@@ -13,15 +13,24 @@ defmodule StarterWeb.Router do
     plug(:accepts, ["json"])
   end
 
-  scope "/", StarterWeb do
-    # Use the default browser stack
-    pipe_through(:browser)
+  pipeline :api_auth do
+    plug(StarterWeb.Guardian.AuthPipeline)
+  end
 
+  scope "/", StarterWeb do
+  # Use the default browser stack
+    pipe_through(:api)
     get("/", PageController, :index)
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", StarterWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", StarterWeb do
+    pipe_through(:api)
+
+    # auth & user
+
+    scope "/v1", Api.V1, as: :v1 do
+      post("/user/register", RegistrationController, :create)
+    end
+  end
 end
