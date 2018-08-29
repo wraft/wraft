@@ -43,7 +43,8 @@ defmodule Starter.Mixfile do
       {:cowboy, "~> 1.0"},
       {:distillery, "~> 2.0"},
       {:comeonin, "~> 4.1"},
-      {:bcrypt_elixir, "~> 1.1"}
+      {:bcrypt_elixir, "~> 1.1"},
+      {:guardian, "~> 1.1"}
     ]
   end
 
