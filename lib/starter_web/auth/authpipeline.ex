@@ -1,4 +1,7 @@
 defmodule StarterWeb.Guardian.AuthPipeline do
+  @moduledoc """
+  The pipeline that guradian follows to check and verify the users JWT token.
+  """
   use Guardian.Plug.Pipeline,
     otp_app: :starter,
     module: StarterWeb.Guardian,

@@ -1,4 +1,8 @@
 defmodule StarterWeb.Guardian do
+  @moduledoc """
+    The main Guardian module. Responsible for selecting the subject
+    for token geration and retrieving subject from the token.
+  """
   use Guardian, otp_app: :my_app
 
   def subject_for_token(resource, _claims) do

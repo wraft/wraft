@@ -1,4 +1,7 @@
 defmodule Starter.User_management do
+  @moduledoc """
+  Module that handles the repo connections of the user context.
+  """
   import Ecto.Query, warn: false
   alias Starter.Repo
   alias Starter.User_management.User
