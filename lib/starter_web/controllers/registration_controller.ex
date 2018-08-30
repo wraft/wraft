@@ -1,4 +1,8 @@
 defmodule StarterWeb.Api.V1.RegistrationController do
+  @moduledoc """
+  RegistrationController module handles the user's registration 
+  process.
+  """
   use StarterWeb, :controller
   import Ecto.Query, warn: false
   alias Starter.{User_management, User_management.User, Repo}

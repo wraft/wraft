@@ -1,4 +1,7 @@
 defmodule StarterWeb.Guardian.AuthErrorHandler do
+  @moduledoc """
+  Error handler for Guradian.
+  """
   import Plug.Conn
 
   def auth_error(conn, {type, _reason}, _opts) do

@@ -1,4 +1,7 @@
 defmodule StarterWeb.Api.V1.RegistrationView do
+    @moduledoc """
+    View module for registration controller.
+    """
     use StarterWeb, :view
     alias StarterWeb.RegistrationView
 

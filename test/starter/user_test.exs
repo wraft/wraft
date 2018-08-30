@@ -1,6 +1,15 @@
 defmodule Starter.UserTest do
   use Starter.ModelCase
-
+@moduledoc """
+  # Cases Covered
+  # 1. Valid Data entry 
+  # 2. Invalid data entry
+  # 3. Names with less than 2 characters
+  # 4. Passwords with less than 8 characters
+  # 5. Passwords with more than 16 characters
+  # 6. Invalid email address
+  # 7. Special characters in name
+"""
   alias Starter.User_management
   alias Starter.User_management.User
 
