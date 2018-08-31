@@ -12,9 +12,9 @@ defmodule StarterWeb.Api.V1.RegistrationController do
   # User Registration
   def create(conn, params) do
     with {:ok, %User{} = user} <- User_management.user_registration(params) do
-        conn
-        |> put_status(:created)
-        |> render("registerview.json", user: user)
+      conn
+      |> put_status(:created)
+      |> render("registerview.json", user: user)
     end
   end
 end
