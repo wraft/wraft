@@ -18,7 +18,7 @@ defmodule StarterWeb.Router do
   end
 
   scope "/", StarterWeb do
-  # Use the default browser stack
+    # Use the default browser stack
     pipe_through(:api)
     get("/", PageController, :index)
   end

@@ -6,7 +6,7 @@ defmodule Starter.User_management do
   alias Starter.Repo
   alias Starter.User_management.User
 
-# User Registration
+  # User Registration
   def user_registration(params \\ %{}) do
     %User{}
     |> User.changeset(params)

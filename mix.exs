@@ -44,7 +44,8 @@ defmodule Starter.Mixfile do
       {:distillery, "~> 2.0"},
       {:comeonin, "~> 4.1"},
       {:bcrypt_elixir, "~> 1.1"},
-      {:guardian, "~> 1.1"}
+      {:guardian, "~> 1.1"},
+      {:ex_phone_number, "~> 0.1.1"}
     ]
   end
 

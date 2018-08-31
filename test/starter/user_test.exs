@@ -1,24 +1,30 @@
 defmodule Starter.UserTest do
   use Starter.ModelCase
-@moduledoc """
-  # Cases Covered
-  # 1. Valid Data entry 
-  # 2. Invalid data entry
-  # 3. Names with less than 2 characters
-  # 4. Passwords with less than 8 characters
-  # 5. Passwords with more than 16 characters
-  # 6. Invalid email address
-  # 7. Special characters in name
-"""
+
+  @moduledoc """
+    # Cases Covered
+    # 1. Valid Data entry 
+    # 2. Invalid data entry
+    # 3. Firstname with less than 2 characters
+    # 4. Passwords with less than 8 characters
+    # 5. Passwords with more than 16 characters
+    # 6. Invalid email address
+    # 7. Special characters in firstname
+    # 8. Special characters in lastname
+  """
   alias Starter.User_management
   alias Starter.User_management.User
 
   @valid_attrs %{
-    name: "User",
+    firstname: "User",
+    lastname: "Name",
     email: "user@mail.com",
-    password: "123456789"
+    password: "123456789",
+    mobile: "918943650799",
+    country: "IN"
   }
-  @invalid_attrs %{}
+  # Test fails without mobile and country key in invalid attrs.
+  @invalid_attrs %{mobile: "+9386ew6gqwe", country: "90"}
 
   test "changeset with valid data" do
     changeset = User.changeset(%User{}, @valid_attrs)
@@ -30,10 +36,10 @@ defmodule Starter.UserTest do
     refute changeset.valid?
   end
 
-  test "changeset does not accept short names" do
-    attrs = Map.put(@valid_attrs, :name, "U")
+  test "changeset does not accept short firstnames" do
+    attrs = Map.put(@valid_attrs, :firstname, "U")
     changeset = User.changeset(%User{}, attrs)
-    assert "should be at least 2 character(s)" in errors_on(changeset, :name)
+    assert "should be at least 2 character(s)" in errors_on(changeset, :firstname)
   end
 
   test "changeset does not accept short password" do
@@ -54,9 +60,28 @@ defmodule Starter.UserTest do
     assert "has invalid format" in errors_on(changeset, :email)
   end
 
-  test "changeset does not accept names with special characters" do
-    attrs = Map.put(@valid_attrs, :name, "wrong/4name?!")
+  test "changeset does not accept firstnames with special characters" do
+    attrs = Map.put(@valid_attrs, :firstname, "wrong/4firstname?!")
     changeset = User.changeset(%User{}, attrs)
-    assert "has invalid format" in errors_on(changeset, :name)
+    assert "has invalid format" in errors_on(changeset, :firstname)
+  end
+
+  test "changeset does not accept lastnames with special characters" do
+    attrs = Map.put(@valid_attrs, :lastname, "wrong/4lastname?!")
+    changeset = User.changeset(%User{}, attrs)
+    assert "has invalid format" in errors_on(changeset, :lastname)
+  end
+
+  test "changeset does not accept taken email address" do
+    changeset_1 = 
+    %User{}
+    |> User.changeset(@valid_attrs)
+    |> Repo.insert()
+
+    changeset_2 = 
+    %User{}
+    |> User.changeset(@valid_attrs)
+    {:error, changeset} = Repo.insert(changeset_2)
+    refute changeset.valid?
   end
 end
