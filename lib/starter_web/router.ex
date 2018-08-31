@@ -31,6 +31,7 @@ defmodule StarterWeb.Router do
 
     scope "/v1", Api.V1, as: :v1 do
       post("/user/register", RegistrationController, :create)
+      post("/user/login", UserController, :signin)
     end
   end
 end

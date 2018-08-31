@@ -10,4 +10,5 @@ defmodule StarterWeb.Guardian.AuthPipeline do
   plug(Guardian.Plug.VerifyHeader)
   plug(Guardian.Plug.EnsureAuthenticated)
   plug(Guardian.Plug.LoadResource)
+  plug StarterWeb.CurrentUser
 end
