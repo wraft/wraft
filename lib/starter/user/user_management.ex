@@ -5,7 +5,7 @@ defmodule Starter.User_management do
   import Ecto.Query, warn: false
   alias Starter.Repo
   alias Starter.User_management.User
-require IEx
+  require IEx
   # User Registration
   def user_registration(params \\ %{}) do
     %User{}
@@ -17,14 +17,15 @@ require IEx
   def find(email) do
     Repo.get_by(User, email: email)
   end
-  
- # Authenticate user and generate token
+
+  # Authenticate user and generate token
   def authenticate(%{user: user, password: password}) do
     case Comeonin.Bcrypt.checkpw(password, user.encrypted_password) do
-    true -> 
-    StarterWeb.Guardian.encode_and_sign(user)
-    _ ->
-      {:error, :invalid}
+      true ->
+        StarterWeb.Guardian.encode_and_sign(user)
+
+      _ ->
+        {:error, :invalid}
     end
   end
 end
