@@ -13,8 +13,8 @@ defmodule StarterWeb.Api.V1.UserController do
     def signin(conn, params) do
         with %User{} = user <- User_management.find(params["email"]) do 
             with {:ok, token, _claims} <- User_management.authenticate(%{user: user, password: params["password"]}) do
-                # conn
-                # |> render("token.json", token: token, user: user)
+                conn
+                |> render("token.json", token: token, user: user)
             end
         end
     end
