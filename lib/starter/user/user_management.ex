@@ -19,17 +19,32 @@ defmodule Starter.User_management do
 
   # Fetch user based on email
   def find(email) do
-    Repo.get_by(User, email: email)
+    case email do
+      "" ->
+        {:error, :no_data}
+      _ -> 
+        case Repo.get_by(User, email: email) do
+          user = %User{} -> 
+              user
+            _ ->
+              {:error, :invalid}
+         end
+    end
   end
 
   # Authenticate user and generate token
   def authenticate(%{user: user, password: password}) do
-    case Comeonin.Bcrypt.checkpw(password, user.encrypted_password) do
-      true ->
-        StarterWeb.Guardian.encode_and_sign(user)
-
-      _ ->
-        {:error, :invalid}
+    case password do
+    "" ->
+      {:error, :no_data}
+    _ ->
+      case Comeonin.Bcrypt.checkpw(password, user.encrypted_password) do
+        true ->
+          StarterWeb.Guardian.encode_and_sign(user)
+  
+        _ ->
+          {:error, :invalid}
+      end
     end
   end
 end
