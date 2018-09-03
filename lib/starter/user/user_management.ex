@@ -2,15 +2,19 @@ defmodule Starter.User_management do
   @moduledoc """
   Module that handles the repo connections of the user context.
   """
-  import Ecto.Query, warn: false
+  # import Ecto.Query, warn: false
+  import Ecto
   alias Starter.Repo
   alias Starter.User_management.User
+  alias Starter.User_management.Roles
   require IEx
   # User Registration
   def user_registration(params \\ %{}) do
-    %User{}
-    |> User.changeset(params)
-    |> Repo.insert()
+    role =
+      Repo.get_by(Roles, name: "user")
+      |> build_assoc(:users)
+      |> User.changeset(params)
+      |> Repo.insert()
   end
 
   # Fetch user based on email
