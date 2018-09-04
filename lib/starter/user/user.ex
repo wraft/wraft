@@ -17,6 +17,7 @@ defmodule Starter.User_management.User do
     field(:mobile_verify, :boolean, default: false)
     field(:email_verify, :boolean, default: false)
     belongs_to :roles, Starter.User_management.Roles
+    has_many :basic_profile, Starter.Profile_management.Profile
     timestamps()
   end
 
