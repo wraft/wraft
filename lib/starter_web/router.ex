@@ -23,15 +23,22 @@ defmodule StarterWeb.Router do
     get("/", PageController, :index)
   end
 
-  # Other scopes may use custom stacks.
+  # Scope which does not need authorization.
   scope "/api", StarterWeb do
     pipe_through(:api)
 
-    # auth & user
-
+    # user
     scope "/v1", Api.V1, as: :v1 do
       post("/user/register", RegistrationController, :create)
       post("/user/login", UserController, :signin)
+    end
+  end
+  # Scope which requires authorization.
+  scope "/api", StarterWeb do
+    pipe_through([:api, :api_auth])
+    #user
+    scope "/v1", Api.V1, as: :v1 do
+      post("/user/profile/", ProfileController, :update)
     end
   end
 end
