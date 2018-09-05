@@ -5,7 +5,7 @@ defmodule StarterWeb.Api.V1.RegistrationController do
   """
   use StarterWeb, :controller
   import Ecto.Query, warn: false
-  alias Starter.{User_management, User_management.User, Profile_management.Profile, Repo}
+  alias Starter.{UserManagement, UserManagement.User, ProfileManagement.Profile, Repo}
   require IEx
   action_fallback(StarterWeb.FallbackController)
 
