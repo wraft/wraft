@@ -1,15 +1,15 @@
-defmodule Starter.User_management.Roles do
+defmodule Starter.UserManagement.Roles do
     @moduledoc """
     This is the Roles module
     """
     use Ecto.Schema
     import Ecto.Changeset
-    alias Starter.User_management.Roles
+    alias Starter.UserManagement.Roles
 
     schema "roles" do
         field :name, :string
         field :admin, :boolean, default: false
-        has_many :users, Starter.User_management.User
+        has_many :users, Starter.UserManagement.User
 
         timestamps()
     end

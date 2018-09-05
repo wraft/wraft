@@ -1,4 +1,4 @@
-defmodule Starter.Profile_management do
+defmodule Starter.ProfileManagement do
 @moduledoc """
     This module handles all the repo connections of the
     profile context
@@ -6,5 +6,5 @@ defmodule Starter.Profile_management do
   import Ecto
   alias Starter.Repo
 
-  alias Starter.Profile_management.Profile
+  alias Starter.ProfileManagement.Profile
 end

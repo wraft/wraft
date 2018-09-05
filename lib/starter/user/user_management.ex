@@ -1,13 +1,13 @@
-defmodule Starter.User_management do
+defmodule Starter.UserManagement do
   @moduledoc """
   Module that handles the repo connections of the user context.
   """
   # import Ecto.Query, warn: false
   import Ecto
   alias Starter.Repo
-  alias Starter.User_management.User
-  alias Starter.User_management.Roles
-  alias Starter.Profile_management.Profile
+  alias Starter.UserManagement.User
+  alias Starter.UserManagement.Roles
+  alias Starter.ProfileManagement.Profile
   require IEx
   # User Registration
   def user_registration(params \\ %{}) do
