@@ -14,8 +14,8 @@ defmodule Starter.UserTest do
     # 9. Uniquness of email address
     # 10. Uniquness of mobile number
   """
-  alias Starter.User_management
-  alias Starter.User_management.User
+  alias Starter.UserManagement
+  alias Starter.UserManagement.User
 
   @valid_attrs %{
     firstname: "User",

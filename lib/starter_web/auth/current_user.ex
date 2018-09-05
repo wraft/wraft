@@ -7,7 +7,7 @@ defmodule StarterWeb.CurrentUser do
   import Guardian.Plug
   import Ecto.Query
   alias Starter.Repo
-  alias Starter.User_management.User
+  alias Starter.UserManagement.User
 
   def init(opts), do: opts
 
