@@ -15,8 +15,8 @@ defmodule Starter.Profile_management.Profile do
         field :current_location, :string
         field :address, :string
         field :pin, :string
-        belongs_to :users, Starter.User_management.User
-        belongs_to :countries, Starter.Profile_management.Country
+        belongs_to :user, Starter.User_management.User
+        belongs_to :country, Starter.Profile_management.Country
 
         timestamps()
     end

@@ -10,6 +10,6 @@ defmodule Starter.Profile_management.Country do
         field :country_name, :string
         field :country_code, :string
         field :calling_code, :string
-        has_many :basic_profile, Starter.Profile_management.Profile
+        has_many :basic_profiles, Starter.Profile_management.Profile
     end
 end
