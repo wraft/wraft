@@ -7,6 +7,7 @@ defmodule Starter.User_management do
   alias Starter.Repo
   alias Starter.User_management.User
   alias Starter.User_management.Roles
+  alias Starter.Profile_management.Profile
   require IEx
   # User Registration
   def user_registration(params \\ %{}) do
@@ -14,7 +15,22 @@ defmodule Starter.User_management do
       Repo.get_by(Roles, name: "user")
       |> build_assoc(:users)
       |> User.changeset(params)
-      |> Repo.insert()
+  #To prevent proceeding to next functions if changeset is invalid
+      case Repo.insert(role) do
+        changeset = {:error, _} ->
+          changeset
+        _ ->
+  # Create profile for the user.    
+          {:ok, profile_struct} = 
+          Repo.get_by(User, email: params["email"])
+          |> build_assoc(:basic_profile)
+          |> Profile.changeset(params)
+          |> Repo.insert()
+
+          profile = 
+          profile_struct
+          |> Repo.preload(:user) 
+      end
   end
 
   # Fetch user based on email

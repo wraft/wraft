@@ -4,13 +4,13 @@ defmodule StarterWeb.Api.V1.RegistrationView do
   """
   use StarterWeb, :view
   alias StarterWeb.RegistrationView
-
-  def render("registerview.json", %{user: user}) do
+require IEx
+  def render("registerview.json", %{profile: profile}) do
     %{
-      firstname: user.firstname,
-      lastname: user.lastname,
-      mobile: user.mobile,
-      email: user.email,
+      firstname: profile.firstname,
+      lastname: profile.lastname,
+      mobile: profile.user.mobile,
+      email: profile.user.email,
       info: "User Registered.! Welcome to Duruper.!"
     }
   end
