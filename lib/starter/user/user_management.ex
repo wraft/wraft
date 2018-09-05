@@ -6,13 +6,13 @@ defmodule Starter.UserManagement do
   import Ecto
   alias Starter.Repo
   alias Starter.UserManagement.User
-  alias Starter.UserManagement.Roles
+  alias Starter.UserManagement.Role
   alias Starter.ProfileManagement.Profile
   require IEx
   # User Registration
   def user_registration(params \\ %{}) do
     role =
-      Repo.get_by(Roles, name: "user")
+      Repo.get_by(Role, name: "user")
       |> build_assoc(:users)
       |> User.changeset(params)
   #To prevent proceeding to next functions if changeset is invalid
