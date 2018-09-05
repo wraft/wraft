@@ -11,7 +11,7 @@ defmodule StarterWeb.Api.V1.RegistrationController do
 
   # User Registration
   def create(conn, params) do
-    with %Profile{} = profile <- User_management.user_registration(params) do
+    with %Profile{} = profile <- UserManagement.user_registration(params) do
       conn
       |> put_status(:created)
       |> render("registerview.json", profile: profile)
