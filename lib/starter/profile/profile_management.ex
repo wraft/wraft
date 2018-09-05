@@ -5,6 +5,10 @@ defmodule Starter.ProfileManagement do
 """
   import Ecto
   alias Starter.Repo
-
+require IEx
   alias Starter.ProfileManagement.Profile
+
+  def update_profile(params) do
+    IEx.pry
+  end
 end
