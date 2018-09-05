@@ -1,4 +1,4 @@
-defmodule Starter.Profile_management.Profile do
+defmodule Starter.ProfileManagement.Profile do
     @moduledoc """
     This is the Profile model
     """ 
@@ -15,8 +15,8 @@ defmodule Starter.Profile_management.Profile do
         field :current_location, :string
         field :address, :string
         field :pin, :string
-        belongs_to :user, Starter.User_management.User
-        belongs_to :country, Starter.Profile_management.Country
+        belongs_to :user, Starter.UserManagement.User
+        belongs_to :country, Starter.ProfileManagement.Country
 
         timestamps()
     end

@@ -1,4 +1,4 @@
-defmodule Starter.User_management.User do
+defmodule Starter.UserManagement.User do
   @moduledoc """
   The user model.
   """
@@ -16,8 +16,8 @@ defmodule Starter.User_management.User do
     field(:country, :string, virtual: true)
     field(:mobile_verify, :boolean, default: false)
     field(:email_verify, :boolean, default: false)
-    belongs_to :roles, Starter.User_management.Roles
-    has_one :basic_profile, Starter.Profile_management.Profile
+    belongs_to :roles, Starter.UserManagement.Roles
+    has_one :basic_profile, Starter.ProfileManagement.Profile
     timestamps()
   end
 
