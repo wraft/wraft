@@ -38,11 +38,11 @@ require IEx
 
     defp validate_dob(current_changeset) do
         
-        if Enum.member?(current_changeset.changes, "dob") do
-            # dob = current_changeset.changes.dob 
-            {:ok, dob} = Timex.parse(current_changeset.changes.dob, "{YYYY}-{M}-{D}")
+        if Map.has_key?(current_changeset.changes, :dob) do
+            dob = current_changeset.changes.dob 
+            # {:ok, dob} = Timex.parse(current_changeset.changes.dob, "{YYYY}-{M}-{D}")
             age = Timex.diff(Timex.now, dob, :years) 
-            if  age > 16 do
+            if  age > 15 do
             current_changeset
             |> put_change(:dob, dob)
             else

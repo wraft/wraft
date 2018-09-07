@@ -17,7 +17,7 @@ require IEx
       #Change Filename
     def filename(version, {file, user}) do
         file_name = Path.basename(file.file_name, Path.extname(file.file_name))
-        "profilepic_#{user.firstname}"
+        "profilepic_#{user.firstname}_#{user.updated_at}"
         # IEx.pry
       end
       
