@@ -9,10 +9,10 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
-alias Starter.UserManagement.Roles
+alias Starter.UserManagement.Role
 alias Starter.Repo
 import Plug
 
 #Populate database with roles
-%Starter.UserManagement.Roles{name: "admin", admin: true} |> Starter.Repo.insert!
-%Starter.UserManagement.Roles{name: "user", admin: false} |> Starter.Repo.insert!
+%Starter.UserManagement.Role{name: "admin", admin: true} |> Starter.Repo.insert!
+%Starter.UserManagement.Role{name: "user", admin: false} |> Starter.Repo.insert!

@@ -12,4 +12,10 @@ defmodule Starter.ProfileManagement.Country do
         field :calling_code, :string
         has_many :basic_profiles, Starter.ProfileManagement.Profile
     end
+
+    def changeset(country, attrs \\ %{}) do
+        country
+        |> cast(attrs, [:country_name, :country_code, :calling_code])
+        |> validate_required([:country_name, :country_code, :calling_code])
+    end
 end
