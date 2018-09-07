@@ -3,8 +3,6 @@ defmodule StarterWeb.Api.V1.ProfileView do
     View module for Profile controller.
     """
     use StarterWeb, :view
-    alias StarterWeb.ProfileView
-  require IEx
     def render("profile.json", %{profile: profile}) do
       %{
         firstname: profile.firstname,
