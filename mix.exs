@@ -20,7 +20,7 @@ defmodule Starter.Mixfile do
   def application do
     [
       mod: {Starter.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :arc_ecto]
     ]
   end
 
@@ -45,7 +45,11 @@ defmodule Starter.Mixfile do
       {:comeonin, "~> 4.1"},
       {:bcrypt_elixir, "~> 1.1"},
       {:guardian, "~> 1.1"},
-      {:ex_phone_number, "~> 0.1.1"}
+      {:ex_phone_number, "~> 0.1.1"},
+      {:timex, "~> 3.3"},
+      {:cors_plug, "~> 1.5"},
+      {:arc, "~> 0.10.0"},
+      {:arc_ecto, "~> 0.10.0"}
     ]
   end
 

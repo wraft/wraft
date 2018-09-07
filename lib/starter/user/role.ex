@@ -1,10 +1,10 @@
-defmodule Starter.UserManagement.Roles do
+defmodule Starter.UserManagement.Role do
     @moduledoc """
     This is the Roles module
     """
     use Ecto.Schema
     import Ecto.Changeset
-    alias Starter.UserManagement.Roles
+    alias Starter.UserManagement.Role
 
     schema "roles" do
         field :name, :string
@@ -14,7 +14,7 @@ defmodule Starter.UserManagement.Roles do
         timestamps()
     end
 
-    def changeset(%Roles{} = role, attrs \\ %{}) do
+    def changeset(%Role{} = role, attrs \\ %{}) do
         role
         |> cast(attrs, [:name, :admin])
         |> validate_required([:name, :admin])
