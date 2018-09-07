@@ -18,6 +18,7 @@ defmodule Starter.UserManagement.User do
     field(:email_verify, :boolean, default: false)
     has_one :basic_profile, Starter.ProfileManagement.Profile
     belongs_to :role, Starter.UserManagement.Role
+    has_many :works, Starter.WorkManagement.Work
     timestamps()
   end
 

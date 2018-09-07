@@ -39,6 +39,7 @@ defmodule StarterWeb.Router do
     #user
     scope "/v1", Api.V1, as: :v1 do
       post("/user/profile/", ProfileController, :update)
+      post("/user/resume/work", WorkController, :create)
     end
   end
 end
