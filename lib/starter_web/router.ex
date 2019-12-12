@@ -29,17 +29,17 @@ defmodule StarterWeb.Router do
 
     # user
     scope "/v1", Api.V1, as: :v1 do
-      post("/user/register", RegistrationController, :create)
-      post("/user/login", UserController, :signin)
+      post("/users/", RegistrationController, :create)
+      post("/users/login", UserController, :signin)
     end
   end
+
   # Scope which requires authorization.
   scope "/api", StarterWeb do
     pipe_through([:api, :api_auth])
-    #user
+
     scope "/v1", Api.V1, as: :v1 do
       post("/user/profile/", ProfileController, :update)
-      post("/user/resume/work", WorkController, :create)
     end
   end
 end
