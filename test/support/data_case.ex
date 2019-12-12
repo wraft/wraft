@@ -1,4 +1,4 @@
-defmodule Starter.DataCase do
+defmodule ExStarter.DataCase do
   @moduledoc """
   This module defines the setup for tests requiring
   access to the application's data layer.
@@ -16,20 +16,20 @@ defmodule Starter.DataCase do
 
   using do
     quote do
-      alias Starter.Repo
+      alias ExStarter.Repo
 
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
-      import Starter.DataCase
+      import ExStarter.DataCase
     end
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Starter.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(ExStarter.Repo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Starter.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(ExStarter.Repo, {:shared, self()})
     end
 
     :ok

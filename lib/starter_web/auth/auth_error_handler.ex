@@ -1,4 +1,4 @@
-defmodule StarterWeb.Guardian.AuthErrorHandler do
+defmodule ExStarterWeb.Guardian.AuthErrorHandler do
   @moduledoc """
   Error handler for Guradian.
   """

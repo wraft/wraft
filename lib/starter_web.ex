@@ -1,12 +1,12 @@
-defmodule StarterWeb do
+defmodule ExStarterWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, views, channels and so on.
 
   This can be used in your application as:
 
-      use StarterWeb, :controller
-      use StarterWeb, :view
+      use ExStarterWeb, :controller
+      use ExStarterWeb, :view
 
   The definitions below will be executed for every view,
   controller, etc, so keep them short and clean, focused
@@ -19,18 +19,18 @@ defmodule StarterWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: StarterWeb
+      use Phoenix.Controller, namespace: ExStarterWeb
       import Plug.Conn
-      import StarterWeb.Router.Helpers
-      import StarterWeb.Gettext
+      import ExStarterWeb.Router.Helpers
+      import ExStarterWeb.Gettext
     end
   end
 
   def view do
     quote do
       use Phoenix.View,
-        root: "lib/starter_web/templates",
-        namespace: StarterWeb
+        root: "lib/ex_starter_web/templates",
+        namespace: ExStarterWeb
 
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
@@ -38,9 +38,9 @@ defmodule StarterWeb do
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
 
-      import StarterWeb.Router.Helpers
-      import StarterWeb.ErrorHelpers
-      import StarterWeb.Gettext
+      import ExStarterWeb.Router.Helpers
+      import ExStarterWeb.ErrorHelpers
+      import ExStarterWeb.Gettext
     end
   end
 
@@ -55,7 +55,7 @@ defmodule StarterWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import StarterWeb.Gettext
+      import ExStarterWeb.Gettext
     end
   end
 

@@ -1,9 +1,9 @@
-defmodule Starter.Repo.Migrations.AddRoleToUsers do
+defmodule ExStarter.Repo.Migrations.AddRoleToUsers do
   use Ecto.Migration
 
   def change do
     alter table(:users) do
-      add :roles_id, references(:roles)
+      add(:roles_id, references(:roles))
     end
   end
 end

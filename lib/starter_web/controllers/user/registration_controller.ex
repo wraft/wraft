@@ -1,13 +1,13 @@
-defmodule StarterWeb.Api.V1.RegistrationController do
+defmodule ExStarterWeb.Api.V1.RegistrationController do
   @moduledoc """
   RegistrationController module handles the user's registration 
   process.
   """
-  use StarterWeb, :controller
+  use ExStarterWeb, :controller
   import Ecto.Query, warn: false
-  alias Starter.{UserManagement, UserManagement.User, ProfileManagement.Profile, Repo}
-  require IEx
-  action_fallback(StarterWeb.FallbackController)
+  alias ExStarter.{UserManagement, UserManagement.User, ProfileManagement.Profile, Repo}
+
+  action_fallback(ExStarterWeb.FallbackController)
 
   # User Registration
   def create(conn, params) do

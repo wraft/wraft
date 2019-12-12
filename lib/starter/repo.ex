@@ -1,5 +1,5 @@
-defmodule Starter.Repo do
-  use Ecto.Repo, otp_app: :starter
+defmodule ExStarter.Repo do
+  use Ecto.Repo, otp_app: :ex_starter
 
   @doc """
   Dynamically loads the repository url from the

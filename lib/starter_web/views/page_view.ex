@@ -1,3 +1,3 @@
-defmodule StarterWeb.PageView do
-  use StarterWeb, :view
+defmodule ExStarterWeb.PageView do
+  use ExStarterWeb, :view
 end

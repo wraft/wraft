@@ -1,5 +1,5 @@
-defmodule StarterWeb.Router do
-  use StarterWeb, :router
+defmodule ExStarterWeb.Router do
+  use ExStarterWeb, :router
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -14,17 +14,17 @@ defmodule StarterWeb.Router do
   end
 
   pipeline :api_auth do
-    plug(StarterWeb.Guardian.AuthPipeline)
+    plug(ExStarterWeb.Guardian.AuthPipeline)
   end
 
-  scope "/", StarterWeb do
+  scope "/", ExStarterWeb do
     # Use the default browser stack
     pipe_through(:api)
     get("/", PageController, :index)
   end
 
   # Scope which does not need authorization.
-  scope "/api", StarterWeb do
+  scope "/api", ExStarterWeb do
     pipe_through(:api)
 
     # user
@@ -35,7 +35,7 @@ defmodule StarterWeb.Router do
   end
 
   # Scope which requires authorization.
-  scope "/api", StarterWeb do
+  scope "/api", ExStarterWeb do
     pipe_through([:api, :api_auth])
 
     scope "/v1", Api.V1, as: :v1 do

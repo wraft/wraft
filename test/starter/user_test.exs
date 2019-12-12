@@ -1,5 +1,5 @@
-defmodule Starter.UserTest do
-  use Starter.ModelCase
+defmodule ExStarter.UserTest do
+  use ExStarter.ModelCase
 
   @moduledoc """
     # Cases Covered
@@ -14,8 +14,8 @@ defmodule Starter.UserTest do
     # 9. Uniquness of email address
     # 10. Uniquness of mobile number
   """
-  alias Starter.UserManagement
-  alias Starter.UserManagement.User
+  alias ExStarter.UserManagement
+  alias ExStarter.UserManagement.User
 
   @valid_attrs %{
     firstname: "User",
@@ -76,28 +76,32 @@ defmodule Starter.UserTest do
 
   test "changeset does not accept taken email address" do
     attrs = Map.put(@valid_attrs, :email, "used@mail.com")
-    changeset_1 = 
-    %User{}
-    |> User.changeset(attrs)
-    |> Repo.insert()
 
-    changeset_2 = 
-    %User{}
-    |> User.changeset(attrs)
+    changeset_1 =
+      %User{}
+      |> User.changeset(attrs)
+      |> Repo.insert()
+
+    changeset_2 =
+      %User{}
+      |> User.changeset(attrs)
+
     {:error, changeset} = Repo.insert(changeset_2)
     refute changeset.valid?
   end
 
   test "changeset does not accept taken mobile number" do
     attrs = Map.put(@valid_attrs, :mobile, "917012881175")
-    changeset_1 = 
-    %User{}
-    |> User.changeset(attrs)
-    |> Repo.insert()
+
+    changeset_1 =
+      %User{}
+      |> User.changeset(attrs)
+      |> Repo.insert()
 
     changeset_2 =
-    %User{}
-    |> User.changeset(attrs)
+      %User{}
+      |> User.changeset(attrs)
+
     {:error, changeset} = Repo.insert(changeset_2)
   end
 end
