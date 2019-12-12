@@ -1,4 +1,4 @@
-defmodule StarterWeb.ErrorHelpers do
+defmodule ExStarterWeb.ErrorHelpers do
   @moduledoc """
   Conveniences for translating and building error messages.
   """
@@ -36,9 +36,9 @@ defmodule StarterWeb.ErrorHelpers do
     # should be written to the errors.po file. The :count option is
     # set by Ecto and indicates we should also apply plural rules.
     if count = opts[:count] do
-      Gettext.dngettext(StarterWeb.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(ExStarterWeb.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(StarterWeb.Gettext, "errors", msg, opts)
+      Gettext.dgettext(ExStarterWeb.Gettext, "errors", msg, opts)
     end
   end
 end

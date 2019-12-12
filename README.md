@@ -1,4 +1,4 @@
-# Starter
+# ExStarter
 
 To start your Phoenix server:
 

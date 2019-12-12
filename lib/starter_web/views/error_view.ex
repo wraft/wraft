@@ -1,5 +1,5 @@
-defmodule StarterWeb.ErrorView do
-  use StarterWeb, :view
+defmodule ExStarterWeb.ErrorView do
+  use ExStarterWeb, :view
 
   # If you want to customize a particular status code
   # for a certain format, you may uncomment below.

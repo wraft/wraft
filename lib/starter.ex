@@ -1,6 +1,6 @@
-defmodule Starter do
+defmodule ExStarter do
   @moduledoc """
-  Starter keeps the contexts that define your domain
+  ExStarter keeps the contexts that define your domain
   and business logic.
 
   Contexts are also responsible for managing your data, regardless

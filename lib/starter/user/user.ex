@@ -1,10 +1,9 @@
-defmodule Starter.UserManagement.User do
+defmodule ExStarter.UserManagement.User do
   @moduledoc """
   The user model.
   """
   use Ecto.Schema
   import Ecto.Changeset
-  require IEx
 
   schema "users" do
     field(:firstname, :string)
@@ -16,8 +15,8 @@ defmodule Starter.UserManagement.User do
     field(:country, :string, virtual: true)
     field(:mobile_verify, :boolean, default: false)
     field(:email_verify, :boolean, default: false)
-    has_one(:basic_profile, Starter.ProfileManagement.Profile)
-    belongs_to(:role, Starter.UserManagement.Role)
+    has_one(:basic_profile, ExStarter.ProfileManagement.Profile)
+    belongs_to(:role, ExStarter.UserManagement.Role)
 
     timestamps()
   end

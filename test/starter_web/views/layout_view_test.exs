@@ -1,3 +1,3 @@
-defmodule StarterWeb.LayoutViewTest do
-  use StarterWeb.ConnCase, async: true
+defmodule ExStarterWeb.LayoutViewTest do
+  use ExStarterWeb.ConnCase, async: true
 end

@@ -1,7 +1,7 @@
-defmodule StarterWeb.Endpoint do
-  use Phoenix.Endpoint, otp_app: :starter
+defmodule ExStarterWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :ex_starter
 
-  socket("/socket", StarterWeb.UserSocket)
+  socket("/socket", ExStarterWeb.UserSocket)
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -10,16 +10,16 @@ defmodule StarterWeb.Endpoint do
   plug(
     Plug.Static,
     at: "/",
-    from: :starter,
+    from: :ex_starter,
     gzip: false,
     only: ~w(css fonts images js favicon.ico robots.txt)
   )
+
   plug(
-    Plug.Static, 
-    at: "/uploads", 
+    Plug.Static,
+    at: "/uploads",
     from: "uploads"
   )
-
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
@@ -47,11 +47,12 @@ defmodule StarterWeb.Endpoint do
   plug(
     Plug.Session,
     store: :cookie,
-    key: "_starter_key",
+    key: "_ex_starter_key",
     signing_salt: "OZYS2y3c"
   )
-  plug CORSPlug
-  plug(StarterWeb.Router)
+
+  plug(CORSPlug)
+  plug(ExStarterWeb.Router)
 
   @doc """
   Callback invoked for dynamically configuring the endpoint.

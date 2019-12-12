@@ -1,11 +1,11 @@
-defmodule StarterWeb.Guardian do
+defmodule ExStarterWeb.Guardian do
   @moduledoc """
     The main Guardian module. Responsible for selecting the subject
     for token geration and retrieving subject from the token.
   """
-  use Guardian, otp_app: :starter
-  alias Starter.Repo
-  alias Starter.UserManagement.User
+  use Guardian, otp_app: :ex_starter
+  alias ExStarter.Repo
+  alias ExStarter.UserManagement.User
 
   def subject_for_token(resource, _claims) do
     # You can use any value for the subject of your token but

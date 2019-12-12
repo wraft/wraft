@@ -1,3 +1,3 @@
-defmodule StarterWeb.LayoutView do
-  use StarterWeb, :view
+defmodule ExStarterWeb.LayoutView do
+  use ExStarterWeb, :view
 end

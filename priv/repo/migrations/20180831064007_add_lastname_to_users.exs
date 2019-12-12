@@ -1,10 +1,11 @@
-defmodule Starter.Repo.Migrations.AddLastnameToUsers do
+defmodule ExStarter.Repo.Migrations.AddLastnameToUsers do
   use Ecto.Migration
 
   def change do
     alter table(:users) do
-    add :lastname, :string, null: false
+      add(:lastname, :string, null: false)
     end
-    rename table(:users), :name, to: :firstname
+
+    rename(table(:users), :name, to: :firstname)
   end
 end
