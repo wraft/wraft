@@ -3,7 +3,6 @@ defmodule ExStarterWeb.Api.V1.RegistrationView do
   View module for registration controller.
   """
   use ExStarterWeb, :view
-  alias ExStarterWeb.RegistrationView
 
   def render("registerview.json", %{profile: profile}) do
     %{

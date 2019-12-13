@@ -4,7 +4,6 @@ defmodule ExStarter.ProfileManagement.Country do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias ExStarter.UserManagement.Roles
 
   schema "countries" do
     field(:country_name, :string)
