@@ -1,7 +1,10 @@
 defmodule ExStarterWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :ex_starter
 
-  socket("/socket", ExStarterWeb.UserSocket)
+  socket("/socket", ExStarterWeb.UserSocket,
+    websocket: [timeout: :infinity],
+    longpoll: false
+  )
 
   # Serve at "/" the static files from "priv/static" directory.
   #

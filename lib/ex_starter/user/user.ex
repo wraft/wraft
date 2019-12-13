@@ -35,7 +35,6 @@ defmodule ExStarter.UserManagement.User do
     |> validate_confirmation(:password, message: "Passwords do not match.!")
     |> unique_constraint(:email, message: "Email already taken.! Try another email.")
     |> unique_constraint(:mobile, message: "Mobile Number already taken.! Try another number.")
-    |> validate_mobile
     |> generate_encrypted_password
   end
 
@@ -50,25 +49,6 @@ defmodule ExStarter.UserManagement.User do
 
       _ ->
         current_changeset
-    end
-  end
-
-  defp validate_mobile(current_changeset) do
-    {:ok, phone_number} =
-      ExPhoneNumber.parse(current_changeset.changes.mobile, current_changeset.changes.country)
-
-    case ExPhoneNumber.is_possible_number?(phone_number) do
-      true ->
-        case ExPhoneNumber.is_valid_number?(phone_number) do
-          true ->
-            current_changeset
-
-          false ->
-            add_error(current_changeset, :mobile, "Invalid Mobile number")
-        end
-
-      false ->
-        add_error(current_changeset, :mobile, "Please check your mobile number and try again.!")
     end
   end
 end

@@ -16,14 +16,12 @@ defmodule ExStarterWeb.PropicUploader do
   end
 
   # Change Filename
-  def filename(version, {file, user}) do
-    file_name = Path.basename(file.file_name, Path.extname(file.file_name))
+  def filename(_version, {_file, user}) do
     "profilepic_#{user.firstname}_#{user.updated_at}"
-    # IEx.pry
   end
 
   # Storage Directory
-  def storage_dir(_, {file, user}) do
+  def storage_dir(_, {_file, user}) do
     "uploads/avatars/#{user.id}"
   end
 end
