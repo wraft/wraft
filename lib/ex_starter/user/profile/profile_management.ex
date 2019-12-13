@@ -3,11 +3,9 @@ defmodule ExStarter.ProfileManagement do
       This module handles all the repo connections of the
       profile context
   """
-  import Ecto
   alias ExStarter.Repo
 
   alias ExStarter.ProfileManagement.Profile
-  alias ExStarter.ProfileManagement.Country
 
   def update_profile(conn, params) do
     current_user = conn.assigns.current_user.id
