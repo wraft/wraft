@@ -9,7 +9,7 @@ defmodule ExStarter.UserManagement do
   alias ExStarter.UserManagement.Role
   alias ExStarter.ProfileManagement.Profile
   alias ExStarter.ProfileManagement.Country
-  require IEx
+
   # User Registration
   def user_registration(params \\ %{}) do
     country = Repo.get_by(Country, country_code: params["country"])

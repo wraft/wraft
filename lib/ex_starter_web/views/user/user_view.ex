@@ -15,4 +15,14 @@ defmodule ExStarterWeb.Api.V1.UserView do
       }
     }
   end
+
+  def render("registerview.json", %{profile: profile}) do
+    %{
+      firstname: profile.firstname,
+      lastname: profile.lastname,
+      mobile: profile.user.mobile,
+      email: profile.user.email,
+      info: "User Registered.! Welcome to Duruper.!"
+    }
+  end
 end
