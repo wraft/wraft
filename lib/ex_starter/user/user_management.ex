@@ -32,9 +32,8 @@ defmodule ExStarter.UserManagement do
           |> Profile.changeset(params)
           |> Repo.insert()
 
-        profile =
-          profile_struct
-          |> Repo.preload(:user)
+        profile_struct
+        |> Repo.preload(:user)
     end
   end
 

@@ -5,7 +5,7 @@ defmodule ExStarterWeb.Api.V1.UserController do
   """
   use ExStarterWeb, :controller
   import Ecto.Query, warn: false
-  alias ExStarter.{UserManagement, UserManagement.User, Repo}
+  alias ExStarter.{UserManagement, UserManagement.User}
 
   action_fallback(ExStarterWeb.FallbackController)
 

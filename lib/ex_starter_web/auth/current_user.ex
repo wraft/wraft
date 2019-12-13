@@ -5,9 +5,7 @@ defmodule ExStarterWeb.CurrentUser do
   """
   import Plug.Conn
   import Guardian.Plug
-  import Ecto.Query
-  alias ExStarter.Repo
-  alias ExStarter.UserManagement.User
+  alias ExStarter.{Repo, UserManagement.User}
 
   def init(opts), do: opts
 
