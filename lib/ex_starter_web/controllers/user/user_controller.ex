@@ -5,11 +5,24 @@ defmodule ExStarterWeb.Api.V1.UserController do
   """
   use ExStarterWeb, :controller
   import Ecto.Query, warn: false
-  alias ExStarter.{UserManagement, UserManagement.User}
+  alias ExStarter.{UserManagement, UserManagement.User, ProfileManagement.Profile}
 
   action_fallback(ExStarterWeb.FallbackController)
 
-  # User Login
+  @doc """
+  New registration.
+  """
+  def create(conn, params) do
+    with %Profile{} = profile <- UserManagement.user_registration(params) do
+      conn
+      |> put_status(:created)
+      |> render("registerview.json", profile: profile)
+    end
+  end
+
+  @doc """
+  User Login.
+  """
   def signin(conn, params) do
     with %User{} = user <- UserManagement.find(params["email"]) do
       with {:ok, token, _claims} <-
