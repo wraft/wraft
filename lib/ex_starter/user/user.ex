@@ -5,15 +5,13 @@ defmodule ExStarter.UserManagement.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "users" do
-    field(:firstname, :string)
-    field(:lastname, :string)
+  schema "user" do
+    field(:name, :string)
     field(:email, :string)
     field(:mobile, :string)
     field(:encrypted_password, :string)
     field(:password, :string, virtual: true)
     field(:country, :string, virtual: true)
-    field(:mobile_verify, :boolean, default: false)
     field(:email_verify, :boolean, default: false)
     has_one(:basic_profile, ExStarter.ProfileManagement.Profile)
     belongs_to(:role, ExStarter.UserManagement.Role)
@@ -32,7 +30,6 @@ defmodule ExStarter.UserManagement.User do
     |> validate_format(:lastname, ~r/^[A-z ]+$/)
     |> validate_length(:firstname, min: 2)
     |> validate_length(:password, min: 8, max: 16)
-    |> validate_confirmation(:password, message: "Passwords do not match.!")
     |> unique_constraint(:email, message: "Email already taken.! Try another email.")
     |> unique_constraint(:mobile, message: "Mobile Number already taken.! Try another number.")
     |> generate_encrypted_password

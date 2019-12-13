@@ -3,7 +3,7 @@ defmodule ExStarter.Repo.Migrations.AddCountriesToBasicProfile do
 
   def change do
     alter table(:basic_profile) do
-      add(:countries_id, references(:countries))
+      add(:country_id, references(:country))
     end
   end
 end

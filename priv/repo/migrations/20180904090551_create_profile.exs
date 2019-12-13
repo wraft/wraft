@@ -5,12 +5,8 @@ defmodule ExStarter.Repo.Migrations.CreateProfile do
     create table(:basic_profile) do
       add(:dob, :date)
       add(:gender, :string)
-      add(:marital_status, :string)
-      add(:current_location, :string)
-      add(:address, :string)
-      add(:pin, :string)
-      add(:user_id, references(:users), null: false)
-
+      add(:user_id, references(:user), null: false)
+      add(:profile_pic, :string)
       timestamps()
     end
 

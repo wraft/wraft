@@ -6,7 +6,7 @@ defmodule ExStarter.UserManagement.Role do
   import Ecto.Changeset
   alias ExStarter.UserManagement.Role
 
-  schema "roles" do
+  schema "role" do
     field(:name, :string)
     field(:admin, :boolean, default: false)
     has_many(:users, ExStarter.UserManagement.User)
