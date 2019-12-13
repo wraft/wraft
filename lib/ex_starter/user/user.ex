@@ -19,19 +19,17 @@ defmodule ExStarter.UserManagement.User do
     timestamps()
   end
 
-  @required_fields ~w(firstname lastname email mobile password country)
+  @required_fields ~w(name email mobile password country)
   @optional_fields ~w(encrypted_password)
   def changeset(users, attrs \\ %{}) do
     users
     |> cast(attrs, @required_fields, @optional_fields)
-    |> validate_required([:firstname, :lastname, :email, :mobile, :password, :country])
+    |> validate_required([:name, :email, :mobile, :password, :country])
     |> validate_format(:email, ~r/@/)
-    |> validate_format(:firstname, ~r/^[A-z ]+$/)
-    |> validate_format(:lastname, ~r/^[A-z ]+$/)
-    |> validate_length(:firstname, min: 2)
+    |> validate_format(:name, ~r/^[A-z ]+$/)
+    |> validate_length(:name, min: 2)
     |> validate_length(:password, min: 8, max: 16)
     |> unique_constraint(:email, message: "Email already taken.! Try another email.")
-    |> unique_constraint(:mobile, message: "Mobile Number already taken.! Try another number.")
     |> generate_encrypted_password
   end
 

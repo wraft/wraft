@@ -8,7 +8,6 @@ defmodule ExStarter.UserManagement.Role do
 
   schema "role" do
     field(:name, :string)
-    field(:admin, :boolean, default: false)
     has_many(:users, ExStarter.UserManagement.User)
 
     timestamps()

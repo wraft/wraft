@@ -3,6 +3,7 @@ defmodule ExStarter.Repo.Migrations.CreateProfile do
 
   def change do
     create table(:basic_profile) do
+      add(:name, :string, null: false)
       add(:dob, :date)
       add(:gender, :string)
       add(:user_id, references(:user), null: false)
