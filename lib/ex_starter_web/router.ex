@@ -29,7 +29,7 @@ defmodule ExStarterWeb.Router do
 
     # user
     scope "/v1", Api.V1, as: :v1 do
-      resources("/users", UserController, only[:create])
+      resources("/users", UserController, only: [:create])
       post("/users/login", UserController, :signin)
     end
   end
