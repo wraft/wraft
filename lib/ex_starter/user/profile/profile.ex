@@ -5,18 +5,12 @@ defmodule ExStarter.ProfileManagement.Profile do
   use Ecto.Schema
   use Arc.Ecto.Schema
   import Ecto.Changeset
-  require IEx
 
   schema "basic_profile" do
-    field(:firstname, :string)
-    field(:lastname, :string)
+    field(:name, :string)
     field(:profile_pic, ExStarterWeb.PropicUploader.Type)
     field(:dob, :date)
     field(:gender, :string)
-    field(:marital_status, :string)
-    field(:current_location, :string)
-    field(:address, :string)
-    field(:pin, :string)
     belongs_to(:user, ExStarter.UserManagement.User)
     belongs_to(:country, ExStarter.ProfileManagement.Country)
 
@@ -26,19 +20,13 @@ defmodule ExStarter.ProfileManagement.Profile do
   def changeset(profile, attrs \\ %{}) do
     profile
     |> cast(attrs, [
-      :firstname,
-      :lastname,
+      :name,
       :dob,
-      :gender,
-      :marital_status,
-      :current_location,
-      :address,
-      :pin
+      :gender
     ])
     |> cast_attachments(attrs, [:profile_pic])
-    |> validate_required([:firstname, :lastname])
-    |> validate_format(:firstname, ~r/^[A-z ]+$/)
-    |> validate_format(:lastname, ~r/^[A-z ]+$/)
+    |> validate_required([:name])
+    |> validate_format(:name, ~r/^[A-z ]+$/)
     |> validate_length(:firstname, min: 2)
     |> validate_dob
   end

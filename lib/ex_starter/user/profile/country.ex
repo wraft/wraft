@@ -5,7 +5,7 @@ defmodule ExStarter.ProfileManagement.Country do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "countries" do
+  schema "country" do
     field(:country_name, :string)
     field(:country_code, :string)
     field(:calling_code, :string)
