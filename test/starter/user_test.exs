@@ -1,5 +1,5 @@
-defmodule ExStarter.UserTest do
-  use ExStarter.ModelCase
+defmodule WraftDoc.UserTest do
+  use WraftDoc.ModelCase
 
   @moduledoc """
     # Cases Covered
@@ -14,8 +14,8 @@ defmodule ExStarter.UserTest do
     # 9. Uniquness of email address
     # 10. Uniquness of mobile number
   """
-  alias ExStarter.UserManagement
-  alias ExStarter.UserManagement.User
+  alias WraftDoc.UserManagement
+  alias WraftDoc.UserManagement.User
 
   @valid_attrs %{
     firstname: "User",

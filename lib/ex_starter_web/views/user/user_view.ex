@@ -1,8 +1,8 @@
-defmodule ExStarterWeb.Api.V1.UserView do
+defmodule WraftDocWeb.Api.V1.UserView do
   @moduledoc """
   View module for user controller.
   """
-  use ExStarterWeb, :view
+  use WraftDocWeb, :view
 
   def render("token.json", %{token: token, user: user}) do
     %{

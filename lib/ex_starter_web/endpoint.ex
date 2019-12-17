@@ -1,7 +1,7 @@
-defmodule ExStarterWeb.Endpoint do
-  use Phoenix.Endpoint, otp_app: :ex_starter
+defmodule WraftDocWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :wraft_doc
 
-  socket("/socket", ExStarterWeb.UserSocket,
+  socket("/socket", WraftDocWeb.UserSocket,
     websocket: [timeout: :infinity],
     longpoll: false
   )
@@ -13,7 +13,7 @@ defmodule ExStarterWeb.Endpoint do
   plug(
     Plug.Static,
     at: "/",
-    from: :ex_starter,
+    from: :wraft_doc,
     gzip: false,
     only: ~w(css fonts images js favicon.ico robots.txt)
   )
@@ -50,12 +50,12 @@ defmodule ExStarterWeb.Endpoint do
   plug(
     Plug.Session,
     store: :cookie,
-    key: "_ex_starter_key",
+    key: "_wraft_doc_key",
     signing_salt: "OZYS2y3c"
   )
 
   plug(CORSPlug)
-  plug(ExStarterWeb.Router)
+  plug(WraftDocWeb.Router)
 
   @doc """
   Callback invoked for dynamically configuring the endpoint.

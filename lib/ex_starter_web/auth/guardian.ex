@@ -1,9 +1,9 @@
-defmodule ExStarterWeb.Guardian do
+defmodule WraftDocWeb.Guardian do
   @moduledoc """
     The main Guardian module. Responsible for selecting the subject
     for token geration and retrieving subject from the token.
   """
-  use Guardian, otp_app: :ex_starter
+  use Guardian, otp_app: :wraft_doc
 
   def subject_for_token(%{email: email}, _claims) do
     # You can use any value for the subject of your token but

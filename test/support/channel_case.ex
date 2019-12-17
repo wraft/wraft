@@ -1,4 +1,4 @@
-defmodule ExStarterWeb.ChannelCase do
+defmodule WraftDocWeb.ChannelCase do
   @moduledoc """
   This module defines the test case to be used by
   channel tests.
@@ -21,15 +21,15 @@ defmodule ExStarterWeb.ChannelCase do
       use Phoenix.ChannelTest
 
       # The default endpoint for testing
-      @endpoint ExStarterWeb.Endpoint
+      @endpoint WraftDocWeb.Endpoint
     end
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(ExStarter.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(WraftDoc.Repo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(ExStarter.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, {:shared, self()})
     end
 
     :ok

@@ -1,4 +1,4 @@
-defmodule ExStarter.ProfileManagement.Profile do
+defmodule WraftDoc.ProfileManagement.Profile do
   @moduledoc """
   This is the Profile model
   """
@@ -8,11 +8,11 @@ defmodule ExStarter.ProfileManagement.Profile do
 
   schema "basic_profile" do
     field(:name, :string)
-    field(:profile_pic, ExStarterWeb.PropicUploader.Type)
+    field(:profile_pic, WraftDocWeb.PropicUploader.Type)
     field(:dob, :date)
     field(:gender, :string)
-    belongs_to(:user, ExStarter.UserManagement.User)
-    belongs_to(:country, ExStarter.ProfileManagement.Country)
+    belongs_to(:user, WraftDoc.UserManagement.User)
+    belongs_to(:country, WraftDoc.ProfileManagement.Country)
 
     timestamps()
   end

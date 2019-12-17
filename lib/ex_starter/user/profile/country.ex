@@ -1,4 +1,4 @@
-defmodule ExStarter.ProfileManagement.Country do
+defmodule WraftDoc.ProfileManagement.Country do
   @moduledoc """
   This is the Country module
   """
@@ -9,7 +9,7 @@ defmodule ExStarter.ProfileManagement.Country do
     field(:country_name, :string)
     field(:country_code, :string)
     field(:calling_code, :string)
-    has_many(:basic_profiles, ExStarter.ProfileManagement.Profile)
+    has_many(:basic_profiles, WraftDoc.ProfileManagement.Profile)
   end
 
   def changeset(country, attrs \\ %{}) do

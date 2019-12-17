@@ -1,12 +1,12 @@
-defmodule ExStarterWeb do
+defmodule WraftDocWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, views, channels and so on.
 
   This can be used in your application as:
 
-      use ExStarterWeb, :controller
-      use ExStarterWeb, :view
+      use WraftDocWeb, :controller
+      use WraftDocWeb, :view
 
   The definitions below will be executed for every view,
   controller, etc, so keep them short and clean, focused
@@ -19,18 +19,18 @@ defmodule ExStarterWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: ExStarterWeb
+      use Phoenix.Controller, namespace: WraftDocWeb
       import Plug.Conn
-      import ExStarterWeb.Router.Helpers
-      import ExStarterWeb.Gettext
+      import WraftDocWeb.Router.Helpers
+      import WraftDocWeb.Gettext
     end
   end
 
   def view do
     quote do
       use Phoenix.View,
-        root: "lib/ex_starter_web/templates",
-        namespace: ExStarterWeb
+        root: "lib/wraft_doc_web/templates",
+        namespace: WraftDocWeb
 
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
@@ -38,9 +38,9 @@ defmodule ExStarterWeb do
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
 
-      import ExStarterWeb.Router.Helpers
-      import ExStarterWeb.ErrorHelpers
-      import ExStarterWeb.Gettext
+      import WraftDocWeb.Router.Helpers
+      import WraftDocWeb.ErrorHelpers
+      import WraftDocWeb.Gettext
     end
   end
 
@@ -55,7 +55,7 @@ defmodule ExStarterWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import ExStarterWeb.Gettext
+      import WraftDocWeb.Gettext
     end
   end
 

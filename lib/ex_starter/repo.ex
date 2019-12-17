@@ -1,5 +1,5 @@
-defmodule ExStarter.Repo do
-  use Ecto.Repo, otp_app: :ex_starter, adapter: Ecto.Adapters.Postgres
+defmodule WraftDoc.Repo do
+  use Ecto.Repo, otp_app: :wraft_doc, adapter: Ecto.Adapters.Postgres
 
   @doc """
   Dynamically loads the repository url from the

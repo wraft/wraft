@@ -1,8 +1,8 @@
-defmodule ExStarterWeb.Api.V1.ProfileController do
-  use ExStarterWeb, :controller
+defmodule WraftDocWeb.Api.V1.ProfileController do
+  use WraftDocWeb, :controller
   import Ecto.Query, warn: false
-  alias ExStarter.{ProfileManagement, ProfileManagement.Profile}
-  action_fallback(ExStarterWeb.FallbackController)
+  alias WraftDoc.{ProfileManagement, ProfileManagement.Profile}
+  action_fallback(WraftDocWeb.FallbackController)
   require IEx
   # Profile Update
   def update(conn, params) do

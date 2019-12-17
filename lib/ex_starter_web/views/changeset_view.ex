@@ -1,5 +1,5 @@
-defmodule ExStarterWeb.ChangesetView do
-  use ExStarterWeb, :view
+defmodule WraftDocWeb.ChangesetView do
+  use WraftDocWeb, :view
 
   @doc """
   Traverses and translates changeset errors.

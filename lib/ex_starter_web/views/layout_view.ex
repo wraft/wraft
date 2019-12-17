@@ -1,3 +1,3 @@
-defmodule ExStarterWeb.LayoutView do
-  use ExStarterWeb, :view
+defmodule WraftDocWeb.LayoutView do
+  use WraftDocWeb, :view
 end

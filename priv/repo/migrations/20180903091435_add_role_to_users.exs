@@ -1,4 +1,4 @@
-defmodule ExStarter.Repo.Migrations.AddRoleToUsers do
+defmodule WraftDoc.Repo.Migrations.AddRoleToUsers do
   use Ecto.Migration
 
   def change do

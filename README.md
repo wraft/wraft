@@ -1,4 +1,4 @@
-# ExStarter
+# WraftDoc
 
 To start your Phoenix server:
 
