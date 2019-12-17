@@ -1,3 +1,3 @@
-defmodule ExStarterWeb.PageView do
-  use ExStarterWeb, :view
+defmodule WraftDocWeb.PageView do
+  use WraftDocWeb, :view
 end

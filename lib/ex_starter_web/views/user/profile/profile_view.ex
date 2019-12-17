@@ -1,8 +1,8 @@
-defmodule ExStarterWeb.Api.V1.ProfileView do
+defmodule WraftDocWeb.Api.V1.ProfileView do
   @moduledoc """
   View module for Profile controller.
   """
-  use ExStarterWeb, :view
+  use WraftDocWeb, :view
 
   def render("profile.json", %{profile: profile}) do
     %{

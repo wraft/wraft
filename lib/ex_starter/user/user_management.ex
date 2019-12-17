@@ -1,14 +1,14 @@
-defmodule ExStarter.UserManagement do
+defmodule WraftDoc.UserManagement do
   @moduledoc """
   Module that handles the repo connections of the user context.
   """
   # import Ecto.Query, warn: false
   import Ecto
-  alias ExStarter.Repo
-  alias ExStarter.UserManagement.User
-  alias ExStarter.UserManagement.Role
-  alias ExStarter.ProfileManagement.Profile
-  alias ExStarter.ProfileManagement.Country
+  alias WraftDoc.Repo
+  alias WraftDoc.UserManagement.User
+  alias WraftDoc.UserManagement.Role
+  alias WraftDoc.ProfileManagement.Profile
+  alias WraftDoc.ProfileManagement.Country
 
   # User Registration
   def user_registration(params \\ %{}) do
@@ -63,7 +63,7 @@ defmodule ExStarter.UserManagement do
       _ ->
         case Comeonin.Bcrypt.checkpw(password, user.encrypted_password) do
           true ->
-            ExStarterWeb.Guardian.encode_and_sign(user)
+            WraftDocWeb.Guardian.encode_and_sign(user)
 
           _ ->
             {:error, :invalid}

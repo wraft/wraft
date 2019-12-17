@@ -1,3 +1,3 @@
-defmodule ExStarterWeb.PageViewTest do
-  use ExStarterWeb.ConnCase, async: true
+defmodule WraftDocWeb.PageViewTest do
+  use WraftDocWeb.ConnCase, async: true
 end

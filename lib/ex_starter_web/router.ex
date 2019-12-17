@@ -1,5 +1,5 @@
-defmodule ExStarterWeb.Router do
-  use ExStarterWeb, :router
+defmodule WraftDocWeb.Router do
+  use WraftDocWeb, :router
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -14,17 +14,17 @@ defmodule ExStarterWeb.Router do
   end
 
   pipeline :api_auth do
-    plug(ExStarterWeb.Guardian.AuthPipeline)
+    plug(WraftDocWeb.Guardian.AuthPipeline)
   end
 
-  scope "/", ExStarterWeb do
+  scope "/", WraftDocWeb do
     # Use the default browser stack
     pipe_through(:api)
     get("/", PageController, :index)
   end
 
   # Scope which does not need authorization.
-  scope "/api", ExStarterWeb do
+  scope "/api", WraftDocWeb do
     pipe_through(:api)
 
     # user
@@ -35,7 +35,7 @@ defmodule ExStarterWeb.Router do
   end
 
   # Scope which requires authorization.
-  scope "/api", ExStarterWeb do
+  scope "/api", WraftDocWeb do
     pipe_through([:api, :api_auth])
 
     scope "/v1", Api.V1, as: :v1 do

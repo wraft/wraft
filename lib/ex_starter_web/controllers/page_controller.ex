@@ -1,5 +1,5 @@
-defmodule ExStarterWeb.PageController do
-  use ExStarterWeb, :controller
+defmodule WraftDocWeb.PageController do
+  use WraftDocWeb, :controller
 
   def index(conn, _params) do
     body = Poison.encode!(%{error: "Not Authenticated. Sign up first.!"})

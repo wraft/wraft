@@ -1,11 +1,11 @@
-defmodule ExStarterWeb.CurrentUser do
+defmodule WraftDocWeb.CurrentUser do
   @moduledoc """
   This is a plug that stores the current user details in the 
   conn based on the subject in the JWT token.
   """
   import Plug.Conn
   import Guardian.Plug
-  alias ExStarter.{Repo, UserManagement.User}
+  alias WraftDoc.{Repo, UserManagement.User}
 
   def init(opts), do: opts
 

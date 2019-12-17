@@ -1,11 +1,11 @@
-defmodule ExStarter.ProfileManagement do
+defmodule WraftDoc.ProfileManagement do
   @moduledoc """
       This module handles all the repo connections of the
       profile context
   """
-  alias ExStarter.Repo
+  alias WraftDoc.Repo
 
-  alias ExStarter.ProfileManagement.Profile
+  alias WraftDoc.ProfileManagement.Profile
 
   def update_profile(conn, params) do
     current_user = conn.assigns.current_user.id

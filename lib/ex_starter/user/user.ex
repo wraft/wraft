@@ -1,4 +1,4 @@
-defmodule ExStarter.UserManagement.User do
+defmodule WraftDoc.UserManagement.User do
   @moduledoc """
   The user model.
   """
@@ -13,8 +13,8 @@ defmodule ExStarter.UserManagement.User do
     field(:password, :string, virtual: true)
     field(:country, :string, virtual: true)
     field(:email_verify, :boolean, default: false)
-    has_one(:basic_profile, ExStarter.ProfileManagement.Profile)
-    belongs_to(:role, ExStarter.UserManagement.Role)
+    has_one(:basic_profile, WraftDoc.ProfileManagement.Profile)
+    belongs_to(:role, WraftDoc.UserManagement.Role)
 
     timestamps()
   end

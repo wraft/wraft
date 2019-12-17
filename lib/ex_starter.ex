@@ -1,6 +1,6 @@
-defmodule ExStarter do
+defmodule WraftDoc do
   @moduledoc """
-  ExStarter keeps the contexts that define your domain
+  WraftDoc keeps the contexts that define your domain
   and business logic.
 
   Contexts are also responsible for managing your data, regardless

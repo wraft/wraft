@@ -1,13 +1,13 @@
-defmodule ExStarterWeb.Api.V1.UserController do
+defmodule WraftDocWeb.Api.V1.UserController do
   @moduledoc """
   UserController module handles all the processes user's requested
   by the user.  
   """
-  use ExStarterWeb, :controller
+  use WraftDocWeb, :controller
   import Ecto.Query, warn: false
-  alias ExStarter.{UserManagement, UserManagement.User, ProfileManagement.Profile}
+  alias WraftDoc.{UserManagement, UserManagement.User, ProfileManagement.Profile}
 
-  action_fallback(ExStarterWeb.FallbackController)
+  action_fallback(WraftDocWeb.FallbackController)
 
   @doc """
   New registration.
