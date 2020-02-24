@@ -1,4 +1,4 @@
-defmodule ExStarterWeb.ConnCase do
+defmodule WraftDocWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -22,15 +22,15 @@ defmodule ExStarterWeb.ConnCase do
       import ExtarterWeb.Router.Helpers
 
       # The default endpoint for testing
-      @endpoint ExStarterWeb.Endpoint
+      @endpoint WraftDocWeb.Endpoint
     end
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(ExStarter.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(WraftDoc.Repo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(ExStarter.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, {:shared, self()})
     end
 
     {:ok, conn: Phoenix.ConnTest.build_conn()}

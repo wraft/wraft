@@ -1,5 +1,5 @@
-defmodule ExStarterWeb.PageControllerTest do
-  use ExStarterWeb.ConnCase
+defmodule WraftDocWeb.PageControllerTest do
+  use WraftDocWeb.ConnCase
 
   test "GET /", %{conn: conn} do
     conn = get(conn, "/")
