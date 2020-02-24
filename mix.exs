@@ -1,9 +1,9 @@
-defmodule ExStarter.Mixfile do
+defmodule WraftDoc.Mixfile do
   use Mix.Project
 
   def project do
     [
-      app: :ex_starter,
+      app: :wraft_doc,
       version: "0.0.1",
       elixir: "~> 1.9.4",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -19,7 +19,7 @@ defmodule ExStarter.Mixfile do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {ExStarter.Application, []},
+      mod: {WraftDoc.Application, []},
       extra_applications: [:logger, :runtime_tools, :arc_ecto]
     ]
   end

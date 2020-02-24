@@ -1,4 +1,4 @@
-defmodule ExStarter.Repo.Migrations.AddCountriesToBasicProfile do
+defmodule WraftDoc.Repo.Migrations.AddCountriesToBasicProfile do
   use Ecto.Migration
 
   def change do
