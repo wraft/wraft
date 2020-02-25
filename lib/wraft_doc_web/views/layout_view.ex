@@ -1,3 +1,3 @@
-defmodule WraftDocWeb.LayoutView do
+defmodule WraftDocWeb.Api.V1.LayoutView do
   use WraftDocWeb, :view
 end
