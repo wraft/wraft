@@ -1,6 +1,6 @@
 defmodule WraftDoc.Account.Country do
   @moduledoc """
-  This is the Country module
+    This is the Country module
   """
   use Ecto.Schema
   import Ecto.Changeset

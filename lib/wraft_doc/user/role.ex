@@ -1,6 +1,6 @@
 defmodule WraftDoc.Account.Role do
   @moduledoc """
-  This is the Roles module
+    This is the Roles module
   """
   use Ecto.Schema
   import Ecto.Changeset
