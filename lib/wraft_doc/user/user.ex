@@ -1,4 +1,4 @@
-defmodule WraftDoc.UserManagement.User do
+defmodule WraftDoc.Account.User do
   @moduledoc """
   The user model.
   """
@@ -6,6 +6,7 @@ defmodule WraftDoc.UserManagement.User do
   import Ecto.Changeset
 
   schema "user" do
+    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
     field(:email, :string)
     field(:mobile, :string)
@@ -13,8 +14,8 @@ defmodule WraftDoc.UserManagement.User do
     field(:password, :string, virtual: true)
     field(:country, :string, virtual: true)
     field(:email_verify, :boolean, default: false)
-    has_one(:basic_profile, WraftDoc.ProfileManagement.Profile)
-    belongs_to(:role, WraftDoc.UserManagement.Role)
+    has_one(:basic_profile, WraftDoc.Account.Profile)
+    belongs_to(:role, WraftDoc.Account.Role)
 
     timestamps()
   end

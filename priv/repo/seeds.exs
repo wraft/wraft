@@ -9,10 +9,10 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
-alias WraftDoc.UserManagement.Role
+alias WraftDoc.Account.Role
 alias WraftDoc.Repo
 import Plug
 
 # Populate database with roles
-%WraftDoc.UserManagement.Role{name: "admin", admin: true} |> WraftDoc.Repo.insert!()
-%WraftDoc.UserManagement.Role{name: "user", admin: false} |> WraftDoc.Repo.insert!()
+%WraftDoc.Account.Role{name: "admin", admin: true} |> WraftDoc.Repo.insert!()
+%WraftDoc.Account.Role{name: "user", admin: false} |> WraftDoc.Repo.insert!()
