@@ -14,6 +14,8 @@ defmodule WraftDoc.Document.ContentType do
     belongs_to(:layout, WraftDoc.Document.Layout)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+
+    timestamps()
   end
 
   def changeset(%ContentType{} = content_type, attrs \\ %{}) do

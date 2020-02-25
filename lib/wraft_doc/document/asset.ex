@@ -9,6 +9,7 @@ defmodule WraftDoc.Document.Asset do
   schema "asset" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
+    belongs_to(:creator, WraftDoc.Account.User)
     timestamps()
   end
 
