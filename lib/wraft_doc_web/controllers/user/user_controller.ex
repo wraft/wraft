@@ -1,11 +1,11 @@
 defmodule WraftDocWeb.Api.V1.UserController do
   @moduledoc """
   UserController module handles all the processes user's requested
-  by the user.  
+  by the user.
   """
   use WraftDocWeb, :controller
   import Ecto.Query, warn: false
-  alias WraftDoc.{UserManagement, UserManagement.User, ProfileManagement.Profile}
+  alias WraftDoc.{Account, Account.User, Account.Profile}
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -13,7 +13,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   New registration.
   """
   def create(conn, params) do
-    with %Profile{} = profile <- UserManagement.user_registration(params) do
+    with %Profile{} = profile <- Account.user_registration(params) do
       conn
       |> put_status(:created)
       |> render("registerview.json", profile: profile)
@@ -24,9 +24,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
   User Login.
   """
   def signin(conn, params) do
-    with %User{} = user <- UserManagement.find(params["email"]) do
+    with %User{} = user <- Account.find(params["email"]) do
       with {:ok, token, _claims} <-
-             UserManagement.authenticate(%{user: user, password: params["password"]}) do
+             Account.authenticate(%{user: user, password: params["password"]}) do
         conn
         |> render("token.json", token: token, user: user)
       end
