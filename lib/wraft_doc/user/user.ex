@@ -6,6 +6,7 @@ defmodule WraftDoc.Account.User do
   import Ecto.Changeset
 
   schema "user" do
+    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
     field(:email, :string)
     field(:mobile, :string)

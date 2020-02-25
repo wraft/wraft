@@ -1,6 +1,6 @@
 defmodule WraftDoc.Account.Profile do
   @moduledoc """
-  This is the Profile model
+    This is the Profile model
   """
   use Ecto.Schema
   use Arc.Ecto.Schema
