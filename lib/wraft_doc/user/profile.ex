@@ -1,4 +1,4 @@
-defmodule WraftDoc.ProfileManagement.Profile do
+defmodule WraftDoc.Account.Profile do
   @moduledoc """
   This is the Profile model
   """
@@ -11,8 +11,8 @@ defmodule WraftDoc.ProfileManagement.Profile do
     field(:profile_pic, WraftDocWeb.PropicUploader.Type)
     field(:dob, :date)
     field(:gender, :string)
-    belongs_to(:user, WraftDoc.UserManagement.User)
-    belongs_to(:country, WraftDoc.ProfileManagement.Country)
+    belongs_to(:user, WraftDoc.Account.User)
+    belongs_to(:country, WraftDoc.Account.Country)
 
     timestamps()
   end

@@ -1,17 +1,20 @@
-defmodule WraftDoc.UserManagement do
+defmodule WraftDoc.Account do
   @moduledoc """
   Module that handles the repo connections of the user context.
   """
   # import Ecto.Query, warn: false
   import Ecto
   alias WraftDoc.Repo
-  alias WraftDoc.UserManagement.User
-  alias WraftDoc.UserManagement.Role
-  alias WraftDoc.ProfileManagement.Profile
-  alias WraftDoc.ProfileManagement.Country
+  alias WraftDoc.Account.User
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Account.Profile
+  alias WraftDoc.Account.Country
 
-  # User Registration
-  def user_registration(params \\ %{}) do
+  @doc """
+    User Registration
+  """
+  @spec user_registration(map) :: %Profile{} | Ecto.Changeset.t()
+  def user_registration(params \\ %{}) when is_map(params) do
     country = Repo.get_by(Country, country_code: params["country"])
 
     role =
@@ -25,7 +28,7 @@ defmodule WraftDoc.UserManagement do
         changeset
 
       _ ->
-        # Create profile for the user.    
+        # Create profile for the user.
         {:ok, profile_struct} =
           Repo.get_by(User, email: params["email"])
           |> build_assoc(:basic_profile, country: country)
@@ -68,6 +71,24 @@ defmodule WraftDoc.UserManagement do
           _ ->
             {:error, :invalid}
         end
+    end
+  end
+
+  def update_profile(conn, params) do
+    current_user = conn.assigns.current_user.id
+
+    user =
+      Profile
+      |> Repo.get_by(user_id: current_user)
+      |> Profile.changeset(params)
+
+    case Repo.update(user) do
+      changeset = {:error, _} ->
+        changeset
+
+      {:ok, profile_struct} ->
+        Repo.preload(profile_struct, :user)
+        |> Repo.preload(:country)
     end
   end
 end

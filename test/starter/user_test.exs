@@ -3,7 +3,7 @@ defmodule WraftDoc.UserTest do
 
   @moduledoc """
     # Cases Covered
-    # 1. Valid Data entry 
+    # 1. Valid Data entry
     # 2. Invalid data entry
     # 3. Firstname with less than 2 characters
     # 4. Passwords with less than 8 characters
@@ -14,8 +14,8 @@ defmodule WraftDoc.UserTest do
     # 9. Uniquness of email address
     # 10. Uniquness of mobile number
   """
-  alias WraftDoc.UserManagement
-  alias WraftDoc.UserManagement.User
+  alias WraftDoc.Account
+  alias WraftDoc.Account.User
 
   @valid_attrs %{
     firstname: "User",
