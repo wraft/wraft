@@ -1,4 +1,4 @@
-defmodule WraftDoc.ProfileManagement.Country do
+defmodule WraftDoc.Account.Country do
   @moduledoc """
   This is the Country module
   """
@@ -9,7 +9,7 @@ defmodule WraftDoc.ProfileManagement.Country do
     field(:country_name, :string)
     field(:country_code, :string)
     field(:calling_code, :string)
-    has_many(:basic_profiles, WraftDoc.ProfileManagement.Profile)
+    has_many(:basic_profiles, WraftDoc.Account.Profile)
   end
 
   def changeset(country, attrs \\ %{}) do
