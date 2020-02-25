@@ -12,8 +12,9 @@ defmodule WraftDoc.Account.User do
     field(:encrypted_password, :string)
     field(:password, :string, virtual: true)
     field(:email_verify, :boolean, default: false)
-    has_one(:basic_profile, WraftDoc.Account.Profile)
+    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:role, WraftDoc.Account.Role)
+    has_one(:basic_profile, WraftDoc.Account.Profile)
 
     timestamps()
   end
