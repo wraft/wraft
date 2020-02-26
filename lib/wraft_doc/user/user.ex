@@ -16,12 +16,14 @@ defmodule WraftDoc.Account.User do
     belongs_to(:role, WraftDoc.Account.Role)
     has_one(:profile, WraftDoc.Account.Profile)
 
+    has_many(:layouts, WraftDoc.Document.Layout, foreign_key: :creator_id)
+
     timestamps()
   end
 
   def changeset(users, attrs \\ %{}) do
     users
-    |> cast(attrs, [:name, :email, :password])
+    |> cast(attrs, [:name, :email, :password, :role_id])
     |> validate_required([:name, :email, :password])
     |> validate_format(:email, ~r/@/)
     |> validate_format(:name, ~r/^[A-z ]+$/)
