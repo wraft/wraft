@@ -8,6 +8,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
     %{
       token: token,
       user: %{
+        id: user.uuid,
         name: user.name,
         email: user.email
       }
