@@ -50,20 +50,21 @@ defmodule WraftDoc.Account do
     end
   end
 
-  # Authenticate user and generate token
+  @doc """
+    Authenticate user and generate token.
+  """
+  @spec authenticate(%{user: %User{}, password: binary | nil}) ::
+          {:error, atom} | {:ok, Guardian.Token.token(), Guardian.Token.claims()}
+  def authenticate(%{user: _, password: ""}), do: {:error, :no_data}
+  def authenticate(%{user: _, password: nil}), do: {:error, :no_data}
+
   def authenticate(%{user: user, password: password}) do
-    case password do
-      "" ->
-        {:error, :no_data}
+    case Bcrypt.verify_pass(password, user.encrypted_password) do
+      true ->
+        WraftDocWeb.Guardian.encode_and_sign(user)
 
       _ ->
-        case Bcrypt.verify_pass(password, user.encrypted_password) do
-          true ->
-            WraftDocWeb.Guardian.encode_and_sign(user)
-
-          _ ->
-            {:error, :invalid}
-        end
+        {:error, :invalid}
     end
   end
 
@@ -85,12 +86,16 @@ defmodule WraftDoc.Account do
     end
   end
 
+  # Get the role struct from given role name
+  @spec get_role(binary) :: %Role{}
   defp get_role(role \\ "user")
 
   defp get_role(role) when is_binary(role) do
     Repo.get_by(Role, name: role)
   end
 
+  # Get the user struct from given email
+  @spec get_user_by_email(binary) :: %User{} | nil
   defp get_user_by_email(email) when is_binary(email) do
     Repo.get_by(User, email: email)
   end

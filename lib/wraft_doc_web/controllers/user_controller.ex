@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
       with {:ok, token, _claims} <-
              Account.authenticate(%{user: user, password: params["password"]}) do
         conn
-        |> render("token.json", token: token, user: user)
+        |> render("sign-in.json", token: token, user: user)
       end
     end
   end
