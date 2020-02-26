@@ -13,12 +13,11 @@ defmodule WraftDocWeb.Api.V1.UserController do
   User Login.
   """
   def signin(conn, params) do
-    with %User{} = user <- Account.find(params["email"]) do
-      with {:ok, token, _claims} <-
-             Account.authenticate(%{user: user, password: params["password"]}) do
-        conn
-        |> render("sign-in.json", token: token, user: user)
-      end
+    with %User{} = user <- Account.find(params["email"]),
+         {:ok, token, _claims} <-
+           Account.authenticate(%{user: user, password: params["password"]}) do
+      conn
+      |> render("sign-in.json", token: token, user: user)
     end
   end
 end
