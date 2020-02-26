@@ -4,56 +4,49 @@ defmodule WraftDoc.Account do
   """
   # import Ecto.Query, warn: false
   import Ecto
-  alias WraftDoc.Repo
-  alias WraftDoc.Account.User
-  alias WraftDoc.Account.Role
-  alias WraftDoc.Account.Profile
-  alias WraftDoc.Account.Country
+  alias WraftDoc.{Repo, Account.User, Account.Role, Account.Profile}
 
   @doc """
     User Registration
   """
-  @spec user_registration(map) :: %Profile{} | Ecto.Changeset.t()
-  def user_registration(params \\ %{}) when is_map(params) do
-    country = Repo.get_by(Country, country_code: params["country"])
-
-    role =
-      Repo.get_by(Role, name: "user")
-      |> build_assoc(:users)
-      |> User.changeset(params)
-
-    # To prevent proceeding to next functions if changeset is invalid
-    case Repo.insert(role) do
+  @spec registration(map) :: %User{} | Ecto.Changeset.t()
+  def registration(params \\ %{}) do
+    get_role()
+    |> build_assoc(:users)
+    |> User.changeset(params)
+    |> Repo.insert()
+    |> case do
       changeset = {:error, _} ->
         changeset
 
-      _ ->
-        # Create profile for the user.
-        {:ok, profile_struct} =
-          Repo.get_by(User, email: params["email"])
-          |> build_assoc(:basic_profile, country: country)
-          |> Profile.changeset(params)
-          |> Repo.insert()
-
-        profile_struct
-        |> Repo.preload(:user)
+      {:ok, %User{} = user} ->
+        create_profile(user, params)
+        user |> Repo.preload(:profile)
     end
   end
 
-  # Fetch user based on email
+  @doc """
+    Create profile for the user
+  """
+  @spec create_profile(%User{}, map) :: {atom, %Profile{}}
+  def create_profile(user, params) do
+    user
+    |> build_assoc(:profile)
+    |> Profile.changeset(params)
+    |> Repo.insert()
+  end
+
+  @doc """
+    Find the user with the given email
+  """
   def find(email) do
-    case email do
-      "" ->
-        {:error, :no_data}
+    get_user_by_email(email)
+    |> case do
+      user = %User{} ->
+        user
 
       _ ->
-        case Repo.get_by(User, email: email) do
-          user = %User{} ->
-            user
-
-          _ ->
-            {:error, :invalid}
-        end
+        {:error, :invalid}
     end
   end
 
@@ -64,7 +57,7 @@ defmodule WraftDoc.Account do
         {:error, :no_data}
 
       _ ->
-        case Comeonin.Bcrypt.checkpw(password, user.encrypted_password) do
+        case Bcrypt.verify_pass(password, user.encrypted_password) do
           true ->
             WraftDocWeb.Guardian.encode_and_sign(user)
 
@@ -90,5 +83,19 @@ defmodule WraftDoc.Account do
         Repo.preload(profile_struct, :user)
         |> Repo.preload(:country)
     end
+  end
+
+  defp get_role(role \\ "user")
+
+  defp get_role(role) when is_binary(role) do
+    Repo.get_by(Role, name: role)
+  end
+
+  defp get_user_by_email(email) when is_binary(email) do
+    Repo.get_by(User, email: email)
+  end
+
+  defp get_user_by_email(_email) do
+    nil
   end
 end

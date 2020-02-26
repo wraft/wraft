@@ -14,5 +14,5 @@ alias WraftDoc.Repo
 import Plug
 
 # Populate database with roles
-%WraftDoc.Account.Role{name: "admin", admin: true} |> WraftDoc.Repo.insert!()
-%WraftDoc.Account.Role{name: "user", admin: false} |> WraftDoc.Repo.insert!()
+%Role{name: "admin"} |> Repo.insert!()
+%Role{name: "user"} |> Repo.insert!()
