@@ -14,17 +14,15 @@ defmodule WraftDoc.Account.User do
     field(:email_verify, :boolean, default: false)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:role, WraftDoc.Account.Role)
-    has_one(:basic_profile, WraftDoc.Account.Profile)
+    has_one(:profile, WraftDoc.Account.Profile)
 
     timestamps()
   end
 
-  @required_fields ~w(name email mobile password country)
-  @optional_fields ~w(encrypted_password)
   def changeset(users, attrs \\ %{}) do
     users
-    |> cast(attrs, @required_fields, @optional_fields)
-    |> validate_required([:name, :email, :mobile, :password, :country])
+    |> cast(attrs, [:name, :email, :password])
+    |> validate_required([:name, :email, :password])
     |> validate_format(:email, ~r/@/)
     |> validate_format(:name, ~r/^[A-z ]+$/)
     |> validate_length(:name, min: 2)
@@ -39,7 +37,7 @@ defmodule WraftDoc.Account.User do
         put_change(
           current_changeset,
           :encrypted_password,
-          Comeonin.Bcrypt.hashpwsalt(password)
+          Bcrypt.hash_pwd_salt(password)
         )
 
       _ ->

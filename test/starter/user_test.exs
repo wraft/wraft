@@ -5,11 +5,11 @@ defmodule WraftDoc.UserTest do
     # Cases Covered
     # 1. Valid Data entry
     # 2. Invalid data entry
-    # 3. Firstname with less than 2 characters
+    # 3. Name with less than 2 characters
     # 4. Passwords with less than 8 characters
     # 5. Passwords with more than 16 characters
     # 6. Invalid email address
-    # 7. Special characters in firstname
+    # 7. Special characters in name
     # 8. Special characters in lastname
     # 9. Uniquness of email address
     # 10. Uniquness of mobile number
@@ -18,7 +18,7 @@ defmodule WraftDoc.UserTest do
   alias WraftDoc.Account.User
 
   @valid_attrs %{
-    firstname: "User",
+    name: "User",
     lastname: "Name",
     email: "user@mail.com",
     password: "123456789",
@@ -38,10 +38,10 @@ defmodule WraftDoc.UserTest do
     refute changeset.valid?
   end
 
-  test "changeset does not accept short firstnames" do
-    attrs = Map.put(@valid_attrs, :firstname, "U")
+  test "changeset does not accept short name" do
+    attrs = Map.put(@valid_attrs, :name, "U")
     changeset = User.changeset(%User{}, attrs)
-    assert "should be at least 2 character(s)" in errors_on(changeset, :firstname)
+    assert "should be at least 2 character(s)" in errors_on(changeset, :name)
   end
 
   test "changeset does not accept short password" do
@@ -62,10 +62,10 @@ defmodule WraftDoc.UserTest do
     assert "has invalid format" in errors_on(changeset, :email)
   end
 
-  test "changeset does not accept firstnames with special characters" do
-    attrs = Map.put(@valid_attrs, :firstname, "wrong/4firstname?!")
+  test "changeset does not accept names with special characters" do
+    attrs = Map.put(@valid_attrs, :name, "wrong/name?!")
     changeset = User.changeset(%User{}, attrs)
-    assert "has invalid format" in errors_on(changeset, :firstname)
+    assert "has invalid format" in errors_on(changeset, :name)
   end
 
   test "changeset does not accept lastnames with special characters" do
