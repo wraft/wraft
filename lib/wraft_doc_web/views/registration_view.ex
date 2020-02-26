@@ -6,6 +6,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationView do
 
   def render("create.json", %{user: user, token: token}) do
     %{
+      id: user.uuid,
       name: user.name,
       email: user.email,
       email_verify: user.email_verify,
