@@ -27,10 +27,12 @@ defmodule WraftDoc.Account.Profile do
     |> cast_attachments(attrs, [:profile_pic])
     |> validate_required([:name])
     |> validate_format(:name, ~r/^[A-z ]+$/)
-    |> validate_length(:firstname, min: 2)
-    |> validate_dob
+    |> validate_length(:name, min: 2)
+
+    # |> validate_dob
   end
 
+  @deprecated "Not used anymore"
   defp validate_dob(current_changeset) do
     if Map.has_key?(current_changeset.changes, :dob) do
       dob = current_changeset.changes.dob

@@ -43,7 +43,7 @@ defmodule WraftDoc.Mixfile do
       {:gettext, "~> 0.17.1"},
       {:plug_cowboy, "~> 2.1.0"},
       {:distillery, "~> 2.1.1"},
-      {:poison, "~> 4.0", override: true},
+      {:poison, "~> 3.0", override: true},
       {:comeonin, "~> 5.1.3"},
       {:bcrypt_elixir, "~> 2.0.3"},
       {:guardian, "~> 2.0.0"},

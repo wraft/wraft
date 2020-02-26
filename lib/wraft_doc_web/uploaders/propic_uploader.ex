@@ -17,7 +17,7 @@ defmodule WraftDocWeb.PropicUploader do
 
   # Change Filename
   def filename(_version, {_file, user}) do
-    "profilepic_#{user.firstname}_#{user.updated_at}"
+    "profilepic_#{user.name}_#{user.updated_at}"
   end
 
   # Storage Directory
