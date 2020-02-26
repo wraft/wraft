@@ -4,25 +4,13 @@ defmodule WraftDocWeb.Api.V1.UserView do
   """
   use WraftDocWeb, :view
 
-  def render("token.json", %{token: token, user: user}) do
+  def render("sign-in.json", %{token: token, user: user}) do
     %{
       token: token,
       user: %{
-        firstname: user.firstname,
-        lastname: user.lastname,
-        email: user.email,
-        mobile: user.mobile
+        name: user.name,
+        email: user.email
       }
-    }
-  end
-
-  def render("registerview.json", %{profile: profile}) do
-    %{
-      firstname: profile.firstname,
-      lastname: profile.lastname,
-      mobile: profile.user.mobile,
-      email: profile.user.email,
-      info: "User Registered.! Welcome to Duruper.!"
     }
   end
 end
