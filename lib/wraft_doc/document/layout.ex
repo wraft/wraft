@@ -13,7 +13,7 @@ defmodule WraftDoc.Document.Layout do
     field(:width, :float)
     field(:height, :float)
     field(:unit, :string)
-    belongs_to(:slug, WraftDoc.Document.Slug)
+    field(:slug, :string)
     belongs_to(:engine, WraftDoc.Document.Engine)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
@@ -28,7 +28,7 @@ defmodule WraftDoc.Document.Layout do
       :width,
       :height,
       :unit,
-      :slug_id,
+      :slug,
       :engine_id,
       :organisation_id
     ])
@@ -38,9 +38,9 @@ defmodule WraftDoc.Document.Layout do
       :width,
       :height,
       :unit,
-      :slug_id,
-      :engine_id,
-      :organisation_id
+      :slug,
+      :engine_id
+      # :organisation_id
     ])
     |> unique_constraint(:name,
       message: "Layout with the same name exists. Use another name.!",
