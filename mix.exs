@@ -5,7 +5,7 @@ defmodule WraftDoc.Mixfile do
     [
       app: :wraft_doc,
       version: "0.0.1",
-      elixir: "~> 1.9.4",
+      elixir: "~> 1.10.2",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -33,21 +33,21 @@ defmodule WraftDoc.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.4.11"},
+      {:phoenix, "~> 1.4.14"},
       {:phoenix_pubsub, "~> 1.1.2"},
       {:phoenix_ecto, "~> 4.1.0"},
-      {:ecto_sql, "~> 3.0"},
+      {:ecto_sql, "~> 3.3.4"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.13.3"},
       {:phoenix_live_reload, "~> 1.2.1", only: :dev},
-      {:gettext, "~> 0.17.1"},
-      {:plug_cowboy, "~> 2.1.0"},
+      {:gettext, "~> 0.17.4"},
+      {:plug_cowboy, "~> 2.1.2"},
       {:distillery, "~> 2.1.1"},
-      {:poison, "~> 4.0", override: true},
+      {:poison, "~> 3.0", override: true},
       {:comeonin, "~> 5.1.3"},
       {:bcrypt_elixir, "~> 2.0.3"},
       {:guardian, "~> 2.0.0"},
-      {:cors_plug, "~> 2.0.0"},
+      {:cors_plug, "~> 2.0.2"},
       {:arc, "~> 0.11.0"},
       {:arc_ecto, "~> 0.11.3"},
       {:timex, "~>  3.6.1"}
