@@ -46,4 +46,18 @@ defmodule WraftDocWeb.Router do
       resources("/content_types", ContentTypeController, only: [:create])
     end
   end
+
+  scope "/api/swagger" do
+    forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :wraft_doc, swagger_file: "swagger.json")
+  end
+
+  def swagger_info do
+    %{
+      info: %{
+        version: "0.0.1",
+        title: "Wraft Docs"
+      },
+      basePath: "/api/v1"
+    }
+  end
 end

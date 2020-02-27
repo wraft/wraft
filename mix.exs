@@ -7,7 +7,7 @@ defmodule WraftDoc.Mixfile do
       version: "0.0.1",
       elixir: "~> 1.10.2",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers(),
+      compilers: [:phoenix, :gettext] ++ Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps()
@@ -57,7 +57,9 @@ defmodule WraftDoc.Mixfile do
       {:timex, "~>  3.6.1"},
       # JSON parser
       {:jason, "~> 1.1"},
-      {:poison, "~> 3.0", override: true}
+      {:poison, "~> 3.0", override: true},
+      # API documentation
+      {:phoenix_swagger, "~> 0.8.2"}
     ]
   end
 
@@ -71,7 +73,8 @@ defmodule WraftDoc.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      swagger: ["phx.swagger.generate priv/static/swagger.json"]
     ]
   end
 end
