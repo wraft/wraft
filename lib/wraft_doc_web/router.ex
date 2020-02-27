@@ -57,7 +57,21 @@ defmodule WraftDocWeb.Router do
         version: "0.0.1",
         title: "Wraft Docs"
       },
-      basePath: "/api/v1"
+      basePath: "/api/v1",
+      securityDefinitions: %{
+        Bearer: %{
+          type: "apiKey",
+          name: "Authorization",
+          in: "header",
+          description: "API Operations require a valid token."
+        }
+      },
+      security: [
+        # ApiKey is applied to all operations
+        %{
+          Bearer: []
+        }
+      ]
     }
   end
 end
