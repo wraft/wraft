@@ -42,6 +42,8 @@ defmodule WraftDocWeb.Router do
       resources("/profile/:id", ProfileController, only: [:update])
       # Layout
       resources("/layouts", LayoutController, only: [:create])
+      # Content type
+      resources("/content_types", ContentTypeController, only: [:create])
     end
   end
 end
