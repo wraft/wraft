@@ -1,4 +1,4 @@
-defmodule WraftDoc.UserManagement.User do
+defmodule WraftDoc.Account.User do
   @moduledoc """
   The user model.
   """
@@ -6,25 +6,26 @@ defmodule WraftDoc.UserManagement.User do
   import Ecto.Changeset
 
   schema "user" do
+    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
     field(:email, :string)
-    field(:mobile, :string)
     field(:encrypted_password, :string)
     field(:password, :string, virtual: true)
-    field(:country, :string, virtual: true)
     field(:email_verify, :boolean, default: false)
-    has_one(:basic_profile, WraftDoc.ProfileManagement.Profile)
-    belongs_to(:role, WraftDoc.UserManagement.Role)
+    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+    belongs_to(:role, WraftDoc.Account.Role)
+    has_one(:profile, WraftDoc.Account.Profile)
+
+    has_many(:layouts, WraftDoc.Document.Layout, foreign_key: :creator_id)
+    has_many(:content_types, WraftDoc.Document.ContentType, foreign_key: :creator_id)
 
     timestamps()
   end
 
-  @required_fields ~w(name email mobile password country)
-  @optional_fields ~w(encrypted_password)
   def changeset(users, attrs \\ %{}) do
     users
-    |> cast(attrs, @required_fields, @optional_fields)
-    |> validate_required([:name, :email, :mobile, :password, :country])
+    |> cast(attrs, [:name, :email, :password, :role_id])
+    |> validate_required([:name, :email, :password])
     |> validate_format(:email, ~r/@/)
     |> validate_format(:name, ~r/^[A-z ]+$/)
     |> validate_length(:name, min: 2)
@@ -39,7 +40,7 @@ defmodule WraftDoc.UserManagement.User do
         put_change(
           current_changeset,
           :encrypted_password,
-          Comeonin.Bcrypt.hashpwsalt(password)
+          Bcrypt.hash_pwd_salt(password)
         )
 
       _ ->

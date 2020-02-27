@@ -9,10 +9,34 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
-alias WraftDoc.UserManagement.Role
-alias WraftDoc.Repo
+alias WraftDoc.{
+  Repo,
+  Account,
+  Account.Role,
+  Account.User,
+  Account.Profile,
+  Document.Engine
+}
+
 import Plug
 
 # Populate database with roles
-%WraftDoc.UserManagement.Role{name: "admin", admin: true} |> WraftDoc.Repo.insert!()
-%WraftDoc.UserManagement.Role{name: "user", admin: false} |> WraftDoc.Repo.insert!()
+%Role{name: "admin"} |> Repo.insert!()
+%Role{name: "user"} |> Repo.insert!()
+
+%{id: id} = Role |> Repo.get_by(name: "admin")
+
+user_params = %{
+  name: "Admin",
+  email: "admin@wraftdocs.com",
+  role_id: id,
+  email_verify: true,
+  password: "Admin@WraftDocs"
+}
+
+user = %User{} |> User.changeset(user_params) |> Repo.insert!()
+%Profile{name: "Admin", user_id: user.id} |> Repo.insert!()
+# Populate engine
+%Engine{name: "PDF"} |> Repo.insert!()
+%Engine{name: "LaTex"} |> Repo.insert!()
+%Engine{name: "Pandoc"} |> Repo.insert!()

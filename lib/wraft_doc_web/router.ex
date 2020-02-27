@@ -29,8 +29,8 @@ defmodule WraftDocWeb.Router do
 
     # user
     scope "/v1", Api.V1, as: :v1 do
-      resources("/users", UserController, only: [:create])
-      post("/users/login", UserController, :signin)
+      resources("/users/sign-up", RegistrationController, only: [:create])
+      post("/users/sign-in", UserController, :signin)
     end
   end
 
@@ -39,7 +39,11 @@ defmodule WraftDocWeb.Router do
     pipe_through([:api, :api_auth])
 
     scope "/v1", Api.V1, as: :v1 do
-      post("/user/profile/", ProfileController, :update)
+      resources("/profile/:id", ProfileController, only: [:update])
+      # Layout
+      resources("/layouts", LayoutController, only: [:create])
+      # Content type
+      resources("/content_types", ContentTypeController, only: [:create])
     end
   end
 end
