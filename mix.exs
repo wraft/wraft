@@ -50,7 +50,8 @@ defmodule WraftDoc.Mixfile do
       {:cors_plug, "~> 2.0.2"},
       {:arc, "~> 0.11.0"},
       {:arc_ecto, "~> 0.11.3"},
-      {:timex, "~>  3.6.1"}
+      {:timex, "~>  3.6.1"},
+      {:jason, "~> 1.1"}
     ]
   end
 
