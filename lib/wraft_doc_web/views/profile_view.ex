@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
       gender: profile.gender,
       profile_pic: profile.profile_pic,
       country: %{
-        id: profile.country.id,
+        id: profile.country.uuid,
         country_name: profile.country.country_name,
         country_code: profile.country.country_code,
         calling_code: profile.country.calling_code

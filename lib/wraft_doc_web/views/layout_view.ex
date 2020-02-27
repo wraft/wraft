@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
 
   def render("create.json", %{doc_layout: layout}) do
     %{
-      uuid: layout.uuid,
+      id: layout.uuid,
       name: layout.name,
       description: layout.description,
       width: layout.width,
@@ -19,7 +19,7 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
 
   def render("preloaded_layout.json", %{doc_layout: layout}) do
     %{
-      uuid: layout.uuid,
+      id: layout.uuid,
       name: layout.name,
       description: layout.description,
       width: layout.width,

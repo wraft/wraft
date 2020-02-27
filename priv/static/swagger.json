@@ -1,5 +1,18 @@
 {
   "swagger": "2.0",
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "API Operations require a valid token."
+    }
+  },
+  "security": [
+    {
+      "Bearer": []
+    }
+  ],
   "paths": {
     "/users/sign-up": {
       "post": {
@@ -69,6 +82,47 @@
         ],
         "operationId": "WraftDocWeb.Api.V1.UserController.signin",
         "description": "User sign in API"
+      }
+    },
+    "/layouts": {
+      "post": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Create layout",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/LayoutAndEngine"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/LayoutRequest"
+            },
+            "required": true,
+            "name": "layout",
+            "in": "body",
+            "description": "Layout to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.create",
+        "description": "Create layout API"
       }
     }
   },
@@ -204,6 +258,123 @@
       },
       "description": "A user of the application"
     },
+    "LayoutRequest": {
+      "type": "object",
+      "title": "Layout Request",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "width": {
+          "type": "float",
+          "description": "Width of the layout"
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of dimensions"
+        },
+        "slug": {
+          "type": "string",
+          "description": "Name of the slug to be used for the layout"
+        },
+        "name": {
+          "type": "string",
+          "description": "Layout's name"
+        },
+        "height": {
+          "type": "float",
+          "description": "Height of the layout"
+        },
+        "engine_id": {
+          "type": "integer",
+          "description": "ID of the engine selected"
+        },
+        "description": {
+          "type": "string",
+          "description": "Layout's description"
+        }
+      },
+      "example": {
+        "width": 40.0,
+        "unit": "cm",
+        "slug": "Pandoc",
+        "name": "Official Letter",
+        "height": 20.0,
+        "engine_id": "1232148nb3478",
+        "description": "An official letter"
+      },
+      "description": "Create layout request."
+    },
+    "LayoutAndEngine": {
+      "type": "object",
+      "title": "Layout",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "width": {
+          "type": "float",
+          "description": "Width of the layout"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of dimensions"
+        },
+        "slug": {
+          "type": "string",
+          "description": "Name of the slug to be used for the layout"
+        },
+        "name": {
+          "type": "string",
+          "description": "Layout's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the layout"
+        },
+        "height": {
+          "type": "float",
+          "description": "Height of the layout"
+        },
+        "engine": {
+          "$ref": "#/definitions/Engine"
+        },
+        "description": {
+          "type": "string",
+          "description": "Layout's description"
+        }
+      },
+      "example": {
+        "width": 40.0,
+        "updated_at": "2020-01-21T14:00:00Z",
+        "unit": "cm",
+        "slug": "Pandoc",
+        "name": "Official Letter",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "height": 20.0,
+        "engine": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Pandoc",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "api_route": ""
+        },
+        "description": "An official letter"
+      },
+      "description": "Layout to be used for the generation of a document."
+    },
     "Error": {
       "type": "object",
       "title": "Errors",
@@ -217,6 +388,46 @@
         }
       },
       "description": "Error responses from the API"
+    },
+    "Engine": {
+      "type": "object",
+      "title": "Render engine",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "name": {
+          "type": "string",
+          "description": "Engine's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the engine"
+        },
+        "api_route": {
+          "type": "string",
+          "description": "API route to be used"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "name": "Pandoc",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "api_route": ""
+      },
+      "description": "A render engine to be used for document generation"
     }
   },
   "basePath": "/api/v1"
