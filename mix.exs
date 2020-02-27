@@ -43,15 +43,21 @@ defmodule WraftDoc.Mixfile do
       {:gettext, "~> 0.17.4"},
       {:plug_cowboy, "~> 2.1.2"},
       {:distillery, "~> 2.1.1"},
-      {:poison, "~> 3.0", override: true},
+      # Password encryption
       {:comeonin, "~> 5.1.3"},
       {:bcrypt_elixir, "~> 2.0.3"},
+      # User authentication
       {:guardian, "~> 2.0.0"},
+      # CORS
       {:cors_plug, "~> 2.0.2"},
+      # File upload to AWS
       {:arc, "~> 0.11.0"},
       {:arc_ecto, "~> 0.11.3"},
+      # Time and date formating
       {:timex, "~>  3.6.1"},
-      {:jason, "~> 1.1"}
+      # JSON parser
+      {:jason, "~> 1.1"},
+      {:poison, "~> 3.0", override: true}
     ]
   end
 
