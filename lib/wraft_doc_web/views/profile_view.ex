@@ -6,14 +6,9 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
 
   def render("profile.json", %{profile: profile}) do
     %{
-      firstname: profile.firstname,
-      lastname: profile.lastname,
+      name: profile.name,
       dob: profile.dob,
       gender: profile.gender,
-      marital_status: profile.marital_status,
-      current_location: profile.current_location,
-      address: profile.address,
-      pin: profile.pin,
       profile_pic: profile.profile_pic,
       country: %{
         id: profile.country.id,
@@ -21,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
         country_code: profile.country.country_code,
         calling_code: profile.country.calling_code
       },
-      user: %{id: profile.user.id, mobile: profile.user.mobile, email: profile.user.email}
+      user: %{id: profile.user.id, email: profile.user.email}
     }
   end
 end
