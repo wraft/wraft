@@ -32,9 +32,38 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             engine_id: "1232148nb3478"
           })
         end,
-      LayoutAndEngine:
+      Layout:
         swagger_schema do
           title("Layout")
+          description("A Layout")
+
+          properties do
+            id(:string, "The ID of the layout", required: true)
+            name(:string, "Layout's name", required: true)
+            description(:string, "Layout's description")
+            width(:float, "Width of the layout")
+            height(:float, "Height of the layout")
+            unit(:string, "Unit of dimensions")
+            slug(:string, "Name of the slug to be used for the layout")
+            inserted_at(:string, "When was the layout created", format: "ISO-8601")
+            updated_at(:string, "When was the layout last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            name: "Official Letter",
+            description: "An official letter",
+            width: 40.0,
+            height: 20.0,
+            unit: "cm",
+            slug: "Pandoc",
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
+      LayoutAndEngine:
+        swagger_schema do
+          title("Layout and Engine")
           description("Layout to be used for the generation of a document.")
 
           properties do
