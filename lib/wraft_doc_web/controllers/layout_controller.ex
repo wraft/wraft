@@ -46,8 +46,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             unit(:string, "Unit of dimensions")
             slug(:string, "Name of the slug to be used for the layout")
             engine(Schema.ref(:Engine))
-            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
-            updated_at(:string, "When was the user last updated", format: "ISO-8601")
+            inserted_at(:string, "When was the layout created", format: "ISO-8601")
+            updated_at(:string, "When was the layout last updated", format: "ISO-8601")
           end
 
           example(%{
@@ -78,8 +78,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             id(:string, "The ID of the engine", required: true)
             name(:string, "Engine's name", required: true)
             api_route(:string, "API route to be used")
-            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
-            updated_at(:string, "When was the user last updated", format: "ISO-8601")
+            inserted_at(:string, "When was the engine inserted", format: "ISO-8601")
+            updated_at(:string, "When was the engine last updated", format: "ISO-8601")
           end
 
           example(%{
