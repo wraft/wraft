@@ -7,7 +7,7 @@ defmodule WraftDoc.Mixfile do
       version: "0.0.1",
       elixir: "~> 1.10.2",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers(),
+      compilers: [:phoenix, :gettext] ++ Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps()
@@ -43,15 +43,23 @@ defmodule WraftDoc.Mixfile do
       {:gettext, "~> 0.17.4"},
       {:plug_cowboy, "~> 2.1.2"},
       {:distillery, "~> 2.1.1"},
-      {:poison, "~> 3.0", override: true},
+      # Password encryption
       {:comeonin, "~> 5.1.3"},
       {:bcrypt_elixir, "~> 2.0.3"},
+      # User authentication
       {:guardian, "~> 2.0.0"},
+      # CORS
       {:cors_plug, "~> 2.0.2"},
+      # File upload to AWS
       {:arc, "~> 0.11.0"},
       {:arc_ecto, "~> 0.11.3"},
+      # Time and date formating
       {:timex, "~>  3.6.1"},
-      {:jason, "~> 1.1"}
+      # JSON parser
+      {:jason, "~> 1.1"},
+      {:poison, "~> 3.0", override: true},
+      # API documentation
+      {:phoenix_swagger, "~> 0.8.2"}
     ]
   end
 
@@ -65,7 +73,8 @@ defmodule WraftDoc.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      swagger: ["phx.swagger.generate priv/static/swagger.json"]
     ]
   end
 end
