@@ -97,27 +97,6 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
-        end,
-      Engine:
-        swagger_schema do
-          title("Render engine")
-          description("A render engine to be used for document generation")
-
-          properties do
-            id(:string, "The ID of the engine", required: true)
-            name(:string, "Engine's name", required: true)
-            api_route(:string, "API route to be used")
-            inserted_at(:string, "When was the engine inserted", format: "ISO-8601")
-            updated_at(:string, "When was the engine last updated", format: "ISO-8601")
-          end
-
-          example(%{
-            id: "1232148nb3478",
-            name: "Pandoc",
-            api_route: "",
-            updated_at: "2020-01-21T14:00:00Z",
-            inserted_at: "2020-02-21T14:00:00Z"
-          })
         end
     }
   end

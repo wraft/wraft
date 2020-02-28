@@ -125,6 +125,37 @@
         "description": "Create layout API"
       }
     },
+    "/engines": {
+      "get": {
+        "tags": [
+          "Engine"
+        ],
+        "summary": "List of all enignes",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Engines"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [],
+        "operationId": "WraftDocWeb.Api.V1.EngineController.index",
+        "description": "API to list of all enignes creates/seeded so far"
+      }
+    },
     "/content_types": {
       "post": {
         "tags": [
@@ -489,6 +520,14 @@
         }
       },
       "description": "Error responses from the API"
+    },
+    "Engines": {
+      "type": "array",
+      "title": "Engines",
+      "items": {
+        "$ref": "#/definitions/Engine"
+      },
+      "description": "All engines that have been created"
     },
     "Engine": {
       "type": "object",
