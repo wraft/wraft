@@ -71,6 +71,33 @@ defmodule WraftDocWeb.Api.V1.UserController do
             }
           })
         end,
+      CurrentUser:
+        swagger_schema do
+          title("Current User")
+          description("Currently loged in user")
+
+          properties do
+            id(:string, "The ID of the user", required: true)
+            name(:string, "Users name", required: true)
+            email(:string, "Users email", required: true)
+            email_verify(:boolean, "Email verification status")
+            profile_pic(:string, "User's profile pic URL")
+            role(:string, "User's role")
+            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
+            updated_at(:string, "When was the user last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            name: "John Doe",
+            email: "email@xyz.com",
+            email_verify: true,
+            role: "user",
+            profile_pic: "www.aws.com/users/johndoe.jpg",
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
       Error:
         swagger_schema do
           title("Errors")
@@ -106,5 +133,23 @@ defmodule WraftDocWeb.Api.V1.UserController do
       conn
       |> render("sign-in.json", token: token, user: user)
     end
+  end
+
+  @doc """
+  Current user details.
+  """
+  swagger_path :me do
+    get("/users/me")
+    summary("Current user")
+    description("Current User details")
+
+    response(200, "Ok", Schema.ref(:CurrentUser))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec me(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def me(conn, _params) do
+    current_user = conn.assigns[:current_user]
+    conn |> render("me.json", user: current_user)
   end
 end
