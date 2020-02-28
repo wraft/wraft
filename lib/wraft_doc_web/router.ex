@@ -29,8 +29,8 @@ defmodule WraftDocWeb.Router do
 
     # user
     scope "/v1", Api.V1, as: :v1 do
-      resources("/users/sign-up", RegistrationController, only: [:create])
-      post("/users/sign-in", UserController, :signin)
+      resources("/users/signup", RegistrationController, only: [:create])
+      post("/users/signin", UserController, :signin)
     end
   end
 

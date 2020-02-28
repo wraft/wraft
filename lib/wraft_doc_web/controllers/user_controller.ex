@@ -87,7 +87,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   User Login.
   """
   swagger_path :signin do
-    post("/users/sign-in")
+    post("/users/signin")
     summary("User sign in")
     description("User sign in API")
 

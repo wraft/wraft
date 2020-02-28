@@ -32,7 +32,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
     New registration.
   """
   swagger_path :create do
-    post("/users/sign-up")
+    post("/users/signup")
     summary("User registration")
     description("User registration API")
 
