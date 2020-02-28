@@ -101,7 +101,68 @@ defmodule WraftDoc.Document do
     |> Ecto.Changeset.no_assoc_constraint(
       :content_types,
       message:
-        "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!.!"
+        "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!"
+    )
+    |> Repo.delete()
+  end
+
+  @doc """
+  List all content types.
+  """
+  @spec content_type_index() :: list
+  def content_type_index() do
+    Repo.all(ContentType) |> Repo.preload(:layout)
+  end
+
+  @doc """
+  Show a content type.
+  """
+  @spec show_content_type(binary) :: %ContentType{layout: %Layout{}, creator: %User{}}
+  def show_content_type(uuid) do
+    get_content_type(uuid)
+    |> Repo.preload([:layout, :creator])
+  end
+
+  @doc """
+  Get a content type from its UUID.
+  """
+  @spec get_content_type(binary) :: %ContentType{}
+  def get_content_type(uuid) do
+    Repo.get_by(ContentType, uuid: uuid)
+  end
+
+  @doc """
+  Update a content type.
+  """
+  @spec update_content_type(%ContentType{}, map) :: %ContentType{
+          layout: %Layout{},
+          creator: %User{}
+        }
+  def update_content_type(content_type, params) do
+    content_type
+    |> ContentType.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, content_type} ->
+        content_type |> Repo.preload([:layout, :creator])
+    end
+  end
+
+  @doc """
+  Delete a content type.
+  """
+  @spec delete_content_type(%ContentType{}) ::
+          {:ok, %ContentType{}} | {:error, Ecto.Changeset.t()}
+  def delete_content_type(content_type) do
+    content_type
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.no_assoc_constraint(
+      :instances,
+      message:
+        "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
     )
     |> Repo.delete()
   end

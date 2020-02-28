@@ -15,6 +15,8 @@ defmodule WraftDoc.Document.ContentType do
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
+    has_many(:instances, WraftDoc.Document.Instance)
+
     timestamps()
   end
 
