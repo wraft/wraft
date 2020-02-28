@@ -126,8 +126,8 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type from its UUID.
   """
-  @spec get_show_content_type(binary) :: %ContentType{}
-  def get_show_content_type(uuid) do
+  @spec get_content_type(binary) :: %ContentType{}
+  def get_content_type(uuid) do
     Repo.get_by(ContentType, uuid: uuid)
   end
 end
