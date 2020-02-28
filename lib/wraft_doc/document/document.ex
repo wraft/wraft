@@ -56,4 +56,13 @@ defmodule WraftDoc.Document do
   def layout_index() do
     Repo.all(Layout) |> Repo.preload(:engine)
   end
+
+  @doc """
+  Show a layout.
+  """
+  @spec show_layout(binary) :: %Layout{}
+  def show_layout(uuid) do
+    Repo.get_by(Layout, uuid: uuid)
+    |> Repo.preload([:engine, :creator])
+  end
 end
