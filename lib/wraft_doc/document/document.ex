@@ -72,6 +72,22 @@ defmodule WraftDoc.Document do
   @spec get_layout(binary) :: %Layout{}
   def get_layout(uuid) do
     Repo.get_by(Layout, uuid: uuid)
-    |> Repo.preload([:engine, :creator])
+  end
+
+  @doc """
+  Update a layout.
+  """
+  @spec update_layout(%Layout{}, map) :: %Layout{engine: %Engine{}, creator: %User{}}
+  def update_layout(layout, params) do
+    layout
+    |> Layout.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, layout} ->
+        layout |> Repo.preload([:engine, :creator])
+    end
   end
 end

@@ -85,6 +85,52 @@
       }
     },
     "/layouts/{id}": {
+      "put": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Update a Layout",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowLayout"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "layout id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/LayoutRequest"
+            },
+            "required": true,
+            "name": "layout",
+            "in": "body",
+            "description": "Layout to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.update",
+        "description": "API to update a layout"
+      },
       "get": {
         "tags": [
           "Layout"
@@ -110,7 +156,7 @@
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "user id"
+            "description": "layout id"
           }
         ],
         "operationId": "WraftDocWeb.Api.V1.LayoutController.show",
