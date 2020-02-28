@@ -17,6 +17,8 @@ defmodule WraftDoc.Document.Layout do
     belongs_to(:engine, WraftDoc.Document.Engine)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+
+    has_many(:content_types, WraftDoc.Document.ContentType)
     timestamps()
   end
 
