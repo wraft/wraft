@@ -41,7 +41,7 @@ defmodule WraftDocWeb.Router do
     scope "/v1", Api.V1, as: :v1 do
       resources("/profile/:id", ProfileController, only: [:update])
       # Layout
-      resources("/layouts", LayoutController, only: [:create])
+      resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
       # Content type
       resources("/content_types", ContentTypeController, only: [:create])
       # Engine

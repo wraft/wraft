@@ -84,6 +84,122 @@
         "description": "User sign in API"
       }
     },
+    "/layouts/{id}": {
+      "put": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Update a Layout",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowLayout"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "layout id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/LayoutRequest"
+            },
+            "required": true,
+            "name": "layout",
+            "in": "body",
+            "description": "Layout to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.update",
+        "description": "API to update a layout"
+      },
+      "get": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Show a Layout",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowLayout"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "layout id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.show",
+        "description": "API to show details of a layout"
+      },
+      "delete": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Delete a Layout",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Layout"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "layout id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.delete",
+        "description": "API to delete a layout"
+      }
+    },
     "/layouts": {
       "post": {
         "tags": [
@@ -123,6 +239,29 @@
         ],
         "operationId": "WraftDocWeb.Api.V1.LayoutController.create",
         "description": "Create layout API"
+      },
+      "get": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Layout index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/LayoutsAndEngines"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.index",
+        "description": "API to get the list of all layouts created so far"
       }
     },
     "/engines": {
@@ -329,6 +468,55 @@
         "email": "email@xyz.com"
       },
       "description": "A user of the application"
+    },
+    "ShowLayout": {
+      "type": "object",
+      "title": "Layout and all its details",
+      "properties": {
+        "layout": {
+          "$ref": "#/definitions/LayoutAndEngine"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "layout": {
+          "width": 40.0,
+          "updated_at": "2020-01-21T14:00:00Z",
+          "unit": "cm",
+          "slug": "Pandoc",
+          "name": "Official Letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "height": 20.0,
+          "engine": {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "name": "Pandoc",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "api_route": ""
+          },
+          "description": "An official letter"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "API to show a layout and all its details"
+    },
+    "LayoutsAndEngines": {
+      "type": "array",
+      "title": "Layouts and its Engines",
+      "items": {
+        "$ref": "#/definitions/LayoutAndEngine"
+      },
+      "description": "All layouts that have been created and their engines"
     },
     "LayoutRequest": {
       "type": "object",
