@@ -3,7 +3,7 @@ defmodule WraftDoc.Document do
   Module that handles the repo connections of the document context.
   """
   import Ecto
-  alias WraftDoc.{Repo, Account.User, Document.Layout, Document.ContentType}
+  alias WraftDoc.{Repo, Account.User, Document.Layout, Document.ContentType, Document.Engine}
 
   @doc """
   Create a layout.
@@ -39,5 +39,13 @@ defmodule WraftDoc.Document do
       changeset = {:error, _} ->
         changeset
     end
+  end
+
+  @doc """
+  List all engines.
+  """
+  @spec engines_list() :: list
+  def engines_list() do
+    Repo.all(Engine)
   end
 end

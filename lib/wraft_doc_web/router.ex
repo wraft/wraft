@@ -44,6 +44,8 @@ defmodule WraftDocWeb.Router do
       resources("/layouts", LayoutController, only: [:create])
       # Content type
       resources("/content_types", ContentTypeController, only: [:create])
+      # Engine
+      resources("/engines", EngineController, only: [:index])
     end
   end
 
