@@ -60,8 +60,17 @@ defmodule WraftDoc.Document do
   @doc """
   Show a layout.
   """
-  @spec show_layout(binary) :: %Layout{}
+  @spec show_layout(binary) :: %Layout{engine: %Engine{}, creator: %User{}}
   def show_layout(uuid) do
+    get_layout(uuid)
+    |> Repo.preload([:engine, :creator])
+  end
+
+  @doc """
+  Get a layout from its UUID.
+  """
+  @spec get_layout(binary) :: %Layout{}
+  def get_layout(uuid) do
     Repo.get_by(Layout, uuid: uuid)
     |> Repo.preload([:engine, :creator])
   end
