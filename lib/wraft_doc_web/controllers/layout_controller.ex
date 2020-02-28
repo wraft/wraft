@@ -203,7 +203,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     description("API to show details of a layout")
 
     parameters do
-      id(:path, :string, "user id", required: true)
+      id(:path, :string, "layout id", required: true)
     end
 
     response(200, "Ok", Schema.ref(:ShowLayout))
