@@ -101,7 +101,7 @@ defmodule WraftDoc.Document do
     |> Ecto.Changeset.no_assoc_constraint(
       :content_types,
       message:
-        "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!.!"
+        "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!"
     )
     |> Repo.delete()
   end
@@ -149,5 +149,21 @@ defmodule WraftDoc.Document do
       {:ok, content_type} ->
         content_type |> Repo.preload([:layout, :creator])
     end
+  end
+
+  @doc """
+  Delete a content type.
+  """
+  @spec delete_content_type(%ContentType{}) ::
+          {:ok, %ContentType{}} | {:error, Ecto.Changeset.t()}
+  def delete_content_type(content_type) do
+    content_type
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.no_assoc_constraint(
+      :instances,
+      message:
+        "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
+    )
+    |> Repo.delete()
   end
 end
