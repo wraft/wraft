@@ -11,7 +11,7 @@ defmodule WraftDocWeb.CurrentUser do
 
   def call(conn, _opts) do
     current_user_email = current_resource(conn)
-    current_user = Repo.get_by(User, email: current_user_email)
+    current_user = Repo.get_by(User, email: current_user_email) |> Repo.preload([:profile, :role])
     assign(conn, :current_user, current_user)
   end
 end
