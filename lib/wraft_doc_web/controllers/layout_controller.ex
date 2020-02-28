@@ -217,4 +217,31 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
       |> render("show.json", doc_layout: layout)
     end
   end
+
+  @doc """
+  Update a Layout.
+  """
+  swagger_path :update do
+    put("/layouts/{id}")
+    summary("Update a Layout")
+    description("API to update a layout")
+
+    parameters do
+      id(:path, :string, "layout id", required: true)
+      layout(:body, Schema.ref(:LayoutRequest), "Layout to be updated", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowLayout))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"id" => uuid} = params) do
+    with %Layout{} = layout <- Document.get_layout(uuid),
+         %Layout{} = layout <- Document.update_layout(layout, params) do
+      conn
+      |> render("show.json", doc_layout: layout)
+    end
+  end
 end
