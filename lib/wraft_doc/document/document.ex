@@ -50,7 +50,7 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
-  List all engines.
+  List all layouts.
   """
   @spec layout_index() :: list
   def layout_index() do
