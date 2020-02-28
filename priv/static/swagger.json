@@ -296,6 +296,52 @@
       }
     },
     "/content_types/{id}": {
+      "put": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Update a Content Type",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowContentType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "content type id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/ContentTypeRequest"
+            },
+            "required": true,
+            "name": "layout",
+            "in": "body",
+            "description": "Content Type to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.update",
+        "description": "API to update a content type"
+      },
       "get": {
         "tags": [
           "ContentType"
@@ -306,7 +352,7 @@
             "schema": {
               "$ref": "#/definitions/Error"
             },
-            "description": "Unauthorized"
+            "description": "Not Found"
           },
           "401": {
             "schema": {

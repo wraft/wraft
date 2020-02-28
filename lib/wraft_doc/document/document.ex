@@ -119,7 +119,7 @@ defmodule WraftDoc.Document do
   """
   @spec show_content_type(binary) :: %ContentType{layout: %Layout{}, creator: %User{}}
   def show_content_type(uuid) do
-    get_show_content_type(uuid)
+    get_content_type(uuid)
     |> Repo.preload([:layout, :creator])
   end
 
@@ -129,5 +129,25 @@ defmodule WraftDoc.Document do
   @spec get_content_type(binary) :: %ContentType{}
   def get_content_type(uuid) do
     Repo.get_by(ContentType, uuid: uuid)
+  end
+
+  @doc """
+  Update a content type.
+  """
+  @spec update_content_type(%ContentType{}, map) :: %ContentType{
+          layout: %Layout{},
+          creator: %User{}
+        }
+  def update_content_type(content_type, params) do
+    content_type
+    |> ContentType.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, content_type} ->
+        content_type |> Repo.preload([:layout, :creator])
+    end
   end
 end
