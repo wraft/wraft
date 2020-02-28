@@ -28,4 +28,17 @@ defmodule WraftDocWeb.Api.V1.UserView do
       updated_at: user.updated_at
     }
   end
+
+  def render("me.json", %{user: me}) do
+    %{
+      id: me.uuid,
+      name: me.name,
+      email: me.email,
+      email_verify: me.email_verify,
+      inserted_at: me.inserted_at,
+      updated_at: me.updated_at,
+      profile_pic: me.profile.profile_pic,
+      role: me.role.name
+    }
+  end
 end
