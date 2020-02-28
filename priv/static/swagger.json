@@ -295,6 +295,140 @@
         "description": "API to list of all enignes creates/seeded so far"
       }
     },
+    "/content_types/{id}": {
+      "put": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Update a Content Type",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowContentType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "content type id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/ContentTypeRequest"
+            },
+            "required": true,
+            "name": "layout",
+            "in": "body",
+            "description": "Content Type to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.update",
+        "description": "API to update a content type"
+      },
+      "get": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Show a Content Type",
+        "responses": {
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowContentType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "content type id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.show",
+        "description": "API to show details of a content type"
+      },
+      "delete": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Delete a Content Type",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "content type id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.delete",
+        "description": "API to delete a content type"
+      }
+    },
     "/content_types": {
       "post": {
         "tags": [
@@ -334,6 +468,29 @@
         ],
         "operationId": "WraftDocWeb.Api.V1.ContentTypeController.create",
         "description": "Create content type API"
+      },
+      "get": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Content Type index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentTypesAndLayouts"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.index",
+        "description": "API to get the list of all content types created so far"
       }
     }
   },
@@ -509,6 +666,53 @@
         }
       },
       "description": "API to show a layout and all its details"
+    },
+    "ShowContentType": {
+      "type": "object",
+      "title": "Content Type and all its details",
+      "properties": {
+        "creator": {
+          "$ref": "#/definitions/User"
+        },
+        "content_type": {
+          "$ref": "#/definitions/ContentTypeAndLayout"
+        }
+      },
+      "example": {
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        },
+        "content_type": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Offer letter",
+          "layout": {
+            "width": 40.0,
+            "updated_at": "2020-01-21T14:00:00Z",
+            "unit": "cm",
+            "slug": "Pandoc",
+            "name": "Official Letter",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "height": 20.0,
+            "description": "An official letter"
+          },
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "fields": {
+            "position": "string",
+            "name": "string",
+            "joining_date": "date",
+            "approved_by": "string"
+          },
+          "description": "An offer letter"
+        }
+      },
+      "description": "API to show a content type and all its details"
     },
     "LayoutsAndEngines": {
       "type": "array",
@@ -757,6 +961,14 @@
       },
       "description": "A render engine to be used for document generation"
     },
+    "ContentTypesAndLayouts": {
+      "type": "array",
+      "title": "Content Types and their Layouts",
+      "items": {
+        "$ref": "#/definitions/ContentTypeAndLayout"
+      },
+      "description": "All content types that have been created and their layouts"
+    },
     "ContentTypeRequest": {
       "type": "object",
       "title": "Content Type Request",
@@ -857,6 +1069,56 @@
         "description": "An offer letter"
       },
       "description": "Content Type to be used for the generation of a document."
+    },
+    "ContentType": {
+      "type": "object",
+      "title": "Content Type",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "name": {
+          "type": "string",
+          "description": "Content Type's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the content type"
+        },
+        "fields": {
+          "type": "map",
+          "description": "Dynamic fields and their datatype"
+        },
+        "description": {
+          "type": "string",
+          "description": "Content Type's description"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "name": "Offer letter",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "fields": {
+          "position": "string",
+          "name": "string",
+          "joining_date": "date",
+          "approved_by": "string"
+        },
+        "description": "An offer letter"
+      },
+      "description": "A Content Type."
     }
   },
   "basePath": "/api/v1"
