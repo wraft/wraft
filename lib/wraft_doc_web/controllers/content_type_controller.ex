@@ -31,6 +31,34 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             layout_id: 1
           })
         end,
+      ContentType:
+        swagger_schema do
+          title("Content Type")
+          description("A Content Type.")
+
+          properties do
+            id(:string, "The ID of the content type", required: true)
+            name(:string, "Content Type's name", required: true)
+            description(:string, "Content Type's description")
+            fields(:map, "Dynamic fields and their datatype")
+            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
+            updated_at(:string, "When was the user last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            name: "Offer letter",
+            description: "An offer letter",
+            fields: %{
+              name: "string",
+              position: "string",
+              joining_date: "date",
+              approved_by: "string"
+            },
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
       ContentTypeAndLayout:
         swagger_schema do
           title("Content Type and Layout")
@@ -70,6 +98,13 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
+        end,
+      ContentTypesAndLayouts:
+        swagger_schema do
+          title("Content Types and their Layouts")
+          description("All content types that have been created and their layouts")
+          type(:array)
+          items(Schema.ref(:ContentTypeAndLayout))
         end
     }
   end
@@ -101,5 +136,25 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
       conn
       |> render(:create, content_type: content_type)
     end
+  end
+
+  @doc """
+  Content Type index.
+  """
+  swagger_path :index do
+    get("/content_types")
+    summary("Content Type index")
+    description("API to get the list of all content types created so far")
+
+    response(200, "Ok", Schema.ref(:ContentTypesAndLayouts))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index(conn, _params) do
+    content_types = Document.content_type_index()
+
+    conn
+    |> render("index.json", content_types: content_types)
   end
 end

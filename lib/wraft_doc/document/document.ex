@@ -105,4 +105,12 @@ defmodule WraftDoc.Document do
     )
     |> Repo.delete()
   end
+
+  @doc """
+  List all content types.
+  """
+  @spec content_type_index() :: list
+  def content_type_index() do
+    Repo.all(ContentType) |> Repo.preload(:layout)
+  end
 end
