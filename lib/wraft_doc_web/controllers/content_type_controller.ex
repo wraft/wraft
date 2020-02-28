@@ -217,12 +217,39 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
     response(200, "Ok", Schema.ref(:ShowContentType))
     response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => uuid}) do
     with %ContentType{} = content_type <- Document.show_content_type(uuid) do
+      conn
+      |> render("show.json", content_type: content_type)
+    end
+  end
+
+  @doc """
+  Update a Content Type.
+  """
+  swagger_path :update do
+    put("/content_types/{id}")
+    summary("Update a Content Type")
+    description("API to update a content type")
+
+    parameters do
+      id(:path, :string, "content type id", required: true)
+      layout(:body, Schema.ref(:ContentTypeRequest), "Content Type to be updated", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContentType))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"id" => uuid} = params) do
+    with %ContentType{} = content_type <- Document.get_content_type(uuid),
+         %ContentType{} = content_type <- Document.update_content_type(content_type, params) do
       conn
       |> render("show.json", content_type: content_type)
     end
