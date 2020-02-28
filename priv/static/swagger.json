@@ -308,6 +308,12 @@
             },
             "description": "Unprocessable Entity"
           },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
           "401": {
             "schema": {
               "$ref": "#/definitions/Error"
@@ -378,6 +384,49 @@
         ],
         "operationId": "WraftDocWeb.Api.V1.ContentTypeController.show",
         "description": "API to show details of a content type"
+      },
+      "delete": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Delete a Content Type",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "content type id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.delete",
+        "description": "API to delete a content type"
       }
     },
     "/content_types": {

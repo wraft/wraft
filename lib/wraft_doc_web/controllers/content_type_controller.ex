@@ -243,6 +243,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
     response(200, "Ok", Schema.ref(:ShowContentType))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
@@ -252,6 +253,33 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
          %ContentType{} = content_type <- Document.update_content_type(content_type, params) do
       conn
       |> render("show.json", content_type: content_type)
+    end
+  end
+
+  @doc """
+  Delete a Content Type.
+  """
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/content_types/{id}")
+    summary("Delete a Content Type")
+    description("API to delete a content type")
+
+    parameters do
+      id(:path, :string, "content type id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ContentType))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete(conn, %{"id" => uuid}) do
+    with %ContentType{} = content_type <- Document.get_content_type(uuid),
+         {:ok, %ContentType{}} <- Document.delete_content_type(content_type) do
+      conn
+      |> render("content_type.json", content_type: content_type)
     end
   end
 end
