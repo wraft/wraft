@@ -48,4 +48,61 @@ defmodule WraftDoc.Document do
   def engines_list() do
     Repo.all(Engine)
   end
+
+  @doc """
+  List all layouts.
+  """
+  @spec layout_index() :: list
+  def layout_index() do
+    Repo.all(Layout) |> Repo.preload(:engine)
+  end
+
+  @doc """
+  Show a layout.
+  """
+  @spec show_layout(binary) :: %Layout{engine: %Engine{}, creator: %User{}}
+  def show_layout(uuid) do
+    get_layout(uuid)
+    |> Repo.preload([:engine, :creator])
+  end
+
+  @doc """
+  Get a layout from its UUID.
+  """
+  @spec get_layout(binary) :: %Layout{}
+  def get_layout(uuid) do
+    Repo.get_by(Layout, uuid: uuid)
+  end
+
+  @doc """
+  Update a layout.
+  """
+  @spec update_layout(%Layout{}, map) :: %Layout{engine: %Engine{}, creator: %User{}}
+  def update_layout(layout, params) do
+    layout
+    |> Layout.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, layout} ->
+        layout |> Repo.preload([:engine, :creator])
+    end
+  end
+
+  @doc """
+  Delete a layout.
+  """
+  @spec delete_layout(%Layout{}) :: {:ok, %Layout{}} | {:error, Ecto.Changeset.t()}
+  def delete_layout(layout) do
+    layout
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.no_assoc_constraint(
+      :content_types,
+      message:
+        "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!.!"
+    )
+    |> Repo.delete()
+  end
 end
