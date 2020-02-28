@@ -90,4 +90,19 @@ defmodule WraftDoc.Document do
         layout |> Repo.preload([:engine, :creator])
     end
   end
+
+  @doc """
+  Delete a layout.
+  """
+  @spec delete_layout(%Layout{}) :: {:ok, %Layout{}} | {:error, Ecto.Changeset.t()}
+  def delete_layout(layout) do
+    layout
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.no_assoc_constraint(
+      :content_types,
+      message:
+        "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!.!"
+    )
+    |> Repo.delete()
+  end
 end

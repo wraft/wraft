@@ -244,4 +244,30 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
       |> render("show.json", doc_layout: layout)
     end
   end
+
+  @doc """
+  Delete a Layout.
+  """
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/layouts/{id}")
+    summary("Delete a Layout")
+    description("API to delete a layout")
+
+    parameters do
+      id(:path, :string, "layout id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Layout))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete(conn, %{"id" => uuid}) do
+    with %Layout{} = layout <- Document.get_layout(uuid),
+         {:ok, %Layout{}} <- Document.delete_layout(layout) do
+      conn
+      |> render("layout.json", doc_layout: layout)
+    end
+  end
 end

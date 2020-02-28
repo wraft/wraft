@@ -161,6 +161,43 @@
         ],
         "operationId": "WraftDocWeb.Api.V1.LayoutController.show",
         "description": "API to show details of a layout"
+      },
+      "delete": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Delete a Layout",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Layout"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "layout id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.delete",
+        "description": "API to delete a layout"
       }
     },
     "/layouts": {
