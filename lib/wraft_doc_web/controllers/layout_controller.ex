@@ -97,6 +97,13 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
+        end,
+      LayoutsAndEngines:
+        swagger_schema do
+          title("Layouts and its Engines")
+          description("All layouts that have been created and their engines")
+          type(:array)
+          items(Schema.ref(:LayoutAndEngine))
         end
     }
   end
@@ -126,5 +133,25 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
       conn
       |> render("create.json", doc_layout: layout)
     end
+  end
+
+  @doc """
+  Layout index.
+  """
+  swagger_path :index do
+    get("/layouts")
+    summary("Layout index")
+    description("API to get the list of all layouts created so far")
+
+    response(200, "Ok", Schema.ref(:LayoutsAndEngines))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index(conn, _params) do
+    layouts = Document.layout_index()
+
+    conn
+    |> render("index.json", doc_layouts: layouts)
   end
 end

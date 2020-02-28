@@ -123,6 +123,29 @@
         ],
         "operationId": "WraftDocWeb.Api.V1.LayoutController.create",
         "description": "Create layout API"
+      },
+      "get": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Layout index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/LayoutsAndEngines"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.index",
+        "description": "API to get the list of all layouts created so far"
       }
     },
     "/engines": {
@@ -329,6 +352,14 @@
         "email": "email@xyz.com"
       },
       "description": "A user of the application"
+    },
+    "LayoutsAndEngines": {
+      "type": "array",
+      "title": "Layouts and its Engines",
+      "items": {
+        "$ref": "#/definitions/LayoutAndEngine"
+      },
+      "description": "All layouts that have been created and their engines"
     },
     "LayoutRequest": {
       "type": "object",

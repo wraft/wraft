@@ -48,4 +48,12 @@ defmodule WraftDoc.Document do
   def engines_list() do
     Repo.all(Engine)
   end
+
+  @doc """
+  List all engines.
+  """
+  @spec layout_index() :: list
+  def layout_index() do
+    Repo.all(Layout) |> Repo.preload(:engine)
+  end
 end
