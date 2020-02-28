@@ -1,6 +1,7 @@
 defmodule WraftDocWeb.Api.V1.LayoutView do
   use WraftDocWeb, :view
   alias WraftDocWeb.Api.V1.EngineView
+  alias __MODULE__
 
   def render("create.json", %{doc_layout: layout}) do
     %{
@@ -29,5 +30,9 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       inserted_at: layout.inserted_at,
       update_at: layout.updated_at
     }
+  end
+
+  def render("index.json", %{doc_layouts: layouts}) do
+    render_many(layouts, LayoutView, "create.json", as: :doc_layout)
   end
 end
