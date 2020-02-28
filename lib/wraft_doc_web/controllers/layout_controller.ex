@@ -147,7 +147,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, _params) do
     layouts = Document.layout_index()
 
