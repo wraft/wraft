@@ -84,6 +84,39 @@
         "description": "User sign in API"
       }
     },
+    "/layouts/{id}": {
+      "get": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Show a Layout",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowLayout"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "user id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.show",
+        "description": "API to show details of a layout"
+      }
+    },
     "/layouts": {
       "post": {
         "tags": [
@@ -352,6 +385,47 @@
         "email": "email@xyz.com"
       },
       "description": "A user of the application"
+    },
+    "ShowLayout": {
+      "type": "object",
+      "title": "Layout and all its details",
+      "properties": {
+        "layout": {
+          "$ref": "#/definitions/LayoutAndEngine"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "layout": {
+          "width": 40.0,
+          "updated_at": "2020-01-21T14:00:00Z",
+          "unit": "cm",
+          "slug": "Pandoc",
+          "name": "Official Letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "height": 20.0,
+          "engine": {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "name": "Pandoc",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "api_route": ""
+          },
+          "description": "An official letter"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "API to show a layout and all its details"
     },
     "LayoutsAndEngines": {
       "type": "array",

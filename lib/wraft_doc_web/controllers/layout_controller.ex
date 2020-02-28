@@ -104,6 +104,45 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
           description("All layouts that have been created and their engines")
           type(:array)
           items(Schema.ref(:LayoutAndEngine))
+        end,
+      ShowLayout:
+        swagger_schema do
+          title("Layout and all its details")
+          description("API to show a layout and all its details")
+
+          properties do
+            layout(Schema.ref(:LayoutAndEngine))
+            creator(Schema.ref(:User))
+          end
+
+          example(%{
+            layout: %{
+              id: "1232148nb3478",
+              name: "Official Letter",
+              description: "An official letter",
+              width: 40.0,
+              height: 20.0,
+              unit: "cm",
+              slug: "Pandoc",
+              engine: %{
+                id: "1232148nb3478",
+                name: "Pandoc",
+                api_route: "",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              },
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            creator: %{
+              id: "1232148nb3478",
+              name: "John Doe",
+              email: "email@xyz.com",
+              email_verify: true,
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            }
+          })
         end
     }
   end
@@ -153,5 +192,29 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     conn
     |> render("index.json", doc_layouts: layouts)
+  end
+
+  @doc """
+  Show a Layout.
+  """
+  swagger_path :show do
+    get("/layouts/{id}")
+    summary("Show a Layout")
+    description("API to show details of a layout")
+
+    parameters do
+      id(:path, :string, "user id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowLayout))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show(conn, %{"id" => uuid}) do
+    with %Layout{} = layout <- Document.show_layout(uuid) do
+      conn
+      |> render("show.json", doc_layout: layout)
+    end
   end
 end

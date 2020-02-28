@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.LayoutView do
   use WraftDocWeb, :view
-  alias WraftDocWeb.Api.V1.EngineView
+  alias WraftDocWeb.Api.V1.{EngineView, UserView}
   alias __MODULE__
 
   def render("create.json", %{doc_layout: layout}) do
@@ -34,5 +34,12 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
 
   def render("index.json", %{doc_layouts: layouts}) do
     render_many(layouts, LayoutView, "create.json", as: :doc_layout)
+  end
+
+  def render("show.json", %{doc_layout: layout}) do
+    %{
+      layout: render_one(layout, LayoutView, "create.json", as: :doc_layout),
+      creator: render_one(layout.creator, UserView, "user.json", as: :user)
+    }
   end
 end
