@@ -113,4 +113,21 @@ defmodule WraftDoc.Document do
   def content_type_index() do
     Repo.all(ContentType) |> Repo.preload(:layout)
   end
+
+  @doc """
+  Show a content type.
+  """
+  @spec show_content_type(binary) :: %ContentType{layout: %Layout{}, creator: %User{}}
+  def show_content_type(uuid) do
+    get_show_content_type(uuid)
+    |> Repo.preload([:layout, :creator])
+  end
+
+  @doc """
+  Get a content type from its UUID.
+  """
+  @spec get_show_content_type(binary) :: %ContentType{}
+  def get_show_content_type(uuid) do
+    Repo.get_by(ContentType, uuid: uuid)
+  end
 end

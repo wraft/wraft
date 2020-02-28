@@ -295,6 +295,45 @@
         "description": "API to list of all enignes creates/seeded so far"
       }
     },
+    "/content_types/{id}": {
+      "get": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Show a Content Type",
+        "responses": {
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowContentType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "content type id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.show",
+        "description": "API to show details of a content type"
+      }
+    },
     "/content_types": {
       "post": {
         "tags": [
@@ -532,6 +571,53 @@
         }
       },
       "description": "API to show a layout and all its details"
+    },
+    "ShowContentType": {
+      "type": "object",
+      "title": "Content Type and all its details",
+      "properties": {
+        "creator": {
+          "$ref": "#/definitions/User"
+        },
+        "content_type": {
+          "$ref": "#/definitions/ContentTypeAndLayout"
+        }
+      },
+      "example": {
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        },
+        "content_type": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Offer letter",
+          "layout": {
+            "width": 40.0,
+            "updated_at": "2020-01-21T14:00:00Z",
+            "unit": "cm",
+            "slug": "Pandoc",
+            "name": "Official Letter",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "height": 20.0,
+            "description": "An official letter"
+          },
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "fields": {
+            "position": "string",
+            "name": "string",
+            "joining_date": "date",
+            "approved_by": "string"
+          },
+          "description": "An offer letter"
+        }
+      },
+      "description": "API to show a content type and all its details"
     },
     "LayoutsAndEngines": {
       "type": "array",

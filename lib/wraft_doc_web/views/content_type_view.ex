@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
   use WraftDocWeb, :view
 
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.LayoutView
+  alias WraftDocWeb.Api.V1.{LayoutView, UserView}
 
   def render("create.json", %{content_type: c_type}) do
     %{
@@ -18,5 +18,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("index.json", %{content_types: content_types}) do
     render_many(content_types, ContentTypeView, "create.json", as: :content_type)
+  end
+
+  def render("show.json", %{content_type: content_type}) do
+    %{
+      content_type: render_one(content_type, ContentTypeView, "create.json", as: :content_type),
+      creator: render_one(content_type.creator, UserView, "user.json", as: :user)
+    }
   end
 end

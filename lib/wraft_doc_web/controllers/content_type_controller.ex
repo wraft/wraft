@@ -105,6 +105,51 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           description("All content types that have been created and their layouts")
           type(:array)
           items(Schema.ref(:ContentTypeAndLayout))
+        end,
+      ShowContentType:
+        swagger_schema do
+          title("Content Type and all its details")
+          description("API to show a content type and all its details")
+
+          properties do
+            content_type(Schema.ref(:ContentTypeAndLayout))
+            creator(Schema.ref(:User))
+          end
+
+          example(%{
+            content_type: %{
+              id: "1232148nb3478",
+              name: "Offer letter",
+              description: "An offer letter",
+              fields: %{
+                name: "string",
+                position: "string",
+                joining_date: "date",
+                approved_by: "string"
+              },
+              layout: %{
+                id: "1232148nb3478",
+                name: "Official Letter",
+                description: "An official letter",
+                width: 40.0,
+                height: 20.0,
+                unit: "cm",
+                slug: "Pandoc",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              },
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            creator: %{
+              id: "1232148nb3478",
+              name: "John Doe",
+              email: "email@xyz.com",
+              email_verify: true,
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            }
+          })
         end
     }
   end
@@ -156,5 +201,30 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
     conn
     |> render("index.json", content_types: content_types)
+  end
+
+  @doc """
+  Show a Content Type.
+  """
+  swagger_path :show do
+    get("/content_types/{id}")
+    summary("Show a Content Type")
+    description("API to show details of a content type")
+
+    parameters do
+      id(:path, :string, "content type id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContentType))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show(conn, %{"id" => uuid}) do
+    with %ContentType{} = content_type <- Document.show_content_type(uuid) do
+      conn
+      |> render("show.json", content_type: content_type)
+    end
   end
 end
