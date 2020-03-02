@@ -289,6 +289,47 @@
         "description": "API to get the list of all layouts created so far"
       }
     },
+    "/flows": {
+      "post": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Create a flow",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Flow"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/FlowRequest"
+            },
+            "required": true,
+            "name": "flow",
+            "in": "body",
+            "description": "Flow to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.create",
+        "description": "Create flow API"
+      }
+    },
     "/engines": {
       "get": {
         "tags": [
@@ -740,6 +781,34 @@
       },
       "description": "API to show a layout and all its details"
     },
+    "ShowFlow": {
+      "type": "object",
+      "title": "Show flow details",
+      "properties": {
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "flow": {
+          "state": "published",
+          "order": 1,
+          "id": "1232148nb3478"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "Show all details of a flow"
+    },
     "ShowContentType": {
       "type": "object",
       "title": "Content Type and all its details",
@@ -972,6 +1041,29 @@
       },
       "description": "A Layout"
     },
+    "FlowRequest": {
+      "type": "object",
+      "title": "Flow Request",
+      "required": [
+        "order",
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "description": "State name"
+        },
+        "order": {
+          "type": "integer",
+          "description": "State's order"
+        }
+      },
+      "example": {
+        "state": "Published",
+        "order": 1
+      },
+      "description": "Create flow request."
+    },
     "Flow": {
       "type": "object",
       "title": "Flow",
@@ -983,12 +1075,16 @@
         "order": {
           "type": "integer",
           "description": "Order of the state"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the flow"
         }
       },
       "example": {
-        "uuid": "1232148nb3478",
         "state": "published",
-        "order": 1
+        "order": 1,
+        "id": "1232148nb3478"
       },
       "description": "State assigened to contents"
     },
