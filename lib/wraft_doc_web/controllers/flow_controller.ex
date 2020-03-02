@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   use PhoenixSwagger
 
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Enterprise.Flow}
+  alias WraftDoc.{Document, Enterprise, Enterprise.Flow}
 
   def swagger_definitions do
     %{
@@ -146,6 +146,33 @@ defmodule WraftDocWeb.Api.V1.FlowController do
          %Flow{} = flow <- Document.update_flow(flow, params) do
       conn
       |> render("show.json", flow: flow)
+    end
+  end
+
+  @doc """
+  Flow delete.
+  """
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/flows/{id}")
+    summary("Flow delete")
+    description("API to delete a flow")
+
+    parameters do
+      id(:path, :string, "flow id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Flow))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete(conn, %{"id" => uuid}) do
+    with %Flow{} = flow <- Document.get_flow(uuid),
+         {:ok, %Flow{}} <- Enterprise.delete_flow(flow) do
+      conn
+      |> render("flow.json", flow: flow)
     end
   end
 end
