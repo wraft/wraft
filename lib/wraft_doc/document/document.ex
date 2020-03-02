@@ -3,15 +3,24 @@ defmodule WraftDoc.Document do
   Module that handles the repo connections of the document context.
   """
   import Ecto
-  alias WraftDoc.{Repo, Account.User, Document.Layout, Document.ContentType, Document.Engine}
+
+  alias WraftDoc.{
+    Repo,
+    Account.User,
+    Document.Layout,
+    Document.ContentType,
+    Document.Engine,
+    Document.Instance,
+    Enterprise.Flow
+  }
 
   @doc """
   Create a layout.
   """
-  @spec create_layout(%User{}, map) :: %Layout{} | {:error, Ecto.Changeset.t()}
-  def create_layout(current_user, params) do
+  @spec create_layout(%User{}, %Engine{}, map) :: %Layout{} | {:error, Ecto.Changeset.t()}
+  def create_layout(current_user, engine, params) do
     current_user
-    |> build_assoc(:layouts)
+    |> build_assoc(:layouts, engine: engine)
     |> Layout.changeset(params)
     |> Repo.insert()
     |> case do
@@ -26,10 +35,11 @@ defmodule WraftDoc.Document do
   @doc """
   Create a content type.
   """
-  @spec create_content_type(%User{}, map) :: %ContentType{} | {:error, Ecto.Changeset.t()}
-  def create_content_type(current_user, params) do
+  @spec create_content_type(%User{}, %Layout{}, map) ::
+          %ContentType{} | {:error, Ecto.Changeset.t()}
+  def create_content_type(current_user, layout, params) do
     current_user
-    |> build_assoc(:content_types)
+    |> build_assoc(:content_types, layout: layout)
     |> ContentType.changeset(params)
     |> Repo.insert()
     |> case do
@@ -78,9 +88,16 @@ defmodule WraftDoc.Document do
   Update a layout.
   """
   @spec update_layout(%Layout{}, map) :: %Layout{engine: %Engine{}, creator: %User{}}
+  def update_layout(layout, %{"engine_uuid" => engine_uuid} = params) do
+    %Engine{id: id} = get_engine(engine_uuid)
+    {_, params} = Map.pop(params, "engine_uuid")
+    params = params |> Map.merge(%{"engine_id" => id})
+    update_layout(layout, params)
+  end
+
   def update_layout(layout, params) do
     layout
-    |> Layout.changeset(params)
+    |> Layout.update_changeset(params)
     |> Repo.update()
     |> case do
       {:error, _} = changeset ->
@@ -134,13 +151,22 @@ defmodule WraftDoc.Document do
   @doc """
   Update a content type.
   """
-  @spec update_content_type(%ContentType{}, map) :: %ContentType{
-          layout: %Layout{},
-          creator: %User{}
-        }
+  @spec update_content_type(%ContentType{}, map) ::
+          %ContentType{
+            layout: %Layout{},
+            creator: %User{}
+          }
+          | {:error, Ecto.Changeset.t()}
+  def update_content_type(content_type, %{"layout_uuid" => layout_uuid} = params) do
+    %Layout{id: id} = get_layout(layout_uuid)
+    {_, params} = Map.pop(params, "layout_uuid")
+    params = params |> Map.merge(%{"layout_id" => id})
+    update_content_type(content_type, params)
+  end
+
   def update_content_type(content_type, params) do
     content_type
-    |> ContentType.changeset(params)
+    |> ContentType.update_changeset(params)
     |> Repo.update()
     |> case do
       {:error, _} = changeset ->
@@ -165,5 +191,44 @@ defmodule WraftDoc.Document do
         "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
     )
     |> Repo.delete()
+  end
+
+  @doc """
+  Create a new instance.
+  """
+  @spec create_instance(%User{}, %ContentType{}, map) ::
+          %Instance{content_type: %ContentType{}, state: %Flow{}} | {:error, Ecto.Changeset.t()}
+  # def create_instance(current_user, c_type, flow, params) do
+  def create_instance(current_user, c_type, params) do
+    params = params |> Map.merge(%{"instance_id" => Ecto.UUID.generate()})
+
+    c_type
+    # |> build_assoc(:instances, state: flow, creator: current_user)
+    |> build_assoc(:instances, creator: current_user)
+    |> Instance.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, content} ->
+        content |> Repo.preload([:content_type, :state])
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
+  @doc """
+  Get a flow from its UUID.
+  """
+  @spec get_flow(binary) :: %Flow{} | nil
+  def get_flow(flow_uuid) do
+    Repo.get_by(Flow, uuid: flow_uuid)
+  end
+
+  @doc """
+  Get an engine from its UUID.
+  """
+  @spec get_engine(binary) :: %Engine{} | nil
+  def get_engine(engine_uuid) do
+    Repo.get_by(Engine, uuid: engine_uuid)
   end
 end

@@ -31,6 +31,32 @@ defmodule WraftDoc.Document.Layout do
       :height,
       :unit,
       :slug,
+      :organisation_id
+    ])
+    |> validate_required([
+      :name,
+      :description,
+      :width,
+      :height,
+      :unit,
+      :slug
+      # :organisation_id
+    ])
+    |> unique_constraint(:name,
+      message: "Layout with the same name exists. Use another name.!",
+      name: :layout_name_unique_index
+    )
+  end
+
+  def update_changeset(%Layout{} = layout, attrs \\ %{}) do
+    layout
+    |> cast(attrs, [
+      :name,
+      :description,
+      :width,
+      :height,
+      :unit,
+      :slug,
       :engine_id,
       :organisation_id
     ])
