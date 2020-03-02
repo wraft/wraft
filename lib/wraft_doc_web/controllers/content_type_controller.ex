@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   use PhoenixSwagger
 
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.ContentType}
+  alias WraftDoc.{Document, Document.ContentType, Document.Layout}
 
   def swagger_definitions do
     %{
@@ -16,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description")
             fields(:map, "Dynamic fields and their datatype")
-            layout_id(:integer, "ID of the layout selected")
+            layout_uuid(:string, "ID of the layout selected")
           end
 
           example(%{
@@ -28,7 +28,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               joining_date: "date",
               approved_by: "string"
             },
-            layout_id: 1
+            layout_uuid: "1232148nb3478"
           })
         end,
       ContentType:
@@ -174,10 +174,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, params) do
+  def create(conn, %{"layout_uuid" => layout_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <- Document.create_content_type(current_user, params) do
+    with %Layout{} = layout <- Document.get_layout(layout_uuid),
+         %ContentType{} = content_type <-
+           Document.create_content_type(current_user, layout, params) do
       conn
       |> render(:create, content_type: content_type)
     end

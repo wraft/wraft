@@ -35,10 +35,11 @@ defmodule WraftDoc.Document do
   @doc """
   Create a content type.
   """
-  @spec create_content_type(%User{}, map) :: %ContentType{} | {:error, Ecto.Changeset.t()}
-  def create_content_type(current_user, params) do
+  @spec create_content_type(%User{}, %Layout{}, map) ::
+          %ContentType{} | {:error, Ecto.Changeset.t()}
+  def create_content_type(current_user, layout, params) do
     current_user
-    |> build_assoc(:content_types)
+    |> build_assoc(:content_types, layout: layout)
     |> ContentType.changeset(params)
     |> Repo.insert()
     |> case do
@@ -150,13 +151,22 @@ defmodule WraftDoc.Document do
   @doc """
   Update a content type.
   """
-  @spec update_content_type(%ContentType{}, map) :: %ContentType{
-          layout: %Layout{},
-          creator: %User{}
-        }
+  @spec update_content_type(%ContentType{}, map) ::
+          %ContentType{
+            layout: %Layout{},
+            creator: %User{}
+          }
+          | {:error, Ecto.Changeset.t()}
+  def update_content_type(content_type, %{"layout_uuid" => layout_uuid} = params) do
+    %Layout{id: id} = get_layout(layout_uuid)
+    {_, params} = Map.pop(params, "layout_uuid")
+    params = params |> Map.merge(%{"layout_id" => id})
+    update_content_type(content_type, params)
+  end
+
   def update_content_type(content_type, params) do
     content_type
-    |> ContentType.changeset(params)
+    |> ContentType.update_changeset(params)
     |> Repo.update()
     |> case do
       {:error, _} = changeset ->
