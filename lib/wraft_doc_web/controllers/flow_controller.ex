@@ -120,4 +120,32 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     conn
     |> render("index.json", flows: flows)
   end
+
+  @doc """
+  Flow update.
+  """
+  swagger_path :update do
+    put("/flows/{id}")
+    summary("Flow update")
+    description("API to update a flow")
+
+    parameters do
+      id(:path, :string, "flow id", required: true)
+      flow(:body, Schema.ref(:FlowRequest), "Flow to be created", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowFlow))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"id" => uuid} = params) do
+    with %Flow{} = flow <- Document.get_flow(uuid),
+         %Flow{} = flow <- Document.update_flow(flow, params) do
+      conn
+      |> render("show.json", flow: flow)
+    end
+  end
 end
