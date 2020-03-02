@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   use PhoenixSwagger
 
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Layout}
+  alias WraftDoc.{Document, Document.Layout, Document.Engine}
 
   def swagger_definitions do
     %{
@@ -19,7 +19,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             height(:float, "Height of the layout")
             unit(:string, "Unit of dimensions")
             slug(:string, "Name of the slug to be used for the layout")
-            engine_id(:integer, "ID of the engine selected")
+            engine_uuid(:string, "ID of the engine selected")
           end
 
           example(%{
@@ -29,7 +29,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             height: 20.0,
             unit: "cm",
             slug: "Pandoc",
-            engine_id: "1232148nb3478"
+            engine_uuid: "1232148nb3478"
           })
         end,
       Layout:
@@ -165,10 +165,11 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, params) do
+  def create(conn, %{"engine_uuid" => engine_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Document.create_layout(current_user, params) do
+    with %Engine{} = engine <- Document.get_engine(engine_uuid),
+         %Layout{} = layout <- Document.create_layout(current_user, engine, params) do
       conn
       |> render("create.json", doc_layout: layout)
     end
