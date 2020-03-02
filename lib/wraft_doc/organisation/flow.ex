@@ -12,6 +12,8 @@ defmodule WraftDoc.Enterprise.Flow do
     field(:order, :integer, null: false)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+
+    has_many(:instances, WraftDoc.Document.Instance, foreign_key: :state_id)
     timestamps()
   end
 
