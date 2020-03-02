@@ -84,22 +84,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               order: 1
             }
           })
-        end,
-      Flow:
-        swagger_schema do
-          title("Flow")
-          description("State assigened to contents")
-
-          properties do
-            state(:string, "A state of content")
-            order(:integer, "Order of the state")
-          end
-
-          example(%{
-            uuid: "1232148nb3478",
-            state: "published",
-            order: 1
-          })
         end
     }
   end

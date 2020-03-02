@@ -231,4 +231,18 @@ defmodule WraftDoc.Document do
   def get_engine(engine_uuid) do
     Repo.get_by(Engine, uuid: engine_uuid)
   end
+
+  def create_flow(current_user, params) do
+    current_user
+    |> build_assoc(:flows)
+    |> Flow.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, flow} ->
+        flow |> Repo.preload(:creator)
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
 end
