@@ -232,6 +232,10 @@ defmodule WraftDoc.Document do
     Repo.get_by(Engine, uuid: engine_uuid)
   end
 
+  @doc """
+  Create a flow.
+  """
+  @spec create_flow(%User{}, map) :: %Flow{creator: %User{}} | {:error, Ecto.Changeset.t()}
   def create_flow(current_user, params) do
     current_user
     |> build_assoc(:flows)
@@ -244,5 +248,13 @@ defmodule WraftDoc.Document do
       {:error, _} = changeset ->
         changeset
     end
+  end
+
+  @doc """
+  List of all flows.
+  """
+  @spec flow_index() :: list
+  def flow_index() do
+    Flow |> Repo.all() |> Repo.preload(:creator)
   end
 end

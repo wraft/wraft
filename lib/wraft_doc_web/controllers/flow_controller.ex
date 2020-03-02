@@ -64,6 +64,13 @@ defmodule WraftDocWeb.Api.V1.FlowController do
               inserted_at: "2020-02-21T14:00:00Z"
             }
           })
+        end,
+      ShowFlows:
+        swagger_schema do
+          title("All flows and its details")
+          description("All flows that have been created and their creators")
+          type(:array)
+          items(Schema.ref(:ShowFlow))
         end
     }
   end
@@ -92,5 +99,25 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     with %Flow{} = flow <- Document.create_flow(current_user, params) do
       conn |> render("flow.json", flow: flow)
     end
+  end
+
+  @doc """
+  Flow index.
+  """
+  swagger_path :index do
+    get("/flows")
+    summary("Flow index")
+    description("Index of flow")
+
+    response(200, "Ok", Schema.ref(:ShowFlows))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index(conn, _params) do
+    flows = Document.flow_index()
+
+    conn
+    |> render("index.json", flows: flows)
   end
 end
