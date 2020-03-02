@@ -58,7 +58,7 @@ defmodule WraftDocWeb.Router do
       resources("/engines", EngineController, only: [:index])
 
       # Flow
-      resources("/flows", FlowController, only: [:create])
+      resources("/flows", FlowController, only: [:create, :index])
     end
   end
 

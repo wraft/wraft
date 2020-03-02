@@ -328,6 +328,29 @@
         ],
         "operationId": "WraftDocWeb.Api.V1.FlowController.create",
         "description": "Create flow API"
+      },
+      "get": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Flow index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowFlows"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.index",
+        "description": "Index of flow"
       }
     },
     "/engines": {
@@ -780,6 +803,14 @@
         }
       },
       "description": "API to show a layout and all its details"
+    },
+    "ShowFlows": {
+      "type": "array",
+      "title": "All flows and its details",
+      "items": {
+        "$ref": "#/definitions/ShowFlow"
+      },
+      "description": "All flows that have been created and their creators"
     },
     "ShowFlow": {
       "type": "object",
