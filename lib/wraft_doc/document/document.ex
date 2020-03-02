@@ -17,10 +17,10 @@ defmodule WraftDoc.Document do
   @doc """
   Create a layout.
   """
-  @spec create_layout(%User{}, map) :: %Layout{} | {:error, Ecto.Changeset.t()}
-  def create_layout(current_user, params) do
+  @spec create_layout(%User{}, %Engine{}, map) :: %Layout{} | {:error, Ecto.Changeset.t()}
+  def create_layout(current_user, engine, params) do
     current_user
-    |> build_assoc(:layouts)
+    |> build_assoc(:layouts, engine: engine)
     |> Layout.changeset(params)
     |> Repo.insert()
     |> case do
@@ -87,9 +87,16 @@ defmodule WraftDoc.Document do
   Update a layout.
   """
   @spec update_layout(%Layout{}, map) :: %Layout{engine: %Engine{}, creator: %User{}}
+  def update_layout(layout, %{"engine_uuid" => engine_uuid} = params) do
+    %Engine{id: id} = get_engine(engine_uuid)
+    {_, params} = Map.pop(params, "engine_uuid")
+    params = params |> Map.merge(%{"engine_id" => id})
+    update_layout(layout, params)
+  end
+
   def update_layout(layout, params) do
     layout
-    |> Layout.changeset(params)
+    |> Layout.update_changeset(params)
     |> Repo.update()
     |> case do
       {:error, _} = changeset ->
@@ -205,5 +212,13 @@ defmodule WraftDoc.Document do
   @spec get_flow(binary) :: %Flow{} | nil
   def get_flow(flow_uuid) do
     Repo.get_by(Flow, uuid: flow_uuid)
+  end
+
+  @doc """
+  Get an engine from its UUID.
+  """
+  @spec get_engine(binary) :: %Engine{} | nil
+  def get_engine(engine_uuid) do
+    Repo.get_by(Engine, uuid: engine_uuid)
   end
 end
