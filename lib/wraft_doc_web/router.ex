@@ -49,6 +49,11 @@ defmodule WraftDocWeb.Router do
         only: [:create, :index, :show, :update, :delete]
       )
 
+      # Instances
+      resources("/content_types/:c_type_id/contents", InstanceController,
+        only: [:create, :index, :show, :update, :delete]
+      )
+
       # Engine
       resources("/engines", EngineController, only: [:index])
     end
