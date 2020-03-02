@@ -10,16 +10,17 @@ defmodule WraftDoc.Document.Instance do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:instance_id, :string, null: false)
     field(:raw, :string)
-    field(:serialized, {:array, :string}, default: %{})
+    field(:serialized, :map, default: %{})
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
+    belongs_to(:state, WraftDoc.Document.Flow)
     timestamps()
   end
 
   def changeset(%Instance{} = instance, attrs \\ %{}) do
     instance
-    |> cast(attrs, [:instance_id, :raw, :serialized, :content_type_id])
-    |> validate_required([:instanec_id, :raw, :serialized, :content_type_id])
+    |> cast(attrs, [:instance_id, :raw, :serialized])
+    |> validate_required([:instance_id, :raw, :serialized])
     |> unique_constraint(:instance_id,
       message: "Instance with the ID exists.!",
       name: :content_organisation_unique_index

@@ -3,7 +3,16 @@ defmodule WraftDoc.Document do
   Module that handles the repo connections of the document context.
   """
   import Ecto
-  alias WraftDoc.{Repo, Account.User, Document.Layout, Document.ContentType, Document.Engine}
+
+  alias WraftDoc.{
+    Repo,
+    Account.User,
+    Document.Layout,
+    Document.ContentType,
+    Document.Engine,
+    Document.Instance,
+    Enterprise.Flow
+  }
 
   @doc """
   Create a layout.
@@ -165,5 +174,36 @@ defmodule WraftDoc.Document do
         "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
     )
     |> Repo.delete()
+  end
+
+  @doc """
+  Create a new instance.
+  """
+  @spec create_instance(%User{}, %ContentType{}, map) ::
+          %Instance{content_type: %ContentType{}, state: %Flow{}} | {:error, Ecto.Changeset.t()}
+  # def create_instance(current_user, c_type, flow, params) do
+  def create_instance(current_user, c_type, params) do
+    params = params |> Map.merge(%{"instance_id" => Ecto.UUID.generate()})
+
+    c_type
+    # |> build_assoc(:instances, state: flow, creator: current_user)
+    |> build_assoc(:instances, creator: current_user)
+    |> Instance.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, content} ->
+        content |> Repo.preload([:content_type, :state])
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
+  @doc """
+  Get a flow from its UUID.
+  """
+  @spec get_flow(binary) :: %Flow{} | nil
+  def get_flow(flow_uuid) do
+    Repo.get_by(Flow, uuid: flow_uuid)
   end
 end
