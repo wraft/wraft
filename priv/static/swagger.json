@@ -289,6 +289,60 @@
         "description": "API to get the list of all layouts created so far"
       }
     },
+    "/flows/{id}": {
+      "put": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Flow update",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowFlow"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "flow id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/FlowRequest"
+            },
+            "required": true,
+            "name": "flow",
+            "in": "body",
+            "description": "Flow to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.update",
+        "description": "API to update a flow"
+      }
+    },
     "/flows": {
       "post": {
         "tags": [

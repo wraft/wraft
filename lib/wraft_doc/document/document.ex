@@ -257,4 +257,21 @@ defmodule WraftDoc.Document do
   def flow_index() do
     Flow |> Repo.all() |> Repo.preload(:creator)
   end
+
+  @doc """
+  Update a flow.
+  """
+  @spec update_flow(%Flow{}, map) :: %Flow{} | {:error, Ecto.Changeset.t()}
+  def update_flow(flow, params) do
+    flow
+    |> Flow.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, flow} ->
+        flow |> Repo.preload(:creator)
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
 end
