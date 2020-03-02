@@ -429,6 +429,54 @@
         "description": "API to delete a content type"
       }
     },
+    "/content_types/{c_type_id}/contents": {
+      "post": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Create a content",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentAndContentTypeAndFlow"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "c_type_id",
+            "in": "path",
+            "description": "content type id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/ContentRequest"
+            },
+            "required": true,
+            "name": "content",
+            "in": "body",
+            "description": "Content to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.create",
+        "description": "Create content API"
+      }
+    },
     "/content_types": {
       "post": {
         "tags": [
@@ -899,6 +947,26 @@
       },
       "description": "A Layout"
     },
+    "Flow": {
+      "type": "object",
+      "title": "Flow",
+      "properties": {
+        "state": {
+          "type": "string",
+          "description": "A state of content"
+        },
+        "order": {
+          "type": "integer",
+          "description": "Order of the state"
+        }
+      },
+      "example": {
+        "uuid": "1232148nb3478",
+        "state": "published",
+        "order": 1
+      },
+      "description": "State assigened to contents"
+    },
     "Error": {
       "type": "object",
       "title": "Errors",
@@ -1119,6 +1187,125 @@
         "description": "An offer letter"
       },
       "description": "A Content Type."
+    },
+    "ContentRequest": {
+      "type": "object",
+      "title": "Content Request",
+      "required": [
+        "raw"
+      ],
+      "properties": {
+        "serialized": {
+          "type": "string",
+          "description": "Content serialized data"
+        },
+        "raw": {
+          "type": "string",
+          "description": "Content raw data"
+        }
+      },
+      "example": {
+        "serialized": {
+          "title": "Title of the content",
+          "body": "Body of the content"
+        },
+        "raw": "Content data"
+      },
+      "description": "Content creation request"
+    },
+    "ContentAndContentTypeAndFlow": {
+      "type": "object",
+      "title": "Content and its Content Type",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/Flow"
+        },
+        "content_type": {
+          "$ref": "#/definitions/ContentType"
+        },
+        "content": {
+          "$ref": "#/definitions/Content"
+        }
+      },
+      "example": {
+        "state": {
+          "uuid": "1232148nb3478",
+          "state": "published",
+          "order": 1
+        },
+        "content_type": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Offer letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "fields": {
+            "position": "string",
+            "name": "string",
+            "joining_date": "date",
+            "approved_by": "string"
+          },
+          "description": "An offer letter"
+        },
+        "content": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "serialized": {
+            "title": "Title of the content",
+            "body": "Body of the content"
+          },
+          "raw": "Content",
+          "instance_id": "OFFL01",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        }
+      },
+      "description": "A content and its content type"
+    },
+    "Content": {
+      "type": "object",
+      "title": "Content",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine last updated"
+        },
+        "serialized": {
+          "type": "map",
+          "description": "Serialized data of the content"
+        },
+        "raw": {
+          "type": "string",
+          "description": "Raw data of the content"
+        },
+        "instance_id": {
+          "type": "string",
+          "description": "A unique ID generated for the content"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the content"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "serialized": {
+          "title": "Title of the content",
+          "body": "Body of the content"
+        },
+        "raw": "Content",
+        "instance_id": "OFFL01",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478"
+      },
+      "description": "A content, which is then used to generate the out files."
     }
   },
   "basePath": "/api/v1"
