@@ -822,8 +822,8 @@
           "type": "float",
           "description": "Height of the layout"
         },
-        "engine_id": {
-          "type": "integer",
+        "engine_uuid": {
+          "type": "string",
           "description": "ID of the engine selected"
         },
         "description": {
@@ -837,7 +837,7 @@
         "slug": "Pandoc",
         "name": "Official Letter",
         "height": 20.0,
-        "engine_id": "1232148nb3478",
+        "engine_uuid": "1232148nb3478",
         "description": "An official letter"
       },
       "description": "Create layout request."
@@ -1129,8 +1129,8 @@
           "type": "string",
           "description": "Content Type's name"
         },
-        "layout_id": {
-          "type": "integer",
+        "layout_uuid": {
+          "type": "string",
           "description": "ID of the layout selected"
         },
         "fields": {
@@ -1144,7 +1144,7 @@
       },
       "example": {
         "name": "Offer letter",
-        "layout_id": 1,
+        "layout_uuid": "1232148nb3478",
         "fields": {
           "position": "string",
           "name": "string",
