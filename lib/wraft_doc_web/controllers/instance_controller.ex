@@ -112,7 +112,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
 
     with %ContentType{} = c_type <- Document.get_content_type(c_type_uuid),
-         #  %Flow{} = flow <- Document.get_flow(flow_uuid),
+         #  %Flow{} = flow <- Enterprise.get_flow(flow_uuid),
          #  Document.create_instance(current_user, c_type, flow, params) do
          %Instance{} = content <-
            Document.create_instance(current_user, c_type, params) do
