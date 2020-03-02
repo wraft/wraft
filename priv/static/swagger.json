@@ -341,6 +341,49 @@
         ],
         "operationId": "WraftDocWeb.Api.V1.FlowController.update",
         "description": "API to update a flow"
+      },
+      "delete": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Flow delete",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Flow"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "flow id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.delete",
+        "description": "API to delete a flow"
       }
     },
     "/flows": {
