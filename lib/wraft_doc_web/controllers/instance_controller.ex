@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   use PhoenixSwagger
 
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Instance, Document.ContentType, Enterprise.Flow}
+  alias WraftDoc.{Document, Document.Instance, Document.ContentType, Enterprise, Enterprise.Flow}
 
   def swagger_definitions do
     %{
@@ -38,11 +38,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           properties do
             raw(:string, "Content raw data", required: true)
             serialized(:string, "Content serialized data")
+            flow_uuid(:string, "Flow id", required: true)
           end
 
           example(%{
             raw: "Content data",
-            serialized: %{title: "Title of the content", body: "Body of the content"}
+            serialized: %{title: "Title of the content", body: "Body of the content"},
+            flow_uuid: "kjb12389k23eyg"
           })
         end,
       ContentAndContentTypeAndFlow:
@@ -107,15 +109,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # def create(conn, %{"c_type_id" => c_type_uuid, "flow_id" => flow_uuid} = params) do
-  def create(conn, %{"c_type_id" => c_type_uuid} = params) do
+  def create(conn, %{"c_type_id" => c_type_uuid, "flow_uuid" => flow_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
     with %ContentType{} = c_type <- Document.get_content_type(c_type_uuid),
-         #  %Flow{} = flow <- Enterprise.get_flow(flow_uuid),
-         #  Document.create_instance(current_user, c_type, flow, params) do
-         %Instance{} = content <-
-           Document.create_instance(current_user, c_type, params) do
+         %Flow{} = flow <- Enterprise.get_flow(flow_uuid),
+         %Instance{} = content <- Document.create_instance(current_user, c_type, flow, params) do
       conn
       |> render(:create, content: content)
     end
