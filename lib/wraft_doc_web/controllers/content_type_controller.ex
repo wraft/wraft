@@ -17,6 +17,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             description(:string, "Content Type's description")
             fields(:map, "Dynamic fields and their datatype")
             layout_uuid(:string, "ID of the layout selected")
+            prefix(:string, "Prefix to be used for generating Unique ID for contents")
           end
 
           example(%{
@@ -28,7 +29,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               joining_date: "date",
               approved_by: "string"
             },
-            layout_uuid: "1232148nb3478"
+            layout_uuid: "1232148nb3478",
+            prefix: "OFFLET"
           })
         end,
       ContentType:
@@ -41,6 +43,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description")
             fields(:map, "Dynamic fields and their datatype")
+            prefix(:string, "Prefix to be used for generating Unique ID for contents")
             inserted_at(:string, "When was the user inserted", format: "ISO-8601")
             updated_at(:string, "When was the user last updated", format: "ISO-8601")
           end
@@ -55,6 +58,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               joining_date: "date",
               approved_by: "string"
             },
+            prefix: "OFFLET",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -69,6 +73,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description")
             fields(:map, "Dynamic fields and their datatype")
+            prefix(:string, "Prefix to be used for generating Unique ID for contents")
             layout(Schema.ref(:Layout))
             inserted_at(:string, "When was the user inserted", format: "ISO-8601")
             updated_at(:string, "When was the user last updated", format: "ISO-8601")
@@ -84,6 +89,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               joining_date: "date",
               approved_by: "string"
             },
+            prefix: "OFFLET",
             layout: %{
               id: "1232148nb3478",
               name: "Official Letter",
@@ -127,6 +133,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
                 joining_date: "date",
                 approved_by: "string"
               },
+              prefix: "OFFLET",
               layout: %{
                 id: "1232148nb3478",
                 name: "Official Letter",

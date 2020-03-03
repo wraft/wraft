@@ -959,6 +959,7 @@
         },
         "content_type": {
           "updated_at": "2020-01-21T14:00:00Z",
+          "prefix": "OFFLET",
           "name": "Offer letter",
           "layout": {
             "width": 40.0,
@@ -1378,6 +1379,10 @@
         "name"
       ],
       "properties": {
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
+        },
         "name": {
           "type": "string",
           "description": "Content Type's name"
@@ -1396,6 +1401,7 @@
         }
       },
       "example": {
+        "prefix": "OFFLET",
         "name": "Offer letter",
         "layout_uuid": "1232148nb3478",
         "fields": {
@@ -1420,6 +1426,10 @@
           "type": "string",
           "format": "ISO-8601",
           "description": "When was the user last updated"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
         },
         "name": {
           "type": "string",
@@ -1448,6 +1458,7 @@
       },
       "example": {
         "updated_at": "2020-01-21T14:00:00Z",
+        "prefix": "OFFLET",
         "name": "Offer letter",
         "layout": {
           "width": 40.0,
@@ -1485,6 +1496,10 @@
           "format": "ISO-8601",
           "description": "When was the user last updated"
         },
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
+        },
         "name": {
           "type": "string",
           "description": "Content Type's name"
@@ -1509,6 +1524,7 @@
       },
       "example": {
         "updated_at": "2020-01-21T14:00:00Z",
+        "prefix": "OFFLET",
         "name": "Offer letter",
         "inserted_at": "2020-02-21T14:00:00Z",
         "id": "1232148nb3478",
@@ -1526,6 +1542,7 @@
       "type": "object",
       "title": "Content Request",
       "required": [
+        "flow_uuid",
         "raw"
       ],
       "properties": {
@@ -1536,6 +1553,10 @@
         "raw": {
           "type": "string",
           "description": "Content raw data"
+        },
+        "flow_uuid": {
+          "type": "string",
+          "description": "Flow id"
         }
       },
       "example": {
@@ -1543,7 +1564,8 @@
           "title": "Title of the content",
           "body": "Body of the content"
         },
-        "raw": "Content data"
+        "raw": "Content data",
+        "flow_uuid": "kjb12389k23eyg"
       },
       "description": "Content creation request"
     },

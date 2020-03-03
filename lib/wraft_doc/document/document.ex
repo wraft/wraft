@@ -3,6 +3,7 @@ defmodule WraftDoc.Document do
   Module that handles the repo connections of the document context.
   """
   import Ecto
+  import Ecto.Query
 
   alias WraftDoc.{
     Repo,
@@ -18,7 +19,9 @@ defmodule WraftDoc.Document do
   Create a layout.
   """
   @spec create_layout(%User{}, %Engine{}, map) :: %Layout{} | {:error, Ecto.Changeset.t()}
-  def create_layout(current_user, engine, params) do
+  def create_layout(%{organisation_id: org_id} = current_user, engine, params) do
+    params = params |> Map.merge(%{"organisation_id" => org_id})
+
     current_user
     |> build_assoc(:layouts, engine: engine)
     |> Layout.changeset(params)
@@ -37,7 +40,9 @@ defmodule WraftDoc.Document do
   """
   @spec create_content_type(%User{}, %Layout{}, map) ::
           %ContentType{} | {:error, Ecto.Changeset.t()}
-  def create_content_type(current_user, layout, params) do
+  def create_content_type(%{organisation_id: org_id} = current_user, layout, params) do
+    params = params |> Map.merge(%{"organisation_id" => org_id})
+
     current_user
     |> build_assoc(:content_types, layout: layout)
     |> ContentType.changeset(params)
@@ -196,15 +201,14 @@ defmodule WraftDoc.Document do
   @doc """
   Create a new instance.
   """
-  @spec create_instance(%User{}, %ContentType{}, map) ::
+  @spec create_instance(%User{}, %ContentType{}, %Flow{}, map) ::
           %Instance{content_type: %ContentType{}, state: %Flow{}} | {:error, Ecto.Changeset.t()}
-  # def create_instance(current_user, c_type, flow, params) do
-  def create_instance(current_user, c_type, params) do
-    params = params |> Map.merge(%{"instance_id" => Ecto.UUID.generate()})
+  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, flow, params) do
+    instance_id = c_id |> create_instance_id(prefix)
+    params = params |> Map.merge(%{"instance_id" => instance_id})
 
     c_type
-    # |> build_assoc(:instances, state: flow, creator: current_user)
-    |> build_assoc(:instances, creator: current_user)
+    |> build_assoc(:instances, state: flow, creator: current_user)
     |> Instance.changeset(params)
     |> Repo.insert()
     |> case do
@@ -214,6 +218,25 @@ defmodule WraftDoc.Document do
       changeset = {:error, _} ->
         changeset
     end
+  end
+
+  # Create Instance ID from the prefix of the content type
+  @spec create_instance_id(integer, binary) :: binary
+  defp create_instance_id(c_id, prefix) do
+    instance_count =
+      from(i in Instance, where: i.content_type_id == ^c_id, select: count(i.id))
+      |> Repo.one()
+      |> add(1)
+      |> to_string
+      |> String.pad_leading(4, "0")
+
+    prefix <> instance_count
+  end
+
+  # Add two integers
+  @spec add(integer, integer) :: integer
+  defp add(num1, num2) do
+    num1 + num2
   end
 
   @doc """
