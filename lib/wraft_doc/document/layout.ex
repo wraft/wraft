@@ -39,8 +39,8 @@ defmodule WraftDoc.Document.Layout do
       :width,
       :height,
       :unit,
-      :slug
-      # :organisation_id
+      :slug,
+      :organisation_id
     ])
     |> unique_constraint(:name,
       message: "Layout with the same name exists. Use another name.!",
@@ -57,8 +57,7 @@ defmodule WraftDoc.Document.Layout do
       :height,
       :unit,
       :slug,
-      :engine_id,
-      :organisation_id
+      :engine_id
     ])
     |> validate_required([
       :name,
@@ -68,7 +67,6 @@ defmodule WraftDoc.Document.Layout do
       :unit,
       :slug,
       :engine_id
-      # :organisation_id
     ])
     |> unique_constraint(:name,
       message: "Layout with the same name exists. Use another name.!",

@@ -19,7 +19,9 @@ defmodule WraftDoc.Document do
   Create a layout.
   """
   @spec create_layout(%User{}, %Engine{}, map) :: %Layout{} | {:error, Ecto.Changeset.t()}
-  def create_layout(current_user, engine, params) do
+  def create_layout(%{organisation_id: org_id} = current_user, engine, params) do
+    params = params |> Map.merge(%{"organisation_id" => org_id})
+
     current_user
     |> build_assoc(:layouts, engine: engine)
     |> Layout.changeset(params)
