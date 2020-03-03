@@ -38,7 +38,9 @@ defmodule WraftDoc.Document do
   """
   @spec create_content_type(%User{}, %Layout{}, map) ::
           %ContentType{} | {:error, Ecto.Changeset.t()}
-  def create_content_type(current_user, layout, params) do
+  def create_content_type(%{organisation_id: org_id} = current_user, layout, params) do
+    params = params |> Map.merge(%{"organisation_id" => org_id})
+
     current_user
     |> build_assoc(:content_types, layout: layout)
     |> ContentType.changeset(params)
