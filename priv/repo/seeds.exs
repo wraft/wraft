@@ -15,7 +15,8 @@ alias WraftDoc.{
   Account.Role,
   Account.User,
   Account.Profile,
-  Document.Engine
+  Document.Engine,
+  Enterprise.Organisation
 }
 
 import Plug
@@ -24,6 +25,7 @@ import Plug
 %Role{name: "admin"} |> Repo.insert!()
 %Role{name: "user"} |> Repo.insert!()
 
+# Populate DB with admin user and profile
 %{id: id} = Role |> Repo.get_by(name: "admin")
 
 user_params = %{
@@ -36,7 +38,11 @@ user_params = %{
 
 user = %User{} |> User.changeset(user_params) |> Repo.insert!()
 %Profile{name: "Admin", user_id: user.id} |> Repo.insert!()
+
 # Populate engine
 %Engine{name: "PDF"} |> Repo.insert!()
 %Engine{name: "LaTex"} |> Repo.insert!()
 %Engine{name: "Pandoc"} |> Repo.insert!()
+
+# Populate DB with one organisation
+%Organisation{name: "Functionary Labs Pvt Ltd."} |> Repo.insert!()

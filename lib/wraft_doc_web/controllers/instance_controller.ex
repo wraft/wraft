@@ -84,22 +84,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               order: 1
             }
           })
-        end,
-      Flow:
-        swagger_schema do
-          title("Flow")
-          description("State assigened to contents")
-
-          properties do
-            state(:string, "A state of content")
-            order(:integer, "Order of the state")
-          end
-
-          example(%{
-            uuid: "1232148nb3478",
-            state: "published",
-            order: 1
-          })
         end
     }
   end
@@ -128,7 +112,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
 
     with %ContentType{} = c_type <- Document.get_content_type(c_type_uuid),
-         #  %Flow{} = flow <- Document.get_flow(flow_uuid),
+         #  %Flow{} = flow <- Enterprise.get_flow(flow_uuid),
          #  Document.create_instance(current_user, c_type, flow, params) do
          %Instance{} = content <-
            Document.create_instance(current_user, c_type, params) do

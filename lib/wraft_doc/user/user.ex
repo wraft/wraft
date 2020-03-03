@@ -18,6 +18,7 @@ defmodule WraftDoc.Account.User do
 
     has_many(:layouts, WraftDoc.Document.Layout, foreign_key: :creator_id)
     has_many(:content_types, WraftDoc.Document.ContentType, foreign_key: :creator_id)
+    has_many(:flows, WraftDoc.Enterprise.Flow, foreign_key: :creator_id)
 
     timestamps()
   end
