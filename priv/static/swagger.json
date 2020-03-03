@@ -331,7 +331,7 @@
           },
           {
             "schema": {
-              "$ref": "#/definitions/FlowRequest"
+              "$ref": "#/definitions/FlowUpdateRequest"
             },
             "required": true,
             "name": "flow",
@@ -1169,9 +1169,9 @@
       },
       "description": "A Layout"
     },
-    "FlowRequest": {
+    "FlowUpdateRequest": {
       "type": "object",
-      "title": "Flow Request",
+      "title": "Flow update Request",
       "required": [
         "order",
         "state"
@@ -1188,6 +1188,35 @@
       },
       "example": {
         "state": "Published",
+        "order": 1
+      },
+      "description": "Update flow request."
+    },
+    "FlowRequest": {
+      "type": "object",
+      "title": "Flow Request",
+      "required": [
+        "organisation_uuid",
+        "order",
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "description": "State name"
+        },
+        "organisation_uuid": {
+          "type": "string",
+          "description": "Organisation ID"
+        },
+        "order": {
+          "type": "integer",
+          "description": "State's order"
+        }
+      },
+      "example": {
+        "state": "Published",
+        "organisation_id": "nu123kmlj2348",
         "order": 1
       },
       "description": "Create flow request."

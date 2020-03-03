@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   use PhoenixSwagger
 
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Enterprise, Enterprise.Flow}
+  alias WraftDoc.{Enterprise, Enterprise.Flow, Enterprise.Organisation}
 
   def swagger_definitions do
     %{
@@ -11,6 +11,23 @@ defmodule WraftDocWeb.Api.V1.FlowController do
         swagger_schema do
           title("Flow Request")
           description("Create flow request.")
+
+          properties do
+            state(:string, "State name", required: true)
+            order(:integer, "State's order", required: true)
+            organisation_uuid(:string, "Organisation ID", required: true)
+          end
+
+          example(%{
+            state: "Published",
+            order: 1,
+            organisation_id: "nu123kmlj2348"
+          })
+        end,
+      FlowUpdateRequest:
+        swagger_schema do
+          title("Flow update Request")
+          description("Update flow request.")
 
           properties do
             state(:string, "State name", required: true)
@@ -93,10 +110,11 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, params) do
+  def create(conn, %{"organisation_uuid" => org_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Flow{} = flow <- Enterprise.create_flow(current_user, params) do
+    with %Organisation{} = organisation <- Enterprise.get_organisation(org_uuid),
+         %Flow{} = flow <- Enterprise.create_flow(current_user, organisation, params) do
       conn |> render("flow.json", flow: flow)
     end
   end
@@ -131,7 +149,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
     parameters do
       id(:path, :string, "flow id", required: true)
-      flow(:body, Schema.ref(:FlowRequest), "Flow to be created", required: true)
+      flow(:body, Schema.ref(:FlowUpdateRequest), "Flow to be created", required: true)
     end
 
     response(200, "Ok", Schema.ref(:ShowFlow))
@@ -171,6 +189,8 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   def delete(conn, %{"id" => uuid}) do
     with %Flow{} = flow <- Enterprise.get_flow(uuid),
          {:ok, %Flow{}} <- Enterprise.delete_flow(flow) do
+      Task.start(fn -> Enterprise.shuffle_order(flow, -1) end)
+
       conn
       |> render("flow.json", flow: flow)
     end
