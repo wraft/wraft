@@ -217,14 +217,6 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
-  Get a flow from its UUID.
-  """
-  @spec get_flow(binary) :: %Flow{} | nil
-  def get_flow(flow_uuid) do
-    Repo.get_by(Flow, uuid: flow_uuid)
-  end
-
-  @doc """
   Get an engine from its UUID.
   """
   @spec get_engine(binary) :: %Engine{} | nil

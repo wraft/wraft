@@ -17,13 +17,18 @@ defmodule WraftDoc.Enterprise.Flow do
     timestamps()
   end
 
-  def chanegeset(%Flow{} = flow, attrs \\ %{}) do
+  def changeset(%Flow{} = flow, attrs \\ %{}) do
     flow
-    |> cast(attrs, [:state, :order, :organisation_id])
-    |> validate_required([:state, :order, :organisation_id])
+    |> cast(attrs, [:state, :order])
+    |> validate_required([:state, :order])
     |> unique_constraint(:state,
       message: "State already created.!",
       name: :flow_organisation_unique_index
     )
+  end
+
+  def order_update_changeset(%Flow{} = flow, attrs \\ %{}) do
+    flow
+    |> cast(attrs, [:order])
   end
 end
