@@ -23,10 +23,8 @@ defmodule WraftDoc.Document.ContentType do
 
   def changeset(%ContentType{} = content_type, attrs \\ %{}) do
     content_type
-    |> cast(attrs, [:name, :description, :fields, :prefix])
-    # :organisation_id])
-    |> validate_required([:name, :description, :fields, :prefix])
-    # , :organisation_id])
+    |> cast(attrs, [:name, :description, :fields, :prefix, :organisation_id])
+    |> validate_required([:name, :description, :fields, :prefix, :organisation_id])
     |> unique_constraint(:name,
       message: "Content type with the same name under your organisation exists.!",
       name: :content_type_organisation_unique_index
@@ -36,9 +34,7 @@ defmodule WraftDoc.Document.ContentType do
   def update_changeset(%ContentType{} = content_type, attrs \\ %{}) do
     content_type
     |> cast(attrs, [:name, :description, :fields, :layout_id, :prefix])
-    # :organisation_id])
     |> validate_required([:name, :description, :fields, :layout_id, :prefix])
-    # , :organisation_id])
     |> unique_constraint(:name,
       message: "Content type with the same name under your organisation exists.!",
       name: :content_type_organisation_unique_index
