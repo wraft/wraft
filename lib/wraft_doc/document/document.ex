@@ -13,7 +13,7 @@ defmodule WraftDoc.Document do
     Document.Engine,
     Document.Instance,
     Document.Theme,
-    Enterprise.Flow
+    Enterprise.Flow.State
   }
 
   @doc """
@@ -202,14 +202,14 @@ defmodule WraftDoc.Document do
   @doc """
   Create a new instance.
   """
-  @spec create_instance(%User{}, %ContentType{}, %Flow{}, map) ::
-          %Instance{content_type: %ContentType{}, state: %Flow{}} | {:error, Ecto.Changeset.t()}
-  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, flow, params) do
+  @spec create_instance(%User{}, %ContentType{}, %State{}, map) ::
+          %Instance{content_type: %ContentType{}, state: %State{}} | {:error, Ecto.Changeset.t()}
+  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = c_id |> create_instance_id(prefix)
     params = params |> Map.merge(%{"instance_id" => instance_id})
 
     c_type
-    |> build_assoc(:instances, state: flow, creator: current_user)
+    |> build_assoc(:instances, state: state, creator: current_user)
     |> Instance.changeset(params)
     |> Repo.insert()
     |> case do
