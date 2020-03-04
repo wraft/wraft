@@ -27,7 +27,7 @@ defmodule WraftDoc.Account.User do
 
   def changeset(users, attrs \\ %{}) do
     users
-    |> cast(attrs, [:name, :email, :password, :role_id])
+    |> cast(attrs, [:name, :email, :password, :role_id, :organisation_id])
     |> validate_required([:name, :email, :password])
     |> validate_format(:email, ~r/@/)
     |> validate_format(:name, ~r/^[A-z ]+$/)
