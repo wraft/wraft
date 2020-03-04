@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.PropicUploader do
   use Arc.Definition
   use Arc.Ecto.Definition
-  require IEx
+
   @versions [:original]
   @extension_whitelist ~w(.jpg .jpeg .gif .png)
 

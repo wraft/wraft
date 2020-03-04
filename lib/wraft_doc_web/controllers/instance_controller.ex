@@ -3,7 +3,14 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   use PhoenixSwagger
 
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Instance, Document.ContentType, Enterprise.Flow}
+
+  alias WraftDoc.{
+    Document,
+    Document.Instance,
+    Document.ContentType,
+    Enterprise,
+    Enterprise.Flow.State
+  }
 
   def swagger_definitions do
     %{
@@ -38,11 +45,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           properties do
             raw(:string, "Content raw data", required: true)
             serialized(:string, "Content serialized data")
+            state_uuid(:string, "Flow id", required: true)
           end
 
           example(%{
             raw: "Content data",
-            serialized: %{title: "Title of the content", body: "Body of the content"}
+            serialized: %{title: "Title of the content", body: "Body of the content"},
+            state_uuid: "kjb12389k23eyg"
           })
         end,
       ContentAndContentTypeAndFlow:
@@ -53,7 +62,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           properties do
             content(Schema.ref(:Content))
             content_type(Schema.ref(:ContentType))
-            state(Schema.ref(:Flow))
+            state(Schema.ref(:State))
           end
 
           example(%{
@@ -79,26 +88,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               inserted_at: "2020-02-21T14:00:00Z"
             },
             state: %{
-              uuid: "1232148nb3478",
+              id: "1232148nb3478",
               state: "published",
-              order: 1
+              order: 1,
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
             }
-          })
-        end,
-      Flow:
-        swagger_schema do
-          title("Flow")
-          description("State assigened to contents")
-
-          properties do
-            state(:string, "A state of content")
-            order(:integer, "Order of the state")
-          end
-
-          example(%{
-            uuid: "1232148nb3478",
-            state: "published",
-            order: 1
           })
         end
     }
@@ -123,15 +118,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # def create(conn, %{"c_type_id" => c_type_uuid, "flow_id" => flow_uuid} = params) do
-  def create(conn, %{"c_type_id" => c_type_uuid} = params) do
+  def create(conn, %{"c_type_id" => c_type_uuid, "state_uuid" => state_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
     with %ContentType{} = c_type <- Document.get_content_type(c_type_uuid),
-         #  %Flow{} = flow <- Document.get_flow(flow_uuid),
-         #  Document.create_instance(current_user, c_type, flow, params) do
-         %Instance{} = content <-
-           Document.create_instance(current_user, c_type, params) do
+         %State{} = state <- Enterprise.get_state(state_uuid),
+         %Instance{} = content <- Document.create_instance(current_user, c_type, state, params) do
       conn
       |> render(:create, content: content)
     end

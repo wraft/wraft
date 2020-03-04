@@ -56,6 +56,19 @@ defmodule WraftDocWeb.Router do
 
       # Engine
       resources("/engines", EngineController, only: [:index])
+
+      # Theme
+      resources("/themes", ThemeController, only: [:create])
+
+      scope "/flows" do
+        # Flows
+        resources("/", FlowController, only: [:create, :index, :show, :update, :delete])
+        # States
+        resources("/:flow_id/states", StateController, only: [:create, :index])
+      end
+
+      # State delete and update
+      resources("/states", StateController, only: [:update, :delete])
     end
   end
 
