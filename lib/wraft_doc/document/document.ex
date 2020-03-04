@@ -12,6 +12,7 @@ defmodule WraftDoc.Document do
     Document.ContentType,
     Document.Engine,
     Document.Instance,
+    Document.Theme,
     Enterprise.Flow
   }
 
@@ -245,5 +246,37 @@ defmodule WraftDoc.Document do
   @spec get_engine(binary) :: %Engine{} | nil
   def get_engine(engine_uuid) do
     Repo.get_by(Engine, uuid: engine_uuid)
+  end
+
+  @doc """
+  Create a theme.
+  """
+  @spec create_theme(%User{}, map) :: {:ok, %Theme{}} | {:error, Ecto.Changeset.t()}
+  def create_theme(%{organisation_id: org_id} = current_user, params) do
+    params = params |> Map.merge(%{"organisation_id" => org_id})
+
+    current_user
+    |> build_assoc(:themes)
+    |> Theme.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, theme} ->
+        theme |> theme_file_upload(params)
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Upload theme file.
+  """
+  @spec theme_file_upload(%Theme{}, map) :: {:ok, %Theme{}} | {:error, Ecto.Changeset.t()}
+  def theme_file_upload(theme, %{"file" => _} = params) do
+    theme |> Theme.file_changeset(params) |> Repo.update()
+  end
+
+  def theme_file_upload(theme, _params) do
+    {:ok, theme}
   end
 end
