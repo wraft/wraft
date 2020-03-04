@@ -13,7 +13,7 @@ defmodule WraftDoc.Document.Instance do
     field(:serialized, :map, default: %{})
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
-    belongs_to(:state, WraftDoc.Enterprise.Flow)
+    belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     timestamps()
   end
 
