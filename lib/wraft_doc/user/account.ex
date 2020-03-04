@@ -39,7 +39,7 @@ defmodule WraftDoc.Account do
   @doc """
     Find the user with the given email
   """
-  @spec find(binary()) :: list
+  @spec find(binary()) :: %User{} | {:error, atom}
   def find(email) do
     get_user_by_email(email)
     |> case do

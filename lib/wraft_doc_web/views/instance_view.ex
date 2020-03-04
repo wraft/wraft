@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.InstanceView do
   use WraftDocWeb, :view
-  alias WraftDocWeb.Api.V1.{ContentTypeView, FlowView}
+  alias WraftDocWeb.Api.V1.{ContentTypeView, StateView}
 
   def render("create.json", %{content: content}) do
     %{
@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       },
       content_type:
         render_one(content.content_type, ContentTypeView, "content_type.json", as: :content_type),
-      state: render_one(content.state, FlowView, "flow.json", as: :flow)
+      state: render_one(content.state, StateView, "create.json", as: :state)
     }
   end
 end

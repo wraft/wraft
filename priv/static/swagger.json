@@ -109,6 +109,166 @@
         "description": "Current User details"
       }
     },
+    "/themes": {
+      "post": {
+        "tags": [
+          "Theme"
+        ],
+        "summary": "Create theme",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Theme"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "name",
+            "in": "formData",
+            "description": "Theme's name"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "font",
+            "in": "formData",
+            "description": "Font to be used in the theme"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "typescale",
+            "in": "formData",
+            "description": "Typescale of the theme"
+          },
+          {
+            "type": "file",
+            "required": false,
+            "name": "file",
+            "in": "formData",
+            "description": "Theme file to upload"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ThemeController.create",
+        "description": "Create theme API",
+        "consumes": [
+          "multipart/form-data"
+        ]
+      }
+    },
+    "/states/{id}": {
+      "put": {
+        "tags": [
+          "State"
+        ],
+        "summary": "State update",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowState"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "state id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/StateRequest"
+            },
+            "required": true,
+            "name": "flow",
+            "in": "body",
+            "description": "Flow to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.StateController.update",
+        "description": "API to update a state"
+      },
+      "delete": {
+        "tags": [
+          "State"
+        ],
+        "summary": "State delete",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/State"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "state id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.StateController.delete",
+        "description": "API to delete a state"
+      }
+    },
     "/layouts/{id}": {
       "put": {
         "tags": [
@@ -287,6 +447,277 @@
         "parameters": [],
         "operationId": "WraftDocWeb.Api.V1.LayoutController.index",
         "description": "API to get the list of all layouts created so far"
+      }
+    },
+    "/flows/{id}": {
+      "put": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Flow update",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/UpdateFlow"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "flow id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/FlowRequest"
+            },
+            "required": true,
+            "name": "flow",
+            "in": "body",
+            "description": "Flow to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.update",
+        "description": "API to update a flow"
+      },
+      "get": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Show a flow",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FlowAndStates"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "flow id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.show",
+        "description": "Show a flow and its details including states under it"
+      },
+      "delete": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Flow delete",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Flow"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "flow id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.delete",
+        "description": "API to delete a flow"
+      }
+    },
+    "/flows/{flow_id}/states": {
+      "post": {
+        "tags": [
+          "State"
+        ],
+        "summary": "Create a state",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/State"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/StateRequest"
+            },
+            "required": true,
+            "name": "state",
+            "in": "body",
+            "description": "State to be created"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "flow_id",
+            "in": "path",
+            "description": "Flow id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.StateController.create",
+        "description": "Create state API"
+      },
+      "get": {
+        "tags": [
+          "State"
+        ],
+        "summary": "State index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowStates"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "flow_id",
+            "in": "path",
+            "description": "flow id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.StateController.index",
+        "description": "Index of States under a flow"
+      }
+    },
+    "/flows": {
+      "post": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Create a flow",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Flow"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/FlowRequest"
+            },
+            "required": true,
+            "name": "flow",
+            "in": "body",
+            "description": "Flow to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.create",
+        "description": "Create flow API"
+      },
+      "get": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Flow index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowFlows"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.index",
+        "description": "Index of flows in current user's organisation"
       }
     },
     "/engines": {
@@ -699,6 +1130,197 @@
       },
       "description": "A user of the application"
     },
+    "UpdateFlow": {
+      "type": "object",
+      "title": "Show flow details",
+      "properties": {
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "flow": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Flow 1",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "Show all details of a flow"
+    },
+    "Theme": {
+      "type": "object",
+      "title": "Theme",
+      "required": [
+        "typescale",
+        "font",
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout last updated"
+        },
+        "typescale": {
+          "type": "map",
+          "description": "Typescale of the theme"
+        },
+        "name": {
+          "type": "string",
+          "description": "Theme's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout created"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the theme"
+        },
+        "font": {
+          "type": "string",
+          "description": "Font name"
+        },
+        "file": {
+          "type": "Elixir.WraftDocWeb.ThemeUploader",
+          "description": "Theme file attachment"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "typescale": {
+          "p": "6",
+          "h2": "8",
+          "h1": "10"
+        },
+        "name": "Official Letter Theme",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "font": "Malery",
+        "file": "/malory.css"
+      },
+      "description": "A Theme"
+    },
+    "StateRequest": {
+      "type": "object",
+      "title": "State Request",
+      "required": [
+        "order",
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "description": "State name"
+        },
+        "order": {
+          "type": "integer",
+          "description": "State's order"
+        }
+      },
+      "example": {
+        "state": "Published",
+        "order": 1
+      },
+      "description": "Create state request."
+    },
+    "State": {
+      "type": "object",
+      "title": "State",
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the state last updated"
+        },
+        "state": {
+          "type": "string",
+          "description": "A state of content"
+        },
+        "order": {
+          "type": "integer",
+          "description": "Order of the state"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the state inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the state"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "state": "published",
+        "order": 1,
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478"
+      },
+      "description": "State assigened to contents"
+    },
+    "ShowStates": {
+      "type": "array",
+      "title": "All states and its details",
+      "items": {
+        "$ref": "#/definitions/ShowState"
+      },
+      "description": "All states that have been created and their details"
+    },
+    "ShowState": {
+      "type": "object",
+      "title": "Show flow details",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/State"
+        },
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "state": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "state": "published",
+          "order": 1,
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "flow": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Flow 1",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "jnb234881adsad"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "Show all details of a flow"
+    },
     "ShowLayout": {
       "type": "object",
       "title": "Layout and all its details",
@@ -740,6 +1362,14 @@
       },
       "description": "API to show a layout and all its details"
     },
+    "ShowFlows": {
+      "type": "array",
+      "title": "All flows and its details",
+      "items": {
+        "$ref": "#/definitions/UpdateFlow"
+      },
+      "description": "All flows that have been created and their details"
+    },
     "ShowContentType": {
       "type": "object",
       "title": "Content Type and all its details",
@@ -762,6 +1392,7 @@
         },
         "content_type": {
           "updated_at": "2020-01-21T14:00:00Z",
+          "prefix": "OFFLET",
           "name": "Offer letter",
           "layout": {
             "width": 40.0,
@@ -972,25 +1603,92 @@
       },
       "description": "A Layout"
     },
+    "FlowRequest": {
+      "type": "object",
+      "title": "Flow Request",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Flow's name"
+        }
+      },
+      "example": {
+        "name": "Flow 1"
+      },
+      "description": "Create flow request."
+    },
+    "FlowAndStates": {
+      "type": "object",
+      "title": "Show flow details and its states",
+      "properties": {
+        "states": {
+          "$ref": "#/definitions/State"
+        },
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "states": [
+          {
+            "state": "published",
+            "order": 1,
+            "id": "1232148nb3478"
+          }
+        ],
+        "flow": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Flow 1",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "Show all details of a flow including all the states undet the flow"
+    },
     "Flow": {
       "type": "object",
       "title": "Flow",
       "properties": {
-        "state": {
+        "updated_at": {
           "type": "string",
-          "description": "A state of content"
+          "format": "ISO-8601",
+          "description": "When was the flow last updated"
         },
-        "order": {
-          "type": "integer",
-          "description": "Order of the state"
+        "name": {
+          "type": "string",
+          "description": "Name of the flow"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the flow inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the flow"
         }
       },
       "example": {
-        "uuid": "1232148nb3478",
-        "state": "published",
-        "order": 1
+        "updated_at": "2020-01-21T14:00:00Z",
+        "name": "Flow 1",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478"
       },
-      "description": "State assigened to contents"
+      "description": "Flows to be followed in an organisation"
     },
     "Error": {
       "type": "object",
@@ -1125,6 +1823,10 @@
         "name"
       ],
       "properties": {
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
+        },
         "name": {
           "type": "string",
           "description": "Content Type's name"
@@ -1143,6 +1845,7 @@
         }
       },
       "example": {
+        "prefix": "OFFLET",
         "name": "Offer letter",
         "layout_uuid": "1232148nb3478",
         "fields": {
@@ -1167,6 +1870,10 @@
           "type": "string",
           "format": "ISO-8601",
           "description": "When was the user last updated"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
         },
         "name": {
           "type": "string",
@@ -1195,6 +1902,7 @@
       },
       "example": {
         "updated_at": "2020-01-21T14:00:00Z",
+        "prefix": "OFFLET",
         "name": "Offer letter",
         "layout": {
           "width": 40.0,
@@ -1232,6 +1940,10 @@
           "format": "ISO-8601",
           "description": "When was the user last updated"
         },
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
+        },
         "name": {
           "type": "string",
           "description": "Content Type's name"
@@ -1256,6 +1968,7 @@
       },
       "example": {
         "updated_at": "2020-01-21T14:00:00Z",
+        "prefix": "OFFLET",
         "name": "Offer letter",
         "inserted_at": "2020-02-21T14:00:00Z",
         "id": "1232148nb3478",
@@ -1273,9 +1986,14 @@
       "type": "object",
       "title": "Content Request",
       "required": [
+        "state_uuid",
         "raw"
       ],
       "properties": {
+        "state_uuid": {
+          "type": "string",
+          "description": "Flow id"
+        },
         "serialized": {
           "type": "string",
           "description": "Content serialized data"
@@ -1286,6 +2004,7 @@
         }
       },
       "example": {
+        "state_uuid": "kjb12389k23eyg",
         "serialized": {
           "title": "Title of the content",
           "body": "Body of the content"
@@ -1299,7 +2018,7 @@
       "title": "Content and its Content Type",
       "properties": {
         "state": {
-          "$ref": "#/definitions/Flow"
+          "$ref": "#/definitions/State"
         },
         "content_type": {
           "$ref": "#/definitions/ContentType"
@@ -1310,9 +2029,11 @@
       },
       "example": {
         "state": {
-          "uuid": "1232148nb3478",
+          "updated_at": "2020-01-21T14:00:00Z",
           "state": "published",
-          "order": 1
+          "order": 1,
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
         },
         "content_type": {
           "updated_at": "2020-01-21T14:00:00Z",

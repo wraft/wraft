@@ -4,25 +4,25 @@ defmodule WraftDoc.Enterprise.Flow do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias WraftDoc.Enterprise.Flow
+  alias __MODULE__
 
   schema "flow" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
-    field(:state, :string, null: false)
-    field(:order, :integer, null: false)
+    field(:name, :string, null: false)
+
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
-    has_many(:instances, WraftDoc.Document.Instance, foreign_key: :state_id)
+    has_many(:states, WraftDoc.Enterprise.Flow.State)
     timestamps()
   end
 
-  def chanegeset(%Flow{} = flow, attrs \\ %{}) do
+  def changeset(%Flow{} = flow, attrs \\ %{}) do
     flow
-    |> cast(attrs, [:state, :order, :organisation_id])
-    |> validate_required([:state, :order, :organisation_id])
-    |> unique_constraint(:state,
-      message: "State already created.!",
+    |> cast(attrs, [:name, :organisation_id])
+    |> validate_required([:name, :organisation_id])
+    |> unique_constraint(:name,
+      message: "Flow already created.!",
       name: :flow_organisation_unique_index
     )
   end
