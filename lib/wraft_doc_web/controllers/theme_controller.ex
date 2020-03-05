@@ -154,4 +154,36 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
       |> render("show.json", theme: theme)
     end
   end
+
+  @doc """
+  Update a theme.
+  """
+  swagger_path :update do
+    put("/themes/{id}")
+    summary("Update a theme")
+    description("Update a theme API")
+    consumes("multipart/form-data")
+    parameter(:id, :path, :string, "theme id", required: true)
+    parameter(:name, :formData, :string, "Theme's name", required: true)
+
+    parameter(:font, :formData, :string, "Font to be used in the theme", required: true)
+
+    parameter(:typescale, :formData, :string, "Typescale of the theme", required: true)
+
+    parameter(:file, :formData, :file, "Theme file to upload")
+
+    response(200, "Ok", Schema.ref(:Theme))
+    response(404, "Not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"id" => theme_uuid} = params) do
+    with %Theme{} = theme <- Document.get_theme(theme_uuid),
+         {:ok, %Theme{} = theme} <- Document.update_theme(theme, params) do
+      conn
+      |> render("create.json", theme: theme)
+    end
+  end
 end

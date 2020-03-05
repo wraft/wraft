@@ -29,4 +29,11 @@ defmodule WraftDoc.Document.Theme do
     |> cast_attachments(attrs, [:file])
     |> validate_required([:file])
   end
+
+  def update_changeset(%Theme{} = theme, attrs \\ %{}) do
+    theme
+    |> cast(attrs, [:name, :font, :typescale])
+    |> cast_attachments(attrs, [:file])
+    |> validate_required([:name, :font, :typescale, :file])
+  end
 end
