@@ -918,6 +918,39 @@
         "description": "API to list of all enignes creates/seeded so far"
       }
     },
+    "/data_templates/{id}": {
+      "get": {
+        "tags": [
+          "DataTemplate"
+        ],
+        "summary": "Show Data template",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowDataTemplate"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "ID of the data template"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.show",
+        "description": "API to get all details of a data template"
+      }
+    },
     "/content_types/{id}": {
       "put": {
         "tags": [

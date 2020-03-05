@@ -341,4 +341,20 @@ defmodule WraftDoc.Document do
     )
     |> Repo.all()
   end
+
+  @doc """
+  Get a data template from its uuid
+  """
+  @spec get_d_template(binary) :: DataTemplat.t() | nil
+  def get_d_template(d_temp_uuid) do
+    Repo.get_by(DataTemplate, uuid: d_temp_uuid)
+  end
+
+  @doc """
+  Show a data template.
+  """
+  @spec show_d_template(binary) :: DataTemplat.t() | nil
+  def show_d_template(d_temp_uuid) do
+    d_temp_uuid |> get_d_template() |> Repo.preload([:creator, :content_type])
+  end
 end
