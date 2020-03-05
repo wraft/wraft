@@ -359,8 +359,28 @@ defmodule WraftDoc.Document do
   @doc """
   Show a data template.
   """
-  @spec show_d_template(binary) :: DataTemplat.t() | nil
+  @spec show_d_template(binary) ::
+          %DataTemplate{creator: User.t(), content_type: ContentType.t()} | nil
   def show_d_template(d_temp_uuid) do
     d_temp_uuid |> get_d_template() |> Repo.preload([:creator, :content_type])
+  end
+
+  @doc """
+  Update a data template
+  """
+  @spec update_data_template(DataTemplate.t(), map) ::
+          %DataTemplate{creator: User.t(), content_type: ContentType.t()}
+          | {:error, Ecto.Changeset.t()}
+  def update_data_template(d_temp, params) do
+    d_temp
+    |> DataTemplate.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, d_temp} ->
+        d_temp |> Repo.preload([:creator, :content_type])
+
+      {:error, _} = changeset ->
+        changeset
+    end
   end
 end
