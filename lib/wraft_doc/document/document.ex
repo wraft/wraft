@@ -383,4 +383,12 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
+
+  @doc """
+  Delete a data template
+  """
+  @spec delete_data_template(DataTemplate.t()) :: {:ok, DataTemplate.t()}
+  def delete_data_template(d_temp) do
+    d_temp |> Repo.delete()
+  end
 end
