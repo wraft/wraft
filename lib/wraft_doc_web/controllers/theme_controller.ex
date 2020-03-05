@@ -186,4 +186,30 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
       |> render("create.json", theme: theme)
     end
   end
+
+  @doc """
+  Delete a Theme.
+  """
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/themes/{id}")
+    summary("Delete a theme")
+    description("API to delete a theme")
+
+    parameters do
+      id(:path, :string, "theme id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Theme))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete(conn, %{"id" => uuid}) do
+    with %Theme{} = theme <- Document.get_theme(uuid),
+         {:ok, %Theme{}} <- Document.delete_theme(theme) do
+      conn
+      |> render("create.json", theme: theme)
+    end
+  end
 end
