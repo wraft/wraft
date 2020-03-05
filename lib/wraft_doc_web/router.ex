@@ -54,7 +54,7 @@ defmodule WraftDocWeb.Router do
           resources("/contents", InstanceController, only: [:create])
 
           # Data template
-          resources("/data_templates", DataTemplateController, only: [:create])
+          resources("/data_templates", DataTemplateController, only: [:create, :index])
         end
       end
 
