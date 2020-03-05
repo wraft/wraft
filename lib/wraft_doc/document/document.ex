@@ -289,4 +289,17 @@ defmodule WraftDoc.Document do
     from(t in Theme, where: t.organisation_id == ^org_id)
     |> Repo.all()
   end
+
+  @doc """
+  Get a theme from its UUID.
+  """
+  @spec get_theme(binary) :: Theme.t() | nil
+  def get_theme(theme_uuid) do
+    Repo.get_by(Theme, uuid: theme_uuid)
+  end
+
+  @spec get_theme(binary) :: %Theme{creator: User.t()} | nil
+  def show_theme(theme_uuid) do
+    theme_uuid |> get_theme() |> Repo.preload([:creator])
+  end
 end
