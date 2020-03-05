@@ -16,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
         country_code: profile.country.country_code,
         calling_code: profile.country.calling_code
       },
-      user: %{id: profile.user.id, email: profile.user.email}
+      user: %{id: profile.user.uuid, email: profile.user.email}
     }
   end
 end

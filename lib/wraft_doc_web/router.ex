@@ -44,15 +44,19 @@ defmodule WraftDocWeb.Router do
       resources("/profile/:id", ProfileController, only: [:update])
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
-      # Content type
-      resources("/content_types", ContentTypeController,
-        only: [:create, :index, :show, :update, :delete]
-      )
 
-      # Instances
-      resources("/content_types/:c_type_id/contents", InstanceController,
-        only: [:create, :index, :show, :update, :delete]
-      )
+      scope "/content_types" do
+        # Content type
+        resources("/", ContentTypeController, only: [:create, :index, :show, :update, :delete])
+
+        scope "/:c_type_id" do
+          # Instances
+          resources("/contents", InstanceController, only: [:create])
+
+          # Data template
+          resources("/data_templates", DataTemplateController, only: [:create])
+        end
+      end
 
       # Engine
       resources("/engines", EngineController, only: [:index])
