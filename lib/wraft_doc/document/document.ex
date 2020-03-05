@@ -13,6 +13,7 @@ defmodule WraftDoc.Document do
     Document.Engine,
     Document.Instance,
     Document.Theme,
+    Document.DataTemplate,
     Enterprise.Flow.State
   }
 
@@ -315,5 +316,17 @@ defmodule WraftDoc.Document do
   def delete_theme(theme) do
     theme
     |> Repo.delete()
+  end
+
+  @doc """
+  Create a data template.
+  """
+  @spec create_data_template(User.t(), ContentType.t(), map) ::
+          {:ok, DataTemplate.t()} | {:error, Ecto.Changeset.t()}
+  def create_data_template(current_user, c_type, params) do
+    current_user
+    |> build_assoc(:data_templates, content_type: c_type)
+    |> DataTemplate.changeset(params)
+    |> Repo.insert()
   end
 end
