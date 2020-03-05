@@ -9,7 +9,7 @@ defmodule WraftDoc.Account do
   @doc """
     User Registration
   """
-  @spec registration(map) :: %User{} | Ecto.Changeset.t()
+  @spec registration(map) :: User.t() | Ecto.Changeset.t()
   def registration(params \\ %{}) do
     get_role()
     |> build_assoc(:users)
@@ -28,7 +28,7 @@ defmodule WraftDoc.Account do
   @doc """
     Create profile for the user
   """
-  @spec create_profile(%User{}, map) :: {atom, %Profile{}}
+  @spec create_profile(User.t(), map) :: {atom, Profile.t()}
   def create_profile(user, params) do
     user
     |> build_assoc(:profile)
@@ -39,7 +39,7 @@ defmodule WraftDoc.Account do
   @doc """
     Find the user with the given email
   """
-  @spec find(binary()) :: %User{} | {:error, atom}
+  @spec find(binary()) :: User.t() | {:error, atom}
   def find(email) do
     get_user_by_email(email)
     |> case do
@@ -54,7 +54,7 @@ defmodule WraftDoc.Account do
   @doc """
     Authenticate user and generate token.
   """
-  @spec authenticate(%{user: %User{}, password: binary | nil}) ::
+  @spec authenticate(%{user: User.t(), password: binary | nil}) ::
           {:error, atom} | {:ok, Guardian.Token.token(), Guardian.Token.claims()}
   def authenticate(%{user: _, password: ""}), do: {:error, :no_data}
   def authenticate(%{user: _, password: nil}), do: {:error, :no_data}
@@ -88,7 +88,7 @@ defmodule WraftDoc.Account do
   end
 
   # Get the role struct from given role name
-  @spec get_role(binary) :: %Role{}
+  @spec get_role(binary) :: Role.t()
   defp get_role(role \\ "user")
 
   defp get_role(role) when is_binary(role) do
@@ -96,7 +96,7 @@ defmodule WraftDoc.Account do
   end
 
   # Get the user struct from given email
-  @spec get_user_by_email(binary) :: %User{} | nil
+  @spec get_user_by_email(binary) :: User.t() | nil
   defp get_user_by_email(email) when is_binary(email) do
     Repo.get_by(User, email: email)
   end
