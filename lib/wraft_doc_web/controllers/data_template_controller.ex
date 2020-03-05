@@ -130,7 +130,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   end
 
   @doc """
-  Layout index.
+  Data template index.
   """
   swagger_path :index do
     get("/content_types/{c_type_id}/data_templates")
@@ -151,5 +151,29 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
     conn
     |> render("index.json", data_templates: data_templates)
+  end
+
+  @doc """
+  Show data template.
+  """
+  swagger_path :show do
+    get("/data_templates/{id}")
+    summary("Show Data template")
+    description("API to get all details of a data template")
+
+    parameters do
+      id(:path, :string, "ID of the data template", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowDataTemplate))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show(conn, %{"id" => d_temp_uuid}) do
+    with %DataTemplate{} = data_template <- Document.show_d_template(d_temp_uuid) do
+      conn
+      |> render("show.json", d_template: data_template)
+    end
   end
 end
