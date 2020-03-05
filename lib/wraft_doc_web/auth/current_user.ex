@@ -6,12 +6,20 @@ defmodule WraftDocWeb.CurrentUser do
   import Plug.Conn
   import Guardian.Plug
   alias WraftDoc.{Repo, Account.User}
+  alias WraftDocWeb.Guardian.AuthErrorHandler
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
     current_user_email = current_resource(conn)
-    current_user = Repo.get_by(User, email: current_user_email) |> Repo.preload([:profile, :role])
-    assign(conn, :current_user, current_user)
+
+    case Repo.get_by(User, email: current_user_email) do
+      nil ->
+        AuthErrorHandler.auth_error(conn, {:error, :no_user})
+
+      user ->
+        user = user |> Repo.preload([:profile, :role])
+        assign(conn, :current_user, user)
+    end
   end
 end
