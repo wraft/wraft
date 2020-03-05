@@ -16,7 +16,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Get a flow from its UUID.
   """
-  @spec get_flow(binary) :: %Flow{} | nil
+  @spec get_flow(binary) :: Flow.t() | nil
   def get_flow(flow_uuid) do
     Repo.get_by(Flow, uuid: flow_uuid)
   end
@@ -24,7 +24,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Get a state from its UUID.
   """
-  @spec get_state(binary) :: %State{} | nil
+  @spec get_state(binary) :: State.t() | nil
   def get_state(state_uuid) do
     Repo.get_by(State, uuid: state_uuid)
   end
@@ -32,8 +32,8 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Create a flow.
   """
-  @spec create_flow(%User{}, map) ::
-          %Flow{creator: %User{}} | {:error, Ecto.Changeset.t()}
+  @spec create_flow(User.t(), map) ::
+          %Flow{creator: User.t()} | {:error, Ecto.Changeset.t()}
   def create_flow(%{organisation_id: org_id} = current_user, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
 
@@ -53,7 +53,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   List of all flows.
   """
-  @spec flow_index(%User{}) :: list
+  @spec flow_index(User.t()) :: list
   def flow_index(%User{organisation_id: org_id}) do
     from(f in Flow, where: f.organisation_id == ^org_id, preload: [:creator]) |> Repo.all()
   end
@@ -61,7 +61,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Show a flow.
   """
-  @spec show_flow(binary) :: %Flow{} | nil
+  @spec show_flow(binary) :: Flow.t() | nil
   def show_flow(flow_uuid) do
     flow_uuid |> get_flow |> Repo.preload([:creator, :states])
   end
@@ -69,7 +69,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Update a flow.
   """
-  @spec update_flow(%Flow{}, map) :: %Flow{} | {:error, Ecto.Changeset.t()}
+  @spec update_flow(Flow.t(), map) :: Flow.t() | {:error, Ecto.Changeset.t()}
   def update_flow(flow, params) do
     flow
     |> Flow.changeset(params)
@@ -86,7 +86,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Delete a flow.
   """
-  @spec delete_flow(%Flow{}) :: {:ok, %Flow{}} | {:error, Ecto.Changeset.t()}
+  @spec delete_flow(Flow.t()) :: {:ok, Flow.t()} | {:error, Ecto.Changeset.t()}
   def delete_flow(flow) do
     flow
     |> Ecto.Changeset.change()
@@ -101,7 +101,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Create a state under a flow.
   """
-  @spec create_state(%User{}, %Flow{}, map) :: {:ok, %State{}} | {:error, Ecto.Changeset.t()}
+  @spec create_state(User.t(), Flow.t(), map) :: {:ok, State.t()} | {:error, Ecto.Changeset.t()}
   def create_state(%User{organisation_id: org_id} = current_user, flow, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
     current_user |> build_assoc(:states, flow: flow) |> State.changeset(params) |> Repo.insert()
@@ -123,8 +123,8 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Update a state.
   """
-  @spec update_state(%State{}, map) ::
-          %State{creator: %User{}, flow: %Flow{}} | {:error, Ecto.Changeset.t()}
+  @spec update_state(State.t(), map) ::
+          %State{creator: User.t(), flow: Flow.t()} | {:error, Ecto.Changeset.t()}
   def update_state(state, params) do
     state
     |> State.changeset(params)
@@ -141,7 +141,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Shuffle the order of flows.
   """
-  @spec shuffle_order(%State{}, integer) :: list
+  @spec shuffle_order(State.t(), integer) :: list
   def shuffle_order(%{order: order, organisation_id: org_id}, additive) do
     from(f in Flow, where: f.organisation_id == ^org_id and f.order > ^order)
     |> Repo.all()
@@ -150,7 +150,7 @@ defmodule WraftDoc.Enterprise do
   end
 
   # Update the flow order by adding the additive.
-  @spec update_state_order(%State{}, integer) :: {:ok, %State{}}
+  @spec update_state_order(State.t(), integer) :: {:ok, State.t()}
   defp update_state_order(%{order: order} = flow, additive) do
     flow
     |> State.order_update_changeset(%{order: order + additive})
@@ -160,7 +160,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Delete a state.
   """
-  @spec delete_state(%State{}) :: {:ok, %State{}} | {:error, Ecto.Changeset.t()}
+  @spec delete_state(State.t()) :: {:ok, State.t()} | {:error, Ecto.Changeset.t()}
   def delete_state(state) do
     state
     |> Ecto.Changeset.change()
@@ -175,7 +175,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Get an organisation from its UUID.
   """
-  @spec get_organisation(binary) :: %Organisation{} | nil
+  @spec get_organisation(binary) :: Organisation.t() | nil
   def get_organisation(org_uuid) do
     Repo.get_by(Organisation, uuid: org_uuid)
   end
