@@ -329,4 +329,16 @@ defmodule WraftDoc.Document do
     |> DataTemplate.changeset(params)
     |> Repo.insert()
   end
+
+  @doc """
+  List all data templates under a content types.
+  """
+  @spec data_type_index(binary) :: list
+  def data_type_index(c_type_uuid) do
+    from(dt in DataTemplate,
+      join: ct in ContentType,
+      where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id
+    )
+    |> Repo.all()
+  end
 end
