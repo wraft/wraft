@@ -307,4 +307,13 @@ defmodule WraftDoc.Document do
   def update_theme(theme, params) do
     theme |> Theme.update_changeset(params) |> Repo.update()
   end
+
+  @doc """
+  Delete a theme.
+  """
+  @spec delete_theme(Theme.t()) :: {:ok, Theme.t()}
+  def delete_theme(theme) do
+    theme
+    |> Repo.delete()
+  end
 end
