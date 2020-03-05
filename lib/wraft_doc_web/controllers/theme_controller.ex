@@ -42,6 +42,36 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
           type(:array)
           items(Schema.ref(:Theme))
+        end,
+      ShowTheme:
+        swagger_schema do
+          title("Show Theme")
+          description("Show details of a theme")
+
+          properties do
+            theme(Schema.ref(:Theme))
+            creator(Schema.ref(:User))
+          end
+
+          example(%{
+            theme: %{
+              id: "1232148nb3478",
+              name: "Official Letter Theme",
+              font: "Malery",
+              typescale: %{h1: "10", p: "6", h2: "8"},
+              file: "/malory.css",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            creator: %{
+              id: "1232148nb3478",
+              name: "John Doe",
+              email: "email@xyz.com",
+              email_verify: true,
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            }
+          })
         end
     }
   end
@@ -99,5 +129,29 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     conn
     |> render("index.json", themes: themes)
+  end
+
+  @doc """
+  Show a theme.
+  """
+  swagger_path :show do
+    get("/themes/{id}")
+    summary("Show a theme")
+    description("Show a theme API")
+
+    parameters do
+      id(:path, :string, "theme id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowTheme))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show(conn, %{"id" => theme_uuid}) do
+    with %Theme{} = theme <- Document.show_theme(theme_uuid) do
+      conn
+      |> render("show.json", theme: theme)
+    end
   end
 end
