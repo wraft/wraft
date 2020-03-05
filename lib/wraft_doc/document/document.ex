@@ -279,4 +279,10 @@ defmodule WraftDoc.Document do
   def theme_file_upload(theme, _params) do
     {:ok, theme}
   end
+
+  @spec theme_index(User.t()) :: list
+  def theme_index(%User{organisation_id: org_id}) do
+    from(t in Theme, where: t.organisation_id == ^org_id)
+    |> Repo.all()
+  end
 end

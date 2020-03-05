@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
             name(:string, "Theme's name", required: true)
             font(:string, "Font name", required: true)
             typescale(:map, "Typescale of the theme", required: true)
-            file(WraftDocWeb.ThemeUploader, "Theme file attachment")
+            file(:string, "Theme file attachment")
             inserted_at(:string, "When was the layout created", format: "ISO-8601")
             updated_at(:string, "When was the layout last updated", format: "ISO-8601")
           end
@@ -31,6 +31,17 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
+        end,
+      Themes:
+        swagger_schema do
+          title("All themes and its details")
+
+          description(
+            "All themes that have been created under current user's organisation and their details"
+          )
+
+          type(:array)
+          items(Schema.ref(:Theme))
         end
     }
   end
@@ -66,5 +77,27 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
       conn
       |> render("create.json", theme: theme)
     end
+  end
+
+  @doc """
+  Index of themes in the current user's organisation.
+  """
+  swagger_path :index do
+    get("/themes")
+    summary("Theme index")
+    description("Theme index API")
+
+    response(200, "Ok", Schema.ref(:Themes))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index(conn, _params) do
+    current_user = conn.assigns[:current_user]
+
+    themes = Document.theme_index(current_user)
+
+    conn
+    |> render("index.json", themes: themes)
   end
 end
