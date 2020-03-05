@@ -13,6 +13,7 @@ defmodule WraftDoc.Document do
     Document.Engine,
     Document.Instance,
     Document.Theme,
+    Document.DataTemplate,
     Enterprise.Flow.State
   }
 
@@ -298,11 +299,17 @@ defmodule WraftDoc.Document do
     Repo.get_by(Theme, uuid: theme_uuid)
   end
 
+  @doc """
+  Show a theme.
+  """
   @spec show_theme(binary) :: %Theme{creator: User.t()} | nil
   def show_theme(theme_uuid) do
     theme_uuid |> get_theme() |> Repo.preload([:creator])
   end
 
+  @doc """
+  Update a theme.
+  """
   @spec update_theme(Theme.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
   def update_theme(theme, params) do
     theme |> Theme.update_changeset(params) |> Repo.update()
@@ -315,5 +322,73 @@ defmodule WraftDoc.Document do
   def delete_theme(theme) do
     theme
     |> Repo.delete()
+  end
+
+  @doc """
+  Create a data template.
+  """
+  @spec create_data_template(User.t(), ContentType.t(), map) ::
+          {:ok, DataTemplate.t()} | {:error, Ecto.Changeset.t()}
+  def create_data_template(current_user, c_type, params) do
+    current_user
+    |> build_assoc(:data_templates, content_type: c_type)
+    |> DataTemplate.changeset(params)
+    |> Repo.insert()
+  end
+
+  @doc """
+  List all data templates under a content types.
+  """
+  @spec data_type_index(binary) :: list
+  def data_type_index(c_type_uuid) do
+    from(dt in DataTemplate,
+      join: ct in ContentType,
+      where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Get a data template from its uuid
+  """
+  @spec get_d_template(binary) :: DataTemplat.t() | nil
+  def get_d_template(d_temp_uuid) do
+    Repo.get_by(DataTemplate, uuid: d_temp_uuid)
+  end
+
+  @doc """
+  Show a data template.
+  """
+  @spec show_d_template(binary) ::
+          %DataTemplate{creator: User.t(), content_type: ContentType.t()} | nil
+  def show_d_template(d_temp_uuid) do
+    d_temp_uuid |> get_d_template() |> Repo.preload([:creator, :content_type])
+  end
+
+  @doc """
+  Update a data template
+  """
+  @spec update_data_template(DataTemplate.t(), map) ::
+          %DataTemplate{creator: User.t(), content_type: ContentType.t()}
+          | {:error, Ecto.Changeset.t()}
+  def update_data_template(d_temp, params) do
+    d_temp
+    |> DataTemplate.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, d_temp} ->
+        d_temp |> Repo.preload([:creator, :content_type])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Delete a data template
+  """
+  @spec delete_data_template(DataTemplate.t()) :: {:ok, DataTemplate.t()}
+  def delete_data_template(d_temp) do
+    d_temp |> Repo.delete()
   end
 end
