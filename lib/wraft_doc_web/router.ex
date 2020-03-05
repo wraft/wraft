@@ -58,7 +58,7 @@ defmodule WraftDocWeb.Router do
       resources("/engines", EngineController, only: [:index])
 
       # Theme
-      resources("/themes", ThemeController, only: [:create, :index, :show])
+      resources("/themes", ThemeController, only: [:create, :index, :show, :update])
 
       scope "/flows" do
         # Flows
