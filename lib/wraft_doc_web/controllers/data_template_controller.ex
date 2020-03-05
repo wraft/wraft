@@ -207,4 +207,31 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
       |> render("show.json", d_template: d_temp)
     end
   end
+
+  @doc """
+  Delete a Data template.
+  """
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/data_templates/{id}")
+    summary("Delete a data template")
+    description("API to delete a data template")
+
+    parameters do
+      id(:path, :string, "data template id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:DataTemplate))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete(conn, %{"id" => uuid}) do
+    with %DataTemplate{} = d_temp <- Document.get_d_template(uuid),
+         {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp) do
+      conn
+      |> render("create.json", d_template: d_temp)
+    end
+  end
 end
