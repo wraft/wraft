@@ -299,11 +299,17 @@ defmodule WraftDoc.Document do
     Repo.get_by(Theme, uuid: theme_uuid)
   end
 
+  @doc """
+  Show a theme.
+  """
   @spec show_theme(binary) :: %Theme{creator: User.t()} | nil
   def show_theme(theme_uuid) do
     theme_uuid |> get_theme() |> Repo.preload([:creator])
   end
 
+  @doc """
+  Update a theme.
+  """
   @spec update_theme(Theme.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
   def update_theme(theme, params) do
     theme |> Theme.update_changeset(params) |> Repo.update()
