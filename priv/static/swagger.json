@@ -170,6 +170,29 @@
         "consumes": [
           "multipart/form-data"
         ]
+      },
+      "get": {
+        "tags": [
+          "Theme"
+        ],
+        "summary": "Theme index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Themes"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [],
+        "operationId": "WraftDocWeb.Api.V1.ThemeController.index",
+        "description": "Theme index API"
       }
     },
     "/states/{id}": {
@@ -1159,6 +1182,14 @@
       },
       "description": "Show all details of a flow"
     },
+    "Themes": {
+      "type": "array",
+      "title": "All themes and its details",
+      "items": {
+        "$ref": "#/definitions/Theme"
+      },
+      "description": "All themes that have been created under current user's organisation and their details"
+    },
     "Theme": {
       "type": "object",
       "title": "Theme",
@@ -1196,7 +1227,7 @@
           "description": "Font name"
         },
         "file": {
-          "type": "Elixir.WraftDocWeb.ThemeUploader",
+          "type": "string",
           "description": "Theme file attachment"
         }
       },
