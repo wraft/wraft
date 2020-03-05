@@ -176,4 +176,35 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
       |> render("show.json", d_template: data_template)
     end
   end
+
+  @doc """
+  Update a data template.
+  """
+  swagger_path :update do
+    put("/data_templates/{id}")
+    summary("Update a data template")
+    description("API to update a data template")
+
+    parameters do
+      id(:path, :string, "Data template id", required: true)
+
+      data_templte(:body, Schema.ref(:DataTemplateRequest), "Data template to be updated",
+        required: true
+      )
+    end
+
+    response(200, "Ok", Schema.ref(:ShowDataTemplate))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"id" => uuid} = params) do
+    with %DataTemplate{} = d_temp <- Document.get_d_template(uuid),
+         %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, params) do
+      conn
+      |> render("show.json", d_template: d_temp)
+    end
+  end
 end
