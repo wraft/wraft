@@ -234,4 +234,33 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       |> render("show.json", instance: instance)
     end
   end
+
+  @doc """
+  Update an instance.
+  """
+  swagger_path :update do
+    put("/contents/{id}")
+    summary("Update an instance")
+    description("API to update an instance")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+
+      content(:body, Schema.ref(:ContentRequest), "Instance to be updated", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContent))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"id" => uuid} = params) do
+    with %Instance{} = instance <- Document.get_instance(uuid),
+         %Instance{} = instance <- Document.update_instance(instance, params) do
+      conn
+      |> render("show.json", instance: instance)
+    end
+  end
 end
