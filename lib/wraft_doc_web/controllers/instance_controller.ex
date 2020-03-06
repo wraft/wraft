@@ -96,6 +96,57 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             }
           })
         end,
+      ShowContent:
+        swagger_schema do
+          title("Content and its details")
+          description("A content and all its details")
+
+          properties do
+            content(Schema.ref(:Content))
+            content_type(Schema.ref(:ContentType))
+            state(Schema.ref(:State))
+            creator(Schema.ref(:User))
+          end
+
+          example(%{
+            content: %{
+              id: "1232148nb3478",
+              instance_id: "OFFL01",
+              raw: "Content",
+              serialized: %{title: "Title of the content", body: "Body of the content"},
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            content_type: %{
+              id: "1232148nb3478",
+              name: "Offer letter",
+              description: "An offer letter",
+              fields: %{
+                name: "string",
+                position: "string",
+                joining_date: "date",
+                approved_by: "string"
+              },
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            state: %{
+              id: "1232148nb3478",
+              state: "published",
+              order: 1,
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            creator: %{
+              id: "1232148nb3478",
+              name: "John Doe",
+              email: "email@xyz.com",
+              email_verify: true,
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            }
+          })
+        end,
       Contents:
         swagger_schema do
           title("Instances under a content type")
@@ -158,5 +209,29 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     conn
     |> render("index.json", contents: contents)
+  end
+
+  @doc """
+  Show instance.
+  """
+  swagger_path :show do
+    get("/contents/{id}")
+    summary("Show an instance")
+    description("API to get all details of an instance")
+
+    parameters do
+      id(:path, :string, "ID of the instance", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContent))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show(conn, %{"id" => instance_uuid}) do
+    with %Instance{} = instance <- Document.show_instance(instance_uuid) do
+      conn
+      |> render("show.json", instance: instance)
+    end
   end
 end
