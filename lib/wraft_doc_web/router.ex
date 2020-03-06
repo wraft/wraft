@@ -44,21 +44,25 @@ defmodule WraftDocWeb.Router do
       resources("/profile/:id", ProfileController, only: [:update])
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
-      # Content type
-      resources("/content_types", ContentTypeController,
-        only: [:create, :index, :show, :update, :delete]
-      )
 
-      # Instances
-      resources("/content_types/:c_type_id/contents", InstanceController,
-        only: [:create, :index, :show, :update, :delete]
-      )
+      scope "/content_types" do
+        # Content type
+        resources("/", ContentTypeController, only: [:create, :index, :show, :update, :delete])
+
+        scope "/:c_type_id" do
+          # Instances
+          resources("/contents", InstanceController, only: [:create, :index])
+
+          # Data template
+          resources("/data_templates", DataTemplateController, only: [:create, :index])
+        end
+      end
 
       # Engine
       resources("/engines", EngineController, only: [:index])
 
       # Theme
-      resources("/themes", ThemeController, only: [:create])
+      resources("/themes", ThemeController, only: [:create, :index, :show, :update, :delete])
 
       scope "/flows" do
         # Flows
@@ -69,6 +73,12 @@ defmodule WraftDocWeb.Router do
 
       # State delete and update
       resources("/states", StateController, only: [:update, :delete])
+
+      # Data template show, delete and update
+      resources("/data_templates", DataTemplateController, only: [:show, :update, :delete])
+
+      # Instance show, update and delete
+      resources("/contents", InstanceController, only: [:show, :update, :delete])
     end
   end
 
