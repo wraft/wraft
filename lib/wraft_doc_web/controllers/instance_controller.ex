@@ -45,7 +45,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           properties do
             raw(:string, "Content raw data", required: true)
             serialized(:string, "Content serialized data")
-            state_uuid(:string, "Flow id", required: true)
+            state_uuid(:string, "state id", required: true)
           end
 
           example(%{
@@ -95,6 +95,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               inserted_at: "2020-02-21T14:00:00Z"
             }
           })
+        end,
+      Contents:
+        swagger_schema do
+          title("Instances under a content type")
+          description("All instances that have been created under a content type")
+          type(:array)
+          items(Schema.ref(:Content))
         end
     }
   end
@@ -127,5 +134,29 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       conn
       |> render(:create, content: content)
     end
+  end
+
+  @doc """
+  Instance index.
+  """
+  swagger_path :index do
+    get("/content_types/{c_type_id}/contents")
+    summary("Instance index")
+    description("API to get the list of all instances created so far under a content type")
+
+    parameters do
+      c_type_id(:path, :string, "ID of the content type", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Contents))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index(conn, %{"c_type_id" => c_type_uuid}) do
+    contents = Document.instance_index(c_type_uuid)
+
+    conn
+    |> render("index.json", contents: contents)
   end
 end

@@ -236,6 +236,18 @@ defmodule WraftDoc.Document do
     prefix <> instance_count
   end
 
+  @doc """
+  List all instances under a content types.
+  """
+  @spec instance_index(binary) :: list
+  def instance_index(c_type_uuid) do
+    from(i in Instance,
+      join: ct in ContentType,
+      where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id
+    )
+    |> Repo.all()
+  end
+
   # Add two integers
   @spec add(integer, integer) :: integer
   defp add(num1, num2) do
