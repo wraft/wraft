@@ -147,7 +147,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, %{"c_type_id" => c_type_uuid}) do
-    data_templates = Document.data_type_index(c_type_uuid)
+    data_templates = Document.data_template_index(c_type_uuid)
 
     conn
     |> render("index.json", data_templates: data_templates)
