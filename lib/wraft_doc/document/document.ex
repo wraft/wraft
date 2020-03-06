@@ -14,6 +14,7 @@ defmodule WraftDoc.Document do
     Document.Instance,
     Document.Theme,
     Document.DataTemplate,
+    Enterprise,
     Enterprise.Flow.State
   }
 
@@ -269,6 +270,35 @@ defmodule WraftDoc.Document do
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
   def show_instance(instance_uuid) do
     instance_uuid |> get_instance() |> Repo.preload([:creator, :content_type, :state])
+  end
+
+  @doc """
+  Update an instance.
+  """
+  @spec update_instance(Instance.t(), map) ::
+          %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
+          | {:error, Ecto.Changeset.t()}
+
+  def update_instance(instance, %{"state_uuid" => state_uuid} = params) do
+    %State{id: id} = Enterprise.get_state(state_uuid)
+    {_, params} = Map.pop(params, "state_uuid")
+    params = params |> Map.merge(%{"state_id" => id})
+    update_instance(instance, params)
+  end
+
+  def update_instance(instance, params) do
+    IO.inspect(params)
+
+    instance
+    |> Instance.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, instance} ->
+        instance |> Repo.preload([:creator, :content_type, :state])
+
+      {:error, _} = changeset ->
+        changeset
+    end
   end
 
   @doc """
