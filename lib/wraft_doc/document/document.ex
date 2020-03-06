@@ -236,6 +236,12 @@ defmodule WraftDoc.Document do
     prefix <> instance_count
   end
 
+  # Add two integers
+  @spec add(integer, integer) :: integer
+  defp add(num1, num2) do
+    num1 + num2
+  end
+
   @doc """
   List all instances under a content types.
   """
@@ -248,10 +254,21 @@ defmodule WraftDoc.Document do
     |> Repo.all()
   end
 
-  # Add two integers
-  @spec add(integer, integer) :: integer
-  defp add(num1, num2) do
-    num1 + num2
+  @doc """
+  Get an instance from its UUID.
+  """
+  @spec get_instance(binary) :: Instance.t()
+  def get_instance(uuid) do
+    Repo.get_by(Instance, uuid: uuid)
+  end
+
+  @doc """
+  Show an instance.
+  """
+  @spec show_instance(binary) ::
+          %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
+  def show_instance(instance_uuid) do
+    instance_uuid |> get_instance() |> Repo.preload([:creator, :content_type, :state])
   end
 
   @doc """

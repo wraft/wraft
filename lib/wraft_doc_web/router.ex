@@ -76,6 +76,9 @@ defmodule WraftDocWeb.Router do
 
       # Data template show, delete and update
       resources("/data_templates", DataTemplateController, only: [:show, :update, :delete])
+
+      # Instance show, update and delete
+      resources("/contents", InstanceController, only: [:show])
     end
   end
 
