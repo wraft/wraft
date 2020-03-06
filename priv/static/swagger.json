@@ -1280,7 +1280,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/ContentAndContentTypeAndFlow"
+              "$ref": "#/definitions/ContentAndContentTypeAndState"
             },
             "description": "Ok"
           }
@@ -2311,7 +2311,7 @@
       },
       "description": "Flows to be followed in an organisation"
     },
-    "ContentAndContentTypeAndFlow": {
+    "ContentAndContentTypeAndState": {
       "type": "object",
       "title": "Content and its Content Type",
       "properties": {
