@@ -287,8 +287,6 @@ defmodule WraftDoc.Document do
   end
 
   def update_instance(instance, params) do
-    IO.inspect(params)
-
     instance
     |> Instance.update_changeset(params)
     |> Repo.update()
@@ -299,6 +297,16 @@ defmodule WraftDoc.Document do
       {:error, _} = changeset ->
         changeset
     end
+  end
+
+  @doc """
+  Delete an instance.
+  """
+  @spec delete_instance(Instance.t()) ::
+          {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
+  def delete_instance(instance) do
+    instance
+    |> Repo.delete()
   end
 
   @doc """

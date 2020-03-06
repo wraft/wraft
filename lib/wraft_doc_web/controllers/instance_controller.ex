@@ -263,4 +263,31 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       |> render("show.json", instance: instance)
     end
   end
+
+  @doc """
+  Delete an instance.
+  """
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/contents/{id}")
+    summary("Delete an instance")
+    description("API to delete an instance")
+
+    parameters do
+      id(:path, :string, "instance id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete(conn, %{"id" => uuid}) do
+    with %Instance{} = instance <- Document.get_instance(uuid),
+         {:ok, %Instance{}} <- Document.delete_instance(instance) do
+      conn
+      |> render("instance.json", instance: instance)
+    end
+  end
 end
