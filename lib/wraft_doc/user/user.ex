@@ -21,6 +21,7 @@ defmodule WraftDoc.Account.User do
     has_many(:themes, WraftDoc.Document.Theme, foreign_key: :creator_id)
     has_many(:flows, WraftDoc.Enterprise.Flow, foreign_key: :creator_id)
     has_many(:states, WraftDoc.Enterprise.Flow.State, foreign_key: :creator_id)
+    has_many(:data_templates, WraftDoc.Document.DataTemplate, foreign_key: :creator_id)
 
     timestamps()
   end
