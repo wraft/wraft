@@ -14,6 +14,7 @@ defmodule WraftDoc.Document do
     Document.Instance,
     Document.Theme,
     Document.DataTemplate,
+    Enterprise,
     Enterprise.Flow.State
   }
 
@@ -243,6 +244,72 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+  List all instances under a content types.
+  """
+  @spec instance_index(binary) :: list
+  def instance_index(c_type_uuid) do
+    from(i in Instance,
+      join: ct in ContentType,
+      where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Get an instance from its UUID.
+  """
+  @spec get_instance(binary) :: Instance.t()
+  def get_instance(uuid) do
+    Repo.get_by(Instance, uuid: uuid)
+  end
+
+  @doc """
+  Show an instance.
+  """
+  @spec show_instance(binary) ::
+          %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
+  def show_instance(instance_uuid) do
+    instance_uuid |> get_instance() |> Repo.preload([:creator, :content_type, :state])
+  end
+
+  @doc """
+  Update an instance.
+  """
+  @spec update_instance(Instance.t(), map) ::
+          %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
+          | {:error, Ecto.Changeset.t()}
+
+  def update_instance(instance, %{"state_uuid" => state_uuid} = params) do
+    %State{id: id} = Enterprise.get_state(state_uuid)
+    {_, params} = Map.pop(params, "state_uuid")
+    params = params |> Map.merge(%{"state_id" => id})
+    update_instance(instance, params)
+  end
+
+  def update_instance(instance, params) do
+    instance
+    |> Instance.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, instance} ->
+        instance |> Repo.preload([:creator, :content_type, :state])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Delete an instance.
+  """
+  @spec delete_instance(Instance.t()) ::
+          {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
+  def delete_instance(instance) do
+    instance
+    |> Repo.delete()
+  end
+
+  @doc """
   Get an engine from its UUID.
   """
   @spec get_engine(binary) :: Engine.t() | nil
@@ -339,8 +406,8 @@ defmodule WraftDoc.Document do
   @doc """
   List all data templates under a content types.
   """
-  @spec data_type_index(binary) :: list
-  def data_type_index(c_type_uuid) do
+  @spec data_template_index(binary) :: list
+  def data_template_index(c_type_uuid) do
     from(dt in DataTemplate,
       join: ct in ContentType,
       where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id
