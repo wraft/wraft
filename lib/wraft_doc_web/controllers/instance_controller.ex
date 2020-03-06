@@ -54,7 +54,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             state_uuid: "kjb12389k23eyg"
           })
         end,
-      ContentAndContentTypeAndFlow:
+      ContentAndContentTypeAndState:
         swagger_schema do
           title("Content and its Content Type")
           description("A content and its content type")
@@ -112,7 +112,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       content(:body, Schema.ref(:ContentRequest), "Content to be created", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:ContentAndContentTypeAndFlow))
+    response(200, "Ok", Schema.ref(:ContentAndContentTypeAndState))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end

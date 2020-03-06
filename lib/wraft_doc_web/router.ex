@@ -51,7 +51,7 @@ defmodule WraftDocWeb.Router do
 
         scope "/:c_type_id" do
           # Instances
-          resources("/contents", InstanceController, only: [:create])
+          resources("/contents", InstanceController, only: [:create, :index])
 
           # Data template
           resources("/data_templates", DataTemplateController, only: [:create, :index])
