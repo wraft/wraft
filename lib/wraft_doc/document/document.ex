@@ -31,11 +31,32 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, layout} ->
-        layout |> Repo.preload(:engine)
+        layout |> slug_file_upload(params)
 
       changeset = {:error, _} ->
         changeset
     end
+  end
+
+  @doc """
+  Upload layout slug file.
+  """
+  @spec slug_file_upload(Layout.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
+  def slug_file_upload(layout, %{"slug_file" => _} = params) do
+    layout
+    |> Layout.file_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, layout} ->
+        layout |> Repo.preload([:engine, :creator])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def slug_file_upload(layout, _params) do
+    layout |> Repo.preload([:engine])
   end
 
   @doc """
@@ -112,7 +133,7 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, layout} ->
-        layout |> Repo.preload([:engine, :creator])
+        layout |> slug_file_upload(params)
     end
   end
 
