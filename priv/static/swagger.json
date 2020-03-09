@@ -1629,6 +1629,47 @@
         "operationId": "WraftDocWeb.Api.V1.ContentTypeController.index",
         "description": "API to get the list of all content types created so far"
       }
+    },
+    "/assets": {
+      "post": {
+        "tags": [
+          "Asset"
+        ],
+        "summary": "Create an asset",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Asset"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/AssetRequest"
+            },
+            "required": true,
+            "name": "asset",
+            "in": "body",
+            "description": "Asset to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.AssetController.create",
+        "description": "Create asset API"
+      }
     }
   },
   "info": {
@@ -1895,6 +1936,14 @@
       },
       "description": "Error responses from the API"
     },
+    "Assets": {
+      "type": "array",
+      "title": "All assets in an organisation",
+      "items": {
+        "$ref": "#/definitions/Asset"
+      },
+      "description": "All assets that have been created under an organisation"
+    },
     "ContentAndContentTypeAndState": {
       "type": "object",
       "title": "Content and its Content Type",
@@ -1996,6 +2045,35 @@
         "name": "Flow 1"
       },
       "description": "Create flow request."
+    },
+    "ShowAsset": {
+      "type": "object",
+      "title": "Show asset",
+      "properties": {
+        "creator": {
+          "$ref": "#/definitions/User"
+        },
+        "content": {
+          "$ref": "#/definitions/Asset"
+        }
+      },
+      "example": {
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        },
+        "asset": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Asset",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        }
+      },
+      "description": "An asset and its details"
     },
     "UserRegisterRequest": {
       "type": "object",
@@ -2421,6 +2499,23 @@
       },
       "description": "A render engine to be used for document generation"
     },
+    "AssetRequest": {
+      "type": "object",
+      "title": "Asset Request",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Asset name"
+        }
+      },
+      "example": {
+        "name": "Asset"
+      },
+      "description": "Asset creation/updation request"
+    },
     "ShowStates": {
       "type": "array",
       "title": "All states and its details",
@@ -2713,6 +2808,40 @@
         }
       },
       "description": "Show all details of a flow including all the states undet the flow"
+    },
+    "Asset": {
+      "type": "object",
+      "title": "Asset",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine last updated"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the asset"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the asset"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "name": "Asset",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478"
+      },
+      "description": "An asset."
     },
     "ShowFlows": {
       "type": "array",

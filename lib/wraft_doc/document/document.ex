@@ -14,6 +14,7 @@ defmodule WraftDoc.Document do
     Document.Instance,
     Document.Theme,
     Document.DataTemplate,
+    Document.Asset,
     Enterprise,
     Enterprise.Flow.State
   }
@@ -478,5 +479,14 @@ defmodule WraftDoc.Document do
   @spec delete_data_template(DataTemplate.t()) :: {:ok, DataTemplate.t()}
   def delete_data_template(d_temp) do
     d_temp |> Repo.delete()
+  end
+
+  @doc """
+  Create an asset.
+  """
+  @spec create_asset(User.t(), map) :: {:ok, Asset.t()}
+  def create_asset(%{organisation_id: org_id} = current_user, params) do
+    params = params |> Map.merge(%{"organisation_id" => org_id})
+    current_user |> build_assoc(:assets) |> Asset.changeset(params) |> Repo.insert()
   end
 end
