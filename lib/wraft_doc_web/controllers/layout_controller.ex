@@ -7,31 +7,31 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   def swagger_definitions do
     %{
-      LayoutRequest:
-        swagger_schema do
-          title("Layout Request")
-          description("Create layout request.")
+      # LayoutRequest:
+      #   swagger_schema do
+      #     title("Layout Request")
+      #     description("Create layout request.")
 
-          properties do
-            name(:string, "Layout's name", required: true)
-            description(:string, "Layout's description")
-            width(:float, "Width of the layout")
-            height(:float, "Height of the layout")
-            unit(:string, "Unit of dimensions")
-            slug(:string, "Name of the slug to be used for the layout")
-            engine_uuid(:string, "ID of the engine selected")
-          end
+      #     properties do
+      #       name(:string, "Layout's name", required: true)
+      #       description(:string, "Layout's description")
+      #       width(:float, "Width of the layout")
+      #       height(:float, "Height of the layout")
+      #       unit(:string, "Unit of dimensions")
+      #       slug(:string, "Name of the slug to be used for the layout")
+      #       engine_uuid(:string, "ID of the engine selected")
+      #     end
 
-          example(%{
-            name: "Official Letter",
-            description: "An official letter",
-            width: 40.0,
-            height: 20.0,
-            unit: "cm",
-            slug: "Pandoc",
-            engine_uuid: "1232148nb3478"
-          })
-        end,
+      #     example(%{
+      #       name: "Official Letter",
+      #       description: "An official letter",
+      #       width: 40.0,
+      #       height: 20.0,
+      #       unit: "cm",
+      #       slug: "Pandoc",
+      #       engine_uuid: "1232148nb3478"
+      #     })
+      #   end,
       Layout:
         swagger_schema do
           title("Layout")
@@ -155,9 +155,27 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     summary("Create layout")
     description("Create layout API")
 
-    parameters do
-      layout(:body, Schema.ref(:LayoutRequest), "Layout to be created", required: true)
-    end
+    # parameters do
+    #   layout(:body, Schema.ref(:LayoutRequest), "Layout to be created", required: true)
+    # end
+
+    consumes("multipart/form-data")
+
+    parameter(:name, :formData, :string, "Layout's name", required: true)
+
+    parameter(:description, :formData, :string, "Layout description", required: true)
+
+    parameter(:width, :formData, :string, "Layout width", required: true)
+
+    parameter(:height, :formData, :string, "Layout height", required: true)
+
+    parameter(:unit, :formData, :string, "Layout dimension unit", required: true)
+
+    parameter(:slug, :formData, :string, "Name of slug to be used")
+
+    parameter(:slug_file, :formData, :file, "Slug file to upload")
+
+    parameter(:engine_uuid, :formData, :string, "ID of layout's engine", required: true)
 
     response(200, "Ok", Schema.ref(:LayoutAndEngine))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -227,10 +245,30 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     summary("Update a Layout")
     description("API to update a layout")
 
-    parameters do
-      id(:path, :string, "layout id", required: true)
-      layout(:body, Schema.ref(:LayoutRequest), "Layout to be updated", required: true)
-    end
+    # parameters do
+    #   id(:path, :string, "layout id", required: true)
+    #   layout(:body, Schema.ref(:LayoutRequest), "Layout to be updated", required: true)
+    # end
+
+    consumes("multipart/form-data")
+
+    parameter(:id, :path, :string, "layout id", required: true)
+
+    parameter(:name, :formData, :string, "Layout's name", required: true)
+
+    parameter(:description, :formData, :string, "Layout description", required: true)
+
+    parameter(:width, :formData, :string, "Layout width", required: true)
+
+    parameter(:height, :formData, :string, "Layout height", required: true)
+
+    parameter(:unit, :formData, :string, "Layout dimension unit", required: true)
+
+    parameter(:slug, :formData, :string, "Name of slug to be used")
+
+    parameter(:slug_file, :formData, :file, "Slug file to upload")
+
+    parameter(:engine_uuid, :formData, :string, "ID of layout's engine", required: true)
 
     response(200, "Ok", Schema.ref(:ShowLayout))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
