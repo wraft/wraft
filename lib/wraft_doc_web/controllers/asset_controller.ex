@@ -177,4 +177,31 @@ defmodule WraftDocWeb.Api.V1.AssetController do
       |> render("asset.json", asset: asset)
     end
   end
+
+  @doc """
+  Delete an asset.
+  """
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/assets/{id}")
+    summary("Delete an asset")
+    description("API to delete an asset")
+
+    parameters do
+      id(:path, :string, "asset id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Asset))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete(conn, %{"id" => uuid}) do
+    with %Asset{} = asset <- Document.get_asset(uuid),
+         {:ok, %Asset{}} <- Document.delete_asset(asset) do
+      conn
+      |> render("asset.json", asset: asset)
+    end
+  end
 end
