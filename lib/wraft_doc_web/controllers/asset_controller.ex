@@ -112,7 +112,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     summary("Asset index")
     description("API to get the list of all assets created so far under an organisation")
 
-    response(200, "Ok", Schema.ref(:Contents))
+    response(200, "Ok", Schema.ref(:Assets))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
@@ -123,5 +123,29 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
     conn
     |> render("index.json", assets: assets)
+  end
+
+  @doc """
+  Show instance.
+  """
+  swagger_path :show do
+    get("/assets/{id}")
+    summary("Show an asset")
+    description("API to get all details of an asset")
+
+    parameters do
+      id(:path, :string, "ID of the asset", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowAsset))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show(conn, %{"id" => asset_uuid}) do
+    with %Asset{} = asset <- Document.show_asset(asset_uuid) do
+      conn
+      |> render("show.json", asset: asset)
+    end
   end
 end
