@@ -14,6 +14,7 @@ defmodule WraftDoc.Document do
     Document.Instance,
     Document.Theme,
     Document.DataTemplate,
+    Document.Asset,
     Enterprise,
     Enterprise.Flow.State
   }
@@ -31,11 +32,32 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, layout} ->
-        layout |> Repo.preload(:engine)
+        layout |> slug_file_upload(params)
 
       changeset = {:error, _} ->
         changeset
     end
+  end
+
+  @doc """
+  Upload layout slug file.
+  """
+  @spec slug_file_upload(Layout.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
+  def slug_file_upload(layout, %{"slug_file" => _} = params) do
+    layout
+    |> Layout.file_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, layout} ->
+        layout |> Repo.preload([:engine, :creator])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def slug_file_upload(layout, _params) do
+    layout |> Repo.preload([:engine])
   end
 
   @doc """
@@ -112,7 +134,7 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, layout} ->
-        layout |> Repo.preload([:engine, :creator])
+        layout |> slug_file_upload(params)
     end
   end
 
@@ -457,5 +479,56 @@ defmodule WraftDoc.Document do
   @spec delete_data_template(DataTemplate.t()) :: {:ok, DataTemplate.t()}
   def delete_data_template(d_temp) do
     d_temp |> Repo.delete()
+  end
+
+  @doc """
+  Create an asset.
+  """
+  @spec create_asset(User.t(), map) :: {:ok, Asset.t()}
+  def create_asset(%{organisation_id: org_id} = current_user, params) do
+    params = params |> Map.merge(%{"organisation_id" => org_id})
+    current_user |> build_assoc(:assets) |> Asset.changeset(params) |> Repo.insert()
+  end
+
+  @doc """
+  Index of all assets in an organisation.
+  """
+  @spec asset_index(integer) :: list
+  def asset_index(organisation_id) do
+    from(a in Asset, where: a.organisation_id == ^organisation_id) |> Repo.all()
+  end
+
+  @doc """
+  Show an asset.
+  """
+  @spec show_asset(binary) :: %Asset{creator: User.t()}
+  def show_asset(asset_uuid) do
+    asset_uuid
+    |> get_asset()
+    |> Repo.preload([:creator])
+  end
+
+  @doc """
+  Get an asset from its UUID.
+  """
+  @spec get_asset(binary) :: Asset.t()
+  def get_asset(uuid) do
+    Repo.get_by(Asset, uuid: uuid)
+  end
+
+  @doc """
+  Update an asset.
+  """
+  @spec update_asset(Asset.t(), map) :: {:ok, Asset.t()}
+  def update_asset(asset, params) do
+    asset |> Asset.update_changeset(params) |> Repo.update()
+  end
+
+  @doc """
+  Delete an asset.
+  """
+  @spec delete_asset(Asset.t()) :: {:ok, Asset.t()}
+  def delete_asset(asset) do
+    asset |> Repo.delete()
   end
 end

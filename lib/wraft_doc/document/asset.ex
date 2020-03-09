@@ -10,10 +10,19 @@ defmodule WraftDoc.Document.Asset do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
     belongs_to(:creator, WraftDoc.Account.User)
+    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     timestamps()
   end
 
   def changeset(%Asset{} = asset, attrs \\ %{}) do
-    asset |> cast(attrs, [:name]) |> validate_required([:name])
+    asset
+    |> cast(attrs, [:name, :organisation_id])
+    |> validate_required([:name, :organisation_id])
+  end
+
+  def update_changeset(%Asset{} = asset, attrs \\ %{}) do
+    asset
+    |> cast(attrs, [:name])
+    |> validate_required([:name])
   end
 end

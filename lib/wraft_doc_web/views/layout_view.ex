@@ -12,6 +12,7 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       height: layout.height,
       unit: layout.unit,
       slug: layout.slug,
+      slug_file: layout |> generate_url(),
       inserted_at: layout.inserted_at,
       update_at: layout.updated_at,
       engine: render_one(layout.engine, EngineView, "create.json", as: :engine)
@@ -27,6 +28,7 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       height: layout.height,
       unit: layout.unit,
       slug: layout.slug,
+      slug_file: layout |> generate_url(),
       inserted_at: layout.inserted_at,
       update_at: layout.updated_at
     }
@@ -41,5 +43,9 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       layout: render_one(layout, LayoutView, "create.json", as: :doc_layout),
       creator: render_one(layout.creator, UserView, "user.json", as: :user)
     }
+  end
+
+  defp generate_url(%{slug_file: file} = layout) do
+    WraftDocWeb.LayoutSlugUploader.url({file, layout})
   end
 end
