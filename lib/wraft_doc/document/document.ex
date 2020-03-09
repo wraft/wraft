@@ -523,4 +523,12 @@ defmodule WraftDoc.Document do
   def update_asset(asset, params) do
     asset |> Asset.update_changeset(params) |> Repo.update()
   end
+
+  @doc """
+  Delete an asset.
+  """
+  @spec delete_asset(Asset.t()) :: {:ok, Asset.t()}
+  def delete_asset(asset) do
+    asset |> Repo.delete()
+  end
 end
