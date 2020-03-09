@@ -1631,6 +1631,58 @@
       }
     },
     "/assets/{id}": {
+      "put": {
+        "tags": [
+          "Asset"
+        ],
+        "summary": "Update an asset",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Asset"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "asset id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/AssetRequest"
+            },
+            "required": true,
+            "name": "asset",
+            "in": "body",
+            "description": "Asset to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.AssetController.update",
+        "description": "API to update an asset"
+      },
       "get": {
         "tags": [
           "Asset"

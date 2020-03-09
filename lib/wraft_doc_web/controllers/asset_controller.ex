@@ -148,4 +148,33 @@ defmodule WraftDocWeb.Api.V1.AssetController do
       |> render("show.json", asset: asset)
     end
   end
+
+  @doc """
+  Update an asset.
+  """
+  swagger_path :update do
+    put("/assets/{id}")
+    summary("Update an asset")
+    description("API to update an asset")
+
+    parameters do
+      id(:path, :string, "asset id", required: true)
+
+      asset(:body, Schema.ref(:AssetRequest), "Asset to be updated", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Asset))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"id" => uuid} = params) do
+    with %Asset{} = asset <- Document.get_asset(uuid),
+         {:ok, asset} <- Document.update_asset(asset, params) do
+      conn
+      |> render("asset.json", asset: asset)
+    end
+  end
 end
