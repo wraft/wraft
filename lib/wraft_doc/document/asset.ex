@@ -19,4 +19,10 @@ defmodule WraftDoc.Document.Asset do
     |> cast(attrs, [:name, :organisation_id])
     |> validate_required([:name, :organisation_id])
   end
+
+  def update_changeset(%Asset{} = asset, attrs \\ %{}) do
+    asset
+    |> cast(attrs, [:name])
+    |> validate_required([:name])
+  end
 end

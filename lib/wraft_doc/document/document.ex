@@ -515,4 +515,12 @@ defmodule WraftDoc.Document do
   def get_asset(uuid) do
     Repo.get_by(Asset, uuid: uuid)
   end
+
+  @doc """
+  Update an asset.
+  """
+  @spec update_asset(Asset.t(), map) :: {:ok, Asset.t()}
+  def update_asset(asset, params) do
+    asset |> Asset.update_changeset(params) |> Repo.update()
+  end
 end
