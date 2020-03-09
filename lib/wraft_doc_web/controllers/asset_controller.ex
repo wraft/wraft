@@ -103,4 +103,25 @@ defmodule WraftDocWeb.Api.V1.AssetController do
       |> render(:asset, asset: asset)
     end
   end
+
+  @doc """
+  Asset index.
+  """
+  swagger_path :index do
+    get("/assets")
+    summary("Asset index")
+    description("API to get the list of all assets created so far under an organisation")
+
+    response(200, "Ok", Schema.ref(:Contents))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index(conn, _params) do
+    %{organisation_id: org_id} = conn.assigns[:current_user]
+    assets = Document.asset_index(org_id)
+
+    conn
+    |> render("index.json", assets: assets)
+  end
 end
