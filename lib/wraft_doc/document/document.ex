@@ -489,4 +489,12 @@ defmodule WraftDoc.Document do
     params = params |> Map.merge(%{"organisation_id" => org_id})
     current_user |> build_assoc(:assets) |> Asset.changeset(params) |> Repo.insert()
   end
+
+  @doc """
+  Index of all assets in an organisation.
+  """
+  @spec asset_index(integer) :: list
+  def asset_index(organisation_id) do
+    from(a in Asset, where: a.organisation_id == ^organisation_id) |> Repo.all()
+  end
 end
