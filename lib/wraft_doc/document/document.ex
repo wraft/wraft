@@ -497,4 +497,22 @@ defmodule WraftDoc.Document do
   def asset_index(organisation_id) do
     from(a in Asset, where: a.organisation_id == ^organisation_id) |> Repo.all()
   end
+
+  @doc """
+  Show an asset.
+  """
+  @spec show_asset(binary) :: %Asset{creator: User.t()}
+  def show_asset(asset_uuid) do
+    asset_uuid
+    |> get_asset()
+    |> Repo.preload([:creator])
+  end
+
+  @doc """
+  Get an asset from its UUID.
+  """
+  @spec get_asset(binary) :: Asset.t()
+  def get_asset(uuid) do
+    Repo.get_by(Asset, uuid: uuid)
+  end
 end
