@@ -266,6 +266,19 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+  List all instances under an organisation.
+  """
+  @spec instance_index_of_an_organisation(User.t()) :: list
+  def instance_index_of_an_organisation(%{organisation_id: org_id}) do
+    from(i in Instance,
+      join: u in User,
+      where: u.organisation_id == ^org_id and i.creator_id == u.id,
+      preload: [:content_type, :state]
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   List all instances under a content types.
   """
   @spec instance_index(binary) :: list
