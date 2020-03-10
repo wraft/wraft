@@ -199,7 +199,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       c_type_id(:path, :string, "ID of the content type", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:Contents))
+    response(200, "Ok", Schema.ref(:ContentsAndContentTypeAndState))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
