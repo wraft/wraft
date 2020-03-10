@@ -452,6 +452,18 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+  List all data templates under current user's organisation.
+  """
+  @spec data_template_index(User.t()) :: list
+  def data_templatei_index_of_an_organisation(%{organisation_id: org_id}) do
+    from(dt in DataTemplate,
+      join: u in User,
+      where: u.organisation_id == ^org_id and dt.creator_id == u.id
+    )
+    |> Repo.all()
+  end
+
+  @doc """
   Get a data template from its uuid
   """
   @spec get_d_template(binary) :: DataTemplat.t() | nil
