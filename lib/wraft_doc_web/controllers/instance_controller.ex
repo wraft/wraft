@@ -147,12 +147,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             }
           })
         end,
-      Contents:
+      ContentsAndContentTypeAndState:
         swagger_schema do
-          title("Instances under a content type")
-          description("All instances that have been created under a content type")
+          title("Instances, their content types and states")
+          description("IInstances and all its details except creator.")
           type(:array)
-          items(Schema.ref(:Content))
+          items(Schema.ref(:ContentAndContentTypeAndState))
         end
     }
   end
@@ -206,6 +206,27 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, %{"c_type_id" => c_type_uuid}) do
     contents = Document.instance_index(c_type_uuid)
+
+    conn
+    |> render("index.json", contents: contents)
+  end
+
+  @doc """
+  All instances.
+  """
+  swagger_path :all_contents do
+    get("/contents")
+    summary("All instances")
+    description("API to get the list of all instances created so far under an organisation")
+
+    response(200, "Ok", Schema.ref(:ContentsAndContentTypeAndState))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec all_contents(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def all_contents(conn, _params) do
+    current_user = conn.assigns[:current_user]
+    contents = Document.instance_index_of_an_organisation(current_user)
 
     conn
     |> render("index.json", contents: contents)
