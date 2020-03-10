@@ -285,7 +285,8 @@ defmodule WraftDoc.Document do
   def instance_index(c_type_uuid) do
     from(i in Instance,
       join: ct in ContentType,
-      where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id
+      where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id,
+      preload: [:content_type, :state]
     )
     |> Repo.all()
   end
