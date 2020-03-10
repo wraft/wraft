@@ -31,7 +31,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
   end
 
   def render("index.json", %{contents: contents}) do
-    render_many(contents, InstanceView, "instance.json", as: :instance)
+    render_many(contents, InstanceView, "create.json", as: :content)
   end
 
   def render("show.json", %{instance: instance}) do

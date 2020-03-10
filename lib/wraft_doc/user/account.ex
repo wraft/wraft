@@ -4,13 +4,16 @@ defmodule WraftDoc.Account do
   """
   # import Ecto.Query, warn: false
   import Ecto
-  alias WraftDoc.{Repo, Account.User, Account.Role, Account.Profile}
+  alias WraftDoc.{Repo, Account.User, Account.Role, Account.Profile, Enterprise.Organisation}
 
   @doc """
     User Registration
   """
   @spec registration(map) :: User.t() | Ecto.Changeset.t()
   def registration(params \\ %{}) do
+    %{id: id} = Repo.get_by(Organisation, name: "Functionary Labs Pvt Ltd.")
+    params = params |> Map.merge(%{"organisation_id" => id})
+
     get_role()
     |> build_assoc(:users)
     |> User.changeset(params)
