@@ -79,8 +79,12 @@ defmodule WraftDocWeb.Router do
 
       # Instance show, update and delete
       resources("/contents", InstanceController, only: [:show, :update, :delete])
+
       # All instances in an organisation
       get("/contents", InstanceController, :all_contents)
+
+      # All instances in an organisation
+      get("/data_templates", DataTemplateController, :all_templates)
 
       # Assets
       resources("/assets", AssetController, only: [:create, :index, :show, :update, :delete])
