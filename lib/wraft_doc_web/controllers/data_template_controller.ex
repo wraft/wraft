@@ -154,6 +154,27 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   end
 
   @doc """
+  All Data templates.
+  """
+  swagger_path :all_templates do
+    get("/data_templates")
+    summary("All Data templates")
+    description("API to get the list of all data templates created so far under an organisation")
+
+    response(200, "Ok", Schema.ref(:DataTemplates))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec all_templates(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def all_templates(conn, _params) do
+    current_user = conn.assigns[:current_user]
+    data_templates = Document.data_templatei_index_of_an_organisation(current_user)
+
+    conn
+    |> render("index.json", data_templates: data_templates)
+  end
+
+  @doc """
   Show data template.
   """
   swagger_path :show do
