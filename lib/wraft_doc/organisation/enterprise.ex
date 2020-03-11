@@ -53,9 +53,14 @@ defmodule WraftDoc.Enterprise do
   @doc """
   List of all flows.
   """
-  @spec flow_index(User.t()) :: list
-  def flow_index(%User{organisation_id: org_id}) do
-    from(f in Flow, where: f.organisation_id == ^org_id, preload: [:creator]) |> Repo.all()
+  @spec flow_index(User.t(), map) :: map
+  def flow_index(%User{organisation_id: org_id}, params) do
+    from(f in Flow,
+      where: f.organisation_id == ^org_id,
+      order_by: [desc: f.id],
+      preload: [:creator]
+    )
+    |> Repo.paginate(params)
   end
 
   @doc """

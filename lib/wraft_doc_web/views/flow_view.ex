@@ -27,7 +27,17 @@ defmodule WraftDocWeb.Api.V1.FlowView do
     }
   end
 
-  def render("index.json", %{flows: flows}) do
-    render_many(flows, __MODULE__, "update.json", as: :flow)
+  def render("index.json", %{
+        flows: flows,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      flows: render_many(flows, __MODULE__, "update.json", as: :flow),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
   end
 end
