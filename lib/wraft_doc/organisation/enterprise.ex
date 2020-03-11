@@ -115,14 +115,15 @@ defmodule WraftDoc.Enterprise do
   @doc """
   State index under a flow.
   """
-  @spec state_index(binary) :: list
-  def state_index(flow_uuid) do
+  @spec state_index(binary, map) :: map
+  def state_index(flow_uuid, params) do
     from(s in State,
       join: f in Flow,
       where: f.uuid == ^flow_uuid and s.flow_id == f.id,
+      order_by: [desc: s.id],
       preload: [:flow, :creator]
     )
-    |> Repo.all()
+    |> Repo.paginate(params)
   end
 
   @doc """
