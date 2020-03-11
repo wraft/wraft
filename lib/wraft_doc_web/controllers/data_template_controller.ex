@@ -168,7 +168,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   @spec all_templates(Plug.Conn.t(), map) :: Plug.Conn.t()
   def all_templates(conn, _params) do
     current_user = conn.assigns[:current_user]
-    data_templates = Document.data_templatei_index_of_an_organisation(current_user)
+    data_templates = Document.data_templates_index_of_an_organisation(current_user)
 
     conn
     |> render("index.json", data_templates: data_templates)
