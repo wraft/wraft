@@ -143,6 +143,41 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
               inserted_at: "2020-02-21T14:00:00Z"
             }
           })
+        end,
+      LayoutIndex:
+        swagger_schema do
+          properties do
+            layouts(Schema.ref(:LayoutsAndEngines))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            layouts: [
+              %{
+                id: "1232148nb3478",
+                name: "Official Letter",
+                description: "An official letter",
+                width: 40.0,
+                height: 20.0,
+                unit: "cm",
+                slug: "Pandoc",
+                engine: %{
+                  id: "1232148nb3478",
+                  name: "Pandoc",
+                  api_route: "",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              }
+            ],
+            page_number: 1,
+            total_pages: 2,
+            total_entries: 15
+          })
         end
     }
   end
@@ -201,16 +236,30 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     summary("Layout index")
     description("API to get the list of all layouts created so far")
 
-    response(200, "Ok", Schema.ref(:LayoutsAndEngines))
+    parameter(:page, :query, :string, "Page number")
+
+    response(200, "Ok", Schema.ref(:LayoutIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, _params) do
-    layouts = Document.layout_index()
+  def index(conn, params) do
+    current_user = conn.assigns[:current_user]
 
-    conn
-    |> render("index.json", doc_layouts: layouts)
+    with %{
+           entries: layouts,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.layout_index(current_user, params) do
+      conn
+      |> render("index.json",
+        doc_layouts: layouts,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 
   @doc """

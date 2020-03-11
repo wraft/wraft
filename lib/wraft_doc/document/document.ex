@@ -85,17 +85,22 @@ defmodule WraftDoc.Document do
   @doc """
   List all engines.
   """
-  @spec engines_list() :: list
-  def engines_list() do
-    Repo.all(Engine)
+  @spec engines_list(map) :: map
+  def engines_list(params) do
+    Repo.paginate(Engine, params)
   end
 
   @doc """
   List all layouts.
   """
-  @spec layout_index() :: list
-  def layout_index() do
-    Repo.all(Layout) |> Repo.preload(:engine)
+  @spec layout_index(User.t(), map) :: map
+  def layout_index(%{organisation_id: org_id}, params) do
+    from(l in Layout,
+      where: l.organisation_id == ^org_id,
+      order_by: [desc: l.id],
+      preload: [:engine]
+    )
+    |> Repo.paginate(params)
   end
 
   @doc """
@@ -157,9 +162,14 @@ defmodule WraftDoc.Document do
   @doc """
   List all content types.
   """
-  @spec content_type_index() :: list
-  def content_type_index() do
-    Repo.all(ContentType) |> Repo.preload([:layout, :flow])
+  @spec content_type_index(User.t(), map) :: map
+  def content_type_index(%{organisation_id: org_id}, params) do
+    from(ct in ContentType,
+      where: ct.organisation_id == ^org_id,
+      order_by: [desc: ct.id],
+      preload: [:layout, :flow]
+    )
+    |> Repo.paginate(params)
   end
 
   @doc """
@@ -274,27 +284,29 @@ defmodule WraftDoc.Document do
   @doc """
   List all instances under an organisation.
   """
-  @spec instance_index_of_an_organisation(User.t()) :: list
-  def instance_index_of_an_organisation(%{organisation_id: org_id}) do
+  @spec instance_index_of_an_organisation(User.t(), map) :: map
+  def instance_index_of_an_organisation(%{organisation_id: org_id}, params) do
     from(i in Instance,
       join: u in User,
       where: u.organisation_id == ^org_id and i.creator_id == u.id,
+      order_by: [desc: i.id],
       preload: [:content_type, :state]
     )
-    |> Repo.all()
+    |> Repo.paginate(params)
   end
 
   @doc """
   List all instances under a content types.
   """
-  @spec instance_index(binary) :: list
-  def instance_index(c_type_uuid) do
+  @spec instance_index(binary, map) :: map
+  def instance_index(c_type_uuid, params) do
     from(i in Instance,
       join: ct in ContentType,
       where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id,
+      order_by: [desc: i.id],
       preload: [:content_type, :state]
     )
-    |> Repo.all()
+    |> Repo.paginate(params)
   end
 
   @doc """
@@ -394,10 +406,10 @@ defmodule WraftDoc.Document do
   @doc """
   Index of themes inside current user's organisation.
   """
-  @spec theme_index(User.t()) :: list
-  def theme_index(%User{organisation_id: org_id}) do
-    from(t in Theme, where: t.organisation_id == ^org_id)
-    |> Repo.all()
+  @spec theme_index(User.t(), map) :: map
+  def theme_index(%User{organisation_id: org_id}, params) do
+    from(t in Theme, where: t.organisation_id == ^org_id, order_by: [desc: t.id])
+    |> Repo.paginate(params)
   end
 
   @doc """
@@ -448,25 +460,27 @@ defmodule WraftDoc.Document do
   @doc """
   List all data templates under a content types.
   """
-  @spec data_template_index(binary) :: list
-  def data_template_index(c_type_uuid) do
+  @spec data_template_index(binary, map) :: map
+  def data_template_index(c_type_uuid, params) do
     from(dt in DataTemplate,
       join: ct in ContentType,
-      where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id
+      where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id,
+      order_by: [desc: dt.id]
     )
-    |> Repo.all()
+    |> Repo.paginate(params)
   end
 
   @doc """
   List all data templates under current user's organisation.
   """
-  @spec data_templates_index_of_an_organisation(User.t()) :: list
-  def data_templates_index_of_an_organisation(%{organisation_id: org_id}) do
+  @spec data_templates_index_of_an_organisation(User.t(), map) :: map
+  def data_templates_index_of_an_organisation(%{organisation_id: org_id}, params) do
     from(dt in DataTemplate,
       join: u in User,
-      where: u.organisation_id == ^org_id and dt.creator_id == u.id
+      where: u.organisation_id == ^org_id and dt.creator_id == u.id,
+      order_by: [desc: dt.id]
     )
-    |> Repo.all()
+    |> Repo.paginate(params)
   end
 
   @doc """
@@ -525,9 +539,10 @@ defmodule WraftDoc.Document do
   @doc """
   Index of all assets in an organisation.
   """
-  @spec asset_index(integer) :: list
-  def asset_index(organisation_id) do
-    from(a in Asset, where: a.organisation_id == ^organisation_id) |> Repo.all()
+  @spec asset_index(integer, map) :: map
+  def asset_index(organisation_id, params) do
+    from(a in Asset, where: a.organisation_id == ^organisation_id, order_by: [desc: a.id])
+    |> Repo.paginate(params)
   end
 
   @doc """

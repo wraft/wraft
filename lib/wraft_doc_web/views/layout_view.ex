@@ -34,8 +34,18 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
     }
   end
 
-  def render("index.json", %{doc_layouts: layouts}) do
-    render_many(layouts, LayoutView, "create.json", as: :doc_layout)
+  def render("index.json", %{
+        doc_layouts: layouts,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      layouts: render_many(layouts, LayoutView, "create.json", as: :doc_layout),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
   end
 
   def render("show.json", %{doc_layout: layout}) do

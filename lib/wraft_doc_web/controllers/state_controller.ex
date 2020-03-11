@@ -84,6 +84,46 @@ defmodule WraftDocWeb.Api.V1.StateController do
           description("All states that have been created and their details")
           type(:array)
           items(Schema.ref(:ShowState))
+        end,
+      FlowIndex:
+        swagger_schema do
+          properties do
+            states(Schema.ref(:ShowStates))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            states: [
+              %{
+                state: %{
+                  id: "1232148nb3478",
+                  state: "published",
+                  order: 1,
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                creator: %{
+                  id: "1232148nb3478",
+                  name: "John Doe",
+                  email: "email@xyz.com",
+                  email_verify: true,
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                flow: %{
+                  id: "jnb234881adsad",
+                  name: "Flow 1",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                }
+              }
+            ],
+            page_number: 1,
+            total_pages: 2,
+            total_entries: 15
+          })
         end
     }
   end
@@ -126,18 +166,29 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
     parameters do
       flow_id(:path, :string, "flow id", required: true)
+      page(:query, :string, "Page number")
     end
 
-    response(200, "Ok", Schema.ref(:ShowStates))
+    response(200, "Ok", Schema.ref(:FlowIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, %{"flow_id" => flow_uuid}) do
-    states = Enterprise.state_index(flow_uuid)
-
-    conn
-    |> render("index.json", states: states)
+  def index(conn, %{"flow_id" => flow_uuid} = params) do
+    with %{
+           entries: states,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Enterprise.state_index(flow_uuid, params) do
+      conn
+      |> render("index.json",
+        states: states,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 
   @doc """

@@ -19,8 +19,19 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
     }
   end
 
-  def render("index.json", %{content_types: content_types}) do
-    render_many(content_types, ContentTypeView, "create.json", as: :content_type)
+  def render("index.json", %{
+        content_types: content_types,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      content_types:
+        render_many(content_types, ContentTypeView, "create.json", as: :content_type),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
   end
 
   def render("show.json", %{content_type: content_type}) do
