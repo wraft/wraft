@@ -406,10 +406,10 @@ defmodule WraftDoc.Document do
   @doc """
   Index of themes inside current user's organisation.
   """
-  @spec theme_index(User.t()) :: list
-  def theme_index(%User{organisation_id: org_id}) do
-    from(t in Theme, where: t.organisation_id == ^org_id)
-    |> Repo.all()
+  @spec theme_index(User.t(), map) :: map
+  def theme_index(%User{organisation_id: org_id}, params) do
+    from(t in Theme, where: t.organisation_id == ^org_id, order_by: [desc: t.id])
+    |> Repo.paginate(params)
   end
 
   @doc """
