@@ -274,27 +274,29 @@ defmodule WraftDoc.Document do
   @doc """
   List all instances under an organisation.
   """
-  @spec instance_index_of_an_organisation(User.t()) :: list
-  def instance_index_of_an_organisation(%{organisation_id: org_id}) do
+  @spec instance_index_of_an_organisation(User.t(), map) :: map
+  def instance_index_of_an_organisation(%{organisation_id: org_id}, params) do
     from(i in Instance,
       join: u in User,
       where: u.organisation_id == ^org_id and i.creator_id == u.id,
+      order_by: [desc: i.id],
       preload: [:content_type, :state]
     )
-    |> Repo.all()
+    |> Repo.paginate(params)
   end
 
   @doc """
   List all instances under a content types.
   """
-  @spec instance_index(binary) :: list
-  def instance_index(c_type_uuid) do
+  @spec instance_index(binary, map) :: map
+  def instance_index(c_type_uuid, params) do
     from(i in Instance,
       join: ct in ContentType,
       where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id,
+      order_by: [desc: i.id],
       preload: [:content_type, :state]
     )
-    |> Repo.all()
+    |> Repo.paginate(params)
   end
 
   @doc """

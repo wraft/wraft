@@ -1314,12 +1314,20 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/ContentsAndContentTypeAndState"
+              "$ref": "#/definitions/ContentsIndex"
             },
             "description": "Ok"
           }
         },
-        "parameters": [],
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
         "operationId": "WraftDocWeb.Api.V1.InstanceController.all_contents",
         "description": "API to get the list of all instances created so far under an organisation"
       }
@@ -1598,7 +1606,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/ContentsAndContentTypeAndState"
+              "$ref": "#/definitions/ContentsIndex"
             },
             "description": "Ok"
           }
@@ -1610,6 +1618,13 @@
             "name": "c_type_id",
             "in": "path",
             "description": "ID of the content type"
+          },
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
           }
         ],
         "operationId": "WraftDocWeb.Api.V1.InstanceController.index",
@@ -2770,6 +2785,66 @@
         "$ref": "#/definitions/UpdateFlow"
       },
       "description": "All flows that have been created and their details"
+    },
+    "ContentsIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "contents": {
+          "$ref": "#/definitions/Elixir.ContentsAndContentTypeAndState"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "contents": [
+          {
+            "state": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "state": "published",
+              "order": 1,
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478"
+            },
+            "content_type": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "name": "Offer letter",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "fields": {
+                "position": "string",
+                "name": "string",
+                "joining_date": "date",
+                "approved_by": "string"
+              },
+              "description": "An offer letter"
+            },
+            "content": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "serialized": {
+                "title": "Title of the content",
+                "body": "Body of the content"
+              },
+              "raw": "Content",
+              "instance_id": "OFFL01",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478"
+            }
+          }
+        ]
+      }
     },
     "ShowTheme": {
       "type": "object",
