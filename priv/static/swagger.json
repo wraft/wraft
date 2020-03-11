@@ -706,12 +706,20 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/LayoutsAndEngines"
+              "$ref": "#/definitions/LayoutIndex"
             },
             "description": "Ok"
           }
         },
-        "parameters": [],
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
         "operationId": "WraftDocWeb.Api.V1.LayoutController.index",
         "description": "API to get the list of all layouts created so far"
       }
@@ -2735,6 +2743,51 @@
       },
       "description": "All engines that have been created"
     },
+    "LayoutIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "layouts": {
+          "$ref": "#/definitions/LayoutsAndEngines"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "layouts": [
+          {
+            "width": 40.0,
+            "updated_at": "2020-01-21T14:00:00Z",
+            "unit": "cm",
+            "slug": "Pandoc",
+            "name": "Official Letter",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "height": 20.0,
+            "engine": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "name": "Pandoc",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "api_route": ""
+            },
+            "description": "An official letter"
+          }
+        ]
+      }
+    },
     "Error": {
       "type": "object",
       "title": "Errors",
@@ -2802,7 +2855,7 @@
           "description": "Page number"
         },
         "contents": {
-          "$ref": "#/definitions/Elixir.ContentsAndContentTypeAndState"
+          "$ref": "#/definitions/ContentsAndContentTypeAndState"
         }
       },
       "example": {

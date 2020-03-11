@@ -157,7 +157,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       ContentsIndex:
         swagger_schema do
           properties do
-            contents(Schema.ref(ContentsAndContentTypeAndState))
+            contents(Schema.ref(:ContentsAndContentTypeAndState))
             page_number(:integer, "Page number")
             total_pages(:integer, "Total number of pages")
             total_entries(:integer, "Total number of contents")

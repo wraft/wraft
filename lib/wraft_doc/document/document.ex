@@ -93,9 +93,14 @@ defmodule WraftDoc.Document do
   @doc """
   List all layouts.
   """
-  @spec layout_index() :: list
-  def layout_index() do
-    Repo.all(Layout) |> Repo.preload(:engine)
+  @spec layout_index(User.t(), map) :: map
+  def layout_index(%{organisation_id: org_id}, params) do
+    from(l in Layout,
+      where: l.organisation_id == ^org_id,
+      order_by: [desc: l.id],
+      preload: [:engine]
+    )
+    |> Repo.paginate(params)
   end
 
   @doc """
