@@ -183,6 +183,66 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               inserted_at: "2020-02-21T14:00:00Z"
             }
           })
+        end,
+      ContentTypesIndex:
+        swagger_schema do
+          properties do
+            content_types(Schema.ref(:ContentTypesAndLayoutsAndFlows))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            content_types: [
+              %{
+                content_type: %{
+                  id: "1232148nb3478",
+                  name: "Offer letter",
+                  description: "An offer letter",
+                  fields: %{
+                    name: "string",
+                    position: "string",
+                    joining_date: "date",
+                    approved_by: "string"
+                  },
+                  prefix: "OFFLET",
+                  color: "#fffff",
+                  flow: %{
+                    id: "1232148nb3478",
+                    name: "Flow 1",
+                    updated_at: "2020-01-21T14:00:00Z",
+                    inserted_at: "2020-02-21T14:00:00Z"
+                  },
+                  layout: %{
+                    id: "1232148nb3478",
+                    name: "Official Letter",
+                    description: "An official letter",
+                    width: 40.0,
+                    height: 20.0,
+                    unit: "cm",
+                    slug: "Pandoc",
+                    slug_file: "/letter.zip",
+                    updated_at: "2020-01-21T14:00:00Z",
+                    inserted_at: "2020-02-21T14:00:00Z"
+                  },
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                creator: %{
+                  id: "1232148nb3478",
+                  name: "John Doe",
+                  email: "email@xyz.com",
+                  email_verify: true,
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                }
+              }
+            ],
+            page_number: 1,
+            total_pages: 2,
+            total_entries: 15
+          })
         end
     }
   end
@@ -226,17 +286,29 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     get("/content_types")
     summary("Content Type index")
     description("API to get the list of all content types created so far")
-
-    response(200, "Ok", Schema.ref(:ContentTypesAndLayoutsAndFlows))
+    parameter(:page, :query, :string, "Page number")
+    response(200, "Ok", Schema.ref(:ContentTypesIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, _params) do
-    content_types = Document.content_type_index()
+  def index(conn, params) do
+    current_user = conn.assigns[:current_user]
 
-    conn
-    |> render("index.json", content_types: content_types)
+    with %{
+           entries: content_types,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.content_type_index(current_user, params) do
+      conn
+      |> render("index.json",
+        content_types: content_types,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 
   @doc """

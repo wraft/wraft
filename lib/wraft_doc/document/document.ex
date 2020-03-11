@@ -162,9 +162,14 @@ defmodule WraftDoc.Document do
   @doc """
   List all content types.
   """
-  @spec content_type_index() :: list
-  def content_type_index() do
-    Repo.all(ContentType) |> Repo.preload([:layout, :flow])
+  @spec content_type_index(User.t(), map) :: map
+  def content_type_index(%{organisation_id: org_id}, params) do
+    from(ct in ContentType,
+      where: ct.organisation_id == ^org_id,
+      order_by: [desc: ct.id],
+      preload: [:layout, :flow]
+    )
+    |> Repo.paginate(params)
   end
 
   @doc """
