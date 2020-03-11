@@ -77,7 +77,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
       AssetsIndex:
         swagger_schema do
           properties do
-            contents(Schema.ref(:Assets))
+            assets(Schema.ref(:Assets))
             page_number(:integer, "Page number")
             total_pages(:integer, "Total number of pages")
             total_entries(:integer, "Total number of contents")

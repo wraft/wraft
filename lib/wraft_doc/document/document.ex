@@ -85,9 +85,9 @@ defmodule WraftDoc.Document do
   @doc """
   List all engines.
   """
-  @spec engines_list() :: list
-  def engines_list() do
-    Repo.all(Engine)
+  @spec engines_list(map) :: map
+  def engines_list(params) do
+    Repo.paginate(Engine, params)
   end
 
   @doc """
