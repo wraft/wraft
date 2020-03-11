@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.PropicUploader do
   use Arc.Definition
   use Arc.Ecto.Definition
-  require IEx
+
   @versions [:original]
   @extension_whitelist ~w(.jpg .jpeg .gif .png)
 
@@ -17,7 +17,7 @@ defmodule WraftDocWeb.PropicUploader do
 
   # Change Filename
   def filename(_version, {_file, user}) do
-    "profilepic_#{user.firstname}_#{user.updated_at}"
+    "profilepic_#{user.name}_#{user.updated_at}"
   end
 
   # Storage Directory
