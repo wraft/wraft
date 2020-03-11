@@ -460,25 +460,27 @@ defmodule WraftDoc.Document do
   @doc """
   List all data templates under a content types.
   """
-  @spec data_template_index(binary) :: list
-  def data_template_index(c_type_uuid) do
+  @spec data_template_index(binary, map) :: map
+  def data_template_index(c_type_uuid, params) do
     from(dt in DataTemplate,
       join: ct in ContentType,
-      where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id
+      where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id,
+      order_by: [desc: dt.id]
     )
-    |> Repo.all()
+    |> Repo.paginate(params)
   end
 
   @doc """
   List all data templates under current user's organisation.
   """
-  @spec data_templates_index_of_an_organisation(User.t()) :: list
-  def data_templates_index_of_an_organisation(%{organisation_id: org_id}) do
+  @spec data_templates_index_of_an_organisation(User.t(), map) :: map
+  def data_templates_index_of_an_organisation(%{organisation_id: org_id}, params) do
     from(dt in DataTemplate,
       join: u in User,
-      where: u.organisation_id == ^org_id and dt.creator_id == u.id
+      where: u.organisation_id == ^org_id and dt.creator_id == u.id,
+      order_by: [desc: dt.id]
     )
-    |> Repo.all()
+    |> Repo.paginate(params)
   end
 
   @doc """
