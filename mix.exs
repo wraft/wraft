@@ -59,7 +59,9 @@ defmodule WraftDoc.Mixfile do
       {:jason, "~> 1.1"},
       {:poison, "~> 3.0", override: true},
       # API documentation
-      {:phoenix_swagger, "~> 0.8.2"}
+      {:phoenix_swagger, "~> 0.8.2"},
+      # Pagination
+      {:scrivener_ecto, "~> 2.3"}
     ]
   end
 
