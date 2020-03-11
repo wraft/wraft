@@ -16,6 +16,7 @@ defmodule WraftDoc.Document do
     Document.DataTemplate,
     Document.Asset,
     Enterprise,
+    Enterprise.Flow,
     Enterprise.Flow.State
   }
 
@@ -63,18 +64,18 @@ defmodule WraftDoc.Document do
   @doc """
   Create a content type.
   """
-  @spec create_content_type(User.t(), Layout.t(), map) ::
+  @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
           ContentType.t() | {:error, Ecto.Changeset.t()}
-  def create_content_type(%{organisation_id: org_id} = current_user, layout, params) do
+  def create_content_type(%{organisation_id: org_id} = current_user, layout, flow, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
 
     current_user
-    |> build_assoc(:content_types, layout: layout)
+    |> build_assoc(:content_types, layout: layout, flow: flow)
     |> ContentType.changeset(params)
     |> Repo.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
-        content_type |> Repo.preload(:layout)
+        content_type |> Repo.preload([:layout, :flow])
 
       changeset = {:error, _} ->
         changeset
@@ -158,7 +159,7 @@ defmodule WraftDoc.Document do
   """
   @spec content_type_index() :: list
   def content_type_index() do
-    Repo.all(ContentType) |> Repo.preload(:layout)
+    Repo.all(ContentType) |> Repo.preload([:layout, :flow])
   end
 
   @doc """
@@ -167,7 +168,7 @@ defmodule WraftDoc.Document do
   @spec show_content_type(binary) :: %ContentType{layout: %Layout{}, creator: %User{}}
   def show_content_type(uuid) do
     get_content_type(uuid)
-    |> Repo.preload([:layout, :creator])
+    |> Repo.preload([:layout, :creator, :flow])
   end
 
   @doc """
@@ -187,10 +188,15 @@ defmodule WraftDoc.Document do
             creator: User.t()
           }
           | {:error, Ecto.Changeset.t()}
-  def update_content_type(content_type, %{"layout_uuid" => layout_uuid} = params) do
+  def update_content_type(
+        content_type,
+        %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
+      ) do
     %Layout{id: id} = get_layout(layout_uuid)
+    %Flow{id: f_id} = Enterprise.get_flow(f_uuid)
     {_, params} = Map.pop(params, "layout_uuid")
-    params = params |> Map.merge(%{"layout_id" => id})
+    {_, params} = Map.pop(params, "flow_uuid")
+    params = params |> Map.merge(%{"layout_id" => id, "flow_id" => f_id})
     update_content_type(content_type, params)
   end
 
@@ -203,7 +209,7 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, content_type} ->
-        content_type |> Repo.preload([:layout, :creator])
+        content_type |> Repo.preload([:layout, :creator, :flow])
     end
   end
 
@@ -454,8 +460,8 @@ defmodule WraftDoc.Document do
   @doc """
   List all data templates under current user's organisation.
   """
-  @spec data_template_index(User.t()) :: list
-  def data_templatei_index_of_an_organisation(%{organisation_id: org_id}) do
+  @spec data_templates_index_of_an_organisation(User.t()) :: list
+  def data_templates_index_of_an_organisation(%{organisation_id: org_id}) do
     from(dt in DataTemplate,
       join: u in User,
       where: u.organisation_id == ^org_id and dt.creator_id == u.id

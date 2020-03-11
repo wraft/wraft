@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   use PhoenixSwagger
 
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.ContentType, Document.Layout}
+  alias WraftDoc.{Document, Document.ContentType, Document.Layout, Enterprise, Enterprise.Flow}
 
   def swagger_definitions do
     %{
@@ -14,11 +14,15 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
           properties do
             name(:string, "Content Type's name", required: true)
-            description(:string, "Content Type's description")
-            fields(:map, "Dynamic fields and their datatype")
-            layout_uuid(:string, "ID of the layout selected")
+            description(:string, "Content Type's description", required: true)
+            fields(:map, "Dynamic fields and their datatype", required: true)
+            layout_uuid(:string, "ID of the layout selected", required: true)
+            flow_uuid(:string, "ID of the flow selected", required: true)
             color(:string, "Hex code of color")
-            prefix(:string, "Prefix to be used for generating Unique ID for contents")
+
+            prefix(:string, "Prefix to be used for generating Unique ID for contents",
+              required: true
+            )
           end
 
           example(%{
@@ -31,6 +35,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               approved_by: "string"
             },
             layout_uuid: "1232148nb3478",
+            flow_uuid: "234okjnskjb8234",
             prefix: "OFFLET",
             color: "#fffff"
           })
@@ -67,7 +72,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
-      ContentTypeAndLayout:
+      ContentTypeAndLayoutAndFlow:
         swagger_schema do
           title("Content Type and Layout")
           description("Content Type to be used for the generation of a document.")
@@ -104,6 +109,13 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               height: 20.0,
               unit: "cm",
               slug: "Pandoc",
+              slug_file: "/letter.zip",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            flow: %{
+              id: "1232148nb3478",
+              name: "Flow 1",
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             },
@@ -111,12 +123,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
-      ContentTypesAndLayouts:
+      ContentTypesAndLayoutsAndFlows:
         swagger_schema do
           title("Content Types and their Layouts")
           description("All content types that have been created and their layouts")
           type(:array)
-          items(Schema.ref(:ContentTypeAndLayout))
+          items(Schema.ref(:ContentTypeAndLayoutAndFlow))
         end,
       ShowContentType:
         swagger_schema do
@@ -124,7 +136,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           description("API to show a content type and all its details")
 
           properties do
-            content_type(Schema.ref(:ContentTypeAndLayout))
+            content_type(Schema.ref(:ContentTypeAndLayoutAndFlow))
             creator(Schema.ref(:User))
           end
 
@@ -141,6 +153,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               },
               prefix: "OFFLET",
               color: "#fffff",
+              flow: %{
+                id: "1232148nb3478",
+                name: "Flow 1",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              },
               layout: %{
                 id: "1232148nb3478",
                 name: "Official Letter",
@@ -149,6 +167,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
                 height: 20.0,
                 unit: "cm",
                 slug: "Pandoc",
+                slug_file: "/letter.zip",
                 updated_at: "2020-01-21T14:00:00Z",
                 inserted_at: "2020-02-21T14:00:00Z"
               },
@@ -182,18 +201,19 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
       )
     end
 
-    response(200, "Ok", Schema.ref(:ContentTypeAndLayout))
+    response(200, "Ok", Schema.ref(:ContentTypeAndLayoutAndFlow))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"layout_uuid" => layout_uuid} = params) do
+  def create(conn, %{"layout_uuid" => layout_uuid, "flow_uuid" => flow_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
     with %Layout{} = layout <- Document.get_layout(layout_uuid),
+         %Flow{} = flow <- Enterprise.get_flow(flow_uuid),
          %ContentType{} = content_type <-
-           Document.create_content_type(current_user, layout, params) do
+           Document.create_content_type(current_user, layout, flow, params) do
       conn
       |> render(:create, content_type: content_type)
     end
@@ -207,7 +227,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     summary("Content Type index")
     description("API to get the list of all content types created so far")
 
-    response(200, "Ok", Schema.ref(:ContentTypesAndLayouts))
+    response(200, "Ok", Schema.ref(:ContentTypesAndLayoutsAndFlows))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
