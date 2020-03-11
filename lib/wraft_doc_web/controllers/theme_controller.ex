@@ -72,6 +72,32 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
               inserted_at: "2020-02-21T14:00:00Z"
             }
           })
+        end,
+      ThemeIndex:
+        swagger_schema do
+          properties do
+            themes(Schema.ref(:Themes))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            themes: [
+              %{
+                id: "1232148nb3478",
+                name: "Official Letter Theme",
+                font: "Malery",
+                typescale: %{h1: "10", p: "6", h2: "8"},
+                file: "/malory.css",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              }
+            ],
+            page_number: 1,
+            total_pages: 2,
+            total_entries: 15
+          })
         end
     }
   end
@@ -116,19 +142,29 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
     get("/themes")
     summary("Theme index")
     description("Theme index API")
-
-    response(200, "Ok", Schema.ref(:Themes))
+    parameter(:page, :query, :string, "Page number")
+    response(200, "Ok", Schema.ref(:ThemeIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, _params) do
+  def index(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    themes = Document.theme_index(current_user)
-
-    conn
-    |> render("index.json", themes: themes)
+    with %{
+           entries: themes,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.theme_index(current_user, params) do
+      conn
+      |> render("index.json",
+        themes: themes,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 
   @doc """

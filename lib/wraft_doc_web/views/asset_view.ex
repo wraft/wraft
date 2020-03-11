@@ -12,8 +12,18 @@ defmodule WraftDocWeb.Api.V1.AssetView do
     }
   end
 
-  def render("index.json", %{assets: assets}) do
-    render_many(assets, AssetView, "asset.json", as: :asset)
+  def render("index.json", %{
+        assets: assets,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      assets: render_many(assets, AssetView, "asset.json", as: :asset),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
   end
 
   def render("show.json", %{asset: asset}) do
