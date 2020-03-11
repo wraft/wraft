@@ -539,9 +539,10 @@ defmodule WraftDoc.Document do
   @doc """
   Index of all assets in an organisation.
   """
-  @spec asset_index(integer) :: list
-  def asset_index(organisation_id) do
-    from(a in Asset, where: a.organisation_id == ^organisation_id) |> Repo.all()
+  @spec asset_index(integer, map) :: map
+  def asset_index(organisation_id, params) do
+    from(a in Asset, where: a.organisation_id == ^organisation_id, order_by: [desc: a.id])
+    |> Repo.paginate(params)
   end
 
   @doc """

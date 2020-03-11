@@ -73,6 +73,29 @@ defmodule WraftDocWeb.Api.V1.AssetController do
           description("All assets that have been created under an organisation")
           type(:array)
           items(Schema.ref(:Asset))
+        end,
+      AssetsIndex:
+        swagger_schema do
+          properties do
+            contents(Schema.ref(:Assets))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            assets: [
+              %{
+                id: "1232148nb3478",
+                name: "Asset",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              }
+            ],
+            page_number: 1,
+            total_pages: 2,
+            total_entries: 15
+          })
         end
     }
   end
@@ -112,17 +135,30 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     summary("Asset index")
     description("API to get the list of all assets created so far under an organisation")
 
-    response(200, "Ok", Schema.ref(:Assets))
+    parameter(:page, :query, :string, "Page number")
+
+    response(200, "Ok", Schema.ref(:AssetsIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, _params) do
+  def index(conn, params) do
     %{organisation_id: org_id} = conn.assigns[:current_user]
-    assets = Document.asset_index(org_id)
 
-    conn
-    |> render("index.json", assets: assets)
+    with %{
+           entries: assets,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.asset_index(org_id, params) do
+      conn
+      |> render("index.json",
+        assets: assets,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 
   @doc """
