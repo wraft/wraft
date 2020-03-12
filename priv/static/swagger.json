@@ -3106,6 +3106,10 @@
           "type": "string",
           "description": "User's profile pic URL"
         },
+        "organisation_id": {
+          "type": "integer",
+          "description": "ID of the user's oranisation"
+        },
         "name": {
           "type": "string",
           "description": "Users name"
@@ -3132,6 +3136,7 @@
         "updated_at": "2020-01-21T14:00:00Z",
         "role": "user",
         "profile_pic": "www.aws.com/users/johndoe.jpg",
+        "organisation_id": "jn14786914qklnqw",
         "name": "John Doe",
         "inserted_at": "2020-02-21T14:00:00Z",
         "id": "1232148nb3478",
