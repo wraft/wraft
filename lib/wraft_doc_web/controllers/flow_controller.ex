@@ -107,6 +107,65 @@ defmodule WraftDocWeb.Api.V1.FlowController do
               }
             ]
           })
+        end,
+      FlowAndStatesWithoutCreator:
+        swagger_schema do
+          title("Show flow details and its states")
+          description("Show all details of a flow including all the states undet the flow")
+
+          properties do
+            flow(Schema.ref(:Flow))
+            states(Schema.ref(:State))
+          end
+
+          example(%{
+            flow: %{
+              id: "1232148nb3478",
+              name: "Flow 1",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            states: [
+              %{
+                id: "1232148nb3478",
+                state: "published",
+                order: 1
+              }
+            ]
+          })
+        end,
+      FlowIndex:
+        swagger_schema do
+          properties do
+            flows(Schema.ref(:ShowFlows))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            flows: [
+              %{
+                flow: %{
+                  id: "1232148nb3478",
+                  name: "Flow 1",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                creator: %{
+                  id: "1232148nb3478",
+                  name: "John Doe",
+                  email: "email@xyz.com",
+                  email_verify: true,
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                }
+              }
+            ],
+            page_number: 1,
+            total_pages: 2,
+            total_entries: 15
+          })
         end
     }
   end
@@ -146,17 +205,30 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     summary("Flow index")
     description("Index of flows in current user's organisation")
 
-    response(200, "Ok", Schema.ref(:ShowFlows))
+    parameter(:page, :query, :string, "Page number")
+
+    response(200, "Ok", Schema.ref(:FlowIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, _params) do
+  def index(conn, params) do
     current_user = conn.assigns[:current_user]
-    flows = Enterprise.flow_index(current_user)
 
-    conn
-    |> render("index.json", flows: flows)
+    with %{
+           entries: flows,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Enterprise.flow_index(current_user, params) do
+      conn
+      |> render("index.json",
+        flows: flows,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 
   @doc """
