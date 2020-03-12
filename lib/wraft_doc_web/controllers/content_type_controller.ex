@@ -85,6 +85,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             prefix(:string, "Prefix to be used for generating Unique ID for contents")
             color(:string, "Hex code of color")
             layout(Schema.ref(:Layout))
+            flow(Schema.ref(:Flow))
             inserted_at(:string, "When was the user inserted", format: "ISO-8601")
             updated_at(:string, "When was the user last updated", format: "ISO-8601")
           end
@@ -130,13 +131,72 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           type(:array)
           items(Schema.ref(:ContentTypeAndLayoutAndFlow))
         end,
+      ContentTypeAndLayoutAndFlowAndStates:
+        swagger_schema do
+          title("Content Type, Layout, Flow and states")
+          description("Content Type to be used for the generation of a document.")
+
+          properties do
+            id(:string, "The ID of the content type", required: true)
+            name(:string, "Content Type's name", required: true)
+            description(:string, "Content Type's description")
+            fields(:map, "Dynamic fields and their datatype")
+            prefix(:string, "Prefix to be used for generating Unique ID for contents")
+            color(:string, "Hex code of color")
+            layout(Schema.ref(:Layout))
+            flow(Schema.ref(:FlowAndStatesWithoutCreator))
+            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
+            updated_at(:string, "When was the user last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            name: "Offer letter",
+            description: "An offer letter",
+            fields: %{
+              name: "string",
+              position: "string",
+              joining_date: "date",
+              approved_by: "string"
+            },
+            prefix: "OFFLET",
+            color: "#fffff",
+            layout: %{
+              id: "1232148nb3478",
+              name: "Official Letter",
+              description: "An official letter",
+              width: 40.0,
+              height: 20.0,
+              unit: "cm",
+              slug: "Pandoc",
+              slug_file: "/letter.zip",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            flow: %{
+              id: "1232148nb3478",
+              name: "Flow 1",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z",
+              states: [
+                %{
+                  id: "1232148nb3478",
+                  state: "published",
+                  order: 1
+                }
+              ]
+            },
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
       ShowContentType:
         swagger_schema do
           title("Content Type and all its details")
           description("API to show a content type and all its details")
 
           properties do
-            content_type(Schema.ref(:ContentTypeAndLayoutAndFlow))
+            content_type(Schema.ref(:ContentTypeAndLayoutAndFlowAndStates))
             creator(Schema.ref(:User))
           end
 
@@ -157,7 +217,14 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
                 id: "1232148nb3478",
                 name: "Flow 1",
                 updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z"
+                inserted_at: "2020-02-21T14:00:00Z",
+                states: [
+                  %{
+                    id: "1232148nb3478",
+                    state: "published",
+                    order: 1
+                  }
+                ]
               },
               layout: %{
                 id: "1232148nb3478",

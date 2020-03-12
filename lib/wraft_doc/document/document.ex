@@ -178,7 +178,7 @@ defmodule WraftDoc.Document do
   @spec show_content_type(binary) :: %ContentType{layout: %Layout{}, creator: %User{}}
   def show_content_type(uuid) do
     get_content_type(uuid)
-    |> Repo.preload([:layout, :creator, :flow])
+    |> Repo.preload([:layout, :creator, [{:flow, :states}]])
   end
 
   @doc """
@@ -219,7 +219,7 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, content_type} ->
-        content_type |> Repo.preload([:layout, :creator, :flow])
+        content_type |> Repo.preload([:layout, :creator, [{:flow, :states}]])
     end
   end
 
