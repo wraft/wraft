@@ -83,6 +83,9 @@ defmodule WraftDocWeb.Router do
       # All instances in an organisation
       get("/contents", InstanceController, :all_contents)
 
+      # uild PDF from a content
+      post("/contents/:id/build", InstanceController, :build)
+
       # All instances in an organisation
       get("/data_templates", DataTemplateController, :all_templates)
 
