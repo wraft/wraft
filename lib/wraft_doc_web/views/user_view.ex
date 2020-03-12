@@ -35,6 +35,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
       name: me.name,
       email: me.email,
       email_verify: me.email_verify,
+      organisation_id: me.organisation.uuid,
       inserted_at: me.inserted_at,
       updated_at: me.updated_at,
       profile_pic: me.profile.profile_pic,
