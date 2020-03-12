@@ -108,6 +108,32 @@ defmodule WraftDocWeb.Api.V1.FlowController do
             ]
           })
         end,
+      FlowAndStatesWithoutCreator:
+        swagger_schema do
+          title("Show flow details and its states")
+          description("Show all details of a flow including all the states undet the flow")
+
+          properties do
+            flow(Schema.ref(:Flow))
+            states(Schema.ref(:State))
+          end
+
+          example(%{
+            flow: %{
+              id: "1232148nb3478",
+              name: "Flow 1",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            states: [
+              %{
+                id: "1232148nb3478",
+                state: "published",
+                order: 1
+              }
+            ]
+          })
+        end,
       FlowIndex:
         swagger_schema do
           properties do
