@@ -13,8 +13,19 @@ defmodule WraftDocWeb.Api.V1.DataTemplateView do
     }
   end
 
-  def render("index.json", %{data_templates: data_templates}) do
-    render_many(data_templates, DataTemplateView, "create.json", as: :d_template)
+  def render("index.json", %{
+        data_templates: data_templates,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      data_templates:
+        render_many(data_templates, DataTemplateView, "create.json", as: :d_template),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
   end
 
   def render("show.json", %{d_template: d_temp}) do
