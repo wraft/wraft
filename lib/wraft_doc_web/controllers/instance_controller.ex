@@ -385,6 +385,25 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
+  @doc """
+  Build a document from a content.
+  """
+  swagger_path :build do
+    post("/contents/{id}/build")
+    summary("Build a document")
+    description("API to build a document from instance")
+
+    parameters do
+      id(:path, :string, "instance id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec build(Plug.Conn.t(), map) :: Plug.Conn.t()
   def build(conn, %{"id" => instance_uuid}) do
     with %Instance{content_type: c_type} = instance <- Document.show_instance(instance_uuid),
          %ContentType{} = c_type <- Document.prelaod_layout(c_type),
