@@ -1,4 +1,0 @@
-dynamic/intro.md
-dynamic/proposal.md
-dynamic/others.md
-dynamic/team.md
