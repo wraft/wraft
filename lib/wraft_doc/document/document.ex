@@ -578,4 +578,51 @@ defmodule WraftDoc.Document do
   def delete_asset(asset) do
     asset |> Repo.delete()
   end
+
+  def prelaod_layout(c_type) do
+    c_type |> Repo.preload(:layout)
+  end
+
+  def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %{
+        layout: %Layout{slug: slug}
+      }) do
+    System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}/"])
+
+    header =
+      c_type.fields
+      |> Enum.reduce("--- \n", fn {k, _}, acc ->
+        find_header_values(k, instance.serialized, acc)
+      end)
+
+    header = header <> "--- \n"
+
+    content = """
+    #{header}
+    #{instance.raw}
+    """
+
+    File.write("uploads/contents/#{u_id}/content.md", content)
+
+    pandoc_commands = [
+      "uploads/contents/#{u_id}/content.md",
+      "--template=uploads/contents/#{u_id}/template.tex",
+      "--pdf-engine=xelatex",
+      "-o",
+      "p-#{u_id}.pdf"
+    ]
+
+    System.cmd("pandoc", pandoc_commands)
+  end
+
+  defp find_header_values(key, serialized, acc) do
+    serialized
+    |> Enum.find(fn {k, _} -> k == key end)
+    |> case do
+      nil ->
+        acc
+
+      {_, value} ->
+        acc <> "#{key}: #{value} \n"
+    end
+  end
 end
