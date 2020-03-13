@@ -74,7 +74,7 @@ content_type =
   %ContentType{
     name: "Offer Letter",
     description: "An offer letter",
-    fields: %{name: "John Doe", position: "Elixir Developer"},
+    fields: %{name: "string", position: "string"},
     prefix: "OFFLET",
     layout_id: layout.id,
     creator_id: user.id,
