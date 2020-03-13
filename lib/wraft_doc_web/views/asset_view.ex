@@ -7,6 +7,7 @@ defmodule WraftDocWeb.Api.V1.AssetView do
     %{
       id: asset.uuid,
       name: asset.name,
+      file: asset |> generate_url,
       inserted_at: asset.inserted_at,
       updated_at: asset.updated_at
     }
@@ -31,5 +32,9 @@ defmodule WraftDocWeb.Api.V1.AssetView do
       asset: render_one(asset, AssetView, "asset.json", as: :asset),
       creator: render_one(asset.creator, UserView, "user.json", as: :user)
     }
+  end
+
+  defp generate_url(%{file: file} = asset) do
+    WraftDocWeb.AssetUploader.url({file, asset})
   end
 end

@@ -533,7 +533,30 @@ defmodule WraftDoc.Document do
   @spec create_asset(User.t(), map) :: {:ok, Asset.t()}
   def create_asset(%{organisation_id: org_id} = current_user, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
-    current_user |> build_assoc(:assets) |> Asset.changeset(params) |> Repo.insert()
+
+    current_user
+    |> build_assoc(:assets)
+    |> Asset.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, asset} ->
+        asset |> asset_file_upload(params)
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Upload asset file.
+  """
+  @spec asset_file_upload(Asset.t(), map) :: {:ok, %Asset{}} | {:error, Ecto.Changeset.t()}
+  def asset_file_upload(asset, %{"file" => _} = params) do
+    asset |> Asset.file_changeset(params) |> Repo.update()
+  end
+
+  def asset_file_upload(asset, _params) do
+    {:ok, asset}
   end
 
   @doc """
