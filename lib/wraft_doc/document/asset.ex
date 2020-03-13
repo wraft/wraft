@@ -25,7 +25,8 @@ defmodule WraftDoc.Document.Asset do
   def update_changeset(%Asset{} = asset, attrs \\ %{}) do
     asset
     |> cast(attrs, [:name])
-    |> validate_required([:name])
+    |> cast_attachments(attrs, [:file])
+    |> validate_required([:name, :file])
   end
 
   def file_changeset(%Asset{} = asset, attrs \\ %{}) do
