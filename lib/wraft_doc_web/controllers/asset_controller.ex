@@ -16,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
           properties do
             id(:string, "The ID of the asset", required: true)
             name(:string, "Name of the asset")
-            file(:string, "URL of uploaded file")
+            file(:string, "URL of the uploaded file")
             inserted_at(:string, "When was the engine inserted", format: "ISO-8601")
             updated_at(:string, "When was the engine last updated", format: "ISO-8601")
           end
