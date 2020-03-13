@@ -16,6 +16,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
           properties do
             id(:string, "The ID of the asset", required: true)
             name(:string, "Name of the asset")
+            file(:string, "URL of uploaded file")
             inserted_at(:string, "When was the engine inserted", format: "ISO-8601")
             updated_at(:string, "When was the engine last updated", format: "ISO-8601")
           end
@@ -23,21 +24,9 @@ defmodule WraftDocWeb.Api.V1.AssetController do
           example(%{
             id: "1232148nb3478",
             name: "Asset",
+            file: "/signature.pdf",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
-          })
-        end,
-      AssetRequest:
-        swagger_schema do
-          title("Asset Request")
-          description("Asset creation/updation request")
-
-          properties do
-            name(:string, "Asset name", required: true)
-          end
-
-          example(%{
-            name: "Asset"
           })
         end,
       ShowAsset:
@@ -54,6 +43,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
             asset: %{
               id: "1232148nb3478",
               name: "Asset",
+              file: "/signature.pdf",
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             },
@@ -88,6 +78,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
               %{
                 id: "1232148nb3478",
                 name: "Asset",
+                file: "/signature.pdf",
                 updated_at: "2020-01-21T14:00:00Z",
                 inserted_at: "2020-02-21T14:00:00Z"
               }
@@ -108,9 +99,10 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     summary("Create an asset")
     description("Create asset API")
 
-    parameters do
-      asset(:body, Schema.ref(:AssetRequest), "Asset to be created", required: true)
-    end
+    consumes("multipart/form-data")
+
+    parameter(:name, :formData, :string, "Asset name", required: true)
+    parameter(:file, :formData, :file, "Asset file to upload")
 
     response(200, "Ok", Schema.ref(:Asset))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -193,11 +185,11 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     summary("Update an asset")
     description("API to update an asset")
 
-    parameters do
-      id(:path, :string, "asset id", required: true)
+    consumes("multipart/form-data")
 
-      asset(:body, Schema.ref(:AssetRequest), "Asset to be updated", required: true)
-    end
+    parameter(:id, :path, :string, "asset id", required: true)
+    parameter(:name, :formData, :string, "Asset name", required: true)
+    parameter(:file, :formData, :file, "Asset file to upload")
 
     response(200, "Ok", Schema.ref(:Asset))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
