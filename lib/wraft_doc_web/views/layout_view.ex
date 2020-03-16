@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.LayoutView do
   use WraftDocWeb, :view
-  alias WraftDocWeb.Api.V1.{EngineView, UserView}
+  alias WraftDocWeb.Api.V1.{EngineView, UserView, AssetView}
   alias __MODULE__
 
   def render("create.json", %{doc_layout: layout}) do
@@ -16,7 +16,8 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       screenshot: layout |> generate_ss_url(),
       inserted_at: layout.inserted_at,
       update_at: layout.updated_at,
-      engine: render_one(layout.engine, EngineView, "create.json", as: :engine)
+      engine: render_one(layout.engine, EngineView, "create.json", as: :engine),
+      assets: render_many(layout.assets, AssetView, "asset.json", as: :asset)
     }
   end
 

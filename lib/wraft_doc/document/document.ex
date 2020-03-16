@@ -15,6 +15,7 @@ defmodule WraftDoc.Document do
     Document.Theme,
     Document.DataTemplate,
     Document.Asset,
+    Document.LayoutAsset,
     Enterprise,
     Enterprise.Flow,
     Enterprise.Flow.State
@@ -33,7 +34,9 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, layout} ->
-        layout |> layout_files_upload(params)
+        layout = layout |> layout_files_upload(params)
+        layout |> fetch_and_associcate_assets(current_user, params)
+        layout |> Repo.preload([:engine, :creator, :assets])
 
       changeset = {:error, _} ->
         changeset
@@ -64,11 +67,28 @@ defmodule WraftDoc.Document do
     |> Repo.update()
     |> case do
       {:ok, layout} ->
-        layout |> Repo.preload([:engine, :creator])
+        layout
 
       {:error, _} = changeset ->
         changeset
     end
+  end
+
+  def fetch_and_associcate_assets(layout, current_user, %{"assets" => assets}) do
+    (assets || "")
+    |> String.split(",")
+    |> Stream.map(fn x -> get_asset(x) end)
+    |> Stream.map(fn x -> associate_layout_and_asset(layout, current_user, x) end)
+    |> Enum.to_list()
+  end
+
+  defp associate_layout_and_asset(_layout, _current_user, nil), do: nil
+
+  defp associate_layout_and_asset(layout, current_user, asset) do
+    layout
+    |> build_assoc(:layout_assets, asset: asset, creator: current_user)
+    |> LayoutAsset.changeset()
+    |> Repo.insert()
   end
 
   @doc """
@@ -108,7 +128,7 @@ defmodule WraftDoc.Document do
     from(l in Layout,
       where: l.organisation_id == ^org_id,
       order_by: [desc: l.id],
-      preload: [:engine]
+      preload: [:engine, :assets]
     )
     |> Repo.paginate(params)
   end
@@ -119,7 +139,7 @@ defmodule WraftDoc.Document do
   @spec show_layout(binary) :: %Layout{engine: Engine.t(), creator: User.t()}
   def show_layout(uuid) do
     get_layout(uuid)
-    |> Repo.preload([:engine, :creator])
+    |> Repo.preload([:engine, :creator, :assets])
   end
 
   @doc """
@@ -133,15 +153,15 @@ defmodule WraftDoc.Document do
   @doc """
   Update a layout.
   """
-  @spec update_layout(Layout.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
-  def update_layout(layout, %{"engine_uuid" => engine_uuid} = params) do
+  @spec update_layout(Layout.t(), User.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
+  def update_layout(layout, current_user, %{"engine_uuid" => engine_uuid} = params) do
     %Engine{id: id} = get_engine(engine_uuid)
     {_, params} = Map.pop(params, "engine_uuid")
     params = params |> Map.merge(%{"engine_id" => id})
-    update_layout(layout, params)
+    update_layout(layout, current_user, params)
   end
 
-  def update_layout(layout, params) do
+  def update_layout(layout, current_user, params) do
     layout
     |> Layout.update_changeset(params)
     |> Repo.update()
@@ -150,7 +170,8 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, layout} ->
-        layout |> Repo.preload([:engine, :creator])
+        layout |> fetch_and_associcate_assets(current_user, params)
+        layout |> Repo.preload([:engine, :creator, :assets])
     end
   end
 

@@ -81,6 +81,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             slug_file(:string, "URL of the uploaded slug file")
             screenshot(:string, "URL of the uploaded screenshot")
             engine(Schema.ref(:Engine))
+            assets(Schema.ref(:Assets))
             inserted_at(:string, "When was the layout created", format: "ISO-8601")
             updated_at(:string, "When was the layout last updated", format: "ISO-8601")
           end
@@ -102,6 +103,15 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             },
+            assets: [
+              %{
+                id: "1232148nb3478",
+                name: "Asset",
+                file: "/signature.pdf",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              }
+            ],
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -224,6 +234,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
 
+    parameter(:assets, :formData, :list, "IDs of assets of the layout")
+
     parameter(:engine_uuid, :formData, :string, "ID of layout's engine", required: true)
 
     response(200, "Ok", Schema.ref(:LayoutAndEngine))
@@ -333,6 +345,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
 
+    parameter(:assets, :formData, :list, "IDs of assets of the layout")
+
     parameter(:engine_uuid, :formData, :string, "ID of layout's engine", required: true)
 
     response(200, "Ok", Schema.ref(:ShowLayout))
@@ -342,8 +356,10 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %Layout{} = layout <- Document.get_layout(uuid),
-         %Layout{} = layout <- Document.update_layout(layout, params) do
+         %Layout{} = layout <- Document.update_layout(layout, current_user, params) do
       conn
       |> render("show.json", doc_layout: layout)
     end
