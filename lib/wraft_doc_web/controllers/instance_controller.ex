@@ -406,7 +406,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   @spec build(Plug.Conn.t(), map) :: Plug.Conn.t()
   def build(conn, %{"id" => instance_uuid}) do
     with %Instance{content_type: c_type} = instance <- Document.show_instance(instance_uuid),
-         %ContentType{} = c_type <- Document.prelaod_layout(c_type),
+         %ContentType{} = c_type <- Document.preload_layout(c_type),
          _ <- Document.build_doc(instance, c_type) do
       conn |> render("instance.json", instance: instance)
     end

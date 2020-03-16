@@ -21,6 +21,8 @@ defmodule WraftDoc.Document do
     Enterprise.Flow.State
   }
 
+  alias WraftDocWeb.AssetUploader
+
   @doc """
   Create a layout.
   """
@@ -81,6 +83,8 @@ defmodule WraftDoc.Document do
     |> Stream.map(fn x -> associate_layout_and_asset(layout, current_user, x) end)
     |> Enum.to_list()
   end
+
+  def fetch_and_associcate_assets(_layout, _current_user, _params), do: nil
 
   defp associate_layout_and_asset(_layout, _current_user, nil), do: nil
 
@@ -633,12 +637,12 @@ defmodule WraftDoc.Document do
     asset |> Repo.delete()
   end
 
-  def prelaod_layout(c_type) do
-    c_type |> Repo.preload(:layout)
+  def preload_layout(c_type) do
+    c_type |> Repo.preload([{:layout, :assets}])
   end
 
   def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %{
-        layout: %Layout{slug: slug}
+        layout: %Layout{slug: slug, assets: assets}
       }) do
     System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}/"])
 
@@ -647,6 +651,8 @@ defmodule WraftDoc.Document do
       |> Enum.reduce("--- \n", fn {k, _}, acc ->
         find_header_values(k, instance.serialized, acc)
       end)
+
+    header = assets |> Enum.reduce(header, fn x, acc -> find_header_values(x, acc) end)
 
     header = header <> "--- \n"
 
@@ -662,7 +668,7 @@ defmodule WraftDoc.Document do
       "--template=uploads/contents/#{u_id}/template.tex",
       "--pdf-engine=xelatex",
       "-o",
-      "p-#{u_id}.pdf"
+      "uploads/contents/#{u_id}/final.pdf"
     ]
 
     System.cmd("pandoc", pandoc_commands)
@@ -678,5 +684,14 @@ defmodule WraftDoc.Document do
       {_, value} ->
         acc <> "#{key}: #{value} \n"
     end
+  end
+
+  defp find_header_values(%Asset{name: name, file: file} = asset, acc) do
+    url = AssetUploader |> generate_url(file, asset)
+    acc <> "#{name}: #{url} \n"
+  end
+
+  defp generate_url(uploader, file, scope) do
+    uploader.url({file, scope})
   end
 end
