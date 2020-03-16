@@ -5,7 +5,7 @@ defmodule WraftDoc.Document.Layout do
   use Ecto.Schema
   use Arc.Ecto.Schema
   import Ecto.Changeset
-  alias WraftDoc.Document.Layout
+  alias __MODULE__
 
   schema "layout" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
@@ -22,6 +22,10 @@ defmodule WraftDoc.Document.Layout do
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     has_many(:content_types, WraftDoc.Document.ContentType)
+
+    has_many(:layout_assets, WraftDoc.Document.LayoutAsset)
+    has_many(:assets, through: [:layout_assets, :asset])
+
     timestamps()
   end
 
@@ -81,8 +85,5 @@ defmodule WraftDoc.Document.Layout do
   def file_changeset(%Layout{} = layout, attrs \\ %{}) do
     layout
     |> cast_attachments(attrs, [:slug_file, :screenshot])
-    |> validate_required([:slug_file, :screenshot],
-      message: "Cant be blank. Try editing the layout the layout and upload the file again.!"
-    )
   end
 end
