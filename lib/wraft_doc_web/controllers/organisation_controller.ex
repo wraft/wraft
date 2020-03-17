@@ -52,11 +52,16 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
           end
 
           example(%{
+            id: "mnbjhb23488n23e",
             name: "ABC enterprices",
             legal_name: "ABC enterprices LLC",
             address: "#24, XV Building, TS DEB Layout ",
+            name_of_ceo: "John Doe",
+            name_of_cto: "Foo Doo",
             gstin: "32AA65FF56545353",
+            corporate_id: "BNIJSN1234NGT",
             email: "abcent@gmail.com",
+            logo: "/logo.jpg",
             phone: "865623232",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
@@ -163,6 +168,23 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @doc """
   Delete an organisation
   """
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/organisations/{id}")
+    summary("Delete an organisation")
+    description("Delete Organisation API")
+    operation_id("delete_organisation")
+    tag("Organisation")
+
+    parameters do
+      id(:path, :string, "Organisation id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Organisation))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
     with %Organisation{} = organisation <- Enterprise.get_organisation(uuid),
