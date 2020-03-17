@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.LayoutView do
   use WraftDocWeb, :view
-  alias WraftDocWeb.Api.V1.{EngineView, UserView}
+  alias WraftDocWeb.Api.V1.{EngineView, UserView, AssetView}
   alias __MODULE__
 
   def render("create.json", %{doc_layout: layout}) do
@@ -13,9 +13,11 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       unit: layout.unit,
       slug: layout.slug,
       slug_file: layout |> generate_url(),
+      screenshot: layout |> generate_ss_url(),
       inserted_at: layout.inserted_at,
       update_at: layout.updated_at,
-      engine: render_one(layout.engine, EngineView, "create.json", as: :engine)
+      engine: render_one(layout.engine, EngineView, "create.json", as: :engine),
+      assets: render_many(layout.assets, AssetView, "asset.json", as: :asset)
     }
   end
 
@@ -29,6 +31,7 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       unit: layout.unit,
       slug: layout.slug,
       slug_file: layout |> generate_url(),
+      screenshot: layout |> generate_ss_url(),
       inserted_at: layout.inserted_at,
       update_at: layout.updated_at
     }
@@ -57,5 +60,9 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
 
   defp generate_url(%{slug_file: file} = layout) do
     WraftDocWeb.LayoutSlugUploader.url({file, layout})
+  end
+
+  defp generate_ss_url(%{screenshot: file} = layout) do
+    WraftDocWeb.LayoutScreenShotUploader.url({file, layout})
   end
 end
