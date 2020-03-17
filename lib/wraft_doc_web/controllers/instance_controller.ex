@@ -405,10 +405,31 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   @spec build(Plug.Conn.t(), map) :: Plug.Conn.t()
   def build(conn, %{"id" => instance_uuid}) do
+    current_user = conn.assigns[:current_user]
+    start_time = Timex.now()
+
     with %Instance{content_type: c_type} = instance <- Document.show_instance(instance_uuid),
          %ContentType{} = c_type <- Document.preload_layout(c_type),
-         _ <- Document.build_doc(instance, c_type) do
-      conn |> render("instance.json", instance: instance)
+         {_, exit_code} <- Document.build_doc(instance, c_type) do
+      end_time = Timex.now()
+
+      Task.start_link(fn ->
+        Document.add_build_history(current_user, instance, %{
+          start_time: start_time,
+          end_time: end_time,
+          exit_code: exit_code
+        })
+      end)
+
+      case exit_code do
+        0 ->
+          conn |> render("instance.json", instance: instance)
+
+        _ ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> render("build_fail.json", %{exit_code: exit_code})
+      end
     end
   end
 end

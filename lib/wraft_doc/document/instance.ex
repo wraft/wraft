@@ -14,6 +14,8 @@ defmodule WraftDoc.Document.Instance do
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
+
+    has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :content_id)
     timestamps()
   end
 

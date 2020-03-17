@@ -12,6 +12,7 @@ defmodule WraftDoc.Document do
     Document.ContentType,
     Document.Engine,
     Document.Instance,
+    Document.Instance.History,
     Document.Theme,
     Document.DataTemplate,
     Document.Asset,
@@ -693,5 +694,37 @@ defmodule WraftDoc.Document do
 
   defp generate_url(uploader, file, scope) do
     uploader.url({file, scope}, signed: true)
+  end
+
+  @doc """
+  Insert the build history of the given instance.
+  """
+  @spec add_build_history(User.t(), Instance.t(), map) :: History.t()
+  def add_build_history(current_user, instance, params) do
+    params = create_build_history_params(params)
+
+    current_user
+    |> build_assoc(:build_histories, content: instance)
+    |> History.changeset(params)
+    |> Repo.insert!()
+  end
+
+  # Create params to insert build history
+  # Build history Status will be "success" when exit code is 0
+  @spec create_build_history_params(map) :: map
+  defp create_build_history_params(%{exit_code: exit_code} = params) when exit_code == 0 do
+    %{status: "success"} |> Map.merge(params) |> calculate_build_delay
+  end
+
+  # Build history Status will be "failed" when exit code is not 0
+  defp create_build_history_params(params) do
+    %{status: "failed"} |> Map.merge(params) |> calculate_build_delay
+  end
+
+  # Calculate the delay in the build process from the start and end time in the params.
+  @spec calculate_build_delay(map) :: map
+  defp calculate_build_delay(%{start_time: start_time, end_time: end_time} = params) do
+    delay = Timex.diff(end_time, start_time, :millisecond)
+    params |> Map.merge(%{delay: delay})
   end
 end
