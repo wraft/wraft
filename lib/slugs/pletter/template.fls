@@ -1,0 +1,12 @@
+PWD /Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/pletter
+INPUT /usr/local/texlive/2019/texmf.cnf
+INPUT /usr/local/texlive/2019/texmf-dist/web2c/texmf.cnf
+INPUT /usr/local/texlive/2019/texmf-var/web2c/pdftex/pdflatex.fmt
+INPUT /Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/pletter/template.tex
+OUTPUT /Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/pletter/template.log
+INPUT /usr/local/texlive/2019/texmf-dist/tex/latex/base/letter.cls
+INPUT /usr/local/texlive/2019/texmf-dist/tex/latex/base/letter.cls
+INPUT /usr/local/texlive/2019/texmf-dist/tex/latex/base/size10.clo
+INPUT /usr/local/texlive/2019/texmf-dist/tex/latex/base/size10.clo
+OUTPUT /Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/pletter/template.pdf
+INPUT /usr/local/texlive/2019/texmf-var/fonts/map/pdftex/updmap/pdftex.map

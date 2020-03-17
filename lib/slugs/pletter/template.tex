@@ -36,7 +36,7 @@ $for(fontfamilies)$
   \newfontfamily{$fontfamilies.name$}[$fontfamilies.options$]{$fontfamilies.font$}
 $endfor$
 $if(mainfont)$
-    
+
 $endif$
 $if(sansfont)$
     \setsansfont[$for(sansfontoptions)$$sansfontoptions$$sep$,$endfor$]{$sansfont$}
@@ -274,11 +274,11 @@ $endif$
 }
 $endif$
 
-\setmainfont[
-    BoldFont = Mallory-Bold.otf,
-    ItalicFont = BasierCircle-RegularItalic.otf,
-    BoldItalicFont = BasierCircle-BoldItalic.otf
-    ]{Mallory-Book.otf}
+% \setmainfont[
+%     BoldFont = Mallory-Bold.otf,
+%     ItalicFont = BasierCircle-RegularItalic.otf,
+%     BoldItalicFont = BasierCircle-BoldItalic.otf
+%     ]{Mallory-Book.otf}
 
 
 \begin{letter}{$for(address)$$address$$sep$\\$endfor$$if(subject)$\\ ~ \\$subject$$endif$}
