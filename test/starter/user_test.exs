@@ -68,11 +68,11 @@ defmodule WraftDoc.UserTest do
     assert "has invalid format" in errors_on(changeset, :name)
   end
 
-  test "changeset does not accept lastnames with special characters" do
-    attrs = Map.put(@valid_attrs, :lastname, "wrong/4lastname?!")
-    changeset = User.changeset(%User{}, attrs)
-    assert "has invalid format" in errors_on(changeset, :lastname)
-  end
+  # test "changeset does not accept lastnames with special characters" do
+  #   attrs = Map.put(@valid_attrs, :lastname, "wrong/4lastname?!")
+  #   changeset = User.changeset(%User{}, attrs)
+  #   assert "has invalid format" in errors_on(changeset, :lastname)
+  # end
 
   test "changeset does not accept taken email address" do
     attrs = Map.put(@valid_attrs, :email, "used@mail.com")
@@ -90,18 +90,18 @@ defmodule WraftDoc.UserTest do
     refute changeset.valid?
   end
 
-  test "changeset does not accept taken mobile number" do
-    attrs = Map.put(@valid_attrs, :mobile, "917012881175")
+  # test "changeset does not accept taken mobile number" do
+  #   attrs = Map.put(@valid_attrs, :mobile, "917012881175")
 
-    changeset_1 =
-      %User{}
-      |> User.changeset(attrs)
-      |> Repo.insert()
+  #   changeset_1 =
+  #     %User{}
+  #     |> User.changeset(attrs)
+  #     |> Repo.insert()
 
-    changeset_2 =
-      %User{}
-      |> User.changeset(attrs)
+  #   changeset_2 =
+  #     %User{}
+  #     |> User.changeset(attrs)
 
-    {:error, changeset} = Repo.insert(changeset_2)
-  end
+  #   {:error, changeset} = Repo.insert(changeset_2)
+  # end
 end
