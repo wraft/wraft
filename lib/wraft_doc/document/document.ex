@@ -12,6 +12,7 @@ defmodule WraftDoc.Document do
     Document.ContentType,
     Document.Engine,
     Document.Instance,
+    Document.Instance.History,
     Document.Theme,
     Document.DataTemplate,
     Document.Asset,
@@ -76,7 +77,8 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def fetch_and_associcate_assets(layout, current_user, %{"assets" => assets}) do
+  # Get all the assets from their UUIDs and associate them with the given layout.
+  defp fetch_and_associcate_assets(layout, current_user, %{"assets" => assets}) do
     (assets || "")
     |> String.split(",")
     |> Stream.map(fn x -> get_asset(x) end)
@@ -84,8 +86,9 @@ defmodule WraftDoc.Document do
     |> Enum.to_list()
   end
 
-  def fetch_and_associcate_assets(_layout, _current_user, _params), do: nil
+  defp fetch_and_associcate_assets(_layout, _current_user, _params), do: nil
 
+  # Associate the asset with the given layout, ie; insert a LayoutAsset entry.
   defp associate_layout_and_asset(_layout, _current_user, nil), do: nil
 
   defp associate_layout_and_asset(layout, current_user, asset) do
@@ -358,7 +361,9 @@ defmodule WraftDoc.Document do
   @spec show_instance(binary) ::
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
   def show_instance(instance_uuid) do
-    instance_uuid |> get_instance() |> Repo.preload([:creator, :content_type, :state])
+    instance_uuid
+    |> get_instance()
+    |> Repo.preload([:creator, [{:content_type, :layout}], :state])
   end
 
   @doc """
@@ -381,7 +386,7 @@ defmodule WraftDoc.Document do
     |> Repo.update()
     |> case do
       {:ok, instance} ->
-        instance |> Repo.preload([:creator, :content_type, :state])
+        instance |> Repo.preload([:creator, [{:content_type, :layout}], :state])
 
       {:error, _} = changeset ->
         changeset
@@ -637,12 +642,21 @@ defmodule WraftDoc.Document do
     asset |> Repo.delete()
   end
 
-  def preload_layout(c_type) do
-    c_type |> Repo.preload([{:layout, :assets}])
+  @doc """
+  Preload assets of a layout.
+  """
+  @spec preload_asset(Layout.t()) :: Layout.t()
+  def preload_asset(layout) do
+    layout |> Repo.preload([:assets])
   end
 
-  def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %{
-        layout: %Layout{slug: slug, assets: assets}
+  @doc """
+  Build a PDF document.
+  """
+  @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
+  def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %Layout{
+        slug: slug,
+        assets: assets
       }) do
     System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}/"])
 
@@ -674,6 +688,8 @@ defmodule WraftDoc.Document do
     System.cmd("pandoc", pandoc_commands)
   end
 
+  # Find the header values for the content.md file from the serialized data of an instance.
+  @spec find_header_values(String.t(), map, String.t()) :: String.t()
   defp find_header_values(key, serialized, acc) do
     serialized
     |> Enum.find(fn {k, _} -> k == key end)
@@ -686,12 +702,48 @@ defmodule WraftDoc.Document do
     end
   end
 
+  # Find the header values for the content.md file from the assets of the layout used.
+  @spec find_header_values(Asset.t(), String.t()) :: String.t()
   defp find_header_values(%Asset{name: name, file: file} = asset, acc) do
-    url = AssetUploader |> generate_url(file, asset)
-    acc <> "#{name}: #{url} \n"
+    <<_first::utf8, rest::binary>> = AssetUploader |> generate_url(file, asset)
+    acc <> "#{name}: #{rest} \n"
   end
 
+  # Generate url.
+  @spec generate_url(any, String.t(), map) :: String.t()
   defp generate_url(uploader, file, scope) do
-    uploader.url({file, scope})
+    uploader.url({file, scope}, signed: true)
+  end
+
+  @doc """
+  Insert the build history of the given instance.
+  """
+  @spec add_build_history(User.t(), Instance.t(), map) :: History.t()
+  def add_build_history(current_user, instance, params) do
+    params = create_build_history_params(params)
+
+    current_user
+    |> build_assoc(:build_histories, content: instance)
+    |> History.changeset(params)
+    |> Repo.insert!()
+  end
+
+  # Create params to insert build history
+  # Build history Status will be "success" when exit code is 0
+  @spec create_build_history_params(map) :: map
+  defp create_build_history_params(%{exit_code: exit_code} = params) when exit_code == 0 do
+    %{status: "success"} |> Map.merge(params) |> calculate_build_delay
+  end
+
+  # Build history Status will be "failed" when exit code is not 0
+  defp create_build_history_params(params) do
+    %{status: "failed"} |> Map.merge(params) |> calculate_build_delay
+  end
+
+  # Calculate the delay in the build process from the start and end time in the params.
+  @spec calculate_build_delay(map) :: map
+  defp calculate_build_delay(%{start_time: start_time, end_time: end_time} = params) do
+    delay = Timex.diff(end_time, start_time, :millisecond)
+    params |> Map.merge(%{delay: delay})
   end
 end
