@@ -45,6 +45,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             height(:float, "Height of the layout")
             unit(:string, "Unit of dimensions")
             slug(:string, "Name of the slug to be used for the layout")
+            slug_file(:string, "URL of the uploaded slug file")
+            screenshot(:string, "URL of the uploaded screenshot")
             inserted_at(:string, "When was the layout created", format: "ISO-8601")
             updated_at(:string, "When was the layout last updated", format: "ISO-8601")
           end
@@ -57,6 +59,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             height: 20.0,
             unit: "cm",
             slug: "Pandoc",
+            slug_file: "/official_letter.zip",
+            screenshot: "/official_letter.jpg",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -74,7 +78,10 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             height(:float, "Height of the layout")
             unit(:string, "Unit of dimensions")
             slug(:string, "Name of the slug to be used for the layout")
+            slug_file(:string, "URL of the uploaded slug file")
+            screenshot(:string, "URL of the uploaded screenshot")
             engine(Schema.ref(:Engine))
+            assets(Schema.ref(:Assets))
             inserted_at(:string, "When was the layout created", format: "ISO-8601")
             updated_at(:string, "When was the layout last updated", format: "ISO-8601")
           end
@@ -87,6 +94,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             height: 20.0,
             unit: "cm",
             slug: "Pandoc",
+            slug_file: "/official_letter.zip",
+            screenshot: "/official_letter.jpg",
             engine: %{
               id: "1232148nb3478",
               name: "Pandoc",
@@ -94,6 +103,15 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             },
+            assets: [
+              %{
+                id: "1232148nb3478",
+                name: "Asset",
+                file: "/signature.pdf",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              }
+            ],
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -124,6 +142,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
               height: 20.0,
               unit: "cm",
               slug: "Pandoc",
+              slug_file: "/official_letter.zip",
+              screenshot: "/official_letter.jpg",
               engine: %{
                 id: "1232148nb3478",
                 name: "Pandoc",
@@ -163,6 +183,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
                 height: 20.0,
                 unit: "cm",
                 slug: "Pandoc",
+                slug_file: "/official_letter.zip",
+                screenshot: "/official_letter.jpg",
                 engine: %{
                   id: "1232148nb3478",
                   name: "Pandoc",
@@ -209,6 +231,10 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     parameter(:slug, :formData, :string, "Name of slug to be used")
 
     parameter(:slug_file, :formData, :file, "Slug file to upload")
+
+    parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
+
+    parameter(:assets, :formData, :list, "IDs of assets of the layout")
 
     parameter(:engine_uuid, :formData, :string, "ID of layout's engine", required: true)
 
@@ -317,6 +343,10 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:slug_file, :formData, :file, "Slug file to upload")
 
+    parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
+
+    parameter(:assets, :formData, :list, "IDs of assets of the layout")
+
     parameter(:engine_uuid, :formData, :string, "ID of layout's engine", required: true)
 
     response(200, "Ok", Schema.ref(:ShowLayout))
@@ -326,8 +356,10 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %Layout{} = layout <- Document.get_layout(uuid),
-         %Layout{} = layout <- Document.update_layout(layout, params) do
+         %Layout{} = layout <- Document.update_layout(layout, current_user, params) do
       conn
       |> render("show.json", doc_layout: layout)
     end

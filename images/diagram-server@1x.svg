@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1535" height="867" viewBox="0 0 1535 867">
+  <defs>
+    <rect id="diagram-server@1x-a" width="1099" height="747" x="35" y="52"/>
+    <mask id="diagram-server@1x-b" width="1099" height="747" x="0" y="0" fill="#fff" maskContentUnits="userSpaceOnUse" maskUnits="objectBoundingBox">
+      <use xlink:href="#diagram-server@1x-a"/>
+    </mask>
+  </defs>
+  <g fill="none" fill-rule="evenodd">
+    <use stroke="#1C42A4" stroke-dasharray="2 2" stroke-width="2" mask="url(#diagram-server@1x-b)" xlink:href="#diagram-server@1x-a"/>
+    <g transform="translate(485 190)">
+      <path stroke="#1C42A4" stroke-dasharray="3" stroke-linecap="square" d="M58.5,10 L572,10"/>
+      <text fill="#868E96" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="14" font-weight="bold" letter-spacing=".158">
+        <tspan x="0" y="16">Server</tspan>
+      </text>
+      <path stroke="#1C42A4" stroke-dasharray="3" stroke-linecap="square" d="M79.5,224 L572,224"/>
+      <text fill="#868E96" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="14" font-weight="bold" letter-spacing=".158">
+        <tspan x="0" y="230">Storage</tspan>
+      </text>
+      <path stroke="#1C42A4" stroke-dasharray="3" stroke-linecap="square" d="M119.5,108 L572,108"/>
+      <text fill="#868E96" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="14" font-weight="bold" letter-spacing=".158">
+        <tspan x="0" y="114">Application</tspan>
+      </text>
+      <path stroke="#1C42A4" stroke-dasharray="3" stroke-linecap="square" d="M119.5,422 L572,422"/>
+      <text fill="#868E96" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="14" font-weight="bold" letter-spacing=".158">
+        <tspan x="0" y="428">File Storage</tspan>
+      </text>
+      <g transform="translate(1 32)">
+        <g transform="translate(0 100)">
+          <rect width="585" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+          <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+            <tspan x="265.249" y="39">Elixir</tspan>
+          </text>
+        </g>
+        <g transform="translate(0 213)">
+          <rect width="278" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+          <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+            <tspan x="109.747" y="39">Redis</tspan>
+          </text>
+        </g>
+        <g transform="translate(307 213)">
+          <rect width="278" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+          <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+            <tspan x="62.455" y="39">ElasticSearch</tspan>
+          </text>
+        </g>
+        <g transform="translate(0 295)">
+          <rect width="585" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+          <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+            <tspan x="192.095" y="39">Postres Database</tspan>
+          </text>
+        </g>
+        <g transform="translate(179)">
+          <rect width="173" height="43" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+          <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+            <tspan x="41.882" y="31.258">Cowboy</tspan>
+          </text>
+        </g>
+        <rect width="156" height="43" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+        <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+          <tspan x="48.469" y="31.258">nginx</tspan>
+        </text>
+        <g transform="translate(375)">
+          <rect width="210" height="43" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+          <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+            <tspan x="65.629" y="31.258">Docker</tspan>
+          </text>
+        </g>
+        <g transform="translate(0 417)">
+          <rect width="585" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+          <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+            <tspan x="229.826" y="39">Amazon S3</tspan>
+          </text>
+        </g>
+      </g>
+    </g>
+    <rect width="642" height="647" x="458.5" y="121.5" stroke="#1C42A4" rx="5"/>
+    <text fill="#071231" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+      <tspan x="485" y="162">Back-end (AWS)</tspan>
+    </text>
+    <text fill="#071231" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+      <tspan x="1168" y="162">External Services</tspan>
+    </text>
+    <g transform="translate(1168 190)">
+      <rect width="270" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+      <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+        <tspan x="83.313" y="39">SendGrid</tspan>
+      </text>
+      <g transform="translate(0 78)">
+        <rect width="270" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+        <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+          <tspan x="102.937" y="39">Twilio</tspan>
+        </text>
+      </g>
+      <g transform="translate(0 156)">
+        <rect width="270" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+        <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+          <tspan x="98.704" y="39">Sentry</tspan>
+        </text>
+      </g>
+      <g transform="translate(0 234)">
+        <rect width="270" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+        <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+          <tspan x="56.419" y="39">Semaphore CI</tspan>
+        </text>
+      </g>
+      <g transform="translate(0 304)">
+        <rect width="270" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+        <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+          <tspan x="95.225" y="39">Rollbar</tspan>
+        </text>
+      </g>
+      <g transform="translate(0 374)">
+        <rect width="270" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+        <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+          <tspan x="83.533" y="39">Papertail</tspan>
+        </text>
+      </g>
+      <g transform="translate(0 444)">
+        <rect width="270" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+        <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+          <tspan x="100.854" y="39">Gitlab</tspan>
+        </text>
+      </g>
+    </g>
+    <g transform="translate(86 121)">
+      <rect width="351" height="647" x=".5" y=".5" stroke="#1C42A4"/>
+      <text fill="#071231" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+        <tspan x="19" y="41">Front-end (AWS)</tspan>
+      </text>
+      <g transform="translate(19 86)">
+        <rect width="299" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+        <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+          <tspan x="103.843" y="39">ReactJS</tspan>
+        </text>
+        <g transform="translate(0 156)">
+          <rect width="299" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+          <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+            <tspan x="106.297" y="39">NodeJS</tspan>
+          </text>
+        </g>
+        <g transform="translate(0 234)">
+          <rect width="299" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+          <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+            <tspan x="97.148" y="39">Webpack</tspan>
+          </text>
+        </g>
+        <g transform="translate(0 78)">
+          <rect width="299" height="59" x="1.5" y="1.5" fill="#FFF" stroke="#1971C2" stroke-width="3" rx="3"/>
+          <text fill="#1971C2" font-family="ObjektivMk2-Bold, Objektiv Mk2" font-size="22.28" font-weight="bold" letter-spacing=".251">
+            <tspan x="66.683" y="39">Design System</tspan>
+          </text>
+        </g>
+      </g>
+    </g>
+    <rect width="352" height="746" x="1134.5" y="52.5" stroke="#1C42A4" rx="2"/>
+  </g>
+</svg>

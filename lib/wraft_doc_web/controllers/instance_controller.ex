@@ -8,6 +8,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     Document,
     Document.Instance,
     Document.ContentType,
+    Document.Layout,
     Enterprise,
     Enterprise.Flow.State
   }
@@ -103,7 +104,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
           properties do
             content(Schema.ref(:Content))
-            content_type(Schema.ref(:ContentType))
+            content_type(Schema.ref(:ContentTypeAndLayout))
             state(Schema.ref(:State))
             creator(Schema.ref(:User))
           end
@@ -126,6 +127,18 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
                 position: "string",
                 joining_date: "date",
                 approved_by: "string"
+              },
+              layout: %{
+                id: "1232148nb3478",
+                name: "Official Letter",
+                description: "An official letter",
+                width: 40.0,
+                height: 20.0,
+                unit: "cm",
+                slug: "Pandoc",
+                slug_file: "/letter.zip",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
               },
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
@@ -382,6 +395,55 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
          {:ok, %Instance{}} <- Document.delete_instance(instance) do
       conn
       |> render("instance.json", instance: instance)
+    end
+  end
+
+  @doc """
+  Build a document from a content.
+  """
+  swagger_path :build do
+    post("/contents/{id}/build")
+    summary("Build a document")
+    description("API to build a document from instance")
+
+    parameters do
+      id(:path, :string, "instance id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec build(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def build(conn, %{"id" => instance_uuid}) do
+    current_user = conn.assigns[:current_user]
+    start_time = Timex.now()
+
+    with %Instance{content_type: %{layout: layout}} = instance <-
+           Document.show_instance(instance_uuid),
+         %Layout{} = layout <- Document.preload_asset(layout),
+         {_, exit_code} <- Document.build_doc(instance, layout) do
+      end_time = Timex.now()
+
+      Task.start_link(fn ->
+        Document.add_build_history(current_user, instance, %{
+          start_time: start_time,
+          end_time: end_time,
+          exit_code: exit_code
+        })
+      end)
+
+      case exit_code do
+        0 ->
+          conn |> render("instance.json", instance: instance)
+
+        _ ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> render("build_fail.json", %{exit_code: exit_code})
+      end
     end
   end
 end

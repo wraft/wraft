@@ -72,10 +72,58 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
-      ContentTypeAndLayoutAndFlow:
+      ContentTypeAndLayout:
         swagger_schema do
           title("Content Type and Layout")
-          description("Content Type to be used for the generation of a document.")
+          description("Content Type to be used for the generation of a document and its layout.")
+
+          properties do
+            id(:string, "The ID of the content type", required: true)
+            name(:string, "Content Type's name", required: true)
+            description(:string, "Content Type's description")
+            fields(:map, "Dynamic fields and their datatype")
+            prefix(:string, "Prefix to be used for generating Unique ID for contents")
+            color(:string, "Hex code of color")
+            layout(Schema.ref(:Layout))
+            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
+            updated_at(:string, "When was the user last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            name: "Offer letter",
+            description: "An offer letter",
+            fields: %{
+              name: "string",
+              position: "string",
+              joining_date: "date",
+              approved_by: "string"
+            },
+            prefix: "OFFLET",
+            color: "#fffff",
+            layout: %{
+              id: "1232148nb3478",
+              name: "Official Letter",
+              description: "An official letter",
+              width: 40.0,
+              height: 20.0,
+              unit: "cm",
+              slug: "Pandoc",
+              slug_file: "/letter.zip",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
+      ContentTypeAndLayoutAndFlow:
+        swagger_schema do
+          title("Content Type, Layout and its flow")
+
+          description(
+            "Content Type to be used for the generation of a document, its layout and flow."
+          )
 
           properties do
             id(:string, "The ID of the content type", required: true)
@@ -126,15 +174,18 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
         end,
       ContentTypesAndLayoutsAndFlows:
         swagger_schema do
-          title("Content Types and their Layouts")
-          description("All content types that have been created and their layouts")
+          title("Content Types and their Layouts and flow")
+          description("All content types that have been created and their layouts and flow")
           type(:array)
           items(Schema.ref(:ContentTypeAndLayoutAndFlow))
         end,
       ContentTypeAndLayoutAndFlowAndStates:
         swagger_schema do
           title("Content Type, Layout, Flow and states")
-          description("Content Type to be used for the generation of a document.")
+
+          description(
+            "Content Type to be used for the generation of a document, its layout, flow and states."
+          )
 
           properties do
             id(:string, "The ID of the content type", required: true)
