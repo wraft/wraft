@@ -197,10 +197,10 @@ defmodule WraftDoc.Enterprise do
     |> Repo.insert()
     |> case do
       {:ok, organisation} ->
-        organisation
+        {:ok, organisation}
 
       {:error, changeset} ->
-        changeset
+        {:error, changeset}
     end
   end
 
