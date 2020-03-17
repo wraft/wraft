@@ -227,6 +227,11 @@ defmodule WraftDoc.Enterprise do
   def delete_organisation(%Organisation{} = organisation) do
     organisation
     |> Ecto.Changeset.change()
+    |> Ecto.Changeset.no_assoc_constraint(
+      :users,
+      message:
+        "Cannot delete the organisation. Some user depend on this organisation. Update those users and then try again.!"
+    )
     |> Repo.delete()
   end
 end
