@@ -179,4 +179,48 @@ defmodule WraftDoc.Enterprise do
   def get_organisation(org_uuid) do
     Repo.get_by(Organisation, uuid: org_uuid)
   end
+
+  @doc """
+  Create an Organisation
+  """
+  @spec create_organisation(User.t(), map) :: {:ok, Organisation.t()}
+  def create_organisation(%User{} = user, params) do
+    user
+    |> build_assoc(:organisation)
+    |> Organisation.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, organisation} ->
+        organisation
+
+      {:error, changeset} ->
+        changeset
+    end
+  end
+
+  @doc """
+  Update an Organisation
+  """
+  @spec update_organisation(Organisation.t(), map) :: {:ok, Organisation.t()}
+  def update_organisation(%Organisation{} = organisation, params) do
+    organisation
+    |> Organisation.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, organisation} ->
+        organisation
+
+      {:error, changeset} ->
+        changeset
+    end
+  end
+
+  @doc """
+  Deletes the organisation
+  """
+  def delete_organisation(%Organisation{} = organisation) do
+    organisation
+    |> Ecto.Changeset.change()
+    |> Repo.delete()
+  end
 end

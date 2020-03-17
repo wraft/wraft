@@ -1,0 +1,458 @@
+
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Wraft Docs</title>
+
+    <style>
+      .highlight table td { padding: 5px; }
+.highlight table pre { margin: 0; }
+.highlight .gh {
+  color: #999999;
+}
+.highlight .sr {
+  color: #f6aa11;
+}
+.highlight .go {
+  color: #888888;
+}
+.highlight .gp {
+  color: #555555;
+}
+.highlight .gs {
+}
+.highlight .gu {
+  color: #aaaaaa;
+}
+.highlight .nb {
+  color: #f6aa11;
+}
+.highlight .cm {
+  color: #75715e;
+}
+.highlight .cp {
+  color: #75715e;
+}
+.highlight .c1 {
+  color: #75715e;
+}
+.highlight .cs {
+  color: #75715e;
+}
+.highlight .c, .highlight .cd {
+  color: #75715e;
+}
+.highlight .err {
+  color: #960050;
+}
+.highlight .gr {
+  color: #960050;
+}
+.highlight .gt {
+  color: #960050;
+}
+.highlight .gd {
+  color: #49483e;
+}
+.highlight .gi {
+  color: #49483e;
+}
+.highlight .ge {
+  color: #49483e;
+}
+.highlight .kc {
+  color: #66d9ef;
+}
+.highlight .kd {
+  color: #66d9ef;
+}
+.highlight .kr {
+  color: #66d9ef;
+}
+.highlight .no {
+  color: #66d9ef;
+}
+.highlight .kt {
+  color: #66d9ef;
+}
+.highlight .mf {
+  color: #ae81ff;
+}
+.highlight .mh {
+  color: #ae81ff;
+}
+.highlight .il {
+  color: #ae81ff;
+}
+.highlight .mi {
+  color: #ae81ff;
+}
+.highlight .mo {
+  color: #ae81ff;
+}
+.highlight .m, .highlight .mb, .highlight .mx {
+  color: #ae81ff;
+}
+.highlight .sc {
+  color: #ae81ff;
+}
+.highlight .se {
+  color: #ae81ff;
+}
+.highlight .ss {
+  color: #ae81ff;
+}
+.highlight .sd {
+  color: #e6db74;
+}
+.highlight .s2 {
+  color: #e6db74;
+}
+.highlight .sb {
+  color: #e6db74;
+}
+.highlight .sh {
+  color: #e6db74;
+}
+.highlight .si {
+  color: #e6db74;
+}
+.highlight .sx {
+  color: #e6db74;
+}
+.highlight .s1 {
+  color: #e6db74;
+}
+.highlight .s {
+  color: #e6db74;
+}
+.highlight .na {
+  color: #a6e22e;
+}
+.highlight .nc {
+  color: #a6e22e;
+}
+.highlight .nd {
+  color: #a6e22e;
+}
+.highlight .ne {
+  color: #a6e22e;
+}
+.highlight .nf {
+  color: #a6e22e;
+}
+.highlight .vc {
+  color: #ffffff;
+}
+.highlight .nn {
+  color: #ffffff;
+}
+.highlight .nl {
+  color: #ffffff;
+}
+.highlight .ni {
+  color: #ffffff;
+}
+.highlight .bp {
+  color: #ffffff;
+}
+.highlight .vg {
+  color: #ffffff;
+}
+.highlight .vi {
+  color: #ffffff;
+}
+.highlight .nv {
+  color: #ffffff;
+}
+.highlight .w {
+  color: #ffffff;
+}
+.highlight {
+  color: #ffffff;
+}
+.highlight .n, .highlight .py, .highlight .nx {
+  color: #ffffff;
+}
+.highlight .ow {
+  color: #f92672;
+}
+.highlight .nt {
+  color: #f92672;
+}
+.highlight .k, .highlight .kv {
+  color: #f92672;
+}
+.highlight .kn {
+  color: #f92672;
+}
+.highlight .kp {
+  color: #f92672;
+}
+.highlight .o {
+  color: #f92672;
+}
+    </style>
+    <link href="stylesheets/screen-a1ce949a.css" rel="stylesheet" media="screen" />
+    <link href="stylesheets/print-bccf8c07.css" rel="stylesheet" media="print" />
+      <script src="javascripts/all-c5541673.js"></script>
+  </head>
+
+  <body class="index" data-languages="[]">
+    <a href="#" id="nav-button">
+      <span>
+        NAV
+        <img src="images/navbar-cad8cdcb.png" alt="Navbar" />
+      </span>
+    </a>
+    <div class="toc-wrapper">
+      <img src="images/logo-1e815a84.png" class="logo" alt="Logo" />
+        <div class="search">
+          <input type="text" class="search" id="input-search" placeholder="Search">
+        </div>
+        <ul class="search-results"></ul>
+      <ul id="toc" class="toc-list-h1">
+          <li>
+            <a href="#wraft-docs" class="toc-h1 toc-link" data-title="Wraft Docs">Wraft Docs</a>
+          </li>
+          <li>
+            <a href="#authentication" class="toc-h1 toc-link" data-title="Authentication">Authentication</a>
+              <ul class="toc-list-h2">
+                  <li>
+                    <a href="#apikey" class="toc-h2 toc-link" data-title="apiKey">apiKey</a>
+                  </li>
+              </ul>
+          </li>
+          <li>
+            <a href="#models" class="toc-h1 toc-link" data-title="Models">Models</a>
+              <ul class="toc-list-h2">
+                  <li>
+                    <a href="#state" class="toc-h2 toc-link" data-title="State">State</a>
+                  </li>
+                  <li>
+                    <a href="#flowandstates" class="toc-h2 toc-link" data-title="FlowAndStates">FlowAndStates</a>
+                  </li>
+                  <li>
+                    <a href="#contenttypeandlayout" class="toc-h2 toc-link" data-title="ContentTypeAndLayout">ContentTypeAndLayout</a>
+                  </li>
+                  <li>
+                    <a href="#layoutsandengines" class="toc-h2 toc-link" data-title="LayoutsAndEngines">LayoutsAndEngines</a>
+                  </li>
+              </ul>
+          </li>
+      </ul>
+    </div>
+    <div class="page-wrapper">
+      <div class="dark-box"></div>
+      <div class="content">
+        <h1 id='wraft-docs'>Wraft Docs</h1><h1 id='authentication'>Authentication</h1><h2 id='apikey'>apiKey</h2>
+<p>API Operations require a valid token.</p>
+<h1 id='models'>Models</h1><h2 id='state'>State</h2>
+<p>State assigened to contents</p>
+<pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+  </span><span class="s2">"updated_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-01-21T14:00:00Z"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"state"</span><span class="p">:</span><span class="w"> </span><span class="s2">"published"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"order"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"inserted_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-02-21T14:00:00Z"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1232148nb3478"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+<table><thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>id</td>
+<td>ID of the state</td>
+<td>string</td>
+<td>false</td>
+</tr>
+<tr>
+<td>inserted_at</td>
+<td>When was the state inserted</td>
+<td>string</td>
+<td>false</td>
+</tr>
+<tr>
+<td>order</td>
+<td>Order of the state</td>
+<td>integer</td>
+<td>false</td>
+</tr>
+<tr>
+<td>state</td>
+<td>A state of content</td>
+<td>string</td>
+<td>false</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>When was the state last updated</td>
+<td>string</td>
+<td>false</td>
+</tr>
+</tbody></table>
+<h2 id='flowandstates'>FlowAndStates</h2>
+<p>Show all details of a flow including all the states undet the flow</p>
+<pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+  </span><span class="s2">"states"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="s2">"state"</span><span class="p">:</span><span class="w"> </span><span class="s2">"published"</span><span class="p">,</span><span class="w">
+      </span><span class="s2">"order"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+      </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1232148nb3478"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">],</span><span class="w">
+  </span><span class="s2">"flow"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="s2">"updated_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-01-21T14:00:00Z"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Flow 1"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"inserted_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-02-21T14:00:00Z"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1232148nb3478"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="s2">"creator"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="s2">"updated_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-01-21T14:00:00Z"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"John Doe"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"inserted_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-02-21T14:00:00Z"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1232148nb3478"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"email_verify"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"email"</span><span class="p">:</span><span class="w"> </span><span class="s2">"email@xyz.com"</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+<table><thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>creator</td>
+<td>A user of the application</td>
+<td><a href="#user">User</a></td>
+<td>false</td>
+</tr>
+<tr>
+<td>flow</td>
+<td>Flows to be followed in an organisation</td>
+<td><a href="#flow">Flow</a></td>
+<td>false</td>
+</tr>
+<tr>
+<td>states</td>
+<td>State assigened to contents</td>
+<td><a href="#state">State</a></td>
+<td>false</td>
+</tr>
+</tbody></table>
+<h2 id='contenttypeandlayout'>ContentTypeAndLayout</h2>
+<p>Content Type to be used for the generation of a document.</p>
+<pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
+  </span><span class="s2">"updated_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-01-21T14:00:00Z"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"prefix"</span><span class="p">:</span><span class="w"> </span><span class="s2">"OFFLET"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Offer letter"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"layout"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="s2">"width"</span><span class="p">:</span><span class="w"> </span><span class="mf">40.0</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"updated_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-01-21T14:00:00Z"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"cm"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"slug"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Pandoc"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Official Letter"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"inserted_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-02-21T14:00:00Z"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1232148nb3478"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"height"</span><span class="p">:</span><span class="w"> </span><span class="mf">20.0</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"An official letter"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="s2">"inserted_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-02-21T14:00:00Z"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1232148nb3478"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"fields"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="s2">"position"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"joining_date"</span><span class="p">:</span><span class="w"> </span><span class="s2">"date"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"approved_by"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="s2">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"An offer letter"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+<table><thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>description</td>
+<td>Content Type&#39;s description</td>
+<td>string</td>
+<td>false</td>
+</tr>
+<tr>
+<td>fields</td>
+<td>Dynamic fields and their datatype</td>
+<td>map</td>
+<td>false</td>
+</tr>
+<tr>
+<td>id</td>
+<td>The ID of the content type</td>
+<td>string</td>
+<td>true</td>
+</tr>
+<tr>
+<td>inserted_at</td>
+<td>When was the user inserted</td>
+<td>string</td>
+<td>false</td>
+</tr>
+<tr>
+<td>layout</td>
+<td>A Layout</td>
+<td><a href="#layout">Layout</a></td>
+<td>false</td>
+</tr>
+<tr>
+<td>name</td>
+<td>Content Type&#39;s name</td>
+<td>string</td>
+<td>true</td>
+</tr>
+<tr>
+<td>prefix</td>
+<td>Prefix to be used for generating Unique ID for contents</td>
+<td>string</td>
+<td>false</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>When was the user last updated</td>
+<td>string</td>
+<td>false</td>
+</tr>
+</tbody></table>
+<h2 id='layoutsandengines'>LayoutsAndEngines</h2>
+<p>All layouts that have been created and their engines</p>
+
+<table><thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+<th>Type</th>
+<th>Required</th>
+</tr>
+</thead><tbody>
+</tbody></table>
+
+      </div>
+      <div class="dark-box">
+      </div>
+    </div>
+  </body>
+</html>
