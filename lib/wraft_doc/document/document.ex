@@ -361,7 +361,9 @@ defmodule WraftDoc.Document do
   @spec show_instance(binary) ::
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
   def show_instance(instance_uuid) do
-    instance_uuid |> get_instance() |> Repo.preload([:creator, :content_type, :state])
+    instance_uuid
+    |> get_instance()
+    |> Repo.preload([:creator, [{:content_type, :layout}], :state])
   end
 
   @doc """
@@ -384,7 +386,7 @@ defmodule WraftDoc.Document do
     |> Repo.update()
     |> case do
       {:ok, instance} ->
-        instance |> Repo.preload([:creator, :content_type, :state])
+        instance |> Repo.preload([:creator, [{:content_type, :layout}], :state])
 
       {:error, _} = changeset ->
         changeset
@@ -640,8 +642,12 @@ defmodule WraftDoc.Document do
     asset |> Repo.delete()
   end
 
-  def preload_layout(c_type) do
-    c_type |> Repo.preload([{:layout, :assets}])
+  @doc """
+  Preload assets of a layout.
+  """
+  @spec preload_asset(Layout.t()) :: Layout.t()
+  def preload_asset(layout) do
+    layout |> Repo.preload([:assets])
   end
 
   @doc """
