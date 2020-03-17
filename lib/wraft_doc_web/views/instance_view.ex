@@ -48,9 +48,18 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     %{
       content: render_one(instance, InstanceView, "instance.json", as: :instance),
       content_type:
-        render_one(instance.content_type, ContentTypeView, "content_type.json", as: :content_type),
+        render_one(instance.content_type, ContentTypeView, "c_type_with_layout.json",
+          as: :content_type
+        ),
       state: render_one(instance.state, StateView, "create.json", as: :state),
       creator: render_one(instance.creator, UserView, "user.json", as: :user)
+    }
+  end
+
+  def render("build_fail.json", %{exit_code: exit_code}) do
+    %{
+      info: "Build failed",
+      exit_code: exit_code
     }
   end
 end
