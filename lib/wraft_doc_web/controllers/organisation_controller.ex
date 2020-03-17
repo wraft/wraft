@@ -94,6 +94,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @doc """
   Createm new organisation
   """
+  require IEx
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
@@ -132,7 +133,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
     with %Organisation{} = organisation <- Enterprise.get_organisation(uuid),
-         {:ok, %Organisation{}} <-
+         {:ok, %Organisation{} = organisation} <-
            Enterprise.update_organisation(organisation, params) do
       conn
       |> put_status(:created)
@@ -158,7 +159,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"uuid" => uuid}) do
+  def show(conn, %{"id" => uuid}) do
     with %Organisation{} = organisation <- Enterprise.get_organisation(uuid) do
       conn
       |> render("show.json", organisation: organisation)
