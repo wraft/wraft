@@ -14,7 +14,14 @@ defmodule WraftDoc.Factory do
   end
 
   def organisation_factory do
-    %Organisation{name: sequence(:name, &"organisation-#{&1}")}
+    %Organisation{
+      name: sequence(:name, &"organisation-#{&1}"),
+      legal_name: sequence(:legal_name, &"Legal name-#{&1}"),
+      address: sequence(:address, &"#{&1} th cross #{&1} th building"),
+      gstin: sequence(:gstin, &"32AASDGGDGDDGDG#{&1}"),
+      phone: sequence(:phone, &"985222332#{&1}"),
+      email: sequence(:email, &"acborg#{&1}@gmail.com")
+    }
   end
 
   def role_factory do

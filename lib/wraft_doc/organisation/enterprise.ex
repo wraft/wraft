@@ -207,17 +207,18 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Update an Organisation
   """
+  require IEx
   @spec update_organisation(Organisation.t(), map) :: {:ok, Organisation.t()}
   def update_organisation(%Organisation{} = organisation, params) do
     organisation
     |> Organisation.changeset(params)
     |> Repo.update()
     |> case do
-      {:ok, organisation} ->
-        organisation
+      {:ok, %Organisation{} = organisation} ->
+        {:ok, organisation}
 
       {:error, changeset} ->
-        changeset
+        {:error, changeset}
     end
   end
 

@@ -19,8 +19,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
 
   def render("show.json", %{organisation: organisation}) do
     %{
-      organisation: render_one(organisation, OrganisationView, "create.json", as: :organisation),
-      creator: render_one(organisation.user, UserVew, "user.json", as: :user)
+      id: organisation.uuid,
+      name: organisation.name,
+      legal_name: organisation.legal_name,
+      address: organisation.address,
+      name_of_ceo: organisation.name_of_ceo,
+      name_of_cto: organisation.name_of_cto,
+      corporate_id: organisation.corporate_id,
+      gstin: organisation.gstin,
+      email: organisation.email,
+      phone: organisation.phone,
+      logo: organisation.logo
     }
   end
 
