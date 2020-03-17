@@ -2,10 +2,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
   alias WraftDoc.{Enterprise.Organisation, Enterprise}
-  import Ecto.Query, warn: false
+
   action_fallback(WraftDocWeb.FallbackController)
 
-  def swagger_defnition do
+  def swagger_definitions do
     %{
       OrganisationRequest:
         swagger_schema do
@@ -106,7 +106,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   Update an organisation
   """
   swagger_path :update do
-    put("/organisation/{id}")
+    put("/organisations/{id}")
     summary("Update an organisation")
     description("API to update an organisation")
 
@@ -139,7 +139,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   Get an organisation by id
   """
   swagger_path :show do
-    get("organisation/{id}")
+    get("/organisations/{id}")
     summary("Show an Organisation")
     description("API to show details of an organisation")
 
