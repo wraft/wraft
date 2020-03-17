@@ -77,7 +77,8 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def fetch_and_associcate_assets(layout, current_user, %{"assets" => assets}) do
+  # Get all the assets from their UUIDs and associate them with the given layout.
+  defp fetch_and_associcate_assets(layout, current_user, %{"assets" => assets}) do
     (assets || "")
     |> String.split(",")
     |> Stream.map(fn x -> get_asset(x) end)
@@ -85,8 +86,9 @@ defmodule WraftDoc.Document do
     |> Enum.to_list()
   end
 
-  def fetch_and_associcate_assets(_layout, _current_user, _params), do: nil
+  defp fetch_and_associcate_assets(_layout, _current_user, _params), do: nil
 
+  # Associate the asset with the given layout, ie; insert a LayoutAsset entry.
   defp associate_layout_and_asset(_layout, _current_user, nil), do: nil
 
   defp associate_layout_and_asset(layout, current_user, asset) do
