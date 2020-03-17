@@ -644,8 +644,13 @@ defmodule WraftDoc.Document do
     c_type |> Repo.preload([{:layout, :assets}])
   end
 
-  def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %{
-        layout: %Layout{slug: slug, assets: assets}
+  @doc """
+  Build a PDF document.
+  """
+  @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
+  def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %Layout{
+        slug: slug,
+        assets: assets
       }) do
     System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}/"])
 
@@ -677,6 +682,8 @@ defmodule WraftDoc.Document do
     System.cmd("pandoc", pandoc_commands)
   end
 
+  # Find the header values for the content.md file from the serialized data of an instance.
+  @spec find_header_values(String.t(), map, String.t()) :: String.t()
   defp find_header_values(key, serialized, acc) do
     serialized
     |> Enum.find(fn {k, _} -> k == key end)
@@ -689,11 +696,15 @@ defmodule WraftDoc.Document do
     end
   end
 
+  # Find the header values for the content.md file from the assets of the layout used.
+  @spec find_header_values(Asset.t(), String.t()) :: String.t()
   defp find_header_values(%Asset{name: name, file: file} = asset, acc) do
     <<_first::utf8, rest::binary>> = AssetUploader |> generate_url(file, asset)
     acc <> "#{name}: #{rest} \n"
   end
 
+  # Generate url.
+  @spec generate_url(any, String.t(), map) :: String.t()
   defp generate_url(uploader, file, scope) do
     uploader.url({file, scope}, signed: true)
   end
