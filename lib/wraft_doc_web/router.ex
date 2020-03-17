@@ -81,7 +81,7 @@ defmodule WraftDocWeb.Router do
       resources("/contents", InstanceController, only: [:show, :update, :delete])
 
       # Organisations
-      resources("/organisations", OrganisationController, except: [:index])
+      resources("/organisations", OrganisationController, only: [:create, :update, :show, :delete])
 
       # All instances in an organisation
       get("/contents", InstanceController, :all_contents)
