@@ -53,9 +53,14 @@ defmodule WraftDoc.Enterprise do
   @doc """
   List of all flows.
   """
-  @spec flow_index(User.t()) :: list
-  def flow_index(%User{organisation_id: org_id}) do
-    from(f in Flow, where: f.organisation_id == ^org_id, preload: [:creator]) |> Repo.all()
+  @spec flow_index(User.t(), map) :: map
+  def flow_index(%User{organisation_id: org_id}, params) do
+    from(f in Flow,
+      where: f.organisation_id == ^org_id,
+      order_by: [desc: f.id],
+      preload: [:creator]
+    )
+    |> Repo.paginate(params)
   end
 
   @doc """
@@ -110,14 +115,15 @@ defmodule WraftDoc.Enterprise do
   @doc """
   State index under a flow.
   """
-  @spec state_index(binary) :: list
-  def state_index(flow_uuid) do
+  @spec state_index(binary, map) :: map
+  def state_index(flow_uuid, params) do
     from(s in State,
       join: f in Flow,
       where: f.uuid == ^flow_uuid and s.flow_id == f.id,
+      order_by: [desc: s.id],
       preload: [:flow, :creator]
     )
-    |> Repo.all()
+    |> Repo.paginate(params)
   end
 
   @doc """

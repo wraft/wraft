@@ -12,7 +12,17 @@ defmodule WraftDocWeb.Api.V1.EngineView do
     }
   end
 
-  def render("index.json", %{engines: engines}) do
-    render_many(engines, EngineView, "create.json", as: :engine)
+  def render("index.json", %{
+        engines: engines,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      engines: render_many(engines, EngineView, "create.json", as: :engine),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
   end
 end

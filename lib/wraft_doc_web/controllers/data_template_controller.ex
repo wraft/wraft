@@ -92,6 +92,30 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
           description("All data template that have been created under a content type")
           type(:array)
           items(Schema.ref(:DataTemplate))
+        end,
+      DataTemplatesIndex:
+        swagger_schema do
+          properties do
+            contents(Schema.ref(:DataTemplates))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            contents: [
+              %{
+                id: "1232148nb3478",
+                tag: "Main template",
+                data: "Hi [user]",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              }
+            ],
+            page_number: 1,
+            total_pages: 2,
+            total_entries: 15
+          })
         end
     }
   end
@@ -139,18 +163,61 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
     parameters do
       c_type_id(:path, :string, "ID of the content type", required: true)
+      page(:query, :string, "Page number")
     end
 
-    response(200, "Ok", Schema.ref(:DataTemplates))
+    response(200, "Ok", Schema.ref(:DataTemplatesIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, %{"c_type_id" => c_type_uuid}) do
-    data_templates = Document.data_template_index(c_type_uuid)
+  def index(conn, %{"c_type_id" => c_type_uuid} = params) do
+    with %{
+           entries: data_templates,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.data_template_index(c_type_uuid, params) do
+      conn
+      |> render("index.json",
+        data_templates: data_templates,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
 
-    conn
-    |> render("index.json", data_templates: data_templates)
+  @doc """
+  All Data templates.
+  """
+  swagger_path :all_templates do
+    get("/data_templates")
+    summary("All Data templates")
+    description("API to get the list of all data templates created so far under an organisation")
+    parameter(:page, :query, :string, "Page number")
+    response(200, "Ok", Schema.ref(:DataTemplatesIndex))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec all_templates(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def all_templates(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %{
+           entries: data_templates,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.data_templates_index_of_an_organisation(current_user, params) do
+      conn
+      |> render("index.json",
+        data_templates: data_templates,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 
   @doc """
