@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Endpoint do
     at: "/",
     from: :wraft_doc,
     gzip: false,
-    only: ~w(css fonts images js favicon.ico robots.txt)
+    only: ~w(css doc fonts images js favicon.ico robots.txt)
   )
 
   plug(

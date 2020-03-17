@@ -19,8 +19,8 @@ defmodule WraftDocWeb.ConnCase do
     quote do
       # Import conveniences for testing with connections
       use Phoenix.ConnTest
-      import ExtarterWeb.Router.Helpers
-
+      alias WraftDocWeb.Router.Helpers, as: Routes
+      import Bureaucrat.Helpers
       # The default endpoint for testing
       @endpoint WraftDocWeb.Endpoint
     end
@@ -33,6 +33,8 @@ defmodule WraftDocWeb.ConnCase do
       Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, {:shared, self()})
     end
 
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    conn = Phoenix.ConnTest.build_conn()
+
+    {:ok, conn: conn}
   end
 end

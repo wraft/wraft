@@ -59,7 +59,14 @@ defmodule WraftDoc.Mixfile do
       {:jason, "~> 1.1"},
       {:poison, "~> 3.0", override: true},
       # API documentation
-      {:phoenix_swagger, "~> 0.8.2"}
+      {:phoenix_swagger, "~> 0.8.2"},
+      # For Writing Api documentation by slate
+      {:bureaucrat, "~> 0.2.5"},
+      {:ex_json_schema, "~> 0.5"},
+      # For testing
+      {:ex_machina, "~> 2.3", only: :test},
+      # For creating date times
+      {:good_times, "~> 1.1"}
     ]
   end
 

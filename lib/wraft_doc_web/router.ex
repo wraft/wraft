@@ -79,6 +79,9 @@ defmodule WraftDocWeb.Router do
 
       # Instance show, update and delete
       resources("/contents", InstanceController, only: [:show, :update, :delete])
+
+      # Organisations
+      resources("/organisations", OrganisationController, except: [:index])
     end
   end
 
@@ -101,6 +104,7 @@ defmodule WraftDocWeb.Router do
           description: "API Operations require a valid token."
         }
       },
+      tags: [%{name: "Registration", description: "User registration"}],
       security: [
         # ApiKey is applied to all operations
         %{
