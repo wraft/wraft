@@ -147,12 +147,59 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             }
           })
         end,
-      Contents:
+      ContentsAndContentTypeAndState:
         swagger_schema do
-          title("Instances under a content type")
-          description("All instances that have been created under a content type")
+          title("Instances, their content types and states")
+          description("IInstances and all its details except creator.")
           type(:array)
-          items(Schema.ref(:Content))
+          items(Schema.ref(:ContentAndContentTypeAndState))
+        end,
+      ContentsIndex:
+        swagger_schema do
+          properties do
+            contents(Schema.ref(:ContentsAndContentTypeAndState))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            contents: [
+              %{
+                content: %{
+                  id: "1232148nb3478",
+                  instance_id: "OFFL01",
+                  raw: "Content",
+                  serialized: %{title: "Title of the content", body: "Body of the content"},
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                content_type: %{
+                  id: "1232148nb3478",
+                  name: "Offer letter",
+                  description: "An offer letter",
+                  fields: %{
+                    name: "string",
+                    position: "string",
+                    joining_date: "date",
+                    approved_by: "string"
+                  },
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                state: %{
+                  id: "1232148nb3478",
+                  state: "published",
+                  order: 1,
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                }
+              }
+            ],
+            page_number: 1,
+            total_pages: 2,
+            total_entries: 15
+          })
         end
     }
   end
@@ -197,18 +244,65 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     parameters do
       c_type_id(:path, :string, "ID of the content type", required: true)
+      page(:query, :string, "Page number")
     end
 
-    response(200, "Ok", Schema.ref(:Contents))
+    response(200, "Ok", Schema.ref(:ContentsIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, %{"c_type_id" => c_type_uuid}) do
-    contents = Document.instance_index(c_type_uuid)
+  def index(conn, %{"c_type_id" => c_type_uuid} = params) do
+    with %{
+           entries: contents,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.instance_index(c_type_uuid, params) do
+      conn
+      |> render("index.json",
+        contents: contents,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
 
-    conn
-    |> render("index.json", contents: contents)
+  @doc """
+  All instances.
+  """
+  swagger_path :all_contents do
+    get("/contents")
+    summary("All instances")
+    description("API to get the list of all instances created so far under an organisation")
+
+    parameters do
+      page(:query, :string, "Page number")
+    end
+
+    response(200, "Ok", Schema.ref(:ContentsIndex))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec all_contents(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def all_contents(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %{
+           entries: contents,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.instance_index_of_an_organisation(current_user, params) do
+      conn
+      |> render("index.json",
+        contents: contents,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 
   @doc """
@@ -288,6 +382,33 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
          {:ok, %Instance{}} <- Document.delete_instance(instance) do
       conn
       |> render("instance.json", instance: instance)
+    end
+  end
+
+  @doc """
+  Build a document from a content.
+  """
+  swagger_path :build do
+    post("/contents/{id}/build")
+    summary("Build a document")
+    description("API to build a document from instance")
+
+    parameters do
+      id(:path, :string, "instance id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec build(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def build(conn, %{"id" => instance_uuid}) do
+    with %Instance{content_type: c_type} = instance <- Document.show_instance(instance_uuid),
+         %ContentType{} = c_type <- Document.preload_layout(c_type),
+         _ <- Document.build_doc(instance, c_type) do
+      conn |> render("instance.json", instance: instance)
     end
   end
 end

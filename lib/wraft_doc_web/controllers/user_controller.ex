@@ -81,6 +81,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
             name(:string, "Users name", required: true)
             email(:string, "Users email", required: true)
             email_verify(:boolean, "Email verification status")
+            organisation_id(:integer, "ID of the user's oranisation")
             profile_pic(:string, "User's profile pic URL")
             role(:string, "User's role")
             inserted_at(:string, "When was the user inserted", format: "ISO-8601")
@@ -94,6 +95,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
             email_verify: true,
             role: "user",
             profile_pic: "www.aws.com/users/johndoe.jpg",
+            organisation_id: "jn14786914qklnqw",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })

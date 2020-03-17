@@ -14,9 +14,14 @@ defmodule WraftDoc.Document do
     Document.Instance,
     Document.Theme,
     Document.DataTemplate,
+    Document.Asset,
+    Document.LayoutAsset,
     Enterprise,
+    Enterprise.Flow,
     Enterprise.Flow.State
   }
+
+  alias WraftDocWeb.AssetUploader
 
   @doc """
   Create a layout.
@@ -31,7 +36,9 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, layout} ->
-        layout |> Repo.preload(:engine)
+        layout = layout |> layout_files_upload(params)
+        layout |> fetch_and_associcate_assets(current_user, params)
+        layout |> Repo.preload([:engine, :creator, :assets])
 
       changeset = {:error, _} ->
         changeset
@@ -39,20 +46,70 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+  Upload layout slug file.
+  """
+  @spec layout_files_upload(Layout.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
+  def layout_files_upload(layout, %{"slug_file" => _} = params) do
+    layout_update_files(layout, params)
+  end
+
+  def layout_files_upload(layout, %{"screenshot" => _} = params) do
+    layout_update_files(layout, params)
+  end
+
+  def layout_files_upload(layout, _params) do
+    layout |> Repo.preload([:engine, :creator])
+  end
+
+  # Update the layout on fileupload.
+  @spec layout_update_files(Layout.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
+  defp layout_update_files(layout, params) do
+    layout
+    |> Layout.file_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, layout} ->
+        layout
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def fetch_and_associcate_assets(layout, current_user, %{"assets" => assets}) do
+    (assets || "")
+    |> String.split(",")
+    |> Stream.map(fn x -> get_asset(x) end)
+    |> Stream.map(fn x -> associate_layout_and_asset(layout, current_user, x) end)
+    |> Enum.to_list()
+  end
+
+  def fetch_and_associcate_assets(_layout, _current_user, _params), do: nil
+
+  defp associate_layout_and_asset(_layout, _current_user, nil), do: nil
+
+  defp associate_layout_and_asset(layout, current_user, asset) do
+    layout
+    |> build_assoc(:layout_assets, asset: asset, creator: current_user)
+    |> LayoutAsset.changeset()
+    |> Repo.insert()
+  end
+
+  @doc """
   Create a content type.
   """
-  @spec create_content_type(User.t(), Layout.t(), map) ::
+  @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
           ContentType.t() | {:error, Ecto.Changeset.t()}
-  def create_content_type(%{organisation_id: org_id} = current_user, layout, params) do
+  def create_content_type(%{organisation_id: org_id} = current_user, layout, flow, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
 
     current_user
-    |> build_assoc(:content_types, layout: layout)
+    |> build_assoc(:content_types, layout: layout, flow: flow)
     |> ContentType.changeset(params)
     |> Repo.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
-        content_type |> Repo.preload(:layout)
+        content_type |> Repo.preload([:layout, :flow])
 
       changeset = {:error, _} ->
         changeset
@@ -62,17 +119,22 @@ defmodule WraftDoc.Document do
   @doc """
   List all engines.
   """
-  @spec engines_list() :: list
-  def engines_list() do
-    Repo.all(Engine)
+  @spec engines_list(map) :: map
+  def engines_list(params) do
+    Repo.paginate(Engine, params)
   end
 
   @doc """
   List all layouts.
   """
-  @spec layout_index() :: list
-  def layout_index() do
-    Repo.all(Layout) |> Repo.preload(:engine)
+  @spec layout_index(User.t(), map) :: map
+  def layout_index(%{organisation_id: org_id}, params) do
+    from(l in Layout,
+      where: l.organisation_id == ^org_id,
+      order_by: [desc: l.id],
+      preload: [:engine, :assets]
+    )
+    |> Repo.paginate(params)
   end
 
   @doc """
@@ -81,7 +143,7 @@ defmodule WraftDoc.Document do
   @spec show_layout(binary) :: %Layout{engine: Engine.t(), creator: User.t()}
   def show_layout(uuid) do
     get_layout(uuid)
-    |> Repo.preload([:engine, :creator])
+    |> Repo.preload([:engine, :creator, :assets])
   end
 
   @doc """
@@ -95,15 +157,15 @@ defmodule WraftDoc.Document do
   @doc """
   Update a layout.
   """
-  @spec update_layout(Layout.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
-  def update_layout(layout, %{"engine_uuid" => engine_uuid} = params) do
+  @spec update_layout(Layout.t(), User.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
+  def update_layout(layout, current_user, %{"engine_uuid" => engine_uuid} = params) do
     %Engine{id: id} = get_engine(engine_uuid)
     {_, params} = Map.pop(params, "engine_uuid")
     params = params |> Map.merge(%{"engine_id" => id})
-    update_layout(layout, params)
+    update_layout(layout, current_user, params)
   end
 
-  def update_layout(layout, params) do
+  def update_layout(layout, current_user, params) do
     layout
     |> Layout.update_changeset(params)
     |> Repo.update()
@@ -112,7 +174,8 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, layout} ->
-        layout |> Repo.preload([:engine, :creator])
+        layout |> fetch_and_associcate_assets(current_user, params)
+        layout |> Repo.preload([:engine, :creator, :assets])
     end
   end
 
@@ -134,9 +197,14 @@ defmodule WraftDoc.Document do
   @doc """
   List all content types.
   """
-  @spec content_type_index() :: list
-  def content_type_index() do
-    Repo.all(ContentType) |> Repo.preload(:layout)
+  @spec content_type_index(User.t(), map) :: map
+  def content_type_index(%{organisation_id: org_id}, params) do
+    from(ct in ContentType,
+      where: ct.organisation_id == ^org_id,
+      order_by: [desc: ct.id],
+      preload: [:layout, :flow]
+    )
+    |> Repo.paginate(params)
   end
 
   @doc """
@@ -145,7 +213,7 @@ defmodule WraftDoc.Document do
   @spec show_content_type(binary) :: %ContentType{layout: %Layout{}, creator: %User{}}
   def show_content_type(uuid) do
     get_content_type(uuid)
-    |> Repo.preload([:layout, :creator])
+    |> Repo.preload([:layout, :creator, [{:flow, :states}]])
   end
 
   @doc """
@@ -165,10 +233,15 @@ defmodule WraftDoc.Document do
             creator: User.t()
           }
           | {:error, Ecto.Changeset.t()}
-  def update_content_type(content_type, %{"layout_uuid" => layout_uuid} = params) do
+  def update_content_type(
+        content_type,
+        %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
+      ) do
     %Layout{id: id} = get_layout(layout_uuid)
+    %Flow{id: f_id} = Enterprise.get_flow(f_uuid)
     {_, params} = Map.pop(params, "layout_uuid")
-    params = params |> Map.merge(%{"layout_id" => id})
+    {_, params} = Map.pop(params, "flow_uuid")
+    params = params |> Map.merge(%{"layout_id" => id, "flow_id" => f_id})
     update_content_type(content_type, params)
   end
 
@@ -181,7 +254,7 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, content_type} ->
-        content_type |> Repo.preload([:layout, :creator])
+        content_type |> Repo.preload([:layout, :creator, [{:flow, :states}]])
     end
   end
 
@@ -244,15 +317,31 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+  List all instances under an organisation.
+  """
+  @spec instance_index_of_an_organisation(User.t(), map) :: map
+  def instance_index_of_an_organisation(%{organisation_id: org_id}, params) do
+    from(i in Instance,
+      join: u in User,
+      where: u.organisation_id == ^org_id and i.creator_id == u.id,
+      order_by: [desc: i.id],
+      preload: [:content_type, :state]
+    )
+    |> Repo.paginate(params)
+  end
+
+  @doc """
   List all instances under a content types.
   """
-  @spec instance_index(binary) :: list
-  def instance_index(c_type_uuid) do
+  @spec instance_index(binary, map) :: map
+  def instance_index(c_type_uuid, params) do
     from(i in Instance,
       join: ct in ContentType,
-      where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id
+      where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id,
+      order_by: [desc: i.id],
+      preload: [:content_type, :state]
     )
-    |> Repo.all()
+    |> Repo.paginate(params)
   end
 
   @doc """
@@ -352,10 +441,10 @@ defmodule WraftDoc.Document do
   @doc """
   Index of themes inside current user's organisation.
   """
-  @spec theme_index(User.t()) :: list
-  def theme_index(%User{organisation_id: org_id}) do
-    from(t in Theme, where: t.organisation_id == ^org_id)
-    |> Repo.all()
+  @spec theme_index(User.t(), map) :: map
+  def theme_index(%User{organisation_id: org_id}, params) do
+    from(t in Theme, where: t.organisation_id == ^org_id, order_by: [desc: t.id])
+    |> Repo.paginate(params)
   end
 
   @doc """
@@ -406,13 +495,27 @@ defmodule WraftDoc.Document do
   @doc """
   List all data templates under a content types.
   """
-  @spec data_template_index(binary) :: list
-  def data_template_index(c_type_uuid) do
+  @spec data_template_index(binary, map) :: map
+  def data_template_index(c_type_uuid, params) do
     from(dt in DataTemplate,
       join: ct in ContentType,
-      where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id
+      where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id,
+      order_by: [desc: dt.id]
     )
-    |> Repo.all()
+    |> Repo.paginate(params)
+  end
+
+  @doc """
+  List all data templates under current user's organisation.
+  """
+  @spec data_templates_index_of_an_organisation(User.t(), map) :: map
+  def data_templates_index_of_an_organisation(%{organisation_id: org_id}, params) do
+    from(dt in DataTemplate,
+      join: u in User,
+      where: u.organisation_id == ^org_id and dt.creator_id == u.id,
+      order_by: [desc: dt.id]
+    )
+    |> Repo.paginate(params)
   end
 
   @doc """
@@ -457,5 +560,138 @@ defmodule WraftDoc.Document do
   @spec delete_data_template(DataTemplate.t()) :: {:ok, DataTemplate.t()}
   def delete_data_template(d_temp) do
     d_temp |> Repo.delete()
+  end
+
+  @doc """
+  Create an asset.
+  """
+  @spec create_asset(User.t(), map) :: {:ok, Asset.t()}
+  def create_asset(%{organisation_id: org_id} = current_user, params) do
+    params = params |> Map.merge(%{"organisation_id" => org_id})
+
+    current_user
+    |> build_assoc(:assets)
+    |> Asset.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, asset} ->
+        asset |> asset_file_upload(params)
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Upload asset file.
+  """
+  @spec asset_file_upload(Asset.t(), map) :: {:ok, %Asset{}} | {:error, Ecto.Changeset.t()}
+  def asset_file_upload(asset, %{"file" => _} = params) do
+    asset |> Asset.file_changeset(params) |> Repo.update()
+  end
+
+  def asset_file_upload(asset, _params) do
+    {:ok, asset}
+  end
+
+  @doc """
+  Index of all assets in an organisation.
+  """
+  @spec asset_index(integer, map) :: map
+  def asset_index(organisation_id, params) do
+    from(a in Asset, where: a.organisation_id == ^organisation_id, order_by: [desc: a.id])
+    |> Repo.paginate(params)
+  end
+
+  @doc """
+  Show an asset.
+  """
+  @spec show_asset(binary) :: %Asset{creator: User.t()}
+  def show_asset(asset_uuid) do
+    asset_uuid
+    |> get_asset()
+    |> Repo.preload([:creator])
+  end
+
+  @doc """
+  Get an asset from its UUID.
+  """
+  @spec get_asset(binary) :: Asset.t()
+  def get_asset(uuid) do
+    Repo.get_by(Asset, uuid: uuid)
+  end
+
+  @doc """
+  Update an asset.
+  """
+  @spec update_asset(Asset.t(), map) :: {:ok, Asset.t()}
+  def update_asset(asset, params) do
+    asset |> Asset.update_changeset(params) |> Repo.update()
+  end
+
+  @doc """
+  Delete an asset.
+  """
+  @spec delete_asset(Asset.t()) :: {:ok, Asset.t()}
+  def delete_asset(asset) do
+    asset |> Repo.delete()
+  end
+
+  def preload_layout(c_type) do
+    c_type |> Repo.preload([{:layout, :assets}])
+  end
+
+  def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %{
+        layout: %Layout{slug: slug, assets: assets}
+      }) do
+    System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}/"])
+
+    header =
+      c_type.fields
+      |> Enum.reduce("--- \n", fn {k, _}, acc ->
+        find_header_values(k, instance.serialized, acc)
+      end)
+
+    header = assets |> Enum.reduce(header, fn x, acc -> find_header_values(x, acc) end)
+
+    header = header <> "--- \n"
+
+    content = """
+    #{header}
+    #{instance.raw}
+    """
+
+    File.write("uploads/contents/#{u_id}/content.md", content)
+
+    pandoc_commands = [
+      "uploads/contents/#{u_id}/content.md",
+      "--template=uploads/contents/#{u_id}/template.tex",
+      "--pdf-engine=xelatex",
+      "-o",
+      "uploads/contents/#{u_id}/final.pdf"
+    ]
+
+    System.cmd("pandoc", pandoc_commands)
+  end
+
+  defp find_header_values(key, serialized, acc) do
+    serialized
+    |> Enum.find(fn {k, _} -> k == key end)
+    |> case do
+      nil ->
+        acc
+
+      {_, value} ->
+        acc <> "#{key}: #{value} \n"
+    end
+  end
+
+  defp find_header_values(%Asset{name: name, file: file} = asset, acc) do
+    url = AssetUploader |> generate_url(file, asset)
+    acc <> "#{name}: #{url} \n"
+  end
+
+  defp generate_url(uploader, file, scope) do
+    uploader.url({file, scope})
   end
 end

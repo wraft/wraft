@@ -4,7 +4,7 @@ defmodule WraftDoc.Document.LayoutAsset do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias WraftDoc.Document.LayoutAsset
+  alias __MODULE__
 
   schema "layout_asset" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
@@ -17,5 +17,9 @@ defmodule WraftDoc.Document.LayoutAsset do
   def changeset(%LayoutAsset{} = layout_asset, attrs \\ %{}) do
     layout_asset
     |> cast(attrs, [:layout_id, :asset_id])
+    |> unique_constraint(:layout_id,
+      message: "Asset already added.!",
+      name: :layout_asset_unique_index
+    )
   end
 end

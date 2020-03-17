@@ -82,6 +82,18 @@ defmodule WraftDocWeb.Router do
 
       # Organisations
       resources("/organisations", OrganisationController, except: [:index])
+
+      # All instances in an organisation
+      get("/contents", InstanceController, :all_contents)
+
+      # uild PDF from a content
+      post("/contents/:id/build", InstanceController, :build)
+
+      # All instances in an organisation
+      get("/data_templates", DataTemplateController, :all_templates)
+
+      # Assets
+      resources("/assets", AssetController, only: [:create, :index, :show, :update, :delete])
     end
   end
 
