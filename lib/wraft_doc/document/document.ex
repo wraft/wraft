@@ -687,11 +687,11 @@ defmodule WraftDoc.Document do
   end
 
   defp find_header_values(%Asset{name: name, file: file} = asset, acc) do
-    url = AssetUploader |> generate_url(file, asset)
-    acc <> "#{name}: #{url} \n"
+    <<_first::utf8, rest::binary>> = AssetUploader |> generate_url(file, asset)
+    acc <> "#{name}: #{rest} \n"
   end
 
   defp generate_url(uploader, file, scope) do
-    uploader.url({file, scope})
+    uploader.url({file, scope}, signed: true)
   end
 end
