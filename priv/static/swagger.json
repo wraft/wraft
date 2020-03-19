@@ -444,6 +444,224 @@
         "description": "API to delete a state"
       }
     },
+    "/resources/{id}": {
+      "put": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Update a resource",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Resource"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "resource id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/ResourceRequest"
+            },
+            "required": true,
+            "name": "resource",
+            "in": "body",
+            "description": "Resource to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.update",
+        "description": "API to update a resource"
+      },
+      "get": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Show a resource",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Resource"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "resource id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.show",
+        "description": "API to show details of a resource"
+      },
+      "delete": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Delete a resource",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Resource"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "resource id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.delete",
+        "description": "API to delete a resource"
+      }
+    },
+    "/resources": {
+      "post": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Create resource",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/LayoutAndEngine"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/ResourceRequest"
+            },
+            "required": true,
+            "name": "resource",
+            "in": "body",
+            "description": "Resource to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.create",
+        "description": "Create resource API"
+      },
+      "get": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Resource index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ResourceIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.index",
+        "description": "API to get the list of all resources created so far"
+      }
+    },
     "/layouts/{id}": {
       "put": {
         "tags": [
@@ -2053,87 +2271,6 @@
   },
   "host": "localhost:4000",
   "definitions": {
-    "FlowAndStates": {
-      "type": "object",
-      "title": "Show flow details and its states",
-      "properties": {
-        "states": {
-          "$ref": "#/definitions/State"
-        },
-        "flow": {
-          "$ref": "#/definitions/Flow"
-        },
-        "creator": {
-          "$ref": "#/definitions/User"
-        }
-      },
-      "example": {
-        "states": [
-          {
-            "state": "published",
-            "order": 1,
-            "id": "1232148nb3478"
-          }
-        ],
-        "flow": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "name": "Flow 1",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478"
-        },
-        "creator": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "name": "John Doe",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "email_verify": true,
-          "email": "email@xyz.com"
-        }
-      },
-      "description": "Show all details of a flow including all the states undet the flow"
-    },
-    "Themes": {
-      "type": "array",
-      "title": "All themes and its details",
-      "items": {
-        "$ref": "#/definitions/Theme"
-      },
-      "description": "All themes that have been created under current user's organisation and their details"
-    },
-    "EngineIndex": {
-      "type": "object",
-      "properties": {
-        "total_pages": {
-          "type": "integer",
-          "description": "Total number of pages"
-        },
-        "total_entries": {
-          "type": "integer",
-          "description": "Total number of contents"
-        },
-        "page_number": {
-          "type": "integer",
-          "description": "Page number"
-        },
-        "engines": {
-          "$ref": "#/definitions/Engines"
-        }
-      },
-      "example": {
-        "total_pages": 2,
-        "total_entries": 15,
-        "page_number": 1,
-        "engines": [
-          {
-            "updated_at": "2020-01-21T14:00:00Z",
-            "name": "Pandoc",
-            "inserted_at": "2020-02-21T14:00:00Z",
-            "id": "1232148nb3478",
-            "api_route": ""
-          }
-        ]
-      }
-    },
     "ShowLayout": {
       "type": "object",
       "title": "Layout and all its details",
@@ -2177,623 +2314,95 @@
       },
       "description": "API to show a layout and all its details"
     },
-    "DataTemplatesIndex": {
+    "FlowAndStatesWithoutCreator": {
       "type": "object",
+      "title": "Show flow details and its states",
       "properties": {
-        "total_pages": {
-          "type": "integer",
-          "description": "Total number of pages"
-        },
-        "total_entries": {
-          "type": "integer",
-          "description": "Total number of contents"
-        },
-        "page_number": {
-          "type": "integer",
-          "description": "Page number"
-        },
-        "contents": {
-          "$ref": "#/definitions/DataTemplates"
-        }
-      },
-      "example": {
-        "total_pages": 2,
-        "total_entries": 15,
-        "page_number": 1,
-        "contents": [
-          {
-            "updated_at": "2020-01-21T14:00:00Z",
-            "tag": "Main template",
-            "inserted_at": "2020-02-21T14:00:00Z",
-            "id": "1232148nb3478",
-            "data": "Hi [user]"
-          }
-        ]
-      }
-    },
-    "ContentTypeAndLayoutAndFlow": {
-      "type": "object",
-      "title": "Content Type, Layout and its flow",
-      "required": [
-        "name",
-        "id"
-      ],
-      "properties": {
-        "updated_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the user last updated"
-        },
-        "prefix": {
-          "type": "string",
-          "description": "Prefix to be used for generating Unique ID for contents"
-        },
-        "name": {
-          "type": "string",
-          "description": "Content Type's name"
-        },
-        "layout": {
-          "$ref": "#/definitions/Layout"
-        },
-        "inserted_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the user inserted"
-        },
-        "id": {
-          "type": "string",
-          "description": "The ID of the content type"
+        "states": {
+          "$ref": "#/definitions/State"
         },
         "flow": {
           "$ref": "#/definitions/Flow"
-        },
-        "fields": {
-          "type": "map",
-          "description": "Dynamic fields and their datatype"
-        },
-        "description": {
-          "type": "string",
-          "description": "Content Type's description"
-        },
-        "color": {
-          "type": "string",
-          "description": "Hex code of color"
         }
       },
       "example": {
-        "updated_at": "2020-01-21T14:00:00Z",
-        "prefix": "OFFLET",
-        "name": "Offer letter",
-        "layout": {
-          "width": 40.0,
-          "updated_at": "2020-01-21T14:00:00Z",
-          "unit": "cm",
-          "slug_file": "/letter.zip",
-          "slug": "Pandoc",
-          "name": "Official Letter",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "height": 20.0,
-          "description": "An official letter"
-        },
-        "inserted_at": "2020-02-21T14:00:00Z",
-        "id": "1232148nb3478",
+        "states": [
+          {
+            "state": "published",
+            "order": 1,
+            "id": "1232148nb3478"
+          }
+        ],
         "flow": {
           "updated_at": "2020-01-21T14:00:00Z",
           "name": "Flow 1",
           "inserted_at": "2020-02-21T14:00:00Z",
           "id": "1232148nb3478"
-        },
-        "fields": {
-          "position": "string",
-          "name": "string",
-          "joining_date": "date",
-          "approved_by": "string"
-        },
-        "description": "An offer letter",
-        "color": "#fffff"
+        }
       },
-      "description": "Content Type to be used for the generation of a document, its layout and flow."
+      "description": "Show all details of a flow including all the states undet the flow"
     },
-    "Flow": {
+    "Asset": {
       "type": "object",
-      "title": "Flow",
-      "properties": {
-        "updated_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the flow last updated"
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the flow"
-        },
-        "inserted_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the flow inserted"
-        },
-        "id": {
-          "type": "string",
-          "description": "ID of the flow"
-        }
-      },
-      "example": {
-        "updated_at": "2020-01-21T14:00:00Z",
-        "name": "Flow 1",
-        "inserted_at": "2020-02-21T14:00:00Z",
-        "id": "1232148nb3478"
-      },
-      "description": "Flows to be followed in an organisation"
-    },
-    "ShowDataTemplate": {
-      "type": "object",
-      "title": "Data template and all its details",
-      "properties": {
-        "data_template": {
-          "$ref": "#/definitions/LayoutAndEngine"
-        },
-        "creator": {
-          "$ref": "#/definitions/User"
-        },
-        "content_type": {
-          "$ref": "#/definitions/ContentType"
-        }
-      },
-      "example": {
-        "data_template": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "tag": "Main tag",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "data": "Hi [user]"
-        },
-        "creator": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "name": "John Doe",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "email_verify": true,
-          "email": "email@xyz.com"
-        },
-        "content_type": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "prefix": "OFFLET",
-          "name": "Offer letter",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "fields": {
-            "position": "string",
-            "name": "string",
-            "joining_date": "date",
-            "approved_by": "string"
-          },
-          "description": "An offer letter"
-        }
-      },
-      "description": "API to show a data template and all its details"
-    },
-    "ContentAndContentTypeAndState": {
-      "type": "object",
-      "title": "Content and its Content Type",
-      "properties": {
-        "state": {
-          "$ref": "#/definitions/State"
-        },
-        "content_type": {
-          "$ref": "#/definitions/ContentType"
-        },
-        "content": {
-          "$ref": "#/definitions/Content"
-        }
-      },
-      "example": {
-        "state": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "state": "published",
-          "order": 1,
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478"
-        },
-        "content_type": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "name": "Offer letter",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "fields": {
-            "position": "string",
-            "name": "string",
-            "joining_date": "date",
-            "approved_by": "string"
-          },
-          "description": "An offer letter"
-        },
-        "content": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "serialized": {
-            "title": "Title of the content",
-            "body": "Body of the content"
-          },
-          "raw": "Content",
-          "instance_id": "OFFL01",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478"
-        }
-      },
-      "description": "A content and its content type"
-    },
-    "LayoutIndex": {
-      "type": "object",
-      "properties": {
-        "total_pages": {
-          "type": "integer",
-          "description": "Total number of pages"
-        },
-        "total_entries": {
-          "type": "integer",
-          "description": "Total number of contents"
-        },
-        "page_number": {
-          "type": "integer",
-          "description": "Page number"
-        },
-        "layouts": {
-          "$ref": "#/definitions/LayoutsAndEngines"
-        }
-      },
-      "example": {
-        "total_pages": 2,
-        "total_entries": 15,
-        "page_number": 1,
-        "layouts": [
-          {
-            "width": 40.0,
-            "updated_at": "2020-01-21T14:00:00Z",
-            "unit": "cm",
-            "slug_file": "/official_letter.zip",
-            "slug": "Pandoc",
-            "screenshot": "/official_letter.jpg",
-            "name": "Official Letter",
-            "inserted_at": "2020-02-21T14:00:00Z",
-            "id": "1232148nb3478",
-            "height": 20.0,
-            "engine": {
-              "updated_at": "2020-01-21T14:00:00Z",
-              "name": "Pandoc",
-              "inserted_at": "2020-02-21T14:00:00Z",
-              "id": "1232148nb3478",
-              "api_route": ""
-            },
-            "description": "An official letter"
-          }
-        ]
-      }
-    },
-    "CurrentUser": {
-      "type": "object",
-      "title": "Current User",
+      "title": "Asset",
       "required": [
-        "email",
-        "name",
         "id"
       ],
       "properties": {
         "updated_at": {
           "type": "string",
           "format": "ISO-8601",
-          "description": "When was the user last updated"
-        },
-        "role": {
-          "type": "string",
-          "description": "User's role"
-        },
-        "profile_pic": {
-          "type": "string",
-          "description": "User's profile pic URL"
-        },
-        "organisation_id": {
-          "type": "integer",
-          "description": "ID of the user's oranisation"
+          "description": "When was the engine last updated"
         },
         "name": {
           "type": "string",
-          "description": "Users name"
+          "description": "Name of the asset"
         },
         "inserted_at": {
           "type": "string",
           "format": "ISO-8601",
-          "description": "When was the user inserted"
+          "description": "When was the engine inserted"
         },
         "id": {
           "type": "string",
-          "description": "The ID of the user"
+          "description": "The ID of the asset"
         },
-        "email_verify": {
-          "type": "boolean",
-          "description": "Email verification status"
-        },
-        "email": {
+        "file": {
           "type": "string",
-          "description": "Users email"
+          "description": "URL of the uploaded file"
         }
       },
       "example": {
         "updated_at": "2020-01-21T14:00:00Z",
-        "role": "user",
-        "profile_pic": "www.aws.com/users/johndoe.jpg",
-        "organisation_id": "jn14786914qklnqw",
-        "name": "John Doe",
+        "name": "Asset",
         "inserted_at": "2020-02-21T14:00:00Z",
         "id": "1232148nb3478",
-        "email_verify": true,
-        "email": "email@xyz.com"
+        "file": "/signature.pdf"
       },
-      "description": "Currently loged in user"
+      "description": "An asset."
     },
-    "FlowRequest": {
+    "DataTemplateRequest": {
       "type": "object",
-      "title": "Flow Request",
+      "title": "Data template Request",
       "required": [
-        "name"
+        "data",
+        "tag"
       ],
       "properties": {
-        "name": {
+        "tag": {
           "type": "string",
-          "description": "Flow's name"
+          "description": "Data templates's tag"
+        },
+        "data": {
+          "type": "string",
+          "description": "Data template's contents"
         }
       },
       "example": {
-        "name": "Flow 1"
+        "tag": "Main template",
+        "data": "Hi [user]"
       },
-      "description": "Create flow request."
-    },
-    "ContentTypesAndLayoutsAndFlows": {
-      "type": "array",
-      "title": "Content Types and their Layouts and flow",
-      "items": {
-        "$ref": "#/definitions/ContentTypeAndLayoutAndFlow"
-      },
-      "description": "All content types that have been created and their layouts and flow"
-    },
-    "ThemeIndex": {
-      "type": "object",
-      "properties": {
-        "total_pages": {
-          "type": "integer",
-          "description": "Total number of pages"
-        },
-        "total_entries": {
-          "type": "integer",
-          "description": "Total number of contents"
-        },
-        "themes": {
-          "$ref": "#/definitions/Themes"
-        },
-        "page_number": {
-          "type": "integer",
-          "description": "Page number"
-        }
-      },
-      "example": {
-        "total_pages": 2,
-        "total_entries": 15,
-        "themes": [
-          {
-            "updated_at": "2020-01-21T14:00:00Z",
-            "typescale": {
-              "p": "6",
-              "h2": "8",
-              "h1": "10"
-            },
-            "name": "Official Letter Theme",
-            "inserted_at": "2020-02-21T14:00:00Z",
-            "id": "1232148nb3478",
-            "font": "Malery",
-            "file": "/malory.css"
-          }
-        ],
-        "page_number": 1
-      }
-    },
-    "LayoutsAndEngines": {
-      "type": "array",
-      "title": "Layouts and its Engines",
-      "items": {
-        "$ref": "#/definitions/LayoutAndEngine"
-      },
-      "description": "All layouts that have been created and their engines"
-    },
-    "ContentType": {
-      "type": "object",
-      "title": "Content Type",
-      "required": [
-        "name",
-        "id"
-      ],
-      "properties": {
-        "updated_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the user last updated"
-        },
-        "prefix": {
-          "type": "string",
-          "description": "Prefix to be used for generating Unique ID for contents"
-        },
-        "name": {
-          "type": "string",
-          "description": "Content Type's name"
-        },
-        "inserted_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the user inserted"
-        },
-        "id": {
-          "type": "string",
-          "description": "The ID of the content type"
-        },
-        "fields": {
-          "type": "map",
-          "description": "Dynamic fields and their datatype"
-        },
-        "description": {
-          "type": "string",
-          "description": "Content Type's description"
-        },
-        "color": {
-          "type": "string",
-          "description": "Hex code of color"
-        }
-      },
-      "example": {
-        "updated_at": "2020-01-21T14:00:00Z",
-        "prefix": "OFFLET",
-        "name": "Offer letter",
-        "inserted_at": "2020-02-21T14:00:00Z",
-        "id": "1232148nb3478",
-        "fields": {
-          "position": "string",
-          "name": "string",
-          "joining_date": "date",
-          "approved_by": "string"
-        },
-        "description": "An offer letter",
-        "color": "#fffff"
-      },
-      "description": "A Content Type."
-    },
-    "Error": {
-      "type": "object",
-      "title": "Errors",
-      "required": [
-        "error"
-      ],
-      "properties": {
-        "error": {
-          "type": "string",
-          "description": "The message of the error raised"
-        }
-      },
-      "description": "Error responses from the API"
-    },
-    "ShowAsset": {
-      "type": "object",
-      "title": "Show asset",
-      "properties": {
-        "creator": {
-          "$ref": "#/definitions/User"
-        },
-        "content": {
-          "$ref": "#/definitions/Asset"
-        }
-      },
-      "example": {
-        "creator": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "name": "John Doe",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "email_verify": true,
-          "email": "email@xyz.com"
-        },
-        "asset": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "name": "Asset",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "file": "/signature.pdf"
-        }
-      },
-      "description": "An asset and its details"
-    },
-    "ShowContent": {
-      "type": "object",
-      "title": "Content and its details",
-      "properties": {
-        "state": {
-          "$ref": "#/definitions/State"
-        },
-        "creator": {
-          "$ref": "#/definitions/User"
-        },
-        "content_type": {
-          "$ref": "#/definitions/ContentTypeAndLayout"
-        },
-        "content": {
-          "$ref": "#/definitions/Content"
-        }
-      },
-      "example": {
-        "state": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "state": "published",
-          "order": 1,
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478"
-        },
-        "creator": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "name": "John Doe",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "email_verify": true,
-          "email": "email@xyz.com"
-        },
-        "content_type": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "name": "Offer letter",
-          "layout": {
-            "width": 40.0,
-            "updated_at": "2020-01-21T14:00:00Z",
-            "unit": "cm",
-            "slug_file": "/letter.zip",
-            "slug": "Pandoc",
-            "name": "Official Letter",
-            "inserted_at": "2020-02-21T14:00:00Z",
-            "id": "1232148nb3478",
-            "height": 20.0,
-            "description": "An official letter"
-          },
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "fields": {
-            "position": "string",
-            "name": "string",
-            "joining_date": "date",
-            "approved_by": "string"
-          },
-          "description": "An offer letter"
-        },
-        "content": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "serialized": {
-            "title": "Title of the content",
-            "body": "Body of the content"
-          },
-          "raw": "Content",
-          "instance_id": "OFFL01",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478"
-        }
-      },
-      "description": "A content and all its details"
-    },
-    "Engines": {
-      "type": "array",
-      "title": "Engines",
-      "items": {
-        "$ref": "#/definitions/Engine"
-      },
-      "description": "All engines that have been created"
-    },
-    "Assets": {
-      "type": "array",
-      "title": "All assets in an organisation",
-      "items": {
-        "$ref": "#/definitions/Asset"
-      },
-      "description": "All assets that have been created under an organisation"
+      "description": "Create data template request."
     },
     "Content": {
       "type": "object",
@@ -2842,104 +2451,7 @@
       },
       "description": "A content, which is then used to generate the out files."
     },
-    "ContentTypeRequest": {
-      "type": "object",
-      "title": "Content Type Request",
-      "required": [
-        "prefix",
-        "flow_uuid",
-        "layout_uuid",
-        "fields",
-        "description",
-        "name"
-      ],
-      "properties": {
-        "prefix": {
-          "type": "string",
-          "description": "Prefix to be used for generating Unique ID for contents"
-        },
-        "name": {
-          "type": "string",
-          "description": "Content Type's name"
-        },
-        "layout_uuid": {
-          "type": "string",
-          "description": "ID of the layout selected"
-        },
-        "flow_uuid": {
-          "type": "string",
-          "description": "ID of the flow selected"
-        },
-        "fields": {
-          "type": "map",
-          "description": "Dynamic fields and their datatype"
-        },
-        "description": {
-          "type": "string",
-          "description": "Content Type's description"
-        },
-        "color": {
-          "type": "string",
-          "description": "Hex code of color"
-        }
-      },
-      "example": {
-        "prefix": "OFFLET",
-        "name": "Offer letter",
-        "layout_uuid": "1232148nb3478",
-        "flow_uuid": "234okjnskjb8234",
-        "fields": {
-          "position": "string",
-          "name": "string",
-          "joining_date": "date",
-          "approved_by": "string"
-        },
-        "description": "An offer letter",
-        "color": "#fffff"
-      },
-      "description": "Create content type request."
-    },
-    "DataTemplate": {
-      "type": "object",
-      "title": "Data Template",
-      "required": [
-        "tag",
-        "id"
-      ],
-      "properties": {
-        "updated_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the layout last updated"
-        },
-        "tag": {
-          "type": "string",
-          "description": "Tag name of the data template"
-        },
-        "inserted_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the layout created"
-        },
-        "id": {
-          "type": "string",
-          "description": "The ID of the data template"
-        },
-        "data": {
-          "type": "string",
-          "description": "Data template's contents"
-        }
-      },
-      "example": {
-        "updated_at": "2020-01-21T14:00:00Z",
-        "tag": "Main template",
-        "inserted_at": "2020-02-21T14:00:00Z",
-        "id": "1232148nb3478",
-        "data": "Hi [user]"
-      },
-      "description": "A Data Template"
-    },
-    "ContentTypesIndex": {
+    "EngineIndex": {
       "type": "object",
       "properties": {
         "total_pages": {
@@ -2954,421 +2466,24 @@
           "type": "integer",
           "description": "Page number"
         },
-        "content_types": {
-          "$ref": "#/definitions/ContentTypesAndLayoutsAndFlows"
+        "engines": {
+          "$ref": "#/definitions/Engines"
         }
       },
       "example": {
         "total_pages": 2,
         "total_entries": 15,
         "page_number": 1,
-        "content_types": [
+        "engines": [
           {
-            "creator": {
-              "updated_at": "2020-01-21T14:00:00Z",
-              "name": "John Doe",
-              "inserted_at": "2020-02-21T14:00:00Z",
-              "id": "1232148nb3478",
-              "email_verify": true,
-              "email": "email@xyz.com"
-            },
-            "content_type": {
-              "updated_at": "2020-01-21T14:00:00Z",
-              "prefix": "OFFLET",
-              "name": "Offer letter",
-              "layout": {
-                "width": 40.0,
-                "updated_at": "2020-01-21T14:00:00Z",
-                "unit": "cm",
-                "slug_file": "/letter.zip",
-                "slug": "Pandoc",
-                "name": "Official Letter",
-                "inserted_at": "2020-02-21T14:00:00Z",
-                "id": "1232148nb3478",
-                "height": 20.0,
-                "description": "An official letter"
-              },
-              "inserted_at": "2020-02-21T14:00:00Z",
-              "id": "1232148nb3478",
-              "flow": {
-                "updated_at": "2020-01-21T14:00:00Z",
-                "name": "Flow 1",
-                "inserted_at": "2020-02-21T14:00:00Z",
-                "id": "1232148nb3478"
-              },
-              "fields": {
-                "position": "string",
-                "name": "string",
-                "joining_date": "date",
-                "approved_by": "string"
-              },
-              "description": "An offer letter",
-              "color": "#fffff"
-            }
+            "updated_at": "2020-01-21T14:00:00Z",
+            "name": "Pandoc",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "api_route": ""
           }
         ]
       }
-    },
-    "StateRequest": {
-      "type": "object",
-      "title": "State Request",
-      "required": [
-        "order",
-        "state"
-      ],
-      "properties": {
-        "state": {
-          "type": "string",
-          "description": "State name"
-        },
-        "order": {
-          "type": "integer",
-          "description": "State's order"
-        }
-      },
-      "example": {
-        "state": "Published",
-        "order": 1
-      },
-      "description": "Create state request."
-    },
-    "FlowIndex": {
-      "type": "object",
-      "properties": {
-        "total_pages": {
-          "type": "integer",
-          "description": "Total number of pages"
-        },
-        "total_entries": {
-          "type": "integer",
-          "description": "Total number of contents"
-        },
-        "states": {
-          "$ref": "#/definitions/ShowStates"
-        },
-        "page_number": {
-          "type": "integer",
-          "description": "Page number"
-        }
-      },
-      "example": {
-        "total_pages": 2,
-        "total_entries": 15,
-        "states": [
-          {
-            "state": {
-              "updated_at": "2020-01-21T14:00:00Z",
-              "state": "published",
-              "order": 1,
-              "inserted_at": "2020-02-21T14:00:00Z",
-              "id": "1232148nb3478"
-            },
-            "flow": {
-              "updated_at": "2020-01-21T14:00:00Z",
-              "name": "Flow 1",
-              "inserted_at": "2020-02-21T14:00:00Z",
-              "id": "jnb234881adsad"
-            },
-            "creator": {
-              "updated_at": "2020-01-21T14:00:00Z",
-              "name": "John Doe",
-              "inserted_at": "2020-02-21T14:00:00Z",
-              "id": "1232148nb3478",
-              "email_verify": true,
-              "email": "email@xyz.com"
-            }
-          }
-        ],
-        "page_number": 1
-      }
-    },
-    "DataTemplates": {
-      "type": "array",
-      "title": "Data templates under a content type",
-      "items": {
-        "$ref": "#/definitions/DataTemplate"
-      },
-      "description": "All data template that have been created under a content type"
-    },
-    "UserLoginRequest": {
-      "type": "object",
-      "title": "User Login",
-      "required": [
-        "password",
-        "email"
-      ],
-      "properties": {
-        "password": {
-          "type": "string",
-          "description": "User's password"
-        },
-        "email": {
-          "type": "string",
-          "description": "User's email"
-        }
-      },
-      "example": {
-        "password": "Password",
-        "email": "email@xyz.com"
-      },
-      "description": "A user log in to the application"
-    },
-    "UserToken": {
-      "type": "object",
-      "title": "User and token",
-      "required": [
-        "token"
-      ],
-      "properties": {
-        "user": {
-          "$ref": "#/definitions/User"
-        },
-        "token": {
-          "type": "string",
-          "description": "JWT token for authenticating the user"
-        }
-      },
-      "example": {
-        "user": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "name": "John Doe",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "email_verify": true,
-          "email": "email@xyz.com"
-        },
-        "token": "Asdlkqweb.Khgqiwue132.xcli123"
-      },
-      "description": "User details with the generated JWT token for authentication"
-    },
-    "ShowTheme": {
-      "type": "object",
-      "title": "Show Theme",
-      "properties": {
-        "theme": {
-          "$ref": "#/definitions/Theme"
-        },
-        "creator": {
-          "$ref": "#/definitions/User"
-        }
-      },
-      "example": {
-        "theme": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "typescale": {
-            "p": "6",
-            "h2": "8",
-            "h1": "10"
-          },
-          "name": "Official Letter Theme",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "font": "Malery",
-          "file": "/malory.css"
-        },
-        "creator": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "name": "John Doe",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "email_verify": true,
-          "email": "email@xyz.com"
-        }
-      },
-      "description": "Show details of a theme"
-    },
-    "Engine": {
-      "type": "object",
-      "title": "Render engine",
-      "required": [
-        "name",
-        "id"
-      ],
-      "properties": {
-        "updated_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the engine last updated"
-        },
-        "name": {
-          "type": "string",
-          "description": "Engine's name"
-        },
-        "inserted_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the engine inserted"
-        },
-        "id": {
-          "type": "string",
-          "description": "The ID of the engine"
-        },
-        "api_route": {
-          "type": "string",
-          "description": "API route to be used"
-        }
-      },
-      "example": {
-        "updated_at": "2020-01-21T14:00:00Z",
-        "name": "Pandoc",
-        "inserted_at": "2020-02-21T14:00:00Z",
-        "id": "1232148nb3478",
-        "api_route": ""
-      },
-      "description": "A render engine to be used for document generation"
-    },
-    "ContentsIndex": {
-      "type": "object",
-      "properties": {
-        "total_pages": {
-          "type": "integer",
-          "description": "Total number of pages"
-        },
-        "total_entries": {
-          "type": "integer",
-          "description": "Total number of contents"
-        },
-        "page_number": {
-          "type": "integer",
-          "description": "Page number"
-        },
-        "contents": {
-          "$ref": "#/definitions/ContentsAndContentTypeAndState"
-        }
-      },
-      "example": {
-        "total_pages": 2,
-        "total_entries": 15,
-        "page_number": 1,
-        "contents": [
-          {
-            "state": {
-              "updated_at": "2020-01-21T14:00:00Z",
-              "state": "published",
-              "order": 1,
-              "inserted_at": "2020-02-21T14:00:00Z",
-              "id": "1232148nb3478"
-            },
-            "content_type": {
-              "updated_at": "2020-01-21T14:00:00Z",
-              "name": "Offer letter",
-              "inserted_at": "2020-02-21T14:00:00Z",
-              "id": "1232148nb3478",
-              "fields": {
-                "position": "string",
-                "name": "string",
-                "joining_date": "date",
-                "approved_by": "string"
-              },
-              "description": "An offer letter"
-            },
-            "content": {
-              "updated_at": "2020-01-21T14:00:00Z",
-              "serialized": {
-                "title": "Title of the content",
-                "body": "Body of the content"
-              },
-              "raw": "Content",
-              "instance_id": "OFFL01",
-              "inserted_at": "2020-02-21T14:00:00Z",
-              "id": "1232148nb3478"
-            }
-          }
-        ]
-      }
-    },
-    "Theme": {
-      "type": "object",
-      "title": "Theme",
-      "required": [
-        "typescale",
-        "font",
-        "name",
-        "id"
-      ],
-      "properties": {
-        "updated_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the layout last updated"
-        },
-        "typescale": {
-          "type": "map",
-          "description": "Typescale of the theme"
-        },
-        "name": {
-          "type": "string",
-          "description": "Theme's name"
-        },
-        "inserted_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the layout created"
-        },
-        "id": {
-          "type": "string",
-          "description": "The ID of the theme"
-        },
-        "font": {
-          "type": "string",
-          "description": "Font name"
-        },
-        "file": {
-          "type": "string",
-          "description": "Theme file attachment"
-        }
-      },
-      "example": {
-        "updated_at": "2020-01-21T14:00:00Z",
-        "typescale": {
-          "p": "6",
-          "h2": "8",
-          "h1": "10"
-        },
-        "name": "Official Letter Theme",
-        "inserted_at": "2020-02-21T14:00:00Z",
-        "id": "1232148nb3478",
-        "font": "Malery",
-        "file": "/malory.css"
-      },
-      "description": "A Theme"
-    },
-    "UpdateFlow": {
-      "type": "object",
-      "title": "Show flow details",
-      "properties": {
-        "flow": {
-          "$ref": "#/definitions/Flow"
-        },
-        "creator": {
-          "$ref": "#/definitions/User"
-        }
-      },
-      "example": {
-        "flow": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "name": "Flow 1",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478"
-        },
-        "creator": {
-          "updated_at": "2020-01-21T14:00:00Z",
-          "name": "John Doe",
-          "inserted_at": "2020-02-21T14:00:00Z",
-          "id": "1232148nb3478",
-          "email_verify": true,
-          "email": "email@xyz.com"
-        }
-      },
-      "description": "Show all details of a flow"
-    },
-    "ShowStates": {
-      "type": "array",
-      "title": "All states and its details",
-      "items": {
-        "$ref": "#/definitions/ShowState"
-      },
-      "description": "All states that have been created and their details"
     },
     "ContentTypeAndLayout": {
       "type": "object",
@@ -3445,146 +2560,17 @@
       },
       "description": "Content Type to be used for the generation of a document and its layout."
     },
-    "Layout": {
+    "UserLoginRequest": {
       "type": "object",
-      "title": "Layout",
-      "required": [
-        "name",
-        "id"
-      ],
-      "properties": {
-        "width": {
-          "type": "float",
-          "description": "Width of the layout"
-        },
-        "updated_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the layout last updated"
-        },
-        "unit": {
-          "type": "string",
-          "description": "Unit of dimensions"
-        },
-        "slug_file": {
-          "type": "string",
-          "description": "URL of the uploaded slug file"
-        },
-        "slug": {
-          "type": "string",
-          "description": "Name of the slug to be used for the layout"
-        },
-        "screenshot": {
-          "type": "string",
-          "description": "URL of the uploaded screenshot"
-        },
-        "name": {
-          "type": "string",
-          "description": "Layout's name"
-        },
-        "inserted_at": {
-          "type": "string",
-          "format": "ISO-8601",
-          "description": "When was the layout created"
-        },
-        "id": {
-          "type": "string",
-          "description": "The ID of the layout"
-        },
-        "height": {
-          "type": "float",
-          "description": "Height of the layout"
-        },
-        "description": {
-          "type": "string",
-          "description": "Layout's description"
-        }
-      },
-      "example": {
-        "width": 40.0,
-        "updated_at": "2020-01-21T14:00:00Z",
-        "unit": "cm",
-        "slug_file": "/official_letter.zip",
-        "slug": "Pandoc",
-        "screenshot": "/official_letter.jpg",
-        "name": "Official Letter",
-        "inserted_at": "2020-02-21T14:00:00Z",
-        "id": "1232148nb3478",
-        "height": 20.0,
-        "description": "An official letter"
-      },
-      "description": "A Layout"
-    },
-    "DataTemplateRequest": {
-      "type": "object",
-      "title": "Data template Request",
-      "required": [
-        "data",
-        "tag"
-      ],
-      "properties": {
-        "tag": {
-          "type": "string",
-          "description": "Data templates's tag"
-        },
-        "data": {
-          "type": "string",
-          "description": "Data template's contents"
-        }
-      },
-      "example": {
-        "tag": "Main template",
-        "data": "Hi [user]"
-      },
-      "description": "Create data template request."
-    },
-    "ContentRequest": {
-      "type": "object",
-      "title": "Content Request",
-      "required": [
-        "state_uuid",
-        "raw"
-      ],
-      "properties": {
-        "state_uuid": {
-          "type": "string",
-          "description": "state id"
-        },
-        "serialized": {
-          "type": "string",
-          "description": "Content serialized data"
-        },
-        "raw": {
-          "type": "string",
-          "description": "Content raw data"
-        }
-      },
-      "example": {
-        "state_uuid": "kjb12389k23eyg",
-        "serialized": {
-          "title": "Title of the content",
-          "body": "Body of the content"
-        },
-        "raw": "Content data"
-      },
-      "description": "Content creation request"
-    },
-    "UserRegisterRequest": {
-      "type": "object",
-      "title": "Register User",
+      "title": "User Login",
       "required": [
         "password",
-        "email",
-        "name"
+        "email"
       ],
       "properties": {
         "password": {
           "type": "string",
           "description": "User's password"
-        },
-        "name": {
-          "type": "string",
-          "description": "User's name"
         },
         "email": {
           "type": "string",
@@ -3593,12 +2579,71 @@
       },
       "example": {
         "password": "Password",
-        "name": "John Doe",
         "email": "email@xyz.com"
       },
-      "description": "A user to be registered in the application"
+      "description": "A user log in to the application"
     },
-    "AssetsIndex": {
+    "DataTemplates": {
+      "type": "array",
+      "title": "Data templates under a content type",
+      "items": {
+        "$ref": "#/definitions/DataTemplate"
+      },
+      "description": "All data template that have been created under a content type"
+    },
+    "Engines": {
+      "type": "array",
+      "title": "Engines",
+      "items": {
+        "$ref": "#/definitions/Engine"
+      },
+      "description": "All engines that have been created"
+    },
+    "State": {
+      "type": "object",
+      "title": "State",
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the state last updated"
+        },
+        "state": {
+          "type": "string",
+          "description": "A state of content"
+        },
+        "order": {
+          "type": "integer",
+          "description": "Order of the state"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the state inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the state"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "state": "published",
+        "order": 1,
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478"
+      },
+      "description": "State assigened to contents"
+    },
+    "Assets": {
+      "type": "array",
+      "title": "All assets in an organisation",
+      "items": {
+        "$ref": "#/definitions/Asset"
+      },
+      "description": "All assets that have been created under an organisation"
+    },
+    "ContentsIndex": {
       "type": "object",
       "properties": {
         "total_pages": {
@@ -3613,23 +2658,86 @@
           "type": "integer",
           "description": "Page number"
         },
-        "assets": {
-          "$ref": "#/definitions/Assets"
+        "contents": {
+          "$ref": "#/definitions/ContentsAndContentTypeAndState"
         }
       },
       "example": {
         "total_pages": 2,
         "total_entries": 15,
         "page_number": 1,
-        "assets": [
+        "contents": [
           {
-            "updated_at": "2020-01-21T14:00:00Z",
-            "name": "Asset",
-            "inserted_at": "2020-02-21T14:00:00Z",
-            "id": "1232148nb3478",
-            "file": "/signature.pdf"
+            "state": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "state": "published",
+              "order": 1,
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478"
+            },
+            "content_type": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "name": "Offer letter",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "fields": {
+                "position": "string",
+                "name": "string",
+                "joining_date": "date",
+                "approved_by": "string"
+              },
+              "description": "An offer letter"
+            },
+            "content": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "serialized": {
+                "title": "Title of the content",
+                "body": "Body of the content"
+              },
+              "raw": "Content",
+              "instance_id": "OFFL01",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478"
+            }
           }
         ]
+      }
+    },
+    "ResourceIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "resources": {
+          "$ref": "#/definitions/Resource"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "resources": [
+          {
+            "id": "1232148nb3478",
+            "category": "Flow",
+            "action": "create"
+          },
+          {
+            "id": "137ykjbefd987132",
+            "category": "Flow",
+            "action": "update"
+          }
+        ],
+        "page_number": 1
       }
     },
     "ShowContentType": {
@@ -3695,44 +2803,389 @@
       },
       "description": "API to show a content type and all its details"
     },
-    "Asset": {
+    "Error": {
       "type": "object",
-      "title": "Asset",
+      "title": "Errors",
       "required": [
+        "error"
+      ],
+      "properties": {
+        "error": {
+          "type": "string",
+          "description": "The message of the error raised"
+        }
+      },
+      "description": "Error responses from the API"
+    },
+    "ContentRequest": {
+      "type": "object",
+      "title": "Content Request",
+      "required": [
+        "state_uuid",
+        "raw"
+      ],
+      "properties": {
+        "state_uuid": {
+          "type": "string",
+          "description": "state id"
+        },
+        "serialized": {
+          "type": "string",
+          "description": "Content serialized data"
+        },
+        "raw": {
+          "type": "string",
+          "description": "Content raw data"
+        }
+      },
+      "example": {
+        "state_uuid": "kjb12389k23eyg",
+        "serialized": {
+          "title": "Title of the content",
+          "body": "Body of the content"
+        },
+        "raw": "Content data"
+      },
+      "description": "Content creation request"
+    },
+    "Resource": {
+      "type": "object",
+      "title": "Resource",
+      "required": [
+        "action",
+        "category",
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The ID of the layout"
+        },
+        "category": {
+          "type": "string",
+          "description": "Name of the category"
+        },
+        "action": {
+          "type": "string",
+          "description": "Name of the action"
+        }
+      },
+      "example": {
+        "id": "1232148nb3478",
+        "category": "Flow",
+        "action": "create"
+      },
+      "description": "A Resource"
+    },
+    "Themes": {
+      "type": "array",
+      "title": "All themes and its details",
+      "items": {
+        "$ref": "#/definitions/Theme"
+      },
+      "description": "All themes that have been created under current user's organisation and their details"
+    },
+    "ResourceRequest": {
+      "type": "object",
+      "title": "Resource Request",
+      "required": [
+        "action",
+        "category"
+      ],
+      "properties": {
+        "category": {
+          "type": "string",
+          "description": "Category's name"
+        },
+        "action": {
+          "type": "string",
+          "description": "Action name"
+        }
+      },
+      "example": {
+        "category": "Flow",
+        "action": "create"
+      },
+      "description": "Create resource request."
+    },
+    "ContentTypesIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "content_types": {
+          "$ref": "#/definitions/ContentTypesAndLayoutsAndFlows"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "content_types": [
+          {
+            "creator": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "name": "John Doe",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "email_verify": true,
+              "email": "email@xyz.com"
+            },
+            "content_type": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "prefix": "OFFLET",
+              "name": "Offer letter",
+              "layout": {
+                "width": 40.0,
+                "updated_at": "2020-01-21T14:00:00Z",
+                "unit": "cm",
+                "slug_file": "/letter.zip",
+                "slug": "Pandoc",
+                "name": "Official Letter",
+                "inserted_at": "2020-02-21T14:00:00Z",
+                "id": "1232148nb3478",
+                "height": 20.0,
+                "description": "An official letter"
+              },
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "flow": {
+                "updated_at": "2020-01-21T14:00:00Z",
+                "name": "Flow 1",
+                "inserted_at": "2020-02-21T14:00:00Z",
+                "id": "1232148nb3478"
+              },
+              "fields": {
+                "position": "string",
+                "name": "string",
+                "joining_date": "date",
+                "approved_by": "string"
+              },
+              "description": "An offer letter",
+              "color": "#fffff"
+            }
+          }
+        ]
+      }
+    },
+    "ShowStates": {
+      "type": "array",
+      "title": "All states and its details",
+      "items": {
+        "$ref": "#/definitions/ShowState"
+      },
+      "description": "All states that have been created and their details"
+    },
+    "DataTemplate": {
+      "type": "object",
+      "title": "Data Template",
+      "required": [
+        "tag",
         "id"
       ],
       "properties": {
         "updated_at": {
           "type": "string",
           "format": "ISO-8601",
-          "description": "When was the engine last updated"
+          "description": "When was the layout last updated"
         },
-        "name": {
+        "tag": {
           "type": "string",
-          "description": "Name of the asset"
+          "description": "Tag name of the data template"
         },
         "inserted_at": {
           "type": "string",
           "format": "ISO-8601",
-          "description": "When was the engine inserted"
+          "description": "When was the layout created"
         },
         "id": {
           "type": "string",
-          "description": "The ID of the asset"
+          "description": "The ID of the data template"
         },
-        "file": {
+        "data": {
           "type": "string",
-          "description": "URL of the uploaded file"
+          "description": "Data template's contents"
         }
       },
       "example": {
         "updated_at": "2020-01-21T14:00:00Z",
-        "name": "Asset",
+        "tag": "Main template",
         "inserted_at": "2020-02-21T14:00:00Z",
         "id": "1232148nb3478",
-        "file": "/signature.pdf"
+        "data": "Hi [user]"
       },
-      "description": "An asset."
+      "description": "A Data Template"
+    },
+    "ShowFlows": {
+      "type": "array",
+      "title": "All flows and its details",
+      "items": {
+        "$ref": "#/definitions/UpdateFlow"
+      },
+      "description": "All flows that have been created and their details"
+    },
+    "Flow": {
+      "type": "object",
+      "title": "Flow",
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the flow last updated"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the flow"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the flow inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the flow"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "name": "Flow 1",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478"
+      },
+      "description": "Flows to be followed in an organisation"
+    },
+    "ThemeIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "themes": {
+          "$ref": "#/definitions/Themes"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "themes": [
+          {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "typescale": {
+              "p": "6",
+              "h2": "8",
+              "h1": "10"
+            },
+            "name": "Official Letter Theme",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "font": "Malery",
+            "file": "/malory.css"
+          }
+        ],
+        "page_number": 1
+      }
+    },
+    "ContentTypeRequest": {
+      "type": "object",
+      "title": "Content Type Request",
+      "required": [
+        "prefix",
+        "flow_uuid",
+        "layout_uuid",
+        "fields",
+        "description",
+        "name"
+      ],
+      "properties": {
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
+        },
+        "name": {
+          "type": "string",
+          "description": "Content Type's name"
+        },
+        "layout_uuid": {
+          "type": "string",
+          "description": "ID of the layout selected"
+        },
+        "flow_uuid": {
+          "type": "string",
+          "description": "ID of the flow selected"
+        },
+        "fields": {
+          "type": "map",
+          "description": "Dynamic fields and their datatype"
+        },
+        "description": {
+          "type": "string",
+          "description": "Content Type's description"
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex code of color"
+        }
+      },
+      "example": {
+        "prefix": "OFFLET",
+        "name": "Offer letter",
+        "layout_uuid": "1232148nb3478",
+        "flow_uuid": "234okjnskjb8234",
+        "fields": {
+          "position": "string",
+          "name": "string",
+          "joining_date": "date",
+          "approved_by": "string"
+        },
+        "description": "An offer letter",
+        "color": "#fffff"
+      },
+      "description": "Create content type request."
+    },
+    "FlowRequest": {
+      "type": "object",
+      "title": "Flow Request",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Flow's name"
+        }
+      },
+      "example": {
+        "name": "Flow 1"
+      },
+      "description": "Create flow request."
+    },
+    "ContentsAndContentTypeAndState": {
+      "type": "array",
+      "title": "Instances, their content types and states",
+      "items": {
+        "$ref": "#/definitions/ContentAndContentTypeAndState"
+      },
+      "description": "IInstances and all its details except creator."
     },
     "ShowState": {
       "type": "object",
@@ -3865,6 +3318,92 @@
       },
       "description": "Layout to be used for the generation of a document."
     },
+    "ShowAsset": {
+      "type": "object",
+      "title": "Show asset",
+      "properties": {
+        "creator": {
+          "$ref": "#/definitions/User"
+        },
+        "content": {
+          "$ref": "#/definitions/Asset"
+        }
+      },
+      "example": {
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        },
+        "asset": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Asset",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "file": "/signature.pdf"
+        }
+      },
+      "description": "An asset and its details"
+    },
+    "Theme": {
+      "type": "object",
+      "title": "Theme",
+      "required": [
+        "typescale",
+        "font",
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout last updated"
+        },
+        "typescale": {
+          "type": "map",
+          "description": "Typescale of the theme"
+        },
+        "name": {
+          "type": "string",
+          "description": "Theme's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout created"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the theme"
+        },
+        "font": {
+          "type": "string",
+          "description": "Font name"
+        },
+        "file": {
+          "type": "string",
+          "description": "Theme file attachment"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "typescale": {
+          "p": "6",
+          "h2": "8",
+          "h1": "10"
+        },
+        "name": "Official Letter Theme",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "font": "Malery",
+        "file": "/malory.css"
+      },
+      "description": "A Theme"
+    },
     "User": {
       "type": "object",
       "title": "User",
@@ -3911,41 +3450,146 @@
       },
       "description": "A user of the application"
     },
-    "State": {
+    "ContentAndContentTypeAndState": {
       "type": "object",
-      "title": "State",
+      "title": "Content and its Content Type",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/State"
+        },
+        "content_type": {
+          "$ref": "#/definitions/ContentType"
+        },
+        "content": {
+          "$ref": "#/definitions/Content"
+        }
+      },
+      "example": {
+        "state": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "state": "published",
+          "order": 1,
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "content_type": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Offer letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "fields": {
+            "position": "string",
+            "name": "string",
+            "joining_date": "date",
+            "approved_by": "string"
+          },
+          "description": "An offer letter"
+        },
+        "content": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "serialized": {
+            "title": "Title of the content",
+            "body": "Body of the content"
+          },
+          "raw": "Content",
+          "instance_id": "OFFL01",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        }
+      },
+      "description": "A content and its content type"
+    },
+    "ContentTypeAndLayoutAndFlow": {
+      "type": "object",
+      "title": "Content Type, Layout and its flow",
+      "required": [
+        "name",
+        "id"
+      ],
       "properties": {
         "updated_at": {
           "type": "string",
           "format": "ISO-8601",
-          "description": "When was the state last updated"
+          "description": "When was the user last updated"
         },
-        "state": {
+        "prefix": {
           "type": "string",
-          "description": "A state of content"
+          "description": "Prefix to be used for generating Unique ID for contents"
         },
-        "order": {
-          "type": "integer",
-          "description": "Order of the state"
+        "name": {
+          "type": "string",
+          "description": "Content Type's name"
+        },
+        "layout": {
+          "$ref": "#/definitions/Layout"
         },
         "inserted_at": {
           "type": "string",
           "format": "ISO-8601",
-          "description": "When was the state inserted"
+          "description": "When was the user inserted"
         },
         "id": {
           "type": "string",
-          "description": "ID of the state"
+          "description": "The ID of the content type"
+        },
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "fields": {
+          "type": "map",
+          "description": "Dynamic fields and their datatype"
+        },
+        "description": {
+          "type": "string",
+          "description": "Content Type's description"
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex code of color"
         }
       },
       "example": {
         "updated_at": "2020-01-21T14:00:00Z",
-        "state": "published",
-        "order": 1,
+        "prefix": "OFFLET",
+        "name": "Offer letter",
+        "layout": {
+          "width": 40.0,
+          "updated_at": "2020-01-21T14:00:00Z",
+          "unit": "cm",
+          "slug_file": "/letter.zip",
+          "slug": "Pandoc",
+          "name": "Official Letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "height": 20.0,
+          "description": "An official letter"
+        },
         "inserted_at": "2020-02-21T14:00:00Z",
-        "id": "1232148nb3478"
+        "id": "1232148nb3478",
+        "flow": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Flow 1",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "fields": {
+          "position": "string",
+          "name": "string",
+          "joining_date": "date",
+          "approved_by": "string"
+        },
+        "description": "An offer letter",
+        "color": "#fffff"
       },
-      "description": "State assigened to contents"
+      "description": "Content Type to be used for the generation of a document, its layout and flow."
+    },
+    "ContentTypesAndLayoutsAndFlows": {
+      "type": "array",
+      "title": "Content Types and their Layouts and flow",
+      "items": {
+        "$ref": "#/definitions/ContentTypeAndLayoutAndFlow"
+      },
+      "description": "All content types that have been created and their layouts and flow"
     },
     "ContentTypeAndLayoutAndFlowAndStates": {
       "type": "object",
@@ -4038,7 +3682,245 @@
       },
       "description": "Content Type to be used for the generation of a document, its layout, flow and states."
     },
-    "FlowAndStatesWithoutCreator": {
+    "UserRegisterRequest": {
+      "type": "object",
+      "title": "Register User",
+      "required": [
+        "password",
+        "email",
+        "name"
+      ],
+      "properties": {
+        "password": {
+          "type": "string",
+          "description": "User's password"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's name"
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email"
+        }
+      },
+      "example": {
+        "password": "Password",
+        "name": "John Doe",
+        "email": "email@xyz.com"
+      },
+      "description": "A user to be registered in the application"
+    },
+    "ShowTheme": {
+      "type": "object",
+      "title": "Show Theme",
+      "properties": {
+        "theme": {
+          "$ref": "#/definitions/Theme"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "theme": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "typescale": {
+            "p": "6",
+            "h2": "8",
+            "h1": "10"
+          },
+          "name": "Official Letter Theme",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "font": "Malery",
+          "file": "/malory.css"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "Show details of a theme"
+    },
+    "LayoutIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "layouts": {
+          "$ref": "#/definitions/LayoutsAndEngines"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "layouts": [
+          {
+            "width": 40.0,
+            "updated_at": "2020-01-21T14:00:00Z",
+            "unit": "cm",
+            "slug_file": "/official_letter.zip",
+            "slug": "Pandoc",
+            "screenshot": "/official_letter.jpg",
+            "name": "Official Letter",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "height": 20.0,
+            "engine": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "name": "Pandoc",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "api_route": ""
+            },
+            "description": "An official letter"
+          }
+        ]
+      }
+    },
+    "UpdateFlow": {
+      "type": "object",
+      "title": "Show flow details",
+      "properties": {
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "flow": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Flow 1",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "Show all details of a flow"
+    },
+    "UserToken": {
+      "type": "object",
+      "title": "User and token",
+      "required": [
+        "token"
+      ],
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/User"
+        },
+        "token": {
+          "type": "string",
+          "description": "JWT token for authenticating the user"
+        }
+      },
+      "example": {
+        "user": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        },
+        "token": "Asdlkqweb.Khgqiwue132.xcli123"
+      },
+      "description": "User details with the generated JWT token for authentication"
+    },
+    "LayoutsAndEngines": {
+      "type": "array",
+      "title": "Layouts and its Engines",
+      "items": {
+        "$ref": "#/definitions/LayoutAndEngine"
+      },
+      "description": "All layouts that have been created and their engines"
+    },
+    "CurrentUser": {
+      "type": "object",
+      "title": "Current User",
+      "required": [
+        "email",
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "role": {
+          "type": "string",
+          "description": "User's role"
+        },
+        "profile_pic": {
+          "type": "string",
+          "description": "User's profile pic URL"
+        },
+        "organisation_id": {
+          "type": "integer",
+          "description": "ID of the user's oranisation"
+        },
+        "name": {
+          "type": "string",
+          "description": "Users name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the user"
+        },
+        "email_verify": {
+          "type": "boolean",
+          "description": "Email verification status"
+        },
+        "email": {
+          "type": "string",
+          "description": "Users email"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "role": "user",
+        "profile_pic": "www.aws.com/users/johndoe.jpg",
+        "organisation_id": "jn14786914qklnqw",
+        "name": "John Doe",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "email_verify": true,
+        "email": "email@xyz.com"
+      },
+      "description": "Currently loged in user"
+    },
+    "FlowAndStates": {
       "type": "object",
       "title": "Show flow details and its states",
       "properties": {
@@ -4047,6 +3929,9 @@
         },
         "flow": {
           "$ref": "#/definitions/Flow"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
         }
       },
       "example": {
@@ -4062,25 +3947,447 @@
           "name": "Flow 1",
           "inserted_at": "2020-02-21T14:00:00Z",
           "id": "1232148nb3478"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
         }
       },
       "description": "Show all details of a flow including all the states undet the flow"
     },
-    "ShowFlows": {
-      "type": "array",
-      "title": "All flows and its details",
-      "items": {
-        "$ref": "#/definitions/UpdateFlow"
+    "AssetsIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "assets": {
+          "$ref": "#/definitions/Assets"
+        }
       },
-      "description": "All flows that have been created and their details"
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "assets": [
+          {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "name": "Asset",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "file": "/signature.pdf"
+          }
+        ]
+      }
     },
-    "ContentsAndContentTypeAndState": {
-      "type": "array",
-      "title": "Instances, their content types and states",
-      "items": {
-        "$ref": "#/definitions/ContentAndContentTypeAndState"
+    "Layout": {
+      "type": "object",
+      "title": "Layout",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "width": {
+          "type": "float",
+          "description": "Width of the layout"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout last updated"
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of dimensions"
+        },
+        "slug_file": {
+          "type": "string",
+          "description": "URL of the uploaded slug file"
+        },
+        "slug": {
+          "type": "string",
+          "description": "Name of the slug to be used for the layout"
+        },
+        "screenshot": {
+          "type": "string",
+          "description": "URL of the uploaded screenshot"
+        },
+        "name": {
+          "type": "string",
+          "description": "Layout's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout created"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the layout"
+        },
+        "height": {
+          "type": "float",
+          "description": "Height of the layout"
+        },
+        "description": {
+          "type": "string",
+          "description": "Layout's description"
+        }
       },
-      "description": "IInstances and all its details except creator."
+      "example": {
+        "width": 40.0,
+        "updated_at": "2020-01-21T14:00:00Z",
+        "unit": "cm",
+        "slug_file": "/official_letter.zip",
+        "slug": "Pandoc",
+        "screenshot": "/official_letter.jpg",
+        "name": "Official Letter",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "height": 20.0,
+        "description": "An official letter"
+      },
+      "description": "A Layout"
+    },
+    "ShowDataTemplate": {
+      "type": "object",
+      "title": "Data template and all its details",
+      "properties": {
+        "data_template": {
+          "$ref": "#/definitions/LayoutAndEngine"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        },
+        "content_type": {
+          "$ref": "#/definitions/ContentType"
+        }
+      },
+      "example": {
+        "data_template": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "tag": "Main tag",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "data": "Hi [user]"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        },
+        "content_type": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "prefix": "OFFLET",
+          "name": "Offer letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "fields": {
+            "position": "string",
+            "name": "string",
+            "joining_date": "date",
+            "approved_by": "string"
+          },
+          "description": "An offer letter"
+        }
+      },
+      "description": "API to show a data template and all its details"
+    },
+    "DataTemplatesIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "contents": {
+          "$ref": "#/definitions/DataTemplates"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "contents": [
+          {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "tag": "Main template",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "data": "Hi [user]"
+          }
+        ]
+      }
+    },
+    "Engine": {
+      "type": "object",
+      "title": "Render engine",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine last updated"
+        },
+        "name": {
+          "type": "string",
+          "description": "Engine's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the engine"
+        },
+        "api_route": {
+          "type": "string",
+          "description": "API route to be used"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "name": "Pandoc",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "api_route": ""
+      },
+      "description": "A render engine to be used for document generation"
+    },
+    "ShowContent": {
+      "type": "object",
+      "title": "Content and its details",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/State"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        },
+        "content_type": {
+          "$ref": "#/definitions/ContentTypeAndLayout"
+        },
+        "content": {
+          "$ref": "#/definitions/Content"
+        }
+      },
+      "example": {
+        "state": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "state": "published",
+          "order": 1,
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        },
+        "content_type": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Offer letter",
+          "layout": {
+            "width": 40.0,
+            "updated_at": "2020-01-21T14:00:00Z",
+            "unit": "cm",
+            "slug_file": "/letter.zip",
+            "slug": "Pandoc",
+            "name": "Official Letter",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "height": 20.0,
+            "description": "An official letter"
+          },
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "fields": {
+            "position": "string",
+            "name": "string",
+            "joining_date": "date",
+            "approved_by": "string"
+          },
+          "description": "An offer letter"
+        },
+        "content": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "serialized": {
+            "title": "Title of the content",
+            "body": "Body of the content"
+          },
+          "raw": "Content",
+          "instance_id": "OFFL01",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        }
+      },
+      "description": "A content and all its details"
+    },
+    "FlowIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "states": {
+          "$ref": "#/definitions/ShowStates"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "states": [
+          {
+            "state": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "state": "published",
+              "order": 1,
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478"
+            },
+            "flow": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "name": "Flow 1",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "jnb234881adsad"
+            },
+            "creator": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "name": "John Doe",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "email_verify": true,
+              "email": "email@xyz.com"
+            }
+          }
+        ],
+        "page_number": 1
+      }
+    },
+    "StateRequest": {
+      "type": "object",
+      "title": "State Request",
+      "required": [
+        "order",
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "description": "State name"
+        },
+        "order": {
+          "type": "integer",
+          "description": "State's order"
+        }
+      },
+      "example": {
+        "state": "Published",
+        "order": 1
+      },
+      "description": "Create state request."
+    },
+    "ContentType": {
+      "type": "object",
+      "title": "Content Type",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
+        },
+        "name": {
+          "type": "string",
+          "description": "Content Type's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the content type"
+        },
+        "fields": {
+          "type": "map",
+          "description": "Dynamic fields and their datatype"
+        },
+        "description": {
+          "type": "string",
+          "description": "Content Type's description"
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex code of color"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "prefix": "OFFLET",
+        "name": "Offer letter",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "fields": {
+          "position": "string",
+          "name": "string",
+          "joining_date": "date",
+          "approved_by": "string"
+        },
+        "description": "An offer letter",
+        "color": "#fffff"
+      },
+      "description": "A Content Type."
     }
   },
   "basePath": "/api/v1"
