@@ -39,10 +39,16 @@ defmodule WraftDocWeb.Api.V1.ResourceController do
             action: "create"
           })
         end,
+      Resources:
+        swagger_schema do
+          title("Resource list")
+          type(:array)
+          items(Schema.ref(:Resource))
+        end,
       ResourceIndex:
         swagger_schema do
           properties do
-            resources(Schema.ref(:Resource))
+            resources(Schema.ref(:Resources))
             page_number(:integer, "Page number")
             total_pages(:integer, "Total number of pages")
             total_entries(:integer, "Total number of contents")
@@ -81,7 +87,7 @@ defmodule WraftDocWeb.Api.V1.ResourceController do
       resource(:body, Schema.ref(:ResourceRequest), "Resource to be created", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:LayoutAndEngine))
+    response(200, "Ok", Schema.ref(:Resource))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(400, "Bad Request", Schema.ref(:Error))
