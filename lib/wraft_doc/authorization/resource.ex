@@ -15,5 +15,9 @@ defmodule WraftDoc.Authorization.Resource do
     resource
     |> cast(attrs, [:category, :action])
     |> validate_required([:category, :action])
+    |> unique_constraint(:category,
+      name: :resource_unique_index,
+      message: "Action already created under the resource."
+    )
   end
 end
