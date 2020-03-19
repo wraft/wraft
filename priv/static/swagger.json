@@ -605,7 +605,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/LayoutAndEngine"
+              "$ref": "#/definitions/Resource"
             },
             "description": "Ok"
           }
@@ -660,6 +660,90 @@
         ],
         "operationId": "WraftDocWeb.Api.V1.ResourceController.index",
         "description": "API to get the list of all resources created so far"
+      }
+    },
+    "/permissions": {
+      "post": {
+        "tags": [
+          "Permission"
+        ],
+        "summary": "Create permission",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Permission"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/PermissionRequest"
+            },
+            "required": true,
+            "name": "resource",
+            "in": "body",
+            "description": "Permission to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.PermissionController.create",
+        "description": "Create permission API"
+      },
+      "get": {
+        "tags": [
+          "Permission"
+        ],
+        "summary": "Permission index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/PermissionIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.PermissionController.index",
+        "description": "API to get the list of all permissions created so far"
       }
     },
     "/layouts/{id}": {
@@ -2803,7 +2887,7 @@
           "description": "Total number of contents"
         },
         "resources": {
-          "$ref": "#/definitions/Resource"
+          "$ref": "#/definitions/Resources"
         },
         "page_number": {
           "type": "integer",
@@ -3161,6 +3245,13 @@
       },
       "description": "A content and all its details"
     },
+    "Resources": {
+      "type": "array",
+      "title": "Resource list",
+      "items": {
+        "$ref": "#/definitions/Resource"
+      }
+    },
     "EngineIndex": {
       "type": "object",
       "properties": {
@@ -3426,6 +3517,29 @@
         "color": "#fffff"
       },
       "description": "Create content type request."
+    },
+    "PermissionRequest": {
+      "type": "object",
+      "title": "Permission Request",
+      "required": [
+        "resource_uuid",
+        "role_uuid"
+      ],
+      "properties": {
+        "role_uuid": {
+          "type": "string",
+          "description": "Role ID"
+        },
+        "resource_uuid": {
+          "type": "string",
+          "description": "Resource ID"
+        }
+      },
+      "example": {
+        "role_uuid": "jb3123jbiu1293",
+        "resource_uuid": "kjb3476123"
+      },
+      "description": "Create permission request."
     },
     "AssetsIndex": {
       "type": "object",
@@ -3709,6 +3823,17 @@
         }
       },
       "description": "Error responses from the API"
+    },
+    "Permission": {
+      "type": "map",
+      "title": "A permission JSON response",
+      "example": {
+        "Flow_create": [
+          "user",
+          "admin"
+        ]
+      },
+      "description": "JSON response for a permission"
     },
     "ShowTheme": {
       "type": "object",
@@ -4181,6 +4306,44 @@
         "$ref": "#/definitions/Theme"
       },
       "description": "All themes that have been created under current user's organisation and their details"
+    },
+    "PermissionIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "permissions": {
+          "$ref": "#/definitions/Permission"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "resources": [
+          {
+            "Flow_create": [
+              "user",
+              "admin"
+            ]
+          },
+          {
+            "Flow_delete": [
+              "admin"
+            ]
+          }
+        ],
+        "page_number": 1
+      }
     },
     "UserRegisterRequest": {
       "type": "object",

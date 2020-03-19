@@ -104,6 +104,8 @@ defmodule WraftDocWeb.Router do
 
     scope "/v1", Api.V1, as: :v1 do
       resources("/resources", ResourceController, only: [:create, :index, :show, :update, :delete])
+
+      resources("/permissions", PermissionController, only: [:create, :index, :delete])
     end
   end
 

@@ -3,7 +3,8 @@ defmodule WraftDoc.Authorization do
   Module that handles the repo connections of the authorization context.
   """
   import Ecto.Query
-  alias WraftDoc.{Repo, Authorization.Resource}
+  import Ecto
+  alias WraftDoc.{Repo, Authorization.Resource, Authorization.Permission, Account.Role}
 
   @doc """
   Create a resource.
@@ -53,5 +54,35 @@ defmodule WraftDoc.Authorization do
         "Cannot delete the resource. Some permissions depend on this resource. Update those resources and then try again.!"
     )
     |> Repo.delete()
+  end
+
+  @doc """
+  Create a permission.
+  """
+  @spec create_permission(Resource.t(), Role.t()) :: Permission.t() | {:error, Ecto.Changeset.t()}
+  def create_permission(resource, role) do
+    resource
+    |> build_assoc(:permissions, role: role)
+    |> Permission.changeset()
+    |> Repo.insert()
+    |> case do
+      {:ok, permission} ->
+        permission |> Repo.preload([:role, :resource])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Permission index.
+  """
+  @spec permission_index(map) :: map
+  def permission_index(params) do
+    from(r in Resource,
+      order_by: [asc: r.category],
+      preload: [{:permissions, :role}]
+    )
+    |> Repo.paginate(params)
   end
 end
