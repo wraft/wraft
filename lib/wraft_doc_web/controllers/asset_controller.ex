@@ -1,9 +1,8 @@
 defmodule WraftDocWeb.Api.V1.AssetController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-
+  plug(WraftDocWeb.Plug.Authorized)
   action_fallback(WraftDocWeb.FallbackController)
-
   alias WraftDoc.{Document, Document.Asset}
 
   def swagger_definitions do
