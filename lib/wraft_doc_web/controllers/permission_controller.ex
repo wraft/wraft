@@ -51,10 +51,36 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
           example(%{
             resources: [
               %{
-                Flow_create: ["user", "admin"]
+                Flow_create: [
+                  %{
+                    name: "user",
+                    id: "5613hbkqew67134",
+                    permission: %{
+                      id: "1237-gh34813",
+                      resource_id: "nnbj12378123m"
+                    }
+                  },
+                  %{
+                    name: "admin",
+                    id: "87612-1230981230123",
+                    permission: %{
+                      id: "1237-glkn348-123",
+                      resource_id: "  bnjcasd-123ln13248-kjcns"
+                    }
+                  }
+                ]
               },
               %{
-                Flow_delete: ["admin"]
+                Flow_delete: [
+                  %{
+                    name: "user",
+                    id: "5613hbkqew67134",
+                    permission: %{
+                      id: "1237-gh34813",
+                      resource_id: "nnbj12378123m"
+                    }
+                  }
+                ]
               }
             ],
             page_number: 1,
@@ -126,55 +152,30 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
     end
   end
 
-  # @doc """
-  # Show a resource.
-  # """
-  # swagger_path :show do
-  #   get("/resources/{id}")
-  #   summary("Show a resource")
-  #   description("API to show details of a resource")
+  @doc """
+  Delete a permission.
+  """
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/permissions/{id}")
+    summary("Delete a permission")
+    description("API to remove a permission")
 
-  #   parameters do
-  #     id(:path, :string, "resource id", required: true)
-  #   end
+    parameters do
+      id(:path, :string, "permission id", required: true)
+    end
 
-  #   response(200, "Ok", Schema.ref(:Resource))
-  #   response(401, "Unauthorized", Schema.ref(:Error))
-  #   response(400, "Bad Request", Schema.ref(:Error))
-  # end
+    response(200, "Ok", Schema.ref(:Resource))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(400, "Bad Request", Schema.ref(:Error))
+  end
 
-  # @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # def show(conn, %{"id" => uuid}) do
-  #   with %Resource{} = resource <- Authorization.get_resource(uuid) do
-  #     conn
-  #     |> render("create.json", resource: resource)
-  #   end
-  # end
-
-  # @doc """
-  # Delete a Resource.
-  # """
-  # swagger_path :delete do
-  #   PhoenixSwagger.Path.delete("/resources/{id}")
-  #   summary("Delete a resource")
-  #   description("API to delete a resource")
-
-  #   parameters do
-  #     id(:path, :string, "resource id", required: true)
-  #   end
-
-  #   response(200, "Ok", Schema.ref(:Resource))
-  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
-  #   response(401, "Unauthorized", Schema.ref(:Error))
-  #   response(400, "Bad Request", Schema.ref(:Error))
-  # end
-
-  # @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # def delete(conn, %{"id" => uuid}) do
-  #   with %Resource{} = resource <- Authorization.get_resource(uuid),
-  #        {:ok, %Resource{}} <- Authorization.delete_resource(resource) do
-  #     conn
-  #     |> render("create.json", resource: resource)
-  #   end
-  # end
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete(conn, %{"id" => uuid}) do
+    with %Permission{} = permission <- Authorization.get_permission(uuid),
+         {:ok, %Permission{}} <- Authorization.delete_permission(permission) do
+      conn
+      |> render("delete.json", permission: permission)
+    end
+  end
 end
