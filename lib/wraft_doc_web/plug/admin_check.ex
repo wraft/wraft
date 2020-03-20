@@ -1,6 +1,5 @@
 defmodule WraftDocWeb.Plug.AdminCheck do
   import Plug.Conn
-  use Phoenix.Controller
 
   alias WraftDoc.Account.User
 
