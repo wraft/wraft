@@ -94,7 +94,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @doc """
   Createm new organisation
   """
-  require IEx
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
@@ -124,7 +123,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
       )
     end
 
-    response(202, "Accepted", Schema.ref(:Organisation))
+    response(201, "Accepted", Schema.ref(:Organisation))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(404, "Not Found", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))

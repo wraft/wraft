@@ -9,9 +9,11 @@ defmodule WraftDoc.Account do
   @doc """
     User Registration
   """
+  require IEx
   @spec registration(map) :: User.t() | Ecto.Changeset.t()
   def registration(params \\ %{}) do
     %{id: id} = Repo.get_by(Organisation, name: "Functionary Labs Pvt Ltd.")
+
     params = params |> Map.merge(%{"organisation_id" => id})
 
     get_role()

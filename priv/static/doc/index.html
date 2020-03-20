@@ -353,7 +353,7 @@
 </tr>
 </tbody></table>
 <h2 id='contenttypeandlayout'>ContentTypeAndLayout</h2>
-<p>Content Type to be used for the generation of a document.</p>
+<p>Content Type to be used for the generation of a document and its layout.</p>
 <pre class="highlight json tab-json"><code><span class="p">{</span><span class="w">
   </span><span class="s2">"updated_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-01-21T14:00:00Z"</span><span class="p">,</span><span class="w">
   </span><span class="s2">"prefix"</span><span class="p">:</span><span class="w"> </span><span class="s2">"OFFLET"</span><span class="p">,</span><span class="w">
@@ -362,6 +362,7 @@
     </span><span class="s2">"width"</span><span class="p">:</span><span class="w"> </span><span class="mf">40.0</span><span class="p">,</span><span class="w">
     </span><span class="s2">"updated_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-01-21T14:00:00Z"</span><span class="p">,</span><span class="w">
     </span><span class="s2">"unit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"cm"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"slug_file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/letter.zip"</span><span class="p">,</span><span class="w">
     </span><span class="s2">"slug"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Pandoc"</span><span class="p">,</span><span class="w">
     </span><span class="s2">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Official Letter"</span><span class="p">,</span><span class="w">
     </span><span class="s2">"inserted_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-02-21T14:00:00Z"</span><span class="p">,</span><span class="w">
@@ -377,7 +378,8 @@
     </span><span class="s2">"joining_date"</span><span class="p">:</span><span class="w"> </span><span class="s2">"date"</span><span class="p">,</span><span class="w">
     </span><span class="s2">"approved_by"</span><span class="p">:</span><span class="w"> </span><span class="s2">"string"</span><span class="w">
   </span><span class="p">},</span><span class="w">
-  </span><span class="s2">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"An offer letter"</span><span class="w">
+  </span><span class="s2">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"An offer letter"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"color"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#fffff"</span><span class="w">
 </span><span class="p">}</span><span class="w">
 </span></code></pre>
 <table><thead>
@@ -388,6 +390,12 @@
 <th>Required</th>
 </tr>
 </thead><tbody>
+<tr>
+<td>color</td>
+<td>Hex code of color</td>
+<td>string</td>
+<td>false</td>
+</tr>
 <tr>
 <td>description</td>
 <td>Content Type&#39;s description</td>
