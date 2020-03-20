@@ -1,7 +1,8 @@
 defmodule WraftDocWeb.Plug.Authorized do
+  @moduledoc false
   import Plug.Conn
   import Ecto.Query
-  alias WraftDoc.{Repo, Account.Role, Authorization.Resource, Authorization.Permission}
+  alias WraftDoc.{Repo, Authorization.Resource, Authorization.Permission}
 
   @category %{
     "WraftDocWeb.Api.V1.AssetController" => "Asset",
@@ -21,18 +22,19 @@ defmodule WraftDocWeb.Plug.Authorized do
   end
 
   def call(conn, _params) do
-    %{role: %{name: name}} = conn.assigns[:current_user]
     [_ | [category]] = conn.private[:phoenix_controller] |> to_string |> String.split("Elixir.")
     {_, category} = @category |> Enum.find(fn {k, _y} -> k == category end)
     action = conn.private[:phoenix_action] |> to_string
 
-    from(p in Permission,
-      join: r in Role,
-      where: r.name == ^name,
-      join: re in Resource,
-      where: re.category == ^category and re.action == ^action,
-      where: p.resource_id == re.id and p.role_id == r.id
-    )
+    from(r in Resource, where: r.category == ^category and r.action == ^action)
+    |> Repo.one()
+    |> check_permission(conn)
+  end
+
+  defp check_permission(%Resource{id: id}, conn) do
+    %{role: %{id: role_id}} = conn.assigns[:current_user]
+
+    from(p in Permission, where: p.resource_id == ^id and p.role_id == ^role_id)
     |> Repo.one()
     |> case do
       %Permission{} ->
@@ -44,5 +46,9 @@ defmodule WraftDocWeb.Plug.Authorized do
         send_resp(conn, 400, body)
         |> halt()
     end
+  end
+
+  defp check_permission(nil, conn) do
+    conn
   end
 end
