@@ -31,7 +31,7 @@ defmodule WraftDoc.Document.ContentType do
       message: "Content type with the same name under your organisation exists.!",
       name: :content_type_organisation_unique_index
     )
-    |> validate_format(:color, ~r/^#/)
+    |> validate_format(:color, ~r/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
   end
 
   def update_changeset(%ContentType{} = content_type, attrs \\ %{}) do

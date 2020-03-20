@@ -2,7 +2,6 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
   import Ecto.Query, warn: false
-
   action_fallback(WraftDocWeb.FallbackController)
   alias WraftDoc.{Account, Account.User}
 
@@ -35,6 +34,8 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
     post("/users/signup")
     summary("User registration")
     description("User registration API")
+    operation_id("create_user")
+    tag("Registration")
 
     parameters do
       user(:body, Schema.ref(:UserRegisterRequest), "User to register", required: true)
