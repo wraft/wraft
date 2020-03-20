@@ -14,6 +14,9 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
   end
 
   test "register users for valid attrs", %{conn: conn} do
+    insert(:organisation, name: "Functionary Labs Pvt Ltd.")
+    insert(:role)
+
     conn =
       post(conn, Routes.v1_registration_path(conn, :create, @valid_attrs))
       |> doc(operation_id: "create_user")
@@ -23,6 +26,9 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
   end
 
   test "render error for invalid attributes", %{conn: conn} do
+    insert(:organisation, name: "Functionary Labs Pvt Ltd.")
+    insert(:role)
+
     conn =
       post(conn, Routes.v1_registration_path(conn, :create, @invalid_attrs))
       |> doc(operation_id: "create_user")

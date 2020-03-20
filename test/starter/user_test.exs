@@ -68,9 +68,12 @@ defmodule WraftDoc.UserTest do
     assert "has invalid format" in errors_on(changeset, :name)
   end
 
+  # require IEx
+
   # test "changeset does not accept lastnames with special characters" do
-  #   attrs = Map.put(@valid_attrs, :lastname, "wrong/4lastname?!")
-  #   changeset = User.changeset(%User{}, attrs)
+  #   # attrs = Map.put(@valid_attrs, :lastname, "wrong/4lastname?!")
+  #   changeset = User.changeset(%User{}, @valid_attrs)
+  #   IEx.pry()
   #   assert "has invalid format" in errors_on(changeset, :lastname)
   # end
 

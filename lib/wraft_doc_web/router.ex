@@ -116,7 +116,10 @@ defmodule WraftDocWeb.Router do
           description: "API Operations require a valid token."
         }
       },
-      tags: [%{name: "Registration", description: "User registration"}],
+      tags: [
+        %{name: "Registration", description: "User registration"},
+        %{name: "Organisation", description: "Manage Enterprise details"}
+      ],
       security: [
         # ApiKey is applied to all operations
         %{

@@ -15,7 +15,7 @@ defmodule WraftDoc.Account.Role do
 
   def changeset(%Role{} = role, attrs \\ %{}) do
     role
-    |> cast(attrs, [:name, :admin])
-    |> validate_required([:name, :admin])
+    |> cast(attrs, [:name])
+    |> validate_required([:name])
   end
 end

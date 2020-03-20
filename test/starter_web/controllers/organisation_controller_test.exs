@@ -39,7 +39,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Organisation |> Repo.all() |> length
-    conn = post(conn, Routes.v1_organisation_path(conn, :create, @valid_attrs))
+
+    conn =
+      post(conn, Routes.v1_organisation_path(conn, :create, @valid_attrs))
+      |> doc(operation_id: "create_organisation")
+
     assert json_response(conn, 201)["name"] == @valid_attrs["name"]
     assert json_response(conn, 201)["address"] == @valid_attrs["address"]
     assert json_response(conn, 201)["gstin"] == @valid_attrs["gstin"]
@@ -91,15 +95,15 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     assert json_response(conn, 200)["address"] == organisation.address
   end
 
-  # test " Error not found for  organisation id does not exist", %{conn: conn} do
-  #   conn =
-  #     build_conn
-  #     |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-  #     |> assign(:current_user, conn.assigns.current_user)
+  test " Error not found for  organisation id does not exist", %{conn: conn} do
+    conn =
+      build_conn
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
 
-  #   conn = get(conn, Routes.v1_organisation_path(conn, :show, "-1"))
-  #   IEx.pry()
-  # end
+    conn = get(conn, Routes.v1_organisation_path(conn, :show, Ecto.UUID.generate()))
+    assert json_response(conn, 404) == "Not Found"
+  end
 
   test "deletes organisation and render the details", %{conn: conn} do
     organisation = insert(:organisation)
