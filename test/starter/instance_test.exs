@@ -15,6 +15,7 @@ defmodule WraftDoc.InstanceTest do
   }
 
   @invalid_attrs %{}
+
   test "changeset with valid attributes" do
     changeset = Instance.changeset(%Instance{}, @valid_attrs)
     assert changeset.valid?
@@ -38,11 +39,12 @@ defmodule WraftDoc.InstanceTest do
   end
 
   test "instance id unique constraint" do
-    {:ok, instance} = Instance.changeset(%Instance{}, @valid_attrs) |> Repo.insert()
-    IO.inspect(instance.instance_id)
-    {:ok, instance} = Instance.changeset(%Instance{}, @valid_attrs) |> Repo.insert()
-    IO.inspect(instance.instance_id)
-    {:error, changeset} = Instance.changeset(%Instance{}, @valid_attrs) |> Repo.insert()
+    %{id: id} = insert(:content_type)
+    params = @valid_attrs |> Map.put(:content_type_id, id)
+
+    {:ok, instance} = Instance.changeset(%Instance{}, params) |> Repo.insert()
+    {:error, changeset} = Instance.changeset(%Instance{}, params) |> Repo.insert()
+
     assert "Instance with the ID exists.!" in errors_on(changeset, :instance_id)
   end
 end
