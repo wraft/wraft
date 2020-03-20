@@ -85,4 +85,20 @@ defmodule WraftDoc.Authorization do
     )
     |> Repo.paginate(params)
   end
+
+  @doc """
+  Get a permission from its UUID.
+  """
+  @spec get_permission(binary) :: Permission.t()
+  def get_permission(uuid) do
+    Repo.get_by(Permission, uuid: uuid)
+  end
+
+  @doc """
+  Delete a resource.
+  """
+  @spec delete_permission(Permission.t()) :: {:ok, Permission.t()}
+  def delete_permission(permission) do
+    permission |> Repo.delete()
+  end
 end

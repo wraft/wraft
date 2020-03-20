@@ -36,6 +36,21 @@ defmodule WraftDocWeb.Api.V1.PermissionView do
   end
 
   def render("permission_role.json", %{permission: permission}) do
-    permission.role.name
+    %{
+      id: permission.role.uuid,
+      name: permission.role.name,
+      permission: %{
+        id: permission.uuid,
+        resource_id: permission.resource_id
+      }
+    }
+  end
+
+  def render("delete.json", %{permission: permission}) do
+    %{
+      id: permission.uuid,
+      resource_id: permission.resource_id,
+      role_id: permission.role_id
+    }
   end
 end
