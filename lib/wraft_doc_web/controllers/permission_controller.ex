@@ -49,7 +49,7 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
           end
 
           example(%{
-            resources: [
+            permissions: [
               %{
                 Flow_create: [
                   %{
