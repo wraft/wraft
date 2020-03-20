@@ -17,6 +17,14 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Guardian.AuthPipeline)
   end
 
+  pipeline :admin do
+    plug(WraftDocWeb.Plug.AdminCheck)
+  end
+
+  pipeline :can do
+    plug(WraftDocWeb.Plug.Authorized)
+  end
+
   scope "/", WraftDocWeb do
     # Use the default browser stack
     pipe_through(:api)
@@ -94,6 +102,17 @@ defmodule WraftDocWeb.Router do
 
       # Assets
       resources("/assets", AssetController, only: [:create, :index, :show, :update, :delete])
+    end
+  end
+
+  # Scope which requires authorization.
+  scope "/api", WraftDocWeb do
+    pipe_through([:api, :api_auth, :admin])
+
+    scope "/v1", Api.V1, as: :v1 do
+      resources("/resources", ResourceController, only: [:create, :index, :show, :update, :delete])
+
+      resources("/permissions", PermissionController, only: [:create, :index, :delete])
     end
   end
 
