@@ -47,7 +47,7 @@ defmodule WraftDoc.Factory do
   def profile_factory do
     %Profile{
       name: sequence(:name, &"name-#{&1}"),
-      dob: GoodTimes.years_ago(27),
+      dob: Timex.shift(Timex.now(), years: 27),
       gender: "male"
     }
   end
