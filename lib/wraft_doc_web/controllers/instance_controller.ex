@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.InstanceController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-
+  plug(WraftDocWeb.Plug.Authorized)
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.{
@@ -25,6 +25,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             instance_id(:string, "A unique ID generated for the content")
             raw(:string, "Raw data of the content")
             serialized(:map, "Serialized data of the content")
+            build(:string, "URL of the build document")
             inserted_at(:string, "When was the engine inserted", format: "ISO-8601")
             updated_at(:string, "When was the engine last updated", format: "ISO-8601")
           end
@@ -34,6 +35,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             instance_id: "OFFL01",
             raw: "Content",
             serialized: %{title: "Title of the content", body: "Body of the content"},
+            build: "/uploads/OFFL01/final.pdf",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })

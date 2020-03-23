@@ -7,6 +7,7 @@ defmodule WraftDoc.Account.Role do
   alias WraftDoc.Account.Role
 
   schema "role" do
+    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
     has_many(:users, WraftDoc.Account.User)
 
@@ -15,7 +16,7 @@ defmodule WraftDoc.Account.Role do
 
   def changeset(%Role{} = role, attrs \\ %{}) do
     role
-    |> cast(attrs, [:name, :admin])
-    |> validate_required([:name, :admin])
+    |> cast(attrs, [:name])
+    |> validate_required([:name])
   end
 end

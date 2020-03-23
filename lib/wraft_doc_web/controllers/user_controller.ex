@@ -5,6 +5,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   """
   use WraftDocWeb, :controller
   use PhoenixSwagger
+  plug(WraftDocWeb.Plug.Authorized)
   import Ecto.Query, warn: false
   alias WraftDoc.{Account, Account.User}
   action_fallback(WraftDocWeb.FallbackController)
