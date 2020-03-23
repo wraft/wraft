@@ -310,7 +310,7 @@ defmodule WraftDoc.Document do
       |> to_string
       |> String.pad_leading(4, "0")
 
-    prefix <> instance_count
+    concat_strings(prefix, instance_count)
   end
 
   # Add two integers
@@ -694,7 +694,7 @@ defmodule WraftDoc.Document do
     header = assets |> Enum.reduce(header, fn x, acc -> find_header_values(x, acc) end)
     qr_code = Task.await(task)
 
-    header = header <> "qrcode: #{qr_code} \n" <> "--- \n"
+    header = header |> concat_strings("qrcode: #{qr_code} \n") |> concat_strings("--- \n")
 
     content = """
     #{header}
@@ -724,7 +724,7 @@ defmodule WraftDoc.Document do
         acc
 
       {_, value} ->
-        acc <> "#{key}: #{value} \n"
+        concat_strings(acc, "#{key}: #{value} \n")
     end
   end
 
@@ -732,7 +732,7 @@ defmodule WraftDoc.Document do
   @spec find_header_values(Asset.t(), String.t()) :: String.t()
   defp find_header_values(%Asset{name: name, file: file} = asset, acc) do
     <<_first::utf8, rest::binary>> = AssetUploader |> generate_url(file, asset)
-    acc <> "#{name}: #{rest} \n"
+    concat_strings(acc, "#{name}: #{rest} \n")
   end
 
   # Generate url.
@@ -741,6 +741,8 @@ defmodule WraftDoc.Document do
     uploader.url({file, scope}, signed: true)
   end
 
+  # Generate QR code with the UUID of the given Instance.
+  @spec generate_qr(Instance.t()) :: String.t()
   defp generate_qr(%Instance{uuid: uuid, instance_id: i_id}) do
     qr_code_png =
       uuid
@@ -750,6 +752,14 @@ defmodule WraftDoc.Document do
     destination = "uploads/contents/#{i_id}/qr.png"
     File.write(destination, qr_code_png, [:binary])
     destination
+  end
+
+  @doc """
+  Concat two strings.
+  """
+  @spec concat_strings(String.t(), String.t()) :: String.t()
+  def concat_strings(string1, string2) do
+    string1 <> string2
   end
 
   @doc """
