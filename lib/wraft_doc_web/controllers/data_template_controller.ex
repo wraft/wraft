@@ -13,12 +13,14 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
           description("Create data template request.")
 
           properties do
-            tag(:string, "Data templates's tag", required: true)
+            title(:string, "Data template's title", required: true)
+            title_template(:string, "Title template", required: true)
             data(:string, "Data template's contents", required: true)
           end
 
           example(%{
-            tag: "Main template",
+            title: "Template 1",
+            title_template: "Letter for [user]",
             data: "Hi [user]"
           })
         end,
@@ -29,7 +31,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
           properties do
             id(:string, "The ID of the data template", required: true)
-            tag(:string, "Tag name of the data template", required: true)
+            title(:string, "Title of the data template", required: true)
+            title_template(:string, "Title content of the data template", required: true)
             data(:string, "Data template's contents")
             inserted_at(:string, "When was the layout created", format: "ISO-8601")
             updated_at(:string, "When was the layout last updated", format: "ISO-8601")
@@ -37,7 +40,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
           example(%{
             id: "1232148nb3478",
-            tag: "Main template",
+            title: "Template 1",
+            title_template: "Letter for [user]",
             data: "Hi [user]",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
@@ -57,7 +61,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
           example(%{
             data_template: %{
               id: "1232148nb3478",
-              tag: "Main tag",
+              title: "Main Template",
+              title_template: "Letter for [user]",
               data: "Hi [user]",
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
@@ -106,7 +111,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
             contents: [
               %{
                 id: "1232148nb3478",
-                tag: "Main template",
+                title: "Main template",
+                title_template: "Letter for [user]",
                 data: "Hi [user]",
                 updated_at: "2020-01-21T14:00:00Z",
                 inserted_at: "2020-02-21T14:00:00Z"
