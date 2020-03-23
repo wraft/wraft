@@ -683,6 +683,8 @@ defmodule WraftDoc.Document do
       }) do
     System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}/"])
 
+    task = Task.async(fn -> generate_qr(instance) end)
+
     header =
       c_type.fields
       |> Enum.reduce("--- \n", fn {k, _}, acc ->
@@ -690,8 +692,9 @@ defmodule WraftDoc.Document do
       end)
 
     header = assets |> Enum.reduce(header, fn x, acc -> find_header_values(x, acc) end)
+    qr_code = Task.await(task)
 
-    header = header <> "--- \n"
+    header = header <> "qrcode: #{qr_code} \n" <> "--- \n"
 
     content = """
     #{header}
@@ -736,6 +739,17 @@ defmodule WraftDoc.Document do
   @spec generate_url(any, String.t(), map) :: String.t()
   defp generate_url(uploader, file, scope) do
     uploader.url({file, scope}, signed: true)
+  end
+
+  defp generate_qr(%Instance{uuid: uuid, instance_id: i_id}) do
+    qr_code_png =
+      uuid
+      |> EQRCode.encode()
+      |> EQRCode.png()
+
+    destination = "uploads/contents/#{i_id}/qr.png"
+    File.write(destination, qr_code_png, [:binary])
+    destination
   end
 
   @doc """
