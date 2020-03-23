@@ -364,6 +364,27 @@ defmodule WraftDoc.Document do
     instance_uuid
     |> get_instance()
     |> Repo.preload([:creator, [{:content_type, :layout}], :state])
+    |> get_built_document()
+  end
+
+  # Get the build document of the given instance
+  @spec get_built_document(Instance.t()) :: Instance.t()
+  defp get_built_document(%{id: id, instance_id: instance_id} = instance) do
+    from(h in History,
+      where: h.exit_code == 0,
+      where: h.content_id == ^id,
+      order_by: [desc: h.inserted_at],
+      limit: 1
+    )
+    |> Repo.one()
+    |> case do
+      nil ->
+        instance
+
+      %History{} ->
+        doc_url = "uploads/contents/#{instance_id}/final.pdf"
+        instance |> Map.put(:build, doc_url)
+    end
   end
 
   @doc """
@@ -386,7 +407,9 @@ defmodule WraftDoc.Document do
     |> Repo.update()
     |> case do
       {:ok, instance} ->
-        instance |> Repo.preload([:creator, [{:content_type, :layout}], :state])
+        instance
+        |> Repo.preload([:creator, [{:content_type, :layout}], :state])
+        |> get_built_document
 
       {:error, _} = changeset ->
         changeset
