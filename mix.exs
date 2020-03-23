@@ -71,7 +71,9 @@ defmodule WraftDoc.Mixfile do
       # Pagination
       {:scrivener_ecto, "~> 2.3"},
       # QR code generation
-      {:eqrcode, "~> 0.1.7"}
+      {:eqrcode, "~> 0.1.7"},
+      # Background jobs
+      {:oban, "~> 1.2"}
     ]
   end
 
