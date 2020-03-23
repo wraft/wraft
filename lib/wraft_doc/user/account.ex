@@ -9,9 +9,11 @@ defmodule WraftDoc.Account do
   @doc """
     User Registration
   """
+  require IEx
   @spec registration(map) :: User.t() | Ecto.Changeset.t()
   def registration(params \\ %{}) do
     %{id: id} = Repo.get_by(Organisation, name: "Functionary Labs Pvt Ltd.")
+
     params = params |> Map.merge(%{"organisation_id" => id})
 
     get_role()
@@ -96,6 +98,14 @@ defmodule WraftDoc.Account do
 
   defp get_role(role) when is_binary(role) do
     Repo.get_by(Role, name: role)
+  end
+
+  @doc """
+  Get a role type from its UUID.
+  """
+  @spec get_role_from_uuid(binary) :: Role.t()
+  def get_role_from_uuid(uuid) do
+    Repo.get_by(Role, uuid: uuid)
   end
 
   # Get the user struct from given email
