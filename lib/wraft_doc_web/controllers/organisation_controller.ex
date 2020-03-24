@@ -66,6 +66,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
+        end,
+      InvitedResponse:
+        swagger_schema do
+          title("Invite user response")
+          description("Invite user response")
+
+          properties do
+            info(:string, "Info", required: true)
+          end
+
+          example(%{info: "Invited successfully.!"})
         end
     }
   end
@@ -191,6 +202,36 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
          {:ok, %Organisation{}} <- Enterprise.delete_organisation(organisation) do
       conn
       |> render("organisation.json", organisation: organisation)
+    end
+  end
+
+  @doc """
+  Invite new member.
+  """
+  swagger_path :invite do
+    post("/organisations/{id}/invite")
+    summary("Invite new member to the organisation")
+    description("Invite new member to the organisation")
+
+    parameters do
+      id(:path, :string, "Organisation id", required: true)
+      email(:body, :string, "Email of the user", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:InvitedResponse))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def invite(conn, %{"id" => id, "email" => email}) do
+    current_user = conn.assigns[:current_user]
+
+    with %Organisation{} = organisation <- Enterprise.check_permission(current_user, id),
+         :ok <- Enterprise.already_member?(email),
+         {:ok, _} <- Enterprise.invite_team_member(current_user, organisation, email) do
+      conn
+      |> render("invite.json")
     end
   end
 end
