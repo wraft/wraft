@@ -43,6 +43,6 @@ defmodule WraftDoc.Document.ContentType do
       name: :content_type_organisation_unique_index
     )
     |> validate_length(:prefix, min: 2, max: 6)
-    |> validate_format(:color, ~r/^#/)
+    |> validate_format(:color, ~r/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
   end
 end
