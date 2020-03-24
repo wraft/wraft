@@ -25,6 +25,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       instance_id: instance.instance_id,
       raw: instance.raw,
       serialized: instance.serialized,
+      build: instance.build,
       inserted_at: instance.inserted_at,
       updated_at: instance.updated_at
     }
