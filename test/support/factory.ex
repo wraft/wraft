@@ -15,7 +15,10 @@ defmodule WraftDoc.Factory do
     Document.Instance,
     Enterprise.Flow.State,
     Enterprise.Flow,
-    Account.Country
+    Account.Country,
+    Document.DataTemplate,
+    Authorization.Resource,
+    Document.Theme
   }
 
   def user_factory do
@@ -47,8 +50,9 @@ defmodule WraftDoc.Factory do
   def profile_factory do
     %Profile{
       name: sequence(:name, &"name-#{&1}"),
-      dob: GoodTimes.years_ago(27),
-      gender: "male"
+      dob: Timex.shift(Timex.now(), years: 27),
+      gender: "male",
+      user: build(:user)
     }
   end
 
@@ -134,6 +138,30 @@ defmodule WraftDoc.Factory do
       country_name: sequence(:country_name, &"country-#{&1}"),
       country_code: sequence(:country_code, &"243432#{&1}"),
       calling_code: sequence(:calling_code, &"3343#{&1}")
+    }
+  end
+
+  def data_template_factory do
+    %DataTemplate{
+      tag: sequence(:tag, &"tag-#{&1}"),
+      data: sequence(:data, &"data-#{&1}")
+    }
+  end
+
+  def resource_factory do
+    %Resource{
+      category: sequence(:resource, &"Flow-#{&1}"),
+      action: sequence(:action, &"Action-#{&1}")
+    }
+  end
+
+  def theme_factory do
+    %Theme{
+      name: sequence(:name, &"Official Letter Theme-#{&1}"),
+      font: sequence(:font, &"Malery-#{&1}"),
+      typescale: %{h1: "10", p: "6", h2: "8"},
+      organisation: build(:organisation),
+      creator: build(:user)
     }
   end
 end
