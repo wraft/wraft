@@ -11,6 +11,7 @@ defmodule WraftDoc.Document.Instance do
     field(:instance_id, :string, null: false)
     field(:raw, :string)
     field(:serialized, :map, default: %{})
+    field(:build, :string, virtual: true)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
