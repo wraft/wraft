@@ -22,10 +22,11 @@ defmodule WraftDoc.Account.Profile do
     |> cast(attrs, [
       :name,
       :dob,
-      :gender
+      :gender,
+      :user_id
     ])
     |> cast_attachments(attrs, [:profile_pic])
-    |> validate_required([:name])
+    |> validate_required([:name, :user_id])
     |> validate_format(:name, ~r/^[A-z ]+$/)
     |> validate_length(:name, min: 2)
 
