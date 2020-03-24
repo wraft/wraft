@@ -68,9 +68,12 @@ defmodule WraftDoc.Mixfile do
       {:ex_machina, "~> 2.3", only: :test},
       # For creating date times
       {:good_times, "~> 1.1"},
-
       # Pagination
-      {:scrivener_ecto, "~> 2.3"}
+      {:scrivener_ecto, "~> 2.3"},
+      # QR code generation
+      {:eqrcode, "~> 0.1.7"},
+      # Background jobs
+      {:oban, "~> 1.2"}
     ]
   end
 
