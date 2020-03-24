@@ -10,6 +10,7 @@ defmodule WraftDoc.Enterprise do
     Enterprise.Flow,
     Enterprise.Flow.State,
     Enterprise.Organisation,
+    Account,
     Account.User
   }
 
@@ -235,5 +236,48 @@ defmodule WraftDoc.Enterprise do
         "Cannot delete the organisation. Some user depend on this organisation. Update those users and then try again.!"
     )
     |> Repo.delete()
+  end
+
+  @doc """
+  Check the permission of the user wrt to the given organisation UUID.
+  """
+  @spec check_permission(User.t(), binary) :: Organisation.t() | nil | {:error, :no_permission}
+  def check_permission(%User{role: %{name: "admin"}}, id) do
+    get_organisation(id)
+  end
+
+  def check_permission(%User{organisation: %{uuid: id} = organisation}, id), do: organisation
+  def check_permission(_, _), do: {:error, :no_permission}
+
+  @doc """
+  Check if a user with the given Email ID exists or not.
+  """
+  @spec already_member?(String.t()) :: :ok | {:error, :already_member}
+  def already_member?(email) do
+    Account.find(email)
+    |> case do
+      %User{} ->
+        {:error, :already_member}
+
+      _ ->
+        :ok
+    end
+  end
+
+  @doc """
+  Send invitation email to given email.
+  """
+  @spec invite_team_member(User.t(), Organisation.t(), String.t()) ::
+          {:ok, Oban.Job.t()} | {:error, any}
+  def invite_team_member(%User{name: name}, %{name: org_name} = organisation, email) do
+    token =
+      Phoenix.Token.sign(WraftDocWeb.Endpoint, "organisation_invite", %{
+        organisation: organisation,
+        email: email
+      })
+
+    %{org_name: org_name, user_name: name, email: email, token: token}
+    |> WraftDocWeb.Worker.EmailWorker.new(queue: "mailer", tags: ["invite"])
+    |> Oban.insert()
   end
 end

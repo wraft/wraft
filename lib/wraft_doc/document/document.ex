@@ -694,7 +694,11 @@ defmodule WraftDoc.Document do
     header = assets |> Enum.reduce(header, fn x, acc -> find_header_values(x, acc) end)
     qr_code = Task.await(task)
 
-    header = header |> concat_strings("qrcode: #{qr_code} \n") |> concat_strings("--- \n")
+    header =
+      header
+      |> concat_strings("qrcode: #{qr_code} \n")
+      |> concat_strings("path: uploads/contents/#{u_id}\n")
+      |> concat_strings("--- \n")
 
     content = """
     #{header}
