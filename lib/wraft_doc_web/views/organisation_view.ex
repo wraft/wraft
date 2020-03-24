@@ -48,4 +48,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       logo: organisation.logo
     }
   end
+
+  def render("invite.json", %{}) do
+    %{
+      info: "Invited successfully.!"
+    }
+  end
 end

@@ -9,11 +9,8 @@ defmodule WraftDoc.Account do
   @doc """
     User Registration
   """
-  require IEx
-  @spec registration(map) :: User.t() | Ecto.Changeset.t()
-  def registration(params \\ %{}) do
-    %{id: id} = Repo.get_by(Organisation, name: "Functionary Labs Pvt Ltd.")
-
+  @spec registration(map, Organisation.t()) :: User.t() | Ecto.Changeset.t()
+  def registration(params, %Organisation{id: id}) do
     params = params |> Map.merge(%{"organisation_id" => id})
 
     get_role()
@@ -28,6 +25,35 @@ defmodule WraftDoc.Account do
         create_profile(user, params)
         user |> Repo.preload(:profile)
     end
+  end
+
+  @doc """
+  Get the organisation from the token, if there is  token in the params.
+  If no token is present in the params, then get the default organisation
+  """
+  @spec get_organisation_from_token(map) :: Organisation.t()
+  def get_organisation_from_token(%{"token" => token, "email" => email}) do
+    Phoenix.Token.verify(WraftDocWeb.Endpoint, "organisation_invite", token, max_age: 9_00_000)
+    |> case do
+      {:ok, %{organisation: org, email: token_email}} ->
+        cond do
+          token_email == email ->
+            org
+
+          true ->
+            {:error, :no_permission}
+        end
+
+      {:error, :invalid} ->
+        {:error, :no_permission}
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  def get_organisation_from_token(_) do
+    Repo.get_by(Organisation, name: "Functionary Labs Pvt Ltd.")
   end
 
   @doc """
