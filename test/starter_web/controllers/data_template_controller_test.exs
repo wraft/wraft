@@ -8,10 +8,11 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
   alias WraftDoc.{Document.DataTemplate, Repo}
 
   @valid_attrs %{
-    tag: "Main template",
+    title: "Main template",
+    title_template: "Offer letter of [client]",
     data: "Hi [user]"
   }
-  @invalid_attrs %{}
+  @invalid_attrs %{title: ""}
   setup %{conn: conn} do
     user = insert(:user)
 
@@ -83,7 +84,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
       put(conn, Routes.v1_data_template_path(conn, :update, data_template.uuid, @valid_attrs))
       |> doc(operation_id: "update_asset")
 
-    assert json_response(conn, 200)["data_template"]["tag"] == @valid_attrs.tag
+    assert json_response(conn, 200)["data_template"]["title"] == @valid_attrs.title
     assert count_before == DataTemplate |> Repo.all() |> length()
   end
 
@@ -99,7 +100,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
       put(conn, Routes.v1_data_template_path(conn, :update, data_template.uuid, @invalid_attrs))
       |> doc(operation_id: "update_asset")
 
-    assert json_response(conn, 422)["errors"]["file"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["title"] == ["can't be blank"]
   end
 
   test "index lists all data templates under a content type", %{conn: conn} do
@@ -116,9 +117,9 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
 
     conn = get(conn, Routes.v1_data_template_path(conn, :index, content_type.uuid))
     dt_index = json_response(conn, 200)["data_templates"]
-    data_templates = Enum.map(dt_index, fn %{"tag" => tag} -> tag end)
-    assert List.to_string(data_templates) =~ dt1.tag
-    assert List.to_string(data_templates) =~ dt2.tag
+    data_templates = Enum.map(dt_index, fn %{"title" => title} -> title end)
+    assert List.to_string(data_templates) =~ dt1.title
+    assert List.to_string(data_templates) =~ dt2.title
   end
 
   test "all templates lists all data templates under an organisation", %{conn: conn} do
@@ -135,9 +136,9 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
 
     conn = get(conn, Routes.v1_data_template_path(conn, :all_templates))
     dt_index = json_response(conn, 200)["data_templates"]
-    data_templates = Enum.map(dt_index, fn %{"tag" => tag} -> tag end)
-    assert List.to_string(data_templates) =~ dt1.tag
-    assert List.to_string(data_templates) =~ dt2.tag
+    data_templates = Enum.map(dt_index, fn %{"title" => title} -> title end)
+    assert List.to_string(data_templates) =~ dt1.title
+    assert List.to_string(data_templates) =~ dt2.title
   end
 
   test "show renders asset details by id", %{conn: conn} do
@@ -150,7 +151,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
 
     conn = get(conn, Routes.v1_data_template_path(conn, :show, data_template.uuid))
 
-    assert json_response(conn, 200)["data_template"]["tag"] == data_template.tag
+    assert json_response(conn, 200)["data_template"]["title"] == data_template.title
   end
 
   test "error not found for id does not exists", %{conn: conn} do
@@ -174,6 +175,6 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
 
     conn = delete(conn, Routes.v1_data_template_path(conn, :delete, data_template.uuid))
     assert count_before - 1 == DataTemplate |> Repo.all() |> length()
-    assert json_response(conn, 200)["tag"] == data_template.tag
+    assert json_response(conn, 200)["title"] == data_template.title
   end
 end
