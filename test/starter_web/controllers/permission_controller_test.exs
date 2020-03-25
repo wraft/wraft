@@ -5,7 +5,7 @@ defmodule WraftDocWeb.PermissionControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Permission, Repo}
+  alias WraftDoc.{Authorization.Permission, Repo}
 
   @valid_attrs %{}
   @invalid_attrs %{}
