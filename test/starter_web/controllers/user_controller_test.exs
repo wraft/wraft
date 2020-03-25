@@ -1,9 +1,11 @@
 defmodule WraftDocWeb.UserControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
+  alias WraftDoc.Repo
 
   setup %{conn: conn} do
-    user = insert(:user)
+    profile = insert(:profile)
+    user = profile.user |> Repo.preload([:profile, :role, :organisation])
 
     conn =
       conn
@@ -46,6 +48,6 @@ defmodule WraftDocWeb.UserControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_user_path(conn, :me))
-    assert json_response(conn, 200)["me"]["email"] == user.email
+    assert json_response(conn, 200)["email"] == user.email
   end
 end
