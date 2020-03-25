@@ -18,7 +18,8 @@ defmodule WraftDoc.Factory do
     Account.Country,
     Document.DataTemplate,
     Authorization.Resource,
-    Document.Theme
+    Document.Theme,
+    Authorization.Permission
   }
 
   def user_factory do
@@ -143,7 +144,8 @@ defmodule WraftDoc.Factory do
 
   def data_template_factory do
     %DataTemplate{
-      tag: sequence(:tag, &"tag-#{&1}"),
+      title: sequence(:title, &"tag-#{&1}"),
+      title_template: sequence(:title_template, &"title_template#{&1}"),
       data: sequence(:data, &"data-#{&1}")
     }
   end
@@ -163,5 +165,9 @@ defmodule WraftDoc.Factory do
       organisation: build(:organisation),
       creator: build(:user)
     }
+  end
+
+  def permission_factory do
+    %Permission{role: build(:role), resource: build(:resource)}
   end
 end
