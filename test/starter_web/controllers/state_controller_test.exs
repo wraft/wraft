@@ -9,11 +9,10 @@ defmodule WraftDocWeb.StateControllerTest do
 
   @valid_attrs %{
     state: "Published",
-    order: 1,
-    organisation_id: 12
+    order: 1
   }
 
-  @invalid_attrs %{}
+  @invalid_attrs %{state: ""}
   setup %{conn: conn} do
     user = insert(:user)
 
@@ -68,7 +67,7 @@ defmodule WraftDocWeb.StateControllerTest do
   end
 
   test "update states on valid attrs", %{conn: conn} do
-    state = insert(:state, creator: conn.assigns.current_user)
+    state = insert(:state, creator: conn.assigns.current_user, flow: insert(:flow))
 
     conn =
       build_conn()
@@ -81,7 +80,8 @@ defmodule WraftDocWeb.StateControllerTest do
       put(conn, Routes.v1_state_path(conn, :update, state.uuid, @valid_attrs))
       |> doc(operation_id: "update_state")
 
-    assert json_response(conn, 200)["state"] == @valid_attrs.state
+    assert json_response(conn, 200)["state"]["order"] == @valid_attrs.order
+    assert json_response(conn, 200)["state"]["state"] == @valid_attrs.state
     assert count_before == State |> Repo.all() |> length()
   end
 
@@ -97,15 +97,15 @@ defmodule WraftDocWeb.StateControllerTest do
       put(conn, Routes.v1_state_path(conn, :update, state.uuid, @invalid_attrs))
       |> doc(operation_id: "update_state")
 
-    assert json_response(conn, 422)["errors"]["file"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["state"] == ["can't be blank"]
   end
 
   test "index lists states by current user", %{conn: conn} do
     user = conn.assigns.current_user
     flow = insert(:flow)
 
-    a1 = insert(:state, creator: user, organisation: user.organisation, flow: insert(:flow))
-    a2 = insert(:state, creator: user, organisation: user.organisation, flow: insert(:flow))
+    a1 = insert(:state, creator: user, organisation: user.organisation, flow: flow)
+    a2 = insert(:state, creator: user, organisation: user.organisation, flow: flow)
 
     conn =
       build_conn()
@@ -114,7 +114,7 @@ defmodule WraftDocWeb.StateControllerTest do
 
     conn = get(conn, Routes.v1_state_path(conn, :index, flow.uuid))
     states_index = json_response(conn, 200)["states"]
-    states = Enum.map(states_index, fn %{"state" => state} -> state end)
+    states = Enum.map(states_index, fn %{"state" => state} -> state["state"] end)
     assert List.to_string(states) =~ a1.state
     assert List.to_string(states) =~ a2.state
   end
