@@ -123,9 +123,10 @@ defmodule WraftDoc.Factory do
 
   def state_factory do
     %State{
-      state: "published",
+      state: sequence(:state, &"state-#{&1}"),
       order: 1,
-      organisation: build(:organisation)
+      organisation: build(:organisation),
+      flow: build(:flow)
     }
   end
 
