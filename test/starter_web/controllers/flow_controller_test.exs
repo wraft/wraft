@@ -9,7 +9,7 @@ defmodule WraftDocWeb.FlowControllerTest do
     organisation_id: 12
   }
 
-  @invalid_attrs %{}
+  @invalid_attrs %{name: ""}
   setup %{conn: conn} do
     user = insert(:user)
 
@@ -97,7 +97,7 @@ defmodule WraftDocWeb.FlowControllerTest do
       put(conn, Routes.v1_flow_path(conn, :update, flow.uuid, @invalid_attrs))
       |> doc(operation_id: "update_flow")
 
-    assert json_response(conn, 422)["errors"]["flow_id"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
   end
 
   test "index lists flow by current user", %{conn: conn} do
