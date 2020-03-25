@@ -30,7 +30,7 @@ defmodule WraftDocWeb.FlowControllerTest do
 
   test "create flow by valid attrrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -51,7 +51,7 @@ defmodule WraftDocWeb.FlowControllerTest do
 
   test "does not create flow by invalid attrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -69,7 +69,7 @@ defmodule WraftDocWeb.FlowControllerTest do
     flow = insert(:flow, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -89,7 +89,7 @@ defmodule WraftDocWeb.FlowControllerTest do
     flow = insert(:flow, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -107,7 +107,7 @@ defmodule WraftDocWeb.FlowControllerTest do
     f2 = insert(:flow, creator: user, organisation: user.organisation)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -123,7 +123,7 @@ defmodule WraftDocWeb.FlowControllerTest do
     flow = insert(:flow, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -134,7 +134,7 @@ defmodule WraftDocWeb.FlowControllerTest do
 
   test "error not found for id does not exists", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -144,7 +144,7 @@ defmodule WraftDocWeb.FlowControllerTest do
 
   test "delete flow by given id", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 

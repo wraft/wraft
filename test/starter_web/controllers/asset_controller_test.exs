@@ -5,7 +5,7 @@ defmodule WraftDocWeb.AssetControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Asset, Document, Repo}
+  alias WraftDoc.{Document.Asset, Repo}
 
   @valid_attrs %{name: "letter head", organisation_id: 12}
 
@@ -30,7 +30,7 @@ defmodule WraftDocWeb.AssetControllerTest do
 
   test "create assets by valid attrrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -46,7 +46,7 @@ defmodule WraftDocWeb.AssetControllerTest do
 
   test "does not create assets by invalid attrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -68,7 +68,7 @@ defmodule WraftDocWeb.AssetControllerTest do
     params = Map.put(@valid_attrs, :file, uploader)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -86,7 +86,7 @@ defmodule WraftDocWeb.AssetControllerTest do
     asset = insert(:asset, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -104,7 +104,7 @@ defmodule WraftDocWeb.AssetControllerTest do
     a2 = insert(:asset, creator: user, organisation: user.organisation)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -119,7 +119,7 @@ defmodule WraftDocWeb.AssetControllerTest do
     asset = insert(:asset, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -130,7 +130,7 @@ defmodule WraftDocWeb.AssetControllerTest do
 
   test "error not found for id does not exists", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -140,7 +140,7 @@ defmodule WraftDocWeb.AssetControllerTest do
 
   test "delete asset by given id", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 

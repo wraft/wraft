@@ -2,8 +2,6 @@ defmodule WraftDocWeb.ProfileControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
 
-  alias WraftDoc.Account.Profile
-
   @valid_attrs %{
     name: "Shakkir palakkal",
     dob: Timex.shift(Timex.now(), years: 27),
@@ -34,7 +32,7 @@ defmodule WraftDocWeb.ProfileControllerTest do
     params = Map.merge(@valid_attrs, %{user: user})
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 

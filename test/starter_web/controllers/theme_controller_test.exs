@@ -5,7 +5,7 @@ defmodule WraftDocWeb.ThemeControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Theme, Document, Repo}
+  alias WraftDoc.{Document.Theme, Repo}
 
   @valid_attrs %{
     name: "Official Letter Theme",
@@ -34,16 +34,14 @@ defmodule WraftDocWeb.ThemeControllerTest do
   end
 
   test "create themes by valid attrrs", %{conn: conn} do
+    user = conn.assigns.current_user
+
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     count_before = Theme |> Repo.all() |> length()
-    user = conn.assigns.current_user
-    organisation = user.organisation
-
-    params = Map.merge(@valid_attrs, %{organisation: organisation, creator: user})
 
     conn =
       post(conn, Routes.v1_theme_path(conn, :create, @valid_attrs))
@@ -55,7 +53,7 @@ defmodule WraftDocWeb.ThemeControllerTest do
 
   test "does not create themes by invalid attrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -78,7 +76,7 @@ defmodule WraftDocWeb.ThemeControllerTest do
     params = Map.merge(@valid_attrs, %{organisation: organisation, creator: user, file: file})
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -96,7 +94,7 @@ defmodule WraftDocWeb.ThemeControllerTest do
     theme = insert(:theme, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -114,7 +112,7 @@ defmodule WraftDocWeb.ThemeControllerTest do
     a2 = insert(:theme, creator: user, organisation: user.organisation)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -129,7 +127,7 @@ defmodule WraftDocWeb.ThemeControllerTest do
     theme = insert(:theme, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -140,7 +138,7 @@ defmodule WraftDocWeb.ThemeControllerTest do
 
   test "error not found for id does not exists", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -150,7 +148,7 @@ defmodule WraftDocWeb.ThemeControllerTest do
 
   test "delete theme by given id", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 

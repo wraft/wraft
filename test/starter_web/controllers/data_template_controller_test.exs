@@ -5,7 +5,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.DataTemplate, Document, Repo}
+  alias WraftDoc.{Document.DataTemplate, Repo}
 
   @valid_attrs %{
     tag: "Main template",
@@ -34,7 +34,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     content_type = insert(:content_type, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -54,7 +54,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     content_type = insert(:content_type, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -73,7 +73,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     data_template = insert(:data_template, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -91,7 +91,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     data_template = insert(:data_template, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -110,7 +110,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     dt2 = insert(:data_template, creator: user, content_type: content_type)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -129,7 +129,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     dt2 = insert(:data_template, creator: user, content_type: content_type)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -144,7 +144,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     data_template = insert(:data_template, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -155,7 +155,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
 
   test "error not found for id does not exists", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -165,7 +165,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
 
   test "delete asset by given id", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 

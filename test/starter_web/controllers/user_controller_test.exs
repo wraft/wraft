@@ -1,7 +1,6 @@
 defmodule WraftDocWeb.UserControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.Account.User
 
   setup %{conn: conn} do
     user = insert(:user)
@@ -24,8 +23,10 @@ defmodule WraftDocWeb.UserControllerTest do
   test "user signed in on email and password" do
     user = insert(:user)
 
+    conn = build_conn()
+
     conn =
-      build_conn
+      conn
       |> post(
         Routes.v1_user_path(conn, :signin, %{
           email: user.email,
@@ -40,7 +41,7 @@ defmodule WraftDocWeb.UserControllerTest do
     user = conn.assigns.current_user
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 

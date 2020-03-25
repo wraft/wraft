@@ -5,7 +5,7 @@ defmodule WraftDocWeb.PermissionControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Permission, Document, Repo}
+  alias WraftDoc.{Document.Permission, Repo}
 
   @valid_attrs %{}
   @invalid_attrs %{}
@@ -29,7 +29,7 @@ defmodule WraftDocWeb.PermissionControllerTest do
 
   test "create permissions by valid attrrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -45,7 +45,7 @@ defmodule WraftDocWeb.PermissionControllerTest do
 
   test "does not create permissions by invalid attrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -66,7 +66,7 @@ defmodule WraftDocWeb.PermissionControllerTest do
     a2 = insert(:permission, creator: user, organisation: user.organisation)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -79,7 +79,7 @@ defmodule WraftDocWeb.PermissionControllerTest do
 
   test "delete permission by given id", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 

@@ -5,7 +5,7 @@ defmodule WraftDocWeb.LayoutControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Layout, Document, Repo}
+  alias WraftDoc.{Document.Layout, Repo}
 
   @valid_attrs %{
     name: "Official Letter",
@@ -40,7 +40,7 @@ defmodule WraftDocWeb.LayoutControllerTest do
 
   test "create layouts on valid attrrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -62,7 +62,7 @@ defmodule WraftDocWeb.LayoutControllerTest do
 
   test "does not create layouts on invalid attrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -80,10 +80,9 @@ defmodule WraftDocWeb.LayoutControllerTest do
 
   test "update layouts on valid attributes", %{conn: conn} do
     layout = insert(:layout, creator: conn.assigns.current_user)
-    content_type = insert(:content_type)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -105,7 +104,7 @@ defmodule WraftDocWeb.LayoutControllerTest do
     layout = insert(:layout, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -123,7 +122,7 @@ defmodule WraftDocWeb.LayoutControllerTest do
     a2 = insert(:layout, creator: user, organisation: user.organisation)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -138,7 +137,7 @@ defmodule WraftDocWeb.LayoutControllerTest do
     layout = insert(:layout, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -149,7 +148,7 @@ defmodule WraftDocWeb.LayoutControllerTest do
 
   test "error not found for id does not exists", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -159,7 +158,7 @@ defmodule WraftDocWeb.LayoutControllerTest do
 
   test "delete layout by given id", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
