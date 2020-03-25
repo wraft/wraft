@@ -5,7 +5,7 @@ defmodule WraftDocWeb.PermissionControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Permission, Document, Repo}
+  alias WraftDoc.{Authorization.Permission, Repo}
 
   @valid_attrs %{}
   @invalid_attrs %{}
@@ -59,7 +59,7 @@ defmodule WraftDocWeb.PermissionControllerTest do
     assert count_before == Permission |> Repo.all() |> length()
   end
 
-  test "index lists assests by current user", %{conn: conn} do
+  test "index lists permissions by current user", %{conn: conn} do
     user = conn.assigns.current_user
 
     a1 = insert(:permission, creator: user, organisation: user.organisation)

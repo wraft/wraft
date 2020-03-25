@@ -3,7 +3,8 @@ defmodule WraftDoc.DataTemplateTest do
   alias WraftDoc.Document.DataTemplate
 
   @valid_attrs %{
-    tag: "industry",
+    title: "industry",
+    title_template: "Test",
     data: "administrative"
   }
   @invalid_attrs %{}
