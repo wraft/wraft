@@ -125,8 +125,7 @@ defmodule WraftDoc.Factory do
     %State{
       state: sequence(:state, &"state-#{&1}"),
       order: 1,
-      organisation: build(:organisation),
-      flow: build(:flow)
+      organisation: build(:organisation)
     }
   end
 
