@@ -5,7 +5,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Instance, Document, Repo}
+  alias WraftDoc.{Document.Instance, Repo}
 
   @valid_attrs %{
     instance_id: "OFFL01",
@@ -36,7 +36,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
     content_type = insert(:content_type, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -56,7 +56,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
     content_type = insert(:content_type, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -75,7 +75,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
     instance = insert(:instance, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -99,7 +99,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
     instance = insert(:instance, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -120,7 +120,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
     dt2 = insert(:instance, creator: user, content_type: insert(:content_type))
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -142,7 +142,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
     dt2 = insert(:instance, creator: user, content_type: ct2)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -158,7 +158,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
     instance = insert(:instance, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -169,7 +169,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
 
   test "error not found for id does not exists", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -179,7 +179,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
 
   test "delete asset by given id", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 

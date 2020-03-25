@@ -143,7 +143,8 @@ defmodule WraftDoc.Factory do
 
   def data_template_factory do
     %DataTemplate{
-      tag: sequence(:tag, &"tag-#{&1}"),
+      title: sequence(:title, &"title-#{&1}"),
+      title_template: sequence(:title_template, &"title-[client]-#{&1}"),
       data: sequence(:data, &"data-#{&1}")
     }
   end

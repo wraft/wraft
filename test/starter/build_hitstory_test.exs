@@ -1,7 +1,6 @@
 defmodule WraftDoc.BuildHistoryTest do
   use WraftDoc.ModelCase
-  import WraftDoc.Factory
-  alias WraftDoc.{Document, Document.Instance.History}
+  alias WraftDoc.Document.Instance.History
 
   {:ok, start_time} = NaiveDateTime.new(2020, 03, 17, 20, 20, 20)
   {:ok, end_time} = NaiveDateTime.new(2020, 03, 17, 20, 21, 20)

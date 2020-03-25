@@ -34,7 +34,7 @@ defmodule WraftDocWeb.StateControllerTest do
 
   test "create states by valid attrrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -50,7 +50,7 @@ defmodule WraftDocWeb.StateControllerTest do
 
   test "does not create states by invalid attrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -69,16 +69,13 @@ defmodule WraftDocWeb.StateControllerTest do
 
   test "update states on valid attrs", %{conn: conn} do
     state = insert(:state, creator: conn.assigns.current_user)
-    content_type = insert(:content_type)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    organisation = insert(:organisation)
     count_before = State |> Repo.all() |> length()
-    params = Map.merge(@valid_attrs, %{organisation: organisation})
 
     conn =
       put(conn, Routes.v1_state_path(conn, :update, state.uuid, @valid_attrs))
@@ -92,7 +89,7 @@ defmodule WraftDocWeb.StateControllerTest do
     state = insert(:state, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -111,7 +108,7 @@ defmodule WraftDocWeb.StateControllerTest do
     a2 = insert(:state, creator: user, organisation: user.organisation, flow: insert(:flow))
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -124,7 +121,7 @@ defmodule WraftDocWeb.StateControllerTest do
 
   test "delete state by given id", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
