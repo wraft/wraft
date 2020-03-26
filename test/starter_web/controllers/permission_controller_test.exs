@@ -69,7 +69,7 @@ defmodule WraftDocWeb.PermissionControllerTest do
     assert count_before == Permission |> Repo.all() |> length()
   end
 
-  test "index lists assests by current user", %{conn: conn} do
+  test "index lists permissions by current user", %{conn: conn} do
     user = conn.assigns.current_user
 
     a1 = insert(:permission)

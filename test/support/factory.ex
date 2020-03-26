@@ -174,4 +174,8 @@ defmodule WraftDoc.Factory do
       creator: build(:user)
     }
   end
+
+  def permission_factory do
+    %Permission{role: build(:role), resource: build(:resource)}
+  end
 end
