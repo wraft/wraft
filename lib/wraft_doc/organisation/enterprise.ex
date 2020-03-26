@@ -149,8 +149,8 @@ defmodule WraftDoc.Enterprise do
   Shuffle the order of flows.
   """
   @spec shuffle_order(State.t(), integer) :: list
-  def shuffle_order(%{order: order, organisation_id: org_id}, additive) do
-    from(f in Flow, where: f.organisation_id == ^org_id and f.order > ^order)
+  def shuffle_order(%{order: order, flow_id: flow_id}, additive) do
+    from(s in State, where: s.flow_id == ^flow_id and s.order > ^order)
     |> Repo.all()
     |> Task.async_stream(fn x -> update_state_order(x, additive) end)
     |> Enum.to_list()
@@ -158,8 +158,8 @@ defmodule WraftDoc.Enterprise do
 
   # Update the flow order by adding the additive.
   @spec update_state_order(State.t(), integer) :: {:ok, State.t()}
-  defp update_state_order(%{order: order} = flow, additive) do
-    flow
+  defp update_state_order(%{order: order} = state, additive) do
+    state
     |> State.order_update_changeset(%{order: order + additive})
     |> Repo.update()
   end

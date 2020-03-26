@@ -4,7 +4,7 @@ defmodule WraftDoc.DataTemplateTest do
 
   @valid_attrs %{
     title: "industry",
-    title_template: "Test",
+    title_template: "test",
     data: "administrative"
   }
   @invalid_attrs %{}
