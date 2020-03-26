@@ -5,7 +5,7 @@ defmodule WraftDoc.ProfileTest do
   @valid_attrs %{
     name: "under world",
     gender: "male",
-    user_id: 12
+    user_id: 1
   }
   @invalid_attrs %{}
 

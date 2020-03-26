@@ -14,7 +14,6 @@ defmodule WraftDoc.UserTest do
     # 9. Uniquness of email address
     # 10. Uniquness of mobile number
   """
-  alias WraftDoc.Account
   alias WraftDoc.Account.User
 
   @valid_attrs %{
@@ -80,10 +79,9 @@ defmodule WraftDoc.UserTest do
   test "changeset does not accept taken email address" do
     attrs = Map.put(@valid_attrs, :email, "used@mail.com")
 
-    changeset_1 =
-      %User{}
-      |> User.changeset(attrs)
-      |> Repo.insert()
+    %User{}
+    |> User.changeset(attrs)
+    |> Repo.insert()
 
     changeset_2 =
       %User{}

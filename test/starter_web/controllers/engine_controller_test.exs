@@ -2,8 +2,6 @@ defmodule WraftDocWeb.EngineControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
 
-  alias WraftDoc.{Document.Engine, Document}
-
   setup %{conn: conn} do
     user = insert(:user)
 
@@ -27,7 +25,7 @@ defmodule WraftDocWeb.EngineControllerTest do
     e2 = insert(:engine)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
