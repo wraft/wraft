@@ -34,18 +34,19 @@ defmodule WraftDocWeb.InstanceControllerTest do
 
   test "create instances by valid attrrs", %{conn: conn} do
     content_type = insert(:content_type, creator: conn.assigns.current_user)
+    state = insert(:state)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    params = Map.merge(@valid_attrs, %{c_type_id: content_type.uuid, content_type: content_type})
+    params = Map.merge(@valid_attrs, %{state_uuid: state.uuid})
 
     count_before = Instance |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_instance_path(conn, :create, params))
+      post(conn, Routes.v1_instance_path(conn, :create, content_type.uuid), params)
       |> doc(operation_id: "create_instance")
 
     assert count_before + 1 == Instance |> Repo.all() |> length()
@@ -54,6 +55,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
 
   test "does not create instances by invalid attrs", %{conn: conn} do
     content_type = insert(:content_type, creator: conn.assigns.current_user)
+    state = insert(:state)
 
     conn =
       build_conn()
@@ -61,10 +63,10 @@ defmodule WraftDocWeb.InstanceControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Instance |> Repo.all() |> length()
-    params = Map.merge(@valid_attrs, %{c_type_id: content_type.uuid, content_type: content_type})
+    params = Map.merge(@invalid_attrs, %{state_uuid: state.uuid})
 
     conn =
-      post(conn, Routes.v1_instance_path(conn, :create, params))
+      post(conn, Routes.v1_instance_path(conn, :create, content_type.uuid), params)
       |> doc(operation_id: "create_instance")
 
     assert json_response(conn, 422)["errors"]["raw"] == ["can't be blank"]
