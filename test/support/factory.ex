@@ -3,7 +3,7 @@ defmodule WraftDoc.Factory do
 
   alias WraftDoc.{
     Account.User,
-    Enterprise.Organisation,
+    Account.Country,
     Account.Role,
     Account.Profile,
     Document.ContentType,
@@ -13,12 +13,13 @@ defmodule WraftDoc.Factory do
     Document.Layout,
     Document.Engine,
     Document.Instance,
-    Enterprise.Flow.State,
-    Enterprise.Flow,
-    Account.Country,
     Document.DataTemplate,
+    Document.Theme,
+    Enterprise.Flow.State,
+    Enterprise.Organisation,
+    Enterprise.Flow,
     Authorization.Resource,
-    Document.Theme
+    Authorization.Permission
   }
 
   def user_factory do
@@ -154,6 +155,13 @@ defmodule WraftDoc.Factory do
     %Resource{
       category: sequence(:resource, &"Flow-#{&1}"),
       action: sequence(:action, &"Action-#{&1}")
+    }
+  end
+
+  def permission_factory do
+    %Permission{
+      resource: build(:resource),
+      role: build(:role)
     }
   end
 
