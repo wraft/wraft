@@ -39,16 +39,14 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    params = Map.put(@valid_attrs, :c_type_id, content_type.uuid)
-
     count_before = DataTemplate |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_data_template_path(conn, :create, params))
+      post(conn, Routes.v1_data_template_path(conn, :create, content_type.uuid), @valid_attrs)
       |> doc(operation_id: "create_data_template")
 
     assert count_before + 1 == DataTemplate |> Repo.all() |> length()
-    assert json_response(conn, 200)["tag"] == @valid_attrs.tag
+    assert json_response(conn, 200)["title"] == @valid_attrs.title
   end
 
   test "does not create data templates by invalid attrs", %{conn: conn} do
@@ -60,13 +58,12 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = DataTemplate |> Repo.all() |> length()
-    params = Map.put(@invalid_attrs, :c_type_id, content_type.uuid)
 
     conn =
-      post(conn, Routes.v1_data_template_path(conn, :create, params))
+      post(conn, Routes.v1_data_template_path(conn, :create, content_type.uuid), @invalid_attrs)
       |> doc(operation_id: "create_data_template")
 
-    assert json_response(conn, 422)["errors"]["tag"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["title"] == ["can't be blank"]
     assert count_before == DataTemplate |> Repo.all() |> length()
   end
 
