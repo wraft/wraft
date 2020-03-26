@@ -72,7 +72,8 @@ defmodule WraftDocWeb.ThemeControllerTest do
     organisation = user.organisation
     theme = insert(:theme, creator: user)
     content_type = insert(:content_type)
-    file = %Plug.Upload{content_type: content_type, filename: "file", path: "/tmp"}
+    filename = Plug.Upload.random_file!("test")
+    file = %Plug.Upload{content_type: content_type, filename: filename, path: filename}
     params = Map.merge(@valid_attrs, %{organisation: organisation, creator: user, file: file})
 
     conn =
@@ -83,7 +84,7 @@ defmodule WraftDocWeb.ThemeControllerTest do
     count_before = Theme |> Repo.all() |> length()
 
     conn =
-      put(conn, Routes.v1_theme_path(conn, :update, theme.uuid, params))
+      put(conn, Routes.v1_theme_path(conn, :update, theme.uuid), params)
       |> doc(operation_id: "update_theme")
 
     assert json_response(conn, 200)["name"] == @valid_attrs.name
