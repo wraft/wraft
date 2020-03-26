@@ -5,7 +5,7 @@ defmodule WraftDocWeb.ContentTypeControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.ContentType, Document, Repo}
+  alias WraftDoc.{Document.ContentType, Repo}
 
   @valid_attrs %{
     name: "Offer letter",
@@ -41,7 +41,7 @@ defmodule WraftDocWeb.ContentTypeControllerTest do
 
   test "create content types by valid attrrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -64,7 +64,7 @@ defmodule WraftDocWeb.ContentTypeControllerTest do
 
   test "does not create content types by invalid attrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -86,7 +86,7 @@ defmodule WraftDocWeb.ContentTypeControllerTest do
     content_type = insert(:content_type, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -109,7 +109,7 @@ defmodule WraftDocWeb.ContentTypeControllerTest do
     content_type = insert(:content_type, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -127,7 +127,7 @@ defmodule WraftDocWeb.ContentTypeControllerTest do
     ct2 = insert(:content_type, creator: user, organisation: user.organisation)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -142,7 +142,7 @@ defmodule WraftDocWeb.ContentTypeControllerTest do
     content_type = insert(:content_type, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -153,7 +153,7 @@ defmodule WraftDocWeb.ContentTypeControllerTest do
 
   test "error not found for id does not exists", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -163,7 +163,7 @@ defmodule WraftDocWeb.ContentTypeControllerTest do
 
   test "delete content type by given id", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 

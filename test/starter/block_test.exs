@@ -1,8 +1,8 @@
 defmodule WraftDoc.BlockTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.{Document, Document.Block, Repo}
-  require IEx
+  alias WraftDoc.{Document.Block, Repo}
+
   @invalid_attrs %{name: "Block name"}
   test "changest with valid attributes" do
     organisation = insert(:organisation)
@@ -38,7 +38,7 @@ defmodule WraftDoc.BlockTest do
       content_type_id: content_type.id
     }
 
-    {:ok, block} = Block.changeset(%Block{}, params) |> Repo.insert()
+    {:ok, _block} = Block.changeset(%Block{}, params) |> Repo.insert()
     {:error, changeset} = Block.changeset(%Block{}, params) |> Repo.insert()
 
     assert "Block with same name exists.!" in errors_on(changeset, :name)

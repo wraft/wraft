@@ -5,13 +5,14 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.DataTemplate, Document, Repo}
+  alias WraftDoc.{Document.DataTemplate, Repo}
 
   @valid_attrs %{
-    tag: "Main template",
+    title: "Main template",
+    title_template: "Offer letter of [client]",
     data: "Hi [user]"
   }
-  @invalid_attrs %{}
+  @invalid_attrs %{title: ""}
   setup %{conn: conn} do
     user = insert(:user)
 
@@ -34,38 +35,35 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     content_type = insert(:content_type, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
-
-    params = Map.put(@valid_attrs, :c_type_id, content_type.uuid)
 
     count_before = DataTemplate |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_data_template_path(conn, :create, params))
+      post(conn, Routes.v1_data_template_path(conn, :create, content_type.uuid), @valid_attrs)
       |> doc(operation_id: "create_data_template")
 
     assert count_before + 1 == DataTemplate |> Repo.all() |> length()
-    assert json_response(conn, 200)["tag"] == @valid_attrs.tag
+    assert json_response(conn, 200)["title"] == @valid_attrs.title
   end
 
   test "does not create data templates by invalid attrs", %{conn: conn} do
     content_type = insert(:content_type, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = DataTemplate |> Repo.all() |> length()
-    params = Map.put(@invalid_attrs, :c_type_id, content_type.uuid)
 
     conn =
-      post(conn, Routes.v1_data_template_path(conn, :create, params))
+      post(conn, Routes.v1_data_template_path(conn, :create, content_type.uuid), @invalid_attrs)
       |> doc(operation_id: "create_data_template")
 
-    assert json_response(conn, 422)["errors"]["tag"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["title"] == ["can't be blank"]
     assert count_before == DataTemplate |> Repo.all() |> length()
   end
 
@@ -73,7 +71,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     data_template = insert(:data_template, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -83,7 +81,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
       put(conn, Routes.v1_data_template_path(conn, :update, data_template.uuid, @valid_attrs))
       |> doc(operation_id: "update_asset")
 
-    assert json_response(conn, 200)["data_template"]["tag"] == @valid_attrs.tag
+    assert json_response(conn, 200)["data_template"]["title"] == @valid_attrs.title
     assert count_before == DataTemplate |> Repo.all() |> length()
   end
 
@@ -91,7 +89,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     data_template = insert(:data_template, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -99,7 +97,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
       put(conn, Routes.v1_data_template_path(conn, :update, data_template.uuid, @invalid_attrs))
       |> doc(operation_id: "update_asset")
 
-    assert json_response(conn, 422)["errors"]["file"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["title"] == ["can't be blank"]
   end
 
   test "index lists all data templates under a content type", %{conn: conn} do
@@ -110,15 +108,15 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     dt2 = insert(:data_template, creator: user, content_type: content_type)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_data_template_path(conn, :index, content_type.uuid))
     dt_index = json_response(conn, 200)["data_templates"]
-    data_templates = Enum.map(dt_index, fn %{"tag" => tag} -> tag end)
-    assert List.to_string(data_templates) =~ dt1.tag
-    assert List.to_string(data_templates) =~ dt2.tag
+    data_templates = Enum.map(dt_index, fn %{"title" => title} -> title end)
+    assert List.to_string(data_templates) =~ dt1.title
+    assert List.to_string(data_templates) =~ dt2.title
   end
 
   test "all templates lists all data templates under an organisation", %{conn: conn} do
@@ -129,33 +127,33 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     dt2 = insert(:data_template, creator: user, content_type: content_type)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_data_template_path(conn, :all_templates))
     dt_index = json_response(conn, 200)["data_templates"]
-    data_templates = Enum.map(dt_index, fn %{"tag" => tag} -> tag end)
-    assert List.to_string(data_templates) =~ dt1.tag
-    assert List.to_string(data_templates) =~ dt2.tag
+    data_templates = Enum.map(dt_index, fn %{"title" => title} -> title end)
+    assert List.to_string(data_templates) =~ dt1.title
+    assert List.to_string(data_templates) =~ dt2.title
   end
 
   test "show renders asset details by id", %{conn: conn} do
     data_template = insert(:data_template, creator: conn.assigns.current_user)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_data_template_path(conn, :show, data_template.uuid))
 
-    assert json_response(conn, 200)["data_template"]["tag"] == data_template.tag
+    assert json_response(conn, 200)["data_template"]["title"] == data_template.title
   end
 
   test "error not found for id does not exists", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -165,7 +163,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
 
   test "delete asset by given id", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -174,6 +172,6 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
 
     conn = delete(conn, Routes.v1_data_template_path(conn, :delete, data_template.uuid))
     assert count_before - 1 == DataTemplate |> Repo.all() |> length()
-    assert json_response(conn, 200)["tag"] == data_template.tag
+    assert json_response(conn, 200)["title"] == data_template.title
   end
 end
