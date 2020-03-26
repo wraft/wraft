@@ -36,7 +36,7 @@ defmodule WraftDocWeb.ProfileControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = put(conn, Routes.v1_profile_path(conn, :update, profile.id, params))
-    assert json_response(conn, 200)["profile"]["name"] == @valid_attrs.name
+    conn = put(conn, Routes.v1_profile_path(conn, :update, profile.id), params)
+    assert json_response(conn, 200)["name"] == @valid_attrs.name
   end
 end
