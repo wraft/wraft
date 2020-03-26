@@ -15,7 +15,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   @invalid_attrs %{name: "abc"}
 
   setup %{conn: conn} do
-    user = insert(:user)
+    role = insert(:role, name: "admin")
+    user = insert(:user, role: role)
 
     conn =
       conn
@@ -119,5 +120,21 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     assert Organisation |> Repo.all() |> length == count_before - 1
     assert json_response(conn, 200)["name"] == organisation.name
     assert json_response(conn, 200)["address"] == organisation.address
+  end
+
+  test "invite persons send the mail to the persons mail", %{conn: conn} do
+    organisation = conn.assigns.current_user.organisation
+
+    conn =
+      build_conn
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn =
+      post(conn, Routes.v1_organisation_path(conn, :invite, organisation.uuid), %{
+        email: "msadi@gmail.com"
+      })
+
+    assert json_response(conn, 200) == %{"info" => "Invited successfully.!"}
   end
 end
