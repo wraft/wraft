@@ -32,6 +32,8 @@ defmodule WraftDocWeb.StateControllerTest do
   end
 
   test "create states by valid attrrs", %{conn: conn} do
+    flow = insert(:flow)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
@@ -40,7 +42,7 @@ defmodule WraftDocWeb.StateControllerTest do
     count_before = State |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_state_path(conn, :create, @valid_attrs))
+      post(conn, Routes.v1_state_path(conn, :create, flow.uuid), @valid_attrs)
       |> doc(operation_id: "create_state")
 
     assert count_before + 1 == State |> Repo.all() |> length()
@@ -54,12 +56,12 @@ defmodule WraftDocWeb.StateControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     organisation = insert(:organisation)
-    params = Map.merge(@valid_attrs, %{organisation: organisation})
-
+    params = Map.merge(@invalid_attrs, %{organisation: organisation})
+    flow = insert(:flow)
     count_before = State |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_state_path(conn, :create, params))
+      post(conn, Routes.v1_state_path(conn, :create, flow.uuid), params)
       |> doc(operation_id: "create_state")
 
     assert json_response(conn, 422)["errors"]["state"] == ["can't be blank"]
