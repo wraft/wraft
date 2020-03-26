@@ -12,9 +12,10 @@ defmodule WraftDocWeb.ResourceControllerTest do
     action: "create"
   }
 
-  @invalid_attrs %{}
+  @invalid_attrs %{category: ""}
   setup %{conn: conn} do
-    user = insert(:user)
+    role = insert(:role, name: "admin")
+    user = insert(:user, role: role)
 
     conn =
       conn
@@ -33,7 +34,7 @@ defmodule WraftDocWeb.ResourceControllerTest do
 
   test "create resources by valid attrrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -49,7 +50,7 @@ defmodule WraftDocWeb.ResourceControllerTest do
 
   test "does not create resources by invalid attrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -65,10 +66,9 @@ defmodule WraftDocWeb.ResourceControllerTest do
 
   test "update resources on valid attributes", %{conn: conn} do
     resource = insert(:resource)
-    content_type = insert(:content_type)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -86,7 +86,7 @@ defmodule WraftDocWeb.ResourceControllerTest do
     resource = insert(:resource)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -94,7 +94,7 @@ defmodule WraftDocWeb.ResourceControllerTest do
       put(conn, Routes.v1_resource_path(conn, :update, resource.uuid, @invalid_attrs))
       |> doc(operation_id: "update_resource")
 
-    assert json_response(conn, 422)["errors"]["file"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["category"] == ["can't be blank"]
   end
 
   test "index lists assests by current user", %{conn: conn} do
@@ -104,9 +104,9 @@ defmodule WraftDocWeb.ResourceControllerTest do
     a2 = insert(:resource)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_resource_path(conn, :index))
     resources_index = json_response(conn, 200)["resources"]
@@ -119,18 +119,18 @@ defmodule WraftDocWeb.ResourceControllerTest do
     resource = insert(:resource)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_resource_path(conn, :show, resource.uuid))
 
-    assert json_response(conn, 200)["resource"]["category"] == resource.category
+    assert json_response(conn, 200)["category"] == resource.category
   end
 
   test "error not found for id does not exists", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
@@ -140,7 +140,7 @@ defmodule WraftDocWeb.ResourceControllerTest do
 
   test "delete resource by given id", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 

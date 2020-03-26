@@ -5,12 +5,13 @@ defmodule WraftDocWeb.PermissionControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Permission, Document, Repo}
+  alias WraftDoc.{Authorization.Permission, Repo}
 
   @valid_attrs %{}
   @invalid_attrs %{}
   setup %{conn: conn} do
-    user = insert(:user)
+    role = insert(:role, name: "admin")
+    user = insert(:user, role: role)
 
     conn =
       conn
@@ -28,66 +29,79 @@ defmodule WraftDocWeb.PermissionControllerTest do
   end
 
   test "create permissions by valid attrrs", %{conn: conn} do
+    role = insert(:role)
+    resource = insert(:resource)
+
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Permission |> Repo.all() |> length()
+    params = @valid_attrs |> Map.merge(%{role_uuid: role.uuid, resource_uuid: resource.uuid})
 
     conn =
-      post(conn, Routes.v1_permission_path(conn, :create, @valid_attrs))
+      post(conn, Routes.v1_permission_path(conn, :create, params))
       |> doc(operation_id: "create_permission")
 
     assert count_before + 1 == Permission |> Repo.all() |> length()
-    assert json_response(conn, 200)["role"] == @valid_attrs.role
+    assert json_response(conn, 200)["#{resource.category}_#{resource.action}"] == [role.name]
   end
 
   test "does not create permissions by invalid attrs", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Permission |> Repo.all() |> length()
 
+    params =
+      @invalid_attrs
+      |> Map.merge(%{role_uuid: Ecto.UUID.generate(), resource_uuid: Ecto.UUID.generate()})
+
     conn =
-      post(conn, Routes.v1_permission_path(conn, :create, @invalid_attrs))
+      post(conn, Routes.v1_permission_path(conn, :create, params))
       |> doc(operation_id: "create_permission")
 
-    assert json_response(conn, 422)["errors"]["role"] == ["can't be blank"]
+    # assert json_response(conn, 422)["errors"]["role"] == ["can't be blank"]
+    assert json_response(conn, 404) == "Not Found"
     assert count_before == Permission |> Repo.all() |> length()
   end
 
   test "index lists assests by current user", %{conn: conn} do
     user = conn.assigns.current_user
 
-    a1 = insert(:permission, creator: user, organisation: user.organisation)
-    a2 = insert(:permission, creator: user, organisation: user.organisation)
+    a1 = insert(:permission)
+    a2 = insert(:permission)
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_permission_path(conn, :index))
-    permissions_index = json_response(conn, 200)["permissions"]
-    permissions = Enum.map(permissions_index, fn %{"role" => role} -> role end)
-    assert List.to_string(permissions) =~ a1.role
-    assert List.to_string(permissions) =~ a2.role
+
+    permissions =
+      json_response(conn, 200)["permissions"]
+      |> Enum.map(fn x -> Map.keys(x) end)
+      |> List.flatten()
+
+    assert List.to_string(permissions) =~ a1.resource.category <> "_" <> a1.resource.action
+    assert List.to_string(permissions) =~ a2.resource.category <> "_" <> a2.resource.action
   end
 
   test "delete permission by given id", %{conn: conn} do
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    permission = insert(:permission, creator: conn.assigns.current_user)
+    permission = insert(:permission)
     count_before = Permission |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_permission_path(conn, :delete, permission.uuid))
     assert count_before - 1 == Permission |> Repo.all() |> length()
-    assert json_response(conn, 200)["role"] == permission.role
+    assert json_response(conn, 200)["role_id"] == permission.role.id
   end
 end
