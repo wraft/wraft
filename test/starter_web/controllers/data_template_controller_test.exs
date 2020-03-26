@@ -138,7 +138,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     assert List.to_string(data_templates) =~ dt2.title
   end
 
-  test "show renders asset details by id", %{conn: conn} do
+  test "show renders data template details by id", %{conn: conn} do
     data_template = insert(:data_template, creator: conn.assigns.current_user)
 
     conn =
@@ -161,7 +161,7 @@ defmodule WraftDocWeb.DataTemplateControllerTest do
     assert json_response(conn, 404) == "Not Found"
   end
 
-  test "delete asset by given id", %{conn: conn} do
+  test "delete data template by given id", %{conn: conn} do
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
