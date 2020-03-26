@@ -53,7 +53,7 @@ defmodule WraftDocWeb.LayoutControllerTest do
       Map.put(@valid_attrs, :organisation, organisation) |> Map.put(:engine_uuid, engine_uuid)
 
     conn =
-      post(conn, Routes.v1_layout_path(conn, :create, params))
+      post(conn, Routes.v1_layout_path(conn, :create), params)
       |> doc(operation_id: "create_layout")
 
     assert count_before + 1 == Layout |> Repo.all() |> length()
@@ -86,17 +86,16 @@ defmodule WraftDocWeb.LayoutControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    organisation = insert(:organisation)
     engine = insert(:engine)
-    params = Map.merge(@valid_attrs, %{organisation: organisation, engine: engine})
+    params = Map.merge(@valid_attrs, %{engine_id: engine.id})
 
     count_before = Layout |> Repo.all() |> length()
 
     conn =
-      put(conn, Routes.v1_layout_path(conn, :update, layout.uuid, params))
+      put(conn, Routes.v1_layout_path(conn, :update, layout.uuid), params)
       |> doc(operation_id: "update_layout")
 
-    assert json_response(conn, 200)["name"] == @valid_attrs.name
+    assert json_response(conn, 200)["layout"]["name"] == @valid_attrs.name
     assert count_before == Layout |> Repo.all() |> length()
   end
 
