@@ -63,8 +63,8 @@ defmodule WraftDocWeb.AssetControllerTest do
   test "update assets on valid attrs with Plug.Upload", %{conn: conn} do
     asset = insert(:asset, creator: conn.assigns.current_user)
     content_type = insert(:content_type)
-
-    uploader = %Plug.Upload{content_type: content_type, filename: "file", path: "/tmp"}
+    filename = Plug.Upload.random_file!("test")
+    uploader = %Plug.Upload{content_type: content_type, filename: filename, path: filename}
     params = Map.put(@valid_attrs, :file, uploader)
 
     conn =
@@ -75,7 +75,7 @@ defmodule WraftDocWeb.AssetControllerTest do
     count_before = Asset |> Repo.all() |> length()
 
     conn =
-      put(conn, Routes.v1_asset_path(conn, :update, asset.uuid, params))
+      put(conn, Routes.v1_asset_path(conn, :update, asset.uuid), params)
       |> doc(operation_id: "update_asset")
 
     assert json_response(conn, 200)["name"] == @valid_attrs.name
