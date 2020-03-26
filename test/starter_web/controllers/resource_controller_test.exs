@@ -12,9 +12,10 @@ defmodule WraftDocWeb.ResourceControllerTest do
     action: "create"
   }
 
-  @invalid_attrs %{}
+  @invalid_attrs %{category: ""}
   setup %{conn: conn} do
-    user = insert(:user)
+    role = insert(:role, name: "admin")
+    user = insert(:user, role: role)
 
     conn =
       conn
@@ -93,7 +94,7 @@ defmodule WraftDocWeb.ResourceControllerTest do
       put(conn, Routes.v1_resource_path(conn, :update, resource.uuid, @invalid_attrs))
       |> doc(operation_id: "update_resource")
 
-    assert json_response(conn, 422)["errors"]["file"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["category"] == ["can't be blank"]
   end
 
   test "index lists assests by current user", %{conn: conn} do
@@ -124,7 +125,7 @@ defmodule WraftDocWeb.ResourceControllerTest do
 
     conn = get(conn, Routes.v1_resource_path(conn, :show, resource.uuid))
 
-    assert json_response(conn, 200)["resource"]["category"] == resource.category
+    assert json_response(conn, 200)["category"] == resource.category
   end
 
   test "error not found for id does not exists", %{conn: conn} do
