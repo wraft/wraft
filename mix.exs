@@ -66,14 +66,15 @@ defmodule WraftDoc.Mixfile do
       {:ex_json_schema, "~> 0.5"},
       # For testing
       {:ex_machina, "~> 2.3", only: :test},
-      # For creating date times
-      {:good_times, "~> 1.1"},
+
       # Pagination
       {:scrivener_ecto, "~> 2.3"},
       # QR code generation
       {:eqrcode, "~> 0.1.7"},
       # Background jobs
-      {:oban, "~> 1.2"}
+      {:oban, "~> 1.2"},
+      # Email client
+      {:bamboo, "~> 1.4"}
     ]
   end
 

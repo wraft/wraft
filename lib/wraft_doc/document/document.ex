@@ -368,7 +368,7 @@ defmodule WraftDoc.Document do
   end
 
   # Get the build document of the given instance
-  @spec get_built_document(Instance.t()) :: Instance.t()
+  @spec get_built_document(Instance.t()) :: Instance.t() | nil
   defp get_built_document(%{id: id, instance_id: instance_id} = instance) do
     from(h in History,
       where: h.exit_code == 0,
@@ -385,6 +385,10 @@ defmodule WraftDoc.Document do
         doc_url = "uploads/contents/#{instance_id}/final.pdf"
         instance |> Map.put(:build, doc_url)
     end
+  end
+
+  defp get_built_document(nil) do
+    nil
   end
 
   @doc """
@@ -409,7 +413,7 @@ defmodule WraftDoc.Document do
       {:ok, instance} ->
         instance
         |> Repo.preload([:creator, [{:content_type, :layout}], :state])
-        |> get_built_document
+        |> get_built_document()
 
       {:error, _} = changeset ->
         changeset
@@ -694,7 +698,11 @@ defmodule WraftDoc.Document do
     header = assets |> Enum.reduce(header, fn x, acc -> find_header_values(x, acc) end)
     qr_code = Task.await(task)
 
-    header = header |> concat_strings("qrcode: #{qr_code} \n") |> concat_strings("--- \n")
+    header =
+      header
+      |> concat_strings("qrcode: #{qr_code} \n")
+      |> concat_strings("path: uploads/contents/#{u_id}\n")
+      |> concat_strings("--- \n")
 
     content = """
     #{header}
