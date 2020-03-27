@@ -3,7 +3,7 @@ defmodule WraftDoc.Factory do
 
   alias WraftDoc.{
     Account.User,
-    Enterprise.Organisation,
+    Account.Country,
     Account.Role,
     Account.Profile,
     Document.ContentType,
@@ -13,9 +13,13 @@ defmodule WraftDoc.Factory do
     Document.Layout,
     Document.Engine,
     Document.Instance,
+    Document.DataTemplate,
+    Document.Theme,
     Enterprise.Flow.State,
+    Enterprise.Organisation,
     Enterprise.Flow,
-    Account.Country
+    Authorization.Resource,
+    Authorization.Permission
   }
 
   def user_factory do
@@ -47,8 +51,9 @@ defmodule WraftDoc.Factory do
   def profile_factory do
     %Profile{
       name: sequence(:name, &"name-#{&1}"),
-      dob: GoodTimes.years_ago(27),
-      gender: "male"
+      dob: Timex.shift(Timex.now(), years: 27),
+      gender: "male",
+      user: build(:user)
     }
   end
 
@@ -119,9 +124,10 @@ defmodule WraftDoc.Factory do
 
   def state_factory do
     %State{
-      state: "published",
+      state: sequence(:state, &"state-#{&1}"),
       order: 1,
-      organisation: build(:organisation)
+      organisation: build(:organisation),
+      flow: build(:flow)
     }
   end
 
@@ -135,5 +141,41 @@ defmodule WraftDoc.Factory do
       country_code: sequence(:country_code, &"243432#{&1}"),
       calling_code: sequence(:calling_code, &"3343#{&1}")
     }
+  end
+
+  def data_template_factory do
+    %DataTemplate{
+      title: sequence(:title, &"title-#{&1}"),
+      title_template: sequence(:title_template, &"title-[client]-#{&1}"),
+      data: sequence(:data, &"data-#{&1}")
+    }
+  end
+
+  def resource_factory do
+    %Resource{
+      category: sequence(:resource, &"Flow-#{&1}"),
+      action: sequence(:action, &"Action-#{&1}")
+    }
+  end
+
+  def permission_factory do
+    %Permission{
+      resource: build(:resource),
+      role: build(:role)
+    }
+  end
+
+  def theme_factory do
+    %Theme{
+      name: sequence(:name, &"Official Letter Theme-#{&1}"),
+      font: sequence(:font, &"Malery-#{&1}"),
+      typescale: %{h1: "10", p: "6", h2: "8"},
+      organisation: build(:organisation),
+      creator: build(:user)
+    }
+  end
+
+  def permission_factory do
+    %Permission{role: build(:role), resource: build(:resource)}
   end
 end

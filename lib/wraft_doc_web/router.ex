@@ -91,6 +91,9 @@ defmodule WraftDocWeb.Router do
       # Organisations
       resources("/organisations", OrganisationController, only: [:create, :update, :show, :delete])
 
+      # Invite new user
+      post("/organisations/:id/invite", OrganisationController, :invite)
+
       # All instances in an organisation
       get("/contents", InstanceController, :all_contents)
 

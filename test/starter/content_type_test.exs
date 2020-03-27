@@ -1,7 +1,7 @@
 defmodule WraftDoc.ContentTypeTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.{Document, Document.ContentType}
+  alias WraftDoc.Document.ContentType
 
   @valid_attributes %{
     name: "Offer letter",
@@ -25,7 +25,7 @@ defmodule WraftDoc.ContentTypeTest do
     organisation = insert(:organisation)
     params = Map.put(@valid_attributes, :organisation_id, organisation.id)
 
-    {:ok, content_type} = ContentType.changeset(%ContentType{}, params) |> Repo.insert()
+    {:ok, _content_type} = ContentType.changeset(%ContentType{}, params) |> Repo.insert()
 
     {:error, changeset} = ContentType.changeset(%ContentType{}, params) |> Repo.insert()
 

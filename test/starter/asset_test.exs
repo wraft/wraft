@@ -1,7 +1,7 @@
 defmodule WraftDoc.AssetTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.{Document, Document.Asset}
+  alias WraftDoc.Document.Asset
 
   @create_attrs %{name: "asset one"}
   @invalid_attrs %{}

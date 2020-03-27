@@ -97,7 +97,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     post("/assets")
     summary("Create an asset")
     description("Create asset API")
-
+    operation_id("create_asset")
     consumes("multipart/form-data")
 
     parameter(:name, :formData, :string, "Asset name", required: true)

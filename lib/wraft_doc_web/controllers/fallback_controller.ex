@@ -24,6 +24,21 @@ defmodule WraftDocWeb.FallbackController do
     send_resp(conn, 400, body)
   end
 
+  def call(conn, {:error, :no_permission}) do
+    body = Poison.encode!(%{error: "You are not authorized for this action.!"})
+    send_resp(conn, 400, body)
+  end
+
+  def call(conn, {:error, :expired}) do
+    body = Poison.encode!(%{error: "Expired.!"})
+    send_resp(conn, 400, body)
+  end
+
+  def call(conn, {:error, :already_member}) do
+    body = Poison.encode!(%{error: "User with this email exists.!"})
+    send_resp(conn, 422, body)
+  end
+
   def call(conn, nil) do
     conn
     |> put_status(:not_found)
