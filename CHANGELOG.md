@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v0.0.2.2 - 2020-03-27
+
+### Added
+
+- Invite new members to organisation
+- Improved tests
+- Added documentation
+
 ## v0.0.2.1 - 2020-03-23
 
 ### Added
