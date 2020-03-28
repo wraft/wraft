@@ -71,7 +71,8 @@ defmodule WraftDoc.Factory do
     %Block{
       name: sequence(:name, &"name-#{&1}"),
       btype: sequence(:btype, &"btype-#{&1}"),
-      content_type: build(:content_type),
+      dataset:
+        "{type:'pie',data:{labels:['January','February', 'March','April', 'May'], datasets:[{data:[50,60,70,180,190]}]}}",
       organisation: build(:organisation)
     }
   end

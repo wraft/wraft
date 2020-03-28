@@ -19,7 +19,8 @@ defmodule WraftDoc.Document do
     Document.LayoutAsset,
     Enterprise,
     Enterprise.Flow,
-    Enterprise.Flow.State
+    Enterprise.Flow.State,
+    Document.Block
   }
 
   alias WraftDocWeb.AssetUploader
@@ -800,5 +801,49 @@ defmodule WraftDoc.Document do
   defp calculate_build_delay(%{start_time: start_time, end_time: end_time} = params) do
     delay = Timex.diff(end_time, start_time, :millisecond)
     params |> Map.merge(%{delay: delay})
+  end
+
+  @doc """
+  Create a Block
+  """
+  @spec create_block(User.t(), map) :: Block.t()
+
+  def create_block(%{organisation_id: org_id} = current_user, params) do
+    params = params |> Map.merge(%{"organisation_id" => org_id})
+
+    current_user
+    |> build_assoc(:blocks)
+    |> Block.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, block} ->
+        block
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Function to create chart from  https://quickchart.io/chart?c=[[insert chart config]].
+  """
+  require IEx
+
+  def create_chart() do
+    url = "https://quickchart.io/chart?c={
+      type: 'pie',
+      data: {
+
+        datasets: [{
+          label: 'Raisins',
+          data: [12, 6, 5, 18, 12]
+        }, {
+          label: 'Bananas',
+          data: [4, 8, 16, 5, 5]
+        }]
+      }
+    }"
+    test = Scrape.domain(url)
+    IEx.pry()
   end
 end
