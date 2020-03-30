@@ -688,6 +688,7 @@ defmodule WraftDoc.Document do
     System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}/"])
 
     task = Task.async(fn -> generate_qr(instance) end)
+    Task.start(fn -> move_old_builds(u_id) end)
 
     header =
       c_type.fields
@@ -768,6 +769,31 @@ defmodule WraftDoc.Document do
   @spec concat_strings(String.t(), String.t()) :: String.t()
   def concat_strings(string1, string2) do
     string1 <> string2
+  end
+
+  # Move old builds to the history folder
+  @spec move_old_builds(String.t()) :: {:ok, non_neg_integer()}
+  defp move_old_builds(u_id) do
+    path = "uploads/contents/#{u_id}/"
+    history_path = concat_strings(path, "history/")
+    old_file = concat_strings(path, "final.pdf")
+    File.mkdir_p(history_path)
+
+    history_file =
+      history_path
+      |> File.ls!()
+      |> Enum.sort(:desc)
+      |> case do
+        ["final-" <> version | _] ->
+          ["v" <> version | _] = version |> String.split(".pdf")
+          version = version |> String.to_integer() |> add(1)
+          concat_strings(history_path, "final-v#{version}.pdf")
+
+        [] ->
+          concat_strings(history_path, "final-v1.pdf")
+      end
+
+    File.copy(old_file, history_file)
   end
 
   @doc """
