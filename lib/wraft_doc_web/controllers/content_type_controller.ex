@@ -113,6 +113,31 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
+      ContentTypeWithoutFields:
+        swagger_schema do
+          title("Content Type without fields")
+          description("A Content Type without its fields.")
+
+          properties do
+            id(:string, "The ID of the content type", required: true)
+            name(:string, "Content Type's name", required: true)
+            description(:string, "Content Type's description")
+            color(:string, "Hex code of color")
+            prefix(:string, "Prefix to be used for generating Unique ID for contents")
+            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
+            updated_at(:string, "When was the user last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            name: "Offer letter",
+            description: "An offer letter",
+            prefix: "OFFLET",
+            color: "#fffff",
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
       ContentTypeAndLayout:
         swagger_schema do
           title("Content Type and Layout")
