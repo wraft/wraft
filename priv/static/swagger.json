@@ -1676,6 +1676,37 @@
         ],
         "operationId": "create_field_type",
         "description": "Create field type API"
+      },
+      "get": {
+        "tags": [
+          "FieldType"
+        ],
+        "summary": "Field type index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FieldTypeIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.index",
+        "description": "API to get the list of all field typs created so far"
       }
     },
     "/engines": {
