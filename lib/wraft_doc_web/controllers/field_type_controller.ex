@@ -131,29 +131,30 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
     end
   end
 
-  # @doc """
-  # Show instance.
-  # """
-  # swagger_path :show do
-  #   get("/assets/{id}")
-  #   summary("Show an asset")
-  #   description("API to get all details of an asset")
+  @doc """
+  Show fielf type.
+  """
+  swagger_path :show do
+    get("/field_types/{id}")
+    summary("Show a field type")
+    description("API to show a field type")
 
-  #   parameters do
-  #     id(:path, :string, "ID of the asset", required: true)
-  #   end
+    parameters do
+      id(:path, :string, "ID of the field type", required: true)
+    end
 
-  #   response(200, "Ok", Schema.ref(:ShowAsset))
-  #   response(401, "Unauthorized", Schema.ref(:Error))
-  # end
+    response(200, "Ok", Schema.ref(:FieldType))
+    response(404, "Not found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
 
-  # @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # def show(conn, %{"id" => asset_uuid}) do
-  #   with %Asset{} = asset <- Document.show_asset(asset_uuid) do
-  #     conn
-  #     |> render("show.json", asset: asset)
-  #   end
-  # end
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show(conn, %{"id" => field_type_uuid}) do
+    with %FieldType{} = field_type <- Document.get_field_type(field_type_uuid) do
+      conn
+      |> render("field_type.json", field_type: field_type)
+    end
+  end
 
   # @doc """
   # Update an asset.
