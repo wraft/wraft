@@ -55,7 +55,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
           properties do
             data_template(Schema.ref(:LayoutAndEngine))
             creator(Schema.ref(:User))
-            content_type(Schema.ref(:ContentType))
+            content_type(Schema.ref(:ContentTypeWithoutFields))
           end
 
           example(%{
@@ -79,12 +79,6 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
               id: "1232148nb3478",
               name: "Offer letter",
               description: "An offer letter",
-              fields: %{
-                name: "string",
-                position: "string",
-                joining_date: "date",
-                approved_by: "string"
-              },
               prefix: "OFFLET",
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
@@ -101,14 +95,14 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
       DataTemplatesIndex:
         swagger_schema do
           properties do
-            contents(Schema.ref(:DataTemplates))
+            data_templates(Schema.ref(:DataTemplates))
             page_number(:integer, "Page number")
             total_pages(:integer, "Total number of pages")
             total_entries(:integer, "Total number of contents")
           end
 
           example(%{
-            contents: [
+            data_templates: [
               %{
                 id: "1232148nb3478",
                 title: "Main template",
