@@ -17,6 +17,7 @@ defmodule WraftDoc.Document do
     Document.DataTemplate,
     Document.Asset,
     Document.LayoutAsset,
+    Document.FieldType,
     Enterprise,
     Enterprise.Flow,
     Enterprise.Flow.State
@@ -826,5 +827,16 @@ defmodule WraftDoc.Document do
   defp calculate_build_delay(%{start_time: start_time, end_time: end_time} = params) do
     delay = Timex.diff(end_time, start_time, :millisecond)
     params |> Map.merge(%{delay: delay})
+  end
+
+  @doc """
+  Create a field type
+  """
+  @spec create_field_type(User.t(), map) :: {:ok, FieldType.t()}
+  def create_field_type(current_user, params) do
+    current_user
+    |> build_assoc(:field_types)
+    |> FieldType.changeset(params)
+    |> Repo.insert()
   end
 end
