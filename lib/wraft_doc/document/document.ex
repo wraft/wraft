@@ -866,4 +866,15 @@ defmodule WraftDoc.Document do
     |> FieldType.changeset(params)
     |> Repo.update()
   end
+
+  def delete_field_type(field_type) do
+    field_type
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.no_assoc_constraint(
+      :fields,
+      message:
+        "Cannot delete the field type. Some Content types depend on this field type. Update those content types and then try again.!"
+    )
+    |> Repo.delete()
+  end
 end
