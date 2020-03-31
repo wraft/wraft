@@ -153,7 +153,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   end
 
   @doc """
-  Show instance.
+  Show asset.
   """
   swagger_path :show do
     get("/assets/{id}")

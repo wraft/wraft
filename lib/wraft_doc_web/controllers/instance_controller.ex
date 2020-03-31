@@ -64,7 +64,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
           properties do
             content(Schema.ref(:Content))
-            content_type(Schema.ref(:ContentType))
+            content_type(Schema.ref(:ContentTypeWithoutFields))
             state(Schema.ref(:State))
           end
 
@@ -81,12 +81,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               id: "1232148nb3478",
               name: "Offer letter",
               description: "An offer letter",
-              fields: %{
-                name: "string",
-                position: "string",
-                joining_date: "date",
-                approved_by: "string"
-              },
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             },
