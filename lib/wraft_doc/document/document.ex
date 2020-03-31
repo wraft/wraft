@@ -17,6 +17,8 @@ defmodule WraftDoc.Document do
     Document.DataTemplate,
     Document.Asset,
     Document.LayoutAsset,
+    Document.FieldType,
+    Document.ContentTypeField,
     Enterprise,
     Enterprise.Flow,
     Enterprise.Flow.State
@@ -112,12 +114,43 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
-        content_type |> Repo.preload([:layout, :flow])
+        content_type |> fetch_and_associate_fields(params)
+        content_type |> Repo.preload([:layout, :flow, {:fields, :field_type}])
 
       changeset = {:error, _} ->
         changeset
     end
   end
+
+  @spec fetch_and_associate_fields(ContentType.t(), map) :: list
+  # Iterate throught the list of field types and associate with the content type
+  defp fetch_and_associate_fields(content_type, %{"fields" => fields}) do
+    fields
+    |> Stream.map(fn x -> associate_c_type_and_fields(content_type, x) end)
+    |> Enum.to_list()
+  end
+
+  defp fetch_and_associate_fields(_content_type, _params), do: nil
+
+  @spec associate_c_type_and_fields(ContentType.t(), map) ::
+          {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()} | nil
+  # Fetch and associate field types with the content type
+  defp associate_c_type_and_fields(c_type, %{"key" => key, "field_type_id" => field_type_id}) do
+    field_type_id
+    |> get_field_type
+    |> case do
+      %FieldType{} = field_type ->
+        field_type
+        |> build_assoc(:fields, content_type: c_type)
+        |> ContentTypeField.changeset(%{name: key})
+        |> Repo.insert()
+
+      nil ->
+        nil
+    end
+  end
+
+  defp associate_c_type_and_fields(_c_type, _field), do: nil
 
   @doc """
   List all engines.
@@ -205,7 +238,7 @@ defmodule WraftDoc.Document do
     from(ct in ContentType,
       where: ct.organisation_id == ^org_id,
       order_by: [desc: ct.id],
-      preload: [:layout, :flow]
+      preload: [:layout, :flow, {:fields, :field_type}]
     )
     |> Repo.paginate(params)
   end
@@ -216,7 +249,7 @@ defmodule WraftDoc.Document do
   @spec show_content_type(binary) :: %ContentType{layout: %Layout{}, creator: %User{}}
   def show_content_type(uuid) do
     get_content_type(uuid)
-    |> Repo.preload([:layout, :creator, [{:flow, :states}]])
+    |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
   end
 
   @doc """
@@ -257,7 +290,10 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, content_type} ->
-        content_type |> Repo.preload([:layout, :creator, [{:flow, :states}]])
+        content_type |> fetch_and_associate_fields(params)
+
+        content_type
+        |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
     end
   end
 
@@ -685,8 +721,8 @@ defmodule WraftDoc.Document do
         slug: slug,
         assets: assets
       }) do
-    System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}/"])
-
+    File.mkdir_p("uploads_1/contents/#{u_id}")
+    System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads_1/contents/#{u_id}"])
     task = Task.async(fn -> generate_qr(instance) end)
     Task.start(fn -> move_old_builds(u_id) end)
 
@@ -826,5 +862,54 @@ defmodule WraftDoc.Document do
   defp calculate_build_delay(%{start_time: start_time, end_time: end_time} = params) do
     delay = Timex.diff(end_time, start_time, :millisecond)
     params |> Map.merge(%{delay: delay})
+  end
+
+  @doc """
+  Create a field type
+  """
+  @spec create_field_type(User.t(), map) :: {:ok, FieldType.t()}
+  def create_field_type(current_user, params) do
+    current_user
+    |> build_assoc(:field_types)
+    |> FieldType.changeset(params)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Index of all field types.
+  """
+  @spec field_type_index(map) :: map
+  def field_type_index(params) do
+    from(ft in FieldType, order_by: [desc: ft.id])
+    |> Repo.paginate(params)
+  end
+
+  @doc """
+  Get a field type from its UUID.
+  """
+  @spec get_field_type(binary) :: FieldType.t()
+  def get_field_type(field_type_uuid) do
+    Repo.get_by(FieldType, uuid: field_type_uuid)
+  end
+
+  @doc """
+  Update a field type
+  """
+  @spec update_field_type(FieldType.t(), map) :: FieldType.t() | {:error, Ecto.Changeset.t()}
+  def update_field_type(field_type, params) do
+    field_type
+    |> FieldType.changeset(params)
+    |> Repo.update()
+  end
+
+  def delete_field_type(field_type) do
+    field_type
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.no_assoc_constraint(
+      :fields,
+      message:
+        "Cannot delete the field type. Some Content types depend on this field type. Update those content types and then try again.!"
+    )
+    |> Repo.delete()
   end
 end
