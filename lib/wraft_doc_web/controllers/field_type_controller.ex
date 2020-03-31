@@ -12,7 +12,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
           description("Field type request")
 
           properties do
-            name(:string, "Name of the asset")
+            name(:string, "Name of the field type")
           end
 
           example(%{
@@ -25,8 +25,8 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
           description("A field type.")
 
           properties do
-            id(:string, "The ID of the asset", required: true)
-            name(:string, "Name of the asset")
+            id(:string, "The ID of the field type", required: true)
+            name(:string, "Name of the field type")
             inserted_at(:string, "When was the engine inserted", format: "ISO-8601")
             updated_at(:string, "When was the engine last updated", format: "ISO-8601")
           end
@@ -48,7 +48,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
       FieldTypeIndex:
         swagger_schema do
           properties do
-            assets(Schema.ref(:FieldTypes))
+            field_types(Schema.ref(:FieldTypes))
             page_number(:integer, "Page number")
             total_pages(:integer, "Total number of pages")
             total_entries(:integer, "Total number of contents")
@@ -169,7 +169,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
       field_type(:body, Schema.ref(:FieldTypeRequest), "Field Type to be created", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:Asset))
+    response(200, "Ok", Schema.ref(:FieldType))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not found", Schema.ref(:Error))
@@ -196,7 +196,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
       id(:path, :string, "field type id", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:Asset))
+    response(200, "Ok", Schema.ref(:FieldType))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not found", Schema.ref(:Error))
   end

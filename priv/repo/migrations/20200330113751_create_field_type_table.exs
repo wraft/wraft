@@ -15,7 +15,6 @@ defmodule WraftDoc.Repo.Migrations.CreateFieldTypeTable do
       add(:name, :string, null: false)
       add(:content_type_id, references(:content_type, on_delete: :delete_all))
       add(:field_type_id, references(:field_type, on_delete: :delete_all))
-      add(:creator_id, references(:user, on_delete: :nilify_all))
 
       timestamps()
     end
