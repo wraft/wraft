@@ -856,4 +856,14 @@ defmodule WraftDoc.Document do
   def get_field_type(field_type_uuid) do
     Repo.get_by(FieldType, uuid: field_type_uuid)
   end
+
+  @doc """
+  Update a field type
+  """
+  @spec update_field_type(FieldType.t(), map) :: FieldType.t() | {:error, Ecto.Changeset.t()}
+  def update_field_type(field_type, params) do
+    field_type
+    |> FieldType.changeset(params)
+    |> Repo.update()
+  end
 end
