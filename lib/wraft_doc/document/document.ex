@@ -848,4 +848,12 @@ defmodule WraftDoc.Document do
     from(ft in FieldType, order_by: [desc: ft.id])
     |> Repo.paginate(params)
   end
+
+  @doc """
+  Get a field type from its UUID.
+  """
+  @spec get_field_type(binary) :: FieldType.t()
+  def get_field_type(field_type_uuid) do
+    Repo.get_by(FieldType, uuid: field_type_uuid)
+  end
 end
