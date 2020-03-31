@@ -10,7 +10,6 @@ defmodule WraftDoc.Document.ContentTypeField do
     field(:name, :string, null: false)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:field_type, WraftDoc.Document.FieldType)
-    belongs_to(:creator, WraftDoc.Account.User)
     timestamps()
   end
 

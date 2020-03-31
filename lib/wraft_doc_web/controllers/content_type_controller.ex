@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           properties do
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description", required: true)
-            fields(:map, "Dynamic fields and their datatype", required: true)
+            fields(Schema.ref(:ContentTypeFieldRequests))
             layout_uuid(:string, "ID of the layout selected", required: true)
             flow_uuid(:string, "ID of the flow selected", required: true)
             color(:string, "Hex code of color")
@@ -28,17 +28,60 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           example(%{
             name: "Offer letter",
             description: "An offer letter",
-            fields: %{
-              name: "string",
-              position: "string",
-              joining_date: "date",
-              approved_by: "string"
-            },
+            fields: [
+              %{key: "position", field_type_id: "kjb14713132lkdac"},
+              %{key: "name", field_type_id: "kjb2347mnsad"}
+            ],
             layout_uuid: "1232148nb3478",
             flow_uuid: "234okjnskjb8234",
             prefix: "OFFLET",
-            color: "#fffff"
+            color: "#fff"
           })
+        end,
+      ContentTypeFieldRequest:
+        swagger_schema do
+          title("Content type field request")
+          description("Data to be send to add fields to content type.")
+
+          properties do
+            key(:string, "Name of the field")
+            field_type_id(:string, "ID of the field type")
+          end
+
+          example(%{
+            key: "position",
+            field_type_id: "asdlkne4781234123clk"
+          })
+        end,
+      ContentTypeField:
+        swagger_schema do
+          title("Content type field in response")
+          description("Content type field in respone.")
+
+          properties do
+            id(:string, "ID of content type field")
+            name(:string, "Name of content type field")
+            field_type(Schema.ref(:FieldType))
+          end
+
+          example(%{
+            key: "position",
+            field_type_id: "asdlkne4781234123clk"
+          })
+        end,
+      ContentTypeFields:
+        swagger_schema do
+          title("Field response array")
+          description("List of field type in response.")
+          type(:array)
+          items(Schema.ref(:ContentTypeField))
+        end,
+      ContentTypeFieldRequests:
+        swagger_schema do
+          title("Field request array")
+          description("List of data to be send to add fields to content type.")
+          type(:array)
+          items(Schema.ref(:ContentTypeFieldRequest))
         end,
       ContentType:
         swagger_schema do
@@ -50,7 +93,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description")
             color(:string, "Hex code of color")
-            fields(:map, "Dynamic fields and their datatype")
+            fields(Schema.ref(:ContentTypeFields))
             prefix(:string, "Prefix to be used for generating Unique ID for contents")
             inserted_at(:string, "When was the user inserted", format: "ISO-8601")
             updated_at(:string, "When was the user last updated", format: "ISO-8601")
@@ -60,12 +103,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id: "1232148nb3478",
             name: "Offer letter",
             description: "An offer letter",
-            fields: %{
-              name: "string",
-              position: "string",
-              joining_date: "date",
-              approved_by: "string"
-            },
+            fields: [
+              %{key: "position", field_type_id: "kjb14713132lkdac"},
+              %{key: "name", field_type_id: "kjb2347mnsad"}
+            ],
             prefix: "OFFLET",
             color: "#fffff",
             updated_at: "2020-01-21T14:00:00Z",
@@ -81,7 +122,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id(:string, "The ID of the content type", required: true)
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description")
-            fields(:map, "Dynamic fields and their datatype")
+            fields(Schema.ref(:ContentTypeFields))
             prefix(:string, "Prefix to be used for generating Unique ID for contents")
             color(:string, "Hex code of color")
             layout(Schema.ref(:Layout))
@@ -93,12 +134,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id: "1232148nb3478",
             name: "Offer letter",
             description: "An offer letter",
-            fields: %{
-              name: "string",
-              position: "string",
-              joining_date: "date",
-              approved_by: "string"
-            },
+            fields: [
+              %{key: "position", field_type_id: "kjb14713132lkdac"},
+              %{key: "name", field_type_id: "kjb2347mnsad"}
+            ],
             prefix: "OFFLET",
             color: "#fffff",
             layout: %{
@@ -129,7 +168,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id(:string, "The ID of the content type", required: true)
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description")
-            fields(:map, "Dynamic fields and their datatype")
+            fields(Schema.ref(:ContentTypeFields))
             prefix(:string, "Prefix to be used for generating Unique ID for contents")
             color(:string, "Hex code of color")
             layout(Schema.ref(:Layout))
@@ -142,12 +181,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id: "1232148nb3478",
             name: "Offer letter",
             description: "An offer letter",
-            fields: %{
-              name: "string",
-              position: "string",
-              joining_date: "date",
-              approved_by: "string"
-            },
+            fields: [
+              %{key: "position", field_type_id: "kjb14713132lkdac"},
+              %{key: "name", field_type_id: "kjb2347mnsad"}
+            ],
             prefix: "OFFLET",
             color: "#fffff",
             layout: %{
@@ -191,7 +228,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id(:string, "The ID of the content type", required: true)
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description")
-            fields(:map, "Dynamic fields and their datatype")
+            fields(Schema.ref(:ContentTypeFields))
             prefix(:string, "Prefix to be used for generating Unique ID for contents")
             color(:string, "Hex code of color")
             layout(Schema.ref(:Layout))
@@ -204,12 +241,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id: "1232148nb3478",
             name: "Offer letter",
             description: "An offer letter",
-            fields: %{
-              name: "string",
-              position: "string",
-              joining_date: "date",
-              approved_by: "string"
-            },
+            fields: [
+              %{key: "position", field_type_id: "kjb14713132lkdac"},
+              %{key: "name", field_type_id: "kjb2347mnsad"}
+            ],
             prefix: "OFFLET",
             color: "#fffff",
             layout: %{
@@ -256,12 +291,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               id: "1232148nb3478",
               name: "Offer letter",
               description: "An offer letter",
-              fields: %{
-                name: "string",
-                position: "string",
-                joining_date: "date",
-                approved_by: "string"
-              },
+              fields: [
+                %{key: "position", field_type_id: "kjb14713132lkdac"},
+                %{key: "name", field_type_id: "kjb2347mnsad"}
+              ],
               prefix: "OFFLET",
               color: "#fffff",
               flow: %{
@@ -318,12 +351,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
                   id: "1232148nb3478",
                   name: "Offer letter",
                   description: "An offer letter",
-                  fields: %{
-                    name: "string",
-                    position: "string",
-                    joining_date: "date",
-                    approved_by: "string"
-                  },
+                  fields: [
+                    %{key: "position", field_type_id: "kjb14713132lkdac"},
+                    %{key: "name", field_type_id: "kjb2347mnsad"}
+                  ],
                   prefix: "OFFLET",
                   color: "#fffff",
                   flow: %{

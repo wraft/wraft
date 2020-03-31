@@ -10,7 +10,7 @@ defmodule WraftDoc.Document.ContentType do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
     field(:description, :string)
-    field(:fields, :map)
+    # field(:fields, :map)
     field(:color, :string)
     field(:prefix, :string)
     belongs_to(:layout, WraftDoc.Document.Layout)
@@ -19,14 +19,15 @@ defmodule WraftDoc.Document.ContentType do
     belongs_to(:flow, WraftDoc.Enterprise.Flow)
 
     has_many(:instances, WraftDoc.Document.Instance)
+    has_many(:fields, WraftDoc.Document.ContentTypeField)
 
     timestamps()
   end
 
   def changeset(%ContentType{} = content_type, attrs \\ %{}) do
     content_type
-    |> cast(attrs, [:name, :description, :fields, :color, :prefix, :organisation_id])
-    |> validate_required([:name, :description, :fields, :prefix, :organisation_id])
+    |> cast(attrs, [:name, :description, :color, :prefix, :organisation_id])
+    |> validate_required([:name, :description, :prefix, :organisation_id])
     |> unique_constraint(:name,
       message: "Content type with the same name under your organisation exists.!",
       name: :content_type_organisation_unique_index
@@ -36,8 +37,8 @@ defmodule WraftDoc.Document.ContentType do
 
   def update_changeset(%ContentType{} = content_type, attrs \\ %{}) do
     content_type
-    |> cast(attrs, [:name, :description, :color, :fields, :layout_id, :flow_id, :prefix])
-    |> validate_required([:name, :description, :fields, :layout_id, :flow_id, :prefix])
+    |> cast(attrs, [:name, :description, :color, :layout_id, :flow_id, :prefix])
+    |> validate_required([:name, :description, :layout_id, :flow_id, :prefix])
     |> unique_constraint(:name,
       message: "Content type with the same name under your organisation exists.!",
       name: :content_type_organisation_unique_index

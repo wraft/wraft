@@ -10,7 +10,6 @@ defmodule WraftDoc.Document.FieldType do
     field(:name, :string, null: false)
     belongs_to(:creator, WraftDoc.Account.User)
     has_many(:fields, WraftDoc.Document.ContentTypeField)
-    has_many(:content_types, through: [:fields, :content_type])
     timestamps()
   end
 
