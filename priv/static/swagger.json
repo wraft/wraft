@@ -1726,6 +1726,43 @@
         ],
         "operationId": "WraftDocWeb.Api.V1.FieldTypeController.show",
         "description": "API to show a field type"
+      },
+      "delete": {
+        "tags": [
+          "FieldType"
+        ],
+        "summary": "Delete a field type",
+        "responses": {
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Asset"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "field type id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.delete",
+        "description": "API to delete a field type"
       }
     },
     "/field_types": {

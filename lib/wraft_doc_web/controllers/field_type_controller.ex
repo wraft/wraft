@@ -184,30 +184,29 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
     end
   end
 
-  # @doc """
-  # Delete an asset.
-  # """
-  # swagger_path :delete do
-  #   PhoenixSwagger.Path.delete("/assets/{id}")
-  #   summary("Delete an asset")
-  #   description("API to delete an asset")
+  @doc """
+  Delete a field type.
+  """
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/field_types/{id}")
+    summary("Delete a field type")
+    description("API to delete a field type")
 
-  #   parameters do
-  #     id(:path, :string, "asset id", required: true)
-  #   end
+    parameters do
+      id(:path, :string, "field type id", required: true)
+    end
 
-  #   response(200, "Ok", Schema.ref(:Asset))
-  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
-  #   response(401, "Unauthorized", Schema.ref(:Error))
-  #   response(404, "Not found", Schema.ref(:Error))
-  # end
+    response(200, "Ok", Schema.ref(:Asset))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
 
-  # @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # def delete(conn, %{"id" => uuid}) do
-  #   with %Asset{} = asset <- Document.get_asset(uuid),
-  #        {:ok, %Asset{}} <- Document.delete_asset(asset) do
-  #     conn
-  #     |> render("asset.json", asset: asset)
-  #   end
-  # end
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete(conn, %{"id" => uuid}) do
+    with %FieldType{} = field_type <- Document.get_field_type(uuid),
+         {:ok, %FieldType{}} <- Document.delete_field_type(field_type) do
+      conn
+      |> render("field_type.json", field_type: field_type)
+    end
+  end
 end
