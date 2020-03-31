@@ -156,34 +156,33 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
     end
   end
 
-  # @doc """
-  # Update an asset.
-  # """
-  # swagger_path :update do
-  #   put("/assets/{id}")
-  #   summary("Update an asset")
-  #   description("API to update an asset")
+  @doc """
+  Update a field type.
+  """
+  swagger_path :update do
+    put("/field_types/{id}")
+    summary("Update a field type")
+    description("API to update a field type")
 
-  #   consumes("multipart/form-data")
+    parameters do
+      id(:path, :string, "Field type id", required: true)
+      field_type(:body, Schema.ref(:FieldTypeRequest), "Field Type to be created", required: true)
+    end
 
-  #   parameter(:id, :path, :string, "asset id", required: true)
-  #   parameter(:name, :formData, :string, "Asset name", required: true)
-  #   parameter(:file, :formData, :file, "Asset file to upload")
+    response(200, "Ok", Schema.ref(:Asset))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
 
-  #   response(200, "Ok", Schema.ref(:Asset))
-  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
-  #   response(401, "Unauthorized", Schema.ref(:Error))
-  #   response(404, "Not found", Schema.ref(:Error))
-  # end
-
-  # @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # def update(conn, %{"id" => uuid} = params) do
-  #   with %Asset{} = asset <- Document.get_asset(uuid),
-  #        {:ok, asset} <- Document.update_asset(asset, params) do
-  #     conn
-  #     |> render("asset.json", asset: asset)
-  #   end
-  # end
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"id" => uuid} = params) do
+    with %FieldType{} = field_type <- Document.get_field_type(uuid),
+         {:ok, field_type} <- Document.update_field_type(field_type, params) do
+      conn
+      |> render("field_type.json", field_type: field_type)
+    end
+  end
 
   # @doc """
   # Delete an asset.
