@@ -99,39 +99,37 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
     end
   end
 
-  # @doc """
-  # Asset index.
-  # """
-  # swagger_path :index do
-  #   get("/assets")
-  #   summary("Asset index")
-  #   description("API to get the list of all assets created so far under an organisation")
+  @doc """
+  Field type index.
+  """
+  swagger_path :index do
+    get("/field_types")
+    summary("Field type index")
+    description("API to get the list of all field typs created so far")
 
-  #   parameter(:page, :query, :string, "Page number")
+    parameter(:page, :query, :string, "Page number")
 
-  #   response(200, "Ok", Schema.ref(:AssetsIndex))
-  #   response(401, "Unauthorized", Schema.ref(:Error))
-  # end
+    response(200, "Ok", Schema.ref(:FieldTypeIndex))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
 
-  # @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # def index(conn, params) do
-  #   %{organisation_id: org_id} = conn.assigns[:current_user]
-
-  #   with %{
-  #          entries: assets,
-  #          page_number: page_number,
-  #          total_pages: total_pages,
-  #          total_entries: total_entries
-  #        } <- Document.asset_index(org_id, params) do
-  #     conn
-  #     |> render("index.json",
-  #       assets: assets,
-  #       page_number: page_number,
-  #       total_pages: total_pages,
-  #       total_entries: total_entries
-  #     )
-  #   end
-  # end
+  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index(conn, params) do
+    with %{
+           entries: field_types,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.field_type_index(params) do
+      conn
+      |> render("index.json",
+        field_types: field_types,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
 
   # @doc """
   # Show instance.

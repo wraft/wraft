@@ -839,4 +839,13 @@ defmodule WraftDoc.Document do
     |> FieldType.changeset(params)
     |> Repo.insert()
   end
+
+  @doc """
+  Index of all field types.
+  """
+  @spec field_type_index(map) :: map
+  def field_type_index(params) do
+    from(ft in FieldType, order_by: [desc: ft.id])
+    |> Repo.paginate(params)
+  end
 end
