@@ -685,8 +685,8 @@ defmodule WraftDoc.Document do
         slug: slug,
         assets: assets
       }) do
-    System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}/"])
-
+    File.mkdir_p("uploads_1/contents/#{u_id}")
+    System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads_1/contents/#{u_id}"])
     task = Task.async(fn -> generate_qr(instance) end)
     Task.start(fn -> move_old_builds(u_id) end)
 
