@@ -198,8 +198,10 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %Asset{} = asset <- Document.get_asset(uuid),
-         {:ok, asset} <- Document.update_asset(asset, params) do
+         {:ok, asset} <- Document.update_asset(asset, current_user, params) do
       conn
       |> render("asset.json", asset: asset)
     end

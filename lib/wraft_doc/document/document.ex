@@ -227,7 +227,7 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!"
     )
-    |> Repo.delete()
+    |> Spur.delete()
   end
 
   @doc """
@@ -640,7 +640,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:assets)
     |> Asset.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, asset} ->
         asset |> asset_file_upload(params)
@@ -692,9 +692,9 @@ defmodule WraftDoc.Document do
   @doc """
   Update an asset.
   """
-  @spec update_asset(Asset.t(), map) :: {:ok, Asset.t()}
-  def update_asset(asset, params) do
-    asset |> Asset.update_changeset(params) |> Repo.update()
+  @spec update_asset(Asset.t(), User.t(), map) :: {:ok, Asset.t()}
+  def update_asset(asset, %User{id: id}, params) do
+    asset |> Asset.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
   end
 
   @doc """
@@ -702,7 +702,7 @@ defmodule WraftDoc.Document do
   """
   @spec delete_asset(Asset.t()) :: {:ok, Asset.t()}
   def delete_asset(asset) do
-    asset |> Repo.delete()
+    asset |> Spur.delete()
   end
 
   @doc """
