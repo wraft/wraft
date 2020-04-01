@@ -36,7 +36,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:layouts, engine: engine)
     |> Layout.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, layout} ->
         layout = layout |> layout_files_upload(params)
@@ -201,10 +201,10 @@ defmodule WraftDoc.Document do
     update_layout(layout, current_user, params)
   end
 
-  def update_layout(layout, current_user, params) do
+  def update_layout(layout, %{id: user_id} = current_user, params) do
     layout
     |> Layout.update_changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{user_id}"})
     |> case do
       {:error, _} = changeset ->
         changeset

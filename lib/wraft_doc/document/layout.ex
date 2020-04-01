@@ -5,7 +5,19 @@ defmodule WraftDoc.Document.Layout do
   use Ecto.Schema
   use Arc.Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias __MODULE__
+  alias WraftDoc.Account.User
+
+  defimpl Spur.Trackable, for: Layout do
+    def actor(layout), do: "#{layout.creator_id}"
+    def object(layout), do: "Layout:#{layout.id}"
+    def target(_chore), do: nil
+
+    def audience(%{organisation_id: id}) do
+      from(u in User, where: u.organisation_id == ^id)
+    end
+  end
 
   schema "layout" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
