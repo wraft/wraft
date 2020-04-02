@@ -11,11 +11,11 @@ defmodule WraftDoc.Document.DataTemplate do
     def object(data_template), do: "DataTemplate:#{data_template.id}"
     def target(_chore), do: nil
 
-    def audience(%{creator_id: id}) do
+    def audience(%{content_type_id: id}) do
       from(u in User,
-        join: a in User,
-        where: a.id == ^id,
-        where: u.organisation_id == a.organisation_id
+        join: ct in ContentType,
+        where: ct.id == ^id,
+        where: u.organisation_id == ct.organisation_id
       )
     end
   end
