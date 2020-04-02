@@ -263,7 +263,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update a content type.
   """
-  @spec update_content_type(ContentType.t(), map) ::
+  @spec update_content_type(ContentType.t(), User.t(), map) ::
           %ContentType{
             layout: Layout.t(),
             creator: User.t()
@@ -271,6 +271,7 @@ defmodule WraftDoc.Document do
           | {:error, Ecto.Changeset.t()}
   def update_content_type(
         content_type,
+        user,
         %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
       ) do
     %Layout{id: id} = get_layout(layout_uuid)
@@ -278,13 +279,13 @@ defmodule WraftDoc.Document do
     {_, params} = Map.pop(params, "layout_uuid")
     {_, params} = Map.pop(params, "flow_uuid")
     params = params |> Map.merge(%{"layout_id" => id, "flow_id" => f_id})
-    update_content_type(content_type, params)
+    update_content_type(content_type, user, params)
   end
 
-  def update_content_type(content_type, params) do
+  def update_content_type(content_type, %User{id: id}, params) do
     content_type
     |> ContentType.update_changeset(params)
-    |> Spur.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:error, _} = changeset ->
         changeset
