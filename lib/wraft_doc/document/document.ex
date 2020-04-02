@@ -19,6 +19,7 @@ defmodule WraftDoc.Document do
     Document.LayoutAsset,
     Document.FieldType,
     Document.ContentTypeField,
+    Document.Counter,
     Enterprise,
     Enterprise.Flow,
     Enterprise.Flow.State
@@ -330,6 +331,7 @@ defmodule WraftDoc.Document do
     |> Spur.insert()
     |> case do
       {:ok, content} ->
+        Task.start(fn -> create_or_update_counter(c_type) end)
         content |> Repo.preload([:content_type, :state])
 
       changeset = {:error, _} ->
@@ -341,13 +343,48 @@ defmodule WraftDoc.Document do
   @spec create_instance_id(integer, binary) :: binary
   defp create_instance_id(c_id, prefix) do
     instance_count =
-      from(i in Instance, where: i.content_type_id == ^c_id, select: count(i.id))
-      |> Repo.one()
+      c_id
+      |> get_counter_count_from_content_type_id
       |> add(1)
       |> to_string
       |> String.pad_leading(4, "0")
 
     concat_strings(prefix, instance_count)
+  end
+
+  # Create count of instances created for a content type from its ID
+  @spec get_counter_count_from_content_type_id(integer) :: integer
+  defp get_counter_count_from_content_type_id(c_type_id) do
+    c_type_id
+    |> get_counter_from_content_type_id
+    |> case do
+      nil ->
+        0
+
+      %Counter{count: count} ->
+        count
+    end
+  end
+
+  defp get_counter_from_content_type_id(c_type_id) do
+    from(c in Counter, where: c.subject == ^"ContentType:#{c_type_id}")
+    |> Repo.one()
+  end
+
+  # Create or update the counter of a content type.integer()
+  @spec create_or_update_counter(ContentType.t()) :: {:ok, Counter} | {:error, Ecto.Changeset.t()}
+  def create_or_update_counter(%ContentType{id: id}) do
+    id
+    |> get_counter_from_content_type_id
+    |> case do
+      nil ->
+        Counter.changeset(%Counter{}, %{subject: "ContentType:#{id}", count: 1})
+
+      %Counter{count: count} = counter ->
+        count = count |> add(1)
+        counter |> Counter.changeset(%{count: count})
+    end
+    |> Repo.insert_or_update()
   end
 
   # Add two integers
