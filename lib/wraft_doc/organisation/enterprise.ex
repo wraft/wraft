@@ -110,7 +110,7 @@ defmodule WraftDoc.Enterprise do
   @spec create_state(User.t(), Flow.t(), map) :: {:ok, State.t()} | {:error, Ecto.Changeset.t()}
   def create_state(%User{organisation_id: org_id} = current_user, flow, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
-    current_user |> build_assoc(:states, flow: flow) |> State.changeset(params) |> Repo.insert()
+    current_user |> build_assoc(:states, flow: flow) |> State.changeset(params) |> Spur.insert()
   end
 
   @doc """
@@ -130,12 +130,12 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Update a state.
   """
-  @spec update_state(State.t(), map) ::
+  @spec update_state(State.t(), User.t(), map) ::
           %State{creator: User.t(), flow: Flow.t()} | {:error, Ecto.Changeset.t()}
-  def update_state(state, params) do
+  def update_state(state, %User{id: id}, params) do
     state
     |> State.changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, state} ->
         state |> Repo.preload([:creator, :flow])
@@ -167,8 +167,8 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Delete a state.
   """
-  @spec delete_state(State.t()) :: {:ok, State.t()} | {:error, Ecto.Changeset.t()}
-  def delete_state(state) do
+  @spec delete_state(State.t(), User.t()) :: {:ok, State.t()} | {:error, Ecto.Changeset.t()}
+  def delete_state(state, %User{id: id}) do
     state
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -176,7 +176,7 @@ defmodule WraftDoc.Enterprise do
       message:
         "Cannot delete the state. Some contents depend on this state. Update those states and then try again.!"
     )
-    |> Repo.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
