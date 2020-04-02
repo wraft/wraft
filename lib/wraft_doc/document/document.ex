@@ -36,7 +36,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:layouts, engine: engine)
     |> Layout.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, layout} ->
         layout = layout |> layout_files_upload(params)
@@ -111,7 +111,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:content_types, layout: layout, flow: flow)
     |> ContentType.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
         content_type |> fetch_and_associate_fields(params)
@@ -201,10 +201,10 @@ defmodule WraftDoc.Document do
     update_layout(layout, current_user, params)
   end
 
-  def update_layout(layout, current_user, params) do
+  def update_layout(layout, %{id: user_id} = current_user, params) do
     layout
     |> Layout.update_changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{user_id}"})
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -218,8 +218,8 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a layout.
   """
-  @spec delete_layout(Layout.t()) :: {:ok, Layout.t()} | {:error, Ecto.Changeset.t()}
-  def delete_layout(layout) do
+  @spec delete_layout(Layout.t(), User.t()) :: {:ok, Layout.t()} | {:error, Ecto.Changeset.t()}
+  def delete_layout(layout, %User{id: id}) do
     layout
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -227,7 +227,7 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!"
     )
-    |> Repo.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -263,7 +263,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update a content type.
   """
-  @spec update_content_type(ContentType.t(), map) ::
+  @spec update_content_type(ContentType.t(), User.t(), map) ::
           %ContentType{
             layout: Layout.t(),
             creator: User.t()
@@ -271,6 +271,7 @@ defmodule WraftDoc.Document do
           | {:error, Ecto.Changeset.t()}
   def update_content_type(
         content_type,
+        user,
         %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
       ) do
     %Layout{id: id} = get_layout(layout_uuid)
@@ -278,13 +279,13 @@ defmodule WraftDoc.Document do
     {_, params} = Map.pop(params, "layout_uuid")
     {_, params} = Map.pop(params, "flow_uuid")
     params = params |> Map.merge(%{"layout_id" => id, "flow_id" => f_id})
-    update_content_type(content_type, params)
+    update_content_type(content_type, user, params)
   end
 
-  def update_content_type(content_type, params) do
+  def update_content_type(content_type, %User{id: id}, params) do
     content_type
     |> ContentType.update_changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -300,9 +301,9 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a content type.
   """
-  @spec delete_content_type(ContentType.t()) ::
+  @spec delete_content_type(ContentType.t(), User.t()) ::
           {:ok, ContentType.t()} | {:error, Ecto.Changeset.t()}
-  def delete_content_type(content_type) do
+  def delete_content_type(content_type, %User{id: id}) do
     content_type
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -310,7 +311,7 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
     )
-    |> Repo.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -326,7 +327,7 @@ defmodule WraftDoc.Document do
     c_type
     |> build_assoc(:instances, state: state, creator: current_user)
     |> Instance.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, content} ->
         content |> Repo.preload([:content_type, :state])
@@ -430,21 +431,21 @@ defmodule WraftDoc.Document do
   @doc """
   Update an instance.
   """
-  @spec update_instance(Instance.t(), map) ::
+  @spec update_instance(Instance.t(), User.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
           | {:error, Ecto.Changeset.t()}
 
-  def update_instance(instance, %{"state_uuid" => state_uuid} = params) do
+  def update_instance(instance, user, %{"state_uuid" => state_uuid} = params) do
     %State{id: id} = Enterprise.get_state(state_uuid)
     {_, params} = Map.pop(params, "state_uuid")
     params = params |> Map.merge(%{"state_id" => id})
-    update_instance(instance, params)
+    update_instance(instance, user, params)
   end
 
-  def update_instance(instance, params) do
+  def update_instance(instance, %User{id: id}, params) do
     instance
     |> Instance.update_changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, instance} ->
         instance
@@ -459,11 +460,11 @@ defmodule WraftDoc.Document do
   @doc """
   Delete an instance.
   """
-  @spec delete_instance(Instance.t()) ::
+  @spec delete_instance(Instance.t(), User.t()) ::
           {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def delete_instance(instance) do
+  def delete_instance(instance, %User{id: id}) do
     instance
-    |> Repo.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -484,7 +485,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:themes)
     |> Theme.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, theme} ->
         theme |> theme_file_upload(params)
@@ -534,18 +535,18 @@ defmodule WraftDoc.Document do
   @doc """
   Update a theme.
   """
-  @spec update_theme(Theme.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
-  def update_theme(theme, params) do
-    theme |> Theme.update_changeset(params) |> Repo.update()
+  @spec update_theme(Theme.t(), User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
+  def update_theme(theme, %User{id: id}, params) do
+    theme |> Theme.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
   end
 
   @doc """
   Delete a theme.
   """
-  @spec delete_theme(Theme.t()) :: {:ok, Theme.t()}
-  def delete_theme(theme) do
+  @spec delete_theme(Theme.t(), User.t()) :: {:ok, Theme.t()}
+  def delete_theme(theme, %User{id: id}) do
     theme
-    |> Repo.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -557,7 +558,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:data_templates, content_type: c_type)
     |> DataTemplate.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
   end
 
   @doc """
@@ -606,13 +607,13 @@ defmodule WraftDoc.Document do
   @doc """
   Update a data template
   """
-  @spec update_data_template(DataTemplate.t(), map) ::
+  @spec update_data_template(DataTemplate.t(), User.t(), map) ::
           %DataTemplate{creator: User.t(), content_type: ContentType.t()}
           | {:error, Ecto.Changeset.t()}
-  def update_data_template(d_temp, params) do
+  def update_data_template(d_temp, %User{id: id}, params) do
     d_temp
     |> DataTemplate.changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, d_temp} ->
         d_temp |> Repo.preload([:creator, :content_type])
@@ -625,9 +626,9 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a data template
   """
-  @spec delete_data_template(DataTemplate.t()) :: {:ok, DataTemplate.t()}
-  def delete_data_template(d_temp) do
-    d_temp |> Repo.delete()
+  @spec delete_data_template(DataTemplate.t(), User.t()) :: {:ok, DataTemplate.t()}
+  def delete_data_template(d_temp, %User{id: id}) do
+    d_temp |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -640,7 +641,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:assets)
     |> Asset.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, asset} ->
         asset |> asset_file_upload(params)
@@ -692,17 +693,17 @@ defmodule WraftDoc.Document do
   @doc """
   Update an asset.
   """
-  @spec update_asset(Asset.t(), map) :: {:ok, Asset.t()}
-  def update_asset(asset, params) do
-    asset |> Asset.update_changeset(params) |> Repo.update()
+  @spec update_asset(Asset.t(), User.t(), map) :: {:ok, Asset.t()}
+  def update_asset(asset, %User{id: id}, params) do
+    asset |> Asset.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
   end
 
   @doc """
   Delete an asset.
   """
-  @spec delete_asset(Asset.t()) :: {:ok, Asset.t()}
-  def delete_asset(asset) do
-    asset |> Repo.delete()
+  @spec delete_asset(Asset.t(), User.t()) :: {:ok, Asset.t()}
+  def delete_asset(asset, %User{id: id}) do
+    asset |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """

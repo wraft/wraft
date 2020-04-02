@@ -268,8 +268,10 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %DataTemplate{} = d_temp <- Document.get_d_template(uuid),
-         %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, params) do
+         %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, current_user, params) do
       conn
       |> render("show.json", d_template: d_temp)
     end
@@ -295,8 +297,10 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
     with %DataTemplate{} = d_temp <- Document.get_d_template(uuid),
-         {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp) do
+         {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp, current_user) do
       conn
       |> render("create.json", d_template: d_temp)
     end

@@ -74,7 +74,9 @@ defmodule WraftDoc.Mixfile do
       # Background jobs
       {:oban, "~> 1.2"},
       # Email client
-      {:bamboo, "~> 1.4"}
+      {:bamboo, "~> 1.4"},
+      # Activity stream
+      {:spur, git: "https://github.com/shijithkjayan/spur.git"}
     ]
   end
 
