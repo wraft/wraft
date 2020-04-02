@@ -360,8 +360,10 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %Instance{} = instance <- Document.get_instance(uuid),
-         %Instance{} = instance <- Document.update_instance(instance, params) do
+         %Instance{} = instance <- Document.update_instance(instance, current_user, params) do
       conn
       |> render("show.json", instance: instance)
     end
@@ -387,8 +389,10 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
     with %Instance{} = instance <- Document.get_instance(uuid),
-         {:ok, %Instance{}} <- Document.delete_instance(instance) do
+         {:ok, %Instance{}} <- Document.delete_instance(instance, current_user) do
       conn
       |> render("instance.json", instance: instance)
     end

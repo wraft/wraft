@@ -4,7 +4,23 @@ defmodule WraftDoc.Document.Instance do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias WraftDoc.Document.Instance
+  alias __MODULE__
+  alias WraftDoc.{Account.User, Document.ContentType}
+  import Ecto.Query
+
+  defimpl Spur.Trackable, for: Instance do
+    def actor(instance), do: "#{instance.creator_id}"
+    def object(instance), do: "Instance:#{instance.id}"
+    def target(_chore), do: nil
+
+    def audience(%{content_type_id: id}) do
+      from(u in User,
+        join: ct in ContentType,
+        where: ct.id == ^id,
+        where: u.organisation_id == ct.organisation_id
+      )
+    end
+  end
 
   schema "content" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)

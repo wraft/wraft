@@ -276,8 +276,10 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %Flow{} = flow <- Enterprise.get_flow(uuid),
-         %Flow{} = flow <- Enterprise.update_flow(flow, params) do
+         %Flow{} = flow <- Enterprise.update_flow(flow, current_user, params) do
       conn
       |> render("update.json", flow: flow)
     end
@@ -303,8 +305,10 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
     with %Flow{} = flow <- Enterprise.get_flow(uuid),
-         {:ok, %Flow{}} <- Enterprise.delete_flow(flow) do
+         {:ok, %Flow{}} <- Enterprise.delete_flow(flow, current_user) do
       conn
       |> render("flow.json", flow: flow)
     end

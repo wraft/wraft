@@ -531,8 +531,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns[:current_user]
+    IO.inspect(current_user)
+
     with %ContentType{} = content_type <- Document.get_content_type(uuid),
-         %ContentType{} = content_type <- Document.update_content_type(content_type, params) do
+         %ContentType{} = content_type <-
+           Document.update_content_type(content_type, current_user, params) do
       conn
       |> render("show.json", content_type: content_type)
     end
@@ -558,8 +562,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
     with %ContentType{} = content_type <- Document.get_content_type(uuid),
-         {:ok, %ContentType{}} <- Document.delete_content_type(content_type) do
+         {:ok, %ContentType{}} <- Document.delete_content_type(content_type, current_user) do
       conn
       |> render("content_type.json", content_type: content_type)
     end
