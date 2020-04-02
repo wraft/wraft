@@ -111,7 +111,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:content_types, layout: layout, flow: flow)
     |> ContentType.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
         content_type |> fetch_and_associate_fields(params)
@@ -284,7 +284,7 @@ defmodule WraftDoc.Document do
   def update_content_type(content_type, params) do
     content_type
     |> ContentType.update_changeset(params)
-    |> Repo.update()
+    |> Spur.update()
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -310,7 +310,7 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
     )
-    |> Repo.delete()
+    |> Spur.delete()
   end
 
   @doc """
