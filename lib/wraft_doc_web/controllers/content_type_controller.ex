@@ -562,8 +562,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
     with %ContentType{} = content_type <- Document.get_content_type(uuid),
-         {:ok, %ContentType{}} <- Document.delete_content_type(content_type) do
+         {:ok, %ContentType{}} <- Document.delete_content_type(content_type, current_user) do
       conn
       |> render("content_type.json", content_type: content_type)
     end
