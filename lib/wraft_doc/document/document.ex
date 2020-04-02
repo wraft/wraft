@@ -327,7 +327,7 @@ defmodule WraftDoc.Document do
     c_type
     |> build_assoc(:instances, state: state, creator: current_user)
     |> Instance.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, content} ->
         content |> Repo.preload([:content_type, :state])
@@ -431,21 +431,21 @@ defmodule WraftDoc.Document do
   @doc """
   Update an instance.
   """
-  @spec update_instance(Instance.t(), map) ::
+  @spec update_instance(Instance.t(), User.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
           | {:error, Ecto.Changeset.t()}
 
-  def update_instance(instance, %{"state_uuid" => state_uuid} = params) do
+  def update_instance(instance, user, %{"state_uuid" => state_uuid} = params) do
     %State{id: id} = Enterprise.get_state(state_uuid)
     {_, params} = Map.pop(params, "state_uuid")
     params = params |> Map.merge(%{"state_id" => id})
-    update_instance(instance, params)
+    update_instance(instance, user, params)
   end
 
-  def update_instance(instance, params) do
+  def update_instance(instance, %User{id: id}, params) do
     instance
     |> Instance.update_changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, instance} ->
         instance
@@ -460,11 +460,11 @@ defmodule WraftDoc.Document do
   @doc """
   Delete an instance.
   """
-  @spec delete_instance(Instance.t()) ::
+  @spec delete_instance(Instance.t(), User.t()) ::
           {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def delete_instance(instance) do
+  def delete_instance(instance, %User{id: id}) do
     instance
-    |> Repo.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
