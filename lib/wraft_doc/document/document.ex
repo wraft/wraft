@@ -485,7 +485,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:themes)
     |> Theme.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, theme} ->
         theme |> theme_file_upload(params)
@@ -535,18 +535,18 @@ defmodule WraftDoc.Document do
   @doc """
   Update a theme.
   """
-  @spec update_theme(Theme.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
-  def update_theme(theme, params) do
-    theme |> Theme.update_changeset(params) |> Repo.update()
+  @spec update_theme(Theme.t(), User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
+  def update_theme(theme, %User{id: id}, params) do
+    theme |> Theme.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
   end
 
   @doc """
   Delete a theme.
   """
-  @spec delete_theme(Theme.t()) :: {:ok, Theme.t()}
-  def delete_theme(theme) do
+  @spec delete_theme(Theme.t(), User.t()) :: {:ok, Theme.t()}
+  def delete_theme(theme, %User{id: id}) do
     theme
-    |> Repo.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
