@@ -3,6 +3,22 @@ defmodule WraftDoc.Document.DataTemplate do
   use Ecto.Schema
   import Ecto.Changeset
   alias __MODULE__
+  alias WraftDoc.Account.User
+  import Ecto.Query
+
+  defimpl Spur.Trackable, for: DataTemplate do
+    def actor(data_template), do: "#{data_template.creator_id}"
+    def object(data_template), do: "DataTemplate:#{data_template.id}"
+    def target(_chore), do: nil
+
+    def audience(%{creator_id: id}) do
+      from(u in User,
+        join: a in User,
+        where: a.id == ^id,
+        where: u.organisation_id == a.organisation_id
+      )
+    end
+  end
 
   schema "data_template" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)

@@ -558,7 +558,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:data_templates, content_type: c_type)
     |> DataTemplate.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
   end
 
   @doc """
@@ -607,13 +607,13 @@ defmodule WraftDoc.Document do
   @doc """
   Update a data template
   """
-  @spec update_data_template(DataTemplate.t(), map) ::
+  @spec update_data_template(DataTemplate.t(), User.t(), map) ::
           %DataTemplate{creator: User.t(), content_type: ContentType.t()}
           | {:error, Ecto.Changeset.t()}
-  def update_data_template(d_temp, params) do
+  def update_data_template(d_temp, %User{id: id}, params) do
     d_temp
     |> DataTemplate.changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, d_temp} ->
         d_temp |> Repo.preload([:creator, :content_type])
@@ -626,9 +626,9 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a data template
   """
-  @spec delete_data_template(DataTemplate.t()) :: {:ok, DataTemplate.t()}
-  def delete_data_template(d_temp) do
-    d_temp |> Repo.delete()
+  @spec delete_data_template(DataTemplate.t(), User.t()) :: {:ok, DataTemplate.t()}
+  def delete_data_template(d_temp, %User{id: id}) do
+    d_temp |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
