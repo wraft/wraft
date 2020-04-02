@@ -218,8 +218,8 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a layout.
   """
-  @spec delete_layout(Layout.t()) :: {:ok, Layout.t()} | {:error, Ecto.Changeset.t()}
-  def delete_layout(layout) do
+  @spec delete_layout(Layout.t(), User.t()) :: {:ok, Layout.t()} | {:error, Ecto.Changeset.t()}
+  def delete_layout(layout, %User{id: id}) do
     layout
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -227,7 +227,7 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!"
     )
-    |> Spur.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -301,9 +301,9 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a content type.
   """
-  @spec delete_content_type(ContentType.t()) ::
+  @spec delete_content_type(ContentType.t(), User.t()) ::
           {:ok, ContentType.t()} | {:error, Ecto.Changeset.t()}
-  def delete_content_type(content_type) do
+  def delete_content_type(content_type, %User{id: id}) do
     content_type
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -311,7 +311,7 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
     )
-    |> Spur.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -701,9 +701,9 @@ defmodule WraftDoc.Document do
   @doc """
   Delete an asset.
   """
-  @spec delete_asset(Asset.t()) :: {:ok, Asset.t()}
-  def delete_asset(asset) do
-    asset |> Spur.delete()
+  @spec delete_asset(Asset.t(), User.t()) :: {:ok, Asset.t()}
+  def delete_asset(asset, %User{id: id}) do
+    asset |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """

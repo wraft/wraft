@@ -227,8 +227,10 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
     with %Asset{} = asset <- Document.get_asset(uuid),
-         {:ok, %Asset{}} <- Document.delete_asset(asset) do
+         {:ok, %Asset{}} <- Document.delete_asset(asset, current_user) do
       conn
       |> render("asset.json", asset: asset)
     end
