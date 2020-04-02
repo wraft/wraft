@@ -8,7 +8,7 @@ defmodule WraftDoc.Repo.Migrations.CreateDataTemplateTable do
       add(:data, :text, null: false)
       add(:content_type_id, references(:content_type, on_delete: :nilify_all))
       add(:creator_id, references(:user, on_delete: :nilify_all))
-      timestamps
+      timestamps()
     end
   end
 
