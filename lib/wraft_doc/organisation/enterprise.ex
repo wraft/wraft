@@ -41,7 +41,7 @@ defmodule WraftDoc.Enterprise do
     current_user
     |> build_assoc(:flows)
     |> Flow.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, flow} ->
         flow |> Repo.preload(:creator)
@@ -75,11 +75,11 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Update a flow.
   """
-  @spec update_flow(Flow.t(), map) :: Flow.t() | {:error, Ecto.Changeset.t()}
-  def update_flow(flow, params) do
+  @spec update_flow(Flow.t(), User.t(), map) :: Flow.t() | {:error, Ecto.Changeset.t()}
+  def update_flow(flow, %User{id: id}, params) do
     flow
     |> Flow.changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, flow} ->
         flow |> Repo.preload(:creator)
@@ -92,8 +92,8 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Delete a flow.
   """
-  @spec delete_flow(Flow.t()) :: {:ok, Flow.t()} | {:error, Ecto.Changeset.t()}
-  def delete_flow(flow) do
+  @spec delete_flow(Flow.t(), User.t()) :: {:ok, Flow.t()} | {:error, Ecto.Changeset.t()}
+  def delete_flow(flow, %User{id: id}) do
     flow
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -101,7 +101,7 @@ defmodule WraftDoc.Enterprise do
       message:
         "Cannot delete the flow. Some States depend on this flow. Delete those states and then try again.!"
     )
-    |> Repo.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """

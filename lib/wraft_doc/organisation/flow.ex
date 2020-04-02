@@ -5,6 +5,18 @@ defmodule WraftDoc.Enterprise.Flow do
   use Ecto.Schema
   import Ecto.Changeset
   alias __MODULE__
+  alias WraftDoc.Account.User
+  import Ecto.Query
+
+  defimpl Spur.Trackable, for: Flow do
+    def actor(flow), do: "#{flow.creator_id}"
+    def object(flow), do: "Flow:#{flow.id}"
+    def target(_chore), do: nil
+
+    def audience(%{organisation_id: id}) do
+      from(u in User, where: u.organisation_id == ^id)
+    end
+  end
 
   schema "flow" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
