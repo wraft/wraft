@@ -3,7 +3,7 @@ defmodule WraftDoc.Document.DataTemplate do
   use Ecto.Schema
   import Ecto.Changeset
   alias __MODULE__
-  alias WraftDoc.Account.User
+  alias WraftDoc.{Account.User, Document.ContentType}
   import Ecto.Query
 
   defimpl Spur.Trackable, for: DataTemplate do
