@@ -759,15 +759,16 @@ defmodule WraftDoc.Document do
         slug: slug,
         assets: assets
       }) do
-    File.mkdir_p("uploads_1/contents/#{u_id}")
-    System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads_1/contents/#{u_id}"])
+    File.mkdir_p("uploads/contents/#{u_id}")
+    System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}"])
     task = Task.async(fn -> generate_qr(instance) end)
     Task.start(fn -> move_old_builds(u_id) end)
+    c_type = c_type |> Repo.preload([:fields])
 
     header =
       c_type.fields
-      |> Enum.reduce("--- \n", fn {k, _}, acc ->
-        find_header_values(k, instance.serialized, acc)
+      |> Enum.reduce("--- \n", fn x, acc ->
+        find_header_values(x, instance.serialized, acc)
       end)
 
     header = assets |> Enum.reduce(header, fn x, acc -> find_header_values(x, acc) end)
@@ -798,8 +799,8 @@ defmodule WraftDoc.Document do
   end
 
   # Find the header values for the content.md file from the serialized data of an instance.
-  @spec find_header_values(String.t(), map, String.t()) :: String.t()
-  defp find_header_values(key, serialized, acc) do
+  @spec find_header_values(ContentTypeField.t(), map, String.t()) :: String.t()
+  defp find_header_values(%ContentTypeField{name: key}, serialized, acc) do
     serialized
     |> Enum.find(fn {k, _} -> k == key end)
     |> case do
