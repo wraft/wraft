@@ -681,6 +681,7 @@ defmodule WraftDoc.Document do
   @doc """
   Build a PDF document.
   """
+
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %Layout{
         slug: slug,
@@ -824,26 +825,18 @@ defmodule WraftDoc.Document do
     end
   end
 
-  @doc """
-  Function to create chart from  https://quickchart.io/chart?c=[[insert chart config]].
-  """
-  require IEx
+  def create_chart(url, id) do
+    {:ok, response} = HTTPoison.get(url)
+    File.write!("#{File.cwd!()}/uploads/assets/chart/chart#{id}.pdf", response.body)
+  end
 
-  def create_chart() do
-    url = "https://quickchart.io/chart?c={
-      type: 'pie',
-      data: {
+  def generate_chart(body) do
+    %HTTPotion.Response{body: response_body} =
+      HTTPotion.post!("https://quickchart.io/chart/create",
+        body: Poison.encode!(body),
+        headers: [{"Accept", "application/json"}, {"Content-Type", "application/json"}]
+      )
 
-        datasets: [{
-          label: 'Raisins',
-          data: [12, 6, 5, 18, 12]
-        }, {
-          label: 'Bananas',
-          data: [4, 8, 16, 5, 5]
-        }]
-      }
-    }"
-    test = Scrape.domain(url)
-    IEx.pry()
+    Poison.decode!(response_body)
   end
 end

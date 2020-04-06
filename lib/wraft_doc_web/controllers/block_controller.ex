@@ -22,8 +22,19 @@ defmodule WraftDocWeb.Api.V1.BlockController do
           example(%{
             name: "Energy consumption",
             btype: "pie",
-            dataset:
-              "{type:'pie',data:{labels:['January','February', 'March','April', 'May'], datasets:[{data:[50,60,70,180,190]}]}}"
+            dataset: %{
+              "backgroundColor" => "transparent",
+              "width" => 500,
+              "height" => 300,
+              "format" => "pdf",
+              "chart" => %{
+                "type" => "pie",
+                "data" => %{
+                  "labels" => ["Kondoty", "Manjeri", "Malappuram", "Perinthalmanna", "Tirur"],
+                  "datasets" => [%{"data" => [50, 60, 70, 180, 190]}]
+                }
+              }
+            }
           })
         end,
       Block:
@@ -43,10 +54,16 @@ defmodule WraftDocWeb.Api.V1.BlockController do
             name: "Energy consumption",
             btype: "pie",
             dataset: %{
-              type: "pie",
-              data: %{
-                labels: ["January", "February", "March", "April", "May"],
-                datasets: [%{data: [50, 60, 70, 180, 190]}]
+              "backgroundColor" => "transparent",
+              "width" => 500,
+              "height" => 300,
+              "format" => "pdf",
+              "chart" => %{
+                "type" => "pie",
+                "data" => %{
+                  "labels" => ["Kondoty", "Manjeri", "Malappuram", "Perinthalmanna", "Tirur"],
+                  "datasets" => [%{"data" => [50, 60, 70, 180, 190]}]
+                }
               }
             },
             updated_at: "2020-01-21T14:00:00Z",
@@ -67,10 +84,10 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     tag("Block")
 
     parameters do
-      block(:block, Schema.ref(:BlockRequest), "Block to Create", required: true)
+      block(:body, Schema.ref(:BlockRequest), "Block to Create", required: true)
     end
 
-    response(201, "Created", Schema.ref(:Organisation))
+    response(201, "Created", Schema.ref(:Block))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
@@ -79,12 +96,16 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Block{} = block <- Document.create_block(current_user, params) do
-      chart = Document.create_chart(params["dataset"])
+    with %{"url" => pdf_url} <- Document.generate_chart(params["dataset"]) do
+      params = Map.put(params, "pdf_url", pdf_url)
 
-      conn
-      |> put_status(:created)
-      |> render("block.json", block: block)
+      with %Block{id: id} = block <- Document.create_block(current_user, params) do
+        Document.create_chart(params["pdf_url"], id)
+
+        conn
+        |> put_status(:created)
+        |> render("block.json", block: block)
+      end
     end
   end
 end
