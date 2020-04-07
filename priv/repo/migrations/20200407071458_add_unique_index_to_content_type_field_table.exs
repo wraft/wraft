@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.AddUniqueIndexToContentTypeFieldTable do
 
   def change do
     create(
-      unique_index(:content_type_field, [:content_type_id, :field_type_id],
+      unique_index(:content_type_field, [:name, :content_type_id, :field_type_id],
         name: :content_type_field_unique_index
       )
     )
