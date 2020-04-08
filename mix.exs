@@ -53,9 +53,6 @@ defmodule WraftDoc.Mixfile do
       # File upload to AWS
       {:arc, "~> 0.11.0"},
       {:arc_ecto, "~> 0.11.3"},
-      # If using Amazon S3:
-      {:ex_aws, "~> 2.1"},
-      {:ex_aws_s3, "~> 2.0"},
       # Time and date formating
       {:timex, "~>  3.6.1"},
       # JSON parser
