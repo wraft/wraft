@@ -94,7 +94,7 @@ defmodule WraftDocWeb.Router do
       resources("/blocks", BlockController, only: [:create])
 
       # Generate chart
-      post("/blocks/chart", BlockController, :create_chart)
+      post("/blocks/chart", BlockController, :create_go_chart)
 
       # Invite new user
       post("/organisations/:id/invite", OrganisationController, :invite)
