@@ -961,6 +961,9 @@ defmodule WraftDoc.Document do
   end
 
   def generate_quick_chart_data(%{"label" => label, "value" => value}) do
+  end
+
+  @doc """
 
   Create a field type
   """
@@ -1008,6 +1011,5 @@ defmodule WraftDoc.Document do
         "Cannot delete the field type. Some Content types depend on this field type. Update those content types and then try again.!"
     )
     |> Repo.delete()
-
   end
 end
