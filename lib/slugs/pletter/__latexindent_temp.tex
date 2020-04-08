@@ -276,9 +276,7 @@ $endif$
 
 \setmainfont[
     Path=$path$/fonts/,
-    BoldFont = Mallory-Bold.otf,
-    ItalicFont = BasierCircle-RegularItalic.otf,
-    BoldItalicFont = BasierCircle-BoldItalic.otf
+    BoldFont = Mallory-Bold.otf
     ]{Mallory-Book.otf}
 
 
@@ -286,7 +284,9 @@ $endif$
 \opening{$opening$}
 
 $body$
-\includegraphics[scale=0.25]{$qrcode$}
+$if(qrcode)$
+  \includegraphics[scale=0.25]{$qrcode$}
+$endif$
 $if(closing)$
 $if(closing-indentation)$
 \longindentation=$closing-indentation$
