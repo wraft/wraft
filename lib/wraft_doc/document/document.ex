@@ -773,11 +773,14 @@ defmodule WraftDoc.Document do
 
     header = assets |> Enum.reduce(header, fn x, acc -> find_header_values(x, acc) end)
     qr_code = Task.await(task)
+    page_title = instance.serialized["title"]
 
     header =
       header
       |> concat_strings("qrcode: #{qr_code} \n")
       |> concat_strings("path: uploads/contents/#{u_id}\n")
+      |> concat_strings("title: #{page_title}\n")
+      |> concat_strings("id: #{u_id}\n")
       |> concat_strings("--- \n")
 
     content = """
@@ -950,5 +953,65 @@ defmodule WraftDoc.Document do
         "Cannot delete the field type. Some Content types depend on this field type. Update those content types and then try again.!"
     )
     |> Repo.delete()
+  end
+
+  def bulk_doc_build(
+        current_user,
+        %ContentType{id: id} = c_type,
+        state,
+        %DataTemplate{data: data},
+        %{path: path}
+      ) do
+    fields =
+      from(ctf in ContentTypeField, where: ctf.content_type_id == ^id, select: ctf.name)
+      |> Repo.all()
+
+    c_type = c_type |> Repo.preload([{:layout, :assets}])
+
+    File.stream!(path)
+    |> Stream.drop(1)
+    |> CSV.decode!(headers: fields)
+    |> Enum.to_list()
+    |> Enum.map(fn x ->
+      create_instance_for_bulk_build(x, data, current_user, c_type, state)
+    end)
+    |> Stream.map(fn x -> bulk_build(current_user, x, c_type.layout) end)
+    |> Enum.to_list()
+  end
+
+  def create_instance_for_bulk_build(serialized, template, current_user, c_type, state) do
+    raw =
+      serialized
+      |> Enum.reduce(template, fn {k, v}, acc ->
+        WraftDoc.DocConversion.replace_content(k, v, acc)
+      end)
+
+    params = %{"raw" => raw, "serialized" => serialized}
+    create_instance_for_bulk_build(current_user, c_type, state, params)
+  end
+
+  defp create_instance_for_bulk_build(current_user, c_type, state, params) do
+    create_instance(current_user, c_type, state, params)
+    |> case do
+      %Instance{} = instance ->
+        instance
+
+      _ ->
+        create_instance_for_bulk_build(current_user, c_type, state, params)
+    end
+  end
+
+  defp bulk_build(current_user, instance, layout) do
+    start_time = Timex.now()
+    {_, exit_code} = build_doc(instance, layout)
+    end_time = Timex.now()
+
+    Task.start_link(fn ->
+      add_build_history(current_user, instance, %{
+        start_time: start_time,
+        end_time: end_time,
+        exit_code: exit_code
+      })
+    end)
   end
 end

@@ -532,7 +532,6 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns[:current_user]
-    IO.inspect(current_user)
 
     with %ContentType{} = content_type <- Document.get_content_type(uuid),
          %ContentType{} = content_type <-
@@ -569,5 +568,21 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
       conn
       |> render("content_type.json", content_type: content_type)
     end
+  end
+
+  def bulk_build(
+        conn,
+        %{
+          "c_type_id" => c_type_uuid,
+          "state_id" => state_uuid,
+          "d_temp_uuid" => d_temp_uuid,
+          "file" => file
+        }
+      ) do
+    current_user = conn.assigns[:current_user]
+    c_type = Document.get_content_type(c_type_uuid)
+    state = Enterprise.get_state(state_uuid)
+    data_template = Document.get_d_template(d_temp_uuid)
+    Document.bulk_doc_build(current_user, c_type, state, data_template, file)
   end
 end

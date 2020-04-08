@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.14159265-2.6-0.999991 (TeX Live 2019) (preloaded format=xelatex 2019.12.20)  8 APR 2020 16:16
+This is XeTeX, Version 3.14159265-2.6-0.999991 (TeX Live 2019) (preloaded format=xelatex 2019.12.20)  8 APR 2020 14:30
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -43,11 +43,11 @@ File: babel.def 2019/05/04 3.31 Babel common definitions
  (/usr/local/texlive/2019/texmf-dist/tex/generic/babel/xebabel.def (/usr/local/texlive/2019/texmf-dist/tex/generic/babel/txtbabel.def))
 \bbl@dirlevel=\count89
 )
-\l@canadian = a dialect from \language\l@american 
-\l@australian = a dialect from \language\l@british 
-\l@newzealand = a dialect from \language\l@british 
+\l@canadian = a dialect from \language\l@american
+\l@australian = a dialect from \language\l@british
+\l@newzealand = a dialect from \language\l@british
 )) (/usr/local/texlive/2019/texmf-dist/tex/latex/fontspec/fontspec.sty (/usr/local/texlive/2019/texmf-dist/tex/latex/l3packages/xparse/xparse.sty (/usr/local/texlive/2019/texmf-dist/tex/latex/l3kernel/expl3.sty
-Package: expl3 2019-05-07 L3 programming layer (loader) 
+Package: expl3 2019-05-07 L3 programming layer (loader)
  (/usr/local/texlive/2019/texmf-dist/tex/latex/l3kernel/expl3-code.tex
 Package: expl3 2019-05-07 L3 programming layer (code)
 \c_max_int=\count90
@@ -551,6 +551,10 @@ File: pd1enc.def 2018/11/30 v6.88e Hyperref: PDFDocEncoding definition (HO)
  (/usr/local/texlive/2019/texmf-dist/tex/latex/latexconfig/hyperref.cfg
 File: hyperref.cfg 2002/06/06 v1.2 hyperref configuration of TeXLive
 )
+Package hyperref Info: Option `unicode' set `true' on input line 4393.
+ (/usr/local/texlive/2019/texmf-dist/tex/latex/hyperref/puenc.def
+File: puenc.def 2018/11/30 v6.88e Hyperref: PDF Unicode definition (HO)
+)
 Package hyperref Info: Option `setpagesize' set `false' on input line 4393.
 Package hyperref Info: Option `unicode' set `false' on input line 4393.
 Package hyperref Info: Option `colorlinks' set `true' on input line 4393.
@@ -587,9 +591,7 @@ LaTeX Info: Redefining \pageref on input line 6454.
 Package hyperref Info: Driver (autodetected): hxetex.
  (/usr/local/texlive/2019/texmf-dist/tex/latex/hyperref/hxetex.def
 File: hxetex.def 2018/11/30 v6.88e Hyperref driver for XeTeX
- (/usr/local/texlive/2019/texmf-dist/tex/latex/hyperref/puenc.def
-File: puenc.def 2018/11/30 v6.88e Hyperref: PDF Unicode definition (HO)
-) (/usr/local/texlive/2019/texmf-dist/tex/generic/oberdiek/stringenc.sty
+ (/usr/local/texlive/2019/texmf-dist/tex/generic/oberdiek/stringenc.sty
 Package: stringenc 2016/05/16 v1.11 Convert strings between diff. encodings (HO)
 )
 \pdfm@box=\box52
@@ -988,13 +990,33 @@ File: listings.cfg 2019/02/27 1.8b listings configuration
 Package: listings 2019/02/27 1.8b (Carsten Heinz)
 
 
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:54: Package fontspec Error: The font "BasierCircle-Regular" cannot be found.
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:53: LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...
+
+l.53 $
+      if(path)$
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+LaTeX Font Info:    Try loading font information for U+msa on input line 53.
+(/usr/local/texlive/2019/texmf-dist/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+LaTeX Font Info:    Try loading font information for U+msb on input line 53.
+ (/usr/local/texlive/2019/texmf-dist/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)
+
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:57: Package fontspec Error: The font "Mallory-Book" cannot be found.
 
 For immediate help type H <return>.
- ...                                              
-                                                  
-l.54 
-     
+ ...
+
+l.57 $
+      endif$
 
 A font might not be found for many reasons.
  Check the spelling, where the font is installed etc. etc.
@@ -1003,13 +1025,13 @@ A font might not be found for many reasons.
 
 
 
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:54: Package fontspec Error: The font "BasierCircle-Regular" cannot be found.
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:57: Package fontspec Error: The font "Mallory-Book" cannot be found.
 
 For immediate help type H <return>.
- ...                                              
-                                                  
-l.54 
-     
+ ...
+
+l.57 $
+      endif$
 
 A font might not be found for many reasons.
  Check the spelling, where the font is installed etc. etc.
@@ -1018,13 +1040,13 @@ A font might not be found for many reasons.
 
 
 
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:54: Package fontspec Error: The font "BasierCircle-Regular" cannot be found.
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:57: Package fontspec Error: The font "Mallory-Book" cannot be found.
 
 For immediate help type H <return>.
- ...                                              
-                                                  
-l.54 
-     
+ ...
+
+l.57 $
+      endif$
 
 A font might not be found for many reasons.
  Check the spelling, where the font is installed etc. etc.
@@ -1033,13 +1055,13 @@ A font might not be found for many reasons.
 
 
 
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:54: Package fontspec Error: The font "BasierCircle-Medium.otf" cannot be found.
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:57: Package fontspec Error: The font "Mallory-Bold.otf" cannot be found.
 
 For immediate help type H <return>.
- ...                                              
-                                                  
-l.54 
-     
+ ...
+
+l.57 $
+      endif$
 
 A font might not be found for many reasons.
  Check the spelling, where the font is installed etc. etc.
@@ -1048,13 +1070,13 @@ A font might not be found for many reasons.
 
 
 
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:54: Package fontspec Error: The font "BasierCircle-Medium" cannot be found.
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:57: Package fontspec Error: The font "Mallory-Bold" cannot be found.
 
 For immediate help type H <return>.
- ...                                              
-                                                  
-l.54 
-     
+ ...
+
+l.57 $
+      endif$
 
 A font might not be found for many reasons.
  Check the spelling, where the font is installed etc. etc.
@@ -1063,103 +1085,28 @@ A font might not be found for many reasons.
 
 
 
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:54: Package fontspec Error: The font "BasierCircle-RegularItalic.otf" cannot be
-(fontspec)                found.
-
-For immediate help type H <return>.
- ...                                              
-                                                  
-l.54 
-     
-
-A font might not be found for many reasons.
- Check the spelling, where the font is installed etc. etc.
-
- When in doubt, ask someone for help!
-
-
-
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:54: Package fontspec Error: The font "BasierCircle-RegularItalic" cannot be
-(fontspec)                found.
-
-For immediate help type H <return>.
- ...                                              
-                                                  
-l.54 
-     
-
-A font might not be found for many reasons.
- Check the spelling, where the font is installed etc. etc.
-
- When in doubt, ask someone for help!
-
-
-
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:54: Package fontspec Error: The font "BasierCircle-MediumItalic.otf" cannot be
-(fontspec)                found.
-
-For immediate help type H <return>.
- ...                                              
-                                                  
-l.54 
-     
-
-A font might not be found for many reasons.
- Check the spelling, where the font is installed etc. etc.
-
- When in doubt, ask someone for help!
-
-
-
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:54: Package fontspec Error: The font "BasierCircle-MediumItalic" cannot be
-(fontspec)                found.
-
-For immediate help type H <return>.
- ...                                              
-                                                  
-l.54 
-     
-
-A font might not be found for many reasons.
- Check the spelling, where the font is installed etc. etc.
-
- When in doubt, ask someone for help!
-
-
-
-Package fontspec Info: Font family 'BasierCircle-Regular.otf(0)' created for
-(fontspec)             font 'BasierCircle-Regular.otf' with options
-(fontspec)             [Ligatures=TeX,Path = $path$/fonts/,BoldFont =
-(fontspec)             BasierCircle-Medium.otf,ItalicFont =
-(fontspec)             BasierCircle-RegularItalic.otf,BoldItalicFont =
-(fontspec)             BasierCircle-MediumItalic.otf].
-(fontspec)              
+Package fontspec Info: Font family 'Mallory-Book.otf(0)' created for font
+(fontspec)             'Mallory-Book.otf' with options [Ligatures=TeX,Path =
+(fontspec)             $path$/fonts/,BoldFont = Mallory-Bold.otf].
+(fontspec)
 (fontspec)              This font family consists of the following NFSS
 (fontspec)             series/shapes:
-(fontspec)              
+(fontspec)
 (fontspec)             - 'normal' (m/n) with NFSS spec.:
-(fontspec)             <->"[$path$/fonts/BasierCircle-Regular.otf]/OT"
+(fontspec)             <->"[$path$/fonts/Mallory-Book.otf]/OT"
 (fontspec)             - 'small caps'  (m/sc) with NFSS spec.:
-(fontspec)             <->"[$path$/fonts/BasierCircle-Regular.otf]/OT"
+(fontspec)             <->"[$path$/fonts/Mallory-Book.otf]/OT"
 (fontspec)             - 'bold' (bx/n) with NFSS spec.:
-(fontspec)             <->"[$path$/fonts/BasierCircle-Medium.otf]/OT"
+(fontspec)             <->"[$path$/fonts/Mallory-Bold.otf]/OT"
 (fontspec)             - 'bold small caps'  (bx/sc) with NFSS spec.:
-(fontspec)             <->"[$path$/fonts/BasierCircle-Medium.otf]/OT"
-(fontspec)             - 'italic' (m/it) with NFSS spec.:
-(fontspec)             <->"[$path$/fonts/BasierCircle-RegularItalic.otf]/OT"
-(fontspec)             - 'italic small caps'  (m/itsc) with NFSS spec.:
-(fontspec)             <->"[$path$/fonts/BasierCircle-RegularItalic.otf]/OT"
-(fontspec)             - 'bold italic' (bx/it) with NFSS spec.:
-(fontspec)             <->"[$path$/fonts/BasierCircle-MediumItalic.otf]/OT"
-(fontspec)             - 'bold italic small caps'  (bx/itsc) with NFSS spec.:
-(fontspec)             <->"[$path$/fonts/BasierCircle-MediumItalic.otf]/OT"
+(fontspec)             <->"[$path$/fonts/Mallory-Bold.otf]/OT"
 
-LaTeX Info: Redefining \rmfamily on input line 54.
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:54: Font TU/BasierCircle-Regular.otf(0)/m/n/10.95=[$path$/fonts/BasierCircle-Regular.otf]/OT at 10.95pt not loadable: Metric (TFM) file or installed font not found.
-<to be read again> 
-                   relax 
-l.54 
-     
+LaTeX Info: Redefining \rmfamily on input line 57.
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:57: Font TU/Mallory-Book.otf(0)/m/n/10.95=[$path$/fonts/Mallory-Book.otf]/OT at 10.95pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again>
+                   relax
+l.57 $
+      endif$
 I wasn't able to read the size data for this font,
 so I will ignore the font specification.
 [Wizards can fix TFM files using TFtoPL/PLtoTF.]
@@ -1172,26 +1119,43 @@ File: gloss-english.ldf polyglossia: module for english
 Package polyglossia Info: Default language is english.
 
 
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:72: LaTeX Error: Missing \begin{document}.
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:73: LaTeX Error: Missing \begin{document}.
 
 See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
- ...                                              
-                                                  
-l.72 $
+ ...
+
+l.73 $
+      if(title)$
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:77: LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...
+
+l.77 $
+      if(id)$
+You're in trouble here.  Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:83: LaTeX Error: Missing \begin{document}.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...
+
+l.83 $
       highlighting-macros$
 You're in trouble here.  Try typing  <return>  to proceed.
 If that doesn't work, type  X <return>  to quit.
 
-LaTeX Font Info:    Try loading font information for U+msa on input line 72.
-(/usr/local/texlive/2019/texmf-dist/tex/latex/amsfonts/umsa.fd
-File: umsa.fd 2013/01/14 v3.01 AMS symbols A
-)
-LaTeX Font Info:    Try loading font information for U+msb on input line 72.
- (/usr/local/texlive/2019/texmf-dist/tex/latex/amsfonts/umsb.fd
-File: umsb.fd 2013/01/14 v3.01 AMS symbols B
-) (/usr/local/texlive/2019/texmf-dist/tex/latex/arydshln/arydshln.sty
-Package: arydshln 2019/02/21 v1.76 
+(/usr/local/texlive/2019/texmf-dist/tex/latex/arydshln/arydshln.sty
+Package: arydshln 2019/02/21 v1.76
 \dashlinedash=\dimen303
 \dashlinegap=\dimen304
 \adl@box=\box100
@@ -1263,104 +1227,104 @@ Package floatrow Info: Modified rotfloat package code loaded on input line 473.
 No file template.aux.
 \openout1 = `template.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 124.
-LaTeX Font Info:    ... okay on input line 124.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 124.
-LaTeX Font Info:    ... okay on input line 124.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 124.
-LaTeX Font Info:    ... okay on input line 124.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 124.
-LaTeX Font Info:    ... okay on input line 124.
-LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 124.
-LaTeX Font Info:    ... okay on input line 124.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 124.
-LaTeX Font Info:    ... okay on input line 124.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 124.
-LaTeX Font Info:    ... okay on input line 124.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 124.
-LaTeX Font Info:    Try loading font information for TS1+cmr on input line 124.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 135.
+LaTeX Font Info:    ... okay on input line 135.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 135.
+LaTeX Font Info:    ... okay on input line 135.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 135.
+LaTeX Font Info:    ... okay on input line 135.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 135.
+LaTeX Font Info:    ... okay on input line 135.
+LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 135.
+LaTeX Font Info:    ... okay on input line 135.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 135.
+LaTeX Font Info:    ... okay on input line 135.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 135.
+LaTeX Font Info:    ... okay on input line 135.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 135.
+LaTeX Font Info:    Try loading font information for TS1+cmr on input line 135.
 (/usr/local/texlive/2019/texmf-dist/tex/latex/base/ts1cmr.fd
 File: ts1cmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
-LaTeX Font Info:    ... okay on input line 124.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 124.
-LaTeX Font Info:    ... okay on input line 124.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 124.
-LaTeX Font Info:    ... okay on input line 124.
+LaTeX Font Info:    ... okay on input line 135.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 135.
+LaTeX Font Info:    ... okay on input line 135.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 135.
+LaTeX Font Info:    ... okay on input line 135.
 
 Package fontspec Info: Adjusting the maths setup (use [no-math] to avoid
 (fontspec)             this).
 
 \symlegacymaths=\mathgroup6
 LaTeX Font Info:    Overwriting symbol font `legacymaths' in version `bold'
-(Font)                  OT1/cmr/m/n --> OT1/cmr/bx/n on input line 124.
-LaTeX Font Info:    Redeclaring math accent \acute on input line 124.
-LaTeX Font Info:    Redeclaring math accent \grave on input line 124.
-LaTeX Font Info:    Redeclaring math accent \ddot on input line 124.
-LaTeX Font Info:    Redeclaring math accent \tilde on input line 124.
-LaTeX Font Info:    Redeclaring math accent \bar on input line 124.
-LaTeX Font Info:    Redeclaring math accent \breve on input line 124.
-LaTeX Font Info:    Redeclaring math accent \check on input line 124.
-LaTeX Font Info:    Redeclaring math accent \hat on input line 124.
-LaTeX Font Info:    Redeclaring math accent \dot on input line 124.
-LaTeX Font Info:    Redeclaring math accent \mathring on input line 124.
-LaTeX Font Info:    Redeclaring math symbol \Gamma on input line 124.
-LaTeX Font Info:    Redeclaring math symbol \Delta on input line 124.
-LaTeX Font Info:    Redeclaring math symbol \Theta on input line 124.
-LaTeX Font Info:    Redeclaring math symbol \Lambda on input line 124.
-LaTeX Font Info:    Redeclaring math symbol \Xi on input line 124.
-LaTeX Font Info:    Redeclaring math symbol \Pi on input line 124.
-LaTeX Font Info:    Redeclaring math symbol \Sigma on input line 124.
-LaTeX Font Info:    Redeclaring math symbol \Upsilon on input line 124.
-LaTeX Font Info:    Redeclaring math symbol \Phi on input line 124.
-LaTeX Font Info:    Redeclaring math symbol \Psi on input line 124.
-LaTeX Font Info:    Redeclaring math symbol \Omega on input line 124.
-LaTeX Font Info:    Redeclaring math symbol \mathdollar on input line 124.
-LaTeX Font Info:    Redeclaring symbol font `operators' on input line 124.
+(Font)                  OT1/cmr/m/n --> OT1/cmr/bx/n on input line 135.
+LaTeX Font Info:    Redeclaring math accent \acute on input line 135.
+LaTeX Font Info:    Redeclaring math accent \grave on input line 135.
+LaTeX Font Info:    Redeclaring math accent \ddot on input line 135.
+LaTeX Font Info:    Redeclaring math accent \tilde on input line 135.
+LaTeX Font Info:    Redeclaring math accent \bar on input line 135.
+LaTeX Font Info:    Redeclaring math accent \breve on input line 135.
+LaTeX Font Info:    Redeclaring math accent \check on input line 135.
+LaTeX Font Info:    Redeclaring math accent \hat on input line 135.
+LaTeX Font Info:    Redeclaring math accent \dot on input line 135.
+LaTeX Font Info:    Redeclaring math accent \mathring on input line 135.
+LaTeX Font Info:    Redeclaring math symbol \Gamma on input line 135.
+LaTeX Font Info:    Redeclaring math symbol \Delta on input line 135.
+LaTeX Font Info:    Redeclaring math symbol \Theta on input line 135.
+LaTeX Font Info:    Redeclaring math symbol \Lambda on input line 135.
+LaTeX Font Info:    Redeclaring math symbol \Xi on input line 135.
+LaTeX Font Info:    Redeclaring math symbol \Pi on input line 135.
+LaTeX Font Info:    Redeclaring math symbol \Sigma on input line 135.
+LaTeX Font Info:    Redeclaring math symbol \Upsilon on input line 135.
+LaTeX Font Info:    Redeclaring math symbol \Phi on input line 135.
+LaTeX Font Info:    Redeclaring math symbol \Psi on input line 135.
+LaTeX Font Info:    Redeclaring math symbol \Omega on input line 135.
+LaTeX Font Info:    Redeclaring math symbol \mathdollar on input line 135.
+LaTeX Font Info:    Redeclaring symbol font `operators' on input line 135.
 LaTeX Font Info:    Encoding `OT1' has changed to `TU' for symbol font
-(Font)              `operators' in the math version `normal' on input line 124.
+(Font)              `operators' in the math version `normal' on input line 135.
 LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
-(Font)                  OT1/cmr/m/n --> TU/BasierCircle-Regular.otf(0)/m/n on input line 124.
+(Font)                  OT1/cmr/m/n --> TU/Mallory-Book.otf(0)/m/n on input line 135.
 LaTeX Font Info:    Encoding `OT1' has changed to `TU' for symbol font
-(Font)              `operators' in the math version `bold' on input line 124.
+(Font)              `operators' in the math version `bold' on input line 135.
 LaTeX Font Info:    Overwriting symbol font `operators' in version `bold'
-(Font)                  OT1/cmr/bx/n --> TU/BasierCircle-Regular.otf(0)/m/n on input line 124.
+(Font)                  OT1/cmr/bx/n --> TU/Mallory-Book.otf(0)/m/n on input line 135.
 LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
-(Font)                  TU/BasierCircle-Regular.otf(0)/m/n --> TU/BasierCircle-Regular.otf(0)/m/n on input line 124.
+(Font)                  TU/Mallory-Book.otf(0)/m/n --> TU/Mallory-Book.otf(0)/m/n on input line 135.
 LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `normal'
-(Font)                  OT1/cmr/m/it --> TU/BasierCircle-Regular.otf(0)/m/it on input line 124.
+(Font)                  OT1/cmr/m/it --> TU/Mallory-Book.otf(0)/m/it on input line 135.
 LaTeX Font Info:    Overwriting math alphabet `\mathbf' in version `normal'
-(Font)                  OT1/cmr/bx/n --> TU/BasierCircle-Regular.otf(0)/bx/n on input line 124.
+(Font)                  OT1/cmr/bx/n --> TU/Mallory-Book.otf(0)/bx/n on input line 135.
 LaTeX Font Info:    Overwriting math alphabet `\mathsf' in version `normal'
-(Font)                  OT1/cmss/m/n --> TU/lmss/m/n on input line 124.
+(Font)                  OT1/cmss/m/n --> TU/lmss/m/n on input line 135.
 LaTeX Font Info:    Overwriting math alphabet `\mathtt' in version `normal'
-(Font)                  OT1/cmtt/m/n --> TU/lmtt/m/n on input line 124.
+(Font)                  OT1/cmtt/m/n --> TU/lmtt/m/n on input line 135.
 LaTeX Font Info:    Overwriting symbol font `operators' in version `bold'
-(Font)                  TU/BasierCircle-Regular.otf(0)/m/n --> TU/BasierCircle-Regular.otf(0)/bx/n on input line 124.
+(Font)                  TU/Mallory-Book.otf(0)/m/n --> TU/Mallory-Book.otf(0)/bx/n on input line 135.
 LaTeX Font Info:    Overwriting math alphabet `\mathit' in version `bold'
-(Font)                  OT1/cmr/bx/it --> TU/BasierCircle-Regular.otf(0)/bx/it on input line 124.
+(Font)                  OT1/cmr/bx/it --> TU/Mallory-Book.otf(0)/bx/it on input line 135.
 LaTeX Font Info:    Overwriting math alphabet `\mathsf' in version `bold'
-(Font)                  OT1/cmss/bx/n --> TU/lmss/bx/n on input line 124.
+(Font)                  OT1/cmss/bx/n --> TU/lmss/bx/n on input line 135.
 LaTeX Font Info:    Overwriting math alphabet `\mathtt' in version `bold'
-(Font)                  OT1/cmtt/m/n --> TU/lmtt/bx/n on input line 124.
-LaTeX Info: Redefining \microtypecontext on input line 124.
+(Font)                  OT1/cmtt/m/n --> TU/lmtt/bx/n on input line 135.
+LaTeX Info: Redefining \microtypecontext on input line 135.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
 Package microtype Info: No adjustment of tracking.
 Package microtype Info: No adjustment of spacing.
 Package microtype Info: No adjustment of kerning.
 Package microtype Info: Loading generic protrusion settings for font family
-(microtype)             `BasierCircle-Regular.otf' (encoding: TU).
+(microtype)             `Mallory-Book.otf' (encoding: TU).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
 
-Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/n/10.95' does not specify its
+Package microtype Warning: Font `TU/Mallory-Book.otf(0)/m/n/10.95' does not specify its
 (microtype)                \fontdimen 6 (width of an `em')! Therefore,
 (microtype)                protrusion will not work with this font.
 
 \AtBeginShipoutBox=\box104
-Package hyperref Info: Link coloring ON on input line 124.
+Package hyperref Info: Link coloring ON on input line 135.
 (/usr/local/texlive/2019/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2016/05/21 v2.44 Cross-referencing by name of section
  (/usr/local/texlive/2019/texmf-dist/tex/generic/oberdiek/gettitlestring.sty
@@ -1368,9 +1332,9 @@ Package: gettitlestring 2016/05/16 v1.5 Cleanup title references (HO)
 )
 \c@section@level=\count374
 )
-LaTeX Info: Redefining \ref on input line 124.
-LaTeX Info: Redefining \pageref on input line 124.
-LaTeX Info: Redefining \nameref on input line 124.
+LaTeX Info: Redefining \ref on input line 135.
+LaTeX Info: Redefining \pageref on input line 135.
+LaTeX Info: Redefining \nameref on input line 135.
 \@outlinefile=\write4
 \openout4 = `template.out'.
 
@@ -1417,8 +1381,8 @@ Missing character: There is no t in font nullfont!
 Missing character: There is no d in font nullfont!
 
 ./cover.tex:5: Font TU/BasierCircle-Regular.otf(0)/m/sc/10.95=[$path$/fonts/BasierCircle-Regular.otf]/OT at 10.95pt not loadable: Metric (TFM) file or installed font not found.
-<to be read again> 
-                   relax 
+<to be read again>
+                   relax
 l.5     \textsc{\Large \newCommandProposalId}
                                              \\[0.5cm]
 I wasn't able to read the size data for this font,
@@ -1433,8 +1397,8 @@ Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/sc/10.95' does
 (microtype)                protrusion will not work with this font.
 
 ./cover.tex:5: Font TU/BasierCircle-Regular.otf(0)/m/sc/14.4=[$path$/fonts/BasierCircle-Regular.otf]/OT at 14.4pt not loadable: Metric (TFM) file or installed font not found.
-<to be read again> 
-                   relax 
+<to be read again>
+                   relax
 l.5     \textsc{\Large \newCommandProposalId}
                                              \\[0.5cm]
 I wasn't able to read the size data for this font,
@@ -1449,8 +1413,8 @@ Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/sc/14.4' does 
 (microtype)                protrusion will not work with this font.
 
 ./cover.tex:5: Undefined control sequence.
-<argument> \Large \newCommandProposalId 
-                                        
+<argument> \Large \newCommandProposalId
+
 l.5     \textsc{\Large \newCommandProposalId}
                                              \\[0.5cm]
 The control sequence at the end of the top line
@@ -1460,8 +1424,8 @@ spelling (e.g., `I\hbox'). Otherwise just continue,
 and I'll forget about whatever was undefined.
 
 ./cover.tex:8: Font TU/BasierCircle-Regular.otf(0)/m/n/20.74=[$path$/fonts/BasierCircle-Regular.otf]/OT at 20.74pt not loadable: Metric (TFM) file or installed font not found.
-<to be read again> 
-                   relax 
+<to be read again>
+                   relax
 l.8     {\huge
                \bfseries \newCommandProposalTitle \\[0.4cm]}
 I wasn't able to read the size data for this font,
@@ -1476,8 +1440,8 @@ Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/n/20.74' does 
 (microtype)                protrusion will not work with this font.
 
 ./cover.tex:8: Font TU/BasierCircle-Regular.otf(0)/bx/n/20.74=[$path$/fonts/BasierCircle-Medium.otf]/OT at 20.74pt not loadable: Metric (TFM) file or installed font not found.
-<to be read again> 
-                   relax 
+<to be read again>
+                   relax
 l.8     {\huge \bfseries
                          \newCommandProposalTitle \\[0.4cm]}
 I wasn't able to read the size data for this font,
@@ -1535,8 +1499,8 @@ Missing character: There is no e in font nullfont!
 Missing character: There is no c in font nullfont!
 Missing character: There is no t in font nullfont!
 ./cover.tex:11: Font TU/BasierCircle-Regular.otf(0)/m/it/10.95=[$path$/fonts/BasierCircle-RegularItalic.otf]/OT at 10.95pt not loadable: Metric (TFM) file or installed font not found.
-<to be read again> 
-                   relax 
+<to be read again>
+                   relax
 l.11     \emph{Prepared By}
                            \\[0.1cm]
 I wasn't able to read the size data for this font,
@@ -1561,8 +1525,8 @@ Missing character: There is no d in font nullfont!
 Missing character: There is no B in font nullfont!
 Missing character: There is no y in font nullfont!
 ./cover.tex:16: Font TU/BasierCircle-Regular.otf(0)/m/n/8=[$path$/fonts/BasierCircle-Regular.otf]/OT at 8.0pt not loadable: Metric (TFM) file or installed font not found.
-<to be read again> 
-                   relax 
+<to be read again>
+                   relax
 l.16     \end{tabular}}
                        \\[1cm]
 I wasn't able to read the size data for this font,
@@ -1577,8 +1541,8 @@ Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/n/8' does not 
 (microtype)                protrusion will not work with this font.
 
 ./cover.tex:16: Font TU/BasierCircle-Regular.otf(0)/m/n/6=[$path$/fonts/BasierCircle-Regular.otf]/OT at 6.0pt not loadable: Metric (TFM) file or installed font not found.
-<to be read again> 
-                   relax 
+<to be read again>
+                   relax
 l.16     \end{tabular}}
                        \\[1cm]
 I wasn't able to read the size data for this font,
@@ -1599,6 +1563,7 @@ File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 ) (/usr/local/texlive/2019/texmf-dist/tex/latex/microtype/mt-cmr.cfg
 File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman (RS)
 )
+<<<<<<< Updated upstream
 Missing character: There is no M in font nullfont!
 Missing character: There is no u in font nullfont!
 Missing character: There is no n in font nullfont!
@@ -1629,10 +1594,16 @@ Missing character: There is no o in font nullfont!
 Missing character: There is no m in font nullfont!
 
 ./cover.tex:22: Font TU/BasierCircle-Regular.otf(0)/m/n/12=[$path$/fonts/BasierCircle-Regular.otf]/OT at 12.0pt not loadable: Metric (TFM) file or installed font not found.
-<to be read again> 
-                   relax 
+<to be read again>
+                   relax
 l.22     {\large
                  \today}
+=======
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:136: Font TU/Mallory-Book.otf(0)/m/n/8=[$path$/fonts/Mallory-Book.otf]/OT at 8.0pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again>
+                   relax
+l.136 $i
+        f(path)$
 I wasn't able to read the size data for this font,
 so I will ignore the font specification.
 [Wizards can fix TFM files using TFtoPL/PLtoTF.]
@@ -1640,10 +1611,46 @@ You might try inserting a different font spec;
 e.g., type `I\font<same font id>=<substitute font name>'.
 
 
+Package microtype Warning: Font `TU/Mallory-Book.otf(0)/m/n/8' does not specify its
+(microtype)                \fontdimen 6 (width of an `em')! Therefore,
+(microtype)                protrusion will not work with this font.
+
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:136: Font TU/Mallory-Book.otf(0)/m/n/6=[$path$/fonts/Mallory-Book.otf]/OT at 6.0pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again>
+                   relax
+l.136 $i
+        f(path)$
+>>>>>>> Stashed changes
+I wasn't able to read the size data for this font,
+so I will ignore the font specification.
+[Wizards can fix TFM files using TFtoPL/PLtoTF.]
+You might try inserting a different font spec;
+e.g., type `I\font<same font id>=<substitute font name>'.
+<<<<<<< Updated upstream
+
+=======
+
+
+Package microtype Warning: Font `TU/Mallory-Book.otf(0)/m/n/6' does not specify its
+(microtype)                \fontdimen 6 (width of an `em')! Therefore,
+(microtype)                protrusion will not work with this font.
+
+(/usr/local/texlive/2019/texmf-dist/tex/latex/microtype/mt-msa.cfg
+File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
+) (/usr/local/texlive/2019/texmf-dist/tex/latex/microtype/mt-msb.cfg
+File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
+) (/usr/local/texlive/2019/texmf-dist/tex/latex/microtype/mt-cmr.cfg
+File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman (RS)
+)
+
+! LaTeX Error: File `$path$/cover.tex' not found.
+>>>>>>> Stashed changes
+
 Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/n/12' does not specify its
 (microtype)                \fontdimen 6 (width of an `em')! Therefore,
 (microtype)                protrusion will not work with this font.
 
+<<<<<<< Updated upstream
 Missing character: There is no A in font nullfont!
 Missing character: There is no p in font nullfont!
 Missing character: There is no r in font nullfont!
@@ -1657,15 +1664,24 @@ Missing character: There is no 2 in font nullfont!
 Missing character: There is no 0 in font nullfont!
 [1])
 /Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:131: Font TU/BasierCircle-Regular.otf(0)/m/n/14.4=[$path$/fonts/BasierCircle-Regular.otf]/OT at 14.4pt not loadable: Metric (TFM) file or installed font not found.
-<to be read again> 
-                   relax 
+<to be read again>
+                   relax
 l.131 \tableofcontents
-                      
+
 I wasn't able to read the size data for this font,
 so I will ignore the font specification.
 [Wizards can fix TFM files using TFtoPL/PLtoTF.]
 You might try inserting a different font spec;
 e.g., type `I\font<same font id>=<substitute font name>'.
+=======
+Enter file name:
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:137: Emergency stop.
+<read *>
+
+l.137 \input{$path$/cover}
+                          ^^M
+*** (cannot \read from terminal in nonstop modes)
+>>>>>>> Stashed changes
 
 
 Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/n/14.4' does not specify its
@@ -1673,10 +1689,10 @@ Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/n/14.4' does n
 (microtype)                protrusion will not work with this font.
 
 /Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:131: Font TU/BasierCircle-Regular.otf(0)/bx/n/14.4=[$path$/fonts/BasierCircle-Medium.otf]/OT at 14.4pt not loadable: Metric (TFM) file or installed font not found.
-<to be read again> 
-                   relax 
+<to be read again>
+                   relax
 l.131 \tableofcontents
-                      
+
 I wasn't able to read the size data for this font,
 so I will ignore the font specification.
 [Wizards can fix TFM files using TFtoPL/PLtoTF.]
@@ -1720,14 +1736,15 @@ Package rerunfilecheck Warning: File `template.out' has changed.
 (rerunfilecheck)                or use package `bookmark'.
 
 Package rerunfilecheck Info: Checksums for `template.out':
-(rerunfilecheck)             Before: 
+(rerunfilecheck)             Before:
 (rerunfilecheck)             After:  D41D8CD98F00B204E9800998ECF8427E.
  )
 (\end occurred inside a group at level 1)
 
 ### simple group (level 1) entered at line 119 ({)
-### bottom level 
+### bottom level
 Here is how much of TeX's memory you used:
+<<<<<<< Updated upstream
  39425 strings out of 492916
  772579 string characters out of 6133344
  896395 words of memory out of 5000000
@@ -1737,3 +1754,13 @@ Here is how much of TeX's memory you used:
  62i,8n,92p,873b,1232s stack positions out of 5000i,500n,10000p,200000b,80000s
 
 Output written on template.pdf (3 pages).
+=======
+ 39379 strings out of 492916
+ 770849 string characters out of 6133344
+ 893716 words of memory out of 5000000
+ 42916 multiletter control sequences out of 15000+600000
+ 540466 words of font info for 48 fonts, out of 8000000 for 9000
+ 1348 hyphenation exceptions out of 8191
+ 62i,3n,92p,873b,1013s stack positions out of 5000i,500n,10000p,200000b,80000s
+No pages of output.
+>>>>>>> Stashed changes

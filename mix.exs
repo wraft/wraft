@@ -53,6 +53,9 @@ defmodule WraftDoc.Mixfile do
       # File upload to AWS
       {:arc, "~> 0.11.0"},
       {:arc_ecto, "~> 0.11.3"},
+      # If using Amazon S3:
+      {:ex_aws, "~> 2.1"},
+      {:ex_aws_s3, "~> 2.0"},
       # Time and date formating
       {:timex, "~>  3.6.1"},
       # JSON parser
@@ -76,7 +79,9 @@ defmodule WraftDoc.Mixfile do
       # Email client
       {:bamboo, "~> 1.4"},
       # Activity stream
-      {:spur, git: "https://github.com/shijithkjayan/spur.git"}
+      {:spur, git: "https://github.com/shijithkjayan/spur.git"},
+      # CSV parser
+      {:csv, "~> 2.3.1"}
     ]
   end
 
