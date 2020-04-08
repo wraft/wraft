@@ -93,6 +93,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
@@ -101,6 +102,20 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
       with %Block{id: id} = block <- Document.create_block(current_user, params) do
         Document.create_chart(params["pdf_url"], id)
+
+        conn
+        |> put_status(:created)
+        |> render("block.json", block: block)
+      end
+    end
+  end
+
+  def create_go_chart(conn, params) do
+    current_user = conn.assigns.current_user
+
+    with response_body <- Document.generate_go_chart(params["dataset"]) do
+      with %Block{id: id} = block <- Document.create_block(current_user, params) do
+        Document.create_go_chart(response_body, id)
 
         conn
         |> put_status(:created)

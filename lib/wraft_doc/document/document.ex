@@ -830,7 +830,15 @@ defmodule WraftDoc.Document do
     File.write!("#{File.cwd!()}/uploads/assets/chart/chart#{id}.pdf", response.body)
   end
 
+  def create_go_chart(body, id) do
+    File.write!("#{File.cwd!()}/uploads/assets/chart/chart#{id}.svg", body)
+  end
+
+  require IEx
+
   def generate_chart(body) do
+    IEx.pry()
+
     %HTTPotion.Response{body: response_body} =
       HTTPotion.post!("https://quickchart.io/chart/create",
         body: Poison.encode!(body),
@@ -838,5 +846,18 @@ defmodule WraftDoc.Document do
       )
 
     Poison.decode!(response_body)
+  end
+
+  def generate_go_chart(body) do
+    %HTTPotion.Response{body: response_body} =
+      HTTPotion.post!("http://localhost:8080/chart",
+        body: Poison.encode!(body),
+        headers: [{"Accept", "application./json"}, {"Content-Type", "application/json"}]
+      )
+
+    response_body
+  end
+
+  def generate_quick_chart_data(%{"label" => label, "value" => value}) do
   end
 end

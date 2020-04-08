@@ -21,7 +21,7 @@ defmodule WraftDoc.Document.Block do
   def changeset(%Block{} = block, attrs \\ %{}) do
     block
     |> cast(attrs, [:name, :btype, :dataset, :pdf_url, :creator_id, :organisation_id])
-    |> validate_required([:name, :btype, :dataset, :pdf_url, :organisation_id])
+    |> validate_required([:name, :btype, :dataset, :organisation_id])
     |> unique_constraint(:name,
       message: "Block with same name exists.!",
       name: :block_content_type_unique_index
