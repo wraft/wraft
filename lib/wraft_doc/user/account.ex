@@ -134,6 +134,13 @@ defmodule WraftDoc.Account do
     Repo.get_by(Role, uuid: uuid)
   end
 
+  @doc """
+  Get a user from its UUID.
+  """
+  def get_user_by_uuid(uuid) do
+    Repo.get_by(User, uuid: uuid)
+  end
+
   # Get the user struct from given email
   @spec get_user_by_email(binary) :: User.t() | nil
   defp get_user_by_email(email) when is_binary(email) do
