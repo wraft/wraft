@@ -570,6 +570,26 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     end
   end
 
+  @doc """
+  Bulk build documents for a content type.
+  """
+  swagger_path :bulk_build do
+    post("/content_types/{c_type_id}/bulk_build")
+    summary("Bulk build documents")
+    description("API to bulk build documents for a content type")
+
+    consumes("multipart/form-data")
+
+    parameter(:c_type_id, :path, :string, "Content type id", required: true)
+    parameter(:state_id, :formData, :string, "State id", required: true)
+    parameter(:d_temp_uuid, :formData, :string, "Data template id", required: true)
+    parameter(:file, :formData, :file, "Bulk build source file")
+
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec bulk_build(Plug.Conn.t(), map) :: Plug.Conn.t()
   def bulk_build(
         conn,
         %{

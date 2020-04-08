@@ -24,12 +24,12 @@
     }
   ],
   "paths": {
-    "/users/signup": {
+    "/content_types/{c_type_id}/contents": {
       "post": {
         "tags": [
-          "Registration"
+          "Instance"
         ],
-        "summary": "User registration",
+        "summary": "Create a content",
         "responses": {
           "422": {
             "schema": {
@@ -37,9 +37,15 @@
             },
             "description": "Unprocessable Entity"
           },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
           "200": {
             "schema": {
-              "$ref": "#/definitions/UserToken"
+              "$ref": "#/definitions/ContentAndContentTypeAndState"
             },
             "description": "Ok"
           }
@@ -48,30 +54,68 @@
           {
             "type": "string",
             "required": true,
-            "name": "token",
+            "name": "c_type_id",
             "in": "path",
-            "description": "Token obtained from invitation mail"
+            "description": "content type id"
           },
           {
             "schema": {
-              "$ref": "#/definitions/UserRegisterRequest"
+              "$ref": "#/definitions/ContentRequest"
             },
             "required": true,
-            "name": "user",
+            "name": "content",
             "in": "body",
-            "description": "User to register"
+            "description": "Content to be created"
           }
         ],
-        "operationId": "create_user",
-        "description": "User registration API"
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.create",
+        "description": "Create content API"
+      },
+      "get": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Instance index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentsIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "c_type_id",
+            "in": "path",
+            "description": "ID of the content type"
+          },
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.index",
+        "description": "API to get the list of all instances created so far under a content type"
       }
     },
-    "/users/signin": {
-      "post": {
+    "/states/{id}": {
+      "put": {
         "tags": [
-          "User"
+          "State"
         ],
-        "summary": "User sign in",
+        "summary": "State update",
         "responses": {
           "422": {
             "schema": {
@@ -79,9 +123,371 @@
             },
             "description": "Unprocessable Entity"
           },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
           "200": {
             "schema": {
-              "$ref": "#/definitions/UserToken"
+              "$ref": "#/definitions/ShowState"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "state id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/StateRequest"
+            },
+            "required": true,
+            "name": "flow",
+            "in": "body",
+            "description": "Flow to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.StateController.update",
+        "description": "API to update a state"
+      },
+      "delete": {
+        "tags": [
+          "State"
+        ],
+        "summary": "State delete",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/State"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "state id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.StateController.delete",
+        "description": "API to delete a state"
+      }
+    },
+    "/contents/{id}": {
+      "put": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Update an instance",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowContent"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Instance id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/ContentRequest"
+            },
+            "required": true,
+            "name": "content",
+            "in": "body",
+            "description": "Instance to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.update",
+        "description": "API to update an instance"
+      },
+      "get": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Show an instance",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowContent"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "ID of the instance"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.show",
+        "description": "API to get all details of an instance"
+      },
+      "delete": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Delete an instance",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Content"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "instance id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.delete",
+        "description": "API to delete an instance"
+      }
+    },
+    "/contents/{id}/build": {
+      "post": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Build a document",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Content"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "instance id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.build",
+        "description": "API to build a document from instance"
+      }
+    },
+    "/content_types/{c_type_id}/data_templates": {
+      "post": {
+        "tags": [
+          "DataTemplate"
+        ],
+        "summary": "Create data template",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataTemplate"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "c_type_id",
+            "in": "path",
+            "description": "ID of the content type"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/DataTemplateRequest"
+            },
+            "required": true,
+            "name": "data_template",
+            "in": "body",
+            "description": "Data template to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.create",
+        "description": "Create data template API"
+      },
+      "get": {
+        "tags": [
+          "DataTemplate"
+        ],
+        "summary": "Data template index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataTemplatesIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "c_type_id",
+            "in": "path",
+            "description": "ID of the content type"
+          },
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.index",
+        "description": "API to get the list of all data templates created so far under a content type"
+      }
+    },
+    "/flows": {
+      "post": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Create a flow",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Flow"
             },
             "description": "Ok"
           }
@@ -89,24 +495,88 @@
         "parameters": [
           {
             "schema": {
-              "$ref": "#/definitions/UserLoginRequest"
+              "$ref": "#/definitions/FlowRequest"
             },
             "required": true,
-            "name": "user",
+            "name": "flow",
             "in": "body",
-            "description": "User to trying to login"
+            "description": "Flow to be created"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.UserController.signin",
-        "description": "User sign in API"
-      }
-    },
-    "/users/me": {
+        "operationId": "WraftDocWeb.Api.V1.FlowController.create",
+        "description": "Create flow API"
+      },
       "get": {
         "tags": [
-          "User"
+          "Flow"
         ],
-        "summary": "Current user",
+        "summary": "Flow index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FlowIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.index",
+        "description": "Index of flows in current user's organisation"
+      }
+    },
+    "/data_templates": {
+      "get": {
+        "tags": [
+          "DataTemplate"
+        ],
+        "summary": "All Data templates",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataTemplatesIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.all_templates",
+        "description": "API to get the list of all data templates created so far under an organisation"
+      }
+    },
+    "/resources/{id}": {
+      "put": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Update a resource",
         "responses": {
           "422": {
             "schema": {
@@ -114,16 +584,197 @@
             },
             "description": "Unprocessable Entity"
           },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
           "200": {
             "schema": {
-              "$ref": "#/definitions/CurrentUser"
+              "$ref": "#/definitions/Resource"
             },
             "description": "Ok"
           }
         },
-        "parameters": [],
-        "operationId": "WraftDocWeb.Api.V1.UserController.me",
-        "description": "Current User details"
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "resource id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/ResourceRequest"
+            },
+            "required": true,
+            "name": "resource",
+            "in": "body",
+            "description": "Resource to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.update",
+        "description": "API to update a resource"
+      },
+      "get": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Show a resource",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Resource"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "resource id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.show",
+        "description": "API to show details of a resource"
+      },
+      "delete": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Delete a resource",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Resource"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "resource id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.delete",
+        "description": "API to delete a resource"
+      }
+    },
+    "/content_types": {
+      "post": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Create content type",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentTypeAndLayoutAndFlow"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/ContentTypeRequest"
+            },
+            "required": true,
+            "name": "content_type",
+            "in": "body",
+            "description": "Content Type to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.create",
+        "description": "Create content type API"
+      },
+      "get": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Content Type index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentTypesIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.index",
+        "description": "API to get the list of all content types created so far"
       }
     },
     "/themes/{id}": {
@@ -270,106 +921,12 @@
         "description": "API to delete a theme"
       }
     },
-    "/themes": {
-      "post": {
-        "tags": [
-          "Theme"
-        ],
-        "summary": "Create theme",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Theme"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "name",
-            "in": "formData",
-            "description": "Theme's name"
-          },
-          {
-            "type": "string",
-            "required": true,
-            "name": "font",
-            "in": "formData",
-            "description": "Font to be used in the theme"
-          },
-          {
-            "type": "string",
-            "required": true,
-            "name": "typescale",
-            "in": "formData",
-            "description": "Typescale of the theme"
-          },
-          {
-            "type": "file",
-            "required": false,
-            "name": "file",
-            "in": "formData",
-            "description": "Theme file to upload"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.ThemeController.create",
-        "description": "Create theme API",
-        "consumes": [
-          "multipart/form-data"
-        ]
-      },
-      "get": {
-        "tags": [
-          "Theme"
-        ],
-        "summary": "Theme index",
-        "responses": {
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/ThemeIndex"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": false,
-            "name": "page",
-            "in": "query",
-            "description": "Page number"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.ThemeController.index",
-        "description": "Theme index API"
-      }
-    },
-    "/states/{id}": {
+    "/data_templates/{id}": {
       "put": {
         "tags": [
-          "State"
+          "DataTemplate"
         ],
-        "summary": "State update",
+        "summary": "Update a data template",
         "responses": {
           "422": {
             "schema": {
@@ -391,7 +948,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/ShowState"
+              "$ref": "#/definitions/ShowDataTemplate"
             },
             "description": "Ok"
           }
@@ -402,26 +959,57 @@
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "state id"
+            "description": "Data template id"
           },
           {
             "schema": {
-              "$ref": "#/definitions/StateRequest"
+              "$ref": "#/definitions/DataTemplateRequest"
             },
             "required": true,
-            "name": "flow",
+            "name": "data_templte",
             "in": "body",
-            "description": "Flow to be created"
+            "description": "Data template to be updated"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.StateController.update",
-        "description": "API to update a state"
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.update",
+        "description": "API to update a data template"
+      },
+      "get": {
+        "tags": [
+          "DataTemplate"
+        ],
+        "summary": "Show Data template",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowDataTemplate"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "ID of the data template"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.show",
+        "description": "API to get all details of a data template"
       },
       "delete": {
         "tags": [
-          "State"
+          "DataTemplate"
         ],
-        "summary": "State delete",
+        "summary": "Delete a data template",
         "responses": {
           "422": {
             "schema": {
@@ -443,7 +1031,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/State"
+              "$ref": "#/definitions/DataTemplate"
             },
             "description": "Ok"
           }
@@ -454,544 +1042,11 @@
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "state id"
+            "description": "data template id"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.StateController.delete",
-        "description": "API to delete a state"
-      }
-    },
-    "/resources/{id}": {
-      "put": {
-        "tags": [
-          "Resource"
-        ],
-        "summary": "Update a resource",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "400": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Bad Request"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Resource"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "resource id"
-          },
-          {
-            "schema": {
-              "$ref": "#/definitions/ResourceRequest"
-            },
-            "required": true,
-            "name": "resource",
-            "in": "body",
-            "description": "Resource to be updated"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.ResourceController.update",
-        "description": "API to update a resource"
-      },
-      "get": {
-        "tags": [
-          "Resource"
-        ],
-        "summary": "Show a resource",
-        "responses": {
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "400": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Bad Request"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Resource"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "resource id"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.ResourceController.show",
-        "description": "API to show details of a resource"
-      },
-      "delete": {
-        "tags": [
-          "Resource"
-        ],
-        "summary": "Delete a resource",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "400": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Bad Request"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Resource"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "resource id"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.ResourceController.delete",
-        "description": "API to delete a resource"
-      }
-    },
-    "/resources": {
-      "post": {
-        "tags": [
-          "Resource"
-        ],
-        "summary": "Create resource",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "400": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Bad Request"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Resource"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "schema": {
-              "$ref": "#/definitions/ResourceRequest"
-            },
-            "required": true,
-            "name": "resource",
-            "in": "body",
-            "description": "Resource to be created"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.ResourceController.create",
-        "description": "Create resource API"
-      },
-      "get": {
-        "tags": [
-          "Resource"
-        ],
-        "summary": "Resource index",
-        "responses": {
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "400": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Bad Request"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/ResourceIndex"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": false,
-            "name": "page",
-            "in": "query",
-            "description": "Page number"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.ResourceController.index",
-        "description": "API to get the list of all resources created so far"
-      }
-    },
-    "/permissions/{id}": {
-      "delete": {
-        "tags": [
-          "Permission"
-        ],
-        "summary": "Delete a permission",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "400": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Bad Request"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Resource"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "permission id"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.PermissionController.delete",
-        "description": "API to remove a permission"
-      }
-    },
-    "/permissions": {
-      "post": {
-        "tags": [
-          "Permission"
-        ],
-        "summary": "Create permission",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "400": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Bad Request"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Permission"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "schema": {
-              "$ref": "#/definitions/PermissionRequest"
-            },
-            "required": true,
-            "name": "resource",
-            "in": "body",
-            "description": "Permission to be created"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.PermissionController.create",
-        "description": "Create permission API"
-      },
-      "get": {
-        "tags": [
-          "Permission"
-        ],
-        "summary": "Permission index",
-        "responses": {
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "400": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Bad Request"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/PermissionIndex"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": false,
-            "name": "page",
-            "in": "query",
-            "description": "Page number"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.PermissionController.index",
-        "description": "API to get the list of all permissions created so far"
-      }
-    },
-    "/organisations/{id}/invite": {
-      "post": {
-        "tags": [
-          "Organisation"
-        ],
-        "summary": "Invite new member to the organisation",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "404": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Not Found"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/InvitedResponse"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "Organisation id"
-          },
-          {
-            "schema": "string",
-            "required": true,
-            "name": "email",
-            "in": "body",
-            "description": "Email of the user"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.OrganisationController.invite",
-        "description": "Invite new member to the organisation"
-      }
-    },
-    "/organisations/{id}": {
-      "put": {
-        "tags": [
-          "Organisation"
-        ],
-        "summary": "Update an organisation",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "404": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Not Found"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "201": {
-            "schema": {
-              "$ref": "#/definitions/Organisation"
-            },
-            "description": "Accepted"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "organisation id"
-          },
-          {
-            "schema": {
-              "$ref": "#/definitions/OrganisationRequest"
-            },
-            "required": true,
-            "name": "organisation",
-            "in": "body",
-            "description": "Organisation to be updated"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.OrganisationController.update",
-        "description": "API to update an organisation"
-      },
-      "get": {
-        "tags": [
-          "Organisation"
-        ],
-        "summary": "Show an Organisation",
-        "responses": {
-          "404": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Not Found"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Organisation"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "Organisation id"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.OrganisationController.show",
-        "description": "API to show details of an organisation"
-      },
-      "delete": {
-        "tags": [
-          "Organisation"
-        ],
-        "summary": "Delete an organisation",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "404": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Not Found"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Organisation"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "Organisation id"
-          }
-        ],
-        "operationId": "delete_organisation",
-        "description": "Delete Organisation API"
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.delete",
+        "description": "API to delete a data template"
       }
     },
     "/organisations": {
@@ -1035,18 +1090,49 @@
         "description": "Create Organisation API"
       }
     },
-    "/layouts/{id}": {
-      "put": {
+    "/users/me": {
+      "get": {
         "tags": [
-          "Layout"
+          "User"
         ],
-        "summary": "Update a Layout",
+        "summary": "Current user",
         "responses": {
           "422": {
             "schema": {
               "$ref": "#/definitions/Error"
             },
             "description": "Unprocessable Entity"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/CurrentUser"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [],
+        "operationId": "WraftDocWeb.Api.V1.UserController.me",
+        "description": "Current User details"
+      }
+    },
+    "/field_types/{id}": {
+      "put": {
+        "tags": [
+          "FieldType"
+        ],
+        "summary": "Update a field type",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
           },
           "401": {
             "schema": {
@@ -1056,7 +1142,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/ShowLayout"
+              "$ref": "#/definitions/FieldType"
             },
             "description": "Ok"
           }
@@ -1067,90 +1153,162 @@
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "layout id"
+            "description": "Field type id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/FieldTypeRequest"
+            },
+            "required": true,
+            "name": "field_type",
+            "in": "body",
+            "description": "Field Type to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.update",
+        "description": "API to update a field type"
+      },
+      "get": {
+        "tags": [
+          "FieldType"
+        ],
+        "summary": "Show a field type",
+        "responses": {
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FieldType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "ID of the field type"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.show",
+        "description": "API to show a field type"
+      },
+      "delete": {
+        "tags": [
+          "FieldType"
+        ],
+        "summary": "Delete a field type",
+        "responses": {
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FieldType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "field type id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.delete",
+        "description": "API to delete a field type"
+      }
+    },
+    "/assets/{id}": {
+      "put": {
+        "tags": [
+          "Asset"
+        ],
+        "summary": "Update an asset",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Asset"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "asset id"
           },
           {
             "type": "string",
             "required": true,
             "name": "name",
             "in": "formData",
-            "description": "Layout's name"
-          },
-          {
-            "type": "string",
-            "required": true,
-            "name": "description",
-            "in": "formData",
-            "description": "Layout description"
-          },
-          {
-            "type": "string",
-            "required": true,
-            "name": "width",
-            "in": "formData",
-            "description": "Layout width"
-          },
-          {
-            "type": "string",
-            "required": true,
-            "name": "height",
-            "in": "formData",
-            "description": "Layout height"
-          },
-          {
-            "type": "string",
-            "required": true,
-            "name": "unit",
-            "in": "formData",
-            "description": "Layout dimension unit"
-          },
-          {
-            "type": "string",
-            "required": false,
-            "name": "slug",
-            "in": "formData",
-            "description": "Name of slug to be used"
+            "description": "Asset name"
           },
           {
             "type": "file",
             "required": false,
-            "name": "slug_file",
+            "name": "file",
             "in": "formData",
-            "description": "Slug file to upload"
-          },
-          {
-            "type": "file",
-            "required": true,
-            "name": "screenshot",
-            "in": "formData",
-            "description": "Screenshot to upload"
-          },
-          {
-            "type": "list",
-            "required": false,
-            "name": "assets",
-            "in": "formData",
-            "description": "IDs of assets of the layout"
-          },
-          {
-            "type": "string",
-            "required": true,
-            "name": "engine_uuid",
-            "in": "formData",
-            "description": "ID of layout's engine"
+            "description": "Asset file to upload"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.LayoutController.update",
-        "description": "API to update a layout",
+        "operationId": "WraftDocWeb.Api.V1.AssetController.update",
+        "description": "API to update an asset",
         "consumes": [
           "multipart/form-data"
         ]
       },
       "get": {
         "tags": [
-          "Layout"
+          "Asset"
         ],
-        "summary": "Show a Layout",
+        "summary": "Show an asset",
         "responses": {
           "401": {
             "schema": {
@@ -1160,7 +1318,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/ShowLayout"
+              "$ref": "#/definitions/ShowAsset"
             },
             "description": "Ok"
           }
@@ -1171,17 +1329,17 @@
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "layout id"
+            "description": "ID of the asset"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.LayoutController.show",
-        "description": "API to show details of a layout"
+        "operationId": "WraftDocWeb.Api.V1.AssetController.show",
+        "description": "API to get all details of an asset"
       },
       "delete": {
         "tags": [
-          "Layout"
+          "Asset"
         ],
-        "summary": "Delete a Layout",
+        "summary": "Delete an asset",
         "responses": {
           "422": {
             "schema": {
@@ -1189,6 +1347,12 @@
             },
             "description": "Unprocessable Entity"
           },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
           "401": {
             "schema": {
               "$ref": "#/definitions/Error"
@@ -1197,7 +1361,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/Layout"
+              "$ref": "#/definitions/Asset"
             },
             "description": "Ok"
           }
@@ -1208,11 +1372,11 @@
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "layout id"
+            "description": "asset id"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.LayoutController.delete",
-        "description": "API to delete a layout"
+        "operationId": "WraftDocWeb.Api.V1.AssetController.delete",
+        "description": "API to delete an asset"
       }
     },
     "/layouts": {
@@ -1479,364 +1643,6 @@
         "description": "API to delete a flow"
       }
     },
-    "/flows/{flow_id}/states": {
-      "post": {
-        "tags": [
-          "State"
-        ],
-        "summary": "Create a state",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/State"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "schema": {
-              "$ref": "#/definitions/StateRequest"
-            },
-            "required": true,
-            "name": "state",
-            "in": "body",
-            "description": "State to be created"
-          },
-          {
-            "type": "string",
-            "required": true,
-            "name": "flow_id",
-            "in": "path",
-            "description": "Flow id"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.StateController.create",
-        "description": "Create state API"
-      },
-      "get": {
-        "tags": [
-          "State"
-        ],
-        "summary": "State index",
-        "responses": {
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/FlowIndex"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "flow_id",
-            "in": "path",
-            "description": "flow id"
-          },
-          {
-            "type": "string",
-            "required": false,
-            "name": "page",
-            "in": "query",
-            "description": "Page number"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.StateController.index",
-        "description": "Index of States under a flow"
-      }
-    },
-    "/flows": {
-      "post": {
-        "tags": [
-          "Flow"
-        ],
-        "summary": "Create a flow",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Flow"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "schema": {
-              "$ref": "#/definitions/FlowRequest"
-            },
-            "required": true,
-            "name": "flow",
-            "in": "body",
-            "description": "Flow to be created"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.FlowController.create",
-        "description": "Create flow API"
-      },
-      "get": {
-        "tags": [
-          "Flow"
-        ],
-        "summary": "Flow index",
-        "responses": {
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/FlowIndex"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": false,
-            "name": "page",
-            "in": "query",
-            "description": "Page number"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.FlowController.index",
-        "description": "Index of flows in current user's organisation"
-      }
-    },
-    "/field_types/{id}": {
-      "put": {
-        "tags": [
-          "FieldType"
-        ],
-        "summary": "Update a field type",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "404": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Not found"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/FieldType"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "Field type id"
-          },
-          {
-            "schema": {
-              "$ref": "#/definitions/FieldTypeRequest"
-            },
-            "required": true,
-            "name": "field_type",
-            "in": "body",
-            "description": "Field Type to be created"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.update",
-        "description": "API to update a field type"
-      },
-      "get": {
-        "tags": [
-          "FieldType"
-        ],
-        "summary": "Show a field type",
-        "responses": {
-          "404": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Not found"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/FieldType"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "ID of the field type"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.show",
-        "description": "API to show a field type"
-      },
-      "delete": {
-        "tags": [
-          "FieldType"
-        ],
-        "summary": "Delete a field type",
-        "responses": {
-          "404": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Not found"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/FieldType"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "field type id"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.delete",
-        "description": "API to delete a field type"
-      }
-    },
-    "/field_types": {
-      "post": {
-        "tags": [
-          "FieldType"
-        ],
-        "summary": "Create a field type",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/FieldType"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "schema": {
-              "$ref": "#/definitions/FieldTypeRequest"
-            },
-            "required": true,
-            "name": "field_type",
-            "in": "body",
-            "description": "Field Type to be created"
-          }
-        ],
-        "operationId": "create_field_type",
-        "description": "Create field type API"
-      },
-      "get": {
-        "tags": [
-          "FieldType"
-        ],
-        "summary": "Field type index",
-        "responses": {
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/FieldTypeIndex"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": false,
-            "name": "page",
-            "in": "query",
-            "description": "Page number"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.index",
-        "description": "API to get the list of all field typs created so far"
-      }
-    },
     "/engines": {
       "get": {
         "tags": [
@@ -1876,12 +1682,12 @@
         "description": "API to list of all enignes creates/seeded so far"
       }
     },
-    "/data_templates/{id}": {
-      "put": {
+    "/users/signup": {
+      "post": {
         "tags": [
-          "DataTemplate"
+          "Registration"
         ],
-        "summary": "Update a data template",
+        "summary": "User registration",
         "responses": {
           "422": {
             "schema": {
@@ -1889,11 +1695,47 @@
             },
             "description": "Unprocessable Entity"
           },
-          "404": {
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/UserToken"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "token",
+            "in": "path",
+            "description": "Token obtained from invitation mail"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/UserRegisterRequest"
+            },
+            "required": true,
+            "name": "user",
+            "in": "body",
+            "description": "User to register"
+          }
+        ],
+        "operationId": "create_user",
+        "description": "User registration API"
+      }
+    },
+    "/permissions/{id}": {
+      "delete": {
+        "tags": [
+          "Permission"
+        ],
+        "summary": "Delete a permission",
+        "responses": {
+          "422": {
             "schema": {
               "$ref": "#/definitions/Error"
             },
-            "description": "Not found"
+            "description": "Unprocessable Entity"
           },
           "401": {
             "schema": {
@@ -1901,9 +1743,15 @@
             },
             "description": "Unauthorized"
           },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
           "200": {
             "schema": {
-              "$ref": "#/definitions/ShowDataTemplate"
+              "$ref": "#/definitions/Resource"
             },
             "description": "Ok"
           }
@@ -1914,57 +1762,76 @@
             "required": true,
             "name": "id",
             "in": "path",
+            "description": "permission id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.PermissionController.delete",
+        "description": "API to remove a permission"
+      }
+    },
+    "/content_types/{c_type_id}/bulk_build": {
+      "post": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Bulk build documents",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "c_type_id",
+            "in": "path",
+            "description": "Content type id"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "state_id",
+            "in": "formData",
+            "description": "State id"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "d_temp_uuid",
+            "in": "formData",
             "description": "Data template id"
           },
           {
-            "schema": {
-              "$ref": "#/definitions/DataTemplateRequest"
-            },
-            "required": true,
-            "name": "data_templte",
-            "in": "body",
-            "description": "Data template to be updated"
+            "type": "file",
+            "required": false,
+            "name": "file",
+            "in": "formData",
+            "description": "Bulk build source file"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.update",
-        "description": "API to update a data template"
-      },
-      "get": {
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.bulk_build",
+        "description": "API to bulk build documents for a content type",
+        "consumes": [
+          "multipart/form-data"
+        ]
+      }
+    },
+    "/themes": {
+      "post": {
         "tags": [
-          "DataTemplate"
+          "Theme"
         ],
-        "summary": "Show Data template",
-        "responses": {
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/ShowDataTemplate"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "ID of the data template"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.show",
-        "description": "API to get all details of a data template"
-      },
-      "delete": {
-        "tags": [
-          "DataTemplate"
-        ],
-        "summary": "Delete a data template",
+        "summary": "Create theme",
         "responses": {
           "422": {
             "schema": {
@@ -1972,12 +1839,6 @@
             },
             "description": "Unprocessable Entity"
           },
-          "404": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Not found"
-          },
           "401": {
             "schema": {
               "$ref": "#/definitions/Error"
@@ -1986,7 +1847,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/DataTemplate"
+              "$ref": "#/definitions/Theme"
             },
             "description": "Ok"
           }
@@ -1995,21 +1856,43 @@
           {
             "type": "string",
             "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "data template id"
+            "name": "name",
+            "in": "formData",
+            "description": "Theme's name"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "font",
+            "in": "formData",
+            "description": "Font to be used in the theme"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "typescale",
+            "in": "formData",
+            "description": "Typescale of the theme"
+          },
+          {
+            "type": "file",
+            "required": false,
+            "name": "file",
+            "in": "formData",
+            "description": "Theme file to upload"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.delete",
-        "description": "API to delete a data template"
-      }
-    },
-    "/data_templates": {
+        "operationId": "WraftDocWeb.Api.V1.ThemeController.create",
+        "description": "Create theme API",
+        "consumes": [
+          "multipart/form-data"
+        ]
+      },
       "get": {
         "tags": [
-          "DataTemplate"
+          "Theme"
         ],
-        "summary": "All Data templates",
+        "summary": "Theme index",
         "responses": {
           "401": {
             "schema": {
@@ -2019,7 +1902,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/DataTemplatesIndex"
+              "$ref": "#/definitions/ThemeIndex"
             },
             "description": "Ok"
           }
@@ -2033,16 +1916,16 @@
             "description": "Page number"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.all_templates",
-        "description": "API to get the list of all data templates created so far under an organisation"
+        "operationId": "WraftDocWeb.Api.V1.ThemeController.index",
+        "description": "Theme index API"
       }
     },
-    "/contents/{id}/build": {
+    "/users/signin": {
       "post": {
         "tags": [
-          "Instance"
+          "User"
         ],
-        "summary": "Build a document",
+        "summary": "User sign in",
         "responses": {
           "422": {
             "schema": {
@@ -2050,164 +1933,26 @@
             },
             "description": "Unprocessable Entity"
           },
-          "404": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Not found"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
           "200": {
             "schema": {
-              "$ref": "#/definitions/Content"
+              "$ref": "#/definitions/UserToken"
             },
             "description": "Ok"
           }
         },
         "parameters": [
           {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "instance id"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.InstanceController.build",
-        "description": "API to build a document from instance"
-      }
-    },
-    "/contents/{id}": {
-      "put": {
-        "tags": [
-          "Instance"
-        ],
-        "summary": "Update an instance",
-        "responses": {
-          "422": {
             "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "404": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Not found"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/ShowContent"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "Instance id"
-          },
-          {
-            "schema": {
-              "$ref": "#/definitions/ContentRequest"
+              "$ref": "#/definitions/UserLoginRequest"
             },
             "required": true,
-            "name": "content",
+            "name": "user",
             "in": "body",
-            "description": "Instance to be updated"
+            "description": "User to trying to login"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.InstanceController.update",
-        "description": "API to update an instance"
-      },
-      "get": {
-        "tags": [
-          "Instance"
-        ],
-        "summary": "Show an instance",
-        "responses": {
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/ShowContent"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "ID of the instance"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.InstanceController.show",
-        "description": "API to get all details of an instance"
-      },
-      "delete": {
-        "tags": [
-          "Instance"
-        ],
-        "summary": "Delete an instance",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "404": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Not found"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/Content"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "id",
-            "in": "path",
-            "description": "instance id"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.InstanceController.delete",
-        "description": "API to delete an instance"
+        "operationId": "WraftDocWeb.Api.V1.UserController.signin",
+        "description": "User sign in API"
       }
     },
     "/contents": {
@@ -2377,256 +2122,12 @@
         "description": "API to delete a content type"
       }
     },
-    "/content_types/{c_type_id}/data_templates": {
-      "post": {
-        "tags": [
-          "DataTemplate"
-        ],
-        "summary": "Create data template",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/DataTemplate"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "c_type_id",
-            "in": "path",
-            "description": "ID of the content type"
-          },
-          {
-            "schema": {
-              "$ref": "#/definitions/DataTemplateRequest"
-            },
-            "required": true,
-            "name": "data_template",
-            "in": "body",
-            "description": "Data template to be created"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.create",
-        "description": "Create data template API"
-      },
-      "get": {
-        "tags": [
-          "DataTemplate"
-        ],
-        "summary": "Data template index",
-        "responses": {
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/DataTemplatesIndex"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "c_type_id",
-            "in": "path",
-            "description": "ID of the content type"
-          },
-          {
-            "type": "string",
-            "required": false,
-            "name": "page",
-            "in": "query",
-            "description": "Page number"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.index",
-        "description": "API to get the list of all data templates created so far under a content type"
-      }
-    },
-    "/content_types/{c_type_id}/contents": {
-      "post": {
-        "tags": [
-          "Instance"
-        ],
-        "summary": "Create a content",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/ContentAndContentTypeAndState"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "c_type_id",
-            "in": "path",
-            "description": "content type id"
-          },
-          {
-            "schema": {
-              "$ref": "#/definitions/ContentRequest"
-            },
-            "required": true,
-            "name": "content",
-            "in": "body",
-            "description": "Content to be created"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.InstanceController.create",
-        "description": "Create content API"
-      },
-      "get": {
-        "tags": [
-          "Instance"
-        ],
-        "summary": "Instance index",
-        "responses": {
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/ContentsIndex"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "c_type_id",
-            "in": "path",
-            "description": "ID of the content type"
-          },
-          {
-            "type": "string",
-            "required": false,
-            "name": "page",
-            "in": "query",
-            "description": "Page number"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.InstanceController.index",
-        "description": "API to get the list of all instances created so far under a content type"
-      }
-    },
-    "/content_types": {
-      "post": {
-        "tags": [
-          "ContentType"
-        ],
-        "summary": "Create content type",
-        "responses": {
-          "422": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unprocessable Entity"
-          },
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/ContentTypeAndLayoutAndFlow"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "schema": {
-              "$ref": "#/definitions/ContentTypeRequest"
-            },
-            "required": true,
-            "name": "content_type",
-            "in": "body",
-            "description": "Content Type to be created"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.create",
-        "description": "Create content type API"
-      },
-      "get": {
-        "tags": [
-          "ContentType"
-        ],
-        "summary": "Content Type index",
-        "responses": {
-          "401": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Unauthorized"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/ContentTypesIndex"
-            },
-            "description": "Ok"
-          }
-        },
-        "parameters": [
-          {
-            "type": "string",
-            "required": false,
-            "name": "page",
-            "in": "query",
-            "description": "Page number"
-          }
-        ],
-        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.index",
-        "description": "API to get the list of all content types created so far"
-      }
-    },
-    "/assets/{id}": {
+    "/organisations/{id}": {
       "put": {
         "tags": [
-          "Asset"
+          "Organisation"
         ],
-        "summary": "Update an asset",
+        "summary": "Update an organisation",
         "responses": {
           "422": {
             "schema": {
@@ -2638,7 +2139,53 @@
             "schema": {
               "$ref": "#/definitions/Error"
             },
-            "description": "Not found"
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/Organisation"
+            },
+            "description": "Accepted"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "organisation id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/OrganisationRequest"
+            },
+            "required": true,
+            "name": "organisation",
+            "in": "body",
+            "description": "Organisation to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.OrganisationController.update",
+        "description": "API to update an organisation"
+      },
+      "get": {
+        "tags": [
+          "Organisation"
+        ],
+        "summary": "Show an Organisation",
+        "responses": {
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
           },
           "401": {
             "schema": {
@@ -2648,7 +2195,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/Asset"
+              "$ref": "#/definitions/Organisation"
             },
             "description": "Ok"
           }
@@ -2659,34 +2206,550 @@
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "asset id"
+            "description": "Organisation id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.OrganisationController.show",
+        "description": "API to show details of an organisation"
+      },
+      "delete": {
+        "tags": [
+          "Organisation"
+        ],
+        "summary": "Delete an organisation",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Organisation"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Organisation id"
+          }
+        ],
+        "operationId": "delete_organisation",
+        "description": "Delete Organisation API"
+      }
+    },
+    "/organisations/{id}/invite": {
+      "post": {
+        "tags": [
+          "Organisation"
+        ],
+        "summary": "Invite new member to the organisation",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/InvitedResponse"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Organisation id"
+          },
+          {
+            "schema": "string",
+            "required": true,
+            "name": "email",
+            "in": "body",
+            "description": "Email of the user"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.OrganisationController.invite",
+        "description": "Invite new member to the organisation"
+      }
+    },
+    "/resources": {
+      "post": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Create resource",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Resource"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/ResourceRequest"
+            },
+            "required": true,
+            "name": "resource",
+            "in": "body",
+            "description": "Resource to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.create",
+        "description": "Create resource API"
+      },
+      "get": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Resource index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ResourceIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.index",
+        "description": "API to get the list of all resources created so far"
+      }
+    },
+    "/flows/{flow_id}/states": {
+      "post": {
+        "tags": [
+          "State"
+        ],
+        "summary": "Create a state",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/State"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/StateRequest"
+            },
+            "required": true,
+            "name": "state",
+            "in": "body",
+            "description": "State to be created"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "flow_id",
+            "in": "path",
+            "description": "Flow id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.StateController.create",
+        "description": "Create state API"
+      },
+      "get": {
+        "tags": [
+          "State"
+        ],
+        "summary": "State index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FlowIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "flow_id",
+            "in": "path",
+            "description": "flow id"
+          },
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.StateController.index",
+        "description": "Index of States under a flow"
+      }
+    },
+    "/permissions": {
+      "post": {
+        "tags": [
+          "Permission"
+        ],
+        "summary": "Create permission",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Permission"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/PermissionRequest"
+            },
+            "required": true,
+            "name": "resource",
+            "in": "body",
+            "description": "Permission to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.PermissionController.create",
+        "description": "Create permission API"
+      },
+      "get": {
+        "tags": [
+          "Permission"
+        ],
+        "summary": "Permission index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/PermissionIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.PermissionController.index",
+        "description": "API to get the list of all permissions created so far"
+      }
+    },
+    "/field_types": {
+      "post": {
+        "tags": [
+          "FieldType"
+        ],
+        "summary": "Create a field type",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FieldType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/FieldTypeRequest"
+            },
+            "required": true,
+            "name": "field_type",
+            "in": "body",
+            "description": "Field Type to be created"
+          }
+        ],
+        "operationId": "create_field_type",
+        "description": "Create field type API"
+      },
+      "get": {
+        "tags": [
+          "FieldType"
+        ],
+        "summary": "Field type index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FieldTypeIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.index",
+        "description": "API to get the list of all field typs created so far"
+      }
+    },
+    "/layouts/{id}": {
+      "put": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Update a Layout",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowLayout"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "layout id"
           },
           {
             "type": "string",
             "required": true,
             "name": "name",
             "in": "formData",
-            "description": "Asset name"
+            "description": "Layout's name"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "description",
+            "in": "formData",
+            "description": "Layout description"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "width",
+            "in": "formData",
+            "description": "Layout width"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "height",
+            "in": "formData",
+            "description": "Layout height"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "unit",
+            "in": "formData",
+            "description": "Layout dimension unit"
+          },
+          {
+            "type": "string",
+            "required": false,
+            "name": "slug",
+            "in": "formData",
+            "description": "Name of slug to be used"
           },
           {
             "type": "file",
             "required": false,
-            "name": "file",
+            "name": "slug_file",
             "in": "formData",
-            "description": "Asset file to upload"
+            "description": "Slug file to upload"
+          },
+          {
+            "type": "file",
+            "required": true,
+            "name": "screenshot",
+            "in": "formData",
+            "description": "Screenshot to upload"
+          },
+          {
+            "type": "list",
+            "required": false,
+            "name": "assets",
+            "in": "formData",
+            "description": "IDs of assets of the layout"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "engine_uuid",
+            "in": "formData",
+            "description": "ID of layout's engine"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.AssetController.update",
-        "description": "API to update an asset",
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.update",
+        "description": "API to update a layout",
         "consumes": [
           "multipart/form-data"
         ]
       },
       "get": {
         "tags": [
-          "Asset"
+          "Layout"
         ],
-        "summary": "Show an asset",
+        "summary": "Show a Layout",
         "responses": {
           "401": {
             "schema": {
@@ -2696,7 +2759,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/ShowAsset"
+              "$ref": "#/definitions/ShowLayout"
             },
             "description": "Ok"
           }
@@ -2707,17 +2770,17 @@
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "ID of the asset"
+            "description": "layout id"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.AssetController.show",
-        "description": "API to get all details of an asset"
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.show",
+        "description": "API to show details of a layout"
       },
       "delete": {
         "tags": [
-          "Asset"
+          "Layout"
         ],
-        "summary": "Delete an asset",
+        "summary": "Delete a Layout",
         "responses": {
           "422": {
             "schema": {
@@ -2725,12 +2788,6 @@
             },
             "description": "Unprocessable Entity"
           },
-          "404": {
-            "schema": {
-              "$ref": "#/definitions/Error"
-            },
-            "description": "Not found"
-          },
           "401": {
             "schema": {
               "$ref": "#/definitions/Error"
@@ -2739,7 +2796,7 @@
           },
           "200": {
             "schema": {
-              "$ref": "#/definitions/Asset"
+              "$ref": "#/definitions/Layout"
             },
             "description": "Ok"
           }
@@ -2750,11 +2807,11 @@
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "asset id"
+            "description": "layout id"
           }
         ],
-        "operationId": "WraftDocWeb.Api.V1.AssetController.delete",
-        "description": "API to delete an asset"
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.delete",
+        "description": "API to delete a layout"
       }
     },
     "/assets": {
