@@ -532,7 +532,6 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns[:current_user]
-    IO.inspect(current_user)
 
     with %ContentType{} = content_type <- Document.get_content_type(uuid),
          %ContentType{} = content_type <-
@@ -568,6 +567,49 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
          {:ok, %ContentType{}} <- Document.delete_content_type(content_type, current_user) do
       conn
       |> render("content_type.json", content_type: content_type)
+    end
+  end
+
+  @doc """
+  Bulk build documents for a content type.
+  """
+  swagger_path :bulk_build do
+    post("/content_types/{c_type_id}/bulk_build")
+    summary("Bulk build documents")
+    description("API to bulk build documents for a content type")
+
+    consumes("multipart/form-data")
+
+    parameter(:c_type_id, :path, :string, "Content type id", required: true)
+    parameter(:state_id, :formData, :string, "State id", required: true)
+    parameter(:d_temp_uuid, :formData, :string, "Data template id", required: true)
+    parameter(:file, :formData, :file, "Bulk build source file")
+
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec bulk_build(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def bulk_build(
+        conn,
+        %{
+          "c_type_id" => c_type_uuid,
+          "state_id" => state_uuid,
+          "d_temp_uuid" => d_temp_uuid,
+          "file" => file
+        }
+      ) do
+    current_user = conn.assigns[:current_user]
+
+    with {:ok, %Oban.Job{}} <-
+           Document.insert_bulk_build_work(
+             current_user,
+             c_type_uuid,
+             state_uuid,
+             d_temp_uuid,
+             file
+           ) do
+      conn |> render("bulk.json")
     end
   end
 end

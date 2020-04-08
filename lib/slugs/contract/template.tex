@@ -4,6 +4,9 @@
 % -----------------
 % START OF PREAMBLE
 % -----------------
+
+\PassOptionsToPackage{unicode=true}{hyperref} % options for packages loaded elsewhere
+\PassOptionsToPackage{hyphens}{url}
 \documentclass[a4paper,11pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -46,11 +49,12 @@
 \sectionfont{\color{cyan}}
 \definecolor{foo}{HTML}{2c41ac}
 \sectionfont{\color{foo}}
+
+$if(path)$
 \setmainfont[
 Path = $path$/fonts/,
-BoldFont = BasierCircle-Medium.otf ,
-ItalicFont = BasierCircle-RegularItalic.otf ,
-BoldItalicFont = BasierCircle-MediumItalic.otf ]{BasierCircle-Regular.otf}
+BoldFont = Mallory-Bold.otf]{Mallory-Book.otf}
+$endif$
 
 % Longtabe and friends
 \usepackage{rotating,multirow,longtable,booktabs}
@@ -66,7 +70,14 @@ BoldItalicFont = BasierCircle-MediumItalic.otf ]{BasierCircle-Regular.otf}
 
 \renewcommand{\baselinestretch}{1.25}
 
-\newcommand{\newCommandProposalTitle}{Proposal for 2019 IKST Website Rebuilding Project}
+$if(title)$
+\newcommand{\newCommandProposalTitle}{$title$}
+$endif$
+
+$if(id)$
+\newcommand{\newCommandProposalId}{$id$}
+$endif$
+
 \newcommand{\newCommandProposalParty}{Functionary Labs Pvt Ltd}
 % Required for syntax highlighting
 $highlighting-macros$
@@ -122,14 +133,18 @@ $highlighting-macros$
 %  END OF PREAMBLE
 % -----------------
 \begin{document}
-
-\input{cover}
+$if(path)$
+\input{$path$/cover}
+$endif$
 
 % chapter: 0, section: 1, subsection: 2 etc
 \setcounter{secnumdepth}{3}
 \setcounter{tocdepth}{1}
 \tableofcontents
-
+\newpage
 $body$
 
+$if(qrcode)$
+  \includegraphics[scale=20.25]{$qrcode$}
+$endif$
 \end{document}

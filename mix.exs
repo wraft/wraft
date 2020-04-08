@@ -76,7 +76,9 @@ defmodule WraftDoc.Mixfile do
       # Email client
       {:bamboo, "~> 1.4"},
       # Activity stream
-      {:spur, git: "https://github.com/shijithkjayan/spur.git"}
+      {:spur, git: "https://github.com/shijithkjayan/spur.git"},
+      # CSV parser
+      {:csv, "~> 2.3.1"}
     ]
   end
 
