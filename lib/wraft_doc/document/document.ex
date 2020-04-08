@@ -955,12 +955,37 @@ defmodule WraftDoc.Document do
     |> Repo.delete()
   end
 
+  @doc """
+  Create a background job for Bulk build.
+  """
+  def insert_bulk_build_work(current_user, c_type_uuid, state_uuid, d_temp_uuid, %{
+        filename: filename,
+        path: path
+      }) do
+    File.mkdir_p("temp/bulk_build_source/")
+    dest_path = "temp/bulk_build_source/#{filename}"
+    System.cmd("cp", [path, dest_path])
+
+    %{
+      user_uuid: current_user.uuid,
+      c_type_uuid: c_type_uuid,
+      state_uuid: state_uuid,
+      d_temp_uuid: d_temp_uuid,
+      file: dest_path
+    }
+    |> WraftDocWeb.Worker.BulkWorker.new()
+    |> Oban.insert()
+  end
+
+  @doc """
+  Bulk build function.
+  """
   def bulk_doc_build(
         current_user,
         %ContentType{id: id} = c_type,
         state,
         %DataTemplate{data: data},
-        %{path: path}
+        path
       ) do
     fields =
       from(ctf in ContentTypeField, where: ctf.content_type_id == ^id, select: ctf.name)
@@ -973,13 +998,16 @@ defmodule WraftDoc.Document do
     |> CSV.decode!(headers: fields)
     |> Enum.to_list()
     |> Enum.map(fn x ->
-      create_instance_for_bulk_build(x, data, current_user, c_type, state)
+      create_instance_params_for_bulk_build(x, data, current_user, c_type, state)
     end)
     |> Stream.map(fn x -> bulk_build(current_user, x, c_type.layout) end)
     |> Enum.to_list()
   end
 
-  def create_instance_for_bulk_build(serialized, template, current_user, c_type, state) do
+  @doc """
+  Generate params to create instances for bulk build.
+  """
+  def create_instance_params_for_bulk_build(serialized, template, current_user, c_type, state) do
     raw =
       serialized
       |> Enum.reduce(template, fn {k, v}, acc ->

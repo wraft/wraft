@@ -580,9 +580,16 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
         }
       ) do
     current_user = conn.assigns[:current_user]
-    c_type = Document.get_content_type(c_type_uuid)
-    state = Enterprise.get_state(state_uuid)
-    data_template = Document.get_d_template(d_temp_uuid)
-    Document.bulk_doc_build(current_user, c_type, state, data_template, file)
+
+    with {:ok, %Oban.Job{}} <-
+           Document.insert_bulk_build_work(
+             current_user,
+             c_type_uuid,
+             state_uuid,
+             d_temp_uuid,
+             file
+           ) do
+      conn |> render("bulk.json")
+    end
   end
 end
