@@ -58,6 +58,8 @@ defmodule WraftDocWeb.Router do
         resources("/", ContentTypeController, only: [:create, :index, :show, :update, :delete])
 
         scope "/:c_type_id" do
+          # Bulk build
+          post("/bulk_build", ContentTypeController, :bulk_build)
           # Instances
           resources("/contents", InstanceController, only: [:create, :index])
 
@@ -97,7 +99,7 @@ defmodule WraftDocWeb.Router do
       # All instances in an organisation
       get("/contents", InstanceController, :all_contents)
 
-      # uild PDF from a content
+      # build PDF from a content
       post("/contents/:id/build", InstanceController, :build)
 
       # All instances in an organisation

@@ -89,4 +89,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
       field_type: render_one(field.field_type, FieldTypeView, "field_type.json", as: :field_type)
     }
   end
+
+  def render("bulk.json", %{}) do
+    %{
+      info: "Documents will be generated soon."
+    }
+  end
 end

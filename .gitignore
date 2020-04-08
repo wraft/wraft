@@ -4,6 +4,7 @@
 /deps
 /*.ez
 /uploads
+/temp
 # Generated on crash by the VM
 erl_crash.dump
 
