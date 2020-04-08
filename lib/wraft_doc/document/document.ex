@@ -31,6 +31,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a layout.
   """
+
   @spec create_layout(User.t(), Engine.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
   def create_layout(%{organisation_id: org_id} = current_user, engine, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
@@ -257,6 +258,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type from its UUID.
   """
+
   @spec get_content_type(binary) :: ContentType.t()
   def get_content_type(uuid) do
     Repo.get_by(ContentType, uuid: uuid)
@@ -960,11 +962,7 @@ defmodule WraftDoc.Document do
     response_body
   end
 
-  def generate_quick_chart_data(%{"label" => label, "value" => value}) do
-  end
-
   @doc """
-
   Create a field type
   """
   @spec create_field_type(User.t(), map) :: {:ok, FieldType.t()}
