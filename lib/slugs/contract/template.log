@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.14159265-2.6-0.999991 (TeX Live 2019) (preloaded format=xelatex 2019.12.20)  8 APR 2020 11:20
+This is XeTeX, Version 3.14159265-2.6-0.999991 (TeX Live 2019) (preloaded format=xelatex 2019.12.20)  8 APR 2020 16:16
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1387,28 +1387,353 @@ Package: fr-longtable 2007/11/28 v0.1b (beta) floatrow: additions for longtable
 \flrow@LT@lasthead=\box105
 \flrow@LT@prelastfoot=\box106
 \c@FBLTpage=\count376
+) (./cover.tex
+Missing character: There is no 1 in font nullfont!
+ (/usr/local/texlive/2019/texmf-dist/tex/generic/oberdiek/se-ascii-print.def
+File: se-ascii-print.def 2016/05/16 v1.11 stringenc: Printable ASCII characters
+) [1
+
+]
+Missing character: There is no F in font nullfont!
+Missing character: There is no u in font nullfont!
+Missing character: There is no n in font nullfont!
+Missing character: There is no c in font nullfont!
+Missing character: There is no t in font nullfont!
+Missing character: There is no i in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no n in font nullfont!
+Missing character: There is no a in font nullfont!
+Missing character: There is no r in font nullfont!
+Missing character: There is no y in font nullfont!
+Missing character: There is no L in font nullfont!
+Missing character: There is no a in font nullfont!
+Missing character: There is no b in font nullfont!
+Missing character: There is no s in font nullfont!
+Missing character: There is no P in font nullfont!
+Missing character: There is no v in font nullfont!
+Missing character: There is no t in font nullfont!
+Missing character: There is no L in font nullfont!
+Missing character: There is no t in font nullfont!
+Missing character: There is no d in font nullfont!
+
+./cover.tex:5: Font TU/BasierCircle-Regular.otf(0)/m/sc/10.95=[$path$/fonts/BasierCircle-Regular.otf]/OT at 10.95pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again> 
+                   relax 
+l.5     \textsc{\Large \newCommandProposalId}
+                                             \\[0.5cm]
+I wasn't able to read the size data for this font,
+so I will ignore the font specification.
+[Wizards can fix TFM files using TFtoPL/PLtoTF.]
+You might try inserting a different font spec;
+e.g., type `I\font<same font id>=<substitute font name>'.
+
+
+Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/sc/10.95' does not specify its
+(microtype)                \fontdimen 6 (width of an `em')! Therefore,
+(microtype)                protrusion will not work with this font.
+
+./cover.tex:5: Font TU/BasierCircle-Regular.otf(0)/m/sc/14.4=[$path$/fonts/BasierCircle-Regular.otf]/OT at 14.4pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again> 
+                   relax 
+l.5     \textsc{\Large \newCommandProposalId}
+                                             \\[0.5cm]
+I wasn't able to read the size data for this font,
+so I will ignore the font specification.
+[Wizards can fix TFM files using TFtoPL/PLtoTF.]
+You might try inserting a different font spec;
+e.g., type `I\font<same font id>=<substitute font name>'.
+
+
+Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/sc/14.4' does not specify its
+(microtype)                \fontdimen 6 (width of an `em')! Therefore,
+(microtype)                protrusion will not work with this font.
+
+./cover.tex:5: Undefined control sequence.
+<argument> \Large \newCommandProposalId 
+                                        
+l.5     \textsc{\Large \newCommandProposalId}
+                                             \\[0.5cm]
+The control sequence at the end of the top line
+of your error message was never \def'ed. If you have
+misspelled it (e.g., `\hobx'), type `I' and the correct
+spelling (e.g., `I\hbox'). Otherwise just continue,
+and I'll forget about whatever was undefined.
+
+./cover.tex:8: Font TU/BasierCircle-Regular.otf(0)/m/n/20.74=[$path$/fonts/BasierCircle-Regular.otf]/OT at 20.74pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again> 
+                   relax 
+l.8     {\huge
+               \bfseries \newCommandProposalTitle \\[0.4cm]}
+I wasn't able to read the size data for this font,
+so I will ignore the font specification.
+[Wizards can fix TFM files using TFtoPL/PLtoTF.]
+You might try inserting a different font spec;
+e.g., type `I\font<same font id>=<substitute font name>'.
+
+
+Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/n/20.74' does not specify its
+(microtype)                \fontdimen 6 (width of an `em')! Therefore,
+(microtype)                protrusion will not work with this font.
+
+./cover.tex:8: Font TU/BasierCircle-Regular.otf(0)/bx/n/20.74=[$path$/fonts/BasierCircle-Medium.otf]/OT at 20.74pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again> 
+                   relax 
+l.8     {\huge \bfseries
+                         \newCommandProposalTitle \\[0.4cm]}
+I wasn't able to read the size data for this font,
+so I will ignore the font specification.
+[Wizards can fix TFM files using TFtoPL/PLtoTF.]
+You might try inserting a different font spec;
+e.g., type `I\font<same font id>=<substitute font name>'.
+
+
+Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/bx/n/20.74' does not specify its
+(microtype)                \fontdimen 6 (width of an `em')! Therefore,
+(microtype)                protrusion will not work with this font.
+
+Missing character: There is no P in font nullfont!
+Missing character: There is no r in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no p in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no s in font nullfont!
+Missing character: There is no a in font nullfont!
+Missing character: There is no l in font nullfont!
+Missing character: There is no f in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no r in font nullfont!
+Missing character: There is no 2 in font nullfont!
+Missing character: There is no 0 in font nullfont!
+Missing character: There is no 1 in font nullfont!
+Missing character: There is no 9 in font nullfont!
+Missing character: There is no I in font nullfont!
+Missing character: There is no K in font nullfont!
+Missing character: There is no S in font nullfont!
+Missing character: There is no T in font nullfont!
+Missing character: There is no W in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no b in font nullfont!
+Missing character: There is no s in font nullfont!
+Missing character: There is no i in font nullfont!
+Missing character: There is no t in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no R in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no b in font nullfont!
+Missing character: There is no u in font nullfont!
+Missing character: There is no i in font nullfont!
+Missing character: There is no l in font nullfont!
+Missing character: There is no d in font nullfont!
+Missing character: There is no i in font nullfont!
+Missing character: There is no n in font nullfont!
+Missing character: There is no g in font nullfont!
+Missing character: There is no P in font nullfont!
+Missing character: There is no r in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no j in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no c in font nullfont!
+Missing character: There is no t in font nullfont!
+./cover.tex:11: Font TU/BasierCircle-Regular.otf(0)/m/it/10.95=[$path$/fonts/BasierCircle-RegularItalic.otf]/OT at 10.95pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again> 
+                   relax 
+l.11     \emph{Prepared By}
+                           \\[0.1cm]
+I wasn't able to read the size data for this font,
+so I will ignore the font specification.
+[Wizards can fix TFM files using TFtoPL/PLtoTF.]
+You might try inserting a different font spec;
+e.g., type `I\font<same font id>=<substitute font name>'.
+
+
+Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/it/10.95' does not specify its
+(microtype)                \fontdimen 6 (width of an `em')! Therefore,
+(microtype)                protrusion will not work with this font.
+
+Missing character: There is no P in font nullfont!
+Missing character: There is no r in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no p in font nullfont!
+Missing character: There is no a in font nullfont!
+Missing character: There is no r in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no d in font nullfont!
+Missing character: There is no B in font nullfont!
+Missing character: There is no y in font nullfont!
+./cover.tex:16: Font TU/BasierCircle-Regular.otf(0)/m/n/8=[$path$/fonts/BasierCircle-Regular.otf]/OT at 8.0pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again> 
+                   relax 
+l.16     \end{tabular}}
+                       \\[1cm]
+I wasn't able to read the size data for this font,
+so I will ignore the font specification.
+[Wizards can fix TFM files using TFtoPL/PLtoTF.]
+You might try inserting a different font spec;
+e.g., type `I\font<same font id>=<substitute font name>'.
+
+
+Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/n/8' does not specify its
+(microtype)                \fontdimen 6 (width of an `em')! Therefore,
+(microtype)                protrusion will not work with this font.
+
+./cover.tex:16: Font TU/BasierCircle-Regular.otf(0)/m/n/6=[$path$/fonts/BasierCircle-Regular.otf]/OT at 6.0pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again> 
+                   relax 
+l.16     \end{tabular}}
+                       \\[1cm]
+I wasn't able to read the size data for this font,
+so I will ignore the font specification.
+[Wizards can fix TFM files using TFtoPL/PLtoTF.]
+You might try inserting a different font spec;
+e.g., type `I\font<same font id>=<substitute font name>'.
+
+
+Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/n/6' does not specify its
+(microtype)                \fontdimen 6 (width of an `em')! Therefore,
+(microtype)                protrusion will not work with this font.
+
+(/usr/local/texlive/2019/texmf-dist/tex/latex/microtype/mt-msa.cfg
+File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
+) (/usr/local/texlive/2019/texmf-dist/tex/latex/microtype/mt-msb.cfg
+File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
+) (/usr/local/texlive/2019/texmf-dist/tex/latex/microtype/mt-cmr.cfg
+File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman (RS)
 )
+Missing character: There is no M in font nullfont!
+Missing character: There is no u in font nullfont!
+Missing character: There is no n in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no f in font nullfont!
+Missing character: There is no H in font nullfont!
+Missing character: There is no a in font nullfont!
+Missing character: There is no m in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no d in font nullfont!
+Missing character: There is no m in font nullfont!
+Missing character: There is no u in font nullfont!
+Missing character: There is no n in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no f in font nullfont!
+Missing character: There is no @ in font nullfont!
+Missing character: There is no a in font nullfont!
+Missing character: There is no u in font nullfont!
+Missing character: There is no r in font nullfont!
+Missing character: There is no u in font nullfont!
+Missing character: There is no t in font nullfont!
+Missing character: There is no . in font nullfont!
+Missing character: There is no c in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no m in font nullfont!
 
-! LaTeX Error: File `cover.tex' not found.
+./cover.tex:22: Font TU/BasierCircle-Regular.otf(0)/m/n/12=[$path$/fonts/BasierCircle-Regular.otf]/OT at 12.0pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again> 
+                   relax 
+l.22     {\large
+                 \today}
+I wasn't able to read the size data for this font,
+so I will ignore the font specification.
+[Wizards can fix TFM files using TFtoPL/PLtoTF.]
+You might try inserting a different font spec;
+e.g., type `I\font<same font id>=<substitute font name>'.
 
-Type X to quit or <RETURN> to proceed,
-or enter new name. (Default extension: tex)
 
-Enter file name: 
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:126: Emergency stop.
-<read *> 
-         
-l.126 \input{cover}
-                   ^^M
-*** (cannot \read from terminal in nonstop modes)
+Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/n/12' does not specify its
+(microtype)                \fontdimen 6 (width of an `em')! Therefore,
+(microtype)                protrusion will not work with this font.
 
- 
+Missing character: There is no A in font nullfont!
+Missing character: There is no p in font nullfont!
+Missing character: There is no r in font nullfont!
+Missing character: There is no i in font nullfont!
+Missing character: There is no l in font nullfont!
+Missing character: There is no 8 in font nullfont!
+Missing character: There is no , in font nullfont!
+Missing character: There is no 2 in font nullfont!
+Missing character: There is no 0 in font nullfont!
+Missing character: There is no 2 in font nullfont!
+Missing character: There is no 0 in font nullfont!
+[1])
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:131: Font TU/BasierCircle-Regular.otf(0)/m/n/14.4=[$path$/fonts/BasierCircle-Regular.otf]/OT at 14.4pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again> 
+                   relax 
+l.131 \tableofcontents
+                      
+I wasn't able to read the size data for this font,
+so I will ignore the font specification.
+[Wizards can fix TFM files using TFtoPL/PLtoTF.]
+You might try inserting a different font spec;
+e.g., type `I\font<same font id>=<substitute font name>'.
+
+
+Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/m/n/14.4' does not specify its
+(microtype)                \fontdimen 6 (width of an `em')! Therefore,
+(microtype)                protrusion will not work with this font.
+
+/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/contract/template.tex:131: Font TU/BasierCircle-Regular.otf(0)/bx/n/14.4=[$path$/fonts/BasierCircle-Medium.otf]/OT at 14.4pt not loadable: Metric (TFM) file or installed font not found.
+<to be read again> 
+                   relax 
+l.131 \tableofcontents
+                      
+I wasn't able to read the size data for this font,
+so I will ignore the font specification.
+[Wizards can fix TFM files using TFtoPL/PLtoTF.]
+You might try inserting a different font spec;
+e.g., type `I\font<same font id>=<substitute font name>'.
+
+
+Package microtype Warning: Font `TU/BasierCircle-Regular.otf(0)/bx/n/14.4' does not specify its
+(microtype)                \fontdimen 6 (width of an `em')! Therefore,
+(microtype)                protrusion will not work with this font.
+
+Missing character: There is no T in font nullfont!
+Missing character: There is no a in font nullfont!
+Missing character: There is no b in font nullfont!
+Missing character: There is no l in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no f in font nullfont!
+Missing character: There is no C in font nullfont!
+Missing character: There is no o in font nullfont!
+Missing character: There is no n in font nullfont!
+Missing character: There is no t in font nullfont!
+Missing character: There is no e in font nullfont!
+Missing character: There is no n in font nullfont!
+Missing character: There is no t in font nullfont!
+Missing character: There is no s in font nullfont!
+\tf@toc=\write5
+\openout5 = `template.toc'.
+
+Missing character: There is no 1 in font nullfont!
+[1]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 135.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 135.
+ (./template.aux)
+Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 135.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 135.
+
+
+Package rerunfilecheck Warning: File `template.out' has changed.
+(rerunfilecheck)                Rerun to get outlines right
+(rerunfilecheck)                or use package `bookmark'.
+
+Package rerunfilecheck Info: Checksums for `template.out':
+(rerunfilecheck)             Before: 
+(rerunfilecheck)             After:  D41D8CD98F00B204E9800998ECF8427E.
+ )
+(\end occurred inside a group at level 1)
+
+### simple group (level 1) entered at line 119 ({)
+### bottom level 
 Here is how much of TeX's memory you used:
- 39272 strings out of 492916
- 768801 string characters out of 6133344
- 895395 words of memory out of 5000000
- 42819 multiletter control sequences out of 15000+600000
+ 39425 strings out of 492916
+ 772579 string characters out of 6133344
+ 896395 words of memory out of 5000000
+ 42950 multiletter control sequences out of 15000+600000
  540466 words of font info for 48 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
- 62i,3n,92p,873b,864s stack positions out of 5000i,500n,10000p,200000b,80000s
-No pages of output.
+ 62i,8n,92p,873b,1232s stack positions out of 5000i,500n,10000p,200000b,80000s
+
+Output written on template.pdf (3 pages).
