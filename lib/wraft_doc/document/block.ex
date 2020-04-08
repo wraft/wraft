@@ -4,7 +4,19 @@ defmodule WraftDoc.Document.Block do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias WraftDoc.Document.Block
+  alias __MODULE__
+  alias WraftDoc.Account.User
+  import Ecto.Query
+
+  defimpl Spur.Trackable, for: Block do
+    def actor(block), do: "#{block.creator_id}"
+    def object(block), do: "Block:#{block.id}"
+    def target(_chore), do: nil
+
+    def audience(%{organisation_id: id}) do
+      from(u in User, where: u.organisation_id == ^id)
+    end
+  end
 
   schema "block" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)

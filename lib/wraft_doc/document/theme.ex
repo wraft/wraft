@@ -5,7 +5,19 @@ defmodule WraftDoc.Document.Theme do
   use Ecto.Schema
   use Arc.Ecto.Schema
   import Ecto.Changeset
-  alias WraftDoc.Document.Theme
+  import Ecto.Query
+  alias __MODULE__
+  alias WraftDoc.Account.User
+
+  defimpl Spur.Trackable, for: Theme do
+    def actor(theme), do: "#{theme.creator_id}"
+    def object(theme), do: "Theme:#{theme.id}"
+    def target(_chore), do: nil
+
+    def audience(%{organisation_id: id}) do
+      from(u in User, where: u.organisation_id == ^id)
+    end
+  end
 
   schema "theme" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
