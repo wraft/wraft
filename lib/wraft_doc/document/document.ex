@@ -17,6 +17,9 @@ defmodule WraftDoc.Document do
     Document.DataTemplate,
     Document.Asset,
     Document.LayoutAsset,
+    Document.FieldType,
+    Document.ContentTypeField,
+    Document.Counter,
     Enterprise,
     Enterprise.Flow,
     Enterprise.Flow.State,
@@ -35,7 +38,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:layouts, engine: engine)
     |> Layout.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, layout} ->
         layout = layout |> layout_files_upload(params)
@@ -110,15 +113,46 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:content_types, layout: layout, flow: flow)
     |> ContentType.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
-        content_type |> Repo.preload([:layout, :flow])
+        content_type |> fetch_and_associate_fields(params)
+        content_type |> Repo.preload([:layout, :flow, {:fields, :field_type}])
 
       changeset = {:error, _} ->
         changeset
     end
   end
+
+  @spec fetch_and_associate_fields(ContentType.t(), map) :: list
+  # Iterate throught the list of field types and associate with the content type
+  defp fetch_and_associate_fields(content_type, %{"fields" => fields}) do
+    fields
+    |> Stream.map(fn x -> associate_c_type_and_fields(content_type, x) end)
+    |> Enum.to_list()
+  end
+
+  defp fetch_and_associate_fields(_content_type, _params), do: nil
+
+  @spec associate_c_type_and_fields(ContentType.t(), map) ::
+          {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()} | nil
+  # Fetch and associate field types with the content type
+  defp associate_c_type_and_fields(c_type, %{"key" => key, "field_type_id" => field_type_id}) do
+    field_type_id
+    |> get_field_type
+    |> case do
+      %FieldType{} = field_type ->
+        field_type
+        |> build_assoc(:fields, content_type: c_type)
+        |> ContentTypeField.changeset(%{name: key})
+        |> Repo.insert()
+
+      nil ->
+        nil
+    end
+  end
+
+  defp associate_c_type_and_fields(_c_type, _field), do: nil
 
   @doc """
   List all engines.
@@ -169,10 +203,10 @@ defmodule WraftDoc.Document do
     update_layout(layout, current_user, params)
   end
 
-  def update_layout(layout, current_user, params) do
+  def update_layout(layout, %{id: user_id} = current_user, params) do
     layout
     |> Layout.update_changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{user_id}"})
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -186,8 +220,8 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a layout.
   """
-  @spec delete_layout(Layout.t()) :: {:ok, Layout.t()} | {:error, Ecto.Changeset.t()}
-  def delete_layout(layout) do
+  @spec delete_layout(Layout.t(), User.t()) :: {:ok, Layout.t()} | {:error, Ecto.Changeset.t()}
+  def delete_layout(layout, %User{id: id}) do
     layout
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -195,7 +229,7 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!"
     )
-    |> Repo.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -206,7 +240,7 @@ defmodule WraftDoc.Document do
     from(ct in ContentType,
       where: ct.organisation_id == ^org_id,
       order_by: [desc: ct.id],
-      preload: [:layout, :flow]
+      preload: [:layout, :flow, {:fields, :field_type}]
     )
     |> Repo.paginate(params)
   end
@@ -217,7 +251,7 @@ defmodule WraftDoc.Document do
   @spec show_content_type(binary) :: %ContentType{layout: %Layout{}, creator: %User{}}
   def show_content_type(uuid) do
     get_content_type(uuid)
-    |> Repo.preload([:layout, :creator, [{:flow, :states}]])
+    |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
   end
 
   @doc """
@@ -231,7 +265,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update a content type.
   """
-  @spec update_content_type(ContentType.t(), map) ::
+  @spec update_content_type(ContentType.t(), User.t(), map) ::
           %ContentType{
             layout: Layout.t(),
             creator: User.t()
@@ -239,6 +273,7 @@ defmodule WraftDoc.Document do
           | {:error, Ecto.Changeset.t()}
   def update_content_type(
         content_type,
+        user,
         %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
       ) do
     %Layout{id: id} = get_layout(layout_uuid)
@@ -246,28 +281,31 @@ defmodule WraftDoc.Document do
     {_, params} = Map.pop(params, "layout_uuid")
     {_, params} = Map.pop(params, "flow_uuid")
     params = params |> Map.merge(%{"layout_id" => id, "flow_id" => f_id})
-    update_content_type(content_type, params)
+    update_content_type(content_type, user, params)
   end
 
-  def update_content_type(content_type, params) do
+  def update_content_type(content_type, %User{id: id}, params) do
     content_type
     |> ContentType.update_changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:error, _} = changeset ->
         changeset
 
       {:ok, content_type} ->
-        content_type |> Repo.preload([:layout, :creator, [{:flow, :states}]])
+        content_type |> fetch_and_associate_fields(params)
+
+        content_type
+        |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
     end
   end
 
   @doc """
   Delete a content type.
   """
-  @spec delete_content_type(ContentType.t()) ::
+  @spec delete_content_type(ContentType.t(), User.t()) ::
           {:ok, ContentType.t()} | {:error, Ecto.Changeset.t()}
-  def delete_content_type(content_type) do
+  def delete_content_type(content_type, %User{id: id}) do
     content_type
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -275,7 +313,7 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
     )
-    |> Repo.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -291,9 +329,10 @@ defmodule WraftDoc.Document do
     c_type
     |> build_assoc(:instances, state: state, creator: current_user)
     |> Instance.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, content} ->
+        Task.start(fn -> create_or_update_counter(c_type) end)
         content |> Repo.preload([:content_type, :state])
 
       changeset = {:error, _} ->
@@ -305,13 +344,48 @@ defmodule WraftDoc.Document do
   @spec create_instance_id(integer, binary) :: binary
   defp create_instance_id(c_id, prefix) do
     instance_count =
-      from(i in Instance, where: i.content_type_id == ^c_id, select: count(i.id))
-      |> Repo.one()
+      c_id
+      |> get_counter_count_from_content_type_id
       |> add(1)
       |> to_string
       |> String.pad_leading(4, "0")
 
     concat_strings(prefix, instance_count)
+  end
+
+  # Create count of instances created for a content type from its ID
+  @spec get_counter_count_from_content_type_id(integer) :: integer
+  defp get_counter_count_from_content_type_id(c_type_id) do
+    c_type_id
+    |> get_counter_from_content_type_id
+    |> case do
+      nil ->
+        0
+
+      %Counter{count: count} ->
+        count
+    end
+  end
+
+  defp get_counter_from_content_type_id(c_type_id) do
+    from(c in Counter, where: c.subject == ^"ContentType:#{c_type_id}")
+    |> Repo.one()
+  end
+
+  # Create or update the counter of a content type.integer()
+  @spec create_or_update_counter(ContentType.t()) :: {:ok, Counter} | {:error, Ecto.Changeset.t()}
+  def create_or_update_counter(%ContentType{id: id}) do
+    id
+    |> get_counter_from_content_type_id
+    |> case do
+      nil ->
+        Counter.changeset(%Counter{}, %{subject: "ContentType:#{id}", count: 1})
+
+      %Counter{count: count} = counter ->
+        count = count |> add(1)
+        counter |> Counter.changeset(%{count: count})
+    end
+    |> Repo.insert_or_update()
   end
 
   # Add two integers
@@ -395,21 +469,21 @@ defmodule WraftDoc.Document do
   @doc """
   Update an instance.
   """
-  @spec update_instance(Instance.t(), map) ::
+  @spec update_instance(Instance.t(), User.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
           | {:error, Ecto.Changeset.t()}
 
-  def update_instance(instance, %{"state_uuid" => state_uuid} = params) do
+  def update_instance(instance, user, %{"state_uuid" => state_uuid} = params) do
     %State{id: id} = Enterprise.get_state(state_uuid)
     {_, params} = Map.pop(params, "state_uuid")
     params = params |> Map.merge(%{"state_id" => id})
-    update_instance(instance, params)
+    update_instance(instance, user, params)
   end
 
-  def update_instance(instance, params) do
+  def update_instance(instance, %User{id: id}, params) do
     instance
     |> Instance.update_changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, instance} ->
         instance
@@ -424,11 +498,11 @@ defmodule WraftDoc.Document do
   @doc """
   Delete an instance.
   """
-  @spec delete_instance(Instance.t()) ::
+  @spec delete_instance(Instance.t(), User.t()) ::
           {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def delete_instance(instance) do
+  def delete_instance(instance, %User{id: id}) do
     instance
-    |> Repo.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -449,7 +523,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:themes)
     |> Theme.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, theme} ->
         theme |> theme_file_upload(params)
@@ -499,18 +573,18 @@ defmodule WraftDoc.Document do
   @doc """
   Update a theme.
   """
-  @spec update_theme(Theme.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
-  def update_theme(theme, params) do
-    theme |> Theme.update_changeset(params) |> Repo.update()
+  @spec update_theme(Theme.t(), User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
+  def update_theme(theme, %User{id: id}, params) do
+    theme |> Theme.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
   end
 
   @doc """
   Delete a theme.
   """
-  @spec delete_theme(Theme.t()) :: {:ok, Theme.t()}
-  def delete_theme(theme) do
+  @spec delete_theme(Theme.t(), User.t()) :: {:ok, Theme.t()}
+  def delete_theme(theme, %User{id: id}) do
     theme
-    |> Repo.delete()
+    |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -522,7 +596,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:data_templates, content_type: c_type)
     |> DataTemplate.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
   end
 
   @doc """
@@ -571,13 +645,13 @@ defmodule WraftDoc.Document do
   @doc """
   Update a data template
   """
-  @spec update_data_template(DataTemplate.t(), map) ::
+  @spec update_data_template(DataTemplate.t(), User.t(), map) ::
           %DataTemplate{creator: User.t(), content_type: ContentType.t()}
           | {:error, Ecto.Changeset.t()}
-  def update_data_template(d_temp, params) do
+  def update_data_template(d_temp, %User{id: id}, params) do
     d_temp
     |> DataTemplate.changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, d_temp} ->
         d_temp |> Repo.preload([:creator, :content_type])
@@ -590,9 +664,9 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a data template
   """
-  @spec delete_data_template(DataTemplate.t()) :: {:ok, DataTemplate.t()}
-  def delete_data_template(d_temp) do
-    d_temp |> Repo.delete()
+  @spec delete_data_template(DataTemplate.t(), User.t()) :: {:ok, DataTemplate.t()}
+  def delete_data_template(d_temp, %User{id: id}) do
+    d_temp |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -605,7 +679,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:assets)
     |> Asset.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, asset} ->
         asset |> asset_file_upload(params)
@@ -657,17 +731,17 @@ defmodule WraftDoc.Document do
   @doc """
   Update an asset.
   """
-  @spec update_asset(Asset.t(), map) :: {:ok, Asset.t()}
-  def update_asset(asset, params) do
-    asset |> Asset.update_changeset(params) |> Repo.update()
+  @spec update_asset(Asset.t(), User.t(), map) :: {:ok, Asset.t()}
+  def update_asset(asset, %User{id: id}, params) do
+    asset |> Asset.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
   end
 
   @doc """
   Delete an asset.
   """
-  @spec delete_asset(Asset.t()) :: {:ok, Asset.t()}
-  def delete_asset(asset) do
-    asset |> Repo.delete()
+  @spec delete_asset(Asset.t(), User.t()) :: {:ok, Asset.t()}
+  def delete_asset(asset, %User{id: id}) do
+    asset |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
@@ -687,14 +761,16 @@ defmodule WraftDoc.Document do
         slug: slug,
         assets: assets
       }) do
-    System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}/"])
-
+    File.mkdir_p("uploads/contents/#{u_id}")
+    System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}"])
     task = Task.async(fn -> generate_qr(instance) end)
+    Task.start(fn -> move_old_builds(u_id) end)
+    c_type = c_type |> Repo.preload([:fields])
 
     header =
       c_type.fields
-      |> Enum.reduce("--- \n", fn {k, _}, acc ->
-        find_header_values(k, instance.serialized, acc)
+      |> Enum.reduce("--- \n", fn x, acc ->
+        find_header_values(x, instance.serialized, acc)
       end)
 
     header = assets |> Enum.reduce(header, fn x, acc -> find_header_values(x, acc) end)
@@ -725,8 +801,8 @@ defmodule WraftDoc.Document do
   end
 
   # Find the header values for the content.md file from the serialized data of an instance.
-  @spec find_header_values(String.t(), map, String.t()) :: String.t()
-  defp find_header_values(key, serialized, acc) do
+  @spec find_header_values(ContentTypeField.t(), map, String.t()) :: String.t()
+  defp find_header_values(%ContentTypeField{name: key}, serialized, acc) do
     serialized
     |> Enum.find(fn {k, _} -> k == key end)
     |> case do
@@ -772,6 +848,31 @@ defmodule WraftDoc.Document do
     string1 <> string2
   end
 
+  # Move old builds to the history folder
+  @spec move_old_builds(String.t()) :: {:ok, non_neg_integer()}
+  defp move_old_builds(u_id) do
+    path = "uploads/contents/#{u_id}/"
+    history_path = concat_strings(path, "history/")
+    old_file = concat_strings(path, "final.pdf")
+    File.mkdir_p(history_path)
+
+    history_file =
+      history_path
+      |> File.ls!()
+      |> Enum.sort(:desc)
+      |> case do
+        ["final-" <> version | _] ->
+          ["v" <> version | _] = version |> String.split(".pdf")
+          version = version |> String.to_integer() |> add(1)
+          concat_strings(history_path, "final-v#{version}.pdf")
+
+        [] ->
+          concat_strings(history_path, "final-v1.pdf")
+      end
+
+    File.copy(old_file, history_file)
+  end
+
   @doc """
   Insert the build history of the given instance.
   """
@@ -805,6 +906,7 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+
   Create a Block
   """
   @spec create_block(User.t(), map) :: Block.t()
@@ -859,5 +961,53 @@ defmodule WraftDoc.Document do
   end
 
   def generate_quick_chart_data(%{"label" => label, "value" => value}) do
+
+  Create a field type
+  """
+  @spec create_field_type(User.t(), map) :: {:ok, FieldType.t()}
+  def create_field_type(current_user, params) do
+    current_user
+    |> build_assoc(:field_types)
+    |> FieldType.changeset(params)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Index of all field types.
+  """
+  @spec field_type_index(map) :: map
+  def field_type_index(params) do
+    from(ft in FieldType, order_by: [desc: ft.id])
+    |> Repo.paginate(params)
+  end
+
+  @doc """
+  Get a field type from its UUID.
+  """
+  @spec get_field_type(binary) :: FieldType.t()
+  def get_field_type(field_type_uuid) do
+    Repo.get_by(FieldType, uuid: field_type_uuid)
+  end
+
+  @doc """
+  Update a field type
+  """
+  @spec update_field_type(FieldType.t(), map) :: FieldType.t() | {:error, Ecto.Changeset.t()}
+  def update_field_type(field_type, params) do
+    field_type
+    |> FieldType.changeset(params)
+    |> Repo.update()
+  end
+
+  def delete_field_type(field_type) do
+    field_type
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.no_assoc_constraint(
+      :fields,
+      message:
+        "Cannot delete the field type. Some Content types depend on this field type. Update those content types and then try again.!"
+    )
+    |> Repo.delete()
+
   end
 end

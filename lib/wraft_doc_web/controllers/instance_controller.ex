@@ -64,7 +64,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
           properties do
             content(Schema.ref(:Content))
-            content_type(Schema.ref(:ContentType))
+            content_type(Schema.ref(:ContentTypeWithoutFields))
             state(Schema.ref(:State))
           end
 
@@ -81,12 +81,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               id: "1232148nb3478",
               name: "Offer letter",
               description: "An offer letter",
-              fields: %{
-                name: "string",
-                position: "string",
-                joining_date: "date",
-                approved_by: "string"
-              },
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             },
@@ -366,8 +360,10 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %Instance{} = instance <- Document.get_instance(uuid),
-         %Instance{} = instance <- Document.update_instance(instance, params) do
+         %Instance{} = instance <- Document.update_instance(instance, current_user, params) do
       conn
       |> render("show.json", instance: instance)
     end
@@ -393,8 +389,10 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
     with %Instance{} = instance <- Document.get_instance(uuid),
-         {:ok, %Instance{}} <- Document.delete_instance(instance) do
+         {:ok, %Instance{}} <- Document.delete_instance(instance, current_user) do
       conn
       |> render("instance.json", instance: instance)
     end

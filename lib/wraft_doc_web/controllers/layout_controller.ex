@@ -384,8 +384,10 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
     with %Layout{} = layout <- Document.get_layout(uuid),
-         {:ok, %Layout{}} <- Document.delete_layout(layout) do
+         {:ok, %Layout{}} <- Document.delete_layout(layout, current_user) do
       conn
       |> render("layout.json", doc_layout: layout)
     end

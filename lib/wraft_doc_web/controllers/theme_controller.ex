@@ -216,8 +216,10 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => theme_uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %Theme{} = theme <- Document.get_theme(theme_uuid),
-         {:ok, %Theme{} = theme} <- Document.update_theme(theme, params) do
+         {:ok, %Theme{} = theme} <- Document.update_theme(theme, current_user, params) do
       conn
       |> render("create.json", theme: theme)
     end
@@ -242,8 +244,10 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
     with %Theme{} = theme <- Document.get_theme(uuid),
-         {:ok, %Theme{}} <- Document.delete_theme(theme) do
+         {:ok, %Theme{}} <- Document.delete_theme(theme, current_user) do
       conn
       |> render("create.json", theme: theme)
     end

@@ -121,6 +121,10 @@ defmodule WraftDocWeb.Router do
       resources("/resources", ResourceController, only: [:create, :index, :show, :update, :delete])
 
       resources("/permissions", PermissionController, only: [:create, :index, :delete])
+
+      resources("/field_types", FieldTypeController,
+        only: [:create, :index, :show, :update, :delete]
+      )
     end
   end
 
