@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
   View module for user controller.
   """
   use WraftDocWeb, :view
+  alias __MODULE__
 
   def render("sign-in.json", %{token: token, user: user}) do
     %{
@@ -42,4 +43,65 @@ defmodule WraftDocWeb.Api.V1.UserView do
       role: me.role.name
     }
   end
+
+  def render("activities.json", %{
+        activities: activities,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      activities: render_many(activities, UserView, "activity.json", as: :activity),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
+  end
+
+  def render("activity.json", %{activity: activity}) do
+    actor = get_actor_name(activity.actor)
+    object_details = get_object_data(activity.object_struct)
+
+    %{
+      action: activity.action,
+      object: activity.object,
+      meta: activity.meta,
+      inserted_at: activity.inserted_at,
+      actor: actor,
+      object_details: object_details
+    }
+  end
+
+  defp get_actor_name(%{name: name}), do: name
+  defp get_actor_name(nil), do: nil
+
+  defp get_object_data(%{name: name, uuid: uuid}) do
+    %{
+      id: uuid,
+      name: name
+    }
+  end
+
+  defp get_object_data(%{title: name, uuid: uuid}) do
+    %{
+      id: uuid,
+      name: name
+    }
+  end
+
+  defp get_object_data(%{instance_id: name, uuid: uuid}) do
+    %{
+      id: uuid,
+      name: name
+    }
+  end
+
+  defp get_object_data(%{state: name, uuid: uuid}) do
+    %{
+      id: uuid,
+      name: name
+    }
+  end
+
+  defp get_object_data(_), do: nil
 end

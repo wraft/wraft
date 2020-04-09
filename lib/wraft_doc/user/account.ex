@@ -2,9 +2,24 @@ defmodule WraftDoc.Account do
   @moduledoc """
   Module that handles the repo connections of the user context.
   """
-  # import Ecto.Query, warn: false
+  import Ecto.Query
   import Ecto
   alias WraftDoc.{Repo, Account.User, Account.Role, Account.Profile, Enterprise.Organisation}
+  alias WraftDoc.Document.{Asset, Block, ContentType, DataTemplate, Instance, Layout, Theme}
+  alias WraftDoc.Enterprise.{Flow, Flow.State}
+
+  @activity_models %{
+    "Asset" => Asset,
+    "Block" => Block,
+    "ContentType" => ContentType,
+    "DataTemplate" => DataTemplate,
+    "Instance" => Instance,
+    "Instance-State" => Instance,
+    "Layout" => Layout,
+    "Theme" => Theme,
+    "Flow" => Flow,
+    "State" => State
+  }
 
   @doc """
     User Registration
@@ -141,6 +156,11 @@ defmodule WraftDoc.Account do
     Repo.get_by(User, uuid: uuid)
   end
 
+  @spec get_user(integer() | String.t()) :: User.t() | nil
+  defp get_user(id) do
+    Repo.get(User, id)
+  end
+
   # Get the user struct from given email
   @spec get_user_by_email(binary) :: User.t() | nil
   defp get_user_by_email(email) when is_binary(email) do
@@ -149,5 +169,59 @@ defmodule WraftDoc.Account do
 
   defp get_user_by_email(_email) do
     nil
+  end
+
+  @doc """
+  Get the activity stream for current user.
+  """
+  @spec get_activity_stream(User.t(), map) :: map
+  def get_activity_stream(%User{id: id}, params) do
+    from(a in Spur.Activity,
+      join: au in "audience",
+      where: au.user_id == ^id and au.activity_id == a.id,
+      order_by: [desc: a.inserted_at],
+      select: %{
+        action: a.action,
+        actor: a.actor,
+        object: a.object,
+        meta: a.meta,
+        inserted_at: a.inserted_at
+      }
+    )
+    |> Repo.paginate(params)
+  end
+
+  @doc """
+  Get the actor and object datas of the activity.
+  """
+  @spec get_activity_datas(list | map) :: list | map
+  def get_activity_datas(activities) when is_list(activities) do
+    activities |> Enum.map(fn x -> get_activity_datas(x) end)
+  end
+
+  def get_activity_datas(%{
+        action: action,
+        actor: actor_id,
+        object: object,
+        meta: meta,
+        inserted_at: inserted_at
+      }) do
+    actor = actor_id |> get_user()
+    object_struct = object |> get_activity_object_struct()
+
+    %{
+      action: action,
+      actor: actor,
+      object: object,
+      object_struct: object_struct,
+      meta: meta,
+      inserted_at: inserted_at
+    }
+  end
+
+  @spec get_activity_object_struct(String.t()) :: map | nil
+  defp get_activity_object_struct(object) do
+    [model | [id]] = object |> String.split(":")
+    @activity_models[model] |> Repo.get(id)
   end
 end
