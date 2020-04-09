@@ -89,6 +89,8 @@ defmodule WraftDocWeb.Router do
 
       # Instance show, update and delete
       resources("/contents", InstanceController, only: [:show, :update, :delete])
+      # Instance state update
+      patch("/contents/:id/states", InstanceController, :state_update)
 
       # Organisations
       resources("/organisations", OrganisationController, only: [:create, :update, :show, :delete])

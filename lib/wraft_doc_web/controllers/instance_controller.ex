@@ -57,6 +57,19 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             state_uuid: "kjb12389k23eyg"
           })
         end,
+      ContentStateUpdateRequest:
+        swagger_schema do
+          title("Content state update Request")
+          description("Content state update request")
+
+          properties do
+            state_uuid(:string, "state id", required: true)
+          end
+
+          example(%{
+            state_uuid: "kjb12389k23eyg"
+          })
+        end,
       ContentAndContentTypeAndState:
         swagger_schema do
           title("Content and its Content Type")
@@ -444,6 +457,37 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           |> put_status(:unprocessable_entity)
           |> render("build_fail.json", %{exit_code: exit_code})
       end
+    end
+  end
+
+  swagger_path :state_update do
+    patch("/contents/{id}/states")
+    summary("Update an instance's state")
+    description("API to update an instance's state")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+
+      content(:body, Schema.ref(:ContentStateUpdateRequest), "New state of the instance",
+        required: true
+      )
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContent))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec state_update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def state_update(conn, %{"id" => instance_uuid, "state_uuid" => state_uuid}) do
+    current_user = conn.assigns[:current_user]
+
+    with %Instance{} = instance <- Document.get_instance(instance_uuid),
+         %State{} = state <- Enterprise.get_state(state_uuid),
+         %Instance{} = instance <- Document.update_instance_state(current_user, instance, state) do
+      conn
+      |> render("show.json", instance: instance)
     end
   end
 end

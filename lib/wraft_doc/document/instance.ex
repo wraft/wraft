@@ -48,11 +48,17 @@ defmodule WraftDoc.Document.Instance do
 
   def update_changeset(%Instance{} = instance, attrs \\ %{}) do
     instance
-    |> cast(attrs, [:instance_id, :raw, :serialized, :state_id])
-    |> validate_required([:instance_id, :raw, :serialized, :state_id])
+    |> cast(attrs, [:instance_id, :raw, :serialized])
+    |> validate_required([:instance_id, :raw, :serialized])
     |> unique_constraint(:instance_id,
       message: "Instance with the ID exists.!",
       name: :content_organisation_unique_index
     )
+  end
+
+  def update_state_changeset(%Instance{} = instance, attrs \\ %{}) do
+    instance
+    |> cast(attrs, [:state_id])
+    |> validate_required([:state_id])
   end
 end
