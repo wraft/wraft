@@ -980,6 +980,39 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+  Get a block by id
+  """
+  @spec get_block(Ecto.UUID.t()) :: Block.t()
+  def get_block(uuid) do
+    Block |> Repo.get(uuid: uuid)
+  end
+
+  @doc """
+  Update a block
+  """
+  def update_block(%Block{} = block, params) do
+    block
+    |> Block.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, :block} ->
+        block
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Delete a block
+  """
+
+  def delete_block(%Block{} = block) do
+    block
+    |> Repo.delete()
+  end
+
+  @doc """
   Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create
   """
   @spec generate_chart(map) :: map
