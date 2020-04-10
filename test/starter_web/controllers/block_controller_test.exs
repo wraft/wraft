@@ -20,6 +20,7 @@ defmodule BlockControllerTest do
   @valid_attrs %{
     name: "energy consumption",
     btype: "pie",
+    endpoint: "quick_chart",
     dataset: Poison.decode(@dataset)
   }
   setup %{conn: conn} do

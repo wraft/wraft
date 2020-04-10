@@ -160,8 +160,79 @@ defmodule WraftDocWeb.Api.V1.BlockController do
       with %Block{} = block <- Document.create_block(current_user, params) do
         conn
         |> put_status(:created)
-        |> render("block.json", block: block)
+        |> render("create.json", block: block)
       end
+    end
+  end
+
+  swagger_path :update do
+    put("/blocks")
+    summary("Update blocks")
+    description("Update a block")
+    operation_id("update_block")
+
+    parameters do
+      id(:path, :string, "block id", required: true)
+      block(:body, Schema.ref(:BlockRequest), "Block to update", required: true)
+    end
+
+    response(201, "Accepted", Schema.ref(:Block))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"id" => uuid} = params) do
+    with %Block{} = block <- Document.get_block(uuid),
+         %Block{} = block <- Document.update_block(block, params) do
+      conn
+      |> put_status(:created)
+      |> render("update.json", block: block)
+    end
+  end
+
+  swagger_path :show do
+    get("/blocks/:id")
+    summary("Show a block")
+    description("Show a block details")
+    operation_id("show_block")
+
+    parameters do
+      id(:path, :string, "Block id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Block))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def show(conn, %{"id" => uuid}) do
+    with %Block{} = block <- Document.get_block(uuid) do
+      conn
+      |> render("show.json", block: block)
+    end
+  end
+
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/block")
+    summary("Delete a block")
+    description("Delete a block from database")
+    operation_id("delete_block")
+
+    parameters do
+      id(:path, "Block id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Block))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def delete(conn, %{"id" => uuid}) do
+    with %Block{} = block <- Document.get_block(uuid),
+         {:ok, %Block{}} <- Document.delete_block(block) do
+      conn |> render("block.json", block: block)
     end
   end
 end
