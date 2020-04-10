@@ -76,7 +76,6 @@ defmodule WraftDoc.Mixfile do
       # Email client
       {:bamboo, "~> 1.4"},
       {:httpoison, "~> 1.6"},
-      {:httpotion, "~> 3.1.0"},
 
       # Activity stream
       {:spur, git: "https://github.com/shijithkjayan/spur.git"},

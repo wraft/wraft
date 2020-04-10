@@ -1,12 +1,11 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdflatex 2019.12.20)  8 APR 2020 11:19
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdflatex 2020.4.5)  9 APR 2020 10:12
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
 **/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex
 (/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex
-LaTeX2e <2017-04-15>
-Babel <3.18> and hyphenation patterns for 84 language(s) loaded.
+LaTeX2e <2018-12-01>
 
 /home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex:3: LaTeX Error: Missing \begin{document}.
 
@@ -23,14 +22,14 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <7> on input line 3.
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <5> on input line 3.
-(/usr/share/texlive/texmf-dist/tex/latex/base/letter.cls
+(/usr/local/texlive/2019/texmf-dist/tex/latex/base/letter.cls
 Document Class: letter 2014/09/29 v1.2z Standard LaTeX document class
-(/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo
-File: size10.clo 2014/09/29 v1.4h Standard LaTeX file (size option)
+(/usr/local/texlive/2019/texmf-dist/tex/latex/base/size10.clo
+File: size10.clo 2018/09/03 v1.4i Standard LaTeX file (size option)
 )
 \longindentation=\dimen102
 \indentedwidth=\dimen103
-\labelcount=\count79
+\labelcount=\count80
 
 Overfull \hbox (82.02354pt too wide) in paragraph at lines 3--405
 []$\OML/cmm/m/it/10 if\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 colorlinks\OT1/cmr/m/n/10 )$
@@ -41,7 +40,7 @@ Overfull \hbox (25.28087pt too wide) in paragraph at lines 3--405
 \OML/cmm/m/it/10 endif$
  []
 
-[1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}])
+[1{/usr/local/texlive/2019/texmf-var/fonts/map/pdftex/updmap/pdftex.map}])
 
 /home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex:7: LaTeX Error: Missing \begin{document}.
 
@@ -70,11 +69,11 @@ l.9 $
 
  
 Here is how much of TeX's memory you used:
- 148 strings out of 492982
- 2052 string characters out of 6134897
- 54920 words of memory out of 5000000
- 3801 multiletter control sequences out of 15000+600000
+ 148 strings out of 492623
+ 2065 string characters out of 6129538
+ 61434 words of memory out of 5000000
+ 4148 multiletter control sequences out of 15000+600000
  3640 words of font info for 14 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 20i,4n,21p,265b,113s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 20i,4n,22p,265b,113s stack positions out of 5000i,500n,10000p,200000b,80000s
 /home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex:9:  ==> Fatal error occurred, no output PDF file produced!

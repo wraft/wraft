@@ -764,7 +764,7 @@ defmodule WraftDoc.Document do
         assets: assets
       }) do
     File.mkdir_p("uploads/contents/#{u_id}")
-    System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}"])
+    System.cmd("cp", ["-a", "lib/slugs/#{slug}/.", "uploads/contents/#{u_id}"])
     task = Task.async(fn -> generate_qr(instance) end)
     Task.start(fn -> move_old_builds(u_id) end)
     c_type = c_type |> Repo.preload([:fields])
@@ -932,37 +932,33 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def create_chart(url, id) do
-    {:ok, response} = HTTPoison.get(url)
-    File.write!("#{File.cwd!()}/uploads/assets/chart/chart#{id}.pdf", response.body)
-  end
-
-  def create_go_chart(body, id) do
-    File.write!("#{File.cwd!()}/uploads/assets/chart/chart#{id}.svg", body)
-  end
-
-  require IEx
-
-  def generate_chart(body) do
-    IEx.pry()
-
-    %HTTPotion.Response{body: response_body} =
-      HTTPotion.post!("https://quickchart.io/chart/create",
-        body: Poison.encode!(body),
+  @doc """
+  Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create
+  """
+  @spec generate_chart(map) :: map
+  def generate_chart(%{
+        "dataset" => dataset,
+        "api_route" => api_route,
+        "endpoint" => "quick_chart"
+      }) do
+    %HTTPoison.Response{body: response_body} =
+      HTTPoison.post!(api_route,
+        body: Poison.encode!(dataset),
         headers: [{"Accept", "application/json"}, {"Content-Type", "application/json"}]
       )
 
     Poison.decode!(response_body)
   end
 
-  def generate_go_chart(body) do
-    %HTTPotion.Response{body: response_body} =
-      HTTPotion.post!("http://localhost:8080/chart",
-        body: Poison.encode!(body),
-        headers: [{"Accept", "application./json"}, {"Content-Type", "application/json"}]
+  def generate_chart(%{"dataset" => dataset, "api_route" => api_route, "endpoint" => "blocks_api"}) do
+    %HTTPoison.Response{body: response_body} =
+      HTTPoison.post!(
+        api_route,
+        Poison.encode!(dataset),
+        [{"Accept", "application./json"}, {"Content-Type", "application/json"}]
       )
 
-    response_body
+    Poison.decode!(response_body)
   end
 
   @doc """
