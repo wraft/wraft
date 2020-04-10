@@ -3,7 +3,6 @@
 $if(colorlinks)$
 \PassOptionsToPackage{dvipsnames,svgnames*,x11names*}{xcolor}
 $endif$
-%
 \documentclass[$if(fontsize)$$fontsize$,$endif$$if(lang)$$babel-lang$,$endif$$if(papersize)$$papersize$paper,$endif$$for(classoption)$$classoption$$sep$,$endfor$]{letter}
 $if(fontfamily)$
 \usepackage[$for(fontfamilyoptions)$$fontfamilyoptions$$sep$,$endfor$]{$fontfamily$}
@@ -266,12 +265,12 @@ $include-before$
 $endfor$
 $if(toc)$
 {
-$if(colorlinks)$
-\hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
-$endif$
-\setcounter{tocdepth}{$toc-depth$}
-\tableofcontents
-}
+    $if(colorlinks)$
+    \hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
+    $endif$
+    \setcounter{tocdepth}{$toc-depth$}
+    \tableofcontents
+  }
 $endif$
 
 \setmainfont[
@@ -281,8 +280,27 @@ $endif$
 
 
 \begin{letter}{$for(address)$$address$$sep$\\$endfor$$if(subject)$\\ ~ \\$subject$$endif$}
-\opening{$opening$}
+    \opening{$opening$}
 
+<<<<<<< HEAD
+  $body$
+    \includegraphics[scale=0.25]{$qrcode$}
+  $if(closing)$
+  $if(closing-indentation)$
+    \longindentation=$closing-indentation$
+  $endif$
+    \closing{$closing$}
+  $endif$
+  $if(encl)$
+    \encl{$for(encl)$$encl$$sep$\\$endfor$}
+  $endif$
+  $if(cc)$
+    \cc{$for(cc)$$cc$$sep$\\$endfor$}
+  $endif$
+  $if(ps)$
+    \ps{$ps$}
+  $endif$
+=======
 $body$
 $if(qrcode)$
   \includegraphics[scale=0.25]{$qrcode$}
@@ -302,6 +320,7 @@ $endif$
 $if(ps)$
 \ps{$ps$}
 $endif$
+>>>>>>> a42fecc5a79ed0d9b4f167f4701263e9b9c3e799
 
 \end{letter}
 

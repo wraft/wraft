@@ -22,7 +22,8 @@ defmodule WraftDoc.Document do
     Document.Counter,
     Enterprise,
     Enterprise.Flow,
-    Enterprise.Flow.State
+    Enterprise.Flow.State,
+    Document.Block
   }
 
   alias WraftDocWeb.AssetUploader
@@ -30,6 +31,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a layout.
   """
+
   @spec create_layout(User.t(), Engine.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
   def create_layout(%{organisation_id: org_id} = current_user, engine, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
@@ -256,6 +258,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type from its UUID.
   """
+
   @spec get_content_type(binary) :: ContentType.t()
   def get_content_type(uuid) do
     Repo.get_by(ContentType, uuid: uuid)
@@ -801,13 +804,14 @@ defmodule WraftDoc.Document do
   @doc """
   Build a PDF document.
   """
+
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %Layout{
         slug: slug,
         assets: assets
       }) do
     File.mkdir_p("uploads/contents/#{u_id}")
-    System.cmd("cp", ["-a", "lib/slugs/#{slug}/", "uploads/contents/#{u_id}"])
+    System.cmd("cp", ["-a", "lib/slugs/#{slug}/.", "uploads/contents/#{u_id}"])
     task = Task.async(fn -> generate_qr(instance) end)
     Task.start(fn -> move_old_builds(u_id) end)
     c_type = c_type |> Repo.preload([:fields])
@@ -951,6 +955,90 @@ defmodule WraftDoc.Document do
   defp calculate_build_delay(%{start_time: start_time, end_time: end_time} = params) do
     delay = Timex.diff(end_time, start_time, :millisecond)
     params |> Map.merge(%{delay: delay})
+  end
+
+  @doc """
+
+  Create a Block
+  """
+  @spec create_block(User.t(), map) :: Block.t()
+
+  def create_block(%{organisation_id: org_id} = current_user, params) do
+    params = params |> Map.merge(%{"organisation_id" => org_id})
+
+    current_user
+    |> build_assoc(:blocks)
+    |> Block.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, block} ->
+        block
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Get a block by id
+  """
+  @spec get_block(Ecto.UUID.t()) :: Block.t()
+  def get_block(uuid) do
+    Block |> Repo.get(uuid: uuid)
+  end
+
+  @doc """
+  Update a block
+  """
+  def update_block(%Block{} = block, params) do
+    block
+    |> Block.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, :block} ->
+        block
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Delete a block
+  """
+
+  def delete_block(%Block{} = block) do
+    block
+    |> Repo.delete()
+  end
+
+  @doc """
+  Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create
+  """
+  @spec generate_chart(map) :: map
+  def generate_chart(%{
+        "dataset" => dataset,
+        "api_route" => api_route,
+        "endpoint" => "quick_chart"
+      }) do
+    %HTTPoison.Response{body: response_body} =
+      HTTPoison.post!(api_route,
+        body: Poison.encode!(dataset),
+        headers: [{"Accept", "application/json"}, {"Content-Type", "application/json"}]
+      )
+
+    Poison.decode!(response_body)
+  end
+
+  def generate_chart(%{"dataset" => dataset, "api_route" => api_route, "endpoint" => "blocks_api"}) do
+    %HTTPoison.Response{body: response_body} =
+      HTTPoison.post!(
+        api_route,
+        Poison.encode!(dataset),
+        [{"Accept", "application./json"}, {"Content-Type", "application/json"}]
+      )
+
+    Poison.decode!(response_body)
   end
 
   @doc """

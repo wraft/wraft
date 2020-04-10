@@ -267,6 +267,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Send invitation email to given email.
   """
+
   @spec invite_team_member(User.t(), Organisation.t(), String.t()) ::
           {:ok, Oban.Job.t()} | {:error, any}
   def invite_team_member(%User{name: name}, %{name: org_name} = organisation, email) do
