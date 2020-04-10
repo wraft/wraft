@@ -68,7 +68,7 @@ defmodule WraftDocWeb.Router do
         end
       end
 
-      # Engine
+      # Enginebody
       resources("/engines", EngineController, only: [:index])
 
       # Theme
@@ -94,9 +94,6 @@ defmodule WraftDocWeb.Router do
       resources("/organisations", OrganisationController, only: [:create, :update, :show, :delete])
 
       resources("/blocks", BlockController, only: [:create])
-
-      # Generate chart
-      post("/blocks/chart", BlockController, :create_go_chart)
 
       # Invite new user
       post("/organisations/:id/invite", OrganisationController, :invite)

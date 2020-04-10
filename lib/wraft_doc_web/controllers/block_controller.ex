@@ -2,9 +2,9 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   use WraftDocWeb, :controller
 
   use PhoenixSwagger
+  action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.{Document, Document.Block}
-  action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_defnitions do
     %{
@@ -17,23 +17,51 @@ defmodule WraftDocWeb.Api.V1.BlockController do
             name(:string, "Block name", required: true)
             btype(:string, "Block type", required: true)
             dataset(:map, "Dataset for creating charts", required: true)
+            api_route(:string, "Api route to generate chart")
+            endpoint(:string, "name of the endpoint going to choose")
           end
 
           example(%{
-            name: "Energy consumption",
+            name: "Farming",
             btype: "pie",
+            api_route: "http://localhost:8080/chart",
+            endpoint: "blocks_api",
             dataset: %{
-              "backgroundColor" => "transparent",
-              "width" => 500,
-              "height" => 300,
-              "format" => "pdf",
-              "chart" => %{
-                "type" => "pie",
-                "data" => %{
-                  "labels" => ["Kondoty", "Manjeri", "Malappuram", "Perinthalmanna", "Tirur"],
-                  "datasets" => [%{"data" => [50, 60, 70, 180, 190]}]
+              data: [
+                %{
+                  value: 10,
+                  label: "Adakka"
+                },
+                %{
+                  value: 20,
+                  label: "Tenga"
+                },
+                %{
+                  value: 5,
+                  label: "Vanila"
+                },
+                %{
+                  value: 60,
+                  label: "Pazham"
+                },
+                %{
+                  value: 80,
+                  label: "Kurumulak"
+                },
+                %{
+                  value: 70,
+                  label: "Urulakiyang"
+                },
+                %{
+                  value: 90,
+                  label: "Gothamb"
                 }
-              }
+              ],
+              width: 512,
+              height: 512,
+              backgroundColor: "transparent",
+              format: "svg",
+              type: "pie"
             }
           })
         end,
@@ -48,23 +76,53 @@ defmodule WraftDocWeb.Api.V1.BlockController do
             dataset(:map, "Dataset for creating charts", required: true)
             inserted_at(:string, "When was the user inserted", format: "ISO-8601")
             updated_at(:string, "When was the user last updated", format: "ISO-8601")
+            api_route(:string, "Api route to generate chart")
+            endpoint(:string, "name of the endpoint going to choose")
           end
 
           example(%{
-            name: "Energy consumption",
+            name: "Farming",
             btype: "pie",
+            api_route: "http://localhost:8080/chart",
+            endpoint: "blocks_api",
+            file_url:
+              "/home/sadique/Documents/org.functionary/go/src/blocks_api/002dc916-4444-4072-a8aa-85a32c5a65ea.svg",
             dataset: %{
-              "backgroundColor" => "transparent",
-              "width" => 500,
-              "height" => 300,
-              "format" => "pdf",
-              "chart" => %{
-                "type" => "pie",
-                "data" => %{
-                  "labels" => ["Kondoty", "Manjeri", "Malappuram", "Perinthalmanna", "Tirur"],
-                  "datasets" => [%{"data" => [50, 60, 70, 180, 190]}]
+              data: [
+                %{
+                  value: 10,
+                  label: "Adakka"
+                },
+                %{
+                  value: 20,
+                  label: "Tenga"
+                },
+                %{
+                  value: 5,
+                  label: "Vanila"
+                },
+                %{
+                  value: 60,
+                  label: "Pazham"
+                },
+                %{
+                  value: 80,
+                  label: "Kurumulak"
+                },
+                %{
+                  value: 70,
+                  label: "Urulakiyang"
+                },
+                %{
+                  value: 90,
+                  label: "Gothamb"
                 }
-              }
+              ],
+              width: 512,
+              height: 512,
+              backgroundColor: "transparent",
+              format: "svg",
+              type: "pie"
             },
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
@@ -77,17 +135,16 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   Create New one
   """
   swagger_path :create do
-    post("/block")
-    summary("Register Block")
+    post("/blocks")
+    summary("Generate blocks")
     description("Create a block")
     operation_id("create_block")
-    tag("Block")
 
     parameters do
       block(:body, Schema.ref(:BlockRequest), "Block to Create", required: true)
     end
 
-    response(201, "Created", Schema.ref(:Block))
+    response(200, "Created", Schema.ref(:Block))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
@@ -97,26 +154,10 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %{"url" => pdf_url} <- Document.generate_chart(params["dataset"]) do
-      params = Map.put(params, "pdf_url", pdf_url)
+    with %{"url" => file_url} <- Document.generate_chart(params) do
+      params = Map.put(params, "file_url", file_url)
 
-      with %Block{id: id} = block <- Document.create_block(current_user, params) do
-        Document.create_chart(params["pdf_url"], id)
-
-        conn
-        |> put_status(:created)
-        |> render("block.json", block: block)
-      end
-    end
-  end
-
-  def create_go_chart(conn, params) do
-    current_user = conn.assigns.current_user
-
-    with response_body <- Document.generate_go_chart(params["dataset"]) do
-      with %Block{id: id} = block <- Document.create_block(current_user, params) do
-        Document.create_go_chart(response_body, id)
-
+      with %Block{} = block <- Document.create_block(current_user, params) do
         conn
         |> put_status(:created)
         |> render("block.json", block: block)
