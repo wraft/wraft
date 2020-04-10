@@ -49,6 +49,8 @@ defmodule WraftDocWeb.Router do
     scope "/v1", Api.V1, as: :v1 do
       # Current user details
       get("/users/me", UserController, :me)
+      # Get activity stream for current user user
+      get("/activities", UserController, :activity)
       resources("/profile/:id", ProfileController, only: [:update])
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
@@ -89,6 +91,8 @@ defmodule WraftDocWeb.Router do
 
       # Instance show, update and delete
       resources("/contents", InstanceController, only: [:show, :update, :delete])
+      # Instance state update
+      patch("/contents/:id/states", InstanceController, :state_update)
 
       # Organisations
       resources("/organisations", OrganisationController, only: [:create, :update, :show, :delete])

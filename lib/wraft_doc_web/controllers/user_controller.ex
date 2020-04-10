@@ -101,6 +101,43 @@ defmodule WraftDocWeb.Api.V1.UserController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
+      ActivityStream:
+        swagger_schema do
+          title("Activity Stream")
+          description("Activity stream object")
+
+          properties do
+            action(:string, "Activity action")
+            object(:string, "Activity Object")
+            meta(:map, "Meta of the activity")
+            inserted_at(:string, "When was the user last updated", format: "ISO-8601")
+            actor(:string, "Actor name")
+            object_details(:map, "Name and ID of the object")
+          end
+        end,
+      ActivityStreamIndex:
+        swagger_schema do
+          title("Activity Stream")
+          description("Activity stream index")
+
+          properties do
+            content_types(Schema.ref(:ContentTypesAndLayoutsAndFlows))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example([
+            %{
+              action: "create",
+              object: "Layout:1",
+              meta: %{from: "", to: %{name: "Layout 1"}},
+              inserted_at: "2020-01-21T14:00:00Z",
+              actor: "John Doe",
+              object_details: %{name: "Layout 1", id: "jhg1348561234nkjqwd89"}
+            }
+          ])
+        end,
       Error:
         swagger_schema do
           title("Errors")
@@ -154,5 +191,42 @@ defmodule WraftDocWeb.Api.V1.UserController do
   def me(conn, _params) do
     current_user = conn.assigns[:current_user]
     conn |> render("me.json", user: current_user)
+  end
+
+  @doc """
+  Activity stream index.
+  """
+  swagger_path :activity do
+    get("/activities")
+    summary("Activity stream index")
+
+    description(
+      "API to get the list of all activities for which the current user is one of the audience"
+    )
+
+    parameter(:page, :query, :string, "Page number")
+    response(200, "Ok", Schema.ref(:ContentTypesIndex))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec activity(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def activity(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %{
+           entries: activities,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Account.get_activity_stream(current_user, params),
+         activities <- Account.get_activity_datas(activities) do
+      conn
+      |> render("activities.json",
+        activities: activities,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 end
