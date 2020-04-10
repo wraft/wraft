@@ -22,8 +22,11 @@ defmodule WraftDoc.Document.Block do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
     field(:btype, :string)
+    field(:dataset, :map)
+    field(:file_url, :string)
+    field(:api_route, :string)
+    field(:endpoint, :string)
     belongs_to(:creator, WraftDoc.Account.User)
-    belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     timestamps()
@@ -31,8 +34,17 @@ defmodule WraftDoc.Document.Block do
 
   def changeset(%Block{} = block, attrs \\ %{}) do
     block
-    |> cast(attrs, [:name, :btype, :content_type_id, :organisation_id])
-    |> validate_required([:name, :btype, :content_type_id, :organisation_id])
+    |> cast(attrs, [
+      :name,
+      :btype,
+      :dataset,
+      :file_url,
+      :api_route,
+      :endpoint,
+      :creator_id,
+      :organisation_id
+    ])
+    |> validate_required([:name, :file_url, :creator_id, :dataset, :organisation_id])
     |> unique_constraint(:name,
       message: "Block with same name exists.!",
       name: :block_content_type_unique_index
