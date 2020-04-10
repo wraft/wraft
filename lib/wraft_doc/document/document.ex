@@ -498,6 +498,53 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+  Update instance's state if the flow IDs of both
+  the new state and the instance's content type are same.
+  """
+  @spec update_instance_state(User.t(), Instance.t(), State.t()) ::
+          Instance.t() | {:error, Ecto.Changeset.t()} | {:error, :wrong_flow}
+  def update_instance_state(%{id: user_id}, instance, %{
+        id: state_id,
+        state: new_state,
+        flow_id: flow_id
+      }) do
+    %{content_type: %{flow_id: f_id}, state: %{state: state}} =
+      instance |> Repo.preload([:content_type, :state])
+
+    cond do
+      flow_id == f_id ->
+        instance_state_upadate(instance, user_id, state_id, state, new_state)
+
+      true ->
+        {:error, :wrong_flow}
+    end
+  end
+
+  @doc """
+  Update instance's state. Also add the from and to state of in the activity meta.
+  """
+  @spec instance_state_upadate(Instance.t(), integer, integer, String.t(), String.t()) ::
+          Instance.t() | {:error, Ecto.Changeset.t()}
+  def instance_state_upadate(instance, user_id, state_id, old_state, new_state) do
+    instance
+    |> Instance.update_state_changeset(%{state_id: state_id})
+    |> Spur.update(%{
+      actor: "#{user_id}",
+      object: "Instance-State:#{instance.id}",
+      meta: %{from: old_state, to: new_state}
+    })
+    |> case do
+      {:ok, instance} ->
+        instance
+        |> Repo.preload([:creator, [{:content_type, :layout}], :state])
+        |> get_built_document()
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
   Delete an instance.
   """
   @spec delete_instance(Instance.t(), User.t()) ::
