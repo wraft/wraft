@@ -57,4 +57,11 @@ defmodule WraftDocWeb.Api.V1.BlockView do
       updated_at: block.updated_at
     }
   end
+
+  def render("error.json", %{message: message}) do
+    %{
+      status: false,
+      message: message
+    }
+  end
 end

@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
   alias WraftDoc.{Document, Document.Block}
 
-  def swagger_defnitions do
+  def swagger_definitions do
     %{
       BlockRequest:
         swagger_schema do
@@ -30,31 +30,31 @@ defmodule WraftDocWeb.Api.V1.BlockController do
               data: [
                 %{
                   value: 10,
-                  label: "Adakka"
+                  label: "January"
                 },
                 %{
                   value: 20,
-                  label: "Tenga"
+                  label: "February"
                 },
                 %{
                   value: 5,
-                  label: "Vanila"
+                  label: "March"
                 },
                 %{
                   value: 60,
-                  label: "Pazham"
+                  label: "April"
                 },
                 %{
                   value: 80,
-                  label: "Kurumulak"
+                  label: "May"
                 },
                 %{
                   value: 70,
-                  label: "Urulakiyang"
+                  label: "June"
                 },
                 %{
                   value: 90,
-                  label: "Gothamb"
+                  label: "Julay"
                 }
               ],
               width: 512,
@@ -91,31 +91,31 @@ defmodule WraftDocWeb.Api.V1.BlockController do
               data: [
                 %{
                   value: 10,
-                  label: "Adakka"
+                  label: "January"
                 },
                 %{
                   value: 20,
-                  label: "Tenga"
+                  label: "February"
                 },
                 %{
                   value: 5,
-                  label: "Vanila"
+                  label: "March"
                 },
                 %{
                   value: 60,
-                  label: "Pazham"
+                  label: "April"
                 },
                 %{
                   value: 80,
-                  label: "Kurumulak"
+                  label: "May"
                 },
                 %{
                   value: 70,
-                  label: "Urulakiyang"
+                  label: "June"
                 },
                 %{
                   value: 90,
-                  label: "Gothamb"
+                  label: "Julay"
                 }
               ],
               width: 512,
@@ -162,11 +162,16 @@ defmodule WraftDocWeb.Api.V1.BlockController do
         |> put_status(:created)
         |> render("create.json", block: block)
       end
+    else
+      %{"error" => message} ->
+        conn
+        |> put_status(:bad_request)
+        |> render("error.json", message: message)
     end
   end
 
   swagger_path :update do
-    put("/blocks")
+    put("/blocks/{id}")
     summary("Update blocks")
     description("Update a block")
     operation_id("update_block")
@@ -193,7 +198,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   end
 
   swagger_path :show do
-    get("/blocks/:id")
+    get("/blocks/{id}")
     summary("Show a block")
     description("Show a block details")
     operation_id("show_block")
@@ -215,13 +220,13 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   end
 
   swagger_path :delete do
-    PhoenixSwagger.Path.delete("/block")
+    PhoenixSwagger.Path.delete("/blocks/{id}")
     summary("Delete a block")
     description("Delete a block from database")
     operation_id("delete_block")
 
     parameters do
-      id(:path, "Block id", required: true)
+      id(:path, :string, "Block id", required: true)
     end
 
     response(200, "Ok", Schema.ref(:Block))
