@@ -97,7 +97,7 @@ defmodule WraftDocWeb.Router do
       # Organisations
       resources("/organisations", OrganisationController, only: [:create, :update, :show, :delete])
 
-      resources("/blocks", BlockController, only: [:create])
+      resources("/blocks", BlockController, except: [:index])
 
       # Invite new user
       post("/organisations/:id/invite", OrganisationController, :invite)
