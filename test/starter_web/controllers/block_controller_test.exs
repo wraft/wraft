@@ -3,25 +3,35 @@ defmodule BlockControllerTest do
   import WraftDoc.Factory
 
   alias WraftDoc.{Document.Block, Repo}
-  @dataset "{
-    type: 'pie',
-    data: {
 
-      datasets: [{
-        label: 'Raisins',
-        data: [12, 6, 5, 18, 12]
-      }, {
-        label: 'Bananas',
-        data: [4, 8, 16, 5, 5]
-      }]
-    }
-  }"
-
-  @valid_attrs %{
+  @data [
+    %{"label" => "January", "value" => 10},
+    %{"label" => "February", "value" => 20},
+    %{"label" => "March", "value" => 5},
+    %{"label" => "April", "value" => 60},
+    %{"label" => "May", "value" => 80},
+    %{"label" => "June", "value" => 70},
+    %{"label" => "Julay", "value" => 90}
+  ]
+  @update_valid_attrs %{
+    "api_route" => "http://localhost:8080/chart",
+    "btype" => "pie",
+    "file_url" => "/usr/local/hoem/filex.svg",
+    "dataset" => %{
+      "backgroundColor" => "transparent",
+      "data" => Poison.encode!(@data),
+      "format" => "svg",
+      "height" => 512,
+      "type" => "pie",
+      "width" => 512
+    },
+    "endpoint" => "blocks_api",
+    "name" => "Farming"
+  }
+  @invalid_attrs %{
     name: "energy consumption",
     btype: "pie",
-    endpoint: "quick_chart",
-    dataset: Poison.decode(@dataset)
+    endpoint: "quick_chart"
   }
   setup %{conn: conn} do
     user = insert(:user)
@@ -41,16 +51,79 @@ defmodule BlockControllerTest do
     {:ok, %{conn: conn}}
   end
 
-  test "create block by valid attributes", %{conn: conn} do
+  test "create block renders error.json for invalid attributes", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = post(conn, Routes.v1_block_path(conn, :create, @invalid_attrs))
+    assert json_response(conn, 400)["status"] == false
+    assert json_response(conn, 400)["message"] == "invalid endpoint"
+  end
+
+  test "update blocks and render update.json for valid attributes", %{conn: conn} do
+    block = insert(:block, creator: conn.assigns.current_user)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Block |> Repo.all() |> length()
+    conn = put(conn, Routes.v1_block_path(conn, :update, block.uuid), @update_valid_attrs)
 
-    conn = post(conn, Routes.v1_block_path(conn, :create, @valid_attrs))
-    assert json_response(conn, 201)["btype"] == @valid_attrs.btype
-    assert count_before + 1 == Block |> Repo.all() |> length()
+    assert json_response(conn, 201)["name"] == @update_valid_attrs["name"]
+    count_after = Block |> Repo.all() |> length()
+    assert count_before == count_after
+  end
+
+  test "does not update blocks for invalid attributes", %{conn: conn} do
+    block = insert(:block, creator: conn.assigns.current_user)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = put(conn, Routes.v1_block_path(conn, :update, block.uuid), @invalid_attrs)
+    assert json_response(conn, 422)["errors"]["file_url"] == ["can't be blank"]
+  end
+
+  test "renders show.json on existing id", %{conn: conn} do
+    block = insert(:block, creator: conn.assigns.current_user)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_block_path(conn, :show, block.uuid))
+    assert json_response(conn, 200)["name"] == block.name
+  end
+
+  test "renders error not found id doesnot exist", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_block_path(conn, :show, Ecto.UUID.autogenerate()))
+    assert json_response(conn, 404) == "Not Found"
+  end
+
+  test "deletes the block and renders the block.json", %{conn: conn} do
+    block = insert(:block, creator: conn.assigns.current_user)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    count_before = Block |> Repo.all() |> length()
+    conn = delete(conn, Routes.v1_block_path(conn, :delete, block.uuid))
+    count_after = Block |> Repo.all() |> length()
+    assert json_response(conn, 200)["name"] == block.name
+    assert count_before - 1 == count_after
   end
 end
