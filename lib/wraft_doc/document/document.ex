@@ -982,20 +982,22 @@ defmodule WraftDoc.Document do
   @doc """
   Get a block by id
   """
+
   @spec get_block(Ecto.UUID.t()) :: Block.t()
   def get_block(uuid) do
-    Block |> Repo.get(uuid: uuid)
+    Block |> Repo.get_by(uuid: uuid)
   end
 
   @doc """
   Update a block
   """
+
   def update_block(%Block{} = block, params) do
     block
     |> Block.changeset(params)
     |> Repo.update()
     |> case do
-      {:ok, :block} ->
+      {:ok, block} ->
         block
 
       {:error, _} = changeset ->
@@ -1039,6 +1041,10 @@ defmodule WraftDoc.Document do
       )
 
     Poison.decode!(response_body)
+  end
+
+  def generate_chart(params) do
+    %{"status" => false, "error" => "invalid endpoint"}
   end
 
   @doc """
