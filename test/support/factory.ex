@@ -71,7 +71,45 @@ defmodule WraftDoc.Factory do
     %Block{
       name: sequence(:name, &"name-#{&1}"),
       btype: sequence(:btype, &"btype-#{&1}"),
-      content_type: build(:content_type),
+      api_route: "http://localhost:8080/chart",
+      endpoint: "blocks_api",
+      dataset: %{
+        data: [
+          %{
+            value: 10,
+            label: "January"
+          },
+          %{
+            value: 20,
+            label: "February"
+          },
+          %{
+            value: 5,
+            label: "March"
+          },
+          %{
+            value: 60,
+            label: "April"
+          },
+          %{
+            value: 80,
+            label: "May"
+          },
+          %{
+            value: 70,
+            label: "June"
+          },
+          %{
+            value: 90,
+            label: "Julay"
+          }
+        ],
+        width: 512,
+        height: 512,
+        backgroundColor: "transparent",
+        format: "svg",
+        type: "pie"
+      },
       organisation: build(:organisation)
     }
   end
