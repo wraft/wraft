@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
   use PhoenixSwagger
   action_fallback(WraftDocWeb.FallbackController)
+  plug(WraftDocWeb.Plug.Authorized)
 
   alias WraftDoc.{Document, Document.Block}
 
@@ -192,7 +193,6 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     with %Block{} = block <- Document.get_block(uuid),
          %Block{} = block <- Document.update_block(block, params) do
       conn
-      |> put_status(:created)
       |> render("update.json", block: block)
     end
   end

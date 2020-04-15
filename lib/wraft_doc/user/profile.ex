@@ -7,6 +7,7 @@ defmodule WraftDoc.Account.Profile do
   import Ecto.Changeset
 
   schema "basic_profile" do
+    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
     field(:profile_pic, WraftDocWeb.PropicUploader.Type)
     field(:dob, :date)

@@ -37,8 +37,17 @@ defmodule WraftDocWeb.Router do
 
     # user
     scope "/v1", Api.V1, as: :v1 do
-      resources("/users/signup", RegistrationController, only: [:create])
+      resources("/users/signup/", RegistrationController, only: [:create])
       post("/users/signin", UserController, :signin)
+      # to generate the auth token
+      post("/user/password/forgot", UserController, :generate_token)
+      # to verify the auth token and generate the jwt token
+      get("/user/password/reset/:token", UserController, :verify_token)
+      # Reset the password
+      post("/user/password/reset", UserController, :reset)
+
+      # Verify Token
+      get("/token", UserController, :token)
     end
   end
 
@@ -51,7 +60,8 @@ defmodule WraftDocWeb.Router do
       get("/users/me", UserController, :me)
       # Get activity stream for current user user
       get("/activities", UserController, :activity)
-      resources("/profile/:id", ProfileController, only: [:update])
+      resources("/profile", ProfileController, except: [:index, :create])
+      get("/profiles/me", ProfileController, :show_current_profile)
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
 
@@ -113,6 +123,7 @@ defmodule WraftDocWeb.Router do
 
       # Assets
       resources("/assets", AssetController, only: [:create, :index, :show, :update, :delete])
+      put("/user/password", UserController, :update)
     end
   end
 

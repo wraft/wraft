@@ -6,6 +6,7 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
 
   def render("profile.json", %{profile: profile}) do
     %{
+      uuid: profile.uuid,
       name: profile.name,
       dob: profile.dob,
       gender: profile.gender,

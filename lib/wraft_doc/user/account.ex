@@ -4,9 +4,21 @@ defmodule WraftDoc.Account do
   """
   import Ecto.Query
   import Ecto
-  alias WraftDoc.{Repo, Account.User, Account.Role, Account.Profile, Enterprise.Organisation}
+
+  alias WraftDoc.{
+    Repo,
+    Account.User,
+    Account.Role,
+    Account.Profile,
+    Enterprise.Organisation,
+    Account.AuthToken
+  }
+
+  alias WraftDocWeb.Endpoint
+
   alias WraftDoc.Document.{Asset, Block, ContentType, DataTemplate, Instance, Layout, Theme}
   alias WraftDoc.Enterprise.{Flow, Flow.State}
+  alias Ecto.Multi
 
   @activity_models %{
     "Asset" => Asset,
@@ -24,6 +36,7 @@ defmodule WraftDoc.Account do
   @doc """
     User Registration
   """
+
   @spec registration(map, Organisation.t()) :: User.t() | Ecto.Changeset.t()
   def registration(params, %Organisation{id: id}) do
     params = params |> Map.merge(%{"organisation_id" => id})
@@ -46,6 +59,7 @@ defmodule WraftDoc.Account do
   Get the organisation from the token, if there is  token in the params.
   If no token is present in the params, then get the default organisation
   """
+
   @spec get_organisation_from_token(map) :: Organisation.t()
   def get_organisation_from_token(%{"token" => token, "email" => email}) do
     Phoenix.Token.verify(WraftDocWeb.Endpoint, "organisation_invite", token, max_age: 9_00_000)
@@ -116,21 +130,55 @@ defmodule WraftDoc.Account do
   end
 
   def update_profile(conn, params) do
-    current_user = conn.assigns.current_user.id
+    current_user_id = conn.assigns.current_user.id
+    current_user = conn.assigns.current_user
 
-    user =
+    profile =
       Profile
-      |> Repo.get_by(user_id: current_user)
+      |> Repo.get_by(user_id: current_user_id)
       |> Profile.changeset(params)
 
-    case Repo.update(user) do
-      changeset = {:error, _} ->
+    Multi.new()
+    |> Multi.update(:profile, profile)
+    |> Multi.update(:user, User.update_changeset(current_user, params))
+    |> WraftDoc.Repo.transaction()
+    |> case do
+      changeset = {:error, _, _, _} ->
         changeset
 
-      {:ok, profile_struct} ->
+      {:ok, %{profile: profile_struct, user: _user}} ->
         Repo.preload(profile_struct, :user)
         |> Repo.preload(:country)
     end
+  end
+
+  @doc """
+  Get profile by uuid
+  """
+  @spec get_profile(String.t()) :: Profile.t()
+  def get_profile(id) do
+    Profile |> Repo.get_by(uuid: id) |> Repo.preload(:user) |> Repo.preload(:country)
+  end
+
+  @doc """
+  Get current profile by Plug.conn
+  """
+  @spec get_current_profile(Plug.Conn.t()) :: Profile.t()
+  def get_current_profile(conn) do
+    current_user_id = conn.assigns.current_user.id
+
+    Profile
+    |> Repo.get_by(user_id: current_user_id)
+    |> Repo.preload(:user)
+    |> Repo.preload(:country)
+  end
+
+  @doc """
+  Delete Profile
+  """
+
+  def delete_profile(profile) do
+    profile |> Repo.delete()
   end
 
   # Get the role struct from given role name
@@ -223,5 +271,168 @@ defmodule WraftDoc.Account do
   defp get_activity_object_struct(object) do
     [model | [id]] = object |> String.split(":")
     @activity_models[model] |> Repo.get(id)
+  end
+
+  def delete_token(user_id, type) do
+    from(
+      a in AuthToken,
+      where: a.user_id == ^user_id,
+      where: a.token_type == ^type
+    )
+    |> Repo.all()
+    |> Enum.each(fn x -> Repo.delete!(x) end)
+  end
+
+  @doc """
+  Generate auth token for password reset for the user with the given email ID
+  and insert it to auth_tokens table.
+  """
+  def create_token(%{"email" => email}) do
+    email = email |> String.downcase()
+
+    with %User{} = current_user <- Repo.get_by(User, email: email) do
+      delete_token(current_user.id, "password_verify")
+      token = Phoenix.Token.sign(Endpoint, "reset", current_user.email) |> Base.url_encode64()
+      new_params = %{value: token, token_type: "password_verify"}
+
+      {:ok, auth_struct} = insert_auth_token(current_user, new_params)
+
+      auth_struct
+      |> Repo.preload(:user)
+    else
+      nil ->
+        {:error, :invalid_email}
+    end
+  end
+
+  @doc """
+  Validate the password reset link, ie; token in the link to verify and
+  authenticate the password reset request.
+  """
+  require IEx
+
+  def check_token(token) do
+    query =
+      from(
+        tok in AuthToken,
+        where: tok.value == ^token,
+        where: tok.token_type == "password_verify",
+        select: tok
+      )
+
+    case Repo.one(query) do
+      nil ->
+        {:error, :fake}
+
+      token_struct ->
+        {:ok, decoded_token} = token_struct.value |> Base.url_decode64()
+
+        Phoenix.Token.verify(Endpoint, "reset", decoded_token, max_age: 860)
+        |> case do
+          {:error, :invalid} ->
+            {:error, :fake}
+
+          {:error, :expired} ->
+            {:error, :expired}
+
+          {:ok, _} ->
+            token_struct |> Repo.preload(:user)
+        end
+    end
+  end
+
+  @doc """
+  Change/reset the forgotten password, insert the new one and
+  delete the password reset token.
+  """
+
+  def reset_password(params = %{"token" => token, "password" => _}) do
+    with %AuthToken{} = auth_token <- check_token(token) do
+      user =
+        Repo.get_by(User, email: auth_token.user.email)
+        |> User.password_changeset(params)
+
+      case Repo.update(user) do
+        changeset = {:error, _} ->
+          changeset
+
+        {:ok, user_struct} ->
+          Repo.delete!(auth_token)
+          user_struct
+      end
+    else
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
+  @doc """
+  Update the password of the current user after verifying the
+  old password.
+  """
+  def update_password(conn, params) do
+    user = conn.assigns.current_user
+
+    case Comeonin.Bcrypt.checkpw(params["current_password"], user.encrypted_password) do
+      true ->
+        check_and_update_password(user, params)
+
+      _ ->
+        {:error, :invalid_password}
+    end
+  end
+
+  @doc """
+  Update the password if the new one is not same as the previous one.
+  """
+  def check_and_update_password(user, params) do
+    case Comeonin.Bcrypt.checkpw(params["password"], user.encrypted_password) do
+      true ->
+        {:error, :same_password}
+
+      _ ->
+        update_changeset =
+          user
+          |> User.password_changeset(params)
+
+        case Repo.update(update_changeset) do
+          changeset = {:error, _} ->
+            changeset
+
+          {:ok, user_struct} ->
+            user_struct
+        end
+    end
+  end
+
+  @doc """
+  Insert auth token without expiry date.
+  """
+  def insert_auth_token(current_user, params) do
+    current_user
+    |> build_assoc(:auth_tokens)
+    |> AuthToken.changeset(params)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Decode and verify the JWT obtained from conn and send an appropriate response.
+  To decode and verify the token, Guardian provides a `decode_and_verify` function.
+  """
+  def verify_jwt_token(headers) do
+    with {"authorization", "Bearer " <> token} <-
+           headers |> Enum.find(fn {k, _v} -> k == "authorization" end) do
+      Guardian.decode_and_verify(WraftDocWeb.Guardian, token)
+      |> case do
+        {:error, _} ->
+          {:error, :token_expired}
+
+        {:ok, _} ->
+          {:ok, "verified"}
+      end
+    else
+      nil ->
+        {:error, :token_expired}
+    end
   end
 end
