@@ -29,6 +29,7 @@ defmodule WraftDoc.Account.User do
 
     has_many(:field_types, WraftDoc.Document.FieldType, foreign_key: :creator_id)
     has_many(:content_type_fields, WraftDoc.Document.FieldType, foreign_key: :creator_id)
+    has_many(:instance_versions, WraftDoc.Document.Instance.Version, foreign_key: :creator_id)
     many_to_many(:activities, Spur.Activity, join_through: "audience")
 
     timestamps()
