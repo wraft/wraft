@@ -1139,6 +1139,10 @@ defmodule WraftDoc.Document do
     |> Repo.update()
   end
 
+  @doc """
+  Deleta a field type
+  """
+  @spec delete_field_type(FieldType.t()) :: {:ok, FieldType.t()} | {:error, Ecto.Changeset.t()}
   def delete_field_type(field_type) do
     field_type
     |> Ecto.Changeset.change()
@@ -1153,6 +1157,8 @@ defmodule WraftDoc.Document do
   @doc """
   Create a background job for Bulk build.
   """
+  @spec insert_bulk_build_work(User.t(), binary(), binary(), binary(), map, Plug.Upload.t()) ::
+          {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
   def insert_bulk_build_work(current_user, c_type_uuid, state_uuid, d_temp_uuid, mapping, %{
         filename: filename,
         path: path
@@ -1176,6 +1182,8 @@ defmodule WraftDoc.Document do
   @doc """
   Bulk build function.
   """
+  @spec bulk_doc_build(User.t(), ContentType.t(), State.t(), DataTemplate.t(), map, String.t()) ::
+          list | {:error, :not_found}
   def bulk_doc_build(
         %User{} = current_user,
         %ContentType{} = c_type,
@@ -1206,6 +1214,14 @@ defmodule WraftDoc.Document do
   @doc """
   Generate params to create instances for bulk build.
   """
+  @spec create_instance_params_for_bulk_build(
+          map,
+          DataTemplate.t(),
+          User.t(),
+          ContentType.t(),
+          State.t(),
+          map
+        ) :: Instance.t()
   def create_instance_params_for_bulk_build(
         serialized,
         %{title_template: title_temp, data: template},
@@ -1241,6 +1257,7 @@ defmodule WraftDoc.Document do
   # Since we are iterating over list of params to create instances, there is a high chance of
   # unique ID of instances to repeat and hence for instance creation failures. This is why
   # we loop the fucntion until instance is successfully created.
+  @spec create_instance_for_bulk_build(User.t(), ContentType.t(), State.t(), map) :: Instance.t()
   defp create_instance_for_bulk_build(current_user, c_type, state, params) do
     create_instance(current_user, c_type, state, params)
     |> case do
@@ -1254,6 +1271,7 @@ defmodule WraftDoc.Document do
 
   # Builds the doc using `build_doc/2`.
   # Here we also records the build history using `add_build_history/3`.
+  @spec bulk_build(User.t(), Instance.t(), Layout.t()) :: {:ok, pid()}
   defp bulk_build(current_user, instance, layout) do
     start_time = Timex.now()
     {_, exit_code} = build_doc(instance, layout)
@@ -1269,6 +1287,7 @@ defmodule WraftDoc.Document do
   end
 
   # Change the Keys of the CSV decoded map to the values of the mapping.
+  @spec update_keys(map, map) :: map
   defp update_keys(map, mapping) do
     new_map =
       Enum.reduce(mapping, %{}, fn {k, v}, acc ->
