@@ -249,7 +249,7 @@
           },
           {
             "schema": {
-              "$ref": "#/definitions/ContentRequest"
+              "$ref": "#/definitions/ContentUpdateRequest"
             },
             "required": true,
             "name": "content",
@@ -4102,6 +4102,31 @@
         "color": "#fff"
       },
       "description": "Create content type request."
+    },
+    "ContentUpdateRequest": {
+      "type": "object",
+      "title": "Content update Request",
+      "required": [
+        "raw"
+      ],
+      "properties": {
+        "serialized": {
+          "type": "string",
+          "description": "Content serialized data"
+        },
+        "raw": {
+          "type": "string",
+          "description": "Content raw data"
+        }
+      },
+      "example": {
+        "serialized": {
+          "title": "Title of the content",
+          "body": "Body of the content"
+        },
+        "raw": "Content data"
+      },
+      "description": "Content updation request"
     },
     "ContentStateUpdateRequest": {
       "type": "object",
