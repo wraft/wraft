@@ -57,6 +57,21 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             state_uuid: "kjb12389k23eyg"
           })
         end,
+      ContentUpdateRequest:
+        swagger_schema do
+          title("Content update Request")
+          description("Content updation request")
+
+          properties do
+            raw(:string, "Content raw data", required: true)
+            serialized(:string, "Content serialized data")
+          end
+
+          example(%{
+            raw: "Content data",
+            serialized: %{title: "Title of the content", body: "Body of the content"}
+          })
+        end,
       ContentStateUpdateRequest:
         swagger_schema do
           title("Content state update Request")
@@ -362,7 +377,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     parameters do
       id(:path, :string, "Instance id", required: true)
 
-      content(:body, Schema.ref(:ContentRequest), "Instance to be updated", required: true)
+      content(:body, Schema.ref(:ContentUpdateRequest), "Instance to be updated", required: true)
     end
 
     response(200, "Ok", Schema.ref(:ShowContent))

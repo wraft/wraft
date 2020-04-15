@@ -13,10 +13,12 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
 
           properties do
             name(:string, "Name of the field type")
+            description(:string, "Description of the field type")
           end
 
           example(%{
-            name: "Date"
+            name: "Date",
+            description: "A date field"
           })
         end,
       FieldType:
@@ -27,6 +29,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
           properties do
             id(:string, "The ID of the field type", required: true)
             name(:string, "Name of the field type")
+            description(:string, "Description of the field type")
             inserted_at(:string, "When was the engine inserted", format: "ISO-8601")
             updated_at(:string, "When was the engine last updated", format: "ISO-8601")
           end
@@ -34,6 +37,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
           example(%{
             id: "1232148nb3478",
             name: "Date",
+            description: "A date field",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -59,6 +63,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
               %{
                 id: "1232148nb3478",
                 name: "Date",
+                description: "A date field",
                 updated_at: "2020-01-21T14:00:00Z",
                 inserted_at: "2020-02-21T14:00:00Z"
               }
