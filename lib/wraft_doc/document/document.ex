@@ -13,6 +13,7 @@ defmodule WraftDoc.Document do
     Document.Engine,
     Document.Instance,
     Document.Instance.History,
+    Document.Instance.Version,
     Document.Theme,
     Document.DataTemplate,
     Document.Asset,
@@ -482,12 +483,14 @@ defmodule WraftDoc.Document do
     update_instance(instance, user, params)
   end
 
-  def update_instance(instance, %User{id: id}, params) do
-    instance
+  def update_instance(old_instance, %User{id: id} = current_user, params) do
+    old_instance
     |> Instance.update_changeset(params)
     |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, instance} ->
+        Task.start(fn -> create_version(current_user, old_instance, instance) end)
+
         instance
         |> Repo.preload([:creator, [{:content_type, :layout}], :state])
         |> get_built_document()
@@ -496,6 +499,57 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
+
+  # Create a new version with old data, when an instance is updated.
+  # The previous data will be stored in the versions. Latest one will
+  # be in the content.
+  # A new version is added only if there is any difference in either the
+  # raw or serialized fields of the instances.
+  @spec create_version(User.t(), Instance.t(), Instance.t()) ::
+          {:ok, Version.t()} | {:error, Ecto.Changeset.t()}
+  defp create_version(current_user, old_instance, new_instance) do
+    case instance_updated?(old_instance, new_instance) do
+      true ->
+        params = create_version_params(old_instance)
+
+        current_user
+        |> build_assoc(:instance_versions, content: old_instance)
+        |> Version.changeset(params)
+        |> Repo.insert()
+
+      false ->
+        nil
+    end
+  end
+
+  # Create the params to create a new version.
+  @spec create_version_params(Instance.t()) :: map
+  defp create_version_params(%Instance{id: id} = instance) do
+    version =
+      from(v in Version,
+        where: v.content_id == ^id,
+        order_by: [desc: v.inserted_at],
+        limit: 1,
+        select: v.version_number
+      )
+      |> Repo.one()
+      |> case do
+        nil ->
+          1
+
+        version ->
+          version + 1
+      end
+
+    instance |> Map.from_struct() |> Map.put(:version_number, version)
+  end
+
+  # Checks whether the raw and serialzed of old and new instances are same or not.
+  # If they are both the same, returns false, else returns true
+  @spec instance_updated?(Instance.t(), Instance.t()) :: boolean
+  defp instance_updated?(%{raw: raw, serialized: map}, %{raw: raw, serialized: map}), do: false
+
+  defp instance_updated?(_old_instance, _new_instance), do: true
 
   @doc """
   Update instance's state if the flow IDs of both
@@ -1043,7 +1097,7 @@ defmodule WraftDoc.Document do
     Poison.decode!(response_body)
   end
 
-  def generate_chart(params) do
+  def generate_chart(_params) do
     %{"status" => false, "error" => "invalid endpoint"}
   end
 
@@ -1085,6 +1139,10 @@ defmodule WraftDoc.Document do
     |> Repo.update()
   end
 
+  @doc """
+  Deleta a field type
+  """
+  @spec delete_field_type(FieldType.t()) :: {:ok, FieldType.t()} | {:error, Ecto.Changeset.t()}
   def delete_field_type(field_type) do
     field_type
     |> Ecto.Changeset.change()
@@ -1099,6 +1157,8 @@ defmodule WraftDoc.Document do
   @doc """
   Create a background job for Bulk build.
   """
+  @spec insert_bulk_build_work(User.t(), binary(), binary(), binary(), map, Plug.Upload.t()) ::
+          {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
   def insert_bulk_build_work(current_user, c_type_uuid, state_uuid, d_temp_uuid, mapping, %{
         filename: filename,
         path: path
@@ -1122,6 +1182,8 @@ defmodule WraftDoc.Document do
   @doc """
   Bulk build function.
   """
+  @spec bulk_doc_build(User.t(), ContentType.t(), State.t(), DataTemplate.t(), map, String.t()) ::
+          list | {:error, :not_found}
   def bulk_doc_build(
         %User{} = current_user,
         %ContentType{} = c_type,
@@ -1152,6 +1214,14 @@ defmodule WraftDoc.Document do
   @doc """
   Generate params to create instances for bulk build.
   """
+  @spec create_instance_params_for_bulk_build(
+          map,
+          DataTemplate.t(),
+          User.t(),
+          ContentType.t(),
+          State.t(),
+          map
+        ) :: Instance.t()
   def create_instance_params_for_bulk_build(
         serialized,
         %{title_template: title_temp, data: template},
@@ -1187,6 +1257,7 @@ defmodule WraftDoc.Document do
   # Since we are iterating over list of params to create instances, there is a high chance of
   # unique ID of instances to repeat and hence for instance creation failures. This is why
   # we loop the fucntion until instance is successfully created.
+  @spec create_instance_for_bulk_build(User.t(), ContentType.t(), State.t(), map) :: Instance.t()
   defp create_instance_for_bulk_build(current_user, c_type, state, params) do
     create_instance(current_user, c_type, state, params)
     |> case do
@@ -1200,6 +1271,7 @@ defmodule WraftDoc.Document do
 
   # Builds the doc using `build_doc/2`.
   # Here we also records the build history using `add_build_history/3`.
+  @spec bulk_build(User.t(), Instance.t(), Layout.t()) :: {:ok, pid()}
   defp bulk_build(current_user, instance, layout) do
     start_time = Timex.now()
     {_, exit_code} = build_doc(instance, layout)
@@ -1215,6 +1287,7 @@ defmodule WraftDoc.Document do
   end
 
   # Change the Keys of the CSV decoded map to the values of the mapping.
+  @spec update_keys(map, map) :: map
   defp update_keys(map, mapping) do
     new_map =
       Enum.reduce(mapping, %{}, fn {k, v}, acc ->

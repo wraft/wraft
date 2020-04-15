@@ -33,6 +33,7 @@ defmodule WraftDoc.Document.Instance do
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
 
     has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :content_id)
+    has_many(:versions, WraftDoc.Document.Instance.Version, foreign_key: :content_id)
     timestamps()
   end
 
