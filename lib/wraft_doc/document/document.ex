@@ -13,6 +13,7 @@ defmodule WraftDoc.Document do
     Document.Engine,
     Document.Instance,
     Document.Instance.History,
+    Document.Instance.Version,
     Document.Theme,
     Document.DataTemplate,
     Document.Asset,
@@ -482,12 +483,14 @@ defmodule WraftDoc.Document do
     update_instance(instance, user, params)
   end
 
-  def update_instance(instance, %User{id: id}, params) do
-    instance
+  def update_instance(old_instance, %User{id: id} = current_user, params) do
+    old_instance
     |> Instance.update_changeset(params)
     |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, instance} ->
+        Task.start(fn -> create_version(current_user, old_instance, instance) end)
+
         instance
         |> Repo.preload([:creator, [{:content_type, :layout}], :state])
         |> get_built_document()
@@ -496,6 +499,57 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
+
+  # Create a new version with old data, when an instance is updated.
+  # The previous data will be stored in the versions. Latest one will
+  # be in the content.
+  # A new version is added only if there is any difference in either the
+  # raw or serialized fields of the instances.
+  @spec create_version(User.t(), Instance.t(), Instance.t()) ::
+          {:ok, Version.t()} | {:error, Ecto.Changeset.t()}
+  defp create_version(current_user, old_instance, new_instance) do
+    case instance_updated?(old_instance, new_instance) do
+      true ->
+        params = create_version_params(old_instance)
+
+        current_user
+        |> build_assoc(:instance_versions, content: old_instance)
+        |> Version.changeset(params)
+        |> Repo.insert()
+
+      false ->
+        nil
+    end
+  end
+
+  # Create the params to create a new version.
+  @spec create_version_params(Instance.t()) :: map
+  defp create_version_params(%Instance{id: id} = instance) do
+    version =
+      from(v in Version,
+        where: v.content_id == ^id,
+        order_by: [desc: v.inserted_at],
+        limit: 1,
+        select: v.version_number
+      )
+      |> Repo.one()
+      |> case do
+        nil ->
+          1
+
+        version ->
+          version + 1
+      end
+
+    instance |> Map.from_struct() |> Map.put(:version_number, version)
+  end
+
+  # Checks whether the raw and serialzed of old and new instances are same or not.
+  # If they are both the same, returns false, else returns true
+  @spec instance_updated?(Instance.t(), Instance.t()) :: boolean
+  defp instance_updated?(%{raw: raw, serialized: map}, %{raw: raw, serialized: map}), do: false
+
+  defp instance_updated?(_old_instance, _new_instance), do: true
 
   @doc """
   Update instance's state if the flow IDs of both
