@@ -104,4 +104,31 @@ defmodule WraftDocWeb.Api.V1.UserView do
   end
 
   defp get_object_data(_), do: nil
+
+  @doc """
+   Auth token for reseting password
+  """
+  def render("auth_token.json", %{auth_token: _}) do
+    %{
+      info: "A password reset link has been sent to your email.!"
+    }
+  end
+
+  @doc """
+  Guardian token generated after verifying auth_token
+  """
+  def render("check_token.json", %{token: _}) do
+    %{
+      info: "Approved"
+    }
+  end
+
+  @doc """
+  Token verified information
+  """
+  def render("token_verified.json", %{info: info}) do
+    %{
+      info: info
+    }
+  end
 end

@@ -15,4 +15,19 @@ defmodule WraftDocWeb.Mailer.Email do
     new_email()
     |> from({"WraftDoc", "admin@wraftdocs.com"})
   end
+
+  @doc """
+  Password reset link.
+  """
+
+  def password_reset(token) do
+    new_email()
+    |> from({"WraftDoc", "admin@wraftdocs.com"})
+    |> to(token.user.email)
+    |> subject("Forgot your WraftDoc Password?")
+    |> html_body(
+      "Hi #{token.user.name}.\n You recently requested to reset your password for WraftDocs
+    Click <a href=#{WraftDocWeb.Endpoint.url()}/users/password/reset?token=#{token.value}>here</a> to reset"
+    )
+  end
 end
