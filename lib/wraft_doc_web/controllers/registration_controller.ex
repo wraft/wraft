@@ -31,14 +31,14 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
     New registration.
   """
   swagger_path :create do
-    post("/users/signup")
+    post("/users/signup/")
     summary("User registration")
     description("User registration API")
     operation_id("create_user")
     tag("Registration")
 
     parameters do
-      token(:path, :string, "Token obtained from invitation mail")
+      token(:query, :string, "Token obtained from invitation mail")
       user(:body, Schema.ref(:UserRegisterRequest), "User to register", required: true)
     end
 
