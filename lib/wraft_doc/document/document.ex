@@ -1097,7 +1097,7 @@ defmodule WraftDoc.Document do
     Poison.decode!(response_body)
   end
 
-  def generate_chart(params) do
+  def generate_chart(_params) do
     %{"status" => false, "error" => "invalid endpoint"}
   end
 
