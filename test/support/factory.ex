@@ -25,7 +25,7 @@ defmodule WraftDoc.Factory do
   def user_factory do
     %User{
       name: sequence(:name, &"wrafts user-#{&1}"),
-      email: sequence(:email, &"wraftuser-#{&1}@gmail.com"),
+      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       organisation: build(:organisation),
@@ -50,10 +50,10 @@ defmodule WraftDoc.Factory do
 
   def profile_factory do
     %Profile{
-      name: sequence(:name, &"name-#{&1}"),
+      name: "admin@wraftdocs",
       dob: Timex.shift(Timex.now(), years: 27),
       gender: "male",
-      user: build(:user)
+      user: build(:user, name: "admin@wraftdocs")
     }
   end
 

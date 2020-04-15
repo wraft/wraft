@@ -18,5 +18,6 @@ defmodule WraftDoc.Account.Role do
     role
     |> cast(attrs, [:name])
     |> validate_required([:name])
+    |> unique_constraint(:role, message: "Role already exists")
   end
 end

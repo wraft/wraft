@@ -182,7 +182,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Get an organisation from its UUID.
   """
-  require IEx
+
   @spec get_organisation(binary) :: Organisation.t() | nil
   def get_organisation(org_uuid) do
     Repo.get_by(Organisation, uuid: org_uuid)

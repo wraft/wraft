@@ -7,7 +7,8 @@ defmodule WraftDocWeb.Api.V1.UserController do
   use PhoenixSwagger
   plug(WraftDocWeb.Plug.Authorized)
   import Ecto.Query, warn: false
-  alias WraftDoc.{Account, Account.User}
+  alias WraftDoc.{Account, Account.User, Account.AuthToken}
+  alias WraftDocWeb.{Mailer.Email, Mailer}
   action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do
@@ -146,6 +147,54 @@ defmodule WraftDocWeb.Api.V1.UserController do
           properties do
             error(:string, "The message of the error raised", required: true)
           end
+        end,
+      ResetPasswordRequest:
+        swagger_schema do
+          title("Reset password request")
+          description("Request to reset password")
+
+          properties do
+            token(:string, "Token has given in email", required: true)
+            password(:string, "New password to update", required: true)
+          end
+
+          example(%{
+            token:
+              "asddff23a2ds_f3asdf3a21fds23f2as32f3as3f213a2df3s2f3a213sad12f13df13adsf-21f1d3sf",
+            password: "new password"
+          })
+        end,
+      AuthToken:
+        swagger_schema do
+          title("Auth token")
+          description("Response for reset password request")
+
+          properties do
+            info(:string, "Response info")
+          end
+
+          example(%{
+            info: "A password reset link has been sent to your email.!"
+          })
+        end,
+      TokenVerifiedInfo:
+        swagger_schema do
+          title("Token verified info")
+          description("Token verified info")
+
+          properties do
+            info(:string, "info")
+          end
+        end,
+      UpdatePasswordRequest:
+        swagger_schema do
+          title("Password to update")
+          description("Request to update password")
+
+          properties do
+            current_password(:string, "Current password", required: true)
+            password(:string, "Password to update", required: true)
+          end
         end
     }
   end
@@ -227,6 +276,115 @@ defmodule WraftDocWeb.Api.V1.UserController do
         total_pages: total_pages,
         total_entries: total_entries
       )
+    end
+  end
+
+  @doc """
+  Generate auth token for password reset for the user with the given email ID.
+  """
+  swagger_path :generate_token do
+    post("/user/password/forgot")
+    summary("Generate token")
+    description("Api to generate token to update password")
+
+    parameters do
+      email(:body, :string, "Email", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:AuthToken))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def generate_token(conn, params) do
+    with %AuthToken{} = auth_token <- Account.create_token(params) do
+      Email.password_reset(auth_token) |> Mailer.deliver_now()
+
+      conn
+      |> render("auth_token.json", auth_token: auth_token)
+    end
+  end
+
+  @doc """
+  Verify password reset link/token.
+  """
+  swagger_path :verify_token do
+    get("/user/password/reset/{token}")
+    summary("Veriy password")
+    description("Verify password reset link")
+
+    parameters do
+      token(:path, :string, "Token", requried: true)
+    end
+
+    response(200, "Ok", Schema.ref(:TokenVerifiedInfo))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def verify_token(conn, %{"token" => token}) do
+    with %AuthToken{} = auth_token <- Account.check_token(token) do
+      conn
+      |> render("check_token.json", token: auth_token.value)
+    end
+  end
+
+  @doc """
+  Reset the forgotten password.
+  """
+  swagger_path :reset do
+    post("/user/password/reset")
+    summary("Reset password")
+    description("Reseting password of user")
+
+    parameters do
+      token(:body, Schema.ref(:ResetPasswordRequest), "Password deteails to reset", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:User))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def reset(conn, params) do
+    with %User{} = user <- Account.reset_password(params) do
+      conn
+      |> render("user.json", user: user)
+    end
+  end
+
+  @doc """
+  Update the password.
+  """
+  swagger_path :update do
+    post("/users/password")
+    summary("Update password")
+    description("Authenticated updation of password")
+
+    parameters do
+      password(:body, Schema.ref(:UpdatePasswordRequest), "Password to update", required: true)
+    end
+
+    response(201, "Accepted", Schema.ref(:User))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def update(conn, params) do
+    with %User{} = user <- Account.update_password(conn, params) do
+      conn
+      |> render("user.json", user: user)
+    end
+  end
+
+  @doc """
+  Verify the JWT token in the incoming request and return appropriate response.
+  The JWT token is obtained by pattern matching the conn.
+  When there is no token provided, then return the same error response as that of
+  having an invalid or expired token.
+  """
+  # When token is provided.
+  def token(%{req_headers: headers} = conn, _params) do
+    with {:ok, info} <- Account.verify_jwt_token(headers) do
+      conn |> render("token_verified.json", %{info: info})
     end
   end
 end
