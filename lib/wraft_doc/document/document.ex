@@ -1099,7 +1099,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a background job for Bulk build.
   """
-  def insert_bulk_build_work(current_user, c_type_uuid, state_uuid, d_temp_uuid, %{
+  def insert_bulk_build_work(current_user, c_type_uuid, state_uuid, d_temp_uuid, mapping, %{
         filename: filename,
         path: path
       }) do
@@ -1112,6 +1112,7 @@ defmodule WraftDoc.Document do
       c_type_uuid: c_type_uuid,
       state_uuid: state_uuid,
       d_temp_uuid: d_temp_uuid,
+      mapping: mapping,
       file: dest_path
     }
     |> WraftDocWeb.Worker.BulkWorker.new()
@@ -1122,33 +1123,55 @@ defmodule WraftDoc.Document do
   Bulk build function.
   """
   def bulk_doc_build(
-        current_user,
-        %ContentType{id: id} = c_type,
-        state,
-        %DataTemplate{data: data},
+        %User{} = current_user,
+        %ContentType{} = c_type,
+        %State{} = state,
+        %DataTemplate{} = d_temp,
+        mapping,
         path
       ) do
-    fields =
-      from(ctf in ContentTypeField, where: ctf.content_type_id == ^id, select: ctf.name)
-      |> Repo.all()
+    mapping_keys = mapping |> Map.keys()
 
     c_type = c_type |> Repo.preload([{:layout, :assets}])
 
     File.stream!(path)
     |> Stream.drop(1)
-    |> CSV.decode!(headers: fields)
+    |> CSV.decode!(headers: mapping_keys)
     |> Enum.to_list()
     |> Enum.map(fn x ->
-      create_instance_params_for_bulk_build(x, data, current_user, c_type, state)
+      create_instance_params_for_bulk_build(x, d_temp, current_user, c_type, state, mapping)
     end)
     |> Stream.map(fn x -> bulk_build(current_user, x, c_type.layout) end)
     |> Enum.to_list()
   end
 
+  def bulk_doc_build(_user, _c_type, _state, _d_temp, _mapping, _path) do
+    {:error, :not_found}
+  end
+
   @doc """
   Generate params to create instances for bulk build.
   """
-  def create_instance_params_for_bulk_build(serialized, template, current_user, c_type, state) do
+  def create_instance_params_for_bulk_build(
+        serialized,
+        %{title_template: title_temp, data: template},
+        current_user,
+        c_type,
+        state,
+        mapping
+      ) do
+    # The serialzed map's keys are changed to the values in the mapping. These
+    # values are actually the fields of the content type.
+    # This updated serialzed is then reduced to get the raw data
+    # by replacing the variables in the data template.
+    title =
+      serialized
+      |> Enum.reduce(title_temp, fn {k, v}, acc ->
+        WraftDoc.DocConversion.replace_content(k, v, acc)
+      end)
+
+    serialized = serialized |> Map.put("title", title) |> update_keys(mapping)
+
     raw =
       serialized
       |> Enum.reduce(template, fn {k, v}, acc ->
@@ -1159,6 +1182,11 @@ defmodule WraftDoc.Document do
     create_instance_for_bulk_build(current_user, c_type, state, params)
   end
 
+  # Create instance for bulk build. Uses the `create_instance/4` function
+  # to create the instances. But the functions is run until the instance is created successfully.
+  # Since we are iterating over list of params to create instances, there is a high chance of
+  # unique ID of instances to repeat and hence for instance creation failures. This is why
+  # we loop the fucntion until instance is successfully created.
   defp create_instance_for_bulk_build(current_user, c_type, state, params) do
     create_instance(current_user, c_type, state, params)
     |> case do
@@ -1170,6 +1198,8 @@ defmodule WraftDoc.Document do
     end
   end
 
+  # Builds the doc using `build_doc/2`.
+  # Here we also records the build history using `add_build_history/3`.
   defp bulk_build(current_user, instance, layout) do
     start_time = Timex.now()
     {_, exit_code} = build_doc(instance, layout)
@@ -1182,5 +1212,17 @@ defmodule WraftDoc.Document do
         exit_code: exit_code
       })
     end)
+  end
+
+  # Change the Keys of the CSV decoded map to the values of the mapping.
+  defp update_keys(map, mapping) do
+    new_map =
+      Enum.reduce(mapping, %{}, fn {k, v}, acc ->
+        value = Map.get(map, k)
+        acc |> Map.put(v, value)
+      end)
+
+    keys = mapping |> Map.keys()
+    map |> Map.drop(keys) |> Map.merge(new_map)
   end
 end

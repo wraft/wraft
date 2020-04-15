@@ -584,6 +584,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     parameter(:state_id, :formData, :string, "State id", required: true)
     parameter(:d_temp_uuid, :formData, :string, "Data template id", required: true)
     parameter(:file, :formData, :file, "Bulk build source file")
+    parameter(:mapping, :formData, :map, "Mappings for the CSV")
 
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
@@ -596,6 +597,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           "c_type_id" => c_type_uuid,
           "state_id" => state_uuid,
           "d_temp_uuid" => d_temp_uuid,
+          "mapping" => mapping,
           "file" => file
         }
       ) do
@@ -607,6 +609,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
              c_type_uuid,
              state_uuid,
              d_temp_uuid,
+             mapping,
              file
            ) do
       conn |> render("bulk.json")
