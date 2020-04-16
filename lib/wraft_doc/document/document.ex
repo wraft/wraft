@@ -259,10 +259,25 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type from its UUID.
   """
-
   @spec get_content_type(binary) :: ContentType.t()
   def get_content_type(uuid) do
     Repo.get_by(ContentType, uuid: uuid)
+  end
+
+  @doc """
+  Get a content type from its ID.
+  """
+  @spec get_content_type_from_id(integer()) :: ContentType.t()
+  def get_content_type_from_id(id) do
+    Repo.get(ContentType, id)
+  end
+
+  @doc """
+  Get a content type field from its UUID.
+  """
+  @spec get_content_type_field(binary) :: ContentTypeField.t()
+  def get_content_type_field(uuid) do
+    Repo.get_by(ContentTypeField, uuid: uuid)
   end
 
   @doc """
@@ -317,6 +332,15 @@ defmodule WraftDoc.Document do
         "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
     )
     |> Spur.delete(%{actor: "#{id}"})
+  end
+
+  @doc """
+  Delete a content type field.
+  """
+  @spec delete_content_type_field(ContentTypeField.t(), User.t()) ::
+          {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()}
+  def delete_content_type_field(content_type_field, %User{id: id}) do
+    content_type_field |> Spur.delete(%{actor: "#{id}"})
   end
 
   @doc """
