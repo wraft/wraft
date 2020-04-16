@@ -1,0 +1,6479 @@
+{
+  "tags": [
+    {
+      "name": "Registration",
+      "description": "User registration"
+    },
+    {
+      "name": "Organisation",
+      "description": "Manage Enterprise details"
+    }
+  ],
+  "swagger": "2.0",
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "API Operations require a valid token."
+    }
+  },
+  "security": [
+    {
+      "Bearer": []
+    }
+  ],
+  "paths": {
+    "/content_types/{c_type_id}/contents": {
+      "post": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Create a content",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentAndContentTypeAndState"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "c_type_id",
+            "in": "path",
+            "description": "content type id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/ContentRequest"
+            },
+            "required": true,
+            "name": "content",
+            "in": "body",
+            "description": "Content to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.create",
+        "description": "Create content API"
+      },
+      "get": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Instance index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentsIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "c_type_id",
+            "in": "path",
+            "description": "ID of the content type"
+          },
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.index",
+        "description": "API to get the list of all instances created so far under a content type"
+      }
+    },
+    "/states/{id}": {
+      "put": {
+        "tags": [
+          "State"
+        ],
+        "summary": "State update",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowState"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "state id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/StateRequest"
+            },
+            "required": true,
+            "name": "flow",
+            "in": "body",
+            "description": "Flow to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.StateController.update",
+        "description": "API to update a state"
+      },
+      "delete": {
+        "tags": [
+          "State"
+        ],
+        "summary": "State delete",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/State"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "state id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.StateController.delete",
+        "description": "API to delete a state"
+      }
+    },
+    "/contents/{id}": {
+      "put": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Update an instance",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowContent"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Instance id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/ContentUpdateRequest"
+            },
+            "required": true,
+            "name": "content",
+            "in": "body",
+            "description": "Instance to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.update",
+        "description": "API to update an instance"
+      },
+      "get": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Show an instance",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowContent"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "ID of the instance"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.show",
+        "description": "API to get all details of an instance"
+      },
+      "delete": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Delete an instance",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Content"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "instance id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.delete",
+        "description": "API to delete an instance"
+      }
+    },
+    "/contents/{id}/build": {
+      "post": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Build a document",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Content"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "instance id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.build",
+        "description": "API to build a document from instance"
+      }
+    },
+    "/content_types/{c_type_id}/data_templates": {
+      "post": {
+        "tags": [
+          "DataTemplate"
+        ],
+        "summary": "Create data template",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataTemplate"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "c_type_id",
+            "in": "path",
+            "description": "ID of the content type"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/DataTemplateRequest"
+            },
+            "required": true,
+            "name": "data_template",
+            "in": "body",
+            "description": "Data template to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.create",
+        "description": "Create data template API"
+      },
+      "get": {
+        "tags": [
+          "DataTemplate"
+        ],
+        "summary": "Data template index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataTemplatesIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "c_type_id",
+            "in": "path",
+            "description": "ID of the content type"
+          },
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.index",
+        "description": "API to get the list of all data templates created so far under a content type"
+      }
+    },
+    "/flows": {
+      "post": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Create a flow",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Flow"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/FlowRequest"
+            },
+            "required": true,
+            "name": "flow",
+            "in": "body",
+            "description": "Flow to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.create",
+        "description": "Create flow API"
+      },
+      "get": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Flow index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FlowIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.index",
+        "description": "Index of flows in current user's organisation"
+      }
+    },
+    "/data_templates": {
+      "get": {
+        "tags": [
+          "DataTemplate"
+        ],
+        "summary": "All Data templates",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataTemplatesIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.all_templates",
+        "description": "API to get the list of all data templates created so far under an organisation"
+      }
+    },
+    "/resources/{id}": {
+      "put": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Update a resource",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Resource"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "resource id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/ResourceRequest"
+            },
+            "required": true,
+            "name": "resource",
+            "in": "body",
+            "description": "Resource to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.update",
+        "description": "API to update a resource"
+      },
+      "get": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Show a resource",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Resource"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "resource id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.show",
+        "description": "API to show details of a resource"
+      },
+      "delete": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Delete a resource",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Resource"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "resource id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.delete",
+        "description": "API to delete a resource"
+      }
+    },
+    "/user/password/reset": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Reset password",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/User"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/ResetPasswordRequest"
+            },
+            "required": true,
+            "name": "token",
+            "in": "body",
+            "description": "Password deteails to reset"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.UserController.reset",
+        "description": "Reseting password of user"
+      }
+    },
+    "/content_types": {
+      "post": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Create content type",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentTypeAndLayoutAndFlow"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/ContentTypeRequest"
+            },
+            "required": true,
+            "name": "content_type",
+            "in": "body",
+            "description": "Content Type to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.create",
+        "description": "Create content type API"
+      },
+      "get": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Content Type index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentTypesIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.index",
+        "description": "API to get the list of all content types created so far"
+      }
+    },
+    "/themes/{id}": {
+      "put": {
+        "tags": [
+          "Theme"
+        ],
+        "summary": "Update a theme",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Theme"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "theme id"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "name",
+            "in": "formData",
+            "description": "Theme's name"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "font",
+            "in": "formData",
+            "description": "Font to be used in the theme"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "typescale",
+            "in": "formData",
+            "description": "Typescale of the theme"
+          },
+          {
+            "type": "file",
+            "required": false,
+            "name": "file",
+            "in": "formData",
+            "description": "Theme file to upload"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ThemeController.update",
+        "description": "Update a theme API",
+        "consumes": [
+          "multipart/form-data"
+        ]
+      },
+      "get": {
+        "tags": [
+          "Theme"
+        ],
+        "summary": "Show a theme",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowTheme"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "theme id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ThemeController.show",
+        "description": "Show a theme API"
+      },
+      "delete": {
+        "tags": [
+          "Theme"
+        ],
+        "summary": "Delete a theme",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Theme"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "theme id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ThemeController.delete",
+        "description": "API to delete a theme"
+      }
+    },
+    "/data_templates/{id}": {
+      "put": {
+        "tags": [
+          "DataTemplate"
+        ],
+        "summary": "Update a data template",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowDataTemplate"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Data template id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/DataTemplateRequest"
+            },
+            "required": true,
+            "name": "data_templte",
+            "in": "body",
+            "description": "Data template to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.update",
+        "description": "API to update a data template"
+      },
+      "get": {
+        "tags": [
+          "DataTemplate"
+        ],
+        "summary": "Show Data template",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowDataTemplate"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "ID of the data template"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.show",
+        "description": "API to get all details of a data template"
+      },
+      "delete": {
+        "tags": [
+          "DataTemplate"
+        ],
+        "summary": "Delete a data template",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataTemplate"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "data template id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.DataTemplateController.delete",
+        "description": "API to delete a data template"
+      }
+    },
+    "/organisations": {
+      "post": {
+        "tags": [
+          "Organisation"
+        ],
+        "summary": "Register organisation",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/Organisation"
+            },
+            "description": "Created"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/OrganisationRequest"
+            },
+            "required": true,
+            "name": "organisation",
+            "in": "body",
+            "description": "Organisation to create"
+          }
+        ],
+        "operationId": "create_organisation",
+        "description": "Create Organisation API"
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Current user",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/CurrentUser"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [],
+        "operationId": "WraftDocWeb.Api.V1.UserController.me",
+        "description": "Current User details"
+      }
+    },
+    "/activities": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Activity stream index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentTypesIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.UserController.activity",
+        "description": "API to get the list of all activities for which the current user is one of the audience"
+      }
+    },
+    "/field_types/{id}": {
+      "put": {
+        "tags": [
+          "FieldType"
+        ],
+        "summary": "Update a field type",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FieldType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Field type id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/FieldTypeRequest"
+            },
+            "required": true,
+            "name": "field_type",
+            "in": "body",
+            "description": "Field Type to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.update",
+        "description": "API to update a field type"
+      },
+      "get": {
+        "tags": [
+          "FieldType"
+        ],
+        "summary": "Show a field type",
+        "responses": {
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FieldType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "ID of the field type"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.show",
+        "description": "API to show a field type"
+      },
+      "delete": {
+        "tags": [
+          "FieldType"
+        ],
+        "summary": "Delete a field type",
+        "responses": {
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FieldType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "field type id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.delete",
+        "description": "API to delete a field type"
+      }
+    },
+    "/assets/{id}": {
+      "put": {
+        "tags": [
+          "Asset"
+        ],
+        "summary": "Update an asset",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Asset"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "asset id"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "name",
+            "in": "formData",
+            "description": "Asset name"
+          },
+          {
+            "type": "file",
+            "required": false,
+            "name": "file",
+            "in": "formData",
+            "description": "Asset file to upload"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.AssetController.update",
+        "description": "API to update an asset",
+        "consumes": [
+          "multipart/form-data"
+        ]
+      },
+      "get": {
+        "tags": [
+          "Asset"
+        ],
+        "summary": "Show an asset",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowAsset"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "ID of the asset"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.AssetController.show",
+        "description": "API to get all details of an asset"
+      },
+      "delete": {
+        "tags": [
+          "Asset"
+        ],
+        "summary": "Delete an asset",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Asset"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "asset id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.AssetController.delete",
+        "description": "API to delete an asset"
+      }
+    },
+    "/users/signup/": {
+      "post": {
+        "tags": [
+          "Registration"
+        ],
+        "summary": "User registration",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/UserToken"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "token",
+            "in": "query",
+            "description": "Token obtained from invitation mail"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/UserRegisterRequest"
+            },
+            "required": true,
+            "name": "user",
+            "in": "body",
+            "description": "User to register"
+          }
+        ],
+        "operationId": "create_user",
+        "description": "User registration API"
+      }
+    },
+    "/profile/me": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Show current profile",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Profile"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [],
+        "operationId": "show_current_profile",
+        "description": "Api to show current profile"
+      }
+    },
+    "/contents/{id}/states": {
+      "patch": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "Update an instance's state",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowContent"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Instance id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/ContentStateUpdateRequest"
+            },
+            "required": true,
+            "name": "content",
+            "in": "body",
+            "description": "New state of the instance"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.state_update",
+        "description": "API to update an instance's state"
+      }
+    },
+    "/layouts": {
+      "post": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Create layout",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/LayoutAndEngine"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "name",
+            "in": "formData",
+            "description": "Layout's name"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "description",
+            "in": "formData",
+            "description": "Layout description"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "width",
+            "in": "formData",
+            "description": "Layout width"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "height",
+            "in": "formData",
+            "description": "Layout height"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "unit",
+            "in": "formData",
+            "description": "Layout dimension unit"
+          },
+          {
+            "type": "string",
+            "required": false,
+            "name": "slug",
+            "in": "formData",
+            "description": "Name of slug to be used"
+          },
+          {
+            "type": "file",
+            "required": false,
+            "name": "slug_file",
+            "in": "formData",
+            "description": "Slug file to upload"
+          },
+          {
+            "type": "file",
+            "required": true,
+            "name": "screenshot",
+            "in": "formData",
+            "description": "Screenshot to upload"
+          },
+          {
+            "type": "list",
+            "required": false,
+            "name": "assets",
+            "in": "formData",
+            "description": "IDs of assets of the layout"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "engine_uuid",
+            "in": "formData",
+            "description": "ID of layout's engine"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.create",
+        "description": "Create layout API",
+        "consumes": [
+          "multipart/form-data"
+        ]
+      },
+      "get": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Layout index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/LayoutIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.index",
+        "description": "API to get the list of all layouts created so far"
+      }
+    },
+    "/user/password/reset/{token}": {
+      "get": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Veriy password",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/TokenVerifiedInfo"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "requried": true,
+            "required": true,
+            "name": "token",
+            "in": "path",
+            "description": "Token"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.UserController.verify_token",
+        "description": "Verify password reset link"
+      }
+    },
+    "/flows/{id}": {
+      "put": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Flow update",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/UpdateFlow"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "flow id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/FlowRequest"
+            },
+            "required": true,
+            "name": "flow",
+            "in": "body",
+            "description": "Flow to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.update",
+        "description": "API to update a flow"
+      },
+      "get": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Show a flow",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FlowAndStates"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "flow id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.show",
+        "description": "Show a flow and its details including states under it"
+      },
+      "delete": {
+        "tags": [
+          "Flow"
+        ],
+        "summary": "Flow delete",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Flow"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "flow id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FlowController.delete",
+        "description": "API to delete a flow"
+      }
+    },
+    "/engines": {
+      "get": {
+        "tags": [
+          "Engine"
+        ],
+        "summary": "List of all enignes",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/EngineIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.EngineController.index",
+        "description": "API to list of all enignes creates/seeded so far"
+      }
+    },
+    "/permissions/{id}": {
+      "delete": {
+        "tags": [
+          "Permission"
+        ],
+        "summary": "Delete a permission",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Resource"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "permission id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.PermissionController.delete",
+        "description": "API to remove a permission"
+      }
+    },
+    "/blocks": {
+      "post": {
+        "tags": [
+          "Block"
+        ],
+        "summary": "Generate blocks",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Block"
+            },
+            "description": "Created"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/BlockRequest"
+            },
+            "required": true,
+            "name": "block",
+            "in": "body",
+            "description": "Block to Create"
+          }
+        ],
+        "operationId": "create_block",
+        "description": "Create a block"
+      }
+    },
+    "/content_types/{c_type_id}/bulk_build": {
+      "post": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Bulk build documents",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "c_type_id",
+            "in": "path",
+            "description": "Content type id"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "state_id",
+            "in": "formData",
+            "description": "State id"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "d_temp_uuid",
+            "in": "formData",
+            "description": "Data template id"
+          },
+          {
+            "type": "file",
+            "required": false,
+            "name": "file",
+            "in": "formData",
+            "description": "Bulk build source file"
+          },
+          {
+            "type": "map",
+            "required": false,
+            "name": "mapping",
+            "in": "formData",
+            "description": "Mappings for the CSV"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.bulk_build",
+        "description": "API to bulk build documents for a content type",
+        "consumes": [
+          "multipart/form-data"
+        ]
+      }
+    },
+    "/themes": {
+      "post": {
+        "tags": [
+          "Theme"
+        ],
+        "summary": "Create theme",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Theme"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "name",
+            "in": "formData",
+            "description": "Theme's name"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "font",
+            "in": "formData",
+            "description": "Font to be used in the theme"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "typescale",
+            "in": "formData",
+            "description": "Typescale of the theme"
+          },
+          {
+            "type": "file",
+            "required": false,
+            "name": "file",
+            "in": "formData",
+            "description": "Theme file to upload"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ThemeController.create",
+        "description": "Create theme API",
+        "consumes": [
+          "multipart/form-data"
+        ]
+      },
+      "get": {
+        "tags": [
+          "Theme"
+        ],
+        "summary": "Theme index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ThemeIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ThemeController.index",
+        "description": "Theme index API"
+      }
+    },
+    "profile/{id}": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Show profile details",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Profile"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Users id"
+          }
+        ],
+        "operationId": "show_profile",
+        "description": "Show profile details by id"
+      }
+    },
+    "/users/signin": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "summary": "User sign in",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/UserToken"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/UserLoginRequest"
+            },
+            "required": true,
+            "name": "user",
+            "in": "body",
+            "description": "User to trying to login"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.UserController.signin",
+        "description": "User sign in API"
+      }
+    },
+    "/contents": {
+      "get": {
+        "tags": [
+          "Instance"
+        ],
+        "summary": "All instances",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentsIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.InstanceController.all_contents",
+        "description": "API to get the list of all instances created so far under an organisation"
+      }
+    },
+    "/content_types/{id}": {
+      "put": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Update a Content Type",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowContentType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "content type id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/ContentTypeRequest"
+            },
+            "required": true,
+            "name": "layout",
+            "in": "body",
+            "description": "Content Type to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.update",
+        "description": "API to update a content type"
+      },
+      "get": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Show a Content Type",
+        "responses": {
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowContentType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "content type id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.show",
+        "description": "API to show details of a content type"
+      },
+      "delete": {
+        "tags": [
+          "ContentType"
+        ],
+        "summary": "Delete a Content Type",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ContentType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "content type id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ContentTypeController.delete",
+        "description": "API to delete a content type"
+      }
+    },
+    "/profile/{id}": {
+      "put": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "update users profile",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Profile"
+            },
+            "description": "Updated"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "name",
+            "in": "formData",
+            "description": "Name"
+          },
+          {
+            "type": "file",
+            "required": false,
+            "name": "profile_pic",
+            "in": "formData",
+            "description": "Profile pic"
+          },
+          {
+            "type": "date",
+            "required": false,
+            "name": "dob",
+            "in": "formData",
+            "description": "Date of Birth"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "gender",
+            "in": "formData",
+            "description": "Gender"
+          }
+        ],
+        "operationId": "update_profile",
+        "description": "Update users profile",
+        "consumes": [
+          "multipart/form-data"
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Profile"
+        ],
+        "summary": "Delete profile",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Profile"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Profile id"
+          }
+        ],
+        "operationId": "delete_profile",
+        "description": "Api to delete profile"
+      }
+    },
+    "/organisations/{id}": {
+      "put": {
+        "tags": [
+          "Organisation"
+        ],
+        "summary": "Update an organisation",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/Organisation"
+            },
+            "description": "Accepted"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "organisation id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/OrganisationRequest"
+            },
+            "required": true,
+            "name": "organisation",
+            "in": "body",
+            "description": "Organisation to be updated"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.OrganisationController.update",
+        "description": "API to update an organisation"
+      },
+      "get": {
+        "tags": [
+          "Organisation"
+        ],
+        "summary": "Show an Organisation",
+        "responses": {
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Organisation"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Organisation id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.OrganisationController.show",
+        "description": "API to show details of an organisation"
+      },
+      "delete": {
+        "tags": [
+          "Organisation"
+        ],
+        "summary": "Delete an organisation",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Organisation"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Organisation id"
+          }
+        ],
+        "operationId": "delete_organisation",
+        "description": "Delete Organisation API"
+      }
+    },
+    "/users/password": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Update password",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/User"
+            },
+            "description": "Accepted"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/UpdatePasswordRequest"
+            },
+            "required": true,
+            "name": "password",
+            "in": "body",
+            "description": "Password to update"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.UserController.update",
+        "description": "Authenticated updation of password"
+      }
+    },
+    "/organisations/{id}/invite": {
+      "post": {
+        "tags": [
+          "Organisation"
+        ],
+        "summary": "Invite new member to the organisation",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/InvitedResponse"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Organisation id"
+          },
+          {
+            "schema": "string",
+            "required": true,
+            "name": "email",
+            "in": "body",
+            "description": "Email of the user"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.OrganisationController.invite",
+        "description": "Invite new member to the organisation"
+      }
+    },
+    "/user/password/forgot": {
+      "post": {
+        "tags": [
+          "User"
+        ],
+        "summary": "Generate token",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/AuthToken"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": "string",
+            "required": true,
+            "name": "email",
+            "in": "body",
+            "description": "Email"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.UserController.generate_token",
+        "description": "Api to generate token to update password"
+      }
+    },
+    "/resources": {
+      "post": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Create resource",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Resource"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/ResourceRequest"
+            },
+            "required": true,
+            "name": "resource",
+            "in": "body",
+            "description": "Resource to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.create",
+        "description": "Create resource API"
+      },
+      "get": {
+        "tags": [
+          "Resource"
+        ],
+        "summary": "Resource index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ResourceIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.ResourceController.index",
+        "description": "API to get the list of all resources created so far"
+      }
+    },
+    "/flows/{flow_id}/states": {
+      "post": {
+        "tags": [
+          "State"
+        ],
+        "summary": "Create a state",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/State"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/StateRequest"
+            },
+            "required": true,
+            "name": "state",
+            "in": "body",
+            "description": "State to be created"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "flow_id",
+            "in": "path",
+            "description": "Flow id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.StateController.create",
+        "description": "Create state API"
+      },
+      "get": {
+        "tags": [
+          "State"
+        ],
+        "summary": "State index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FlowIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "flow_id",
+            "in": "path",
+            "description": "flow id"
+          },
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.StateController.index",
+        "description": "Index of States under a flow"
+      }
+    },
+    "/permissions": {
+      "post": {
+        "tags": [
+          "Permission"
+        ],
+        "summary": "Create permission",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Permission"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/PermissionRequest"
+            },
+            "required": true,
+            "name": "resource",
+            "in": "body",
+            "description": "Permission to be created"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.PermissionController.create",
+        "description": "Create permission API"
+      },
+      "get": {
+        "tags": [
+          "Permission"
+        ],
+        "summary": "Permission index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "400": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Bad Request"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/PermissionIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.PermissionController.index",
+        "description": "API to get the list of all permissions created so far"
+      }
+    },
+    "/field_types": {
+      "post": {
+        "tags": [
+          "FieldType"
+        ],
+        "summary": "Create a field type",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FieldType"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/FieldTypeRequest"
+            },
+            "required": true,
+            "name": "field_type",
+            "in": "body",
+            "description": "Field Type to be created"
+          }
+        ],
+        "operationId": "create_field_type",
+        "description": "Create field type API"
+      },
+      "get": {
+        "tags": [
+          "FieldType"
+        ],
+        "summary": "Field type index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FieldTypeIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.FieldTypeController.index",
+        "description": "API to get the list of all field typs created so far"
+      }
+    },
+    "/blocks/{id}": {
+      "put": {
+        "tags": [
+          "Block"
+        ],
+        "summary": "Update blocks",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/Block"
+            },
+            "description": "Accepted"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "block id"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/BlockRequest"
+            },
+            "required": true,
+            "name": "block",
+            "in": "body",
+            "description": "Block to update"
+          }
+        ],
+        "operationId": "update_block",
+        "description": "Update a block"
+      },
+      "get": {
+        "tags": [
+          "Block"
+        ],
+        "summary": "Show a block",
+        "responses": {
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Block"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Block id"
+          }
+        ],
+        "operationId": "show_block",
+        "description": "Show a block details"
+      },
+      "delete": {
+        "tags": [
+          "Block"
+        ],
+        "summary": "Delete a block",
+        "responses": {
+          "404": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Not Found"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Block"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Block id"
+          }
+        ],
+        "operationId": "delete_block",
+        "description": "Delete a block from database"
+      }
+    },
+    "/layouts/{id}": {
+      "put": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Update a Layout",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowLayout"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "layout id"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "name",
+            "in": "formData",
+            "description": "Layout's name"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "description",
+            "in": "formData",
+            "description": "Layout description"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "width",
+            "in": "formData",
+            "description": "Layout width"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "height",
+            "in": "formData",
+            "description": "Layout height"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "unit",
+            "in": "formData",
+            "description": "Layout dimension unit"
+          },
+          {
+            "type": "string",
+            "required": false,
+            "name": "slug",
+            "in": "formData",
+            "description": "Name of slug to be used"
+          },
+          {
+            "type": "file",
+            "required": false,
+            "name": "slug_file",
+            "in": "formData",
+            "description": "Slug file to upload"
+          },
+          {
+            "type": "file",
+            "required": true,
+            "name": "screenshot",
+            "in": "formData",
+            "description": "Screenshot to upload"
+          },
+          {
+            "type": "list",
+            "required": false,
+            "name": "assets",
+            "in": "formData",
+            "description": "IDs of assets of the layout"
+          },
+          {
+            "type": "string",
+            "required": true,
+            "name": "engine_uuid",
+            "in": "formData",
+            "description": "ID of layout's engine"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.update",
+        "description": "API to update a layout",
+        "consumes": [
+          "multipart/form-data"
+        ]
+      },
+      "get": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Show a Layout",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/ShowLayout"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "layout id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.show",
+        "description": "API to show details of a layout"
+      },
+      "delete": {
+        "tags": [
+          "Layout"
+        ],
+        "summary": "Delete a Layout",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Layout"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "layout id"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.LayoutController.delete",
+        "description": "API to delete a layout"
+      }
+    },
+    "/assets": {
+      "post": {
+        "tags": [
+          "Asset"
+        ],
+        "summary": "Create an asset",
+        "responses": {
+          "422": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unprocessable Entity"
+          },
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/Asset"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "name",
+            "in": "formData",
+            "description": "Asset name"
+          },
+          {
+            "type": "file",
+            "required": false,
+            "name": "file",
+            "in": "formData",
+            "description": "Asset file to upload"
+          }
+        ],
+        "operationId": "create_asset",
+        "description": "Create asset API",
+        "consumes": [
+          "multipart/form-data"
+        ]
+      },
+      "get": {
+        "tags": [
+          "Asset"
+        ],
+        "summary": "Asset index",
+        "responses": {
+          "401": {
+            "schema": {
+              "$ref": "#/definitions/Error"
+            },
+            "description": "Unauthorized"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/AssetsIndex"
+            },
+            "description": "Ok"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "page",
+            "in": "query",
+            "description": "Page number"
+          }
+        ],
+        "operationId": "WraftDocWeb.Api.V1.AssetController.index",
+        "description": "API to get the list of all assets created so far under an organisation"
+      }
+    }
+  },
+  "info": {
+    "version": "0.0.1",
+    "title": "Wraft Docs"
+  },
+  "host": "localhost:4000",
+  "definitions": {
+    "PermissionRequest": {
+      "type": "object",
+      "title": "Permission Request",
+      "required": [
+        "resource_uuid",
+        "role_uuid"
+      ],
+      "properties": {
+        "role_uuid": {
+          "type": "string",
+          "description": "Role ID"
+        },
+        "resource_uuid": {
+          "type": "string",
+          "description": "Resource ID"
+        }
+      },
+      "example": {
+        "role_uuid": "jb3123jbiu1293",
+        "resource_uuid": "kjb3476123"
+      },
+      "description": "Create permission request."
+    },
+    "FieldType": {
+      "type": "object",
+      "title": "Field type",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine last updated"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the field type"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the field type"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the field type"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "name": "Date",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "description": "A date field"
+      },
+      "description": "A field type."
+    },
+    "CurrentUser": {
+      "type": "object",
+      "title": "Current User",
+      "required": [
+        "email",
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "role": {
+          "type": "string",
+          "description": "User's role"
+        },
+        "profile_pic": {
+          "type": "string",
+          "description": "User's profile pic URL"
+        },
+        "organisation_id": {
+          "type": "integer",
+          "description": "ID of the user's oranisation"
+        },
+        "name": {
+          "type": "string",
+          "description": "Users name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the user"
+        },
+        "email_verify": {
+          "type": "boolean",
+          "description": "Email verification status"
+        },
+        "email": {
+          "type": "string",
+          "description": "Users email"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "role": "user",
+        "profile_pic": "www.aws.com/users/johndoe.jpg",
+        "organisation_id": "jn14786914qklnqw",
+        "name": "John Doe",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "email_verify": true,
+        "email": "email@xyz.com"
+      },
+      "description": "Currently loged in user"
+    },
+    "LayoutIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "layouts": {
+          "$ref": "#/definitions/LayoutsAndEngines"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "layouts": [
+          {
+            "width": 40.0,
+            "updated_at": "2020-01-21T14:00:00Z",
+            "unit": "cm",
+            "slug_file": "/official_letter.zip",
+            "slug": "Pandoc",
+            "screenshot": "/official_letter.jpg",
+            "name": "Official Letter",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "height": 20.0,
+            "engine": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "name": "Pandoc",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "api_route": ""
+            },
+            "description": "An official letter"
+          }
+        ]
+      }
+    },
+    "ContentTypeAndLayoutAndFlowAndStates": {
+      "type": "object",
+      "title": "Content Type, Layout, Flow and states",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
+        },
+        "name": {
+          "type": "string",
+          "description": "Content Type's name"
+        },
+        "layout": {
+          "$ref": "#/definitions/Layout"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the content type"
+        },
+        "flow": {
+          "$ref": "#/definitions/FlowAndStatesWithoutCreator"
+        },
+        "fields": {
+          "$ref": "#/definitions/ContentTypeFields"
+        },
+        "description": {
+          "type": "string",
+          "description": "Content Type's description"
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex code of color"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "prefix": "OFFLET",
+        "name": "Offer letter",
+        "layout": {
+          "width": 40.0,
+          "updated_at": "2020-01-21T14:00:00Z",
+          "unit": "cm",
+          "slug_file": "/letter.zip",
+          "slug": "Pandoc",
+          "name": "Official Letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "height": 20.0,
+          "description": "An official letter"
+        },
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "flow": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "states": [
+            {
+              "state": "published",
+              "order": 1,
+              "id": "1232148nb3478"
+            }
+          ],
+          "name": "Flow 1",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "fields": [
+          {
+            "key": "position",
+            "field_type_id": "kjb14713132lkdac"
+          },
+          {
+            "key": "name",
+            "field_type_id": "kjb2347mnsad"
+          }
+        ],
+        "description": "An offer letter",
+        "color": "#fffff"
+      },
+      "description": "Content Type to be used for the generation of a document, its layout, flow and states."
+    },
+    "ShowFlows": {
+      "type": "array",
+      "title": "All flows and its details",
+      "items": {
+        "$ref": "#/definitions/UpdateFlow"
+      },
+      "description": "All flows that have been created and their details"
+    },
+    "Error": {
+      "type": "object",
+      "title": "Errors",
+      "required": [
+        "error"
+      ],
+      "properties": {
+        "error": {
+          "type": "string",
+          "description": "The message of the error raised"
+        }
+      },
+      "description": "Error responses from the API"
+    },
+    "FlowAndStatesWithoutCreator": {
+      "type": "object",
+      "title": "Show flow details and its states",
+      "properties": {
+        "states": {
+          "$ref": "#/definitions/State"
+        },
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        }
+      },
+      "example": {
+        "states": [
+          {
+            "state": "published",
+            "order": 1,
+            "id": "1232148nb3478"
+          }
+        ],
+        "flow": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Flow 1",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        }
+      },
+      "description": "Show all details of a flow including all the states undet the flow"
+    },
+    "ShowAsset": {
+      "type": "object",
+      "title": "Show asset",
+      "properties": {
+        "creator": {
+          "$ref": "#/definitions/User"
+        },
+        "content": {
+          "$ref": "#/definitions/Asset"
+        }
+      },
+      "example": {
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        },
+        "asset": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Asset",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "file": "/signature.pdf"
+        }
+      },
+      "description": "An asset and its details"
+    },
+    "Theme": {
+      "type": "object",
+      "title": "Theme",
+      "required": [
+        "typescale",
+        "font",
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout last updated"
+        },
+        "typescale": {
+          "type": "map",
+          "description": "Typescale of the theme"
+        },
+        "name": {
+          "type": "string",
+          "description": "Theme's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout created"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the theme"
+        },
+        "font": {
+          "type": "string",
+          "description": "Font name"
+        },
+        "file": {
+          "type": "string",
+          "description": "Theme file attachment"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "typescale": {
+          "p": "6",
+          "h2": "8",
+          "h1": "10"
+        },
+        "name": "Official Letter Theme",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "font": "Malery",
+        "file": "/malory.css"
+      },
+      "description": "A Theme"
+    },
+    "ContentTypeField": {
+      "type": "object",
+      "title": "Content type field in response",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of content type field"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of content type field"
+        },
+        "field_type": {
+          "$ref": "#/definitions/FieldType"
+        }
+      },
+      "example": {
+        "key": "position",
+        "field_type_id": "asdlkne4781234123clk"
+      },
+      "description": "Content type field in respone."
+    },
+    "FlowIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "states": {
+          "$ref": "#/definitions/ShowStates"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "states": [
+          {
+            "state": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "state": "published",
+              "order": 1,
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478"
+            },
+            "flow": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "name": "Flow 1",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "jnb234881adsad"
+            },
+            "creator": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "name": "John Doe",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "email_verify": true,
+              "email": "email@xyz.com"
+            }
+          }
+        ],
+        "page_number": 1
+      }
+    },
+    "Layout": {
+      "type": "object",
+      "title": "Layout",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "width": {
+          "type": "float",
+          "description": "Width of the layout"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout last updated"
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of dimensions"
+        },
+        "slug_file": {
+          "type": "string",
+          "description": "URL of the uploaded slug file"
+        },
+        "slug": {
+          "type": "string",
+          "description": "Name of the slug to be used for the layout"
+        },
+        "screenshot": {
+          "type": "string",
+          "description": "URL of the uploaded screenshot"
+        },
+        "name": {
+          "type": "string",
+          "description": "Layout's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout created"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the layout"
+        },
+        "height": {
+          "type": "float",
+          "description": "Height of the layout"
+        },
+        "description": {
+          "type": "string",
+          "description": "Layout's description"
+        }
+      },
+      "example": {
+        "width": 40.0,
+        "updated_at": "2020-01-21T14:00:00Z",
+        "unit": "cm",
+        "slug_file": "/official_letter.zip",
+        "slug": "Pandoc",
+        "screenshot": "/official_letter.jpg",
+        "name": "Official Letter",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "height": 20.0,
+        "description": "An official letter"
+      },
+      "description": "A Layout"
+    },
+    "Assets": {
+      "type": "array",
+      "title": "All assets in an organisation",
+      "items": {
+        "$ref": "#/definitions/Asset"
+      },
+      "description": "All assets that have been created under an organisation"
+    },
+    "Resources": {
+      "type": "array",
+      "title": "Resource list",
+      "items": {
+        "$ref": "#/definitions/Resource"
+      }
+    },
+    "ThemeIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "themes": {
+          "$ref": "#/definitions/Themes"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "themes": [
+          {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "typescale": {
+              "p": "6",
+              "h2": "8",
+              "h1": "10"
+            },
+            "name": "Official Letter Theme",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "font": "Malery",
+            "file": "/malory.css"
+          }
+        ],
+        "page_number": 1
+      }
+    },
+    "ContentTypeFieldRequests": {
+      "type": "array",
+      "title": "Field request array",
+      "items": {
+        "$ref": "#/definitions/ContentTypeFieldRequest"
+      },
+      "description": "List of data to be send to add fields to content type."
+    },
+    "AssetsIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "assets": {
+          "$ref": "#/definitions/Assets"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "assets": [
+          {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "name": "Asset",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "file": "/signature.pdf"
+          }
+        ]
+      }
+    },
+    "LayoutsAndEngines": {
+      "type": "array",
+      "title": "Layouts and its Engines",
+      "items": {
+        "$ref": "#/definitions/LayoutAndEngine"
+      },
+      "description": "All layouts that have been created and their engines"
+    },
+    "PermissionIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "permissions": {
+          "$ref": "#/definitions/Permission"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "permissions": [
+          {
+            "Flow_create": [
+              {
+                "permission": {
+                  "resource_id": "nnbj12378123m",
+                  "id": "1237-gh34813"
+                },
+                "name": "user",
+                "id": "5613hbkqew67134"
+              },
+              {
+                "permission": {
+                  "resource_id": "  bnjcasd-123ln13248-kjcns",
+                  "id": "1237-glkn348-123"
+                },
+                "name": "admin",
+                "id": "87612-1230981230123"
+              }
+            ]
+          },
+          {
+            "Flow_delete": [
+              {
+                "permission": {
+                  "resource_id": "nnbj12378123m",
+                  "id": "1237-gh34813"
+                },
+                "name": "user",
+                "id": "5613hbkqew67134"
+              }
+            ]
+          }
+        ],
+        "page_number": 1
+      }
+    },
+    "ContentAndContentTypeAndState": {
+      "type": "object",
+      "title": "Content and its Content Type",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/State"
+        },
+        "content_type": {
+          "$ref": "#/definitions/ContentTypeWithoutFields"
+        },
+        "content": {
+          "$ref": "#/definitions/Content"
+        }
+      },
+      "example": {
+        "state": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "state": "published",
+          "order": 1,
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "content_type": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Offer letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "description": "An offer letter"
+        },
+        "content": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "serialized": {
+            "title": "Title of the content",
+            "body": "Body of the content"
+          },
+          "raw": "Content",
+          "instance_id": "OFFL01",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        }
+      },
+      "description": "A content and its content type"
+    },
+    "UpdatePasswordRequest": {
+      "type": "object",
+      "title": "Password to update",
+      "required": [
+        "password",
+        "current_password"
+      ],
+      "properties": {
+        "password": {
+          "type": "string",
+          "description": "Password to update"
+        },
+        "current_password": {
+          "type": "string",
+          "description": "Current password"
+        }
+      },
+      "description": "Request to update password"
+    },
+    "EngineIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "engines": {
+          "$ref": "#/definitions/Engines"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "engines": [
+          {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "name": "Pandoc",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "api_route": ""
+          }
+        ]
+      }
+    },
+    "Themes": {
+      "type": "array",
+      "title": "All themes and its details",
+      "items": {
+        "$ref": "#/definitions/Theme"
+      },
+      "description": "All themes that have been created under current user's organisation and their details"
+    },
+    "ProfileRequest": {
+      "type": "object",
+      "title": "Profile Request",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "profile_pic": {
+          "type": "string",
+          "description": "path to profile pic"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the user"
+        },
+        "gender": {
+          "type": "string",
+          "description": "Users gender"
+        },
+        "dob": {
+          "type": "date",
+          "description": "Date of birth"
+        }
+      },
+      "example": {
+        "profile_pic": "/image.png",
+        "name": "Jhone",
+        "gender": "Male",
+        "dob": "1992-09-24"
+      },
+      "description": "User profile details to create"
+    },
+    "Block": {
+      "type": "object",
+      "title": "Block",
+      "required": [
+        "dataset",
+        "btype",
+        "name"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "name": {
+          "type": "string",
+          "description": "Block name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "name of the endpoint going to choose"
+        },
+        "dataset": {
+          "type": "map",
+          "description": "Dataset for creating charts"
+        },
+        "btype": {
+          "type": "string",
+          "description": "Block type"
+        },
+        "api_route": {
+          "type": "string",
+          "description": "Api route to generate chart"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "name": "Farming",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "file_url": "/home/sadique/Documents/org.functionary/go/src/blocks_api/002dc916-4444-4072-a8aa-85a32c5a65ea.svg",
+        "endpoint": "blocks_api",
+        "dataset": {
+          "width": 512,
+          "type": "pie",
+          "height": 512,
+          "format": "svg",
+          "data": [
+            {
+              "value": 10,
+              "label": "January"
+            },
+            {
+              "value": 20,
+              "label": "February"
+            },
+            {
+              "value": 5,
+              "label": "March"
+            },
+            {
+              "value": 60,
+              "label": "April"
+            },
+            {
+              "value": 80,
+              "label": "May"
+            },
+            {
+              "value": 70,
+              "label": "June"
+            },
+            {
+              "value": 90,
+              "label": "Julay"
+            }
+          ],
+          "backgroundColor": "transparent"
+        },
+        "btype": "pie",
+        "api_route": "http://localhost:8080/chart"
+      },
+      "description": "A Block"
+    },
+    "DataTemplatesIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "data_templates": {
+          "$ref": "#/definitions/DataTemplates"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "data_templates": [
+          {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "title_template": "Letter for [user]",
+            "title": "Main template",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "data": "Hi [user]"
+          }
+        ]
+      }
+    },
+    "UserLoginRequest": {
+      "type": "object",
+      "title": "User Login",
+      "required": [
+        "password",
+        "email"
+      ],
+      "properties": {
+        "password": {
+          "type": "string",
+          "description": "User's password"
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email"
+        }
+      },
+      "example": {
+        "password": "Password",
+        "email": "email@xyz.com"
+      },
+      "description": "A user log in to the application"
+    },
+    "StateRequest": {
+      "type": "object",
+      "title": "State Request",
+      "required": [
+        "order",
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "description": "State name"
+        },
+        "order": {
+          "type": "integer",
+          "description": "State's order"
+        }
+      },
+      "example": {
+        "state": "Published",
+        "order": 1
+      },
+      "description": "Create state request."
+    },
+    "FlowAndStates": {
+      "type": "object",
+      "title": "Show flow details and its states",
+      "properties": {
+        "states": {
+          "$ref": "#/definitions/State"
+        },
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "states": [
+          {
+            "state": "published",
+            "order": 1,
+            "id": "1232148nb3478"
+          }
+        ],
+        "flow": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Flow 1",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "Show all details of a flow including all the states undet the flow"
+    },
+    "ResourceRequest": {
+      "type": "object",
+      "title": "Resource Request",
+      "required": [
+        "action",
+        "category"
+      ],
+      "properties": {
+        "category": {
+          "type": "string",
+          "description": "Category's name"
+        },
+        "action": {
+          "type": "string",
+          "description": "Action name"
+        }
+      },
+      "example": {
+        "category": "Flow",
+        "action": "create"
+      },
+      "description": "Create resource request."
+    },
+    "FlowRequest": {
+      "type": "object",
+      "title": "Flow Request",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Flow's name"
+        }
+      },
+      "example": {
+        "name": "Flow 1"
+      },
+      "description": "Create flow request."
+    },
+    "Organisation": {
+      "type": "object",
+      "title": "Organisation",
+      "required": [
+        "legal_name",
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "phone": {
+          "type": "strign",
+          "description": "Phone number of organisation"
+        },
+        "name_of_cto": {
+          "type": "string",
+          "description": "Organisation CTO's Name"
+        },
+        "name_of_ceo": {
+          "type": "string",
+          "description": "Organisation CEO's Name"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the organisation"
+        },
+        "logo": {
+          "type": "string",
+          "description": "Logo of organisation"
+        },
+        "legal_name": {
+          "type": "string",
+          "description": "Legal Name of the organisation"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The id of an organisation"
+        },
+        "gstin": {
+          "type": "string",
+          "description": "GSTIN of organisation"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email of organisation"
+        },
+        "corporate_id": {
+          "type": "string",
+          "description": "Corporate id of organisation"
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the organisation"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "phone": "865623232",
+        "name_of_cto": "Foo Doo",
+        "name_of_ceo": "John Doe",
+        "name": "ABC enterprices",
+        "logo": "/logo.jpg",
+        "legal_name": "ABC enterprices LLC",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "mnbjhb23488n23e",
+        "gstin": "32AA65FF56545353",
+        "email": "abcent@gmail.com",
+        "corporate_id": "BNIJSN1234NGT",
+        "address": "#24, XV Building, TS DEB Layout "
+      },
+      "description": "An Organisation"
+    },
+    "ContentsIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "contents": {
+          "$ref": "#/definitions/ContentsAndContentTypeAndState"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "contents": [
+          {
+            "state": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "state": "published",
+              "order": 1,
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478"
+            },
+            "content_type": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "name": "Offer letter",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "fields": {
+                "position": "string",
+                "name": "string",
+                "joining_date": "date",
+                "approved_by": "string"
+              },
+              "description": "An offer letter"
+            },
+            "content": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "serialized": {
+                "title": "Title of the content",
+                "body": "Body of the content"
+              },
+              "raw": "Content",
+              "instance_id": "OFFL01",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478"
+            }
+          }
+        ]
+      }
+    },
+    "ContentTypeFieldRequest": {
+      "type": "object",
+      "title": "Content type field request",
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "Name of the field"
+        },
+        "field_type_id": {
+          "type": "string",
+          "description": "ID of the field type"
+        }
+      },
+      "example": {
+        "key": "position",
+        "field_type_id": "asdlkne4781234123clk"
+      },
+      "description": "Data to be send to add fields to content type."
+    },
+    "ShowState": {
+      "type": "object",
+      "title": "Show flow details",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/State"
+        },
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "state": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "state": "published",
+          "order": 1,
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "flow": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Flow 1",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "jnb234881adsad"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "Show all details of a flow"
+    },
+    "DataTemplates": {
+      "type": "array",
+      "title": "Data templates under a content type",
+      "items": {
+        "$ref": "#/definitions/DataTemplate"
+      },
+      "description": "All data template that have been created under a content type"
+    },
+    "BlockRequest": {
+      "type": "object",
+      "title": "Block Request",
+      "required": [
+        "dataset",
+        "btype",
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Block name"
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "name of the endpoint going to choose"
+        },
+        "dataset": {
+          "type": "map",
+          "description": "Dataset for creating charts"
+        },
+        "btype": {
+          "type": "string",
+          "description": "Block type"
+        },
+        "api_route": {
+          "type": "string",
+          "description": "Api route to generate chart"
+        }
+      },
+      "example": {
+        "name": "Farming",
+        "endpoint": "blocks_api",
+        "dataset": {
+          "width": 512,
+          "type": "pie",
+          "height": 512,
+          "format": "svg",
+          "data": [
+            {
+              "value": 10,
+              "label": "January"
+            },
+            {
+              "value": 20,
+              "label": "February"
+            },
+            {
+              "value": 5,
+              "label": "March"
+            },
+            {
+              "value": 60,
+              "label": "April"
+            },
+            {
+              "value": 80,
+              "label": "May"
+            },
+            {
+              "value": 70,
+              "label": "June"
+            },
+            {
+              "value": 90,
+              "label": "Julay"
+            }
+          ],
+          "backgroundColor": "transparent"
+        },
+        "btype": "pie",
+        "api_route": "http://localhost:8080/chart"
+      },
+      "description": "A block to Be created to add to instances"
+    },
+    "ContentTypeAndLayout": {
+      "type": "object",
+      "title": "Content Type and Layout",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
+        },
+        "name": {
+          "type": "string",
+          "description": "Content Type's name"
+        },
+        "layout": {
+          "$ref": "#/definitions/Layout"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the content type"
+        },
+        "fields": {
+          "$ref": "#/definitions/ContentTypeFields"
+        },
+        "description": {
+          "type": "string",
+          "description": "Content Type's description"
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex code of color"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "prefix": "OFFLET",
+        "name": "Offer letter",
+        "layout": {
+          "width": 40.0,
+          "updated_at": "2020-01-21T14:00:00Z",
+          "unit": "cm",
+          "slug_file": "/letter.zip",
+          "slug": "Pandoc",
+          "name": "Official Letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "height": 20.0,
+          "description": "An official letter"
+        },
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "fields": [
+          {
+            "key": "position",
+            "field_type_id": "kjb14713132lkdac"
+          },
+          {
+            "key": "name",
+            "field_type_id": "kjb2347mnsad"
+          }
+        ],
+        "description": "An offer letter",
+        "color": "#fffff"
+      },
+      "description": "Content Type to be used for the generation of a document and its layout."
+    },
+    "ActivityStreamIndex": {
+      "type": "object",
+      "title": "Activity Stream",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "content_types": {
+          "$ref": "#/definitions/ContentTypesAndLayoutsAndFlows"
+        }
+      },
+      "example": [
+        {
+          "object_details": {
+            "name": "Layout 1",
+            "id": "jhg1348561234nkjqwd89"
+          },
+          "object": "Layout:1",
+          "meta": {
+            "to": {
+              "name": "Layout 1"
+            },
+            "from": ""
+          },
+          "inserted_at": "2020-01-21T14:00:00Z",
+          "actor": "John Doe",
+          "action": "create"
+        }
+      ],
+      "description": "Activity stream index"
+    },
+    "FieldTypeIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "field_types": {
+          "$ref": "#/definitions/FieldTypes"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "field_types": [
+          {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "name": "Date",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "description": "A date field"
+          }
+        ]
+      }
+    },
+    "ShowDataTemplate": {
+      "type": "object",
+      "title": "Data template and all its details",
+      "properties": {
+        "data_template": {
+          "$ref": "#/definitions/LayoutAndEngine"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        },
+        "content_type": {
+          "$ref": "#/definitions/ContentTypeWithoutFields"
+        }
+      },
+      "example": {
+        "data_template": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "title_template": "Letter for [user]",
+          "title": "Main Template",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "data": "Hi [user]"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        },
+        "content_type": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "prefix": "OFFLET",
+          "name": "Offer letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "description": "An offer letter"
+        }
+      },
+      "description": "API to show a data template and all its details"
+    },
+    "ContentTypeFields": {
+      "type": "array",
+      "title": "Field response array",
+      "items": {
+        "$ref": "#/definitions/ContentTypeField"
+      },
+      "description": "List of field type in response."
+    },
+    "ContentTypesIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        },
+        "content_types": {
+          "$ref": "#/definitions/ContentTypesAndLayoutsAndFlows"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "page_number": 1,
+        "content_types": [
+          {
+            "creator": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "name": "John Doe",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "email_verify": true,
+              "email": "email@xyz.com"
+            },
+            "content_type": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "prefix": "OFFLET",
+              "name": "Offer letter",
+              "layout": {
+                "width": 40.0,
+                "updated_at": "2020-01-21T14:00:00Z",
+                "unit": "cm",
+                "slug_file": "/letter.zip",
+                "slug": "Pandoc",
+                "name": "Official Letter",
+                "inserted_at": "2020-02-21T14:00:00Z",
+                "id": "1232148nb3478",
+                "height": 20.0,
+                "description": "An official letter"
+              },
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "flow": {
+                "updated_at": "2020-01-21T14:00:00Z",
+                "name": "Flow 1",
+                "inserted_at": "2020-02-21T14:00:00Z",
+                "id": "1232148nb3478"
+              },
+              "fields": [
+                {
+                  "key": "position",
+                  "field_type_id": "kjb14713132lkdac"
+                },
+                {
+                  "key": "name",
+                  "field_type_id": "kjb2347mnsad"
+                }
+              ],
+              "description": "An offer letter",
+              "color": "#fffff"
+            }
+          }
+        ]
+      }
+    },
+    "Profile": {
+      "type": "object",
+      "title": "Profile",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "profile_pic": {
+          "type": "string",
+          "description": "path to profile pic"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the user"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "gender": {
+          "type": "string",
+          "description": "Users gender"
+        },
+        "dob": {
+          "type": "date",
+          "description": "Date of birth"
+        }
+      },
+      "example": {
+        "user": {
+          "$ref": "#/definitions/User"
+        },
+        "updated_at": "2020-01-21T14:00:00Z",
+        "profile_pic": "/image.png",
+        "name": "Jhone",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "gender": "Male",
+        "dob": "1992-09-24"
+      },
+      "description": "Profile details"
+    },
+    "InvitedResponse": {
+      "type": "object",
+      "title": "Invite user response",
+      "required": [
+        "info"
+      ],
+      "properties": {
+        "info": {
+          "type": "string",
+          "description": "Info"
+        }
+      },
+      "example": {
+        "info": "Invited successfully.!"
+      },
+      "description": "Invite user response"
+    },
+    "OrganisationRequest": {
+      "type": "object",
+      "title": "Organisation Request",
+      "required": [
+        "legal_name",
+        "name"
+      ],
+      "properties": {
+        "phone": {
+          "type": "string",
+          "description": "Offical Phone number"
+        },
+        "name": {
+          "type": "string",
+          "description": "Organisation name"
+        },
+        "legal_name": {
+          "type": "string",
+          "description": "Legal name of organisation"
+        },
+        "gstin": {
+          "type": "string",
+          "description": "Goods and service tax invoice numger"
+        },
+        "email": {
+          "type": "string",
+          "description": "Official email"
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of organisation"
+        }
+      },
+      "example": {
+        "phone": "865623232",
+        "name": "ABC enterprices",
+        "legal_name": "ABC enterprices LLC",
+        "gstin": "32AA65FF56545353",
+        "email": "abcent@gmail.com",
+        "address": "#24, XV Building, TS DEB Layout "
+      },
+      "description": "An organisation to be register for enterprice operation"
+    },
+    "ContentsAndContentTypeAndState": {
+      "type": "array",
+      "title": "Instances, their content types and states",
+      "items": {
+        "$ref": "#/definitions/ContentAndContentTypeAndState"
+      },
+      "description": "IInstances and all its details except creator."
+    },
+    "ShowStates": {
+      "type": "array",
+      "title": "All states and its details",
+      "items": {
+        "$ref": "#/definitions/ShowState"
+      },
+      "description": "All states that have been created and their details"
+    },
+    "ContentTypeAndLayoutAndFlow": {
+      "type": "object",
+      "title": "Content Type, Layout and its flow",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
+        },
+        "name": {
+          "type": "string",
+          "description": "Content Type's name"
+        },
+        "layout": {
+          "$ref": "#/definitions/Layout"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the content type"
+        },
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "fields": {
+          "$ref": "#/definitions/ContentTypeFields"
+        },
+        "description": {
+          "type": "string",
+          "description": "Content Type's description"
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex code of color"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "prefix": "OFFLET",
+        "name": "Offer letter",
+        "layout": {
+          "width": 40.0,
+          "updated_at": "2020-01-21T14:00:00Z",
+          "unit": "cm",
+          "slug_file": "/letter.zip",
+          "slug": "Pandoc",
+          "name": "Official Letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "height": 20.0,
+          "description": "An official letter"
+        },
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "flow": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Flow 1",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "fields": [
+          {
+            "key": "position",
+            "field_type_id": "kjb14713132lkdac"
+          },
+          {
+            "key": "name",
+            "field_type_id": "kjb2347mnsad"
+          }
+        ],
+        "description": "An offer letter",
+        "color": "#fffff"
+      },
+      "description": "Content Type to be used for the generation of a document, its layout and flow."
+    },
+    "Resource": {
+      "type": "object",
+      "title": "Resource",
+      "required": [
+        "action",
+        "category",
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The ID of the layout"
+        },
+        "category": {
+          "type": "string",
+          "description": "Name of the category"
+        },
+        "action": {
+          "type": "string",
+          "description": "Name of the action"
+        }
+      },
+      "example": {
+        "id": "1232148nb3478",
+        "category": "Flow",
+        "action": "create"
+      },
+      "description": "A Resource"
+    },
+    "ShowContent": {
+      "type": "object",
+      "title": "Content and its details",
+      "properties": {
+        "state": {
+          "$ref": "#/definitions/State"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        },
+        "content_type": {
+          "$ref": "#/definitions/ContentTypeAndLayout"
+        },
+        "content": {
+          "$ref": "#/definitions/Content"
+        }
+      },
+      "example": {
+        "state": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "state": "published",
+          "order": 1,
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        },
+        "content_type": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Offer letter",
+          "layout": {
+            "width": 40.0,
+            "updated_at": "2020-01-21T14:00:00Z",
+            "unit": "cm",
+            "slug_file": "/letter.zip",
+            "slug": "Pandoc",
+            "name": "Official Letter",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "height": 20.0,
+            "description": "An official letter"
+          },
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "fields": {
+            "position": "string",
+            "name": "string",
+            "joining_date": "date",
+            "approved_by": "string"
+          },
+          "description": "An offer letter"
+        },
+        "content": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "serialized": {
+            "title": "Title of the content",
+            "body": "Body of the content"
+          },
+          "raw": "Content",
+          "instance_id": "OFFL01",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        }
+      },
+      "description": "A content and all its details"
+    },
+    "Flow": {
+      "type": "object",
+      "title": "Flow",
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the flow last updated"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the flow"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the flow inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the flow"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "name": "Flow 1",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478"
+      },
+      "description": "Flows to be followed in an organisation"
+    },
+    "ContentUpdateRequest": {
+      "type": "object",
+      "title": "Content update Request",
+      "required": [
+        "raw"
+      ],
+      "properties": {
+        "serialized": {
+          "type": "string",
+          "description": "Content serialized data"
+        },
+        "raw": {
+          "type": "string",
+          "description": "Content raw data"
+        }
+      },
+      "example": {
+        "serialized": {
+          "title": "Title of the content",
+          "body": "Body of the content"
+        },
+        "raw": "Content data"
+      },
+      "description": "Content updation request"
+    },
+    "ContentTypeRequest": {
+      "type": "object",
+      "title": "Content Type Request",
+      "required": [
+        "prefix",
+        "flow_uuid",
+        "layout_uuid",
+        "description",
+        "name"
+      ],
+      "properties": {
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
+        },
+        "name": {
+          "type": "string",
+          "description": "Content Type's name"
+        },
+        "layout_uuid": {
+          "type": "string",
+          "description": "ID of the layout selected"
+        },
+        "flow_uuid": {
+          "type": "string",
+          "description": "ID of the flow selected"
+        },
+        "fields": {
+          "$ref": "#/definitions/ContentTypeFieldRequests"
+        },
+        "description": {
+          "type": "string",
+          "description": "Content Type's description"
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex code of color"
+        }
+      },
+      "example": {
+        "prefix": "OFFLET",
+        "name": "Offer letter",
+        "layout_uuid": "1232148nb3478",
+        "flow_uuid": "234okjnskjb8234",
+        "fields": [
+          {
+            "key": "position",
+            "field_type_id": "kjb14713132lkdac"
+          },
+          {
+            "key": "name",
+            "field_type_id": "kjb2347mnsad"
+          }
+        ],
+        "description": "An offer letter",
+        "color": "#fff"
+      },
+      "description": "Create content type request."
+    },
+    "UserToken": {
+      "type": "object",
+      "title": "User and token",
+      "required": [
+        "token"
+      ],
+      "properties": {
+        "user": {
+          "$ref": "#/definitions/User"
+        },
+        "token": {
+          "type": "string",
+          "description": "JWT token for authenticating the user"
+        }
+      },
+      "example": {
+        "user": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        },
+        "token": "Asdlkqweb.Khgqiwue132.xcli123"
+      },
+      "description": "User details with the generated JWT token for authentication"
+    },
+    "Permission": {
+      "type": "map",
+      "title": "A permission JSON response",
+      "example": {
+        "Flow_create": [
+          "user",
+          "admin"
+        ]
+      },
+      "description": "JSON response for a permission"
+    },
+    "State": {
+      "type": "object",
+      "title": "State",
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the state last updated"
+        },
+        "state": {
+          "type": "string",
+          "description": "A state of content"
+        },
+        "order": {
+          "type": "integer",
+          "description": "Order of the state"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the state inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "ID of the state"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "state": "published",
+        "order": 1,
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478"
+      },
+      "description": "State assigened to contents"
+    },
+    "ContentRequest": {
+      "type": "object",
+      "title": "Content Request",
+      "required": [
+        "state_uuid",
+        "raw"
+      ],
+      "properties": {
+        "state_uuid": {
+          "type": "string",
+          "description": "state id"
+        },
+        "serialized": {
+          "type": "string",
+          "description": "Content serialized data"
+        },
+        "raw": {
+          "type": "string",
+          "description": "Content raw data"
+        }
+      },
+      "example": {
+        "state_uuid": "kjb12389k23eyg",
+        "serialized": {
+          "title": "Title of the content",
+          "body": "Body of the content"
+        },
+        "raw": "Content data"
+      },
+      "description": "Content creation request"
+    },
+    "ShowTheme": {
+      "type": "object",
+      "title": "Show Theme",
+      "properties": {
+        "theme": {
+          "$ref": "#/definitions/Theme"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "theme": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "typescale": {
+            "p": "6",
+            "h2": "8",
+            "h1": "10"
+          },
+          "name": "Official Letter Theme",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "font": "Malery",
+          "file": "/malory.css"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "Show details of a theme"
+    },
+    "TokenVerifiedInfo": {
+      "type": "object",
+      "title": "Token verified info",
+      "properties": {
+        "info": {
+          "type": "string",
+          "description": "info"
+        }
+      },
+      "description": "Token verified info"
+    },
+    "ShowContentType": {
+      "type": "object",
+      "title": "Content Type and all its details",
+      "properties": {
+        "creator": {
+          "$ref": "#/definitions/User"
+        },
+        "content_type": {
+          "$ref": "#/definitions/ContentTypeAndLayoutAndFlowAndStates"
+        }
+      },
+      "example": {
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        },
+        "content_type": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "prefix": "OFFLET",
+          "name": "Offer letter",
+          "layout": {
+            "width": 40.0,
+            "updated_at": "2020-01-21T14:00:00Z",
+            "unit": "cm",
+            "slug_file": "/letter.zip",
+            "slug": "Pandoc",
+            "name": "Official Letter",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "height": 20.0,
+            "description": "An official letter"
+          },
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "flow": {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "states": [
+              {
+                "state": "published",
+                "order": 1,
+                "id": "1232148nb3478"
+              }
+            ],
+            "name": "Flow 1",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478"
+          },
+          "fields": [
+            {
+              "key": "position",
+              "field_type_id": "kjb14713132lkdac"
+            },
+            {
+              "key": "name",
+              "field_type_id": "kjb2347mnsad"
+            }
+          ],
+          "description": "An offer letter",
+          "color": "#fffff"
+        }
+      },
+      "description": "API to show a content type and all its details"
+    },
+    "AuthToken": {
+      "type": "object",
+      "title": "Auth token",
+      "properties": {
+        "info": {
+          "type": "string",
+          "description": "Response info"
+        }
+      },
+      "example": {
+        "info": "A password reset link has been sent to your email.!"
+      },
+      "description": "Response for reset password request"
+    },
+    "FieldTypeRequest": {
+      "type": "object",
+      "title": "Field type request",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the field type"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the field type"
+        }
+      },
+      "example": {
+        "name": "Date",
+        "description": "A date field"
+      },
+      "description": "Field type request"
+    },
+    "ContentStateUpdateRequest": {
+      "type": "object",
+      "title": "Content state update Request",
+      "required": [
+        "state_uuid"
+      ],
+      "properties": {
+        "state_uuid": {
+          "type": "string",
+          "description": "state id"
+        }
+      },
+      "example": {
+        "state_uuid": "kjb12389k23eyg"
+      },
+      "description": "Content state update request"
+    },
+    "FieldTypes": {
+      "type": "array",
+      "title": "All field types",
+      "items": {
+        "$ref": "#/definitions/FieldType"
+      },
+      "description": "All filed types that have been created so far"
+    },
+    "UpdateFlow": {
+      "type": "object",
+      "title": "Show flow details",
+      "properties": {
+        "flow": {
+          "$ref": "#/definitions/Flow"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "flow": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Flow 1",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "Show all details of a flow"
+    },
+    "Engines": {
+      "type": "array",
+      "title": "Engines",
+      "items": {
+        "$ref": "#/definitions/Engine"
+      },
+      "description": "All engines that have been created"
+    },
+    "ContentTypesAndLayoutsAndFlows": {
+      "type": "array",
+      "title": "Content Types and their Layouts and flow",
+      "items": {
+        "$ref": "#/definitions/ContentTypeAndLayoutAndFlow"
+      },
+      "description": "All content types that have been created and their layouts and flow"
+    },
+    "Content": {
+      "type": "object",
+      "title": "Content",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine last updated"
+        },
+        "serialized": {
+          "type": "map",
+          "description": "Serialized data of the content"
+        },
+        "raw": {
+          "type": "string",
+          "description": "Raw data of the content"
+        },
+        "instance_id": {
+          "type": "string",
+          "description": "A unique ID generated for the content"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the content"
+        },
+        "build": {
+          "type": "string",
+          "description": "URL of the build document"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "serialized": {
+          "title": "Title of the content",
+          "body": "Body of the content"
+        },
+        "raw": "Content",
+        "instance_id": "OFFL01",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "build": "/uploads/OFFL01/final.pdf"
+      },
+      "description": "A content, which is then used to generate the out files."
+    },
+    "DataTemplateRequest": {
+      "type": "object",
+      "title": "Data template Request",
+      "required": [
+        "data",
+        "title_template",
+        "title"
+      ],
+      "properties": {
+        "title_template": {
+          "type": "string",
+          "description": "Title template"
+        },
+        "title": {
+          "type": "string",
+          "description": "Data template's title"
+        },
+        "data": {
+          "type": "string",
+          "description": "Data template's contents"
+        }
+      },
+      "example": {
+        "title_template": "Letter for [user]",
+        "title": "Template 1",
+        "data": "Hi [user]"
+      },
+      "description": "Create data template request."
+    },
+    "LayoutAndEngine": {
+      "type": "object",
+      "title": "Layout and Engine",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "width": {
+          "type": "float",
+          "description": "Width of the layout"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout last updated"
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of dimensions"
+        },
+        "slug_file": {
+          "type": "string",
+          "description": "URL of the uploaded slug file"
+        },
+        "slug": {
+          "type": "string",
+          "description": "Name of the slug to be used for the layout"
+        },
+        "screenshot": {
+          "type": "string",
+          "description": "URL of the uploaded screenshot"
+        },
+        "name": {
+          "type": "string",
+          "description": "Layout's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout created"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the layout"
+        },
+        "height": {
+          "type": "float",
+          "description": "Height of the layout"
+        },
+        "engine": {
+          "$ref": "#/definitions/Engine"
+        },
+        "description": {
+          "type": "string",
+          "description": "Layout's description"
+        },
+        "assets": {
+          "$ref": "#/definitions/Assets"
+        }
+      },
+      "example": {
+        "width": 40.0,
+        "updated_at": "2020-01-21T14:00:00Z",
+        "unit": "cm",
+        "slug_file": "/official_letter.zip",
+        "slug": "Pandoc",
+        "screenshot": "/official_letter.jpg",
+        "name": "Official Letter",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "height": 20.0,
+        "engine": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "Pandoc",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "api_route": ""
+        },
+        "description": "An official letter",
+        "assets": [
+          {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "name": "Asset",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "file": "/signature.pdf"
+          }
+        ]
+      },
+      "description": "Layout to be used for the generation of a document."
+    },
+    "Engine": {
+      "type": "object",
+      "title": "Render engine",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine last updated"
+        },
+        "name": {
+          "type": "string",
+          "description": "Engine's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the engine"
+        },
+        "api_route": {
+          "type": "string",
+          "description": "API route to be used"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "name": "Pandoc",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "api_route": ""
+      },
+      "description": "A render engine to be used for document generation"
+    },
+    "DataTemplate": {
+      "type": "object",
+      "title": "Data Template",
+      "required": [
+        "title_template",
+        "title",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout last updated"
+        },
+        "title_template": {
+          "type": "string",
+          "description": "Title content of the data template"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the data template"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout created"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the data template"
+        },
+        "data": {
+          "type": "string",
+          "description": "Data template's contents"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "title_template": "Letter for [user]",
+        "title": "Template 1",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "data": "Hi [user]"
+      },
+      "description": "A Data Template"
+    },
+    "ResetPasswordRequest": {
+      "type": "object",
+      "title": "Reset password request",
+      "required": [
+        "password",
+        "token"
+      ],
+      "properties": {
+        "token": {
+          "type": "string",
+          "description": "Token has given in email"
+        },
+        "password": {
+          "type": "string",
+          "description": "New password to update"
+        }
+      },
+      "example": {
+        "token": "asddff23a2ds_f3asdf3a21fds23f2as32f3as3f213a2df3s2f3a213sad12f13df13adsf-21f1d3sf",
+        "password": "new password"
+      },
+      "description": "Request to reset password"
+    },
+    "ContentTypeWithoutFields": {
+      "type": "object",
+      "title": "Content Type without fields",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
+        },
+        "name": {
+          "type": "string",
+          "description": "Content Type's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the content type"
+        },
+        "description": {
+          "type": "string",
+          "description": "Content Type's description"
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex code of color"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "prefix": "OFFLET",
+        "name": "Offer letter",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "description": "An offer letter",
+        "color": "#fffff"
+      },
+      "description": "A Content Type without its fields."
+    },
+    "User": {
+      "type": "object",
+      "title": "User",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User id"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email id"
+        }
+      },
+      "example": {
+        "id": "c68b0988-790b-45e8-965c-c4aeb427e70d",
+        "email": "admin@wraftdocs.com"
+      },
+      "description": "User login details"
+    },
+    "ContentType": {
+      "type": "object",
+      "title": "Content Type",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "prefix": {
+          "type": "string",
+          "description": "Prefix to be used for generating Unique ID for contents"
+        },
+        "name": {
+          "type": "string",
+          "description": "Content Type's name"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the content type"
+        },
+        "fields": {
+          "$ref": "#/definitions/ContentTypeFields"
+        },
+        "description": {
+          "type": "string",
+          "description": "Content Type's description"
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex code of color"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "prefix": "OFFLET",
+        "name": "Offer letter",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "fields": [
+          {
+            "key": "position",
+            "field_type_id": "kjb14713132lkdac"
+          },
+          {
+            "key": "name",
+            "field_type_id": "kjb2347mnsad"
+          }
+        ],
+        "description": "An offer letter",
+        "color": "#fffff"
+      },
+      "description": "A Content Type."
+    },
+    "ActivityStream": {
+      "type": "object",
+      "title": "Activity Stream",
+      "properties": {
+        "object_details": {
+          "type": "map",
+          "description": "Name and ID of the object"
+        },
+        "object": {
+          "type": "string",
+          "description": "Activity Object"
+        },
+        "meta": {
+          "type": "map",
+          "description": "Meta of the activity"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the user last updated"
+        },
+        "actor": {
+          "type": "string",
+          "description": "Actor name"
+        },
+        "action": {
+          "type": "string",
+          "description": "Activity action"
+        }
+      },
+      "description": "Activity stream object"
+    },
+    "ResourceIndex": {
+      "type": "object",
+      "properties": {
+        "total_pages": {
+          "type": "integer",
+          "description": "Total number of pages"
+        },
+        "total_entries": {
+          "type": "integer",
+          "description": "Total number of contents"
+        },
+        "resources": {
+          "$ref": "#/definitions/Resources"
+        },
+        "page_number": {
+          "type": "integer",
+          "description": "Page number"
+        }
+      },
+      "example": {
+        "total_pages": 2,
+        "total_entries": 15,
+        "resources": [
+          {
+            "id": "1232148nb3478",
+            "category": "Flow",
+            "action": "create"
+          },
+          {
+            "id": "137ykjbefd987132",
+            "category": "Flow",
+            "action": "update"
+          }
+        ],
+        "page_number": 1
+      }
+    },
+    "ShowLayout": {
+      "type": "object",
+      "title": "Layout and all its details",
+      "properties": {
+        "layout": {
+          "$ref": "#/definitions/LayoutAndEngine"
+        },
+        "creator": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "example": {
+        "layout": {
+          "width": 40.0,
+          "updated_at": "2020-01-21T14:00:00Z",
+          "unit": "cm",
+          "slug_file": "/official_letter.zip",
+          "slug": "Pandoc",
+          "screenshot": "/official_letter.jpg",
+          "name": "Official Letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "height": 20.0,
+          "engine": {
+            "updated_at": "2020-01-21T14:00:00Z",
+            "name": "Pandoc",
+            "inserted_at": "2020-02-21T14:00:00Z",
+            "id": "1232148nb3478",
+            "api_route": ""
+          },
+          "description": "An official letter"
+        },
+        "creator": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "name": "John Doe",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "email_verify": true,
+          "email": "email@xyz.com"
+        }
+      },
+      "description": "API to show a layout and all its details"
+    },
+    "UserRegisterRequest": {
+      "type": "object",
+      "title": "Register User",
+      "required": [
+        "password",
+        "email",
+        "name"
+      ],
+      "properties": {
+        "password": {
+          "type": "string",
+          "description": "User's password"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's name"
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email"
+        }
+      },
+      "example": {
+        "password": "Password",
+        "name": "John Doe",
+        "email": "email@xyz.com"
+      },
+      "description": "A user to be registered in the application"
+    },
+    "Asset": {
+      "type": "object",
+      "title": "Asset",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine last updated"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the asset"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the engine inserted"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the asset"
+        },
+        "file": {
+          "type": "string",
+          "description": "URL of the uploaded file"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "name": "Asset",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "file": "/signature.pdf"
+      },
+      "description": "An asset."
+    }
+  },
+  "basePath": "/api/v1"
+}
