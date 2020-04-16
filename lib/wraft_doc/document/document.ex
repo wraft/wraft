@@ -295,11 +295,12 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
-  Get a content type from its ID.
+  Get a content type from its ID. Also fetches all its related datas.
   """
-  @spec get_content_type_from_id(integer()) :: ContentType.t()
+  @spec get_content_type_from_id(integer()) :: %ContentType{layout: %Layout{}, creator: %User{}}
   def get_content_type_from_id(id) do
     Repo.get(ContentType, id)
+    |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
   end
 
   @doc """

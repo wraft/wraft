@@ -34,7 +34,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldController do
          %ContentType{} = c_type <- Document.get_content_type_from_id(c_type_id) do
       conn
       |> put_view(WraftDocWeb.Api.V1.ContentTypeView)
-      |> render("content_type.json", content_type: c_type)
+      |> render("show.json", content_type: c_type)
     end
   end
 end
