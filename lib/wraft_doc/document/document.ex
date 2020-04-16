@@ -195,6 +195,21 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+  Get a layout asset from its layout's and asset's UUIDs.
+  """
+  @spec get_layout_asset(binary, binary) :: LayoutAsset.t()
+  def get_layout_asset(l_uuid, a_uuid) do
+    from(la in LayoutAsset,
+      join: l in Layout,
+      where: l.uuid == ^l_uuid,
+      join: a in Asset,
+      where: a.uuid == ^a_uuid,
+      where: la.layout_id == l.id and la.asset_id == a.id
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Update a layout.
   """
   @spec update_layout(Layout.t(), User.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
@@ -232,6 +247,21 @@ defmodule WraftDoc.Document do
         "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!"
     )
     |> Spur.delete(%{actor: "#{id}", object: "Layout:#{layout.id},#{layout.name}"})
+  end
+
+  @doc """
+  Delete a layout asset.
+  """
+  @spec delete_layout_asset(LayoutAsset.t(), User.t()) ::
+          {:ok, LayoutAsset.t()} | {:error, Ecto.Changeset.t()}
+  def delete_layout_asset(layout_asset, %User{id: id}) do
+    %{asset: %{name: asset_name}} = layout_asset |> Repo.preload([:asset])
+
+    layout_asset
+    |> Spur.delete(%{
+      actor: "#{id}",
+      object: "LayoutAsset:#{layout_asset.id},#{asset_name}"
+    })
   end
 
   @doc """

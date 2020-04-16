@@ -24,6 +24,7 @@ defmodule WraftDoc.Account do
     DataTemplate,
     Instance,
     Layout,
+    LayoutAsset,
     Theme
   }
 
@@ -41,7 +42,8 @@ defmodule WraftDoc.Account do
     "Theme" => Theme,
     "Flow" => Flow,
     "State" => State,
-    "ContentTypeField" => ContentTypeField
+    "ContentTypeField" => ContentTypeField,
+    "LayoutAsset" => LayoutAsset
   }
 
   @doc """
