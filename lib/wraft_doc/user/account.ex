@@ -309,8 +309,6 @@ defmodule WraftDoc.Account do
   Validate the password reset link, ie; token in the link to verify and
   authenticate the password reset request.
   """
-  require IEx
-
   def check_token(token) do
     query =
       from(
