@@ -109,6 +109,9 @@ defmodule WraftDocWeb.Router do
 
       resources("/blocks", BlockController, except: [:index])
 
+      # Delete content type field
+      resources("/content_type_fields", ContentTypeFieldController, only: [:delete])
+
       # Invite new user
       post("/organisations/:id/invite", OrganisationController, :invite)
 
