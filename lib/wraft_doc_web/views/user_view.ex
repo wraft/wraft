@@ -130,5 +130,9 @@ defmodule WraftDocWeb.Api.V1.UserView do
     }
   end
 
+  defp get_object_data(map) when is_map(map) do
+    map
+  end
+
   defp get_object_data(_), do: nil
 end
