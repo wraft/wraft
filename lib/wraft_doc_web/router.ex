@@ -64,6 +64,8 @@ defmodule WraftDocWeb.Router do
       get("/profiles/me", ProfileController, :show_current_profile)
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
+      # Delete layout asset
+      delete("/layouts/:id/assets/:a_id", LayoutController, :delete_layout_asset)
 
       scope "/content_types" do
         # Content type
