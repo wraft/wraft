@@ -1234,13 +1234,15 @@ defmodule WraftDoc.Document do
     # values are actually the fields of the content type.
     # This updated serialzed is then reduced to get the raw data
     # by replacing the variables in the data template.
+    serialized = serialized |> update_keys(mapping)
+
     title =
       serialized
       |> Enum.reduce(title_temp, fn {k, v}, acc ->
         WraftDoc.DocConversion.replace_content(k, v, acc)
       end)
 
-    serialized = serialized |> Map.put("title", title) |> update_keys(mapping)
+    serialized = serialized |> Map.put("title", title)
 
     raw =
       serialized
@@ -1289,13 +1291,13 @@ defmodule WraftDoc.Document do
   # Change the Keys of the CSV decoded map to the values of the mapping.
   @spec update_keys(map, map) :: map
   defp update_keys(map, mapping) do
-    new_map =
-      Enum.reduce(mapping, %{}, fn {k, v}, acc ->
-        value = Map.get(map, k)
-        acc |> Map.put(v, value)
-      end)
+    # new_map =
+    Enum.reduce(mapping, %{}, fn {k, v}, acc ->
+      value = Map.get(map, k)
+      acc |> Map.put(v, value)
+    end)
 
-    keys = mapping |> Map.keys()
-    map |> Map.drop(keys) |> Map.merge(new_map)
+    # keys = mapping |> Map.keys()
+    # map |> Map.drop(keys) |> Map.merge(new_map)
   end
 end
