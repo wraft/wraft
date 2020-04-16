@@ -231,7 +231,7 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!"
     )
-    |> Spur.delete(%{actor: "#{id}"})
+    |> Spur.delete(%{actor: "#{id}", object: "Layout:#{layout.id},#{layout.name}"})
   end
 
   @doc """
@@ -331,7 +331,10 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
     )
-    |> Spur.delete(%{actor: "#{id}"})
+    |> Spur.delete(%{
+      actor: "#{id}",
+      object: "ContentType:#{content_type.id},#{content_type.name}"
+    })
   end
 
   @doc """
@@ -340,7 +343,11 @@ defmodule WraftDoc.Document do
   @spec delete_content_type_field(ContentTypeField.t(), User.t()) ::
           {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()}
   def delete_content_type_field(content_type_field, %User{id: id}) do
-    content_type_field |> Spur.delete(%{actor: "#{id}"})
+    content_type_field
+    |> Spur.delete(%{
+      actor: "#{id}",
+      object: "ContentTypeField:#{content_type_field.id},#{content_type_field.name}"
+    })
   end
 
   @doc """
@@ -629,7 +636,7 @@ defmodule WraftDoc.Document do
           {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
   def delete_instance(instance, %User{id: id}) do
     instance
-    |> Spur.delete(%{actor: "#{id}"})
+    |> Spur.delete(%{actor: "#{id}", object: "Instance:#{instance.id},#{instance.instance_id}"})
   end
 
   @doc """
@@ -711,7 +718,7 @@ defmodule WraftDoc.Document do
   @spec delete_theme(Theme.t(), User.t()) :: {:ok, Theme.t()}
   def delete_theme(theme, %User{id: id}) do
     theme
-    |> Spur.delete(%{actor: "#{id}"})
+    |> Spur.delete(%{actor: "#{id}", object: "Theme:#{theme.id},#{theme.name}"})
   end
 
   @doc """
@@ -793,7 +800,7 @@ defmodule WraftDoc.Document do
   """
   @spec delete_data_template(DataTemplate.t(), User.t()) :: {:ok, DataTemplate.t()}
   def delete_data_template(d_temp, %User{id: id}) do
-    d_temp |> Spur.delete(%{actor: "#{id}"})
+    d_temp |> Spur.delete(%{actor: "#{id}", object: "DataTemplate:#{d_temp.id},#{d_temp.title}"})
   end
 
   @doc """
@@ -868,7 +875,7 @@ defmodule WraftDoc.Document do
   """
   @spec delete_asset(Asset.t(), User.t()) :: {:ok, Asset.t()}
   def delete_asset(asset, %User{id: id}) do
-    asset |> Spur.delete(%{actor: "#{id}"})
+    asset |> Spur.delete(%{actor: "#{id}", object: "Asset:#{asset.id},#{asset.name}"})
   end
 
   @doc """

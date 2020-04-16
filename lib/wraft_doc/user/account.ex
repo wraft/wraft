@@ -16,7 +16,17 @@ defmodule WraftDoc.Account do
 
   alias WraftDocWeb.Endpoint
 
-  alias WraftDoc.Document.{Asset, Block, ContentType, DataTemplate, Instance, Layout, Theme}
+  alias WraftDoc.Document.{
+    Asset,
+    Block,
+    ContentType,
+    ContentTypeField,
+    DataTemplate,
+    Instance,
+    Layout,
+    Theme
+  }
+
   alias WraftDoc.Enterprise.{Flow, Flow.State}
   alias Ecto.Multi
 
@@ -30,7 +40,8 @@ defmodule WraftDoc.Account do
     "Layout" => Layout,
     "Theme" => Theme,
     "Flow" => Flow,
-    "State" => State
+    "State" => State,
+    "ContentTypeField" => ContentTypeField
   }
 
   @doc """
@@ -255,7 +266,7 @@ defmodule WraftDoc.Account do
         inserted_at: inserted_at
       }) do
     actor = actor_id |> get_user()
-    object_struct = object |> get_activity_object_struct()
+    object_struct = object |> get_activity_object_struct(action)
 
     %{
       action: action,
@@ -267,8 +278,20 @@ defmodule WraftDoc.Account do
     }
   end
 
-  @spec get_activity_object_struct(String.t()) :: map | nil
-  defp get_activity_object_struct(object) do
+  @spec get_activity_object_struct(String.t(), String.t() | nil) :: map | nil
+  defp get_activity_object_struct(object, "delete") do
+    object
+    |> String.split(",")
+    |> case do
+      [_obj | [obj_name]] ->
+        %{name: obj_name}
+
+      [object | []] ->
+        get_activity_object_struct(object, nil)
+    end
+  end
+
+  defp get_activity_object_struct(object, _action) do
     [model | [id]] = object |> String.split(":")
     @activity_models[model] |> Repo.get(id)
   end
