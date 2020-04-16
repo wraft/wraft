@@ -215,6 +215,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
+  @spec signin(Plug.Conn.t(), map) :: Plug.Conn.t()
   def signin(conn, params) do
     with %User{} = user <- Account.find(params["email"]),
          {:ok, token, _claims} <-
@@ -295,6 +296,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @spec generate_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def generate_token(conn, params) do
     with %AuthToken{} = auth_token <- Account.create_token(params) do
       Email.password_reset(auth_token) |> Mailer.deliver_now()
@@ -320,6 +322,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @spec verify_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def verify_token(conn, %{"token" => token}) do
     with %AuthToken{} = auth_token <- Account.check_token(token) do
       conn
@@ -343,6 +346,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @spec reset(Plug.Conn.t(), map) :: Plug.Conn.t()
   def reset(conn, params) do
     with %User{} = user <- Account.reset_password(params) do
       conn
@@ -368,6 +372,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, params) do
     with %User{} = user <- Account.update_password(conn, params) do
       conn
