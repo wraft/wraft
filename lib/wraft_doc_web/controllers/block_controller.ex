@@ -188,7 +188,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
     with %Block{} = block <- Document.get_block(uuid),
          %Block{} = block <- Document.update_block(block, params) do
