@@ -5,7 +5,7 @@ defmodule WraftDoc.Document.DataTemplate do
   alias __MODULE__
   alias WraftDoc.{Account.User, Document.ContentType}
   import Ecto.Query
-
+  @derive {Jason.Encoder, only: [:title]}
   defimpl Spur.Trackable, for: DataTemplate do
     def actor(data_template), do: "#{data_template.creator_id}"
     def object(data_template), do: "DataTemplate:#{data_template.id}"

@@ -7,7 +7,7 @@ defmodule WraftDoc.Enterprise.Flow do
   alias __MODULE__
   alias WraftDoc.Account.User
   import Ecto.Query
-
+  @derive {Jason.Encoder, only: [:name]}
   defimpl Spur.Trackable, for: Flow do
     def actor(flow), do: "#{flow.creator_id}"
     def object(flow), do: "Flow:#{flow.id}"
