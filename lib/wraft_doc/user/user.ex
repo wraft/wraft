@@ -35,6 +35,7 @@ defmodule WraftDoc.Account.User do
     has_many(:instance_versions, WraftDoc.Document.Instance.Version, foreign_key: :creator_id)
 
     many_to_many(:activities, Spur.Activity, join_through: "audience")
+    has_many(:block_templates, WraftDoc.Document.BlockTemplate, foreign_key: :creator_id)
 
     timestamps()
   end
