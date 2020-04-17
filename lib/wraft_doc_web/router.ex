@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Router do
   use WraftDocWeb, :router
+  import Phoenix.LiveDashboard.Router
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -145,6 +146,13 @@ defmodule WraftDocWeb.Router do
       resources("/field_types", FieldTypeController,
         only: [:create, :index, :show, :update, :delete]
       )
+    end
+  end
+
+  if Mix.env() == :dev do
+    scope "/" do
+      pipe_through(:browser)
+      live_dashboard("/dashboard")
     end
   end
 
