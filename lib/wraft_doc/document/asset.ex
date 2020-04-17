@@ -8,7 +8,7 @@ defmodule WraftDoc.Document.Asset do
   use Arc.Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
-
+  @derive {Jason.Encoder, only: [:name]}
   defimpl Spur.Trackable, for: Asset do
     def actor(asset), do: "#{asset.creator_id}"
     def object(asset), do: "Asset:#{asset.id}"

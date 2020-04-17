@@ -122,22 +122,35 @@ defmodule WraftDocWeb.Api.V1.UserController do
           description("Activity stream index")
 
           properties do
-            content_types(Schema.ref(:ContentTypesAndLayoutsAndFlows))
+            activities(Schema.ref(:ActivityStream))
             page_number(:integer, "Page number")
             total_pages(:integer, "Total number of pages")
             total_entries(:integer, "Total number of contents")
           end
 
-          example([
-            %{
-              action: "create",
-              object: "Layout:1",
-              meta: %{from: "", to: %{name: "Layout 1"}},
-              inserted_at: "2020-01-21T14:00:00Z",
-              actor: "John Doe",
-              object_details: %{name: "Layout 1", id: "jhg1348561234nkjqwd89"}
-            }
-          ])
+          example(%{
+            activities: [
+              %{
+                action: "create",
+                object: "Layout:1",
+                meta: %{from: "", to: %{name: "Layout 1"}},
+                inserted_at: "2020-01-21T14:00:00Z",
+                actor: "John Doe",
+                object_details: %{name: "Layout 1", id: "jhg1348561234nkjqwd89"}
+              },
+              %{
+                action: "delete",
+                object: "Layout:1,Layout 1",
+                meta: %{},
+                inserted_at: "2020-01-21T14:00:00Z",
+                actor: "John Doe",
+                object_details: %{name: "Layout 1"}
+              }
+            ],
+            page_number: 1,
+            total_pages: 10,
+            total_entries: 100
+          })
         end,
       Error:
         swagger_schema do
@@ -255,7 +268,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     )
 
     parameter(:page, :query, :string, "Page number")
-    response(200, "Ok", Schema.ref(:ContentTypesIndex))
+    response(200, "Ok", Schema.ref(:ActivityStreamIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
