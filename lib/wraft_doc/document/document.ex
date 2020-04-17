@@ -773,7 +773,8 @@ defmodule WraftDoc.Document do
     from(dt in DataTemplate,
       join: ct in ContentType,
       where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id,
-      order_by: [desc: dt.id]
+      order_by: [desc: dt.id],
+      preload: [:content_type]
     )
     |> Repo.paginate(params)
   end
@@ -786,7 +787,8 @@ defmodule WraftDoc.Document do
     from(dt in DataTemplate,
       join: u in User,
       where: u.organisation_id == ^org_id and dt.creator_id == u.id,
-      order_by: [desc: dt.id]
+      order_by: [desc: dt.id],
+      preload: [:content_type]
     )
     |> Repo.paginate(params)
   end
