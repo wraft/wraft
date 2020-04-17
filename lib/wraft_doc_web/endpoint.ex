@@ -1,10 +1,17 @@
 defmodule WraftDocWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :wraft_doc
 
+  plug(Phoenix.LiveDashboard.RequestLogger,
+    param_key: "request_logger",
+    cookie_key: "request_logger"
+  )
+
   socket("/socket", WraftDocWeb.UserSocket,
     websocket: [timeout: :infinity],
     longpoll: false
   )
+
+  socket("/live", Phoenix.LiveView.Socket)
 
   # Serve at "/" the static files from "priv/static" directory.
   #
