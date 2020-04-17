@@ -21,7 +21,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateView do
       }) do
     %{
       block_templates:
-        render_many(block_templates, BlockTemplateView, "block_tmplate.json", as: :block_template),
+        render_many(block_templates, BlockTemplateView, "block_template.json", as: :block_template),
       page_number: page_number,
       total_pages: total_pages,
       total_entries: total_entries
