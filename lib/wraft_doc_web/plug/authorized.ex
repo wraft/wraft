@@ -16,7 +16,8 @@ defmodule WraftDocWeb.Plug.Authorized do
     "WraftDocWeb.Api.V1.ProfileController" => "Profile",
     "WraftDocWeb.Api.V1.StateController" => "State",
     "WraftDocWeb.Api.V1.ThemeController" => "Theme",
-    "WraftDocWeb.Api.V1.UserController" => "User"
+    "WraftDocWeb.Api.V1.UserController" => "User",
+    "WraftDocWeb.Api.V1.ContentTypeFieldController" => "ContentTypeField"
   }
   def init(_params) do
   end
