@@ -1364,11 +1364,11 @@ defmodule WraftDoc.Document do
     # map |> Map.drop(keys) |> Map.merge(new_map)
   end
 
-  def create_block_template(current_user, params) do
+  def create_block_template(%{organisation_id: org_id} = current_user, params) do
     current_user
-    |> build_assoc(:block_templates)
+    |> build_assoc(:block_templates, organisation_id: org_id)
     |> BlockTemplate.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, block_template} ->
         block_template
@@ -1383,10 +1383,10 @@ defmodule WraftDoc.Document do
     |> Repo.get_by(uuid: uuid)
   end
 
-  def update_block_template(block_template, params) do
+  def update_block_template(%User{id: id}, block_template, params) do
     block_template
-    |> BlockTemplate.changeset(params)
-    |> Repo.update()
+    |> BlockTemplate.update_changeset(params)
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -1396,14 +1396,16 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def delete_block_template(%BlockTemplate{} = block_template) do
+  def delete_block_template(%User{id: id}, %BlockTemplate{} = block_template) do
     block_template
-    |> Repo.delete()
+    |> Spur.delete(%{
+      actor: "#{id}",
+      object: "BlockTemplate:#{block_template.id},#{block_template.title}"
+    })
   end
 
-  def block_template_index(%{organisatoin_id: org_id}, params) do
+  def block_template_index(%{organisation_id: org_id}, params) do
     from(bt in BlockTemplate, where: bt.organisation_id == ^org_id, order_by: [desc: bt.id])
-    |> Repo.all()
     |> Repo.paginate(params)
   end
 end
