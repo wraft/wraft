@@ -25,7 +25,8 @@ defmodule WraftDoc.Account do
     Instance,
     Layout,
     LayoutAsset,
-    Theme
+    Theme,
+    BlockTemplate
   }
 
   alias WraftDoc.Enterprise.{Flow, Flow.State}
@@ -43,7 +44,8 @@ defmodule WraftDoc.Account do
     "Flow" => Flow,
     "State" => State,
     "ContentTypeField" => ContentTypeField,
-    "LayoutAsset" => LayoutAsset
+    "LayoutAsset" => LayoutAsset,
+    "BlockTemplate" => BlockTemplate
   }
 
   @doc """
