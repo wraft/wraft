@@ -24,7 +24,8 @@ defmodule WraftDoc.Document do
     Enterprise,
     Enterprise.Flow,
     Enterprise.Flow.State,
-    Document.Block
+    Document.Block,
+    Document.BlockTemplate
   }
 
   alias WraftDocWeb.AssetUploader
@@ -1361,5 +1362,48 @@ defmodule WraftDoc.Document do
 
     # keys = mapping |> Map.keys()
     # map |> Map.drop(keys) |> Map.merge(new_map)
+  end
+
+  def create_block_template(current_user, params) do
+    current_user
+    |> build_assoc(:block_templates)
+    |> BlockTemplate.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, block_template} ->
+        block_template
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def get_block_template(uuid) do
+    BlockTemplate
+    |> Repo.get_by(uuid: uuid)
+  end
+
+  def update_block_template(block_template, params) do
+    block_template
+    |> BlockTemplate.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, block_template} ->
+        block_template
+    end
+  end
+
+  def delete_block_template(%BlockTemplate{} = block_template) do
+    block_template
+    |> Repo.delete()
+  end
+
+  def block_template_index(%{organisatoin_id: org_id}, params) do
+    from(bt in BlockTemplate, where: bt.organisation_id == ^org_id, order_by: [desc: bt.id])
+    |> Repo.all()
+    |> Repo.paginate(params)
   end
 end
