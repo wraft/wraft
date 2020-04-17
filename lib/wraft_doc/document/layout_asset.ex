@@ -4,7 +4,23 @@ defmodule WraftDoc.Document.LayoutAsset do
   """
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
   alias __MODULE__
+  alias WraftDoc.{Document.Layout, Account.User}
+
+  defimpl Spur.Trackable, for: LayoutAsset do
+    def actor(layout_asset), do: "#{layout_asset.creator_id}"
+    def object(layout_asset), do: "LayoutAsset:#{layout_asset.id}"
+    def target(_chore), do: nil
+
+    def audience(%{layout_id: id}) do
+      from(u in User,
+        join: l in Layout,
+        where: l.id == ^id,
+        where: u.organisation_id == l.organisation_id
+      )
+    end
+  end
 
   schema "layout_asset" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)

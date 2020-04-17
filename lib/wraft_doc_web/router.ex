@@ -64,6 +64,8 @@ defmodule WraftDocWeb.Router do
       get("/profiles/me", ProfileController, :show_current_profile)
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
+      # Delete layout asset
+      delete("/layouts/:id/assets/:a_id", LayoutController, :delete_layout_asset)
 
       scope "/content_types" do
         # Content type
@@ -108,6 +110,9 @@ defmodule WraftDocWeb.Router do
       resources("/organisations", OrganisationController, only: [:create, :update, :show, :delete])
 
       resources("/blocks", BlockController, except: [:index])
+
+      # Delete content type field
+      resources("/content_type_fields", ContentTypeFieldController, only: [:delete])
 
       # Invite new user
       post("/organisations/:id/invite", OrganisationController, :invite)

@@ -4,6 +4,23 @@ defmodule WraftDoc.Document.ContentTypeField do
   """
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
+  alias __MODULE__
+  alias WraftDoc.{Document.ContentType, Account.User}
+
+  defimpl Spur.Trackable, for: ContentTypeField do
+    def actor(_content_type_field), do: ""
+    def object(content_type_field), do: "ContentTypeField:#{content_type_field.id}"
+    def target(_chore), do: nil
+
+    def audience(%{content_type_id: id}) do
+      from(u in User,
+        join: ct in ContentType,
+        where: ct.id == ^id,
+        where: u.organisation_id == ct.organisation_id
+      )
+    end
+  end
 
   schema "content_type_field" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
