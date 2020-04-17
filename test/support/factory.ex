@@ -19,7 +19,8 @@ defmodule WraftDoc.Factory do
     Enterprise.Organisation,
     Enterprise.Flow,
     Authorization.Resource,
-    Authorization.Permission
+    Authorization.Permission,
+    Document.BlockTemplate
   }
 
   def user_factory do
@@ -210,6 +211,14 @@ defmodule WraftDoc.Factory do
       typescale: %{h1: "10", p: "6", h2: "8"},
       organisation: build(:organisation),
       creator: build(:user)
+    }
+  end
+
+  def block_template_factory do
+    %BlockTemplate{
+      title: sequence(:title, &"BlockTemplate title #{&1} "),
+      body: sequence(:body, &"BlockTemplate body #{&1} "),
+      serialised: sequence(:serialised, &"BlockTemplate serialised #{&1} ")
     }
   end
 end
