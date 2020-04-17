@@ -149,11 +149,9 @@ defmodule WraftDocWeb.Router do
     end
   end
 
-  if Mix.env() == :dev do
-    scope "/" do
-      pipe_through(:browser)
-      live_dashboard("/dashboard")
-    end
+  scope "/" do
+    pipe_through([:browser, :api_auth, :admin])
+    live_dashboard("/dashboard")
   end
 
   scope "/api/swagger" do
