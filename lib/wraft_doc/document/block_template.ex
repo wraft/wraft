@@ -4,7 +4,7 @@ defmodule WraftDoc.Document.BlockTemplate do
   alias __MODULE__
   alias WraftDoc.{Account.User}
   import Ecto.Query
-
+  @derive {Jason.Encoder, only: [:title]}
   defimpl Spur.Trackable, for: BlockTemplate do
     def actor(block_template), do: "#{block_template.creator_id}"
     def object(block_template), do: "BlockTemplate:#{block_template.id}"

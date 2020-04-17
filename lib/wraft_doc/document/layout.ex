@@ -8,7 +8,7 @@ defmodule WraftDoc.Document.Layout do
   import Ecto.Query
   alias __MODULE__
   alias WraftDoc.Account.User
-
+  @derive {Jason.Encoder, only: [:name]}
   defimpl Spur.Trackable, for: Layout do
     def actor(layout), do: "#{layout.creator_id}"
     def object(layout), do: "Layout:#{layout.id}"
