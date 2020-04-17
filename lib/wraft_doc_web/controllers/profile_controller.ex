@@ -96,7 +96,7 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
   end
 
   swagger_path :show do
-    get("profile/{id}")
+    get("/profile/{id}")
     summary("Show profile details")
     description("Show profile details by id")
     operation_id("show_profile")
