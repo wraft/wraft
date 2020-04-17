@@ -20,7 +20,8 @@ defmodule WraftDoc.Factory do
     Enterprise.Flow,
     Authorization.Resource,
     Authorization.Permission,
-    Document.BlockTemplate
+    Document.BlockTemplate,
+    Document.Comment
   }
 
   def user_factory do
@@ -219,6 +220,17 @@ defmodule WraftDoc.Factory do
       title: sequence(:title, &"BlockTemplate title #{&1} "),
       body: sequence(:body, &"BlockTemplate body #{&1} "),
       serialised: sequence(:serialised, &"BlockTemplate serialised #{&1} ")
+    }
+  end
+
+  def comment_factory do
+    %Comment{
+      comment: sequence(:comment, &"C comment #{&1} "),
+      is_parent: true,
+      master: "instance",
+      master_id: "sdgasdfs2262dsf32a2sd",
+      user: build(:user),
+      organisation: build(:organisation)
     }
   end
 end
