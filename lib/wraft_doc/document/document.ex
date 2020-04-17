@@ -1404,9 +1404,8 @@ defmodule WraftDoc.Document do
     })
   end
 
-  def block_template_index(%{organisatoin_id: org_id}, params) do
+  def block_template_index(%{organisation_id: org_id}, params) do
     from(bt in BlockTemplate, where: bt.organisation_id == ^org_id, order_by: [desc: bt.id])
-    |> Repo.all()
     |> Repo.paginate(params)
   end
 end
