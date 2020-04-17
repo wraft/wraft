@@ -3826,6 +3826,64 @@
         ]
       }
     },
+    "DataTemplateAndContentType": {
+      "type": "object",
+      "title": "Data Template and its content type",
+      "required": [
+        "title_template",
+        "title",
+        "id"
+      ],
+      "properties": {
+        "updated_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout last updated"
+        },
+        "title_template": {
+          "type": "string",
+          "description": "Title content of the data template"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the data template"
+        },
+        "inserted_at": {
+          "type": "string",
+          "format": "ISO-8601",
+          "description": "When was the layout created"
+        },
+        "id": {
+          "type": "string",
+          "description": "The ID of the data template"
+        },
+        "data": {
+          "type": "string",
+          "description": "Data template's contents"
+        },
+        "content_type": {
+          "$ref": "#/definitions/ContentTypeWithoutFields"
+        }
+      },
+      "example": {
+        "updated_at": "2020-01-21T14:00:00Z",
+        "title_template": "Letter for [user]",
+        "title": "Template 1",
+        "inserted_at": "2020-02-21T14:00:00Z",
+        "id": "1232148nb3478",
+        "data": "Hi [user]",
+        "content_type": {
+          "updated_at": "2020-01-21T14:00:00Z",
+          "prefix": "OFFLET",
+          "name": "Offer letter",
+          "inserted_at": "2020-02-21T14:00:00Z",
+          "id": "1232148nb3478",
+          "description": "An offer letter",
+          "color": "#fffff"
+        }
+      },
+      "description": "A Data Template and its content type"
+    },
     "ShowStates": {
       "type": "array",
       "title": "All states and its details",
@@ -6329,7 +6387,7 @@
           "description": "Page number"
         },
         "data_templates": {
-          "$ref": "#/definitions/DataTemplates"
+          "$ref": "#/definitions/DataTemplateAndContentType"
         }
       },
       "example": {
@@ -6343,7 +6401,15 @@
             "title": "Main template",
             "inserted_at": "2020-02-21T14:00:00Z",
             "id": "1232148nb3478",
-            "data": "Hi [user]"
+            "data": "Hi [user]",
+            "content_type": {
+              "updated_at": "2020-01-21T14:00:00Z",
+              "prefix": "OFFLET",
+              "name": "Offer letter",
+              "inserted_at": "2020-02-21T14:00:00Z",
+              "id": "1232148nb3478",
+              "description": "An offer letter"
+            }
           }
         ]
       }
