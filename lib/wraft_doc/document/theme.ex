@@ -8,7 +8,7 @@ defmodule WraftDoc.Document.Theme do
   import Ecto.Query
   alias __MODULE__
   alias WraftDoc.Account.User
-
+  @derive {Jason.Encoder, only: [:name]}
   defimpl Spur.Trackable, for: Theme do
     def actor(theme), do: "#{theme.creator_id}"
     def object(theme), do: "Theme:#{theme.id}"

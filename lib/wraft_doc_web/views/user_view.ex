@@ -60,7 +60,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
 
   def render("activity.json", %{activity: activity}) do
     actor = get_actor_name(activity.actor)
-    object_details = get_object_data(activity.object_struct)
+    object_details = get_object_data(activity.object_struct, activity.meta)
 
     %{
       action: activity.action,
@@ -102,37 +102,39 @@ defmodule WraftDocWeb.Api.V1.UserView do
   defp get_actor_name(%{name: name}), do: name
   defp get_actor_name(nil), do: nil
 
-  defp get_object_data(%{name: name, uuid: uuid}) do
+  defp get_object_data(%{name: name, uuid: uuid}, _meta) do
     %{
       id: uuid,
       name: name
     }
   end
 
-  defp get_object_data(%{title: name, uuid: uuid}) do
+  defp get_object_data(%{title: name, uuid: uuid}, _meta) do
     %{
       id: uuid,
       name: name
     }
   end
 
-  defp get_object_data(%{instance_id: name, uuid: uuid}) do
+  defp get_object_data(%{instance_id: name, uuid: uuid}, _meta) do
     %{
       id: uuid,
       name: name
     }
   end
 
-  defp get_object_data(%{state: name, uuid: uuid}) do
+  defp get_object_data(%{state: name, uuid: uuid}, _meta) do
     %{
       id: uuid,
       name: name
     }
   end
 
-  defp get_object_data(map) when is_map(map) do
-    map
-  end
+  # defp get_object_data(map) when is_map(map) do
+  #   map
+  # end
 
-  defp get_object_data(_), do: nil
+  defp get_object_data(_, meta) do
+    Map.new(meta, fn {_, address} -> {:name, address} end)
+  end
 end
