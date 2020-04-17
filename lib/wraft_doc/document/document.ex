@@ -1364,9 +1364,9 @@ defmodule WraftDoc.Document do
     # map |> Map.drop(keys) |> Map.merge(new_map)
   end
 
-  def create_block_template(current_user, params) do
+  def create_block_template(%{organisation_id: org_id} = current_user, params) do
     current_user
-    |> build_assoc(:block_templates)
+    |> build_assoc(:block_templates, organisation_id: org_id)
     |> BlockTemplate.changeset(params)
     |> Spur.insert()
     |> case do
