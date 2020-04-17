@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Router do
   use WraftDocWeb, :router
+  import Phoenix.LiveDashboard.Router
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -146,6 +147,11 @@ defmodule WraftDocWeb.Router do
         only: [:create, :index, :show, :update, :delete]
       )
     end
+  end
+
+  scope "/" do
+    pipe_through([:browser, :api_auth, :admin])
+    live_dashboard("/dashboard")
   end
 
   scope "/api/swagger" do
