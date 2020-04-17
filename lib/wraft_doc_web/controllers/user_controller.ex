@@ -392,17 +392,4 @@ defmodule WraftDocWeb.Api.V1.UserController do
       |> render("user.json", user: user)
     end
   end
-
-  @doc """
-  Verify the JWT token in the incoming request and return appropriate response.
-  The JWT token is obtained by pattern matching the conn.
-  When there is no token provided, then return the same error response as that of
-  having an invalid or expired token.
-  """
-  # When token is provided.
-  def token(%{req_headers: headers} = conn, _params) do
-    with {:ok, info} <- Account.verify_jwt_token(headers) do
-      conn |> render("token_verified.json", %{info: info})
-    end
-  end
 end

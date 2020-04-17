@@ -131,6 +131,7 @@ defmodule WraftDocWeb.Router do
       resources("/assets", AssetController, only: [:create, :index, :show, :update, :delete])
       put("/user/password", UserController, :update)
       resources("/block_templates", BlockTemplateController)
+      resources("/comments", CommentController)
     end
   end
 

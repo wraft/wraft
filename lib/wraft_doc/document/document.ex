@@ -25,7 +25,8 @@ defmodule WraftDoc.Document do
     Enterprise.Flow,
     Enterprise.Flow.State,
     Document.Block,
-    Document.BlockTemplate
+    Document.BlockTemplate,
+    Document.Comment
   }
 
   alias WraftDocWeb.AssetUploader
@@ -1396,6 +1397,54 @@ defmodule WraftDoc.Document do
 
   def block_template_index(%{organisation_id: org_id}, params) do
     from(bt in BlockTemplate, where: bt.organisation_id == ^org_id, order_by: [desc: bt.id])
+    |> Repo.paginate(params)
+  end
+
+  def create_comment(%{organisation_id: org_id} = current_user, params \\ %{}) do
+    params = Map.put(params, "organisation_id", org_id)
+
+    current_user
+    |> build_assoc(:comments)
+    |> Comment.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, comment} ->
+        comment
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def get_comment(uuid) do
+    Comment
+    |> Repo.get_by(uuid: uuid)
+  end
+
+  def update_comment(comment, params) do
+    comment
+    |> Comment.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, comment} ->
+        comment
+    end
+  end
+
+  def delete_comment(%Comment{} = comment) do
+    comment
+    |> Repo.delete()
+  end
+
+  def comment_index(%{organisation_id: org_id}, %{"master_id" => master_id} = params) do
+    from(c in Comment,
+      where: c.organisation_id == ^org_id,
+      where: c.master_id == ^master_id,
+      order_by: [desc: c.id]
+    )
     |> Repo.paginate(params)
   end
 end
