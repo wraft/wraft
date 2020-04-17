@@ -24,7 +24,8 @@ defmodule WraftDoc.Document do
     Enterprise,
     Enterprise.Flow,
     Enterprise.Flow.State,
-    Document.Block
+    Document.Block,
+    Document.BlockTemplate
   }
 
   alias WraftDocWeb.AssetUploader
@@ -195,6 +196,21 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+  Get a layout asset from its layout's and asset's UUIDs.
+  """
+  @spec get_layout_asset(binary, binary) :: LayoutAsset.t()
+  def get_layout_asset(l_uuid, a_uuid) do
+    from(la in LayoutAsset,
+      join: l in Layout,
+      where: l.uuid == ^l_uuid,
+      join: a in Asset,
+      where: a.uuid == ^a_uuid,
+      where: la.layout_id == l.id and la.asset_id == a.id
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Update a layout.
   """
   @spec update_layout(Layout.t(), User.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
@@ -231,7 +247,22 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!"
     )
-    |> Spur.delete(%{actor: "#{id}"})
+    |> Spur.delete(%{actor: "#{id}", object: "Layout:#{layout.id},#{layout.name}"})
+  end
+
+  @doc """
+  Delete a layout asset.
+  """
+  @spec delete_layout_asset(LayoutAsset.t(), User.t()) ::
+          {:ok, LayoutAsset.t()} | {:error, Ecto.Changeset.t()}
+  def delete_layout_asset(layout_asset, %User{id: id}) do
+    %{asset: %{name: asset_name}} = layout_asset |> Repo.preload([:asset])
+
+    layout_asset
+    |> Spur.delete(%{
+      actor: "#{id}",
+      object: "LayoutAsset:#{layout_asset.id},#{asset_name}"
+    })
   end
 
   @doc """
@@ -259,10 +290,26 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type from its UUID.
   """
-
   @spec get_content_type(binary) :: ContentType.t()
   def get_content_type(uuid) do
     Repo.get_by(ContentType, uuid: uuid)
+  end
+
+  @doc """
+  Get a content type from its ID. Also fetches all its related datas.
+  """
+  @spec get_content_type_from_id(integer()) :: %ContentType{layout: %Layout{}, creator: %User{}}
+  def get_content_type_from_id(id) do
+    Repo.get(ContentType, id)
+    |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
+  end
+
+  @doc """
+  Get a content type field from its UUID.
+  """
+  @spec get_content_type_field(binary) :: ContentTypeField.t()
+  def get_content_type_field(uuid) do
+    Repo.get_by(ContentTypeField, uuid: uuid)
   end
 
   @doc """
@@ -316,7 +363,23 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
     )
-    |> Spur.delete(%{actor: "#{id}"})
+    |> Spur.delete(%{
+      actor: "#{id}",
+      object: "ContentType:#{content_type.id},#{content_type.name}"
+    })
+  end
+
+  @doc """
+  Delete a content type field.
+  """
+  @spec delete_content_type_field(ContentTypeField.t(), User.t()) ::
+          {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()}
+  def delete_content_type_field(content_type_field, %User{id: id}) do
+    content_type_field
+    |> Spur.delete(%{
+      actor: "#{id}",
+      object: "ContentTypeField:#{content_type_field.id},#{content_type_field.name}"
+    })
   end
 
   @doc """
@@ -605,7 +668,7 @@ defmodule WraftDoc.Document do
           {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
   def delete_instance(instance, %User{id: id}) do
     instance
-    |> Spur.delete(%{actor: "#{id}"})
+    |> Spur.delete(%{actor: "#{id}", object: "Instance:#{instance.id},#{instance.instance_id}"})
   end
 
   @doc """
@@ -687,7 +750,7 @@ defmodule WraftDoc.Document do
   @spec delete_theme(Theme.t(), User.t()) :: {:ok, Theme.t()}
   def delete_theme(theme, %User{id: id}) do
     theme
-    |> Spur.delete(%{actor: "#{id}"})
+    |> Spur.delete(%{actor: "#{id}", object: "Theme:#{theme.id},#{theme.name}"})
   end
 
   @doc """
@@ -710,7 +773,8 @@ defmodule WraftDoc.Document do
     from(dt in DataTemplate,
       join: ct in ContentType,
       where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id,
-      order_by: [desc: dt.id]
+      order_by: [desc: dt.id],
+      preload: [:content_type]
     )
     |> Repo.paginate(params)
   end
@@ -723,7 +787,8 @@ defmodule WraftDoc.Document do
     from(dt in DataTemplate,
       join: u in User,
       where: u.organisation_id == ^org_id and dt.creator_id == u.id,
-      order_by: [desc: dt.id]
+      order_by: [desc: dt.id],
+      preload: [:content_type]
     )
     |> Repo.paginate(params)
   end
@@ -769,7 +834,7 @@ defmodule WraftDoc.Document do
   """
   @spec delete_data_template(DataTemplate.t(), User.t()) :: {:ok, DataTemplate.t()}
   def delete_data_template(d_temp, %User{id: id}) do
-    d_temp |> Spur.delete(%{actor: "#{id}"})
+    d_temp |> Spur.delete(%{actor: "#{id}", object: "DataTemplate:#{d_temp.id},#{d_temp.title}"})
   end
 
   @doc """
@@ -844,7 +909,7 @@ defmodule WraftDoc.Document do
   """
   @spec delete_asset(Asset.t(), User.t()) :: {:ok, Asset.t()}
   def delete_asset(asset, %User{id: id}) do
-    asset |> Spur.delete(%{actor: "#{id}"})
+    asset |> Spur.delete(%{actor: "#{id}", object: "Asset:#{asset.id},#{asset.name}"})
   end
 
   @doc """
@@ -1234,13 +1299,15 @@ defmodule WraftDoc.Document do
     # values are actually the fields of the content type.
     # This updated serialzed is then reduced to get the raw data
     # by replacing the variables in the data template.
+    serialized = serialized |> update_keys(mapping)
+
     title =
       serialized
       |> Enum.reduce(title_temp, fn {k, v}, acc ->
         WraftDoc.DocConversion.replace_content(k, v, acc)
       end)
 
-    serialized = serialized |> Map.put("title", title) |> update_keys(mapping)
+    serialized = serialized |> Map.put("title", title)
 
     raw =
       serialized
@@ -1289,13 +1356,58 @@ defmodule WraftDoc.Document do
   # Change the Keys of the CSV decoded map to the values of the mapping.
   @spec update_keys(map, map) :: map
   defp update_keys(map, mapping) do
-    new_map =
-      Enum.reduce(mapping, %{}, fn {k, v}, acc ->
-        value = Map.get(map, k)
-        acc |> Map.put(v, value)
-      end)
+    # new_map =
+    Enum.reduce(mapping, %{}, fn {k, v}, acc ->
+      value = Map.get(map, k)
+      acc |> Map.put(v, value)
+    end)
 
-    keys = mapping |> Map.keys()
-    map |> Map.drop(keys) |> Map.merge(new_map)
+    # keys = mapping |> Map.keys()
+    # map |> Map.drop(keys) |> Map.merge(new_map)
+  end
+
+  def create_block_template(%{organisation_id: org_id} = current_user, params) do
+    current_user
+    |> build_assoc(:block_templates, organisation_id: org_id)
+    |> BlockTemplate.changeset(params)
+    |> Spur.insert()
+    |> case do
+      {:ok, block_template} ->
+        block_template
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def get_block_template(uuid) do
+    BlockTemplate
+    |> Repo.get_by(uuid: uuid)
+  end
+
+  def update_block_template(%User{id: id}, block_template, params) do
+    block_template
+    |> BlockTemplate.update_changeset(params)
+    |> Spur.update(%{actor: "#{id}"})
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, block_template} ->
+        block_template
+    end
+  end
+
+  def delete_block_template(%User{id: id}, %BlockTemplate{} = block_template) do
+    block_template
+    |> Spur.delete(%{
+      actor: "#{id}",
+      object: "BlockTemplate:#{block_template.id},#{block_template.title}"
+    })
+  end
+
+  def block_template_index(%{organisation_id: org_id}, params) do
+    from(bt in BlockTemplate, where: bt.organisation_id == ^org_id, order_by: [desc: bt.id])
+    |> Repo.paginate(params)
   end
 end

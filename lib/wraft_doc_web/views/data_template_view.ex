@@ -22,10 +22,23 @@ defmodule WraftDocWeb.Api.V1.DataTemplateView do
       }) do
     %{
       data_templates:
-        render_many(data_templates, DataTemplateView, "create.json", as: :d_template),
+        render_many(data_templates, DataTemplateView, "d_temp_and_c_type.json", as: :d_template),
       page_number: page_number,
       total_pages: total_pages,
       total_entries: total_entries
+    }
+  end
+
+  def render("d_temp_and_c_type.json", %{d_template: d_temp}) do
+    %{
+      id: d_temp.uuid,
+      title: d_temp.title,
+      title_template: d_temp.title_template,
+      data: d_temp.data,
+      inserted_at: d_temp.inserted_at,
+      updated_at: d_temp.updated_at,
+      content_type:
+        render_one(d_temp.content_type, ContentTypeView, "content_type.json", as: :content_type)
     }
   end
 

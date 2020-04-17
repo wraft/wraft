@@ -1,6 +1,5 @@
 defmodule WraftDocWeb.Api.V1.BlockView do
   use WraftDocWeb, :view
-  alias __MODULE__
 
   def render("block.json", %{block: block}) do
     %{
