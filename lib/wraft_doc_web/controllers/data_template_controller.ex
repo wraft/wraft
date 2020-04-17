@@ -47,6 +47,39 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
+      DataTemplateAndContentType:
+        swagger_schema do
+          title("Data Template and its content type")
+          description("A Data Template and its content type")
+
+          properties do
+            id(:string, "The ID of the data template", required: true)
+            title(:string, "Title of the data template", required: true)
+            title_template(:string, "Title content of the data template", required: true)
+            data(:string, "Data template's contents")
+            inserted_at(:string, "When was the layout created", format: "ISO-8601")
+            updated_at(:string, "When was the layout last updated", format: "ISO-8601")
+            content_type(Schema.ref(:ContentTypeWithoutFields))
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            title: "Template 1",
+            title_template: "Letter for [user]",
+            data: "Hi [user]",
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z",
+            content_type: %{
+              id: "1232148nb3478",
+              name: "Offer letter",
+              description: "An offer letter",
+              prefix: "OFFLET",
+              color: "#fffff",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            }
+          })
+        end,
       ShowDataTemplate:
         swagger_schema do
           title("Data template and all its details")
@@ -95,7 +128,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
       DataTemplatesIndex:
         swagger_schema do
           properties do
-            data_templates(Schema.ref(:DataTemplates))
+            data_templates(Schema.ref(:DataTemplateAndContentType))
             page_number(:integer, "Page number")
             total_pages(:integer, "Total number of pages")
             total_entries(:integer, "Total number of contents")
@@ -109,7 +142,15 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
                 title_template: "Letter for [user]",
                 data: "Hi [user]",
                 updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z"
+                inserted_at: "2020-02-21T14:00:00Z",
+                content_type: %{
+                  id: "1232148nb3478",
+                  name: "Offer letter",
+                  description: "An offer letter",
+                  prefix: "OFFLET",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                }
               }
             ],
             page_number: 1,
