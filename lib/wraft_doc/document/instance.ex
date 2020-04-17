@@ -7,7 +7,7 @@ defmodule WraftDoc.Document.Instance do
   alias __MODULE__
   alias WraftDoc.{Account.User, Document.ContentType}
   import Ecto.Query
-
+  @derive {Jason.Encoder, only: [:instance_id]}
   defimpl Spur.Trackable, for: Instance do
     def actor(instance), do: "#{instance.creator_id}"
     def object(instance), do: "Instance:#{instance.id}"

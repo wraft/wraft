@@ -270,7 +270,7 @@ defmodule WraftDoc.Account do
         inserted_at: inserted_at
       }) do
     actor = actor_id |> get_user()
-    object_struct = object |> get_activity_object_struct(action)
+    object_struct = get_activity_object_struct(object)
 
     %{
       action: action,
@@ -282,20 +282,9 @@ defmodule WraftDoc.Account do
     }
   end
 
-  @spec get_activity_object_struct(String.t(), String.t() | nil) :: map | nil
-  defp get_activity_object_struct(object, "delete") do
-    object
-    |> String.split(",")
-    |> case do
-      [_obj | [obj_name]] ->
-        %{name: obj_name}
+  @spec get_activity_object_struct(String.t()) :: map | nil
 
-      [object | []] ->
-        get_activity_object_struct(object, nil)
-    end
-  end
-
-  defp get_activity_object_struct(object, _action) do
+  defp get_activity_object_struct(object) do
     [model | [id]] = object |> String.split(":")
     @activity_models[model] |> Repo.get(id)
   end

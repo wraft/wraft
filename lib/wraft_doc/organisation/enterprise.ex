@@ -101,7 +101,7 @@ defmodule WraftDoc.Enterprise do
       message:
         "Cannot delete the flow. Some States depend on this flow. Delete those states and then try again.!"
     )
-    |> Spur.delete(%{actor: "#{id}", object: "Flow:#{flow.id},#{flow.name}"})
+    |> Spur.delete(%{actor: "#{id}", meta: flow})
   end
 
   @doc """
@@ -176,7 +176,7 @@ defmodule WraftDoc.Enterprise do
       message:
         "Cannot delete the state. Some contents depend on this state. Update those states and then try again.!"
     )
-    |> Spur.delete(%{actor: "#{id}", object: "State:#{state.id},#{state.state}"})
+    |> Spur.delete(%{actor: "#{id}", meta: state})
   end
 
   @doc """

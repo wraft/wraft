@@ -7,7 +7,7 @@ defmodule WraftDoc.Document.ContentType do
   alias __MODULE__
   alias WraftDoc.Account.User
   import Ecto.Query
-
+  @derive {Jason.Encoder, only: [:name]}
   defimpl Spur.Trackable, for: ContentType do
     def actor(content_type), do: "#{content_type.creator_id}"
     def object(content_type), do: "ContentType:#{content_type.id}"
