@@ -60,3 +60,11 @@ The dependencies used, other than the default ones, are listed below
   - Job processing library
 - Bamboo v1.4
   - Email client
+- HTTPoision v1.6
+  - HTTP client for elixir
+- Spur
+  - Activity stream
+- CSV
+  - CSV parser
+- Phoenix Live Dashboard v0.1.0
+  - Dashboard
