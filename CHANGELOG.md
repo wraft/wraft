@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## v0.0.2.3 - 2020-04-18
+
+### Added
+
+- Blocks
+- Field type and content type fields
+- Activity stream
+- Bulk build
+- Keep build hitory
+- Versioning of instances
+- Commenting on data templates and
+- Block templates
+- Integrated Phoenix live dashboard
+- Update state of an instance
+- Account management for users
+
 ## v0.0.2.2 - 2020-03-27
 
 ### Added
