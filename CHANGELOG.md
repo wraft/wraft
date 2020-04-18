@@ -10,7 +10,7 @@
 - Bulk build
 - Keep build hitory
 - Versioning of instances
-- Commenting on data templates and
+- Commenting on data templates and instances
 - Block templates
 - Integrated Phoenix live dashboard
 - Update state of an instance
