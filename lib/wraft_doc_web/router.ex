@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Router do
   use WraftDocWeb, :router
+  import Phoenix.LiveDashboard.Router
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -37,8 +38,17 @@ defmodule WraftDocWeb.Router do
 
     # user
     scope "/v1", Api.V1, as: :v1 do
-      resources("/users/signup", RegistrationController, only: [:create])
+      resources("/users/signup/", RegistrationController, only: [:create])
       post("/users/signin", UserController, :signin)
+      # to generate the auth token
+      post("/user/password/forgot", UserController, :generate_token)
+      # to verify the auth token and generate the jwt token
+      get("/user/password/reset/:token", UserController, :verify_token)
+      # Reset the password
+      post("/user/password/reset", UserController, :reset)
+
+      # Verify Token
+      get("/token", UserController, :token)
     end
   end
 
@@ -49,15 +59,22 @@ defmodule WraftDocWeb.Router do
     scope "/v1", Api.V1, as: :v1 do
       # Current user details
       get("/users/me", UserController, :me)
-      resources("/profile/:id", ProfileController, only: [:update])
+      # Get activity stream for current user user
+      get("/activities", UserController, :activity)
+      resources("/profile", ProfileController, except: [:index, :create])
+      get("/profiles/me", ProfileController, :show_current_profile)
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
+      # Delete layout asset
+      delete("/layouts/:id/assets/:a_id", LayoutController, :delete_layout_asset)
 
       scope "/content_types" do
         # Content type
         resources("/", ContentTypeController, only: [:create, :index, :show, :update, :delete])
 
         scope "/:c_type_id" do
+          # Bulk build
+          post("/bulk_build", ContentTypeController, :bulk_build)
           # Instances
           resources("/contents", InstanceController, only: [:create, :index])
 
@@ -66,7 +83,7 @@ defmodule WraftDocWeb.Router do
         end
       end
 
-      # Engine
+      # Enginebody
       resources("/engines", EngineController, only: [:index])
 
       # Theme
@@ -87,9 +104,16 @@ defmodule WraftDocWeb.Router do
 
       # Instance show, update and delete
       resources("/contents", InstanceController, only: [:show, :update, :delete])
+      # Instance state update
+      patch("/contents/:id/states", InstanceController, :state_update)
 
       # Organisations
       resources("/organisations", OrganisationController, only: [:create, :update, :show, :delete])
+
+      resources("/blocks", BlockController, except: [:index])
+
+      # Delete content type field
+      resources("/content_type_fields", ContentTypeFieldController, only: [:delete])
 
       # Invite new user
       post("/organisations/:id/invite", OrganisationController, :invite)
@@ -97,7 +121,7 @@ defmodule WraftDocWeb.Router do
       # All instances in an organisation
       get("/contents", InstanceController, :all_contents)
 
-      # uild PDF from a content
+      # build PDF from a content
       post("/contents/:id/build", InstanceController, :build)
 
       # All instances in an organisation
@@ -105,6 +129,9 @@ defmodule WraftDocWeb.Router do
 
       # Assets
       resources("/assets", AssetController, only: [:create, :index, :show, :update, :delete])
+      put("/user/password", UserController, :update)
+      resources("/block_templates", BlockTemplateController)
+      resources("/comments", CommentController)
     end
   end
 
@@ -116,7 +143,16 @@ defmodule WraftDocWeb.Router do
       resources("/resources", ResourceController, only: [:create, :index, :show, :update, :delete])
 
       resources("/permissions", PermissionController, only: [:create, :index, :delete])
+
+      resources("/field_types", FieldTypeController,
+        only: [:create, :index, :show, :update, :delete]
+      )
     end
+  end
+
+  scope "/" do
+    pipe_through([:browser, :api_auth, :admin])
+    live_dashboard("/dashboard")
   end
 
   scope "/api/swagger" do

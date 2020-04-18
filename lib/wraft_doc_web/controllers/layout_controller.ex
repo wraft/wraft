@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   use PhoenixSwagger
   plug(WraftDocWeb.Plug.Authorized)
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Layout, Document.Engine}
+  alias WraftDoc.{Document, Document.Layout, Document.LayoutAsset, Document.Engine}
 
   def swagger_definitions do
     %{
@@ -384,10 +384,42 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
     with %Layout{} = layout <- Document.get_layout(uuid),
-         {:ok, %Layout{}} <- Document.delete_layout(layout) do
+         {:ok, %Layout{}} <- Document.delete_layout(layout, current_user) do
       conn
       |> render("layout.json", doc_layout: layout)
+    end
+  end
+
+  @doc """
+  Delete a Layout Asset.
+  """
+  swagger_path :delete_layout_asset do
+    PhoenixSwagger.Path.delete("/layouts/{id}/assets/{a_id}")
+    summary("Delete a Layout Asset")
+    description("API to delete a layout-asset association")
+
+    parameters do
+      id(:path, :string, "layout id", required: true)
+      a_id(:path, :string, "asset id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowLayout))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec delete_layout_asset(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete_layout_asset(conn, %{"id" => l_uuid, "a_id" => a_uuid}) do
+    current_user = conn.assigns[:current_user]
+
+    with %LayoutAsset{} = layout_asset <- Document.get_layout_asset(l_uuid, a_uuid),
+         {:ok, %LayoutAsset{}} <- Document.delete_layout_asset(layout_asset, current_user),
+         %Layout{} = layout <- Document.show_layout(l_uuid) do
+      conn
+      |> render("show.json", doc_layout: layout)
     end
   end
 end

@@ -39,6 +39,11 @@ defmodule WraftDocWeb.FallbackController do
     send_resp(conn, 422, body)
   end
 
+  def call(conn, {:error, :wrong_flow}) do
+    body = Poison.encode!(%{error: "This instance follow a different flow.!"})
+    send_resp(conn, 422, body)
+  end
+
   def call(conn, nil) do
     conn
     |> put_status(:not_found)
