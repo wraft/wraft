@@ -24,6 +24,20 @@ defmodule WraftDoc.Account.User do
     has_many(:data_templates, WraftDoc.Document.DataTemplate, foreign_key: :creator_id)
     has_many(:assets, WraftDoc.Document.Asset, foreign_key: :creator_id)
     has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :creator_id)
+
+    has_many(:blocks, WraftDoc.Document.Block, foreign_key: :creator_id)
+
+    has_many(:field_types, WraftDoc.Document.FieldType, foreign_key: :creator_id)
+    has_many(:content_type_fields, WraftDoc.Document.FieldType, foreign_key: :creator_id)
+
+    has_many(:auth_tokens, WraftDoc.Account.AuthToken, foreign_key: :user_id)
+
+    has_many(:instance_versions, WraftDoc.Document.Instance.Version, foreign_key: :creator_id)
+
+    many_to_many(:activities, Spur.Activity, join_through: "audience")
+    has_many(:block_templates, WraftDoc.Document.BlockTemplate, foreign_key: :creator_id)
+    has_many(:comments, WraftDoc.Document.Comment)
+
     timestamps()
   end
 
@@ -36,6 +50,21 @@ defmodule WraftDoc.Account.User do
     |> validate_length(:name, min: 2)
     |> validate_length(:password, min: 8, max: 16)
     |> unique_constraint(:email, message: "Email already taken.! Try another email.")
+    |> generate_encrypted_password
+  end
+
+  def update_changeset(users, attrs \\ %{}) do
+    users
+    |> cast(attrs, [:name])
+    |> validate_required([:name])
+    |> validate_length(:name, min: 2)
+  end
+
+  def password_changeset(password, attrs \\ %{}) do
+    password
+    |> cast(attrs, [:password, :encrypted_password])
+    |> validate_required([:password])
+    |> validate_length(:password, min: 8, max: 16)
     |> generate_encrypted_password
   end
 

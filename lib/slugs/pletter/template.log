@@ -1,13 +1,13 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdflatex 2019.12.20)  23 MAR 2020 15:18
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019) (preloaded format=pdflatex 2020.4.5)  9 APR 2020 10:12
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
-**/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/pletter/template.tex
-(/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/pletter/template.tex
+**/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex
+(/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex
 LaTeX2e <2018-12-01>
 
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/pletter/template.tex:3: LaTeX Error: Missing \begin{document}.
+/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex:3: LaTeX Error: Missing \begin{document}.
 
 See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
@@ -42,13 +42,13 @@ Overfull \hbox (25.28087pt too wide) in paragraph at lines 3--405
 
 [1{/usr/local/texlive/2019/texmf-var/fonts/map/pdftex/updmap/pdftex.map}])
 
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/pletter/template.tex:8: LaTeX Error: Missing \begin{document}.
+/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex:7: LaTeX Error: Missing \begin{document}.
 
 See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.8 $
+l.7 $
      if(fontfamily)$
 You're in trouble here.  Try typing  <return>  to proceed.
 If that doesn't work, type  X <return>  to quit.
@@ -60,20 +60,20 @@ Type X to quit or <RETURN> to proceed,
 or enter new name. (Default extension: sty)
 
 Enter file name: 
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/pletter/template.tex:10: Emergency stop.
+/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex:9: Emergency stop.
 <read *> 
          
-l.10 $
-      else$^^M
+l.9 $
+     else$^^M
 *** (cannot \read from terminal in nonstop modes)
 
  
 Here is how much of TeX's memory you used:
- 148 strings out of 492616
- 1945 string characters out of 6129480
- 61593 words of memory out of 5000000
- 4155 multiletter control sequences out of 15000+600000
+ 148 strings out of 492623
+ 2065 string characters out of 6129538
+ 61434 words of memory out of 5000000
+ 4148 multiletter control sequences out of 15000+600000
  3640 words of font info for 14 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 20i,4n,22p,241b,113s stack positions out of 5000i,500n,10000p,200000b,80000s
-/Users/sk/Sites/Elixir/wraft-docs-api/lib/slugs/pletter/template.tex:10:  ==> Fatal error occurred, no output PDF file produced!
+ 20i,4n,22p,265b,113s stack positions out of 5000i,500n,10000p,200000b,80000s
+/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex:9:  ==> Fatal error occurred, no output PDF file produced!

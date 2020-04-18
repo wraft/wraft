@@ -153,7 +153,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   end
 
   @doc """
-  Show instance.
+  Show asset.
   """
   swagger_path :show do
     get("/assets/{id}")
@@ -198,8 +198,10 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %Asset{} = asset <- Document.get_asset(uuid),
-         {:ok, asset} <- Document.update_asset(asset, params) do
+         {:ok, asset} <- Document.update_asset(asset, current_user, params) do
       conn
       |> render("asset.json", asset: asset)
     end
@@ -225,8 +227,10 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
     with %Asset{} = asset <- Document.get_asset(uuid),
-         {:ok, %Asset{}} <- Document.delete_asset(asset) do
+         {:ok, %Asset{}} <- Document.delete_asset(asset, current_user) do
       conn
       |> render("asset.json", asset: asset)
     end

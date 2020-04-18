@@ -47,6 +47,39 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
+      DataTemplateAndContentType:
+        swagger_schema do
+          title("Data Template and its content type")
+          description("A Data Template and its content type")
+
+          properties do
+            id(:string, "The ID of the data template", required: true)
+            title(:string, "Title of the data template", required: true)
+            title_template(:string, "Title content of the data template", required: true)
+            data(:string, "Data template's contents")
+            inserted_at(:string, "When was the layout created", format: "ISO-8601")
+            updated_at(:string, "When was the layout last updated", format: "ISO-8601")
+            content_type(Schema.ref(:ContentTypeWithoutFields))
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            title: "Template 1",
+            title_template: "Letter for [user]",
+            data: "Hi [user]",
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z",
+            content_type: %{
+              id: "1232148nb3478",
+              name: "Offer letter",
+              description: "An offer letter",
+              prefix: "OFFLET",
+              color: "#fffff",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            }
+          })
+        end,
       ShowDataTemplate:
         swagger_schema do
           title("Data template and all its details")
@@ -55,7 +88,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
           properties do
             data_template(Schema.ref(:LayoutAndEngine))
             creator(Schema.ref(:User))
-            content_type(Schema.ref(:ContentType))
+            content_type(Schema.ref(:ContentTypeWithoutFields))
           end
 
           example(%{
@@ -79,12 +112,6 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
               id: "1232148nb3478",
               name: "Offer letter",
               description: "An offer letter",
-              fields: %{
-                name: "string",
-                position: "string",
-                joining_date: "date",
-                approved_by: "string"
-              },
               prefix: "OFFLET",
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
@@ -101,21 +128,29 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
       DataTemplatesIndex:
         swagger_schema do
           properties do
-            contents(Schema.ref(:DataTemplates))
+            data_templates(Schema.ref(:DataTemplateAndContentType))
             page_number(:integer, "Page number")
             total_pages(:integer, "Total number of pages")
             total_entries(:integer, "Total number of contents")
           end
 
           example(%{
-            contents: [
+            data_templates: [
               %{
                 id: "1232148nb3478",
                 title: "Main template",
                 title_template: "Letter for [user]",
                 data: "Hi [user]",
                 updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z"
+                inserted_at: "2020-02-21T14:00:00Z",
+                content_type: %{
+                  id: "1232148nb3478",
+                  name: "Offer letter",
+                  description: "An offer letter",
+                  prefix: "OFFLET",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                }
               }
             ],
             page_number: 1,
@@ -274,8 +309,10 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %DataTemplate{} = d_temp <- Document.get_d_template(uuid),
-         %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, params) do
+         %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, current_user, params) do
       conn
       |> render("show.json", d_template: d_temp)
     end
@@ -301,8 +338,10 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
     with %DataTemplate{} = d_temp <- Document.get_d_template(uuid),
-         {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp) do
+         {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp, current_user) do
       conn
       |> render("create.json", d_template: d_temp)
     end

@@ -19,13 +19,15 @@ defmodule WraftDoc.Factory do
     Enterprise.Organisation,
     Enterprise.Flow,
     Authorization.Resource,
-    Authorization.Permission
+    Authorization.Permission,
+    Document.BlockTemplate,
+    Document.Comment
   }
 
   def user_factory do
     %User{
       name: sequence(:name, &"wrafts user-#{&1}"),
-      email: sequence(:email, &"wraftuser-#{&1}@gmail.com"),
+      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       organisation: build(:organisation),
@@ -50,10 +52,10 @@ defmodule WraftDoc.Factory do
 
   def profile_factory do
     %Profile{
-      name: sequence(:name, &"name-#{&1}"),
+      name: "admin@wraftdocs",
       dob: Timex.shift(Timex.now(), years: 27),
       gender: "male",
-      user: build(:user)
+      user: build(:user, name: "admin@wraftdocs")
     }
   end
 
@@ -71,7 +73,45 @@ defmodule WraftDoc.Factory do
     %Block{
       name: sequence(:name, &"name-#{&1}"),
       btype: sequence(:btype, &"btype-#{&1}"),
-      content_type: build(:content_type),
+      api_route: "http://localhost:8080/chart",
+      endpoint: "blocks_api",
+      dataset: %{
+        data: [
+          %{
+            value: 10,
+            label: "January"
+          },
+          %{
+            value: 20,
+            label: "February"
+          },
+          %{
+            value: 5,
+            label: "March"
+          },
+          %{
+            value: 60,
+            label: "April"
+          },
+          %{
+            value: 80,
+            label: "May"
+          },
+          %{
+            value: 70,
+            label: "June"
+          },
+          %{
+            value: 90,
+            label: "Julay"
+          }
+        ],
+        width: 512,
+        height: 512,
+        backgroundColor: "transparent",
+        format: "svg",
+        type: "pie"
+      },
       organisation: build(:organisation)
     }
   end
@@ -175,7 +215,22 @@ defmodule WraftDoc.Factory do
     }
   end
 
-  def permission_factory do
-    %Permission{role: build(:role), resource: build(:resource)}
+  def block_template_factory do
+    %BlockTemplate{
+      title: sequence(:title, &"BlockTemplate title #{&1} "),
+      body: sequence(:body, &"BlockTemplate body #{&1} "),
+      serialised: sequence(:serialised, &"BlockTemplate serialised #{&1} ")
+    }
+  end
+
+  def comment_factory do
+    %Comment{
+      comment: sequence(:comment, &"C comment #{&1} "),
+      is_parent: true,
+      master: "instance",
+      master_id: "sdgasdfs2262dsf32a2sd",
+      user: build(:user),
+      organisation: build(:organisation)
+    }
   end
 end

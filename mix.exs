@@ -38,7 +38,7 @@ defmodule WraftDoc.Mixfile do
       {:phoenix_ecto, "~> 4.1.0"},
       {:ecto_sql, "~> 3.3.4"},
       {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 2.13.3"},
+      {:phoenix_html, "~> 2.14.1"},
       {:phoenix_live_reload, "~> 1.2.1", only: :dev},
       {:gettext, "~> 0.17.4"},
       {:plug_cowboy, "~> 2.1.2"},
@@ -74,7 +74,15 @@ defmodule WraftDoc.Mixfile do
       # Background jobs
       {:oban, "~> 1.2"},
       # Email client
-      {:bamboo, "~> 1.4"}
+      {:bamboo, "~> 1.4"},
+      {:httpoison, "~> 1.6"},
+
+      # Activity stream
+      {:spur, git: "https://github.com/shijithkjayan/spur.git"},
+      # CSV parser
+      {:csv, "~> 2.3.1"},
+      # Live dashboard
+      {:phoenix_live_dashboard, "~> 0.1.0"}
     ]
   end
 
