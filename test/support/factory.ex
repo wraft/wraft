@@ -15,6 +15,8 @@ defmodule WraftDoc.Factory do
     Document.Instance,
     Document.DataTemplate,
     Document.Theme,
+    Document.FieldType,
+    Document.ContentTypeField,
     Enterprise.Flow.State,
     Enterprise.Organisation,
     Enterprise.Flow,
@@ -63,7 +65,6 @@ defmodule WraftDoc.Factory do
     %ContentType{
       name: sequence(:name, &"name-#{&1}"),
       description: "A content type to create documents",
-      fields: %{name: "string", position: "string", joining_date: "date", approved_by: "string"},
       prefix: "OFFR",
       organisation: build(:organisation)
     }
@@ -143,7 +144,8 @@ defmodule WraftDoc.Factory do
       description: sequence(:description, &"laout for document-#{&1}"),
       width: :rand.uniform(16),
       height: :rand.uniform(16),
-      unit: sequence(:name, &"layout-#{&1}")
+      unit: sequence(:name, &"layout-#{&1}"),
+      organisation: build(:organisation)
     }
   end
 
@@ -158,7 +160,8 @@ defmodule WraftDoc.Factory do
     %Instance{
       instance_id: "OFFL01",
       raw: "Content",
-      serialized: %{title: "Title of the content", body: "Body of the content"}
+      serialized: %{title: "Title of the content", body: "Body of the content"},
+      content_type: build(:content_type)
     }
   end
 
@@ -187,7 +190,8 @@ defmodule WraftDoc.Factory do
     %DataTemplate{
       title: sequence(:title, &"title-#{&1}"),
       title_template: sequence(:title_template, &"title-[client]-#{&1}"),
-      data: sequence(:data, &"data-#{&1}")
+      data: sequence(:data, &"data-#{&1}"),
+      content_type: build(:content_type)
     }
   end
 
@@ -219,7 +223,9 @@ defmodule WraftDoc.Factory do
     %BlockTemplate{
       title: sequence(:title, &"BlockTemplate title #{&1} "),
       body: sequence(:body, &"BlockTemplate body #{&1} "),
-      serialised: sequence(:serialised, &"BlockTemplate serialised #{&1} ")
+      serialised: sequence(:serialised, &"BlockTemplate serialised #{&1} "),
+      organisation: build(:organisation),
+      creator: build(:user)
     }
   end
 
@@ -231,6 +237,22 @@ defmodule WraftDoc.Factory do
       master_id: "sdgasdfs2262dsf32a2sd",
       user: build(:user),
       organisation: build(:organisation)
+    }
+  end
+
+  def field_type_factory do
+    %FieldType{
+      name: sequence(:name, &"String #{&1}"),
+      description: "Text field",
+      creator: build(:user)
+    }
+  end
+
+  def content_type_field_factory do
+    %ContentTypeField{
+      name: sequence(:name, &"Field name #{&1}"),
+      content_type: build(:content_type),
+      field_type: build(:field_type)
     }
   end
 end
