@@ -22,6 +22,7 @@ defmodule WraftDocWeb.Api.V1.BlockView do
       btype: block.btype,
       dataset: block.dataset,
       file_url: block.file_url,
+      tex_chart: block.tex_chart,
       api_route: block.api_route,
       endpoint: block.endpoint,
       inserted_at: block.inserted_at,
