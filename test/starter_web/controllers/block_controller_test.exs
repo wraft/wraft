@@ -73,7 +73,7 @@ defmodule BlockControllerTest do
     count_before = Block |> Repo.all() |> length()
     conn = put(conn, Routes.v1_block_path(conn, :update, block.uuid), @update_valid_attrs)
 
-    assert json_response(conn, 201)["name"] == @update_valid_attrs["name"]
+    assert json_response(conn, 200)["name"] == @update_valid_attrs["name"]
     count_after = Block |> Repo.all() |> length()
     assert count_before == count_after
   end
