@@ -79,6 +79,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
             updated_at(:string, "When was the user last updated", format: "ISO-8601")
             api_route(:string, "Api route to generate chart")
             endpoint(:string, "name of the endpoint going to choose")
+            tex_chart(:string, "Latex code of the pie chart")
           end
 
           example(%{
@@ -88,6 +89,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
             endpoint: "blocks_api",
             file_url:
               "/home/sadique/Documents/org.functionary/go/src/blocks_api/002dc916-4444-4072-a8aa-85a32c5a65ea.svg",
+            tex_chart: "\pie [rotate=180]{80/january}",
             dataset: %{
               data: [
                 %{
@@ -145,7 +147,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
       block(:body, Schema.ref(:BlockRequest), "Block to Create", required: true)
     end
 
-    response(200, "Created", Schema.ref(:Block))
+    response(201, "Created", Schema.ref(:Block))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
@@ -156,7 +158,11 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     current_user = conn.assigns.current_user
 
     with %{"url" => file_url} <- Document.generate_chart(params) do
-      params = Map.put(params, "file_url", file_url)
+      params =
+        Map.merge(params, %{
+          "file_url" => file_url,
+          "tex_chart" => Document.generate_tex_chart(params)
+        })
 
       with %Block{} = block <- Document.create_block(current_user, params) do
         conn
@@ -190,10 +196,17 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
-    with %Block{} = block <- Document.get_block(uuid),
-         %Block{} = block <- Document.update_block(block, params) do
-      conn
-      |> render("update.json", block: block)
+    with %{"url" => file_url} <- Document.generate_chart(params) do
+      Map.merge(params, %{
+        "file_url" => file_url,
+        "tex_chart" => Document.generate_tex_chart(params)
+      })
+
+      with %Block{} = block <- Document.get_block(uuid),
+           %Block{} = block <- Document.update_block(block, params) do
+        conn
+        |> render("update.json", block: block)
+      end
     end
   end
 
