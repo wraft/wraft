@@ -10,7 +10,7 @@ defmodule WraftDocWeb.BlockTemplateControllerTest do
     serialised: "a sample Serialised"
   }
 
-  @invalid_attrs %{}
+  @invalid_attrs %{title: ""}
   setup %{conn: conn} do
     role = insert(:role, name: "admin")
     user = insert(:user, role: role)
@@ -93,14 +93,14 @@ defmodule WraftDocWeb.BlockTemplateControllerTest do
       put(conn, Routes.v1_block_template_path(conn, :update, block_template.uuid, @invalid_attrs))
       |> doc(operation_id: "update_resource")
 
-    assert json_response(conn, 422)["errors"]["creator_id"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["title"] == ["can't be blank"]
   end
 
   test "index lists assests by current user", %{conn: conn} do
-    user = conn.assigns.current_user
+    user = conn.assigns.current_user |> Repo.preload(:organisation)
 
-    a1 = insert(:block_template)
-    a2 = insert(:block_template)
+    a1 = insert(:block_template, organisation: user.organisation)
+    a2 = insert(:block_template, organisation: user.organisation)
 
     conn =
       build_conn()

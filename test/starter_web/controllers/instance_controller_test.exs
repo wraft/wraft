@@ -10,10 +10,10 @@ defmodule WraftDocWeb.InstanceControllerTest do
   @valid_attrs %{
     instance_id: "OFFL01",
     raw: "Content",
-    serialized: %{title: "Title of the content", body: "Body of the content"},
-    content_type_id: 12
+    serialized: %{title: "Title of the content", body: "Body of the content"}
   }
-  @invalid_attrs %{}
+  @invalid_attrs %{raw: ""}
+
   setup %{conn: conn} do
     user = insert(:user)
 
@@ -50,7 +50,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
       |> doc(operation_id: "create_instance")
 
     assert count_before + 1 == Instance |> Repo.all() |> length()
-    assert json_response(conn, 200)["raw"] == @valid_attrs.raw
+    assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
   end
 
   test "does not create instances by invalid attrs", %{conn: conn} do
@@ -109,7 +109,7 @@ defmodule WraftDocWeb.InstanceControllerTest do
       put(conn, Routes.v1_instance_path(conn, :update, instance.uuid, @invalid_attrs))
       |> doc(operation_id: "update_asset")
 
-    assert json_response(conn, 422)["errors"]["state_id"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["raw"] == ["can't be blank"]
   end
 
   test "index lists all instances under a content type", %{conn: conn} do
