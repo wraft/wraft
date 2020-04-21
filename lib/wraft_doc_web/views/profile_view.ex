@@ -10,7 +10,7 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
       name: profile.name,
       dob: profile.dob,
       gender: profile.gender,
-      profile_pic: profile.profile_pic |> generate_url,
+      profile_pic: profile |> generate_url,
       # country: %{
       #   id: profile.country.uuid,
       #   country_name: profile.country.country_name,
