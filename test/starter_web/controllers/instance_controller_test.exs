@@ -133,8 +133,6 @@ defmodule WraftDocWeb.InstanceControllerTest do
     assert List.to_string(instances) =~ dt2.raw
   end
 
-  require IEx
-
   test "all templates lists all instances under an organisation", %{conn: conn} do
     user = conn.assigns.current_user
     ct1 = insert(:content_type)
