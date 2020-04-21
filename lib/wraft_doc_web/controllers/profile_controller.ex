@@ -99,27 +99,27 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
     end
   end
 
-  swagger_path :show do
-    get("/profiles/{id}")
-    summary("Show profile details")
-    description("Show profile details by id")
-    operation_id("show_profile")
+  # swagger_path :show do
+  #   get("/profiles/{id}")
+  #   summary("Show profile details")
+  #   description("Show profile details by id")
+  #   operation_id("show_profile")
 
-    parameters do
-      id(:path, :string, "Users id", required: true)
-    end
+  #   parameters do
+  #     id(:path, :string, "Users id", required: true)
+  #   end
 
-    response(200, "OK", Schema.ref(:Profile))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  #   response(200, "OK", Schema.ref(:Profile))
+  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
+  #   response(401, "Unauthorized", Schema.ref(:Error))
+  # end
 
-  def show(conn, %{"id" => uuid}) do
-    with %Profile{} = profile <- Account.get_profile(uuid) do
-      conn
-      |> render("profile.json", profile: profile)
-    end
-  end
+  # def show(conn, %{"id" => uuid}) do
+  #   with %Profile{} = profile <- Account.get_profile(uuid) do
+  #     conn
+  #     |> render("profile.json", profile: profile)
+  #   end
+  # end
 
   swagger_path :show_current_profile do
     get("/profiles")
