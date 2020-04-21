@@ -61,7 +61,7 @@ defmodule WraftDocWeb.Router do
       get("/users/me", UserController, :me)
       # Get activity stream for current user user
       get("/activities", UserController, :activity)
-      resources("/profiles", ProfileController, except: [:index, :create])
+      put("/profiles", ProfileController, :update)
       get("/profiles", ProfileController, :show_current_profile)
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
