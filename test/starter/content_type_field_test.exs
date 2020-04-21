@@ -29,7 +29,6 @@ defmodule WraftDoc.ContentTypeFieldTest do
 
     {:ok, _c_type_field} = changeset |> Repo.insert()
     {:error, changeset} = changeset |> Repo.insert()
-    IO.inspect(changeset)
     assert "Field type already added.!" in errors_on(changeset, :name)
   end
 end
