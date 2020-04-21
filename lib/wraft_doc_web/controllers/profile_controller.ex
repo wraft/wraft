@@ -9,7 +9,7 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
 
   def swagger_definitions do
     %{
-      User:
+      UserForProfile:
         swagger_schema do
           title("User")
           description("User login details")
@@ -55,6 +55,7 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
             profile_pic(:string, "path to profile pic")
             inserted_at(:string, "When was the user inserted", format: "ISO-8601")
             updated_at(:string, "When was the user last updated", format: "ISO-8601")
+            user(Schema.ref(:UserForProfile))
           end
 
           example(%{
@@ -62,7 +63,10 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
             dob: "1992-09-24",
             gender: "Male",
             profile_pic: "/image.png",
-            user: Schema.ref(:User),
+            user: %{
+              id: "c68b0988-790b-45e8-965c-c4aeb427e70d",
+              email: "admin@wraftdocs.com"
+            },
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
