@@ -16,6 +16,7 @@ defmodule WraftDoc.Factory do
     Document.DataTemplate,
     Document.Theme,
     Document.FieldType,
+    Document.Counter,
     Document.ContentTypeField,
     Enterprise.Flow.State,
     Enterprise.Organisation,
@@ -253,6 +254,13 @@ defmodule WraftDoc.Factory do
       name: sequence(:name, &"Field name #{&1}"),
       content_type: build(:content_type),
       field_type: build(:field_type)
+    }
+  end
+
+  def counter_factory do
+    %Counter{
+      subject: sequence(:subject, &"Subject:#{&1}"),
+      count: Enum.random(1..100)
     }
   end
 end
