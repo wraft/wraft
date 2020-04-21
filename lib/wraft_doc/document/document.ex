@@ -1158,6 +1158,27 @@ defmodule WraftDoc.Document do
     %{"status" => false, "error" => "invalid endpoint"}
   end
 
+  @spec generate_tex_chart(map) :: <<_::64, _::_*8>>
+  @doc """
+  Generate tex code for the chart
+  """
+  def generate_tex_chart(%{"dataset" => %{"data" => data}}) do
+    "\\pie [rotate = 180 ]{#{tex_chart(data, "")}}"
+  end
+
+  defp tex_chart([%{"value" => value, "label" => label} | []], tex_chart) do
+    "#{tex_chart}#{value}/#{label}"
+  end
+
+  defp tex_chart([%{"value" => value, "label" => label} | datas], tex_chart) do
+    tex_chart = "#{tex_chart}#{value}/#{label}, "
+    tex_chart(datas, tex_chart)
+  end
+
+  # defp tex_chart([], tex_chart) do
+  #   tex_chart
+  # end
+
   @doc """
   Create a field type
   """

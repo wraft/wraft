@@ -13,9 +13,9 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
           description("Create block_template request.")
 
           properties do
-            title(:string, "The Title of the title", required: true)
-            body(:string, "The Body of the body", required: true)
-            serialised(:string, "The Serialised of the serialised", required: true)
+            title(:string, "The Title of the Block Template", required: true)
+            body(:string, "The Body of the block template", required: true)
+            serialised(:string, "The Serialised of the block template", required: true)
           end
 
           example(%{
@@ -30,9 +30,9 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
           description("A BlockTemplate")
 
           properties do
-            title(:string, "The Title of the title", required: true)
-            body(:string, "The Body of the body", required: true)
-            serialised(:string, "The Serialised of the serialised", required: true)
+            title(:string, "The Title of the block template", required: true)
+            body(:string, "The Body of the block template", required: true)
+            serialised(:string, "The Serialised of the block template", required: true)
 
             inserted_at(:string, "When was the block_template inserted", format: "ISO-8601")
             updated_at(:string, "When was the block_template last updated", format: "ISO-8601")
