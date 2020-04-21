@@ -34,7 +34,7 @@ defmodule WraftDoc.Document.ContentTypeField do
     field_type
     |> cast(attrs, [:name])
     |> validate_required([:name])
-    |> unique_constraint(:content_type_id,
+    |> unique_constraint(:name,
       message: "Field type already added.!",
       name: :content_type_field_unique_index
     )
