@@ -13,7 +13,6 @@ defmodule WraftDoc.InstanceVersionTest do
 
   test "changeset with valid attributes" do
     changeset = Version.changeset(%Version{}, @valid_attrs)
-    IO.inspect(changeset)
     assert changeset.valid?
   end
 
