@@ -33,6 +33,7 @@ defmodule WraftDoc.Document.LayoutAsset do
   def changeset(%LayoutAsset{} = layout_asset, attrs \\ %{}) do
     layout_asset
     |> cast(attrs, [:layout_id, :asset_id])
+    |> validate_required([:layout_id, :asset_id])
     |> unique_constraint(:layout_id,
       message: "Asset already added.!",
       name: :layout_asset_unique_index
