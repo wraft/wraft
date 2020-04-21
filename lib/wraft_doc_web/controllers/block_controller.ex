@@ -196,10 +196,17 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
-    with %Block{} = block <- Document.get_block(uuid),
-         %Block{} = block <- Document.update_block(block, params) do
-      conn
-      |> render("update.json", block: block)
+    with %{"url" => file_url} <- Document.generate_chart(params) do
+      Map.merge(params, %{
+        "file_url" => file_url,
+        "tex_chart" => Document.generate_tex_chart(params)
+      })
+
+      with %Block{} = block <- Document.get_block(uuid),
+           %Block{} = block <- Document.update_block(block, params) do
+        conn
+        |> render("update.json", block: block)
+      end
     end
   end
 
