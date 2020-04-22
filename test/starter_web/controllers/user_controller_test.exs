@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.UserControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Account.User, Account.AuthToken}
+  alias WraftDoc.Repo
 
   setup %{conn: conn} do
     profile = insert(:profile)

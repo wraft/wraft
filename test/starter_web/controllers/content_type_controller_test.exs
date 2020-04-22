@@ -10,17 +10,11 @@ defmodule WraftDocWeb.ContentTypeControllerTest do
   @valid_attrs %{
     name: "Offer letter",
     description: "An offer letter",
-    fields: %{
-      name: "string",
-      position: "string",
-      joining_date: "date",
-      approved_by: "string"
-    },
     prefix: "OFFLET",
     color: "#ffffff"
   }
 
-  @invalid_attrs %{name: "Offer letter", description: "An offer letter"}
+  @invalid_attrs %{name: ""}
   setup %{conn: conn} do
     user = insert(:user)
 
@@ -78,7 +72,7 @@ defmodule WraftDocWeb.ContentTypeControllerTest do
       post(conn, Routes.v1_content_type_path(conn, :create, params))
       |> doc(operation_id: "create_content_type")
 
-    assert json_response(conn, 422)["errors"]["fields"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
     assert count_before == ContentType |> Repo.all() |> length()
   end
 

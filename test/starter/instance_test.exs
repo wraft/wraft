@@ -8,13 +8,7 @@ defmodule WraftDoc.InstanceTest do
     raw: "Content",
     serialized: %{title: "Title of the content", body: "Body of the content"}
   }
-  @update_invalid_attrs %{
-    instance_id: "OFFL01",
-    raw: "Content",
-    serialized: %{title: "Title of the content", body: "Body of the content"}
-  }
-
-  @invalid_attrs %{}
+  @invalid_attrs %{raw: ""}
 
   test "changeset with valid attributes" do
     changeset = Instance.changeset(%Instance{}, @valid_attrs)
@@ -34,7 +28,7 @@ defmodule WraftDoc.InstanceTest do
   end
 
   test "update changeset with invalid attrs" do
-    changeset = Instance.update_changeset(%Instance{}, @update_invalid_attrs)
+    changeset = Instance.update_changeset(%Instance{}, @invalid_attrs)
     refute changeset.valid?
   end
 
