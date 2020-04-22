@@ -1,7 +1,7 @@
 defmodule WraftDoc.AuthTokenTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Account.AuthToken}
+  alias WraftDoc.Account.AuthToken
 
   @valid_attrs %{
     value: "token value",

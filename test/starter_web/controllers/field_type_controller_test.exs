@@ -4,7 +4,7 @@ defmodule WraftDocWeb.FieldTypeControllerTest do
   """
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Document, Document.FieldType}
+  alias WraftDoc.{Repo, Document.FieldType}
 
   @valid_attrs %{name: "String", description: "A test field"}
 
@@ -85,8 +85,6 @@ defmodule WraftDocWeb.FieldTypeControllerTest do
   end
 
   test "index lists field types", %{conn: conn} do
-    user = conn.assigns.current_user
-
     ft1 = insert(:field_type)
     ft2 = insert(:field_type)
 

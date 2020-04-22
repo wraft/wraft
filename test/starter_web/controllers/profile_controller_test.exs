@@ -1,7 +1,6 @@
 defmodule WraftDocWeb.ProfileControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.{Account.Profile, Repo}
 
   @valid_attrs %{
     name: "Shakkir palakkal",
@@ -30,8 +29,6 @@ defmodule WraftDocWeb.ProfileControllerTest do
 
   test "updates profile on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
-
-    profile = Profile |> Repo.get_by(user_id: user.id)
 
     params = Map.merge(@valid_attrs, %{user: user})
 

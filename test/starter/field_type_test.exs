@@ -1,8 +1,6 @@
 defmodule WraftDoc.FieldTypeTest do
   use WraftDoc.ModelCase
-  import WraftDoc.Factory
   alias WraftDoc.Document.FieldType
-  import Ecto
 
   @valid_attrs %{name: "Date", description: "A data field"}
   @invalid_attrs %{name: ""}

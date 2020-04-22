@@ -4,7 +4,7 @@ defmodule WraftDocWeb.ContentTypeFieldControllerTest do
   """
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Document, Document.ContentTypeField}
+  alias WraftDoc.{Repo, Document.ContentTypeField}
 
   setup %{conn: conn} do
     user = insert(:user)
