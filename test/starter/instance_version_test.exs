@@ -1,8 +1,6 @@
 defmodule WraftDoc.InstanceVersionTest do
   use WraftDoc.ModelCase
-  import WraftDoc.Factory
   alias WraftDoc.Document.Instance.Version
-  import Ecto
 
   @valid_attrs %{
     version_number: 1,

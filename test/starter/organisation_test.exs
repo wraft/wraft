@@ -1,6 +1,5 @@
 defmodule WraftDoc.OrganisationTest do
   use WraftDoc.ModelCase
-  import WraftDoc.Factory
   alias WraftDoc.{Repo, Enterprise.Organisation}
 
   @valid_attrs %{

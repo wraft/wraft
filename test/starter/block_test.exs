@@ -1,7 +1,6 @@
 defmodule WraftDoc.BlockTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  import Ecto
   alias WraftDoc.{Document.Block, Repo}
 
   @invalid_attrs %{name: "Block name"}
