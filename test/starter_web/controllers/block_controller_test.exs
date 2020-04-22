@@ -14,12 +14,11 @@ defmodule BlockControllerTest do
     %{"label" => "Julay", "value" => 90}
   ]
   @update_valid_attrs %{
-    "api_route" => "http://localhost:8080/chart",
     "btype" => "pie",
     "file_url" => "/usr/local/hoem/filex.svg",
     "dataset" => %{
       "backgroundColor" => "transparent",
-      "data" => Poison.encode!(@data),
+      "data" => @data,
       "format" => "svg",
       "height" => 512,
       "type" => "pie",
@@ -47,8 +46,10 @@ defmodule BlockControllerTest do
       )
 
     conn = assign(conn, :current_user, user)
+    # Open bypass connection
+    bypass = Bypass.open()
 
-    {:ok, %{conn: conn}}
+    {:ok, %{conn: conn, bypass: bypass}}
   end
 
   test "create block renders error.json for invalid attributes", %{conn: conn} do
@@ -62,7 +63,13 @@ defmodule BlockControllerTest do
     assert json_response(conn, 400)["message"] == "invalid endpoint"
   end
 
-  test "update blocks and render update.json for valid attributes", %{conn: conn} do
+  test "update blocks and render update.json for valid attributes", %{conn: conn, bypass: bypass} do
+    Bypass.expect(bypass, fn conn ->
+      Plug.Conn.resp(conn, 200, "{\"url\":\"/test.jpg\"}")
+    end)
+
+    params = @update_valid_attrs |> Map.put("api_route", "http://localhost:#{bypass.port}")
+
     block = insert(:block, creator: conn.assigns.current_user)
 
     conn =
@@ -71,7 +78,7 @@ defmodule BlockControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Block |> Repo.all() |> length()
-    conn = put(conn, Routes.v1_block_path(conn, :update, block.uuid), @update_valid_attrs)
+    conn = put(conn, Routes.v1_block_path(conn, :update, block.uuid), params)
 
     assert json_response(conn, 200)["name"] == @update_valid_attrs["name"]
     count_after = Block |> Repo.all() |> length()
@@ -87,7 +94,7 @@ defmodule BlockControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = put(conn, Routes.v1_block_path(conn, :update, block.uuid), @invalid_attrs)
-    assert json_response(conn, 422)["errors"]["file_url"] == ["can't be blank"]
+    assert json_response(conn, 400)["message"] == "invalid endpoint"
   end
 
   test "renders show.json on existing id", %{conn: conn} do
