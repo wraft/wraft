@@ -42,8 +42,8 @@ defmodule WraftDoc.Enterprise.Organisation do
       name: :organisation_unique_index
     )
     |> unique_constraint(:gstin,
-      message: "GSTIN Already Registerd",
-      name: :organisation_unique_index
+      message: "GSTIN Already Registered",
+      name: :organisation_gstin_unique_index
     )
   end
 end
