@@ -29,7 +29,7 @@ defmodule WraftDoc.Factory do
 
   def user_factory do
     %User{
-      name: sequence(:name, &"wrafts user-#{&1}"),
+      name: "wrafts user",
       email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
