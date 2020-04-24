@@ -106,5 +106,32 @@ defmodule WraftDoc.DocumentTest do
 
       assert error == {:error, :expired}
     end
+
+    test "returns not found when params doens't contain token or email or both" do
+      resp1 = Account.get_organisation_from_token(%{"token" => nil})
+      resp2 = Account.get_organisation_from_token(%{"email" => nil})
+      resp3 = Account.get_organisation_from_token(%{})
+      assert resp1 == nil
+      assert resp2 == nil
+      assert resp3 == nil
+    end
+  end
+
+  describe "create_profile/2" do
+    test "create profile for a user with valid attrs" do
+      user = insert(:user)
+      {:ok, dob} = Date.new(2020, 2, 29)
+      params = %{name: user.name, dob: dob, gender: "Male"}
+      {:ok, profile} = Account.create_profile(user, params)
+      assert profile.name == user.name
+      assert profile.dob == dob
+      assert profile.gender == "Male"
+    end
+
+    test "return error on creatinf profile for a user with invalid attrs" do
+      user = insert(:user)
+      {:error, changeset} = Account.create_profile(user, %{})
+      assert %{name: ["can't be blank"]} == errors_on(changeset)
+    end
   end
 end

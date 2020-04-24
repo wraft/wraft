@@ -101,7 +101,9 @@ defmodule WraftDoc.Account do
   end
 
   def get_organisation_from_token(_) do
-    Repo.get_by(Organisation, name: "Functionary Labs Pvt Ltd.")
+    # Repo.get_by(Organisation, name: "Functionary Labs Pvt Ltd.")
+    # {:error, :not_found}
+    nil
   end
 
   @doc """
