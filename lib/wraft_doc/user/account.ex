@@ -88,6 +88,10 @@ defmodule WraftDoc.Account do
             {:error, :no_permission}
         end
 
+      # When token is valid, but encoded data is not what we expected
+      {:ok, _} ->
+        {:error, :no_permission}
+
       {:error, :invalid} ->
         {:error, :no_permission}
 
