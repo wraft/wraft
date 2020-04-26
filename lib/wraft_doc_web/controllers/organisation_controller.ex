@@ -90,13 +90,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     description("Create Organisation API")
     operation_id("create_organisation")
     tag("Organisation")
-
-    parameters do
-      organisation(:body, Schema.ref(:OrganisationRequest), "Organisation to create",
-        required: true
-      )
-    end
-
+    consumes("multipart/form-data")
+    parameter(:name, :formData, :string, "Organisation name", required: true)
+    parameter(:legal_name, :formData, :string, "Legal name of organisation", required: true)
+    parameter(:addres, :formData, :string, "address of organisation")
+    parameter(:name_of_ceo, :formData, :string, "name of ceo of organisation")
+    parameter(:name_of_cto, :formData, :string, "name of cto of organisation")
+    parameter(:gstin, :formData, :string, "gstin of organisation")
+    parameter(:corporate_id, :formData, :string, "Corporate id of organisation")
+    parameter(:email, :formData, :string, "Official email")
+    parameter(:logo, :formData, :file, "Logo of organisation")
+    parameter(:phone, :formData, :string, "Official ph number")
     response(201, "Created", Schema.ref(:Organisation))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
@@ -107,6 +111,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   """
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
@@ -124,15 +129,19 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   swagger_path :update do
     put("/organisations/{id}")
     summary("Update an organisation")
+    consumes("multipart/form-data")
     description("API to update an organisation")
-
-    parameters do
-      id(:path, :string, "organisation id", required: true)
-
-      organisation(:body, Schema.ref(:OrganisationRequest), "Organisation to be updated",
-        required: true
-      )
-    end
+    parameter(:id, :path, :string, "organisation id", required: true)
+    parameter(:name, :formData, :string, "Organisation name", required: true)
+    parameter(:legal_name, :formData, :string, "Legal name of organisation", required: true)
+    parameter(:addres, :formData, :string, "address of organisation")
+    parameter(:name_of_ceo, :formData, :string, "name of ceo of organisation")
+    parameter(:name_of_cto, :formData, :string, "name of cto of organisation")
+    parameter(:gstin, :formData, :string, "gstin of organisation")
+    parameter(:corporate_id, :formData, :string, "Corporate id of organisation")
+    parameter(:email, :formData, :string, "Official email")
+    parameter(:logo, :formData, :file, "Logo of organisation")
+    parameter(:phone, :formData, :string, "Official ph number")
 
     response(201, "Accepted", Schema.ref(:Organisation))
     response(422, "Unprocessable Entity", Schema.ref(:Error))

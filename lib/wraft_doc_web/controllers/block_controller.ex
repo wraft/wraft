@@ -207,6 +207,11 @@ defmodule WraftDocWeb.Api.V1.BlockController do
         conn
         |> render("update.json", block: block)
       end
+    else
+      %{"error" => message} ->
+        conn
+        |> put_status(:bad_request)
+        |> render("error.json", message: message)
     end
   end
 

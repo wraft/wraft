@@ -144,8 +144,6 @@ defmodule WraftDoc.Account do
     end
   end
 
-  require IEx
-
   def update_profile(conn, params) do
     current_user_id = conn.assigns.current_user.id
     current_user = conn.assigns.current_user
