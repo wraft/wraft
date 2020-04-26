@@ -26,6 +26,7 @@ defmodule WraftDoc.Document.Block do
     field(:file_url, :string)
     field(:api_route, :string)
     field(:endpoint, :string)
+    field(:tex_chart, :string)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
@@ -41,13 +42,14 @@ defmodule WraftDoc.Document.Block do
       :file_url,
       :api_route,
       :endpoint,
+      :tex_chart,
       :creator_id,
       :organisation_id
     ])
     |> validate_required([:name, :file_url, :creator_id, :dataset, :organisation_id])
     |> unique_constraint(:name,
       message: "Block with same name exists.!",
-      name: :block_content_type_unique_index
+      name: :block_organisation_unique_index
     )
   end
 end

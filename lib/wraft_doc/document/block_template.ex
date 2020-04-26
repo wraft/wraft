@@ -10,12 +10,8 @@ defmodule WraftDoc.Document.BlockTemplate do
     def object(block_template), do: "BlockTemplate:#{block_template.id}"
     def target(_chore), do: nil
 
-    def audience(%{creator_id: id}) do
-      from(u in User,
-        join: us in User,
-        where: us.id == ^id,
-        where: u.organisation_id == us.organisation_id
-      )
+    def audience(%{organisation_id: id}) do
+      from(u in User, where: u.organisation_id == ^id)
     end
   end
 

@@ -66,7 +66,7 @@ defmodule WraftDoc.Mixfile do
       {:ex_json_schema, "~> 0.5"},
       # For testing
       {:ex_machina, "~> 2.3", only: :test},
-
+      {:bypass, "~> 1.0", only: :test},
       # Pagination
       {:scrivener_ecto, "~> 2.3"},
       # QR code generation

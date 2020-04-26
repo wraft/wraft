@@ -70,8 +70,6 @@ defmodule WraftDocWeb.PermissionControllerTest do
   end
 
   test "index lists permissions by current user", %{conn: conn} do
-    user = conn.assigns.current_user
-
     a1 = insert(:permission)
     a2 = insert(:permission)
 

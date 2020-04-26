@@ -61,8 +61,8 @@ defmodule WraftDocWeb.Router do
       get("/users/me", UserController, :me)
       # Get activity stream for current user user
       get("/activities", UserController, :activity)
-      resources("/profile", ProfileController, except: [:index, :create])
-      get("/profiles/me", ProfileController, :show_current_profile)
+      put("/profiles", ProfileController, :update)
+      get("/profiles", ProfileController, :show_current_profile)
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
       # Delete layout asset
@@ -132,6 +132,8 @@ defmodule WraftDocWeb.Router do
       put("/user/password", UserController, :update)
       resources("/block_templates", BlockTemplateController)
       resources("/comments", CommentController)
+      resources("/approval_systems", ApprovalSystemController)
+      post("/approval_systems/approve", ApprovalSystemController, :approve)
     end
   end
 
