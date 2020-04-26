@@ -132,6 +132,8 @@ defmodule WraftDocWeb.Router do
       put("/user/password", UserController, :update)
       resources("/block_templates", BlockTemplateController)
       resources("/comments", CommentController)
+      resources("/approval_systems", ApprovalSystemController)
+      post("/approval_systems/approve", ApprovalSystemController, :approve)
     end
   end
 
