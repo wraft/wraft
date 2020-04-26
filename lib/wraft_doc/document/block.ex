@@ -49,7 +49,7 @@ defmodule WraftDoc.Document.Block do
     |> validate_required([:name, :file_url, :creator_id, :dataset, :organisation_id])
     |> unique_constraint(:name,
       message: "Block with same name exists.!",
-      name: :block_content_type_unique_index
+      name: :block_organisation_unique_index
     )
   end
 end

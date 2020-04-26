@@ -8,7 +8,7 @@ defmodule WraftDoc.Document.Comment do
     field(:is_parent, :boolean)
     field(:master, :string)
     field(:master_id, :string)
-    field(:replay_count, :integer)
+    field(:reply_count, :integer)
     belongs_to(:parent, WraftDoc.Document.Comment)
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
@@ -36,9 +36,9 @@ defmodule WraftDoc.Document.Comment do
     ])
   end
 
-  def replay_count_changeset(comment, attrs \\ %{}) do
+  def reply_count_changeset(comment, attrs \\ %{}) do
     comment
-    |> cast(attrs, [:replay_count])
-    |> validate_required([:replay_count])
+    |> cast(attrs, [:reply_count])
+    |> validate_required([:reply_count])
   end
 end
