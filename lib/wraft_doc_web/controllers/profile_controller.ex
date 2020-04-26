@@ -9,7 +9,7 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
 
   def swagger_definitions do
     %{
-      User:
+      UserForProfile:
         swagger_schema do
           title("User")
           description("User login details")
@@ -55,6 +55,7 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
             profile_pic(:string, "path to profile pic")
             inserted_at(:string, "When was the user inserted", format: "ISO-8601")
             updated_at(:string, "When was the user last updated", format: "ISO-8601")
+            user(Schema.ref(:UserForProfile))
           end
 
           example(%{
@@ -62,7 +63,10 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
             dob: "1992-09-24",
             gender: "Male",
             profile_pic: "/image.png",
-            user: Schema.ref(:User),
+            user: %{
+              id: "c68b0988-790b-45e8-965c-c4aeb427e70d",
+              email: "admin@wraftdocs.com"
+            },
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -72,7 +76,7 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
 
   # Profile Update
   swagger_path :update do
-    put("/profile/{id}")
+    put("/profiles")
     summary("update users profile")
     description("Update users profile")
     operation_id("update_profile")
@@ -95,30 +99,30 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
     end
   end
 
-  swagger_path :show do
-    get("/profile/{id}")
-    summary("Show profile details")
-    description("Show profile details by id")
-    operation_id("show_profile")
+  # swagger_path :show do
+  #   get("/profiles/{id}")
+  #   summary("Show profile details")
+  #   description("Show profile details by id")
+  #   operation_id("show_profile")
 
-    parameters do
-      id(:path, :string, "Users id", required: true)
-    end
+  #   parameters do
+  #     id(:path, :string, "Users id", required: true)
+  #   end
 
-    response(200, "OK", Schema.ref(:Profile))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
+  #   response(200, "OK", Schema.ref(:Profile))
+  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
+  #   response(401, "Unauthorized", Schema.ref(:Error))
+  # end
 
-  def show(conn, %{"id" => uuid}) do
-    with %Profile{} = profile <- Account.get_profile(uuid) do
-      conn
-      |> render("profile.json", profile: profile)
-    end
-  end
+  # def show(conn, %{"id" => uuid}) do
+  #   with %Profile{} = profile <- Account.get_profile(uuid) do
+  #     conn
+  #     |> render("profile.json", profile: profile)
+  #   end
+  # end
 
   swagger_path :show_current_profile do
-    get("/profile/me")
+    get("/profiles")
     summary("Show current profile")
     description("Api to show current profile")
     operation_id("show_current_profile")
@@ -131,30 +135,6 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
     with %Profile{} = profile <- Account.get_current_profile(conn) do
       conn
       |> render("profile.json", profile: profile)
-    end
-  end
-
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/profile/{id}")
-    summary("Delete profile")
-    description("Api to delete profile")
-    operation_id("delete_profile")
-
-    parameters do
-      id(:path, :string, "Profile id", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:Profile))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  def delete(conn, %{"id" => uuid}) do
-    with %Profile{} = profile <- Account.get_profile(uuid) do
-      with {:ok, %Profile{} = profile} <- Account.delete_profile(profile) do
-        conn
-        |> render("profile.json", profile: profile)
-      end
     end
   end
 end

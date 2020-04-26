@@ -390,7 +390,7 @@ defmodule WraftDoc.Document do
     |> Spur.insert()
     |> case do
       {:ok, content} ->
-        Task.start(fn -> create_or_update_counter(c_type) end)
+        Task.start_link(fn -> create_or_update_counter(c_type) end)
         content |> Repo.preload([:content_type, :state])
 
       changeset = {:error, _} ->
@@ -485,7 +485,7 @@ defmodule WraftDoc.Document do
   """
   @spec get_instance(binary) :: Instance.t()
   def get_instance(uuid) do
-    Repo.get_by(Instance, uuid: uuid)
+    Repo.get_by(Instance, uuid: uuid) |> Repo.preload([:state])
   end
 
   @doc """
@@ -610,6 +610,7 @@ defmodule WraftDoc.Document do
   Update instance's state if the flow IDs of both
   the new state and the instance's content type are same.
   """
+
   @spec update_instance_state(User.t(), Instance.t(), State.t()) ::
           Instance.t() | {:error, Ecto.Changeset.t()} | {:error, :wrong_flow}
   def update_instance_state(%{id: user_id}, instance, %{
@@ -1157,6 +1158,27 @@ defmodule WraftDoc.Document do
   def generate_chart(_params) do
     %{"status" => false, "error" => "invalid endpoint"}
   end
+
+  @spec generate_tex_chart(map) :: <<_::64, _::_*8>>
+  @doc """
+  Generate tex code for the chart
+  """
+  def generate_tex_chart(%{"dataset" => %{"data" => data}}) do
+    "\\pie [rotate = 180 ]{#{tex_chart(data, "")}}"
+  end
+
+  defp tex_chart([%{"value" => value, "label" => label} | []], tex_chart) do
+    "#{tex_chart}#{value}/#{label}"
+  end
+
+  defp tex_chart([%{"value" => value, "label" => label} | datas], tex_chart) do
+    tex_chart = "#{tex_chart}#{value}/#{label}, "
+    tex_chart(datas, tex_chart)
+  end
+
+  # defp tex_chart([], tex_chart) do
+  #   tex_chart
+  # end
 
   @doc """
   Create a field type

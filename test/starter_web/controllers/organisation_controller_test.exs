@@ -126,7 +126,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     organisation = conn.assigns.current_user.organisation
 
     conn =
-      build_conn
+      build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 

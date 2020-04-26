@@ -15,8 +15,8 @@ defmodule WraftDocWeb.Api.V1.CommentView do
     }
   end
 
-  def render("replay_count.json", %{replay_count: replay_count}) do
-    %{replay_count: replay_count}
+  def render("reply_count.json", %{reply_count: reply_count}) do
+    %{reply_count: reply_count}
   end
 
   def render("index.json", %{
