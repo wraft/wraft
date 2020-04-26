@@ -21,7 +21,8 @@ defmodule WraftDoc.Factory do
     Authorization.Resource,
     Authorization.Permission,
     Document.BlockTemplate,
-    Document.Comment
+    Document.Comment,
+    Enterprise.ApprovalSystem
   }
 
   def user_factory do
@@ -63,7 +64,6 @@ defmodule WraftDoc.Factory do
     %ContentType{
       name: sequence(:name, &"name-#{&1}"),
       description: "A content type to create documents",
-      fields: %{name: "string", position: "string", joining_date: "date", approved_by: "string"},
       prefix: "OFFR",
       organisation: build(:organisation)
     }
@@ -156,7 +156,7 @@ defmodule WraftDoc.Factory do
 
   def instance_factory do
     %Instance{
-      instance_id: "OFFL01",
+      instance_id: sequence(:instance_id, &"OFFLET#{&1}"),
       raw: "Content",
       serialized: %{title: "Title of the content", body: "Body of the content"}
     }
@@ -229,6 +229,17 @@ defmodule WraftDoc.Factory do
       is_parent: true,
       master: "instance",
       master_id: "sdgasdfs2262dsf32a2sd",
+      user: build(:user),
+      organisation: build(:organisation)
+    }
+  end
+
+  def approval_system_factory do
+    %ApprovalSystem{
+      instance: build(:instance),
+      pre_state: build(:state),
+      post_state: build(:state),
+      approver: build(:user),
       user: build(:user),
       organisation: build(:organisation)
     }
