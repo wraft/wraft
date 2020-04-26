@@ -390,7 +390,7 @@ defmodule WraftDoc.Document do
     |> Spur.insert()
     |> case do
       {:ok, content} ->
-        Task.start(fn -> create_or_update_counter(c_type) end)
+        Task.start_link(fn -> create_or_update_counter(c_type) end)
         content |> Repo.preload([:content_type, :state])
 
       changeset = {:error, _} ->
