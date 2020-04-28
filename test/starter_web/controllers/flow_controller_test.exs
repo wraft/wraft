@@ -2,7 +2,7 @@ defmodule WraftDocWeb.FlowControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Enterprise.Flow, Repo}
+  alias WraftDoc.{Enterprise.Flow, Repo, Enterprise.Flow.State}
 
   @valid_attrs %{
     name: "Authorised",
@@ -28,12 +28,13 @@ defmodule WraftDocWeb.FlowControllerTest do
     {:ok, %{conn: conn}}
   end
 
-  test "create flow by valid attrrs", %{conn: conn} do
+  test "create flow by valid attrrs and creates default state", %{conn: conn} do
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
+    state_count_before = State |> Repo.all() |> length()
     count_before = Flow |> Repo.all() |> length()
     %{uuid: organisation_id} = insert(:organisation)
     params = Map.put(@valid_attrs, :organisation_id, organisation_id)
@@ -45,8 +46,11 @@ defmodule WraftDocWeb.FlowControllerTest do
       )
       |> doc(operation_id: "create_flow")
 
+    state_count_after = State |> Repo.all() |> length()
+
     assert count_before + 1 == Flow |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == @valid_attrs.name
+    refute state_count_after == state_count_before
   end
 
   test "does not create flow by invalid attrs", %{conn: conn} do

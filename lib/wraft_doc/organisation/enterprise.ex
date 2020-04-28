@@ -17,6 +17,8 @@ defmodule WraftDoc.Enterprise do
     Document
   }
 
+  @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
+
   @doc """
   Get a flow from its UUID.
   """
@@ -107,12 +109,18 @@ defmodule WraftDoc.Enterprise do
     |> Spur.delete(%{actor: "#{id}", meta: flow})
   end
 
+  @spec create_default_states(User.t(), Flow.t()) :: list
+  def create_default_states(current_user, flow) do
+    Enum.map(@default_states, fn x -> create_state(current_user, flow, x) end)
+  end
+
   @doc """
   Create a state under a flow.
   """
   @spec create_state(User.t(), Flow.t(), map) :: {:ok, State.t()} | {:error, Ecto.Changeset.t()}
   def create_state(%User{organisation_id: org_id} = current_user, flow, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
+
     current_user |> build_assoc(:states, flow: flow) |> State.changeset(params) |> Spur.insert()
   end
 
@@ -413,7 +421,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Approve a content by approval system
   """
-  require IEx
+
   @spec approve_content(User.t(), ApprovalSystem.t()) :: ApprovalSystem.t()
   def approve_content(
         current_user,
