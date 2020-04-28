@@ -25,6 +25,8 @@ defmodule WraftDoc.Document.ContentTypeField do
   schema "content_type_field" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
+    field(:meta, :map)
+    field(:description, :string)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:field_type, WraftDoc.Document.FieldType)
     timestamps()
@@ -32,7 +34,7 @@ defmodule WraftDoc.Document.ContentTypeField do
 
   def changeset(field_type, attrs \\ %{}) do
     field_type
-    |> cast(attrs, [:name])
+    |> cast(attrs, [:name, :meta])
     |> validate_required([:name])
     |> unique_constraint(:name,
       message: "Field type already added.!",
