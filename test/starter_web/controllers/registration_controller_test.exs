@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
   end
 
   test "register users for valid attrs", %{conn: conn} do
-    insert(:organisation, name: "Functionary Labs Pvt Ltd.")
+    insert(:organisation)
     insert(:role)
 
     conn =
@@ -26,7 +26,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
   end
 
   test "render error for invalid attributes", %{conn: conn} do
-    insert(:organisation, name: "Functionary Labs Pvt Ltd.")
+    insert(:organisation)
     insert(:role)
 
     conn =

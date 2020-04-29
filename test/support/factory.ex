@@ -177,7 +177,11 @@ defmodule WraftDoc.Factory do
   end
 
   def flow_factory do
-    %Flow{name: sequence(:name, &"flow-#{&1}"), organisation: build(:organisation)}
+    %Flow{
+      name: sequence(:name, &"flow-#{&1}"),
+      organisation: build(:organisation),
+      creator: build(:user)
+    }
   end
 
   def contry_factory do
