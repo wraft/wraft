@@ -34,7 +34,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a layout.
   """
-
+  require IEx
   @spec create_layout(User.t(), Engine.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
   def create_layout(%{organisation_id: org_id} = current_user, engine, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
@@ -50,6 +50,7 @@ defmodule WraftDoc.Document do
         layout |> Repo.preload([:engine, :creator, :assets])
 
       changeset = {:error, _} ->
+        IEx.pry()
         changeset
     end
   end
@@ -485,7 +486,7 @@ defmodule WraftDoc.Document do
   """
   @spec get_instance(binary) :: Instance.t()
   def get_instance(uuid) do
-    Repo.get_by(Instance, uuid: uuid)
+    Repo.get_by(Instance, uuid: uuid) |> Repo.preload([:state])
   end
 
   @doc """
@@ -610,6 +611,7 @@ defmodule WraftDoc.Document do
   Update instance's state if the flow IDs of both
   the new state and the instance's content type are same.
   """
+
   @spec update_instance_state(User.t(), Instance.t(), State.t()) ::
           Instance.t() | {:error, Ecto.Changeset.t()} | {:error, :wrong_flow}
   def update_instance_state(%{id: user_id}, instance, %{
