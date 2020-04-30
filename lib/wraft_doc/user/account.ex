@@ -100,6 +100,8 @@ defmodule WraftDoc.Account do
     end
   end
 
+  # This is for test purpose.
+  # Should return an error once the product is deployed in production
   def get_organisation_from_token(_) do
     # Repo.get_by(Organisation, name: "Functionary Labs Pvt Ltd.")
     # {:error, :not_found}
