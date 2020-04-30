@@ -392,10 +392,8 @@ defmodule WraftDoc.Account do
   Update the password of the current user after verifying the
   old password.
   """
-  def update_password(conn, params) do
-    user = conn.assigns.current_user
-
-    case Comeonin.Bcrypt.checkpw(params["current_password"], user.encrypted_password) do
+  def update_password(user, params) do
+    case Bcrypt.verify_pass(params["current_password"], user.encrypted_password) do
       true ->
         check_and_update_password(user, params)
 
@@ -408,22 +406,25 @@ defmodule WraftDoc.Account do
   Update the password if the new one is not same as the previous one.
   """
   def check_and_update_password(user, params) do
-    case Comeonin.Bcrypt.checkpw(params["password"], user.encrypted_password) do
+    case Bcrypt.verify_pass(params["password"], user.encrypted_password) do
       true ->
         {:error, :same_password}
 
       _ ->
-        update_changeset =
-          user
-          |> User.password_changeset(params)
+        do_update_password(user, params)
+    end
+  end
 
-        case Repo.update(update_changeset) do
-          changeset = {:error, _} ->
-            changeset
+  defp do_update_password(user, params) do
+    user
+    |> User.password_changeset(params)
+    |> Repo.update()
+    |> case do
+      changeset = {:error, _} ->
+        changeset
 
-          {:ok, user_struct} ->
-            user_struct
-        end
+      {:ok, user_struct} ->
+        user_struct
     end
   end
 
