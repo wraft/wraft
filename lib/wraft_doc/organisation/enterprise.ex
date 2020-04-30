@@ -121,7 +121,14 @@ defmodule WraftDoc.Enterprise do
   def create_state(%User{organisation_id: org_id} = current_user, flow, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
 
-    current_user |> build_assoc(:states, flow: flow) |> State.changeset(params) |> Spur.insert()
+    current_user
+    |> build_assoc(:states, flow: flow)
+    |> State.changeset(params)
+    |> Spur.insert()
+    |> case do
+      {:ok, state} -> state
+      {:error, _} = changeset -> changeset
+    end
   end
 
   @doc """
@@ -443,11 +450,10 @@ defmodule WraftDoc.Enterprise do
     ])
   end
 
-  @doc """
-  Proceed approval make the status of approval system as approved
-  """
+  # Proceed approval make the status of approval system as approved
+
   @spec proceed_approval(ApprovalSystem.t()) :: ApprovalSystem.t()
-  def proceed_approval(approval_system) do
+  defp proceed_approval(approval_system) do
     params = %{approved: true}
 
     approval_system
