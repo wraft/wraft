@@ -117,7 +117,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Create a state under a flow.
   """
-  @spec create_state(User.t(), Flow.t(), map) :: {:ok, State.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_state(User.t(), Flow.t(), map) :: State.t() | {:error, Ecto.Changeset.t()}
   def create_state(%User{organisation_id: org_id} = current_user, flow, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
 
