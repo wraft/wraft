@@ -128,10 +128,31 @@ defmodule WraftDoc.DocumentTest do
       assert profile.gender == "Male"
     end
 
-    test "return error on creatinf profile for a user with invalid attrs" do
+    test "return error on creating profile for a user with invalid attrs" do
       user = insert(:user)
       {:error, changeset} = Account.create_profile(user, %{})
       assert %{name: ["can't be blank"]} == errors_on(changeset)
+    end
+  end
+
+  describe "find/1" do
+    test "get user when correct email is provided" do
+      user = insert(:user)
+      found_user = Account.find(user.email)
+
+      assert user.email == found_user.email
+      assert user.id == found_user.id
+      assert user.uuid == found_user.uuid
+    end
+
+    test "returns error when incorrect email is provided" do
+      found_user = Account.find("nouser@xyz.com")
+      assert found_user == {:error, :invalid}
+    end
+
+    test "return error when invalid data is provided" do
+      found_user = Account.find(123)
+      assert found_user == {:error, :invalid}
     end
   end
 end
