@@ -11,8 +11,13 @@ defmodule WraftDoc.Enterprise do
     Enterprise.Flow.State,
     Enterprise.Organisation,
     Account,
-    Account.User
+    Account.User,
+    Enterprise.ApprovalSystem,
+    Document.Instance,
+    Document
   }
+
+  @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
 
   @doc """
   Get a flow from its UUID.
@@ -104,13 +109,26 @@ defmodule WraftDoc.Enterprise do
     |> Spur.delete(%{actor: "#{id}", meta: flow})
   end
 
+  @spec create_default_states(User.t(), Flow.t()) :: list
+  def create_default_states(current_user, flow) do
+    Enum.map(@default_states, fn x -> create_state(current_user, flow, x) end)
+  end
+
   @doc """
   Create a state under a flow.
   """
   @spec create_state(User.t(), Flow.t(), map) :: {:ok, State.t()} | {:error, Ecto.Changeset.t()}
   def create_state(%User{organisation_id: org_id} = current_user, flow, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
-    current_user |> build_assoc(:states, flow: flow) |> State.changeset(params) |> Spur.insert()
+
+    current_user
+    |> build_assoc(:states, flow: flow)
+    |> State.changeset(params)
+    |> Spur.insert()
+    |> case do
+      {:ok, state} -> state
+      {:error, _} = changeset -> changeset
+    end
   end
 
   @doc """
@@ -191,6 +209,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Create an Organisation
   """
+
   @spec create_organisation(User.t(), map) :: {:ok, Organisation.t()}
   def create_organisation(%User{} = user, params) do
     user
@@ -280,5 +299,172 @@ defmodule WraftDoc.Enterprise do
     %{org_name: org_name, user_name: name, email: email, token: token}
     |> WraftDocWeb.Worker.EmailWorker.new(queue: "mailer", tags: ["invite"])
     |> Oban.insert()
+  end
+
+  @doc """
+  Create approval system
+  """
+  @spec create_approval_system(User.t(), map) ::
+          ApprovalSystem.t() | {:error, Ecto.Changeset.t()}
+  def create_approval_system(
+        %{organisation_id: org_id} = current_user,
+        %{
+          "instance_id" => instance_id,
+          "pre_state_id" => pre_state_id,
+          "post_state_id" => post_state_id,
+          "approver_id" => approver_id
+        }
+      ) do
+    with %Instance{} = instance <- Document.get_instance(instance_id),
+         %State{} = pre_state <- get_state(pre_state_id),
+         %State{} = post_state <- get_state(post_state_id),
+         %User{} = approver <- Account.get_user_by_uuid(approver_id) do
+      params = %{
+        instance_id: instance.id,
+        pre_state_id: pre_state.id,
+        post_state_id: post_state.id,
+        approver_id: approver.id,
+        organisation_id: org_id
+      }
+
+      current_user
+      |> build_assoc(:approval_systems)
+      |> ApprovalSystem.changeset(params)
+      |> Repo.insert()
+      |> case do
+        {:ok, approval_system} ->
+          approval_system
+          |> Repo.preload([:instance, :pre_state, :post_state, :approver, :organisation, :user])
+
+        {:error, _} = changeset ->
+          changeset
+      end
+    end
+  end
+
+  def create_approval_system(current_user, params) do
+    current_user
+    |> build_assoc(:approval_systems)
+    |> ApprovalSystem.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, approval_system} ->
+        approval_system
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Get approval system by uuid
+  """
+
+  @spec get_approval_system(Ecto.UUID.t()) :: ApprovalSystem.t()
+  def get_approval_system(uuid) do
+    ApprovalSystem
+    |> Repo.get_by(uuid: uuid)
+    |> Repo.preload([:instance, :pre_state, :post_state, :approver, :organisation, :user])
+  end
+
+  @doc """
+  Update an uproval system
+  """
+  @spec update_approval_system(ApprovalSystem.t(), map) ::
+          ApprovalSystem.t() | {:error, Ecto.Changeset.t()}
+  def update_approval_system(approval_system, %{
+        "instance_id" => instance_id,
+        "pre_state_id" => pre_state_id,
+        "post_state_id" => post_state_id,
+        "approver_id" => approver_id
+      }) do
+    with %Instance{} = instance <- Document.get_instance(instance_id),
+         %State{} = pre_state <- get_state(pre_state_id),
+         %State{} = post_state <- get_state(post_state_id),
+         %User{} = approver <- Account.get_user_by_uuid(approver_id) do
+      params = %{
+        instance_id: instance.id,
+        pre_state_id: pre_state.id,
+        post_state_id: post_state.id,
+        approver_id: approver.id
+      }
+
+      approval_system
+      |> ApprovalSystem.changeset(params)
+      |> Repo.update()
+      |> case do
+        {:error, _} = changeset ->
+          changeset
+
+        {:ok, approval_system} ->
+          approval_system
+          |> Repo.preload([:instance, :pre_state, :post_state, :approver, :organisation, :user])
+      end
+    end
+  end
+
+  def update_approval_system(approval_system, params) do
+    approval_system
+    |> ApprovalSystem.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, approval_system} ->
+        approval_system
+    end
+  end
+
+  @doc """
+  Delete an approval system
+  """
+  @spec delete_approval_system(ApprovalSystem.t()) :: ApprovalSystem.t()
+  def delete_approval_system(%ApprovalSystem{} = approval_system) do
+    approval_system
+    |> Repo.delete()
+  end
+
+  @doc """
+  Approve a content by approval system
+  """
+
+  @spec approve_content(User.t(), ApprovalSystem.t()) :: ApprovalSystem.t()
+  def approve_content(
+        current_user,
+        %ApprovalSystem{
+          instance: instance,
+          post_state: post_state
+        } = approval_system
+      ) do
+    Document.update_instance_state(current_user, instance, post_state)
+
+    proceed_approval(approval_system)
+    |> Repo.preload([
+      :instance,
+      :pre_state,
+      :post_state,
+      :approver,
+      :user,
+      :organisation
+    ])
+  end
+
+  # Proceed approval make the status of approval system as approved
+
+  @spec proceed_approval(ApprovalSystem.t()) :: ApprovalSystem.t()
+  defp proceed_approval(approval_system) do
+    params = %{approved: true}
+
+    approval_system
+    |> ApprovalSystem.approve_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, approval_system} ->
+        approval_system
+
+      {:error, changeset} = changeset ->
+        changeset
+    end
   end
 end

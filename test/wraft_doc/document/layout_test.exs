@@ -50,10 +50,11 @@ defmodule WraftDoc.Document.LayoutTest do
 
   test "layout name unique constraint" do
     organisation = insert(:organisation)
-    params = Map.put(@valid_attrs, :organisation_id, organisation.id)
+    layout = insert(:layout)
+    params = Map.merge(@valid_attrs, %{organisation_id: organisation.id, name: layout.name})
 
-    {:ok, _layout} = Layout.changeset(%Layout{}, params) |> Repo.insert()
     {:error, changeset} = Layout.changeset(%Layout{}, params) |> Repo.insert()
+
     assert "Layout with the same name exists. Use another name.!" in errors_on(changeset, :name)
   end
 end

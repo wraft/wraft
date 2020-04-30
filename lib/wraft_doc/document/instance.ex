@@ -34,6 +34,7 @@ defmodule WraftDoc.Document.Instance do
 
     has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :content_id)
     has_many(:versions, WraftDoc.Document.Instance.Version, foreign_key: :content_id)
+    has_many(:approval_systems, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :instance_id)
     timestamps()
   end
 

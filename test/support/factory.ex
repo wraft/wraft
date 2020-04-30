@@ -24,7 +24,8 @@ defmodule WraftDoc.Factory do
     Authorization.Resource,
     Authorization.Permission,
     Document.BlockTemplate,
-    Document.Comment
+    Document.Comment,
+    Enterprise.ApprovalSystem
   }
 
   def user_factory do
@@ -159,7 +160,7 @@ defmodule WraftDoc.Factory do
 
   def instance_factory do
     %Instance{
-      instance_id: "OFFL01",
+      instance_id: sequence(:instance_id, &"OFFLET#{&1}"),
       raw: "Content",
       serialized: %{title: "Title of the content", body: "Body of the content"},
       content_type: build(:content_type)
@@ -176,7 +177,11 @@ defmodule WraftDoc.Factory do
   end
 
   def flow_factory do
-    %Flow{name: sequence(:name, &"flow-#{&1}"), organisation: build(:organisation)}
+    %Flow{
+      name: sequence(:name, &"flow-#{&1}"),
+      organisation: build(:organisation),
+      creator: build(:user)
+    }
   end
 
   def contry_factory do
@@ -236,6 +241,17 @@ defmodule WraftDoc.Factory do
       is_parent: true,
       master: "instance",
       master_id: "sdgasdfs2262dsf32a2sd",
+      user: build(:user),
+      organisation: build(:organisation)
+    }
+  end
+
+  def approval_system_factory do
+    %ApprovalSystem{
+      instance: build(:instance),
+      pre_state: build(:state),
+      post_state: build(:state),
+      approver: build(:user),
       user: build(:user),
       organisation: build(:organisation)
     }
