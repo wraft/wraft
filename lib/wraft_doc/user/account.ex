@@ -137,7 +137,7 @@ defmodule WraftDoc.Account do
   @doc """
     Authenticate user and generate token.
   """
-  @spec authenticate(%{user: User.t(), password: binary | nil}) ::
+  @spec authenticate(%{user: User.t(), password: binary}) ::
           {:error, atom} | {:ok, Guardian.Token.token(), Guardian.Token.claims()}
   def authenticate(%{user: _, password: ""}), do: {:error, :no_data}
   def authenticate(%{user: _, password: nil}), do: {:error, :no_data}

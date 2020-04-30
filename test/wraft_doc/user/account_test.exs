@@ -155,4 +155,27 @@ defmodule WraftDoc.DocumentTest do
       assert found_user == {:error, :invalid}
     end
   end
+
+  describe "authenticate/1" do
+    test "successfully authenticate when correct password is given" do
+      user = insert(:user)
+      response = Account.authenticate(%{user: user, password: "encrypt"})
+      assert tuple_size(response) == 3
+      assert elem(response, 0) == :ok
+    end
+
+    test "does not authenticate when nil or empty password is given" do
+      user = insert(:user)
+      response1 = Account.authenticate(%{user: user, password: ""})
+      response2 = Account.authenticate(%{user: user, password: nil})
+      assert response1 == {:error, :no_data}
+      assert response2 == {:error, :no_data}
+    end
+
+    test "does not authenticate when incorrect password is given" do
+      user = insert(:user)
+      response = Account.authenticate(%{user: user, password: "inorrectpassword"})
+      assert response == {:error, :invalid}
+    end
+  end
 end
