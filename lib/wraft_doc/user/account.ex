@@ -217,9 +217,11 @@ defmodule WraftDoc.Account do
   Get a role type from its UUID.
   """
   @spec get_role_from_uuid(binary) :: Role.t()
-  def get_role_from_uuid(uuid) do
+  def get_role_from_uuid(uuid) when is_binary(uuid) do
     Repo.get_by(Role, uuid: uuid)
   end
+
+  def get_role_from_uuid(_id), do: nil
 
   @doc """
   Get a user from its UUID.
