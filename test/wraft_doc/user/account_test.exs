@@ -250,4 +250,23 @@ defmodule WraftDoc.DocumentTest do
       assert response == nil
     end
   end
+
+  describe "get_role_from_uuid/1" do
+    test "get role when correct UUID is given" do
+      role = insert(:role)
+      response = Account.get_role_from_uuid(role.uuid)
+      refute response == nil
+      assert response == role
+    end
+
+    test "return nil when incorrect UUID is given" do
+      response = Account.get_role_from_uuid(Ecto.UUID.generate())
+      assert response == nil
+    end
+
+    test "return nil when non-UUID value is given" do
+      response = Account.get_role_from_uuid(1)
+      assert response == nil
+    end
+  end
 end
