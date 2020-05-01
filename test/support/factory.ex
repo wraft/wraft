@@ -6,6 +6,7 @@ defmodule WraftDoc.Factory do
     Account.Country,
     Account.Role,
     Account.Profile,
+    Account.AuthToken,
     Document.ContentType,
     Document.Block,
     Document.Instance.History,
@@ -277,6 +278,15 @@ defmodule WraftDoc.Factory do
     %Counter{
       subject: sequence(:subject, &"Subject:#{&1}"),
       count: Enum.random(1..100)
+    }
+  end
+
+  def auth_token_factory do
+    %AuthToken{
+      value: "token",
+      token_type: "token",
+      expiry_datetime: Timex.shift(Timex.now(), days: 1),
+      user: build(:user)
     }
   end
 end

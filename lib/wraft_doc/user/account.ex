@@ -251,6 +251,8 @@ defmodule WraftDoc.Account do
   @doc """
   Get the activity stream for current user.
   """
+
+  # => No test written
   @spec get_activity_stream(User.t(), map) :: map
   def get_activity_stream(%User{id: id}, params) do
     from(a in Spur.Activity,
