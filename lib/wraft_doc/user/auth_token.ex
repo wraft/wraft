@@ -18,6 +18,7 @@ defmodule WraftDoc.Account.AuthToken do
     |> validate_required([:value, :token_type])
   end
 
+  # Not used anywhere
   def verification_changeset(token, attrs \\ %{}) do
     token
     |> cast(attrs, [:value, :token_type, :expiry_datetime])
