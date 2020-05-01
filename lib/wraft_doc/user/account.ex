@@ -378,7 +378,7 @@ defmodule WraftDoc.Account do
   delete the password reset token.
   """
 
-  @spec reset_password(map) :: User.t() | Ecto.Changeset.t() | {:error, atom}
+  @spec reset_password(map) :: User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
   def reset_password(%{"token" => token, "password" => _} = params) do
     with %AuthToken{} = auth_token <- check_token(token) do
       user =
@@ -403,6 +403,7 @@ defmodule WraftDoc.Account do
   Update the password of the current user after verifying the
   old password.
   """
+  @spec update_password(User.t(), map) :: User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
   def update_password(user, params) do
     case Bcrypt.verify_pass(params["current_password"], user.encrypted_password) do
       true ->
@@ -416,6 +417,8 @@ defmodule WraftDoc.Account do
   @doc """
   Update the password if the new one is not same as the previous one.
   """
+  @spec check_and_update_password(User.t(), map) ::
+          User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
   def check_and_update_password(user, params) do
     case Bcrypt.verify_pass(params["password"], user.encrypted_password) do
       true ->
@@ -426,6 +429,7 @@ defmodule WraftDoc.Account do
     end
   end
 
+  @spec do_update_password(User.t(), map) :: User.t() | {:error, Ecto.Changeset.t()}
   defp do_update_password(user, params) do
     user
     |> User.password_changeset(params)
