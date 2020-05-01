@@ -92,8 +92,11 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, params) do
-    with %Profile{} = profile <- Account.update_profile(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %Profile{} = profile <- Account.update_profile(current_user, params) do
       conn
       |> render("profile.json", profile: profile)
     end

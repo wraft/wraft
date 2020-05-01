@@ -57,7 +57,7 @@ defmodule WraftDoc.Factory do
   def profile_factory do
     %Profile{
       name: "admin@wraftdocs",
-      dob: Timex.shift(Timex.now(), years: 27),
+      dob: Timex.shift(Timex.now(), years: -27),
       gender: "male",
       user: build(:user, name: "admin@wraftdocs")
     }

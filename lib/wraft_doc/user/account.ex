@@ -152,10 +152,7 @@ defmodule WraftDoc.Account do
     end
   end
 
-  def update_profile(conn, params) do
-    current_user_id = conn.assigns.current_user.id
-    current_user = conn.assigns.current_user
-
+  def update_profile(%{id: current_user_id} = current_user, params) do
     profile =
       Profile
       |> Repo.get_by(user_id: current_user_id)
