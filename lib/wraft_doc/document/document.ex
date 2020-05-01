@@ -1432,17 +1432,31 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, comment} ->
-        comment |> Repo.preload(:user)
+        comment |> Repo.preload([{:user, :profile}])
 
       {:error, _} = changeset ->
         changeset
     end
   end
 
-  def get_comment(uuid) do
+  @doc """
+  Fetch a comment from its UUID.
+  """
+  @spec get_comment(Ecto.UUID.t()) :: Comment.t() | nil
+  def get_comment(<<_::288>> = uuid) do
     Comment
     |> Repo.get_by(uuid: uuid)
   end
+
+  @doc """
+  Fetch a comment and all its details.
+  """
+  @spec show_comment(Ecto.UUID.t()) :: Comment.t() | nil
+  def show_comment(<<_::288>> = uuid) do
+    uuid |> get_comment() |> Repo.preload([{:user, :profile}])
+  end
+
+  def show_comment(_), do: nil
 
   def update_comment(comment, params) do
     comment
@@ -1453,7 +1467,7 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, comment} ->
-        comment
+        comment |> Repo.preload([{:user, :profile}])
     end
   end
 
@@ -1466,21 +1480,8 @@ defmodule WraftDoc.Document do
     from(c in Comment,
       where: c.organisation_id == ^org_id,
       where: c.master_id == ^master_id,
-      join: u in assoc(c, :user),
-      join: p in assoc(u, :profile),
-      select: %{
-        uuid: c.uuid,
-        comment: c.comment,
-        master: c.master,
-        master_id: c.master_id,
-        is_parent: c.is_parent,
-        parent_id: c.parent_id,
-        inserted_at: c.inserted_at,
-        updated_at: c.updated_at,
-        user_name: u.name,
-        profile_pic: p.profile_pic
-      },
-      order_by: [desc: c.inserted_at]
+      order_by: [desc: c.inserted_at],
+      preload: [{:user, :profile}]
     )
     |> Repo.paginate(params)
   end

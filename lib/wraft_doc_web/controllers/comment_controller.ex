@@ -107,8 +107,6 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     }
   end
 
-  require IEx
-
   swagger_path :create do
     post("/comments")
     summary("Create comment")
@@ -128,22 +126,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Comment{user: user} = comment <- Document.create_comment(current_user, params) do
-      user = Repo.preload(user, :profile)
-
-      comment = %{
-        uuid: comment.uuid,
-        comment: comment.comment,
-        is_parent: comment.is_parent,
-        parent_id: comment.parent_id,
-        master: comment.master,
-        master_id: comment.master_id,
-        user_name: user.name,
-        profile_pic: user.profile.profile_pic,
-        inserted_at: comment.inserted_at,
-        updated_at: comment.updated_at
-      }
-
+    with %Comment{} = comment <- Document.create_comment(current_user, params) do
       conn |> render("comment.json", comment: comment)
     end
   end
@@ -196,7 +179,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => uuid}) do
-    with %Comment{} = comment <- Document.get_comment(uuid) do
+    with %Comment{} = comment <- Document.show_comment(uuid) do
       conn
       |> render("comment.json", comment: comment)
     end
@@ -247,7 +230,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     with %Comment{} = comment <- Document.get_comment(uuid),
          {:ok, %Comment{}} <- Document.delete_comment(comment) do
       conn
-      |> render("comment.json", comment: comment)
+      |> render("delete.json", comment: comment)
     end
   end
 end
