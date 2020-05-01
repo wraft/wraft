@@ -175,10 +175,12 @@ defmodule WraftDoc.Account do
   @doc """
   Get profile by uuid
   """
-  @spec get_profile(String.t()) :: Profile.t()
-  def get_profile(id) do
+  @spec get_profile(String.t()) :: Profile.t() | nil
+  def get_profile(id) when is_binary(id) do
     Profile |> Repo.get_by(uuid: id) |> Repo.preload(:user) |> Repo.preload(:country)
   end
+
+  def get_profile(_id), do: nil
 
   @doc """
   Get current profile by Plug.conn
