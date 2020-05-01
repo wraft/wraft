@@ -191,13 +191,32 @@ defmodule WraftDoc.DocumentTest do
       assert profile.gender == "Male"
     end
 
-    test "update profilw with invalid attrs" do
+    test "update profile with invalid attrs" do
       profile = insert(:profile)
       params = %{name: "", dob: "1990", gender: 1}
       {:error, :profile, changeset, %{}} = Account.update_profile(profile.user, params)
 
       assert %{name: ["can't be blank"], dob: ["is invalid"], gender: ["is invalid"]} ==
                errors_on(changeset)
+    end
+  end
+
+  describe "get_profile/1" do
+    test "get profile when correct UUID is given" do
+      profile = insert(:profile)
+      response = Account.get_profile(profile.uuid)
+      refute response == nil
+      assert response.uuid == profile.uuid
+    end
+
+    test "return nil when incorrect UUID is given" do
+      response = Account.get_profile(Ecto.UUID.generate())
+      assert response == nil
+    end
+
+    test "return nil when a non-UUID value is given" do
+      response = Account.get_profile(1)
+      assert response == nil
     end
   end
 end
