@@ -183,17 +183,17 @@ defmodule WraftDoc.Account do
   def get_profile(_id), do: nil
 
   @doc """
-  Get current profile by Plug.conn
+  Get the profile of given user.
   """
-  @spec get_current_profile(Plug.Conn.t()) :: Profile.t()
-  def get_current_profile(conn) do
-    current_user_id = conn.assigns.current_user.id
-
+  @spec get_current_profile(User.t()) :: Profile.t()
+  def get_current_profile(%User{id: id}) do
     Profile
-    |> Repo.get_by(user_id: current_user_id)
+    |> Repo.get_by(user_id: id)
     |> Repo.preload(:user)
     |> Repo.preload(:country)
   end
+
+  def get_current_profile(_), do: nil
 
   @doc """
   Delete Profile
