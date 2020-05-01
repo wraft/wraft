@@ -1432,7 +1432,7 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, comment} ->
-        comment
+        comment |> Repo.preload(:user)
 
       {:error, _} = changeset ->
         changeset
@@ -1466,7 +1466,21 @@ defmodule WraftDoc.Document do
     from(c in Comment,
       where: c.organisation_id == ^org_id,
       where: c.master_id == ^master_id,
-      order_by: [desc: c.id]
+      join: u in assoc(c, :user),
+      join: p in assoc(u, :profile),
+      select: %{
+        uuid: c.uuid,
+        comment: c.comment,
+        master: c.master,
+        master_id: c.master_id,
+        is_parent: c.is_parent,
+        parent_id: c.parent_id,
+        inserted_at: c.inserted_at,
+        updated_at: c.updated_at,
+        user_name: u.name,
+        profile_pic: p.profile_pic
+      },
+      order_by: [desc: c.inserted_at]
     )
     |> Repo.paginate(params)
   end
