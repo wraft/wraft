@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   use PhoenixSwagger
 
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Comment}
+  alias WraftDoc.{Document, Document.Comment, Repo}
 
   def swagger_definitions do
     %{
@@ -14,6 +14,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
           properties do
             comment(:string, "The Comment to post", required: true)
+            meta(:map, "Meta data of inline comments")
             is_parent(:boolean, "Declare the comment is parent or child", required: true)
             parent_id(:string, "Parent id of a child comment", required: true)
             master(:string, "Comments master", required: true)
@@ -25,6 +26,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
             is_parent: true,
             parent_id: nil,
             master: "instance",
+            meta: %{block: "introduction", line: 12},
             master_id: "32232sdffasdfsfdfasdfsdfs"
           })
         end,
@@ -35,6 +37,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
           properties do
             comment(:string, "Posted comment", required: true)
+            meta(:map, "Meta data of inline comments")
             is_parent(:boolean, "Parent or child comment", required: true)
             parent_id(:string, "The ParentId of the comment", required: true)
             master(:string, "The Master of the comment", required: true)
@@ -48,6 +51,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
             comment: "a sample comment",
             is_parent: true,
             master: "instance",
+            meta: %{block: "introduction", line: 12},
             master_id: "sdf15511551sdf",
             user_id: "asdf2s2dfasd2",
             organisation_id: "451s51dfsdf515",
@@ -74,6 +78,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
             comments: [
               %{
                 comment: "a sample comment",
+                meta: %{block: "introduction", line: 12},
                 is_parent: true,
                 master: "instance",
                 master_id: "sdf15511551sdf",
@@ -84,6 +89,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
               },
               %{
                 comment: "a sample comment",
+                meta: %{block: "introduction", line: 12},
                 is_parent: true,
                 master: "instance",
                 master_id: "sdf15511551sdf",
@@ -100,6 +106,8 @@ defmodule WraftDocWeb.Api.V1.CommentController do
         end
     }
   end
+
+  require IEx
 
   swagger_path :create do
     post("/comments")
@@ -120,7 +128,22 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Comment{} = comment <- Document.create_comment(current_user, params) do
+    with %Comment{user: user} = comment <- Document.create_comment(current_user, params) do
+      user = Repo.preload(user, :profile)
+
+      comment = %{
+        uuid: comment.uuid,
+        comment: comment.comment,
+        is_parent: comment.is_parent,
+        parent_id: comment.parent_id,
+        master: comment.master,
+        master_id: comment.master_id,
+        user_name: user.name,
+        profile_pic: user.profile.profile_pic,
+        inserted_at: comment.inserted_at,
+        updated_at: comment.updated_at
+      }
+
       conn |> render("comment.json", comment: comment)
     end
   end

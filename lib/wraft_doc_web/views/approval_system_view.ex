@@ -24,4 +24,11 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemView do
       approved: approval_system.approved
     }
   end
+
+  def render("error.json", %{message: message}) do
+    %{
+      status: false,
+      message: message
+    }
+  end
 end

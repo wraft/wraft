@@ -426,6 +426,23 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+  Check the user and approver is same while approving the content
+  """
+  def same_user?(current_user_uuid, approver_uuid) when current_user_uuid != approver_uuid,
+    do: :invalid_user
+
+  def same_user?(current_user_uuid, approver_uuid) when current_user_uuid === approver_uuid,
+    do: true
+
+  @doc """
+  Check the prestate of the approval system and state of instance are same
+  """
+  def same_state?(prestate_id, state_id) when prestate_id != state_id,
+    do: :unprocessible_state
+
+  def same_state?(prestate_id, state_id) when prestate_id === state_id, do: true
+
+  @doc """
   Approve a content by approval system
   """
 
@@ -454,7 +471,7 @@ defmodule WraftDoc.Enterprise do
 
   @spec proceed_approval(ApprovalSystem.t()) :: ApprovalSystem.t()
   defp proceed_approval(approval_system) do
-    params = %{approved: true}
+    params = %{approved: true, approved_log: NaiveDateTime.local_now()}
 
     approval_system
     |> ApprovalSystem.approve_changeset(params)

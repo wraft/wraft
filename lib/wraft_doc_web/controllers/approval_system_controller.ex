@@ -242,12 +242,18 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
   def approve(conn, %{"id" => uuid}) do
     current_user = conn.assigns.current_user
 
-    with %ApprovalSystem{} = approval_system <- Enterprise.get_approval_system(uuid),
+    with %ApprovalSystem{approver: approver, instance: instance, pre_state: pre_state} =
+           approval_system <-
+           Enterprise.get_approval_system(uuid),
+         true <- Enterprise.same_user?(current_user.uuid, approver.uuid),
+         true <- Enterprise.same_state?(pre_state.id, instance.state_id),
          %ApprovalSystem{instance: instance} = approval_system <-
            Enterprise.approve_content(current_user, approval_system),
          %Instance{} = instance <- Document.get_instance(instance.uuid) do
       conn
       |> render("approve.json", approval_system: approval_system, instance: instance)
+    else
+      message -> conn |> put_status(:bad_request) |> render("error.json", message: message)
     end
   end
 end
