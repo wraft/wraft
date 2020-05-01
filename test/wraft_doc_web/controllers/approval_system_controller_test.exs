@@ -168,7 +168,9 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
     state = insert(:state)
     instance = insert(:instance, state: state, creator: current_user, content_type: content_type)
 
-    approval_system = insert(:approval_system, user: current_user, instance: instance)
+    approval_system =
+      insert(:approval_system, approver: current_user, user: current_user, instance: instance)
+
     conn = post(conn, Routes.v1_approval_system_path(conn, :approve), id: approval_system.uuid)
     assert json_response(conn, 200)["approved"] == true
   end
