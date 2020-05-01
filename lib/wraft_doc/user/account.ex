@@ -444,12 +444,16 @@ defmodule WraftDoc.Account do
   @doc """
   Insert auth token without expiry date.
   """
-  def insert_auth_token(current_user, params) do
+  @spec insert_auth_token(User.t(), map) ::
+          {:ok, AuthToken.t()} | {:error, Ecto.Changeset.t()} | nil
+  def insert_auth_token(%User{} = current_user, params) do
     current_user
     |> build_assoc(:auth_tokens)
     |> AuthToken.changeset(params)
     |> Repo.insert()
   end
+
+  def insert_auth_token(_, _), do: nil
 
   @doc """
   Decode and verify the JWT obtained from conn and send an appropriate response.
