@@ -178,4 +178,26 @@ defmodule WraftDoc.DocumentTest do
       assert response == {:error, :invalid}
     end
   end
+
+  describe "update_profile/2" do
+    test "update profile with valid attrs" do
+      profile = insert(:profile, gender: "Female", dob: "1998-04-01")
+      params = %{name: "new name", dob: "1990-01-22", gender: "Male"}
+      profile = Account.update_profile(profile.user, params)
+
+      assert profile.name == "new name"
+      assert profile.user.name == "new name"
+      assert profile.dob == ~D[1990-01-22]
+      assert profile.gender == "Male"
+    end
+
+    test "update profilw with invalid attrs" do
+      profile = insert(:profile)
+      params = %{name: "", dob: "1990", gender: 1}
+      {:error, :profile, changeset, %{}} = Account.update_profile(profile.user, params)
+
+      assert %{name: ["can't be blank"], dob: ["is invalid"], gender: ["is invalid"]} ==
+               errors_on(changeset)
+    end
+  end
 end
