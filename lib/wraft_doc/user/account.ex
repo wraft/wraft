@@ -454,25 +454,4 @@ defmodule WraftDoc.Account do
   end
 
   def insert_auth_token(_, _), do: nil
-
-  @doc """
-  Decode and verify the JWT obtained from conn and send an appropriate response.
-  To decode and verify the token, Guardian provides a `decode_and_verify` function.
-  """
-  def verify_jwt_token(headers) do
-    with {"authorization", "Bearer " <> token} <-
-           headers |> Enum.find(fn {k, _v} -> k == "authorization" end) do
-      Guardian.decode_and_verify(WraftDocWeb.Guardian, token)
-      |> case do
-        {:error, _} ->
-          {:error, :token_expired}
-
-        {:ok, _} ->
-          {:ok, "verified"}
-      end
-    else
-      nil ->
-        {:error, :token_expired}
-    end
-  end
 end
