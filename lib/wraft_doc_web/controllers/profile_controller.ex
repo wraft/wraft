@@ -135,7 +135,9 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
   end
 
   def show_current_profile(conn, _params) do
-    with %Profile{} = profile <- Account.get_current_profile(conn) do
+    current_user = conn.assigns[:current_user]
+
+    with %Profile{} = profile <- Account.get_current_profile(current_user) do
       conn
       |> render("profile.json", profile: profile)
     end
