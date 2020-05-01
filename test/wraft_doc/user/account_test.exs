@@ -269,4 +269,24 @@ defmodule WraftDoc.DocumentTest do
       assert response == nil
     end
   end
+
+  describe "get_user_by_uuid/1" do
+    test "get user when correct UUID is given" do
+      user = insert(:user)
+      response = Account.get_user_by_uuid(user.uuid)
+      refute response == nil
+      assert response.uuid == user.uuid
+      assert response.name == user.name
+    end
+
+    test "return nil when incorrect UUID is given" do
+      response = Account.get_user_by_uuid(Ecto.UUID.generate())
+      assert response == nil
+    end
+
+    test "return nil when non-UUID value is given" do
+      response = Account.get_user_by_uuid(1)
+      assert response == nil
+    end
+  end
 end
