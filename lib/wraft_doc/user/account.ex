@@ -381,15 +381,13 @@ defmodule WraftDoc.Account do
   @spec reset_password(map) :: User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
   def reset_password(%{"token" => token, "password" => _} = params) do
     with %AuthToken{} = auth_token <- check_token(token) do
-      user =
-        Repo.get_by(User, email: auth_token.user.email)
-        |> User.password_changeset(params)
-
-      case Repo.update(user) do
+      Repo.get_by(User, email: auth_token.user.email)
+      |> do_update_password(params)
+      |> case do
         changeset = {:error, _} ->
           changeset
 
-        {:ok, user_struct} ->
+        %User{} = user_struct ->
           Repo.delete!(auth_token)
           user_struct
       end
