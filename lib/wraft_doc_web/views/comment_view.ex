@@ -10,6 +10,8 @@ defmodule WraftDocWeb.Api.V1.CommentView do
       parent_id: comment.parent_id,
       master: comment.master,
       master_id: comment.master_id,
+      user_name: comment.user_name,
+      profile_pic: comment.profile_pic,
       inserted_at: comment.inserted_at,
       updated_at: comment.updated_at
     }
