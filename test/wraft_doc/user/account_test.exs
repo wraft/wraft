@@ -328,4 +328,38 @@ defmodule WraftDoc.DocumentTest do
       assert response == {:error, :invalid_email}
     end
   end
+
+  describe "check_token/1" do
+    test "test when valid token is given" do
+      user = insert(:user)
+      auth_token = Account.create_token(%{"email" => user.email})
+      response = Account.check_token(auth_token.value)
+      assert response.value == auth_token.value
+      assert response.token_type == auth_token.token_type
+      assert response.expiry_datetime == auth_token.expiry_datetime
+      assert response.user_id == auth_token.user_id
+    end
+
+    test "test when invalid token is given" do
+      value = Phoenix.Token.sign(WraftDocWeb.Endpoint, "invalid", "email") |> Base.url_encode64()
+      auth_token = insert(:auth_token, value: value, token_type: "password_verify")
+      response = Account.check_token(auth_token.value)
+      assert response == {:error, :fake}
+    end
+
+    test "test when expired token is given" do
+      value =
+        Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", "email", signed_at: -861)
+        |> Base.url_encode64()
+
+      auth_token = insert(:auth_token, value: value, token_type: "password_verify")
+      response = Account.check_token(auth_token.value)
+      assert response == {:error, :expired}
+    end
+
+    test "test when token does not exist" do
+      response = Account.check_token("invalid token")
+      assert response == {:error, :fake}
+    end
+  end
 end
