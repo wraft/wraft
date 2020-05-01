@@ -322,7 +322,7 @@ defmodule WraftDoc.Account do
   def create_token(%{"email" => email}) do
     email = email |> String.downcase()
 
-    with %User{} = current_user <- Repo.get_by(User, email: email) do
+    with %User{} = current_user <- get_user_by_email(email) do
       delete_token(current_user.id, "password_verify")
       token = Phoenix.Token.sign(Endpoint, "reset", current_user.email) |> Base.url_encode64()
       new_params = %{value: token, token_type: "password_verify"}
@@ -336,6 +336,8 @@ defmodule WraftDoc.Account do
         {:error, :invalid_email}
     end
   end
+
+  def create_token(_), do: {:error, :invalid_email}
 
   @doc """
   Validate the password reset link, ie; token in the link to verify and
