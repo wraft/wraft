@@ -236,27 +236,25 @@ defmodule WraftDoc.EnterpriseTest do
     assert approval_system.instance.uuid == d_approval_system.instance.uuid
   end
 
-  # require IEx
+  test "approve content changes the state of instace from pre state to post state" do
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user)
+    state = insert(:state, creator: user, flow: content_type.flow)
+    instance = insert(:instance, content_type: content_type, creator: user, state: state)
+    post_state = insert(:state, flow: content_type.flow, creator: user)
 
-  # test "approve content changes the state of instace from pre state to post state" do
-  #   user = insert(:user)
-  #   content_type = insert(:content_type, creator: user)
-  #   state = insert(:state, creator: user, flow: content_type.flow)
-  #   instance = insert(:instance, content_type: content_type, creator: user, state: state)
-  #   post_state = insert(:state, flow: content_type.flow, creator: user)
+    approval_system =
+      insert(:approval_system,
+        user: user,
+        instance: instance,
+        pre_state: state,
+        post_state: post_state
+      )
 
-  #   approval_system =
-  #     insert(:approval_system,
-  #       user: user,
-  #       instance: instance,
-  #       pre_state: state,
-  #       post_state: post_state
-  #     )
+    approved = Enterprise.approve_content(user, approval_system)
 
-  #   approved = Enterprise.approve_content(user, approval_system)
-
-  #   assert approval_system.post_state.id == approved.instance.state_id
-  # end
+    assert approval_system.post_state.id == approved.instance.state_id
+  end
 
   test "check permission grand a permission for admin user to enter any organisation" do
     role = insert(:role, name: "admin")
