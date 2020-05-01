@@ -389,4 +389,34 @@ defmodule WraftDoc.DocumentTest do
       assert response == {:error, :fake}
     end
   end
+
+  describe "update_password/2" do
+    test "updates password with valid attrs" do
+      user = insert(:user)
+      params = %{"current_password" => "encrypt", "password" => "newpassword"}
+      updated_user = Account.update_password(user, params)
+      assert Bcrypt.verify_pass("newpassword", updated_user.encrypted_password) == true
+    end
+
+    test "does not update with invalid attrs" do
+      user = insert(:user)
+      params = %{"current_password" => "encrypt", "password" => "invalid"}
+      {:error, changeset} = Account.update_password(user, params)
+      assert %{password: ["should be at least 8 character(s)"]} == errors_on(changeset)
+    end
+
+    test "does not update with wrong current password" do
+      user = insert(:user)
+      params = %{"current_password" => "wrongcurrentpassword"}
+      response = Account.update_password(user, params)
+      assert response == {:error, :invalid_password}
+    end
+
+    test "does not update with same password" do
+      user = insert(:user)
+      params = %{"current_password" => "encrypt", "password" => "encrypt"}
+      response = Account.update_password(user, params)
+      assert response == {:error, :same_password}
+    end
+  end
 end
