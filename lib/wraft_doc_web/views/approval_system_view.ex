@@ -1,6 +1,5 @@
 defmodule WraftDocWeb.Api.V1.ApprovalSystemView do
   use WraftDocWeb, :view
-  alias __MODULE__
 
   def render("approval_system.json", %{approval_system: approval_system}) do
     %{

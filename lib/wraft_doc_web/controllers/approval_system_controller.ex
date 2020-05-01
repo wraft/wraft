@@ -8,10 +8,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
     Enterprise,
     Enterprise.ApprovalSystem,
     Document,
-    Account,
-    Account.User,
-    Document.Instance,
-    Enterprise.Flow.State
+    Document.Instance
   }
 
   def swagger_definitions do

@@ -88,6 +88,10 @@ defmodule WraftDoc.Account do
             {:error, :no_permission}
         end
 
+      # When token is valid, but encoded data is not what we expected
+      {:ok, _} ->
+        {:error, :no_permission}
+
       {:error, :invalid} ->
         {:error, :no_permission}
 
@@ -99,7 +103,9 @@ defmodule WraftDoc.Account do
   # This is for test purpose.
   # Should return an error once the product is deployed in production
   def get_organisation_from_token(_) do
-    Repo.get_by(Organisation, name: "Functionary Labs Pvt Ltd.")
+    # Repo.get_by(Organisation, name: "Functionary Labs Pvt Ltd.")
+    # {:error, :not_found}
+    nil
   end
 
   @doc """
@@ -131,7 +137,7 @@ defmodule WraftDoc.Account do
   @doc """
     Authenticate user and generate token.
   """
-  @spec authenticate(%{user: User.t(), password: binary | nil}) ::
+  @spec authenticate(%{user: User.t(), password: binary}) ::
           {:error, atom} | {:ok, Guardian.Token.token(), Guardian.Token.claims()}
   def authenticate(%{user: _, password: ""}), do: {:error, :no_data}
   def authenticate(%{user: _, password: nil}), do: {:error, :no_data}
@@ -146,10 +152,7 @@ defmodule WraftDoc.Account do
     end
   end
 
-  def update_profile(conn, params) do
-    current_user_id = conn.assigns.current_user.id
-    current_user = conn.assigns.current_user
-
+  def update_profile(%{id: current_user_id} = current_user, params) do
     profile =
       Profile
       |> Repo.get_by(user_id: current_user_id)
@@ -172,31 +175,35 @@ defmodule WraftDoc.Account do
   @doc """
   Get profile by uuid
   """
-  @spec get_profile(String.t()) :: Profile.t()
-  def get_profile(id) do
+  @spec get_profile(Ecto.UUID.t()) :: Profile.t() | nil
+  def get_profile(<<_::288>> = id) do
     Profile |> Repo.get_by(uuid: id) |> Repo.preload(:user) |> Repo.preload(:country)
   end
 
-  @doc """
-  Get current profile by Plug.conn
-  """
-  @spec get_current_profile(Plug.Conn.t()) :: Profile.t()
-  def get_current_profile(conn) do
-    current_user_id = conn.assigns.current_user.id
+  def get_profile(_id), do: nil
 
+  @doc """
+  Get the profile of given user.
+  """
+  @spec get_current_profile(User.t()) :: Profile.t()
+  def get_current_profile(%User{id: id}) do
     Profile
-    |> Repo.get_by(user_id: current_user_id)
+    |> Repo.get_by(user_id: id)
     |> Repo.preload(:user)
     |> Repo.preload(:country)
   end
 
+  def get_current_profile(_), do: nil
+
   @doc """
   Delete Profile
   """
-
-  def delete_profile(profile) do
+  @spec delete_profile(Profile.t()) :: {:ok, Profile.t()} | nil
+  def delete_profile(%Profile{} = profile) do
     profile |> Repo.delete()
   end
+
+  def delete_profile(_), do: nil
 
   # Get the role struct from given role name
   @spec get_role(binary) :: Role.t()
@@ -209,17 +216,22 @@ defmodule WraftDoc.Account do
   @doc """
   Get a role type from its UUID.
   """
-  @spec get_role_from_uuid(binary) :: Role.t()
-  def get_role_from_uuid(uuid) do
+  @spec get_role_from_uuid(Ecto.UUID.t()) :: Role.t() | nil
+  def get_role_from_uuid(<<_::288>> = uuid) when is_binary(uuid) do
     Repo.get_by(Role, uuid: uuid)
   end
+
+  def get_role_from_uuid(_id), do: nil
 
   @doc """
   Get a user from its UUID.
   """
-  def get_user_by_uuid(uuid) do
+  @spec get_user_by_uuid(Ecto.UUID.t()) :: User.t() | nil
+  def get_user_by_uuid(<<_::288>> = uuid) when is_binary(uuid) do
     Repo.get_by(User, uuid: uuid)
   end
+
+  def get_user_by_uuid(_), do: nil
 
   @spec get_user(integer() | String.t()) :: User.t() | nil
   defp get_user(id) do
@@ -239,6 +251,8 @@ defmodule WraftDoc.Account do
   @doc """
   Get the activity stream for current user.
   """
+
+  # => No test written
   @spec get_activity_stream(User.t(), map) :: map
   def get_activity_stream(%User{id: id}, params) do
     from(a in Spur.Activity,
@@ -308,7 +322,7 @@ defmodule WraftDoc.Account do
   def create_token(%{"email" => email}) do
     email = email |> String.downcase()
 
-    with %User{} = current_user <- Repo.get_by(User, email: email) do
+    with %User{} = current_user <- get_user_by_email(email) do
       delete_token(current_user.id, "password_verify")
       token = Phoenix.Token.sign(Endpoint, "reset", current_user.email) |> Base.url_encode64()
       new_params = %{value: token, token_type: "password_verify"}
@@ -322,6 +336,8 @@ defmodule WraftDoc.Account do
         {:error, :invalid_email}
     end
   end
+
+  def create_token(_), do: {:error, :invalid_email}
 
   @doc """
   Validate the password reset link, ie; token in the link to verify and
@@ -362,17 +378,16 @@ defmodule WraftDoc.Account do
   delete the password reset token.
   """
 
-  def reset_password(params = %{"token" => token, "password" => _}) do
+  @spec reset_password(map) :: User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
+  def reset_password(%{"token" => token, "password" => _} = params) do
     with %AuthToken{} = auth_token <- check_token(token) do
-      user =
-        Repo.get_by(User, email: auth_token.user.email)
-        |> User.password_changeset(params)
-
-      case Repo.update(user) do
+      Repo.get_by(User, email: auth_token.user.email)
+      |> do_update_password(params)
+      |> case do
         changeset = {:error, _} ->
           changeset
 
-        {:ok, user_struct} ->
+        %User{} = user_struct ->
           Repo.delete!(auth_token)
           user_struct
       end
@@ -386,10 +401,9 @@ defmodule WraftDoc.Account do
   Update the password of the current user after verifying the
   old password.
   """
-  def update_password(conn, params) do
-    user = conn.assigns.current_user
-
-    case Comeonin.Bcrypt.checkpw(params["current_password"], user.encrypted_password) do
+  @spec update_password(User.t(), map) :: User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
+  def update_password(user, params) do
+    case Bcrypt.verify_pass(params["current_password"], user.encrypted_password) do
       true ->
         check_and_update_password(user, params)
 
@@ -401,54 +415,43 @@ defmodule WraftDoc.Account do
   @doc """
   Update the password if the new one is not same as the previous one.
   """
+  @spec check_and_update_password(User.t(), map) ::
+          User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
   def check_and_update_password(user, params) do
-    case Comeonin.Bcrypt.checkpw(params["password"], user.encrypted_password) do
+    case Bcrypt.verify_pass(params["password"], user.encrypted_password) do
       true ->
         {:error, :same_password}
 
       _ ->
-        update_changeset =
-          user
-          |> User.password_changeset(params)
+        do_update_password(user, params)
+    end
+  end
 
-        case Repo.update(update_changeset) do
-          changeset = {:error, _} ->
-            changeset
+  @spec do_update_password(User.t(), map) :: User.t() | {:error, Ecto.Changeset.t()}
+  defp do_update_password(user, params) do
+    user
+    |> User.password_changeset(params)
+    |> Repo.update()
+    |> case do
+      changeset = {:error, _} ->
+        changeset
 
-          {:ok, user_struct} ->
-            user_struct
-        end
+      {:ok, user_struct} ->
+        user_struct
     end
   end
 
   @doc """
   Insert auth token without expiry date.
   """
-  def insert_auth_token(current_user, params) do
+  @spec insert_auth_token(User.t(), map) ::
+          {:ok, AuthToken.t()} | {:error, Ecto.Changeset.t()} | nil
+  def insert_auth_token(%User{} = current_user, params) do
     current_user
     |> build_assoc(:auth_tokens)
     |> AuthToken.changeset(params)
     |> Repo.insert()
   end
 
-  @doc """
-  Decode and verify the JWT obtained from conn and send an appropriate response.
-  To decode and verify the token, Guardian provides a `decode_and_verify` function.
-  """
-  def verify_jwt_token(headers) do
-    with {"authorization", "Bearer " <> token} <-
-           headers |> Enum.find(fn {k, _v} -> k == "authorization" end) do
-      Guardian.decode_and_verify(WraftDocWeb.Guardian, token)
-      |> case do
-        {:error, _} ->
-          {:error, :token_expired}
-
-        {:ok, _} ->
-          {:ok, "verified"}
-      end
-    else
-      nil ->
-        {:error, :token_expired}
-    end
-  end
+  def insert_auth_token(_, _), do: nil
 end
