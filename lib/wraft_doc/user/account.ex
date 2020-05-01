@@ -378,7 +378,8 @@ defmodule WraftDoc.Account do
   delete the password reset token.
   """
 
-  def reset_password(params = %{"token" => token, "password" => _}) do
+  @spec reset_password(map) :: User.t() | Ecto.Changeset.t() | {:error, atom}
+  def reset_password(%{"token" => token, "password" => _} = params) do
     with %AuthToken{} = auth_token <- check_token(token) do
       user =
         Repo.get_by(User, email: auth_token.user.email)

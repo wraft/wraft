@@ -362,4 +362,31 @@ defmodule WraftDoc.DocumentTest do
       assert response == {:error, :fake}
     end
   end
+
+  describe "reset_password/1" do
+    test "update user password when valid token and password are given" do
+      user = insert(:user)
+      auth_token = Account.create_token(%{"email" => user.email})
+      params = %{"token" => auth_token.value, "password" => "newpassword"}
+      updated_user = Account.reset_password(params)
+      assert Bcrypt.verify_pass("newpassword", updated_user.encrypted_password) == true
+    end
+
+    test "does not update user password when password is not valid" do
+      user = insert(:user)
+      auth_token = Account.create_token(%{"email" => user.email})
+      params = %{"token" => auth_token.value, "password" => "invalid"}
+      {:error, changeset} = Account.reset_password(params)
+      assert %{password: ["should be at least 8 character(s)"]} == errors_on(changeset)
+    end
+
+    test "return error when token is invalid" do
+      user = insert(:user)
+      value = Phoenix.Token.sign(WraftDocWeb.Endpoint, "invalid", "email") |> Base.url_encode64()
+      auth_token = insert(:auth_token, value: value, token_type: "password_verify")
+      params = %{"token" => auth_token.value, "password" => "newpassword"}
+      response = Account.reset_password(params)
+      assert response == {:error, :fake}
+    end
+  end
 end
