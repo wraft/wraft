@@ -235,4 +235,19 @@ defmodule WraftDoc.DocumentTest do
       assert response == nil
     end
   end
+
+  describe "delete_profile/1" do
+    test "successfully delete profile when profile struct is given" do
+      profile = insert(:profile)
+      {:ok, deleted_profile} = Account.delete_profile(profile)
+      fetched_deleted_profile = Account.get_profile(profile.uuid)
+      assert deleted_profile.uuid == profile.uuid
+      assert fetched_deleted_profile == nil
+    end
+
+    test "return nil when given value is not a profile struct" do
+      response = Account.delete_profile(1)
+      assert response == nil
+    end
+  end
 end

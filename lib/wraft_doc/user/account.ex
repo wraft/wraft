@@ -198,10 +198,12 @@ defmodule WraftDoc.Account do
   @doc """
   Delete Profile
   """
-
-  def delete_profile(profile) do
+  @spec delete_profile(Profile.t()) :: {:ok, Profile.t()} | nil
+  def delete_profile(%Profile{} = profile) do
     profile |> Repo.delete()
   end
+
+  def delete_profile(_), do: nil
 
   # Get the role struct from given role name
   @spec get_role(binary) :: Role.t()
