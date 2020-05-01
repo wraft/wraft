@@ -175,8 +175,8 @@ defmodule WraftDoc.Account do
   @doc """
   Get profile by uuid
   """
-  @spec get_profile(String.t()) :: Profile.t() | nil
-  def get_profile(id) when is_binary(id) do
+  @spec get_profile(Ecto.UUID.t()) :: Profile.t() | nil
+  def get_profile(<<_::288>> = id) do
     Profile |> Repo.get_by(uuid: id) |> Repo.preload(:user) |> Repo.preload(:country)
   end
 
@@ -216,8 +216,8 @@ defmodule WraftDoc.Account do
   @doc """
   Get a role type from its UUID.
   """
-  @spec get_role_from_uuid(binary) :: Role.t()
-  def get_role_from_uuid(uuid) when is_binary(uuid) do
+  @spec get_role_from_uuid(Ecto.UUID.t()) :: Role.t() | nil
+  def get_role_from_uuid(<<_::288>> = uuid) when is_binary(uuid) do
     Repo.get_by(Role, uuid: uuid)
   end
 
@@ -226,9 +226,12 @@ defmodule WraftDoc.Account do
   @doc """
   Get a user from its UUID.
   """
-  def get_user_by_uuid(uuid) do
+  @spec get_user_by_uuid(Ecto.UUID.t()) :: User.t() | nil
+  def get_user_by_uuid(<<_::288>> = uuid) when is_binary(uuid) do
     Repo.get_by(User, uuid: uuid)
   end
+
+  def get_user_by_uuid(_), do: nil
 
   @spec get_user(integer() | String.t()) :: User.t() | nil
   defp get_user(id) do
