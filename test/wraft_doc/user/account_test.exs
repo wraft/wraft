@@ -308,4 +308,24 @@ defmodule WraftDoc.DocumentTest do
       assert response == :ok
     end
   end
+
+  describe "create_token/1" do
+    test "create token when the email of a valid user is given" do
+      user = insert(:user)
+      token = Account.create_token(%{"email" => user.email})
+      refute token.value == nil
+      assert token.user.email == user.email
+      assert token.token_type == "password_verify"
+    end
+
+    test "return error when the email given is not of valid user" do
+      response = Account.create_token(%{"email" => "testamail@xyz.com"})
+      assert response == {:error, :invalid_email}
+    end
+
+    test "return error for invalid attrs" do
+      response = Account.create_token(%{})
+      assert response == {:error, :invalid_email}
+    end
+  end
 end
