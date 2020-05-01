@@ -442,4 +442,33 @@ defmodule WraftDoc.DocumentTest do
       assert response == {:error, :same_password}
     end
   end
+
+  describe "insert_auth_token/2" do
+    test "insert auth token with valid attrs" do
+      user = insert(:user)
+      params = %{value: "token", token_type: "password_verify"}
+      {:ok, auth_token} = Account.insert_auth_token(user, params)
+
+      refute auth_token.uuid == nil
+      assert auth_token.value == "token"
+      assert auth_token.token_type == "password_verify"
+      assert auth_token.expiry_datetime == nil
+    end
+
+    test "return error with invalid attrs" do
+      user = insert(:user)
+      params = %{value: "token", token_type: "password_verify"}
+      {:ok, auth_token} = Account.insert_auth_token(user, params)
+
+      refute auth_token.uuid == nil
+      assert auth_token.value == "token"
+      assert auth_token.token_type == "password_verify"
+      assert auth_token.expiry_datetime == nil
+    end
+
+    test "return error when first argument is not a user struct" do
+      response = Account.insert_auth_token(nil, %{})
+      assert response == nil
+    end
+  end
 end
