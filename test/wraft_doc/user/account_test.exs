@@ -1,7 +1,7 @@
 defmodule WraftDoc.DocumentTest do
   use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
-  alias WraftDoc.Account
+  alias WraftDoc.{Repo, Account, Account.AuthToken}
   alias WraftDocWeb.Endpoint
 
   @valid_attrs %{
@@ -287,6 +287,25 @@ defmodule WraftDoc.DocumentTest do
     test "return nil when non-UUID value is given" do
       response = Account.get_user_by_uuid(1)
       assert response == nil
+    end
+  end
+
+  describe "delete_token/2" do
+    test "deletes all tokens of a user under the given token type" do
+      user = insert(:user)
+      token1 = insert(:auth_token, token_type: "test_token", user: user)
+      token2 = insert(:auth_token, token_type: "test_token", user: user)
+      count_before = Repo.all(AuthToken) |> length()
+      response = Account.delete_token(user.id, "test_token")
+      count_after = Repo.all(AuthToken) |> length()
+      assert count_after == count_before - 2
+      assert response == :ok
+    end
+
+    test "returns :ok and do not raise even if no tokens matching the user Id and token type exist to delete" do
+      user = insert(:user)
+      response = Account.delete_token(user.id, "test_token")
+      assert response == :ok
     end
   end
 end
