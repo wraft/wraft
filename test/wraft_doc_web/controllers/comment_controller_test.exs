@@ -15,6 +15,8 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
   setup %{conn: conn} do
     role = insert(:role, name: "admin")
     user = insert(:user, role: role)
+    insert(:profile, user: user)
+    user = user |> Repo.preload([:profile])
 
     conn =
       conn
@@ -65,7 +67,8 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
   end
 
   test "update comments on valid attributes", %{conn: conn} do
-    comment = insert(:comment)
+    current_user = conn.assigns[:current_user]
+    comment = insert(:comment, user: current_user)
 
     conn =
       build_conn()
@@ -121,7 +124,8 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
   end
 
   test "show renders comment details by id", %{conn: conn} do
-    comment = insert(:comment)
+    current_user = conn.assigns[:current_user]
+    comment = insert(:comment, user: current_user)
 
     conn =
       build_conn()

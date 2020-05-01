@@ -457,14 +457,17 @@ defmodule WraftDoc.Enterprise do
     Document.update_instance_state(current_user, instance, post_state)
 
     proceed_approval(approval_system)
-    |> Repo.preload([
-      :instance,
-      :pre_state,
-      :post_state,
-      :approver,
-      :user,
-      :organisation
-    ])
+    |> Repo.preload(
+      [
+        :instance,
+        :pre_state,
+        :post_state,
+        :approver,
+        :user,
+        :organisation
+      ],
+      force: true
+    )
   end
 
   # Proceed approval make the status of approval system as approved
