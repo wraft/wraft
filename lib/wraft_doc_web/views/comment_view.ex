@@ -2,10 +2,10 @@ defmodule WraftDocWeb.Api.V1.CommentView do
   use WraftDocWeb, :view
   alias __MODULE__
   alias WraftDocWeb.Api.V1.ProfileView
+  alias WraftDocWeb.Api.V1.UserView
+  require IEx
 
   def render("comment.json", %{comment: comment}) do
-    profile_pic = ProfileView.generate_url(comment.user.profile)
-
     %{
       id: comment.uuid,
       comment: comment.comment,
@@ -13,8 +13,8 @@ defmodule WraftDocWeb.Api.V1.CommentView do
       parent_id: comment.parent_id,
       master: comment.master,
       master_id: comment.master_id,
-      user_name: comment.user.name,
-      profile_pic: profile_pic,
+      user: render_one(comment.user, UserView, "user.json", as: :user),
+      profile: render_one(comment.user.profile, ProfileView, "base_profile.json", as: :profile),
       inserted_at: comment.inserted_at,
       updated_at: comment.updated_at
     }
