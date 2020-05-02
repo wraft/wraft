@@ -21,6 +21,16 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
     }
   end
 
+  def render("base_profile.json", %{profile: profile}) do
+    %{
+      uuid: profile.uuid,
+      name: profile.name,
+      dob: profile.dob,
+      gender: profile.gender,
+      profile_pic: profile |> generate_url()
+    }
+  end
+
   def generate_url(%{profile_pic: pic} = profile) do
     WraftDocWeb.PropicUploader.url({pic, profile})
   end
