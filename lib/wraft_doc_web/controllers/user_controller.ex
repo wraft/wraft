@@ -387,7 +387,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, params) do
-    with %User{} = user <- Account.update_password(conn, params) do
+    current_user = conn.assigns.current_user
+
+    with %User{} = user <- Account.update_password(current_user, params) do
       conn
       |> render("user.json", user: user)
     end

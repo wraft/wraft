@@ -29,7 +29,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name: "Offer letter",
             description: "An offer letter",
             fields: [
-              %{key: "position", field_type_id: "kjb14713132lkdac"},
+              %{
+                key: "position",
+                field_type_id: "kjb14713132lkdac",
+                meta: %{"src" => "/img/img.png", "alt" => "Image"},
+                description: "a text input"
+              },
               %{key: "name", field_type_id: "kjb2347mnsad"}
             ],
             layout_uuid: "1232148nb3478",
@@ -46,11 +51,15 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           properties do
             key(:string, "Name of the field")
             field_type_id(:string, "ID of the field type")
+            meta(:map, "Attributes of the field")
+            description(:string, "Field description")
           end
 
           example(%{
             key: "position",
-            field_type_id: "asdlkne4781234123clk"
+            field_type_id: "asdlkne4781234123clk",
+            meta: %{"src" => "/img/img.png", "alt" => "Image"},
+            descrtiption: "text input"
           })
         end,
       ContentTypeField:
@@ -61,12 +70,14 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           properties do
             id(:string, "ID of content type field")
             name(:string, "Name of content type field")
+            meta(:map, "Attributes of the field")
             field_type(Schema.ref(:FieldType))
           end
 
           example(%{
             key: "position",
-            field_type_id: "asdlkne4781234123clk"
+            field_type_id: "asdlkne4781234123clk",
+            meta: %{"src" => "/img/img.png", "alt" => "Image"}
           })
         end,
       ContentTypeFields:
@@ -104,8 +115,16 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name: "Offer letter",
             description: "An offer letter",
             fields: [
-              %{key: "position", field_type_id: "kjb14713132lkdac"},
-              %{key: "name", field_type_id: "kjb2347mnsad"}
+              %{
+                key: "position",
+                field_type_id: "kjb14713132lkdac",
+                meta: %{"src" => "/img/img.png", "alt" => "Image"}
+              },
+              %{
+                key: "name",
+                field_type_id: "kjb2347mnsad",
+                meta: %{"src" => "/img/img.png", "alt" => "Image"}
+              }
             ],
             prefix: "OFFLET",
             color: "#fffff",
