@@ -8,10 +8,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
     Enterprise,
     Enterprise.ApprovalSystem,
     Document,
-    Account,
-    Account.User,
-    Document.Instance,
-    Enterprise.Flow.State
+    Document.Instance
   }
 
   def swagger_definitions do
@@ -35,30 +32,91 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
             approver_id: "03asdfasfd00f032as"
           })
         end,
+      Instance:
+        swagger_schema do
+          title("Instance")
+          description("Approved instance")
+
+          properties do
+            id(:string, "Instance id to approve")
+          end
+        end,
+      State:
+        swagger_schema do
+          title("State")
+          description("States of content")
+
+          properties do
+            id(:string, "States id")
+            state(:string, "State of the content")
+          end
+        end,
+      Approver:
+        swagger_schema do
+          title("Approver")
+          description("Approver of the content")
+
+          properties do
+            id(:string, "Approvers id")
+            name(:string, "Name of the approver")
+          end
+        end,
+      ApprovedInstance:
+        swagger_schema do
+          title("Approved instance")
+          description("Content approved by approver")
+
+          properties do
+            id(:string, "Instance id")
+            state_id(:string, "State id")
+            state(:string, "Current State")
+          end
+        end,
       ApprovalSystem:
         swagger_schema do
           title("ApprovalSystem")
           description("A ApprovalSystem")
 
           properties do
-            instance_id(:string, "The id of instance to approve", required: true)
-            pre_state_id(:string, "The Prirmary state id", required: true)
-            post_state_id(:string, "The state to change by approval", required: true)
-            approver_id(:string, "The id of approver", required: true)
+            instance(Schema.ref(:Instance))
+            pre_state(Schema.ref(:State))
+            post_state(Schema.ref(:State))
+            approver(Schema.ref(:Approver))
 
             inserted_at(:string, "When was the approval_system inserted", format: "ISO-8601")
             updated_at(:string, "When was the approval_system last updated", format: "ISO-8601")
           end
 
           example(%{
-            instance: "0sdf21d12sdfdfdf",
-            pre_state_id: "0sdffsafdsaf21f1ds21",
-            post_state_id: "33sdf0a3sf0d300sad",
-            approver_id: "03asdfasfd00f0302as",
-            user: "03sdfadsfa30sdf",
-            organisation: "020sdf20s2a0f2",
+            instance: %{id: "0sdf21d12sdfdfdf"},
+            pre_state: %{id: "0sdffsafdsaf21f1ds21", state: "Draft"},
+            post_state: %{id: "33sdf0a3sf0d300sad", state: "Publish"},
+            approver: %{id: "03asdfasfd00f0302as", name: "Approver"},
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
+      Approved:
+        swagger_schema do
+          title("Approve content")
+          description("To approve a content")
+
+          properties do
+            instance(Schema.ref(:ApprovedInstance))
+            pre_state(Schema.ref(:State))
+            post_stae(Schema.ref(:State))
+            approved(:boolean, "The system has been approved")
+          end
+
+          example(%{
+            instance: %{
+              id: "3adfafd12a1fsd561a1df",
+              stete_id: "2a2ds3fads3f2sd66s2adf6",
+              state: "Publish"
+            },
+            pre_state: %{id: "sdfasdf32ds6f2as6f262saf62", state: "Draft"},
+            post_state: %{id: "dsadsffasdfsfasdff2asdf32f", state: "Publish"},
+            approved: true
           })
         end
     }
@@ -175,7 +233,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
       id(:query, :string, "approval_system id", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:ApprovalSystem))
+    response(200, "Ok", Schema.ref(:Approved))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(400, "Bad Request", Schema.ref(:Error))
@@ -184,12 +242,18 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
   def approve(conn, %{"id" => uuid}) do
     current_user = conn.assigns.current_user
 
-    with %ApprovalSystem{} = approval_system <- Enterprise.get_approval_system(uuid),
+    with %ApprovalSystem{approver: approver, instance: instance, pre_state: pre_state} =
+           approval_system <-
+           Enterprise.get_approval_system(uuid),
+         true <- Enterprise.same_user?(current_user.uuid, approver.uuid),
+         true <- Enterprise.same_state?(pre_state.id, instance.state_id),
          %ApprovalSystem{instance: instance} = approval_system <-
            Enterprise.approve_content(current_user, approval_system),
          %Instance{} = instance <- Document.get_instance(instance.uuid) do
       conn
       |> render("approve.json", approval_system: approval_system, instance: instance)
+    else
+      message -> conn |> put_status(:bad_request) |> render("error.json", message: message)
     end
   end
 end

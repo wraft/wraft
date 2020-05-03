@@ -6,6 +6,7 @@ defmodule WraftDoc.Factory do
     Account.Country,
     Account.Role,
     Account.Profile,
+    Account.AuthToken,
     Document.ContentType,
     Document.Block,
     Document.Instance.History,
@@ -30,7 +31,7 @@ defmodule WraftDoc.Factory do
 
   def user_factory do
     %User{
-      name: sequence(:name, &"wrafts user-#{&1}"),
+      name: "wrafts user",
       email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
@@ -57,7 +58,7 @@ defmodule WraftDoc.Factory do
   def profile_factory do
     %Profile{
       name: "admin@wraftdocs",
-      dob: Timex.shift(Timex.now(), years: 27),
+      dob: Timex.shift(Timex.now(), years: -27),
       gender: "male",
       user: build(:user, name: "admin@wraftdocs")
     }
@@ -177,7 +178,11 @@ defmodule WraftDoc.Factory do
   end
 
   def flow_factory do
-    %Flow{name: sequence(:name, &"flow-#{&1}"), organisation: build(:organisation)}
+    %Flow{
+      name: sequence(:name, &"flow-#{&1}"),
+      organisation: build(:organisation),
+      creator: build(:user)
+    }
   end
 
   def contry_factory do
@@ -273,6 +278,15 @@ defmodule WraftDoc.Factory do
     %Counter{
       subject: sequence(:subject, &"Subject:#{&1}"),
       count: Enum.random(1..100)
+    }
+  end
+
+  def auth_token_factory do
+    %AuthToken{
+      value: "token",
+      token_type: "token",
+      expiry_datetime: Timex.shift(Timex.now(), days: 1),
+      user: build(:user)
     }
   end
 end

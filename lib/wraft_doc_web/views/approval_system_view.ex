@@ -1,6 +1,5 @@
 defmodule WraftDocWeb.Api.V1.ApprovalSystemView do
   use WraftDocWeb, :view
-  alias __MODULE__
 
   def render("approval_system.json", %{approval_system: approval_system}) do
     %{
@@ -23,6 +22,13 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemView do
       pre_state: %{id: approval_system.pre_state.uuid, state: approval_system.pre_state.state},
       post_state: %{id: approval_system.post_state.uuid, state: approval_system.post_state.state},
       approved: approval_system.approved
+    }
+  end
+
+  def render("error.json", %{message: message}) do
+    %{
+      status: false,
+      message: message
     }
   end
 end
