@@ -62,4 +62,21 @@ defmodule WraftDocWeb.Worker.BulkWorker do
     IO.puts("Job end.!")
     :ok
   end
+
+  def perform(%{"user_uuid" => user_uuid, "mapping" => mapping, "file" => path}, %{
+        tags: ["block template"]
+      }) do
+    IO.puts("Job starting..")
+    mapping = mapping |> convert_to_map()
+    current_user = Account.get_user_by_uuid(user_uuid)
+    Document.block_template_bulk_insert(current_user, mapping, path)
+    IO.puts("Job end.!")
+    :ok
+  end
+
+  defp convert_to_map(mapping) when is_map(mapping), do: mapping
+
+  defp convert_to_map(mapping) when is_binary(mapping) do
+    mapping |> Jason.decode!()
+  end
 end

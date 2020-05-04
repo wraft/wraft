@@ -1282,6 +1282,28 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+  Creates a background job for block template bulk import.
+  """
+  @spec insert_block_template_bulk_import_work(binary, map, Plug.Uploap.t()) ::
+          {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
+  def insert_block_template_bulk_import_work(user_uuid, mapping, %Plug.Upload{
+        filename: filename,
+        path: path
+      }) do
+    File.mkdir_p("temp/bulk_import_source/b_template")
+    dest_path = "temp/bulk_import_source/b_template/#{filename}"
+    System.cmd("cp", [path, dest_path])
+
+    %{
+      user_uuid: user_uuid,
+      mapping: mapping,
+      file: dest_path
+    }
+    |> WraftDocWeb.Worker.BulkWorker.new(tags: ["block template"])
+    |> Oban.insert()
+  end
+
+  @doc """
   Bulk build function.
   """
   @spec bulk_doc_build(User.t(), ContentType.t(), State.t(), DataTemplate.t(), map, String.t()) ::
@@ -1425,6 +1447,39 @@ defmodule WraftDoc.Document do
   defp bulk_d_temp_creation(data, user, c_type, mapping) do
     params = data |> update_keys(mapping)
     create_data_template(user, c_type, params)
+  end
+
+  @doc """
+  Creates block templates in bulk from the file given.
+  """
+  @spec block_template_bulk_insert(User.t(), map, String.t()) ::
+          [{:ok, BlockTemplate.t()}] | {:error, :not_found}
+  def block_template_bulk_insert(%User{} = current_user, mapping, path) do
+    mapping_keys = mapping |> Map.keys()
+
+    path
+    |> decode_csv(mapping_keys)
+    |> Stream.map(fn x -> bulk_b_temp_creation(x, current_user, mapping) end)
+    |> Enum.to_list()
+  end
+
+  def block_template_bulk_insert(_, _, _), do: {:error, :not_found}
+
+  # Decode the given CSV file using the headers values
+  # First argument is the path of the file
+  # Second argument is the headers.
+  @spec decode_csv(String.t(), list) :: list
+  defp decode_csv(path, mapping_keys) do
+    File.stream!(path)
+    |> Stream.drop(1)
+    |> CSV.decode!(headers: mapping_keys)
+    |> Enum.to_list()
+  end
+
+  @spec bulk_b_temp_creation(map, User.t(), map) :: BlockTemplate.t()
+  defp bulk_b_temp_creation(data, user, mapping) do
+    params = data |> update_keys(mapping)
+    create_block_template(user, params)
   end
 
   def create_block_template(%{organisation_id: org_id} = current_user, params) do
