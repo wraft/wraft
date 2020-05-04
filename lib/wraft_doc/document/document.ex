@@ -1259,6 +1259,29 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+  Create a background job for data template bulk import.
+  """
+  @spec insert_data_template_bulk_import_work(binary, binary, map, Plug.Uploap.t()) ::
+          {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
+  def insert_data_template_bulk_import_work(user_uuid, c_type_uuid, mapping, %Plug.Upload{
+        filename: filename,
+        path: path
+      }) do
+    File.mkdir_p("temp/bulk_import_source/d_template")
+    dest_path = "temp/bulk_import_source/d_template/#{filename}"
+    System.cmd("cp", [path, dest_path])
+
+    %{
+      user_uuid: user_uuid,
+      c_type_uuid: c_type_uuid,
+      mapping: mapping,
+      file: dest_path
+    }
+    |> WraftDocWeb.Worker.BulkWorker.new(tags: ["data template"])
+    |> Oban.insert()
+  end
+
+  @doc """
   Bulk build function.
   """
   @spec bulk_doc_build(User.t(), ContentType.t(), State.t(), DataTemplate.t(), map, String.t()) ::
@@ -1378,6 +1401,30 @@ defmodule WraftDoc.Document do
 
     # keys = mapping |> Map.keys()
     # map |> Map.drop(keys) |> Map.merge(new_map)
+  end
+
+  @doc """
+  Creates data templates in bulk from the file given.
+  """
+  @spec data_template_bulk_insert(User.t(), ContentType.t(), map, String.t()) ::
+          [{:ok, DataTemplate.t()}] | {:error, :not_found}
+  def data_template_bulk_insert(%User{} = current_user, %ContentType{} = c_type, mapping, path) do
+    mapping_keys = mapping |> Map.keys()
+
+    File.stream!(path)
+    |> Stream.drop(1)
+    |> CSV.decode!(headers: mapping_keys)
+    |> Enum.to_list()
+    |> Stream.map(fn x -> bulk_d_temp_creation(x, current_user, c_type, mapping) end)
+    |> Enum.to_list()
+  end
+
+  def data_template_bulk_insert(_, _, _, _), do: {:error, :not_found}
+
+  @spec bulk_d_temp_creation(map, User.t(), ContentType.t(), map) :: {:ok, DataTemplate.t()}
+  defp bulk_d_temp_creation(data, user, c_type, mapping) do
+    params = data |> update_keys(mapping)
+    create_data_template(user, c_type, params)
   end
 
   def create_block_template(%{organisation_id: org_id} = current_user, params) do

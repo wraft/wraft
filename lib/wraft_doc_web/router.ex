@@ -84,6 +84,7 @@ defmodule WraftDocWeb.Router do
 
           # Data template
           resources("/data_templates", DataTemplateController, only: [:create, :index])
+          post("/data_templates/bulk_import", DataTemplateController, :bulk_import)
         end
       end
 
