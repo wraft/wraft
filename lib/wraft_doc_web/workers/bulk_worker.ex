@@ -16,16 +16,7 @@ defmodule WraftDocWeb.Worker.BulkWorker do
       ) do
     IO.puts("Job starting..")
 
-    mapping =
-      mapping
-      |> case do
-        map when is_map(map) ->
-          map
-
-        string when is_binary(string) ->
-          string |> Jason.decode!()
-      end
-
+    mapping = mapping |> convert_to_map()
     current_user = Account.get_user_by_uuid(user_uuid)
     c_type = Document.get_content_type(c_type_uuid)
     state = Enterprise.get_state(state_uuid)
@@ -45,17 +36,7 @@ defmodule WraftDocWeb.Worker.BulkWorker do
         _job
       ) do
     IO.puts("Job starting..")
-
-    mapping =
-      mapping
-      |> case do
-        map when is_map(map) ->
-          map
-
-        string when is_binary(string) ->
-          string |> Jason.decode!()
-      end
-
+    mapping = mapping |> convert_to_map()
     current_user = Account.get_user_by_uuid(user_uuid)
     c_type = Document.get_content_type(c_type_uuid)
     Document.data_template_bulk_insert(current_user, c_type, mapping, path)
