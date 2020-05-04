@@ -1254,8 +1254,7 @@ defmodule WraftDoc.Document do
       mapping: mapping,
       file: dest_path
     }
-    |> WraftDocWeb.Worker.BulkWorker.new()
-    |> Oban.insert()
+    |> create_bulk_job()
   end
 
   @doc """
@@ -1277,8 +1276,7 @@ defmodule WraftDoc.Document do
       mapping: mapping,
       file: dest_path
     }
-    |> WraftDocWeb.Worker.BulkWorker.new(tags: ["data template"])
-    |> Oban.insert()
+    |> create_bulk_job(["data template"])
   end
 
   @doc """
@@ -1299,7 +1297,12 @@ defmodule WraftDoc.Document do
       mapping: mapping,
       file: dest_path
     }
-    |> WraftDocWeb.Worker.BulkWorker.new(tags: ["block template"])
+    |> create_bulk_job(["block template"])
+  end
+
+  defp create_bulk_job(args, tags \\ []) do
+    args
+    |> WraftDocWeb.Worker.BulkWorker.new(tags: tags)
     |> Oban.insert()
   end
 
@@ -1320,10 +1323,8 @@ defmodule WraftDoc.Document do
 
     c_type = c_type |> Repo.preload([{:layout, :assets}])
 
-    File.stream!(path)
-    |> Stream.drop(1)
-    |> CSV.decode!(headers: mapping_keys)
-    |> Enum.to_list()
+    path
+    |> decode_csv(mapping_keys)
     |> Enum.map(fn x ->
       create_instance_params_for_bulk_build(x, d_temp, current_user, c_type, state, mapping)
     end)
@@ -1433,10 +1434,8 @@ defmodule WraftDoc.Document do
   def data_template_bulk_insert(%User{} = current_user, %ContentType{} = c_type, mapping, path) do
     mapping_keys = mapping |> Map.keys()
 
-    File.stream!(path)
-    |> Stream.drop(1)
-    |> CSV.decode!(headers: mapping_keys)
-    |> Enum.to_list()
+    path
+    |> decode_csv(mapping_keys)
     |> Stream.map(fn x -> bulk_d_temp_creation(x, current_user, c_type, mapping) end)
     |> Enum.to_list()
   end
