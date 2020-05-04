@@ -50,4 +50,10 @@ defmodule WraftDocWeb.Api.V1.DataTemplateView do
       creator: render_one(d_temp.creator, UserView, "user.json", as: :user)
     }
   end
+
+  def render("bulk.json", %{}) do
+    %{
+      info: "Data templates will be created soon"
+    }
+  end
 end
