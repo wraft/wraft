@@ -61,8 +61,12 @@ defmodule WraftDocWeb.Router do
       get("/users/me", UserController, :me)
       # Get activity stream for current user user
       get("/activities", UserController, :activity)
+      # Update profile
       put("/profiles", ProfileController, :update)
+      # Show current user's profile
       get("/profiles", ProfileController, :show_current_profile)
+      # Update user password
+      put("/user/password", UserController, :update)
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
       # Delete layout asset
@@ -124,14 +128,16 @@ defmodule WraftDocWeb.Router do
       # build PDF from a content
       post("/contents/:id/build", InstanceController, :build)
 
-      # All instances in an organisation
+      # All data in an organisation
       get("/data_templates", DataTemplateController, :all_templates)
+      # Block templates
+      resources("/block_templates", BlockTemplateController)
 
       # Assets
       resources("/assets", AssetController, only: [:create, :index, :show, :update, :delete])
-      put("/user/password", UserController, :update)
-      resources("/block_templates", BlockTemplateController)
+      # Comments
       resources("/comments", CommentController)
+      # Approval system
       resources("/approval_systems", ApprovalSystemController)
       post("/approval_systems/approve", ApprovalSystemController, :approve)
     end
