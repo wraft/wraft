@@ -375,7 +375,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
          {:ok, %Oban.Job{}} <-
            Document.insert_data_template_bulk_import_work(uuid, c_type_uuid, mapping, file) do
       conn
-      |> render("bulk.json")
+      |> render("bulk.json", resource: "Data Template")
     end
   end
 end
