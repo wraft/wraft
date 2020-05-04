@@ -51,9 +51,9 @@ defmodule WraftDocWeb.Api.V1.DataTemplateView do
     }
   end
 
-  def render("bulk.json", %{}) do
+  def render("bulk.json", %{resource: resource}) do
     %{
-      info: "Data templates will be created soon"
+      info: "#{resource} will be created soon"
     }
   end
 end

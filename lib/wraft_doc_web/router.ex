@@ -133,6 +133,7 @@ defmodule WraftDocWeb.Router do
       get("/data_templates", DataTemplateController, :all_templates)
       # Block templates
       resources("/block_templates", BlockTemplateController)
+      post("/block_templates/bulk_import", BlockTemplateController, :bulk_import)
 
       # Assets
       resources("/assets", AssetController, only: [:create, :index, :show, :update, :delete])
