@@ -141,4 +141,35 @@ defmodule WraftDoc.DocumentTest do
       assert response == {:error, :not_found}
     end
   end
+
+  describe "create_block_template/2" do
+    test "test creates block template with valid attrs" do
+      user = insert(:user)
+
+      params = %{
+        title: "Introduction",
+        body: "Hi [employee], we welcome you to our [company], [address]",
+        serialised: "Hi [employee], we welcome you to our family"
+      }
+
+      count_before = BlockTemplate |> Repo.all() |> length()
+      block_template = Document.create_block_template(user, params)
+
+      assert count_before + 1 == BlockTemplate |> Repo.all() |> length()
+      assert block_template.title == "Introduction"
+      assert block_template.body == "Hi [employee], we welcome you to our [company], [address]"
+      assert block_template.serialised == "Hi [employee], we welcome you to our family"
+    end
+
+    test "test does not create block template with invalid attrs" do
+      user = insert(:user)
+      {:error, changeset} = Document.create_block_template(user, %{})
+
+      assert %{
+               title: ["can't be blank"],
+               serialised: ["can't be blank"],
+               body: ["can't be blank"]
+             } == errors_on(changeset)
+    end
+  end
 end

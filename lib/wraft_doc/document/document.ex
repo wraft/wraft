@@ -1463,6 +1463,8 @@ defmodule WraftDoc.Document do
   """
   @spec block_template_bulk_insert(User.t(), map, String.t()) ::
           [{:ok, BlockTemplate.t()}] | {:error, :not_found}
+  ## TODO - remove the next comment
+  # Test written
   def block_template_bulk_insert(%User{} = current_user, mapping, path) do
     # TODO Map will be arranged in the ascending order
     # of keys. This causes unexpected changes in decoded CSV
