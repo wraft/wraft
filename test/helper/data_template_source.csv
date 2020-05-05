@@ -1,4 +1,4 @@
-Title,TitleTemplate,Data
-Title1,Agreement 1 b/w [party1] & [party2], Hi [party1] This is [party2]
-Title2,Agreement 2 b/w [party1] & [party2], Hi [party2] We are [party1]
-Title3,Agreement 3 b/w [party1] & [party2], Hi [party2] I am [party1]
+Data,Title,TitleTemplate
+"Hi [party1],This is [party2]",Title1,Agreement 1 b/w [party1] & [party2]
+"Hi [party2],We are [party1]",Title2,Agreement 2 b/w [party1] & [party2]
+"Hi [party2],I am [party1]",Title3,Agreement 3 b/w [party1] & [party2]

@@ -1319,6 +1319,8 @@ defmodule WraftDoc.Document do
         mapping,
         path
       ) do
+    # TODO Map will be arranged in the ascending order
+    # of keys. This causes unexpected changes in decoded CSV
     mapping_keys = mapping |> Map.keys()
 
     c_type = c_type |> Repo.preload([{:layout, :assets}])
@@ -1432,6 +1434,8 @@ defmodule WraftDoc.Document do
   @spec data_template_bulk_insert(User.t(), ContentType.t(), map, String.t()) ::
           [{:ok, DataTemplate.t()}] | {:error, :not_found}
   def data_template_bulk_insert(%User{} = current_user, %ContentType{} = c_type, mapping, path) do
+    # TODO Map will be arranged in the ascending order
+    # of keys. This causes unexpected changes in decoded CSV
     mapping_keys = mapping |> Map.keys()
 
     path
@@ -1454,6 +1458,8 @@ defmodule WraftDoc.Document do
   @spec block_template_bulk_insert(User.t(), map, String.t()) ::
           [{:ok, BlockTemplate.t()}] | {:error, :not_found}
   def block_template_bulk_insert(%User{} = current_user, mapping, path) do
+    # TODO Map will be arranged in the ascending order
+    # of keys. This causes unexpected changes in decoded CSV
     mapping_keys = mapping |> Map.keys()
 
     path
