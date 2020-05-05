@@ -378,4 +378,6 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
       |> render("bulk.json", resource: "Data Template")
     end
   end
+
+  def bulk_import(_conn, _), do: nil
 end
