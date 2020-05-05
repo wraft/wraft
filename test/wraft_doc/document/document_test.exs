@@ -115,4 +115,30 @@ defmodule WraftDoc.DocumentTest do
                errors_on(changeset)
     end
   end
+
+  describe "block_template_bulk_insert/3" do
+    test "test bulk block template creation with valid data" do
+      user = insert(:user)
+      mapping = %{"Body" => "body", "Serialised" => "serialised", "Title" => "title"}
+      path = "test/helper/block_template_source.csv"
+      count_before = BlockTemplate |> Repo.all() |> length()
+
+      block_templates =
+        Document.block_template_bulk_insert(user, mapping, path)
+        |> Enum.map(fn x -> x.title end)
+        |> List.to_string()
+
+      assert count_before + 3 == BlockTemplate |> Repo.all() |> length()
+      assert block_templates =~ "B Temp1"
+      assert block_templates =~ "B Temp2"
+      assert block_templates =~ "B Temp3"
+    end
+
+    test "test doesn not do bulk block template creation with invalid data" do
+      count_before = BlockTemplate |> Repo.all() |> length()
+      response = Document.block_template_bulk_insert(nil, nil, nil)
+      assert count_before == BlockTemplate |> Repo.all() |> length()
+      assert response == {:error, :not_found}
+    end
+  end
 end
