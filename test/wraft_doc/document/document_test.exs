@@ -172,4 +172,43 @@ defmodule WraftDoc.DocumentTest do
              } == errors_on(changeset)
     end
   end
+
+  describe "insert_bulk_build_work/6" do
+    test "test creates bulk build backgroung job with valid attrs" do
+      user = insert(:user)
+      %{uuid: c_type_id} = insert(:content_type)
+      %{uuid: state_id} = insert(:state)
+      %{uuid: d_temp_id} = insert(:data_template)
+      mapping = %{test: "map"}
+      file = Plug.Upload.random_file!("test")
+      tmp_file_source = "temp/bulk_build_source/" <> file
+      count_before = Oban.Job |> Repo.all() |> length()
+
+      {:ok, job} =
+        Document.insert_bulk_build_work(
+          user,
+          c_type_id,
+          state_id,
+          d_temp_id,
+          mapping,
+          %Plug.Upload{filename: file, path: file}
+        )
+
+      assert count_before + 1 == Oban.Job |> Repo.all() |> length()
+
+      assert job.args == %{
+               c_type_uuid: c_type_id,
+               state_uuid: state_id,
+               d_temp_uuid: d_temp_id,
+               mapping: mapping,
+               user_uuid: user.uuid,
+               file: tmp_file_source
+             }
+    end
+
+    test "does not create bulk build backgroung job with invalid attrs" do
+      response = Document.insert_bulk_build_work(nil, nil, nil, nil, nil, nil)
+      assert response == nil
+    end
+  end
 end

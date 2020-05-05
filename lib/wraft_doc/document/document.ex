@@ -1240,10 +1240,19 @@ defmodule WraftDoc.Document do
   """
   @spec insert_bulk_build_work(User.t(), binary(), binary(), binary(), map, Plug.Upload.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  def insert_bulk_build_work(current_user, c_type_uuid, state_uuid, d_temp_uuid, mapping, %{
-        filename: filename,
-        path: path
-      }) do
+  ## TODO - remove the next comment
+  ## Test written
+  def insert_bulk_build_work(
+        %User{} = current_user,
+        c_type_uuid,
+        state_uuid,
+        d_temp_uuid,
+        mapping,
+        %{
+          filename: filename,
+          path: path
+        }
+      ) do
     File.mkdir_p("temp/bulk_build_source/")
     dest_path = "temp/bulk_build_source/#{filename}"
     System.cmd("cp", [path, dest_path])
@@ -1258,6 +1267,8 @@ defmodule WraftDoc.Document do
     }
     |> create_bulk_job()
   end
+
+  def insert_bulk_build_work(_, _, _, _, _, _), do: nil
 
   @doc """
   Create a background job for data template bulk import.
