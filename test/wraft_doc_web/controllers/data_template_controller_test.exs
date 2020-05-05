@@ -174,4 +174,38 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
     assert count_before - 1 == DataTemplate |> Repo.all() |> length()
     assert json_response(conn, 200)["title"] == data_template.title
   end
+
+  test "test bulk import job creation for data template with valid attrs", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    filename = Plug.Upload.random_file!("test")
+    file = %Plug.Upload{filename: filename, path: filename}
+    c_type = insert(:content_type)
+    count_before = Oban.Job |> Repo.all() |> length()
+
+    params = %{mapping: %{"Title" => "title"}, file: file}
+
+    conn = post(conn, Routes.v1_data_template_path(conn, :bulk_import, c_type.uuid), params)
+
+    assert count_before + 1 == Oban.Job |> Repo.all() |> length()
+    assert json_response(conn, 200)["info"] == "Data Template will be created soon"
+  end
+
+  test "test bulk import job not created for data template with invalid attrs", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    c_type = insert(:content_type)
+    count_before = Oban.Job |> Repo.all() |> length()
+
+    conn = post(conn, Routes.v1_data_template_path(conn, :bulk_import, c_type.uuid), %{})
+
+    assert count_before == Oban.Job |> Repo.all() |> length()
+    assert json_response(conn, 404) == "Not Found"
+  end
 end

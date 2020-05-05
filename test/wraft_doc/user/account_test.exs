@@ -1,4 +1,4 @@
-defmodule WraftDoc.DocumentTest do
+defmodule WraftDoc.AccountTest do
   use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
   alias WraftDoc.{Repo, Account, Account.AuthToken}
@@ -293,8 +293,8 @@ defmodule WraftDoc.DocumentTest do
   describe "delete_token/2" do
     test "deletes all tokens of a user under the given token type" do
       user = insert(:user)
-      token1 = insert(:auth_token, token_type: "test_token", user: user)
-      token2 = insert(:auth_token, token_type: "test_token", user: user)
+      insert(:auth_token, token_type: "test_token", user: user)
+      insert(:auth_token, token_type: "test_token", user: user)
       count_before = Repo.all(AuthToken) |> length()
       response = Account.delete_token(user.id, "test_token")
       count_after = Repo.all(AuthToken) |> length()
@@ -381,7 +381,6 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "return error when token is invalid" do
-      user = insert(:user)
       value = Phoenix.Token.sign(WraftDocWeb.Endpoint, "invalid", "email") |> Base.url_encode64()
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")
       params = %{"token" => auth_token.value, "password" => "newpassword"}
