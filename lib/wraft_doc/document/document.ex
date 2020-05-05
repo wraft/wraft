@@ -751,6 +751,8 @@ defmodule WraftDoc.Document do
   """
   @spec create_data_template(User.t(), ContentType.t(), map) ::
           {:ok, DataTemplate.t()} | {:error, Ecto.Changeset.t()}
+  ## TODO - remove the next comment
+  ## Test written
   def create_data_template(current_user, c_type, params) do
     current_user
     |> build_assoc(:data_templates, content_type: c_type)
@@ -1433,6 +1435,8 @@ defmodule WraftDoc.Document do
   """
   @spec data_template_bulk_insert(User.t(), ContentType.t(), map, String.t()) ::
           [{:ok, DataTemplate.t()}] | {:error, :not_found}
+  ## TODO - remove the next comment
+  ## Test written
   def data_template_bulk_insert(%User{} = current_user, %ContentType{} = c_type, mapping, path) do
     # TODO Map will be arranged in the ascending order
     # of keys. This causes unexpected changes in decoded CSV
@@ -1444,6 +1448,8 @@ defmodule WraftDoc.Document do
     |> Enum.to_list()
   end
 
+  ## TODO - remove the next comment
+  # Test written
   def data_template_bulk_insert(_, _, _, _), do: {:error, :not_found}
 
   @spec bulk_d_temp_creation(map, User.t(), ContentType.t(), map) :: {:ok, DataTemplate.t()}
