@@ -1275,6 +1275,8 @@ defmodule WraftDoc.Document do
   """
   @spec insert_data_template_bulk_import_work(binary, binary, map, Plug.Uploap.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
+  ## TODO - remove the next comment
+  ## Test written
   def insert_data_template_bulk_import_work(user_uuid, c_type_uuid, mapping, %Plug.Upload{
         filename: filename,
         path: path
@@ -1291,6 +1293,8 @@ defmodule WraftDoc.Document do
     }
     |> create_bulk_job(["data template"])
   end
+
+  def insert_data_template_bulk_import_work(_, _, _, _), do: nil
 
   @doc """
   Creates a background job for block template bulk import.
