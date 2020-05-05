@@ -211,4 +211,35 @@ defmodule WraftDoc.DocumentTest do
       assert response == nil
     end
   end
+
+  describe "insert_data_template_bulk_import_work/4" do
+    test "test creates bulk import data template backgroung job with valid attrs" do
+      %{uuid: user_id} = insert(:user)
+      %{uuid: c_type_id} = insert(:content_type)
+      mapping = %{test: "map"}
+      file = Plug.Upload.random_file!("test")
+      tmp_file_source = "temp/bulk_import_source/d_template/" <> file
+      count_before = Oban.Job |> Repo.all() |> length()
+
+      {:ok, job} =
+        Document.insert_data_template_bulk_import_work(user_id, c_type_id, mapping, %Plug.Upload{
+          filename: file,
+          path: file
+        })
+
+      assert count_before + 1 == Oban.Job |> Repo.all() |> length()
+
+      assert job.args == %{
+               user_uuid: user_id,
+               c_type_uuid: c_type_id,
+               mapping: mapping,
+               file: tmp_file_source
+             }
+    end
+
+    test "does not create bulk import data template backgroung job with invalid attrs" do
+      response = Document.insert_data_template_bulk_import_work(nil, nil, nil, nil)
+      assert response == nil
+    end
+  end
 end
