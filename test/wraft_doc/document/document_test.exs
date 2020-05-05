@@ -1,10 +1,6 @@
 defmodule WraftDoc.DocumentTest do
-  import Ecto.Query
-  import Ecto
+  use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
-  use WraftDoc.ModelCase
-  use ExUnit.Case
-  use Bamboo.Test
 
   alias WraftDoc.{
     Repo,
@@ -80,6 +76,43 @@ defmodule WraftDoc.DocumentTest do
       response = Document.data_template_bulk_insert(nil, nil, nil, nil)
       assert count_before == DataTemplate |> Repo.all() |> length()
       assert response == {:error, :not_found}
+    end
+  end
+
+  describe "create_data_template/3" do
+    test "test creates data template with valid attrs" do
+      user = insert(:user)
+      c_type = insert(:content_type)
+
+      params = %{
+        title: "Offer letter tempalate",
+        title_template: "Hi [employee], we welcome you to our [company], [address]",
+        data: "Hi [employee], we welcome you to our [company], [address]"
+      }
+
+      count_before = DataTemplate |> Repo.all() |> length()
+      {:ok, data_template} = Document.create_data_template(user, c_type, params)
+
+      assert count_before + 1 == DataTemplate |> Repo.all() |> length()
+      assert data_template.title == "Offer letter tempalate"
+
+      assert data_template.title_template ==
+               "Hi [employee], we welcome you to our [company], [address]"
+
+      assert data_template.data == "Hi [employee], we welcome you to our [company], [address]"
+    end
+
+    test "test does not create data template with invalid attrs" do
+      user = insert(:user)
+      c_type = insert(:content_type)
+      {:error, changeset} = Document.create_data_template(user, c_type, %{})
+
+      assert %{
+               title: ["can't be blank"],
+               title_template: ["can't be blank"],
+               data: ["can't be blank"]
+             } ==
+               errors_on(changeset)
     end
   end
 end
