@@ -1306,6 +1306,8 @@ defmodule WraftDoc.Document do
   """
   @spec insert_block_template_bulk_import_work(binary, map, Plug.Uploap.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
+  ## TODO - remove the next comment
+  ## Test written
   def insert_block_template_bulk_import_work(<<_::288>> = user_uuid, mapping, %Plug.Upload{
         filename: filename,
         path: path
