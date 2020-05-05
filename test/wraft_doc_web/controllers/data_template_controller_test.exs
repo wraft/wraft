@@ -200,14 +200,12 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    filename = Plug.Upload.random_file!("test")
-    file = %Plug.Upload{filename: filename, path: filename}
     c_type = insert(:content_type)
     count_before = Oban.Job |> Repo.all() |> length()
 
     conn = post(conn, Routes.v1_data_template_path(conn, :bulk_import, c_type.uuid), %{})
 
     assert count_before == Oban.Job |> Repo.all() |> length()
-    assert json_response(conn, 404)["error"] == "Not Found"
+    assert json_response(conn, 404) == "Not Found"
   end
 end
