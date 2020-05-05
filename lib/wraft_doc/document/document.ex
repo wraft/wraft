@@ -1244,9 +1244,9 @@ defmodule WraftDoc.Document do
   ## Test written
   def insert_bulk_build_work(
         %User{} = current_user,
-        c_type_uuid,
-        state_uuid,
-        d_temp_uuid,
+        <<_::288>> = c_type_uuid,
+        <<_::288>> = state_uuid,
+        <<_::288>> = d_temp_uuid,
         mapping,
         %{
           filename: filename,
@@ -1277,10 +1277,15 @@ defmodule WraftDoc.Document do
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
   ## TODO - remove the next comment
   ## Test written
-  def insert_data_template_bulk_import_work(user_uuid, c_type_uuid, mapping, %Plug.Upload{
-        filename: filename,
-        path: path
-      }) do
+  def insert_data_template_bulk_import_work(
+        <<_::288>> = user_uuid,
+        <<_::288>> = c_type_uuid,
+        mapping,
+        %Plug.Upload{
+          filename: filename,
+          path: path
+        }
+      ) do
     File.mkdir_p("temp/bulk_import_source/d_template")
     dest_path = "temp/bulk_import_source/d_template/#{filename}"
     System.cmd("cp", [path, dest_path])
@@ -1301,7 +1306,7 @@ defmodule WraftDoc.Document do
   """
   @spec insert_block_template_bulk_import_work(binary, map, Plug.Uploap.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  def insert_block_template_bulk_import_work(user_uuid, mapping, %Plug.Upload{
+  def insert_block_template_bulk_import_work(<<_::288>> = user_uuid, mapping, %Plug.Upload{
         filename: filename,
         path: path
       }) do
@@ -1316,6 +1321,8 @@ defmodule WraftDoc.Document do
     }
     |> create_bulk_job(["block template"])
   end
+
+  def insert_block_template_bulk_import_work(_, _, _), do: nil
 
   defp create_bulk_job(args, tags \\ []) do
     args
