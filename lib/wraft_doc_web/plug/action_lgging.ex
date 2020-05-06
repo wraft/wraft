@@ -34,7 +34,7 @@ defmodule WraftDocWeb.Plug.AddActionLog do
          } = conn
        ) do
     remote_ip = :inet_parse.ntoa(ip) |> to_string()
-    [actor_agent] = get_req_header(conn, "user-agent")
+    actor_agent = get_req_header(conn, "user-agent") |> List.first()
     action = conn.private.phoenix_action |> Atom.to_string()
     params = params |> change_structs_to_maps()
 
@@ -54,7 +54,7 @@ defmodule WraftDocWeb.Plug.AddActionLog do
          %Plug.Conn{method: method, request_path: path, remote_ip: ip, params: params} = conn
        ) do
     remote_ip = :inet_parse.ntoa(ip) |> to_string()
-    actor_agent = get_req_header(conn, "user-agent")
+    actor_agent = get_req_header(conn, "user-agent") |> List.first()
     action = conn.private.phoenix_action |> Atom.to_string()
     params = params |> change_structs_to_maps()
 
