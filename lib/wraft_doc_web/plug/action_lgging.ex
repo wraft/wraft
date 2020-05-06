@@ -36,6 +36,7 @@ defmodule WraftDocWeb.Plug.AddActionLog do
     remote_ip = :inet_parse.ntoa(ip) |> to_string()
     [actor_agent] = get_req_header(conn, "user-agent")
     action = conn.private.phoenix_action |> Atom.to_string()
+    params = params |> change_structs_to_maps()
 
     %{
       actor: user,
@@ -55,6 +56,7 @@ defmodule WraftDocWeb.Plug.AddActionLog do
     remote_ip = :inet_parse.ntoa(ip) |> to_string()
     actor_agent = get_req_header(conn, "user-agent")
     action = conn.private.phoenix_action |> Atom.to_string()
+    params = params |> change_structs_to_maps()
 
     %{
       request_path: path,
@@ -64,5 +66,19 @@ defmodule WraftDocWeb.Plug.AddActionLog do
       actor_agent: actor_agent,
       action: action
     }
+  end
+
+  # Change the stucts in params to maps.
+  @spec change_structs_to_maps(map) :: map
+  defp change_structs_to_maps(params) do
+    params
+    |> Enum.reduce(%{}, fn
+      {k, %{__struct__: _} = v}, acc ->
+        v = v |> Map.from_struct()
+        Map.put(acc, k, v)
+
+      {k, v}, acc ->
+        Map.put(acc, k, v)
+    end)
   end
 end
