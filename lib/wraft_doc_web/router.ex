@@ -22,9 +22,9 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.AdminCheck)
   end
 
-  pipeline :can do
-    plug(WraftDocWeb.Plug.Authorized)
-  end
+  # pipeline :can do
+  # plug(WraftDocWeb.Plug.Authorized)
+  # end
 
   scope "/", WraftDocWeb do
     # Use the default browser stack

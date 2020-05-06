@@ -6,7 +6,7 @@ defmodule WraftDoc.Enterprise.Organisation do
   import Ecto.Changeset
   use Arc.Ecto.Schema
   alias WraftDoc.Enterprise.Organisation
-
+  @derive {Jason.Encoder, only: [:name]}
   schema "organisation" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)

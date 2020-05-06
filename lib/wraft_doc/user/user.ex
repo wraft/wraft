@@ -4,7 +4,7 @@ defmodule WraftDoc.Account.User do
   """
   use Ecto.Schema
   import Ecto.Changeset
-
+  @derive {Jason.Encoder, only: [:name, :email, :organisation]}
   schema "user" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
