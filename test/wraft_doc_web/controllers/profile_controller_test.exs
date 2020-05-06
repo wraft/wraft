@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
 
   @valid_attrs %{
     name: "Shakkir palakkal",
-    dob: Timex.shift(Timex.now(), years: 27),
+    dob: Date.new(2020, 2, 29) |> elem(1),
     gender: "male"
   }
 
@@ -28,16 +28,12 @@ defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
   end
 
   test "updates profile on valid attributes", %{conn: conn} do
-    user = conn.assigns.current_user
-
-    params = Map.merge(@valid_attrs, %{user: user})
-
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = put(conn, Routes.v1_profile_path(conn, :update), params)
+    conn = put(conn, Routes.v1_profile_path(conn, :update), @valid_attrs)
     assert json_response(conn, 200)["name"] == @valid_attrs.name
   end
 
