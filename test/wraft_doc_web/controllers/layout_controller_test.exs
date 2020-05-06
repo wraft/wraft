@@ -45,12 +45,8 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Layout |> Repo.all() |> length()
-
-    organisation = insert(:organisation)
     %{uuid: engine_uuid} = insert(:engine)
-
-    params =
-      Map.put(@valid_attrs, :organisation, organisation) |> Map.put(:engine_uuid, engine_uuid)
+    params = @valid_attrs |> Map.put(:engine_uuid, engine_uuid)
 
     conn =
       post(conn, Routes.v1_layout_path(conn, :create), params)

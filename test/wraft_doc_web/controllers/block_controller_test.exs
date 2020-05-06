@@ -1,4 +1,4 @@
-defmodule WraftDocWeb.Api.V1BlockControllerTest do
+defmodule WraftDocWeb.Api.V1.BlockControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
 
