@@ -26,7 +26,8 @@ defmodule WraftDoc.Factory do
     Authorization.Permission,
     Document.BlockTemplate,
     Document.Comment,
-    Enterprise.ApprovalSystem
+    Enterprise.ApprovalSystem,
+    Document.LayoutAsset
   }
 
   def user_factory do
@@ -149,6 +150,14 @@ defmodule WraftDoc.Factory do
       height: :rand.uniform(16),
       unit: sequence(:name, &"layout-#{&1}"),
       organisation: build(:organisation)
+    }
+  end
+
+  def layout_asset_factory do
+    %LayoutAsset{
+      layout: build(:layout),
+      asset: build(:asset),
+      creator: build(:user)
     }
   end
 
