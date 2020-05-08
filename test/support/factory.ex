@@ -26,7 +26,8 @@ defmodule WraftDoc.Factory do
     Authorization.Permission,
     Document.BlockTemplate,
     Document.Comment,
-    Enterprise.ApprovalSystem
+    Enterprise.ApprovalSystem,
+    Document.LayoutAsset
   }
 
   def user_factory do
@@ -152,6 +153,14 @@ defmodule WraftDoc.Factory do
     }
   end
 
+  def layout_asset_factory do
+    %LayoutAsset{
+      layout: build(:layout),
+      asset: build(:asset),
+      creator: build(:user)
+    }
+  end
+
   def engine_factory do
     %Engine{
       name: sequence(:name, &"engine-#{&1}"),
@@ -181,6 +190,7 @@ defmodule WraftDoc.Factory do
     %Flow{
       name: sequence(:name, &"flow-#{&1}"),
       organisation: build(:organisation),
+      controlled: false,
       creator: build(:user)
     }
   end
