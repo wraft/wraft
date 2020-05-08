@@ -247,4 +247,30 @@ defmodule WraftDoc.DocumentTest do
       assert response == nil
     end
   end
+
+  describe "create_pipeline/2" do
+    test "creates pipeline with valid attrs" do
+      user = insert(:user)
+      c_type = insert(:content_type)
+
+      attrs = %{
+        "name" => "pipeline",
+        "api_route" => "www.crm.com",
+        "organisation_id" => user.organisation_id,
+        "content_types" => [c_type.uuid]
+      }
+
+      pipeline = Document.create_pipeline(user, attrs)
+      [content_type] = pipeline.content_types
+      assert pipeline.name == "pipeline"
+      assert pipeline.api_route == "www.crm.com"
+      assert content_type.name == c_type.name
+    end
+
+    test "returns error with invalid attrs" do
+      user = insert(:user)
+      {:error, changeset} = Document.create_pipeline(user, %{})
+      assert %{name: ["can't be blank"], api_route: ["can't be blank"]} == errors_on(changeset)
+    end
+  end
 end
