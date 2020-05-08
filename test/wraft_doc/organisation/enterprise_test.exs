@@ -11,11 +11,7 @@ defmodule WraftDoc.EnterpriseTest do
     Enterprise.Flow,
     Enterprise.Flow.State,
     Enterprise.Organisation,
-    Account,
-    Account.User,
     Enterprise.ApprovalSystem,
-    Document.Instance,
-    Document,
     Enterprise
   }
 
@@ -48,7 +44,7 @@ defmodule WraftDoc.EnterpriseTest do
     flow_index = Enterprise.flow_index(user, %{page_number: 1})
 
     assert flow_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ f1.name
-    assert flow_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ f1.name
+    assert flow_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ f2.name
   end
 
   test "show flow preloads flow with creator and states" do
@@ -92,7 +88,7 @@ defmodule WraftDoc.EnterpriseTest do
     flow = insert(:flow)
     count_before = State |> Repo.all() |> length()
     state = Enterprise.create_state(flow.creator, flow, %{"state" => "Review", "order" => 2})
-    count_ater = State |> Repo.all() |> length()
+    assert count_before + 1 == State |> Repo.all() |> length()
     assert state.state == "Review"
     assert state.order == 2
   end
@@ -202,7 +198,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "get approval system returns apprval system data" do
-    %{uuid: uuid, instance: instance, pre_state: pre_state} = insert(:approval_system)
+    %{uuid: uuid, instance: instance, pre_state: _pre_state} = insert(:approval_system)
     approval_system = Enterprise.get_approval_system(uuid)
     assert approval_system.instance.uuid == instance.uuid
   end
@@ -260,21 +256,21 @@ defmodule WraftDoc.EnterpriseTest do
     role = insert(:role, name: "admin")
     organisation = insert(:organisation)
     user = insert(:user, role: role)
-    Enterprise.check_permission(user, organisation.uuid) == organisation
+    assert Enterprise.check_permission(user, organisation.uuid) == organisation
   end
 
   test "check permission grand permission for user within organisation" do
     role = insert(:role, name: "user")
     organisation = insert(:organisation)
     user = insert(:user, role: role, organisation: organisation)
-    Enterprise.check_permission(user, organisation.uuid) == organisation
+    assert Enterprise.check_permission(user, organisation.uuid) == organisation
   end
 
   test "check permission reject permmision to enter another organisation" do
     role = insert(:role, name: "user")
     organisation = insert(:organisation)
     user = insert(:user, role: role)
-    Enterprise.check_permission(user, organisation.uuid) == {:error, :no_permission}
+    assert Enterprise.check_permission(user, organisation.uuid) == {:error, :no_permission}
   end
 
   test "already a member return error for existing email" do
