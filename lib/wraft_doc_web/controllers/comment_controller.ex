@@ -1,7 +1,8 @@
 defmodule WraftDocWeb.Api.V1.CommentController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-
+  plug(WraftDocWeb.Plug.Authorized)
+  plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
   alias WraftDoc.{Document, Document.Comment}
 
@@ -14,6 +15,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
           properties do
             comment(:string, "The Comment to post", required: true)
+            meta(:map, "Meta data of inline comments")
             is_parent(:boolean, "Declare the comment is parent or child", required: true)
             parent_id(:string, "Parent id of a child comment", required: true)
             master(:string, "Comments master", required: true)
@@ -25,6 +27,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
             is_parent: true,
             parent_id: nil,
             master: "instance",
+            meta: %{block: "introduction", line: 12},
             master_id: "32232sdffasdfsfdfasdfsdfs"
           })
         end,
@@ -35,6 +38,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
           properties do
             comment(:string, "Posted comment", required: true)
+            meta(:map, "Meta data of inline comments")
             is_parent(:boolean, "Parent or child comment", required: true)
             parent_id(:string, "The ParentId of the comment", required: true)
             master(:string, "The Master of the comment", required: true)
@@ -48,6 +52,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
             comment: "a sample comment",
             is_parent: true,
             master: "instance",
+            meta: %{block: "introduction", line: 12},
             master_id: "sdf15511551sdf",
             user_id: "asdf2s2dfasd2",
             organisation_id: "451s51dfsdf515",
@@ -74,6 +79,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
             comments: [
               %{
                 comment: "a sample comment",
+                meta: %{block: "introduction", line: 12},
                 is_parent: true,
                 master: "instance",
                 master_id: "sdf15511551sdf",
@@ -84,6 +90,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
               },
               %{
                 comment: "a sample comment",
+                meta: %{block: "introduction", line: 12},
                 is_parent: true,
                 master: "instance",
                 master_id: "sdf15511551sdf",
@@ -173,7 +180,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => uuid}) do
-    with %Comment{} = comment <- Document.get_comment(uuid) do
+    with %Comment{} = comment <- Document.show_comment(uuid) do
       conn
       |> render("comment.json", comment: comment)
     end
@@ -224,7 +231,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     with %Comment{} = comment <- Document.get_comment(uuid),
          {:ok, %Comment{}} <- Document.delete_comment(comment) do
       conn
-      |> render("comment.json", comment: comment)
+      |> render("delete.json", comment: comment)
     end
   end
 end

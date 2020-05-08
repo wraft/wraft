@@ -1,6 +1,7 @@
 defmodule WraftDocWeb.Api.V1.ProfileController do
   use WraftDocWeb, :controller
   plug(WraftDocWeb.Plug.Authorized)
+  plug(WraftDocWeb.Plug.AddActionLog)
   import Ecto.Query, warn: false
   alias WraftDoc.{Account, Account.Profile}
   action_fallback(WraftDocWeb.FallbackController)
@@ -92,8 +93,11 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, params) do
-    with %Profile{} = profile <- Account.update_profile(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %Profile{} = profile <- Account.update_profile(current_user, params) do
       conn
       |> render("profile.json", profile: profile)
     end
@@ -132,7 +136,9 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
   end
 
   def show_current_profile(conn, _params) do
-    with %Profile{} = profile <- Account.get_current_profile(conn) do
+    current_user = conn.assigns[:current_user]
+
+    with %Profile{} = profile <- Account.get_current_profile(current_user) do
       conn
       |> render("profile.json", profile: profile)
     end

@@ -7,6 +7,8 @@ defmodule WraftDocWeb.Api.V1.FlowView do
     %{
       id: flow.uuid,
       name: flow.name,
+      controlled: flow.controlled,
+      control_data: flow.control_data,
       updated_at: flow.updated_at,
       inserted_at: flow.inserted_at
     }

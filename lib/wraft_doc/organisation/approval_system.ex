@@ -5,6 +5,7 @@ defmodule WraftDoc.Enterprise.ApprovalSystem do
   schema "approval_system" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:approved, :boolean, default: false)
+    field(:approved_log, :naive_datetime)
     belongs_to(:instance, WraftDoc.Document.Instance)
     belongs_to(:pre_state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:post_state, WraftDoc.Enterprise.Flow.State)
@@ -55,7 +56,7 @@ defmodule WraftDoc.Enterprise.ApprovalSystem do
 
   def approve_changeset(approval_system, attrs \\ %{}) do
     approval_system
-    |> cast(attrs, [:approved])
-    |> validate_required([:approved])
+    |> cast(attrs, [:approved, :approved_log])
+    |> validate_required([:approved, :approved_log])
   end
 end
