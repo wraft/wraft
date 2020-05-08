@@ -27,6 +27,7 @@ defmodule WraftDoc.DocumentTest do
     Document.BlockTemplate,
     Document.Comment,
     Document.Pipeline,
+    Document.Pipeline.Stage,
     Document
   }
 
@@ -866,6 +867,24 @@ defmodule WraftDoc.DocumentTest do
 
     test "returns nil invalid data" do
       response = Document.get_pipe_stage(nil, Ecto.UUID.generate(), Ecto.UUID.generate())
+      assert response == nil
+    end
+  end
+
+  describe "delete_pipe_stage/2" do
+    test "deletes stage with correct data" do
+      user = insert(:user)
+      stage = insert(:pipe_stage)
+      count_before = Stage |> Repo.all() |> length()
+      {:ok, deleted_stage} = Document.delete_pipe_stage(stage, user)
+      count_after = Stage |> Repo.all() |> length()
+      assert count_before - 1 == count_after
+      assert deleted_stage.pipeline_id == stage.pipeline_id
+      assert deleted_stage.content_type_id == stage.content_type_id
+    end
+
+    test "returns nil with invalid data" do
+      response = Document.delete_pipe_stage(nil, nil)
       assert response == nil
     end
   end
