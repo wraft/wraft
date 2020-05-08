@@ -751,6 +751,8 @@ defmodule WraftDoc.Document do
   """
   @spec create_data_template(User.t(), ContentType.t(), map) ::
           {:ok, DataTemplate.t()} | {:error, Ecto.Changeset.t()}
+  ## TODO - remove the next comment
+  ## Test written
   def create_data_template(current_user, c_type, params) do
     current_user
     |> build_assoc(:data_templates, content_type: c_type)
@@ -1238,10 +1240,19 @@ defmodule WraftDoc.Document do
   """
   @spec insert_bulk_build_work(User.t(), binary(), binary(), binary(), map, Plug.Upload.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  def insert_bulk_build_work(current_user, c_type_uuid, state_uuid, d_temp_uuid, mapping, %{
-        filename: filename,
-        path: path
-      }) do
+  ## TODO - remove the next comment
+  ## Test written
+  def insert_bulk_build_work(
+        %User{} = current_user,
+        <<_::288>> = c_type_uuid,
+        <<_::288>> = state_uuid,
+        <<_::288>> = d_temp_uuid,
+        mapping,
+        %{
+          filename: filename,
+          path: path
+        }
+      ) do
     File.mkdir_p("temp/bulk_build_source/")
     dest_path = "temp/bulk_build_source/#{filename}"
     System.cmd("cp", [path, dest_path])
@@ -1254,7 +1265,70 @@ defmodule WraftDoc.Document do
       mapping: mapping,
       file: dest_path
     }
-    |> WraftDocWeb.Worker.BulkWorker.new()
+    |> create_bulk_job()
+  end
+
+  def insert_bulk_build_work(_, _, _, _, _, _), do: nil
+
+  @doc """
+  Create a background job for data template bulk import.
+  """
+  @spec insert_data_template_bulk_import_work(binary, binary, map, Plug.Uploap.t()) ::
+          {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
+  ## TODO - remove the next comment
+  ## Test written
+  def insert_data_template_bulk_import_work(
+        <<_::288>> = user_uuid,
+        <<_::288>> = c_type_uuid,
+        mapping,
+        %Plug.Upload{
+          filename: filename,
+          path: path
+        }
+      ) do
+    File.mkdir_p("temp/bulk_import_source/d_template")
+    dest_path = "temp/bulk_import_source/d_template/#{filename}"
+    System.cmd("cp", [path, dest_path])
+
+    %{
+      user_uuid: user_uuid,
+      c_type_uuid: c_type_uuid,
+      mapping: mapping,
+      file: dest_path
+    }
+    |> create_bulk_job(["data template"])
+  end
+
+  def insert_data_template_bulk_import_work(_, _, _, _), do: nil
+
+  @doc """
+  Creates a background job for block template bulk import.
+  """
+  @spec insert_block_template_bulk_import_work(binary, map, Plug.Uploap.t()) ::
+          {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
+  ## TODO - remove the next comment
+  ## Test written
+  def insert_block_template_bulk_import_work(<<_::288>> = user_uuid, mapping, %Plug.Upload{
+        filename: filename,
+        path: path
+      }) do
+    File.mkdir_p("temp/bulk_import_source/b_template")
+    dest_path = "temp/bulk_import_source/b_template/#{filename}"
+    System.cmd("cp", [path, dest_path])
+
+    %{
+      user_uuid: user_uuid,
+      mapping: mapping,
+      file: dest_path
+    }
+    |> create_bulk_job(["block template"])
+  end
+
+  def insert_block_template_bulk_import_work(_, _, _), do: nil
+
+  defp create_bulk_job(args, tags \\ []) do
+    args
+    |> WraftDocWeb.Worker.BulkWorker.new(tags: tags)
     |> Oban.insert()
   end
 
@@ -1271,14 +1345,14 @@ defmodule WraftDoc.Document do
         mapping,
         path
       ) do
+    # TODO Map will be arranged in the ascending order
+    # of keys. This causes unexpected changes in decoded CSV
     mapping_keys = mapping |> Map.keys()
 
     c_type = c_type |> Repo.preload([{:layout, :assets}])
 
-    File.stream!(path)
-    |> Stream.drop(1)
-    |> CSV.decode!(headers: mapping_keys)
-    |> Enum.to_list()
+    path
+    |> decode_csv(mapping_keys)
     |> Enum.map(fn x ->
       create_instance_params_for_bulk_build(x, d_temp, current_user, c_type, state, mapping)
     end)
@@ -1380,6 +1454,71 @@ defmodule WraftDoc.Document do
     # map |> Map.drop(keys) |> Map.merge(new_map)
   end
 
+  @doc """
+  Creates data templates in bulk from the file given.
+  """
+  @spec data_template_bulk_insert(User.t(), ContentType.t(), map, String.t()) ::
+          [{:ok, DataTemplate.t()}] | {:error, :not_found}
+  ## TODO - remove the next comment
+  ## Test written
+  def data_template_bulk_insert(%User{} = current_user, %ContentType{} = c_type, mapping, path) do
+    # TODO Map will be arranged in the ascending order
+    # of keys. This causes unexpected changes in decoded CSV
+    mapping_keys = mapping |> Map.keys()
+
+    path
+    |> decode_csv(mapping_keys)
+    |> Stream.map(fn x -> bulk_d_temp_creation(x, current_user, c_type, mapping) end)
+    |> Enum.to_list()
+  end
+
+  ## TODO - remove the next comment
+  # Test written
+  def data_template_bulk_insert(_, _, _, _), do: {:error, :not_found}
+
+  @spec bulk_d_temp_creation(map, User.t(), ContentType.t(), map) :: {:ok, DataTemplate.t()}
+  defp bulk_d_temp_creation(data, user, c_type, mapping) do
+    params = data |> update_keys(mapping)
+    create_data_template(user, c_type, params)
+  end
+
+  @doc """
+  Creates block templates in bulk from the file given.
+  """
+  @spec block_template_bulk_insert(User.t(), map, String.t()) ::
+          [{:ok, BlockTemplate.t()}] | {:error, :not_found}
+  ## TODO - remove the next comment
+  # Test written
+  def block_template_bulk_insert(%User{} = current_user, mapping, path) do
+    # TODO Map will be arranged in the ascending order
+    # of keys. This causes unexpected changes in decoded CSV
+    mapping_keys = mapping |> Map.keys()
+
+    path
+    |> decode_csv(mapping_keys)
+    |> Stream.map(fn x -> bulk_b_temp_creation(x, current_user, mapping) end)
+    |> Enum.to_list()
+  end
+
+  def block_template_bulk_insert(_, _, _), do: {:error, :not_found}
+
+  # Decode the given CSV file using the headers values
+  # First argument is the path of the file
+  # Second argument is the headers.
+  @spec decode_csv(String.t(), list) :: list
+  defp decode_csv(path, mapping_keys) do
+    File.stream!(path)
+    |> Stream.drop(1)
+    |> CSV.decode!(headers: mapping_keys)
+    |> Enum.to_list()
+  end
+
+  @spec bulk_b_temp_creation(map, User.t(), map) :: BlockTemplate.t()
+  defp bulk_b_temp_creation(data, user, mapping) do
+    params = data |> update_keys(mapping)
+    create_block_template(user, params)
+  end
+
   def create_block_template(%{organisation_id: org_id} = current_user, params) do
     current_user
     |> build_assoc(:block_templates, organisation_id: org_id)
@@ -1431,17 +1570,31 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, comment} ->
-        comment
+        comment |> Repo.preload([{:user, :profile}])
 
       {:error, _} = changeset ->
         changeset
     end
   end
 
-  def get_comment(uuid) do
+  @doc """
+  Fetch a comment from its UUID.
+  """
+  @spec get_comment(Ecto.UUID.t()) :: Comment.t() | nil
+  def get_comment(<<_::288>> = uuid) do
     Comment
     |> Repo.get_by(uuid: uuid)
   end
+
+  @doc """
+  Fetch a comment and all its details.
+  """
+  @spec show_comment(Ecto.UUID.t()) :: Comment.t() | nil
+  def show_comment(<<_::288>> = uuid) do
+    uuid |> get_comment() |> Repo.preload([{:user, :profile}])
+  end
+
+  def show_comment(_), do: nil
 
   def update_comment(comment, params) do
     comment
@@ -1452,7 +1605,7 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, comment} ->
-        comment
+        comment |> Repo.preload([{:user, :profile}])
     end
   end
 
@@ -1465,7 +1618,8 @@ defmodule WraftDoc.Document do
     from(c in Comment,
       where: c.organisation_id == ^org_id,
       where: c.master_id == ^master_id,
-      order_by: [desc: c.id]
+      order_by: [desc: c.inserted_at],
+      preload: [{:user, :profile}]
     )
     |> Repo.paginate(params)
   end

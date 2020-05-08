@@ -17,7 +17,10 @@ defmodule WraftDocWeb.Plug.Authorized do
     "WraftDocWeb.Api.V1.StateController" => "State",
     "WraftDocWeb.Api.V1.ThemeController" => "Theme",
     "WraftDocWeb.Api.V1.UserController" => "User",
-    "WraftDocWeb.Api.V1.ContentTypeFieldController" => "ContentTypeField"
+    "WraftDocWeb.Api.V1.ContentTypeFieldController" => "ContentTypeField",
+    "WraftDocWeb.Api.V1.ApprovalSystemController" => "ApprovalSystem",
+    "WraftDocWeb.Api.V1.BlockTemplateController" => "BlockTemplate",
+    "WraftDocWeb.Api.V1.CommentController" => "Comment"
   }
   def init(_params) do
   end

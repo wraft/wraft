@@ -1,7 +1,8 @@
 defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-
+  plug(WraftDocWeb.Plug.Authorized)
+  plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
   alias WraftDoc.{Document, Document.BlockTemplate}
 
@@ -216,6 +217,34 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
          {:ok, %BlockTemplate{}} <- Document.delete_block_template(current_user, block_template) do
       conn
       |> render("block_template.json", block_template: block_template)
+    end
+  end
+
+  @doc """
+  Bulk block template creation.
+  """
+  swagger_path :bulk_import do
+    post("/block_templates/bulk_import")
+    summary("Create block template in bulk")
+    description("API for block template bulk creation")
+    consumes("multipart/form-data")
+
+    parameter(:file, :formData, :file, "Bulk block template creation source file")
+    parameter(:mapping, :formData, :map, "Mappings for the CSV")
+
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec bulk_import(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def bulk_import(conn, %{"mapping" => mapping, "file" => file}) do
+    %{uuid: uuid} = conn.assigns[:current_user]
+
+    with {:ok, %Oban.Job{}} <-
+           Document.insert_block_template_bulk_import_work(uuid, mapping, file) do
+      conn
+      |> put_view(WraftDocWeb.Api.V1.DataTemplateView)
+      |> render("bulk.json", resource: "Block Template")
     end
   end
 end

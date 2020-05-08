@@ -1,5 +1,21 @@
 # CHANGELOG
 
+## v0.0.25 - 2020-05-03
+
+### Added
+
+- Improved test coverage
+- Added CI
+- Approval system
+- Creates default states for every newly created flows
+
+## v0.0.24 - 2020-04-26
+
+### Added
+
+- Improved test coverage
+- Generate latex charts
+
 ## v0.0.2.3 - 2020-04-18
 
 ### Added

@@ -9,6 +9,7 @@ defmodule WraftDoc.Document.Comment do
     field(:master, :string)
     field(:master_id, :string)
     field(:reply_count, :integer)
+    field(:meta, :map)
     belongs_to(:parent, WraftDoc.Document.Comment)
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
