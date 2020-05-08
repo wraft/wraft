@@ -194,8 +194,6 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
     with %Flow{} = flow <-
            Enterprise.create_flow(current_user, params) do
-      Task.start_link(fn -> Enterprise.create_default_states(current_user, flow) end)
-
       conn |> render("flow.json", flow: flow)
     end
   end
