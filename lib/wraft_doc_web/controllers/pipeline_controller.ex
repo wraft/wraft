@@ -221,4 +221,31 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
       |> render("show.json", pipeline: pipeline)
     end
   end
+
+  @doc """
+  Show a pipeline.
+  """
+  swagger_path :show do
+    get("/pipelines/{id}")
+    summary("Show a pipeline")
+    description("API to show a pipeline.")
+
+    parameters do
+      id(:path, :string, "ID of pipeline", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowPipeline))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show(conn, %{"id" => p_uuid}) do
+    current_user = conn.assigns[:current_user]
+
+    with %Pipeline{} = pipeline <- Document.show_pipeline(current_user, p_uuid) do
+      conn
+      |> render("show.json", pipeline: pipeline)
+    end
+  end
 end

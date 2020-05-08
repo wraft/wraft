@@ -133,12 +133,38 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     conn =
       put(conn, Routes.v1_pipeline_path(conn, :update, pipeline.uuid, %{name: ""}))
       |> doc(operation_id: "update_pipeline")
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
+  end
+
+  test "show renders pipeline details by id", %{conn: conn} do
+    user = conn.assigns.current_user
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, user)
+
+    pipeline = insert(:pipeline, organisation: user.organisation)
+
+    conn = get(conn, Routes.v1_pipeline_path(conn, :show, pipeline.uuid))
+
+    assert json_response(conn, 200)["name"] == pipeline.name
+    assert json_response(conn, 200)["id"] == pipeline.uuid
+  end
+
+  test "show returns not found for non-existent ID", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_pipeline_path(conn, :show, Ecto.UUID.generate()))
+    assert json_response(conn, 404) == "Not Found"
   end
 end

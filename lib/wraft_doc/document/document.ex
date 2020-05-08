@@ -1688,6 +1688,14 @@ defmodule WraftDoc.Document do
   def get_pipeline(_, _), do: nil
 
   @doc """
+  Get a pipeline and its details.
+  """
+  @spec show_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
+  def show_pipeline(current_user, p_uuid) do
+    current_user |> get_pipeline(p_uuid) |> Repo.preload([:creator, :content_types])
+  end
+
+  @doc """
   Updates a pipeline.
   """
   @spec pipeline_update(Pipeline.t(), User.t(), map) :: Pipeline.t()
