@@ -98,4 +98,47 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
     assert pipelines =~ p1.name
     assert pipelines =~ p2.name
   end
+
+  test "update pipeline on valid attributes", %{conn: conn} do
+    user = conn.assigns[:current_user]
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, user)
+
+    pipeline = insert(:pipeline, organisation: user.organisation)
+    insert(:pipe_stage, pipeline: pipeline)
+    c_type = insert(:content_type)
+    params = Map.put(@valid_attrs, :content_types, [c_type.uuid])
+
+    conn =
+      put(conn, Routes.v1_pipeline_path(conn, :update, pipeline.uuid, params))
+      |> doc(operation_id: "update_pipeline")
+
+    stages =
+      json_response(conn, 200)["content_types"]
+      |> Enum.map(fn %{"name" => name} -> name end)
+      |> List.to_string()
+
+    assert json_response(conn, 200)["name"] == @valid_attrs.name
+    assert json_response(conn, 200)["api_route"] == @valid_attrs.api_route
+    assert stages =~ c_type.name
+  end
+
+  test "does't update flow on invalid attrs", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    pipeline = insert(:pipeline, organisation: user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn =
+      put(conn, Routes.v1_pipeline_path(conn, :update, pipeline.uuid, %{name: ""}))
+      |> doc(operation_id: "update_pipeline")
+
+    assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
+  end
 end

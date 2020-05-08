@@ -1651,7 +1651,7 @@ defmodule WraftDoc.Document do
 
   # Create pipe stages by iterating over the list of content type UUIDs
   # given among the params.
-  @spec create_pipe_stages(Pipeline.t(), map) :: [Stage.t()]
+  @spec create_pipe_stages(Pipeline.t(), map) :: list
   defp create_pipe_stages(pipeline, %{"content_types" => c_type_uuids}) do
     c_type_uuids
     |> Enum.map(fn c_type_uuid ->
@@ -1659,11 +1659,13 @@ defmodule WraftDoc.Document do
     end)
   end
 
+  defp create_pipe_stages(_, _), do: []
+
   # Create pipe stages
   @spec do_create_pipe_stages(ContentType.t() | nil, Pipeline.t()) ::
           {:ok, Stage.t()} | {:error, Ecto.Changeset.t()}
   defp do_create_pipe_stages(%ContentType{} = c_type, pipeline) do
-    pipeline |> build_assoc(:stages, content_type: c_type) |> Repo.insert()
+    pipeline |> build_assoc(:stages, content_type: c_type) |> Stage.changeset() |> Repo.insert()
   end
 
   defp do_create_pipe_stages(c_type, _) when is_nil(c_type), do: nil
@@ -1675,5 +1677,31 @@ defmodule WraftDoc.Document do
   def pipeline_index(%User{organisation_id: org_id}, params) do
     from(p in Pipeline, where: p.organisation_id == ^org_id)
     |> Repo.paginate(params)
+  end
+
+  @spec get_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
+  def get_pipeline(%User{organisation_id: org_id}, <<_::288>> = p_uuid) do
+    from(p in Pipeline, where: p.uuid == ^p_uuid, where: p.organisation_id == ^org_id)
+    |> Repo.one()
+  end
+
+  def get_pipeline(_, _), do: nil
+
+  @doc """
+  Updates a pipeline.
+  """
+  @spec pipeline_update(Pipeline.t(), User.t(), map) :: Pipeline.t()
+  def pipeline_update(pipeline, %User{id: user_id}, params) do
+    pipeline
+    |> Pipeline.changeset(params)
+    |> Spur.update(%{actor: "#{user_id}"})
+    |> case do
+      {:ok, pipeline} ->
+        pipeline |> create_pipe_stages(params)
+        pipeline |> Repo.preload([:creator, :content_types])
+
+      {:error, _} = changeset ->
+        changeset
+    end
   end
 end
