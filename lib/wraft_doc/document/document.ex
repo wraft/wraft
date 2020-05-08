@@ -1667,4 +1667,13 @@ defmodule WraftDoc.Document do
   end
 
   defp do_create_pipe_stages(c_type, _) when is_nil(c_type), do: nil
+
+  @doc """
+  List of all pipelines in the user's organisation.
+  """
+  @spec pipeline_index(User.t(), map) :: map
+  def pipeline_index(%User{organisation_id: org_id}, params) do
+    from(p in Pipeline, where: p.organisation_id == ^org_id)
+    |> Repo.paginate(params)
+  end
 end
