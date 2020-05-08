@@ -273,4 +273,21 @@ defmodule WraftDoc.DocumentTest do
       assert %{name: ["can't be blank"], api_route: ["can't be blank"]} == errors_on(changeset)
     end
   end
+
+  describe "pipeline_index/2" do
+    test "returns list of pipelines in the users organisation only" do
+      user = insert(:user)
+      pipeline1 = insert(:pipeline, organisation: user.organisation)
+      pipeline2 = insert(:pipeline)
+      %{entries: pipelines} = Document.pipeline_index(user, %{})
+      pipeline_names = pipelines |> Enum.map(fn x -> x.name end) |> List.to_string()
+      assert pipeline_names =~ pipeline1.name
+      refute pipeline_names =~ pipeline2.name
+    end
+
+    test "returns nil with invalid attrs" do
+      response = Document.pipeline_index(nil, %{})
+      assert response == nil
+    end
+  end
 end

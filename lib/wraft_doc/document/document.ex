@@ -1675,12 +1675,17 @@ defmodule WraftDoc.Document do
   @doc """
   List of all pipelines in the user's organisation.
   """
-  @spec pipeline_index(User.t(), map) :: map
+  @spec pipeline_index(User.t(), map) :: map | nil
   def pipeline_index(%User{organisation_id: org_id}, params) do
     from(p in Pipeline, where: p.organisation_id == ^org_id)
     |> Repo.paginate(params)
   end
 
+  def pipeline_index(_, _), do: nil
+
+  @doc """
+  Get a pipeline from its UUID and user's organisation.
+  """
   @spec get_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
   def get_pipeline(%User{organisation_id: org_id}, <<_::288>> = p_uuid) do
     from(p in Pipeline, where: p.uuid == ^p_uuid, where: p.organisation_id == ^org_id)
