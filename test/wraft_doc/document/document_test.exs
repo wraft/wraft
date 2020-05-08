@@ -26,6 +26,7 @@ defmodule WraftDoc.DocumentTest do
     Document.Block,
     Document.BlockTemplate,
     Document.Comment,
+    Document.Pipeline,
     Document
   }
 
@@ -817,6 +818,24 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       {:error, changeset} = Document.create_pipeline(user, %{})
       assert %{name: ["can't be blank"], api_route: ["can't be blank"]} == errors_on(changeset)
+    end
+  end
+
+  describe "delete_pipeline/2" do
+    test "deletes pipeline with correct data" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+      count_before = Pipeline |> Repo.all() |> length()
+      {:ok, deleted_pipeline} = Document.delete_pipeline(pipeline, user)
+      count_after = Pipeline |> Repo.all() |> length()
+      assert count_before - 1 == count_after
+      assert deleted_pipeline.name == pipeline.name
+      assert deleted_pipeline.api_route == pipeline.api_route
+    end
+
+    test "returns nil with invalid data" do
+      response = Document.delete_pipeline(nil, nil)
+      assert response == nil
     end
   end
 end

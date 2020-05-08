@@ -1725,10 +1725,12 @@ defmodule WraftDoc.Document do
   """
   @spec delete_pipeline(Pipeline.t(), User.t()) ::
           {:ok, Pipeline.t()} | {:error, Ecto.Changeset.t()}
-  def delete_pipeline(pipeline, %User{id: id}) do
+  def delete_pipeline(%Pipeline{} = pipeline, %User{id: id}) do
     pipeline
     |> Spur.delete(%{actor: "#{id}", meta: pipeline})
   end
+
+  def delete_pipeline(_, _), do: nil
 
   @doc """
   Get a pipeline stage.
