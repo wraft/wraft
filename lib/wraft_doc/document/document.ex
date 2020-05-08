@@ -1708,7 +1708,7 @@ defmodule WraftDoc.Document do
   @spec pipeline_update(Pipeline.t(), User.t(), map) :: Pipeline.t()
   def pipeline_update(pipeline, %User{id: user_id}, params) do
     pipeline
-    |> Pipeline.changeset(params)
+    |> Pipeline.update_changeset(params)
     |> Spur.update(%{actor: "#{user_id}"})
     |> case do
       {:ok, pipeline} ->
