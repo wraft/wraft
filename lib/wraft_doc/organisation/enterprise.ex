@@ -18,6 +18,11 @@ defmodule WraftDoc.Enterprise do
   }
 
   @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
+  @default_controlled_states [
+    %{"state" => "Draft", "order" => 1},
+    %{"state" => "Review", "order" => 2},
+    %{"state" => "Publish", "order" => 3}
+  ]
 
   @doc """
   Get a flow from its UUID.
@@ -36,11 +41,11 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
-  Create a flow.
+  Create an uncontrolled flow flow.
   """
   @spec create_flow(User.t(), map) ::
           %Flow{creator: User.t()} | {:error, Ecto.Changeset.t()}
-  def create_flow(%{organisation_id: org_id} = current_user, params) do
+  def create_flow(%{organisation_id: org_id} = current_user, %{"controlled" => false} = params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
 
     current_user
@@ -49,6 +54,28 @@ defmodule WraftDoc.Enterprise do
     |> Spur.insert()
     |> case do
       {:ok, flow} ->
+        Task.start_link(fn -> create_default_states(current_user, flow, false) end)
+        flow |> Repo.preload(:creator)
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Create a controlled flow flow.
+  """
+
+  def create_flow(%{organisation_id: org_id} = current_user, %{"controlled" => true} = params) do
+    params = params |> Map.merge(%{"organisation_id" => org_id})
+
+    current_user
+    |> build_assoc(:flows)
+    |> Flow.controlled_changeset(params)
+    |> Spur.insert()
+    |> case do
+      {:ok, flow} ->
+        Task.start_link(fn -> create_default_states(current_user, flow, true) end)
         flow |> Repo.preload(:creator)
 
       {:error, _} = changeset ->
@@ -109,8 +136,19 @@ defmodule WraftDoc.Enterprise do
     |> Spur.delete(%{actor: "#{id}", meta: flow})
   end
 
-  @spec create_default_states(User.t(), Flow.t()) :: list
-  def create_default_states(current_user, flow) do
+  @doc """
+  Create default states for a controlled fow
+  """
+  @spec create_default_states(User.t(), Flow.t(), boolean()) :: list
+  def create_default_states(current_user, flow, true) do
+    Enum.map(@default_controlled_states, fn x -> create_state(current_user, flow, x) end)
+  end
+
+  @doc """
+  Create default states for an uncontrolled flow
+  """
+
+  def create_default_states(current_user, flow, false) do
     Enum.map(@default_states, fn x -> create_state(current_user, flow, x) end)
   end
 

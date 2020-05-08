@@ -1,10 +1,8 @@
 defmodule WraftDoc.DocumentTest do
   use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
-
   use ExUnit.Case
   use Bamboo.Test
-  use WraftDoc.DataCase, async: true
 
   alias WraftDoc.{
     Repo,
