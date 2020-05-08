@@ -49,4 +49,24 @@ defmodule WraftDoc.Enterprise.Flow do
       name: :flow_organisation_unique_index
     )
   end
+
+  def update_changeset(%Flow{} = flow, attrs \\ %{}) do
+    flow
+    |> cast(attrs, [:name, :organisation_id])
+    |> validate_required([:name, :organisation_id])
+    |> unique_constraint(:name,
+      message: "Flow already created.!",
+      name: :flow_organisation_unique_index
+    )
+  end
+
+  def update_controlled_changeset(%Flow{} = flow, attrs \\ %{}) do
+    flow
+    |> cast(attrs, [:name, :control_data, :organisation_id])
+    |> validate_required([:name, :control_data, :organisation_id])
+    |> unique_constraint(:name,
+      message: "Flow already created.!",
+      name: :flow_organisation_unique_index
+    )
+  end
 end

@@ -6,9 +6,26 @@ defmodule WraftDoc.DocumentTest do
 
   alias WraftDoc.{
     Repo,
+    Account.User,
     Document.Layout,
+    Document.ContentType,
+    Document.Engine,
+    Document.Instance,
+    Document.Instance.History,
+    Document.Instance.Version,
+    Document.Theme,
     Document.DataTemplate,
+    Document.Asset,
+    Document.LayoutAsset,
+    Document.FieldType,
+    Document.ContentTypeField,
+    Document.Counter,
+    Enterprise,
+    Enterprise.Flow,
+    Enterprise.Flow.State,
+    Document.Block,
     Document.BlockTemplate,
+    Document.Comment,
     Document
   }
 
