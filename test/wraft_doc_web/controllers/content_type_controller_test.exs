@@ -111,7 +111,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       put(conn, Routes.v1_content_type_path(conn, :update, content_type.uuid, @invalid_attrs))
       |> doc(operation_id: "update_content_type")
 
-    assert json_response(conn, 422)["errors"]["flow_id"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
   end
 
   test "index lists content type by current user", %{conn: conn} do

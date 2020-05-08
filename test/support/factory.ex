@@ -72,7 +72,9 @@ defmodule WraftDoc.Factory do
       name: sequence(:name, &"name-#{&1}"),
       description: "A content type to create documents",
       prefix: "OFFR",
-      organisation: build(:organisation)
+      organisation: build(:organisation),
+      layout: build(:layout),
+      flow: build(:flow)
     }
   end
 

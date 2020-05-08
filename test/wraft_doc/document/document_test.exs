@@ -6,26 +6,14 @@ defmodule WraftDoc.DocumentTest do
 
   alias WraftDoc.{
     Repo,
-    Account.User,
     Document.Layout,
     Document.ContentType,
-    Document.Engine,
     Document.Instance,
-    Document.Instance.History,
     Document.Instance.Version,
-    Document.Theme,
     Document.DataTemplate,
-    Document.Asset,
     Document.LayoutAsset,
-    Document.FieldType,
-    Document.ContentTypeField,
     Document.Counter,
-    Enterprise,
-    Enterprise.Flow,
-    Enterprise.Flow.State,
-    Document.Block,
     Document.BlockTemplate,
-    Document.Comment,
     Document.Pipeline,
     Document.Pipeline.Stage,
     Document
@@ -77,9 +65,7 @@ defmodule WraftDoc.DocumentTest do
   test "show layout shows the layout data and preloads engine crator assets data" do
     user = insert(:user)
     engine = insert(:engine)
-    asset = insert(:asset)
     layout = insert(:layout, creator: user, engine: engine)
-    layout_asset = insert(:layout_asset, layout: layout, asset: asset, creator: user)
     s_layout = Document.show_layout(layout.uuid)
 
     assert s_layout.name == layout.name
@@ -150,12 +136,12 @@ defmodule WraftDoc.DocumentTest do
     {:ok, model} = Document.delete_layout(layout, user)
     count_after = Layout |> Repo.all() |> length()
     assert count_before - 1 == count_after
-    assert layout.name == layout.name
-    assert layout.description == layout.description
-    assert layout.width == layout.width
-    assert layout.height == layout.height
-    assert layout.unit == layout.unit
-    assert layout.slug == layout.slug
+    assert model.name == layout.name
+    assert model.description == layout.description
+    assert model.width == layout.width
+    assert model.height == layout.height
+    assert model.unit == layout.unit
+    assert model.slug == layout.slug
   end
 
   test "delete layout asset deletes a layouts asset and returns the data" do
@@ -173,12 +159,8 @@ defmodule WraftDoc.DocumentTest do
   test "layout index returns the list of layouts" do
     user = insert(:user)
     engine = insert(:engine)
-    a1 = insert(:asset)
-    a2 = insert(:asset)
     l1 = insert(:layout, creator: user, organisation: user.organisation, engine: engine)
     l2 = insert(:layout, creator: user, organisation: user.organisation, engine: engine)
-    la1 = insert(:layout_asset, layout: l1, asset: a1)
-    la2 = insert(:layout_asset, layout: l2, asset: a2)
     layout_index = Document.layout_index(user, %{page_number: 1})
 
     assert layout_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ l1.name
@@ -222,7 +204,7 @@ defmodule WraftDoc.DocumentTest do
     count_before = ContentType |> Repo.all() |> length()
     content_type = Document.create_content_type(user, layout, flow, @valid_content_type_attrs)
     count_after = ContentType |> Repo.all() |> length()
-    count_before + 1 == count_after
+    assert count_before + 1 == count_after
     assert content_type.name == @valid_content_type_attrs["name"]
     assert content_type.description == @valid_content_type_attrs["description"]
     assert content_type.color == @valid_content_type_attrs["color"]
@@ -263,16 +245,7 @@ defmodule WraftDoc.DocumentTest do
     user = insert(:user)
     layout = insert(:layout, creator: user)
     flow = insert(:flow, creator: user)
-    state_1 = insert(:state, flow: flow)
-    state_2 = insert(:state, flow: flow)
-    field_type = insert(:field_type)
     content_type = insert(:content_type, creator: user, layout: layout, flow: flow)
-
-    content_type_field =
-      insert(:content_type_field,
-        content_type: content_type,
-        field_type: field_type
-      )
 
     s_content_type = Document.show_content_type(content_type.uuid)
     assert s_content_type.name == content_type.name
@@ -318,16 +291,16 @@ defmodule WraftDoc.DocumentTest do
     user = insert(:user)
     content_type = insert(:content_type, creator: user)
     count_before = ContentType |> Repo.all() |> length()
-
-    {:error, changeset} = Document.update_content_type(content_type, user, @invalid_attrs)
+    params = @invalid_attrs |> Map.merge(%{name: "", description: "", prefix: ""})
+    {:error, changeset} = Document.update_content_type(content_type, user, params)
     count_after = ContentType |> Repo.all() |> length()
     assert count_before == count_after
 
-    %{
-      name: ["can't be blank"],
-      description: ["can't be blank"],
-      prefix: ["can't be blank"]
-    } == errors_on(changeset)
+    assert %{
+             name: ["can't be blank"],
+             description: ["can't be blank"],
+             prefix: ["can't be blank"]
+           } == errors_on(changeset)
   end
 
   test "delete content_type deletes the content_type data" do
@@ -397,7 +370,6 @@ defmodule WraftDoc.DocumentTest do
 
   test "instance index of an organisation lists instances under an organisation" do
     user = insert(:user)
-    organisation = user.organisation
     i1 = insert(:instance, creator: user)
     i2 = insert(:instance, creator: user)
 
@@ -466,8 +438,8 @@ defmodule WraftDoc.DocumentTest do
     count_after = Instance |> Repo.all() |> length()
     assert count_before == count_after
 
-    %{raw: ["can't be blank"]} ==
-      errors_on(changeset)
+    assert %{raw: ["can't be blank"]} ==
+             errors_on(changeset)
   end
 
   test "update instance state updates state of an instance to new state" do
@@ -845,7 +817,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       pipeline = insert(:pipeline, organisation: user.organisation)
       content_type = insert(:content_type, organisation: user.organisation)
-      stage = insert(:pipe_stage, pipeline: pipeline, content_type: content_type)
+      insert(:pipe_stage, pipeline: pipeline, content_type: content_type)
       response = Document.get_pipe_stage(user, pipeline.uuid, content_type.uuid)
       assert response.pipeline_id == pipeline.id
       assert response.content_type_id == content_type.id
