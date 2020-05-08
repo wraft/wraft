@@ -8,7 +8,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
   plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Pipeline}
+  alias WraftDoc.{Document, Document.Pipeline, Document.Pipeline.Stage}
 
   def swagger_definitions do
     %{
@@ -275,6 +275,36 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
          {:ok, %Pipeline{}} <- Document.delete_pipeline(pipeline, current_user) do
       conn
       |> render("pipeline.json", pipeline: pipeline)
+    end
+  end
+
+  @doc """
+  Delete a pipe stage.
+  """
+  swagger_path :delete_stage do
+    PhoenixSwagger.Path.delete("/pipelines/{id}/content_types/{c_id}")
+    summary("Delete a Pipeline stage")
+    description("API to delete a pipeline-content type association")
+
+    parameters do
+      id(:path, :string, "pipeline id", required: true)
+      c_id(:path, :string, "content type id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowPipeline))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec delete_stage(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete_stage(conn, %{"id" => p_uuid, "c_id" => c_uuid}) do
+    current_user = conn.assigns[:current_user]
+
+    with %Stage{} = pipe_stage <- Document.get_pipe_stage(current_user, p_uuid, c_uuid),
+         {:ok, %Stage{}} <- Document.delete_pipe_stage(pipe_stage, current_user),
+         %Pipeline{} = pipeline <- Document.show_pipeline(current_user, p_uuid) do
+      conn
+      |> render("show.json", pipeline: pipeline)
     end
   end
 end

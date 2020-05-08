@@ -1722,4 +1722,31 @@ defmodule WraftDoc.Document do
     pipeline
     |> Spur.delete(%{actor: "#{id}", meta: pipeline})
   end
+
+  @doc """
+  Get a pipeline stage.
+  """
+  @spec get_pipe_stage(User.t(), Ecto.UUID.t(), Ecto.UUID.t()) :: Stage.t() | nil
+  def get_pipe_stage(%User{organisation_id: org_id}, <<_::288>> = p_uuid, <<_::288>> = c_uuid) do
+    from(s in Stage,
+      join: p in Pipeline,
+      join: c in ContentType,
+      where: p.uuid == ^p_uuid and s.pipeline_id == p.id,
+      where: c.uuid == ^c_uuid and s.content_type_id == c.id,
+      where: p.organisation_id == ^org_id and c.organisation_id == ^org_id
+    )
+    |> Repo.one()
+  end
+
+  def get_pipe_stage(_, _, _), do: nil
+
+  @doc """
+  Delete a pipe stage.
+  """
+  @spec delete_pipe_stage(Stage.t(), User.t()) :: {:ok, Stage.t()}
+  def delete_pipe_stage(pipe_stage, %User{id: id}) do
+    pipe_stage = pipe_stage |> Repo.preload([:pipeline, :content_type])
+    meta = %{pipeline: pipe_stage.pipeline, content_type: pipe_stage.content_type}
+    pipe_stage |> Spur.delete(%{actor: "#{id}", meta: meta})
+  end
 end

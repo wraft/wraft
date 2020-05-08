@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Pipeline, Repo}
+  alias WraftDoc.{Document.Pipeline, Document.Pipeline.Stage, Repo}
 
   @valid_attrs %{
     name: "Official Letter",
@@ -182,5 +182,45 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
     conn = delete(conn, Routes.v1_pipeline_path(conn, :delete, pipeline.uuid))
     assert count_before - 1 == Pipeline |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == pipeline.name
+  end
+
+  test "delete pipe stage by given pipeline and content type ids", %{conn: conn} do
+    user = conn.assigns.current_user
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, user)
+
+    pipeline = insert(:pipeline, organisation: user.organisation)
+    c_type = insert(:content_type, organisation: user.organisation)
+    stage = insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
+    count_before = Stage |> Repo.all() |> length()
+
+    conn = delete(conn, Routes.v1_pipeline_path(conn, :delete_stage, pipeline.uuid, c_type.uuid))
+
+    stages =
+      json_response(conn, 200)["content_types"]
+      |> Enum.map(fn %{"name" => name} -> name end)
+      |> List.to_string()
+
+    assert count_before - 1 == Stage |> Repo.all() |> length()
+    assert json_response(conn, 200)["name"] == pipeline.name
+    refute stages =~ stage.content_type.name
+  end
+
+  test "delete stage returns not found for non-existent IDs", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn =
+      delete(
+        conn,
+        Routes.v1_pipeline_path(conn, :delete_stage, Ecto.UUID.generate(), Ecto.UUID.generate())
+      )
+
+    assert json_response(conn, 404) == "Not Found"
   end
 end
