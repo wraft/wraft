@@ -142,6 +142,8 @@ defmodule WraftDocWeb.Router do
       # Approval system
       resources("/approval_systems", ApprovalSystemController)
       post("/approval_systems/approve", ApprovalSystemController, :approve)
+      # Pipeline
+      resources("/pipelines", PipelineController, only: [:create, :index, :show, :update, :delete])
     end
   end
 

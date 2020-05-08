@@ -8,8 +8,8 @@ defmodule WraftDoc.Document.Pipeline do
   import Ecto.Changeset
   import Ecto.Query
 
-  defimpl Spur.Trackable, for: Asset do
-    def actor(pipeline), do: "#{pipeline.user_id}"
+  defimpl Spur.Trackable, for: Pipeline do
+    def actor(pipeline), do: "#{pipeline.creator_id}"
     def object(pipeline), do: "Pipeline:#{pipeline.id}"
     def target(_chore), do: nil
 
@@ -31,11 +31,7 @@ defmodule WraftDoc.Document.Pipeline do
     timestamps()
   end
 
-  require IEx
-
   def changeset(%Pipeline{} = pipeline, attrs \\ %{}) do
-    IEx.pry()
-
     pipeline
     |> cast(attrs, [:name, :api_route, :organisation_id])
     |> validate_required([:name, :api_route, :organisation_id])
