@@ -26,7 +26,9 @@ defmodule WraftDoc.Document do
     Enterprise.Flow.State,
     Document.Block,
     Document.BlockTemplate,
-    Document.Comment
+    Document.Comment,
+    Document.Pipeline,
+    Document.Pipeline.Stage
   }
 
   alias WraftDocWeb.AssetUploader
@@ -288,10 +290,12 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type from its UUID.
   """
-  @spec get_content_type(binary) :: ContentType.t()
-  def get_content_type(uuid) do
+  @spec get_content_type(Ecto.UUID.t()) :: ContentType.t()
+  def get_content_type(<<_::288>> = uuid) do
     Repo.get_by(ContentType, uuid: uuid)
   end
+
+  def get_content_type(_), do: nil
 
   @doc """
   Get a content type from its ID. Also fetches all its related datas.
@@ -1623,4 +1627,44 @@ defmodule WraftDoc.Document do
     )
     |> Repo.paginate(params)
   end
+
+  @doc """
+  Create a pipeline.
+  """
+  @spec create_pipeline(User.t(), map) :: Pipeline.t() | {:error, Ecto.Changeset.t()}
+  def create_pipeline(%{organisation_id: org_id} = current_user, params) do
+    params = params |> Map.put("organisation_id", org_id)
+
+    current_user
+    |> build_assoc(:pipelines)
+    |> Pipeline.changeset(params)
+    |> Spur.insert()
+    |> case do
+      {:ok, pipeline} ->
+        create_pipe_stages(pipeline, params)
+        pipeline |> Repo.preload(:content_types)
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  # Create pipe stages by iterating over the list of content type UUIDs
+  # given among the params.
+  @spec create_pipe_stages(Pipeline.t(), map) :: [Stage.t()]
+  defp create_pipe_stages(pipeline, %{"content_types" => c_type_uuids}) do
+    c_type_uuids
+    |> Enum.map(fn c_type_uuid ->
+      get_content_type(c_type_uuid) |> do_create_pipe_stages(pipeline)
+    end)
+  end
+
+  # Create pipe stages
+  @spec do_create_pipe_stages(ContentType.t() | nil, Pipeline.t()) ::
+          {:ok, Stage.t()} | {:error, Ecto.Changeset.t()}
+  defp do_create_pipe_stages(%ContentType{} = c_type, pipeline) do
+    pipeline |> build_assoc(:stages, content_type: c_type) |> Repo.insert()
+  end
+
+  defp do_create_pipe_stages(c_type, _) when is_nil(c_type), do: nil
 end
