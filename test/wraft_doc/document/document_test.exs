@@ -838,4 +838,35 @@ defmodule WraftDoc.DocumentTest do
       assert response == nil
     end
   end
+
+  describe "get_pipe_stage/3" do
+    test "returns the pipe stage in the user's organisation with valid IDs and user struct" do
+      user = insert(:user)
+      pipeline = insert(:pipeline, organisation: user.organisation)
+      content_type = insert(:content_type, organisation: user.organisation)
+      stage = insert(:pipe_stage, pipeline: pipeline, content_type: content_type)
+      response = Document.get_pipe_stage(user, pipeline.uuid, content_type.uuid)
+      assert response.pipeline_id == pipeline.id
+      assert response.content_type_id == content_type.id
+    end
+
+    test "returns nil when stage does not belong to user's organisation" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+      content_type = insert(:content_type)
+      response = Document.get_pipe_stage(user, pipeline.uuid, content_type.uuid)
+      assert response == nil
+    end
+
+    test "returns nil with non-existent IDs" do
+      user = insert(:user)
+      response = Document.get_pipe_stage(user, Ecto.UUID.generate(), Ecto.UUID.generate())
+      assert response == nil
+    end
+
+    test "returns nil invalid data" do
+      response = Document.get_pipe_stage(nil, Ecto.UUID.generate(), Ecto.UUID.generate())
+      assert response == nil
+    end
+  end
 end
