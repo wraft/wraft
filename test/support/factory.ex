@@ -26,6 +26,7 @@ defmodule WraftDoc.Factory do
     Authorization.Permission,
     Document.BlockTemplate,
     Document.Comment,
+    Document.Pipeline,
     Enterprise.ApprovalSystem
   }
 
@@ -287,6 +288,15 @@ defmodule WraftDoc.Factory do
       token_type: "token",
       expiry_datetime: Timex.shift(Timex.now(), days: 1),
       user: build(:user)
+    }
+  end
+
+  def pipeline_factory do
+    %Pipeline{
+      name: sequence(:name, &"Pipeline-#{&1}"),
+      api_route: sequence(:api_route, &"clinet-#{&1}.crm-#{&1}.com"),
+      creator: build(:user),
+      organisation: build(:organisation)
     }
   end
 end
