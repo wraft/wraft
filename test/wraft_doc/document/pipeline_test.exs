@@ -8,6 +8,8 @@ defmodule WraftDoc.Document.PipelineTest do
     api_route: "newclient.example.crm.com"
   }
 
+  @update_valid_attrs %{name: ""}
+
   test "changeset with valid attrs" do
     %{id: id} = insert(:organisation)
     params = @valid_attrs |> Map.put(:organisation_id, id)
@@ -17,6 +19,19 @@ defmodule WraftDoc.Document.PipelineTest do
 
   test "changeset with invalid attrs" do
     changeset = Pipeline.changeset(%Pipeline{}, %{})
+    refute changeset.valid?
+  end
+
+  test "update changeset with valid attrs" do
+    pipeline = insert(:pipeline)
+    params = @valid_attrs
+    changeset = Pipeline.changeset(pipeline, @valid_attrs)
+    assert changeset.valid?
+  end
+
+  test "update changeset with invalid attrs" do
+    pipeline = insert(:pipeline)
+    changeset = Pipeline.changeset(pipeline, @update_valid_attrs)
     refute changeset.valid?
   end
 

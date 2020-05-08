@@ -41,4 +41,14 @@ defmodule WraftDoc.Document.Pipeline do
       name: "organisation_pipeline_unique_index"
     )
   end
+
+  def update_changeset(%Pipeline{} = pipeline, attrs \\ %{}) do
+    pipeline
+    |> cast(attrs, [:name, :api_route])
+    |> validate_required([:name, :api_route])
+    |> unique_constraint(:name,
+      message: "Pipeline with the same name already exists.!",
+      name: "organisation_pipeline_unique_index"
+    )
+  end
 end
