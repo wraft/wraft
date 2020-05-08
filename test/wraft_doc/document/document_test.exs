@@ -499,7 +499,7 @@ defmodule WraftDoc.DocumentTest do
       assert data_templates =~ "Title3"
     end
 
-    test "test doesn not do bulk data template creation with invalid data" do
+    test "test does not do bulk data template creation with invalid data" do
       count_before = DataTemplate |> Repo.all() |> length()
       response = Document.data_template_bulk_insert(nil, nil, nil, nil)
       assert count_before == DataTemplate |> Repo.all() |> length()
