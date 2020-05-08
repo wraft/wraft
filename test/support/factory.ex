@@ -27,6 +27,7 @@ defmodule WraftDoc.Factory do
     Document.BlockTemplate,
     Document.Comment,
     Document.Pipeline,
+    Document.Pipeline.Stage,
     Enterprise.ApprovalSystem
   }
 
@@ -297,6 +298,13 @@ defmodule WraftDoc.Factory do
       api_route: sequence(:api_route, &"clinet-#{&1}.crm-#{&1}.com"),
       creator: build(:user),
       organisation: build(:organisation)
+    }
+  end
+
+  def pipe_stage_factory do
+    %Stage{
+      pipeline: build(:pipeline),
+      content_type: build(:content_type)
     }
   end
 end

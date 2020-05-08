@@ -83,6 +83,21 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
             ]
           })
         end,
+      ShowPipeline:
+        swagger_schema do
+          title("Show pipeline")
+          description("Show details of a pipeline")
+
+          properties do
+            id(:string, "ID of the pipeline")
+            name(:string, "Name of the pipeline")
+            api_route(:string, "API route of the CRM")
+            inserted_at(:string, "When was the flow inserted", format: "ISO-8601")
+            updated_at(:string, "When was the flow last updated", format: "ISO-8601")
+            stages(Schema.ref(:ContentTypeWithoutFields))
+            creator(Schema.ref(:User))
+          end
+        end,
       Pipelines:
         swagger_schema do
           title("Pipeline list")
@@ -175,6 +190,35 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
         total_pages: total_pages,
         total_entries: total_entries
       )
+    end
+  end
+
+  @doc """
+  Update a pipeline.
+  """
+  swagger_path :update do
+    put("/pipelines/{id}")
+    summary("Update a pipeline")
+    description("API to update a pipeline.")
+
+    parameters do
+      id(:path, :string, "ID of pipeline", required: true)
+      pipeline(:body, Schema.ref(:PipelineRequest), "Pipeline to be updated", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowPipeline))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"id" => p_uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, p_uuid),
+         %Pipeline{} = pipeline <- Document.pipeline_update(pipeline, current_user, params) do
+      conn
+      |> render("show.json", pipeline: pipeline)
     end
   end
 end
