@@ -1712,4 +1712,14 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
+
+  @doc """
+  Delete a pipeline.
+  """
+  @spec delete_pipeline(Pipeline.t(), User.t()) ::
+          {:ok, Pipeline.t()} | {:error, Ecto.Changeset.t()}
+  def delete_pipeline(pipeline, %User{id: id}) do
+    pipeline
+    |> Spur.delete(%{actor: "#{id}", meta: pipeline})
+  end
 end

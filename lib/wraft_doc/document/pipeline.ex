@@ -18,6 +18,7 @@ defmodule WraftDoc.Document.Pipeline do
     end
   end
 
+  @derive {Jason.Encoder, only: [:name, :api_route]}
   schema "pipeline" do
     field(:uuid, Ecto.UUID, autogenerate: true)
     field(:name, :string)

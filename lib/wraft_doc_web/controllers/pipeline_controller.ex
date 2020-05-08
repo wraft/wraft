@@ -248,4 +248,33 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
       |> render("show.json", pipeline: pipeline)
     end
   end
+
+  @doc """
+  Delete a pipeline.
+  """
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/pipelines/{id}")
+    summary("Pipeline delete")
+    description("API to delete a pipeline")
+
+    parameters do
+      id(:path, :string, "pipeline id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Pipeline))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete(conn, %{"id" => uuid}) do
+    current_user = conn.assigns[:current_user]
+
+    with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, uuid),
+         {:ok, %Pipeline{}} <- Document.delete_pipeline(pipeline, current_user) do
+      conn
+      |> render("pipeline.json", pipeline: pipeline)
+    end
+  end
 end
