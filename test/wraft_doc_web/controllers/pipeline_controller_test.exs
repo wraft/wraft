@@ -76,4 +76,26 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
     assert count_before == Pipeline |> Repo.all() |> length()
   end
+
+  test "index lists all pipelines in current user's organisation", %{conn: conn} do
+    user = conn.assigns.current_user
+
+    p1 = insert(:pipeline, organisation: user.organisation)
+    p2 = insert(:pipeline, organisation: user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_pipeline_path(conn, :index))
+
+    pipelines =
+      json_response(conn, 200)["pipelines"]
+      |> Enum.map(fn %{"name" => name} -> name end)
+      |> List.to_string()
+
+    assert pipelines =~ p1.name
+    assert pipelines =~ p2.name
+  end
 end

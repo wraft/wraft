@@ -82,6 +82,37 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
               }
             ]
           })
+        end,
+      Pipelines:
+        swagger_schema do
+          title("Pipeline list")
+          description("Pipelines created so far")
+          type(:array)
+          items(Schema.ref(:Pipeline))
+        end,
+      PipelineIndex:
+        swagger_schema do
+          properties do
+            flows(Schema.ref(:Pipelines))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            pipelines: [
+              %{
+                id: "1232148nb3478",
+                name: "Pipeline 1",
+                api_route: "client.crm.com",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              }
+            ],
+            page_number: 1,
+            total_pages: 2,
+            total_entries: 15
+          })
         end
     }
   end
@@ -109,6 +140,41 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
 
     with %Pipeline{} = pipeline <- Document.create_pipeline(current_user, params) do
       conn |> render("create.json", pipeline: pipeline)
+    end
+  end
+
+  @doc """
+  Pipeline index of current user's organisation.
+  """
+  swagger_path :index do
+    get("/pipelines")
+    summary("Pipeline index of a organisation")
+    description("API to list pipelines of current user's organisation.")
+
+    parameter(:page, :query, :string, "Page number")
+
+    response(200, "Ok", Schema.ref(:PipelineIndex))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %{
+           entries: pipelines,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.pipeline_index(current_user, params) do
+      conn
+      |> render("index.json",
+        pipelines: pipelines,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
     end
   end
 end
