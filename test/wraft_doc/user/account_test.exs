@@ -1,4 +1,4 @@
-defmodule WraftDoc.DocumentTest do
+defmodule WraftDoc.AccountTest do
   use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
   alias WraftDoc.{Repo, Account, Account.AuthToken}
