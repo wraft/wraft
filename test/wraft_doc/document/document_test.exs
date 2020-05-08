@@ -318,4 +318,32 @@ defmodule WraftDoc.DocumentTest do
       assert response == nil
     end
   end
+
+  describe "show_pipeline/2" do
+    test "returns the pipeline in the user's organisation with given id" do
+      user = insert(:user)
+      pipe = insert(:pipeline, organisation: user.organisation)
+      pipeline = Document.show_pipeline(user, pipe.uuid)
+      assert pipeline.name == pipe.name
+      assert pipeline.uuid == pipe.uuid
+    end
+
+    test "returns nil when pipeline does not belong to the user's organisation" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+      response = Document.show_pipeline(user, pipeline.uuid)
+      assert response == nil
+    end
+
+    test "returns nil for non existent pipeline" do
+      user = insert(:user)
+      response = Document.show_pipeline(user, Ecto.UUID.generate())
+      assert response == nil
+    end
+
+    test "returns nil for invalid data" do
+      response = Document.show_pipeline(nil, Ecto.UUID.generate())
+      assert response == nil
+    end
+  end
 end
