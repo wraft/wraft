@@ -27,13 +27,41 @@ defmodule WraftDoc.EnterpriseTest do
     assert state.state == r_state.state
   end
 
-  test "create flow creates a flow in database" do
-    %{name: name, creator: user} = insert(:flow)
+  test "create a controlled flow by adding conttrolled true and adding three default states" do
+    user = insert(:user)
+
+    params = %{
+      "name" => "flow 1",
+      "controlled" => true,
+      "control_data" => %{"pre_state" => "review", "post_state" => "publish", "approver" => user}
+    }
+
     count_before = Flow |> Repo.all() |> length()
-    flow = Enterprise.create_flow(user, %{"name" => name})
+    state_count_before = State |> Repo.all() |> length()
+    flow = Enterprise.create_flow(user, params)
     count_after = Flow |> Repo.all() |> length()
-    assert flow.name == name
+    state_count_after = State |> Repo.all() |> length()
+    assert flow.name == params["name"]
     assert count_before + 1 == count_after
+    refute state_count_before == state_count_after
+  end
+
+  test "create an uncontrolled flow by adding conttrolled false and adding two default states" do
+    user = insert(:user)
+
+    params = %{
+      "name" => "flow 1",
+      "controlled" => false
+    }
+
+    count_before = Flow |> Repo.all() |> length()
+    state_count_before = State |> Repo.all() |> length()
+    flow = Enterprise.create_flow(user, params)
+    count_after = Flow |> Repo.all() |> length()
+    state_count_after = State |> Repo.all() |> length()
+    assert flow.name == params["name"]
+    assert count_before + 1 == count_after
+    refute state_count_before == state_count_after
   end
 
   test "flow index returns the list of flows" do
@@ -58,7 +86,10 @@ defmodule WraftDoc.EnterpriseTest do
   test "update flow updates a flow data" do
     flow = insert(:flow)
     count_before = Flow |> Repo.all() |> length()
-    %Flow{name: name} = Enterprise.update_flow(flow, flow.creator, %{name: "flow 2"})
+
+    %Flow{name: name} =
+      Enterprise.update_flow(flow, flow.creator, %{"name" => "flow 2", "controlled" => false})
+
     count_after = Flow |> Repo.all() |> length()
     assert name == "flow 2"
     assert count_before == count_after
@@ -72,17 +103,17 @@ defmodule WraftDoc.EnterpriseTest do
     assert count_before - 1 == count_after
   end
 
-  test "create default states creates two states per flow" do
-    flow = insert(:flow)
-    state_count_before = State |> Repo.all() |> length()
+  # test "create default states creates two states per flow" do
+  #   flow = insert(:flow)
+  #   state_count_before = State |> Repo.all() |> length()
 
-    states = Enterprise.create_default_states(flow.creator, flow)
-    state_count_after = State |> Repo.all() |> length()
-    assert state_count_before + 2 == state_count_after
+  #   states = Enterprise.create_default_states(flow.creator, flow)
+  #   state_count_after = State |> Repo.all() |> length()
+  #   assert state_count_before + 2 == state_count_after
 
-    assert Enum.map(states, fn x -> x.state end) |> List.to_string() =~ "Draft"
-    assert Enum.map(states, fn x -> x.state end) |> List.to_string() =~ "Publish"
-  end
+  #   assert Enum.map(states, fn x -> x.state end) |> List.to_string() =~ "Draft"
+  #   assert Enum.map(states, fn x -> x.state end) |> List.to_string() =~ "Publish"
+  # end
 
   test "create state creates a state " do
     flow = insert(:flow)
