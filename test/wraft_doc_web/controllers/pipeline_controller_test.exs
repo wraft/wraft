@@ -167,4 +167,20 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
     conn = get(conn, Routes.v1_pipeline_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 404) == "Not Found"
   end
+
+  test "delete pipeline by given id", %{conn: conn} do
+    user = conn.assigns.current_user
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, user)
+
+    pipeline = insert(:pipeline, organisation: user.organisation)
+    count_before = Pipeline |> Repo.all() |> length()
+
+    conn = delete(conn, Routes.v1_pipeline_path(conn, :delete, pipeline.uuid))
+    assert count_before - 1 == Pipeline |> Repo.all() |> length()
+    assert json_response(conn, 200)["name"] == pipeline.name
+  end
 end
