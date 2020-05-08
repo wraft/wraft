@@ -190,6 +190,7 @@ defmodule WraftDoc.Factory do
     %Flow{
       name: sequence(:name, &"flow-#{&1}"),
       organisation: build(:organisation),
+      controlled: false,
       creator: build(:user)
     }
   end

@@ -33,4 +33,21 @@ defmodule WraftDoc.Account.ProfileTest do
     assert changeset.valid?
     refute Map.has_key?(changeset.changes, :profile_pic)
   end
+
+  test "changeset with a file uploader struct" do
+    profile = insert(:profile)
+
+    profile_pic = %Plug.Upload{
+      content_type: "image/png",
+      path: File.cwd!() <> "/test/helper/images.png",
+      filename: "images.png"
+    }
+
+    attrs = Map.put(@valid_attrs, :profile_pic, profile_pic)
+
+    changeset = Profile.changeset(profile, attrs)
+
+    assert changeset.valid?
+    assert Map.has_key?(changeset.changes, :profile_pic)
+  end
 end
