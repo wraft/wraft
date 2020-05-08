@@ -1632,6 +1632,8 @@ defmodule WraftDoc.Document do
   Create a pipeline.
   """
   @spec create_pipeline(User.t(), map) :: Pipeline.t() | {:error, Ecto.Changeset.t()}
+  # TODO- remove the next line
+  # Test written
   def create_pipeline(%{organisation_id: org_id} = current_user, params) do
     params = params |> Map.put("organisation_id", org_id)
 
