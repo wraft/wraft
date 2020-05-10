@@ -22,9 +22,9 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.AdminCheck)
   end
 
-  pipeline :can do
-    plug(WraftDocWeb.Plug.Authorized)
-  end
+  # pipeline :can do
+  # plug(WraftDocWeb.Plug.Authorized)
+  # end
 
   scope "/", WraftDocWeb do
     # Use the default browser stack
@@ -61,8 +61,12 @@ defmodule WraftDocWeb.Router do
       get("/users/me", UserController, :me)
       # Get activity stream for current user user
       get("/activities", UserController, :activity)
+      # Update profile
       put("/profiles", ProfileController, :update)
+      # Show current user's profile
       get("/profiles", ProfileController, :show_current_profile)
+      # Update user password
+      put("/user/password", UserController, :update)
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
       # Delete layout asset
@@ -80,6 +84,7 @@ defmodule WraftDocWeb.Router do
 
           # Data template
           resources("/data_templates", DataTemplateController, only: [:create, :index])
+          post("/data_templates/bulk_import", DataTemplateController, :bulk_import)
         end
       end
 
@@ -124,14 +129,17 @@ defmodule WraftDocWeb.Router do
       # build PDF from a content
       post("/contents/:id/build", InstanceController, :build)
 
-      # All instances in an organisation
+      # All data in an organisation
       get("/data_templates", DataTemplateController, :all_templates)
+      # Block templates
+      resources("/block_templates", BlockTemplateController)
+      post("/block_templates/bulk_import", BlockTemplateController, :bulk_import)
 
       # Assets
       resources("/assets", AssetController, only: [:create, :index, :show, :update, :delete])
-      put("/user/password", UserController, :update)
-      resources("/block_templates", BlockTemplateController)
+      # Comments
       resources("/comments", CommentController)
+      # Approval system
       resources("/approval_systems", ApprovalSystemController)
       post("/approval_systems/approve", ApprovalSystemController, :approve)
     end

@@ -2,6 +2,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
   plug(WraftDocWeb.Plug.Authorized)
+  plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
   alias WraftDoc.{Document, Document.ContentType, Document.DataTemplate}
 
@@ -346,4 +347,38 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
       |> render("create.json", d_template: d_temp)
     end
   end
+
+  @doc """
+  Bulk data template creation.
+  """
+  swagger_path :bulk_import do
+    post("/content_types/{c_type_id}/data_templates/bulk_import")
+    summary("Create data template in bulk")
+    description("API for data template bulk creation")
+    consumes("multipart/form-data")
+
+    parameter(:c_type_id, :path, :string, "Content type id", required: true)
+    parameter(:file, :formData, :file, "Bulk data template creation source file")
+    parameter(:mapping, :formData, :map, "Mappings for the CSV")
+
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec bulk_import(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def bulk_import(
+        conn,
+        %{"c_type_id" => c_type_uuid, "mapping" => mapping, "file" => file}
+      ) do
+    %{uuid: uuid} = conn.assigns[:current_user]
+
+    with %ContentType{} <- Document.get_content_type(c_type_uuid),
+         {:ok, %Oban.Job{}} <-
+           Document.insert_data_template_bulk_import_work(uuid, c_type_uuid, mapping, file) do
+      conn
+      |> render("bulk.json", resource: "Data Template")
+    end
+  end
+
+  def bulk_import(_conn, _), do: nil
 end

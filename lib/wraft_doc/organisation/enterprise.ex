@@ -18,6 +18,11 @@ defmodule WraftDoc.Enterprise do
   }
 
   @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
+  @default_controlled_states [
+    %{"state" => "Draft", "order" => 1},
+    %{"state" => "Review", "order" => 2},
+    %{"state" => "Publish", "order" => 3}
+  ]
 
   @doc """
   Get a flow from its UUID.
@@ -36,10 +41,32 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
-  Create a flow.
+  Create a controlled flow flow.
   """
   @spec create_flow(User.t(), map) ::
           %Flow{creator: User.t()} | {:error, Ecto.Changeset.t()}
+
+  def create_flow(%{organisation_id: org_id} = current_user, %{"controlled" => true} = params) do
+    params = params |> Map.merge(%{"organisation_id" => org_id})
+
+    current_user
+    |> build_assoc(:flows)
+    |> Flow.controlled_changeset(params)
+    |> Spur.insert()
+    |> case do
+      {:ok, flow} ->
+        Task.start_link(fn -> create_default_states(current_user, flow, true) end)
+        flow |> Repo.preload(:creator)
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Create an uncontrolled flow flow.
+  """
+
   def create_flow(%{organisation_id: org_id} = current_user, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
 
@@ -49,6 +76,7 @@ defmodule WraftDoc.Enterprise do
     |> Spur.insert()
     |> case do
       {:ok, flow} ->
+        Task.start_link(fn -> create_default_states(current_user, flow) end)
         flow |> Repo.preload(:creator)
 
       {:error, _} = changeset ->
@@ -78,12 +106,11 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
-  Update a flow.
+  Update a controlled flow
   """
-  @spec update_flow(Flow.t(), User.t(), map) :: Flow.t() | {:error, Ecto.Changeset.t()}
-  def update_flow(flow, %User{id: id}, params) do
+  def update_flow(flow, %User{id: id}, %{"controlled" => true} = params) do
     flow
-    |> Flow.changeset(params)
+    |> Flow.update_controlled_changeset(params)
     |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, flow} ->
@@ -95,7 +122,24 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
-  Delete a flow.
+  Update a uncontrolled flow.
+  """
+  @spec update_flow(Flow.t(), User.t(), map) :: Flow.t() | {:error, Ecto.Changeset.t()}
+  def update_flow(flow, %User{id: id}, params) do
+    flow
+    |> Flow.update_changeset(params)
+    |> Spur.update(%{actor: "#{id}"})
+    |> case do
+      {:ok, flow} ->
+        flow |> Repo.preload(:creator)
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Delete a  flow.
   """
   @spec delete_flow(Flow.t(), User.t()) :: {:ok, Flow.t()} | {:error, Ecto.Changeset.t()}
   def delete_flow(flow, %User{id: id}) do
@@ -109,7 +153,19 @@ defmodule WraftDoc.Enterprise do
     |> Spur.delete(%{actor: "#{id}", meta: flow})
   end
 
-  @spec create_default_states(User.t(), Flow.t()) :: list
+  @doc """
+  Create default states for a controlled fow
+  """
+
+  @spec create_default_states(User.t(), Flow.t(), boolean()) :: list
+  def create_default_states(current_user, flow, true) do
+    Enum.map(@default_controlled_states, fn x -> create_state(current_user, flow, x) end)
+  end
+
+  @doc """
+  Create default states for an uncontrolled flow
+  """
+
   def create_default_states(current_user, flow) do
     Enum.map(@default_states, fn x -> create_state(current_user, flow, x) end)
   end

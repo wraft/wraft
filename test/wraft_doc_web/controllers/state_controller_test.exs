@@ -56,12 +56,11 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     organisation = insert(:organisation)
-    params = Map.merge(@invalid_attrs, %{organisation: organisation})
     flow = insert(:flow)
     count_before = State |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_state_path(conn, :create, flow.uuid), params)
+      post(conn, Routes.v1_state_path(conn, :create, flow.uuid), @invalid_attrs)
       |> doc(operation_id: "create_state")
 
     assert json_response(conn, 422)["errors"]["state"] == ["can't be blank"]
