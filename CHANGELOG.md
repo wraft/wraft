@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v0.0.26 - 2020-05-10
+
+### Added
+
+- Bulk import for Data template and Block template
+- Action logging
+- Integrated Approval system with Flow
+
 ## v0.0.25 - 2020-05-03
 
 ### Added
