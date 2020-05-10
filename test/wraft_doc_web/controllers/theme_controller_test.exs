@@ -69,12 +69,11 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   test "update themes on valid attrs ", %{conn: conn} do
     user = conn.assigns.current_user
-    organisation = user.organisation
     theme = insert(:theme, creator: user)
     content_type = insert(:content_type)
     filename = Plug.Upload.random_file!("test")
     file = %Plug.Upload{content_type: content_type, filename: filename, path: filename}
-    params = Map.merge(@valid_attrs, %{organisation: organisation, creator: user, file: file})
+    params = Map.merge(@valid_attrs, %{file: file})
 
     conn =
       build_conn()
