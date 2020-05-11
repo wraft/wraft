@@ -28,14 +28,14 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
             api_route: "client.crm.com",
             stages: [
               %{
-                content_type_uuid: "12lkjn3490u12",
-                data_template_uuid: "23e40p9lknsd478",
-                state_uuid: "kjwe1823786b3478"
+                content_type_id: "12lkjn3490u12",
+                data_template_id: "23e40p9lknsd478",
+                state_id: "kjwe1823786b3478"
               },
               %{
-                content_type_uuid: "1232148nb3478",
-                data_template_uuid: "1232148nb3478",
-                state_uuid: "1232148nb3478"
+                content_type_id: "1232148nb3478",
+                data_template_id: "1232148nb3478",
+                state_id: "1232148nb3478"
               }
             ]
           })
@@ -46,15 +46,15 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
           description("Map with content type, data template and state UUIDs")
 
           properties do
-            content_type_uuid(:string, "Content type UUID")
-            data_template_uuid(:string, "Data template UUID")
-            state_uuid(:string, "State UUID")
+            content_type_id(:string, "Content type UUID")
+            data_template_id(:string, "Data template UUID")
+            state_id(:string, "State UUID")
           end
 
           example(%{
-            content_type_uuid: "1232148nb3478",
-            data_template_uuid: "1232148nb3478",
-            state_uuid: "1232148nb3478"
+            content_type_id: "1232148nb3478",
+            data_template_id: "1232148nb3478",
+            state_id: "1232148nb3478"
           })
         end,
       PipeStageRequest:
@@ -66,14 +66,14 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
 
           example([
             %{
-              content_type_uuid: "12lkjn3490u12",
-              data_template_uuid: "23e40p9lknsd478",
-              state_uuid: "kjwe1823786b3478"
+              content_type_id: "12lkjn3490u12",
+              data_template_id: "23e40p9lknsd478",
+              state_id: "kjwe1823786b3478"
             },
             %{
-              content_type_uuid: "1232148nb3478",
-              data_template_uuid: "1232148nb3478",
-              state_uuid: "1232148nb3478"
+              content_type_id: "1232148nb3478",
+              data_template_id: "1232148nb3478",
+              state_id: "1232148nb3478"
             }
           ])
         end,

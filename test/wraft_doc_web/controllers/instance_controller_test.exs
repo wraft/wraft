@@ -33,7 +33,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   test "create instances by valid attrrs", %{conn: conn} do
-    content_type = insert(:content_type, creator: conn.assigns.current_user)
+    content_type = insert(:content_type, organisation: conn.assigns.current_user.organisation)
     state = insert(:state)
 
     conn =
@@ -54,7 +54,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   test "does not create instances by invalid attrs", %{conn: conn} do
-    content_type = insert(:content_type, creator: conn.assigns.current_user)
+    content_type = insert(:content_type, organiation: conn.assigns.current_user.organisation)
     state = insert(:state)
 
     conn =

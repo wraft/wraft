@@ -68,7 +68,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   end
 
   test "update states on valid attrs", %{conn: conn} do
-    state = insert(:state, creator: conn.assigns.current_user, flow: insert(:flow))
+    state = insert(:state, organisation: conn.assigns.current_user.organisation)
 
     conn =
       build_conn()
@@ -87,7 +87,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   end
 
   test "does't update states for invalid attrs", %{conn: conn} do
-    state = insert(:state, creator: conn.assigns.current_user)
+    state = insert(:state, organisation: conn.assigns.current_user.organisation)
 
     conn =
       build_conn()
@@ -126,7 +126,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    state = insert(:state, creator: conn.assigns.current_user)
+    state = insert(:state, organisation: conn.assigns.current_user.organisation)
     count_before = State |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_state_path(conn, :delete, state.uuid))

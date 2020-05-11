@@ -24,7 +24,6 @@ defmodule WraftDoc.Document.PipelineTest do
 
   test "update changeset with valid attrs" do
     pipeline = insert(:pipeline)
-    params = @valid_attrs
     changeset = Pipeline.changeset(pipeline, @valid_attrs)
     assert changeset.valid?
   end
@@ -37,7 +36,7 @@ defmodule WraftDoc.Document.PipelineTest do
 
   test "pipeline name unique constraint" do
     organisation = insert(:organisation)
-    pipeline = insert(:pipeline, organisation: organisation)
+    insert(:pipeline, organisation: organisation)
     params = @valid_attrs |> Map.put(:organisation_id, organisation.id)
     {:ok, _pipeline} = Pipeline.changeset(%Pipeline{}, params) |> Repo.insert()
     {:error, changeset} = Pipeline.changeset(%Pipeline{}, params) |> Repo.insert()

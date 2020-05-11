@@ -1662,16 +1662,16 @@ defmodule WraftDoc.Document do
     end)
   end
 
-  defp create_pipe_stages(_, _), do: []
+  defp create_pipe_stages(_, _, _), do: []
 
   # Get the values for pipe stage creation to create a pipe stage.
   @spec get_pipe_stage_params(map, User.t()) ::
           {ContentType.t(), DataTemplate.t(), State.t(), User.t()}
   defp get_pipe_stage_params(
          %{
-           "content_type_uuid" => c_type_uuid,
-           "data_template_uuid" => d_temp_uuid,
-           "state_uuid" => state_uuid
+           "content_type_id" => c_type_uuid,
+           "data_template_id" => d_temp_uuid,
+           "state_id" => state_uuid
          },
          user
        ) do
@@ -1733,21 +1733,23 @@ defmodule WraftDoc.Document do
   """
   @spec show_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
   def show_pipeline(current_user, p_uuid) do
-    current_user |> get_pipeline(p_uuid) |> Repo.preload([:creator, :content_types])
+    current_user
+    |> get_pipeline(p_uuid)
+    |> Repo.preload([:creator, stages: [:content_type, :data_template, :state]])
   end
 
   @doc """
   Updates a pipeline.
   """
   @spec pipeline_update(Pipeline.t(), User.t(), map) :: Pipeline.t()
-  def pipeline_update(pipeline, %User{id: user_id}, params) do
+  def pipeline_update(pipeline, %User{id: user_id} = user, params) do
     pipeline
     |> Pipeline.update_changeset(params)
     |> Spur.update(%{actor: "#{user_id}"})
     |> case do
       {:ok, pipeline} ->
-        pipeline |> create_pipe_stages(params)
-        pipeline |> Repo.preload([:creator, :content_types])
+        user |> create_pipe_stages(pipeline, params)
+        pipeline |> Repo.preload([:creator, stages: [:content_type, :data_template, :state]])
 
       {:error, _} = changeset ->
         changeset

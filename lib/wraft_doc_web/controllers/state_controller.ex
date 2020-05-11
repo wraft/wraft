@@ -223,7 +223,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
   end
 
   @doc """
-  Flow delete.
+  State delete.
   """
   swagger_path :delete do
     PhoenixSwagger.Path.delete("/states/{id}")

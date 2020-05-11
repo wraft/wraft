@@ -245,9 +245,16 @@ defmodule WraftDoc.DocumentTest do
     user = insert(:user)
     layout = insert(:layout, creator: user)
     flow = insert(:flow, creator: user)
-    content_type = insert(:content_type, creator: user, layout: layout, flow: flow)
 
-    s_content_type = Document.show_content_type(content_type.uuid)
+    content_type =
+      insert(:content_type,
+        organisation: user.organisation,
+        creator: user,
+        layout: layout,
+        flow: flow
+      )
+
+    s_content_type = Document.show_content_type(user, content_type.uuid)
     assert s_content_type.name == content_type.name
     assert s_content_type.description == content_type.description
     assert s_content_type.color == content_type.color
@@ -257,8 +264,8 @@ defmodule WraftDoc.DocumentTest do
 
   test "get content_type shows the content_type data" do
     user = insert(:user)
-    content_type = insert(:content_type, creator: user)
-    s_content_type = Document.get_content_type(content_type.uuid)
+    content_type = insert(:content_type, organisation: user.user)
+    s_content_type = Document.get_content_type(user, content_type.uuid)
     assert s_content_type.name == content_type.name
     assert s_content_type.description == content_type.description
     assert s_content_type.color == content_type.color
@@ -672,20 +679,33 @@ defmodule WraftDoc.DocumentTest do
   describe "create_pipeline/2" do
     test "creates pipeline with valid attrs" do
       user = insert(:user)
-      c_type = insert(:content_type)
+      c_type = insert(:content_type, organisation: user.organisation)
+      d_temp = insert(:data_template, content_type: c_type)
+      state = insert(:state, organisation: user.organisation)
 
       attrs = %{
         "name" => "pipeline",
         "api_route" => "www.crm.com",
         "organisation_id" => user.organisation_id,
-        "content_types" => [c_type.uuid]
+        "stages" => [
+          %{
+            "state_id" => state.uuid,
+            "content_type_id" => c_type.uuid,
+            "data_template_uuid" => d_temp.uuid
+          }
+        ]
       }
 
       pipeline = Document.create_pipeline(user, attrs)
-      [content_type] = pipeline.content_types
+
+      [%{content_type: content_type, data_template: data_template, state: resp_state}] =
+        pipeline.stages
+
       assert pipeline.name == "pipeline"
       assert pipeline.api_route == "www.crm.com"
       assert content_type.name == c_type.name
+      assert data_template.name == d_temp.title
+      assert resp_state.name == state.state
     end
 
     test "returns error with invalid attrs" do

@@ -1,7 +1,7 @@
 defmodule WraftDoc.Document.Pipeline.HookTriggerHistoryTest do
   use WraftDoc.ModelCase
   alias WraftDoc.Document.Pipeline.HookTriggerHistory
-  import WraftDoc.Factory
+  # import WraftDoc.Factory
 
   @valid_attrs %{
     meta: %{name: "John Doe", post: "Developer"}
