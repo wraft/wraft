@@ -31,7 +31,7 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     current_user = conn.assigns.current_user
-    instance = insert(:instance, organisation: current_user.organisation)
+    instance = insert(:instance)
     pre_state = insert(:state, organisation: current_user.organisation)
     post_state = insert(:state, organisation: current_user.organisation)
     approver = insert(:user)
@@ -76,7 +76,7 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     current_user = conn.assigns.current_user
-    instance = insert(:instance, organisation: current_user.organisation)
+    instance = insert(:instance)
     pre_state = insert(:state, organisation: current_user.organisation)
     post_state = insert(:state, organisation: current_user.organisation)
     approver = insert(:user)

@@ -33,13 +33,14 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   test "create instances by valid attrrs", %{conn: conn} do
-    content_type = insert(:content_type, organisation: conn.assigns.current_user.organisation)
-    state = insert(:state)
+    user = conn.assigns.current_user
+    content_type = insert(:content_type, organisation: user.organisation)
+    state = insert(:state, organisation: user.organisation)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     params = Map.merge(@valid_attrs, %{state_uuid: state.uuid})
 
@@ -54,13 +55,14 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   test "does not create instances by invalid attrs", %{conn: conn} do
-    content_type = insert(:content_type, organiation: conn.assigns.current_user.organisation)
-    state = insert(:state)
+    user = conn.assigns.current_user
+    content_type = insert(:content_type, organisation: user.organisation)
+    state = insert(:state, organisation: user.organisation)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     count_before = Instance |> Repo.all() |> length()
     params = Map.merge(@invalid_attrs, %{state_uuid: state.uuid})
