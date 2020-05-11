@@ -187,7 +187,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   def create(conn, %{"c_type_id" => c_type_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = c_type <- Document.get_content_type(c_type_uuid),
+    with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_uuid),
          {:ok, %DataTemplate{} = d_template} <-
            Document.create_data_template(current_user, c_type, params) do
       conn
@@ -370,11 +370,11 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
         conn,
         %{"c_type_id" => c_type_uuid, "mapping" => mapping, "file" => file}
       ) do
-    %{uuid: uuid} = conn.assigns[:current_user]
+    user = conn.assigns[:current_user]
 
-    with %ContentType{} <- Document.get_content_type(c_type_uuid),
+    with %ContentType{} <- Document.get_content_type(user, c_type_uuid),
          {:ok, %Oban.Job{}} <-
-           Document.insert_data_template_bulk_import_work(uuid, c_type_uuid, mapping, file) do
+           Document.insert_data_template_bulk_import_work(user.uuid, c_type_uuid, mapping, file) do
       conn
       |> render("bulk.json", resource: "Data Template")
     end

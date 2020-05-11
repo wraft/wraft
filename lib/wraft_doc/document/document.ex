@@ -281,21 +281,23 @@ defmodule WraftDoc.Document do
   @doc """
   Show a content type.
   """
-  @spec show_content_type(binary) :: %ContentType{layout: %Layout{}, creator: %User{}}
-  def show_content_type(uuid) do
-    get_content_type(uuid)
+  @spec show_content_type(User.t(), Ecto.UUID.t()) ::
+          %ContentType{layout: Layout.t(), creator: User.t()} | nil
+  def show_content_type(user, uuid) do
+    user
+    |> get_content_type(uuid)
     |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
   end
 
   @doc """
   Get a content type from its UUID.
   """
-  @spec get_content_type(Ecto.UUID.t()) :: ContentType.t()
-  def get_content_type(<<_::288>> = uuid) do
-    Repo.get_by(ContentType, uuid: uuid)
+  @spec get_content_type(User.t(), Ecto.UUID.t()) :: ContentType.t() | nil
+  def get_content_type(%User{organisation_id: org_id}, <<_::288>> = uuid) do
+    from(c in ContentType, where: c.uuid == ^uuid and c.organisation_id == ^org_id) |> Repo.one()
   end
 
-  def get_content_type(_), do: nil
+  def get_content_type(_, _), do: nil
 
   @doc """
   Get a content type from its ID. Also fetches all its related datas.

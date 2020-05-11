@@ -264,7 +264,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def create(conn, %{"c_type_id" => c_type_uuid, "state_uuid" => state_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = c_type <- Document.get_content_type(c_type_uuid),
+    with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_uuid),
          %State{} = state <- Enterprise.get_state(state_uuid),
          %Instance{} = content <- Document.create_instance(current_user, c_type, state, params) do
       conn
