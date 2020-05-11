@@ -68,12 +68,14 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   end
 
   test "update data templates on valid attributes", %{conn: conn} do
-    data_template = insert(:data_template, organisation: conn.assigns.current_user.organisation)
+    user = conn.assigns.current_user
+    c_type = insert(:content_type, organisation: user.organisation)
+    data_template = insert(:data_template, content_type: c_type)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     count_before = DataTemplate |> Repo.all() |> length()
 
@@ -86,12 +88,14 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   end
 
   test "does't update data templates for invalid attrs", %{conn: conn} do
-    data_template = insert(:data_template, organisation: conn.assigns.current_user.organisation)
+    user = conn.assigns.current_user
+    c_type = insert(:content_type, organisation: user.organisation)
+    data_template = insert(:data_template, content_type: c_type)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     conn =
       put(conn, Routes.v1_data_template_path(conn, :update, data_template.uuid, @invalid_attrs))
@@ -139,12 +143,14 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   end
 
   test "show renders data template details by id", %{conn: conn} do
-    data_template = insert(:data_template, organisation: conn.assigns.current_user.organisation)
+    user = conn.assigns[:current_user]
+    c_type = insert(:content_type, organisation: user.organisation)
+    data_template = insert(:data_template, content_type: c_type)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_data_template_path(conn, :show, data_template.uuid))
 
@@ -162,12 +168,15 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   end
 
   test "delete data template by given id", %{conn: conn} do
+    user = conn.assigns.current_user
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
-    data_template = insert(:data_template, organisation: conn.assigns.current_user.organisation)
+    c_type = insert(:content_type, organisation: user.organisation)
+    data_template = insert(:data_template, content_type: c_type)
     count_before = DataTemplate |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_data_template_path(conn, :delete, data_template.uuid))

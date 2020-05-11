@@ -264,7 +264,7 @@ defmodule WraftDoc.DocumentTest do
 
   test "get content_type shows the content_type data" do
     user = insert(:user)
-    content_type = insert(:content_type, organisation: user.user)
+    content_type = insert(:content_type, organisation: user.organisation)
     s_content_type = Document.get_content_type(user, content_type.uuid)
     assert s_content_type.name == content_type.name
     assert s_content_type.description == content_type.description
@@ -691,7 +691,7 @@ defmodule WraftDoc.DocumentTest do
           %{
             "state_id" => state.uuid,
             "content_type_id" => c_type.uuid,
-            "data_template_uuid" => d_temp.uuid
+            "data_template_id" => d_temp.uuid
           }
         ]
       }
@@ -704,8 +704,8 @@ defmodule WraftDoc.DocumentTest do
       assert pipeline.name == "pipeline"
       assert pipeline.api_route == "www.crm.com"
       assert content_type.name == c_type.name
-      assert data_template.name == d_temp.title
-      assert resp_state.name == state.state
+      assert data_template.title == d_temp.title
+      assert resp_state.state == state.state
     end
 
     test "returns error with invalid attrs" do
@@ -792,19 +792,29 @@ defmodule WraftDoc.DocumentTest do
     test "updates pipeline with valid attrs" do
       user = insert(:user)
       pipeline = insert(:pipeline)
-      c_type = insert(:content_type)
+      c_type = insert(:content_type, organisation: user.organisation)
+      d_temp = insert(:data_template, content_type: c_type)
+      state = insert(:state, organisation: user.organisation)
 
       attrs = %{
         "name" => "pipeline",
         "api_route" => "www.crm.com",
-        "content_types" => [c_type.uuid]
+        "stages" => [
+          %{
+            "content_type_id" => c_type.uuid,
+            "data_template_id" => d_temp.uuid,
+            "state_id" => state.uuid
+          }
+        ]
       }
 
       pipeline = Document.pipeline_update(pipeline, user, attrs)
-      [content_type] = pipeline.content_types
+      [stage] = pipeline.stages
       assert pipeline.name == "pipeline"
       assert pipeline.api_route == "www.crm.com"
-      assert content_type.name == c_type.name
+      assert stage.content_type.name == c_type.name
+      assert stage.data_template.title == d_temp.title
+      assert stage.state.state == state.state
     end
 
     test "returns error with invalid attrs" do
