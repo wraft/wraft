@@ -316,7 +316,10 @@ defmodule WraftDoc.Factory do
   def pipe_stage_factory do
     %Stage{
       pipeline: build(:pipeline),
-      content_type: build(:content_type)
+      content_type: build(:content_type),
+      data_template: build(:data_template),
+      state: build(:state),
+      creator: build(:user)
     }
   end
 end

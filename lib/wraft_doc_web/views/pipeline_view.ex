@@ -45,7 +45,8 @@ defmodule WraftDocWeb.Api.V1.PipelineView do
       api_route: pipeline.api_route,
       inserted_at: pipeline.inserted_at,
       updated_at: pipeline.updated_at,
-      creator: render_one(pipeline.creator, UserView, "user.json", as: :user)
+      creator: render_one(pipeline.creator, UserView, "user.json", as: :user),
+      stages: render_many(pipeline.stages, PipeStageView, "stage.json", as: :stage)
     }
   end
 end

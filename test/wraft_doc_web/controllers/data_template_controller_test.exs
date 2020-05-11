@@ -32,7 +32,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   end
 
   test "create data templates by valid attrrs", %{conn: conn} do
-    content_type = insert(:content_type, creator: conn.assigns.current_user)
+    content_type = insert(:content_type, organisation: conn.assigns.current_user.organisation)
 
     conn =
       build_conn()
@@ -50,7 +50,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   end
 
   test "does not create data templates by invalid attrs", %{conn: conn} do
-    content_type = insert(:content_type, creator: conn.assigns.current_user)
+    content_type = insert(:content_type, organisation: conn.assigns.current_user.organisation)
 
     conn =
       build_conn()
@@ -68,7 +68,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   end
 
   test "update data templates on valid attributes", %{conn: conn} do
-    data_template = insert(:data_template, creator: conn.assigns.current_user)
+    data_template = insert(:data_template, organisation: conn.assigns.current_user.organisation)
 
     conn =
       build_conn()
@@ -86,7 +86,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   end
 
   test "does't update data templates for invalid attrs", %{conn: conn} do
-    data_template = insert(:data_template, creator: conn.assigns.current_user)
+    data_template = insert(:data_template, organisation: conn.assigns.current_user.organisation)
 
     conn =
       build_conn()
@@ -139,7 +139,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   end
 
   test "show renders data template details by id", %{conn: conn} do
-    data_template = insert(:data_template, creator: conn.assigns.current_user)
+    data_template = insert(:data_template, organisation: conn.assigns.current_user.organisation)
 
     conn =
       build_conn()
@@ -167,7 +167,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    data_template = insert(:data_template, creator: conn.assigns.current_user)
+    data_template = insert(:data_template, organisation: conn.assigns.current_user.organisation)
     count_before = DataTemplate |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_data_template_path(conn, :delete, data_template.uuid))
@@ -183,7 +183,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
 
     filename = Plug.Upload.random_file!("test")
     file = %Plug.Upload{filename: filename, path: filename}
-    c_type = insert(:content_type)
+    c_type = insert(:content_type, organisation: conn.assigns.current_user.organisation)
     count_before = Oban.Job |> Repo.all() |> length()
 
     params = %{mapping: %{"Title" => "title"}, file: file}

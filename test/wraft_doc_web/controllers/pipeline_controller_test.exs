@@ -38,25 +38,42 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, user)
 
-    c_type1 = insert(:content_type)
-    c_type2 = insert(:content_type)
+    c_type = insert(:content_type, organisation: user.organisation)
+    data_temp = insert(:data_template, content_type: c_type)
+    state = insert(:state, organisation: user.organisation)
 
-    params = @valid_attrs |> Map.put(:content_types, [c_type1.uuid, c_type2.uuid])
+    params =
+      @valid_attrs
+      |> Map.put(:stages, [
+        %{content_type_id: c_type.uuid, data_template_id: data_temp.uuid, state_id: state.uuid}
+      ])
+
     count_before = Pipeline |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_pipeline_path(conn, :create, params))
+      post(conn, Routes.v1_pipeline_path(conn, :create), params)
       |> doc(operation_id: "create_pipeline")
 
     content_types =
-      json_response(conn, 200)["content_types"]
-      |> Enum.map(fn x -> x["name"] end)
+      json_response(conn, 200)["stages"]
+      |> Enum.map(fn x -> x["content_type"]["name"] end)
+      |> List.to_string()
+
+    d_temps =
+      json_response(conn, 200)["stages"]
+      |> Enum.map(fn x -> x["data_template"]["title"] end)
+      |> List.to_string()
+
+    resp_states =
+      json_response(conn, 200)["stages"]
+      |> Enum.map(fn x -> x["state"]["state"] end)
       |> List.to_string()
 
     assert count_before + 1 == Pipeline |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == @valid_attrs.name
-    assert content_types =~ c_type1.name
-    assert content_types =~ c_type2.name
+    assert content_types =~ c_type.name
+    assert d_temps =~ data_temp.title
+    assert resp_states =~ state.state
   end
 
   test "does not create pipeline by invalid attrs", %{conn: conn} do
@@ -109,21 +126,44 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
 
     pipeline = insert(:pipeline, organisation: user.organisation)
     insert(:pipe_stage, pipeline: pipeline)
-    c_type = insert(:content_type)
-    params = Map.put(@valid_attrs, :content_types, [c_type.uuid])
+    c_type = insert(:content_type, organisation: user.organisation)
+    data_template = insert(:data_template, content_type: c_type)
+    state = insert(:state, organisation: user.organisation)
+
+
+    params =
+      Map.put(@valid_attrs, :stages, [
+        %{
+          content_type_id: c_type.uuid,
+          data_template_id: data_template.uuid,
+          state_id: state.uuid
+        }
+      ])
 
     conn =
-      put(conn, Routes.v1_pipeline_path(conn, :update, pipeline.uuid, params))
+      put(conn, Routes.v1_pipeline_path(conn, :update, pipeline.uuid), params)
       |> doc(operation_id: "update_pipeline")
 
-    stages =
-      json_response(conn, 200)["content_types"]
-      |> Enum.map(fn %{"name" => name} -> name end)
+    c_types =
+      json_response(conn, 200)["stages"]
+      |> Enum.map(fn x -> x["content_type"]["name"] end)
+      |> List.to_string()
+
+    data_temps =
+      json_response(conn, 200)["stages"]
+      |> Enum.map(fn x -> x["data_template"]["title"] end)
+      |> List.to_string()
+
+    states =
+      json_response(conn, 200)["stages"]
+      |> Enum.map(fn x -> x["state"]["state"] end)
       |> List.to_string()
 
     assert json_response(conn, 200)["name"] == @valid_attrs.name
     assert json_response(conn, 200)["api_route"] == @valid_attrs.api_route
-    assert stages =~ c_type.name
+    assert c_types =~ c_type.name
+    assert data_temps =~ data_template.title
+    assert states =~ state.state
   end
 
   test "does't update flow on invalid attrs", %{conn: conn} do
@@ -200,8 +240,8 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
     conn = delete(conn, Routes.v1_pipeline_path(conn, :delete_stage, pipeline.uuid, c_type.uuid))
 
     stages =
-      json_response(conn, 200)["content_types"]
-      |> Enum.map(fn %{"name" => name} -> name end)
+      json_response(conn, 200)["stages"]
+      |> Enum.map(fn x -> x["content_type"]["name"] end)
       |> List.to_string()
 
     assert count_before - 1 == Stage |> Repo.all() |> length()
