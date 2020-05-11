@@ -1644,8 +1644,8 @@ defmodule WraftDoc.Document do
     |> Spur.insert()
     |> case do
       {:ok, pipeline} ->
-        create_pipe_stages(pipeline, params)
-        pipeline |> Repo.preload(:content_types)
+        create_pipe_stages(current_user, pipeline, params)
+        pipeline |> Repo.preload(stages: [:content_type, :data_template, :state])
 
       {:error, _} = changeset ->
         changeset
@@ -1654,24 +1654,57 @@ defmodule WraftDoc.Document do
 
   # Create pipe stages by iterating over the list of content type UUIDs
   # given among the params.
-  @spec create_pipe_stages(Pipeline.t(), map) :: list
-  defp create_pipe_stages(pipeline, %{"content_types" => c_type_uuids}) do
-    c_type_uuids
-    |> Enum.map(fn c_type_uuid ->
-      get_content_type(c_type_uuid) |> do_create_pipe_stages(pipeline)
+  @spec create_pipe_stages(User.t(), Pipeline.t(), map) :: list
+  defp create_pipe_stages(user, pipeline, %{"stages" => stage_data}) do
+    stage_data
+    |> Enum.map(fn stage_params ->
+      get_pipe_stage_params(stage_params, user) |> do_create_pipe_stages(pipeline)
     end)
   end
 
   defp create_pipe_stages(_, _), do: []
 
-  # Create pipe stages
-  @spec do_create_pipe_stages(ContentType.t() | nil, Pipeline.t()) ::
-          {:ok, Stage.t()} | {:error, Ecto.Changeset.t()}
-  defp do_create_pipe_stages(%ContentType{} = c_type, pipeline) do
-    pipeline |> build_assoc(:stages, content_type: c_type) |> Stage.changeset() |> Repo.insert()
+  # Get the values for pipe stage creation to create a pipe stage.
+  @spec get_pipe_stage_params(map, User.t()) ::
+          {ContentType.t(), DataTemplate.t(), State.t(), User.t()}
+  defp get_pipe_stage_params(
+         %{
+           "content_type_uuid" => c_type_uuid,
+           "data_template_uuid" => d_temp_uuid,
+           "state_uuid" => state_uuid
+         },
+         user
+       ) do
+    c_type = get_content_type(user, c_type_uuid)
+    d_temp = get_d_template(user, d_temp_uuid)
+    state = Enterprise.get_state(user, state_uuid)
+    {c_type, d_temp, state, user}
   end
 
-  defp do_create_pipe_stages(c_type, _) when is_nil(c_type), do: nil
+  defp get_pipe_stage_params(_, _), do: nil
+
+  # Create pipe stages
+  @spec do_create_pipe_stages(
+          {ContentType.t(), DataTemplate.t(), State.t(), User.t()} | nil,
+          Pipeline.t()
+        ) ::
+          {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
+  defp do_create_pipe_stages(
+         {%ContentType{} = c_type, %DataTemplate{} = d_temp, %State{} = state, %User{} = user},
+         pipeline
+       ) do
+    pipeline
+    |> build_assoc(:stages,
+      content_type: c_type,
+      data_template: d_temp,
+      state: state,
+      creator: user
+    )
+    |> Stage.changeset()
+    |> Repo.insert()
+  end
+
+  defp do_create_pipe_stages(_, _), do: nil
 
   @doc """
   List of all pipelines in the user's organisation.

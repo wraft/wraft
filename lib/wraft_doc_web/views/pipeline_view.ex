@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.PipelineView do
   use WraftDocWeb, :view
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{ContentTypeView, UserView}
+  alias WraftDocWeb.Api.V1.{UserView, PipeStageView}
 
   def render("create.json", %{pipeline: pipeline}) do
     %{
@@ -10,10 +10,7 @@ defmodule WraftDocWeb.Api.V1.PipelineView do
       api_route: pipeline.api_route,
       inserted_at: pipeline.inserted_at,
       updated_at: pipeline.updated_at,
-      content_types:
-        render_many(pipeline.content_types, ContentTypeView, "content_type.json",
-          as: :content_type
-        )
+      stages: render_many(pipeline.stages, PipeStageView, "stage.json", as: :stage)
     }
   end
 
@@ -48,10 +45,6 @@ defmodule WraftDocWeb.Api.V1.PipelineView do
       api_route: pipeline.api_route,
       inserted_at: pipeline.inserted_at,
       updated_at: pipeline.updated_at,
-      content_types:
-        render_many(pipeline.content_types, ContentTypeView, "content_type.json",
-          as: :content_type
-        ),
       creator: render_one(pipeline.creator, UserView, "user.json", as: :user)
     }
   end

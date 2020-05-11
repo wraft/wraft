@@ -20,14 +20,62 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
           properties do
             name(:string, "Pipeline's name", required: true)
             api_route(:string, "Pipeline's API route", required: true)
-            content_types(:list, "ID of Content types", required: true)
+            stages(Schema.ref(:PipeStageRequest))
           end
 
           example(%{
             name: "Pipeline 1",
             api_route: "client.crm.com",
-            content_types: ["23q23wejh38owje", "2347ksjbc98341"]
+            stages: [
+              %{
+                content_type_uuid: "12lkjn3490u12",
+                data_template_uuid: "23e40p9lknsd478",
+                state_uuid: "kjwe1823786b3478"
+              },
+              %{
+                content_type_uuid: "1232148nb3478",
+                data_template_uuid: "1232148nb3478",
+                state_uuid: "1232148nb3478"
+              }
+            ]
           })
+        end,
+      PipeStageRequestMap:
+        swagger_schema do
+          title("Pipe stage request")
+          description("Map with content type, data template and state UUIDs")
+
+          properties do
+            content_type_uuid(:string, "Content type UUID")
+            data_template_uuid(:string, "Data template UUID")
+            state_uuid(:string, "State UUID")
+          end
+
+          example(%{
+            content_type_uuid: "1232148nb3478",
+            data_template_uuid: "1232148nb3478",
+            state_uuid: "1232148nb3478"
+          })
+        end,
+      PipeStageRequest:
+        swagger_schema do
+          title("Pipe stage request list")
+          description("List of maps with content type, data template and state UUIDs")
+          type(:array)
+          items(Schema.ref(:PipeStageRequestMap))
+
+          example([
+            %{
+              content_type_uuid: "12lkjn3490u12",
+              data_template_uuid: "23e40p9lknsd478",
+              state_uuid: "kjwe1823786b3478"
+            },
+            %{
+              content_type_uuid: "1232148nb3478",
+              data_template_uuid: "1232148nb3478",
+              state_uuid: "1232148nb3478"
+            }
+          ])
         end,
       Pipeline:
         swagger_schema do
@@ -50,6 +98,24 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
+      PipeStage:
+        swagger_schema do
+          title("Pipeline stage")
+          description("One stage in a pipeline.")
+
+          properties do
+            content_type(Schema.ref(:ContentTypeWithoutFields))
+            data_template(Schema.ref(:DataTemplate))
+            state(Schema.ref(:State))
+          end
+        end,
+      PipeStages:
+        swagger_schema do
+          title("Pipe stages list")
+          description("List of pipe stages")
+          type(:array)
+          items(Schema.ref(:PipeStage))
+        end,
       PipelineAndStages:
         swagger_schema do
           title("Pipeline and its stages")
@@ -61,7 +127,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
             api_route(:string, "API route of the CRM")
             inserted_at(:string, "When was the flow inserted", format: "ISO-8601")
             updated_at(:string, "When was the flow last updated", format: "ISO-8601")
-            stages(Schema.ref(:ContentTypeWithoutFields))
+            stages(Schema.ref(:PipeStages))
           end
 
           example(%{
@@ -72,13 +138,30 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
             inserted_at: "2020-02-21T14:00:00Z",
             stages: [
               %{
-                id: "1232148nb3478",
-                name: "Offer letter",
-                description: "An offer letter",
-                prefix: "OFFLET",
-                color: "#fffff",
-                updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z"
+                content_type: %{
+                  id: "1232148nb3478",
+                  name: "Offer letter",
+                  description: "An offer letter",
+                  prefix: "OFFLET",
+                  color: "#fffff",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                data_template: %{
+                  id: "1232148nb3478",
+                  title: "Template 1",
+                  title_template: "Letter for [user]",
+                  data: "Hi [user]",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                state: %{
+                  id: "1232148nb3478",
+                  state: "published",
+                  order: 1,
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                }
               }
             ]
           })
@@ -94,7 +177,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
             api_route(:string, "API route of the CRM")
             inserted_at(:string, "When was the flow inserted", format: "ISO-8601")
             updated_at(:string, "When was the flow last updated", format: "ISO-8601")
-            stages(Schema.ref(:ContentTypeWithoutFields))
+            stages(Schema.ref(:PipeStages))
             creator(Schema.ref(:User))
           end
         end,

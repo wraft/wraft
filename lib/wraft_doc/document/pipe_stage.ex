@@ -3,22 +3,18 @@ defmodule WraftDoc.Document.Pipeline.Stage do
   The pipeline stages model.
   """
   alias __MODULE__
-  alias WraftDoc.{Account.User, Document.Pipeline}
+  alias WraftDoc.Account.User
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
 
   defimpl Spur.Trackable, for: Stage do
-    def actor(_stage), do: ""
+    def actor(stage), do: "#{stage.creator_id}"
     def object(stage), do: "Stage:#{stage.id}"
     def target(_chore), do: nil
 
-    def audience(%{pipeline_id: id}) do
-      from(u in User,
-        join: p in Pipeline,
-        where: p.id == ^id,
-        where: u.organisation_id == p.organisation_id
-      )
+    def audience(%{creator_id: id}) do
+      from(u in User, where: u.id == ^id)
     end
   end
 
@@ -26,6 +22,11 @@ defmodule WraftDoc.Document.Pipeline.Stage do
     field(:uuid, Ecto.UUID, autogenerate: true)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:pipeline, WraftDoc.Document.Pipeline)
+    belongs_to(:data_template, WraftDoc.Document.DataTemplate)
+    belongs_to(:state, WraftDoc.Enterprise.Flow.State)
+    belongs_to(:creator, WraftDoc.Account.User)
+
+    timestamps()
   end
 
   def changeset(%Stage{} = stage, attrs \\ %{}) do
