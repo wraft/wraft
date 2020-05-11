@@ -536,14 +536,6 @@ defmodule WraftDoc.Document do
   @spec update_instance(Instance.t(), User.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
           | {:error, Ecto.Changeset.t()}
-
-  def update_instance(instance, user, %{"state_uuid" => state_uuid} = params) do
-    %State{id: id} = Enterprise.get_state(state_uuid)
-    {_, params} = Map.pop(params, "state_uuid")
-    params = params |> Map.merge(%{"state_id" => id})
-    update_instance(instance, user, params)
-  end
-
   def update_instance(old_instance, %User{id: id} = current_user, params) do
     old_instance
     |> Instance.update_changeset(params)

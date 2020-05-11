@@ -193,9 +193,11 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %ApprovalSystem{} = approval_system <- Enterprise.get_approval_system(uuid),
          %ApprovalSystem{} = approval_system <-
-           Enterprise.update_approval_system(approval_system, params) do
+           Enterprise.update_approval_system(current_user, approval_system, params) do
       conn
       |> render("approval_system.json", approval_system: approval_system)
     end

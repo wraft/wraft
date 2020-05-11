@@ -241,7 +241,7 @@ defmodule WraftDoc.EnterpriseTest do
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     updated_approval_system =
-      Enterprise.update_approval_system(approval_system, %{
+      Enterprise.update_approval_system(user, approval_system, %{
         "instance_id" => instance.uuid,
         "pre_state_id" => approval_system.pre_state.uuid,
         "post_state_id" => approval_system.post_state.uuid,
