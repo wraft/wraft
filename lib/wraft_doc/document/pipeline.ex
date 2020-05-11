@@ -18,7 +18,7 @@ defmodule WraftDoc.Document.Pipeline do
     end
   end
 
-  @derive {Jason.Encoder, only: [:name, :api_route]}
+  @derive {Jason.Encoder, only: [:id, :uuid, :name, :api_route]}
   schema "pipeline" do
     field(:uuid, Ecto.UUID, autogenerate: true)
     field(:name, :string)
@@ -27,7 +27,6 @@ defmodule WraftDoc.Document.Pipeline do
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     has_many(:stages, WraftDoc.Document.Pipeline.Stage)
-    has_many(:content_types, through: [:stages, :content_type])
 
     timestamps()
   end
