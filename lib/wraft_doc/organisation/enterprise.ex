@@ -33,11 +33,11 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
-  Get a state from its UUID.
+  Get a state from its UUID and user's organisation.
   """
-  @spec get_state(binary) :: State.t() | nil
-  def get_state(state_uuid) do
-    Repo.get_by(State, uuid: state_uuid)
+  @spec get_state(User.t(), Ecto.UUID.t()) :: State.t() | nil
+  def get_state(%User{organisation_id: org_id}, state_uuid) do
+    from(s in State, where: s.uuid == ^state_uuid and s.organisation_id == ^org_id) |> Repo.one()
   end
 
   @doc """
@@ -372,8 +372,8 @@ defmodule WraftDoc.Enterprise do
         }
       ) do
     with %Instance{} = instance <- Document.get_instance(instance_id),
-         %State{} = pre_state <- get_state(pre_state_id),
-         %State{} = post_state <- get_state(post_state_id),
+         %State{} = pre_state <- get_state(current_user, pre_state_id),
+         %State{} = post_state <- get_state(current_user, post_state_id),
          %User{} = approver <- Account.get_user_by_uuid(approver_id) do
       params = %{
         instance_id: instance.id,
@@ -426,17 +426,17 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Update an uproval system
   """
-  @spec update_approval_system(ApprovalSystem.t(), map) ::
+  @spec update_approval_system(User.t(), ApprovalSystem.t(), map) ::
           ApprovalSystem.t() | {:error, Ecto.Changeset.t()}
-  def update_approval_system(approval_system, %{
+  def update_approval_system(current_user, approval_system, %{
         "instance_id" => instance_id,
         "pre_state_id" => pre_state_id,
         "post_state_id" => post_state_id,
         "approver_id" => approver_id
       }) do
     with %Instance{} = instance <- Document.get_instance(instance_id),
-         %State{} = pre_state <- get_state(pre_state_id),
-         %State{} = post_state <- get_state(post_state_id),
+         %State{} = pre_state <- get_state(current_user, pre_state_id),
+         %State{} = post_state <- get_state(current_user, post_state_id),
          %User{} = approver <- Account.get_user_by_uuid(approver_id) do
       params = %{
         instance_id: instance.id,
@@ -459,7 +459,7 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  def update_approval_system(approval_system, params) do
+  def update_approval_system(_current_user, approval_system, params) do
     approval_system
     |> ApprovalSystem.changeset(params)
     |> Repo.update()
