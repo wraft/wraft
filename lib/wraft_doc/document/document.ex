@@ -290,7 +290,7 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
-  Get a content type from its UUID.
+  Get a content type from its UUID and user's organisation ID.
   """
   @spec get_content_type(User.t(), Ecto.UUID.t()) :: ContentType.t() | nil
   def get_content_type(%User{organisation_id: org_id}, <<_::288>> = uuid) do
@@ -795,20 +795,27 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
-  Get a data template from its uuid
+  Get a data template from its uuid and organisation ID of user.
   """
-  @spec get_d_template(binary) :: DataTemplat.t() | nil
-  def get_d_template(d_temp_uuid) do
-    Repo.get_by(DataTemplate, uuid: d_temp_uuid)
+  @spec get_d_template(User.t(), Ecto.UUID.t()) :: DataTemplat.t() | nil
+  def get_d_template(%User{organisation_id: org_id}, <<_::288>> = d_temp_uuid) do
+    from(d in DataTemplate,
+      where: d.uuid == ^d_temp_uuid,
+      join: c in ContentType,
+      where: c.id == d.content_type_id and c.organisation_id == ^org_id
+    )
+    |> Repo.one()
   end
+
+  def get_d_template(_, _), do: nil
 
   @doc """
   Show a data template.
   """
-  @spec show_d_template(binary) ::
+  @spec show_d_template(User.t(), Ecto.UUID.t()) ::
           %DataTemplate{creator: User.t(), content_type: ContentType.t()} | nil
-  def show_d_template(d_temp_uuid) do
-    d_temp_uuid |> get_d_template() |> Repo.preload([:creator, :content_type])
+  def show_d_template(user, d_temp_uuid) do
+    user |> get_d_template(d_temp_uuid) |> Repo.preload([:creator, :content_type])
   end
 
   @doc """
