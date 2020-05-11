@@ -20,7 +20,7 @@ defmodule WraftDocWeb.Worker.BulkWorker do
     current_user = Account.get_user_by_uuid(user_uuid)
     c_type = Document.get_content_type(current_user, c_type_uuid)
     state = Enterprise.get_state(state_uuid)
-    data_template = Document.get_d_template(d_temp_uuid)
+    data_template = Document.get_d_template(current_user, d_temp_uuid)
     Document.bulk_doc_build(current_user, c_type, state, data_template, mapping, path)
     IO.puts("Job end.!")
     :ok
