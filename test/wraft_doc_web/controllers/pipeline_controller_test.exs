@@ -130,7 +130,6 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
     data_template = insert(:data_template, content_type: c_type)
     state = insert(:state, organisation: user.organisation)
 
-
     params =
       Map.put(@valid_attrs, :stages, [
         %{

@@ -1670,7 +1670,11 @@ defmodule WraftDoc.Document do
   def create_pipe_stage(
         user,
         pipeline,
-        %{"content_type_id" => _, "data_template_id" => _, "state_id" => _} = params
+        %{
+          "content_type_id" => <<_::288>>,
+          "data_template_id" => <<_::288>>,
+          "state_id" => <<_::288>>
+        } = params
       ) do
     get_pipe_stage_params(params, user) |> do_create_pipe_stages(pipeline)
   end
