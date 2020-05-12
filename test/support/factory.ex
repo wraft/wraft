@@ -279,6 +279,7 @@ defmodule WraftDoc.Factory do
   def content_type_field_factory do
     %ContentTypeField{
       name: sequence(:name, &"Field name #{&1}"),
+      description: sequence(:desription, &"Field description #{&1}"),
       content_type: build(:content_type),
       field_type: build(:field_type)
     }
