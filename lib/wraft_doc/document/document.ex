@@ -1655,14 +1655,27 @@ defmodule WraftDoc.Document do
   # Create pipe stages by iterating over the list of content type UUIDs
   # given among the params.
   @spec create_pipe_stages(User.t(), Pipeline.t(), map) :: list
-  defp create_pipe_stages(user, pipeline, %{"stages" => stage_data}) do
+  defp create_pipe_stages(user, pipeline, %{"stages" => stage_data}) when is_list(stage_data) do
     stage_data
-    |> Enum.map(fn stage_params ->
-      get_pipe_stage_params(stage_params, user) |> do_create_pipe_stages(pipeline)
-    end)
+    |> Enum.map(fn stage_params -> create_pipe_stage(user, pipeline, stage_params) end)
   end
 
   defp create_pipe_stages(_, _, _), do: []
+
+  @doc """
+  Create a pipe stage.
+  """
+  @spec create_pipe_stage(User.t(), Pipeline.t(), map) ::
+          nil | {:error, Ecto.Changeset.t()} | {:ok, any}
+  def create_pipe_stage(
+        user,
+        pipeline,
+        %{"content_type_id" => _, "data_template_id" => _, "state_id" => _} = params
+      ) do
+    get_pipe_stage_params(params, user) |> do_create_pipe_stages(pipeline)
+  end
+
+  def create_pipe_stage(_, _, _), do: nil
 
   # Get the values for pipe stage creation to create a pipe stage.
   @spec get_pipe_stage_params(map, User.t()) ::
@@ -1796,4 +1809,12 @@ defmodule WraftDoc.Document do
   end
 
   def delete_pipe_stage(_, _), do: nil
+
+  @doc """
+  Preload all datas of a pipe stage excluding pipeline.
+  """
+  @spec preload_stage_details(Stage.t()) :: Stage.t()
+  def preload_stage_details(stage) do
+    stage |> Repo.preload([:content_type, :data_template, :state])
+  end
 end

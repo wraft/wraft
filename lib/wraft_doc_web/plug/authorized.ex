@@ -21,7 +21,8 @@ defmodule WraftDocWeb.Plug.Authorized do
     "WraftDocWeb.Api.V1.ApprovalSystemController" => "ApprovalSystem",
     "WraftDocWeb.Api.V1.BlockTemplateController" => "BlockTemplate",
     "WraftDocWeb.Api.V1.CommentController" => "Comment",
-    "WraftDocWeb.Api.V1.PipelineController" => "Pipeline"
+    "WraftDocWeb.Api.V1.PipelineController" => "Pipeline",
+    "WraftDocWeb.Api.V1.PipeStageController" => "Stage"
   }
   def init(_params) do
   end

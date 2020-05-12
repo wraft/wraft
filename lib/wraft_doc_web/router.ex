@@ -142,8 +142,16 @@ defmodule WraftDocWeb.Router do
       # Approval system
       resources("/approval_systems", ApprovalSystemController)
       post("/approval_systems/approve", ApprovalSystemController, :approve)
-      # Pipeline
-      resources("/pipelines", PipelineController, only: [:create, :index, :show, :update, :delete])
+
+      scope "/pipelines" do
+        # Pipeline
+        resources("/", PipelineController, only: [:create, :index, :show, :update, :delete])
+
+        scope "/:pipeline_id" do
+          # Pipe stages
+          resources("/stages", PipeStageController, only: [:create, :index])
+        end
+      end
 
       # Delete pipe stage
       delete("/pipelines/:id/content_types/:c_id", PipelineController, :delete_stage)
