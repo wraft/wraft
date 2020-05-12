@@ -1690,15 +1690,15 @@ defmodule WraftDoc.Document do
         ) ::
           {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
   defp do_create_pipe_stages(
-         {%ContentType{} = c_type, %DataTemplate{} = d_temp, %State{} = state, %User{} = user},
+         {%ContentType{id: c_id}, %DataTemplate{id: d_id}, %State{id: s_id}, %User{id: u_id}},
          pipeline
        ) do
     pipeline
     |> build_assoc(:stages,
-      content_type: c_type,
-      data_template: d_temp,
-      state: state,
-      creator: user
+      content_type_id: c_id,
+      data_template_id: d_id,
+      state_id: s_id,
+      creator_id: u_id
     )
     |> Stage.changeset()
     |> Repo.insert()
