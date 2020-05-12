@@ -544,7 +544,7 @@ defmodule WraftDoc.Document do
     |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, instance} ->
-        Task.start(fn -> create_version(current_user, old_instance, instance) end)
+        Task.start_link(fn -> create_version(current_user, old_instance, instance) end)
 
         instance
         |> Repo.preload([:creator, [{:content_type, :layout}], :state])
