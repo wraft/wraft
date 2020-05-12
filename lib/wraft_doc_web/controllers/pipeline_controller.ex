@@ -40,23 +40,6 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
             ]
           })
         end,
-      PipeStageRequestMap:
-        swagger_schema do
-          title("Pipe stage request")
-          description("Map with content type, data template and state UUIDs")
-
-          properties do
-            content_type_id(:string, "Content type UUID")
-            data_template_id(:string, "Data template UUID")
-            state_id(:string, "State UUID")
-          end
-
-          example(%{
-            content_type_id: "1232148nb3478",
-            data_template_id: "1232148nb3478",
-            state_id: "1232148nb3478"
-          })
-        end,
       PipeStageRequest:
         swagger_schema do
           title("Pipe stage request list")
@@ -97,24 +80,6 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
-        end,
-      PipeStage:
-        swagger_schema do
-          title("Pipeline stage")
-          description("One stage in a pipeline.")
-
-          properties do
-            content_type(Schema.ref(:ContentTypeWithoutFields))
-            data_template(Schema.ref(:DataTemplate))
-            state(Schema.ref(:State))
-          end
-        end,
-      PipeStages:
-        swagger_schema do
-          title("Pipe stages list")
-          description("List of pipe stages")
-          type(:array)
-          items(Schema.ref(:PipeStage))
         end,
       PipelineAndStages:
         swagger_schema do
