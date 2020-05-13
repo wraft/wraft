@@ -209,6 +209,35 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       assert json_response(conn, 200)["state"]["id"] == state.uuid
     end
 
+    test "delete pipe stage by given id", %{conn: conn} do
+      user = conn.assigns.current_user
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, user)
+
+      pipeline = insert(:pipeline, organisation: user.organisation)
+      stage = insert(:pipe_stage, pipeline: pipeline)
+      count_before = Stage |> Repo.all() |> length()
+
+      conn = delete(conn, Routes.v1_pipe_stage_path(conn, :delete, stage.uuid))
+
+      assert count_before - 1 == Stage |> Repo.all() |> length()
+      assert json_response(conn, 200)["id"] == stage.uuid
+    end
+
+    test "delete stage returns not found for non-existent ID", %{conn: conn} do
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, conn.assigns.current_user)
+
+      conn = delete(conn, Routes.v1_pipeline_path(conn, :delete, Ecto.UUID.generate()))
+
+      assert json_response(conn, 404) == "Not Found"
+    end
+
     # test "does not create pipe stage and returns not found with non existent datas in attrs", %{
     #   conn: conn
     # } do

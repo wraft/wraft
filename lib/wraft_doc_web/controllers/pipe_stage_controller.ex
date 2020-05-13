@@ -37,10 +37,13 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
 
           properties do
             id(:string, "ID of the pipe stage")
+            inserted_at(:string, "When was the pipe stage inserted", format: "ISO-8601")
+            updated_at(:string, "When was the pipe stage last updated", format: "ISO-8601")
             content_type(Schema.ref(:ContentTypeWithoutFields))
             data_template(Schema.ref(:DataTemplate))
             state(Schema.ref(:State))
           end
+
           example(%{
             id: "kjasfqjbn",
             updated_at: "2020-01-21T14:00:00Z",
@@ -77,6 +80,23 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
           description("List of pipe stages")
           type(:array)
           items(Schema.ref(:PipeStage))
+        end,
+      DeletedPipeStage:
+        swagger_schema do
+          title("Deleted pipe stage")
+          description("Response when a pipe stage is deleted")
+
+          properties do
+            id(:string, "ID of the pipe stage")
+            inserted_at(:string, "When was the pipe stage inserted", format: "ISO-8601")
+            updated_at(:string, "When was the pipe stage last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "kjasfqjbn",
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
         end
     }
   end
@@ -137,6 +157,33 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
          {:ok, %Stage{} = stage} <- Document.update_pipe_stage(current_user, stage, params),
          %Stage{} = stage <- Document.preload_stage_details(stage) do
       conn |> render("stage.json", stage: stage)
+    end
+  end
+
+  @doc """
+  Deletes a pipe stage.
+  """
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/stages/{id}")
+    summary("Delete a pipe stage")
+    description("Delete pipe stage API")
+
+    parameters do
+      id(:path, :string, "ID of the pipe stage", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:DeletedPipeStage))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def delete(conn, %{"id" => s_uuid}) do
+    current_user = conn.assigns[:current_user]
+
+    with %Stage{} = stage <- Document.get_pipe_stage(current_user, s_uuid),
+         {:ok, %Stage{} = stage} <- Document.delete_pipe_stage(current_user, stage) do
+      conn |> render("delete.json", stage: stage)
     end
   end
 end
