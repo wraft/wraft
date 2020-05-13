@@ -85,7 +85,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
   Updates a pipe stage.
   """
   swagger_path :update do
-    post("/stages/{id}")
+    put("/stages/{id}")
     summary("Update a pipe stage")
     description("Update pipe stage API")
 
