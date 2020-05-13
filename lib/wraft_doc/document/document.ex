@@ -1835,10 +1835,13 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a pipe stage.
   """
-  @spec delete_pipe_stage(Stage.t(), User.t()) :: {:ok, Stage.t()}
-  def delete_pipe_stage(%Stage{} = pipe_stage, %User{id: id}) do
-    pipe_stage = pipe_stage |> Repo.preload([:pipeline, :content_type])
-    meta = %{pipeline: pipe_stage.pipeline, content_type: pipe_stage.content_type}
+  @spec delete_pipe_stage(User.t(), Stage.t()) :: {:ok, Stage.t()}
+  def delete_pipe_stage(%User{id: id}, %Stage{} = pipe_stage) do
+    %{pipeline: pipeline, content_type: c_type, data_template: d_temp, state: state} =
+      pipe_stage |> Repo.preload([:pipeline, :content_type, :data_template, :state])
+
+    meta = %{pipeline: pipeline, content_type: c_type, data_template: d_temp, state: state}
+
     pipe_stage |> Spur.delete(%{actor: "#{id}", meta: meta})
   end
 
