@@ -36,10 +36,40 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
           description("One stage in a pipeline.")
 
           properties do
+            id(:string, "ID of the pipe stage")
             content_type(Schema.ref(:ContentTypeWithoutFields))
             data_template(Schema.ref(:DataTemplate))
             state(Schema.ref(:State))
           end
+          example(%{
+            id: "kjasfqjbn",
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z",
+            content_type: %{
+              id: "1232148nb3478",
+              name: "Offer letter",
+              description: "An offer letter",
+              prefix: "OFFLET",
+              color: "#fffff",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            data_template: %{
+              id: "1232148nb3478",
+              title: "Template 1",
+              title_template: "Letter for [user]",
+              data: "Hi [user]",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            state: %{
+              id: "1232148nb3478",
+              state: "published",
+              order: 1,
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            }
+          })
         end,
       PipeStages:
         swagger_schema do
