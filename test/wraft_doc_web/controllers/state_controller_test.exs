@@ -55,7 +55,6 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    organisation = insert(:organisation)
     flow = insert(:flow)
     count_before = State |> Repo.all() |> length()
 

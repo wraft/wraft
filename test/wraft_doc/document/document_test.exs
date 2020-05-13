@@ -842,33 +842,31 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "get_pipe_stage/3" do
+  describe "get_pipe_stage/2" do
     test "returns the pipe stage in the user's organisation with valid IDs and user struct" do
       user = insert(:user)
       pipeline = insert(:pipeline, organisation: user.organisation)
-      content_type = insert(:content_type, organisation: user.organisation)
-      insert(:pipe_stage, pipeline: pipeline, content_type: content_type)
-      response = Document.get_pipe_stage(user, pipeline.uuid, content_type.uuid)
+      stage = insert(:pipe_stage, pipeline: pipeline)
+      response = Document.get_pipe_stage(user, stage.uuid)
       assert response.pipeline_id == pipeline.id
-      assert response.content_type_id == content_type.id
+      assert response.uuid == stage.uuid
     end
 
     test "returns nil when stage does not belong to user's organisation" do
       user = insert(:user)
-      pipeline = insert(:pipeline)
-      content_type = insert(:content_type)
-      response = Document.get_pipe_stage(user, pipeline.uuid, content_type.uuid)
+      stage = insert(:pipe_stage)
+      response = Document.get_pipe_stage(user, stage.uuid)
       assert response == nil
     end
 
     test "returns nil with non-existent IDs" do
       user = insert(:user)
-      response = Document.get_pipe_stage(user, Ecto.UUID.generate(), Ecto.UUID.generate())
+      response = Document.get_pipe_stage(user, Ecto.UUID.generate())
       assert response == nil
     end
 
     test "returns nil invalid data" do
-      response = Document.get_pipe_stage(nil, Ecto.UUID.generate(), Ecto.UUID.generate())
+      response = Document.get_pipe_stage(nil, Ecto.UUID.generate())
       assert response == nil
     end
   end
@@ -878,7 +876,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       stage = insert(:pipe_stage)
       count_before = Stage |> Repo.all() |> length()
-      {:ok, deleted_stage} = Document.delete_pipe_stage(stage, user)
+      {:ok, deleted_stage} = Document.delete_pipe_stage(user, stage)
       count_after = Stage |> Repo.all() |> length()
       assert count_before - 1 == count_after
       assert deleted_stage.pipeline_id == stage.pipeline_id
