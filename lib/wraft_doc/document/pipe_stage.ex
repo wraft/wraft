@@ -44,4 +44,18 @@ defmodule WraftDoc.Document.Pipeline.Stage do
       message: "Already added.!"
     )
   end
+
+  def update_changeset(%Stage{} = stage, attrs \\ %{}) do
+    stage
+    |> cast(attrs, [:content_type_id, :data_template_id, :state_id])
+    |> validate_required([
+      :content_type_id,
+      :data_template_id,
+      :state_id
+    ])
+    |> unique_constraint(:content_type_id,
+      name: :pipe_stages_unique_index,
+      message: "Already added.!"
+    )
+  end
 end

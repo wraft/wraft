@@ -36,9 +36,11 @@ defmodule WraftDoc.Enterprise do
   Get a state from its UUID and user's organisation.
   """
   @spec get_state(User.t(), Ecto.UUID.t()) :: State.t() | nil
-  def get_state(%User{organisation_id: org_id}, state_uuid) do
+  def get_state(%User{organisation_id: org_id}, <<_::288>> = state_uuid) do
     from(s in State, where: s.uuid == ^state_uuid and s.organisation_id == ^org_id) |> Repo.one()
   end
+
+  def get_state(_, _), do: nil
 
   @doc """
   Create a controlled flow flow.

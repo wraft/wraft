@@ -149,12 +149,12 @@ defmodule WraftDocWeb.Router do
 
         scope "/:pipeline_id" do
           # Pipe stages
-          resources("/stages", PipeStageController, only: [:create, :index])
+          resources("/stages", PipeStageController, only: [:create])
         end
       end
 
-      # Delete pipe stage
-      delete("/pipelines/:id/content_types/:c_id", PipelineController, :delete_stage)
+      # Update and Delete pipe stage
+      resources("/stages", PipeStageController, only: [:update, :delete])
     end
   end
 
