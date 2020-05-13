@@ -80,4 +80,33 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
       conn |> render("stage.json", stage: stage)
     end
   end
+
+  @doc """
+  Updates a pipe stage.
+  """
+  swagger_path :update do
+    post("/stages/{id}")
+    summary("Update a pipe stage")
+    description("Update pipe stage API")
+
+    parameters do
+      id(:path, :string, "ID of the pipe stage", required: true)
+      stage(:body, Schema.ref(:PipeStageRequestMap), "Pipe stage to be updated", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:PipeStage))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"id" => s_uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with %Stage{} = stage <- Document.get_pipe_stage(current_user, s_uuid),
+         {:ok, %Stage{} = stage} <- Document.update_pipe_stage(current_user, stage, params),
+         %Stage{} = stage <- Document.preload_stage_details(stage) do
+      conn |> render("stage.json", stage: stage)
+    end
+  end
 end

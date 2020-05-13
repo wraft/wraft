@@ -1786,21 +1786,51 @@ defmodule WraftDoc.Document do
   def delete_pipeline(_, _), do: nil
 
   @doc """
-  Get a pipeline stage.
+  Get a pipeline stage from its UUID and user's organisation.
   """
-  @spec get_pipe_stage(User.t(), Ecto.UUID.t(), Ecto.UUID.t()) :: Stage.t() | nil
-  def get_pipe_stage(%User{organisation_id: org_id}, <<_::288>> = p_uuid, <<_::288>> = c_uuid) do
+  @spec get_pipe_stage(User.t(), Ecto.UUID.t()) :: Stage.t() | nil
+  def get_pipe_stage(%User{organisation_id: org_id}, <<_::288>> = s_uuid) do
     from(s in Stage,
       join: p in Pipeline,
-      join: c in ContentType,
-      where: p.uuid == ^p_uuid and s.pipeline_id == p.id,
-      where: c.uuid == ^c_uuid and s.content_type_id == c.id,
-      where: p.organisation_id == ^org_id and c.organisation_id == ^org_id
+      where: p.organisation_id == ^org_id and s.pipeline_id == p.id,
+      where: s.uuid == ^s_uuid
     )
     |> Repo.one()
   end
 
-  def get_pipe_stage(_, _, _), do: nil
+  def get_pipe_stage(_, _), do: nil
+
+  @doc """
+  Get all required fields and then update a stage.
+  """
+  @spec update_pipe_stage(User.t(), Stage.t(), map) ::
+          {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
+  def update_pipe_stage(%User{} = current_user, %Stage{} = stage, %{
+        "content_type_id" => c_uuid,
+        "data_template_id" => d_uuid,
+        "state_id" => s_uuid
+      }) do
+    c_type = get_content_type(current_user, c_uuid)
+    d_temp = get_d_template(current_user, d_uuid)
+    state = Enterprise.get_state(current_user, s_uuid)
+
+    do_update_pipe_stage(current_user, stage, c_type, d_temp, state)
+  end
+
+  def update_pipe_stage(_, _, _), do: nil
+
+  # Update a stage.
+  @spec do_update_pipe_stage(User.t(), Stage.t(), ContentType.t(), DataTemplate.t(), State.t()) ::
+          {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
+  defp do_update_pipe_stage(user, stage, %ContentType{id: c_id}, %DataTemplate{id: d_id}, %State{
+         id: s_id
+       }) do
+    stage
+    |> Stage.update_changeset(%{content_type_id: c_id, data_template_id: d_id, state_id: s_id})
+    |> Spur.update(%{actor: "#{user.id}"})
+  end
+
+  defp do_update_pipe_stage(_, _, _, _, _), do: nil
 
   @doc """
   Delete a pipe stage.
