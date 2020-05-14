@@ -27,6 +27,7 @@ defmodule WraftDoc.Document.Pipeline do
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     has_many(:stages, WraftDoc.Document.Pipeline.Stage)
+    has_many(:trigger_histories, WraftDoc.Document.Pipeline.TriggerHistory)
 
     timestamps()
   end

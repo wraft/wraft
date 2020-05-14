@@ -28,7 +28,8 @@ defmodule WraftDoc.Document do
     Document.BlockTemplate,
     Document.Comment,
     Document.Pipeline,
-    Document.Pipeline.Stage
+    Document.Pipeline.Stage,
+    Document.Pipeline.TriggerHistory
   }
 
   alias WraftDocWeb.AssetUploader
@@ -1331,6 +1332,17 @@ defmodule WraftDoc.Document do
 
   def insert_block_template_bulk_import_work(_, _, _), do: nil
 
+  @doc """
+  Creates a background job to run a pipeline.
+  """
+  @spec create_pipeline_job(TriggerHistory.t()) ::
+          {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
+  def create_pipeline_job(%TriggerHistory{} = trigger_history) do
+    trigger_history |> create_bulk_job(["pipeline_job"])
+  end
+
+  def create_pipeline_job(_, _), do: nil
+
   defp create_bulk_job(args, tags \\ []) do
     args
     |> WraftDocWeb.Worker.BulkWorker.new(tags: tags)
@@ -1854,4 +1866,30 @@ defmodule WraftDoc.Document do
   def preload_stage_details(stage) do
     stage |> Repo.preload([:content_type, :data_template, :state])
   end
+
+  @doc """
+  Creates a pipeline trigger history with a user association.
+
+  ## Example
+  iex> create_trigger_history(%User{}, %Pipeline{}, %{name: "John Doe"})
+  {:ok, %TriggerHistory{}}
+
+  iex> create_trigger_history(%User{}, %Pipeline{}, "meta")
+  {:error, Ecto.Changeset}
+
+  iex> create_trigger_history("user", "pipeline", "meta")
+  nil
+  """
+  @spec create_trigger_history(User.t(), Pipeline.t(), map) ::
+          {:ok, TriggerHistory.t()} | {:error, Ecto.Changeset.t()} | nil
+  def create_trigger_history(%User{id: u_id}, %Pipeline{} = pipeline, meta) do
+    state = TriggerHistory.states()[:enqued]
+
+    pipeline
+    |> build_assoc(:trigger_histories, creator_id: u_id)
+    |> TriggerHistory.changeset(%{meta: meta, state: state})
+    |> Repo.insert()
+  end
+
+  def create_trigger_history(_, _, _), do: nil
 end
