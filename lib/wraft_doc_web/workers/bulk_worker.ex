@@ -55,6 +55,15 @@ defmodule WraftDocWeb.Worker.BulkWorker do
     :ok
   end
 
+  def perform(%{"u_uuid" => u_uuid, "p_uuid" => p_uuid, "meta" => meta}, %{tags: ["pipeline_job"]}) do
+    IO.puts("Job starting..")
+
+    # pipeline = Document.get_pipeline(p_uuid) |> Document.preload_pipe_stages()
+
+    IO.puts("Job end.!")
+    :ok
+  end
+
   defp convert_to_map(mapping) when is_map(mapping), do: mapping
 
   defp convert_to_map(mapping) when is_binary(mapping) do
