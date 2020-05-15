@@ -263,6 +263,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, %{"c_type_id" => c_type_uuid, "state_uuid" => state_uuid} = params) do
     current_user = conn.assigns[:current_user]
+    type = Instance.types()[:normal]
+    params = Map.put(params, "type", type)
 
     with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_uuid),
          %State{} = state <- Enterprise.get_state(current_user, state_uuid),

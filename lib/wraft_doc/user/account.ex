@@ -233,8 +233,11 @@ defmodule WraftDoc.Account do
 
   def get_user_by_uuid(_), do: nil
 
+  @doc """
+  Get a user from its ID.
+  """
   @spec get_user(integer() | String.t()) :: User.t() | nil
-  defp get_user(id) do
+  def get_user(id) do
     Repo.get(User, id)
   end
 

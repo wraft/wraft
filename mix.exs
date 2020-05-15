@@ -82,7 +82,9 @@ defmodule WraftDoc.Mixfile do
       # CSV parser
       {:csv, "~> 2.3.1"},
       # Live dashboard
-      {:phoenix_live_dashboard, "~> 0.1.0"}
+      {:phoenix_live_dashboard, "~> 0.1.0"},
+      # Business logic flow
+      {:opus, "~> 0.6.1"}
     ]
   end
 
