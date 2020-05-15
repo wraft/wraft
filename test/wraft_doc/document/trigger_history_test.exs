@@ -9,6 +9,11 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistoryTest do
     state: 1
   }
 
+  @valid_update_attrs %{
+    meta: %{error: :pipeline_not_exist},
+    state: 1
+  }
+
   test "changeset with valid attrs" do
     params = @valid_attrs |> Map.put(:creator_id, 1)
     changeset = TriggerHistory.changeset(%TriggerHistory{}, params)
@@ -22,12 +27,21 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistoryTest do
 
   test "hook changeset with valid attrs" do
     changeset = TriggerHistory.hook_changeset(%TriggerHistory{}, @valid_attrs)
-    IO.inspect(changeset)
     assert changeset.valid?
   end
 
   test "hook changeset with invalid attrs" do
     changeset = TriggerHistory.hook_changeset(%TriggerHistory{}, %{})
+    refute changeset.valid?
+  end
+
+  test "update changeset with valid update attrs" do
+    changeset = TriggerHistory.update_changeset(%TriggerHistory{}, @valid_update_attrs)
+    assert changeset.valid?
+  end
+
+  test "update changeset with invalid attrs" do
+    changeset = TriggerHistory.update_changeset(%TriggerHistory{}, %{})
     refute changeset.valid?
   end
 end

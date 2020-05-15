@@ -29,7 +29,8 @@ defmodule WraftDoc.Factory do
     Document.Pipeline,
     Document.Pipeline.Stage,
     Enterprise.ApprovalSystem,
-    Document.LayoutAsset
+    Document.LayoutAsset,
+    Document.Pipeline.TriggerHistory
   }
 
   def user_factory do
@@ -319,6 +320,16 @@ defmodule WraftDoc.Factory do
       content_type: build(:content_type),
       data_template: build(:data_template),
       state: build(:state),
+      creator: build(:user)
+    }
+  end
+
+  def trigger_history_factory do
+    %TriggerHistory{
+      data: %{name: sequence(:name, &"Name-#{&1}")},
+      meta: %{error: sequence(:error, &"error_reason-#{&1}")},
+      state: sequence(:state, &"#{&1}"),
+      pipeline: build(:pipeline),
       creator: build(:user)
     }
   end
