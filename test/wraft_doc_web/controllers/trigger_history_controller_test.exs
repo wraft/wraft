@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
   alias WraftDoc.{Repo, Document.Pipeline.TriggerHistory}
 
   @valid_attrs %{
-    meta: %{name: "John Doe"}
+    data: %{name: "John Doe"}
   }
 
   setup %{conn: conn} do
@@ -48,16 +48,16 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
       created_jobs = Oban.Job |> Repo.all()
       created_history = TriggerHistory |> Repo.all()
 
-      meta =
+      data =
         created_history
-        |> Enum.map(fn x -> x.meta end)
+        |> Enum.map(fn x -> x.data end)
         |> List.last()
 
-      meta = for {key, val} <- meta, into: %{}, do: {String.to_atom(key), val}
+      data = for {key, val} <- data, into: %{}, do: {String.to_atom(key), val}
 
       assert job_count_before + 1 == created_jobs |> length()
       assert history_count_before + 1 == created_history |> length()
-      assert meta == @valid_attrs.meta
+      assert data == @valid_attrs.data
 
       assert json_response(conn, 200)["info"] ==
                "Trigger accepted. All the required documents in the pipeline will be created soon and will be available for you to download.!"
@@ -77,13 +77,13 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
 
       conn =
         post(conn, Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), %{
-          meta: "wrong meta"
+          data: "wrong meta"
         })
         |> doc(operation_id: "create_trigger_history")
 
       assert job_count_before == Oban.Job |> Repo.all() |> length()
       assert history_count_before == TriggerHistory |> Repo.all() |> length()
-      assert json_response(conn, 422)["errors"]["meta"] == ["is invalid"]
+      assert json_response(conn, 422)["errors"]["data"] == ["is invalid"]
     end
 
     test "does not create trigger history when pipeline belongs to different organisation", %{

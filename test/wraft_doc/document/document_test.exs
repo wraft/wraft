@@ -27,7 +27,18 @@ defmodule WraftDoc.DocumentTest do
     "unit" => "cm",
     "slug" => "layout slug"
   }
-
+  @valid_instance_attrs %{
+    "instance_id" => "OFFR0001",
+    "raw" => "instance raw",
+    "serialized" => %{"body" => "body of the content", "title" => "title of the content"},
+    "type" => 1
+  }
+  @valid_content_type_attrs %{
+    "name" => "content_type name",
+    "description" => "content_type description",
+    "color" => "#fff",
+    "prefix" => "OFFRE"
+  }
   @invalid_attrs %{}
 
   test "create layout on valid attributes" do
@@ -191,12 +202,6 @@ defmodule WraftDoc.DocumentTest do
   #   assert u_layout.screenshot.filename == "example.png"
   # end
 
-  @valid_content_type_attrs %{
-    "name" => "content_type name",
-    "description" => "content_type description",
-    "color" => "#fff",
-    "prefix" => "OFFRE"
-  }
   test "create content_type on valid attributes" do
     user = insert(:user)
     layout = insert(:layout, creator: user)
@@ -323,12 +328,6 @@ defmodule WraftDoc.DocumentTest do
     assert s_content_type.prefix == content_type.prefix
   end
 
-  @valid_instance_attrs %{
-    "instance_id" => "OFFR0001",
-    "raw" => "instance raw",
-    "serialized" => %{"body" => "body of the content", "title" => "title of the content"}
-  }
-
   test "create instance on valid attributes and updates count of instances at counter" do
     user = insert(:user)
     content_type = insert(:content_type)
@@ -358,7 +357,8 @@ defmodule WraftDoc.DocumentTest do
     assert count_before == count_after
 
     assert %{
-             raw: ["can't be blank"]
+             raw: ["can't be blank"],
+             type: ["can't be blank"]
            } == errors_on(changeset)
   end
 

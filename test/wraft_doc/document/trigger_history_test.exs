@@ -5,7 +5,7 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistoryTest do
   # import WraftDoc.Factory
 
   @valid_attrs %{
-    meta: %{name: "John Doe", post: "Developer"},
+    data: %{name: "John Doe", post: "Developer"},
     state: 1
   }
 
