@@ -18,9 +18,9 @@ defmodule WraftDocWeb.Worker.BulkWorker do
 
     mapping = mapping |> convert_to_map()
     current_user = Account.get_user_by_uuid(user_uuid)
-    c_type = Document.get_content_type(c_type_uuid)
-    state = Enterprise.get_state(state_uuid)
-    data_template = Document.get_d_template(d_temp_uuid)
+    c_type = Document.get_content_type(c_type_uuid, current_user)
+    state = Enterprise.get_state(state_uuid, current_user)
+    data_template = Document.get_d_template(d_temp_uuid, current_user)
     Document.bulk_doc_build(current_user, c_type, state, data_template, mapping, path)
     IO.puts("Job end.!")
     :ok
@@ -38,7 +38,7 @@ defmodule WraftDocWeb.Worker.BulkWorker do
     IO.puts("Job starting..")
     mapping = mapping |> convert_to_map()
     current_user = Account.get_user_by_uuid(user_uuid)
-    c_type = Document.get_content_type(c_type_uuid)
+    c_type = Document.get_content_type(c_type_uuid, current_user)
     Document.data_template_bulk_insert(current_user, c_type, mapping, path)
     IO.puts("Job end.!")
     :ok

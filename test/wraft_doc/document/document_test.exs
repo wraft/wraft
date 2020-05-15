@@ -75,10 +75,18 @@ defmodule WraftDoc.DocumentTest do
   test "show layout shows the layout data and preloads engine crator assets data" do
     user = insert(:user)
     engine = insert(:engine)
-    asset = insert(:asset)
-    layout = insert(:layout, creator: user, engine: engine)
+    asset = insert(:asset, creator: user, organisation: user.organisation)
+
+    layout =
+      insert(:layout,
+        creator: user,
+        engine: engine,
+        creator: user,
+        organisation: user.organisation
+      )
+
     layout_asset = insert(:layout_asset, layout: layout, asset: asset, creator: user)
-    s_layout = Document.show_layout(layout.uuid)
+    s_layout = Document.show_layout(layout.uuid, user)
 
     assert s_layout.name == layout.name
     assert s_layout.description == layout.description
@@ -88,8 +96,8 @@ defmodule WraftDoc.DocumentTest do
 
   test "get layout returns the layout data by uuid" do
     user = insert(:user)
-    layout = insert(:layout, creator: user)
-    s_layout = Document.get_layout(layout.uuid)
+    layout = insert(:layout, creator: user, organisation: user.organisation)
+    s_layout = Document.get_layout(layout.uuid, user)
     assert s_layout.name == layout.name
     assert s_layout.description == layout.description
     assert s_layout.width == layout.width
@@ -101,7 +109,7 @@ defmodule WraftDoc.DocumentTest do
   test "get layout asset from its layout and assets uuids" do
     user = insert(:user)
     engine = insert(:engine)
-    asset = insert(:asset)
+    asset = insert(:asset, creator: user, organisation: user.organisation)
     layout = insert(:layout, creator: user, engine: engine)
     layout_asset = insert(:layout_asset, layout: layout, asset: asset, creator: user)
     g_layout_asset = Document.get_layout_asset(layout.uuid, asset.uuid)
@@ -111,7 +119,7 @@ defmodule WraftDoc.DocumentTest do
   test "update layout on valid attrs" do
     user = insert(:user)
     engine = insert(:engine)
-    layout = insert(:layout, creator: user)
+    layout = insert(:layout, creator: user, organisation: user.organisation)
     count_before = Layout |> Repo.all() |> length()
     params = Map.put(@valid_layout_attrs, "engine_uuid", engine.uuid)
 
@@ -128,7 +136,7 @@ defmodule WraftDoc.DocumentTest do
 
   test "update layout on invalid attrs" do
     user = insert(:user)
-    layout = insert(:layout, creator: user)
+    layout = insert(:layout, creator: user, organisation: user.organisation)
     count_before = Layout |> Repo.all() |> length()
 
     {:error, changeset} = Document.update_layout(layout, user, @invalid_attrs)
@@ -215,8 +223,16 @@ defmodule WraftDoc.DocumentTest do
   }
   test "create content_type on valid attributes" do
     user = insert(:user)
-    layout = insert(:layout, creator: user)
-    flow = insert(:flow, creator: user)
+    layout = insert(:layout, creator: user, organisation: user.organisation)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+
+    fields = [
+      insert(:content_type_field, content_type: content_type),
+      insert(:content_type_field, content_type: content_type)
+    ]
+
+    flow = insert(:flow, creator: user, organisation: user.organisation)
+    param = Map.put(@valid_content_type_attrs, "fields", fields)
     count_before = ContentType |> Repo.all() |> length()
     content_type = Document.create_content_type(user, layout, flow, @valid_content_type_attrs)
     count_after = ContentType |> Repo.all() |> length()
@@ -259,12 +275,19 @@ defmodule WraftDoc.DocumentTest do
 
   test "show content_type shows the content_type data" do
     user = insert(:user)
-    layout = insert(:layout, creator: user)
-    flow = insert(:flow, creator: user)
+    layout = insert(:layout, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: user.organisation)
     state_1 = insert(:state, flow: flow)
     state_2 = insert(:state, flow: flow)
     field_type = insert(:field_type)
-    content_type = insert(:content_type, creator: user, layout: layout, flow: flow)
+
+    content_type =
+      insert(:content_type,
+        creator: user,
+        layout: layout,
+        flow: flow,
+        organisation: user.organisation
+      )
 
     content_type_field =
       insert(:content_type_field,
@@ -272,7 +295,7 @@ defmodule WraftDoc.DocumentTest do
         field_type: field_type
       )
 
-    s_content_type = Document.show_content_type(content_type.uuid)
+    s_content_type = Document.show_content_type(content_type.uuid, user)
     assert s_content_type.name == content_type.name
     assert s_content_type.description == content_type.description
     assert s_content_type.color == content_type.color
@@ -282,8 +305,8 @@ defmodule WraftDoc.DocumentTest do
 
   test "get content_type shows the content_type data" do
     user = insert(:user)
-    content_type = insert(:content_type, creator: user)
-    s_content_type = Document.get_content_type(content_type.uuid)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    s_content_type = Document.get_content_type(content_type.uuid, user)
     assert s_content_type.name == content_type.name
     assert s_content_type.description == content_type.description
     assert s_content_type.color == content_type.color
@@ -292,15 +315,27 @@ defmodule WraftDoc.DocumentTest do
 
   test "update content_type on valid attrs" do
     user = insert(:user)
-    layout = insert(:layout, creator: user)
-    flow = insert(:flow, creator: user)
-    content_type = insert(:content_type, creator: user, layout: layout, flow: flow)
+    layout = insert(:layout, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: user.organisation)
+
+    content_type =
+      insert(:content_type,
+        creator: user,
+        layout: layout,
+        flow: flow,
+        organisation: user.organisation
+      )
+
     count_before = ContentType |> Repo.all() |> length()
 
     params =
       Map.merge(@valid_content_type_attrs, %{
         "flow_uuid" => flow.uuid,
-        "layout_uuid" => layout.uuid
+        "layout_uuid" => layout.uuid,
+        "fields" => [
+          insert(:content_type_field, content_type: content_type),
+          insert(:content_type_field, content_type: content_type)
+        ]
       })
 
     content_type = Document.update_content_type(content_type, user, params)
@@ -414,20 +449,21 @@ defmodule WraftDoc.DocumentTest do
 
   test "get instance shows the instance data" do
     user = insert(:user)
-    instance = insert(:instance, creator: user)
-    i_instance = Document.get_instance(instance.uuid)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    instance = insert(:instance, creator: user, content_type: content_type)
+    i_instance = Document.get_instance(instance.uuid, user)
     assert i_instance.instance_id == instance.instance_id
     assert i_instance.raw == instance.raw
   end
 
   test "show instance shows and preloads creator content thype layout and state instance data" do
     user = insert(:user)
-    content_type = insert(:content_type, creator: user)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
     flow = content_type.flow
-    state = insert(:state, flow: flow)
+    state = insert(:state, flow: flow, organisation: user.organisation)
     instance = insert(:instance, creator: user, content_type: content_type, state: state)
 
-    i_instance = Document.show_instance(instance.uuid)
+    i_instance = Document.show_instance(instance.uuid, user)
     assert i_instance.instance_id == instance.instance_id
     assert i_instance.raw == instance.raw
 
@@ -696,8 +732,10 @@ defmodule WraftDoc.DocumentTest do
   end
 
   test "get content type field returns content type field data" do
-    content_type_field = insert(:content_type_field)
-    c_content_type_field = Document.get_content_type_field(content_type_field.uuid)
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    content_type_field = insert(:content_type_field, content_type: content_type)
+    c_content_type_field = Document.get_content_type_field(content_type_field.uuid, user)
     assert content_type_field.name == c_content_type_field.name
     assert content_type_field.description == c_content_type_field.description
   end
@@ -777,16 +815,16 @@ defmodule WraftDoc.DocumentTest do
 
   test "get theme returns the theme data" do
     user = insert(:user)
-    theme = insert(:theme, creator: user)
-    t_theme = Document.get_theme(theme.uuid)
+    theme = insert(:theme, creator: user, organisation: user.organisation)
+    t_theme = Document.get_theme(theme.uuid, user)
     assert t_theme.name == theme.name
     assert t_theme.font == theme.font
   end
 
   test "show theme returns the theme data and preloads the creator" do
     user = insert(:user)
-    theme = insert(:theme, creator: user)
-    t_theme = Document.show_theme(theme.uuid)
+    theme = insert(:theme, creator: user, organisation: user.organisation)
+    t_theme = Document.show_theme(theme.uuid, user)
     assert t_theme.name == theme.name
     assert t_theme.font == theme.font
 
@@ -900,8 +938,10 @@ defmodule WraftDoc.DocumentTest do
 
   test "get data_template returns the data_template data" do
     user = insert(:user)
-    data_template = insert(:data_template, creator: user)
-    d_data_template = Document.get_d_template(data_template.uuid)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+
+    data_template = insert(:data_template, creator: user, content_type: content_type)
+    d_data_template = Document.get_d_template(data_template.uuid, user)
     assert d_data_template.title == data_template.title
     assert d_data_template.title_template == data_template.title_template
     assert d_data_template.data == data_template.data
@@ -909,9 +949,9 @@ defmodule WraftDoc.DocumentTest do
 
   test "show data_template returns the data_template data and preloads creator and content type" do
     user = insert(:user)
-    content_type = insert(:content_type, creator: user)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
     data_template = insert(:data_template, creator: user, content_type: content_type)
-    d_data_template = Document.show_d_template(data_template.uuid)
+    d_data_template = Document.show_d_template(data_template.uuid, user)
     assert d_data_template.title == data_template.title
     assert d_data_template.title_template == data_template.title_template
     assert d_data_template.data == data_template.data
@@ -994,15 +1034,15 @@ defmodule WraftDoc.DocumentTest do
 
   test "get asset returns the asset data" do
     user = insert(:user)
-    asset = insert(:asset, creator: user)
-    a_asset = Document.get_asset(asset.uuid)
+    asset = insert(:asset, creator: user, organisation: user.organisation)
+    a_asset = Document.get_asset(asset.uuid, user)
     assert a_asset.name == asset.name
   end
 
   test "show asset returns the asset data and preloads" do
     user = insert(:user)
-    asset = insert(:asset, creator: user)
-    a_asset = Document.show_asset(asset.uuid)
+    asset = insert(:asset, creator: user, organisation: user.organisation)
+    a_asset = Document.show_asset(asset.uuid, user)
     assert a_asset.name == asset.name
     assert a_asset.creator.name == user.name
   end
@@ -1086,8 +1126,8 @@ defmodule WraftDoc.DocumentTest do
 
   test "get comment returns the comment data" do
     user = insert(:user)
-    comment = insert(:comment, user: user)
-    c_comment = Document.get_comment(comment.uuid)
+    comment = insert(:comment, user: user, organisation: user.organisation)
+    c_comment = Document.get_comment(comment.uuid, user)
     assert c_comment.comment == comment.comment
     assert c_comment.is_parent == comment.is_parent
     assert c_comment.master == comment.master
@@ -1096,8 +1136,8 @@ defmodule WraftDoc.DocumentTest do
 
   test "show comment returns the comment data and preloads user and profile" do
     user = insert(:user)
-    comment = insert(:comment, user: user)
-    c_comment = Document.show_comment(comment.uuid)
+    comment = insert(:comment, user: user, organisation: user.organisation)
+    c_comment = Document.show_comment(comment.uuid, user)
     assert c_comment.comment == comment.comment
     assert c_comment.is_parent == comment.is_parent
     assert c_comment.master == comment.master

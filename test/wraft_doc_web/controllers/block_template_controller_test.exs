@@ -64,7 +64,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
 
   test "update block_templates on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
-    block_template = insert(:block_template, creator: user)
+    block_template = insert(:block_template, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -82,7 +82,9 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   end
 
   test "does't update block_templates for invalid attrs", %{conn: conn} do
-    block_template = insert(:block_template)
+    user = conn.assigns.current_user
+
+    block_template = insert(:block_template, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -115,7 +117,8 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   end
 
   test "show renders block_template details by id", %{conn: conn} do
-    block_template = insert(:block_template)
+    user = conn.assigns.current_user
+    block_template = insert(:block_template, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -143,7 +146,8 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    block_template = insert(:block_template)
+    user = conn.assigns.current_user
+    block_template = insert(:block_template, organisation: user.organisation)
     count_before = BlockTemplate |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_block_template_path(conn, :delete, block_template.uuid))
@@ -167,5 +171,19 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
 
     assert count_before + 1 == Oban.Job |> Repo.all() |> length()
     assert json_response(conn, 200)["info"] == "Block Template will be created soon"
+  end
+
+  test "error not found for user from another organisation", %{conn: conn} do
+    user = insert(:user)
+    block_template = insert(:block_template, creator: user, organisation: user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_block_template_path(conn, :show, block_template.uuid))
+
+    assert json_response(conn, 404) == "Not Found"
   end
 end
