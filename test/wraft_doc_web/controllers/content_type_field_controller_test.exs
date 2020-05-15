@@ -30,7 +30,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    content_type_field = insert(:content_type_field) |> Repo.preload(:content_type)
+    user = conn.assigns.current_user
+
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    content_type_field = insert(:content_type_field, content_type: content_type)
     count_before = ContentTypeField |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_content_type_field_path(conn, :delete, content_type_field.uuid))
@@ -38,5 +41,18 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldControllerTest do
 
     assert json_response(conn, 200)["content_type"]["name"] ==
              content_type_field.content_type.name
+  end
+
+  test "error not found for user from another organisation", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    content_type_field = insert(:content_type_field, content_type: content_type)
+    conn = delete(conn, Routes.v1_content_type_field_path(conn, :delete, content_type_field.uuid))
+    assert json_response(conn, 404) == "Not Found"
   end
 end

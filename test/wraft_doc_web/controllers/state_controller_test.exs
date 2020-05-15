@@ -32,7 +32,8 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   end
 
   test "create states by valid attrrs", %{conn: conn} do
-    flow = insert(:flow)
+    user = conn.assigns.current_user
+    flow = insert(:flow, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -55,8 +56,8 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    organisation = insert(:organisation)
-    flow = insert(:flow)
+    user = conn.assigns.current_user
+    flow = insert(:flow, creator: user, organisation: user.organisation)
     count_before = State |> Repo.all() |> length()
 
     conn =
@@ -68,7 +69,8 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   end
 
   test "update states on valid attrs", %{conn: conn} do
-    state = insert(:state, creator: conn.assigns.current_user, flow: insert(:flow))
+    user = conn.assigns.current_user
+    state = insert(:state, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -87,7 +89,8 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   end
 
   test "does't update states for invalid attrs", %{conn: conn} do
-    state = insert(:state, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    state = insert(:state, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -126,11 +129,25 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    state = insert(:state, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    state = insert(:state, creator: user, organisation: user.organisation)
     count_before = State |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_state_path(conn, :delete, state.uuid))
     assert count_before - 1 == State |> Repo.all() |> length()
     assert json_response(conn, 200)["state"] == state.state
+  end
+
+  test "error not found for user from another organisation", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    user = insert(:user)
+    state = insert(:state, creator: user, organisation: user.organisation)
+
+    conn = delete(conn, Routes.v1_state_path(conn, :delete, state.uuid))
+    assert json_response(conn, 404) == "Not Found"
   end
 end

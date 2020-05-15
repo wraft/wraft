@@ -135,7 +135,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   swagger_path :index do
     get("/comments")
     summary("Comment index")
-    description("API to get the list of all comments created so far")
+    description("API to get the list of all comments created under a master")
     parameter(:master_id, :query, :string, "Master id")
     parameter(:page, :query, :string, "Page number")
 
@@ -164,6 +164,39 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     end
   end
 
+  swagger_path :replies do
+    get("/comments/replies")
+    summary("Comment replies")
+    description("API to get the list of replies under a comment")
+    parameter(:master_id, :query, :string, "Master id")
+    parameter(:comment_id, :query, :string, "comment_id")
+    parameter(:page, :query, :string, "Page number")
+
+    response(200, "Ok", Schema.ref(:CommentIndex))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(400, "Bad Request", Schema.ref(:Error))
+  end
+
+  @spec reply(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def reply(conn, params) do
+    current_user = conn.assigns.current_user
+
+    with %{
+           entries: comments,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.comment_replies(current_user, params) do
+      conn
+      |> render("index.json",
+        comments: comments,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
+
   swagger_path :show do
     get("/comments/{id}")
     summary("Show a comment")
@@ -180,7 +213,9 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => uuid}) do
-    with %Comment{} = comment <- Document.show_comment(uuid) do
+    current_user = conn.assigns.current_user
+
+    with %Comment{} = comment <- Document.show_comment(uuid, current_user) do
       conn
       |> render("comment.json", comment: comment)
     end
@@ -204,7 +239,9 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
-    with %Comment{} = comment <- Document.get_comment(uuid),
+    current_user = conn.assigns.current_user
+
+    with %Comment{} = comment <- Document.get_comment(uuid, current_user),
          %Comment{} = comment <- Document.update_comment(comment, params) do
       conn
       |> render("comment.json", comment: comment)
@@ -228,7 +265,9 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
-    with %Comment{} = comment <- Document.get_comment(uuid),
+    current_user = conn.assigns.current_user
+
+    with %Comment{} = comment <- Document.get_comment(uuid, current_user),
          {:ok, %Comment{}} <- Document.delete_comment(comment) do
       conn
       |> render("delete.json", comment: comment)
