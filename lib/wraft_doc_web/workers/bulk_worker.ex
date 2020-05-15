@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Worker.BulkWorker do
   use Oban.Worker, queue: :default
   @impl Oban.Worker
-  alias WraftDoc.{Account, Document, Enterprise}
+  alias WraftDoc.{Account, Document, Document.Pipeline.TriggerHistory, Enterprise}
 
   def perform(
         %{
@@ -55,10 +55,14 @@ defmodule WraftDocWeb.Worker.BulkWorker do
     :ok
   end
 
-  def perform(%{"u_uuid" => u_uuid, "p_uuid" => p_uuid, "meta" => meta}, %{tags: ["pipeline_job"]}) do
+  def perform(%{"uuid" => _, "data" => _, "meta" => _, "pipeline_id" => _} = trigger, %{
+        tags: ["pipeline_job"]
+      }) do
     IO.puts("Job starting..")
 
-    # pipeline = Document.get_pipeline(p_uuid) |> Document.preload_pipe_stages()
+    convert_map_to_trigger_struct(trigger)
+    |> WraftDoc.PipelineRunner.call()
+    |> IO.inspect(label: "pipe runner")
 
     IO.puts("Job end.!")
     :ok
@@ -68,5 +72,10 @@ defmodule WraftDocWeb.Worker.BulkWorker do
 
   defp convert_to_map(mapping) when is_binary(mapping) do
     mapping |> Jason.decode!()
+  end
+
+  defp convert_map_to_trigger_struct(map) do
+    map = for {k, v} <- map, into: %{}, do: {String.to_atom(k), v}
+    struct(TriggerHistory, map)
   end
 end

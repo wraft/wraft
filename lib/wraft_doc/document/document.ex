@@ -405,6 +405,30 @@ defmodule WraftDoc.Document do
     end
   end
 
+  @doc """
+  Same as create_instance/4, but does not add the insert activity to activity stream.
+  """
+  @spec create_instance(ContentType.t(), State.t(), map) ::
+          %Instance{content_type: ContentType.t(), state: State.t()}
+          | {:error, Ecto.Changeset.t()}
+  def create_instance(%{id: c_id, prefix: prefix} = c_type, state, params) do
+    instance_id = c_id |> create_instance_id(prefix)
+    params = params |> Map.merge(%{"instance_id" => instance_id})
+
+    c_type
+    |> build_assoc(:instances, state: state)
+    |> Instance.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, content} ->
+        Task.start_link(fn -> create_or_update_counter(c_type) end)
+        content |> Repo.preload([:content_type, :state])
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
   # Create Instance ID from the prefix of the content type
   @spec create_instance_id(integer, binary) :: binary
   defp create_instance_id(c_id, prefix) do
@@ -507,9 +531,11 @@ defmodule WraftDoc.Document do
     |> get_built_document()
   end
 
-  # Get the build document of the given instance
+  @doc """
+  Get the build document of the given instance.
+  """
   @spec get_built_document(Instance.t()) :: Instance.t() | nil
-  defp get_built_document(%{id: id, instance_id: instance_id} = instance) do
+  def get_built_document(%{id: id, instance_id: instance_id} = instance) do
     from(h in History,
       where: h.exit_code == 0,
       where: h.content_id == ^id,
@@ -527,9 +553,7 @@ defmodule WraftDoc.Document do
     end
   end
 
-  defp get_built_document(nil) do
-    nil
-  end
+  def get_built_document(nil), do: nil
 
   @doc """
   Update an instance.
@@ -1058,6 +1082,19 @@ defmodule WraftDoc.Document do
     |> Repo.insert!()
   end
 
+  @doc """
+  Same as add_build_history/3, but creator will not be stored.
+  """
+  @spec add_build_history(Instance.t(), map) :: History.t()
+  def add_build_history(instance, params) do
+    params = create_build_history_params(params)
+
+    instance
+    |> build_assoc(:build_histories)
+    |> History.changeset(params)
+    |> Repo.insert!()
+  end
+
   # Create params to insert build history
   # Build history Status will be "success" when exit code is 0
   @spec create_build_history_params(map) :: map
@@ -1381,9 +1418,6 @@ defmodule WraftDoc.Document do
     {:error, :not_found}
   end
 
-  @doc """
-  Generate params to create instances for bulk build.
-  """
   @spec create_instance_params_for_bulk_build(
           map,
           DataTemplate.t(),
@@ -1392,20 +1426,30 @@ defmodule WraftDoc.Document do
           State.t(),
           map
         ) :: Instance.t()
-  def create_instance_params_for_bulk_build(
-        serialized,
-        %{title_template: title_temp, data: template},
-        current_user,
-        c_type,
-        state,
-        mapping
-      ) do
+  defp create_instance_params_for_bulk_build(
+         serialized,
+         %DataTemplate{} = d_temp,
+         current_user,
+         c_type,
+         state,
+         mapping
+       ) do
     # The serialzed map's keys are changed to the values in the mapping. These
     # values are actually the fields of the content type.
     # This updated serialzed is then reduced to get the raw data
     # by replacing the variables in the data template.
     serialized = serialized |> update_keys(mapping)
+    params = do_create_instance_params(serialized, d_temp)
+    type = Instance.types()[:bulk_build]
+    params = params |> Map.put("type", type)
+    create_instance_for_bulk_build(current_user, c_type, state, params)
+  end
 
+  @doc """
+  Generate params to create instance.
+  """
+  @spec do_create_instance_params(map, DataTemplate.t()) :: map
+  def do_create_instance_params(serialized, %{title_template: title_temp, data: template}) do
     title =
       serialized
       |> Enum.reduce(title_temp, fn {k, v}, acc ->
@@ -1420,8 +1464,7 @@ defmodule WraftDoc.Document do
         WraftDoc.DocConversion.replace_content(k, v, acc)
       end)
 
-    params = %{"raw" => raw, "serialized" => serialized}
-    create_instance_for_bulk_build(current_user, c_type, state, params)
+    %{"raw" => raw, "serialized" => serialized}
   end
 
   # Create instance for bulk build. Uses the `create_instance/4` function
@@ -1441,21 +1484,41 @@ defmodule WraftDoc.Document do
     end
   end
 
-  # Builds the doc using `build_doc/2`.
-  # Here we also records the build history using `add_build_history/3`.
-  @spec bulk_build(User.t(), Instance.t(), Layout.t()) :: {:ok, pid()}
-  defp bulk_build(current_user, instance, layout) do
+  @doc """
+  Builds the doc using `build_doc/2`.
+  Here we also records the build history using `add_build_history/3`.
+  """
+  @spec bulk_build(User.t(), Instance.t(), Layout.t()) :: tuple
+  def bulk_build(current_user, instance, layout) do
     start_time = Timex.now()
-    {_, exit_code} = build_doc(instance, layout)
+    {result, exit_code} = build_doc(instance, layout)
     end_time = Timex.now()
 
-    Task.start_link(fn ->
-      add_build_history(current_user, instance, %{
-        start_time: start_time,
-        end_time: end_time,
-        exit_code: exit_code
-      })
-    end)
+    add_build_history(current_user, instance, %{
+      start_time: start_time,
+      end_time: end_time,
+      exit_code: exit_code
+    })
+
+    {result, exit_code}
+  end
+
+  @doc """
+  Same as bulk_buil/3, but does not store the creator in build history.
+  """
+  @spec bulk_build(Instance.t(), Layout.t()) :: {Collectable.t(), non_neg_integer()}
+  def bulk_build(instance, layout) do
+    start_time = Timex.now()
+    {result, exit_code} = build_doc(instance, layout)
+    end_time = Timex.now()
+
+    add_build_history(instance, %{
+      start_time: start_time,
+      end_time: end_time,
+      exit_code: exit_code
+    })
+
+    {result, exit_code}
   end
 
   # Change the Keys of the CSV decoded map to the values of the mapping.
@@ -1882,12 +1945,12 @@ defmodule WraftDoc.Document do
   """
   @spec create_trigger_history(User.t(), Pipeline.t(), map) ::
           {:ok, TriggerHistory.t()} | {:error, Ecto.Changeset.t()} | nil
-  def create_trigger_history(%User{id: u_id}, %Pipeline{} = pipeline, meta) do
+  def create_trigger_history(%User{id: u_id}, %Pipeline{} = pipeline, data) do
     state = TriggerHistory.states()[:enqued]
 
     pipeline
     |> build_assoc(:trigger_histories, creator_id: u_id)
-    |> TriggerHistory.changeset(%{meta: meta, state: state})
+    |> TriggerHistory.changeset(%{data: data, state: state})
     |> Repo.insert()
   end
 

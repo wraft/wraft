@@ -31,10 +31,10 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
           description("Meta of a trigger message")
 
           properties do
-            meta(:map, "Meta of a trigger message", required: true)
+            data(:map, "Meta of a trigger message", required: true)
           end
 
-          example(%{meta: %{name: "John Doe", position: "HR Manager"}})
+          example(%{data: %{name: "John Doe", position: "HR Manager"}})
         end
     }
   end
@@ -59,7 +59,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"pipeline_id" => p_uuid, "meta" => meta}) do
+  def create(conn, %{"pipeline_id" => p_uuid, "data" => meta}) do
     current_user = conn.assigns[:current_user]
 
     with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, p_uuid),

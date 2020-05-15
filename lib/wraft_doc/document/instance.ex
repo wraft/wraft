@@ -8,6 +8,8 @@ defmodule WraftDoc.Document.Instance do
   alias WraftDoc.{Account.User, Document.ContentType}
   import Ecto.Query
   @derive {Jason.Encoder, only: [:instance_id]}
+  def types, do: [normal: 1, bulk_build: 2, pipeline_api: 3, pipeline_hook: 4]
+
   defimpl Spur.Trackable, for: Instance do
     def actor(instance), do: "#{instance.creator_id}"
     def object(instance), do: "Instance:#{instance.id}"
@@ -27,6 +29,7 @@ defmodule WraftDoc.Document.Instance do
     field(:instance_id, :string, null: false)
     field(:raw, :string)
     field(:serialized, :map, default: %{})
+    field(:type, :integer)
     field(:build, :string, virtual: true)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
@@ -40,8 +43,8 @@ defmodule WraftDoc.Document.Instance do
 
   def changeset(%Instance{} = instance, attrs \\ %{}) do
     instance
-    |> cast(attrs, [:instance_id, :raw, :serialized, :content_type_id])
-    |> validate_required([:instance_id, :raw, :serialized])
+    |> cast(attrs, [:instance_id, :raw, :serialized, :content_type_id, :type])
+    |> validate_required([:instance_id, :raw, :serialized, :type])
     |> unique_constraint(:instance_id,
       message: "Instance with the ID exists.!",
       name: :content_organisation_unique_index
