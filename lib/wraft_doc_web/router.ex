@@ -136,9 +136,10 @@ defmodule WraftDocWeb.Router do
       post("/block_templates/bulk_import", BlockTemplateController, :bulk_import)
 
       # Assets
-      resources("/assets", AssetController, only: [:create, :index, :show, :update, :delete])
+      resources("/assets", AssetController)
       # Comments
       resources("/comments", CommentController)
+      get("/comments/:id/replies", CommentController, :reply)
       # Approval system
       resources("/approval_systems", ApprovalSystemController)
       post("/approval_systems/approve", ApprovalSystemController, :approve)

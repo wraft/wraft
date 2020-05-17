@@ -151,7 +151,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
   def create(conn, %{"flow_id" => flow_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Flow{} = flow <- Enterprise.get_flow(flow_id),
+    with %Flow{} = flow <- Enterprise.get_flow(flow_id, current_user),
          %State{} = state <- Enterprise.create_state(current_user, flow, params) do
       conn |> render("create.json", state: state)
     end

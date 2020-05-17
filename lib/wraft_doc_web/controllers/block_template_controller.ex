@@ -157,7 +157,9 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => uuid}) do
-    with %BlockTemplate{} = block_template <- Document.get_block_template(uuid) do
+    current_user = conn.assigns.current_user
+
+    with %BlockTemplate{} = block_template <- Document.get_block_template(uuid, current_user) do
       conn
       |> render("block_template.json", block_template: block_template)
     end
@@ -186,7 +188,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %BlockTemplate{} = block_template <- Document.get_block_template(uuid),
+    with %BlockTemplate{} = block_template <- Document.get_block_template(uuid, current_user),
          %BlockTemplate{} = block_template <-
            Document.update_block_template(current_user, block_template, params) do
       conn
@@ -213,7 +215,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   def delete(conn, %{"id" => uuid}) do
     current_user = conn.assigns[:current_user]
 
-    with %BlockTemplate{} = block_template <- Document.get_block_template(uuid),
+    with %BlockTemplate{} = block_template <- Document.get_block_template(uuid, current_user),
          {:ok, %BlockTemplate{}} <- Document.delete_block_template(current_user, block_template) do
       conn
       |> render("block_template.json", block_template: block_template)

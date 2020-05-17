@@ -464,8 +464,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   def create(conn, %{"layout_uuid" => layout_uuid, "flow_uuid" => flow_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Document.get_layout(layout_uuid),
-         %Flow{} = flow <- Enterprise.get_flow(flow_uuid),
+    with %Layout{} = layout <- Document.get_layout(layout_uuid, current_user),
+         %Flow{} = flow <- Enterprise.get_flow(flow_uuid, current_user),
          %ContentType{} = content_type <-
            Document.create_content_type(current_user, layout, flow, params) do
       conn
