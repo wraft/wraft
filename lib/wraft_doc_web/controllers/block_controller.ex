@@ -197,13 +197,15 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns.current_user
+
     with %{"url" => file_url} <- Document.generate_chart(params) do
       Map.merge(params, %{
         "file_url" => file_url,
         "tex_chart" => Document.generate_tex_chart(params)
       })
 
-      with %Block{} = block <- Document.get_block(uuid),
+      with %Block{} = block <- Document.get_block(uuid, current_user),
            %Block{} = block <- Document.update_block(block, params) do
         conn
         |> render("update.json", block: block)
@@ -232,7 +234,9 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   end
 
   def show(conn, %{"id" => uuid}) do
-    with %Block{} = block <- Document.get_block(uuid) do
+    current_user = conn.assigns.current_user
+
+    with %Block{} = block <- Document.get_block(uuid, current_user) do
       conn
       |> render("show.json", block: block)
     end
@@ -254,7 +258,9 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   end
 
   def delete(conn, %{"id" => uuid}) do
-    with %Block{} = block <- Document.get_block(uuid),
+    current_user = conn.assigns.current_user
+
+    with %Block{} = block <- Document.get_block(uuid, current_user),
          {:ok, %Block{}} <- Document.delete_block(block) do
       conn |> render("block.json", block: block)
     end

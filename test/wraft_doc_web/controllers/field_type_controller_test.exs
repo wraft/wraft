@@ -57,7 +57,8 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   end
 
   test "update field type on valid attrs", %{conn: conn} do
-    field_type = insert(:field_type, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    field_type = insert(:field_type, creator: user)
 
     conn =
       build_conn()
@@ -73,7 +74,9 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   end
 
   test "does't update field type for invalid attrs", %{conn: conn} do
-    field_type = insert(:field_type, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+
+    field_type = insert(:field_type, creator: user)
 
     conn =
       build_conn()
@@ -102,7 +105,8 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   end
 
   test "show renders field type details by id", %{conn: conn} do
-    field_type = insert(:field_type)
+    user = conn.assigns.current_user
+    field_type = insert(:field_type, creator: user)
 
     conn =
       build_conn()
@@ -130,11 +134,26 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    field_type = insert(:field_type)
+    user = conn.assigns.current_user
+    field_type = insert(:field_type, creator: user)
     count_before = FieldType |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_field_type_path(conn, :delete, field_type.uuid))
     assert count_before - 1 == FieldType |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == field_type.name
+  end
+
+  test "error not found on user from another organisation", %{conn: conn} do
+    user = insert(:user)
+    field_type = insert(:field_type, creator: user)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_field_type_path(conn, :show, field_type.uuid))
+
+    assert json_response(conn, 404) == "Not Found"
   end
 end

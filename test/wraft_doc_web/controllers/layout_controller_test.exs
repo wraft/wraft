@@ -75,7 +75,8 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   end
 
   test "update layouts on valid attributes", %{conn: conn} do
-    layout = insert(:layout, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    layout = insert(:layout, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -96,7 +97,8 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   end
 
   test "does't update layouts on invalid attrs", %{conn: conn} do
-    layout = insert(:layout, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    layout = insert(:layout, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -129,7 +131,8 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   end
 
   test "show renders layout details by id", %{conn: conn} do
-    layout = insert(:layout, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    layout = insert(:layout, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -157,11 +160,26 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    layout = insert(:layout, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    layout = insert(:layout, creator: user, organisation: user.organisation)
     count_before = Layout |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_layout_path(conn, :delete, layout.uuid))
     assert count_before - 1 == Layout |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == layout.name
+  end
+
+  test "error not found for user from another organisation", %{conn: conn} do
+    user = insert(:user)
+    layout = insert(:layout, creator: user, organisation: user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_layout_path(conn, :show, layout.uuid))
+
+    assert json_response(conn, 404) == "Not Found"
   end
 end

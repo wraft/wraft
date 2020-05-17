@@ -76,7 +76,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   test "update instances on valid attributes", %{conn: conn} do
-    instance = insert(:instance, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    instance = insert(:instance, creator: user, content_type: content_type)
 
     conn =
       build_conn()
@@ -100,7 +102,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   test "does't update instances for invalid attrs", %{conn: conn} do
-    instance = insert(:instance, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    instance = insert(:instance, creator: user, content_type: content_type)
 
     conn =
       build_conn()
@@ -156,8 +160,10 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert List.to_string(instances) =~ dt2.raw
   end
 
-  test "show renders asset details by id", %{conn: conn} do
-    instance = insert(:instance, creator: conn.assigns.current_user)
+  test "show renders instance details by id", %{conn: conn} do
+    user = conn.assigns.current_user
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    instance = insert(:instance, creator: user, content_type: content_type)
 
     conn =
       build_conn()
@@ -179,17 +185,34 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert json_response(conn, 404) == "Not Found"
   end
 
-  test "delete asset by given id", %{conn: conn} do
+  test "delete instance by given id", %{conn: conn} do
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    instance = insert(:instance, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    instance = insert(:instance, creator: user, content_type: content_type)
     count_before = Instance |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_instance_path(conn, :delete, instance.uuid))
     assert count_before - 1 == Instance |> Repo.all() |> length()
     assert json_response(conn, 200)["raw"] == instance.raw
+  end
+
+  test "error not found for user from another organisation", %{conn: conn} do
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    instance = insert(:instance, creator: user, content_type: content_type)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_instance_path(conn, :show, instance.uuid))
+
+    assert json_response(conn, 404) == "Not Found"
   end
 end

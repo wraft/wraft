@@ -69,8 +69,8 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
     end)
 
     params = @update_valid_attrs |> Map.put("api_route", "http://localhost:#{bypass.port}")
-
-    block = insert(:block, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    block = insert(:block, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -86,7 +86,8 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
   end
 
   test "does not update blocks for invalid attributes", %{conn: conn} do
-    block = insert(:block, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    block = insert(:block, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -98,7 +99,8 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
   end
 
   test "renders show.json on existing id", %{conn: conn} do
-    block = insert(:block, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    block = insert(:block, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -120,7 +122,8 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
   end
 
   test "deletes the block and renders the block.json", %{conn: conn} do
-    block = insert(:block, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    block = insert(:block, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -132,5 +135,18 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
     count_after = Block |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == block.name
     assert count_before - 1 == count_after
+  end
+
+  test "error not found on user from another organisation", %{conn: conn} do
+    user = insert(:user)
+    block = insert(:block, creator: user, organisation: user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_block_path(conn, :show, block.uuid))
+    assert json_response(conn, 404) == "Not Found"
   end
 end

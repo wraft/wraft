@@ -166,7 +166,9 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => uuid}) do
-    with %ApprovalSystem{} = approval_system <- Enterprise.get_approval_system(uuid) do
+    current_user = conn.assigns.current_user
+
+    with %ApprovalSystem{} = approval_system <- Enterprise.get_approval_system(uuid, current_user) do
       conn
       |> render("approval_system.json", approval_system: approval_system)
     end
@@ -193,9 +195,10 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
-    current_user = conn.assigns[:current_user]
+    current_user = conn.assigns.current_user
 
-    with %ApprovalSystem{} = approval_system <- Enterprise.get_approval_system(uuid),
+    with %ApprovalSystem{} = approval_system <-
+           Enterprise.get_approval_system(uuid, current_user),
          %ApprovalSystem{} = approval_system <-
            Enterprise.update_approval_system(current_user, approval_system, params) do
       conn
@@ -220,7 +223,10 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
-    with %ApprovalSystem{} = approval_system <- Enterprise.get_approval_system(uuid),
+    current_user = conn.assigns.current_user
+
+    with %ApprovalSystem{} = approval_system <-
+           Enterprise.get_approval_system(uuid, current_user),
          {:ok, %ApprovalSystem{}} <- Enterprise.delete_approval_system(approval_system) do
       conn
       |> render("approval_system.json", approval_system: approval_system)
@@ -247,12 +253,12 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
 
     with %ApprovalSystem{approver: approver, instance: instance, pre_state: pre_state} =
            approval_system <-
-           Enterprise.get_approval_system(uuid),
+           Enterprise.get_approval_system(uuid, current_user),
          true <- Enterprise.same_user?(current_user.uuid, approver.uuid),
          true <- Enterprise.same_state?(pre_state.id, instance.state_id),
          %ApprovalSystem{instance: instance} = approval_system <-
            Enterprise.approve_content(current_user, approval_system),
-         %Instance{} = instance <- Document.get_instance(instance.uuid) do
+         %Instance{} = instance <- Document.get_instance(instance.uuid, current_user) do
       conn
       |> render("approve.json", approval_system: approval_system, instance: instance)
     else

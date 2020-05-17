@@ -363,7 +363,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => instance_uuid}) do
-    with %Instance{} = instance <- Document.show_instance(instance_uuid) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Document.show_instance(instance_uuid, current_user) do
       conn
       |> render("show.json", instance: instance)
     end
@@ -393,7 +395,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Instance{} = instance <- Document.get_instance(uuid),
+    with %Instance{} = instance <- Document.get_instance(uuid, current_user),
          %Instance{} = instance <- Document.update_instance(instance, current_user, params) do
       conn
       |> render("show.json", instance: instance)
@@ -422,7 +424,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def delete(conn, %{"id" => uuid}) do
     current_user = conn.assigns[:current_user]
 
-    with %Instance{} = instance <- Document.get_instance(uuid),
+    with %Instance{} = instance <- Document.get_instance(uuid, current_user),
          {:ok, %Instance{}} <- Document.delete_instance(instance, current_user) do
       conn
       |> render("instance.json", instance: instance)
@@ -453,7 +455,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     start_time = Timex.now()
 
     with %Instance{content_type: %{layout: layout}} = instance <-
-           Document.show_instance(instance_uuid),
+           Document.show_instance(instance_uuid, current_user),
          %Layout{} = layout <- Document.preload_asset(layout),
          {_, exit_code} <- Document.build_doc(instance, layout) do
       end_time = Timex.now()
@@ -501,7 +503,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def state_update(conn, %{"id" => instance_uuid, "state_uuid" => state_uuid}) do
     current_user = conn.assigns[:current_user]
 
-    with %Instance{} = instance <- Document.get_instance(instance_uuid),
+    with %Instance{} = instance <- Document.get_instance(instance_uuid, current_user),
          %State{} = state <- Enterprise.get_state(current_user, state_uuid),
          %Instance{} = instance <- Document.update_instance_state(current_user, instance, state) do
       conn

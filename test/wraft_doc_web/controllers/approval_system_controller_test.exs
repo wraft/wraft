@@ -31,9 +31,13 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     current_user = conn.assigns.current_user
-    instance = insert(:instance)
-    pre_state = insert(:state, organisation: current_user.organisation)
-    post_state = insert(:state, organisation: current_user.organisation)
+
+    content_type =
+      insert(:content_type, creator: current_user, organisation: current_user.organisation)
+
+    instance = insert(:instance, creator: current_user, content_type: content_type)
+    pre_state = insert(:state, creator: current_user, organisation: current_user.organisation)
+    post_state = insert(:state, creator: current_user, organisation: current_user.organisation)
     approver = insert(:user)
 
     params = %{
@@ -76,9 +80,13 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     current_user = conn.assigns.current_user
-    instance = insert(:instance)
-    pre_state = insert(:state, organisation: current_user.organisation)
-    post_state = insert(:state, organisation: current_user.organisation)
+
+    organisation = current_user.organisation
+    content_type = insert(:content_type, creator: current_user, organisation: organisation)
+    instance = insert(:instance, creator: current_user, content_type: content_type)
+    pre_state = insert(:state, creator: current_user, organisation: organisation)
+    post_state = insert(:state, creator: current_user, organisation: organisation)
+
     approver = insert(:user)
 
     params = %{
@@ -89,7 +97,13 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
     }
 
     approval_system =
-      insert(:approval_system, instance: instance, pre_state: pre_state, post_state: post_state)
+      insert(:approval_system,
+        instance: instance,
+        pre_state: pre_state,
+        post_state: post_state,
+        user: current_user,
+        organisation: organisation
+      )
 
     count_before = ApprovalSystem |> Repo.all() |> length()
 
@@ -102,7 +116,9 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
   end
 
   test "does't update approval_systems for invalid attrs", %{conn: conn} do
-    approval_system = insert(:approval_system)
+    user = conn.assigns.current_user
+    organisation = user.organisation
+    approval_system = insert(:approval_system, organisation: organisation, user: user)
 
     conn =
       build_conn()
@@ -120,7 +136,9 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
   end
 
   test "show renders approval_system details by id", %{conn: conn} do
-    approval_system = insert(:approval_system)
+    user = conn.assigns.current_user
+    organisation = user.organisation
+    approval_system = insert(:approval_system, organisation: organisation, user: user)
 
     conn =
       build_conn()
@@ -149,7 +167,8 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     current_user = conn.assigns.current_user
-    approval_system = insert(:approval_system, user: current_user)
+    organisation = current_user.organisation
+    approval_system = insert(:approval_system, user: current_user, organisation: organisation)
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_approval_system_path(conn, :delete, approval_system.uuid))
@@ -163,9 +182,11 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    content_type = insert(:content_type)
+    user = conn.assigns.current_user
+    organisation = user.organisation
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
     current_user = conn.assigns.current_user
-    state = insert(:state)
+    state = insert(:state, creator: user, organisation: user.organisation)
     instance = insert(:instance, state: state, creator: current_user, content_type: content_type)
 
     approval_system =
@@ -173,10 +194,27 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
         approver: current_user,
         user: current_user,
         instance: instance,
-        pre_state: state
+        pre_state: state,
+        user: user,
+        organisation: organisation
       )
 
     conn = post(conn, Routes.v1_approval_system_path(conn, :approve), id: approval_system.uuid)
     assert json_response(conn, 200)["approved"] == true
+  end
+
+  test "error not found on user from another organsiation", %{conn: conn} do
+    user = insert(:user)
+    organisation = user.organisation
+    approval_system = insert(:approval_system, organisation: organisation, user: user)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_approval_system_path(conn, :show, approval_system.uuid))
+
+    assert json_response(conn, 404) == "Not Found"
   end
 end

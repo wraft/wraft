@@ -92,7 +92,7 @@ defmodule WraftDoc.Document do
   defp fetch_and_associcate_assets(layout, current_user, %{"assets" => assets}) do
     (assets || "")
     |> String.split(",")
-    |> Stream.map(fn x -> get_asset(x) end)
+    |> Stream.map(fn x -> get_asset(x, current_user) end)
     |> Stream.map(fn x -> associate_layout_and_asset(layout, current_user, x) end)
     |> Enum.to_list()
   end
@@ -123,7 +123,7 @@ defmodule WraftDoc.Document do
     |> Spur.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
-        content_type |> fetch_and_associate_fields(params)
+        content_type |> fetch_and_associate_fields(params, current_user)
         content_type |> Repo.preload([:layout, :flow, {:fields, :field_type}])
 
       changeset = {:error, _} ->
@@ -131,22 +131,26 @@ defmodule WraftDoc.Document do
     end
   end
 
-  @spec fetch_and_associate_fields(ContentType.t(), map) :: list
+  @spec fetch_and_associate_fields(ContentType.t(), map, User.t()) :: list
   # Iterate throught the list of field types and associate with the content type
-  defp fetch_and_associate_fields(content_type, %{"fields" => fields}) do
+  defp fetch_and_associate_fields(content_type, %{"fields" => fields}, user) do
     fields
-    |> Stream.map(fn x -> associate_c_type_and_fields(content_type, x) end)
+    |> Stream.map(fn x -> associate_c_type_and_fields(content_type, x, user) end)
     |> Enum.to_list()
   end
 
-  defp fetch_and_associate_fields(_content_type, _params), do: nil
+  defp fetch_and_associate_fields(_content_type, _params, _user), do: nil
 
-  @spec associate_c_type_and_fields(ContentType.t(), map) ::
+  @spec associate_c_type_and_fields(ContentType.t(), map, User.t()) ::
           {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()} | nil
   # Fetch and associate field types with the content type
-  defp associate_c_type_and_fields(c_type, %{"key" => key, "field_type_id" => field_type_id}) do
+  defp associate_c_type_and_fields(
+         c_type,
+         %{"key" => key, "field_type_id" => field_type_id},
+         user
+       ) do
     field_type_id
-    |> get_field_type
+    |> get_field_type(user)
     |> case do
       %FieldType{} = field_type ->
         field_type
@@ -159,7 +163,7 @@ defmodule WraftDoc.Document do
     end
   end
 
-  defp associate_c_type_and_fields(_c_type, _field), do: nil
+  defp associate_c_type_and_fields(_c_type, _field, _user), do: nil
 
   @doc """
   List all engines.
@@ -185,18 +189,18 @@ defmodule WraftDoc.Document do
   @doc """
   Show a layout.
   """
-  @spec show_layout(binary) :: %Layout{engine: Engine.t(), creator: User.t()}
-  def show_layout(uuid) do
-    get_layout(uuid)
+  @spec show_layout(binary, User.t()) :: %Layout{engine: Engine.t(), creator: User.t()}
+  def show_layout(uuid, user) do
+    get_layout(uuid, user)
     |> Repo.preload([:engine, :creator, :assets])
   end
 
   @doc """
   Get a layout from its UUID.
   """
-  @spec get_layout(binary) :: Layout.t()
-  def get_layout(uuid) do
-    Repo.get_by(Layout, uuid: uuid)
+  @spec get_layout(binary, User.t()) :: Layout.t()
+  def get_layout(uuid, %{organisation_id: org_id}) do
+    Repo.get_by(Layout, uuid: uuid, organisation_id: org_id)
   end
 
   @doc """
@@ -295,7 +299,7 @@ defmodule WraftDoc.Document do
   """
   @spec get_content_type(User.t(), Ecto.UUID.t()) :: ContentType.t() | nil
   def get_content_type(%User{organisation_id: org_id}, <<_::288>> = uuid) do
-    from(c in ContentType, where: c.uuid == ^uuid and c.organisation_id == ^org_id) |> Repo.one()
+    Repo.get_by(ContentType, uuid: uuid, organisation_id: org_id)
   end
 
   def get_content_type(_, _), do: nil
@@ -312,9 +316,14 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type field from its UUID.
   """
-  @spec get_content_type_field(binary) :: ContentTypeField.t()
-  def get_content_type_field(uuid) do
-    Repo.get_by(ContentTypeField, uuid: uuid)
+  @spec get_content_type_field(binary, User.t()) :: ContentTypeField.t()
+  def get_content_type_field(uuid, %{organisation_id: org_id}) do
+    from(cf in ContentTypeField,
+      where: cf.uuid == ^uuid,
+      join: c in ContentType,
+      where: c.id == cf.content_type_id and c.organisation_id == ^org_id
+    )
+    |> Repo.one()
   end
 
   @doc """
@@ -331,15 +340,15 @@ defmodule WraftDoc.Document do
         user,
         %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
       ) do
-    %Layout{id: id} = get_layout(layout_uuid)
-    %Flow{id: f_id} = Enterprise.get_flow(f_uuid)
+    %Layout{id: id} = get_layout(layout_uuid, user)
+    %Flow{id: f_id} = Enterprise.get_flow(f_uuid, user)
     {_, params} = Map.pop(params, "layout_uuid")
     {_, params} = Map.pop(params, "flow_uuid")
     params = params |> Map.merge(%{"layout_id" => id, "flow_id" => f_id})
     update_content_type(content_type, user, params)
   end
 
-  def update_content_type(content_type, %User{id: id}, params) do
+  def update_content_type(content_type, %User{id: id} = user, params) do
     content_type
     |> ContentType.update_changeset(params)
     |> Spur.update(%{actor: "#{id}"})
@@ -348,7 +357,7 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, content_type} ->
-        content_type |> fetch_and_associate_fields(params)
+        content_type |> fetch_and_associate_fields(params, user)
 
         content_type
         |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
@@ -514,19 +523,27 @@ defmodule WraftDoc.Document do
   @doc """
   Get an instance from its UUID.
   """
-  @spec get_instance(binary) :: Instance.t()
-  def get_instance(uuid) do
-    Repo.get_by(Instance, uuid: uuid) |> Repo.preload([:state])
+  @spec get_instance(binary, User.t()) :: Instance.t()
+  def get_instance(uuid, %{organisation_id: org_id}) do
+    from(i in Instance,
+      where: i.uuid == ^uuid,
+      join: c in ContentType,
+      where: c.id == i.content_type_id and c.organisation_id == ^org_id
+    )
+    |> Repo.one()
+    |> Repo.preload([:state])
+
+    # Repo.get_by(Instance, uuid: uuid) |> Repo.preload([:state])
   end
 
   @doc """
   Show an instance.
   """
-  @spec show_instance(binary) ::
+  @spec show_instance(binary, User.t()) ::
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
-  def show_instance(instance_uuid) do
+  def show_instance(instance_uuid, user) do
     instance_uuid
-    |> get_instance()
+    |> get_instance(user)
     |> Repo.preload([:creator, [{:content_type, :layout}], :state])
     |> get_built_document()
   end
@@ -567,7 +584,7 @@ defmodule WraftDoc.Document do
     |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, instance} ->
-        Task.start(fn -> create_version(current_user, old_instance, instance) end)
+        Task.start_link(fn -> create_version(current_user, old_instance, instance) end)
 
         instance
         |> Repo.preload([:creator, [{:content_type, :layout}], :state])
@@ -739,17 +756,17 @@ defmodule WraftDoc.Document do
   @doc """
   Get a theme from its UUID.
   """
-  @spec get_theme(binary) :: Theme.t() | nil
-  def get_theme(theme_uuid) do
-    Repo.get_by(Theme, uuid: theme_uuid)
+  @spec get_theme(binary, User.t()) :: Theme.t() | nil
+  def get_theme(theme_uuid, %{organisation_id: org_id}) do
+    Repo.get_by(Theme, uuid: theme_uuid, organisation_id: org_id)
   end
 
   @doc """
   Show a theme.
   """
-  @spec show_theme(binary) :: %Theme{creator: User.t()} | nil
-  def show_theme(theme_uuid) do
-    theme_uuid |> get_theme() |> Repo.preload([:creator])
+  @spec show_theme(binary, User.t()) :: %Theme{creator: User.t()} | nil
+  def show_theme(theme_uuid, user) do
+    theme_uuid |> get_theme(user) |> Repo.preload([:creator])
   end
 
   @doc """
@@ -906,19 +923,19 @@ defmodule WraftDoc.Document do
   @doc """
   Show an asset.
   """
-  @spec show_asset(binary) :: %Asset{creator: User.t()}
-  def show_asset(asset_uuid) do
+  @spec show_asset(binary, User.t()) :: %Asset{creator: User.t()}
+  def show_asset(asset_uuid, user) do
     asset_uuid
-    |> get_asset()
+    |> get_asset(user)
     |> Repo.preload([:creator])
   end
 
   @doc """
   Get an asset from its UUID.
   """
-  @spec get_asset(binary) :: Asset.t()
-  def get_asset(uuid) do
-    Repo.get_by(Asset, uuid: uuid)
+  @spec get_asset(binary, User.t()) :: Asset.t()
+  def get_asset(uuid, %{organisation_id: org_id}) do
+    Repo.get_by(Asset, uuid: uuid, organisation_id: org_id)
   end
 
   @doc """
@@ -1140,9 +1157,9 @@ defmodule WraftDoc.Document do
   Get a block by id
   """
 
-  @spec get_block(Ecto.UUID.t()) :: Block.t()
-  def get_block(uuid) do
-    Block |> Repo.get_by(uuid: uuid)
+  @spec get_block(Ecto.UUID.t(), User.t()) :: Block.t()
+  def get_block(uuid, %{organisation_id: org_id}) do
+    Block |> Repo.get_by(uuid: uuid, organisation_id: org_id)
   end
 
   @doc """
@@ -1248,9 +1265,16 @@ defmodule WraftDoc.Document do
   @doc """
   Get a field type from its UUID.
   """
-  @spec get_field_type(binary) :: FieldType.t()
-  def get_field_type(field_type_uuid) do
-    Repo.get_by(FieldType, uuid: field_type_uuid)
+  @spec get_field_type(binary, User.t()) :: FieldType.t()
+  def get_field_type(field_type_uuid, %{organisation_id: org_id}) do
+    from(ft in FieldType,
+      where: ft.uuid == ^field_type_uuid,
+      join: u in User,
+      where: u.id == ft.creator_id and u.organisation_id == ^org_id
+    )
+    |> Repo.one()
+
+    # Repo.get_by(FieldType, uuid: field_type_uuid, organisation_id: org_id)
   end
 
   @doc """
@@ -1599,6 +1623,10 @@ defmodule WraftDoc.Document do
     create_block_template(user, params)
   end
 
+  @doc """
+  Create a block template
+  """
+  @spec create_block_template(User.t(), map) :: BlockTemplate.t()
   def create_block_template(%{organisation_id: org_id} = current_user, params) do
     current_user
     |> build_assoc(:block_templates, organisation_id: org_id)
@@ -1613,11 +1641,19 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def get_block_template(uuid) do
+  @doc """
+  Get a block template by its uuid
+  """
+  @spec get_block_template(Ecto.UUID.t(), User.t()) :: BlockTemplate.t()
+  def get_block_template(uuid, %{organisation_id: org_id}) do
     BlockTemplate
-    |> Repo.get_by(uuid: uuid)
+    |> Repo.get_by(uuid: uuid, organisation_id: org_id)
   end
 
+  @doc """
+  Updates a block template
+  """
+  @spec update_block_template(User.t(), BlockTemplate.t(), map) :: BlockTemplate.t()
   def update_block_template(%User{id: id}, block_template, params) do
     block_template
     |> BlockTemplate.update_changeset(params)
@@ -1631,15 +1667,27 @@ defmodule WraftDoc.Document do
     end
   end
 
+  @doc """
+  Delete a block template by uuid
+  """
+  @spec delete_block_template(User.t(), BlockTemplate.t()) :: BlockTemplate.t()
   def delete_block_template(%User{id: id}, %BlockTemplate{} = block_template) do
     block_template
     |> Spur.delete(%{actor: "#{id}", meta: block_template})
   end
 
+  @doc """
+  Index of a block template by organisation
+  """
+  @spec block_template_index(User.t(), map) :: List.t()
   def block_template_index(%{organisation_id: org_id}, params) do
     from(bt in BlockTemplate, where: bt.organisation_id == ^org_id, order_by: [desc: bt.id])
     |> Repo.paginate(params)
   end
+
+  @doc """
+  Create a comment
+  """
 
   def create_comment(%{organisation_id: org_id} = current_user, params \\ %{}) do
     params = Map.put(params, "organisation_id", org_id)
@@ -1658,24 +1706,29 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
-  Fetch a comment from its UUID.
+  Get a comment by uuid.
   """
-  @spec get_comment(Ecto.UUID.t()) :: Comment.t() | nil
-  def get_comment(<<_::288>> = uuid) do
+  @spec get_comment(Ecto.UUID.t(), User.t()) :: Comment.t() | nil
+  def get_comment(<<_::288>> = uuid, %{organisation_id: org_id}) do
     Comment
-    |> Repo.get_by(uuid: uuid)
+    |> Repo.get_by(uuid: uuid, organisation_id: org_id)
   end
 
   @doc """
   Fetch a comment and all its details.
   """
-  @spec show_comment(Ecto.UUID.t()) :: Comment.t() | nil
-  def show_comment(<<_::288>> = uuid) do
-    uuid |> get_comment() |> Repo.preload([{:user, :profile}])
+  @spec show_comment(Ecto.UUID.t(), User.t()) :: Comment.t() | nil
+  def show_comment(<<_::288>> = uuid, user) do
+    uuid |> get_comment(user) |> Repo.preload([{:user, :profile}])
   end
 
+  @spec show_comment(any) :: nil
   def show_comment(_), do: nil
 
+  @doc """
+  Updates a comment
+  """
+  @spec update_comment(Comment.t(), map) :: Comment.t()
   def update_comment(comment, params) do
     comment
     |> Comment.changeset(params)
@@ -1689,19 +1742,47 @@ defmodule WraftDoc.Document do
     end
   end
 
+  @doc """
+  Deletes a coment
+  """
   def delete_comment(%Comment{} = comment) do
     comment
     |> Repo.delete()
   end
 
+  @doc """
+  Comments under a master
+  """
   def comment_index(%{organisation_id: org_id}, %{"master_id" => master_id} = params) do
     from(c in Comment,
       where: c.organisation_id == ^org_id,
       where: c.master_id == ^master_id,
+      where: c.is_parent == true,
       order_by: [desc: c.inserted_at],
       preload: [{:user, :profile}]
     )
     |> Repo.paginate(params)
+  end
+
+  @doc """
+   Replies under a comment
+  """
+  @spec comment_replies(%{organisation_id: any}, map) :: Scrivener.Page.t()
+  def comment_replies(
+        %{organisation_id: org_id} = user,
+        %{"master_id" => master_id, "comment_id" => comment_id} = params
+      ) do
+    with %Comment{id: parent_id} <- get_comment(comment_id, user) do
+      from(c in Comment,
+        where: c.organisation_id == ^org_id,
+        where: c.master_id == ^master_id,
+        where: c.is_parent == false,
+        where: c.parent_id == ^parent_id,
+        order_by: [desc: c.inserted_at],
+        preload: [{:user, :profile}]
+      )
+      |> Repo.paginate(params)
+    end
   end
 
   @doc """
