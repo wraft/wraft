@@ -142,6 +142,21 @@ defmodule WraftDocWeb.Router do
       # Approval system
       resources("/approval_systems", ApprovalSystemController)
       post("/approval_systems/approve", ApprovalSystemController, :approve)
+
+      scope "/pipelines" do
+        # Pipeline
+        resources("/", PipelineController, only: [:create, :index, :show, :update, :delete])
+
+        scope "/:pipeline_id" do
+          # Trigger history
+          resources("/trigger", TriggerHistoryController, only: [:create])
+          # Pipe stages
+          resources("/stages", PipeStageController, only: [:create])
+        end
+      end
+
+      # Update and Delete pipe stage
+      resources("/stages", PipeStageController, only: [:update, :delete])
     end
   end
 
