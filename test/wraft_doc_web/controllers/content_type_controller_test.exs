@@ -77,7 +77,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   end
 
   test "update content type on valid attributes", %{conn: conn} do
-    content_type = insert(:content_type, creator: conn.assigns.current_user)
+    content_type = insert(:content_type, organisation: conn.assigns.current_user.organisation)
 
     conn =
       build_conn()
@@ -100,7 +100,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   end
 
   test "does't update content types for invalid attrs", %{conn: conn} do
-    content_type = insert(:content_type, creator: conn.assigns.current_user)
+    content_type = insert(:content_type, organisation: conn.assigns.current_user.organisation)
 
     conn =
       build_conn()
@@ -111,7 +111,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       put(conn, Routes.v1_content_type_path(conn, :update, content_type.uuid, @invalid_attrs))
       |> doc(operation_id: "update_content_type")
 
-    assert json_response(conn, 422)["errors"]["flow_id"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
   end
 
   test "index lists content type by current user", %{conn: conn} do
@@ -133,7 +133,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   end
 
   test "show renders content type details by id", %{conn: conn} do
-    content_type = insert(:content_type, creator: conn.assigns.current_user)
+    content_type = insert(:content_type, organisation: conn.assigns.current_user.organisation)
 
     conn =
       build_conn()
@@ -161,7 +161,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    content_type = insert(:content_type, creator: conn.assigns.current_user)
+    content_type = insert(:content_type, organisation: conn.assigns.current_user.organisation)
     count_before = ContentType |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_content_type_path(conn, :delete, content_type.uuid))

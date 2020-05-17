@@ -22,8 +22,9 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "get state returns states data " do
-    state = insert(:state)
-    r_state = Enterprise.get_state(state.uuid)
+    user = insert(:user)
+    state = insert(:state, organisation: user.organisation)
+    r_state = Enterprise.get_state(user, state.uuid)
     assert state.state == r_state.state
   end
 
@@ -209,8 +210,8 @@ defmodule WraftDoc.EnterpriseTest do
   test "create aprroval system create a solution to creat a system" do
     user = insert(:user)
     instance = insert(:instance, creator: user)
-    pre_state = insert(:state, creator: user)
-    post_state = insert(:state, creator: user)
+    pre_state = insert(:state, organisation: user.organisation)
+    post_state = insert(:state, organisation: user.organisation)
     approver = insert(:user)
     count_before = ApprovalSystem |> Repo.all() |> length()
 
@@ -236,12 +237,17 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "update approval system updates a system" do
     user = insert(:user)
-    approval_system = insert(:approval_system, user: user)
+    pre_state = insert(:state, organisation: user.organisation)
+    post_state = insert(:state, organisation: user.organisation)
+
+    approval_system =
+      insert(:approval_system, user: user, post_state: post_state, pre_state: pre_state)
+
     instance = insert(:instance, creator: user)
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     updated_approval_system =
-      Enterprise.update_approval_system(approval_system, %{
+      Enterprise.update_approval_system(user, approval_system, %{
         "instance_id" => instance.uuid,
         "pre_state_id" => approval_system.pre_state.uuid,
         "post_state_id" => approval_system.post_state.uuid,
