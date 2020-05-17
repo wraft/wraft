@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v0.0.27 - 2020-05-17
+
+### Added
+
+- Beta version of pipeline
+
+### Fixed
+
+- Fixed a vulnerability.
+
 ## v0.0.26 - 2020-05-10
 
 ### Added

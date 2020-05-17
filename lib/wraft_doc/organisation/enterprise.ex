@@ -27,18 +27,20 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Get a flow from its UUID.
   """
-  @spec get_flow(binary) :: Flow.t() | nil
-  def get_flow(flow_uuid) do
-    Repo.get_by(Flow, uuid: flow_uuid)
+  @spec get_flow(binary, User.t()) :: Flow.t() | nil
+  def get_flow(flow_uuid, %{organisation_id: org_id}) do
+    Repo.get_by(Flow, uuid: flow_uuid, organisation_id: org_id)
   end
 
   @doc """
-  Get a state from its UUID.
+  Get a state from its UUID and user's organisation.
   """
-  @spec get_state(binary) :: State.t() | nil
-  def get_state(state_uuid) do
-    Repo.get_by(State, uuid: state_uuid)
+  @spec get_state(User.t(), Ecto.UUID.t()) :: State.t() | nil
+  def get_state(%User{organisation_id: org_id}, <<_::288>> = state_uuid) do
+    from(s in State, where: s.uuid == ^state_uuid and s.organisation_id == ^org_id) |> Repo.one()
   end
+
+  def get_state(_, _), do: nil
 
   @doc """
   Create a controlled flow flow.
@@ -100,9 +102,9 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Show a flow.
   """
-  @spec show_flow(binary) :: Flow.t() | nil
-  def show_flow(flow_uuid) do
-    flow_uuid |> get_flow |> Repo.preload([:creator, :states])
+  @spec show_flow(binary, User.t()) :: Flow.t() | nil
+  def show_flow(flow_uuid, user) do
+    flow_uuid |> get_flow(user) |> Repo.preload([:creator, :states])
   end
 
   @doc """
@@ -371,9 +373,9 @@ defmodule WraftDoc.Enterprise do
           "approver_id" => approver_id
         }
       ) do
-    with %Instance{} = instance <- Document.get_instance(instance_id),
-         %State{} = pre_state <- get_state(pre_state_id),
-         %State{} = post_state <- get_state(post_state_id),
+    with %Instance{} = instance <- Document.get_instance(instance_id, current_user),
+         %State{} = pre_state <- get_state(current_user, pre_state_id),
+         %State{} = post_state <- get_state(current_user, post_state_id),
          %User{} = approver <- Account.get_user_by_uuid(approver_id) do
       params = %{
         instance_id: instance.id,
@@ -383,22 +385,15 @@ defmodule WraftDoc.Enterprise do
         organisation_id: org_id
       }
 
-      current_user
-      |> build_assoc(:approval_systems)
-      |> ApprovalSystem.changeset(params)
-      |> Repo.insert()
-      |> case do
-        {:ok, approval_system} ->
-          approval_system
-          |> Repo.preload([:instance, :pre_state, :post_state, :approver, :organisation, :user])
-
-        {:error, _} = changeset ->
-          changeset
-      end
+      do_create_approval_system(current_user, params)
     end
   end
 
   def create_approval_system(current_user, params) do
+    do_create_approval_system(current_user, params)
+  end
+
+  defp do_create_approval_system(current_user, params) do
     current_user
     |> build_assoc(:approval_systems)
     |> ApprovalSystem.changeset(params)
@@ -406,6 +401,7 @@ defmodule WraftDoc.Enterprise do
     |> case do
       {:ok, approval_system} ->
         approval_system
+        |> Repo.preload([:instance, :pre_state, :post_state, :approver, :organisation, :user])
 
       {:error, _} = changeset ->
         changeset
@@ -416,27 +412,27 @@ defmodule WraftDoc.Enterprise do
   Get approval system by uuid
   """
 
-  @spec get_approval_system(Ecto.UUID.t()) :: ApprovalSystem.t()
-  def get_approval_system(uuid) do
+  @spec get_approval_system(Ecto.UUID.t(), User.t()) :: ApprovalSystem.t()
+  def get_approval_system(uuid, %{organisation_id: org_id}) do
     ApprovalSystem
-    |> Repo.get_by(uuid: uuid)
+    |> Repo.get_by(uuid: uuid, organisation_id: org_id)
     |> Repo.preload([:instance, :pre_state, :post_state, :approver, :organisation, :user])
   end
 
   @doc """
   Update an uproval system
   """
-  @spec update_approval_system(ApprovalSystem.t(), map) ::
+  @spec update_approval_system(User.t(), ApprovalSystem.t(), map) ::
           ApprovalSystem.t() | {:error, Ecto.Changeset.t()}
-  def update_approval_system(approval_system, %{
+  def update_approval_system(current_user, approval_system, %{
         "instance_id" => instance_id,
         "pre_state_id" => pre_state_id,
         "post_state_id" => post_state_id,
         "approver_id" => approver_id
       }) do
-    with %Instance{} = instance <- Document.get_instance(instance_id),
-         %State{} = pre_state <- get_state(pre_state_id),
-         %State{} = post_state <- get_state(post_state_id),
+    with %Instance{} = instance <- Document.get_instance(instance_id, current_user),
+         %State{} = pre_state <- get_state(current_user, pre_state_id),
+         %State{} = post_state <- get_state(current_user, post_state_id),
          %User{} = approver <- Account.get_user_by_uuid(approver_id) do
       params = %{
         instance_id: instance.id,
@@ -459,7 +455,7 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  def update_approval_system(approval_system, params) do
+  def update_approval_system(_user, approval_system, params) do
     approval_system
     |> ApprovalSystem.changeset(params)
     |> Repo.update()

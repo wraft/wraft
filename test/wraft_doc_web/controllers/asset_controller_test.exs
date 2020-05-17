@@ -61,7 +61,9 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   end
 
   test "update assets on valid attrs with Plug.Upload", %{conn: conn} do
-    asset = insert(:asset, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    organisation = user.organisation
+    asset = insert(:asset, creator: user, organisation: organisation)
     content_type = insert(:content_type)
     filename = Plug.Upload.random_file!("test")
     uploader = %Plug.Upload{content_type: content_type, filename: filename, path: filename}
@@ -83,7 +85,9 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   end
 
   test "does't update assets for invalid attrs", %{conn: conn} do
-    asset = insert(:asset, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    organisation = user.organisation
+    asset = insert(:asset, creator: user, organisation: organisation)
 
     conn =
       build_conn()
@@ -116,7 +120,8 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   end
 
   test "show renders asset details by id", %{conn: conn} do
-    asset = insert(:asset, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    asset = insert(:asset, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -144,11 +149,26 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    asset = insert(:asset, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    asset = insert(:asset, creator: user, organisation: user.organisation)
     count_before = Asset |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_asset_path(conn, :delete, asset.uuid))
     assert count_before - 1 == Asset |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == asset.name
+  end
+
+  test "error Not Found on user from diffrent organisation", %{conn: conn} do
+    user = insert(:user)
+    asset = insert(:asset, creator: user, organisation: user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_asset_path(conn, :show, asset.uuid))
+
+    assert json_response(conn, 404) == "Not Found"
   end
 end

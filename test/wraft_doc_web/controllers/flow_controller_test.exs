@@ -70,7 +70,8 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   end
 
   test "update flow on valid attributes", %{conn: conn} do
-    flow = insert(:flow, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    flow = insert(:flow, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -90,7 +91,8 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   end
 
   test "does't update flow on invalid attrs", %{conn: conn} do
-    flow = insert(:flow, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    flow = insert(:flow, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -124,7 +126,8 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   end
 
   test "show renders flow details by id", %{conn: conn} do
-    flow = insert(:flow, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    flow = insert(:flow, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -152,11 +155,26 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    flow = insert(:flow, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    flow = insert(:flow, creator: user, organisation: user.organisation)
     count_before = Flow |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_flow_path(conn, :delete, flow.uuid))
     assert count_before - 1 == Flow |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == flow.name
+  end
+
+  test "error not found for user from another organisation", %{conn: conn} do
+    user = insert(:user)
+    flow = insert(:flow, creator: user, organisation: user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_flow_path(conn, :show, flow.uuid))
+
+    assert json_response(conn, 404) == "Not Found"
   end
 end

@@ -6,7 +6,8 @@ defmodule WraftDoc.Document.InstanceTest do
   @valid_attrs %{
     instance_id: "OFFL01",
     raw: "Content",
-    serialized: %{title: "Title of the content", body: "Body of the content"}
+    serialized: %{title: "Title of the content", body: "Body of the content"},
+    type: 1
   }
   @invalid_attrs %{raw: ""}
 

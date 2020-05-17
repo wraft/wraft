@@ -39,6 +39,7 @@ defmodule WraftDoc.Account.User do
     has_many(:comments, WraftDoc.Document.Comment)
     has_many(:approvers, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :approver_id)
     has_many(:approval_systems, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :user_id)
+    has_many(:pipelines, WraftDoc.Document.Pipeline, foreign_key: :creator_id)
 
     timestamps()
   end

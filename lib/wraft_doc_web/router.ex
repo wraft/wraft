@@ -136,12 +136,28 @@ defmodule WraftDocWeb.Router do
       post("/block_templates/bulk_import", BlockTemplateController, :bulk_import)
 
       # Assets
-      resources("/assets", AssetController, only: [:create, :index, :show, :update, :delete])
+      resources("/assets", AssetController)
       # Comments
       resources("/comments", CommentController)
+      get("/comments/:id/replies", CommentController, :reply)
       # Approval system
       resources("/approval_systems", ApprovalSystemController)
       post("/approval_systems/approve", ApprovalSystemController, :approve)
+
+      scope "/pipelines" do
+        # Pipeline
+        resources("/", PipelineController, only: [:create, :index, :show, :update, :delete])
+
+        scope "/:pipeline_id" do
+          # Trigger history
+          resources("/trigger", TriggerHistoryController, only: [:create])
+          # Pipe stages
+          resources("/stages", PipeStageController, only: [:create])
+        end
+      end
+
+      # Update and Delete pipe stage
+      resources("/stages", PipeStageController, only: [:update, :delete])
     end
   end
 

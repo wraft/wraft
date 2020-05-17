@@ -307,7 +307,9 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => uuid}) do
-    with %Layout{} = layout <- Document.show_layout(uuid) do
+    current_user = conn.assigns.current_user
+
+    with %Layout{} = layout <- Document.show_layout(uuid, current_user) do
       conn
       |> render("show.json", doc_layout: layout)
     end
@@ -359,7 +361,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Document.get_layout(uuid),
+    with %Layout{} = layout <- Document.get_layout(uuid, current_user),
          %Layout{} = layout <- Document.update_layout(layout, current_user, params) do
       conn
       |> render("show.json", doc_layout: layout)
@@ -387,7 +389,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   def delete(conn, %{"id" => uuid}) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Document.get_layout(uuid),
+    with %Layout{} = layout <- Document.get_layout(uuid, current_user),
          {:ok, %Layout{}} <- Document.delete_layout(layout, current_user) do
       conn
       |> render("layout.json", doc_layout: layout)
@@ -418,7 +420,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     with %LayoutAsset{} = layout_asset <- Document.get_layout_asset(l_uuid, a_uuid),
          {:ok, %LayoutAsset{}} <- Document.delete_layout_asset(layout_asset, current_user),
-         %Layout{} = layout <- Document.show_layout(l_uuid) do
+         %Layout{} = layout <- Document.show_layout(l_uuid, current_user) do
       conn
       |> render("show.json", doc_layout: layout)
     end
