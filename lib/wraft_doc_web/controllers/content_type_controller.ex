@@ -464,8 +464,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   def create(conn, %{"layout_uuid" => layout_uuid, "flow_uuid" => flow_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Document.get_layout(layout_uuid),
-         %Flow{} = flow <- Enterprise.get_flow(flow_uuid),
+    with %Layout{} = layout <- Document.get_layout(layout_uuid, current_user),
+         %Flow{} = flow <- Enterprise.get_flow(flow_uuid, current_user),
          %ContentType{} = content_type <-
            Document.create_content_type(current_user, layout, flow, params) do
       conn
@@ -524,7 +524,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => uuid}) do
-    with %ContentType{} = content_type <- Document.show_content_type(uuid) do
+    current_user = conn.assigns[:current_user]
+
+    with %ContentType{} = content_type <- Document.show_content_type(current_user, uuid) do
       conn
       |> render("show.json", content_type: content_type)
     end
@@ -553,7 +555,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <- Document.get_content_type(uuid),
+    with %ContentType{} = content_type <- Document.get_content_type(current_user, uuid),
          %ContentType{} = content_type <-
            Document.update_content_type(content_type, current_user, params) do
       conn
@@ -583,7 +585,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   def delete(conn, %{"id" => uuid}) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <- Document.get_content_type(uuid),
+    with %ContentType{} = content_type <- Document.get_content_type(current_user, uuid),
          {:ok, %ContentType{}} <- Document.delete_content_type(content_type, current_user) do
       conn
       |> render("content_type.json", content_type: content_type)

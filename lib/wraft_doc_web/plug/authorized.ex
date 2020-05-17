@@ -20,7 +20,10 @@ defmodule WraftDocWeb.Plug.Authorized do
     "WraftDocWeb.Api.V1.ContentTypeFieldController" => "ContentTypeField",
     "WraftDocWeb.Api.V1.ApprovalSystemController" => "ApprovalSystem",
     "WraftDocWeb.Api.V1.BlockTemplateController" => "BlockTemplate",
-    "WraftDocWeb.Api.V1.CommentController" => "Comment"
+    "WraftDocWeb.Api.V1.CommentController" => "Comment",
+    "WraftDocWeb.Api.V1.PipelineController" => "Pipeline",
+    "WraftDocWeb.Api.V1.PipeStageController" => "Stage",
+    "WraftDocWeb.Api.V1.TriggerHistoryController" => "TriggerHistory"
   }
   def init(_params) do
   end

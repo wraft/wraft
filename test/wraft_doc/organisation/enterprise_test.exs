@@ -16,14 +16,16 @@ defmodule WraftDoc.EnterpriseTest do
   }
 
   test "get flow returns flow data by uuid" do
-    flow = insert(:flow)
-    r_flow = Enterprise.get_flow(flow.uuid)
+    user = insert(:user)
+    flow = insert(:flow, creator: user, organisation: user.organisation)
+    r_flow = Enterprise.get_flow(flow.uuid, user)
     assert flow.name == r_flow.name
   end
 
   test "get state returns states data " do
-    state = insert(:state)
-    r_state = Enterprise.get_state(state.uuid)
+    user = insert(:user)
+    state = insert(:state, organisation: user.organisation)
+    r_state = Enterprise.get_state(user, state.uuid)
     assert state.state == r_state.state
   end
 
@@ -76,9 +78,10 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "show flow preloads flow with creator and states" do
-    flow = insert(:flow)
-    state = insert(:state, creator: flow.creator, flow: flow)
-    flow = Enterprise.show_flow(flow.uuid)
+    user = insert(:user)
+    flow = insert(:flow, creator: user, organisation: user.organisation)
+    state = insert(:state, creator: user, flow: flow)
+    flow = Enterprise.show_flow(flow.uuid, user)
 
     assert Enum.map(flow.states, fn x -> x.state end) == [state.state]
   end
@@ -208,9 +211,10 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "create aprroval system create a solution to creat a system" do
     user = insert(:user)
-    instance = insert(:instance, creator: user)
-    pre_state = insert(:state, creator: user)
-    post_state = insert(:state, creator: user)
+    c_type = insert(:content_type, organisation: user.organisation)
+    instance = insert(:instance, creator: user, content_type: c_type)
+    pre_state = insert(:state, organisation: user.organisation)
+    post_state = insert(:state, organisation: user.organisation)
     approver = insert(:user)
     count_before = ApprovalSystem |> Repo.all() |> length()
 
@@ -229,22 +233,35 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "get approval system returns apprval system data" do
-    %{uuid: uuid, instance: instance, pre_state: _pre_state} = insert(:approval_system)
-    approval_system = Enterprise.get_approval_system(uuid)
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    instance = insert(:instance, creator: user, content_type: content_type)
+
+    %{uuid: uuid, instance: instance, pre_state: _pre_state} =
+      insert(:approval_system, user: user, organisation: user.organisation, instance: instance)
+
+    approval_system = Enterprise.get_approval_system(uuid, user)
     assert approval_system.instance.uuid == instance.uuid
   end
 
   test "update approval system updates a system" do
     user = insert(:user)
-    approval_system = insert(:approval_system, user: user)
-    instance = insert(:instance, creator: user)
+
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    instance = insert(:instance, creator: user, content_type: content_type)
+    pre_state = insert(:state, creator: user, organisation: user.organisation)
+    post_state = insert(:state, creator: user, organisation: user.organisation)
+
+    approval_system =
+      insert(:approval_system, user: user, organisation: user.organisation, instance: instance)
+
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     updated_approval_system =
-      Enterprise.update_approval_system(approval_system, %{
+      Enterprise.update_approval_system(user, approval_system, %{
         "instance_id" => instance.uuid,
-        "pre_state_id" => approval_system.pre_state.uuid,
-        "post_state_id" => approval_system.post_state.uuid,
+        "pre_state_id" => pre_state.uuid,
+        "post_state_id" => post_state.uuid,
         "approver_id" => approval_system.approver.uuid
       })
 

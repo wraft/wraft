@@ -171,7 +171,9 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => asset_uuid}) do
-    with %Asset{} = asset <- Document.show_asset(asset_uuid) do
+    current_user = conn.assigns.current_user
+
+    with %Asset{} = asset <- Document.show_asset(asset_uuid, current_user) do
       conn
       |> render("show.json", asset: asset)
     end
@@ -201,7 +203,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset{} = asset <- Document.get_asset(uuid),
+    with %Asset{} = asset <- Document.get_asset(uuid, current_user),
          {:ok, asset} <- Document.update_asset(asset, current_user, params) do
       conn
       |> render("asset.json", asset: asset)
@@ -230,7 +232,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   def delete(conn, %{"id" => uuid}) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset{} = asset <- Document.get_asset(uuid),
+    with %Asset{} = asset <- Document.get_asset(uuid, current_user),
          {:ok, %Asset{}} <- Document.delete_asset(asset, current_user) do
       conn
       |> render("asset.json", asset: asset)

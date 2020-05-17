@@ -69,7 +69,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   test "update themes on valid attrs ", %{conn: conn} do
     user = conn.assigns.current_user
-    theme = insert(:theme, creator: user)
+    theme = insert(:theme, creator: user, organisation: user.organisation)
     content_type = insert(:content_type)
     filename = Plug.Upload.random_file!("test")
     file = %Plug.Upload{content_type: content_type, filename: filename, path: filename}
@@ -91,7 +91,8 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
   end
 
   test "does't update themes for invalid attrs", %{conn: conn} do
-    theme = insert(:theme, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    theme = insert(:theme, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -124,7 +125,8 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
   end
 
   test "show renders theme details by id", %{conn: conn} do
-    theme = insert(:theme, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    theme = insert(:theme, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -152,11 +154,26 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    theme = insert(:theme, creator: conn.assigns.current_user)
+    user = conn.assigns.current_user
+    theme = insert(:theme, creator: user, organisation: user.organisation)
     count_before = Theme |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_theme_path(conn, :delete, theme.uuid))
     assert count_before - 1 == Theme |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == theme.name
+  end
+
+  test "error not founc for user from another organisation", %{conn: conn} do
+    user = insert(:user)
+    theme = insert(:theme, creator: user, organisation: user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    conn = get(conn, Routes.v1_theme_path(conn, :show, theme.uuid))
+
+    assert json_response(conn, 404) == "Not Found"
   end
 end
