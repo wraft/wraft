@@ -103,7 +103,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   end
 
   test "does't update content types for invalid attrs", %{conn: conn} do
-    user = conn.assigns.current_user
+    user = conn.assigns[:current_user]
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
 
     conn =
@@ -115,7 +115,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       put(conn, Routes.v1_content_type_path(conn, :update, content_type.uuid, @invalid_attrs))
       |> doc(operation_id: "update_content_type")
 
-    assert json_response(conn, 422)["errors"]["flow_id"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
   end
 
   test "index lists content type by current user", %{conn: conn} do
@@ -168,6 +168,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
     user = conn.assigns.current_user
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
+
     count_before = ContentType |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_content_type_path(conn, :delete, content_type.uuid))

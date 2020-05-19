@@ -6,25 +6,18 @@ defmodule WraftDoc.DocumentTest do
 
   alias WraftDoc.{
     Repo,
-    Account.User,
     Document.Layout,
     Document.ContentType,
-    Document.Engine,
     Document.Instance,
-    Document.Instance.History,
     Document.Instance.Version,
-    Document.Theme,
     Document.DataTemplate,
-    Document.Asset,
     Document.LayoutAsset,
-    Document.FieldType,
-    Document.ContentTypeField,
     Document.Counter,
-    Enterprise,
-    Enterprise.Flow,
-    Enterprise.Flow.State,
-    Document.Block,
     Document.BlockTemplate,
+    Document.Pipeline,
+    Document.Pipeline.Stage,
+    Document.Theme,
+    Document.Asset,
     Document.Comment,
     Document
   }
@@ -37,7 +30,18 @@ defmodule WraftDoc.DocumentTest do
     "unit" => "cm",
     "slug" => "layout slug"
   }
-
+  @valid_instance_attrs %{
+    "instance_id" => "OFFR0001",
+    "raw" => "instance raw",
+    "serialized" => %{"body" => "body of the content", "title" => "title of the content"},
+    "type" => 1
+  }
+  @valid_content_type_attrs %{
+    "name" => "content_type name",
+    "description" => "content_type description",
+    "color" => "#fff",
+    "prefix" => "OFFRE"
+  }
   @invalid_attrs %{}
 
   test "create layout on valid attributes" do
@@ -156,12 +160,12 @@ defmodule WraftDoc.DocumentTest do
     {:ok, model} = Document.delete_layout(layout, user)
     count_after = Layout |> Repo.all() |> length()
     assert count_before - 1 == count_after
-    assert layout.name == layout.name
-    assert layout.description == layout.description
-    assert layout.width == layout.width
-    assert layout.height == layout.height
-    assert layout.unit == layout.unit
-    assert layout.slug == layout.slug
+    assert model.name == layout.name
+    assert model.description == layout.description
+    assert model.width == layout.width
+    assert model.height == layout.height
+    assert model.unit == layout.unit
+    assert model.slug == layout.slug
   end
 
   test "delete layout asset deletes a layouts asset and returns the data" do
@@ -179,12 +183,8 @@ defmodule WraftDoc.DocumentTest do
   test "layout index returns the list of layouts" do
     user = insert(:user)
     engine = insert(:engine)
-    a1 = insert(:asset)
-    a2 = insert(:asset)
     l1 = insert(:layout, creator: user, organisation: user.organisation, engine: engine)
     l2 = insert(:layout, creator: user, organisation: user.organisation, engine: engine)
-    la1 = insert(:layout_asset, layout: l1, asset: a1)
-    la2 = insert(:layout_asset, layout: l2, asset: a2)
     layout_index = Document.layout_index(user, %{page_number: 1})
 
     assert layout_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ l1.name
@@ -215,12 +215,6 @@ defmodule WraftDoc.DocumentTest do
   #   assert u_layout.screenshot.filename == "example.png"
   # end
 
-  @valid_content_type_attrs %{
-    "name" => "content_type name",
-    "description" => "content_type description",
-    "color" => "#fff",
-    "prefix" => "OFFRE"
-  }
   test "create content_type on valid attributes" do
     user = insert(:user)
     layout = insert(:layout, creator: user, organisation: user.organisation)
@@ -236,7 +230,7 @@ defmodule WraftDoc.DocumentTest do
     count_before = ContentType |> Repo.all() |> length()
     content_type = Document.create_content_type(user, layout, flow, @valid_content_type_attrs)
     count_after = ContentType |> Repo.all() |> length()
-    count_before + 1 == count_after
+    assert count_before + 1 == count_after
     assert content_type.name == @valid_content_type_attrs["name"]
     assert content_type.description == @valid_content_type_attrs["description"]
     assert content_type.color == @valid_content_type_attrs["color"]
@@ -289,13 +283,15 @@ defmodule WraftDoc.DocumentTest do
         organisation: user.organisation
       )
 
-    content_type_field =
-      insert(:content_type_field,
-        content_type: content_type,
-        field_type: field_type
+    content_type =
+      insert(:content_type,
+        organisation: user.organisation,
+        creator: user,
+        layout: layout,
+        flow: flow
       )
 
-    s_content_type = Document.show_content_type(content_type.uuid, user)
+    s_content_type = Document.show_content_type(user, content_type.uuid)
     assert s_content_type.name == content_type.name
     assert s_content_type.description == content_type.description
     assert s_content_type.color == content_type.color
@@ -305,8 +301,10 @@ defmodule WraftDoc.DocumentTest do
 
   test "get content_type shows the content_type data" do
     user = insert(:user)
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
-    s_content_type = Document.get_content_type(content_type.uuid, user)
+
+    content_type = insert(:content_type, organisation: user.organisation)
+    s_content_type = Document.get_content_type(user, content_type.uuid)
+
     assert s_content_type.name == content_type.name
     assert s_content_type.description == content_type.description
     assert s_content_type.color == content_type.color
@@ -351,16 +349,16 @@ defmodule WraftDoc.DocumentTest do
     user = insert(:user)
     content_type = insert(:content_type, creator: user)
     count_before = ContentType |> Repo.all() |> length()
-
-    {:error, changeset} = Document.update_content_type(content_type, user, @invalid_attrs)
+    params = @invalid_attrs |> Map.merge(%{name: "", description: "", prefix: ""})
+    {:error, changeset} = Document.update_content_type(content_type, user, params)
     count_after = ContentType |> Repo.all() |> length()
     assert count_before == count_after
 
-    %{
-      name: ["can't be blank"],
-      description: ["can't be blank"],
-      prefix: ["can't be blank"]
-    } == errors_on(changeset)
+    assert %{
+             name: ["can't be blank"],
+             description: ["can't be blank"],
+             prefix: ["can't be blank"]
+           } == errors_on(changeset)
   end
 
   test "delete content_type deletes the content_type data" do
@@ -375,12 +373,6 @@ defmodule WraftDoc.DocumentTest do
     assert s_content_type.color == content_type.color
     assert s_content_type.prefix == content_type.prefix
   end
-
-  @valid_instance_attrs %{
-    "instance_id" => "OFFR0001",
-    "raw" => "instance raw",
-    "serialized" => %{"body" => "body of the content", "title" => "title of the content"}
-  }
 
   test "create instance on valid attributes and updates count of instances at counter" do
     user = insert(:user)
@@ -411,7 +403,8 @@ defmodule WraftDoc.DocumentTest do
     assert count_before == count_after
 
     assert %{
-             raw: ["can't be blank"]
+             raw: ["can't be blank"],
+             type: ["can't be blank"]
            } == errors_on(changeset)
   end
 
@@ -430,7 +423,6 @@ defmodule WraftDoc.DocumentTest do
 
   test "instance index of an organisation lists instances under an organisation" do
     user = insert(:user)
-    organisation = user.organisation
     i1 = insert(:instance, creator: user)
     i2 = insert(:instance, creator: user)
 
@@ -500,8 +492,8 @@ defmodule WraftDoc.DocumentTest do
     count_after = Instance |> Repo.all() |> length()
     assert count_before == count_after
 
-    %{raw: ["can't be blank"]} ==
-      errors_on(changeset)
+    assert %{raw: ["can't be blank"]} ==
+             errors_on(changeset)
   end
 
   test "update instance state updates state of an instance to new state" do
@@ -535,7 +527,7 @@ defmodule WraftDoc.DocumentTest do
       assert data_templates =~ "Title3"
     end
 
-    test "test doesn not do bulk data template creation with invalid data" do
+    test "test does not do bulk data template creation with invalid data" do
       count_before = DataTemplate |> Repo.all() |> length()
       response = Document.data_template_bulk_insert(nil, nil, nil, nil)
       assert count_before == DataTemplate |> Repo.all() |> length()
@@ -727,6 +719,219 @@ defmodule WraftDoc.DocumentTest do
 
     test "does not create bulk import block template backgroung job with invalid attrs" do
       response = Document.insert_block_template_bulk_import_work(nil, nil, nil)
+      assert response == nil
+    end
+  end
+
+  describe "create_pipeline/2" do
+    test "creates pipeline with valid attrs" do
+      user = insert(:user)
+      c_type = insert(:content_type, organisation: user.organisation)
+      d_temp = insert(:data_template, content_type: c_type)
+      state = insert(:state, organisation: user.organisation)
+
+      attrs = %{
+        "name" => "pipeline",
+        "api_route" => "www.crm.com",
+        "organisation_id" => user.organisation_id,
+        "stages" => [
+          %{
+            "state_id" => state.uuid,
+            "content_type_id" => c_type.uuid,
+            "data_template_id" => d_temp.uuid
+          }
+        ]
+      }
+
+      pipeline = Document.create_pipeline(user, attrs)
+
+      [%{content_type: content_type, data_template: data_template, state: resp_state}] =
+        pipeline.stages
+
+      assert pipeline.name == "pipeline"
+      assert pipeline.api_route == "www.crm.com"
+      assert content_type.name == c_type.name
+      assert data_template.title == d_temp.title
+      assert resp_state.state == state.state
+    end
+
+    test "returns error with invalid attrs" do
+      user = insert(:user)
+      {:error, changeset} = Document.create_pipeline(user, %{})
+      assert %{name: ["can't be blank"], api_route: ["can't be blank"]} == errors_on(changeset)
+    end
+  end
+
+  describe "pipeline_index/2" do
+    test "returns list of pipelines in the users organisation only" do
+      user = insert(:user)
+      pipeline1 = insert(:pipeline, organisation: user.organisation)
+      pipeline2 = insert(:pipeline)
+      %{entries: pipelines} = Document.pipeline_index(user, %{})
+      pipeline_names = pipelines |> Enum.map(fn x -> x.name end) |> List.to_string()
+      assert pipeline_names =~ pipeline1.name
+      refute pipeline_names =~ pipeline2.name
+    end
+
+    test "returns nil with invalid attrs" do
+      response = Document.pipeline_index(nil, %{})
+      assert response == nil
+    end
+  end
+
+  describe "get_pipeline/2" do
+    test "returns the pipeline in the user's organisation with given id" do
+      user = insert(:user)
+      pipe = insert(:pipeline, organisation: user.organisation)
+      pipeline = Document.get_pipeline(user, pipe.uuid)
+      assert pipeline.name == pipe.name
+      assert pipeline.uuid == pipe.uuid
+    end
+
+    test "returns nil when pipeline does not belong to the user's organisation" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+      response = Document.get_pipeline(user, pipeline.uuid)
+      assert response == nil
+    end
+
+    test "returns nil for non existent pipeline" do
+      user = insert(:user)
+      response = Document.get_pipeline(user, Ecto.UUID.generate())
+      assert response == nil
+    end
+
+    test "returns nil for invalid data" do
+      response = Document.get_pipeline(nil, Ecto.UUID.generate())
+      assert response == nil
+    end
+  end
+
+  describe "show_pipeline/2" do
+    test "returns the pipeline in the user's organisation with given id" do
+      user = insert(:user)
+      pipe = insert(:pipeline, organisation: user.organisation)
+      pipeline = Document.show_pipeline(user, pipe.uuid)
+      assert pipeline.name == pipe.name
+      assert pipeline.uuid == pipe.uuid
+    end
+
+    test "returns nil when pipeline does not belong to the user's organisation" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+      response = Document.show_pipeline(user, pipeline.uuid)
+      assert response == nil
+    end
+
+    test "returns nil for non existent pipeline" do
+      user = insert(:user)
+      response = Document.show_pipeline(user, Ecto.UUID.generate())
+      assert response == nil
+    end
+
+    test "returns nil for invalid data" do
+      response = Document.show_pipeline(nil, Ecto.UUID.generate())
+      assert response == nil
+    end
+  end
+
+  describe "pipeline_update/3" do
+    test "updates pipeline with valid attrs" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+      c_type = insert(:content_type, organisation: user.organisation)
+      d_temp = insert(:data_template, content_type: c_type)
+      state = insert(:state, organisation: user.organisation)
+
+      attrs = %{
+        "name" => "pipeline",
+        "api_route" => "www.crm.com",
+        "stages" => [
+          %{
+            "content_type_id" => c_type.uuid,
+            "data_template_id" => d_temp.uuid,
+            "state_id" => state.uuid
+          }
+        ]
+      }
+
+      pipeline = Document.pipeline_update(pipeline, user, attrs)
+      [stage] = pipeline.stages
+      assert pipeline.name == "pipeline"
+      assert pipeline.api_route == "www.crm.com"
+      assert stage.content_type.name == c_type.name
+      assert stage.data_template.title == d_temp.title
+      assert stage.state.state == state.state
+    end
+
+    test "returns error with invalid attrs" do
+      user = insert(:user)
+      {:error, changeset} = Document.create_pipeline(user, %{})
+      assert %{name: ["can't be blank"], api_route: ["can't be blank"]} == errors_on(changeset)
+    end
+  end
+
+  describe "delete_pipeline/2" do
+    test "deletes pipeline with correct data" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+      count_before = Pipeline |> Repo.all() |> length()
+      {:ok, deleted_pipeline} = Document.delete_pipeline(pipeline, user)
+      count_after = Pipeline |> Repo.all() |> length()
+      assert count_before - 1 == count_after
+      assert deleted_pipeline.name == pipeline.name
+      assert deleted_pipeline.api_route == pipeline.api_route
+    end
+
+    test "returns nil with invalid data" do
+      response = Document.delete_pipeline(nil, nil)
+      assert response == nil
+    end
+  end
+
+  describe "get_pipe_stage/2" do
+    test "returns the pipe stage in the user's organisation with valid IDs and user struct" do
+      user = insert(:user)
+      pipeline = insert(:pipeline, organisation: user.organisation)
+      stage = insert(:pipe_stage, pipeline: pipeline)
+      response = Document.get_pipe_stage(user, stage.uuid)
+      assert response.pipeline_id == pipeline.id
+      assert response.uuid == stage.uuid
+    end
+
+    test "returns nil when stage does not belong to user's organisation" do
+      user = insert(:user)
+      stage = insert(:pipe_stage)
+      response = Document.get_pipe_stage(user, stage.uuid)
+      assert response == nil
+    end
+
+    test "returns nil with non-existent IDs" do
+      user = insert(:user)
+      response = Document.get_pipe_stage(user, Ecto.UUID.generate())
+      assert response == nil
+    end
+
+    test "returns nil invalid data" do
+      response = Document.get_pipe_stage(nil, Ecto.UUID.generate())
+      assert response == nil
+    end
+  end
+
+  describe "delete_pipe_stage/2" do
+    test "deletes stage with correct data" do
+      user = insert(:user)
+      stage = insert(:pipe_stage)
+      count_before = Stage |> Repo.all() |> length()
+      {:ok, deleted_stage} = Document.delete_pipe_stage(user, stage)
+      count_after = Stage |> Repo.all() |> length()
+      assert count_before - 1 == count_after
+      assert deleted_stage.pipeline_id == stage.pipeline_id
+      assert deleted_stage.content_type_id == stage.content_type_id
+    end
+
+    test "returns nil with invalid data" do
+      response = Document.delete_pipe_stage(nil, nil)
       assert response == nil
     end
   end
@@ -941,7 +1146,7 @@ defmodule WraftDoc.DocumentTest do
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
 
     data_template = insert(:data_template, creator: user, content_type: content_type)
-    d_data_template = Document.get_d_template(data_template.uuid, user)
+    d_data_template = Document.get_d_template(user, data_template.uuid)
     assert d_data_template.title == data_template.title
     assert d_data_template.title_template == data_template.title_template
     assert d_data_template.data == data_template.data
@@ -951,7 +1156,7 @@ defmodule WraftDoc.DocumentTest do
     user = insert(:user)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     data_template = insert(:data_template, creator: user, content_type: content_type)
-    d_data_template = Document.show_d_template(data_template.uuid, user)
+    d_data_template = Document.show_d_template(user, data_template.uuid)
     assert d_data_template.title == data_template.title
     assert d_data_template.title_template == data_template.title_template
     assert d_data_template.data == data_template.data

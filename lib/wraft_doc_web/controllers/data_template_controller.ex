@@ -187,7 +187,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   def create(conn, %{"c_type_id" => c_type_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = c_type <- Document.get_content_type(c_type_uuid, current_user),
+    with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_uuid),
          {:ok, %DataTemplate{} = d_template} <-
            Document.create_data_template(current_user, c_type, params) do
       conn
@@ -280,9 +280,9 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => d_temp_uuid}) do
-    user = conn.assigns.current_user
+    current_user = conn.assigns[:current_user]
 
-    with %DataTemplate{} = data_template <- Document.show_d_template(d_temp_uuid, user) do
+    with %DataTemplate{} = data_template <- Document.show_d_template(current_user, d_temp_uuid) do
       conn
       |> render("show.json", d_template: data_template)
     end
@@ -314,7 +314,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %DataTemplate{} = d_temp <- Document.get_d_template(uuid, current_user),
+    with %DataTemplate{} = d_temp <- Document.get_d_template(current_user, uuid),
          %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, current_user, params) do
       conn
       |> render("show.json", d_template: d_temp)
@@ -343,7 +343,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   def delete(conn, %{"id" => uuid}) do
     current_user = conn.assigns[:current_user]
 
-    with %DataTemplate{} = d_temp <- Document.get_d_template(uuid, current_user),
+    with %DataTemplate{} = d_temp <- Document.get_d_template(current_user, uuid),
          {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp, current_user) do
       conn
       |> render("create.json", d_template: d_temp)
@@ -372,11 +372,11 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
         conn,
         %{"c_type_id" => c_type_uuid, "mapping" => mapping, "file" => file}
       ) do
-    user = %{uuid: uuid} = conn.assigns[:current_user]
+    user = conn.assigns[:current_user]
 
-    with %ContentType{} <- Document.get_content_type(c_type_uuid, user),
+    with %ContentType{} <- Document.get_content_type(user, c_type_uuid),
          {:ok, %Oban.Job{}} <-
-           Document.insert_data_template_bulk_import_work(uuid, c_type_uuid, mapping, file) do
+           Document.insert_data_template_bulk_import_work(user.uuid, c_type_uuid, mapping, file) do
       conn
       |> render("bulk.json", resource: "Data Template")
     end

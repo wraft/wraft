@@ -21,6 +21,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     field(:logo, WraftDocWeb.LogoUploader.Type)
     has_many(:users, WraftDoc.Account.User)
     has_many(:approval_systems, WraftDoc.Enterprise.ApprovalSystem)
+    has_many(:pipelines, WraftDoc.Document.Pipeline)
     timestamps()
   end
 

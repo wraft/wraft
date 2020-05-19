@@ -263,9 +263,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, %{"c_type_id" => c_type_uuid, "state_uuid" => state_uuid} = params) do
     current_user = conn.assigns[:current_user]
+    type = Instance.types()[:normal]
+    params = Map.put(params, "type", type)
 
-    with %ContentType{} = c_type <- Document.get_content_type(c_type_uuid, current_user),
-         %State{} = state <- Enterprise.get_state(state_uuid, current_user),
+    with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_uuid),
+         %State{} = state <- Enterprise.get_state(current_user, state_uuid),
          %Instance{} = content <- Document.create_instance(current_user, c_type, state, params) do
       conn
       |> render(:create, content: content)
@@ -502,7 +504,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Document.get_instance(instance_uuid, current_user),
-         %State{} = state <- Enterprise.get_state(state_uuid, current_user),
+         %State{} = state <- Enterprise.get_state(current_user, state_uuid),
          %Instance{} = instance <- Document.update_instance_state(current_user, instance, state) do
       conn
       |> render("show.json", instance: instance)

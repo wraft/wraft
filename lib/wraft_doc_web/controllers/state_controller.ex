@@ -215,7 +215,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %State{} = state <- Enterprise.get_state(uuid, current_user),
+    with %State{} = state <- Enterprise.get_state(current_user, uuid),
          %State{} = %State{} = state <- Enterprise.update_state(state, current_user, params) do
       conn
       |> render("show.json", state: state)
@@ -223,7 +223,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
   end
 
   @doc """
-  Flow delete.
+  State delete.
   """
   swagger_path :delete do
     PhoenixSwagger.Path.delete("/states/{id}")
@@ -244,7 +244,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
   def delete(conn, %{"id" => uuid}) do
     current_user = conn.assigns[:current_user]
 
-    with %State{} = state <- Enterprise.get_state(uuid, current_user),
+    with %State{} = state <- Enterprise.get_state(current_user, uuid),
          {:ok, %State{}} <- Enterprise.delete_state(state, current_user) do
       Task.start(fn -> Enterprise.shuffle_order(state, -1) end)
 

@@ -26,8 +26,11 @@ defmodule WraftDoc.Factory do
     Authorization.Permission,
     Document.BlockTemplate,
     Document.Comment,
+    Document.Pipeline,
+    Document.Pipeline.Stage,
     Enterprise.ApprovalSystem,
-    Document.LayoutAsset
+    Document.LayoutAsset,
+    Document.Pipeline.TriggerHistory
   }
 
   def user_factory do
@@ -70,7 +73,9 @@ defmodule WraftDoc.Factory do
       name: sequence(:name, &"name-#{&1}"),
       description: "A content type to create documents",
       prefix: "OFFR",
-      organisation: build(:organisation)
+      organisation: build(:organisation),
+      layout: build(:layout),
+      flow: build(:flow)
     }
   end
 
@@ -298,6 +303,35 @@ defmodule WraftDoc.Factory do
       token_type: "token",
       expiry_datetime: Timex.shift(Timex.now(), days: 1),
       user: build(:user)
+    }
+  end
+
+  def pipeline_factory do
+    %Pipeline{
+      name: sequence(:name, &"Pipeline-#{&1}"),
+      api_route: sequence(:api_route, &"clinet-#{&1}.crm-#{&1}.com"),
+      creator: build(:user),
+      organisation: build(:organisation)
+    }
+  end
+
+  def pipe_stage_factory do
+    %Stage{
+      pipeline: build(:pipeline),
+      content_type: build(:content_type),
+      data_template: build(:data_template),
+      state: build(:state),
+      creator: build(:user)
+    }
+  end
+
+  def trigger_history_factory do
+    %TriggerHistory{
+      data: %{name: sequence(:name, &"Name-#{&1}")},
+      meta: %{error: sequence(:error, &"error_reason-#{&1}")},
+      state: sequence(:state, &"#{&1}"),
+      pipeline: build(:pipeline),
+      creator: build(:user)
     }
   end
 end
