@@ -80,11 +80,13 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     current_user = conn.assigns.current_user
+
     organisation = current_user.organisation
     content_type = insert(:content_type, creator: current_user, organisation: organisation)
     instance = insert(:instance, creator: current_user, content_type: content_type)
     pre_state = insert(:state, creator: current_user, organisation: organisation)
     post_state = insert(:state, creator: current_user, organisation: organisation)
+
     approver = insert(:user)
 
     params = %{

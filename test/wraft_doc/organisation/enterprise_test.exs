@@ -24,8 +24,8 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "get state returns states data " do
     user = insert(:user)
-    state = insert(:state, creator: user, organisation: user.organisation)
-    r_state = Enterprise.get_state(state.uuid, user)
+    state = insert(:state, organisation: user.organisation)
+    r_state = Enterprise.get_state(user, state.uuid)
     assert state.state == r_state.state
   end
 
@@ -211,10 +211,10 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "create aprroval system create a solution to creat a system" do
     user = insert(:user)
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
-    instance = insert(:instance, creator: user, content_type: content_type)
-    pre_state = insert(:state, creator: user, organisation: user.organisation)
-    post_state = insert(:state, creator: user, organisation: user.organisation)
+    c_type = insert(:content_type, organisation: user.organisation)
+    instance = insert(:instance, creator: user, content_type: c_type)
+    pre_state = insert(:state, organisation: user.organisation)
+    post_state = insert(:state, organisation: user.organisation)
     approver = insert(:user)
     count_before = ApprovalSystem |> Repo.all() |> length()
 
@@ -243,8 +243,6 @@ defmodule WraftDoc.EnterpriseTest do
     approval_system = Enterprise.get_approval_system(uuid, user)
     assert approval_system.instance.uuid == instance.uuid
   end
-
-  require IEx
 
   test "update approval system updates a system" do
     user = insert(:user)

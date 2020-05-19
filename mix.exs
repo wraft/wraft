@@ -82,7 +82,9 @@ defmodule WraftDoc.Mixfile do
       # CSV parser
       {:csv, "~> 2.3.1"},
       # Live dashboard
-      {:phoenix_live_dashboard, "~> 0.1.0"}
+      {:phoenix_live_dashboard, "~> 0.1.0"},
+      # Business logic flow
+      {:opus, "~> 0.6.1"}
     ]
   end
 
@@ -96,7 +98,7 @@ defmodule WraftDoc.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      test: ["ecto.create --quiet", "ecto.migrate", "test --trace"],
       swagger: ["phx.swagger.generate priv/static/swagger.json"]
     ]
   end
