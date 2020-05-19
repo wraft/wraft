@@ -1192,6 +1192,10 @@ defmodule WraftDoc.Document do
   Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create
   """
   @spec generate_chart(map) :: map
+  def generate_chart(%{"btype" => "gantt"}) do
+    %{"url" => "gant_chart_url"}
+  end
+
   def generate_chart(%{
         "dataset" => dataset,
         "api_route" => api_route,
@@ -1225,6 +1229,10 @@ defmodule WraftDoc.Document do
   @doc """
   Generate tex code for the chart
   """
+  def generate_tex_chart(%{"dataset" => dataset, "btype" => "gantt"}) do
+    generate_tex_gantt_chart(dataset)
+  end
+
   def generate_tex_chart(%{"dataset" => %{"data" => data}}) do
     "\\pie [rotate = 180 ]{#{tex_chart(data, "")}}"
   end
@@ -1236,6 +1244,61 @@ defmodule WraftDoc.Document do
   defp tex_chart([%{"value" => value, "label" => label} | datas], tex_chart) do
     tex_chart = "#{tex_chart}#{value}/#{label}, "
     tex_chart(datas, tex_chart)
+  end
+
+  @doc """
+  Generate latex of ganttchart
+  """
+  def generate_tex_gantt_chart(%{
+        "caption" => caption,
+        "title_list" => %{"start" => tl_start, "end" => tl_end},
+        "data" => data
+      }) do
+    "\\documentclass[a4paper, 12pt,fleqn]{article}
+      \\usepackage{pgfgantt}
+
+        \\begin{document}
+        \\begin{figure}
+        \\centering
+        \\begin{ganttchart}[%inline,bar inline label anchor=west,bar inline label node/.append style={anchor=west, text=white},bar/.append style={fill=cyan!90!black,},bar height=.8,]
+        {#{tl_start}}{#{tl_end}}
+        \\gantttitlelist{#{tl_start},...,#{tl_end}}{1}\\
+        #{gant_bar(data, "", tl_end)}
+        \\end{ganttchart}
+        \\caption{#{caption}}
+        \\end{figure}
+        \\end{document}
+        "
+  end
+
+  # Generate bar for gant chart
+  defp gant_bar(
+         [%{"label" => label, "start" => b_start, "end" => b_end, "bar" => bar} | data],
+         g_bar,
+         tl_end
+       ) do
+    gant_bar(data, "#{g_bar}\\ganttbar[inline=false]{#{label}}{#{b_start}}{#{b_end}}
+     #{inline_gant_bar(bar, "", "", tl_end)}
+    ", tl_end)
+  end
+
+  defp gant_bar([], g_bar, _tl_end) do
+    g_bar
+  end
+
+  # Generate inline bar for gant chart
+  defp inline_gant_bar(
+         [%{"label" => label, "start" => b_start, "end" => b_end} | data],
+         ig_bar,
+         _b_end,
+         tl_end
+       ) do
+    inline_gant_bar(data, "#{ig_bar}\\ganttbar{#{label}}{#{b_start}}{#{b_end}}", b_end, tl_end)
+  end
+
+  defp inline_gant_bar([], ig_bar, b_end, tl_end) do
+    "#{ig_bar}
+    \\ganttbar{}{#{b_end}}{#{tl_end}}\\"
   end
 
   # defp tex_chart([], tex_chart) do
