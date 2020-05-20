@@ -14,34 +14,40 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistoryTest do
     state: 1
   }
 
-  test "changeset with valid attrs" do
-    params = @valid_attrs |> Map.put(:creator_id, 1)
-    changeset = TriggerHistory.changeset(%TriggerHistory{}, params)
-    assert changeset.valid?
+  describe "changeset/2" do
+    test "changeset with valid attrs" do
+      params = @valid_attrs |> Map.put(:creator_id, 1)
+      changeset = TriggerHistory.changeset(%TriggerHistory{}, params)
+      assert changeset.valid?
+    end
+
+    test "changeset with invalid attrs" do
+      changeset = TriggerHistory.changeset(%TriggerHistory{}, %{})
+      refute changeset.valid?
+    end
   end
 
-  test "changeset with invalid attrs" do
-    changeset = TriggerHistory.changeset(%TriggerHistory{}, %{})
-    refute changeset.valid?
+  describe "hook_changeset/2" do
+    test "hook changeset with valid attrs" do
+      changeset = TriggerHistory.hook_changeset(%TriggerHistory{}, @valid_attrs)
+      assert changeset.valid?
+    end
+
+    test "hook changeset with invalid attrs" do
+      changeset = TriggerHistory.hook_changeset(%TriggerHistory{}, %{})
+      refute changeset.valid?
+    end
   end
 
-  test "hook changeset with valid attrs" do
-    changeset = TriggerHistory.hook_changeset(%TriggerHistory{}, @valid_attrs)
-    assert changeset.valid?
-  end
+  describe "update_changeset/2" do
+    test "update changeset with valid update attrs" do
+      changeset = TriggerHistory.update_changeset(%TriggerHistory{}, @valid_update_attrs)
+      assert changeset.valid?
+    end
 
-  test "hook changeset with invalid attrs" do
-    changeset = TriggerHistory.hook_changeset(%TriggerHistory{}, %{})
-    refute changeset.valid?
-  end
-
-  test "update changeset with valid update attrs" do
-    changeset = TriggerHistory.update_changeset(%TriggerHistory{}, @valid_update_attrs)
-    assert changeset.valid?
-  end
-
-  test "update changeset with invalid attrs" do
-    changeset = TriggerHistory.update_changeset(%TriggerHistory{}, %{})
-    refute changeset.valid?
+    test "update changeset with invalid attrs" do
+      changeset = TriggerHistory.update_changeset(%TriggerHistory{}, %{})
+      refute changeset.valid?
+    end
   end
 end
