@@ -1882,6 +1882,7 @@ defmodule WraftDoc.Document do
   @doc """
   List of all pipelines in the user's organisation.
   """
+  # TODO - Test written
   @spec pipeline_index(User.t(), map) :: map | nil
   def pipeline_index(%User{organisation_id: org_id}, params) do
     from(p in Pipeline, where: p.organisation_id == ^org_id)
@@ -1893,6 +1894,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a pipeline from its UUID and user's organisation.
   """
+  # TODO - Test written
   @spec get_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
   def get_pipeline(%User{organisation_id: org_id}, <<_::288>> = p_uuid) do
     from(p in Pipeline, where: p.uuid == ^p_uuid, where: p.organisation_id == ^org_id)
@@ -1904,6 +1906,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a pipeline and its details.
   """
+  # TODO - Test written
   @spec show_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
   def show_pipeline(current_user, p_uuid) do
     current_user
@@ -1914,6 +1917,7 @@ defmodule WraftDoc.Document do
   @doc """
   Updates a pipeline.
   """
+  # TODO - Test written
   @spec pipeline_update(Pipeline.t(), User.t(), map) :: Pipeline.t()
   def pipeline_update(pipeline, %User{id: user_id} = user, params) do
     pipeline
@@ -1932,6 +1936,7 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a pipeline.
   """
+  # TODO - Test written
   @spec delete_pipeline(Pipeline.t(), User.t()) ::
           {:ok, Pipeline.t()} | {:error, Ecto.Changeset.t()}
   def delete_pipeline(%Pipeline{} = pipeline, %User{id: id}) do
@@ -1944,6 +1949,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a pipeline stage from its UUID and user's organisation.
   """
+  # TODO - Test written
   @spec get_pipe_stage(User.t(), Ecto.UUID.t()) :: Stage.t() | nil
   def get_pipe_stage(%User{organisation_id: org_id}, <<_::288>> = s_uuid) do
     from(s in Stage,
@@ -1991,6 +1997,7 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a pipe stage.
   """
+  # TODO - Test written
   @spec delete_pipe_stage(User.t(), Stage.t()) :: {:ok, Stage.t()}
   def delete_pipe_stage(%User{id: id}, %Stage{} = pipe_stage) do
     %{pipeline: pipeline, content_type: c_type, data_template: d_temp, state: state} =
