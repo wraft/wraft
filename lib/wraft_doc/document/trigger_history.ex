@@ -5,13 +5,14 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
   alias __MODULE__
   use Ecto.Schema
   import Ecto.Changeset
-  @derive {Jason.Encoder, only: [:uuid, :data, :meta, :state, :pipeline_id, :creator_id]}
-  def states, do: [enqued: 1, executing: 2, pending: 3, success: 4, failed: 5]
+  @derive {Jason.Encoder, only: [:id, :uuid, :data, :meta, :state, :pipeline_id, :creator_id]}
+  def states,
+    do: [enqued: 1, executing: 2, pending: 3, partially_completed: 4, success: 5, failed: 6]
 
   schema "trigger_history" do
     field(:uuid, Ecto.UUID, autogenerate: true)
     field(:data, :map)
-    field(:meta, :map)
+    field(:meta, :map, default: %{})
     field(:state, :integer)
     belongs_to(:pipeline, WraftDoc.Document.Pipeline)
     belongs_to(:creator, WraftDoc.Account.User)
