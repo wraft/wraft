@@ -153,11 +153,12 @@ defmodule WraftDoc.PipelineRunner do
   @doc """
   Zip all the builds.
   """
-  @spec zip_builds(map) :: String.t()
+  @spec zip_builds(map) :: map
   def zip_builds(%{instances: instances} = input) do
     builds =
       instances
-      |> Enum.map(fn x -> x |> Document.get_built_document() |> Map.get(:build) end)
+      |> Stream.map(fn x -> x |> Document.get_built_document() |> Map.get(:build) end)
+      |> Stream.filter(fn x -> x != nil end)
       |> Enum.map(&String.to_charlist/1)
 
     time = Timex.now() |> DateTime.to_iso8601()
