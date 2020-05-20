@@ -10,8 +10,13 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistoryTest do
   }
 
   @valid_update_attrs %{
-    meta: %{error: :pipeline_not_exist},
-    state: 1
+    error: %{error: :pipeline_not_exist},
+    state: 1,
+    start_time: "2020-02-12T12:00:00"
+  }
+
+  @valid_trigger_end_attrs %{
+    end_time: "2020-02-12T12:03:00"
   }
 
   describe "changeset/2" do
@@ -47,6 +52,20 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistoryTest do
 
     test "update changeset with invalid attrs" do
       changeset = TriggerHistory.update_changeset(%TriggerHistory{}, %{})
+      refute changeset.valid?
+    end
+  end
+
+  describe "trigger_end_changeset/2" do
+    test "trigger end changeset with valid attrs" do
+      changeset =
+        TriggerHistory.trigger_end_changeset(%TriggerHistory{}, @valid_trigger_end_attrs)
+
+      assert changeset.valid?
+    end
+
+    test "trigger end changeset with invalid attrs" do
+      changeset = TriggerHistory.trigger_end_changeset(%TriggerHistory{}, %{})
       refute changeset.valid?
     end
   end
