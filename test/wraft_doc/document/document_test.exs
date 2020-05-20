@@ -42,6 +42,34 @@ defmodule WraftDoc.DocumentTest do
     "color" => "#fff",
     "prefix" => "OFFRE"
   }
+
+  @valid_theme_attrs %{
+    "name" => "theme name",
+    "font" => "theme font",
+    "typescale" => %{"heading1" => 22, "heading2" => 16, "paragraph" => 12}
+  }
+  @valid_data_template_attrs %{
+    "title" => "data_template title",
+    "title_template" => "data_template title_template",
+    "data" => "data_template data"
+  }
+  @invalid_data_template_attrs %{title: nil, title_template: nil, data: nil}
+  @valid_asset_attrs %{"name" => "asset name"}
+
+  @valid_comment_attrs %{
+    "comment" => "comment comment",
+    "is_parent" => true,
+    "master" => "instance",
+    "master_id" => "0s3df0sd03f3s03d0f3",
+    "organisation_id" => 12
+  }
+  @invalid_comment_attrs %{
+    "comment" => nil,
+    "is_parent" => nil,
+    "master" => nil,
+    "master_id" => nil,
+    "organisation_id" => nil
+  }
   @invalid_attrs %{}
 
   test "create layout on valid attributes" do
@@ -723,6 +751,470 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  test "get content type field returns content type field data" do
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    content_type_field = insert(:content_type_field, content_type: content_type)
+    c_content_type_field = Document.get_content_type_field(content_type_field.uuid, user)
+    assert content_type_field.name == c_content_type_field.name
+    assert content_type_field.description == c_content_type_field.description
+  end
+
+  test "delete content type field deletes the content type field and returns the data" do
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user)
+
+    content_type_field = insert(:content_type_field, content_type: content_type)
+    {:ok, c_content_type_field} = Document.delete_content_type_field(content_type_field, user)
+    assert content_type_field.name == c_content_type_field.name
+    assert content_type_field.description == c_content_type_field.description
+  end
+
+  describe "create_or_update_counter/1" do
+    test "create a row while creating an instance and write the count of instance under a content type" do
+      content_type = insert(:content_type)
+      {:ok, counter} = Document.create_or_update_counter(content_type)
+      assert counter.count == 1
+    end
+
+    test "update counter while adding an instance on existing content type and write total count of instances under a content type" do
+      content_type = insert(:content_type)
+
+      counter = insert(:counter, subject: "ContentType:#{content_type.id}")
+
+      {:ok, n_counter} = Document.create_or_update_counter(content_type)
+      assert counter.count + 1 == n_counter.count
+    end
+  end
+
+  test "get engine returns the engine data" do
+    engine = insert(:engine)
+    e_engine = Document.get_engine(engine.uuid)
+    assert engine.name == e_engine.name
+    assert engine.api_route == e_engine.api_route
+  end
+
+  test "create theme on valid attributes" do
+    user = insert(:user)
+    count_before = Theme |> Repo.all() |> length()
+    {:ok, theme} = Document.create_theme(user, @valid_theme_attrs)
+    count_after = Theme |> Repo.all() |> length()
+    count_before + 1 == count_after
+    assert theme.name == @valid_theme_attrs["name"]
+    assert theme.font == @valid_theme_attrs["font"]
+    assert theme.typescale == @valid_theme_attrs["typescale"]
+  end
+
+  test "create theme on invalid attrs" do
+    user = insert(:user)
+    count_before = Theme |> Repo.all() |> length()
+
+    {:error, changeset} = Document.create_theme(user, @invalid_attrs)
+    count_after = Theme |> Repo.all() |> length()
+    assert count_before == count_after
+
+    assert %{name: ["can't be blank"], font: ["can't be blank"]} ==
+             errors_on(changeset)
+  end
+
+  test "theme index lists the theme data" do
+    user = insert(:user)
+    t1 = insert(:theme, creator: user, organisation: user.organisation)
+    t2 = insert(:theme, creator: user, organisation: user.organisation)
+    theme_index = Document.theme_index(user, %{page_number: 1})
+
+    assert theme_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ t1.name
+    assert theme_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ t2.name
+  end
+
+  test "get theme returns the theme data" do
+    user = insert(:user)
+    theme = insert(:theme, creator: user, organisation: user.organisation)
+    t_theme = Document.get_theme(theme.uuid, user)
+    assert t_theme.name == theme.name
+    assert t_theme.font == theme.font
+  end
+
+  test "show theme returns the theme data and preloads the creator" do
+    user = insert(:user)
+    theme = insert(:theme, creator: user, organisation: user.organisation)
+    t_theme = Document.show_theme(theme.uuid, user)
+    assert t_theme.name == theme.name
+    assert t_theme.font == theme.font
+
+    assert t_theme.creator.name == user.name
+  end
+
+  # test "update theme on valid attrs" do
+  #   user = insert(:user)
+  #   theme = insert(:theme, creator: user)
+  #   count_before = Theme |> Repo.all() |> length()
+
+  #   {:ok, theme} = Document.update_theme(theme, user, @valid_theme_attrs)
+  #   count_after = Theme |> Repo.all() |> length()
+  #   assert count_before == count_after
+  #   assert theme.name == @valid_theme_attrs["name"]
+  #   assert theme.font == @valid_theme_attrs["font"]
+  #   assert theme.typescale == @valid_theme_attrs["typescale"]
+  # end
+
+  test "update theme on invalid attrs" do
+    user = insert(:user)
+    theme = insert(:theme, creator: user)
+    count_before = Theme |> Repo.all() |> length()
+
+    {:error, changeset} = Document.update_theme(theme, user, @invalid_attrs)
+    count_after = Theme |> Repo.all() |> length()
+    assert count_before == count_after
+
+    %{name: ["can't be blank"], font: ["can't be blank"], typescale: ["can't be blank"]} ==
+      errors_on(changeset)
+  end
+
+  test "delete theme deletes and return the theme data" do
+    user = insert(:user)
+    theme = insert(:theme)
+    count_before = Theme |> Repo.all() |> length()
+    {:ok, t_theme} = Document.delete_theme(theme, user)
+    count_after = Theme |> Repo.all() |> length()
+    assert count_before - 1 == count_after
+    assert t_theme.name == theme.name
+    assert t_theme.font == theme.font
+    assert t_theme.typescale == theme.typescale
+  end
+
+  test "create data_template on valid attributes" do
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user)
+    count_before = DataTemplate |> Repo.all() |> length()
+
+    {:ok, data_template} =
+      Document.create_data_template(user, content_type, @valid_data_template_attrs)
+
+    count_after = DataTemplate |> Repo.all() |> length()
+    count_before + 1 == count_after
+    assert data_template.title == @valid_data_template_attrs["title"]
+    assert data_template.title_template == @valid_data_template_attrs["title_template"]
+    assert data_template.data == @valid_data_template_attrs["data"]
+  end
+
+  test "create data_template on invalid attrs" do
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user)
+    count_before = DataTemplate |> Repo.all() |> length()
+
+    {:error, changeset} = Document.create_data_template(user, content_type, @invalid_attrs)
+    count_after = DataTemplate |> Repo.all() |> length()
+    assert count_before == count_after
+
+    assert %{
+             title: ["can't be blank"],
+             title_template: ["can't be blank"],
+             data: ["can't be blank"]
+           } == errors_on(changeset)
+  end
+
+  test "data_template index lists the data_template data" do
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user)
+    d1 = insert(:data_template, creator: user, content_type: content_type)
+    d2 = insert(:data_template, creator: user, content_type: content_type)
+    data_template_index = Document.data_template_index(content_type.uuid, %{page_number: 1})
+
+    assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
+             d1.title
+
+    assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
+             d2.title
+  end
+
+  test "data_template index_under_organisation lists the data_template data under an organisation" do
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user)
+    d1 = insert(:data_template, creator: user, content_type: content_type)
+    d2 = insert(:data_template, creator: user, content_type: content_type)
+
+    data_template_index =
+      Document.data_templates_index_of_an_organisation(user, %{page_number: 1})
+
+    assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
+             d1.title
+
+    assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
+             d2.title
+  end
+
+  test "get data_template returns the data_template data" do
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+
+    data_template = insert(:data_template, creator: user, content_type: content_type)
+    d_data_template = Document.get_d_template(user, data_template.uuid)
+    assert d_data_template.title == data_template.title
+    assert d_data_template.title_template == data_template.title_template
+    assert d_data_template.data == data_template.data
+  end
+
+  test "show data_template returns the data_template data and preloads creator and content type" do
+    user = insert(:user)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    data_template = insert(:data_template, creator: user, content_type: content_type)
+    d_data_template = Document.show_d_template(user, data_template.uuid)
+    assert d_data_template.title == data_template.title
+    assert d_data_template.title_template == data_template.title_template
+    assert d_data_template.data == data_template.data
+    assert d_data_template.content_type.name == content_type.name
+    assert d_data_template.creator.name == user.name
+  end
+
+  test "update data_template on valid attrs" do
+    user = insert(:user)
+    data_template = insert(:data_template, creator: user)
+    count_before = DataTemplate |> Repo.all() |> length()
+
+    data_template = Document.update_data_template(data_template, user, @valid_data_template_attrs)
+    count_after = DataTemplate |> Repo.all() |> length()
+    assert count_before == count_after
+    assert data_template.title == @valid_data_template_attrs["title"]
+    assert data_template.title_template == @valid_data_template_attrs["title_template"]
+    assert data_template.data == @valid_data_template_attrs["data"]
+  end
+
+  test "update data_template on invalid attrs" do
+    user = insert(:user)
+    data_template = insert(:data_template, creator: user)
+    count_before = DataTemplate |> Repo.all() |> length()
+
+    {:error, changeset} =
+      Document.update_data_template(data_template, user, @invalid_data_template_attrs)
+
+    count_after = DataTemplate |> Repo.all() |> length()
+    assert count_before == count_after
+
+    %{title: ["can't be blank"], title_template: ["can't be blank"], data: ["can't be blank"]} ==
+      errors_on(changeset)
+  end
+
+  test "delete data_template deletes the data_template data" do
+    user = insert(:user)
+    data_template = insert(:data_template, creator: user)
+    count_before = DataTemplate |> Repo.all() |> length()
+    {:ok, d_data_template} = Document.delete_data_template(data_template, user)
+    count_after = DataTemplate |> Repo.all() |> length()
+    assert count_before - 1 == count_after
+    assert d_data_template.title == data_template.title
+    assert d_data_template.title_template == data_template.title_template
+    assert d_data_template.data == data_template.data
+  end
+
+  test "create asset on valid attributes" do
+    user = insert(:user)
+    organisation = user.organisation
+    params = Map.put(@valid_asset_attrs, "organisation_id", organisation.id)
+    count_before = Asset |> Repo.all() |> length()
+    {:ok, asset} = Document.create_asset(user, @valid_asset_attrs)
+    count_after = Asset |> Repo.all() |> length()
+    count_before + 1 == count_after
+    assert asset.name == @valid_asset_attrs["name"]
+  end
+
+  test "create asset on invalid attrs" do
+    user = insert(:user)
+    count_before = Asset |> Repo.all() |> length()
+
+    {:error, changeset} = Document.create_asset(user, @invalid_attrs)
+    count_after = Asset |> Repo.all() |> length()
+    assert count_before == count_after
+    assert %{name: ["can't be blank"]} == errors_on(changeset)
+  end
+
+  test "asset index lists the asset data" do
+    user = insert(:user)
+    organisation = user.organisation
+    a1 = insert(:asset, creator: user, organisation: organisation)
+    a2 = insert(:asset, creator: user, organisation: organisation)
+    asset_index = Document.asset_index(organisation.id, %{page_number: 1})
+
+    assert asset_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ a1.name
+    assert asset_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ a2.name
+  end
+
+  test "get asset returns the asset data" do
+    user = insert(:user)
+    asset = insert(:asset, creator: user, organisation: user.organisation)
+    a_asset = Document.get_asset(asset.uuid, user)
+    assert a_asset.name == asset.name
+  end
+
+  test "show asset returns the asset data and preloads" do
+    user = insert(:user)
+    asset = insert(:asset, creator: user, organisation: user.organisation)
+    a_asset = Document.show_asset(asset.uuid, user)
+    assert a_asset.name == asset.name
+    assert a_asset.creator.name == user.name
+  end
+
+  # test "update asset on valid attrs" do
+  #   user = insert(:user)
+  #   asset = insert(:asset, creator: user)
+  #   count_before = Asset |> Repo.all() |> length()
+
+  #   asset = Document.update_asset(asset, user, @valid_asset_attrs)
+  #   count_after = Asset |> Repo.all() |> length()
+  #   assert count_before == count_after
+  #   assert asset.name == @valid_asset_attrs["name"]
+  # end
+
+  test "update asset on invalid attrs" do
+    user = insert(:user)
+    asset = insert(:asset, creator: user)
+    count_before = Asset |> Repo.all() |> length()
+
+    {:error, changeset} = Document.update_asset(asset, user, @invalid_attrs)
+    count_after = Asset |> Repo.all() |> length()
+    assert count_before == count_after
+    %{name: ["can't be blank"]} == errors_on(changeset)
+  end
+
+  test "delete asset deletes the asset data" do
+    user = insert(:user)
+    asset = insert(:asset, creator: user)
+    count_before = Asset |> Repo.all() |> length()
+    {:ok, a_asset} = Document.delete_asset(asset, user)
+    count_after = Asset |> Repo.all() |> length()
+    assert count_before - 1 == count_after
+    assert a_asset.name == asset.name
+  end
+
+  test "create comment on valid attributes" do
+    user = insert(:user)
+    organisation = user.organisation
+    instance = insert(:instance, creator: user)
+
+    params =
+      Map.merge(@valid_comment_attrs, %{
+        "master_id" => instance.uuid,
+        "organisation_id" => organisation.id
+      })
+
+    count_before = Comment |> Repo.all() |> length()
+    comment = Document.create_comment(user, params)
+    count_after = Comment |> Repo.all() |> length()
+    count_before + 1 == count_after
+    assert comment.comment == @valid_comment_attrs["comment"]
+    assert comment.is_parent == @valid_comment_attrs["is_parent"]
+    assert comment.master == @valid_comment_attrs["master"]
+    assert comment.master_id == instance.uuid
+    assert comment.organisation_id == organisation.id
+  end
+
+  test "create comment on invalid attrs" do
+    user = insert(:user)
+    count_before = Comment |> Repo.all() |> length()
+
+    {:error, changeset} = Document.create_comment(user, @invalid_attrs)
+    count_after = Comment |> Repo.all() |> length()
+    assert count_before == count_after
+
+    assert %{
+             comment: ["can't be blank"],
+             is_parent: ["can't be blank"],
+             master: ["can't be blank"],
+             master_id: ["can't be blank"]
+           } == errors_on(changeset)
+  end
+
+  test "get comment returns the comment data" do
+    user = insert(:user)
+    comment = insert(:comment, user: user, organisation: user.organisation)
+    c_comment = Document.get_comment(comment.uuid, user)
+    assert c_comment.comment == comment.comment
+    assert c_comment.is_parent == comment.is_parent
+    assert c_comment.master == comment.master
+    assert c_comment.master_id == comment.master_id
+  end
+
+  test "show comment returns the comment data and preloads user and profile" do
+    user = insert(:user)
+    comment = insert(:comment, user: user, organisation: user.organisation)
+    c_comment = Document.show_comment(comment.uuid, user)
+    assert c_comment.comment == comment.comment
+    assert c_comment.is_parent == comment.is_parent
+    assert c_comment.master == comment.master
+    assert c_comment.master_id == comment.master_id
+    assert c_comment.user.id == user.id
+  end
+
+  test "update comment on invalid attrs" do
+    user = insert(:user)
+    comment = insert(:comment, user: user)
+    count_before = Comment |> Repo.all() |> length()
+
+    {:error, changeset} = Document.update_comment(comment, @invalid_comment_attrs)
+    count_after = Comment |> Repo.all() |> length()
+    assert count_before == count_after
+
+    %{
+      comment: ["can't be blank"],
+      is_parent: ["can't be blank"],
+      master: ["can't be blank"],
+      master_id: ["can't be blank"]
+    } == errors_on(changeset)
+  end
+
+  test "update comment on valid attrs" do
+    user = insert(:user)
+    organisation = user.organisation
+    instance = insert(:instance, creator: user)
+
+    params =
+      Map.merge(@valid_comment_attrs, %{
+        "master_id" => instance.uuid,
+        "organisation_id" => organisation.id
+      })
+
+    comment = insert(:comment, user: user, master_id: instance.uuid)
+
+    count_before = Comment |> Repo.all() |> length()
+
+    comment = Document.update_comment(comment, params)
+    count_after = Comment |> Repo.all() |> length()
+    assert count_before == count_after
+    assert comment.comment == @valid_comment_attrs["comment"]
+    assert comment.is_parent == @valid_comment_attrs["is_parent"]
+    assert comment.master == @valid_comment_attrs["master"]
+    assert comment.master_id == instance.uuid
+    assert comment.organisation_id == organisation.id
+  end
+
+  test "comment index lists the comment data" do
+    user = insert(:user)
+    instance = insert(:instance, creator: user)
+    c1 = insert(:comment, user: user, organisation: user.organisation, master_id: instance.uuid)
+    c2 = insert(:comment, user: user, organisation: user.organisation, master_id: instance.uuid)
+
+    comment_index =
+      Document.comment_index(user, %{"page_number" => 1, "master_id" => instance.uuid})
+
+    assert comment_index.entries |> Enum.map(fn x -> x.comment end) |> List.to_string() =~
+             c1.comment
+
+    assert comment_index.entries |> Enum.map(fn x -> x.comment end) |> List.to_string() =~
+             c2.comment
+  end
+
+  test "delete comment deletes the comment data" do
+    user = insert(:user)
+    comment = insert(:comment, user: user)
+    count_before = Comment |> Repo.all() |> length()
+    {:ok, c_comment} = Document.delete_comment(comment)
+    count_after = Comment |> Repo.all() |> length()
+    assert count_before - 1 == count_after
+    assert c_comment.comment == comment.comment
+    assert c_comment.is_parent == comment.is_parent
+    assert c_comment.master == comment.master
+  end
+
   describe "create_pipeline/2" do
     test "creates pipeline with valid attrs" do
       user = insert(:user)
@@ -934,497 +1426,5 @@ defmodule WraftDoc.DocumentTest do
       response = Document.delete_pipe_stage(nil, nil)
       assert response == nil
     end
-  end
-
-  test "get content type field returns content type field data" do
-    user = insert(:user)
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
-    content_type_field = insert(:content_type_field, content_type: content_type)
-    c_content_type_field = Document.get_content_type_field(content_type_field.uuid, user)
-    assert content_type_field.name == c_content_type_field.name
-    assert content_type_field.description == c_content_type_field.description
-  end
-
-  test "delete content type field deletes the content type field and returns the data" do
-    user = insert(:user)
-    content_type = insert(:content_type, creator: user)
-
-    content_type_field = insert(:content_type_field, content_type: content_type)
-    {:ok, c_content_type_field} = Document.delete_content_type_field(content_type_field, user)
-    assert content_type_field.name == c_content_type_field.name
-    assert content_type_field.description == c_content_type_field.description
-  end
-
-  describe "create_or_update_counter/1" do
-    test "create a row while creating an instance and write the count of instance under a content type" do
-      content_type = insert(:content_type)
-      {:ok, counter} = Document.create_or_update_counter(content_type)
-      assert counter.count == 1
-    end
-
-    test "update counter while adding an instance on existing content type and write total count of instances under a content type" do
-      content_type = insert(:content_type)
-
-      counter = insert(:counter, subject: "ContentType:#{content_type.id}")
-
-      {:ok, n_counter} = Document.create_or_update_counter(content_type)
-      assert counter.count + 1 == n_counter.count
-    end
-  end
-
-  test "get engine returns the engine data" do
-    engine = insert(:engine)
-    e_engine = Document.get_engine(engine.uuid)
-    assert engine.name == e_engine.name
-    assert engine.api_route == e_engine.api_route
-  end
-
-  @valid_theme_attrs %{
-    "name" => "theme name",
-    "font" => "theme font",
-    "typescale" => %{"heading1" => 22, "heading2" => 16, "paragraph" => 12}
-  }
-
-  test "create theme on valid attributes" do
-    user = insert(:user)
-    count_before = Theme |> Repo.all() |> length()
-    {:ok, theme} = Document.create_theme(user, @valid_theme_attrs)
-    count_after = Theme |> Repo.all() |> length()
-    count_before + 1 == count_after
-    assert theme.name == @valid_theme_attrs["name"]
-    assert theme.font == @valid_theme_attrs["font"]
-    assert theme.typescale == @valid_theme_attrs["typescale"]
-  end
-
-  test "create theme on invalid attrs" do
-    user = insert(:user)
-    count_before = Theme |> Repo.all() |> length()
-
-    {:error, changeset} = Document.create_theme(user, @invalid_attrs)
-    count_after = Theme |> Repo.all() |> length()
-    assert count_before == count_after
-
-    assert %{name: ["can't be blank"], font: ["can't be blank"]} ==
-             errors_on(changeset)
-  end
-
-  test "theme index lists the theme data" do
-    user = insert(:user)
-    t1 = insert(:theme, creator: user, organisation: user.organisation)
-    t2 = insert(:theme, creator: user, organisation: user.organisation)
-    theme_index = Document.theme_index(user, %{page_number: 1})
-
-    assert theme_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ t1.name
-    assert theme_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ t2.name
-  end
-
-  test "get theme returns the theme data" do
-    user = insert(:user)
-    theme = insert(:theme, creator: user, organisation: user.organisation)
-    t_theme = Document.get_theme(theme.uuid, user)
-    assert t_theme.name == theme.name
-    assert t_theme.font == theme.font
-  end
-
-  test "show theme returns the theme data and preloads the creator" do
-    user = insert(:user)
-    theme = insert(:theme, creator: user, organisation: user.organisation)
-    t_theme = Document.show_theme(theme.uuid, user)
-    assert t_theme.name == theme.name
-    assert t_theme.font == theme.font
-
-    assert t_theme.creator.name == user.name
-  end
-
-  # test "update theme on valid attrs" do
-  #   user = insert(:user)
-  #   theme = insert(:theme, creator: user)
-  #   count_before = Theme |> Repo.all() |> length()
-
-  #   {:ok, theme} = Document.update_theme(theme, user, @valid_theme_attrs)
-  #   count_after = Theme |> Repo.all() |> length()
-  #   assert count_before == count_after
-  #   assert theme.name == @valid_theme_attrs["name"]
-  #   assert theme.font == @valid_theme_attrs["font"]
-  #   assert theme.typescale == @valid_theme_attrs["typescale"]
-  # end
-
-  test "update theme on invalid attrs" do
-    user = insert(:user)
-    theme = insert(:theme, creator: user)
-    count_before = Theme |> Repo.all() |> length()
-
-    {:error, changeset} = Document.update_theme(theme, user, @invalid_attrs)
-    count_after = Theme |> Repo.all() |> length()
-    assert count_before == count_after
-
-    %{name: ["can't be blank"], font: ["can't be blank"], typescale: ["can't be blank"]} ==
-      errors_on(changeset)
-  end
-
-  test "delete theme deletes and return the theme data" do
-    user = insert(:user)
-    theme = insert(:theme)
-    count_before = Theme |> Repo.all() |> length()
-    {:ok, t_theme} = Document.delete_theme(theme, user)
-    count_after = Theme |> Repo.all() |> length()
-    assert count_before - 1 == count_after
-    assert t_theme.name == theme.name
-    assert t_theme.font == theme.font
-    assert t_theme.typescale == theme.typescale
-  end
-
-  @valid_data_template_attrs %{
-    "title" => "data_template title",
-    "title_template" => "data_template title_template",
-    "data" => "data_template data"
-  }
-  @invalid_data_template_attrs %{title: nil, title_template: nil, data: nil}
-  test "create data_template on valid attributes" do
-    user = insert(:user)
-    content_type = insert(:content_type, creator: user)
-    count_before = DataTemplate |> Repo.all() |> length()
-
-    {:ok, data_template} =
-      Document.create_data_template(user, content_type, @valid_data_template_attrs)
-
-    count_after = DataTemplate |> Repo.all() |> length()
-    count_before + 1 == count_after
-    assert data_template.title == @valid_data_template_attrs["title"]
-    assert data_template.title_template == @valid_data_template_attrs["title_template"]
-    assert data_template.data == @valid_data_template_attrs["data"]
-  end
-
-  test "create data_template on invalid attrs" do
-    user = insert(:user)
-    content_type = insert(:content_type, creator: user)
-    count_before = DataTemplate |> Repo.all() |> length()
-
-    {:error, changeset} = Document.create_data_template(user, content_type, @invalid_attrs)
-    count_after = DataTemplate |> Repo.all() |> length()
-    assert count_before == count_after
-
-    assert %{
-             title: ["can't be blank"],
-             title_template: ["can't be blank"],
-             data: ["can't be blank"]
-           } == errors_on(changeset)
-  end
-
-  test "data_template index lists the data_template data" do
-    user = insert(:user)
-    content_type = insert(:content_type, creator: user)
-    d1 = insert(:data_template, creator: user, content_type: content_type)
-    d2 = insert(:data_template, creator: user, content_type: content_type)
-    data_template_index = Document.data_template_index(content_type.uuid, %{page_number: 1})
-
-    assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
-             d1.title
-
-    assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
-             d2.title
-  end
-
-  test "data_template index_under_organisation lists the data_template data under an organisation" do
-    user = insert(:user)
-    content_type = insert(:content_type, creator: user)
-    d1 = insert(:data_template, creator: user, content_type: content_type)
-    d2 = insert(:data_template, creator: user, content_type: content_type)
-
-    data_template_index =
-      Document.data_templates_index_of_an_organisation(user, %{page_number: 1})
-
-    assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
-             d1.title
-
-    assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
-             d2.title
-  end
-
-  test "get data_template returns the data_template data" do
-    user = insert(:user)
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
-
-    data_template = insert(:data_template, creator: user, content_type: content_type)
-    d_data_template = Document.get_d_template(user, data_template.uuid)
-    assert d_data_template.title == data_template.title
-    assert d_data_template.title_template == data_template.title_template
-    assert d_data_template.data == data_template.data
-  end
-
-  test "show data_template returns the data_template data and preloads creator and content type" do
-    user = insert(:user)
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
-    data_template = insert(:data_template, creator: user, content_type: content_type)
-    d_data_template = Document.show_d_template(user, data_template.uuid)
-    assert d_data_template.title == data_template.title
-    assert d_data_template.title_template == data_template.title_template
-    assert d_data_template.data == data_template.data
-    assert d_data_template.content_type.name == content_type.name
-    assert d_data_template.creator.name == user.name
-  end
-
-  test "update data_template on valid attrs" do
-    user = insert(:user)
-    data_template = insert(:data_template, creator: user)
-    count_before = DataTemplate |> Repo.all() |> length()
-
-    data_template = Document.update_data_template(data_template, user, @valid_data_template_attrs)
-    count_after = DataTemplate |> Repo.all() |> length()
-    assert count_before == count_after
-    assert data_template.title == @valid_data_template_attrs["title"]
-    assert data_template.title_template == @valid_data_template_attrs["title_template"]
-    assert data_template.data == @valid_data_template_attrs["data"]
-  end
-
-  test "update data_template on invalid attrs" do
-    user = insert(:user)
-    data_template = insert(:data_template, creator: user)
-    count_before = DataTemplate |> Repo.all() |> length()
-
-    {:error, changeset} =
-      Document.update_data_template(data_template, user, @invalid_data_template_attrs)
-
-    count_after = DataTemplate |> Repo.all() |> length()
-    assert count_before == count_after
-
-    %{title: ["can't be blank"], title_template: ["can't be blank"], data: ["can't be blank"]} ==
-      errors_on(changeset)
-  end
-
-  test "delete data_template deletes the data_template data" do
-    user = insert(:user)
-    data_template = insert(:data_template, creator: user)
-    count_before = DataTemplate |> Repo.all() |> length()
-    {:ok, d_data_template} = Document.delete_data_template(data_template, user)
-    count_after = DataTemplate |> Repo.all() |> length()
-    assert count_before - 1 == count_after
-    assert d_data_template.title == data_template.title
-    assert d_data_template.title_template == data_template.title_template
-    assert d_data_template.data == data_template.data
-  end
-
-  @valid_asset_attrs %{"name" => "asset name"}
-  test "create asset on valid attributes" do
-    user = insert(:user)
-    organisation = user.organisation
-    params = Map.put(@valid_asset_attrs, "organisation_id", organisation.id)
-    count_before = Asset |> Repo.all() |> length()
-    {:ok, asset} = Document.create_asset(user, @valid_asset_attrs)
-    count_after = Asset |> Repo.all() |> length()
-    count_before + 1 == count_after
-    assert asset.name == @valid_asset_attrs["name"]
-  end
-
-  test "create asset on invalid attrs" do
-    user = insert(:user)
-    count_before = Asset |> Repo.all() |> length()
-
-    {:error, changeset} = Document.create_asset(user, @invalid_attrs)
-    count_after = Asset |> Repo.all() |> length()
-    assert count_before == count_after
-    assert %{name: ["can't be blank"]} == errors_on(changeset)
-  end
-
-  test "asset index lists the asset data" do
-    user = insert(:user)
-    organisation = user.organisation
-    a1 = insert(:asset, creator: user, organisation: organisation)
-    a2 = insert(:asset, creator: user, organisation: organisation)
-    asset_index = Document.asset_index(organisation.id, %{page_number: 1})
-
-    assert asset_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ a1.name
-    assert asset_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ a2.name
-  end
-
-  test "get asset returns the asset data" do
-    user = insert(:user)
-    asset = insert(:asset, creator: user, organisation: user.organisation)
-    a_asset = Document.get_asset(asset.uuid, user)
-    assert a_asset.name == asset.name
-  end
-
-  test "show asset returns the asset data and preloads" do
-    user = insert(:user)
-    asset = insert(:asset, creator: user, organisation: user.organisation)
-    a_asset = Document.show_asset(asset.uuid, user)
-    assert a_asset.name == asset.name
-    assert a_asset.creator.name == user.name
-  end
-
-  # test "update asset on valid attrs" do
-  #   user = insert(:user)
-  #   asset = insert(:asset, creator: user)
-  #   count_before = Asset |> Repo.all() |> length()
-
-  #   asset = Document.update_asset(asset, user, @valid_asset_attrs)
-  #   count_after = Asset |> Repo.all() |> length()
-  #   assert count_before == count_after
-  #   assert asset.name == @valid_asset_attrs["name"]
-  # end
-
-  test "update asset on invalid attrs" do
-    user = insert(:user)
-    asset = insert(:asset, creator: user)
-    count_before = Asset |> Repo.all() |> length()
-
-    {:error, changeset} = Document.update_asset(asset, user, @invalid_attrs)
-    count_after = Asset |> Repo.all() |> length()
-    assert count_before == count_after
-    %{name: ["can't be blank"]} == errors_on(changeset)
-  end
-
-  test "delete asset deletes the asset data" do
-    user = insert(:user)
-    asset = insert(:asset, creator: user)
-    count_before = Asset |> Repo.all() |> length()
-    {:ok, a_asset} = Document.delete_asset(asset, user)
-    count_after = Asset |> Repo.all() |> length()
-    assert count_before - 1 == count_after
-    assert a_asset.name == asset.name
-  end
-
-  @valid_comment_attrs %{
-    "comment" => "comment comment",
-    "is_parent" => true,
-    "master" => "instance",
-    "master_id" => "0s3df0sd03f3s03d0f3",
-    "organisation_id" => 12
-  }
-  test "create comment on valid attributes" do
-    user = insert(:user)
-    organisation = user.organisation
-    instance = insert(:instance, creator: user)
-
-    params =
-      Map.merge(@valid_comment_attrs, %{
-        "master_id" => instance.uuid,
-        "organisation_id" => organisation.id
-      })
-
-    count_before = Comment |> Repo.all() |> length()
-    comment = Document.create_comment(user, params)
-    count_after = Comment |> Repo.all() |> length()
-    count_before + 1 == count_after
-    assert comment.comment == @valid_comment_attrs["comment"]
-    assert comment.is_parent == @valid_comment_attrs["is_parent"]
-    assert comment.master == @valid_comment_attrs["master"]
-    assert comment.master_id == instance.uuid
-    assert comment.organisation_id == organisation.id
-  end
-
-  test "create comment on invalid attrs" do
-    user = insert(:user)
-    count_before = Comment |> Repo.all() |> length()
-
-    {:error, changeset} = Document.create_comment(user, @invalid_attrs)
-    count_after = Comment |> Repo.all() |> length()
-    assert count_before == count_after
-
-    assert %{
-             comment: ["can't be blank"],
-             is_parent: ["can't be blank"],
-             master: ["can't be blank"],
-             master_id: ["can't be blank"]
-           } == errors_on(changeset)
-  end
-
-  test "get comment returns the comment data" do
-    user = insert(:user)
-    comment = insert(:comment, user: user, organisation: user.organisation)
-    c_comment = Document.get_comment(comment.uuid, user)
-    assert c_comment.comment == comment.comment
-    assert c_comment.is_parent == comment.is_parent
-    assert c_comment.master == comment.master
-    assert c_comment.master_id == comment.master_id
-  end
-
-  test "show comment returns the comment data and preloads user and profile" do
-    user = insert(:user)
-    comment = insert(:comment, user: user, organisation: user.organisation)
-    c_comment = Document.show_comment(comment.uuid, user)
-    assert c_comment.comment == comment.comment
-    assert c_comment.is_parent == comment.is_parent
-    assert c_comment.master == comment.master
-    assert c_comment.master_id == comment.master_id
-    assert c_comment.user.id == user.id
-  end
-
-  @invalid_comment_attrs %{
-    "comment" => nil,
-    "is_parent" => nil,
-    "master" => nil,
-    "master_id" => nil,
-    "organisation_id" => nil
-  }
-
-  test "update comment on invalid attrs" do
-    user = insert(:user)
-    comment = insert(:comment, user: user)
-    count_before = Comment |> Repo.all() |> length()
-
-    {:error, changeset} = Document.update_comment(comment, @invalid_comment_attrs)
-    count_after = Comment |> Repo.all() |> length()
-    assert count_before == count_after
-
-    %{
-      comment: ["can't be blank"],
-      is_parent: ["can't be blank"],
-      master: ["can't be blank"],
-      master_id: ["can't be blank"]
-    } == errors_on(changeset)
-  end
-
-  test "update comment on valid attrs" do
-    user = insert(:user)
-    organisation = user.organisation
-    instance = insert(:instance, creator: user)
-
-    params =
-      Map.merge(@valid_comment_attrs, %{
-        "master_id" => instance.uuid,
-        "organisation_id" => organisation.id
-      })
-
-    comment = insert(:comment, user: user, master_id: instance.uuid)
-
-    count_before = Comment |> Repo.all() |> length()
-
-    comment = Document.update_comment(comment, params)
-    count_after = Comment |> Repo.all() |> length()
-    assert count_before == count_after
-    assert comment.comment == @valid_comment_attrs["comment"]
-    assert comment.is_parent == @valid_comment_attrs["is_parent"]
-    assert comment.master == @valid_comment_attrs["master"]
-    assert comment.master_id == instance.uuid
-    assert comment.organisation_id == organisation.id
-  end
-
-  test "comment index lists the comment data" do
-    user = insert(:user)
-    instance = insert(:instance, creator: user)
-    c1 = insert(:comment, user: user, organisation: user.organisation, master_id: instance.uuid)
-    c2 = insert(:comment, user: user, organisation: user.organisation, master_id: instance.uuid)
-
-    comment_index =
-      Document.comment_index(user, %{"page_number" => 1, "master_id" => instance.uuid})
-
-    assert comment_index.entries |> Enum.map(fn x -> x.comment end) |> List.to_string() =~
-             c1.comment
-
-    assert comment_index.entries |> Enum.map(fn x -> x.comment end) |> List.to_string() =~
-             c2.comment
-  end
-
-  test "delete comment deletes the comment data" do
-    user = insert(:user)
-    comment = insert(:comment, user: user)
-    count_before = Comment |> Repo.all() |> length()
-    {:ok, c_comment} = Document.delete_comment(comment)
-    count_after = Comment |> Repo.all() |> length()
-    assert count_before - 1 == count_after
-    assert c_comment.comment == comment.comment
-    assert c_comment.is_parent == comment.is_parent
-    assert c_comment.master == comment.master
   end
 end
