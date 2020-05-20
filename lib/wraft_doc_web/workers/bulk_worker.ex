@@ -56,16 +56,16 @@ defmodule WraftDocWeb.Worker.BulkWorker do
     :ok
   end
 
-  def perform(%{"uuid" => _, "data" => _, "meta" => _, "pipeline_id" => _} = trigger, %{
-        tags: ["pipeline_job"]
-      }) do
+  def perform(trigger, %{tags: ["pipeline_job"]}) do
     IO.puts("Job starting..")
+    start_time = Timex.now()
     state = TriggerHistory.states()[:executing]
 
     convert_map_to_trigger_struct(trigger)
-    |> update_trigger_history(%{state: state})
+    |> update_trigger_history(%{state: state, start_time: start_time})
     |> WraftDoc.PipelineRunner.call()
     |> handle_exceptions()
+    |> trigger_end_update()
 
     IO.puts("Job end.!")
     :ok
@@ -91,12 +91,14 @@ defmodule WraftDocWeb.Worker.BulkWorker do
        ) do
     state = TriggerHistory.states()[:pending]
 
-    update_trigger_history_state_and_meta(trigger, state, %{
-      info: :values_unavailable,
-      stage: stage
-    })
+    trigger =
+      update_trigger_history_state_and_error(trigger, state, %{
+        info: :values_unavailable,
+        stage: stage
+      })
 
     IO.puts("Required values not provided. Pipeline execution is now pending.")
+    trigger
   end
 
   defp handle_exceptions(
@@ -104,47 +106,58 @@ defmodule WraftDocWeb.Worker.BulkWorker do
        ) do
     state = TriggerHistory.states()[:failed]
 
-    update_trigger_history_state_and_meta(trigger, state, %{
-      info: :pipeline_not_found,
-      stage: stage
-    })
+    trigger =
+      update_trigger_history_state_and_error(trigger, state, %{
+        info: :pipeline_not_found,
+        stage: stage
+      })
 
     IO.puts("Pipeline not found. Pipeline execution failed.")
+    trigger
   end
 
   defp handle_exceptions(
          {:error, %PipelineError{error: :instance_failed, input: trigger, stage: stage}}
        ) do
     state = TriggerHistory.states()[:failed]
-    update_trigger_history_state_and_meta(trigger, state, %{info: :instance_failed, stage: stage})
+
+    trigger =
+      update_trigger_history_state_and_error(trigger, state, %{
+        info: :instance_failed,
+        stage: stage
+      })
+
     IO.puts("Instance creation failed. Pipeline execution failed.")
+    trigger
   end
 
-  defp handle_exceptions({:ok, %{trigger: trigger, failed_builds: failed_builds, stage: stage}}) do
+  defp handle_exceptions({:ok, %{trigger: trigger, failed_builds: failed_builds}}) do
     state = TriggerHistory.states()[:partially_completed]
 
-    update_trigger_history_state_and_meta(trigger, state, %{
-      info: "some_builds_failed",
-      failed_builds: failed_builds,
-      stage: stage
-    })
+    trigger =
+      update_trigger_history_state_and_error(trigger, state, %{
+        info: "some_builds_failed",
+        failed_builds: failed_builds
+      })
 
     IO.puts("Pipeline partially completed.! Some builds failed.!")
+    trigger
   end
 
   defp handle_exceptions({:ok, %{trigger: trigger}}) do
     state = TriggerHistory.states()[:success]
-    update_trigger_history(trigger, %{state: state})
+    trigger = update_trigger_history(trigger, %{state: state})
     IO.puts("Pipeline completed succesfully.!")
+    trigger
   end
 
-  # Update state and meta of a trigger history
-  @spec update_trigger_history_state_and_meta(TriggerHistory.t(), integer, map) ::
+  # Update state and error of a trigger history
+  @spec update_trigger_history_state_and_error(TriggerHistory.t(), integer, map) ::
           TriggerHistory.t()
-  defp update_trigger_history_state_and_meta(trigger, state, meta) do
+  defp update_trigger_history_state_and_error(trigger, state, error) do
     key = Timex.now() |> DateTime.to_iso8601()
-    meta = trigger.meta |> Map.put(key, meta)
-    params = %{state: state, meta: meta}
+    error = trigger.error |> Map.put(key, error)
+    params = %{state: state, error: error}
     trigger |> update_trigger_history(params)
   end
 
@@ -152,5 +165,11 @@ defmodule WraftDocWeb.Worker.BulkWorker do
   @spec update_trigger_history(TriggerHistory.t(), map) :: TriggerHistory.t()
   defp update_trigger_history(trigger, params) do
     trigger |> TriggerHistory.update_changeset(params) |> Repo.update!()
+  end
+
+  # Update trigger function, called after a trigger is run.
+  defp trigger_end_update(trigger) do
+    end_time = Timex.now()
+    trigger |> TriggerHistory.trigger_end_changeset(%{end_time: end_time}) |> Repo.update!()
   end
 end
