@@ -1254,6 +1254,123 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  describe "create_pipe_stage/3" do
+    test "creates pipe stage with valid attrs" do
+      user = insert(:user)
+      pipeline = insert(:pipeline, organisation: user.organisation)
+      c_type = insert(:content_type, organisation: user.organisation)
+      d_temp = insert(:data_template, content_type: c_type)
+      state = insert(:state, organisation: user.organisation)
+
+      attrs = %{
+        "state_id" => state.uuid,
+        "content_type_id" => c_type.uuid,
+        "data_template_id" => d_temp.uuid
+      }
+
+      count_before = Stage |> Repo.all() |> length()
+      {:ok, stage} = Document.create_pipe_stage(user, pipeline, attrs)
+      count_after = Stage |> Repo.all() |> length()
+
+      assert count_before + 1 == count_after
+      assert stage.content_type_id == c_type.id
+      assert stage.data_template_id == d_temp.id
+      assert stage.state_id == state.id
+      assert stage.pipeline_id == pipeline.id
+      assert stage.creator_id == user.id
+    end
+
+    test "returns unique constraint error when stage with same pipeline and content type ID exists" do
+      user = insert(:user)
+
+      pipeline = insert(:pipeline, organisation: user.organisation)
+      c_type = insert(:content_type, organisation: user.organisation)
+      d_temp = insert(:data_template, content_type: c_type)
+      state = insert(:state, organisation: user.organisation)
+      insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
+
+      attrs = %{
+        "state_id" => state.uuid,
+        "content_type_id" => c_type.uuid,
+        "data_template_id" => d_temp.uuid
+      }
+
+      count_before = Stage |> Repo.all() |> length()
+      {:error, changeset} = Document.create_pipe_stage(user, pipeline, attrs)
+      count_after = Stage |> Repo.all() |> length()
+
+      assert count_before == count_after
+      assert %{content_type_id: ["Already added.!"]} == errors_on(changeset)
+    end
+
+    test "returns nil with non-existent UUIDs of datas" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+
+      attrs = %{
+        "state_id" => Ecto.UUID.generate(),
+        "content_type_id" => Ecto.UUID.generate(),
+        "data_template_id" => Ecto.UUID.generate()
+      }
+
+      count_before = Stage |> Repo.all() |> length()
+      stage = Document.create_pipe_stage(user, pipeline, attrs)
+      count_after = Stage |> Repo.all() |> length()
+
+      assert count_before == count_after
+      assert stage == nil
+    end
+
+    test "returns nil with wrong data" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+
+      attrs = %{"state_id" => 1, "content_type_id" => 2, "data_template_id" => 3}
+
+      count_before = Stage |> Repo.all() |> length()
+      stage = Document.create_pipe_stage(user, pipeline, attrs)
+      count_after = Stage |> Repo.all() |> length()
+
+      assert count_before == count_after
+      assert stage == nil
+    end
+
+    test "returns nil when all required datas are not given" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+      state = insert(:state)
+      attrs = %{"state_id" => state.uuid}
+
+      count_before = Stage |> Repo.all() |> length()
+      stage = Document.create_pipe_stage(user, pipeline, attrs)
+      count_after = Stage |> Repo.all() |> length()
+
+      assert count_before == count_after
+      assert stage == nil
+    end
+
+    test "retuens nil when given datas does not belong to current user's organsation" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+      c_type = insert(:content_type)
+      d_temp = insert(:data_template)
+      state = insert(:state)
+
+      attrs = %{
+        "state_id" => state.uuid,
+        "content_type_id" => c_type.uuid,
+        "data_template_id" => d_temp.uuid
+      }
+
+      count_before = Stage |> Repo.all() |> length()
+      response = Document.create_pipe_stage(user, pipeline, attrs)
+      count_after = Stage |> Repo.all() |> length()
+
+      assert count_before == count_after
+      assert response == nil
+    end
+  end
+
   describe "pipeline_index/2" do
     test "returns list of pipelines in the users organisation only" do
       user = insert(:user)
