@@ -1849,7 +1849,6 @@ defmodule WraftDoc.Document do
   @doc """
   Create a pipeline.
   """
-  # TODO - improve tests
   @spec create_pipeline(User.t(), map) :: Pipeline.t() | {:error, Ecto.Changeset.t()}
   def create_pipeline(%{organisation_id: org_id} = current_user, params) do
     params = params |> Map.put("organisation_id", org_id)
@@ -2068,7 +2067,6 @@ defmodule WraftDoc.Document do
   @doc """
   Preload all datas of a pipe stage excluding pipeline.
   """
-  # TODO - write tests
   @spec preload_stage_details(Stage.t()) :: Stage.t()
   def preload_stage_details(stage) do
     stage |> Repo.preload([:content_type, :data_template, :state])
