@@ -1349,7 +1349,7 @@ defmodule WraftDoc.DocumentTest do
       assert stage == nil
     end
 
-    test "retuens nil when given datas does not belong to current user's organsation" do
+    test "returns nil when given datas does not belong to current user's organsation" do
       user = insert(:user)
       pipeline = insert(:pipeline)
       c_type = insert(:content_type)
@@ -1523,6 +1523,102 @@ defmodule WraftDoc.DocumentTest do
 
     test "returns nil invalid data" do
       response = Document.get_pipe_stage(nil, Ecto.UUID.generate())
+      assert response == nil
+    end
+  end
+
+  describe "update_pipe_stage/3" do
+    test "updates pipe stage with valid attrs" do
+      user = insert(:user)
+      stage = insert(:pipe_stage)
+      c_type = insert(:content_type, organisation: user.organisation)
+      d_temp = insert(:data_template, content_type: c_type)
+      state = insert(:state, organisation: user.organisation)
+
+      attrs = %{
+        "state_id" => state.uuid,
+        "content_type_id" => c_type.uuid,
+        "data_template_id" => d_temp.uuid
+      }
+
+      {:ok, updated_stage} = Document.update_pipe_stage(user, stage, attrs)
+
+      assert updated_stage.uuid == stage.uuid
+      assert updated_stage.content_type_id == c_type.id
+      assert updated_stage.data_template_id == d_temp.id
+      assert updated_stage.state_id == state.id
+    end
+
+    test "returns unique constraint error when a stage is updated with same pipeline and content type ID of another existing stage" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+      c_type = insert(:content_type, organisation: user.organisation)
+      d_temp = insert(:data_template, content_type: c_type)
+      state = insert(:state, organisation: user.organisation)
+      insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
+      stage = insert(:pipe_stage, pipeline: pipeline)
+
+      attrs = %{
+        "state_id" => state.uuid,
+        "content_type_id" => c_type.uuid,
+        "data_template_id" => d_temp.uuid
+      }
+
+      {:error, changeset} = Document.update_pipe_stage(user, stage, attrs)
+
+      assert %{content_type_id: ["Already added.!"]} == errors_on(changeset)
+    end
+
+    test "returns nil with non-existent UUIDs of datas" do
+      user = insert(:user)
+      stage = insert(:pipe_stage)
+
+      attrs = %{
+        "state_id" => Ecto.UUID.generate(),
+        "content_type_id" => Ecto.UUID.generate(),
+        "data_template_id" => Ecto.UUID.generate()
+      }
+
+      stage = Document.update_pipe_stage(user, stage, attrs)
+
+      assert stage == nil
+    end
+
+    test "returns nil with wrong data" do
+      user = insert(:user)
+      stage = insert(:pipe_stage)
+      attrs = %{"state_id" => 1, "content_type_id" => 2, "data_template_id" => 3}
+      stage = Document.update_pipe_stage(user, stage, attrs)
+
+      assert stage == nil
+    end
+
+    test "returns nil when all required datas are not given" do
+      user = insert(:user)
+      stage = insert(:pipe_stage)
+      state = insert(:state)
+      attrs = %{"state_id" => state.uuid}
+
+      stage = Document.update_pipe_stage(user, stage, attrs)
+
+      assert stage == nil
+    end
+
+    test "returns nil when given datas does not belong to current user's organsation" do
+      user = insert(:user)
+      stage = insert(:pipe_stage)
+      c_type = insert(:content_type)
+      d_temp = insert(:data_template)
+      state = insert(:state)
+
+      attrs = %{
+        "state_id" => state.uuid,
+        "content_type_id" => c_type.uuid,
+        "data_template_id" => d_temp.uuid
+      }
+
+      response = Document.update_pipe_stage(user, stage, attrs)
+
       assert response == nil
     end
   end
