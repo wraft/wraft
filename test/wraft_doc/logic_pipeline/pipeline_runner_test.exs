@@ -145,4 +145,23 @@ defmodule WraftDoc.PipelineRunnerTest do
       assert instance.creator_id == nil
     end
   end
+
+  describe "instances_created?/1" do
+    test "returns true when the list of instances contains only instance structs" do
+      instance1 = insert(:instance)
+      instance2 = insert(:instance)
+
+      response = PipelineRunner.instances_created?(%{instances: [instance1, instance2]})
+      assert response == true
+    end
+
+    test "returns false when the list of instances contains error tuples also" do
+      instance1 = insert(:instance)
+
+      response =
+        PipelineRunner.instances_created?(%{instances: [instance1, {:error, %Ecto.Changeset{}}]})
+
+      assert response == false
+    end
+  end
 end
