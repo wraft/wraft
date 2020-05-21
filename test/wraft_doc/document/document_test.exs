@@ -16,6 +16,7 @@ defmodule WraftDoc.DocumentTest do
     Document.BlockTemplate,
     Document.Pipeline,
     Document.Pipeline.Stage,
+    Document.Pipeline.TriggerHistory,
     Document.Theme,
     Document.Asset,
     Document.Comment,
@@ -1757,6 +1758,42 @@ defmodule WraftDoc.DocumentTest do
       assert preloaded_stage.pipeline.name == stage.pipeline.name
       assert preloaded_stage.state.state == stage.state.state
       assert preloaded_stage.data_template.title == stage.data_template.title
+    end
+  end
+
+  describe "create_trigger_history/3" do
+    test "creates trigger history with valid attrs" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+      data = %{name: "John Doe"}
+      state = TriggerHistory.states()[:enqued]
+      count_before = TriggerHistory |> Repo.all() |> length
+      {:ok, trigger} = Document.create_trigger_history(user, pipeline, data)
+      count_after = TriggerHistory |> Repo.all() |> length
+
+      assert count_before + 1 == count_after
+      assert trigger.data == %{name: "John Doe"}
+      assert trigger.pipeline_id == pipeline.id
+      assert trigger.creator_id == user.id
+      assert trigger.state == state
+    end
+
+    test "returns error with invalid attrs" do
+      user = insert(:user)
+      pipeline = insert(:pipeline)
+      data = "wrong type"
+
+      count_before = TriggerHistory |> Repo.all() |> length
+      {:error, changeset} = Document.create_trigger_history(user, pipeline, data)
+      count_after = TriggerHistory |> Repo.all() |> length
+
+      assert count_before == count_after
+      assert %{data: ["is invalid"]} == errors_on(changeset)
+    end
+
+    test "retruns nil with wrong data" do
+      response = Document.create_trigger_history(nil, nil, %{})
+      assert response == nil
     end
   end
 end
