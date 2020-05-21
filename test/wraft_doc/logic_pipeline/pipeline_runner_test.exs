@@ -32,4 +32,17 @@ defmodule WraftDoc.PipelineRunnerTest do
       assert response == nil
     end
   end
+
+  describe "pipeline_exists?/1" do
+    test "returns true with valid input" do
+      pipeline = insert(:pipeline)
+      response = PipelineRunner.pipeline_exists?(%{pipeline: pipeline})
+      assert response == true
+    end
+
+    test "returns true with invalid input" do
+      response = PipelineRunner.pipeline_exists?(%{pipeline: nil})
+      assert response == false
+    end
+  end
 end
