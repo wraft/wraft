@@ -1039,7 +1039,7 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  descibe "update_data_template/3" do
+  describe "update_data_template/3" do
     test "update data_template on valid attrs" do
       user = insert(:user)
       data_template = insert(:data_template, creator: user)
@@ -1071,7 +1071,7 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  descibe "delete_data_template/2" do
+  describe "delete_data_template/2" do
     test "delete data_template deletes the data_template data" do
       user = insert(:user)
       data_template = insert(:data_template, creator: user)
