@@ -69,4 +69,17 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistoryTest do
       refute changeset.valid?
     end
   end
+
+  test "states/0 returns a list" do
+    states = TriggerHistory.states()
+
+    assert states == [
+             enqued: 1,
+             executing: 2,
+             pending: 3,
+             partially_completed: 4,
+             success: 5,
+             failed: 6
+           ]
+  end
 end
