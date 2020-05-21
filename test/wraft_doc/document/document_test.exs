@@ -1748,4 +1748,15 @@ defmodule WraftDoc.DocumentTest do
       assert response == nil
     end
   end
+
+  describe "preload_stage_details/1" do
+    test "preloads the details of a stage" do
+      stage = insert(:pipe_stage)
+      preloaded_stage = Document.preload_stage_details(stage)
+      assert preloaded_stage.content_type.name == stage.content_type.name
+      assert preloaded_stage.pipeline.name == stage.pipeline.name
+      assert preloaded_stage.state.state == stage.state.state
+      assert preloaded_stage.data_template.title == stage.data_template.title
+    end
+  end
 end
