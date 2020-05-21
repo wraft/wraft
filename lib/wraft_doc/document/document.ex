@@ -2085,7 +2085,6 @@ defmodule WraftDoc.Document do
   iex> create_trigger_history("user", "pipeline", "meta")
   nil
   """
-  # TODO - write tests
   @spec create_trigger_history(User.t(), Pipeline.t(), map) ::
           {:ok, TriggerHistory.t()} | {:error, Ecto.Changeset.t()} | nil
   def create_trigger_history(%User{id: u_id}, %Pipeline{} = pipeline, data) do
