@@ -74,7 +74,7 @@ defmodule WraftDoc.PipelineRunner do
     %{trigger: trigger, instances: instances, user: user}
   end
 
-  def create_instances(%{data: data, creator_id: nil, pipeline: %{stages: stages} = trigger}) do
+  def create_instances(%{data: data, creator_id: nil, pipeline: %{stages: stages}} = trigger) do
     type = Instance.types()[:pipeline_hook]
 
     instances =
