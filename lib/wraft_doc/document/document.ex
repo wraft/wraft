@@ -1974,9 +1974,8 @@ defmodule WraftDoc.Document do
   @doc """
   Updates a pipeline.
   """
-  # TODO - improve tests
   @spec pipeline_update(Pipeline.t(), User.t(), map) :: Pipeline.t()
-  def pipeline_update(pipeline, %User{id: user_id} = user, params) do
+  def pipeline_update(%Pipeline{} = pipeline, %User{id: user_id} = user, params) do
     pipeline
     |> Pipeline.update_changeset(params)
     |> Spur.update(%{actor: "#{user_id}"})
@@ -1989,6 +1988,8 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
+
+  def pipeline_update(_, _, _), do: nil
 
   @doc """
   Delete a pipeline.

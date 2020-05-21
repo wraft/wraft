@@ -1577,8 +1577,14 @@ defmodule WraftDoc.DocumentTest do
 
     test "returns error with invalid attrs" do
       user = insert(:user)
-      {:error, changeset} = Document.create_pipeline(user, %{})
-      assert %{name: ["can't be blank"], api_route: ["can't be blank"]} == errors_on(changeset)
+      pipeline = insert(:pipeline)
+      {:error, changeset} = Document.pipeline_update(pipeline, user, %{name: ""})
+      assert %{name: ["can't be blank"]} == errors_on(changeset)
+    end
+
+    test "returns nil with wrong data" do
+      response = Document.pipeline_update(nil, nil, %{})
+      assert response == nil
     end
   end
 
