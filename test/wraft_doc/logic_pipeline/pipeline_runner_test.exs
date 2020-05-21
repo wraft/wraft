@@ -8,7 +8,7 @@ defmodule WraftDoc.PipelineRunnerTest do
     test "returns preloaded trigger struct with trigger struct as input" do
       pipeline = insert(:pipeline)
       c_type = insert(:content_type)
-      stage = insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
+      insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
       c_type_field = insert(:content_type_field, content_type: c_type)
       trigger = insert(:trigger_history, pipeline: pipeline)
 
@@ -42,6 +42,33 @@ defmodule WraftDoc.PipelineRunnerTest do
 
     test "returns true with invalid input" do
       response = PipelineRunner.pipeline_exists?(%{pipeline: nil})
+      assert response == false
+    end
+  end
+
+  describe "values_provided?/1" do
+    test "returns true when values for all content type field values are provided in the data of trigger" do
+      pipeline = insert(:pipeline)
+      c_type = insert(:content_type)
+      insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
+      c_type_field = insert(:content_type_field, content_type: c_type)
+      pipeline = pipeline |> Repo.preload(stages: [{:content_type, :fields}])
+
+      trigger =
+        insert(:trigger_history, pipeline: pipeline, data: %{"#{c_type_field.name}" => "John Doe"})
+
+      response = PipelineRunner.values_provided?(trigger)
+      assert response == true
+    end
+
+    test "returns false when values for content type fields are missing" do
+      pipeline = insert(:pipeline)
+      c_type = insert(:content_type)
+      insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
+      insert(:content_type_field, content_type: c_type)
+      pipeline = pipeline |> Repo.preload(stages: [{:content_type, :fields}])
+      trigger = insert(:trigger_history, pipeline: pipeline, data: %{"name" => "John Doe"})
+      response = PipelineRunner.values_provided?(trigger)
       assert response == false
     end
   end
