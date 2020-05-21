@@ -10,7 +10,7 @@ defmodule WraftDoc.PipelineRunner do
     Document.Pipeline.TriggerHistory
   }
 
-  step(:get_pipeline_and_stages)
+  step(:preload_pipeline_and_stages)
   check(:pipeline_exists?, error_message: :pipeline_not_found)
   check(:values_provided?, error_message: :values_unavailable)
   step(:create_instances)
@@ -22,18 +22,20 @@ defmodule WraftDoc.PipelineRunner do
   @doc """
   Preload the pipeline and its stages and the content types and fields etc.
   """
-  @spec get_pipeline_and_stages(TriggerHistory.t()) :: TriggerHistory.t()
-  def get_pipeline_and_stages(trigger) do
+  @spec preload_pipeline_and_stages(TriggerHistory.t()) :: TriggerHistory.t() | nil
+  def preload_pipeline_and_stages(%TriggerHistory{} = trigger) do
     trigger
     |> Repo.preload(pipeline: [stages: [{:content_type, :fields}, :data_template, :state]])
   end
+
+  def preload_pipeline_and_stages(_), do: nil
 
   @doc """
   Check if the pipeline exists or not.
   """
   @spec pipeline_exists?(TriggerHistory.t()) :: boolean()
-  def pipeline_exists?(%{pipeline: pipeline}) when is_nil(pipeline), do: false
   def pipeline_exists?(%{pipeline: %Pipeline{}}), do: true
+  def pipeline_exists?(_), do: false
 
   @doc """
   Check if the data provided includes all the requied fields of all stages of the pipeline.
