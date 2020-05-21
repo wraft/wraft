@@ -1821,6 +1821,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a pipe stage.
   """
+  # TODO - test written
   @spec create_pipe_stage(User.t(), Pipeline.t(), map) ::
           nil | {:error, Ecto.Changeset.t()} | {:ok, any}
   def create_pipe_stage(
@@ -1965,6 +1966,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get all required fields and then update a stage.
   """
+  # TODO - test written
   @spec update_pipe_stage(User.t(), Stage.t(), map) ::
           {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
   def update_pipe_stage(%User{} = current_user, %Stage{} = stage, %{
