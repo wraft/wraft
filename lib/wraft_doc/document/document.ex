@@ -37,7 +37,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a layout.
   """
-
+  # TODO - improve tests
   @spec create_layout(User.t(), Engine.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
   def create_layout(%{organisation_id: org_id} = current_user, engine, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
@@ -60,6 +60,7 @@ defmodule WraftDoc.Document do
   @doc """
   Upload layout slug file.
   """
+  # TODO - write test
   @spec layout_files_upload(Layout.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
   def layout_files_upload(layout, %{"slug_file" => _} = params) do
     layout_update_files(layout, params)
@@ -112,6 +113,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a content type.
   """
+  # TODO - improve tests
   @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
           ContentType.t() | {:error, Ecto.Changeset.t()}
   def create_content_type(%{organisation_id: org_id} = current_user, layout, flow, params) do
@@ -168,6 +170,7 @@ defmodule WraftDoc.Document do
   @doc """
   List all engines.
   """
+  # TODO - write tests
   @spec engines_list(map) :: map
   def engines_list(params) do
     Repo.paginate(Engine, params)
@@ -176,6 +179,7 @@ defmodule WraftDoc.Document do
   @doc """
   List all layouts.
   """
+  # TODO - improve tests
   @spec layout_index(User.t(), map) :: map
   def layout_index(%{organisation_id: org_id}, params) do
     from(l in Layout,
@@ -206,6 +210,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a layout asset from its layout's and asset's UUIDs.
   """
+  # TODO - improve tests
   @spec get_layout_asset(binary, binary) :: LayoutAsset.t()
   def get_layout_asset(l_uuid, a_uuid) do
     from(la in LayoutAsset,
@@ -221,6 +226,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update a layout.
   """
+  # TODO - improve tests
   @spec update_layout(Layout.t(), User.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
   def update_layout(layout, current_user, %{"engine_uuid" => engine_uuid} = params) do
     %Engine{id: id} = get_engine(engine_uuid)
@@ -246,6 +252,7 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a layout.
   """
+  # TODO - improve tests
   @spec delete_layout(Layout.t(), User.t()) :: {:ok, Layout.t()} | {:error, Ecto.Changeset.t()}
   def delete_layout(layout, %User{id: id}) do
     layout
@@ -261,6 +268,7 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a layout asset.
   """
+  # TODO - improve tests
   @spec delete_layout_asset(LayoutAsset.t(), User.t()) ::
           {:ok, LayoutAsset.t()} | {:error, Ecto.Changeset.t()}
   def delete_layout_asset(layout_asset, %User{id: id}) do
@@ -273,6 +281,7 @@ defmodule WraftDoc.Document do
   @doc """
   List all content types.
   """
+  # TODO - improve tests
   @spec content_type_index(User.t(), map) :: map
   def content_type_index(%{organisation_id: org_id}, params) do
     from(ct in ContentType,
@@ -286,6 +295,7 @@ defmodule WraftDoc.Document do
   @doc """
   Show a content type.
   """
+  # TODO - improve tests
   @spec show_content_type(User.t(), Ecto.UUID.t()) ::
           %ContentType{layout: Layout.t(), creator: User.t()} | nil
   def show_content_type(user, uuid) do
@@ -297,6 +307,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type from its UUID and user's organisation ID.
   """
+  # TODO - improve tests
   @spec get_content_type(User.t(), Ecto.UUID.t()) :: ContentType.t() | nil
   def get_content_type(%User{organisation_id: org_id}, <<_::288>> = uuid) do
     Repo.get_by(ContentType, uuid: uuid, organisation_id: org_id)
@@ -307,6 +318,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type from its ID. Also fetches all its related datas.
   """
+  # TODO - write tests
   @spec get_content_type_from_id(integer()) :: %ContentType{layout: %Layout{}, creator: %User{}}
   def get_content_type_from_id(id) do
     Repo.get(ContentType, id)
@@ -316,6 +328,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type field from its UUID.
   """
+  # TODO - write tests
   @spec get_content_type_field(binary, User.t()) :: ContentTypeField.t()
   def get_content_type_field(uuid, %{organisation_id: org_id}) do
     from(cf in ContentTypeField,
@@ -329,6 +342,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update a content type.
   """
+  # TODO - write tests
   @spec update_content_type(ContentType.t(), User.t(), map) ::
           %ContentType{
             layout: Layout.t(),
@@ -367,6 +381,7 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a content type.
   """
+  # TODO - write tests
   @spec delete_content_type(ContentType.t(), User.t()) ::
           {:ok, ContentType.t()} | {:error, Ecto.Changeset.t()}
   def delete_content_type(content_type, %User{id: id}) do
@@ -383,6 +398,7 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a content type field.
   """
+  # TODO - improve tests
   @spec delete_content_type_field(ContentTypeField.t(), User.t()) ::
           {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()}
   def delete_content_type_field(content_type_field, %User{id: id}) do
@@ -393,6 +409,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a new instance.
   """
+  # TODO - improve tests
   @spec create_instance(User.t(), ContentType.t(), State.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
@@ -417,6 +434,7 @@ defmodule WraftDoc.Document do
   @doc """
   Same as create_instance/4, but does not add the insert activity to activity stream.
   """
+  # TODO write tests
   @spec create_instance(ContentType.t(), State.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
@@ -470,7 +488,10 @@ defmodule WraftDoc.Document do
     |> Repo.one()
   end
 
-  # Create or update the counter of a content type.integer()
+  @doc """
+  Create or update the counter of a content type.integer()
+  """
+  # TODO - improve tests
   @spec create_or_update_counter(ContentType.t()) :: {:ok, Counter} | {:error, Ecto.Changeset.t()}
   def create_or_update_counter(%ContentType{id: id}) do
     id
@@ -495,6 +516,7 @@ defmodule WraftDoc.Document do
   @doc """
   List all instances under an organisation.
   """
+  # TODO - improve tests
   @spec instance_index_of_an_organisation(User.t(), map) :: map
   def instance_index_of_an_organisation(%{organisation_id: org_id}, params) do
     from(i in Instance,
@@ -509,6 +531,7 @@ defmodule WraftDoc.Document do
   @doc """
   List all instances under a content types.
   """
+  # TODO - improve tests
   @spec instance_index(binary, map) :: map
   def instance_index(c_type_uuid, params) do
     from(i in Instance,
@@ -523,6 +546,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get an instance from its UUID.
   """
+  # TODO - improve tests
   @spec get_instance(binary, User.t()) :: Instance.t()
   def get_instance(uuid, %{organisation_id: org_id}) do
     from(i in Instance,
@@ -539,6 +563,7 @@ defmodule WraftDoc.Document do
   @doc """
   Show an instance.
   """
+  # TODO - improve tests
   @spec show_instance(binary, User.t()) ::
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
   def show_instance(instance_uuid, user) do
@@ -551,6 +576,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get the build document of the given instance.
   """
+  # TODO - write tests
   @spec get_built_document(Instance.t()) :: Instance.t() | nil
   def get_built_document(%{id: id, instance_id: instance_id} = instance) do
     from(h in History,
@@ -575,6 +601,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update an instance.
   """
+  # TODO - improve tests
   @spec update_instance(Instance.t(), User.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
           | {:error, Ecto.Changeset.t()}
@@ -650,7 +677,7 @@ defmodule WraftDoc.Document do
   Update instance's state if the flow IDs of both
   the new state and the instance's content type are same.
   """
-
+  # TODO - impove tests
   @spec update_instance_state(User.t(), Instance.t(), State.t()) ::
           Instance.t() | {:error, Ecto.Changeset.t()} | {:error, :wrong_flow}
   def update_instance_state(%{id: user_id}, instance, %{
@@ -673,6 +700,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update instance's state. Also add the from and to state of in the activity meta.
   """
+  # TODO - write tests
   @spec instance_state_upadate(Instance.t(), integer, integer, String.t(), String.t()) ::
           Instance.t() | {:error, Ecto.Changeset.t()}
   def instance_state_upadate(instance, user_id, state_id, old_state, new_state) do
@@ -697,6 +725,7 @@ defmodule WraftDoc.Document do
   @doc """
   Delete an instance.
   """
+  # TODO - write tests
   @spec delete_instance(Instance.t(), User.t()) ::
           {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
   def delete_instance(instance, %User{id: id}) do
@@ -707,6 +736,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get an engine from its UUID.
   """
+  # TODO - improve tests
   @spec get_engine(binary) :: Engine.t() | nil
   def get_engine(engine_uuid) do
     Repo.get_by(Engine, uuid: engine_uuid)
@@ -715,6 +745,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a theme.
   """
+  # TODO Improve tests
   @spec create_theme(User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
   def create_theme(%{organisation_id: org_id} = current_user, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
@@ -735,6 +766,7 @@ defmodule WraftDoc.Document do
   @doc """
   Upload theme file.
   """
+  # TODO - write tests
   @spec theme_file_upload(Theme.t(), map) :: {:ok, %Theme{}} | {:error, Ecto.Changeset.t()}
   def theme_file_upload(theme, %{"file" => _} = params) do
     theme |> Theme.file_changeset(params) |> Repo.update()
@@ -747,6 +779,7 @@ defmodule WraftDoc.Document do
   @doc """
   Index of themes inside current user's organisation.
   """
+  # TODO - improve tests
   @spec theme_index(User.t(), map) :: map
   def theme_index(%User{organisation_id: org_id}, params) do
     from(t in Theme, where: t.organisation_id == ^org_id, order_by: [desc: t.id])
@@ -756,6 +789,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a theme from its UUID.
   """
+  # TODO - improve test
   @spec get_theme(binary, User.t()) :: Theme.t() | nil
   def get_theme(theme_uuid, %{organisation_id: org_id}) do
     Repo.get_by(Theme, uuid: theme_uuid, organisation_id: org_id)
@@ -764,6 +798,7 @@ defmodule WraftDoc.Document do
   @doc """
   Show a theme.
   """
+  # TODO - improve test
   @spec show_theme(binary, User.t()) :: %Theme{creator: User.t()} | nil
   def show_theme(theme_uuid, user) do
     theme_uuid |> get_theme(user) |> Repo.preload([:creator])
@@ -772,6 +807,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update a theme.
   """
+  # TODO - improve test
   @spec update_theme(Theme.t(), User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
   def update_theme(theme, %User{id: id}, params) do
     theme |> Theme.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
@@ -780,6 +816,7 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a theme.
   """
+  # TODO - improve test
   @spec delete_theme(Theme.t(), User.t()) :: {:ok, Theme.t()}
   def delete_theme(theme, %User{id: id}) do
     theme
@@ -791,8 +828,7 @@ defmodule WraftDoc.Document do
   """
   @spec create_data_template(User.t(), ContentType.t(), map) ::
           {:ok, DataTemplate.t()} | {:error, Ecto.Changeset.t()}
-  ## TODO - remove the next comment
-  ## Test written
+  # TODO - imprvove tests
   def create_data_template(current_user, c_type, params) do
     current_user
     |> build_assoc(:data_templates, content_type: c_type)
@@ -803,6 +839,7 @@ defmodule WraftDoc.Document do
   @doc """
   List all data templates under a content types.
   """
+  # TODO - imprvove tests
   @spec data_template_index(binary, map) :: map
   def data_template_index(c_type_uuid, params) do
     from(dt in DataTemplate,
@@ -817,6 +854,7 @@ defmodule WraftDoc.Document do
   @doc """
   List all data templates under current user's organisation.
   """
+  # TODO - imprvove tests
   @spec data_templates_index_of_an_organisation(User.t(), map) :: map
   def data_templates_index_of_an_organisation(%{organisation_id: org_id}, params) do
     from(dt in DataTemplate,
@@ -831,6 +869,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a data template from its uuid and organisation ID of user.
   """
+  # TODO - imprvove tests
   @spec get_d_template(User.t(), Ecto.UUID.t()) :: DataTemplat.t() | nil
   def get_d_template(%User{organisation_id: org_id}, <<_::288>> = d_temp_uuid) do
     from(d in DataTemplate,
@@ -846,6 +885,7 @@ defmodule WraftDoc.Document do
   @doc """
   Show a data template.
   """
+  # TODO - imprvove tests
   @spec show_d_template(User.t(), Ecto.UUID.t()) ::
           %DataTemplate{creator: User.t(), content_type: ContentType.t()} | nil
   def show_d_template(user, d_temp_uuid) do
@@ -855,6 +895,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update a data template
   """
+  # TODO - imprvove tests
   @spec update_data_template(DataTemplate.t(), User.t(), map) ::
           %DataTemplate{creator: User.t(), content_type: ContentType.t()}
           | {:error, Ecto.Changeset.t()}
@@ -874,6 +915,7 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a data template
   """
+  # TODO - imprvove tests
   @spec delete_data_template(DataTemplate.t(), User.t()) :: {:ok, DataTemplate.t()}
   def delete_data_template(d_temp, %User{id: id}) do
     d_temp |> Spur.delete(%{actor: "#{id}", meta: d_temp})
@@ -882,6 +924,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create an asset.
   """
+  # TODO - imprvove tests
   @spec create_asset(User.t(), map) :: {:ok, Asset.t()}
   def create_asset(%{organisation_id: org_id} = current_user, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
@@ -902,6 +945,7 @@ defmodule WraftDoc.Document do
   @doc """
   Upload asset file.
   """
+  # TODO - write tests
   @spec asset_file_upload(Asset.t(), map) :: {:ok, %Asset{}} | {:error, Ecto.Changeset.t()}
   def asset_file_upload(asset, %{"file" => _} = params) do
     asset |> Asset.file_changeset(params) |> Repo.update()
@@ -914,6 +958,7 @@ defmodule WraftDoc.Document do
   @doc """
   Index of all assets in an organisation.
   """
+  # TODO - improve tests
   @spec asset_index(integer, map) :: map
   def asset_index(organisation_id, params) do
     from(a in Asset, where: a.organisation_id == ^organisation_id, order_by: [desc: a.id])
@@ -923,6 +968,7 @@ defmodule WraftDoc.Document do
   @doc """
   Show an asset.
   """
+  # TODO - improve tests
   @spec show_asset(binary, User.t()) :: %Asset{creator: User.t()}
   def show_asset(asset_uuid, user) do
     asset_uuid
@@ -933,6 +979,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get an asset from its UUID.
   """
+  # TODO - improve tests
   @spec get_asset(binary, User.t()) :: Asset.t()
   def get_asset(uuid, %{organisation_id: org_id}) do
     Repo.get_by(Asset, uuid: uuid, organisation_id: org_id)
@@ -941,6 +988,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update an asset.
   """
+  # TODO - improve tests
   @spec update_asset(Asset.t(), User.t(), map) :: {:ok, Asset.t()}
   def update_asset(asset, %User{id: id}, params) do
     asset |> Asset.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
@@ -957,6 +1005,7 @@ defmodule WraftDoc.Document do
   @doc """
   Preload assets of a layout.
   """
+  # TODO - write tests
   @spec preload_asset(Layout.t()) :: Layout.t()
   def preload_asset(layout) do
     layout |> Repo.preload([:assets])
@@ -965,7 +1014,7 @@ defmodule WraftDoc.Document do
   @doc """
   Build a PDF document.
   """
-
+  # TODO - write tests
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %Layout{
         slug: slug,
@@ -1053,11 +1102,9 @@ defmodule WraftDoc.Document do
     destination
   end
 
-  @doc """
-  Concat two strings.
-  """
+  # Concat two strings.
   @spec concat_strings(String.t(), String.t()) :: String.t()
-  def concat_strings(string1, string2) do
+  defp concat_strings(string1, string2) do
     string1 <> string2
   end
 
@@ -1089,6 +1136,7 @@ defmodule WraftDoc.Document do
   @doc """
   Insert the build history of the given instance.
   """
+  # TODO - write tests
   @spec add_build_history(User.t(), Instance.t(), map) :: History.t()
   def add_build_history(current_user, instance, params) do
     params = create_build_history_params(params)
@@ -1102,6 +1150,7 @@ defmodule WraftDoc.Document do
   @doc """
   Same as add_build_history/3, but creator will not be stored.
   """
+  # TODO - write tests
   @spec add_build_history(Instance.t(), map) :: History.t()
   def add_build_history(instance, params) do
     params = create_build_history_params(params)
@@ -1132,11 +1181,10 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
-
   Create a Block
   """
+  # TODO - write tests
   @spec create_block(User.t(), map) :: Block.t()
-
   def create_block(%{organisation_id: org_id} = current_user, params) do
     params = params |> Map.merge(%{"organisation_id" => org_id})
 
@@ -1156,7 +1204,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a block by id
   """
-
+  # TODO - write tests
   @spec get_block(Ecto.UUID.t(), User.t()) :: Block.t()
   def get_block(uuid, %{organisation_id: org_id}) do
     Block |> Repo.get_by(uuid: uuid, organisation_id: org_id)
@@ -1165,7 +1213,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update a block
   """
-
+  # TODO - write tests
   def update_block(%Block{} = block, params) do
     block
     |> Block.changeset(params)
@@ -1182,7 +1230,7 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a block
   """
-
+  # TODO - write tests
   def delete_block(%Block{} = block) do
     block
     |> Repo.delete()
@@ -1191,6 +1239,7 @@ defmodule WraftDoc.Document do
   @doc """
   Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create
   """
+  # TODO - write tests
   @spec generate_chart(map) :: map
   def generate_chart(%{
         "dataset" => dataset,
@@ -1225,6 +1274,7 @@ defmodule WraftDoc.Document do
   @doc """
   Generate tex code for the chart
   """
+  # TODO - write tests
   def generate_tex_chart(%{"dataset" => %{"data" => data}}) do
     "\\pie [rotate = 180 ]{#{tex_chart(data, "")}}"
   end
@@ -1245,6 +1295,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a field type
   """
+  # TODO - write tests
   @spec create_field_type(User.t(), map) :: {:ok, FieldType.t()}
   def create_field_type(current_user, params) do
     current_user
@@ -1256,6 +1307,7 @@ defmodule WraftDoc.Document do
   @doc """
   Index of all field types.
   """
+  # TODO - write tests
   @spec field_type_index(map) :: map
   def field_type_index(params) do
     from(ft in FieldType, order_by: [desc: ft.id])
@@ -1265,6 +1317,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a field type from its UUID.
   """
+  # TODO - write tests
   @spec get_field_type(binary, User.t()) :: FieldType.t()
   def get_field_type(field_type_uuid, %{organisation_id: org_id}) do
     from(ft in FieldType,
@@ -1280,6 +1333,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update a field type
   """
+  # TODO - write tests
   @spec update_field_type(FieldType.t(), map) :: FieldType.t() | {:error, Ecto.Changeset.t()}
   def update_field_type(field_type, params) do
     field_type
@@ -1290,6 +1344,7 @@ defmodule WraftDoc.Document do
   @doc """
   Deleta a field type
   """
+  # TODO - write tests
   @spec delete_field_type(FieldType.t()) :: {:ok, FieldType.t()} | {:error, Ecto.Changeset.t()}
   def delete_field_type(field_type) do
     field_type
@@ -1307,8 +1362,6 @@ defmodule WraftDoc.Document do
   """
   @spec insert_bulk_build_work(User.t(), binary(), binary(), binary(), map, Plug.Upload.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  ## TODO - remove the next comment
-  ## Test written
   def insert_bulk_build_work(
         %User{} = current_user,
         <<_::288>> = c_type_uuid,
@@ -1342,8 +1395,6 @@ defmodule WraftDoc.Document do
   """
   @spec insert_data_template_bulk_import_work(binary, binary, map, Plug.Uploap.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  ## TODO - remove the next comment
-  ## Test written
   def insert_data_template_bulk_import_work(
         <<_::288>> = user_uuid,
         <<_::288>> = c_type_uuid,
@@ -1373,8 +1424,6 @@ defmodule WraftDoc.Document do
   """
   @spec insert_block_template_bulk_import_work(binary, map, Plug.Uploap.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  ## TODO - remove the next comment
-  ## Test written
   def insert_block_template_bulk_import_work(<<_::288>> = user_uuid, mapping, %Plug.Upload{
         filename: filename,
         path: path
@@ -1396,6 +1445,7 @@ defmodule WraftDoc.Document do
   @doc """
   Creates a background job to run a pipeline.
   """
+  # TODO - write tests
   @spec create_pipeline_job(TriggerHistory.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
   def create_pipeline_job(%TriggerHistory{} = trigger_history) do
@@ -1413,6 +1463,7 @@ defmodule WraftDoc.Document do
   @doc """
   Bulk build function.
   """
+  # TODO - write tests
   @spec bulk_doc_build(User.t(), ContentType.t(), State.t(), DataTemplate.t(), map, String.t()) ::
           list | {:error, :not_found}
   def bulk_doc_build(
@@ -1472,6 +1523,7 @@ defmodule WraftDoc.Document do
   @doc """
   Generate params to create instance.
   """
+  # TODO - write tests
   @spec do_create_instance_params(map, DataTemplate.t()) :: map
   def do_create_instance_params(serialized, %{title_template: title_temp, data: template}) do
     title =
@@ -1512,6 +1564,7 @@ defmodule WraftDoc.Document do
   Builds the doc using `build_doc/2`.
   Here we also records the build history using `add_build_history/3`.
   """
+  # TODO - write tests
   @spec bulk_build(User.t(), Instance.t(), Layout.t()) :: tuple
   def bulk_build(current_user, instance, layout) do
     start_time = Timex.now()
@@ -1530,6 +1583,7 @@ defmodule WraftDoc.Document do
   @doc """
   Same as bulk_buil/3, but does not store the creator in build history.
   """
+  # TODO - write tests
   @spec bulk_build(Instance.t(), Layout.t()) :: {Collectable.t(), non_neg_integer()}
   def bulk_build(instance, layout) do
     start_time = Timex.now()
@@ -1561,10 +1615,9 @@ defmodule WraftDoc.Document do
   @doc """
   Creates data templates in bulk from the file given.
   """
+  ## TODO - improve tests
   @spec data_template_bulk_insert(User.t(), ContentType.t(), map, String.t()) ::
           [{:ok, DataTemplate.t()}] | {:error, :not_found}
-  ## TODO - remove the next comment
-  ## Test written
   def data_template_bulk_insert(%User{} = current_user, %ContentType{} = c_type, mapping, path) do
     # TODO Map will be arranged in the ascending order
     # of keys. This causes unexpected changes in decoded CSV
@@ -1576,8 +1629,6 @@ defmodule WraftDoc.Document do
     |> Enum.to_list()
   end
 
-  ## TODO - remove the next comment
-  # Test written
   def data_template_bulk_insert(_, _, _, _), do: {:error, :not_found}
 
   @spec bulk_d_temp_creation(map, User.t(), ContentType.t(), map) :: {:ok, DataTemplate.t()}
@@ -1591,8 +1642,7 @@ defmodule WraftDoc.Document do
   """
   @spec block_template_bulk_insert(User.t(), map, String.t()) ::
           [{:ok, BlockTemplate.t()}] | {:error, :not_found}
-  ## TODO - remove the next comment
-  # Test written
+  ## TODO - improve tests
   def block_template_bulk_insert(%User{} = current_user, mapping, path) do
     # TODO Map will be arranged in the ascending order
     # of keys. This causes unexpected changes in decoded CSV
@@ -1626,6 +1676,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a block template
   """
+  # TODO - improve tests
   @spec create_block_template(User.t(), map) :: BlockTemplate.t()
   def create_block_template(%{organisation_id: org_id} = current_user, params) do
     current_user
@@ -1644,6 +1695,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a block template by its uuid
   """
+  # TODO - write tests
   @spec get_block_template(Ecto.UUID.t(), User.t()) :: BlockTemplate.t()
   def get_block_template(uuid, %{organisation_id: org_id}) do
     BlockTemplate
@@ -1653,6 +1705,7 @@ defmodule WraftDoc.Document do
   @doc """
   Updates a block template
   """
+  # TODO - write tests
   @spec update_block_template(User.t(), BlockTemplate.t(), map) :: BlockTemplate.t()
   def update_block_template(%User{id: id}, block_template, params) do
     block_template
@@ -1670,6 +1723,7 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a block template by uuid
   """
+  # TODO - write tests
   @spec delete_block_template(User.t(), BlockTemplate.t()) :: BlockTemplate.t()
   def delete_block_template(%User{id: id}, %BlockTemplate{} = block_template) do
     block_template
@@ -1679,6 +1733,7 @@ defmodule WraftDoc.Document do
   @doc """
   Index of a block template by organisation
   """
+  # TODO - write tests
   @spec block_template_index(User.t(), map) :: List.t()
   def block_template_index(%{organisation_id: org_id}, params) do
     from(bt in BlockTemplate, where: bt.organisation_id == ^org_id, order_by: [desc: bt.id])
@@ -1688,7 +1743,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a comment
   """
-
+  # TODO - improve tests
   def create_comment(%{organisation_id: org_id} = current_user, params \\ %{}) do
     params = Map.put(params, "organisation_id", org_id)
 
@@ -1708,6 +1763,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a comment by uuid.
   """
+  # TODO - improve tests
   @spec get_comment(Ecto.UUID.t(), User.t()) :: Comment.t() | nil
   def get_comment(<<_::288>> = uuid, %{organisation_id: org_id}) do
     Comment
@@ -1717,6 +1773,7 @@ defmodule WraftDoc.Document do
   @doc """
   Fetch a comment and all its details.
   """
+  # TODO - improve tests
   @spec show_comment(Ecto.UUID.t(), User.t()) :: Comment.t() | nil
   def show_comment(<<_::288>> = uuid, user) do
     uuid |> get_comment(user) |> Repo.preload([{:user, :profile}])
@@ -1753,6 +1810,7 @@ defmodule WraftDoc.Document do
   @doc """
   Comments under a master
   """
+  # TODO - improve tests
   def comment_index(%{organisation_id: org_id}, %{"master_id" => master_id} = params) do
     from(c in Comment,
       where: c.organisation_id == ^org_id,
@@ -1767,6 +1825,7 @@ defmodule WraftDoc.Document do
   @doc """
    Replies under a comment
   """
+  # TODO - improve tests
   @spec comment_replies(%{organisation_id: any}, map) :: Scrivener.Page.t()
   def comment_replies(
         %{organisation_id: org_id} = user,
@@ -1788,9 +1847,8 @@ defmodule WraftDoc.Document do
   @doc """
   Create a pipeline.
   """
+  # TODO - improve tests
   @spec create_pipeline(User.t(), map) :: Pipeline.t() | {:error, Ecto.Changeset.t()}
-  # TODO- remove the next line
-  # Test written
   def create_pipeline(%{organisation_id: org_id} = current_user, params) do
     params = params |> Map.put("organisation_id", org_id)
 
@@ -1821,7 +1879,6 @@ defmodule WraftDoc.Document do
   @doc """
   Create a pipe stage.
   """
-  # TODO - test written
   @spec create_pipe_stage(User.t(), Pipeline.t(), map) ::
           nil | {:error, Ecto.Changeset.t()} | {:ok, any}
   def create_pipe_stage(
@@ -1883,7 +1940,6 @@ defmodule WraftDoc.Document do
   @doc """
   List of all pipelines in the user's organisation.
   """
-  # TODO - Test written
   @spec pipeline_index(User.t(), map) :: map | nil
   def pipeline_index(%User{organisation_id: org_id}, params) do
     from(p in Pipeline, where: p.organisation_id == ^org_id)
@@ -1895,7 +1951,6 @@ defmodule WraftDoc.Document do
   @doc """
   Get a pipeline from its UUID and user's organisation.
   """
-  # TODO - Test written
   @spec get_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
   def get_pipeline(%User{organisation_id: org_id}, <<_::288>> = p_uuid) do
     from(p in Pipeline, where: p.uuid == ^p_uuid, where: p.organisation_id == ^org_id)
@@ -1907,7 +1962,6 @@ defmodule WraftDoc.Document do
   @doc """
   Get a pipeline and its details.
   """
-  # TODO - Test written
   @spec show_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
   def show_pipeline(current_user, p_uuid) do
     current_user
@@ -1918,7 +1972,7 @@ defmodule WraftDoc.Document do
   @doc """
   Updates a pipeline.
   """
-  # TODO - Test written
+  # TODO - improve tests
   @spec pipeline_update(Pipeline.t(), User.t(), map) :: Pipeline.t()
   def pipeline_update(pipeline, %User{id: user_id} = user, params) do
     pipeline
@@ -1937,7 +1991,6 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a pipeline.
   """
-  # TODO - Test written
   @spec delete_pipeline(Pipeline.t(), User.t()) ::
           {:ok, Pipeline.t()} | {:error, Ecto.Changeset.t()}
   def delete_pipeline(%Pipeline{} = pipeline, %User{id: id}) do
@@ -1950,7 +2003,6 @@ defmodule WraftDoc.Document do
   @doc """
   Get a pipeline stage from its UUID and user's organisation.
   """
-  # TODO - Test written
   @spec get_pipe_stage(User.t(), Ecto.UUID.t()) :: Stage.t() | nil
   def get_pipe_stage(%User{organisation_id: org_id}, <<_::288>> = s_uuid) do
     from(s in Stage,
@@ -1966,7 +2018,6 @@ defmodule WraftDoc.Document do
   @doc """
   Get all required fields and then update a stage.
   """
-  # TODO - test written
   @spec update_pipe_stage(User.t(), Stage.t(), map) ::
           {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
   def update_pipe_stage(%User{} = current_user, %Stage{} = stage, %{
@@ -1999,7 +2050,6 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a pipe stage.
   """
-  # TODO - Test written
   @spec delete_pipe_stage(User.t(), Stage.t()) :: {:ok, Stage.t()}
   def delete_pipe_stage(%User{id: id}, %Stage{} = pipe_stage) do
     %{pipeline: pipeline, content_type: c_type, data_template: d_temp, state: state} =
@@ -2015,6 +2065,7 @@ defmodule WraftDoc.Document do
   @doc """
   Preload all datas of a pipe stage excluding pipeline.
   """
+  # TODO - write tests
   @spec preload_stage_details(Stage.t()) :: Stage.t()
   def preload_stage_details(stage) do
     stage |> Repo.preload([:content_type, :data_template, :state])
@@ -2033,6 +2084,7 @@ defmodule WraftDoc.Document do
   iex> create_trigger_history("user", "pipeline", "meta")
   nil
   """
+  # TODO - write tests
   @spec create_trigger_history(User.t(), Pipeline.t(), map) ::
           {:ok, TriggerHistory.t()} | {:error, Ecto.Changeset.t()} | nil
   def create_trigger_history(%User{id: u_id}, %Pipeline{} = pipeline, data) do
