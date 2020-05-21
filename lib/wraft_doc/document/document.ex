@@ -203,9 +203,11 @@ defmodule WraftDoc.Document do
   Get a layout from its UUID.
   """
   @spec get_layout(binary, User.t()) :: Layout.t()
-  def get_layout(uuid, %{organisation_id: org_id}) do
+  def get_layout(<<_::288>> = uuid, %{organisation_id: org_id}) do
     Repo.get_by(Layout, uuid: uuid, organisation_id: org_id)
   end
+
+  def get_layout(_, _), do: nil
 
   @doc """
   Get a layout asset from its layout's and asset's UUIDs.
