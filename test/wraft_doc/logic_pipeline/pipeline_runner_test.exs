@@ -2,7 +2,7 @@ defmodule WraftDoc.PipelineRunnerTest do
   use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
   use ExUnit.Case
-  alias WraftDoc.PipelineRunner
+  alias WraftDoc.{PipelineRunner, Document.Instance}
 
   describe "preload_pipeline_and_stages/1" do
     test "returns preloaded trigger struct with trigger struct as input" do
@@ -70,6 +70,79 @@ defmodule WraftDoc.PipelineRunnerTest do
       trigger = insert(:trigger_history, pipeline: pipeline, data: %{"name" => "John Doe"})
       response = PipelineRunner.values_provided?(trigger)
       assert response == false
+    end
+  end
+
+  describe "create_instances/1" do
+    test "creates instance and returns a map with created instance when trigger has a creator_id" do
+      pipeline = insert(:pipeline)
+      c_type1 = insert(:content_type)
+      c_type2 = insert(:content_type)
+      insert(:pipe_stage, pipeline: pipeline, content_type: c_type1)
+      insert(:pipe_stage, pipeline: pipeline, content_type: c_type2)
+      c_type_field1 = insert(:content_type_field, content_type: c_type1)
+      c_type_field2 = insert(:content_type_field, content_type: c_type2)
+
+      pipeline =
+        pipeline |> Repo.preload(stages: [{:content_type, :fields}, :data_template, :state])
+
+      trigger =
+        insert(:trigger_history,
+          pipeline: pipeline,
+          data: %{
+            "#{c_type_field1.name}" => "John Doe",
+            "#{c_type_field2.name}" => "John Doe Jr."
+          }
+        )
+
+      before_count = Instance |> Repo.all() |> length
+      response = PipelineRunner.create_instances(trigger)
+
+      instances =
+        response.instances |> Enum.map(fn x -> x.content_type.name end) |> List.to_string()
+
+      assert before_count + 2 == Instance |> Repo.all() |> length
+      assert response.trigger == trigger
+      assert instances =~ c_type1.name
+      assert instances =~ c_type2.name
+      assert response.user.id == trigger.creator.id
+    end
+
+    test "creates instance and returns a map with created instance when trigger does not have creator ID" do
+      pipeline = insert(:pipeline)
+      c_type1 = insert(:content_type)
+      c_type2 = insert(:content_type)
+      insert(:pipe_stage, pipeline: pipeline, content_type: c_type1)
+      insert(:pipe_stage, pipeline: pipeline, content_type: c_type2)
+      c_type_field1 = insert(:content_type_field, content_type: c_type1)
+      c_type_field2 = insert(:content_type_field, content_type: c_type2)
+
+      pipeline =
+        pipeline |> Repo.preload(stages: [{:content_type, :fields}, :data_template, :state])
+
+      trigger =
+        insert(:trigger_history,
+          pipeline: pipeline,
+          creator: nil,
+          data: %{
+            "#{c_type_field1.name}" => "John Doe",
+            "#{c_type_field2.name}" => "John Doe Jr."
+          }
+        )
+
+      before_count = Instance |> Repo.all() |> length
+      response = PipelineRunner.create_instances(trigger)
+
+      instances =
+        response.instances |> Enum.map(fn x -> x.content_type.name end) |> List.to_string()
+
+      instance = response.instances |> List.first()
+
+      assert before_count + 2 == Instance |> Repo.all() |> length
+      assert response.trigger == trigger
+      assert instances =~ c_type1.name
+      assert instances =~ c_type2.name
+      assert instance.creator_id == nil
     end
   end
 end
