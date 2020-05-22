@@ -10,30 +10,32 @@ defmodule WraftDoc.PipelineRunner do
     Document.Pipeline.TriggerHistory
   }
 
-  step(:get_pipeline_and_stages)
+  step(:preload_pipeline_and_stages)
   check(:pipeline_exists?, error_message: :pipeline_not_found)
   check(:values_provided?, error_message: :values_unavailable)
   step(:create_instances)
   check(:instances_created?, error_message: :instance_failed)
   step(:build)
-  check(:build_failed?)
+  tee(:build_failed?)
   step(:zip_builds)
 
   @doc """
   Preload the pipeline and its stages and the content types and fields etc.
   """
-  @spec get_pipeline_and_stages(TriggerHistory.t()) :: TriggerHistory.t()
-  def get_pipeline_and_stages(trigger) do
+  @spec preload_pipeline_and_stages(TriggerHistory.t()) :: TriggerHistory.t() | nil
+  def preload_pipeline_and_stages(%TriggerHistory{} = trigger) do
     trigger
     |> Repo.preload(pipeline: [stages: [{:content_type, :fields}, :data_template, :state]])
   end
+
+  def preload_pipeline_and_stages(_), do: nil
 
   @doc """
   Check if the pipeline exists or not.
   """
   @spec pipeline_exists?(TriggerHistory.t()) :: boolean()
-  def pipeline_exists?(%{pipeline: pipeline}) when is_nil(pipeline), do: false
   def pipeline_exists?(%{pipeline: %Pipeline{}}), do: true
+  def pipeline_exists?(_), do: false
 
   @doc """
   Check if the data provided includes all the requied fields of all stages of the pipeline.
@@ -72,7 +74,7 @@ defmodule WraftDoc.PipelineRunner do
     %{trigger: trigger, instances: instances, user: user}
   end
 
-  def create_instances(%{data: data, creator_id: nil, pipeline: %{stages: stages} = trigger}) do
+  def create_instances(%{data: data, creator_id: nil, pipeline: %{stages: stages}} = trigger) do
     type = Instance.types()[:pipeline_hook]
 
     instances =
@@ -107,51 +109,59 @@ defmodule WraftDoc.PipelineRunner do
   @doc """
   Build all stages.
   """
+  # TODO - write tests - Tests commented to use mock
   @spec build(map) :: map
-  def build(%{instances: instances, user: user} = data) do
+  def build(%{instances: instances, user: user} = input) do
     builds =
       Enum.map(instances, fn instance ->
         instance = instance |> Repo.preload(content_type: [{:layout, :assets}])
-        Document.bulk_build(user, instance, instance.content_type.layout)
+        resp = Document.bulk_build(user, instance, instance.content_type.layout)
+        %{instance: instance, response: resp}
       end)
 
-    data |> Map.put(:builds, builds)
+    input |> Map.put(:builds, builds)
   end
 
-  def build(%{instances: instances} = data) do
+  def build(%{instances: instances} = input) do
     builds =
       Enum.map(instances, fn instance ->
         instance = instance |> Repo.preload(content_type: [{:layout, :assets}])
-        Document.bulk_build(instance, instance.content_type.layout)
+        resp = Document.bulk_build(instance, instance.content_type.layout)
+        %{instance: instance, response: resp}
       end)
 
-    data |> Map.put(:builds, builds)
+    input |> Map.put(:builds, builds)
   end
 
   @doc """
   Check if all the builds were successfull or not
   """
-  @spec build_failed?(map) :: boolean
-  def build_failed?(%{builds: builds}) do
-    builds
-    |> Enum.find(fn {_k, error_code} -> error_code != 0 end)
-    |> case do
-      nil ->
-        true
+  @spec build_failed?(map) :: map
+  def build_failed?(%{builds: builds} = input) do
+    failed_builds =
+      builds
+      |> Stream.map(fn
+        %{response: {_, 0}} ->
+          nil
 
-      _ ->
-        false
-    end
+        %{instance: instance, response: {_, error_code}} ->
+          %{instance: instance, error_code: error_code}
+      end)
+      |> Stream.filter(fn x -> x != nil end)
+      |> Enum.to_list()
+
+    input |> Map.put(:failed_builds, failed_builds)
   end
 
   @doc """
   Zip all the builds.
   """
-  @spec zip_builds(map) :: String.t()
-  def zip_builds(%{instances: instances}) do
+  @spec zip_builds(map) :: map
+  def zip_builds(%{instances: instances} = input) do
     builds =
       instances
-      |> Enum.map(fn x -> x |> Document.get_built_document() |> Map.get(:build) end)
+      |> Stream.map(fn x -> x |> Document.get_built_document() |> Map.get(:build) end)
+      |> Stream.filter(fn x -> x != nil end)
       |> Enum.map(&String.to_charlist/1)
 
     time = Timex.now() |> DateTime.to_iso8601()
@@ -161,6 +171,6 @@ defmodule WraftDoc.PipelineRunner do
     File.mkdir_p!("temp/pipe_builds/")
     System.cmd("cp", [zip_name, dest_path])
     File.rm(zip_name)
-    dest_path
+    input |> Map.put(:dest_path, dest_path)
   end
 end

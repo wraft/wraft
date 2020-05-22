@@ -25,13 +25,13 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
             info: "Trigger accepted."
           })
         end,
-      TriggerMeta:
+      TriggerData:
         swagger_schema do
-          title("Meta of trigger message")
-          description("Meta of a trigger message")
+          title("Data of trigger message")
+          description("Data of a trigger message")
 
           properties do
-            data(:map, "Meta of a trigger message", required: true)
+            data(:map, "Data of a trigger message", required: true)
           end
 
           example(%{data: %{name: "John Doe", position: "HR Manager"}})
@@ -49,7 +49,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
 
     parameters do
       pipeline_id(:path, :string, "pipeline id", required: true)
-      meta(:body, Schema.ref(:TriggerMeta), "Meta of a trigger", required: true)
+      data(:body, Schema.ref(:TriggerData), "Data of a trigger", required: true)
     end
 
     response(200, "OK", Schema.ref(:GeneralResponse))
@@ -59,12 +59,12 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"pipeline_id" => p_uuid, "data" => meta}) do
+  def create(conn, %{"pipeline_id" => p_uuid, "data" => data}) do
     current_user = conn.assigns[:current_user]
 
     with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, p_uuid),
          {:ok, %TriggerHistory{} = trigger_history} <-
-           Document.create_trigger_history(current_user, pipeline, meta),
+           Document.create_trigger_history(current_user, pipeline, data),
          {:ok, %Oban.Job{}} <- Document.create_pipeline_job(trigger_history) do
       conn |> render("create.json")
     end
