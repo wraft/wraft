@@ -235,11 +235,11 @@ defmodule WraftDoc.PipelineRunnerTest do
     test "builds a zip file" do
       instance1 = insert(:instance)
       instance2 = insert(:instance)
-      path = fn instance_id -> "uploads/contents/#{instance1.instance_id}" end
+      path = fn instance_id -> "uploads/contents/#{instance_id}" end
       file_path1 = path.(instance1.instance_id)
       file_path2 = path.(instance2.instance_id)
       File.mkdir_p!(file_path1)
-      File.mkdir_p!(file_path1)
+      File.mkdir_p!(file_path2)
       File.write!(file_path1 <> "/final.pdf", "content")
       File.write!(file_path2 <> "/final.pdf", "content")
 
@@ -247,12 +247,12 @@ defmodule WraftDoc.PipelineRunnerTest do
       insert(:build_history, content: instance2)
 
       response = PipelineRunner.zip_builds(%{instances: [instance1, instance1]})
+      zip_file_path = "temp/pipe_builds/#{response.zip_name}"
+      assert File.exists?(zip_file_path) == true
 
-      assert File.exists?(response.dest_path) == true
-
-      File.rm(file_path1)
-      File.rm(file_path2)
-      File.rm(response.dest_path)
+      File.rm_rf(file_path1)
+      File.rm_rf(file_path2)
+      File.rm(zip_file_path)
     end
   end
 end

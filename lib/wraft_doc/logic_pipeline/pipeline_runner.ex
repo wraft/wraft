@@ -171,6 +171,6 @@ defmodule WraftDoc.PipelineRunner do
     File.mkdir_p!("temp/pipe_builds/")
     System.cmd("cp", [zip_name, dest_path])
     File.rm(zip_name)
-    input |> Map.put(:dest_path, dest_path)
+    input |> Map.put(:zip_file, zip_name)
   end
 end
