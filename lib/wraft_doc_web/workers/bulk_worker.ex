@@ -131,22 +131,25 @@ defmodule WraftDocWeb.Worker.BulkWorker do
     trigger
   end
 
-  defp handle_exceptions({:ok, %{trigger: trigger, failed_builds: failed_builds}}) do
+  defp handle_exceptions(
+         {:ok, %{trigger: trigger, failed_builds: failed_builds, zip_file: zip_file}}
+       ) do
     state = TriggerHistory.states()[:partially_completed]
 
     trigger =
       update_trigger_history_state_and_error(trigger, state, %{
         info: "some_builds_failed",
-        failed_builds: failed_builds
+        failed_builds: failed_builds,
+        zip_file: zip_file
       })
 
     IO.puts("Pipeline partially completed.! Some builds failed.!")
     trigger
   end
 
-  defp handle_exceptions({:ok, %{trigger: trigger}}) do
+  defp handle_exceptions({:ok, %{trigger: trigger, zip_file: zip_file}}) do
     state = TriggerHistory.states()[:success]
-    trigger = update_trigger_history(trigger, %{state: state})
+    trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
     IO.puts("Pipeline completed succesfully.!")
     trigger
   end

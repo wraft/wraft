@@ -30,6 +30,7 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
     field(:start_time, :naive_datetime)
     field(:end_time, :naive_datetime)
     field(:duration, :integer)
+    field(:zip_file, :string)
     belongs_to(:pipeline, WraftDoc.Document.Pipeline)
     belongs_to(:creator, WraftDoc.Account.User)
     timestamps()
@@ -49,7 +50,7 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
 
   def update_changeset(%TriggerHistory{} = trigger, attrs \\ %{}) do
     trigger
-    |> cast(attrs, [:error, :state, :start_time])
+    |> cast(attrs, [:error, :state, :start_time, :zip_file])
     |> validate_required([:state, :start_time])
   end
 
