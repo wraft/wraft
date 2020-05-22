@@ -39,7 +39,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
             id(:string, "ID of the pipe stage")
             inserted_at(:string, "When was the pipe stage inserted", format: "ISO-8601")
             updated_at(:string, "When was the pipe stage last updated", format: "ISO-8601")
-            content_type(Schema.ref(:ContentTypeWithoutFields))
+            content_type(Schema.ref(:ContentTypeWithFields))
             data_template(Schema.ref(:DataTemplate))
             state(Schema.ref(:State))
           end
@@ -52,6 +52,18 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
               id: "1232148nb3478",
               name: "Offer letter",
               description: "An offer letter",
+              fields: [
+                %{
+                  key: "position",
+                  field_type_id: "kjb14713132lkdac",
+                  meta: %{"src" => "/img/img.png", "alt" => "Image"}
+                },
+                %{
+                  key: "name",
+                  field_type_id: "kjb2347mnsad",
+                  meta: %{"src" => "/img/img.png", "alt" => "Image"}
+                }
+              ],
               prefix: "OFFLET",
               color: "#fffff",
               updated_at: "2020-01-21T14:00:00Z",
@@ -115,7 +127,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
       pipeline(:body, Schema.ref(:PipeStageRequestMap), "Pipe stage to be created", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:PipelineAndStages))
+    response(200, "Ok", Schema.ref(:PipeStage))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
