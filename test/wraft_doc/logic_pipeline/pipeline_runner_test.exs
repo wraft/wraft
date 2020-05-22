@@ -198,4 +198,27 @@ defmodule WraftDoc.PipelineRunnerTest do
       assert response_instance_ids == instance_ids
     end
   end
+
+  describe "build_failed?/1" do
+    test "returns a map with list of maps of build failed instances and their error codes when there are failed builds" do
+      instances = insert_list(3, :instance)
+
+      builds =
+        instances |> Enum.map(fn x -> %{instance: x, response: {"", Enum.random(0..3)}} end)
+
+      failed_build_instance_ids =
+        builds
+        |> Stream.filter(fn %{response: {_, x}} -> x != 0 end)
+        |> Stream.map(fn x -> x.instance.instance_id end)
+        |> Enum.to_list()
+
+      response = PipelineRunner.build_failed?(%{builds: builds})
+      error_codes = response.failed_builds |> Enum.map(fn x -> x.error_code end)
+      failed_instance_ids = response.failed_builds |> Enum.map(fn x -> x.instance.instance_id end)
+
+      refute 0 in error_codes
+      refute nil in response.failed_builds
+      assert failed_instance_ids == failed_build_instance_ids
+    end
+  end
 end
