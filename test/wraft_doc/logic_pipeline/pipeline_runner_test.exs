@@ -220,16 +220,27 @@ defmodule WraftDoc.PipelineRunnerTest do
       refute nil in response.failed_builds
       assert failed_instance_ids == failed_build_instance_ids
     end
+
+    test "returns a map with empty list for the faile_builds key when there are no failed builds" do
+      instances = insert_list(3, :instance)
+      builds = instances |> Enum.map(fn x -> %{instance: x, response: {"", 0}} end)
+
+      response = PipelineRunner.build_failed?(%{builds: builds})
+
+      assert response.failed_builds == []
+    end
   end
 
   describe "zip_builds/1" do
-    test "returns a map with path of created zip file path" do
+    test "builds a zip file" do
       instance1 = insert(:instance)
       instance2 = insert(:instance)
-      file_path1 = "uploads/contents/#{instance1.instance_id}/final.pdf"
-      file_path2 = "uploads/contents/#{instance2.instance_id}/final.pdf"
+      path = fn instance_id -> "uploads/contents/#{instance1.instance_id}/final.pdf" end
+      file_path1 = path.(instance1.instance_id)
+      file_path2 = path.(instance2.instance_id)
       insert(:build_history, content: instance1)
       insert(:build_history, content: instance2)
+
       File.write!(file_path1, "content")
       File.write!(file_path2, "content")
       response = PipelineRunner.zip_builds(%{instances: [instance1, instance1]})
