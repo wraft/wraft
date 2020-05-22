@@ -2162,4 +2162,19 @@ defmodule WraftDoc.Document do
   end
 
   def create_trigger_history(_, _, _), do: nil
+
+  @doc """
+  Get all the triggers under a pipeline.
+  """
+  @spec get_trigger_histories_of_a_pipeline(Pipeline.t(), map) :: map | nil
+  def get_trigger_histories_of_a_pipeline(%Pipeline{id: id}, params) do
+    from(t in TriggerHistory,
+      where: t.pipeline_id == ^id,
+      preload: [:creator],
+      order_by: [desc: t.inserted_at]
+    )
+    |> Repo.paginate(params)
+  end
+
+  def get_trigger_histories_of_a_pipeline(_, _), do: nil
 end
