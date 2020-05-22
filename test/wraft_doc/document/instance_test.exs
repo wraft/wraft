@@ -42,4 +42,9 @@ defmodule WraftDoc.Document.InstanceTest do
 
     assert "Instance with the ID exists.!" in errors_on(changeset, :instance_id)
   end
+
+  test "types/0 returns a list" do
+    types = Instance.types()
+    assert types == [normal: 1, bulk_build: 2, pipeline_api: 3, pipeline_hook: 4]
+  end
 end
