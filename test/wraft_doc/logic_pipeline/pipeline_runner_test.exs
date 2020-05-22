@@ -247,7 +247,7 @@ defmodule WraftDoc.PipelineRunnerTest do
       insert(:build_history, content: instance2)
 
       response = PipelineRunner.zip_builds(%{instances: [instance1, instance1]})
-      zip_file_path = "temp/pipe_builds/#{response.zip_name}"
+      zip_file_path = "temp/pipe_builds/#{response.zip_file}"
       assert File.exists?(zip_file_path) == true
 
       File.rm_rf(file_path1)
