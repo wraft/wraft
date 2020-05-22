@@ -95,7 +95,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           type(:array)
           items(Schema.ref(:ContentTypeFieldRequest))
         end,
-      ContentType:
+      ContentTypeWithFields:
         swagger_schema do
           title("Content Type")
           description("A Content Type.")
@@ -575,7 +575,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
       id(:path, :string, "content type id", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:ContentType))
+    response(200, "Ok", Schema.ref(:ContentTypeWithoutFields))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(404, "Not Found", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))

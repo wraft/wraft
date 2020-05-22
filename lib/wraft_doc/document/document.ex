@@ -1923,7 +1923,7 @@ defmodule WraftDoc.Document do
     |> case do
       {:ok, pipeline} ->
         create_pipe_stages(current_user, pipeline, params)
-        pipeline |> Repo.preload(stages: [:content_type, :data_template, :state])
+        pipeline |> Repo.preload(stages: [{:content_type, :fields}, :data_template, :state])
 
       {:error, _} = changeset ->
         changeset
@@ -2030,7 +2030,7 @@ defmodule WraftDoc.Document do
   def show_pipeline(current_user, p_uuid) do
     current_user
     |> get_pipeline(p_uuid)
-    |> Repo.preload([:creator, stages: [:content_type, :data_template, :state]])
+    |> Repo.preload([:creator, stages: [{:content_type, :fields}, :data_template, :state]])
   end
 
   @doc """
@@ -2044,7 +2044,9 @@ defmodule WraftDoc.Document do
     |> case do
       {:ok, pipeline} ->
         user |> create_pipe_stages(pipeline, params)
-        pipeline |> Repo.preload([:creator, stages: [:content_type, :data_template, :state]])
+
+        pipeline
+        |> Repo.preload([:creator, stages: [{:content_type, :fields}, :data_template, :state]])
 
       {:error, _} = changeset ->
         changeset
@@ -2132,7 +2134,7 @@ defmodule WraftDoc.Document do
   """
   @spec preload_stage_details(Stage.t()) :: Stage.t()
   def preload_stage_details(stage) do
-    stage |> Repo.preload([:content_type, :data_template, :state])
+    stage |> Repo.preload([{:content_type, :fields}, :data_template, :state])
   end
 
   @doc """
