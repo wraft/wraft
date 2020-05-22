@@ -2,7 +2,7 @@ defmodule WraftDoc.PipelineRunnerTest do
   use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
   use ExUnit.Case
-  alias WraftDoc.{PipelineRunner, Document.Instance, Document.Instance.History}
+  alias WraftDoc.{PipelineRunner, Document, Document.Instance, Document.Instance.History}
 
   describe "preload_pipeline_and_stages/1" do
     test "returns preloaded trigger struct with trigger struct as input" do
@@ -219,6 +219,28 @@ defmodule WraftDoc.PipelineRunnerTest do
       refute 0 in error_codes
       refute nil in response.failed_builds
       assert failed_instance_ids == failed_build_instance_ids
+    end
+  end
+
+  describe "zip_builds/1" do
+    test "returns a map with path of created zip file path" do
+      instance1 = insert(:instance)
+      instance2 = insert(:instance)
+      file_path1 = "uploads/contents/#{instance1.instance_id}/final.pdf"
+      file_path2 = "uploads/contents/#{instance2.instance_id}/final.pdf"
+      insert(:build_history, content: instance1)
+      insert(:build_history, content: instance2)
+      File.write!(file_path1, "content")
+      File.write!(file_path2, "content")
+      response = PipelineRunner.zip_builds(%{instances: [instance1, instance1]})
+      File.rm(file_path1)
+      File.rm(file_path2)
+
+      assert File.exists?(response.dest_path) == true
+
+      File.rm(file_path1)
+      File.rm(file_path2)
+      File.rm(response.dest_path)
     end
   end
 end
