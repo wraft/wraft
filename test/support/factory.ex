@@ -175,7 +175,7 @@ defmodule WraftDoc.Factory do
 
   def instance_factory do
     %Instance{
-      instance_id: sequence(:instance_id, &"OFFLET#{&1}"),
+      instance_id: sequence(:instance_id, &"Prefix#{&1}"),
       raw: "Content",
       serialized: %{title: "Title of the content", body: "Body of the content"},
       content_type: build(:content_type)
