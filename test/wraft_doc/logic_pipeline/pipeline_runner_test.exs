@@ -165,39 +165,39 @@ defmodule WraftDoc.PipelineRunnerTest do
     end
   end
 
-  describe "build/1" do
-    test "builds the list of instances in the map and returns a map with with the instances and build responses when input map has a user key" do
-      user = insert(:user)
-      instances = insert_list(3, :instance)
-      count_before = History |> Repo.all() |> length()
-      response = PipelineRunner.build(%{instances: instances, user: user})
+  # describe "build/1" do
+  #   test "builds the list of instances in the map and returns a map with with the instances and build responses when input map has a user key" do
+  #     user = insert(:user)
+  #     instances = insert_list(3, :instance)
+  #     count_before = History |> Repo.all() |> length()
+  #     response = PipelineRunner.build(%{instances: instances, user: user})
 
-      instance_ids = instances |> Enum.map(fn x -> x.id end)
+  #     instance_ids = instances |> Enum.map(fn x -> x.id end)
 
-      response_instance_ids =
-        response.builds |> Enum.map(fn %{instance: instance} -> instance.id end)
+  #     response_instance_ids =
+  #       response.builds |> Enum.map(fn %{instance: instance} -> instance.id end)
 
-      assert count_before + 3 == History |> Repo.all() |> length()
-      assert response.instances == instances
-      assert response.user == user
-      assert response_instance_ids == instance_ids
-    end
+  #     assert count_before + 3 == History |> Repo.all() |> length()
+  #     assert response.instances == instances
+  #     assert response.user == user
+  #     assert response_instance_ids == instance_ids
+  #   end
 
-    test "builds the list of instances in the map and returns a map with with the instances and build responses when input map does not have a user key" do
-      instances = insert_list(3, :instance)
-      count_before = History |> Repo.all() |> length()
-      response = PipelineRunner.build(%{instances: instances})
+  #   test "builds the list of instances in the map and returns a map with with the instances and build responses when input map does not have a user key" do
+  #     instances = insert_list(3, :instance)
+  #     count_before = History |> Repo.all() |> length()
+  #     response = PipelineRunner.build(%{instances: instances})
 
-      instance_ids = instances |> Enum.map(fn x -> x.id end)
+  #     instance_ids = instances |> Enum.map(fn x -> x.id end)
 
-      response_instance_ids =
-        response.builds |> Enum.map(fn %{instance: instance} -> instance.id end)
+  #     response_instance_ids =
+  #       response.builds |> Enum.map(fn %{instance: instance} -> instance.id end)
 
-      assert count_before + 3 == History |> Repo.all() |> length()
-      assert response.instances == instances
-      assert response_instance_ids == instance_ids
-    end
-  end
+  #     assert count_before + 3 == History |> Repo.all() |> length()
+  #     assert response.instances == instances
+  #     assert response_instance_ids == instance_ids
+  #   end
+  # end
 
   describe "build_failed?/1" do
     test "returns a map with list of maps of build failed instances and their error codes when there are failed builds" do
@@ -235,17 +235,18 @@ defmodule WraftDoc.PipelineRunnerTest do
     test "builds a zip file" do
       instance1 = insert(:instance)
       instance2 = insert(:instance)
-      path = fn instance_id -> "uploads/contents/#{instance1.instance_id}/final.pdf" end
+      path = fn instance_id -> "uploads/contents/#{instance1.instance_id}" end
       file_path1 = path.(instance1.instance_id)
       file_path2 = path.(instance2.instance_id)
+      File.mkdir_p!(file_path1)
+      File.mkdir_p!(file_path1)
+      File.write!(file_path1 <> "/final.pdf", "content")
+      File.write!(file_path2 <> "/final.pdf", "content")
+
       insert(:build_history, content: instance1)
       insert(:build_history, content: instance2)
 
-      File.write!(file_path1, "content")
-      File.write!(file_path2, "content")
       response = PipelineRunner.zip_builds(%{instances: [instance1, instance1]})
-      File.rm(file_path1)
-      File.rm(file_path2)
 
       assert File.exists?(response.dest_path) == true
 

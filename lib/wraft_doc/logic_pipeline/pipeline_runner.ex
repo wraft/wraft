@@ -109,6 +109,7 @@ defmodule WraftDoc.PipelineRunner do
   @doc """
   Build all stages.
   """
+  # TODO - write tests - Tests commented to use mock
   @spec build(map) :: map
   def build(%{instances: instances, user: user} = input) do
     builds =
