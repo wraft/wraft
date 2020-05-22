@@ -22,6 +22,18 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
   def states,
     do: [enqued: 1, executing: 2, pending: 3, partially_completed: 4, success: 5, failed: 6]
 
+  def get_state(state_int) do
+    states()
+    |> Enum.find(fn {_state, int} -> int == state_int end)
+    |> case do
+      {state, _} ->
+        state
+
+      _ ->
+        nil
+    end
+  end
+
   schema "trigger_history" do
     field(:uuid, Ecto.UUID, autogenerate: true)
     field(:data, :map)
