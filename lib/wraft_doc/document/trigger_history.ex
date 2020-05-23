@@ -22,18 +22,6 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
   def states,
     do: [enqued: 1, executing: 2, pending: 3, partially_completed: 4, success: 5, failed: 6]
 
-  def get_state(state_int) do
-    states()
-    |> Enum.find(fn {_state, int} -> int == state_int end)
-    |> case do
-      {state, _} ->
-        state
-
-      _ ->
-        nil
-    end
-  end
-
   schema "trigger_history" do
     field(:uuid, Ecto.UUID, autogenerate: true)
     field(:data, :map)
@@ -46,6 +34,18 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
     belongs_to(:pipeline, WraftDoc.Document.Pipeline)
     belongs_to(:creator, WraftDoc.Account.User)
     timestamps()
+  end
+
+  def get_state(%TriggerHistory{state: state_int}) do
+    states()
+    |> Enum.find(fn {_state, int} -> int == state_int end)
+    |> case do
+      {state, _} ->
+        state
+
+      _ ->
+        nil
+    end
   end
 
   def changeset(%TriggerHistory{} = trigger, attrs \\ %{}) do

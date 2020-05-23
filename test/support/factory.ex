@@ -329,16 +329,18 @@ defmodule WraftDoc.Factory do
     {:ok, start_time} = NaiveDateTime.new(2020, 03, 17, 20, 20, 20)
     {:ok, end_time} = NaiveDateTime.new(2020, 03, 17, 20, 21, 20)
     duration = Timex.diff(end_time, start_time, :milliseconds)
+    zip_file = Timex.now() |> DateTime.to_iso8601()
 
     %TriggerHistory{
       data: %{name: sequence(:name, &"Name-#{&1}")},
       error: %{error: sequence(:error, &"error_reason-#{&1}")},
-      state: sequence(:state, &"#{&1}"),
+      state: Enum.random(1..6),
       pipeline: build(:pipeline),
       creator: build(:user),
       start_time: start_time,
       end_time: end_time,
-      duration: duration
+      duration: duration,
+      zip_file: "build-#{zip_file}"
     }
   end
 end
