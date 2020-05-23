@@ -39,6 +39,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       |> assign(:current_user, user)
 
     c_type = insert(:content_type, organisation: user.organisation)
+    insert(:content_type_field, content_type: c_type)
     data_temp = insert(:data_template, content_type: c_type)
     state = insert(:state, organisation: user.organisation)
 
@@ -127,6 +128,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
     pipeline = insert(:pipeline, organisation: user.organisation)
     insert(:pipe_stage, pipeline: pipeline)
     c_type = insert(:content_type, organisation: user.organisation)
+    c_type_field = insert(:content_type_field, content_type: c_type)
     data_template = insert(:data_template, content_type: c_type)
     state = insert(:state, organisation: user.organisation)
 
@@ -190,7 +192,9 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       |> assign(:current_user, user)
 
     pipeline = insert(:pipeline, organisation: user.organisation)
-
+    c_type = insert(:content_type)
+    insert(:content_type_field, content_type: c_type)
+    insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
     conn = get(conn, Routes.v1_pipeline_path(conn, :show, pipeline.uuid))
 
     assert json_response(conn, 200)["name"] == pipeline.name
