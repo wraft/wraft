@@ -109,4 +109,34 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
       assert json_response(conn, 404) == "Not Found"
     end
   end
+
+  describe "index/2" do
+    test "index lists triggers under a pipeline with pagination", %{conn: conn} do
+      user = conn.assigns.current_user
+      pipeline = insert(:pipeline, organisation: user.organisation)
+      trigger1 = insert(:trigger_history, state: 1, pipeline: pipeline, creator: user)
+      trigger2 = insert(:trigger_history, state: 2, pipeline: pipeline, creator: user)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, conn.assigns.current_user)
+
+      conn = get(conn, Routes.v1_trigger_history_path(conn, :index, pipeline.uuid))
+      trigger_history_index = json_response(conn, 200)["triggers"]
+      trigger_uuids = Enum.map(trigger_history_index, fn x -> x["id"] end) |> List.to_string()
+      trigger_states = Enum.map(trigger_history_index, fn x -> x["state"] end) |> List.to_string()
+
+      trigger_user_uuid =
+        Enum.map(trigger_history_index, fn x -> x["creator"]["id"] end) |> List.to_string()
+
+      assert trigger_uuids =~ trigger1.uuid
+      assert trigger_uuids =~ trigger2.uuid
+      assert trigger_states =~ "enqued"
+      assert trigger_states =~ "executing"
+      assert trigger_user_uuid =~ user.uuid
+      assert json_response(conn, 200)["total_entries"] == 2
+      assert json_response(conn, 200)["total_pages"] == 1
+    end
+  end
 end
