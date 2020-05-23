@@ -175,7 +175,7 @@ defmodule WraftDoc.Factory do
 
   def instance_factory do
     %Instance{
-      instance_id: sequence(:instance_id, &"OFFLET#{&1}"),
+      instance_id: sequence(:instance_id, &"Prefix#{&1}"),
       raw: "Content",
       serialized: %{title: "Title of the content", body: "Body of the content"},
       content_type: build(:content_type)
@@ -326,12 +326,21 @@ defmodule WraftDoc.Factory do
   end
 
   def trigger_history_factory do
+    {:ok, start_time} = NaiveDateTime.new(2020, 03, 17, 20, 20, 20)
+    {:ok, end_time} = NaiveDateTime.new(2020, 03, 17, 20, 21, 20)
+    duration = Timex.diff(end_time, start_time, :milliseconds)
+    zip_file = Timex.now() |> DateTime.to_iso8601()
+
     %TriggerHistory{
       data: %{name: sequence(:name, &"Name-#{&1}")},
-      meta: %{error: sequence(:error, &"error_reason-#{&1}")},
-      state: sequence(:state, &"#{&1}"),
+      error: %{error: sequence(:error, &"error_reason-#{&1}")},
+      state: Enum.random(1..6),
       pipeline: build(:pipeline),
-      creator: build(:user)
+      creator: build(:user),
+      start_time: start_time,
+      end_time: end_time,
+      duration: duration,
+      zip_file: "build-#{zip_file}"
     }
   end
 end

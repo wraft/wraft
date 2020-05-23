@@ -110,7 +110,19 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
                   prefix: "OFFLET",
                   color: "#fffff",
                   updated_at: "2020-01-21T14:00:00Z",
-                  inserted_at: "2020-02-21T14:00:00Z"
+                  inserted_at: "2020-02-21T14:00:00Z",
+                  fields: [
+                    %{
+                      key: "position",
+                      field_type_id: "kjb14713132lkdac",
+                      meta: %{"src" => "/img/img.png", "alt" => "Image"}
+                    },
+                    %{
+                      key: "name",
+                      field_type_id: "kjb2347mnsad",
+                      meta: %{"src" => "/img/img.png", "alt" => "Image"}
+                    }
+                  ]
                 },
                 data_template: %{
                   id: "1232148nb3478",
