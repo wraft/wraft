@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v0.0.28 - 2020-05-23
+
+### Added
+
+- All first stage feature of pipeline
+- Create Gantt Chart from latex code
+- E-signature system
+
 ## v0.0.27 - 2020-05-17
 
 ### Added
