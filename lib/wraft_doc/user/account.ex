@@ -308,7 +308,7 @@ defmodule WraftDoc.Account do
     @activity_models[model] |> Repo.get(id)
   end
 
-  def delete_token(user_id, type) do
+  defp delete_token(user_id, type) do
     from(
       a in AuthToken,
       where: a.user_id == ^user_id,
@@ -400,13 +400,15 @@ defmodule WraftDoc.Account do
     end
   end
 
+  def reset_password(_), do: nil
+
   @doc """
   Update the password of the current user after verifying the
   old password.
   """
   @spec update_password(User.t(), map) :: User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
-  def update_password(user, params) do
-    case Bcrypt.verify_pass(params["current_password"], user.encrypted_password) do
+  def update_password(user, %{"current_password" => current_password, "password" => _} = params) do
+    case Bcrypt.verify_pass(current_password, user.encrypted_password) do
       true ->
         check_and_update_password(user, params)
 
@@ -415,13 +417,13 @@ defmodule WraftDoc.Account do
     end
   end
 
-  @doc """
-  Update the password if the new one is not same as the previous one.
-  """
+  def update_password(_, _), do: nil
+
+  # Update the password if the new one is not same as the previous one.
   @spec check_and_update_password(User.t(), map) ::
           User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
-  def check_and_update_password(user, params) do
-    case Bcrypt.verify_pass(params["password"], user.encrypted_password) do
+  defp check_and_update_password(user, %{"password" => password} = params) do
+    case Bcrypt.verify_pass(password, user.encrypted_password) do
       true ->
         {:error, :same_password}
 
@@ -444,17 +446,15 @@ defmodule WraftDoc.Account do
     end
   end
 
-  @doc """
-  Insert auth token without expiry date.
-  """
-  @spec insert_auth_token(User.t(), map) ::
+  # Insert auth token without expiry date.
+  @spec insert_auth_token(User.t() | any(), map) ::
           {:ok, AuthToken.t()} | {:error, Ecto.Changeset.t()} | nil
-  def insert_auth_token(%User{} = current_user, params) do
+  defp insert_auth_token(%User{} = current_user, params) do
     current_user
     |> build_assoc(:auth_tokens)
     |> AuthToken.changeset(params)
     |> Repo.insert()
   end
 
-  def insert_auth_token(_, _), do: nil
+  defp insert_auth_token(_, _), do: nil
 end
