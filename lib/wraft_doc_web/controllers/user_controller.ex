@@ -371,7 +371,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   @doc """
   Update the password.
   """
-  swagger_path :update do
+  swagger_path :update_password do
     post("/users/password")
     summary("Update password")
     description("Authenticated updation of password")
@@ -386,8 +386,8 @@ defmodule WraftDocWeb.Api.V1.UserController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, params) do
+  @spec update_password(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update_password(conn, params) do
     current_user = conn.assigns.current_user
 
     with %User{} = user <- Account.update_password(current_user, params) do
