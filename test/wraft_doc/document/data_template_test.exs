@@ -5,7 +5,8 @@ defmodule WraftDoc.Document.DataTemplateTest do
   @valid_attrs %{
     title: "industry",
     title_template: "test",
-    data: "administrative"
+    data: "administrative",
+    serialized: %{title: "test", body: "test"}
   }
   @invalid_attrs %{}
   test "changeset with valid attributes" do

@@ -1,16 +1,17 @@
 defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
+  alias WraftDoc.Repo
 
   @valid_attrs %{
-    name: "Shakkir palakkal",
+    name: "John Doe",
     dob: Date.new(2020, 2, 29) |> elem(1),
     gender: "male"
   }
 
   setup %{conn: conn} do
     profile = insert(:profile)
-    user = profile.user
+    user = profile.user |> Repo.preload([:profile, :role])
 
     conn =
       conn
@@ -27,48 +28,40 @@ defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
     {:ok, %{conn: conn}}
   end
 
-  test "updates profile on valid attributes", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+  describe "update/2" do
+    test "updates profile on valid attributes", %{conn: conn} do
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, conn.assigns.current_user)
 
-    conn = put(conn, Routes.v1_profile_path(conn, :update), @valid_attrs)
-    assert json_response(conn, 200)["name"] == @valid_attrs.name
+      conn = put(conn, Routes.v1_profile_path(conn, :update), @valid_attrs)
+      assert json_response(conn, 200)["name"] == @valid_attrs.name
+    end
+
+    test "does not update profile and returns error on invalid attributes", %{conn: conn} do
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, conn.assigns.current_user)
+
+      conn = put(conn, Routes.v1_profile_path(conn, :update), %{name: ""})
+      assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
+    end
   end
 
-  # test "render profile on id exists", %{conn: conn} do
-  #   profile = insert(:profile)
+  describe "show_current_profile/2" do
+    test "renders current profile ", %{conn: conn} do
+      current_user = conn.assigns.current_user
 
-  #   conn =
-  #     build_conn()
-  #     |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-  #     |> assign(:current_user, conn.assigns.current_user)
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, conn.assigns.current_user)
 
-  #   conn = get(conn, Routes.v1_profile_path(conn, :show, profile.uuid))
-  #   assert json_response(conn, 200)["name"] == profile.name
-  # end
+      conn = get(conn, Routes.v1_profile_path(conn, :show_current_profile))
 
-  # test "error not found for id does not exist", %{conn: conn} do
-  #   conn =
-  #     build_conn()
-  #     |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-  #     |> assign(:current_user, conn.assigns.current_user)
-
-  #   conn = get(conn, Routes.v1_profile_path(conn, :show, Ecto.UUID.autogenerate()))
-  #   assert json_response(conn, 404) == "Not Found"
-  # end
-
-  test "renders current profile ", %{conn: conn} do
-    current_user = conn.assigns.current_user
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
-    conn = get(conn, Routes.v1_profile_path(conn, :show_current_profile))
-
-    assert json_response(conn, 200)["name"] == current_user.name
+      assert json_response(conn, 200)["name"] == current_user.name
+    end
   end
 end
