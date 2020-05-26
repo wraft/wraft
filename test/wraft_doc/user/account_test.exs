@@ -194,7 +194,7 @@ defmodule WraftDoc.AccountTest do
     test "update profile with invalid attrs" do
       profile = insert(:profile)
       params = %{name: "", dob: "1990", gender: 1}
-      {:error, :profile, changeset, %{}} = Account.update_profile(profile.user, params)
+      {:error, changeset} = Account.update_profile(profile.user, params)
 
       assert %{name: ["can't be blank"], dob: ["is invalid"], gender: ["is invalid"]} ==
                errors_on(changeset)
