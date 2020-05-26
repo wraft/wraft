@@ -10,7 +10,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   @valid_attrs %{
     title: "Main template",
     title_template: "Offer letter of [client]",
-    data: "Hi [user]"
+    data: "Hi [user]",
+    serialized: %{title: "Offer letter of [client]", data: "Hi [user]"}
   }
   @invalid_attrs %{title: ""}
   setup %{conn: conn} do
