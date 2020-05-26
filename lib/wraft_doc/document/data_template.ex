@@ -25,6 +25,7 @@ defmodule WraftDoc.Document.DataTemplate do
     field(:title, :string)
     field(:title_template, :string)
     field(:data, :string)
+    field(:serialized, :map, default: %{})
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:creator, WraftDoc.Account.User)
 
@@ -33,7 +34,7 @@ defmodule WraftDoc.Document.DataTemplate do
 
   def changeset(%DataTemplate{} = d_template, attrs \\ %{}) do
     d_template
-    |> cast(attrs, [:title, :title_template, :data])
+    |> cast(attrs, [:title, :title_template, :data, :serialized])
     |> validate_required([:title, :title_template, :data])
   end
 end

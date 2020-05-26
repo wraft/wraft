@@ -17,12 +17,14 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
             title(:string, "Data template's title", required: true)
             title_template(:string, "Title template", required: true)
             data(:string, "Data template's contents", required: true)
+            serialized(:map, "Serialized data", required: true)
           end
 
           example(%{
             title: "Template 1",
             title_template: "Letter for [user]",
-            data: "Hi [user]"
+            data: "Hi [user]",
+            serialized: %{title: "Offer letter of [client]", data: "Hi [user]"}
           })
         end,
       DataTemplate:
@@ -35,6 +37,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
             title(:string, "Title of the data template", required: true)
             title_template(:string, "Title content of the data template", required: true)
             data(:string, "Data template's contents")
+            serialized(:map, "Serialized data")
             inserted_at(:string, "When was the layout created", format: "ISO-8601")
             updated_at(:string, "When was the layout last updated", format: "ISO-8601")
           end
@@ -44,6 +47,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
             title: "Template 1",
             title_template: "Letter for [user]",
             data: "Hi [user]",
+            serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -58,6 +62,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
             title(:string, "Title of the data template", required: true)
             title_template(:string, "Title content of the data template", required: true)
             data(:string, "Data template's contents")
+            serialized(:map, "Serialized data")
             inserted_at(:string, "When was the layout created", format: "ISO-8601")
             updated_at(:string, "When was the layout last updated", format: "ISO-8601")
             content_type(Schema.ref(:ContentTypeWithoutFields))
@@ -68,6 +73,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
             title: "Template 1",
             title_template: "Letter for [user]",
             data: "Hi [user]",
+            serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z",
             content_type: %{
@@ -98,6 +104,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
               title: "Main Template",
               title_template: "Letter for [user]",
               data: "Hi [user]",
+              serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             },
@@ -142,6 +149,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
                 title: "Main template",
                 title_template: "Letter for [user]",
                 data: "Hi [user]",
+                serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
                 updated_at: "2020-01-21T14:00:00Z",
                 inserted_at: "2020-02-21T14:00:00Z",
                 content_type: %{
