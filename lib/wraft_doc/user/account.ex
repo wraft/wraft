@@ -163,8 +163,8 @@ defmodule WraftDoc.Account do
     |> Multi.update(:user, User.update_changeset(current_user, params))
     |> WraftDoc.Repo.transaction()
     |> case do
-      changeset = {:error, _, _, _} ->
-        changeset
+      {:error, _, changeset, _} ->
+        {:error, changeset}
 
       {:ok, %{profile: profile_struct, user: _user}} ->
         Repo.preload(profile_struct, :user)
@@ -181,19 +181,6 @@ defmodule WraftDoc.Account do
   end
 
   def get_profile(_id), do: nil
-
-  @doc """
-  Get the profile of given user.
-  """
-  @spec get_current_profile(User.t()) :: Profile.t()
-  def get_current_profile(%User{id: id}) do
-    Profile
-    |> Repo.get_by(user_id: id)
-    |> Repo.preload(:user)
-    |> Repo.preload(:country)
-  end
-
-  def get_current_profile(_), do: nil
 
   @doc """
   Delete Profile

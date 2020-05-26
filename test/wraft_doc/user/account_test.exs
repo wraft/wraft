@@ -220,22 +220,6 @@ defmodule WraftDoc.AccountTest do
     end
   end
 
-  describe "get_current_profile/1" do
-    test "return user's profile when user struct is given" do
-      profile = insert(:profile)
-      response = Account.get_current_profile(profile.user)
-
-      refute response == nil
-      assert response.name == profile.name
-      assert response.id == profile.id
-    end
-
-    test "return nil when anything other than user struct is given" do
-      response = Account.get_current_profile(1)
-      assert response == nil
-    end
-  end
-
   describe "delete_profile/1" do
     test "successfully delete profile when profile struct is given" do
       profile = insert(:profile)
