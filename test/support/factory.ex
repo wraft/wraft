@@ -30,6 +30,7 @@ defmodule WraftDoc.Factory do
     Document.Pipeline.Stage,
     Enterprise.ApprovalSystem,
     Enterprise.Plan,
+    Enterprise.Membership,
     Document.LayoutAsset,
     Document.Pipeline.TriggerHistory
   }
@@ -351,6 +352,19 @@ defmodule WraftDoc.Factory do
       description: sequence(:description, &"Plan Description-#{&1}"),
       yearly_amount: Enum.random(0..1000),
       monthly_amount: Enum.random(0..500)
+    }
+  end
+
+  def membership_factory do
+    start_date = Timex.now()
+    end_date = start_date |> Timex.shift(days: 30)
+
+    %Membership{
+      organisation: build(:organisation),
+      plan: build(:plan),
+      start_date: Timex.now(),
+      end_date: end_date,
+      plan_duration: 30
     }
   end
 end

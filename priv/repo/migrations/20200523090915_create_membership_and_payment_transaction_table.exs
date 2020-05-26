@@ -31,7 +31,7 @@ defmodule WraftDoc.Repo.Migrations.CreateMembershipAndPaymentTransactionTable do
       timestamps()
     end
 
-    create(unique_index(:membership, [:organisation_id]))
+    create(unique_index(:membership, [:organisation_id], name: :membership_unique_index))
   end
 
   def down do
