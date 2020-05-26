@@ -29,6 +29,7 @@ defmodule WraftDoc.Factory do
     Document.Pipeline,
     Document.Pipeline.Stage,
     Enterprise.ApprovalSystem,
+    Enterprise.Plan,
     Document.LayoutAsset,
     Document.Pipeline.TriggerHistory
   }
@@ -341,6 +342,15 @@ defmodule WraftDoc.Factory do
       end_time: end_time,
       duration: duration,
       zip_file: "build-#{zip_file}"
+    }
+  end
+
+  def plan_factory do
+    %Plan{
+      name: sequence(:name, &"Plan-#{&1}"),
+      description: sequence(:description, &"Plan Description-#{&1}"),
+      yearly_amount: Enum.random(0..1000),
+      monthly_amount: Enum.random(0..500)
     }
   end
 end
