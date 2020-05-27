@@ -384,6 +384,7 @@ defmodule WraftDoc.Factory do
       amount: Enum.random(1000..2000) / 1,
       action: Enum.random(1..3),
       status: Enum.random([1, 2, 3]),
+      meta: %{id: sequence(:invoice, &"Razorpay-#{&1}")},
       from_plan: build(:plan),
       to_plan: build(:plan)
     }

@@ -11,7 +11,8 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
     invoice_number: "WRAFT_INVOICE-001",
     amount: 1000,
     action: 1,
-    status: 1
+    status: 1,
+    meta: %{id: "FUNC-001-1"}
   }
 
   describe "changeset/2" do

@@ -28,6 +28,7 @@ defmodule WraftDoc.Repo.Migrations.CreateMembershipAndPaymentTransactionTable do
       add(:from_plan_id, references(:plan, on_delete: :nilify_all))
       add(:to_plan_id, references(:plan, on_delete: :nilify_all))
       add(:status, :integer, null: false)
+      add(:meta, :jsonb)
       timestamps()
     end
 
