@@ -18,20 +18,22 @@ defmodule WraftDoc.Repo.Migrations.CreateMembershipAndPaymentTransactionTable do
       add(:organisation_id, references(:organisation, on_delete: :nilify_all))
       add(:creator_id, references(:user, on_delete: :nilify_all))
       add(:membership_id, references(:membership, on_delete: :nilify_all))
-      add(:razerpay_id, :string, null: false)
+      add(:razorpay_id, :string, null: false)
       add(:start_date, :naive_datetime)
       add(:end_date, :naive_datetime)
       add(:invoice, :string)
       add(:invoice_number, :string)
       add(:amount, :float, default: 0.0)
-      add(:action, :string)
+      add(:action, :integer)
       add(:from_plan_id, references(:plan, on_delete: :nilify_all))
       add(:to_plan_id, references(:plan, on_delete: :nilify_all))
-
+      add(:status, :integer, null: false)
       timestamps()
     end
 
     create(unique_index(:membership, [:organisation_id], name: :membership_unique_index))
+    create(unique_index(:payment, [:razorpay_id], name: :razorpay_id_unique_index))
+    create(unique_index(:payment, [:invoice_number], name: :invoice_number_unique_index))
   end
 
   def down do

@@ -31,6 +31,7 @@ defmodule WraftDoc.Factory do
     Enterprise.ApprovalSystem,
     Enterprise.Plan,
     Enterprise.Membership,
+    Enterprise.Membership.Payment,
     Document.LayoutAsset,
     Document.Pipeline.TriggerHistory
   }
@@ -365,6 +366,26 @@ defmodule WraftDoc.Factory do
       start_date: Timex.now(),
       end_date: end_date,
       plan_duration: 30
+    }
+  end
+
+  def payment_factory do
+    start_date = Timex.now()
+    end_date = start_date |> Timex.shift(days: 30)
+
+    %Payment{
+      organisation: build(:organisation),
+      creator: build(:user),
+      membership: build(:membership),
+      razorpay_id: sequence(:invoice, &"Razorpay-#{&1}"),
+      start_date: start_date,
+      end_date: end_date,
+      invoice_number: sequence(:invoice, &"WRAFT-INVOICE-#{&1}"),
+      amount: Enum.random(1000..2000) / 1,
+      action: Enum.random(1..3),
+      status: Enum.random([1, 2, 3]),
+      from_plan: build(:plan),
+      to_plan: build(:plan)
     }
   end
 end
