@@ -13,6 +13,7 @@ defmodule WraftDoc.Enterprise do
     Account,
     Account.User,
     Enterprise.ApprovalSystem,
+    Enterprise.Plan,
     Document.Instance,
     Document
   }
@@ -539,4 +540,42 @@ defmodule WraftDoc.Enterprise do
         changeset
     end
   end
+
+  @doc """
+  Creates a plan.
+  """
+  @spec create_plan(map) :: {:ok, Plan.t()}
+  def create_plan(params) do
+    %Plan{} |> Plan.changeset(params) |> Repo.insert()
+  end
+
+  @doc """
+  Get a plan from its UUID.
+  """
+  @spec get_plan(Ecto.UUID.t()) :: Plan.t() | nil
+  def get_plan(<<_::288>> = p_uuid) do
+    Repo.get_by(Plan, uuid: p_uuid)
+  end
+
+  def get_plan(_), do: nil
+
+  @doc """
+  Updates a plan.
+  """
+  @spec update_plan(Plan.t(), map) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}
+  def update_plan(%Plan{} = plan, params) do
+    plan |> Plan.changeset(params) |> Repo.update()
+  end
+
+  def update_plan(_, _), do: nil
+
+  @doc """
+  Deletes a plan
+  """
+  @spec delete_plan(Plan.t()) :: {:ok, Plan.t()} | nil
+  def delete_plan(%Plan{} = plan) do
+    plan |> Repo.delete()
+  end
+
+  def delete_plan(_), do: nil
 end

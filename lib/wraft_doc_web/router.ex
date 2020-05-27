@@ -173,6 +173,8 @@ defmodule WraftDocWeb.Router do
       resources("/field_types", FieldTypeController,
         only: [:create, :index, :show, :update, :delete]
       )
+
+      resources("/plans", PlanController, only: [:create, :update, :delete])
     end
   end
 
