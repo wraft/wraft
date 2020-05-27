@@ -6,6 +6,8 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   import Ecto.Changeset
   use Arc.Ecto.Schema
   alias __MODULE__
+  require Protocol
+  Protocol.derive(Jason.Encoder, Razorpay.Payment)
 
   schema "payment" do
     field(:uuid, Ecto.UUID, autogenerate: true)
@@ -17,6 +19,7 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
     field(:amount, :float)
     field(:action, :integer)
     field(:status, :integer)
+    field(:meta, :map)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:membership, WraftDoc.Enterprise.Membership)
@@ -40,7 +43,8 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
       :creator_id,
       :membership_id,
       :from_plan_id,
-      :to_plan_id
+      :to_plan_id,
+      :meta
     ])
     |> validate_required([:razorpay_id, :amount, :status])
     |> unique_constraint(:razorpay_id,
