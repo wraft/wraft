@@ -2,7 +2,7 @@ defmodule WraftDoc.EnterpriseTest do
   import Ecto.Query
   import Ecto
   import WraftDoc.Factory
-  use WraftDoc.ModelCase
+  use WraftDoc.DataCase
   use ExUnit.Case
   use Bamboo.Test
 
@@ -12,6 +12,7 @@ defmodule WraftDoc.EnterpriseTest do
     Enterprise.Flow.State,
     Enterprise.Organisation,
     Enterprise.ApprovalSystem,
+    Enterprise.Plan,
     Enterprise
   }
 
@@ -335,5 +336,95 @@ defmodule WraftDoc.EnterpriseTest do
     to_email = "myemail@app.com"
     {:ok, oban_job} = Enterprise.invite_team_member(user, user.organisation, to_email)
     assert oban_job.args.email == to_email
+  end
+
+  describe "create_plan/1" do
+    test "creates a plan with valid attrs" do
+      attrs = %{name: "Basic", description: "A free plan", yearly_amount: 0, monthly_amount: 0}
+      count_before = Plan |> Repo.all() |> length()
+      {:ok, plan} = Enterprise.create_plan(attrs)
+
+      assert count_before + 1 == Plan |> Repo.all() |> length()
+      assert plan.name == attrs.name
+      assert plan.description == attrs.description
+      assert plan.yearly_amount == attrs.yearly_amount
+      assert plan.monthly_amount == attrs.monthly_amount
+    end
+
+    test "does not create plan with invalid attrs" do
+      count_before = Plan |> Repo.all() |> length()
+      {:error, changeset} = Enterprise.create_plan(%{})
+
+      assert count_before == Plan |> Repo.all() |> length()
+      assert %{name: ["can't be blank"], description: ["can't be blank"]} == errors_on(changeset)
+    end
+  end
+
+  describe "get_plan/1" do
+    test "fetches a plan with valid uuid" do
+      plan = insert(:plan)
+      fetched_plan = Enterprise.get_plan(plan.uuid)
+
+      assert fetched_plan.uuid == plan.uuid
+      assert fetched_plan.name == plan.name
+    end
+
+    test "returns nil with non-existent uuid" do
+      fetched_plan = Enterprise.get_plan(Ecto.UUID.generate())
+
+      assert fetched_plan == nil
+    end
+
+    test "returns nil with invalid uuid" do
+      fetched_plan = Enterprise.get_plan(1)
+
+      assert fetched_plan == nil
+    end
+  end
+
+  describe "update_plan/2" do
+    test "updates a plan with valid attrs" do
+      plan = insert(:plan)
+      attrs = %{name: "Basic", description: "Basic plan", yearly_amount: 200, monthly_amount: 105}
+      {:ok, updated_plan} = Enterprise.update_plan(plan, attrs)
+
+      assert updated_plan.uuid == plan.uuid
+      assert updated_plan.name == attrs.name
+      assert updated_plan.description == attrs.description
+      assert updated_plan.yearly_amount == attrs.yearly_amount
+      assert updated_plan.monthly_amount == attrs.monthly_amount
+    end
+
+    test "does not update plan with invalid attrs" do
+      plan = insert(:plan)
+      attrs = %{name: ""}
+      {:error, changeset} = Enterprise.update_plan(plan, attrs)
+
+      assert %{name: ["can't be blank"]} == errors_on(changeset)
+    end
+
+    test "returns nil with wrong input" do
+      attrs = %{name: ""}
+      response = Enterprise.update_plan(nil, attrs)
+
+      assert response == nil
+    end
+  end
+
+  describe "delete_plan/2" do
+    test "deletes a plan when valid plan struct is given" do
+      plan = insert(:plan)
+
+      before_count = Plan |> Repo.all() |> length()
+      {:ok, deleted_plan} = Enterprise.delete_plan(plan)
+
+      assert before_count - 1 == Plan |> Repo.all() |> length()
+      assert deleted_plan.uuid == plan.uuid
+    end
+
+    test "returns nil when given input is not a plan struct" do
+      response = Enterprise.delete_plan(nil)
+      assert response == nil
+    end
   end
 end
