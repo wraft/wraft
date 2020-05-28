@@ -382,6 +382,24 @@ defmodule WraftDoc.EnterpriseTest do
     end
   end
 
+  describe "plan_index/0" do
+    test "returns the list of all plans" do
+      p1 = insert(:plan)
+      p2 = insert(:plan)
+
+      plans = Enterprise.plan_index()
+      plan_names = plans |> Enum.map(fn x -> x.name end) |> List.to_string()
+      assert plans |> length() == 2
+      assert plan_names =~ p1.name
+      assert plan_names =~ p2.name
+    end
+
+    test "returns empty list when there are no plans" do
+      plans = Enterprise.plan_index()
+      assert plans == []
+    end
+  end
+
   describe "update_plan/2" do
     test "updates a plan with valid attrs" do
       plan = insert(:plan)

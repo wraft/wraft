@@ -560,6 +560,14 @@ defmodule WraftDoc.Enterprise do
   def get_plan(_), do: nil
 
   @doc """
+  Get all plans.
+  """
+  @spec plan_index() :: [Plan.t()]
+  def plan_index() do
+    Plan |> Repo.all()
+  end
+
+  @doc """
   Updates a plan.
   """
   @spec update_plan(Plan.t(), map) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}

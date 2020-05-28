@@ -52,6 +52,13 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             yearly_amount: 10,
             monthly_amount: 6
           })
+        end,
+      Plans:
+        swagger_schema do
+          title("All plans")
+          description("All plans that have been created")
+          type(:array)
+          items(Schema.ref(:Plan))
         end
     }
   end
@@ -74,6 +81,39 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
     with {:ok, %Plan{} = plan} <- Enterprise.create_plan(params) do
+      conn |> render("plan.json", plan: plan)
+    end
+  end
+
+  swagger_path :index do
+    post("/plans")
+    summary("Plan index")
+    description("List all plans created so far")
+    operation_id("plan_index")
+
+    response(200, "OK", Schema.ref(:Plans))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index(conn, _params) do
+    plans = Enterprise.plan_index()
+    conn |> render("plans.json", plans: plans)
+  end
+
+  swagger_path :show do
+    post("/plans/{id}")
+    summary("Show Plan")
+    description("Show a plan")
+    operation_id("show_plan")
+
+    response(200, "OK", Schema.ref(:Plan))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show(conn, %{"id" => p_uuid}) do
+    with %Plan{} = plan <- Enterprise.get_plan(p_uuid) do
       conn |> render("plan.json", plan: plan)
     end
   end
