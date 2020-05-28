@@ -14,9 +14,11 @@ defmodule WraftDocWeb.Plug.AdminCheck do
         conn
 
       _ ->
-        body = Poison.encode!(%{error: "You are not authorized for this action.!"})
+        body = Jason.encode!(%{errors: "You are not authorized for this action.!"})
 
-        send_resp(conn, 400, body)
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(400, body)
         |> halt()
     end
   end
