@@ -47,6 +47,9 @@ defmodule WraftDocWeb.Router do
       # Reset the password
       post("/user/password/reset", UserController, :reset)
 
+      # Show and index plans
+      resources("/plans", PlanController, only: [:show, :index])
+
       # Verify Token
       get("/token", UserController, :token)
     end
@@ -174,6 +177,7 @@ defmodule WraftDocWeb.Router do
         only: [:create, :index, :show, :update, :delete]
       )
 
+      # Create, Update and delete plans
       resources("/plans", PlanController, only: [:create, :update, :delete])
     end
   end
