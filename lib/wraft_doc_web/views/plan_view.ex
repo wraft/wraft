@@ -12,7 +12,7 @@ defmodule WraftDocWeb.Api.V1.PlanView do
       yearly_amount: plan.yearly_amount,
       monthly_amount: plan.monthly_amount,
       updated_at: plan.updated_at,
-      inserted_at: plan.inseted_at
+      inserted_at: plan.inserted_at
     }
   end
 end
