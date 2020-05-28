@@ -1,4 +1,4 @@
-defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
+defmodule WraftDocWeb.Api.V1.PlanControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
 
