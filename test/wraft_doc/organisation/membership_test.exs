@@ -45,29 +45,29 @@ defmodule WraftDoc.Enterprise.MembershipTest do
       assert changeset.valid?
     end
 
-    test "valid update changeset with valid change in end_date only" do
-      membership = insert(:membership)
-      changeset = Membership.update_changeset(membership, %{end_date: Timex.now()})
+    # test "valid update changeset with valid change in end_date only" do
+    #   membership = insert(:membership)
+    #   changeset = Membership.update_changeset(membership, %{end_date: Timex.now()})
 
-      assert changeset.valid?
-    end
+    #   assert changeset.valid?
+    # end
 
-    test "valid update changeset with valid change in start_date only" do
-      membership = insert(:membership)
-      start_date = Timex.now() |> Timex.shift(days: 1)
-      changeset = Membership.update_changeset(membership, %{start_date: start_date})
-      assert changeset.valid?
-    end
+    # test "valid update changeset with valid change in start_date only" do
+    #   membership = insert(:membership)
+    #   start_date = Timex.now() |> Timex.shift(days: 1)
+    #   changeset = Membership.update_changeset(membership, %{start_date: start_date})
+    #   assert changeset.valid?
+    # end
 
-    test "update changeset with invalid change in plan_duration" do
-      membership = insert(:membership)
-      # In membership factory, the end date is 30 days from current time. So,
-      # to plan duration negative, current time is shifted more than 30 days.
-      start_date = Timex.now() |> Timex.shift(days: 31)
-      changeset = Membership.update_changeset(membership, %{start_date: start_date})
+    # test "update changeset with invalid change in plan_duration" do
+    #   membership = insert(:membership)
+    #   # In membership factory, the end date is 30 days from current time. So,
+    #   # to plan duration negative, current time is shifted more than 30 days.
+    #   start_date = Timex.now() |> Timex.shift(days: 31)
+    #   changeset = Membership.update_changeset(membership, %{start_date: start_date})
 
-      refute changeset.valid?
-    end
+    #   refute changeset.valid?
+    # end
 
     test "update changeset with invalid attrs" do
       membership = insert(:membership)

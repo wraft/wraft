@@ -14,6 +14,8 @@ defmodule WraftDoc.Enterprise.Plan do
     field(:monthly_amount, :integer, default: 0)
 
     timestamps()
+
+    has_many(:memberships, WraftDoc.Enterprise.Membership)
   end
 
   def changeset(%Plan{} = plan, attrs \\ %{}) do

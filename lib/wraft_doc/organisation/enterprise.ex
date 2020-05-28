@@ -14,6 +14,7 @@ defmodule WraftDoc.Enterprise do
     Account.User,
     Enterprise.ApprovalSystem,
     Enterprise.Plan,
+    Enterprise.Membership,
     Document.Instance,
     Document
   }
@@ -25,6 +26,8 @@ defmodule WraftDoc.Enterprise do
     %{"state" => "Publish", "order" => 3}
   ]
 
+  @trial_plan_name "Free Trial"
+  @trial_duration 14
   @doc """
   Get a flow from its UUID.
   """
@@ -277,6 +280,7 @@ defmodule WraftDoc.Enterprise do
     |> Repo.insert()
     |> case do
       {:ok, organisation} ->
+        Task.start_link(fn -> create_membership(organisation) end)
         {:ok, organisation}
 
       {:error, changeset} ->
@@ -586,4 +590,27 @@ defmodule WraftDoc.Enterprise do
   end
 
   def delete_plan(_), do: nil
+
+  # Create free trial membership for the given organisation.
+  @spec create_membership(Organisation.t()) :: Membership.t()
+  defp create_membership(%Organisation{id: id}) do
+    plan = Repo.get_by(Plan, name: @trial_plan_name)
+    start_date = Timex.now()
+    end_date = start_date |> find_end_date(@trial_duration)
+    params = %{start_date: start_date, end_date: end_date, plan_duration: @trial_duration}
+
+    plan
+    |> build_assoc(:memberships, organisation_id: id)
+    |> Membership.changeset(params)
+    |> Repo.insert!()
+  end
+
+  # Find the end date of a membership from the start date and duration of the
+  # membership.
+  @spec find_end_date(DateTime.t(), integer) :: DateTime.t() | nil
+  defp find_end_date(start_date, duration) when is_integer(duration) do
+    start_date |> Timex.shift(days: duration)
+  end
+
+  defp find_end_date(_, _), do: nil
 end
