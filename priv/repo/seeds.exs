@@ -164,8 +164,8 @@ state =
 
 # Populate plans
 %Plan{
-  name: "Basic",
-  description: "Free plan with basic features only",
+  name: "Free Trial",
+  description: "Free trial where users can try out all the features",
   yearly_amount: 0,
   monthly_amount: 0
 }
