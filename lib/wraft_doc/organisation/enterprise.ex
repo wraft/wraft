@@ -4,6 +4,7 @@ defmodule WraftDoc.Enterprise do
   """
   import Ecto.Query
   import Ecto
+  alias Ecto.Multi
 
   alias WraftDoc.{
     Repo,
@@ -15,6 +16,7 @@ defmodule WraftDoc.Enterprise do
     Enterprise.ApprovalSystem,
     Enterprise.Plan,
     Enterprise.Membership,
+    Enterprise.Membership.Payment,
     Document.Instance,
     Document
   }
@@ -613,4 +615,147 @@ defmodule WraftDoc.Enterprise do
   end
 
   defp find_end_date(_, _), do: nil
+
+  @doc """
+  Get a membership from its UUID.
+  """
+  @spec get_membership(Ecto.UUID.t(), User.t()) :: Membership.t() | nil
+  def get_membership(<<_::288>> = m_uuid, %User{organisation_id: org_id}) do
+    Membership |> Repo.get_by(uuid: m_uuid, organisation_id: org_id)
+  end
+
+  def get_membership(_, _), do: nil
+
+  @doc """
+  Updates a membership.
+  """
+  @spec update_membership(User.t(), Membership.t(), Plan.t(), Razorpay.Payment.t()) ::
+          Membership.t() | {:ok, Payment.t()} | {:error, :wrong_amount} | nil
+  def update_membership(
+        %User{} = user,
+        %Membership{} = membership,
+        %Plan{} = plan,
+        %Razorpay.Payment{status: "failed"} = razorpay
+      ) do
+    params = create_payment_params(membership, plan, razorpay)
+    create_payment_changeset(user, params) |> Repo.insert()
+  end
+
+  def update_membership(
+        %User{} = user,
+        %Membership{} = membership,
+        %Plan{} = plan,
+        %Razorpay.Payment{amount: amount} = razorpay
+      ) do
+    with duration when is_integer(duration) <- get_duration_from_plan_and_amount(plan, amount) do
+      params = create_membership_and_payment_params(membership, plan, duration, razorpay)
+      do_update_membership(user, membership, params)
+    else
+      error ->
+        error
+    end
+  end
+
+  def update_membership(_, _, _, _), do: nil
+
+  # Update the membership and insert a new payment.
+  @spec do_update_membership(User.t(), Membership.t(), map) ::
+          {:ok, Membership.t()} | {:error, Ecto.Changeset.t()}
+  defp do_update_membership(user, membership, params) do
+    Multi.new()
+    |> Multi.update(:membership, membership |> Membership.update_changeset(params))
+    |> Multi.insert(:payment, create_payment_changeset(user, params))
+    |> Repo.transaction()
+    |> case do
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+
+      {:ok, %{membership: membership, payment: payment}} ->
+        membership |> Repo.preload(:plan)
+    end
+  end
+
+  # Create new payment.
+  @spec create_payment_changeset(User.t(), map) :: Ecto.Changeset.t()
+  defp create_payment_changeset(user, params) do
+    user
+    |> build_assoc(:payments, organisation_id: user.organisation_id)
+    |> Payment.changeset(params)
+  end
+
+  # Create membership and payment params
+  @spec create_membership_and_payment_params(
+          Membership.t(),
+          Plan.t(),
+          integer(),
+          Razorpay.Payment.t()
+        ) :: map
+  defp create_membership_and_payment_params(membership, plan, duration, razorpay) do
+    start_date = Timex.now()
+    end_date = start_date |> find_end_date(duration)
+
+    create_payment_params(membership, plan, razorpay)
+    |> Map.merge(%{
+      start_date: start_date,
+      end_date: end_date,
+      plan_duration: duration,
+      plan_id: plan.id
+    })
+  end
+
+  # Create payment params
+  @spec create_payment_params(Membership.t(), Plan.t(), Razorpay.Payment.t()) :: map
+  defp create_payment_params(
+         membership,
+         plan,
+         %Razorpay.Payment{amount: amount, id: r_id, status: status} = razorpay
+       ) do
+    status = status |> String.to_atom()
+    status = Payment.statuses()[status]
+
+    membership = membership |> Repo.preload([:plan])
+    action = get_payment_action(membership.plan, plan)
+
+    %{
+      razorpay_id: r_id,
+      amount: amount,
+      status: status,
+      action: action,
+      from_plan_id: membership.plan_id,
+      to_plan_id: plan.id,
+      meta: razorpay,
+      membership_id: membership.id
+    }
+  end
+
+  # Gets the duration of selected plan based on the amount paid.
+  @spec get_duration_from_plan_and_amount(Plan.t(), integer()) ::
+          integer() | {:error, :wrong_amount}
+  defp get_duration_from_plan_and_amount(%Plan{yearly_amount: amount}, amount), do: 365
+  defp get_duration_from_plan_and_amount(%Plan{monthly_amount: amount}, amount), do: 30
+  defp get_duration_from_plan_and_amount(_, _), do: {:error, :wrong_amount}
+
+  # Gets the payment action comparing the old and new plans.
+  @spec get_payment_action(Plan.t(), Plan.t()) :: integer
+  defp get_payment_action(%Plan{id: id}, %Plan{id: id}) do
+    Payment.actions()[:renew]
+  end
+
+  defp get_payment_action(%Plan{} = old_plan, %Plan{} = new_plan) do
+    cond do
+      old_plan.yearly_amount > new_plan.yearly_amount ->
+        Payment.actions()[:downgrade]
+
+      old_plan.yearly_amount < new_plan.yearly_amount ->
+        Payment.actions()[:upgrade]
+    end
+  end
+
+  @doc """
+  Gets the razorpay payment struct from the razorpay ID using `Razorpay.Payment.get/2`
+  """
+  @spec get_razorpay_data(binary) :: {:ok, Razorpay.Payment.t()} | Razorpay.error()
+  def get_razorpay_data(razorpay_id) do
+    Razorpay.Payment.get(razorpay_id)
+  end
 end

@@ -13,9 +13,12 @@ defmodule WraftDoc.EnterpriseTest do
     Enterprise.Organisation,
     Enterprise.ApprovalSystem,
     Enterprise.Plan,
+    Enterprise.Membership.Payment,
     Enterprise
   }
 
+  @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
+  @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
   test "get flow returns flow data by uuid" do
     user = insert(:user)
     flow = insert(:flow, creator: user, organisation: user.organisation)
@@ -442,6 +445,108 @@ defmodule WraftDoc.EnterpriseTest do
 
     test "returns nil when given input is not a plan struct" do
       response = Enterprise.delete_plan(nil)
+      assert response == nil
+    end
+  end
+
+  describe "get_membership/2" do
+    test "fetches a membership with valid parameters" do
+      user = insert(:user)
+      membership = insert(:membership, organisation: user.organisation)
+      fetched_membership = Enterprise.get_membership(membership.uuid, user)
+
+      assert fetched_membership.uuid == membership.uuid
+      assert fetched_membership.plan_id == membership.plan_id
+      assert fetched_membership.organisation_id == membership.organisation_id
+      assert fetched_membership.start_date == membership.start_date
+      assert fetched_membership.end_date == membership.end_date
+      assert fetched_membership.plan_duration == membership.plan_duration
+    end
+
+    test "returns nil with non-existent uuid" do
+      user = insert(:user)
+      fetched_membership = Enterprise.get_membership(Ecto.UUID.generate(), user)
+
+      assert fetched_membership == nil
+    end
+
+    test "returns nil with invalid parameter" do
+      membership = insert(:membership)
+      fetched_membership = Enterprise.get_membership(membership, nil)
+
+      assert fetched_membership == nil
+    end
+
+    test "returns nil with invalid uuid" do
+      user = insert(:user)
+      fetched_membership = Enterprise.get_membership(1, user)
+
+      assert fetched_membership == nil
+    end
+
+    test "returns nil when membership does not belongs to user's organisation" do
+      user = insert(:user)
+      membership = insert(:membership)
+      fetched_membership = Enterprise.get_membership(membership.uuid, user)
+      assert fetched_membership == nil
+    end
+  end
+
+  describe "update_membership/4" do
+    test "upadtes membership and creates new payment with valid attrs" do
+      user = insert(:user)
+      membership = insert(:membership)
+      plan = insert(:plan, monthly_amount: 100_000)
+      payment_count = Payment |> Repo.all() |> length
+      {:ok, razorpay} = @valid_razorpay_id |> Razorpay.Payment.get()
+      new_membership = Enterprise.update_membership(user, membership, plan, razorpay)
+
+      assert payment_count + 1 == Payment |> Repo.all() |> length
+      assert new_membership.organisation_id == membership.organisation_id
+      assert new_membership.plan_id == plan.id
+    end
+
+    test "does not update membership but creates new payment with failed razorpay id but valid attrs" do
+      user = insert(:user)
+      membership = insert(:membership, organisation: user.organisation)
+      plan = insert(:plan, monthly_amount: 100_000)
+      payment_count = Payment |> Repo.all() |> length
+      {:ok, razorpay} = @failed_razorpay_id |> Razorpay.Payment.get()
+      {:ok, payment} = Enterprise.update_membership(user, membership, plan, razorpay)
+
+      assert payment_count + 1 == Payment |> Repo.all() |> length
+      assert payment.organisation_id == membership.organisation_id
+      assert payment.membership_id == membership.id
+      assert payment.from_plan_id == membership.plan_id
+      assert payment.to_plan_id == plan.id
+    end
+
+    test "does not update membership and returns nil with invalid razorpay ID" do
+      user = insert(:user)
+      membership = insert(:membership)
+      plan = insert(:plan)
+      {:error, razorpay} = "wrong_id" |> Razorpay.Payment.get()
+      payment_count = Payment |> Repo.all() |> length
+      response = Enterprise.update_membership(user, membership, plan, razorpay)
+
+      assert payment_count == Payment |> Repo.all() |> length
+      assert response == nil
+    end
+
+    test "does not update membership and returns wrong amount error when razorpay amount does not match any plan amount" do
+      user = insert(:user)
+      membership = insert(:membership)
+      plan = insert(:plan)
+      {:ok, razorpay} = @valid_razorpay_id |> Razorpay.Payment.get()
+      payment_count = Payment |> Repo.all() |> length
+      response = Enterprise.update_membership(user, membership, plan, razorpay)
+
+      assert payment_count == Payment |> Repo.all() |> length
+      assert response == {:error, :wrong_amount}
+    end
+
+    test "does not update membership with wrong parameters" do
+      response = Enterprise.update_membership(nil, nil, nil, nil)
       assert response == nil
     end
   end
