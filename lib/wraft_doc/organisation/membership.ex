@@ -10,7 +10,7 @@ defmodule WraftDoc.Enterprise.Membership do
     field(:uuid, Ecto.UUID, autogenerate: true)
     field(:start_date, :naive_datetime)
     field(:end_date, :naive_datetime)
-    field(:plan_duration, :integer, default: 0)
+    field(:plan_duration, :integer)
     belongs_to(:plan, WraftDoc.Enterprise.Plan)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
@@ -20,7 +20,7 @@ defmodule WraftDoc.Enterprise.Membership do
   def changeset(%Membership{} = membership, attrs \\ %{}) do
     membership
     |> cast(attrs, [:start_date, :end_date, :plan_id, :organisation_id, :plan_duration])
-    |> validate_plan_duration_format()
+    |> validate_number(:plan_duration, greater_than_or_equal_to: 14)
     |> validate_required([:start_date, :end_date, :plan_duration, :plan_id, :organisation_id])
     |> unique_constraint(:plan_id,
       name: :membership_unique_index,
@@ -30,10 +30,9 @@ defmodule WraftDoc.Enterprise.Membership do
 
   def update_changeset(%Membership{} = membership, attrs \\ %{}) do
     membership
-    |> cast(attrs, [:start_date, :end_date, :plan_duration])
-    # |> calculate_plan_duration(membership)
-    |> validate_plan_duration_format()
-    |> validate_required([:start_date, :end_date])
+    |> cast(attrs, [:start_date, :end_date, :plan_duration, :plan_id])
+    |> validate_number(:plan_duration, greater_than_or_equal_to: 30)
+    |> validate_required([:start_date, :end_date, :plan_id])
   end
 
   # # Calculate duration of a membership
@@ -67,24 +66,4 @@ defmodule WraftDoc.Enterprise.Membership do
   # end
 
   # defp calculate_plan_duration(changeset, _), do: changeset
-
-  # Validate the format of the plan duration.
-  # It should be a positive integer.
-  @spec validate_plan_duration_format(Changeset.t()) :: Changeset.t()
-  defp validate_plan_duration_format(
-         %Ecto.Changeset{valid?: true, changes: %{plan_duration: plan_duration}} = changeset
-       ) do
-    plan_duration = plan_duration |> Integer.to_string()
-
-    Regex.match?(~r/^[0-9]\d*$/, plan_duration)
-    |> case do
-      true ->
-        changeset
-
-      false ->
-        add_error(changeset, :plan_duration, "Duration should be a positive number.!")
-    end
-  end
-
-  defp validate_plan_duration_format(changeset), do: changeset
 end

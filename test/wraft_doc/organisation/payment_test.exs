@@ -7,12 +7,15 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
     razorpay_id: "FUNC-001-1",
     start_date: Timex.now(),
     end_date: Timex.now() |> Timex.shift(days: 30),
-    invoice: %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"},
-    invoice_number: "WRAFT_INVOICE-001",
     amount: 1000,
     action: 1,
     status: 1,
     meta: %{id: "FUNC-001-1"}
+  }
+
+  @valid_update_attrs %{
+    invoice: %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"},
+    invoice_number: "WRAFT_INVOICE-001"
   }
 
   describe "changeset/2" do
@@ -43,8 +46,7 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
     end
 
     test "razorpay id unique index" do
-      {_, valid_attrs} = @valid_attrs |> Map.pop!(:invoice)
-      insert(:payment, valid_attrs)
+      insert(:payment, @valid_attrs)
       %{id: org_id} = insert(:organisation)
       %{id: u_id} = insert(:user)
       %{id: m_id} = insert(:membership)
@@ -64,27 +66,27 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
       {:error, changeset} = Payment.changeset(%Payment{}, params) |> Repo.insert()
       assert "Something Wrong. Try again.!" in errors_on(changeset, :razorpay_id)
     end
+  end
+
+  describe "invoice_changeset/2" do
+    test "valid changeset with valid attrs" do
+      changeset = Payment.invoice_changeset(%Payment{}, @valid_update_attrs)
+      assert changeset.valid?
+    end
+
+    test "invalid changeset with invalid attrs" do
+      changeset = Payment.invoice_changeset(%Payment{}, %{})
+      refute changeset.valid?
+    end
 
     test "invoice number unique index" do
-      {_, valid_attrs} = @valid_attrs |> Map.pop!(:invoice) |> elem(1) |> Map.pop!(:razorpay_id)
+      {_, valid_attrs} = @valid_update_attrs |> Map.pop!(:invoice)
       insert(:payment, valid_attrs)
-      %{id: org_id} = insert(:organisation)
-      %{id: u_id} = insert(:user)
-      %{id: m_id} = insert(:membership)
-      %{id: fp_id} = insert(:plan)
-      %{id: tp_id} = insert(:plan)
+      payment = insert(:payment)
 
-      params =
-        @valid_attrs
-        |> Map.merge(%{
-          organisation_id: org_id,
-          creator_id: u_id,
-          membership_id: m_id,
-          from_plan_id: fp_id,
-          to_plan_id: tp_id
-        })
+      {:error, changeset} =
+        Payment.invoice_changeset(payment, @valid_update_attrs) |> Repo.update()
 
-      {:error, changeset} = Payment.changeset(%Payment{}, params) |> Repo.insert()
       assert "Wrong invoice number.!" in errors_on(changeset, :invoice_number)
     end
   end

@@ -5,7 +5,8 @@ defmodule WraftDoc.Enterprise.MembershipTest do
 
   @valid_attrs %{
     start_date: Timex.now(),
-    end_date: Timex.now() |> Timex.shift(days: 30)
+    end_date: Timex.now() |> Timex.shift(days: 30),
+    plan_duration: 14
   }
 
   @invalid_attrs %{start_date: ""}
@@ -26,7 +27,7 @@ defmodule WraftDoc.Enterprise.MembershipTest do
       refute changeset.valid?
     end
 
-    test "organisation-plan unique constraint" do
+    test "organisation unique constraint" do
       plan = insert(:plan)
       organisation = insert(:organisation)
       insert(:membership, organisation: organisation, plan: plan)
@@ -40,7 +41,8 @@ defmodule WraftDoc.Enterprise.MembershipTest do
   describe "update_changeset/2" do
     test "valid update changeset with valid attrs" do
       membership = insert(:membership)
-      changeset = Membership.update_changeset(membership, @valid_attrs)
+      params = @valid_attrs |> Map.put(:plan_duration, 30)
+      changeset = Membership.update_changeset(membership, params)
 
       assert changeset.valid?
     end
@@ -59,15 +61,12 @@ defmodule WraftDoc.Enterprise.MembershipTest do
     #   assert changeset.valid?
     # end
 
-    # test "update changeset with invalid change in plan_duration" do
-    #   membership = insert(:membership)
-    #   # In membership factory, the end date is 30 days from current time. So,
-    #   # to plan duration negative, current time is shifted more than 30 days.
-    #   start_date = Timex.now() |> Timex.shift(days: 31)
-    #   changeset = Membership.update_changeset(membership, %{start_date: start_date})
+    test "update changeset with invalid change in plan_duration" do
+      membership = insert(:membership)
+      changeset = Membership.update_changeset(membership, %{plan_duration: 1})
 
-    #   refute changeset.valid?
-    # end
+      refute changeset.valid?
+    end
 
     test "update changeset with invalid attrs" do
       membership = insert(:membership)

@@ -8,6 +8,8 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   alias __MODULE__
   require Protocol
   Protocol.derive(Jason.Encoder, Razorpay.Payment)
+  def statuses(), do: [failed: 1, captured: 2]
+  def actions(), do: [downgrade: 1, renew: 2, upgrade: 3]
 
   schema "payment" do
     field(:uuid, Ecto.UUID, autogenerate: true)
@@ -35,7 +37,6 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
       :razorpay_id,
       :start_date,
       :end_date,
-      :invoice_number,
       :amount,
       :action,
       :status,
@@ -51,13 +52,16 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
       name: :razorpay_id_unique_index,
       message: "Something Wrong. Try again.!"
     )
+  end
+
+  def invoice_changeset(%Payment{} = payment, attrs \\ %{}) do
+    payment
+    |> cast(attrs, [:invoice_number])
+    |> cast_attachments(attrs, [:invoice])
+    |> validate_required([:invoice, :invoice_number])
     |> unique_constraint(:invoice_number,
       name: :invoice_number_unique_index,
       message: "Wrong invoice number.!"
     )
-  end
-
-  def invoice_changeset(%Payment{} = payment, attrs \\ %{}) do
-    payment |> cast_attachments(attrs, [:invoice])
   end
 end
