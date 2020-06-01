@@ -24,6 +24,53 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
     {:ok, %{conn: conn}}
   end
 
+  describe "show/1" do
+    test "shows organisation's membership with valid attrs", %{conn: conn} do
+      user = conn.assigns.current_user
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, user)
+
+      membership = insert(:membership, organisation: user.organisation)
+
+      conn = get(conn, Routes.v1_membership_path(conn, :show, user.organisation.uuid))
+
+      assert json_response(conn, 200)["id"] == membership.uuid
+      assert json_response(conn, 200)["plan_duration"] == membership.plan_duration
+      assert json_response(conn, 200)["plan"]["name"] == membership.plan.name
+      assert json_response(conn, 200)["plan"]["yearly_amount"] == membership.plan.yearly_amount
+    end
+
+    test "returns nil with non-existent uuid", %{conn: conn} do
+      user = conn.assigns.current_user
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, user)
+
+      conn = get(conn, Routes.v1_membership_path(conn, :show, user.organisation.uuid))
+
+      assert json_response(conn, 404) == "Not Found"
+    end
+
+    test "returns nil when given organisation id is different from user's organisation id", %{
+      conn: conn
+    } do
+      user = conn.assigns.current_user
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, user)
+
+      conn = get(conn, Routes.v1_membership_path(conn, :show, Ecto.UUID.generate()))
+      assert json_response(conn, 404) == "Not Found"
+    end
+  end
+
   describe "update/2" do
     test "updates membership on valid attributes", %{conn: conn} do
       user = conn.assigns.current_user

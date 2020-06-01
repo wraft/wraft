@@ -627,6 +627,22 @@ defmodule WraftDoc.Enterprise do
   def get_membership(_, _), do: nil
 
   @doc """
+  Get membership of an organisation with the given UUID.
+  """
+  @spec get_organisation_membership(Ecto.UUID.t()) :: Membership.t() | nil
+  def get_organisation_membership(<<_::288>> = o_uuid) do
+    from(m in Membership,
+      join: o in Organisation,
+      on: o.id == m.organisation_id,
+      where: o.uuid == ^o_uuid,
+      preload: [:plan]
+    )
+    |> Repo.one()
+  end
+
+  def get_organisation_membership(_), do: nil
+
+  @doc """
   Updates a membership.
   """
   @spec update_membership(User.t(), Membership.t(), Plan.t(), Razorpay.Payment.t()) ::

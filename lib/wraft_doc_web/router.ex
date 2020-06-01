@@ -118,6 +118,11 @@ defmodule WraftDocWeb.Router do
       # Organisations
       resources("/organisations", OrganisationController, only: [:create, :update, :show, :delete])
 
+      # Update membership plan
+      put("/memberships/:id", MembershipController, :update)
+      # Get memberhsip
+      get("/organisations/:id/memberships", MembershipController, :show)
+
       resources("/blocks", BlockController, except: [:index])
 
       # Delete content type field
@@ -161,9 +166,6 @@ defmodule WraftDocWeb.Router do
 
       # Update and Delete pipe stage
       resources("/stages", PipeStageController, only: [:update, :delete])
-
-      # Update membership plan
-      put("/memberships/:id", MembershipController, :update)
     end
   end
 
