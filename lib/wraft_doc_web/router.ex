@@ -161,6 +161,9 @@ defmodule WraftDocWeb.Router do
 
       # Update and Delete pipe stage
       resources("/stages", PipeStageController, only: [:update, :delete])
+
+      # Update membership plan
+      put("/memberships/:id", MembershipController, :update)
     end
   end
 
