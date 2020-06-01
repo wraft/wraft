@@ -66,8 +66,36 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
     }
   end
 
+  swagger_path :show do
+    put("/organisations/{id}/memberships")
+    summary("Show membership")
+    description("Show membership of an organisation")
+    operation_id("show_membership")
+
+    parameters do
+      id(:path, :string, "Organisation ID", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:Membership))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show(conn, %{"id" => o_uuid}) do
+    current_user = conn.assigns[:current_user]
+
+    with true <- o_uuid == current_user.organisation.uuid,
+         %Membership{} = membership <- Enterprise.get_organisation_membership(o_uuid) do
+      conn |> render("membership.json", membership: membership)
+    else
+      _ ->
+        nil
+    end
+  end
+
   swagger_path :update do
-    put("/membership/{id}")
+    put("/memberships/{id}")
     summary("Update a membership")
     description("Update a membership")
     operation_id("update_membership")

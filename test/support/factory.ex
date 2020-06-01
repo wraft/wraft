@@ -365,7 +365,7 @@ defmodule WraftDoc.Factory do
       plan: build(:plan),
       start_date: Timex.now(),
       end_date: end_date,
-      plan_duration: 30
+      plan_duration: Enum.random([14, 30, 365])
     }
   end
 

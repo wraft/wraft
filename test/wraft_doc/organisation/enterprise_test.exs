@@ -492,6 +492,28 @@ defmodule WraftDoc.EnterpriseTest do
     end
   end
 
+  describe "get_organisation_membership/1" do
+    test "fetches a membership with valid parameters" do
+      membership = insert(:membership)
+      fetched_membership = Enterprise.get_organisation_membership(membership.organisation.uuid)
+      assert fetched_membership.uuid == membership.uuid
+      assert fetched_membership.plan_id == membership.plan_id
+      assert fetched_membership.plan.yearly_amount == membership.plan.yearly_amount
+    end
+
+    test "returns nil with non-existent uuid" do
+      fetched_membership = Enterprise.get_organisation_membership(Ecto.UUID.generate())
+
+      assert fetched_membership == nil
+    end
+
+    test "returns nil with invalid uuid" do
+      fetched_membership = Enterprise.get_organisation_membership(1)
+
+      assert fetched_membership == nil
+    end
+  end
+
   describe "update_membership/4" do
     test "upadtes membership and creates new payment with valid attrs" do
       user = insert(:user)
