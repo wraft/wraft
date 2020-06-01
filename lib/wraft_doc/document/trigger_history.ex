@@ -36,17 +36,23 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
     timestamps()
   end
 
+  @doc """
+  Get the state value of a trigger history from its integer.
+  """
+  @spec get_state(%TriggerHistory{}) :: nil | binary
   def get_state(%TriggerHistory{state: state_int}) do
     states()
     |> Enum.find(fn {_state, int} -> int == state_int end)
     |> case do
       {state, _} ->
-        state
+        state |> Atom.to_string()
 
       _ ->
         nil
     end
   end
+
+  def get_state(_), do: nil
 
   def changeset(%TriggerHistory{} = trigger, attrs \\ %{}) do
     trigger

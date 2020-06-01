@@ -1,5 +1,6 @@
 defmodule WraftDoc.Document.Pipeline.TriggerHistoryTest do
   use WraftDoc.ModelCase
+  import WraftDoc.Factory
   alias WraftDoc.Document.Pipeline.TriggerHistory
 
   # import WraftDoc.Factory
@@ -18,6 +19,20 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistoryTest do
   @valid_trigger_end_attrs %{
     end_time: "2020-02-12T12:03:00"
   }
+
+  describe "get_state/1" do
+    test "returns a state with valid input" do
+      integer = TriggerHistory.states()[:executing]
+      trigger = insert(:trigger_history, state: integer)
+      string = TriggerHistory.get_state(trigger)
+      assert string == "executing"
+    end
+
+    test "returns nil with invalid input" do
+      response = TriggerHistory.get_state(%{state: 1})
+      assert response == nil
+    end
+  end
 
   describe "changeset/2" do
     test "changeset with valid attrs" do
