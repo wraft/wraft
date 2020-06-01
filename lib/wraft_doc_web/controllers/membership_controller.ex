@@ -95,7 +95,14 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
       conn |> render("membership.json", membership: membership)
     else
       {:ok, %Payment{}} ->
-        conn |> render("info.json", message: "Payment failed. Membership not updated.!")
+        conn
+        |> put_status(400)
+        |> render("info.json", message: "Payment failed. Membership not updated.!")
+
+      error ->
+        error
     end
   end
+
+  def update(_conn, _), do: nil
 end

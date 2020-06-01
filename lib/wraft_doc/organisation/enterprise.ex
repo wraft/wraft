@@ -670,7 +670,7 @@ defmodule WraftDoc.Enterprise do
       {:error, _, changeset, _} ->
         {:error, changeset}
 
-      {:ok, %{membership: membership, payment: payment}} ->
+      {:ok, %{membership: membership, payment: _payment}} ->
         membership |> Repo.preload(:plan)
     end
   end
