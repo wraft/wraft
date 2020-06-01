@@ -123,6 +123,10 @@ defmodule WraftDocWeb.Router do
       # Get memberhsip
       get("/organisations/:id/memberships", MembershipController, :show)
 
+      # Payments
+      resources("/payments", PaymentController, only: [:index, :show])
+
+      # Blocks
       resources("/blocks", BlockController, except: [:index])
 
       # Delete content type field

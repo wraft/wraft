@@ -62,6 +62,29 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
+        end,
+      OnlyMembership:
+        swagger_schema do
+          title("A Membership")
+          description("A Membership without plan details")
+
+          properties do
+            id(:string, "ID of the membership")
+            start_end(:string, "Start date of membership")
+            end_date(:string, "End date of membership")
+            plan_duration(:integer, "Duration of the membership")
+            inserted_at(:string, "When was the membership created", format: "ISO-8601")
+            updated_at(:string, "When was the membership last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "uhja8324jdadsmsd",
+            start_date: "2020-01-21T14:00:00Z",
+            end_date: "2020-01-21T14:00:00Z",
+            plan_duration: 30,
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
         end
     }
   end

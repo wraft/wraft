@@ -31,6 +31,39 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
     timestamps()
   end
 
+  @doc """
+  Get the status value from its integer
+  """
+  @spec get_status(%Payment{}) :: String.t() | nil
+  def get_status(%Payment{status: status_int}) do
+    statuses() |> find_value(status_int)
+  end
+
+  def get_status(_), do: nil
+
+  @doc """
+  Get the action value from its integer
+  """
+  @spec get_action(%Payment{}) :: String.t() | nil
+  def get_action(%Payment{action: action_int}) do
+    actions() |> find_value(action_int)
+  end
+
+  def get_action(_), do: nil
+
+  # Find the value from integre.
+  defp find_value(list, int_value) do
+    list
+    |> Enum.find(fn {_string_value, int} -> int == int_value end)
+    |> case do
+      {atom, _} ->
+        atom |> Atom.to_string()
+
+      _ ->
+        nil
+    end
+  end
+
   def changeset(%Payment{} = payment, attrs \\ %{}) do
     payment
     |> cast(attrs, [
