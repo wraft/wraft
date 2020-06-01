@@ -774,4 +774,37 @@ defmodule WraftDoc.Enterprise do
   def get_razorpay_data(razorpay_id) do
     Razorpay.Payment.get(razorpay_id)
   end
+
+  @doc """
+  Payment index with pagination.
+  """
+  @spec payment_index(integer, map) :: map
+  def payment_index(org_id, params) do
+    from(p in Payment,
+      where: p.organisation_id == ^org_id,
+      preload: [:organisation, :creator],
+      order_by: [desc: p.id]
+    )
+    |> Repo.paginate(params)
+  end
+
+  @doc """
+  Get a payment from its UUID.
+  """
+  @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
+  def get_payment(<<_::288>> = payment_uuid, %{organisation_id: org_id}) do
+    Payment |> Repo.get_by(uuid: payment_uuid, organisation_id: org_id)
+  end
+
+  def get_payment(_, _), do: nil
+
+  @doc """
+  Show a payment.
+  """
+  @spec show_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
+  def show_payment(payment_uuid, user) do
+    payment_uuid
+    |> get_payment(user)
+    |> Repo.preload([:organisation, :creator, :membership, :from_plan, :to_plan])
+  end
 end

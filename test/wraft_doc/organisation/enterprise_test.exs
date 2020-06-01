@@ -572,4 +572,81 @@ defmodule WraftDoc.EnterpriseTest do
       assert response == nil
     end
   end
+
+  describe "payment_index/2" do
+    test "returns the list of all payments in an organisation" do
+      organisation = insert(:organisation)
+      p1 = insert(:payment, organisation: organisation)
+      p2 = insert(:payment, organisation: organisation)
+
+      list = Enterprise.payment_index(organisation.id, %{})
+
+      assert list.entries |> Enum.map(fn x -> x.razorpay_id end) |> List.to_string() =~
+               p1.razorpay_id
+
+      assert list.entries |> Enum.map(fn x -> x.razorpay_id end) |> List.to_string() =~
+               p2.razorpay_id
+    end
+  end
+
+  describe "get_payment/2" do
+    test "returns the payment in the user's organisation with given id" do
+      user = insert(:user)
+      payment = insert(:payment, organisation: user.organisation)
+      fetched_payement = Enterprise.get_payment(payment.uuid, user)
+      assert fetched_payement.razorpay_id == payment.razorpay_id
+      assert fetched_payement.uuid == payment.uuid
+    end
+
+    test "returns nil when payment does not belong to the user's organisation" do
+      user = insert(:user)
+      payment = insert(:payment)
+      response = Enterprise.get_payment(payment.uuid, user)
+      assert response == nil
+    end
+
+    test "returns nil for non existent payment" do
+      user = insert(:user)
+      response = Enterprise.get_payment(Ecto.UUID.generate(), user)
+      assert response == nil
+    end
+
+    test "returns nil for invalid data" do
+      response = Enterprise.get_payment(Ecto.UUID.generate(), nil)
+      assert response == nil
+    end
+  end
+
+  describe "show_payment/2" do
+    test "returns the payment in the user's organisation with given id" do
+      user = insert(:user)
+      payment = insert(:payment, organisation: user.organisation)
+      fetched_payement = Enterprise.show_payment(payment.uuid, user)
+      assert fetched_payement.razorpay_id == payment.razorpay_id
+      assert fetched_payement.uuid == payment.uuid
+      assert fetched_payement.organisation.uuid == payment.organisation.uuid
+      assert fetched_payement.creator.uuid == payment.creator.uuid
+      assert fetched_payement.membership.uuid == payment.membership.uuid
+      assert fetched_payement.from_plan.uuid == payment.from_plan.uuid
+      assert fetched_payement.to_plan.uuid == payment.to_plan.uuid
+    end
+
+    test "returns nil when payment does not belong to the user's organisation" do
+      user = insert(:user)
+      payment = insert(:payment)
+      response = Enterprise.show_payment(payment.uuid, user)
+      assert response == nil
+    end
+
+    test "returns nil for non existent payment" do
+      user = insert(:user)
+      response = Enterprise.show_payment(Ecto.UUID.generate(), user)
+      assert response == nil
+    end
+
+    test "returns nil for invalid data" do
+      response = Enterprise.show_payment(Ecto.UUID.generate(), nil)
+      assert response == nil
+    end
+  end
 end
