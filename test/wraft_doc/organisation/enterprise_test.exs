@@ -518,7 +518,7 @@ defmodule WraftDoc.EnterpriseTest do
     end
 
     test "returns membership irrespective of organisation when user has admin role" do
-      role = role(name: "admin")
+      role = insert(:role, name: "admin")
       user = insert(:user, role)
       membership = insert(:membership)
       fetched_membership = Enterprise.get_membership(membership.uuid, user)
@@ -645,7 +645,7 @@ defmodule WraftDoc.EnterpriseTest do
     end
 
     test "returns payment irrespective of organisation when user has admin role" do
-      role = role(name: "admin")
+      role = insert(:role, name: "admin")
       user = insert(:user, role)
       payment = insert(:payment)
       fetched_payement = Enterprise.get_payment(payment.uuid, user)
