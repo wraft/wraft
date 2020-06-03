@@ -86,7 +86,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   end
 
   swagger_path :index do
-    post("/plans")
+    get("/plans")
     summary("Plan index")
     description("List all plans created so far")
     operation_id("plan_index")
@@ -102,10 +102,14 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   end
 
   swagger_path :show do
-    post("/plans/{id}")
+    get("/plans/{id}")
     summary("Show Plan")
     description("Show a plan")
     operation_id("show_plan")
+
+    parameters do
+      id(:path, :string, "ID of the plan")
+    end
 
     response(200, "OK", Schema.ref(:Plan))
     response(422, "Unprocessable Entity", Schema.ref(:Error))

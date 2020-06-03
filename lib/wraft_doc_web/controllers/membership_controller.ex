@@ -90,7 +90,7 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
   end
 
   swagger_path :show do
-    put("/organisations/{id}/memberships")
+    get("/organisations/{id}/memberships")
     summary("Show membership")
     description("Show membership of an organisation")
     operation_id("show_membership")

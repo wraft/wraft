@@ -221,7 +221,7 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
   end
 
   swagger_path :index do
-    post("/payments")
+    get("/payments")
     summary("Payment index")
     description("List all payments done so far")
     operation_id("payment_index")
@@ -251,7 +251,7 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
   end
 
   swagger_path :show do
-    post("/payments/{id}")
+    get("/payments/{id}")
     summary("Show a payment")
     description("Show a payment")
     operation_id("show_payment")
