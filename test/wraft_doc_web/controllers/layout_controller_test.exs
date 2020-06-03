@@ -39,10 +39,13 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   end
 
   test "create layouts on valid attrrs", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     count_before = Layout |> Repo.all() |> length()
     %{uuid: engine_uuid} = insert(:engine)
@@ -57,10 +60,13 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   end
 
   test "does not create layouts on invalid attrs", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     count_before = Layout |> Repo.all() |> length()
     %{uuid: engine_uuid} = insert(:engine)
@@ -76,6 +82,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
 
   test "update layouts on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     layout = insert(:layout, creator: user, organisation: user.organisation)
 
     conn =
@@ -98,6 +105,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
 
   test "does't update layouts on invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     layout = insert(:layout, creator: user, organisation: user.organisation)
 
     conn =
@@ -114,7 +122,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
 
   test "index lists assests by current user", %{conn: conn} do
     user = conn.assigns.current_user
-
+    insert(:membership, organisation: user.organisation)
     a1 = insert(:layout, creator: user, organisation: user.organisation)
     a2 = insert(:layout, creator: user, organisation: user.organisation)
 
@@ -132,6 +140,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
 
   test "show renders layout details by id", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     layout = insert(:layout, creator: user, organisation: user.organisation)
 
     conn =
@@ -145,20 +154,26 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   end
 
   test "error not found for id does not exists", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_layout_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 404) == "Not Found"
   end
 
   test "delete layout by given id", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     user = conn.assigns.current_user
     layout = insert(:layout, creator: user, organisation: user.organisation)
@@ -170,13 +185,15 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   end
 
   test "error not found for user from another organisation", %{conn: conn} do
+    current_user = conn.assigns[:current_user]
+    insert(:membership, organisation: current_user.organisation)
     user = insert(:user)
     layout = insert(:layout, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, current_user)
 
     conn = get(conn, Routes.v1_layout_path(conn, :show, layout.uuid))
 

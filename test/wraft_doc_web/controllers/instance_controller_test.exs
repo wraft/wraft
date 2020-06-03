@@ -34,6 +34,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "create instances by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, organisation: user.organisation)
     state = insert(:state, organisation: user.organisation)
 
@@ -56,6 +57,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "does not create instances by invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, organisation: user.organisation)
     state = insert(:state, organisation: user.organisation)
 
@@ -77,6 +79,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "update instances on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     instance = insert(:instance, creator: user, content_type: content_type)
 
@@ -103,6 +106,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "does't update instances for invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     instance = insert(:instance, creator: user, content_type: content_type)
 
@@ -122,6 +126,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     # u1 = insert(:user)
     # u2 = insert(:user)
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type)
 
     dt1 = insert(:instance, creator: user, content_type: content_type)
@@ -141,6 +146,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "all templates lists all instances under an organisation", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     ct1 = insert(:content_type)
     ct2 = insert(:content_type)
 
@@ -162,6 +168,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "show renders instance details by id", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     instance = insert(:instance, creator: user, content_type: content_type)
 
@@ -176,22 +183,27 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   test "error not found for id does not exists", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_instance_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 404) == "Not Found"
   end
 
   test "delete instance by given id", %{conn: conn} do
+    user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
-    user = conn.assigns.current_user
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     instance = insert(:instance, creator: user, content_type: content_type)
     count_before = Instance |> Repo.all() |> length()
@@ -202,14 +214,17 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   test "error not found for user from another organisation", %{conn: conn} do
+    current_user = conn.assigns[:current_user]
+    insert(:membership, organisation: current_user.organisation)
     user = insert(:user)
+    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     instance = insert(:instance, creator: user, content_type: content_type)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, current_user)
 
     conn = get(conn, Routes.v1_instance_path(conn, :show, instance.uuid))
 

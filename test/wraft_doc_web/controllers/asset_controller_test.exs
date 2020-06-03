@@ -29,10 +29,13 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   end
 
   test "create assets by valid attrrs", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     count_before = Asset |> Repo.all() |> length()
 
@@ -45,10 +48,13 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   end
 
   test "does not create assets by invalid attrs", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     count_before = Asset |> Repo.all() |> length()
 
@@ -62,7 +68,9 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
 
   test "update assets on valid attrs with Plug.Upload", %{conn: conn} do
     user = conn.assigns.current_user
+
     organisation = user.organisation
+    insert(:membership, organisation: organisation)
     asset = insert(:asset, creator: user, organisation: organisation)
     content_type = insert(:content_type)
     filename = Plug.Upload.random_file!("test")
@@ -87,6 +95,8 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   test "does't update assets for invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     organisation = user.organisation
+    insert(:membership, organisation: organisation)
+
     asset = insert(:asset, creator: user, organisation: organisation)
 
     conn =
@@ -103,6 +113,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
 
   test "index lists assests by current user", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
 
     a1 = insert(:asset, creator: user, organisation: user.organisation)
     a2 = insert(:asset, creator: user, organisation: user.organisation)
@@ -121,6 +132,8 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
 
   test "show renders asset details by id", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
+
     asset = insert(:asset, creator: user, organisation: user.organisation)
 
     conn =
@@ -134,22 +147,27 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   end
 
   test "error not found for id does not exists", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_asset_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 404) == "Not Found"
   end
 
   test "delete asset by given id", %{conn: conn} do
+    user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
-    user = conn.assigns.current_user
     asset = insert(:asset, creator: user, organisation: user.organisation)
     count_before = Asset |> Repo.all() |> length()
 
@@ -159,8 +177,10 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   end
 
   test "error Not Found on user from diffrent organisation", %{conn: conn} do
-    user = insert(:user)
-    asset = insert(:asset, creator: user, organisation: user.organisation)
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
+    asset = insert(:asset)
 
     conn =
       build_conn()

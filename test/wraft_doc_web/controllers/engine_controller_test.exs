@@ -21,13 +21,15 @@ defmodule WraftDocWeb.Api.V1.EngineControllerTest do
   end
 
   test "index lists engines from database", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
     e1 = insert(:engine)
     e2 = insert(:engine)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_engine_path(conn, :index))
     engine_index = json_response(conn, 200)["engines"]
