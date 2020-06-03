@@ -33,6 +33,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
   test "create states by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     flow = insert(:flow, creator: user, organisation: user.organisation)
 
     conn =
@@ -51,10 +52,13 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   end
 
   test "does not create states by invalid attrs", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     user = conn.assigns.current_user
     flow = insert(:flow, creator: user, organisation: user.organisation)
@@ -71,6 +75,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
   test "update states on valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     state = insert(:state, organisation: user.organisation)
 
     conn =
@@ -91,6 +96,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
   test "does't update states for invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     state = insert(:state, organisation: user.organisation)
 
     conn =
@@ -107,6 +113,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
   test "index lists states by current user", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     flow = insert(:flow)
 
     a1 = insert(:state, creator: user, organisation: user.organisation, flow: flow)
@@ -125,10 +132,13 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   end
 
   test "delete state by given id", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     user = conn.assigns.current_user
     state = insert(:state, organisation: user.organisation)
@@ -140,10 +150,13 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   end
 
   test "error not found for user from another organisation", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     user = insert(:user)
     state = insert(:state, creator: user, organisation: user.organisation)

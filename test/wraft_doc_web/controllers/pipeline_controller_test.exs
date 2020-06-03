@@ -33,6 +33,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "create/2" do
     test "create pipeline by valid attrrs", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -80,6 +81,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
 
     test "does not create pipeline by invalid attrs", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -100,7 +102,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "index/2" do
     test "index lists all pipelines in current user's organisation", %{conn: conn} do
       user = conn.assigns.current_user
-
+      insert(:membership, organisation: user.organisation)
       p1 = insert(:pipeline, organisation: user.organisation)
       p2 = insert(:pipeline, organisation: user.organisation)
 
@@ -124,6 +126,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "update/2" do
     test "update pipeline on valid attributes", %{conn: conn} do
       user = conn.assigns[:current_user]
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -174,6 +177,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
 
     test "does't update flow on invalid attrs", %{conn: conn} do
       user = conn.assigns[:current_user]
+      insert(:membership, organisation: user.organisation)
       pipeline = insert(:pipeline, organisation: user.organisation)
 
       conn =
@@ -192,6 +196,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "show/2" do
     test "show renders pipeline details by id", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -209,10 +214,13 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
     end
 
     test "show returns not found for non-existent ID", %{conn: conn} do
+      user = conn.assigns[:current_user]
+      insert(:membership, organisation: user.organisation)
+
       conn =
         build_conn()
         |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
+        |> assign(:current_user, user)
 
       conn = get(conn, Routes.v1_pipeline_path(conn, :show, Ecto.UUID.generate()))
       assert json_response(conn, 404) == "Not Found"
@@ -222,6 +230,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "delete/2" do
     test "delete pipeline by given id", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()

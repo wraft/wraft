@@ -24,6 +24,7 @@ defmodule WraftDocWeb.Plug.AddActionLogTest do
 
   test "adds new log when an action is made by an authorized user", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
 
     conn =
       build_conn()

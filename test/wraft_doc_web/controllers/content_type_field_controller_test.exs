@@ -31,6 +31,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
 
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     content_type_field = insert(:content_type_field, content_type: content_type)
@@ -44,10 +45,13 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldControllerTest do
   end
 
   test "error not found for user from another organisation", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     user = insert(:user)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)

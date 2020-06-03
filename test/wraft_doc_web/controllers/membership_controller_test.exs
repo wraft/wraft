@@ -43,23 +43,11 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       assert json_response(conn, 200)["plan"]["yearly_amount"] == membership.plan.yearly_amount
     end
 
-    test "returns nil with non-existent uuid", %{conn: conn} do
-      user = conn.assigns.current_user
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
-      conn = get(conn, Routes.v1_membership_path(conn, :show, user.organisation.uuid))
-
-      assert json_response(conn, 404) == "Not Found"
-    end
-
     test "returns nil when given organisation id is different from user's organisation id", %{
       conn: conn
     } do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -153,6 +141,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
            conn: conn
          } do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
