@@ -884,7 +884,7 @@ defmodule WraftDoc.DocumentTest do
       count_before = Theme |> Repo.all() |> length()
       {:ok, theme} = Document.create_theme(user, @valid_theme_attrs)
       count_after = Theme |> Repo.all() |> length()
-      count_before + 1 == count_after
+      assert count_before + 1 == count_after
       assert theme.name == @valid_theme_attrs["name"]
       assert theme.font == @valid_theme_attrs["font"]
       assert theme.typescale == @valid_theme_attrs["typescale"]
