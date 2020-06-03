@@ -618,8 +618,13 @@ defmodule WraftDoc.Enterprise do
 
   @doc """
   Get a membership from its UUID.
+  When the user is admin no need to check the user's organisation.
   """
   @spec get_membership(Ecto.UUID.t(), User.t()) :: Membership.t() | nil
+  def get_membership(<<_::288>> = m_uuid, %User{role: %{name: "admin"}}) do
+    Membership |> Repo.get_by(uuid: m_uuid)
+  end
+
   def get_membership(<<_::288>> = m_uuid, %User{organisation_id: org_id}) do
     Membership |> Repo.get_by(uuid: m_uuid, organisation_id: org_id)
   end
@@ -686,8 +691,10 @@ defmodule WraftDoc.Enterprise do
       {:error, _, changeset, _} ->
         {:error, changeset}
 
-      {:ok, %{membership: membership, payment: _payment}} ->
-        membership |> Repo.preload(:plan)
+      {:ok, %{membership: membership, payment: payment}} ->
+        membership = membership |> Repo.preload([:plan, :organisation])
+        Task.start_link(fn -> create_invoice(membership, payment) end)
+        membership
     end
   end
 
@@ -767,6 +774,53 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
+  # Create invoice and update payment.
+  @spec create_invoice(Membership.t(), Payment.t()) :: {:ok, Payment.t()} | Ecto.Changeset.t()
+  defp create_invoice(membership, payment) do
+    invoice_number = generate_invoice_number(payment)
+
+    invoice =
+      Phoenix.View.render_to_string(
+        WraftDocWeb.Api.V1.PaymentView,
+        "invoice.html",
+        membership: membership,
+        invoice_number: invoice_number,
+        payment: payment
+      )
+
+    {:ok, filename} =
+      PdfGenerator.generate(invoice,
+        page_size: "A4",
+        delete_temporary: true,
+        edit_password: "1234",
+        filename: invoice_number
+      )
+
+    invoice = invoice_upload_struct(invoice_number, filename)
+
+    upload_invoice(payment, invoice, invoice_number)
+  end
+
+  # Create invoice number from payment ID.
+  defp generate_invoice_number(%{id: id}) do
+    "WraftDoc-Invoice-" <> String.pad_leading("#{id}", 6, "0")
+  end
+
+  # Plug upload struct for uploading invoice
+  defp invoice_upload_struct(invoice_number, filename) do
+    %Plug.Upload{
+      content_type: "application/pdf",
+      filename: "#{invoice_number}.pdf",
+      path: filename
+    }
+  end
+
+  # Upload the invoice to AWS and link with payment transactions.
+  defp upload_invoice(payment, invoice, invoice_number) do
+    params = %{invoice: invoice, invoice_number: invoice_number}
+    payment |> Payment.invoice_changeset(params) |> Repo.update!()
+  end
+
   @doc """
   Gets the razorpay payment struct from the razorpay ID using `Razorpay.Payment.get/2`
   """
@@ -792,6 +846,10 @@ defmodule WraftDoc.Enterprise do
   Get a payment from its UUID.
   """
   @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
+  def get_payment(<<_::288>> = payment_uuid, %{role: %{name: "admin"}}) do
+    Payment |> Repo.get_by(uuid: payment_uuid)
+  end
+
   def get_payment(<<_::288>> = payment_uuid, %{organisation_id: org_id}) do
     Payment |> Repo.get_by(uuid: payment_uuid, organisation_id: org_id)
   end

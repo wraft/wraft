@@ -127,6 +127,8 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
       {:error, changeset} =
         Payment.invoice_changeset(payment, @valid_update_attrs) |> Repo.update()
 
+      File.rm_rf!("uploads/invoice/#{payment.id}")
+
       assert "Wrong invoice number.!" in errors_on(changeset, :invoice_number)
     end
   end

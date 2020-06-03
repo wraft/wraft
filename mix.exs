@@ -86,7 +86,9 @@ defmodule WraftDoc.Mixfile do
       # Business logic flow
       {:opus, "~> 0.6.1"},
       # Razorpay
-      {:razorpay, "~> 0.5.0"}
+      {:razorpay, "~> 0.5.0"},
+      # PDF generation using wkhtmltopdf
+      {:pdf_generator, "~> 0.6.2"}
     ]
   end
 
