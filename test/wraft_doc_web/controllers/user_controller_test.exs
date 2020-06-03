@@ -84,6 +84,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   describe "me/2" do
     test "returns the current logined user", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -230,6 +231,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   describe "update/2" do
     test "updates password with valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -246,6 +248,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
     test "does not update password with invalid attrs", %{conn: conn} do
       user = conn.assigns[:current_user]
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -263,6 +266,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     test "does not update password and returns wrong password error with wrong current password",
          %{conn: conn} do
       user = conn.assigns[:current_user]
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -278,6 +282,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     test "does not update password and returns same password error when new password is same as old one",
          %{conn: conn} do
       user = conn.assigns[:current_user]
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -293,6 +298,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
     test "returns not found error when attrs does not contain all required values", %{conn: conn} do
       user = conn.assigns[:current_user]
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()

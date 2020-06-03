@@ -24,7 +24,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
   describe "index/2" do
     test "index lists all payments in current user's organisation", %{conn: conn} do
       user = conn.assigns.current_user
-
+      insert(:membership, organisation: user.organisation)
       p1 = insert(:payment, organisation: user.organisation)
       p2 = insert(:payment, organisation: user.organisation)
 
@@ -48,6 +48,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
   describe "show/2" do
     test "show renders the payment in the user's organisation with given id", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -68,6 +69,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
 
     test "returns nil when payment does not belong to the user's organisation", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -81,6 +83,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
 
     test "returns nil for non existent payment", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -93,6 +96,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
 
     test "returns nil for invalid data", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()

@@ -35,6 +35,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   test "create themes by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -52,10 +53,13 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
   end
 
   test "does not create themes by invalid attrs", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     count_before = Theme |> Repo.all() |> length()
 
@@ -69,6 +73,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   test "update themes on valid attrs ", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     theme = insert(:theme, creator: user, organisation: user.organisation)
     content_type = insert(:content_type)
     filename = Plug.Upload.random_file!("test")
@@ -92,6 +97,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   test "does't update themes for invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     theme = insert(:theme, creator: user, organisation: user.organisation)
 
     conn =
@@ -108,7 +114,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   test "index lists assests by current user", %{conn: conn} do
     user = conn.assigns.current_user
-
+    insert(:membership, organisation: user.organisation)
     a1 = insert(:theme, creator: user, organisation: user.organisation)
     a2 = insert(:theme, creator: user, organisation: user.organisation)
 
@@ -126,6 +132,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   test "show renders theme details by id", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     theme = insert(:theme, creator: user, organisation: user.organisation)
 
     conn =
@@ -139,20 +146,26 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
   end
 
   test "error not found for id does not exists", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_theme_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 404) == "Not Found"
   end
 
   test "delete theme by given id", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     user = conn.assigns.current_user
     theme = insert(:theme, creator: user, organisation: user.organisation)
@@ -164,13 +177,15 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
   end
 
   test "error not founc for user from another organisation", %{conn: conn} do
+    current_user = conn.assigns[:current_user]
+    insert(:membership, organisation: current_user.organisation)
     user = insert(:user)
     theme = insert(:theme, creator: user, organisation: user.organisation)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, current_user)
 
     conn = get(conn, Routes.v1_theme_path(conn, :show, theme.uuid))
 

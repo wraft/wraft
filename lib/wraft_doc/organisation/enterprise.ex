@@ -623,6 +623,8 @@ defmodule WraftDoc.Enterprise do
     Membership |> Repo.get_by(uuid: m_uuid)
   end
 
+  def get_membership(_), do: nil
+
   @doc """
   Same as get_membership/2, but also uses user's organisation ID to get the membership.
   When the user is admin no need to check the user's organisation.

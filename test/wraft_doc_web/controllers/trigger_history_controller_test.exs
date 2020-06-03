@@ -31,6 +31,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
   describe "create" do
     test "creates trigger history and pipeline run job with valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -65,6 +66,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
 
     test "does not create trigger history with invalid attrs", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -90,6 +92,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
       conn: conn
     } do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -113,6 +116,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
   describe "index/2" do
     test "index lists triggers under a pipeline with pagination", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
       pipeline = insert(:pipeline, organisation: user.organisation)
       trigger1 = insert(:trigger_history, state: 1, pipeline: pipeline, creator: user)
       trigger2 = insert(:trigger_history, state: 2, pipeline: pipeline, creator: user)
