@@ -2,7 +2,7 @@ defmodule WraftDoc.PipelineRunnerTest do
   use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
   use ExUnit.Case
-  alias WraftDoc.{PipelineRunner, Document, Document.Instance, Document.Instance.History}
+  alias WraftDoc.{PipelineRunner, Document.Instance, Document.Instance.History}
 
   describe "preload_pipeline_and_stages/1" do
     test "returns preloaded trigger struct with trigger struct as input" do
