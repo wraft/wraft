@@ -449,6 +449,32 @@ defmodule WraftDoc.EnterpriseTest do
     end
   end
 
+  describe "get_membership/1" do
+    test "fetches a membership with valid uuid" do
+      membership = insert(:membership)
+      fetched_membership = Enterprise.get_membership(membership.uuid)
+
+      assert fetched_membership.uuid == membership.uuid
+      assert fetched_membership.plan_id == membership.plan_id
+      assert fetched_membership.organisation_id == membership.organisation_id
+      assert fetched_membership.start_date == membership.start_date
+      assert fetched_membership.end_date == membership.end_date
+      assert fetched_membership.plan_duration == membership.plan_duration
+    end
+
+    test "returns nil with non-existent uuid" do
+      fetched_membership = Enterprise.get_membership(Ecto.UUID.generate())
+
+      assert fetched_membership == nil
+    end
+
+    test "returns nil with invalid uuid" do
+      fetched_membership = Enterprise.get_membership(1)
+
+      assert fetched_membership == nil
+    end
+  end
+
   describe "get_membership/2" do
     test "fetches a membership with valid parameters" do
       user = insert(:user)
@@ -489,6 +515,19 @@ defmodule WraftDoc.EnterpriseTest do
       membership = insert(:membership)
       fetched_membership = Enterprise.get_membership(membership.uuid, user)
       assert fetched_membership == nil
+    end
+
+    test "returns membership irrespective of organisation when user has admin role" do
+      role = role(name: "admin")
+      user = insert(:user, role)
+      membership = insert(:membership)
+      fetched_membership = Enterprise.get_membership(membership.uuid, user)
+      assert fetched_membership.uuid == membership.uuid
+      assert fetched_membership.plan_id == membership.plan_id
+      assert fetched_membership.organisation_id == membership.organisation_id
+      assert fetched_membership.start_date == membership.start_date
+      assert fetched_membership.end_date == membership.end_date
+      assert fetched_membership.plan_duration == membership.plan_duration
     end
   end
 
@@ -603,6 +642,15 @@ defmodule WraftDoc.EnterpriseTest do
       payment = insert(:payment)
       response = Enterprise.get_payment(payment.uuid, user)
       assert response == nil
+    end
+
+    test "returns payment irrespective of organisation when user has admin role" do
+      role = role(name: "admin")
+      user = insert(:user, role)
+      payment = insert(:payment)
+      fetched_payement = Enterprise.get_payment(payment.uuid, user)
+      assert fetched_payement.razorpay_id == payment.razorpay_id
+      assert fetched_payement.uuid == payment.uuid
     end
 
     test "returns nil for non existent payment" do
