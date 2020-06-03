@@ -225,7 +225,7 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
     summary("Payment index")
     description("List all payments done so far")
     operation_id("payment_index")
-
+    parameter(:page, :query, :string, "Page number")
     response(200, "OK", Schema.ref(:PaymentIndex))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
@@ -255,6 +255,8 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
     summary("Show a payment")
     description("Show a payment")
     operation_id("show_payment")
+
+    parameter(:id, :path, :string, "ID of payment", required: true)
 
     response(200, "OK", Schema.ref(:ShowPayment))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
