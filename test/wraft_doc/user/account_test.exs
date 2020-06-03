@@ -1,7 +1,7 @@
 defmodule WraftDoc.AccountTest do
   use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Account, Account.AuthToken}
+  alias WraftDoc.Account
   alias WraftDocWeb.Endpoint
 
   @valid_attrs %{

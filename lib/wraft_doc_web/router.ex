@@ -18,6 +18,10 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Guardian.AuthPipeline)
   end
 
+  pipeline :valid_membership do
+    plug(WraftDocWeb.Plug.ValidMembershipCheck)
+  end
+
   pipeline :admin do
     plug(WraftDocWeb.Plug.AdminCheck)
   end
@@ -47,6 +51,9 @@ defmodule WraftDocWeb.Router do
       # Reset the password
       post("/user/password/reset", UserController, :reset)
 
+      # Show and index plans
+      resources("/plans", PlanController, only: [:show, :index])
+
       # Verify Token
       get("/token", UserController, :token)
     end
@@ -54,7 +61,7 @@ defmodule WraftDocWeb.Router do
 
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth])
+    pipe_through([:api, :api_auth, :valid_membership])
 
     scope "/v1", Api.V1, as: :v1 do
       # Current user details
@@ -115,6 +122,15 @@ defmodule WraftDocWeb.Router do
       # Organisations
       resources("/organisations", OrganisationController, only: [:create, :update, :show, :delete])
 
+      # Update membership plan
+      put("/memberships/:id", MembershipController, :update)
+      # Get memberhsip
+      get("/organisations/:id/memberships", MembershipController, :show)
+
+      # Payments
+      resources("/payments", PaymentController, only: [:index, :show])
+
+      # Blocks
       resources("/blocks", BlockController, except: [:index])
 
       # Delete content type field
@@ -173,6 +189,9 @@ defmodule WraftDocWeb.Router do
       resources("/field_types", FieldTypeController,
         only: [:create, :index, :show, :update, :delete]
       )
+
+      # Create, Update and delete plans
+      resources("/plans", PlanController, only: [:create, :update, :delete])
     end
   end
 

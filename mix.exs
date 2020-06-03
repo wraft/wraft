@@ -84,7 +84,11 @@ defmodule WraftDoc.Mixfile do
       # Live dashboard
       {:phoenix_live_dashboard, "~> 0.1.0"},
       # Business logic flow
-      {:opus, "~> 0.6.1"}
+      {:opus, "~> 0.6.1"},
+      # Razorpay
+      {:razorpay, "~> 0.5.0"},
+      # PDF generation using wkhtmltopdf
+      {:pdf_generator, "~> 0.6.2"}
     ]
   end
 

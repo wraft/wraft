@@ -70,6 +70,16 @@ defmodule WraftDocWeb.FallbackController do
     put_resp_content_type(conn, "application/json") |> send_resp(422, body)
   end
 
+  def call(conn, {:error, %Razorpay.Error{description: description}}) do
+    body = Jason.encode!(%{errors: description})
+    put_resp_content_type(conn, "application/json") |> send_resp(422, body)
+  end
+
+  def call(conn, {:error, :wrong_amount}) do
+    body = Jason.encode!(%{errors: "No plan with paid amount..!!"})
+    put_resp_content_type(conn, "application/json") |> send_resp(422, body)
+  end
+
   def call(conn, nil) do
     conn
     |> put_status(:not_found)
