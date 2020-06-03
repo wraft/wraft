@@ -18,6 +18,10 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Guardian.AuthPipeline)
   end
 
+  pipeline :valid_membership do
+    plug(WraftDocWeb.Plug.ValidMembershipCheck)
+  end
+
   pipeline :admin do
     plug(WraftDocWeb.Plug.AdminCheck)
   end
@@ -57,7 +61,7 @@ defmodule WraftDocWeb.Router do
 
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth])
+    pipe_through([:api, :api_auth, :valid_membership])
 
     scope "/v1", Api.V1, as: :v1 do
       # Current user details
