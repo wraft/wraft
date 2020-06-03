@@ -8,6 +8,7 @@ defmodule WraftDocWeb.Api.V1.MembershipView do
       start_date: membership.start_date,
       end_date: membership.end_date,
       plan_duration: membership.plan_duration,
+      is_expired: membership.is_expired,
       updated_at: membership.updated_at,
       inserted_at: membership.inserted_at,
       plan: render_one(membership.plan, PlanView, "plan.json", as: :plan)
@@ -20,6 +21,7 @@ defmodule WraftDocWeb.Api.V1.MembershipView do
       start_date: membership.start_date,
       end_date: membership.end_date,
       plan_duration: membership.plan_duration,
+      is_expired: membership.is_expired,
       updated_at: membership.updated_at,
       inserted_at: membership.inserted_at
     }
