@@ -76,9 +76,10 @@ defmodule WraftDoc.Enterprise.MembershipTest do
   end
 
   describe "expired_changeset/1" do
-    test "expired changeset returns valid changeset"
-    membership = insert(:membership)
-    changeset = Membership.expired_changeset(membership)
-    assert changeset.valid?
+    test "expired changeset returns valid changeset" do
+      membership = insert(:membership)
+      changeset = Membership.expired_changeset(membership)
+      assert changeset.valid?
+    end
   end
 end
