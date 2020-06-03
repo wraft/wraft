@@ -11,6 +11,7 @@ defmodule WraftDoc.Enterprise.Membership do
     field(:start_date, :naive_datetime)
     field(:end_date, :naive_datetime)
     field(:plan_duration, :integer)
+    field(:is_expired, :boolean, default: false)
     belongs_to(:plan, WraftDoc.Enterprise.Plan)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
@@ -29,10 +30,17 @@ defmodule WraftDoc.Enterprise.Membership do
   end
 
   def update_changeset(%Membership{} = membership, attrs \\ %{}) do
+    attrs = attrs |> Map.put(:is_expired, false)
+
     membership
-    |> cast(attrs, [:start_date, :end_date, :plan_duration, :plan_id])
+    |> cast(attrs, [:start_date, :end_date, :plan_duration, :plan_id, :is_expired])
     |> validate_number(:plan_duration, greater_than_or_equal_to: 30)
     |> validate_required([:start_date, :end_date, :plan_id])
+  end
+
+  def expired_changeset(%Membership{} = membership) do
+    membership
+    |> cast(%{is_expired: true}, [:is_expired])
   end
 
   # # Calculate duration of a membership

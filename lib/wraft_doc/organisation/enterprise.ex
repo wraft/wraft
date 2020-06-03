@@ -617,12 +617,19 @@ defmodule WraftDoc.Enterprise do
   defp find_end_date(_, _), do: nil
 
   @doc """
-  Get a membership from its UUID.
+  Gets a membership from its UUID.
+  """
+  def get_membership(<<_::288>> = m_uuid) do
+    Membership |> Repo.get_by(uuid: m_uuid)
+  end
+
+  @doc """
+  Same as get_membership/2, but also uses user's organisation ID to get the membership.
   When the user is admin no need to check the user's organisation.
   """
   @spec get_membership(Ecto.UUID.t(), User.t()) :: Membership.t() | nil
   def get_membership(<<_::288>> = m_uuid, %User{role: %{name: "admin"}}) do
-    Membership |> Repo.get_by(uuid: m_uuid)
+    get_membership(m_uuid)
   end
 
   def get_membership(<<_::288>> = m_uuid, %User{organisation_id: org_id}) do
@@ -693,7 +700,10 @@ defmodule WraftDoc.Enterprise do
 
       {:ok, %{membership: membership, payment: payment}} ->
         membership = membership |> Repo.preload([:plan, :organisation])
+
         Task.start_link(fn -> create_invoice(membership, payment) end)
+        Task.start_link(fn -> create_membership_expiry_check_job(membership) end)
+
         membership
     end
   end
@@ -799,6 +809,14 @@ defmodule WraftDoc.Enterprise do
     invoice = invoice_upload_struct(invoice_number, filename)
 
     upload_invoice(payment, invoice, invoice_number)
+  end
+
+  # Creates a background job that checks if the membership is expired on the date of membership expiry
+  @spec create_membership_expiry_check_job(Membership.t()) :: Oban.Job.t()
+  defp create_membership_expiry_check_job(%Membership{uuid: uuid, end_date: end_date}) do
+    %{membership_uuid: uuid}
+    |> WraftDocWeb.Worker.ScheduledWorker.new(scheduled_at: end_date, tags: ["plan_expiry"])
+    |> Oban.insert!()
   end
 
   # Create invoice number from payment ID.
