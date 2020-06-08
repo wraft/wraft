@@ -2,7 +2,7 @@ defmodule WraftDoc.EnterpriseTest do
   import Ecto.Query
   import Ecto
   import WraftDoc.Factory
-  use WraftDoc.ModelCase
+  use WraftDoc.DataCase
   use ExUnit.Case
   use Bamboo.Test
 
@@ -12,9 +12,13 @@ defmodule WraftDoc.EnterpriseTest do
     Enterprise.Flow.State,
     Enterprise.Organisation,
     Enterprise.ApprovalSystem,
+    Enterprise.Plan,
+    Enterprise.Membership.Payment,
     Enterprise
   }
 
+  @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
+  @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
   test "get flow returns flow data by uuid" do
     user = insert(:user)
     flow = insert(:flow, creator: user, organisation: user.organisation)
@@ -335,5 +339,362 @@ defmodule WraftDoc.EnterpriseTest do
     to_email = "myemail@app.com"
     {:ok, oban_job} = Enterprise.invite_team_member(user, user.organisation, to_email)
     assert oban_job.args.email == to_email
+  end
+
+  describe "create_plan/1" do
+    test "creates a plan with valid attrs" do
+      attrs = %{name: "Basic", description: "A free plan", yearly_amount: 0, monthly_amount: 0}
+      count_before = Plan |> Repo.all() |> length()
+      {:ok, plan} = Enterprise.create_plan(attrs)
+
+      assert count_before + 1 == Plan |> Repo.all() |> length()
+      assert plan.name == attrs.name
+      assert plan.description == attrs.description
+      assert plan.yearly_amount == attrs.yearly_amount
+      assert plan.monthly_amount == attrs.monthly_amount
+    end
+
+    test "does not create plan with invalid attrs" do
+      count_before = Plan |> Repo.all() |> length()
+      {:error, changeset} = Enterprise.create_plan(%{})
+
+      assert count_before == Plan |> Repo.all() |> length()
+      assert %{name: ["can't be blank"], description: ["can't be blank"]} == errors_on(changeset)
+    end
+  end
+
+  describe "get_plan/1" do
+    test "fetches a plan with valid uuid" do
+      plan = insert(:plan)
+      fetched_plan = Enterprise.get_plan(plan.uuid)
+
+      assert fetched_plan.uuid == plan.uuid
+      assert fetched_plan.name == plan.name
+    end
+
+    test "returns nil with non-existent uuid" do
+      fetched_plan = Enterprise.get_plan(Ecto.UUID.generate())
+
+      assert fetched_plan == nil
+    end
+
+    test "returns nil with invalid uuid" do
+      fetched_plan = Enterprise.get_plan(1)
+
+      assert fetched_plan == nil
+    end
+  end
+
+  describe "plan_index/0" do
+    test "returns the list of all plans" do
+      p1 = insert(:plan)
+      p2 = insert(:plan)
+
+      plans = Enterprise.plan_index()
+      plan_names = plans |> Enum.map(fn x -> x.name end) |> List.to_string()
+      assert plans |> length() == 2
+      assert plan_names =~ p1.name
+      assert plan_names =~ p2.name
+    end
+
+    test "returns empty list when there are no plans" do
+      plans = Enterprise.plan_index()
+      assert plans == []
+    end
+  end
+
+  describe "update_plan/2" do
+    test "updates a plan with valid attrs" do
+      plan = insert(:plan)
+      attrs = %{name: "Basic", description: "Basic plan", yearly_amount: 200, monthly_amount: 105}
+      {:ok, updated_plan} = Enterprise.update_plan(plan, attrs)
+
+      assert updated_plan.uuid == plan.uuid
+      assert updated_plan.name == attrs.name
+      assert updated_plan.description == attrs.description
+      assert updated_plan.yearly_amount == attrs.yearly_amount
+      assert updated_plan.monthly_amount == attrs.monthly_amount
+    end
+
+    test "does not update plan with invalid attrs" do
+      plan = insert(:plan)
+      attrs = %{name: ""}
+      {:error, changeset} = Enterprise.update_plan(plan, attrs)
+
+      assert %{name: ["can't be blank"]} == errors_on(changeset)
+    end
+
+    test "returns nil with wrong input" do
+      attrs = %{name: ""}
+      response = Enterprise.update_plan(nil, attrs)
+
+      assert response == nil
+    end
+  end
+
+  describe "delete_plan/2" do
+    test "deletes a plan when valid plan struct is given" do
+      plan = insert(:plan)
+
+      before_count = Plan |> Repo.all() |> length()
+      {:ok, deleted_plan} = Enterprise.delete_plan(plan)
+
+      assert before_count - 1 == Plan |> Repo.all() |> length()
+      assert deleted_plan.uuid == plan.uuid
+    end
+
+    test "returns nil when given input is not a plan struct" do
+      response = Enterprise.delete_plan(nil)
+      assert response == nil
+    end
+  end
+
+  describe "get_membership/1" do
+    test "fetches a membership with valid uuid" do
+      membership = insert(:membership)
+      fetched_membership = Enterprise.get_membership(membership.uuid)
+
+      assert fetched_membership.uuid == membership.uuid
+      assert fetched_membership.plan_id == membership.plan_id
+      assert fetched_membership.organisation_id == membership.organisation_id
+      assert fetched_membership.start_date == membership.start_date
+      assert fetched_membership.end_date == membership.end_date
+      assert fetched_membership.plan_duration == membership.plan_duration
+    end
+
+    test "returns nil with non-existent uuid" do
+      fetched_membership = Enterprise.get_membership(Ecto.UUID.generate())
+
+      assert fetched_membership == nil
+    end
+
+    test "returns nil with invalid uuid" do
+      fetched_membership = Enterprise.get_membership(1)
+
+      assert fetched_membership == nil
+    end
+  end
+
+  describe "get_membership/2" do
+    test "fetches a membership with valid parameters" do
+      user = insert(:user)
+      membership = insert(:membership, organisation: user.organisation)
+      fetched_membership = Enterprise.get_membership(membership.uuid, user)
+
+      assert fetched_membership.uuid == membership.uuid
+      assert fetched_membership.plan_id == membership.plan_id
+      assert fetched_membership.organisation_id == membership.organisation_id
+      assert fetched_membership.start_date == membership.start_date
+      assert fetched_membership.end_date == membership.end_date
+      assert fetched_membership.plan_duration == membership.plan_duration
+    end
+
+    test "returns nil with non-existent uuid" do
+      user = insert(:user)
+      fetched_membership = Enterprise.get_membership(Ecto.UUID.generate(), user)
+
+      assert fetched_membership == nil
+    end
+
+    test "returns nil with invalid parameter" do
+      membership = insert(:membership)
+      fetched_membership = Enterprise.get_membership(membership, nil)
+
+      assert fetched_membership == nil
+    end
+
+    test "returns nil with invalid uuid" do
+      user = insert(:user)
+      fetched_membership = Enterprise.get_membership(1, user)
+
+      assert fetched_membership == nil
+    end
+
+    test "returns nil when membership does not belongs to user's organisation" do
+      user = insert(:user)
+      membership = insert(:membership)
+      fetched_membership = Enterprise.get_membership(membership.uuid, user)
+      assert fetched_membership == nil
+    end
+
+    test "returns membership irrespective of organisation when user has admin role" do
+      role = insert(:role, name: "admin")
+      user = insert(:user, role: role)
+      membership = insert(:membership)
+      fetched_membership = Enterprise.get_membership(membership.uuid, user)
+      assert fetched_membership.uuid == membership.uuid
+      assert fetched_membership.plan_id == membership.plan_id
+      assert fetched_membership.organisation_id == membership.organisation_id
+      assert fetched_membership.start_date == membership.start_date
+      assert fetched_membership.end_date == membership.end_date
+      assert fetched_membership.plan_duration == membership.plan_duration
+    end
+  end
+
+  describe "get_organisation_membership/1" do
+    test "fetches a membership with valid parameters" do
+      membership = insert(:membership)
+      fetched_membership = Enterprise.get_organisation_membership(membership.organisation.uuid)
+      assert fetched_membership.uuid == membership.uuid
+      assert fetched_membership.plan_id == membership.plan_id
+      assert fetched_membership.plan.yearly_amount == membership.plan.yearly_amount
+    end
+
+    test "returns nil with non-existent uuid" do
+      fetched_membership = Enterprise.get_organisation_membership(Ecto.UUID.generate())
+
+      assert fetched_membership == nil
+    end
+
+    test "returns nil with invalid uuid" do
+      fetched_membership = Enterprise.get_organisation_membership(1)
+
+      assert fetched_membership == nil
+    end
+  end
+
+  describe "update_membership/4" do
+    test "upadtes membership and creates new payment with valid attrs" do
+      user = insert(:user)
+      membership = insert(:membership)
+      plan = insert(:plan, monthly_amount: 100_000)
+      payment_count = Payment |> Repo.all() |> length
+      {:ok, razorpay} = @valid_razorpay_id |> Razorpay.Payment.get()
+      new_membership = Enterprise.update_membership(user, membership, plan, razorpay)
+
+      assert payment_count + 1 == Payment |> Repo.all() |> length
+      assert new_membership.organisation_id == membership.organisation_id
+      assert new_membership.plan_id == plan.id
+    end
+
+    test "does not update membership but creates new payment with failed razorpay id but valid attrs" do
+      user = insert(:user)
+      membership = insert(:membership, organisation: user.organisation)
+      plan = insert(:plan, monthly_amount: 100_000)
+      payment_count = Payment |> Repo.all() |> length
+      {:ok, razorpay} = @failed_razorpay_id |> Razorpay.Payment.get()
+      {:ok, payment} = Enterprise.update_membership(user, membership, plan, razorpay)
+
+      assert payment_count + 1 == Payment |> Repo.all() |> length
+      assert payment.organisation_id == membership.organisation_id
+      assert payment.membership_id == membership.id
+      assert payment.from_plan_id == membership.plan_id
+      assert payment.to_plan_id == plan.id
+    end
+
+    test "does not update membership and returns nil with invalid razorpay ID" do
+      user = insert(:user)
+      membership = insert(:membership)
+      plan = insert(:plan)
+      {:error, razorpay} = "wrong_id" |> Razorpay.Payment.get()
+      payment_count = Payment |> Repo.all() |> length
+      response = Enterprise.update_membership(user, membership, plan, razorpay)
+
+      assert payment_count == Payment |> Repo.all() |> length
+      assert response == nil
+    end
+
+    test "does not update membership and returns wrong amount error when razorpay amount does not match any plan amount" do
+      user = insert(:user)
+      membership = insert(:membership)
+      plan = insert(:plan)
+      {:ok, razorpay} = @valid_razorpay_id |> Razorpay.Payment.get()
+      payment_count = Payment |> Repo.all() |> length
+      response = Enterprise.update_membership(user, membership, plan, razorpay)
+
+      assert payment_count == Payment |> Repo.all() |> length
+      assert response == {:error, :wrong_amount}
+    end
+
+    test "does not update membership with wrong parameters" do
+      response = Enterprise.update_membership(nil, nil, nil, nil)
+      assert response == nil
+    end
+  end
+
+  describe "payment_index/2" do
+    test "returns the list of all payments in an organisation" do
+      organisation = insert(:organisation)
+      p1 = insert(:payment, organisation: organisation)
+      p2 = insert(:payment, organisation: organisation)
+
+      list = Enterprise.payment_index(organisation.id, %{})
+
+      assert list.entries |> Enum.map(fn x -> x.razorpay_id end) |> List.to_string() =~
+               p1.razorpay_id
+
+      assert list.entries |> Enum.map(fn x -> x.razorpay_id end) |> List.to_string() =~
+               p2.razorpay_id
+    end
+  end
+
+  describe "get_payment/2" do
+    test "returns the payment in the user's organisation with given id" do
+      user = insert(:user)
+      payment = insert(:payment, organisation: user.organisation)
+      fetched_payement = Enterprise.get_payment(payment.uuid, user)
+      assert fetched_payement.razorpay_id == payment.razorpay_id
+      assert fetched_payement.uuid == payment.uuid
+    end
+
+    test "returns nil when payment does not belong to the user's organisation" do
+      user = insert(:user)
+      payment = insert(:payment)
+      response = Enterprise.get_payment(payment.uuid, user)
+      assert response == nil
+    end
+
+    test "returns payment irrespective of organisation when user has admin role" do
+      role = insert(:role, name: "admin")
+      user = insert(:user, role: role)
+      payment = insert(:payment)
+      fetched_payement = Enterprise.get_payment(payment.uuid, user)
+      assert fetched_payement.razorpay_id == payment.razorpay_id
+      assert fetched_payement.uuid == payment.uuid
+    end
+
+    test "returns nil for non existent payment" do
+      user = insert(:user)
+      response = Enterprise.get_payment(Ecto.UUID.generate(), user)
+      assert response == nil
+    end
+
+    test "returns nil for invalid data" do
+      response = Enterprise.get_payment(Ecto.UUID.generate(), nil)
+      assert response == nil
+    end
+  end
+
+  describe "show_payment/2" do
+    test "returns the payment in the user's organisation with given id" do
+      user = insert(:user)
+      payment = insert(:payment, organisation: user.organisation)
+      fetched_payement = Enterprise.show_payment(payment.uuid, user)
+      assert fetched_payement.razorpay_id == payment.razorpay_id
+      assert fetched_payement.uuid == payment.uuid
+      assert fetched_payement.organisation.uuid == payment.organisation.uuid
+      assert fetched_payement.creator.uuid == payment.creator.uuid
+      assert fetched_payement.membership.uuid == payment.membership.uuid
+      assert fetched_payement.from_plan.uuid == payment.from_plan.uuid
+      assert fetched_payement.to_plan.uuid == payment.to_plan.uuid
+    end
+
+    test "returns nil when payment does not belong to the user's organisation" do
+      user = insert(:user)
+      payment = insert(:payment)
+      response = Enterprise.show_payment(payment.uuid, user)
+      assert response == nil
+    end
+
+    test "returns nil for non existent payment" do
+      user = insert(:user)
+      response = Enterprise.show_payment(Ecto.UUID.generate(), user)
+      assert response == nil
+    end
+
+    test "returns nil for invalid data" do
+      response = Enterprise.show_payment(Ecto.UUID.generate(), nil)
+      assert response == nil
+    end
   end
 end

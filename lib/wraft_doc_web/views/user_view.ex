@@ -23,6 +23,13 @@ defmodule WraftDocWeb.Api.V1.UserView do
     }
   end
 
+  def render("user_id_and_email.json", %{user: user}) do
+    %{
+      id: user.uuid,
+      email: user.email
+    }
+  end
+
   def render("me.json", %{user: me}) do
     %{
       id: me.uuid,

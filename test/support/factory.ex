@@ -29,6 +29,9 @@ defmodule WraftDoc.Factory do
     Document.Pipeline,
     Document.Pipeline.Stage,
     Enterprise.ApprovalSystem,
+    Enterprise.Plan,
+    Enterprise.Membership,
+    Enterprise.Membership.Payment,
     Document.LayoutAsset,
     Document.Pipeline.TriggerHistory
   }
@@ -341,6 +344,50 @@ defmodule WraftDoc.Factory do
       end_time: end_time,
       duration: duration,
       zip_file: "build-#{zip_file}"
+    }
+  end
+
+  def plan_factory do
+    %Plan{
+      name: sequence(:name, &"Plan-#{&1}"),
+      description: sequence(:description, &"Plan Description-#{&1}"),
+      yearly_amount: Enum.random(0..1000),
+      monthly_amount: Enum.random(0..500)
+    }
+  end
+
+  def membership_factory do
+    start_date = Timex.now()
+    end_date = start_date |> Timex.shift(days: 30)
+
+    %Membership{
+      organisation: build(:organisation),
+      plan: build(:plan),
+      start_date: Timex.now(),
+      end_date: end_date,
+      plan_duration: Enum.random([14, 30, 365]),
+      is_expired: false
+    }
+  end
+
+  def payment_factory do
+    start_date = Timex.now()
+    end_date = start_date |> Timex.shift(days: 30)
+
+    %Payment{
+      organisation: build(:organisation),
+      creator: build(:user),
+      membership: build(:membership),
+      razorpay_id: sequence(:invoice, &"Razorpay-#{&1}"),
+      start_date: start_date,
+      end_date: end_date,
+      invoice_number: sequence(:invoice, &"WRAFT-INVOICE-#{&1}"),
+      amount: Enum.random(1000..2000) / 1,
+      action: Enum.random(1..3),
+      status: Enum.random([1, 2, 3]),
+      meta: %{id: sequence(:invoice, &"Razorpay-#{&1}")},
+      from_plan: build(:plan),
+      to_plan: build(:plan)
     }
   end
 end

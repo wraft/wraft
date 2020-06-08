@@ -13,7 +13,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       gstin: organisation.gstin,
       email: organisation.email,
       phone: organisation.phone,
-      logo: organisation.logo
+      logo: organisation |> generate_url()
     }
   end
 
@@ -29,7 +29,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       gstin: organisation.gstin,
       email: organisation.email,
       phone: organisation.phone,
-      logo: organisation.logo
+      logo: organisation |> generate_url()
     }
   end
 
@@ -45,7 +45,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       gstin: organisation.gstin,
       email: organisation.email,
       phone: organisation.phone,
-      logo: organisation.logo
+      logo: organisation |> generate_url()
     }
   end
 
@@ -53,5 +53,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     %{
       info: "Invited successfully.!"
     }
+  end
+
+  defp generate_url(%{logo: logo} = organisation) do
+    WraftDocWeb.LogoUploader.url(logo, organisation)
   end
 end

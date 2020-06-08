@@ -28,6 +28,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
   describe "create" do
     test "create pipe stage by valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -64,6 +65,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       conn: conn
     } do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -89,6 +91,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
     test "does not create pipe stage and returns not found for datas from different organisation of user",
          %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -118,6 +121,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
 
     test "does not create pipe stage and returns not found with invalid datas", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -140,6 +144,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
     test "does not create pipe stage and returns error when content type and pipeline ID are same as a previously created stage",
          %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -178,6 +183,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
   describe "update" do
     test "updates pipe stage by valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -213,6 +219,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       conn: conn
     } do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -238,6 +245,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
     test "does not update pipe stage and returns not found for datas from different organisation of user",
          %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -268,6 +276,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
 
     test "does not update pipe stage and returns not found with invalid datas", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -291,6 +300,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
     test "does not update pipe stage and returns error when content type and pipeline ID are same as a previously created stage",
          %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -331,6 +341,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
   describe "delete" do
     test "delete pipe stage by given id", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
       conn =
         build_conn()
@@ -348,10 +359,13 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
     end
 
     test "delete stage returns not found for non-existent ID", %{conn: conn} do
+      user = conn.assigns[:current_user]
+      insert(:membership, organisation: user.organisation)
+
       conn =
         build_conn()
         |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
+        |> assign(:current_user, user)
 
       conn = delete(conn, Routes.v1_pipeline_path(conn, :delete, Ecto.UUID.generate()))
 
