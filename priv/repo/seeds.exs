@@ -22,6 +22,7 @@ alias WraftDoc.{
   Enterprise.Organisation,
   Enterprise.Flow,
   Enterprise.Flow.State,
+  Enterprise.Plan,
   Document.FieldType,
   Document.ContentTypeField,
   Document.Counter,
@@ -160,3 +161,28 @@ state =
   creator_id: user.id
 }
 |> Repo.insert!()
+
+# Populate plans
+%Plan{
+  name: "Free Trial",
+  description: "Free trial where users can try out all the features",
+  yearly_amount: 0,
+  monthly_amount: 0
+}
+|> Repo.insert()
+
+%Plan{
+  name: "Premium",
+  description: "Premium plan with premium features only",
+  yearly_amount: 0,
+  monthly_amount: 0
+}
+|> Repo.insert()
+
+%Plan{
+  name: "Pro",
+  description: "Pro plan suitable for enterprises",
+  yearly_amount: 0,
+  monthly_amount: 0
+}
+|> Repo.insert()

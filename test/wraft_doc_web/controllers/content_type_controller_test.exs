@@ -40,6 +40,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     count_before = ContentType |> Repo.all() |> length()
     %{uuid: flow_uuid} = insert(:flow, creator: user, organisation: user.organisation)
     %{uuid: layout_uuid} = insert(:layout, creator: user, organisation: user.organisation)
@@ -64,6 +65,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     count_before = ContentType |> Repo.all() |> length()
     %{uuid: flow_uuid} = insert(:flow, creator: user, organisation: user.organisation)
     %{uuid: layout_uuid} = insert(:layout, creator: user, organisation: user.organisation)
@@ -80,6 +82,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "update content type on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
 
     conn =
@@ -104,6 +107,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "does't update content types for invalid attrs", %{conn: conn} do
     user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
 
     conn =
@@ -120,7 +124,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "index lists content type by current user", %{conn: conn} do
     user = conn.assigns.current_user
-
+    insert(:membership, organisation: user.organisation)
     ct1 = insert(:content_type, creator: user, organisation: user.organisation)
     ct2 = insert(:content_type, creator: user, organisation: user.organisation)
 
@@ -138,6 +142,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "show renders content type details by id", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
 
     conn =
@@ -151,10 +156,13 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   end
 
   test "error not found for id does not exists", %{conn: conn} do
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_asset_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 404) == "Not Found"
@@ -167,6 +175,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
 
     count_before = ContentType |> Repo.all() |> length()
@@ -177,13 +186,15 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   end
 
   test "error not found for users from another organisation", %{conn: conn} do
-    user = insert(:user)
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    user = conn.assigns[:current_user]
+    insert(:membership, organisation: user.organisation)
+
+    content_type = insert(:content_type)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+      |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_content_type_path(conn, :show, content_type.uuid))
 

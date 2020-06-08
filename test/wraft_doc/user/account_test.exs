@@ -1,7 +1,7 @@
 defmodule WraftDoc.AccountTest do
   use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Account, Account.AuthToken}
+  alias WraftDoc.Account
   alias WraftDocWeb.Endpoint
 
   @valid_attrs %{
@@ -194,7 +194,7 @@ defmodule WraftDoc.AccountTest do
     test "update profile with invalid attrs" do
       profile = insert(:profile)
       params = %{name: "", dob: "1990", gender: 1}
-      {:error, :profile, changeset, %{}} = Account.update_profile(profile.user, params)
+      {:error, changeset} = Account.update_profile(profile.user, params)
 
       assert %{name: ["can't be blank"], dob: ["is invalid"], gender: ["is invalid"]} ==
                errors_on(changeset)
@@ -216,22 +216,6 @@ defmodule WraftDoc.AccountTest do
 
     test "return nil when a non-UUID value is given" do
       response = Account.get_profile(1)
-      assert response == nil
-    end
-  end
-
-  describe "get_current_profile/1" do
-    test "return user's profile when user struct is given" do
-      profile = insert(:profile)
-      response = Account.get_current_profile(profile.user)
-
-      refute response == nil
-      assert response.name == profile.name
-      assert response.id == profile.id
-    end
-
-    test "return nil when anything other than user struct is given" do
-      response = Account.get_current_profile(1)
       assert response == nil
     end
   end
@@ -287,25 +271,6 @@ defmodule WraftDoc.AccountTest do
     test "return nil when non-UUID value is given" do
       response = Account.get_user_by_uuid(1)
       assert response == nil
-    end
-  end
-
-  describe "delete_token/2" do
-    test "deletes all tokens of a user under the given token type" do
-      user = insert(:user)
-      insert(:auth_token, token_type: "test_token", user: user)
-      insert(:auth_token, token_type: "test_token", user: user)
-      count_before = Repo.all(AuthToken) |> length()
-      response = Account.delete_token(user.id, "test_token")
-      count_after = Repo.all(AuthToken) |> length()
-      assert count_after == count_before - 2
-      assert response == :ok
-    end
-
-    test "returns :ok and do not raise even if no tokens matching the user Id and token type exist to delete" do
-      user = insert(:user)
-      response = Account.delete_token(user.id, "test_token")
-      assert response == :ok
     end
   end
 
@@ -406,7 +371,7 @@ defmodule WraftDoc.AccountTest do
 
     test "does not update with wrong current password" do
       user = insert(:user)
-      params = %{"current_password" => "wrongcurrentpassword"}
+      params = %{"current_password" => "wrongcurrentpassword", "password" => "123123123"}
       response = Account.update_password(user, params)
       assert response == {:error, :invalid_password}
     end
@@ -416,58 +381,6 @@ defmodule WraftDoc.AccountTest do
       params = %{"current_password" => "encrypt", "password" => "encrypt"}
       response = Account.update_password(user, params)
       assert response == {:error, :same_password}
-    end
-  end
-
-  describe "check_and_update_password/2" do
-    test "updates password with valid attrs" do
-      user = insert(:user)
-      params = %{"password" => "newpassword"}
-      updated_user = Account.check_and_update_password(user, params)
-      assert Bcrypt.verify_pass("newpassword", updated_user.encrypted_password) == true
-    end
-
-    test "does not update with invalid attrs" do
-      user = insert(:user)
-      params = %{"password" => "invalid"}
-      {:error, changeset} = Account.check_and_update_password(user, params)
-      assert %{password: ["should be at least 8 character(s)"]} == errors_on(changeset)
-    end
-
-    test "does not update with same password" do
-      user = insert(:user)
-      params = %{"password" => "encrypt"}
-      response = Account.check_and_update_password(user, params)
-      assert response == {:error, :same_password}
-    end
-  end
-
-  describe "insert_auth_token/2" do
-    test "insert auth token with valid attrs" do
-      user = insert(:user)
-      params = %{value: "token", token_type: "password_verify"}
-      {:ok, auth_token} = Account.insert_auth_token(user, params)
-
-      refute auth_token.uuid == nil
-      assert auth_token.value == "token"
-      assert auth_token.token_type == "password_verify"
-      assert auth_token.expiry_datetime == nil
-    end
-
-    test "return error with invalid attrs" do
-      user = insert(:user)
-      params = %{value: "token", token_type: "password_verify"}
-      {:ok, auth_token} = Account.insert_auth_token(user, params)
-
-      refute auth_token.uuid == nil
-      assert auth_token.value == "token"
-      assert auth_token.token_type == "password_verify"
-      assert auth_token.expiry_datetime == nil
-    end
-
-    test "return error when first argument is not a user struct" do
-      response = Account.insert_auth_token(nil, %{})
-      assert response == nil
     end
   end
 end
