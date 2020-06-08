@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v0.0.29 - 2020-06-08
+
+## Added
+
+- Payment and Billing
+
 ## v0.0.28 - 2020-05-23
 
 ### Added
