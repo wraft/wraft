@@ -24,10 +24,55 @@ Test the app
 
 ## Pre-requisite
 
+### Pandoc
+
 This assumes you have `pandoc` installed in your device. The easiest way to install it on OSX is via brew:
 
 ```
 $ brew install pandoc
+```
+
+For Linux machines, follow the instructions below.
+
+- Download the pandoc package that suits your device [here](https://github.com/jgm/pandoc/releases/tag/2.9.2.1)
+- To install the deb:
+
+```
+sudo dpkg -i $DEB
+```
+
+where \$DEB is the path to the downloaded deb.
+
+These instructions are taken from [Official Pandoc Documentations](https://pandoc.org/installing.html). You may refer if the official documentation if you have any doubts.
+
+### Latex
+
+To use Latex in macOS, its better to install the MacTex Distribution. You can download MacTex [here](https://www.tug.org/mactex/). Choose the correct version that supports your device, download and install. Latex editor comes with the distribution.
+
+In Linux machines, we suggest to use Tex Live LaTeX distribution. Easiest way to install Tex Live distribution in Linux/Ubuntu is to use `apt-get`.
+
+```
+sudo apt-get install texlive-full
+```
+
+In case you need latex editor, type in:
+
+```
+sudo apt-get install texmaker
+```
+
+### Gnuplot
+
+In macOS:
+
+```
+brew install gnuplot
+```
+
+In Linux:
+
+```
+sudo apt-get install gnuplot
 ```
 
 ##### Extra Dependencies used
