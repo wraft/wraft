@@ -35,26 +35,6 @@ defmodule WraftDoc.Document.Block do
     timestamps()
   end
 
-  def changeset(%Block{} = block, %{"dataset" => _} = attrs) do
-    block
-    |> cast(attrs, [
-      :name,
-      :btype,
-      :dataset,
-      :file_url,
-      :api_route,
-      :endpoint,
-      :tex_chart,
-      :creator_id,
-      :organisation_id
-    ])
-    |> validate_required([:name, :file_url, :creator_id, :dataset, :organisation_id])
-    |> unique_constraint(:name,
-      message: "Block with same name exists.!",
-      name: :block_organisation_unique_index
-    )
-  end
-
   def changeset(%Block{} = block, %{"input" => _} = attrs) do
     block
     |> cast(attrs, [
@@ -68,6 +48,26 @@ defmodule WraftDoc.Document.Block do
     ])
     |> cast_attachments(attrs, [:input])
     |> validate_required([:name, :file_url, :creator_id, :input, :organisation_id])
+    |> unique_constraint(:name,
+      message: "Block with same name exists.!",
+      name: :block_organisation_unique_index
+    )
+  end
+
+  def changeset(%Block{} = block, attrs) do
+    block
+    |> cast(attrs, [
+      :name,
+      :btype,
+      :dataset,
+      :file_url,
+      :api_route,
+      :endpoint,
+      :tex_chart,
+      :creator_id,
+      :organisation_id
+    ])
+    |> validate_required([:name, :file_url, :creator_id, :dataset, :organisation_id])
     |> unique_constraint(:name,
       message: "Block with same name exists.!",
       name: :block_organisation_unique_index
