@@ -681,7 +681,7 @@ defmodule WraftDoc.DocumentTest do
   describe "block_template_bulk_insert/3" do
     test "test bulk block template creation with valid data" do
       user = insert(:user)
-      mapping = %{"Body" => "body", "Serialised" => "serialised", "Title" => "title"}
+      mapping = %{"Body" => "body", "Serialized" => "serialized", "Title" => "title"}
       path = "test/helper/block_template_source.csv"
       count_before = BlockTemplate |> Repo.all() |> length()
 
@@ -711,7 +711,7 @@ defmodule WraftDoc.DocumentTest do
       params = %{
         title: "Introduction",
         body: "Hi [employee], we welcome you to our [company], [address]",
-        serialised: "Hi [employee], we welcome you to our family"
+        serialized: "Hi [employee], we welcome you to our family"
       }
 
       count_before = BlockTemplate |> Repo.all() |> length()
@@ -720,7 +720,7 @@ defmodule WraftDoc.DocumentTest do
       assert count_before + 1 == BlockTemplate |> Repo.all() |> length()
       assert block_template.title == "Introduction"
       assert block_template.body == "Hi [employee], we welcome you to our [company], [address]"
-      assert block_template.serialised == "Hi [employee], we welcome you to our family"
+      assert block_template.serialized == "Hi [employee], we welcome you to our family"
     end
 
     test "test does not create block template with invalid attrs" do
@@ -729,7 +729,7 @@ defmodule WraftDoc.DocumentTest do
 
       assert %{
                title: ["can't be blank"],
-               serialised: ["can't be blank"],
+               serialized: ["can't be blank"],
                body: ["can't be blank"]
              } == errors_on(changeset)
     end

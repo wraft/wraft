@@ -6,9 +6,9 @@ defmodule WraftDoc.Document.BlockTemplateTest do
   @valid_attrs %{
     title: "a sample title",
     body: "a sample body",
-    serialised: "a sample serialised"
+    serialized: "a sample serialized"
   }
-  @invalid_attrs %{title: "", body: "", serialised: ""}
+  @invalid_attrs %{title: "", body: "", serialized: ""}
 
   test "changeset with valid data" do
     organisation = insert(:organisation)

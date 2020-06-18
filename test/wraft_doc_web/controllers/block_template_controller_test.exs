@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   @valid_attrs %{
     title: "a sample Title",
     body: "a sample Body",
-    serialised: "a sample Serialised"
+    serialized: "a sample serialized"
   }
 
   @invalid_attrs %{title: ""}

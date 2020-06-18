@@ -248,7 +248,7 @@ defmodule WraftDoc.Factory do
     %BlockTemplate{
       title: sequence(:title, &"BlockTemplate title #{&1} "),
       body: sequence(:body, &"BlockTemplate body #{&1} "),
-      serialised: sequence(:serialised, &"BlockTemplate serialised #{&1} "),
+      serialized: sequence(:serialized, &"BlockTemplate serialized #{&1} "),
       organisation: build(:organisation),
       creator: build(:user)
     }
