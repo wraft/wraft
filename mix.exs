@@ -10,7 +10,19 @@ defmodule WraftDoc.Mixfile do
       compilers: [:phoenix, :gettext] ++ Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      # Coveralls
+      app: :excoveralls,
+      version: "1.0.0",
+      elixir: "~> 1.0.0",
+      deps: deps(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
+      ]
     ]
   end
 
@@ -67,6 +79,7 @@ defmodule WraftDoc.Mixfile do
       # For testing
       {:ex_machina, "~> 2.3", only: :test},
       {:bypass, "~> 1.0", only: :test},
+      {:excoveralls, "~> 0.10", only: :test},
       # Pagination
       {:scrivener_ecto, "~> 2.3"},
       # QR code generation
