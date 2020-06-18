@@ -105,7 +105,7 @@ defmodule WraftDoc.Document do
 
   defp associate_layout_and_asset(layout, current_user, asset) do
     layout
-    |> build_assoc(:layout_assets, asset: asset, creator: current_user)
+    |> build_assoc(:layout_assets, asset_id: asset.id, creator: current_user)
     |> LayoutAsset.changeset()
     |> Repo.insert()
   end
