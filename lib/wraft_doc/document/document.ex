@@ -105,7 +105,7 @@ defmodule WraftDoc.Document do
 
   defp associate_layout_and_asset(layout, current_user, asset) do
     layout
-    |> build_assoc(:layout_assets, asset: asset, creator: current_user)
+    |> build_assoc(:layout_assets, asset_id: asset.id, creator: current_user)
     |> LayoutAsset.changeset()
     |> Repo.insert()
   end
@@ -1276,13 +1276,17 @@ defmodule WraftDoc.Document do
     %{"status" => false, "error" => "invalid endpoint"}
   end
 
-  @spec generate_tex_chart(map) :: <<_::64, _::_*8>>
   @doc """
   Generate tex code for the chart
   """
   # TODO - write tests
+  @spec generate_tex_chart(map) :: <<_::64, _::_*8>>
   def generate_tex_chart(%{"dataset" => dataset, "btype" => "gantt"}) do
     generate_tex_gantt_chart(dataset)
+  end
+
+  def generate_tex_chart(%{"input" => input, "btype" => "gantt", "name" => name}) do
+    generate_gnu_gantt_chart(input, name)
   end
 
   def generate_tex_chart(%{"dataset" => %{"data" => data}}) do
@@ -1321,6 +1325,27 @@ defmodule WraftDoc.Document do
         \\end{figure}
         \\end{document}
         "
+  end
+
+  # Generate a Gantt chart form the given CSV file using Gnuplot CLI.
+  defp generate_gnu_gantt_chart(%Plug.Upload{filename: filename, path: path}, title) do
+    File.mkdir_p("temp/gantt_chart_input/")
+    File.mkdir_p("temp/gantt_chart_output/")
+    dest_path = "temp/gantt_chart_input/#{filename}"
+    System.cmd("cp", [path, dest_path])
+
+    dest_path = Path.expand(dest_path)
+    out_name = Path.expand("temp/gantt_chart_output/gantt_#{title}.svg")
+
+    script =
+      File.read!("lib/slugs/gantt_chart/gnuplot_gantt.plt")
+      |> String.replace("//input//", dest_path)
+      |> String.replace("//out_name//", out_name)
+      |> String.replace("//title//", title)
+
+    File.write("temp/gantt_script.plt", script)
+    file_path = Path.expand("temp/gantt_script.plt")
+    System.cmd("gnuplot", ["-p", file_path])
   end
 
   # Generate bar for gant chart
