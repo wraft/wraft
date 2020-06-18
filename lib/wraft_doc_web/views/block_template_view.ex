@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateView do
       id: block_template.uuid,
       title: block_template.title,
       body: block_template.body,
-      serialised: block_template.serialised,
+      serialized: block_template.serialized,
       inserted_at: block_template.inserted_at,
       updated_at: block_template.updated_at
     }

@@ -16,13 +16,13 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
           properties do
             title(:string, "The Title of the Block Template", required: true)
             body(:string, "The Body of the block template", required: true)
-            serialised(:string, "The Serialised of the block template", required: true)
+            serialized(:string, "The serialized of the block template", required: true)
           end
 
           example(%{
             title: "a sample title",
             body: "a sample body",
-            serialised: "a sample serialised"
+            serialized: "a sample serialized"
           })
         end,
       BlockTemplate:
@@ -33,7 +33,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
           properties do
             title(:string, "The Title of the block template", required: true)
             body(:string, "The Body of the block template", required: true)
-            serialised(:string, "The Serialised of the block template", required: true)
+            serialized(:string, "The serialized of the block template", required: true)
 
             inserted_at(:string, "When was the block_template inserted", format: "ISO-8601")
             updated_at(:string, "When was the block_template last updated", format: "ISO-8601")
@@ -42,7 +42,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
           example(%{
             title: "a sample title",
             body: "a sample body",
-            serialised: "a sample serialised",
+            serialized: "a sample serialized",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -67,12 +67,12 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
               %{
                 title: "a sample title",
                 body: "a sample body",
-                serialised: "a sample serialised"
+                serialized: "a sample serialized"
               },
               %{
                 title: "a sample title",
                 body: "a sample body",
-                serialised: "a sample serialised"
+                serialized: "a sample serialized"
               }
             ],
             page_number: 1,
