@@ -52,7 +52,8 @@ defmodule WraftDoc.DocumentTest do
   @valid_data_template_attrs %{
     "title" => "data_template title",
     "title_template" => "data_template title_template",
-    "data" => "data_template data"
+    "data" => "data_template data",
+    "serialized" => %{"company" => "Apple"}
   }
   @invalid_data_template_attrs %{title: nil, title_template: nil, data: nil}
   @valid_asset_attrs %{"name" => "asset name"}
@@ -649,7 +650,8 @@ defmodule WraftDoc.DocumentTest do
       params = %{
         title: "Offer letter tempalate",
         title_template: "Hi [employee], we welcome you to our [company], [address]",
-        data: "Hi [employee], we welcome you to our [company], [address]"
+        data: "Hi [employee], we welcome you to our [company], [address]",
+        serialized: %{employee: "John", company: "Apple", address: "Silicon Valley"}
       }
 
       count_before = DataTemplate |> Repo.all() |> length()
@@ -662,6 +664,12 @@ defmodule WraftDoc.DocumentTest do
                "Hi [employee], we welcome you to our [company], [address]"
 
       assert data_template.data == "Hi [employee], we welcome you to our [company], [address]"
+
+      assert data_template.serialized == %{
+               employee: "John",
+               company: "Apple",
+               address: "Silicon Valley"
+             }
     end
 
     test "test does not create data template with invalid attrs" do
@@ -1023,6 +1031,7 @@ defmodule WraftDoc.DocumentTest do
       assert d_data_template.title == data_template.title
       assert d_data_template.title_template == data_template.title_template
       assert d_data_template.data == data_template.data
+      assert d_data_template.serialized == data_template.serialized
     end
   end
 
@@ -1035,6 +1044,7 @@ defmodule WraftDoc.DocumentTest do
       assert d_data_template.title == data_template.title
       assert d_data_template.title_template == data_template.title_template
       assert d_data_template.data == data_template.data
+      assert d_data_template.serialized == data_template.serialized
       assert d_data_template.content_type.name == content_type.name
       assert d_data_template.creator.name == user.name
     end
@@ -1054,6 +1064,7 @@ defmodule WraftDoc.DocumentTest do
       assert data_template.title == @valid_data_template_attrs["title"]
       assert data_template.title_template == @valid_data_template_attrs["title_template"]
       assert data_template.data == @valid_data_template_attrs["data"]
+      assert data_template.serialized == @valid_data_template_attrs["serialized"]
     end
 
     test "update data_template on invalid attrs" do
@@ -1083,6 +1094,7 @@ defmodule WraftDoc.DocumentTest do
       assert d_data_template.title == data_template.title
       assert d_data_template.title_template == data_template.title_template
       assert d_data_template.data == data_template.data
+      assert d_data_template.serialized == data_template.serialized
     end
   end
 
