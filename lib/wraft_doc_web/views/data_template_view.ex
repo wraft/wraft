@@ -9,6 +9,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateView do
       title: d_temp.title,
       title_template: d_temp.title_template,
       data: d_temp.data,
+      serialized: d_temp.serialized,
       inserted_at: d_temp.inserted_at,
       updated_at: d_temp.updated_at
     }
@@ -35,6 +36,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateView do
       title: d_temp.title,
       title_template: d_temp.title_template,
       data: d_temp.data,
+      serialized: d_temp.serialized,
       inserted_at: d_temp.inserted_at,
       updated_at: d_temp.updated_at,
       content_type:
