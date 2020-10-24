@@ -120,7 +120,10 @@ defmodule WraftDocWeb.Router do
       patch("/contents/:id/states", InstanceController, :state_update)
 
       # Organisations
-      resources("/organisations", OrganisationController, only: [:create, :update, :show, :delete])
+      scope "/organisations" do
+        resources("/", OrganisationController, only: [:create, :update, :show, :delete])
+        get("/:id/members", OrganisationController, :members)
+      end
 
       # Update membership plan
       put("/memberships/:id", MembershipController, :update)

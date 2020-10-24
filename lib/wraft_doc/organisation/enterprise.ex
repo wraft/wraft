@@ -367,6 +367,27 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+  Fetches the list of all members of current users organisation.
+  """
+  @spec members_index(User.t(), map) :: any
+  def members_index(%User{organisation_id: organisation_id}, %{"name" => name} = params) do
+    from(u in User,
+      where: u.organisation_id == ^organisation_id,
+      where: ilike(u.name, ^"%#{name}%"),
+      preload: [:profile, :role, :organisation]
+    )
+    |> Repo.paginate(params)
+  end
+
+  def members_index(%User{organisation_id: organisation_id}, params) do
+    from(u in User,
+      where: u.organisation_id == ^organisation_id,
+      preload: [:profile, :role, :organisation]
+    )
+    |> Repo.paginate(params)
+  end
+
+  @doc """
   Create approval system
   """
   @spec create_approval_system(User.t(), map) ::
