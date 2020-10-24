@@ -17,6 +17,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   setup %{conn: conn} do
     role = insert(:role, name: "admin")
     user = insert(:user, role: role)
+    insert(:profile, user: user)
 
     conn =
       conn
@@ -136,5 +137,64 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       })
 
     assert json_response(conn, 200) == %{"info" => "Invited successfully.!"}
+  end
+
+  describe "members/2" do
+    test "returns the list of all members of current user's organisation", %{conn: conn} do
+      user1 = conn.assigns[:current_user]
+      user2 = insert(:user, organisation: user1.organisation)
+      insert(:profile, user: user2)
+      user3 = insert(:user, organisation: user1.organisation)
+      insert(:profile, user: user3)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+
+      conn =
+        get(
+          conn,
+          Routes.v1_organisation_path(conn, :members, user1.organisation, %{page: 1})
+        )
+
+      user_ids =
+        json_response(conn, 200)["members"] |> Enum.map(fn x -> x["id"] end) |> to_string()
+
+      assert user_ids =~ user1.uuid
+      assert user_ids =~ user2.uuid
+      assert user_ids =~ user3.uuid
+      assert json_response(conn, 200)["page_number"] == 1
+      assert json_response(conn, 200)["total_pages"] == 1
+      assert json_response(conn, 200)["total_entries"] == 3
+    end
+
+    test "returns the list of all members of current user's organisation matching the given name",
+         %{conn: conn} do
+      user1 = conn.assigns[:current_user]
+      user2 = insert(:user, organisation: user1.organisation, name: "John")
+      insert(:profile, user: user2)
+      user3 = insert(:user, organisation: user1.organisation, name: "John Doe")
+      insert(:profile, user: user3)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+
+      conn =
+        get(
+          conn,
+          Routes.v1_organisation_path(conn, :members, user1.organisation, %{page: 1, name: "joh"})
+        )
+
+      user_ids =
+        json_response(conn, 200)["members"] |> Enum.map(fn x -> x["id"] end) |> to_string()
+
+      refute user_ids =~ user1.uuid
+      assert user_ids =~ user2.uuid
+      assert user_ids =~ user3.uuid
+      assert json_response(conn, 200)["page_number"] == 1
+      assert json_response(conn, 200)["total_pages"] == 1
+      assert json_response(conn, 200)["total_entries"] == 2
+    end
   end
 end

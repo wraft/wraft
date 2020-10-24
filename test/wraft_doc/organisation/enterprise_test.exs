@@ -697,4 +697,40 @@ defmodule WraftDoc.EnterpriseTest do
       assert response == nil
     end
   end
+
+  describe "members_index/2" do
+    test "returns the list of all members of current user's organisation" do
+      organisation = insert(:organisation)
+      user1 = insert(:user, organisation: organisation)
+      user2 = insert(:user, organisation: organisation)
+      user3 = insert(:user, organisation: organisation)
+
+      response = Enterprise.members_index(user1, %{"page" => 1})
+      user_ids = response.entries |> Enum.map(fn x -> x.uuid end) |> to_string()
+
+      assert user_ids =~ user1.uuid
+      assert user_ids =~ user2.uuid
+      assert user_ids =~ user3.uuid
+      assert response.page_number == 1
+      assert response.total_pages == 1
+      assert response.total_entries == 3
+    end
+
+    test "returns the list of all members of current user's organisation matching the given name" do
+      organisation = insert(:organisation)
+      user1 = insert(:user, organisation: organisation, name: "John")
+      user2 = insert(:user, organisation: organisation, name: "John Doe")
+      user3 = insert(:user, organisation: organisation)
+
+      response = Enterprise.members_index(user1, %{"page" => 1, "name" => "joh"})
+      user_ids = response.entries |> Enum.map(fn x -> x.uuid end) |> to_string()
+
+      assert user_ids =~ user1.uuid
+      assert user_ids =~ user2.uuid
+      refute user_ids =~ user3.uuid
+      assert response.page_number == 1
+      assert response.total_pages == 1
+      assert response.total_entries == 2
+    end
+  end
 end

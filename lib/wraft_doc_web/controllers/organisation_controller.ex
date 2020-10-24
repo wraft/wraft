@@ -77,6 +77,24 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
           end
 
           example(%{info: "Invited successfully.!"})
+        end,
+      Members:
+        swagger_schema do
+          title("Members array")
+          description("List of Users/members of an organisation.")
+          type(:array)
+          items(Schema.ref(:CurrentUser))
+        end,
+      MembersIndex:
+        swagger_schema do
+          title("Members index")
+
+          properties do
+            members(Schema.ref(:Members))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
         end
     }
   end
@@ -241,6 +259,46 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
          {:ok, _} <- Enterprise.invite_team_member(current_user, organisation, email) do
       conn
       |> render("invite.json")
+    end
+  end
+
+  @doc """
+  List all members of a organisation
+  """
+
+  swagger_path :members do
+    get("/organisations/{id}/members")
+    summary("Members of an organisation")
+    description("All members of an organisation")
+
+    parameters do
+      id(:path, :string, "ID of the organisation")
+      page(:query, :string, "Page number")
+      name(:query, :string, "Name of the user")
+    end
+
+    response(200, "Ok", Schema.ref(:MembersIndex))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def members(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %{
+           entries: members,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Enterprise.members_index(current_user, params) do
+      conn
+      |> render("members.json",
+        members: members,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
     end
   end
 end
