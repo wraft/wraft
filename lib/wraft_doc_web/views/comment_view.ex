@@ -3,7 +3,6 @@ defmodule WraftDocWeb.Api.V1.CommentView do
   alias __MODULE__
   alias WraftDocWeb.Api.V1.ProfileView
   alias WraftDocWeb.Api.V1.UserView
-  require IEx
 
   def render("comment.json", %{comment: comment}) do
     %{

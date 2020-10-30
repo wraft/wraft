@@ -1,6 +1,7 @@
 defmodule WraftDocWeb.Api.V1.OrganisationView do
   use WraftDocWeb, :view
   alias WraftDocWeb.Api.V1.UserView
+  alias __MODULE__
 
   def render("create.json", %{organisation: organisation}) do
     %{
@@ -58,6 +59,21 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       }) do
     %{
       members: render_many(members, UserView, "me.json", as: :user),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
+  end
+
+  def render("index.json", %{
+        organisations: organisations,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      organisations:
+        render_many(organisations, OrganisationView, "create.json", as: :organisation),
       page_number: page_number,
       total_pages: total_pages,
       total_entries: total_entries

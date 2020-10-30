@@ -195,6 +195,9 @@ defmodule WraftDocWeb.Router do
 
       # Create, Update and delete plans
       resources("/plans", PlanController, only: [:create, :update, :delete])
+
+      # List all organisation details
+      get("/organisations", OrganisationController, :index)
     end
   end
 

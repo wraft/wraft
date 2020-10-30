@@ -388,6 +388,36 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+  Search organisation by name
+
+  ## Parameters
+  - `params` - A map of params to paginate list of organisation
+
+  ## Examples
+  organisations=list_organisations(%{"page"=>1, "name"=> "ABC Enterprices"})
+  organisation.entries= [%Organisation{name: "ABC Enterprices"}]
+  """
+
+  def list_organisations(%{"name" => name} = params) do
+    from(o in Organisation, where: ilike(o.name, ^"%#{name}%")) |> Repo.paginate(params)
+  end
+
+  @doc """
+  Function to list all organisation
+
+  ## Parameters
+  - `params` - A map of params to paginate list of organisation
+
+  ## Examples
+  organisations=list_organisations(%{"page"=>1})
+  organisation.entries= [%Organisation{}]
+  """
+  @spec list_organisations(map) :: Scrivener.Page.t()
+  def list_organisations(params) do
+    Organisation |> Repo.paginate(params)
+  end
+
+  @doc """
   Create approval system
   """
   @spec create_approval_system(User.t(), map) ::
