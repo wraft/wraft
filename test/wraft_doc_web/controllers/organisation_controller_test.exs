@@ -197,4 +197,53 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 200)["total_entries"] == 2
     end
   end
+
+  describe "index" do
+    test "list all existing organisation details", %{conn: conn} do
+      o1 = insert(:organisation)
+      o2 = insert(:organisation)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+
+      conn =
+        get(
+          conn,
+          Routes.v1_organisation_path(conn, :index, %{page: 1})
+        )
+
+      assert json_response(conn, 200)["organisations"]
+             |> Enum.map(fn x -> x["name"] end)
+             |> to_string() =~ o1.name
+
+      assert json_response(conn, 200)["organisations"]
+             |> Enum.map(fn x -> x["address"] end)
+             |> to_string() =~ o2.address
+    end
+  end
+
+  test "search organisation by name", %{conn: conn} do
+    o1 = insert(:organisation, name: "ABC Ectr")
+    o2 = insert(:organisation, name: "KDY soft")
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+
+    conn =
+      get(
+        conn,
+        Routes.v1_organisation_path(conn, :index, %{page: 1, name: "KDY"})
+      )
+
+    assert json_response(conn, 200)["organisations"] |> length() == 1
+    # assert json_response(conn, 200)["organisations"]
+    #        |> Enum.map(fn x -> x["name"] end)
+    #        |> to_string() =~ o1.name
+
+    # assert json_response(conn, 200)["organisations"]
+    #        |> Enum.map(fn x -> x["address"] end)
+    #        |> to_string() =~ o2.address
+  end
 end

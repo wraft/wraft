@@ -78,6 +78,47 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
           example(%{info: "Invited successfully.!"})
         end,
+      ListOfOrganisations:
+        swagger_schema do
+          title("Organisations array")
+          description("List of existing Organisations")
+          type(:array)
+          items(Schema.ref(:Organisation))
+        end,
+      Index:
+        swagger_schema do
+          title("Organisation index")
+
+          properties do
+            organisations(Schema.ref(:ListOfOrganisations))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            toal_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            organisations: [
+              %{
+                id: "mnbjhb23488n23e",
+                name: "ABC enterprices",
+                legal_name: "ABC enterprices LLC",
+                address: "#24, XV Building, TS DEB Layout ",
+                name_of_ceo: "John Doe",
+                name_of_cto: "Foo Doo",
+                gstin: "32AA65FF56545353",
+                corporate_id: "BNIJSN1234NGT",
+                email: "abcent@gmail.com",
+                logo: "/logo.jpg",
+                phone: "865623232",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              }
+            ],
+            page_number: 1,
+            total_pages: 1,
+            total_entries: 1
+          })
+        end,
       Members:
         swagger_schema do
           title("Members array")
@@ -301,4 +342,70 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
       )
     end
   end
+
+  swagger_path :index do
+    get("/organisations")
+    summary("List of all organisations")
+    description("All organisation that we have")
+
+    parameters do
+      name(:query, :string, "Organisations name")
+      page(:query, :string, "Page number")
+    end
+
+    response(200, "Ok", Schema.ref(:Index))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def index(conn, params) do
+    with %{
+           entries: organisations,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Enterprise.list_organisations(params) do
+      conn
+      |> render("index.json",
+        organisations: organisations,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
+
+  # swagger_path :search do
+  #   get("/organisations")
+  #   summary("Search organisation")
+  #   description("Search and list organisation by name")
+
+  #   parameters do
+  #     name(:query, :string, "Organisations name")
+  #     page(:query, :string, "Page number")
+  #   end
+
+  #   response(200, "Ok", Schema.ref(:Index))
+  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
+  #   response(401, "Unauthorized", Schema.ref(:Error))
+  #   response(404, "Not Found", Schema.ref(:Error))
+  # end
+
+  # def search(conn, params) do
+  #   with %{
+  #          entries: organisations,
+  #          page_number: page_number,
+  #          total_pages: total_pages,
+  #          total_entries: total_entries
+  #        } <- Enterprise.search_organisations(params) do
+  #     conn
+  #     |> render("index.json",
+  #       organisations: organisations,
+  #       page_number: page_number,
+  #       total_pages: total_pages,
+  #       total_entries: total_entries
+  #     )
+  #   end
+  # end
 end
