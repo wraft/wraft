@@ -125,6 +125,7 @@ defmodule WraftDocWeb.Router do
         get("/:id/members", OrganisationController, :members)
       end
 
+      resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
       # Update membership plan
       put("/memberships/:id", MembershipController, :update)
       # Get memberhsip

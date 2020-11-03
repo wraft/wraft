@@ -33,7 +33,8 @@ defmodule WraftDoc.Factory do
     Enterprise.Membership,
     Enterprise.Membership.Payment,
     Document.LayoutAsset,
-    Document.Pipeline.TriggerHistory
+    Document.Pipeline.TriggerHistory,
+    Enterprise.Vendor
   }
 
   def user_factory do
@@ -388,6 +389,18 @@ defmodule WraftDoc.Factory do
       meta: %{id: sequence(:invoice, &"Razorpay-#{&1}")},
       from_plan: build(:plan),
       to_plan: build(:plan)
+    }
+  end
+
+  def vendor_factory do
+    %Vendor{
+      name: sequence(:name, &"Vendor name #{&1} "),
+      email: sequence(:email, &"Vendor email #{&1} "),
+      phone: sequence(:phone, &"Vendor phone #{&1} "),
+      address: sequence(:address, &"Vendor address #{&1} "),
+      gstin: sequence(:gstin, &"Vendor gstin #{&1} "),
+      reg_no: sequence(:reg_no, &"Vendor reg_no #{&1} "),
+      contact_person: sequence(:contact_person, &"Vendor contact_person #{&1} ")
     }
   end
 end
