@@ -25,8 +25,8 @@ defmodule WraftDoc.Enterprise.Flow do
     field(:control_data, :map)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-
     has_many(:states, WraftDoc.Enterprise.Flow.State)
+    has_many(:approval_systems, through: [:states, :pre_states])
     timestamps()
   end
 

@@ -37,13 +37,14 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, organisation: user.organisation)
     state = insert(:state, organisation: user.organisation)
+    vendor = insert(:vendor, organisation: user.organisation, creator: user)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, user)
 
-    params = Map.merge(@valid_attrs, %{state_uuid: state.uuid})
+    params = Map.merge(@valid_attrs, %{state_uuid: state.uuid, vendor_uuid: vendor.uuid})
 
     count_before = Instance |> Repo.all() |> length()
 
@@ -60,6 +61,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, organisation: user.organisation)
     state = insert(:state, organisation: user.organisation)
+    vendor = insert(:vendor, organisation: user.organisation, creator: user)
 
     conn =
       build_conn()
@@ -67,7 +69,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> assign(:current_user, user)
 
     count_before = Instance |> Repo.all() |> length()
-    params = Map.merge(@invalid_attrs, %{state_uuid: state.uuid})
+    params = Map.merge(@invalid_attrs, %{state_uuid: state.uuid, vendor_uuid: vendor.uuid})
 
     conn =
       post(conn, Routes.v1_instance_path(conn, :create, content_type.uuid), params)

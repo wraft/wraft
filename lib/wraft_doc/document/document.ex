@@ -415,6 +415,24 @@ defmodule WraftDoc.Document do
   @spec create_instance(User.t(), ContentType.t(), State.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
+  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, vendor, params) do
+    instance_id = c_id |> create_instance_id(prefix)
+    params = params |> Map.merge(%{"instance_id" => instance_id})
+
+    c_type
+    |> build_assoc(:instances, state: state, creator: current_user, vendor: vendor)
+    |> Instance.changeset(params)
+    |> Spur.insert()
+    |> case do
+      {:ok, content} ->
+        Task.start_link(fn -> create_or_update_counter(c_type) end)
+        content |> Repo.preload([:content_type, :state, :vendor])
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
   def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = c_id |> create_instance_id(prefix)
     params = params |> Map.merge(%{"instance_id" => instance_id})
@@ -426,7 +444,7 @@ defmodule WraftDoc.Document do
     |> case do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
-        content |> Repo.preload([:content_type, :state])
+        content |> Repo.preload([:content_type, :state, :vendor])
 
       changeset = {:error, _} ->
         changeset
@@ -525,7 +543,7 @@ defmodule WraftDoc.Document do
       join: u in User,
       where: u.organisation_id == ^org_id and i.creator_id == u.id,
       order_by: [desc: i.id],
-      preload: [:content_type, :state]
+      preload: [:content_type, :state, :vendor]
     )
     |> Repo.paginate(params)
   end
@@ -540,7 +558,7 @@ defmodule WraftDoc.Document do
       join: ct in ContentType,
       where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id,
       order_by: [desc: i.id],
-      preload: [:content_type, :state]
+      preload: [:content_type, :state, :vendor]
     )
     |> Repo.paginate(params)
   end
