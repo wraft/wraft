@@ -806,7 +806,7 @@ defmodule WraftDoc.EnterpriseTest do
       vendor = insert(:vendor, creator: user)
       count_before = Vendor |> Repo.all() |> length()
 
-      {:error, changeset} = Enterprise.update_vendor(vendor, @invalid_vendor_attrs)
+      {:error, changeset} = Enterprise.update_vendor(vendor, user, @invalid_vendor_attrs)
       count_after = Vendor |> Repo.all() |> length()
       assert count_before == count_after
       %{name: ["can't be blank"], email: ["can't be blank"]} == errors_on(changeset)
@@ -817,7 +817,7 @@ defmodule WraftDoc.EnterpriseTest do
     test "get vendor returns the vendor data" do
       user = insert(:user)
       vendor = insert(:vendor, creator: user, organisation: user.organisation)
-      v_vendor = Enterprise.get_vendor(vendor.uuid, user)
+      v_vendor = Enterprise.get_vendor(user, vendor.uuid)
       assert v_vendor.name == vendor.name
       assert v_vendor.email == vendor.email
       assert v_vendor.phone == vendor.phone

@@ -212,8 +212,8 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns.current_user
 
-    with %Vendor{} = vendor <- Enterprise.get_vendor(uuid, current_user),
-         %Vendor{} = vendor <- Enterprise.update_vendor(vendor, params) do
+    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, uuid),
+         %Vendor{} = vendor <- Enterprise.update_vendor(vendor, current_user, params) do
       conn
       |> render("vendor.json", vendor: vendor)
     end
@@ -238,7 +238,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   def delete(conn, %{"id" => uuid}) do
     current_user = conn.assigns.current_user
 
-    with %Vendor{} = vendor <- Enterprise.get_vendor(uuid, current_user),
+    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, uuid),
          {:ok, %Vendor{}} <- Enterprise.delete_vendor(vendor) do
       conn
       |> render("vendor.json", vendor: vendor)

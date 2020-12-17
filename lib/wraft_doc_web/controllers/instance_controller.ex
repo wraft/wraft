@@ -11,7 +11,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     Document.ContentType,
     Document.Layout,
     Enterprise,
-    Enterprise.Flow.State
+    Enterprise.Flow.State,
+    Enterprise.Vendor
   }
 
   def swagger_definitions do
@@ -50,12 +51,14 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             raw(:string, "Content raw data", required: true)
             serialized(:string, "Content serialized data")
             state_uuid(:string, "state id", required: true)
+            vendor_uuid(:string, "Vendor id", required: true)
           end
 
           example(%{
             raw: "Content data",
             serialized: %{title: "Title of the content", body: "Body of the content"},
-            state_uuid: "kjb12389k23eyg"
+            state_uuid: "kjb12389k23eyg",
+            vendor_uuid: "15dsdf-s5d1f-1d51f-1sfd15-1s5df"
           })
         end,
       ContentUpdateRequest:
@@ -231,12 +234,47 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
                   order: 1,
                   updated_at: "2020-01-21T14:00:00Z",
                   inserted_at: "2020-02-21T14:00:00Z"
+                },
+                vendor: %{
+                  name: "Vos Services",
+                  email: "serv@vosmail.com",
+                  phone: "98565262262",
+                  address: "rose boru, hourbures",
+                  gstin: "32ADF22SDD2DFS32SDF",
+                  reg_no: "ASD21122",
+                  contact_person: "vikas abu"
                 }
               }
             ],
             page_number: 1,
             total_pages: 2,
             total_entries: 15
+          })
+        end,
+      Vendor:
+        swagger_schema do
+          title("Vendor")
+          description("A Vendor")
+
+          properties do
+            name(:string, "Vendors name")
+            email(:string, "Vendors email")
+            phone(:string, "Phone number")
+            address(:string, "The Address of the vendor")
+            gstin(:string, "The Gstin of the vendor")
+            reg_no(:string, "The RegNo of the vendor")
+
+            contact_person(:string, "The ContactPerson of the vendor")
+          end
+
+          example(%{
+            name: "Vos Services",
+            email: "serv@vosmail.com",
+            phone: "98565262262",
+            address: "rose boru, hourbures",
+            gstin: "32ADF22SDD2DFS32SDF",
+            reg_no: "ASD21122",
+            contact_person: "vikas abu"
           })
         end
     }
@@ -261,14 +299,20 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"c_type_id" => c_type_uuid, "state_uuid" => state_uuid} = params) do
+  def create(
+        conn,
+        %{"c_type_id" => c_type_uuid, "state_uuid" => state_uuid, "vendor_uuid" => vendor_uuid} =
+          params
+      ) do
     current_user = conn.assigns[:current_user]
     type = Instance.types()[:normal]
     params = Map.put(params, "type", type)
 
     with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_uuid),
          %State{} = state <- Enterprise.get_state(current_user, state_uuid),
-         %Instance{} = content <- Document.create_instance(current_user, c_type, state, params) do
+         %Vendor{} = vendor <- Enterprise.get_vendor(current_user, vendor_uuid),
+         %Instance{} = content <-
+           Document.create_instance(current_user, c_type, state, vendor, params) do
       conn
       |> render(:create, content: content)
     end

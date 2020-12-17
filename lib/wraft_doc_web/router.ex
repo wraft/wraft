@@ -161,8 +161,11 @@ defmodule WraftDocWeb.Router do
       resources("/comments", CommentController)
       get("/comments/:id/replies", CommentController, :reply)
       # Approval system
-      resources("/approval_systems", ApprovalSystemController)
-      post("/approval_systems/approve", ApprovalSystemController, :approve)
+      resources("/approval_systems", ApprovalSystemController,
+        only: [:create, :index, :show, :update, :delete]
+      )
+
+      post("/approval_systems/:id/approve", ApprovalSystemController, :approve)
 
       scope "/pipelines" do
         # Pipeline

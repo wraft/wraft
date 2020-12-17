@@ -11,7 +11,9 @@ defmodule WraftDocWeb.Api.V1.VendorView do
       address: vendor.address,
       gstin: vendor.gstin,
       reg_no: vendor.reg_no,
-      contact_person: vendor.contact_person
+      contact_person: vendor.contact_person,
+      inserted_at: vendor.inserted_at,
+      updated_at: vendor.updated_at
     }
   end
 

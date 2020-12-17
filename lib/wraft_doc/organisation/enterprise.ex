@@ -950,7 +950,7 @@ defmodule WraftDoc.Enterprise do
     current_user
     |> build_assoc(:vendors, organisation_id: current_user.organisation.id)
     |> Vendor.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, vendor} ->
         vendor |> Repo.preload([:organisation, :creator])
@@ -967,15 +967,16 @@ defmodule WraftDoc.Enterprise do
   -`organisation`- Organisation struct
 
   """
-  @spec get_vendor(Ecto.UUID.t(), Organisation.t()) :: Vendor.t()
-  def get_vendor(uuid, %User{organisation_id: id}) do
+  @spec get_vendor(Organisation.t(), Ecto.UUID.t()) :: Vendor.t()
+  def get_vendor(%User{organisation_id: id}, uuid) do
     Vendor
     |> Repo.get_by(uuid: uuid, organisation_id: id)
   end
 
+  def get_vendor(_, _), do: nil
   @spec show_vendor(Ecto.UUID.t(), User.t()) :: Vendor.t()
   def show_vendor(uuid, user) do
-    uuid |> get_vendor(user) |> Repo.preload([:creator, :organisation])
+    user |> get_vendor(uuid) |> Repo.preload([:creator, :organisation])
   end
 
   @doc """
@@ -988,10 +989,10 @@ defmodule WraftDoc.Enterprise do
 
   """
 
-  def update_vendor(vendor, params) do
+  def update_vendor(vendor, %User{id: id}, params) do
     vendor
     |> Vendor.update_changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -1023,4 +1024,22 @@ defmodule WraftDoc.Enterprise do
   end
 
   def vendor_index(_, _), do: nil
+
+  @doc """
+  Lists all pending approval systems to approve
+  ## Parameters
+  * user- User struct
+  """
+  @spec get_pending_approvals(User.t(), map()) :: Scrivener.Page.t()
+  def get_pending_approvals(%User{id: id, organisation_id: org_id}, params) do
+    from(as in ApprovalSystem,
+      where: as.approver_id == ^id,
+      where: as.approved == false,
+      where: as.organisation_id == ^org_id,
+      preload: [:instance, :pre_state, :post_state, :approver]
+    )
+    |> Repo.paginate(params)
+  end
+
+  def get_pending_approvals(_, _), do: nil
 end
