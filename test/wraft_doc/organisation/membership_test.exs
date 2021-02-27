@@ -1,7 +1,7 @@
 defmodule WraftDoc.Enterprise.MembershipTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Enterprise.Membership}
+  alias WraftDoc.{Enterprise.Membership, Repo}
 
   @valid_attrs %{
     start_date: Timex.now(),

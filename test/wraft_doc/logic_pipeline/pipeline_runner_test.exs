@@ -2,7 +2,7 @@ defmodule WraftDoc.PipelineRunnerTest do
   use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
   use ExUnit.Case
-  alias WraftDoc.{PipelineRunner, Document.Instance, Document.Instance.History}
+  alias WraftDoc.{Document.Instance, Document.Instance.History, PipelineRunner}
 
   describe "preload_pipeline_and_stages/1" do
     test "returns preloaded trigger struct with trigger struct as input" do
@@ -166,7 +166,8 @@ defmodule WraftDoc.PipelineRunnerTest do
   end
 
   # describe "build/1" do
-  #   test "builds the list of instances in the map and returns a map with with the instances and build responses when input map has a user key" do
+  #   test "builds the list of instances in the map and returns a map with
+  # with the instances and build responses when input map has a user key" do
   #     user = insert(:user)
   #     instances = insert_list(3, :instance)
   #     count_before = History |> Repo.all() |> length()
@@ -183,7 +184,8 @@ defmodule WraftDoc.PipelineRunnerTest do
   #     assert response_instance_ids == instance_ids
   #   end
 
-  #   test "builds the list of instances in the map and returns a map with with the instances and build responses when input map does not have a user key" do
+  #   test "builds the list of instances in the map and returns a map with with the
+  # instances and build responses when input map does not have a user key" do
   #     instances = insert_list(3, :instance)
   #     count_before = History |> Repo.all() |> length()
   #     response = PipelineRunner.build(%{instances: instances})

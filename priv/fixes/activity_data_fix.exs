@@ -1,9 +1,9 @@
 defmodule ActivityDataFix do
-  alias WraftDoc.Repo
   alias Spur.Activity
+  alias WraftDoc.Repo
   import Ecto.Query
 
-  def get_deletion_activity() do
+  def get_deletion_activity do
     from(a in Activity,
       where: a.action == "delete",
       select: %{

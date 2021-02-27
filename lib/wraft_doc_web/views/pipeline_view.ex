@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.PipelineView do
   use WraftDocWeb, :view
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{UserView, PipeStageView}
+  alias WraftDocWeb.Api.V1.{PipeStageView, UserView}
 
   def render("create.json", %{pipeline: pipeline}) do
     %{

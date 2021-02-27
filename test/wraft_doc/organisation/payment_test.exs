@@ -1,7 +1,7 @@
 defmodule WraftDoc.Enterprise.Membership.PaymentTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Enterprise.Membership.Payment}
+  alias WraftDoc.{Enterprise.Membership.Payment, Repo}
 
   @valid_attrs %{
     razorpay_id: "FUNC-001-1",
