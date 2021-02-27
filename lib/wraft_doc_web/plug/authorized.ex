@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Plug.Authorized do
   @moduledoc false
   import Plug.Conn
   import Ecto.Query
-  alias WraftDoc.{Repo, Authorization.Resource, Authorization.Permission}
+  alias WraftDoc.{Authorization.Permission, Authorization.Resource, Repo}
 
   @category %{
     "WraftDocWeb.Api.V1.AssetController" => "Asset",

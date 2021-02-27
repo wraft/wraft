@@ -1,5 +1,5 @@
 defmodule AddContentTypePrefixes do
-  alias WraftDoc.{Repo, Document.ContentType}
+  alias WraftDoc.{Document.ContentType, Repo}
 
   def get_all_content_types() do
     Repo.all(ContentType)

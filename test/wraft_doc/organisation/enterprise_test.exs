@@ -7,15 +7,15 @@ defmodule WraftDoc.EnterpriseTest do
   use Bamboo.Test
 
   alias WraftDoc.{
-    Repo,
+    Enterprise,
+    Enterprise.ApprovalSystem,
     Enterprise.Flow,
     Enterprise.Flow.State,
-    Enterprise.Organisation,
-    Enterprise.ApprovalSystem,
-    Enterprise.Plan,
     Enterprise.Membership.Payment,
-    Enterprise,
+    Enterprise.Organisation,
+    Enterprise.Plan,
     Enterprise.Vendor
+    Repo,
   }
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"

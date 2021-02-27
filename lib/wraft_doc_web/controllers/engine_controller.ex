@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.EngineController do
   plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document}
+  alias WraftDoc.Document
 
   def swagger_definitions do
     %{

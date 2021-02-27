@@ -6,8 +6,8 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
   alias WraftDoc.{
     Enterprise,
     Enterprise.Membership,
-    Enterprise.Plan,
-    Enterprise.Membership.Payment
+    Enterprise.Membership.Payment,
+    Enterprise.Plan
   }
 
   action_fallback(WraftDocWeb.FallbackController)

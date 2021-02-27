@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   """
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Document.FieldType}
+  alias WraftDoc.{Document.FieldType, Repo}
 
   @valid_attrs %{name: "String", description: "A test field"}
 

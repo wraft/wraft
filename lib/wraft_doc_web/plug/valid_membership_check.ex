@@ -5,9 +5,9 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheck do
 
   import Plug.Conn
 
-  alias WraftDoc.Repo
   alias WraftDoc.Account.User
   alias WraftDoc.Enterprise
+  alias WraftDoc.Repo
 
   def init(_params) do
   end

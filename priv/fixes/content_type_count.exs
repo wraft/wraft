@@ -1,7 +1,7 @@
 defmodule ContentTypeCount do
-  alias WraftDoc.{Repo, Document.ContentType, Document.Counter}
+  alias WraftDoc.{Document.ContentType, Document.Counter, Repo}
 
-  def get_content_type_instances() do
+  def get_content_type_instances do
     Repo.all(ContentType)
     |> Enum.each(fn x -> get_instances_and_udpate_count(x) end)
   end

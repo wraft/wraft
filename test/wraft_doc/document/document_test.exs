@@ -5,22 +5,22 @@ defmodule WraftDoc.DocumentTest do
   use Bamboo.Test
 
   alias WraftDoc.{
-    Repo,
-    Document.Layout,
+    Document,
+    Document.Asset,
+    Document.BlockTemplate,
+    Document.Comment,
     Document.ContentType,
+    Document.Counter,
+    Document.DataTemplate,
     Document.Instance,
     Document.Instance.Version,
-    Document.DataTemplate,
+    Document.Layout,
     Document.LayoutAsset,
-    Document.Counter,
-    Document.BlockTemplate,
     Document.Pipeline,
     Document.Pipeline.Stage,
     Document.Pipeline.TriggerHistory,
     Document.Theme,
-    Document.Asset,
-    Document.Comment,
-    Document
+    Repo
   }
 
   @valid_layout_attrs %{

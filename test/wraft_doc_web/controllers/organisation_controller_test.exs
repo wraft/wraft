@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Enterprise.Organisation}
+  alias WraftDoc.{Enterprise.Organisation, Repo}
   use WraftDocWeb.ConnCase
 
   @valid_attrs %{

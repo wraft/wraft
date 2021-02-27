@@ -5,7 +5,7 @@ defmodule WraftDocWeb.CurrentUser do
   """
   import Plug.Conn
   import Guardian.Plug
-  alias WraftDoc.{Repo, Account.User}
+  alias WraftDoc.{Account.User, Repo}
   alias WraftDocWeb.Guardian.AuthErrorHandler
 
   def init(opts), do: opts

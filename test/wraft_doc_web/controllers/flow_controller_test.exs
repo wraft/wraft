@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Enterprise.Flow, Repo, Enterprise.Flow.State}
+  alias WraftDoc.{Enterprise.Flow, Enterprise.Flow.State, Repo}
 
   @valid_attrs %{
     name: "Authorised",

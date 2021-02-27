@@ -1,5 +1,5 @@
 defmodule RoleUUID do
-  alias WraftDoc.{Repo, Account.Role}
+  alias WraftDoc.{Account.Role, Repo}
   import Ecto.Changeset
 
   def all_roles do

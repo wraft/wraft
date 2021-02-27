@@ -1,7 +1,7 @@
 defmodule WraftDoc.Enterprise.PlanTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Enterprise.Plan}
+  alias WraftDoc.{Enterprise.Plan, Repo}
 
   @valid_attrs %{
     name: "Basic",

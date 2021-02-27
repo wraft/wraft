@@ -1,7 +1,7 @@
 defmodule OrganisationMembershio do
   import Ecto
   import Ecto.Query
-  alias WraftDoc.{Repo, Enterprise.Organisation, Enterprise.Plan, Enterprise.Membership}
+  alias WraftDoc.{Enterprise.Membership, Enterprise.Organisation, Enterprise.Plan, Repo}
   @trial_plan_name "Free Trial"
   @trial_duration 14
 

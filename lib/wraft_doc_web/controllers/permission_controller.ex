@@ -5,10 +5,10 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.{
-    Authorization,
-    Authorization.Permission,
     Account,
     Account.Role,
+    Authorization,
+    Authorization.Permission,
     Authorization.Resource
   }
 
