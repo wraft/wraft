@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Plug.AddActionLogTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, ActionLog}
+  alias WraftDoc.{ActionLog, Repo}
   alias WraftDocWeb.Plug.AddActionLog
 
   test "adds new log when an action is made by an authorized user" do

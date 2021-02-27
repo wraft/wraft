@@ -6,33 +6,34 @@ defmodule WraftDoc.Document do
   import Ecto.Query
 
   alias WraftDoc.{
-    Repo,
     Account.User,
-    Document.Layout,
-    Document.ContentType,
-    Document.Engine,
-    Document.Instance,
-    Document.Instance.History,
-    Document.Instance.Version,
-    Document.Theme,
-    Document.DataTemplate,
     Document.Asset,
-    Document.LayoutAsset,
-    Document.FieldType,
-    Document.ContentTypeField,
-    Document.Counter,
-    Enterprise,
-    Enterprise.Flow,
-    Enterprise.Flow.State,
     Document.Block,
     Document.BlockTemplate,
     Document.Comment,
+    Document.ContentType,
+    Document.ContentTypeField,
+    Document.Counter,
+    Document.DataTemplate,
+    Document.Engine,
+    Document.FieldType,
+    Document.Instance,
+    Document.Instance.History,
+    Document.Instance.Version,
+    Document.Layout,
+    Document.LayoutAsset,
     Document.Pipeline,
     Document.Pipeline.Stage,
-    Document.Pipeline.TriggerHistory
+    Document.Pipeline.TriggerHistory,
+    Document.Theme,
+    Enterprise,
+    Enterprise.Flow,
+    Enterprise.Flow.State,
+    Repoß
   }
 
   alias WraftDocWeb.AssetUploader
+  alias WraftDocWeb.Worker.BulkWorker
 
   @doc """
   Create a layout.

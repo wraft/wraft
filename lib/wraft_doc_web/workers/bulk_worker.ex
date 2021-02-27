@@ -4,8 +4,8 @@ defmodule WraftDocWeb.Worker.BulkWorker do
   """
   use Oban.Worker, queue: :default
   @impl Oban.Worker
-  alias WraftDoc.{Repo, Account, Document, Document.Pipeline.TriggerHistory, Enterprise}
   alias Opus.PipelineError
+  alias WraftDoc.{Account, Document, Document.Pipeline.TriggerHistory, Enterprise, Repo}
 
   def perform(
         %{

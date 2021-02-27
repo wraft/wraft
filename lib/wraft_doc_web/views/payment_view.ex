@@ -1,8 +1,8 @@
 defmodule WraftDocWeb.Api.V1.PaymentView do
   use WraftDocWeb, :view
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{OrganisationView, UserView, PlanView, MembershipView}
   alias WraftDoc.Enterprise.Membership.Payment
+  alias WraftDocWeb.Api.V1.{MembershipView, OrganisationView, PlanView, UserView}
 
   def render("payment.json", %{payment: payment}) do
     %{

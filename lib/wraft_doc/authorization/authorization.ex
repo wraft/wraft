@@ -4,7 +4,7 @@ defmodule WraftDoc.Authorization do
   """
   import Ecto.Query
   import Ecto
-  alias WraftDoc.{Repo, Authorization.Resource, Authorization.Permission, Account.Role}
+  alias WraftDoc.{Authorization.Permission, Authorization.Resource, Account.Role,  Repo}
 
   @doc """
   Create a resource.

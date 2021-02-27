@@ -7,8 +7,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   alias WraftDoc.{
     Document,
-    Document.Instance,
     Document.ContentType,
+    Document.Instance,
     Document.Layout,
     Enterprise,
     Enterprise.Flow.State,

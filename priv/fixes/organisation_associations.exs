@@ -2,13 +2,13 @@ defmodule OrganisationAssoications do
   import Ecto.Query
 
   alias WraftDoc.{
-    Repo,
-    Account.User,
     Account.Role,
-    Enterprise.Organisation,
-    Document.Layout,
+    Account.User,
     Document.ContentType,
+    Document.Layout,
     Enterprise.Flow
+    Enterprise.Organisation,
+    Repo,
   }
 
   def create_organisation() do
