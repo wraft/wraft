@@ -101,7 +101,9 @@ defmodule WraftDoc.Mixfile do
       # Razorpay
       {:razorpay, "~> 0.5.0"},
       # PDF generation using wkhtmltopdf
-      {:pdf_generator, "~> 0.6.2"}
+      {:pdf_generator, "~> 0.6.2"},
+      # Code analysis tool
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
     ]
   end
 
