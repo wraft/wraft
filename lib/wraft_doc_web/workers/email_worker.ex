@@ -1,4 +1,7 @@
 defmodule WraftDocWeb.Worker.EmailWorker do
+  @moduledoc """
+  Oban worker for sending emails.
+  """
   use Oban.Worker, queue: :mailer
   @impl Oban.Worker
   alias WraftDocWeb.{Mailer, Mailer.Email}

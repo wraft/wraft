@@ -1,4 +1,7 @@
 defmodule WraftDocWeb.Funda do
+  @moduledoc """
+  Doc creation engine.
+  """
   require Logger
   def convert(file_path, format \\ "pdf")
 

@@ -1,4 +1,7 @@
 defmodule WraftDocWeb.Worker.BulkWorker do
+  @moduledoc """
+  Oban worker for bulk building of docs.
+  """
   use Oban.Worker, queue: :default
   @impl Oban.Worker
   alias WraftDoc.{Repo, Account, Document, Document.Pipeline.TriggerHistory, Enterprise}

@@ -1,4 +1,6 @@
 defmodule WraftDoc.Enterprise.ApprovalSystem do
+  @moduledoc false
+
   use Ecto.Schema
   import Ecto.Changeset
 

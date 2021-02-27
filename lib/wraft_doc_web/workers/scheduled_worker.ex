@@ -1,4 +1,7 @@
 defmodule WraftDocWeb.Worker.ScheduledWorker do
+  @moduledoc """
+  Oban worker for running scheduled jobs.
+  """
   use Oban.Worker, queue: :scheduled
   @impl Oban.Worker
   import Ecto.Query

@@ -1,4 +1,6 @@
 defmodule WraftDoc.DocConversion do
+  @moduledoc false
+
   alias WraftDocWeb.Funda
 
   def doc_conversion(template_path, params) do
