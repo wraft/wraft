@@ -99,7 +99,7 @@ defmodule WraftDoc.AccountTest do
           Endpoint,
           "organisation_invite",
           %{organisation: organisation, email: @email},
-          signed_at: -9_00_001
+          signed_at: -900_001
         )
 
       error = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
