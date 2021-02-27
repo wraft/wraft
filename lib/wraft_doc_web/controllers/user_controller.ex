@@ -8,8 +8,8 @@ defmodule WraftDocWeb.Api.V1.UserController do
   plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   import Ecto.Query, warn: false
-  alias WraftDoc.{Account, Account.User, Account.AuthToken}
-  alias WraftDocWeb.{Mailer.Email, Mailer}
+  alias WraftDoc.{Account, Account.AuthToken, Account.User}
+  alias WraftDocWeb.{Mailer, Mailer.Email}
   action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do

@@ -6,12 +6,12 @@ defmodule WraftDoc.PipelineRunner do
   use Opus.Pipeline
 
   alias WraftDoc.{
-    Repo,
     Account,
     Document,
-    Document.Pipeline,
     Document.Instance,
-    Document.Pipeline.TriggerHistory
+    Document.Pipeline,
+    Document.Pipeline.TriggerHistory,
+    Repo
   }
 
   step(:preload_pipeline_and_stages)

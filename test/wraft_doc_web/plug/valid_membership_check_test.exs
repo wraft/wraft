@@ -1,8 +1,8 @@
 defmodule WraftDocWeb.Plug.ValidMembershipCheckTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDocWeb.Plug.ValidMembershipCheck
   alias WraftDoc.Repo
+  alias WraftDocWeb.Plug.ValidMembershipCheck
 
   test "user is allowed to continue when user's organisation has a valid membership" do
     user = insert(:user)

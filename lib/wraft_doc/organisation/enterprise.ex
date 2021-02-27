@@ -7,20 +7,22 @@ defmodule WraftDoc.Enterprise do
   alias Ecto.Multi
 
   alias WraftDoc.{
-    Repo,
-    Enterprise.Flow,
-    Enterprise.Flow.State,
-    Enterprise.Organisation,
     Account,
     Account.User,
+    Document,
+    Document.Instance,
     Enterprise.ApprovalSystem,
-    Enterprise.Plan,
+    Enterprise.Flow,
+    Enterprise.Flow.State,
     Enterprise.Membership,
     Enterprise.Membership.Payment,
-    Document.Instance,
-    Document,
-    Enterprise.Vendor
+    Enterprise.Organisation,
+    Enterprise.Plan,
+    Enterprise.Vendor,
+    Repo
   }
+
+  alias WraftDocWeb.Worker.{EmailWorker, ScheduledWorker}
 
   @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
   @default_controlled_states [
@@ -621,7 +623,7 @@ defmodule WraftDoc.Enterprise do
   Get all plans.
   """
   @spec plan_index() :: [Plan.t()]
-  def plan_index() do
+  def plan_index do
     Plan |> Repo.all()
   end
 

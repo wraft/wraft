@@ -6,19 +6,18 @@ defmodule WraftDoc.Account do
   import Ecto
 
   alias WraftDoc.{
-    Repo,
-    Account.User,
-    Account.Role,
-    Account.Profile,
-    Enterprise.Organisation,
     Account.AuthToken
+    Account.Profile,
+    Account.Role,
+    Account.User,
+    Enterprise.Organisation,
+    Repo,
   }
-
-  alias WraftDocWeb.Endpoint
 
   alias WraftDoc.Document.{
     Asset,
     Block,
+    BlockTemplate,
     ContentType,
     ContentTypeField,
     DataTemplate,
@@ -26,10 +25,12 @@ defmodule WraftDoc.Account do
     Layout,
     LayoutAsset,
     Theme,
-    BlockTemplate
   }
-
   alias WraftDoc.Enterprise.{Flow, Flow.State}
+
+  alias WraftDocWeb.Endpoint
+
+
   alias Ecto.Multi
 
   @activity_models %{
@@ -77,7 +78,7 @@ defmodule WraftDoc.Account do
 
   @spec get_organisation_from_token(map) :: Organisation.t()
   def get_organisation_from_token(%{"token" => token, "email" => email}) do
-    Phoenix.Token.verify(WraftDocWeb.Endpoint, "organisation_invite", token, max_age: 9_00_000)
+    Phoenix.Token.verify(WraftDocWeb.Endpoint, "organisation_invite", token, max_age: 900_000)
     |> case do
       {:ok, %{organisation: org, email: token_email}} ->
         cond do

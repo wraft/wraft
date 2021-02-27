@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Plug.AddActionLog do
   """
 
   import Plug.Conn
-  alias WraftDoc.{Repo, ActionLog}
+  alias WraftDoc.{ActionLog, Repo}
 
   def init(_params) do
   end

@@ -6,7 +6,7 @@ defmodule WraftDoc.Document.LayoutAsset do
   import Ecto.Changeset
   import Ecto.Query
   alias __MODULE__
-  alias WraftDoc.{Document.Layout, Account.User}
+  alias WraftDoc.{Account.User, Document.Layout}
 
   defimpl Spur.Trackable, for: LayoutAsset do
     def actor(layout_asset), do: "#{layout_asset.creator_id}"

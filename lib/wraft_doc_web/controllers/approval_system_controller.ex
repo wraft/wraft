@@ -6,10 +6,10 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.{
-    Enterprise,
-    Enterprise.ApprovalSystem,
     Document,
     Document.Instance
+    Enterprise,
+    Enterprise.ApprovalSystem,
   }
 
   def swagger_definitions do
