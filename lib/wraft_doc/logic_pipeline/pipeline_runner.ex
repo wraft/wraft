@@ -1,4 +1,8 @@
 defmodule WraftDoc.PipelineRunner do
+  @moduledoc """
+  Opus Pipeline for docs creation.
+  """
+
   use Opus.Pipeline
 
   alias WraftDoc.{

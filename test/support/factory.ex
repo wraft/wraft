@@ -1,4 +1,7 @@
 defmodule WraftDoc.Factory do
+  @moduledoc """
+  Factory for creating test data. Used by ExMachina.
+  """
   use ExMachina.Ecto, repo: WraftDoc.Repo
 
   alias WraftDoc.{

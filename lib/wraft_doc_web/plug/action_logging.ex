@@ -1,4 +1,8 @@
 defmodule WraftDocWeb.Plug.AddActionLog do
+  @moduledoc """
+  Plug for creating and storing action log.
+  """
+
   import Plug.Conn
   alias WraftDoc.{Repo, ActionLog}
 

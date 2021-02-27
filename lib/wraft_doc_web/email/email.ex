@@ -1,4 +1,6 @@
 defmodule WraftDocWeb.Mailer.Email do
+  @moduledoc false
+
   import Bamboo.Email
 
   def invite_email(org_name, user_name, email, token) do

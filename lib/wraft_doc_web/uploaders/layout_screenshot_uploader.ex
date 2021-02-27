@@ -1,4 +1,5 @@
 defmodule WraftDocWeb.LayoutScreenShotUploader do
+  @moduledoc false
   use Arc.Definition
   use Arc.Ecto.Definition
 

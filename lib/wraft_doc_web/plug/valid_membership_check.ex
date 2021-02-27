@@ -1,4 +1,8 @@
 defmodule WraftDocWeb.Plug.ValidMembershipCheck do
+  @moduledoc """
+  Plug to check if user has valid membership.
+  """
+
   import Plug.Conn
 
   alias WraftDoc.Repo
