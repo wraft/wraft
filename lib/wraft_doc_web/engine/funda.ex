@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Funda do
     System.cmd("pandoc", [file_path, "-o", "/Users/sk/offer_letter.#{format}"])
   end
 
-  def convert() do
+  def convert do
     bodyx1 = "--template=/Users/sk/pandoc/pandoc-letter/template-letter.tex"
 
     System.cmd("pandoc", [
@@ -22,7 +22,7 @@ defmodule WraftDocWeb.Funda do
     ])
   end
 
-  def template_render() do
+  def template_render do
     # get page
 
     # generate markdown
@@ -31,7 +31,7 @@ defmodule WraftDocWeb.Funda do
 
     # generate pandoc command => output.pdf
 
-    # 
+    #
     strt_time = Timex.now()
     Logger.info(strt_time)
     files = File.read!("index.txt") |> String.split("\n")

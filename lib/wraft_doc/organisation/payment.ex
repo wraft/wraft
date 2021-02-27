@@ -8,8 +8,9 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   alias __MODULE__
   require Protocol
   Protocol.derive(Jason.Encoder, Razorpay.Payment)
-  def statuses(), do: [failed: 1, captured: 2]
-  def actions(), do: [downgrade: 1, renew: 2, upgrade: 3]
+
+  def statuses, do: [failed: 1, captured: 2]
+  def actions, do: [downgrade: 1, renew: 2, upgrade: 3]
 
   schema "payment" do
     field(:uuid, Ecto.UUID, autogenerate: true)
