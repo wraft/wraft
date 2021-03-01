@@ -53,8 +53,8 @@ defmodule WraftDoc.Document.Pipeline.StageTest do
         creator_id: u_id
       )
 
-    {:ok, _stage} = Stage.changeset(stage_struct, %{}) |> Repo.insert()
-    {:error, changeset} = Stage.changeset(stage_struct, %{}) |> Repo.insert()
+    {:ok, _stage} = stage_struct |> Stage.changeset(%{}) |> Repo.insert()
+    {:error, changeset} = stage_struct |> Stage.changeset(%{}) |> Repo.insert()
 
     assert "Already added.!" in errors_on(changeset, :content_type_id)
   end

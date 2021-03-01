@@ -6,12 +6,12 @@ defmodule WraftDoc.Account do
   import Ecto
 
   alias WraftDoc.{
-    Account.AuthToken
+    Account.AuthToken,
     Account.Profile,
     Account.Role,
     Account.User,
     Enterprise.Organisation,
-    Repo,
+    Repo
   }
 
   alias WraftDoc.Document.{
@@ -24,12 +24,12 @@ defmodule WraftDoc.Account do
     Instance,
     Layout,
     LayoutAsset,
-    Theme,
+    Theme
   }
+
   alias WraftDoc.Enterprise.{Flow, Flow.State}
 
   alias WraftDocWeb.Endpoint
-
 
   alias Ecto.Multi
 
@@ -78,15 +78,14 @@ defmodule WraftDoc.Account do
 
   @spec get_organisation_from_token(map) :: Organisation.t()
   def get_organisation_from_token(%{"token" => token, "email" => email}) do
-    Phoenix.Token.verify(WraftDocWeb.Endpoint, "organisation_invite", token, max_age: 900_000)
+    Endpoint
+    |> Phoenix.Token.verify("organisation_invite", token, max_age: 900_000)
     |> case do
       {:ok, %{organisation: org, email: token_email}} ->
-        cond do
-          token_email == email ->
-            org
-
-          true ->
-            {:error, :no_permission}
+        if token_email == email do
+          org
+        else
+          {:error, :no_permission}
         end
 
       # When token is valid, but encoded data is not what we expected
@@ -125,7 +124,8 @@ defmodule WraftDoc.Account do
   """
   @spec find(binary()) :: User.t() | {:error, atom}
   def find(email) do
-    get_user_by_email(email)
+    email
+    |> get_user_by_email()
     |> case do
       user = %User{} ->
         user
@@ -168,7 +168,8 @@ defmodule WraftDoc.Account do
         {:error, changeset}
 
       {:ok, %{profile: profile_struct, user: _user}} ->
-        Repo.preload(profile_struct, :user)
+        profile_struct
+        |> Repo.preload(:user)
         |> Repo.preload(:country)
     end
   end
@@ -246,19 +247,21 @@ defmodule WraftDoc.Account do
   # => No test written
   @spec get_activity_stream(User.t(), map) :: map
   def get_activity_stream(%User{id: id}, params) do
-    from(a in Spur.Activity,
-      join: au in "audience",
-      where: au.user_id == ^id and au.activity_id == a.id,
-      order_by: [desc: a.inserted_at],
-      select: %{
-        action: a.action,
-        actor: a.actor,
-        object: a.object,
-        meta: a.meta,
-        inserted_at: a.inserted_at
-      }
-    )
-    |> Repo.paginate(params)
+    query =
+      from(a in Spur.Activity,
+        join: au in "audience",
+        where: au.user_id == ^id and au.activity_id == a.id,
+        order_by: [desc: a.inserted_at],
+        select: %{
+          action: a.action,
+          actor: a.actor,
+          object: a.object,
+          meta: a.meta,
+          inserted_at: a.inserted_at
+        }
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -297,11 +300,14 @@ defmodule WraftDoc.Account do
   end
 
   defp delete_token(user_id, type) do
-    from(
-      a in AuthToken,
-      where: a.user_id == ^user_id,
-      where: a.token_type == ^type
-    )
+    query =
+      from(
+        a in AuthToken,
+        where: a.user_id == ^user_id,
+        where: a.token_type == ^type
+      )
+
+    query
     |> Repo.all()
     |> Enum.each(fn x -> Repo.delete!(x) end)
   end
@@ -313,16 +319,16 @@ defmodule WraftDoc.Account do
   def create_token(%{"email" => email}) do
     email = email |> String.downcase()
 
-    with %User{} = current_user <- get_user_by_email(email) do
-      delete_token(current_user.id, "password_verify")
-      token = Phoenix.Token.sign(Endpoint, "reset", current_user.email) |> Base.url_encode64()
-      new_params = %{value: token, token_type: "password_verify"}
+    case get_user_by_email(email) do
+      %User{} = current_user ->
+        delete_token(current_user.id, "password_verify")
+        token = Endpoint |> Phoenix.Token.sign("reset", current_user.email) |> Base.url_encode64()
+        new_params = %{value: token, token_type: "password_verify"}
 
-      {:ok, auth_struct} = insert_auth_token(current_user, new_params)
+        {:ok, auth_struct} = insert_auth_token(current_user, new_params)
 
-      auth_struct
-      |> Repo.preload(:user)
-    else
+        Repo.preload(auth_struct, :user)
+
       nil ->
         {:error, :invalid_email}
     end
@@ -350,7 +356,8 @@ defmodule WraftDoc.Account do
       token_struct ->
         {:ok, decoded_token} = token_struct.value |> Base.url_decode64()
 
-        Phoenix.Token.verify(Endpoint, "reset", decoded_token, max_age: 860)
+        Endpoint
+        |> Phoenix.Token.verify("reset", decoded_token, max_age: 860)
         |> case do
           {:error, :invalid} ->
             {:error, :fake}
@@ -371,18 +378,20 @@ defmodule WraftDoc.Account do
 
   @spec reset_password(map) :: User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
   def reset_password(%{"token" => token, "password" => _} = params) do
-    with %AuthToken{} = auth_token <- check_token(token) do
-      Repo.get_by(User, email: auth_token.user.email)
-      |> do_update_password(params)
-      |> case do
-        changeset = {:error, _} ->
-          changeset
+    case check_token(token) do
+      %AuthToken{} = auth_token ->
+        User
+        |> Repo.get_by(email: auth_token.user.email)
+        |> do_update_password(params)
+        |> case do
+          changeset = {:error, _} ->
+            changeset
 
-        %User{} = user_struct ->
-          Repo.delete!(auth_token)
-          user_struct
-      end
-    else
+          %User{} = user_struct ->
+            Repo.delete!(auth_token)
+            user_struct
+        end
+
       changeset = {:error, _} ->
         changeset
     end

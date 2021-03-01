@@ -2,6 +2,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
   alias WraftDoc.{Account.AuthToken, Repo}
+  alias WraftDocWeb.Endpoint
 
   setup %{conn: conn} do
     profile = insert(:profile)
@@ -136,7 +137,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       user = insert(:user)
 
-      token = Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", user.email) |> Base.url_encode64()
+      token = Endpoint |> Phoenix.Token.sign("reset", user.email) |> Base.url_encode64()
 
       insert(:auth_token, value: token, token_type: "password_verify")
       conn = get(conn, Routes.v1_user_path(conn, :verify_token, token))
@@ -155,7 +156,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       user = insert(:user)
 
       token =
-        Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", user.email, signed_at: -861)
+        Endpoint
+        |> Phoenix.Token.sign("reset", user.email, signed_at: -861)
         |> Base.url_encode64()
 
       insert(:auth_token, value: token, token_type: "password_verify")
@@ -169,7 +171,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       user = insert(:user)
 
-      token = Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", user.email) |> Base.url_encode64()
+      token = Endpoint |> Phoenix.Token.sign("reset", user.email) |> Base.url_encode64()
 
       insert(:auth_token, value: token, token_type: "password_verify", user: user)
       attrs = %{token: token, password: "123456789"}
@@ -186,7 +188,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       user = insert(:user)
 
-      token = Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", user.email) |> Base.url_encode64()
+      token = Endpoint |> Phoenix.Token.sign("reset", user.email) |> Base.url_encode64()
 
       insert(:auth_token, value: token, token_type: "password_verify")
       attrs = %{token: token, password: "123"}
@@ -219,7 +221,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       user = insert(:user)
 
       token =
-        Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", user.email, signed_at: -861)
+        Endpoint
+        |> Phoenix.Token.sign("reset", user.email, signed_at: -861)
         |> Base.url_encode64()
 
       insert(:auth_token, value: token, token_type: "password_verify")

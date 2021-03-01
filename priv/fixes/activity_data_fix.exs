@@ -4,7 +4,7 @@ defmodule ActivityDataFix do
   import Ecto.Query
 
   def get_deletion_activity do
-    from(a in Activity,
+    query = from(a in Activity,
       where: a.action == "delete",
       select: %{
         id: a.id,
@@ -15,6 +15,7 @@ defmodule ActivityDataFix do
         inserted_at: a.inserted_at
       }
     )
+    query
     |> Repo.all()
     |> Task.async_stream(fn x -> update_object(x) end)
     |> Enum.to_list()
@@ -22,7 +23,7 @@ defmodule ActivityDataFix do
 
   def update_object(%{object: object} = activity) do
     object = object |> String.split(",") |> List.first()
-    struct!(Activity, activity) |> Activity.changeset(%{object: object}) |> Repo.update!()
+    Activity |> struct!(activity) |> Activity.changeset(%{object: object}) |> Repo.update!()
   end
 end
 

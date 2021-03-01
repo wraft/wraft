@@ -7,9 +7,9 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
 
   alias WraftDoc.{
     Document,
-    Document.Instance
+    Document.Instance,
     Enterprise,
-    Enterprise.ApprovalSystem,
+    Enterprise.ApprovalSystem
   }
 
   def swagger_definitions do

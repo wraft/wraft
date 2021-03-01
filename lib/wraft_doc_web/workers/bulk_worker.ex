@@ -64,7 +64,8 @@ defmodule WraftDocWeb.Worker.BulkWorker do
     start_time = Timex.now()
     state = TriggerHistory.states()[:executing]
 
-    convert_map_to_trigger_struct(trigger)
+    trigger
+    |> convert_map_to_trigger_struct()
     |> update_trigger_history(%{state: state, start_time: start_time})
     |> WraftDoc.PipelineRunner.call()
     |> handle_exceptions()

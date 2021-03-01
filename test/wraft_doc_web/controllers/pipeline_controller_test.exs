@@ -54,21 +54,25 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       count_before = Pipeline |> Repo.all() |> length()
 
       conn =
-        post(conn, Routes.v1_pipeline_path(conn, :create), params)
+        conn
+        |> post(Routes.v1_pipeline_path(conn, :create), params)
         |> doc(operation_id: "create_pipeline")
 
       content_types =
-        json_response(conn, 200)["stages"]
+        conn
+        |> json_response(200)["stages"]
         |> Enum.map(fn x -> x["content_type"]["name"] end)
         |> List.to_string()
 
       d_temps =
-        json_response(conn, 200)["stages"]
+        conn
+        |> json_response(200)["stages"]
         |> Enum.map(fn x -> x["data_template"]["title"] end)
         |> List.to_string()
 
       resp_states =
-        json_response(conn, 200)["stages"]
+        conn
+        |> json_response(200)["stages"]
         |> Enum.map(fn x -> x["state"]["state"] end)
         |> List.to_string()
 
@@ -91,7 +95,8 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       count_before = Pipeline |> Repo.all() |> length()
 
       conn =
-        post(conn, Routes.v1_pipeline_path(conn, :create, %{}))
+        conn
+        |> post(Routes.v1_pipeline_path(conn, :create, %{}))
         |> doc(operation_id: "create_pipeline")
 
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -114,7 +119,8 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       conn = get(conn, Routes.v1_pipeline_path(conn, :index))
 
       pipelines =
-        json_response(conn, 200)["pipelines"]
+        conn
+        |> json_response(200)["pipelines"]
         |> Enum.map(fn %{"name" => name} -> name end)
         |> List.to_string()
 
@@ -150,21 +156,25 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
         ])
 
       conn =
-        put(conn, Routes.v1_pipeline_path(conn, :update, pipeline.uuid), params)
+        conn
+        |> put(Routes.v1_pipeline_path(conn, :update, pipeline.uuid), params)
         |> doc(operation_id: "update_pipeline")
 
       c_types =
-        json_response(conn, 200)["stages"]
+        conn
+        |> json_response(200)["stages"]
         |> Enum.map(fn x -> x["content_type"]["name"] end)
         |> List.to_string()
 
       data_temps =
-        json_response(conn, 200)["stages"]
+        conn
+        |> json_response(200)["stages"]
         |> Enum.map(fn x -> x["data_template"]["title"] end)
         |> List.to_string()
 
       states =
-        json_response(conn, 200)["stages"]
+        conn
+        |> json_response(200)["stages"]
         |> Enum.map(fn x -> x["state"]["state"] end)
         |> List.to_string()
 
@@ -186,7 +196,8 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
         |> assign(:current_user, user)
 
       conn =
-        put(conn, Routes.v1_pipeline_path(conn, :update, pipeline.uuid, %{name: ""}))
+        conn
+        |> put(Routes.v1_pipeline_path(conn, :update, pipeline.uuid, %{name: ""}))
         |> doc(operation_id: "update_pipeline")
 
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]

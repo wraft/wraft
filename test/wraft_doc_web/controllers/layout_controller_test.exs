@@ -57,11 +57,13 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
         @valid_attrs |> Map.merge(%{engine_uuid: engine_uuid, assets: "#{a1.uuid},#{a2.uuid}"})
 
       conn =
-        post(conn, Routes.v1_layout_path(conn, :create), params)
+        conn
+        |> post(Routes.v1_layout_path(conn, :create), params)
         |> doc(operation_id: "create_layout")
 
       la_names =
-        json_response(conn, 200)["assets"]
+        conn
+        |> json_response(200)["assets"]
         |> Enum.map(fn x -> x["name"] end)
         |> List.to_string()
 
@@ -85,7 +87,8 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       params = Map.put(@invalid_attrs, :engine_uuid, engine_uuid)
 
       conn =
-        post(conn, Routes.v1_layout_path(conn, :create, params))
+        conn
+        |> post(Routes.v1_layout_path(conn, :create, params))
         |> doc(operation_id: "create_layout")
 
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -112,11 +115,13 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       count_before = Layout |> Repo.all() |> length()
 
       conn =
-        put(conn, Routes.v1_layout_path(conn, :update, layout.uuid), params)
+        conn
+        |> put(Routes.v1_layout_path(conn, :update, layout.uuid), params)
         |> doc(operation_id: "update_layout")
 
       la_names =
-        json_response(conn, 200)["layout"]["assets"]
+        conn
+        |> json_response(200)["layout"]["assets"]
         |> Enum.map(fn x -> x["name"] end)
         |> List.to_string()
 
@@ -137,7 +142,8 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       conn =
-        put(conn, Routes.v1_layout_path(conn, :update, layout.uuid, @invalid_attrs))
+        conn
+        |> put(Routes.v1_layout_path(conn, :update, layout.uuid, @invalid_attrs))
         |> doc(operation_id: "update_layout")
 
       assert json_response(conn, 422)["errors"]["engine_id"] == ["can't be blank"]
@@ -180,7 +186,8 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       conn = get(conn, Routes.v1_layout_path(conn, :show, layout.uuid))
 
       la_names =
-        json_response(conn, 200)["layout"]["assets"]
+        conn
+        |> json_response(200)["layout"]["assets"]
         |> Enum.map(fn x -> x["name"] end)
         |> List.to_string()
 

@@ -41,8 +41,8 @@ defmodule WraftDoc.Document.BlockTest do
       creator_id: user.id
     }
 
-    {:ok, _block} = Block.changeset(%Block{}, params) |> Repo.insert()
-    {:error, changeset} = Block.changeset(%Block{}, params) |> Repo.insert()
+    {:ok, _block} = %Block{} |> Block.changeset(params) |> Repo.insert()
+    {:error, changeset} = %Block{} |> Block.changeset(params) |> Repo.insert()
 
     assert "Block with same name exists.!" in errors_on(changeset, :name)
   end

@@ -38,8 +38,8 @@ defmodule WraftDoc.Document.PipelineTest do
     organisation = insert(:organisation)
     insert(:pipeline, organisation: organisation)
     params = @valid_attrs |> Map.put(:organisation_id, organisation.id)
-    {:ok, _pipeline} = Pipeline.changeset(%Pipeline{}, params) |> Repo.insert()
-    {:error, changeset} = Pipeline.changeset(%Pipeline{}, params) |> Repo.insert()
+    {:ok, _pipeline} = %Pipeline{} |> Pipeline.changeset(params) |> Repo.insert()
+    {:error, changeset} = %Pipeline{} |> Pipeline.changeset(params) |> Repo.insert()
 
     assert "Pipeline with the same name already exists.!" in errors_on(changeset, :name)
   end

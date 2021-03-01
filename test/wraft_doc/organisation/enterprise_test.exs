@@ -14,8 +14,8 @@ defmodule WraftDoc.EnterpriseTest do
     Enterprise.Membership.Payment,
     Enterprise.Organisation,
     Enterprise.Plan,
-    Enterprise.Vendor
-    Repo,
+    Enterprise.Vendor,
+    Repo
   }
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
@@ -139,8 +139,8 @@ defmodule WraftDoc.EnterpriseTest do
 
     states = Enterprise.state_index(flow.uuid, %{page_number: 1})
 
-    assert Enum.map(states.entries, fn x -> x.state end) |> List.to_string() =~ s1.state
-    assert Enum.map(states.entries, fn x -> x.state end) |> List.to_string() =~ s2.state
+    assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s1.state
+    assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s2.state
   end
 
   test "shuffle order updates the order of state" do
@@ -224,7 +224,8 @@ defmodule WraftDoc.EnterpriseTest do
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     approval_system =
-      Enterprise.create_approval_system(user, %{
+      user
+      |> Enterprise.create_approval_system(%{
         "instance_id" => instance.uuid,
         "pre_state_id" => pre_state.uuid,
         "post_state_id" => post_state.uuid,

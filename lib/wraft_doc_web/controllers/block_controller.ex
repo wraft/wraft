@@ -164,19 +164,20 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %{"url" => file_url} <- Document.generate_chart(params) do
-      params =
-        Map.merge(params, %{
-          "file_url" => file_url,
-          "tex_chart" => Document.generate_tex_chart(params)
-        })
+    case Document.generate_chart(params) do
+      %{"url" => file_url} ->
+        params =
+          Map.merge(params, %{
+            "file_url" => file_url,
+            "tex_chart" => Document.generate_tex_chart(params)
+          })
 
-      with %Block{} = block <- Document.create_block(current_user, params) do
-        conn
-        |> put_status(:created)
-        |> render("create.json", block: block)
-      end
-    else
+        with %Block{} = block <- Document.create_block(current_user, params) do
+          conn
+          |> put_status(:created)
+          |> render("create.json", block: block)
+        end
+
       %{"error" => message} ->
         conn
         |> put_status(:bad_request)
@@ -205,18 +206,19 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns.current_user
 
-    with %{"url" => file_url} <- Document.generate_chart(params) do
-      Map.merge(params, %{
-        "file_url" => file_url,
-        "tex_chart" => Document.generate_tex_chart(params)
-      })
+    case Document.generate_chart(params) do
+      %{"url" => file_url} ->
+        Map.merge(params, %{
+          "file_url" => file_url,
+          "tex_chart" => Document.generate_tex_chart(params)
+        })
 
-      with %Block{} = block <- Document.get_block(uuid, current_user),
-           %Block{} = block <- Document.update_block(block, params) do
-        conn
-        |> render("update.json", block: block)
-      end
-    else
+        with %Block{} = block <- Document.get_block(uuid, current_user),
+             %Block{} = block <- Document.update_block(block, params) do
+          conn
+          |> render("update.json", block: block)
+        end
+
       %{"error" => message} ->
         conn
         |> put_status(:bad_request)

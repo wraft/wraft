@@ -40,7 +40,8 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
     count_before = Asset |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_asset_path(conn, :create, @valid_attrs))
+      conn
+      |> post(Routes.v1_asset_path(conn, :create, @valid_attrs))
       |> doc(operation_id: "create_asset")
 
     assert count_before + 1 == Asset |> Repo.all() |> length()
@@ -59,7 +60,8 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
     count_before = Asset |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_asset_path(conn, :create, @invalid_attrs))
+      conn
+      |> post(Routes.v1_asset_path(conn, :create, @invalid_attrs))
       |> doc(operation_id: "create_asset")
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -85,7 +87,8 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
     count_before = Asset |> Repo.all() |> length()
 
     conn =
-      put(conn, Routes.v1_asset_path(conn, :update, asset.uuid), params)
+      conn
+      |> put(Routes.v1_asset_path(conn, :update, asset.uuid), params)
       |> doc(operation_id: "update_asset")
 
     assert json_response(conn, 200)["name"] == @valid_attrs.name
@@ -105,7 +108,8 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn =
-      put(conn, Routes.v1_asset_path(conn, :update, asset.uuid, @invalid_attrs))
+      conn
+      |> put(Routes.v1_asset_path(conn, :update, asset.uuid, @invalid_attrs))
       |> doc(operation_id: "update_asset")
 
     assert json_response(conn, 422)["errors"]["file"] == ["can't be blank"]

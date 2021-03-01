@@ -21,8 +21,8 @@ defmodule WraftDoc.Document.LayoutAssetTest do
     %{id: l_id} = insert(:layout)
     %{id: a_id} = insert(:asset)
     params = %{layout_id: l_id, asset_id: a_id}
-    {:ok, _} = LayoutAsset.changeset(%LayoutAsset{}, params) |> Repo.insert()
-    {:error, changeset} = LayoutAsset.changeset(%LayoutAsset{}, params) |> Repo.insert()
+    {:ok, _} = %LayoutAsset{} |> LayoutAsset.changeset(params) |> Repo.insert()
+    {:error, changeset} = %LayoutAsset{} |> LayoutAsset.changeset(params) |> Repo.insert()
     assert "Asset already added.!" in errors_on(changeset, :layout_id)
   end
 end

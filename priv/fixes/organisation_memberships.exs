@@ -6,11 +6,12 @@ defmodule OrganisationMembershio do
   @trial_duration 14
 
   def get_organisations_without_membership() do
-    from(o in Organisation,
+    query = from(o in Organisation,
       left_join: m in Membership,
       on: m.organisation_id == o.id,
       where: is_nil(m.organisation_id)
     )
+    query
     |> Repo.all()
     |> Enum.each(fn x -> create_membership(x) end)
   end

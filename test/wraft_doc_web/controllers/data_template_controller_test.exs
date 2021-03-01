@@ -45,7 +45,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
     count_before = DataTemplate |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_data_template_path(conn, :create, content_type.uuid), @valid_attrs)
+      conn
+      |> post(Routes.v1_data_template_path(conn, :create, content_type.uuid), @valid_attrs)
       |> doc(operation_id: "create_data_template")
 
     assert count_before + 1 == DataTemplate |> Repo.all() |> length()
@@ -65,7 +66,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
     count_before = DataTemplate |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_data_template_path(conn, :create, content_type.uuid), @invalid_attrs)
+      conn
+      |> post(Routes.v1_data_template_path(conn, :create, content_type.uuid), @invalid_attrs)
       |> doc(operation_id: "create_data_template")
 
     assert json_response(conn, 422)["errors"]["title"] == ["can't be blank"]
@@ -86,7 +88,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
     count_before = DataTemplate |> Repo.all() |> length()
 
     conn =
-      put(conn, Routes.v1_data_template_path(conn, :update, data_template.uuid, @valid_attrs))
+      conn
+      |> put(Routes.v1_data_template_path(conn, :update, data_template.uuid, @valid_attrs))
       |> doc(operation_id: "update_asset")
 
     assert json_response(conn, 200)["data_template"]["title"] == @valid_attrs.title
@@ -105,7 +108,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
       |> assign(:current_user, user)
 
     conn =
-      put(conn, Routes.v1_data_template_path(conn, :update, data_template.uuid, @invalid_attrs))
+      conn
+      |> put(Routes.v1_data_template_path(conn, :update, data_template.uuid, @invalid_attrs))
       |> doc(operation_id: "update_asset")
 
     assert json_response(conn, 422)["errors"]["title"] == ["can't be blank"]

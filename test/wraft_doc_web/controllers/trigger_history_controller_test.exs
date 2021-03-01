@@ -43,7 +43,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
       history_count_before = TriggerHistory |> Repo.all() |> length()
 
       conn =
-        post(conn, Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), @valid_attrs)
+        conn
+        |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), @valid_attrs)
         |> doc(operation_id: "create_trigger_history")
 
       created_jobs = Oban.Job |> Repo.all()
@@ -78,7 +79,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
       history_count_before = TriggerHistory |> Repo.all() |> length()
 
       conn =
-        post(conn, Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), %{
+        conn
+        |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), %{
           data: "wrong meta"
         })
         |> doc(operation_id: "create_trigger_history")
@@ -104,7 +106,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
       history_count_before = TriggerHistory |> Repo.all() |> length()
 
       conn =
-        post(conn, Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), @valid_attrs)
+        conn
+        |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), @valid_attrs)
         |> doc(operation_id: "create_trigger_history")
 
       assert job_count_before == Oban.Job |> Repo.all() |> length()
@@ -128,11 +131,13 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
 
       conn = get(conn, Routes.v1_trigger_history_path(conn, :index, pipeline.uuid))
       trigger_history_index = json_response(conn, 200)["triggers"]
-      trigger_uuids = Enum.map(trigger_history_index, fn x -> x["id"] end) |> List.to_string()
-      trigger_states = Enum.map(trigger_history_index, fn x -> x["state"] end) |> List.to_string()
+      trigger_uuids = trigger_history_index |> Enum.map(fn x -> x["id"] end) |> List.to_string()
+
+      trigger_states =
+        trigger_history_index |> Enum.map(fn x -> x["state"] end) |> List.to_string()
 
       trigger_user_uuid =
-        Enum.map(trigger_history_index, fn x -> x["creator"]["id"] end) |> List.to_string()
+        trigger_history_index |> Enum.map(fn x -> x["creator"]["id"] end) |> List.to_string()
 
       assert trigger_uuids =~ trigger1.uuid
       assert trigger_uuids =~ trigger2.uuid

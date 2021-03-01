@@ -624,7 +624,8 @@ defmodule WraftDoc.DocumentTest do
       count_before = DataTemplate |> Repo.all() |> length()
 
       data_templates =
-        Document.data_template_bulk_insert(user, c_type, mapping, path)
+        user
+        |> Document.data_template_bulk_insert(c_type, mapping, path)
         |> Enum.map(fn {:ok, x} -> x.title end)
         |> List.to_string()
 
@@ -694,7 +695,8 @@ defmodule WraftDoc.DocumentTest do
       count_before = BlockTemplate |> Repo.all() |> length()
 
       block_templates =
-        Document.block_template_bulk_insert(user, mapping, path)
+        user
+        |> Document.block_template_bulk_insert(mapping, path)
         |> Enum.map(fn x -> x.title end)
         |> List.to_string()
 

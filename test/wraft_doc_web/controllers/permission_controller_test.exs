@@ -41,7 +41,8 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
     params = @valid_attrs |> Map.merge(%{role_uuid: role.uuid, resource_uuid: resource.uuid})
 
     conn =
-      post(conn, Routes.v1_permission_path(conn, :create, params))
+      conn
+      |> post(Routes.v1_permission_path(conn, :create, params))
       |> doc(operation_id: "create_permission")
 
     assert count_before + 1 == Permission |> Repo.all() |> length()
@@ -61,7 +62,8 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
       |> Map.merge(%{role_uuid: Ecto.UUID.generate(), resource_uuid: Ecto.UUID.generate()})
 
     conn =
-      post(conn, Routes.v1_permission_path(conn, :create, params))
+      conn
+      |> post(Routes.v1_permission_path(conn, :create, params))
       |> doc(operation_id: "create_permission")
 
     # assert json_response(conn, 422)["errors"]["role"] == ["can't be blank"]
@@ -81,7 +83,8 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
     conn = get(conn, Routes.v1_permission_path(conn, :index))
 
     permissions =
-      json_response(conn, 200)["permissions"]
+      conn
+      |> json_response(200)["permissions"]
       |> Enum.map(fn x -> Map.keys(x) end)
       |> List.flatten()
 

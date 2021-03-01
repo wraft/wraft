@@ -43,7 +43,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     count_before = Organisation |> Repo.all() |> length
 
     conn =
-      post(conn, Routes.v1_organisation_path(conn, :create, @valid_attrs))
+      conn
+      |> post(Routes.v1_organisation_path(conn, :create, @valid_attrs))
       |> doc(operation_id: "create_organisation")
 
     assert json_response(conn, 201)["name"] == @valid_attrs["name"]
@@ -62,7 +63,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
     count_before = Organisation |> Repo.all() |> length
 
-    conn = post(conn, Routes.v1_organisation_path(conn, :create, @invalid_attrs))
+    conn = conn |> post(Routes.v1_organisation_path(conn, :create, @invalid_attrs))
     assert json_response(conn, 422) == %{"errors" => %{"legal_name" => ["can't be blank"]}}
     assert count_before == Organisation |> Repo.all() |> length
   end
@@ -77,7 +78,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
     count_before = Organisation |> Repo.all() |> length
 
-    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation.uuid), @valid_attrs)
+    conn =
+      conn |> put(Routes.v1_organisation_path(conn, :update, organisation.uuid), @valid_attrs)
 
     assert Organisation |> Repo.all() |> length == count_before
     assert json_response(conn, 201)["name"] == @valid_attrs["name"]
@@ -92,7 +94,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_organisation_path(conn, :show, organisation.uuid))
+    conn = conn |> get(Routes.v1_organisation_path(conn, :show, organisation.uuid))
     assert json_response(conn, 200)["name"] == organisation.name
     assert json_response(conn, 200)["address"] == organisation.address
   end
@@ -103,7 +105,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_organisation_path(conn, :show, Ecto.UUID.generate()))
+    conn = conn |> get(Routes.v1_organisation_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 404) == "Not Found"
   end
 
@@ -213,11 +215,13 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
           Routes.v1_organisation_path(conn, :index, %{page: 1})
         )
 
-      assert json_response(conn, 200)["organisations"]
+      assert conn
+             |> json_response(200)["organisations"]
              |> Enum.map(fn x -> x["name"] end)
              |> to_string() =~ o1.name
 
-      assert json_response(conn, 200)["organisations"]
+      assert conn
+             |> json_response(200)["organisations"]
              |> Enum.map(fn x -> x["address"] end)
              |> to_string() =~ o2.address
     end

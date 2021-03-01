@@ -11,11 +11,14 @@ defmodule WraftDocWeb.Worker.ScheduledWorker do
   def perform(_args, %{tags: ["unused_assets"]}) do
     IO.puts("Job started..!")
 
-    from(a in Asset,
-      left_join: la in LayoutAsset,
-      on: la.asset_id == a.id,
-      where: is_nil(la.asset_id)
-    )
+    query =
+      from(a in Asset,
+        left_join: la in LayoutAsset,
+        on: la.asset_id == a.id,
+        where: is_nil(la.asset_id)
+      )
+
+    query
     |> Repo.all()
     |> Stream.map(fn x -> Repo.delete(x) end)
     |> Enum.to_list()
@@ -28,7 +31,8 @@ defmodule WraftDocWeb.Worker.ScheduledWorker do
     IO.puts("Job started..!")
 
     with %Membership{end_date: end_date} = membership <- Enterprise.get_membership(m_uuid) do
-      Timex.before?(end_date, Timex.now())
+      end_date
+      |> Timex.before?(Timex.now())
       |> case do
         true ->
           membership |> Membership.expired_changeset() |> Repo.update!()

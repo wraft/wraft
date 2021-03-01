@@ -46,7 +46,8 @@ defmodule WraftDoc.Enterprise do
   """
   @spec get_state(User.t(), Ecto.UUID.t()) :: State.t() | nil
   def get_state(%User{organisation_id: org_id}, <<_::288>> = state_uuid) do
-    from(s in State, where: s.uuid == ^state_uuid and s.organisation_id == ^org_id) |> Repo.one()
+    query = from(s in State, where: s.uuid == ^state_uuid and s.organisation_id == ^org_id)
+    Repo.one(query)
   end
 
   def get_state(_, _), do: nil
@@ -100,12 +101,14 @@ defmodule WraftDoc.Enterprise do
   """
   @spec flow_index(User.t(), map) :: map
   def flow_index(%User{organisation_id: org_id}, params) do
-    from(f in Flow,
-      where: f.organisation_id == ^org_id,
-      order_by: [desc: f.id],
-      preload: [:creator]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(f in Flow,
+        where: f.organisation_id == ^org_id,
+        order_by: [desc: f.id],
+        preload: [:creator]
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -203,13 +206,15 @@ defmodule WraftDoc.Enterprise do
   """
   @spec state_index(binary, map) :: map
   def state_index(flow_uuid, params) do
-    from(s in State,
-      join: f in Flow,
-      where: f.uuid == ^flow_uuid and s.flow_id == f.id,
-      order_by: [desc: s.id],
-      preload: [:flow, :creator]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(s in State,
+        join: f in Flow,
+        where: f.uuid == ^flow_uuid and s.flow_id == f.id,
+        order_by: [desc: s.id],
+        preload: [:flow, :creator]
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -235,7 +240,9 @@ defmodule WraftDoc.Enterprise do
   """
   @spec shuffle_order(State.t(), integer) :: list
   def shuffle_order(%{order: order, flow_id: flow_id}, additive) do
-    from(s in State, where: s.flow_id == ^flow_id and s.order > ^order)
+    query = from(s in State, where: s.flow_id == ^flow_id and s.order > ^order)
+
+    query
     |> Repo.all()
     |> Task.async_stream(fn x -> update_state_order(x, additive) end)
     |> Enum.to_list()
@@ -341,7 +348,8 @@ defmodule WraftDoc.Enterprise do
   """
   @spec already_member?(String.t()) :: :ok | {:error, :already_member}
   def already_member?(email) do
-    Account.find(email)
+    email
+    |> Account.find()
     |> case do
       %User{} ->
         {:error, :already_member}
@@ -374,20 +382,24 @@ defmodule WraftDoc.Enterprise do
   """
   @spec members_index(User.t(), map) :: any
   def members_index(%User{organisation_id: organisation_id}, %{"name" => name} = params) do
-    from(u in User,
-      where: u.organisation_id == ^organisation_id,
-      where: ilike(u.name, ^"%#{name}%"),
-      preload: [:profile, :role, :organisation]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(u in User,
+        where: u.organisation_id == ^organisation_id,
+        where: ilike(u.name, ^"%#{name}%"),
+        preload: [:profile, :role, :organisation]
+      )
+
+    Repo.paginate(query, params)
   end
 
   def members_index(%User{organisation_id: organisation_id}, params) do
-    from(u in User,
-      where: u.organisation_id == ^organisation_id,
-      preload: [:profile, :role, :organisation]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(u in User,
+        where: u.organisation_id == ^organisation_id,
+        preload: [:profile, :role, :organisation]
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -402,7 +414,8 @@ defmodule WraftDoc.Enterprise do
   """
 
   def list_organisations(%{"name" => name} = params) do
-    from(o in Organisation, where: ilike(o.name, ^"%#{name}%")) |> Repo.paginate(params)
+    query = from(o in Organisation, where: ilike(o.name, ^"%#{name}%"))
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -569,7 +582,8 @@ defmodule WraftDoc.Enterprise do
       ) do
     Document.update_instance_state(current_user, instance, post_state)
 
-    proceed_approval(approval_system)
+    approval_system
+    |> proceed_approval()
     |> Repo.preload(
       [
         :instance,
@@ -699,13 +713,15 @@ defmodule WraftDoc.Enterprise do
   """
   @spec get_organisation_membership(Ecto.UUID.t()) :: Membership.t() | nil
   def get_organisation_membership(<<_::288>> = o_uuid) do
-    from(m in Membership,
-      join: o in Organisation,
-      on: o.id == m.organisation_id,
-      where: o.uuid == ^o_uuid,
-      preload: [:plan]
-    )
-    |> Repo.one()
+    query =
+      from(m in Membership,
+        join: o in Organisation,
+        on: o.id == m.organisation_id,
+        where: o.uuid == ^o_uuid,
+        preload: [:plan]
+      )
+
+    Repo.one(query)
   end
 
   def get_organisation_membership(_), do: nil
@@ -722,7 +738,7 @@ defmodule WraftDoc.Enterprise do
         %Razorpay.Payment{status: "failed"} = razorpay
       ) do
     params = create_payment_params(membership, plan, razorpay)
-    create_payment_changeset(user, params) |> Repo.insert()
+    user |> create_payment_changeset(params) |> Repo.insert()
   end
 
   def update_membership(
@@ -731,10 +747,11 @@ defmodule WraftDoc.Enterprise do
         %Plan{} = plan,
         %Razorpay.Payment{amount: amount} = razorpay
       ) do
-    with duration when is_integer(duration) <- get_duration_from_plan_and_amount(plan, amount) do
-      params = create_membership_and_payment_params(membership, plan, duration, razorpay)
-      do_update_membership(user, membership, params)
-    else
+    case get_duration_from_plan_and_amount(plan, amount) do
+      duration when is_integer(duration) ->
+        params = create_membership_and_payment_params(membership, plan, duration, razorpay)
+        do_update_membership(user, membership, params)
+
       error ->
         error
     end
@@ -781,9 +798,10 @@ defmodule WraftDoc.Enterprise do
         ) :: map
   defp create_membership_and_payment_params(membership, plan, duration, razorpay) do
     start_date = Timex.now()
-    end_date = start_date |> find_end_date(duration)
+    end_date = find_end_date(start_date, duration)
 
-    create_payment_params(membership, plan, razorpay)
+    membership
+    |> create_payment_params(plan, razorpay)
     |> Map.merge(%{
       start_date: start_date,
       end_date: end_date,
@@ -908,12 +926,14 @@ defmodule WraftDoc.Enterprise do
   """
   @spec payment_index(integer, map) :: map
   def payment_index(org_id, params) do
-    from(p in Payment,
-      where: p.organisation_id == ^org_id,
-      preload: [:organisation, :creator],
-      order_by: [desc: p.id]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(p in Payment,
+        where: p.organisation_id == ^org_id,
+        preload: [:organisation, :creator],
+        order_by: [desc: p.id]
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -1022,7 +1042,8 @@ defmodule WraftDoc.Enterprise do
   """
   @spec vendor_index(Organisation.t(), map()) :: Scrivener.Paginater.t()
   def vendor_index(%User{organisation_id: organisation_id}, params) do
-    from(v in Vendor, where: v.organisation_id == ^organisation_id) |> Repo.paginate(params)
+    query = from(v in Vendor, where: v.organisation_id == ^organisation_id)
+    Repo.paginate(query, params)
   end
 
   def vendor_index(_, _), do: nil
@@ -1034,13 +1055,15 @@ defmodule WraftDoc.Enterprise do
   """
   @spec get_pending_approvals(User.t(), map()) :: Scrivener.Page.t()
   def get_pending_approvals(%User{id: id, organisation_id: org_id}, params) do
-    from(as in ApprovalSystem,
-      where: as.approver_id == ^id,
-      where: as.approved == false,
-      where: as.organisation_id == ^org_id,
-      preload: [:instance, :pre_state, :post_state, :approver]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(as in ApprovalSystem,
+        where: as.approver_id == ^id,
+        where: as.approved == false,
+        where: as.organisation_id == ^org_id,
+        preload: [:instance, :pre_state, :post_state, :approver]
+      )
+
+    Repo.paginate(query, params)
   end
 
   def get_pending_approvals(_, _), do: nil

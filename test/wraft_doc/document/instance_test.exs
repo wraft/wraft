@@ -37,8 +37,8 @@ defmodule WraftDoc.Document.InstanceTest do
     %{id: id} = insert(:content_type)
     params = @valid_attrs |> Map.put(:content_type_id, id)
 
-    {:ok, _instance} = Instance.changeset(%Instance{}, params) |> Repo.insert()
-    {:error, changeset} = Instance.changeset(%Instance{}, params) |> Repo.insert()
+    {:ok, _instance} = %Instance{} |> Instance.changeset(params) |> Repo.insert()
+    {:error, changeset} = %Instance{} |> Instance.changeset(params) |> Repo.insert()
 
     assert "Instance with the ID exists.!" in errors_on(changeset, :instance_id)
   end
