@@ -2,7 +2,8 @@ defmodule AddContentTypePrefixes do
   alias WraftDoc.{Document.ContentType, Repo}
 
   def get_all_content_types() do
-    Repo.all(ContentType)
+    ContentType
+    |> Repo.all()
     |> Task.async_stream(fn x -> create_prefix_and_update_c_type(x) end)
     |> Enum.to_list()
   end

@@ -73,19 +73,22 @@ defmodule WraftDocWeb.Api.V1.PaymentView do
   # Calculate GST amount from payment amount
   @spec calculate_gst(integer) :: binary()
   defp calculate_gst(amount) do
-    (18 * amount / 118) |> convert_to_rupee
+    gst_in_paisa = 18 * amount / 118
+    convert_to_rupee(gst_in_paisa)
   end
 
   # Calculate plan amount from payment amount
   @spec calculate_plan_amount(integer) :: binary()
   defp calculate_plan_amount(amount) do
-    (100 * amount / 118) |> convert_to_rupee
+    plan_amount_in_paisa = 100 * amount / 118
+    convert_to_rupee(plan_amount_in_paisa)
   end
 
   # Convert paisa to rupee and change float value to binary
   @spec convert_to_rupee(float) :: binary()
   defp convert_to_rupee(paisa) do
-    (paisa / 100) |> Float.round(2) |> :erlang.float_to_binary([{:decimals, 2}])
+    rupee = paisa / 100
+    rupee |> Float.round(2) |> :erlang.float_to_binary([{:decimals, 2}])
   end
 
   defp generate_url(%{invoice: invoice} = payment) do

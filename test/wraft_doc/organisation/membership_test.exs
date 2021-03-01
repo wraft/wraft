@@ -32,7 +32,7 @@ defmodule WraftDoc.Enterprise.MembershipTest do
       organisation = insert(:organisation)
       insert(:membership, organisation: organisation, plan: plan)
       params = @valid_attrs |> Map.merge(%{organisation_id: organisation.id, plan_id: plan.id})
-      {:error, changeset} = Membership.changeset(%Membership{}, params) |> Repo.insert()
+      {:error, changeset} = %Membership{} |> Membership.changeset(params) |> Repo.insert()
 
       assert "You already have a membership.!" in errors_on(changeset, :plan_id)
     end

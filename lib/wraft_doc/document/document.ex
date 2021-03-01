@@ -29,7 +29,7 @@ defmodule WraftDoc.Document do
     Enterprise,
     Enterprise.Flow,
     Enterprise.Flow.State,
-    Repoß
+    Repo
   }
 
   alias WraftDocWeb.AssetUploader
@@ -183,12 +183,14 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec layout_index(User.t(), map) :: map
   def layout_index(%{organisation_id: org_id}, params) do
-    from(l in Layout,
-      where: l.organisation_id == ^org_id,
-      order_by: [desc: l.id],
-      preload: [:engine, :assets]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(l in Layout,
+        where: l.organisation_id == ^org_id,
+        order_by: [desc: l.id],
+        preload: [:engine, :assets]
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -196,7 +198,8 @@ defmodule WraftDoc.Document do
   """
   @spec show_layout(binary, User.t()) :: %Layout{engine: Engine.t(), creator: User.t()}
   def show_layout(uuid, user) do
-    get_layout(uuid, user)
+    uuid
+    |> get_layout(user)
     |> Repo.preload([:engine, :creator, :assets])
   end
 
@@ -216,14 +219,16 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec get_layout_asset(binary, binary) :: LayoutAsset.t()
   def get_layout_asset(l_uuid, a_uuid) do
-    from(la in LayoutAsset,
-      join: l in Layout,
-      where: l.uuid == ^l_uuid,
-      join: a in Asset,
-      where: a.uuid == ^a_uuid,
-      where: la.layout_id == l.id and la.asset_id == a.id
-    )
-    |> Repo.one()
+    query =
+      from(la in LayoutAsset,
+        join: l in Layout,
+        where: l.uuid == ^l_uuid,
+        join: a in Asset,
+        where: a.uuid == ^a_uuid,
+        where: la.layout_id == l.id and la.asset_id == a.id
+      )
+
+    Repo.one(query)
   end
 
   @doc """
@@ -287,12 +292,14 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec content_type_index(User.t(), map) :: map
   def content_type_index(%{organisation_id: org_id}, params) do
-    from(ct in ContentType,
-      where: ct.organisation_id == ^org_id,
-      order_by: [desc: ct.id],
-      preload: [:layout, :flow, {:fields, :field_type}]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(ct in ContentType,
+        where: ct.organisation_id == ^org_id,
+        order_by: [desc: ct.id],
+        preload: [:layout, :flow, {:fields, :field_type}]
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -324,7 +331,8 @@ defmodule WraftDoc.Document do
   # TODO - write tests
   @spec get_content_type_from_id(integer()) :: %ContentType{layout: %Layout{}, creator: %User{}}
   def get_content_type_from_id(id) do
-    Repo.get(ContentType, id)
+    ContentType
+    |> Repo.get(id)
     |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
   end
 
@@ -334,12 +342,14 @@ defmodule WraftDoc.Document do
   # TODO - write tests
   @spec get_content_type_field(binary, User.t()) :: ContentTypeField.t()
   def get_content_type_field(uuid, %{organisation_id: org_id}) do
-    from(cf in ContentTypeField,
-      where: cf.uuid == ^uuid,
-      join: c in ContentType,
-      where: c.id == cf.content_type_id and c.organisation_id == ^org_id
-    )
-    |> Repo.one()
+    query =
+      from(cf in ContentTypeField,
+        where: cf.uuid == ^uuid,
+        join: c in ContentType,
+        where: c.id == cf.content_type_id and c.organisation_id == ^org_id
+      )
+
+    Repo.one(query)
   end
 
   @doc """
@@ -505,8 +515,8 @@ defmodule WraftDoc.Document do
   end
 
   defp get_counter_from_content_type_id(c_type_id) do
-    from(c in Counter, where: c.subject == ^"ContentType:#{c_type_id}")
-    |> Repo.one()
+    query = from(c in Counter, where: c.subject == ^"ContentType:#{c_type_id}")
+    Repo.one(query)
   end
 
   @doc """
@@ -540,13 +550,15 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec instance_index_of_an_organisation(User.t(), map) :: map
   def instance_index_of_an_organisation(%{organisation_id: org_id}, params) do
-    from(i in Instance,
-      join: u in User,
-      where: u.organisation_id == ^org_id and i.creator_id == u.id,
-      order_by: [desc: i.id],
-      preload: [:content_type, :state, :vendor]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(i in Instance,
+        join: u in User,
+        where: u.organisation_id == ^org_id and i.creator_id == u.id,
+        order_by: [desc: i.id],
+        preload: [:content_type, :state, :vendor]
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -555,13 +567,15 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec instance_index(binary, map) :: map
   def instance_index(c_type_uuid, params) do
-    from(i in Instance,
-      join: ct in ContentType,
-      where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id,
-      order_by: [desc: i.id],
-      preload: [:content_type, :state, :vendor]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(i in Instance,
+        join: ct in ContentType,
+        where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id,
+        order_by: [desc: i.id],
+        preload: [:content_type, :state, :vendor]
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -570,11 +584,14 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec get_instance(binary, User.t()) :: Instance.t()
   def get_instance(uuid, %{organisation_id: org_id}) do
-    from(i in Instance,
-      where: i.uuid == ^uuid,
-      join: c in ContentType,
-      where: c.id == i.content_type_id and c.organisation_id == ^org_id
-    )
+    query =
+      from(i in Instance,
+        where: i.uuid == ^uuid,
+        join: c in ContentType,
+        where: c.id == i.content_type_id and c.organisation_id == ^org_id
+      )
+
+    query
     |> Repo.one()
     |> Repo.preload([:state])
 
@@ -600,12 +617,15 @@ defmodule WraftDoc.Document do
   # TODO - write tests
   @spec get_built_document(Instance.t()) :: Instance.t() | nil
   def get_built_document(%{id: id, instance_id: instance_id} = instance) do
-    from(h in History,
-      where: h.exit_code == 0,
-      where: h.content_id == ^id,
-      order_by: [desc: h.inserted_at],
-      limit: 1
-    )
+    query =
+      from(h in History,
+        where: h.exit_code == 0,
+        where: h.content_id == ^id,
+        order_by: [desc: h.inserted_at],
+        limit: 1
+      )
+
+    query
     |> Repo.one()
     |> case do
       nil ->
@@ -668,13 +688,16 @@ defmodule WraftDoc.Document do
   # Create the params to create a new version.
   @spec create_version_params(Instance.t()) :: map
   defp create_version_params(%Instance{id: id} = instance) do
-    version =
+    query =
       from(v in Version,
         where: v.content_id == ^id,
         order_by: [desc: v.inserted_at],
         limit: 1,
         select: v.version_number
       )
+
+    version =
+      query
       |> Repo.one()
       |> case do
         nil ->
@@ -707,14 +730,12 @@ defmodule WraftDoc.Document do
         flow_id: flow_id
       }) do
     %{content_type: %{flow_id: f_id}, state: %{state: state}} =
-      instance |> Repo.preload([:content_type, :state])
+      Repo.preload(instance, [:content_type, :state])
 
-    cond do
-      flow_id == f_id ->
-        instance_state_upadate(instance, user_id, state_id, state, new_state)
-
-      true ->
-        {:error, :wrong_flow}
+    if flow_id == f_id do
+      instance_state_upadate(instance, user_id, state_id, state, new_state)
+    else
+      {:error, :wrong_flow}
     end
   end
 
@@ -803,8 +824,8 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec theme_index(User.t(), map) :: map
   def theme_index(%User{organisation_id: org_id}, params) do
-    from(t in Theme, where: t.organisation_id == ^org_id, order_by: [desc: t.id])
-    |> Repo.paginate(params)
+    query = from(t in Theme, where: t.organisation_id == ^org_id, order_by: [desc: t.id])
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -863,13 +884,15 @@ defmodule WraftDoc.Document do
   # TODO - imprvove tests
   @spec data_template_index(binary, map) :: map
   def data_template_index(c_type_uuid, params) do
-    from(dt in DataTemplate,
-      join: ct in ContentType,
-      where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id,
-      order_by: [desc: dt.id],
-      preload: [:content_type]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(dt in DataTemplate,
+        join: ct in ContentType,
+        where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id,
+        order_by: [desc: dt.id],
+        preload: [:content_type]
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -878,13 +901,15 @@ defmodule WraftDoc.Document do
   # TODO - imprvove tests
   @spec data_templates_index_of_an_organisation(User.t(), map) :: map
   def data_templates_index_of_an_organisation(%{organisation_id: org_id}, params) do
-    from(dt in DataTemplate,
-      join: u in User,
-      where: u.organisation_id == ^org_id and dt.creator_id == u.id,
-      order_by: [desc: dt.id],
-      preload: [:content_type]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(dt in DataTemplate,
+        join: u in User,
+        where: u.organisation_id == ^org_id and dt.creator_id == u.id,
+        order_by: [desc: dt.id],
+        preload: [:content_type]
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -893,12 +918,14 @@ defmodule WraftDoc.Document do
   # TODO - imprvove tests
   @spec get_d_template(User.t(), Ecto.UUID.t()) :: DataTemplat.t() | nil
   def get_d_template(%User{organisation_id: org_id}, <<_::288>> = d_temp_uuid) do
-    from(d in DataTemplate,
-      where: d.uuid == ^d_temp_uuid,
-      join: c in ContentType,
-      where: c.id == d.content_type_id and c.organisation_id == ^org_id
-    )
-    |> Repo.one()
+    query =
+      from(d in DataTemplate,
+        where: d.uuid == ^d_temp_uuid,
+        join: c in ContentType,
+        where: c.id == d.content_type_id and c.organisation_id == ^org_id
+      )
+
+    Repo.one(query)
   end
 
   def get_d_template(_, _), do: nil
@@ -982,8 +1009,8 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec asset_index(integer, map) :: map
   def asset_index(organisation_id, params) do
-    from(a in Asset, where: a.organisation_id == ^organisation_id, order_by: [desc: a.id])
-    |> Repo.paginate(params)
+    query = from(a in Asset, where: a.organisation_id == ^organisation_id, order_by: [desc: a.id])
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -1419,8 +1446,8 @@ defmodule WraftDoc.Document do
   # TODO - write tests
   @spec field_type_index(map) :: map
   def field_type_index(params) do
-    from(ft in FieldType, order_by: [desc: ft.id])
-    |> Repo.paginate(params)
+    query = from(ft in FieldType, order_by: [desc: ft.id])
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -1429,12 +1456,14 @@ defmodule WraftDoc.Document do
   # TODO - write tests
   @spec get_field_type(binary, User.t()) :: FieldType.t()
   def get_field_type(field_type_uuid, %{organisation_id: org_id}) do
-    from(ft in FieldType,
-      where: ft.uuid == ^field_type_uuid,
-      join: u in User,
-      where: u.id == ft.creator_id and u.organisation_id == ^org_id
-    )
-    |> Repo.one()
+    query =
+      from(ft in FieldType,
+        where: ft.uuid == ^field_type_uuid,
+        join: u in User,
+        where: u.id == ft.creator_id and u.organisation_id == ^org_id
+      )
+
+    Repo.one(query)
 
     # Repo.get_by(FieldType, uuid: field_type_uuid, organisation_id: org_id)
   end
@@ -1659,8 +1688,9 @@ defmodule WraftDoc.Document do
   # we loop the fucntion until instance is successfully created.
   @spec create_instance_for_bulk_build(User.t(), ContentType.t(), State.t(), map) :: Instance.t()
   defp create_instance_for_bulk_build(current_user, c_type, state, params) do
-    create_instance(current_user, c_type, state, params)
-    |> case do
+    instance = create_instance(current_user, c_type, state, params)
+
+    case instance do
       %Instance{} = instance ->
         instance
 
@@ -1770,7 +1800,8 @@ defmodule WraftDoc.Document do
   # Second argument is the headers.
   @spec decode_csv(String.t(), list) :: list
   defp decode_csv(path, mapping_keys) do
-    File.stream!(path)
+    path
+    |> File.stream!()
     |> Stream.drop(1)
     |> CSV.decode!(headers: mapping_keys)
     |> Enum.to_list()
@@ -1845,8 +1876,10 @@ defmodule WraftDoc.Document do
   # TODO - write tests
   @spec block_template_index(User.t(), map) :: List.t()
   def block_template_index(%{organisation_id: org_id}, params) do
-    from(bt in BlockTemplate, where: bt.organisation_id == ^org_id, order_by: [desc: bt.id])
-    |> Repo.paginate(params)
+    query =
+      from(bt in BlockTemplate, where: bt.organisation_id == ^org_id, order_by: [desc: bt.id])
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -1921,14 +1954,16 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   def comment_index(%{organisation_id: org_id}, %{"master_id" => master_id} = params) do
-    from(c in Comment,
-      where: c.organisation_id == ^org_id,
-      where: c.master_id == ^master_id,
-      where: c.is_parent == true,
-      order_by: [desc: c.inserted_at],
-      preload: [{:user, :profile}]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(c in Comment,
+        where: c.organisation_id == ^org_id,
+        where: c.master_id == ^master_id,
+        where: c.is_parent == true,
+        order_by: [desc: c.inserted_at],
+        preload: [{:user, :profile}]
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -1941,15 +1976,17 @@ defmodule WraftDoc.Document do
         %{"master_id" => master_id, "comment_id" => comment_id} = params
       ) do
     with %Comment{id: parent_id} <- get_comment(comment_id, user) do
-      from(c in Comment,
-        where: c.organisation_id == ^org_id,
-        where: c.master_id == ^master_id,
-        where: c.is_parent == false,
-        where: c.parent_id == ^parent_id,
-        order_by: [desc: c.inserted_at],
-        preload: [{:user, :profile}]
-      )
-      |> Repo.paginate(params)
+      query =
+        from(c in Comment,
+          where: c.organisation_id == ^org_id,
+          where: c.master_id == ^master_id,
+          where: c.is_parent == false,
+          where: c.parent_id == ^parent_id,
+          order_by: [desc: c.inserted_at],
+          preload: [{:user, :profile}]
+        )
+
+      Repo.paginate(query, params)
     end
   end
 
@@ -2002,7 +2039,7 @@ defmodule WraftDoc.Document do
           "state_id" => <<_::288>>
         } = params
       ) do
-    get_pipe_stage_params(params, user) |> do_create_pipe_stages(pipeline)
+    params |> get_pipe_stage_params(user) |> do_create_pipe_stages(pipeline)
   end
 
   def create_pipe_stage(_, _, _), do: nil
@@ -2054,8 +2091,8 @@ defmodule WraftDoc.Document do
   """
   @spec pipeline_index(User.t(), map) :: map | nil
   def pipeline_index(%User{organisation_id: org_id}, params) do
-    from(p in Pipeline, where: p.organisation_id == ^org_id)
-    |> Repo.paginate(params)
+    query = from(p in Pipeline, where: p.organisation_id == ^org_id)
+    Repo.paginate(query, params)
   end
 
   def pipeline_index(_, _), do: nil
@@ -2065,8 +2102,8 @@ defmodule WraftDoc.Document do
   """
   @spec get_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
   def get_pipeline(%User{organisation_id: org_id}, <<_::288>> = p_uuid) do
-    from(p in Pipeline, where: p.uuid == ^p_uuid, where: p.organisation_id == ^org_id)
-    |> Repo.one()
+    query = from(p in Pipeline, where: p.uuid == ^p_uuid, where: p.organisation_id == ^org_id)
+    Repo.one(query)
   end
 
   def get_pipeline(_, _), do: nil
@@ -2126,12 +2163,14 @@ defmodule WraftDoc.Document do
   """
   @spec get_pipe_stage(User.t(), Ecto.UUID.t()) :: Stage.t() | nil
   def get_pipe_stage(%User{organisation_id: org_id}, <<_::288>> = s_uuid) do
-    from(s in Stage,
-      join: p in Pipeline,
-      where: p.organisation_id == ^org_id and s.pipeline_id == p.id,
-      where: s.uuid == ^s_uuid
-    )
-    |> Repo.one()
+    query =
+      from(s in Stage,
+        join: p in Pipeline,
+        where: p.organisation_id == ^org_id and s.pipeline_id == p.id,
+        where: s.uuid == ^s_uuid
+      )
+
+    Repo.one(query)
   end
 
   def get_pipe_stage(_, _), do: nil
@@ -2222,12 +2261,14 @@ defmodule WraftDoc.Document do
   """
   @spec get_trigger_histories_of_a_pipeline(Pipeline.t(), map) :: map | nil
   def get_trigger_histories_of_a_pipeline(%Pipeline{id: id}, params) do
-    from(t in TriggerHistory,
-      where: t.pipeline_id == ^id,
-      preload: [:creator],
-      order_by: [desc: t.inserted_at]
-    )
-    |> Repo.paginate(params)
+    query =
+      from(t in TriggerHistory,
+        where: t.pipeline_id == ^id,
+        preload: [:creator],
+        order_by: [desc: t.inserted_at]
+      )
+
+    Repo.paginate(query, params)
   end
 
   def get_trigger_histories_of_a_pipeline(_, _), do: nil

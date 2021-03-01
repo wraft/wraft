@@ -313,7 +313,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   @spec generate_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def generate_token(conn, params) do
     with %AuthToken{} = auth_token <- Account.create_token(params) do
-      Email.password_reset(auth_token) |> Mailer.deliver_now()
+      auth_token |> Email.password_reset() |> Mailer.deliver_now()
 
       conn
       |> render("auth_token.json", auth_token: auth_token)

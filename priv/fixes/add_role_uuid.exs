@@ -3,7 +3,7 @@ defmodule RoleUUID do
   import Ecto.Changeset
 
   def all_roles do
-    Repo.all(Role) |> Enum.each(fn x -> add_uuid(x) end)
+    Role |> Repo.all() |> Enum.each(fn x -> add_uuid(x) end)
   end
 
   def add_uuid(role) do

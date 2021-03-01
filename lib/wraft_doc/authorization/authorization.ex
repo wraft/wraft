@@ -4,7 +4,7 @@ defmodule WraftDoc.Authorization do
   """
   import Ecto.Query
   import Ecto
-  alias WraftDoc.{Authorization.Permission, Authorization.Resource, Account.Role,  Repo}
+  alias WraftDoc.{Authorization.Permission, Authorization.Resource, Account.Role, Repo}
 
   @doc """
   Create a resource.
@@ -19,10 +19,9 @@ defmodule WraftDoc.Authorization do
   """
   @spec resource_index(map) :: map
   def resource_index(params) do
-    from(r in Resource,
-      order_by: [asc: r.category]
-    )
-    |> Repo.paginate(params)
+    query = from(r in Resource, order_by: [asc: r.category])
+
+    Repo.paginate(query, params)
   end
 
   @doc """
@@ -79,11 +78,9 @@ defmodule WraftDoc.Authorization do
   """
   @spec permission_index(map) :: map
   def permission_index(params) do
-    from(r in Resource,
-      order_by: [asc: r.category],
-      preload: [{:permissions, :role}]
-    )
-    |> Repo.paginate(params)
+    query = from(r in Resource, order_by: [asc: r.category], preload: [{:permissions, :role}])
+
+    Repo.paginate(query, params)
   end
 
   @doc """

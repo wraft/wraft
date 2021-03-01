@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Worker.EmailWorker do
         _job
       ) do
     IO.puts("Job started..!")
-    Email.invite_email(org_name, user_name, email, token) |> Mailer.deliver_later()
+    org_name |> Email.invite_email(user_name, email, token) |> Mailer.deliver_later()
     IO.puts("Job finished..!")
 
     :ok

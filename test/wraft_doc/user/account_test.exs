@@ -306,7 +306,7 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "test when invalid token is given" do
-      value = Phoenix.Token.sign(WraftDocWeb.Endpoint, "invalid", "email") |> Base.url_encode64()
+      value = Endpoint |> Phoenix.Token.sign("invalid", "email") |> Base.url_encode64()
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")
       response = Account.check_token(auth_token.value)
       assert response == {:error, :fake}
@@ -314,7 +314,8 @@ defmodule WraftDoc.AccountTest do
 
     test "test when expired token is given" do
       value =
-        Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", "email", signed_at: -861)
+        Endpoint
+        |> Phoenix.Token.sign("reset", "email", signed_at: -861)
         |> Base.url_encode64()
 
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")
@@ -346,7 +347,7 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "return error when token is invalid" do
-      value = Phoenix.Token.sign(WraftDocWeb.Endpoint, "invalid", "email") |> Base.url_encode64()
+      value = Endpoint |> Phoenix.Token.sign("invalid", "email") |> Base.url_encode64()
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")
       params = %{"token" => auth_token.value, "password" => "newpassword"}
       response = Account.reset_password(params)

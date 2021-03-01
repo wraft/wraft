@@ -103,7 +103,7 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
           to_plan_id: tp_id
         })
 
-      {:error, changeset} = Payment.changeset(%Payment{}, params) |> Repo.insert()
+      {:error, changeset} = %Payment{} |> Payment.changeset(params) |> Repo.insert()
       assert "Something Wrong. Try again.!" in errors_on(changeset, :razorpay_id)
     end
   end
@@ -125,7 +125,7 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
       payment = insert(:payment)
 
       {:error, changeset} =
-        Payment.invoice_changeset(payment, @valid_update_attrs) |> Repo.update()
+        payment |> Payment.invoice_changeset(@valid_update_attrs) |> Repo.update()
 
       File.rm_rf!("uploads/invoice/#{payment.id}")
 

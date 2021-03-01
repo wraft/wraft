@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document,Document.Engine, Document.Layout, Document.LayoutAsset}
+  alias WraftDoc.{Document, Document.Engine, Document.Layout, Document.LayoutAsset}
 
   def swagger_definitions do
     %{

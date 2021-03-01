@@ -512,15 +512,19 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
         })
       end)
 
-      case exit_code do
-        0 ->
-          conn |> render("instance.json", instance: instance)
+      handle_response(conn, exit_code, instance)
+    end
+  end
 
-        _ ->
-          conn
-          |> put_status(:unprocessable_entity)
-          |> render("build_fail.json", %{exit_code: exit_code})
-      end
+  defp handle_response(conn, exit_code, instance) do
+    case exit_code do
+      0 ->
+        conn |> render("instance.json", instance: instance)
+
+      _ ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render("build_fail.json", %{exit_code: exit_code})
     end
   end
 

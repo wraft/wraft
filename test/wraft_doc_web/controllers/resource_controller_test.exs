@@ -41,7 +41,8 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
     count_before = Resource |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_resource_path(conn, :create, @valid_attrs))
+      conn
+      |> post(Routes.v1_resource_path(conn, :create, @valid_attrs))
       |> doc(operation_id: "create_resource")
 
     assert count_before + 1 == Resource |> Repo.all() |> length()
@@ -57,7 +58,8 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
     count_before = Resource |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_resource_path(conn, :create, @invalid_attrs))
+      conn
+      |> post(Routes.v1_resource_path(conn, :create, @invalid_attrs))
       |> doc(operation_id: "create_resource")
 
     assert json_response(conn, 422)["errors"]["category"] == ["can't be blank"]
@@ -75,7 +77,8 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
     count_before = Resource |> Repo.all() |> length()
 
     conn =
-      put(conn, Routes.v1_resource_path(conn, :update, resource.uuid, @valid_attrs))
+      conn
+      |> put(Routes.v1_resource_path(conn, :update, resource.uuid, @valid_attrs))
       |> doc(operation_id: "update_resource")
 
     assert json_response(conn, 200)["category"] == @valid_attrs.category
@@ -91,7 +94,8 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn =
-      put(conn, Routes.v1_resource_path(conn, :update, resource.uuid, @invalid_attrs))
+      conn
+      |> put(Routes.v1_resource_path(conn, :update, resource.uuid, @invalid_attrs))
       |> doc(operation_id: "update_resource")
 
     assert json_response(conn, 422)["errors"]["category"] == ["can't be blank"]

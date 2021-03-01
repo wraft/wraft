@@ -37,10 +37,10 @@ defmodule WraftDocWeb.Plug.AddActionLog do
            params: params
          } = conn
        ) do
-    remote_ip = :inet_parse.ntoa(ip) |> to_string()
-    actor_agent = get_req_header(conn, "user-agent") |> List.first()
-    action = conn.private.phoenix_action |> Atom.to_string()
-    params = params |> change_structs_to_maps()
+    remote_ip = ip |> :inet_parse.ntoa() |> to_string()
+    actor_agent = conn |> get_req_header("user-agent") |> List.first()
+    action = Atom.to_string(conn.private.phoenix_action)
+    params = change_structs_to_maps(params)
 
     %{
       actor: user,
@@ -57,10 +57,10 @@ defmodule WraftDocWeb.Plug.AddActionLog do
   defp create_action_log_params(
          %Plug.Conn{method: method, request_path: path, remote_ip: ip, params: params} = conn
        ) do
-    remote_ip = :inet_parse.ntoa(ip) |> to_string()
-    actor_agent = get_req_header(conn, "user-agent") |> List.first()
-    action = conn.private.phoenix_action |> Atom.to_string()
-    params = params |> change_structs_to_maps()
+    remote_ip = ip |> :inet_parse.ntoa() |> to_string()
+    actor_agent = conn |> get_req_header("user-agent") |> List.first()
+    action = Atom.to_string(conn.private.phoenix_action)
+    params = change_structs_to_maps(params)
 
     %{
       request_path: path,

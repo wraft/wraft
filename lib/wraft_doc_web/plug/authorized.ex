@@ -33,15 +33,16 @@ defmodule WraftDocWeb.Plug.Authorized do
     {_, category} = @category |> Enum.find(fn {k, _y} -> k == category end)
     action = conn.private[:phoenix_action] |> to_string
 
-    from(r in Resource, where: r.category == ^category and r.action == ^action)
-    |> Repo.one()
-    |> check_permission(conn)
+    query = from(r in Resource, where: r.category == ^category and r.action == ^action)
+    query |> Repo.one() |> check_permission(conn)
   end
 
   defp check_permission(%Resource{id: id}, conn) do
     %{role: %{id: role_id}} = conn.assigns[:current_user]
 
-    from(p in Permission, where: p.resource_id == ^id and p.role_id == ^role_id)
+    query = from(p in Permission, where: p.resource_id == ^id and p.role_id == ^role_id)
+
+    query
     |> Repo.one()
     |> case do
       %Permission{} ->
@@ -50,8 +51,7 @@ defmodule WraftDocWeb.Plug.Authorized do
       nil ->
         body = Poison.encode!(%{error: "You are not authorized for this action.!"})
 
-        send_resp(conn, 400, body)
-        |> halt()
+        conn |> send_resp(400, body) |> halt()
     end
   end
 

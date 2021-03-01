@@ -69,9 +69,8 @@ defmodule WraftDoc.PipelineRunner do
     type = Instance.types()[:pipeline_api]
 
     instances =
-      stages
-      |> Enum.map(fn %{content_type: c_type, data_template: d_temp, state: state} ->
-        params = Document.do_create_instance_params(data, d_temp) |> Map.put("type", type)
+      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp, state: state} ->
+        params = data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
         Document.create_instance(user, c_type, state, params)
       end)
 
@@ -82,9 +81,8 @@ defmodule WraftDoc.PipelineRunner do
     type = Instance.types()[:pipeline_hook]
 
     instances =
-      stages
-      |> Enum.map(fn %{content_type: c_type, data_template: d_temp, state: state} ->
-        params = Document.do_create_instance_params(data, d_temp) |> Map.put("type", type)
+      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp, state: state} ->
+        params = data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
         Document.create_instance(c_type, state, params)
       end)
 
