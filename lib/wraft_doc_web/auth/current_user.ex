@@ -18,7 +18,7 @@ defmodule WraftDocWeb.CurrentUser do
         AuthErrorHandler.auth_error(conn, {:error, :no_user})
 
       user ->
-        user = user |> Repo.preload([:profile, :role, :organisation])
+        user = Repo.preload(user, [:profile, :role, :organisation])
         assign(conn, :current_user, user)
     end
   end

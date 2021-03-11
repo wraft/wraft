@@ -35,7 +35,7 @@ defmodule WraftDoc.Document.InstanceTest do
 
   test "instance id unique constraint" do
     %{id: id} = insert(:content_type)
-    params = @valid_attrs |> Map.put(:content_type_id, id)
+    params = Map.put(@valid_attrs, :content_type_id, id)
 
     {:ok, _instance} = %Instance{} |> Instance.changeset(params) |> Repo.insert()
     {:error, changeset} = %Instance{} |> Instance.changeset(params) |> Repo.insert()

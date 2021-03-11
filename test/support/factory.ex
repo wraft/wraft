@@ -10,8 +10,8 @@ defmodule WraftDoc.Factory do
     Account.Profile,
     Account.Role,
     Account.User,
-    Authorization.Resource,
     Authorization.Permission,
+    Authorization.Resource,
     Document.Asset,
     Document.Block,
     Document.BlockTemplate,
@@ -336,7 +336,7 @@ defmodule WraftDoc.Factory do
     {:ok, start_time} = NaiveDateTime.new(2020, 03, 17, 20, 20, 20)
     {:ok, end_time} = NaiveDateTime.new(2020, 03, 17, 20, 21, 20)
     duration = Timex.diff(end_time, start_time, :milliseconds)
-    zip_file = Timex.now() |> DateTime.to_iso8601()
+    zip_file = DateTime.to_iso8601(Timex.now())
 
     %TriggerHistory{
       data: %{name: sequence(:name, &"Name-#{&1}")},
@@ -362,7 +362,7 @@ defmodule WraftDoc.Factory do
 
   def membership_factory do
     start_date = Timex.now()
-    end_date = start_date |> Timex.shift(days: 30)
+    end_date = Timex.shift(start_date, days: 30)
 
     %Membership{
       organisation: build(:organisation),
@@ -376,7 +376,7 @@ defmodule WraftDoc.Factory do
 
   def payment_factory do
     start_date = Timex.now()
-    end_date = start_date |> Timex.shift(days: 30)
+    end_date = Timex.shift(start_date, days: 30)
 
     %Payment{
       organisation: build(:organisation),

@@ -47,8 +47,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
         |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), @valid_attrs)
         |> doc(operation_id: "create_trigger_history")
 
-      created_jobs = Oban.Job |> Repo.all()
-      created_history = TriggerHistory |> Repo.all()
+      created_jobs = Repo.all(Oban.Job)
+      created_history = Repo.all(TriggerHistory)
 
       data =
         created_history
@@ -57,8 +57,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
 
       data = for {key, val} <- data, into: %{}, do: {String.to_atom(key), val}
 
-      assert job_count_before + 1 == created_jobs |> length()
-      assert history_count_before + 1 == created_history |> length()
+      assert job_count_before + 1 == length(created_jobs)
+      assert history_count_before + 1 == length(created_history)
       assert data == @valid_attrs.data
 
       assert json_response(conn, 200)["info"] ==

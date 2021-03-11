@@ -10,7 +10,7 @@ defmodule WraftDocWeb.Api.V1.BlockView do
       file_url: block.file_url,
       api_route: block.api_route,
       endpoint: block.endpoint,
-      input: block |> generate_url(),
+      input: generate_url(block),
       inserted_at: block.inserted_at,
       updated_at: block.updated_at
     }

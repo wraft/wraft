@@ -34,7 +34,7 @@ defmodule WraftDocWeb.Funda do
     #
     strt_time = Timex.now()
     Logger.info(strt_time)
-    files = File.read!("index.txt") |> String.split("\n")
+    files = String.split(File.read!("index.txt"), "\n")
 
     template = "--template=template2.tex"
     from = "--from=markdown"
@@ -43,7 +43,7 @@ defmodule WraftDocWeb.Funda do
     engine = "--pdf-engine=xelatex"
 
     args = [from, to, template, out, engine]
-    args = files |> Enum.reduce(args, fn x, acc -> acc ++ [x] end)
+    args = Enum.reduce(files, args, fn x, acc -> acc ++ [x] end)
     System.cmd("pandoc", args)
     end_time = Timex.now()
     Logger.info(end_time)

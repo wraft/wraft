@@ -100,8 +100,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, %FieldType{} = field_type} <- Document.create_field_type(current_user, params) do
-      conn
-      |> render(:field_type, field_type: field_type)
+      render(conn, :field_type, field_type: field_type)
     end
   end
 
@@ -127,8 +126,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.field_type_index(params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         field_types: field_types,
         page_number: page_number,
         total_pages: total_pages,
@@ -159,8 +157,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
     current_user = conn.assigns.current_user
 
     with %FieldType{} = field_type <- Document.get_field_type(field_type_uuid, current_user) do
-      conn
-      |> render("field_type.json", field_type: field_type)
+      render(conn, "field_type.json", field_type: field_type)
     end
   end
 
@@ -189,8 +186,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
 
     with %FieldType{} = field_type <- Document.get_field_type(uuid, current_user),
          {:ok, field_type} <- Document.update_field_type(field_type, params) do
-      conn
-      |> render("field_type.json", field_type: field_type)
+      render(conn, "field_type.json", field_type: field_type)
     end
   end
 
@@ -217,8 +213,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
 
     with %FieldType{} = field_type <- Document.get_field_type(uuid, current_user),
          {:ok, %FieldType{}} <- Document.delete_field_type(field_type) do
-      conn
-      |> render("field_type.json", field_type: field_type)
+      render(conn, "field_type.json", field_type: field_type)
     end
   end
 end

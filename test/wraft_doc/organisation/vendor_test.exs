@@ -18,8 +18,10 @@ defmodule WraftDoc.Enterprise.VendorTest do
     user = insert(:user)
 
     params =
-      @valid_attrs
-      |> Map.merge(%{"organisation_id" => user.organisation.id, "creator_id" => user.id})
+      Map.merge(@valid_attrs, %{
+        "organisation_id" => user.organisation.id,
+        "creator_id" => user.id
+      })
 
     changeset = Vendor.changeset(%Vendor{}, params)
     assert changeset.valid?

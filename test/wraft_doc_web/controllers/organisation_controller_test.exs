@@ -63,7 +63,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
     count_before = Organisation |> Repo.all() |> length
 
-    conn = conn |> post(Routes.v1_organisation_path(conn, :create, @invalid_attrs))
+    conn = post(conn, Routes.v1_organisation_path(conn, :create, @invalid_attrs))
     assert json_response(conn, 422) == %{"errors" => %{"legal_name" => ["can't be blank"]}}
     assert count_before == Organisation |> Repo.all() |> length
   end
@@ -78,8 +78,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
     count_before = Organisation |> Repo.all() |> length
 
-    conn =
-      conn |> put(Routes.v1_organisation_path(conn, :update, organisation.uuid), @valid_attrs)
+    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation.uuid), @valid_attrs)
 
     assert Organisation |> Repo.all() |> length == count_before
     assert json_response(conn, 201)["name"] == @valid_attrs["name"]
@@ -94,7 +93,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = conn |> get(Routes.v1_organisation_path(conn, :show, organisation.uuid))
+    conn = get(conn, Routes.v1_organisation_path(conn, :show, organisation.uuid))
     assert json_response(conn, 200)["name"] == organisation.name
     assert json_response(conn, 200)["address"] == organisation.address
   end
@@ -105,7 +104,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = conn |> get(Routes.v1_organisation_path(conn, :show, Ecto.UUID.generate()))
+    conn = get(conn, Routes.v1_organisation_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 404) == "Not Found"
   end
 
@@ -149,9 +148,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       user3 = insert(:user, organisation: user1.organisation)
       insert(:profile, user: user3)
 
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      conn = put_req_header(build_conn(), "authorization", "Bearer #{conn.assigns.token}")
 
       conn =
         get(
@@ -178,9 +175,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       user3 = insert(:user, organisation: user1.organisation, name: "John Doe")
       insert(:profile, user: user3)
 
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      conn = put_req_header(build_conn(), "authorization", "Bearer #{conn.assigns.token}")
 
       conn =
         get(
@@ -205,9 +200,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       o1 = insert(:organisation)
       o2 = insert(:organisation)
 
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      conn = put_req_header(build_conn(), "authorization", "Bearer #{conn.assigns.token}")
 
       conn =
         get(
@@ -231,9 +224,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     o1 = insert(:organisation, name: "ABC Ectr")
     o2 = insert(:organisation, name: "KDY soft")
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+    conn = put_req_header(build_conn(), "authorization", "Bearer #{conn.assigns.token}")
 
     conn =
       get(
@@ -241,7 +232,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
         Routes.v1_organisation_path(conn, :index, %{page: 1, name: "KDY"})
       )
 
-    assert json_response(conn, 200)["organisations"] |> length() == 1
+    assert length(json_response(conn, 200)["organisations"]) == 1
     # assert json_response(conn, 200)["organisations"]
     #        |> Enum.map(fn x -> x["name"] end)
     #        |> to_string() =~ o1.name

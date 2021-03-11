@@ -440,7 +440,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       content_type = insert(:content_type, creator: user)
       count_before = ContentType |> Repo.all() |> length()
-      params = @invalid_attrs |> Map.merge(%{name: "", description: "", prefix: ""})
+      params = Map.merge(@invalid_attrs, %{name: "", description: "", prefix: ""})
       {:error, changeset} = Document.update_content_type(content_type, user, params)
       count_after = ContentType |> Repo.all() |> length()
       assert count_before == count_after

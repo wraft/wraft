@@ -54,7 +54,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       a2 = insert(:asset, organisation: user.organisation)
 
       params =
-        @valid_attrs |> Map.merge(%{engine_uuid: engine_uuid, assets: "#{a1.uuid},#{a2.uuid}"})
+        Map.merge(@valid_attrs, %{engine_uuid: engine_uuid, assets: "#{a1.uuid},#{a2.uuid}"})
 
       conn =
         conn

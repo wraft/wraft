@@ -17,7 +17,7 @@ defmodule WraftDoc.PipelineRunnerTest do
       preloaded_content_type_field_names =
         preloaded_trigger.pipeline.stages
         |> Enum.map(fn stage ->
-          stage.content_type.fields |> Enum.map(fn field -> field.name end)
+          Enum.map(stage.content_type.fields, fn field -> field.name end)
         end)
         |> List.flatten()
         |> List.to_string()
@@ -52,7 +52,7 @@ defmodule WraftDoc.PipelineRunnerTest do
       c_type = insert(:content_type)
       insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
       c_type_field = insert(:content_type_field, content_type: c_type)
-      pipeline = pipeline |> Repo.preload(stages: [{:content_type, :fields}])
+      pipeline = Repo.preload(pipeline, stages: [{:content_type, :fields}])
 
       trigger =
         insert(:trigger_history, pipeline: pipeline, data: %{"#{c_type_field.name}" => "John Doe"})
@@ -66,7 +66,7 @@ defmodule WraftDoc.PipelineRunnerTest do
       c_type = insert(:content_type)
       insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
       insert(:content_type_field, content_type: c_type)
-      pipeline = pipeline |> Repo.preload(stages: [{:content_type, :fields}])
+      pipeline = Repo.preload(pipeline, stages: [{:content_type, :fields}])
       trigger = insert(:trigger_history, pipeline: pipeline, data: %{"name" => "John Doe"})
       response = PipelineRunner.values_provided?(trigger)
       assert response == false
@@ -84,7 +84,7 @@ defmodule WraftDoc.PipelineRunnerTest do
       c_type_field2 = insert(:content_type_field, content_type: c_type2)
 
       pipeline =
-        pipeline |> Repo.preload(stages: [{:content_type, :fields}, :data_template, :state])
+        Repo.preload(pipeline, stages: [{:content_type, :fields}, :data_template, :state])
 
       trigger =
         insert(:trigger_history,
@@ -118,7 +118,7 @@ defmodule WraftDoc.PipelineRunnerTest do
       c_type_field2 = insert(:content_type_field, content_type: c_type2)
 
       pipeline =
-        pipeline |> Repo.preload(stages: [{:content_type, :fields}, :data_template, :state])
+        Repo.preload(pipeline, stages: [{:content_type, :fields}, :data_template, :state])
 
       trigger =
         insert(:trigger_history,
@@ -136,7 +136,7 @@ defmodule WraftDoc.PipelineRunnerTest do
       instances =
         response.instances |> Enum.map(fn x -> x.content_type.name end) |> List.to_string()
 
-      instance = response.instances |> List.first()
+      instance = List.first(response.instances)
 
       assert before_count + 2 == Instance |> Repo.all() |> length
       assert response.trigger == trigger
@@ -205,8 +205,7 @@ defmodule WraftDoc.PipelineRunnerTest do
     test "returns a map with list of maps of build failed instances and their error codes when there are failed builds" do
       instances = insert_list(3, :instance)
 
-      builds =
-        instances |> Enum.map(fn x -> %{instance: x, response: {"", Enum.random(0..3)}} end)
+      builds = Enum.map(instances, fn x -> %{instance: x, response: {"", Enum.random(0..3)}} end)
 
       failed_build_instance_ids =
         builds
@@ -215,8 +214,8 @@ defmodule WraftDoc.PipelineRunnerTest do
         |> Enum.to_list()
 
       response = PipelineRunner.build_failed?(%{builds: builds})
-      error_codes = response.failed_builds |> Enum.map(fn x -> x.error_code end)
-      failed_instance_ids = response.failed_builds |> Enum.map(fn x -> x.instance.instance_id end)
+      error_codes = Enum.map(response.failed_builds, fn x -> x.error_code end)
+      failed_instance_ids = Enum.map(response.failed_builds, fn x -> x.instance.instance_id end)
 
       refute 0 in error_codes
       refute nil in response.failed_builds
@@ -225,7 +224,7 @@ defmodule WraftDoc.PipelineRunnerTest do
 
     test "returns a map with empty list for the faile_builds key when there are no failed builds" do
       instances = insert_list(3, :instance)
-      builds = instances |> Enum.map(fn x -> %{instance: x, response: {"", 0}} end)
+      builds = Enum.map(instances, fn x -> %{instance: x, response: {"", 0}} end)
 
       response = PipelineRunner.build_failed?(%{builds: builds})
 

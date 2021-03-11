@@ -13,7 +13,7 @@ defmodule WraftDoc.Account.AuthTokenTest do
 
   test "changeset with valid attributes" do
     %{id: id} = insert(:user)
-    params = @valid_attrs |> Map.put(:user_id, id)
+    params = Map.put(@valid_attrs, :user_id, id)
     changeset = AuthToken.changeset(%AuthToken{}, params)
     changeset2 = AuthToken.verification_changeset(%AuthToken{}, params)
     assert changeset.valid?

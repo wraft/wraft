@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
   setup %{conn: conn} do
     profile = insert(:profile)
-    user = profile.user |> Repo.preload([:profile, :role, :organisation])
+    user = Repo.preload(profile.user, [:profile, :role, :organisation])
 
     conn =
       conn
@@ -30,8 +30,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
 
       conn =
-        conn
-        |> post(
+        post(
+          conn,
           Routes.v1_user_path(conn, :signin, %{
             email: user.email,
             password: user.password
@@ -47,8 +47,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
 
       conn =
-        conn
-        |> post(
+        post(
+          conn,
           Routes.v1_user_path(conn, :signin, %{email: user.email, password: "wrong password"})
         )
 
@@ -60,8 +60,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
 
       conn =
-        conn
-        |> post(
+        post(
+          conn,
           Routes.v1_user_path(conn, :signin, %{
             email: "non.existing@email.com",
             password: "wrong password"
@@ -76,7 +76,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       user = insert(:user)
       conn = build_conn()
 
-      conn = conn |> post(Routes.v1_user_path(conn, :signin, %{email: user.email}))
+      conn = post(conn, Routes.v1_user_path(conn, :signin, %{email: user.email}))
 
       assert json_response(conn, 400)["errors"] == "Please provide all necessary datas to login.!"
     end

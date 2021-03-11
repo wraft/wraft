@@ -35,7 +35,7 @@ defmodule WraftDoc.AccountTest do
     test "user registration with invalid email" do
       insert(:role, name: "user")
       organisation = insert(:organisation)
-      params = @valid_attrs |> Map.put("email", "not an email")
+      params = Map.put(@valid_attrs, "email", "not an email")
       {:error, changeset} = Account.registration(params, organisation)
 
       assert %{email: ["has invalid format"]} == errors_on(changeset)

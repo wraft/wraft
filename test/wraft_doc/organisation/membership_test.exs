@@ -5,7 +5,7 @@ defmodule WraftDoc.Enterprise.MembershipTest do
 
   @valid_attrs %{
     start_date: Timex.now(),
-    end_date: Timex.now() |> Timex.shift(days: 30),
+    end_date: Timex.shift(Timex.now(), days: 30),
     plan_duration: 14
   }
 
@@ -15,7 +15,7 @@ defmodule WraftDoc.Enterprise.MembershipTest do
     test "valid changeset with valid attributes" do
       plan = insert(:plan)
       organisation = insert(:organisation)
-      params = @valid_attrs |> Map.merge(%{organisation_id: organisation.id, plan_id: plan.id})
+      params = Map.merge(@valid_attrs, %{organisation_id: organisation.id, plan_id: plan.id})
       changeset = Membership.changeset(%Membership{}, params)
 
       assert changeset.valid?
@@ -23,7 +23,6 @@ defmodule WraftDoc.Enterprise.MembershipTest do
 
     test "invalid changeset with invalid attributes" do
       changeset = Membership.changeset(%Membership{}, %{})
-
       refute changeset.valid?
     end
 
@@ -31,7 +30,7 @@ defmodule WraftDoc.Enterprise.MembershipTest do
       plan = insert(:plan)
       organisation = insert(:organisation)
       insert(:membership, organisation: organisation, plan: plan)
-      params = @valid_attrs |> Map.merge(%{organisation_id: organisation.id, plan_id: plan.id})
+      params = Map.merge(@valid_attrs, %{organisation_id: organisation.id, plan_id: plan.id})
       {:error, changeset} = %Membership{} |> Membership.changeset(params) |> Repo.insert()
 
       assert "You already have a membership.!" in errors_on(changeset, :plan_id)
@@ -41,7 +40,7 @@ defmodule WraftDoc.Enterprise.MembershipTest do
   describe "update_changeset/2" do
     test "valid update changeset with valid attrs" do
       membership = insert(:membership)
-      params = @valid_attrs |> Map.put(:plan_duration, 30)
+      params = Map.put(@valid_attrs, :plan_duration, 30)
       changeset = Membership.update_changeset(membership, params)
 
       assert changeset.valid?

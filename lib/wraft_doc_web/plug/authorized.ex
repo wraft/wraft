@@ -30,8 +30,8 @@ defmodule WraftDocWeb.Plug.Authorized do
 
   def call(conn, _params) do
     [_ | [category]] = conn.private[:phoenix_controller] |> to_string |> String.split("Elixir.")
-    {_, category} = @category |> Enum.find(fn {k, _y} -> k == category end)
-    action = conn.private[:phoenix_action] |> to_string
+    {_, category} = Enum.find(@category, fn {k, _y} -> k == category end)
+    action = to_string(conn.private[:phoenix_action])
 
     query = from(r in Resource, where: r.category == ^category and r.action == ^action)
     query |> Repo.one() |> check_permission(conn)

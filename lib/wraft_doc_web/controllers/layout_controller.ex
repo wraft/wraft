@@ -250,8 +250,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     with %Engine{} = engine <- Document.get_engine(engine_uuid),
          %Layout{} = layout <- Document.create_layout(current_user, engine, params) do
-      conn
-      |> render("create.json", doc_layout: layout)
+      render(conn, "create.json", doc_layout: layout)
     end
   end
 
@@ -279,8 +278,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.layout_index(current_user, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         doc_layouts: layouts,
         page_number: page_number,
         total_pages: total_pages,
@@ -310,8 +308,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     current_user = conn.assigns.current_user
 
     with %Layout{} = layout <- Document.show_layout(uuid, current_user) do
-      conn
-      |> render("show.json", doc_layout: layout)
+      render(conn, "show.json", doc_layout: layout)
     end
   end
 
@@ -363,8 +360,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     with %Layout{} = layout <- Document.get_layout(uuid, current_user),
          %Layout{} = layout <- Document.update_layout(layout, current_user, params) do
-      conn
-      |> render("show.json", doc_layout: layout)
+      render(conn, "show.json", doc_layout: layout)
     end
   end
 
@@ -391,8 +387,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     with %Layout{} = layout <- Document.get_layout(uuid, current_user),
          {:ok, %Layout{}} <- Document.delete_layout(layout, current_user) do
-      conn
-      |> render("layout.json", doc_layout: layout)
+      render(conn, "layout.json", doc_layout: layout)
     end
   end
 
@@ -421,8 +416,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     with %LayoutAsset{} = layout_asset <- Document.get_layout_asset(l_uuid, a_uuid),
          {:ok, %LayoutAsset{}} <- Document.delete_layout_asset(layout_asset, current_user),
          %Layout{} = layout <- Document.show_layout(l_uuid, current_user) do
-      conn
-      |> render("show.json", doc_layout: layout)
+      render(conn, "show.json", doc_layout: layout)
     end
   end
 end

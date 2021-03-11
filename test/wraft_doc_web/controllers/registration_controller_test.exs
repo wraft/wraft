@@ -23,7 +23,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
         email: @valid_attrs["email"]
       })
 
-    params = @valid_attrs |> Map.put("token", token)
+    params = Map.put(@valid_attrs, "token", token)
 
     conn =
       conn
@@ -44,7 +44,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
         email: @invalid_attrs["email"]
       })
 
-    params = @invalid_attrs |> Map.put("token", token)
+    params = Map.put(@invalid_attrs, "token", token)
 
     conn =
       conn

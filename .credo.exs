@@ -83,7 +83,9 @@
         # Priority values are: `low, normal, high, higher`
         #
         {Credo.Check.Design.AliasUsage,
-         [priority: :high, if_nested_deeper_than: 2, if_called_more_often_than: 0]},
+         [priority: :high, if_nested_deeper_than: 2, if_called_more_often_than: 1,
+         files: %{excluded: ["test/support/*_case.ex"]}]
+         },
         # You can also customize the exit_status of each check.
         # If you don't want TODO comments to cause `mix credo` to fail, just
         # set this value to 0 (zero).
@@ -161,14 +163,14 @@
         # Controversial and experimental checks (opt-in, just replace `false` with `[]`)
         #
         {Credo.Check.Consistency.MultiAliasImportRequireUse, false},
-        {Credo.Check.Consistency.UnusedVariableNames, []},
+        {Credo.Check.Consistency.UnusedVariableNames, false},
         {Credo.Check.Design.DuplicatedCode, false},
         {Credo.Check.Readability.AliasAs, false},
         {Credo.Check.Readability.BlockPipe, false},
         {Credo.Check.Readability.ImplTrue, false},
         {Credo.Check.Readability.MultiAlias, false},
         {Credo.Check.Readability.SeparateAliasRequire, false},
-        {Credo.Check.Readability.SinglePipe, false},
+        {Credo.Check.Readability.SinglePipe, []},
         {Credo.Check.Readability.Specs, false},
         {Credo.Check.Readability.StrictModuleLayout, false},
         {Credo.Check.Readability.WithCustomTaggedTuple, false},

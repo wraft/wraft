@@ -38,7 +38,7 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Permission |> Repo.all() |> length()
-    params = @valid_attrs |> Map.merge(%{role_uuid: role.uuid, resource_uuid: resource.uuid})
+    params = Map.merge(@valid_attrs, %{role_uuid: role.uuid, resource_uuid: resource.uuid})
 
     conn =
       conn
@@ -58,8 +58,10 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
     count_before = Permission |> Repo.all() |> length()
 
     params =
-      @invalid_attrs
-      |> Map.merge(%{role_uuid: Ecto.UUID.generate(), resource_uuid: Ecto.UUID.generate()})
+      Map.merge(@invalid_attrs, %{
+        role_uuid: Ecto.UUID.generate(),
+        resource_uuid: Ecto.UUID.generate()
+      })
 
     conn =
       conn

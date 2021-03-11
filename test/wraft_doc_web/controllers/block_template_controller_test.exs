@@ -103,7 +103,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   end
 
   test "index lists assests by current user", %{conn: conn} do
-    user = conn.assigns.current_user |> Repo.preload(:organisation)
+    user = Repo.preload(conn.assigns.current_user, :organisation)
 
     a1 = insert(:block_template, organisation: user.organisation)
     a2 = insert(:block_template, organisation: user.organisation)

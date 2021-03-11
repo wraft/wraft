@@ -19,7 +19,7 @@ defmodule WraftDocWeb.InvoiceUploader do
 
   # Whitelist file extensions:
   def validate({file, _}) do
-    ~w(.pdf) |> Enum.member?(Path.extname(file.file_name))
+    Enum.member?(~w(.pdf), Path.extname(file.file_name))
   end
 
   # Define a thumbnail transformation:
