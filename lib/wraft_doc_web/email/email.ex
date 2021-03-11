@@ -14,8 +14,7 @@ defmodule WraftDocWeb.Mailer.Email do
   end
 
   defp base_email do
-    new_email()
-    |> from({"WraftDoc", "admin@wraftdocs.com"})
+    from(new_email(), {"WraftDoc", "admin@wraftdocs.com"})
   end
 
   @doc """

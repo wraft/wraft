@@ -17,12 +17,12 @@ defmodule WraftDocWeb.Plug.AddActionLog do
   # Create log for an action.
   @spec create_log(Plug.Conn.t()) :: ActionLog.t()
   defp create_log(%Plug.Conn{assigns: %{current_user: _user}} = conn) do
-    params = conn |> create_action_log_params()
+    params = create_action_log_params(conn)
     %ActionLog{} |> ActionLog.authorized_action_changeset(params) |> Repo.insert!()
   end
 
   defp create_log(conn) do
-    params = conn |> create_action_log_params()
+    params = create_action_log_params(conn)
     %ActionLog{} |> ActionLog.unauthorized_action_changeset(params) |> Repo.insert!()
   end
 
@@ -75,11 +75,9 @@ defmodule WraftDocWeb.Plug.AddActionLog do
   # Change the stucts in params to maps.
   @spec change_structs_to_maps(map) :: map
   defp change_structs_to_maps(params) do
-    params
-    |> Enum.reduce(%{}, fn
+    Enum.reduce(params, %{}, fn
       {k, %{__struct__: _} = v}, acc ->
-        v = v |> Map.from_struct()
-        Map.put(acc, k, v)
+        Map.put(acc, k, Map.from_struct(v))
 
       {k, v}, acc ->
         Map.put(acc, k, v)

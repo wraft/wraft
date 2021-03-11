@@ -132,7 +132,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
     current_user = conn.assigns.current_user
 
     with %Vendor{} = vendor <- Enterprise.create_vendor(current_user, params) do
-      conn |> render("create.json", vendor: vendor)
+      render(conn, "create.json", vendor: vendor)
     end
   end
 
@@ -158,8 +158,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Enterprise.vendor_index(current_user, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         vendors: vendors,
         page_number: page_number,
         total_pages: total_pages,
@@ -187,8 +186,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
     current_user = conn.assigns.current_user
 
     with %Vendor{} = vendor <- Enterprise.show_vendor(uuid, current_user) do
-      conn
-      |> render("create.json", vendor: vendor)
+      render(conn, "create.json", vendor: vendor)
     end
   end
 
@@ -214,8 +212,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
 
     with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, uuid),
          %Vendor{} = vendor <- Enterprise.update_vendor(vendor, current_user, params) do
-      conn
-      |> render("vendor.json", vendor: vendor)
+      render(conn, "vendor.json", vendor: vendor)
     end
   end
 
@@ -240,8 +237,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
 
     with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, uuid),
          {:ok, %Vendor{}} <- Enterprise.delete_vendor(vendor) do
-      conn
-      |> render("vendor.json", vendor: vendor)
+      render(conn, "vendor.json", vendor: vendor)
     end
   end
 end

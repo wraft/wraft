@@ -23,8 +23,11 @@ defmodule WraftDoc.Document.CommentTest do
     %{id: user_id, organisation_id: org_id} = insert(:user)
 
     params =
-      @valid_attrs_for_comment
-      |> Map.merge(%{master_id: "#{master_id}", user_id: user_id, organisation_id: org_id})
+      Map.merge(@valid_attrs_for_comment, %{
+        master_id: "#{master_id}",
+        user_id: user_id,
+        organisation_id: org_id
+      })
 
     changeset = Comment.changeset(%Comment{}, params)
     assert changeset.valid?
@@ -36,8 +39,7 @@ defmodule WraftDoc.Document.CommentTest do
     %{id: user_id, organisation_id: org_id} = insert(:user)
 
     params =
-      @valid_attrs_for_reply
-      |> Map.merge(%{
+      Map.merge(@valid_attrs_for_reply, %{
         master_id: "#{master_id}",
         user_id: user_id,
         organisation_id: org_id,

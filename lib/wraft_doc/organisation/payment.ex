@@ -37,7 +37,7 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   """
   @spec get_status(%Payment{}) :: String.t() | nil
   def get_status(%Payment{status: status_int}) do
-    statuses() |> find_value(status_int)
+    find_value(statuses(), status_int)
   end
 
   def get_status(_), do: nil
@@ -47,7 +47,7 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   """
   @spec get_action(%Payment{}) :: String.t() | nil
   def get_action(%Payment{action: action_int}) do
-    actions() |> find_value(action_int)
+    find_value(actions(), action_int)
   end
 
   def get_action(_), do: nil
@@ -58,7 +58,7 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
     |> Enum.find(fn {_string_value, int} -> int == int_value end)
     |> case do
       {atom, _} ->
-        atom |> Atom.to_string()
+        Atom.to_string(atom)
 
       _ ->
         nil

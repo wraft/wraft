@@ -215,8 +215,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
         with %Block{} = block <- Document.get_block(uuid, current_user),
              %Block{} = block <- Document.update_block(block, params) do
-          conn
-          |> render("update.json", block: block)
+          render(conn, "update.json", block: block)
         end
 
       %{"error" => message} ->
@@ -245,8 +244,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     current_user = conn.assigns.current_user
 
     with %Block{} = block <- Document.get_block(uuid, current_user) do
-      conn
-      |> render("show.json", block: block)
+      render(conn, "show.json", block: block)
     end
   end
 
@@ -270,7 +268,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
     with %Block{} = block <- Document.get_block(uuid, current_user),
          {:ok, %Block{}} <- Document.delete_block(block) do
-      conn |> render("block.json", block: block)
+      render(conn, "block.json", block: block)
     end
   end
 end

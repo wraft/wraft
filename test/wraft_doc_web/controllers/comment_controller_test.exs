@@ -16,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
     role = insert(:role, name: "admin")
     user = insert(:user, role: role)
     insert(:profile, user: user)
-    user = user |> Repo.preload([:profile])
+    user = Repo.preload(user, [:profile])
 
     conn =
       conn

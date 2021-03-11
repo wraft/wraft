@@ -59,7 +59,7 @@ defmodule WraftDoc.Enterprise do
           %Flow{creator: User.t()} | {:error, Ecto.Changeset.t()}
 
   def create_flow(%{organisation_id: org_id} = current_user, %{"controlled" => true} = params) do
-    params = params |> Map.merge(%{"organisation_id" => org_id})
+    params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
     |> build_assoc(:flows)
@@ -68,7 +68,7 @@ defmodule WraftDoc.Enterprise do
     |> case do
       {:ok, flow} ->
         Task.start_link(fn -> create_default_states(current_user, flow, true) end)
-        flow |> Repo.preload(:creator)
+        Repo.preload(flow, :creator)
 
       {:error, _} = changeset ->
         changeset
@@ -80,7 +80,7 @@ defmodule WraftDoc.Enterprise do
   """
 
   def create_flow(%{organisation_id: org_id} = current_user, params) do
-    params = params |> Map.merge(%{"organisation_id" => org_id})
+    params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
     |> build_assoc(:flows)
@@ -89,7 +89,7 @@ defmodule WraftDoc.Enterprise do
     |> case do
       {:ok, flow} ->
         Task.start_link(fn -> create_default_states(current_user, flow) end)
-        flow |> Repo.preload(:creator)
+        Repo.preload(flow, :creator)
 
       {:error, _} = changeset ->
         changeset
@@ -128,7 +128,7 @@ defmodule WraftDoc.Enterprise do
     |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, flow} ->
-        flow |> Repo.preload(:creator)
+        Repo.preload(flow, :creator)
 
       {:error, _} = changeset ->
         changeset
@@ -145,7 +145,7 @@ defmodule WraftDoc.Enterprise do
     |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, flow} ->
-        flow |> Repo.preload(:creator)
+        Repo.preload(flow, :creator)
 
       {:error, _} = changeset ->
         changeset
@@ -189,7 +189,7 @@ defmodule WraftDoc.Enterprise do
   """
   @spec create_state(User.t(), Flow.t(), map) :: State.t() | {:error, Ecto.Changeset.t()}
   def create_state(%User{organisation_id: org_id} = current_user, flow, params) do
-    params = params |> Map.merge(%{"organisation_id" => org_id})
+    params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
     |> build_assoc(:states, flow: flow)
@@ -228,7 +228,7 @@ defmodule WraftDoc.Enterprise do
     |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, state} ->
-        state |> Repo.preload([:creator, :flow])
+        Repo.preload(state, [:creator, :flow])
 
       {:error, _} = changeset ->
         changeset
@@ -373,7 +373,7 @@ defmodule WraftDoc.Enterprise do
       })
 
     %{org_name: org_name, user_name: name, email: email, token: token}
-    |> WraftDocWeb.Worker.EmailWorker.new(queue: "mailer", tags: ["invite"])
+    |> EmailWorker.new(queue: "mailer", tags: ["invite"])
     |> Oban.insert()
   end
 
@@ -430,7 +430,7 @@ defmodule WraftDoc.Enterprise do
   """
   @spec list_organisations(map) :: Scrivener.Page.t()
   def list_organisations(params) do
-    Organisation |> Repo.paginate(params)
+    Repo.paginate(Organisation, params)
   end
 
   @doc """
@@ -474,8 +474,14 @@ defmodule WraftDoc.Enterprise do
     |> Repo.insert()
     |> case do
       {:ok, approval_system} ->
-        approval_system
-        |> Repo.preload([:instance, :pre_state, :post_state, :approver, :organisation, :user])
+        Repo.preload(approval_system, [
+          :instance,
+          :pre_state,
+          :post_state,
+          :approver,
+          :organisation,
+          :user
+        ])
 
       {:error, _} = changeset ->
         changeset
@@ -523,8 +529,14 @@ defmodule WraftDoc.Enterprise do
           changeset
 
         {:ok, approval_system} ->
-          approval_system
-          |> Repo.preload([:instance, :pre_state, :post_state, :approver, :organisation, :user])
+          Repo.preload(approval_system, [
+            :instance,
+            :pre_state,
+            :post_state,
+            :approver,
+            :organisation,
+            :user
+          ])
       end
     end
   end
@@ -547,8 +559,7 @@ defmodule WraftDoc.Enterprise do
   """
   @spec delete_approval_system(ApprovalSystem.t()) :: ApprovalSystem.t()
   def delete_approval_system(%ApprovalSystem{} = approval_system) do
-    approval_system
-    |> Repo.delete()
+    Repo.delete(approval_system)
   end
 
   @doc """
@@ -638,7 +649,7 @@ defmodule WraftDoc.Enterprise do
   """
   @spec plan_index() :: [Plan.t()]
   def plan_index do
-    Plan |> Repo.all()
+    Repo.all(Plan)
   end
 
   @doc """
@@ -656,7 +667,7 @@ defmodule WraftDoc.Enterprise do
   """
   @spec delete_plan(Plan.t()) :: {:ok, Plan.t()} | nil
   def delete_plan(%Plan{} = plan) do
-    plan |> Repo.delete()
+    Repo.delete(plan)
   end
 
   def delete_plan(_), do: nil
@@ -666,7 +677,7 @@ defmodule WraftDoc.Enterprise do
   defp create_membership(%Organisation{id: id}) do
     plan = Repo.get_by(Plan, name: @trial_plan_name)
     start_date = Timex.now()
-    end_date = start_date |> find_end_date(@trial_duration)
+    end_date = find_end_date(start_date, @trial_duration)
     params = %{start_date: start_date, end_date: end_date, plan_duration: @trial_duration}
 
     plan
@@ -679,7 +690,7 @@ defmodule WraftDoc.Enterprise do
   # membership.
   @spec find_end_date(DateTime.t(), integer) :: DateTime.t() | nil
   defp find_end_date(start_date, duration) when is_integer(duration) do
-    start_date |> Timex.shift(days: duration)
+    Timex.shift(start_date, days: duration)
   end
 
   defp find_end_date(_, _), do: nil
@@ -688,7 +699,7 @@ defmodule WraftDoc.Enterprise do
   Gets a membership from its UUID.
   """
   def get_membership(<<_::288>> = m_uuid) do
-    Membership |> Repo.get_by(uuid: m_uuid)
+    Repo.get_by(Membership, uuid: m_uuid)
   end
 
   def get_membership(_), do: nil
@@ -703,7 +714,7 @@ defmodule WraftDoc.Enterprise do
   end
 
   def get_membership(<<_::288>> = m_uuid, %User{organisation_id: org_id}) do
-    Membership |> Repo.get_by(uuid: m_uuid, organisation_id: org_id)
+    Repo.get_by(Membership, uuid: m_uuid, organisation_id: org_id)
   end
 
   def get_membership(_, _), do: nil
@@ -764,7 +775,7 @@ defmodule WraftDoc.Enterprise do
           {:ok, Membership.t()} | {:error, Ecto.Changeset.t()}
   defp do_update_membership(user, membership, params) do
     Multi.new()
-    |> Multi.update(:membership, membership |> Membership.update_changeset(params))
+    |> Multi.update(:membership, Membership.update_changeset(membership, params))
     |> Multi.insert(:payment, create_payment_changeset(user, params))
     |> Repo.transaction()
     |> case do
@@ -772,7 +783,7 @@ defmodule WraftDoc.Enterprise do
         {:error, changeset}
 
       {:ok, %{membership: membership, payment: payment}} ->
-        membership = membership |> Repo.preload([:plan, :organisation])
+        membership = Repo.preload(membership, [:plan, :organisation])
 
         Task.start_link(fn -> create_invoice(membership, payment) end)
         Task.start_link(fn -> create_membership_expiry_check_job(membership) end)
@@ -817,10 +828,10 @@ defmodule WraftDoc.Enterprise do
          plan,
          %Razorpay.Payment{amount: amount, id: r_id, status: status} = razorpay
        ) do
-    status = status |> String.to_atom()
+    status = String.to_atom(status)
     status = Payment.statuses()[status]
 
-    membership = membership |> Repo.preload([:plan])
+    membership = Repo.preload(membership, [:plan])
     action = get_payment_action(membership.plan, plan)
 
     %{
@@ -889,7 +900,7 @@ defmodule WraftDoc.Enterprise do
   @spec create_membership_expiry_check_job(Membership.t()) :: Oban.Job.t()
   defp create_membership_expiry_check_job(%Membership{uuid: uuid, end_date: end_date}) do
     %{membership_uuid: uuid}
-    |> WraftDocWeb.Worker.ScheduledWorker.new(scheduled_at: end_date, tags: ["plan_expiry"])
+    |> ScheduledWorker.new(scheduled_at: end_date, tags: ["plan_expiry"])
     |> Oban.insert!()
   end
 
@@ -941,11 +952,11 @@ defmodule WraftDoc.Enterprise do
   """
   @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
   def get_payment(<<_::288>> = payment_uuid, %{role: %{name: "admin"}}) do
-    Payment |> Repo.get_by(uuid: payment_uuid)
+    Repo.get_by(Payment, uuid: payment_uuid)
   end
 
   def get_payment(<<_::288>> = payment_uuid, %{organisation_id: org_id}) do
-    Payment |> Repo.get_by(uuid: payment_uuid, organisation_id: org_id)
+    Repo.get_by(Payment, uuid: payment_uuid, organisation_id: org_id)
   end
 
   def get_payment(_, _), do: nil
@@ -975,7 +986,7 @@ defmodule WraftDoc.Enterprise do
     |> Spur.insert()
     |> case do
       {:ok, vendor} ->
-        vendor |> Repo.preload([:organisation, :creator])
+        Repo.preload(vendor, [:organisation, :creator])
 
       {:error, _} = changeset ->
         changeset
@@ -991,8 +1002,7 @@ defmodule WraftDoc.Enterprise do
   """
   @spec get_vendor(Organisation.t(), Ecto.UUID.t()) :: Vendor.t()
   def get_vendor(%User{organisation_id: id}, uuid) do
-    Vendor
-    |> Repo.get_by(uuid: uuid, organisation_id: id)
+    Repo.get_by(Vendor, uuid: uuid, organisation_id: id)
   end
 
   def get_vendor(_, _), do: nil
@@ -1020,7 +1030,7 @@ defmodule WraftDoc.Enterprise do
         changeset
 
       {:ok, vendor} ->
-        vendor |> Repo.preload([:organisation, :creator])
+        Repo.preload(vendor, [:organisation, :creator])
     end
   end
 
@@ -1030,10 +1040,7 @@ defmodule WraftDoc.Enterprise do
   -`vendor`- a Vendor struct
   """
   @spec delete_vendor(Vendor.t()) :: Vendor.t()
-  def delete_vendor(%Vendor{} = vendor) do
-    vendor
-    |> Repo.delete()
-  end
+  def delete_vendor(%Vendor{} = vendor), do: Repo.delete(vendor)
 
   @doc """
   Lists all vendors under an organisation

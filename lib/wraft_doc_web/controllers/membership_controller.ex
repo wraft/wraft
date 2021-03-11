@@ -110,7 +110,7 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
 
     with true <- o_uuid == current_user.organisation.uuid,
          %Membership{} = membership <- Enterprise.get_organisation_membership(o_uuid) do
-      conn |> render("membership.json", membership: membership)
+      render(conn, "membership.json", membership: membership)
     else
       _ ->
         nil
@@ -143,7 +143,7 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
          {:ok, %Razorpay.Payment{} = razorpay} <- Enterprise.get_razorpay_data(r_id),
          %Membership{} = membership <-
            Enterprise.update_membership(current_user, membership, plan, razorpay) do
-      conn |> render("membership.json", membership: membership)
+      render(conn, "membership.json", membership: membership)
     else
       {:ok, %Payment{}} ->
         conn

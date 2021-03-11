@@ -11,10 +11,10 @@ defmodule WraftDocWeb.Api.V1.PaymentView do
       start_date: payment.start_date,
       end_date: payment.end_date,
       invoice_number: payment.invoice_number,
-      invoice: payment |> generate_url(),
+      invoice: generate_url(payment),
       amount: payment.amount,
-      action: payment |> Payment.get_action(),
-      status: payment |> Payment.get_status(),
+      action: Payment.get_action(payment),
+      status: Payment.get_status(payment),
       organisation:
         render_one(payment.organisation, OrganisationView, "organisation.json", as: :organisation),
       creator: render_one(payment.creator, UserView, "user.json", as: :user),
@@ -44,10 +44,10 @@ defmodule WraftDocWeb.Api.V1.PaymentView do
       start_date: payment.start_date,
       end_date: payment.end_date,
       invoice_number: payment.invoice_number,
-      invoice: payment |> generate_url(),
+      invoice: generate_url(payment),
       amount: payment.amount,
-      action: payment |> Payment.get_action(),
-      status: payment |> Payment.get_status(),
+      action: Payment.get_action(payment),
+      status: Payment.get_status(payment),
       organisation:
         render_one(payment.organisation, OrganisationView, "organisation.json", as: :organisation),
       creator: render_one(payment.creator, UserView, "user.json", as: :user),
@@ -62,12 +62,12 @@ defmodule WraftDocWeb.Api.V1.PaymentView do
 
   # Convert datetime struct to human readable date format
   defp humanize_date(end_date) do
-    end_date |> Timex.format!("%d-%b-%Y", :strftime)
+    Timex.format!(end_date, "%d-%b-%Y", :strftime)
   end
 
   # Convert datetime struct to human readable datetime format
   defp humanize_time(datetime) do
-    datetime |> Timex.format!("%d-%b-%Y %H:%m %P", :strftime)
+    Timex.format!(datetime, "%d-%b-%Y %H:%m %P", :strftime)
   end
 
   # Calculate GST amount from payment amount

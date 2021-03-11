@@ -394,7 +394,7 @@ defmodule WraftDoc.EnterpriseTest do
 
       plans = Enterprise.plan_index()
       plan_names = plans |> Enum.map(fn x -> x.name end) |> List.to_string()
-      assert plans |> length() == 2
+      assert length(plans) == 2
       assert plan_names =~ p1.name
       assert plan_names =~ p2.name
     end
@@ -561,7 +561,7 @@ defmodule WraftDoc.EnterpriseTest do
       membership = insert(:membership)
       plan = insert(:plan, monthly_amount: 100_000)
       payment_count = Payment |> Repo.all() |> length
-      {:ok, razorpay} = @valid_razorpay_id |> Razorpay.Payment.get()
+      {:ok, razorpay} = Razorpay.Payment.get(@valid_razorpay_id)
       new_membership = Enterprise.update_membership(user, membership, plan, razorpay)
 
       assert payment_count + 1 == Payment |> Repo.all() |> length
@@ -574,7 +574,7 @@ defmodule WraftDoc.EnterpriseTest do
       membership = insert(:membership, organisation: user.organisation)
       plan = insert(:plan, monthly_amount: 100_000)
       payment_count = Payment |> Repo.all() |> length
-      {:ok, razorpay} = @failed_razorpay_id |> Razorpay.Payment.get()
+      {:ok, razorpay} = Razorpay.Payment.get(@failed_razorpay_id)
       {:ok, payment} = Enterprise.update_membership(user, membership, plan, razorpay)
 
       assert payment_count + 1 == Payment |> Repo.all() |> length
@@ -588,7 +588,7 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user)
       membership = insert(:membership)
       plan = insert(:plan)
-      {:error, razorpay} = "wrong_id" |> Razorpay.Payment.get()
+      {:error, razorpay} = Razorpay.Payment.get("wrong_id")
       payment_count = Payment |> Repo.all() |> length
       response = Enterprise.update_membership(user, membership, plan, razorpay)
 
@@ -600,7 +600,7 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user)
       membership = insert(:membership)
       plan = insert(:plan)
-      {:ok, razorpay} = @valid_razorpay_id |> Razorpay.Payment.get()
+      {:ok, razorpay} = Razorpay.Payment.get(@valid_razorpay_id)
       payment_count = Payment |> Repo.all() |> length
       response = Enterprise.update_membership(user, membership, plan, razorpay)
 

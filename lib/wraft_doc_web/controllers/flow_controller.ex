@@ -261,7 +261,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
     with %Flow{} = flow <-
            Enterprise.create_flow(current_user, params) do
-      conn |> render("flow.json", flow: flow)
+      render(conn, "flow.json", flow: flow)
     end
   end
 
@@ -289,8 +289,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Enterprise.flow_index(current_user, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         flows: flows,
         page_number: page_number,
         total_pages: total_pages,
@@ -320,8 +319,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     current_user = conn.assigns.current_user
 
     with %Flow{} = flow <- Enterprise.show_flow(flow_uuid, current_user) do
-      conn
-      |> render("show.json", flow: flow)
+      render(conn, "show.json", flow: flow)
     end
   end
 
@@ -355,8 +353,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
              current_user,
              params
            ) do
-      conn
-      |> render("update.json", flow: flow)
+      render(conn, "update.json", flow: flow)
     end
   end
 
@@ -384,8 +381,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
     with %Flow{} = flow <- Enterprise.get_flow(uuid, current_user),
          {:ok, %Flow{}} <- Enterprise.delete_flow(flow, current_user) do
-      conn
-      |> render("flow.json", flow: flow)
+      render(conn, "flow.json", flow: flow)
     end
   end
 end

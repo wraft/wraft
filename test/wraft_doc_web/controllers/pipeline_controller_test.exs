@@ -46,8 +46,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       state = insert(:state, organisation: user.organisation)
 
       params =
-        @valid_attrs
-        |> Map.put(:stages, [
+        Map.put(@valid_attrs, :stages, [
           %{content_type_id: c_type.uuid, data_template_id: data_temp.uuid, state_id: state.uuid}
         ])
 

@@ -81,7 +81,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
     with {:ok, %Plan{} = plan} <- Enterprise.create_plan(params) do
-      conn |> render("plan.json", plan: plan)
+      render(conn, "plan.json", plan: plan)
     end
   end
 
@@ -98,7 +98,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, _params) do
     plans = Enterprise.plan_index()
-    conn |> render("plans.json", plans: plans)
+    render(conn, "plans.json", plans: plans)
   end
 
   swagger_path :show do
@@ -118,7 +118,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => p_uuid}) do
     with %Plan{} = plan <- Enterprise.get_plan(p_uuid) do
-      conn |> render("plan.json", plan: plan)
+      render(conn, "plan.json", plan: plan)
     end
   end
 
@@ -142,7 +142,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   def update(conn, %{"id" => p_uuid} = params) do
     with %Plan{} = plan <- Enterprise.get_plan(p_uuid),
          {:ok, %Plan{} = plan} <- Enterprise.update_plan(plan, params) do
-      conn |> render("plan.json", plan: plan)
+      render(conn, "plan.json", plan: plan)
     end
   end
 
@@ -165,7 +165,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   def delete(conn, %{"id" => p_uuid}) do
     with %Plan{} = plan <- Enterprise.get_plan(p_uuid),
          {:ok, %Plan{} = plan} <- Enterprise.delete_plan(plan) do
-      conn |> render("plan.json", plan: plan)
+      render(conn, "plan.json", plan: plan)
     end
   end
 end

@@ -139,7 +139,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
     with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, p_uuid),
          {:ok, %Stage{} = stage} <- Document.create_pipe_stage(current_user, pipeline, params),
          %Stage{} = stage <- Document.preload_stage_details(stage) do
-      conn |> render("stage.json", stage: stage)
+      render(conn, "stage.json", stage: stage)
     end
   end
 
@@ -168,7 +168,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
     with %Stage{} = stage <- Document.get_pipe_stage(current_user, s_uuid),
          {:ok, %Stage{} = stage} <- Document.update_pipe_stage(current_user, stage, params),
          %Stage{} = stage <- Document.preload_stage_details(stage) do
-      conn |> render("stage.json", stage: stage)
+      render(conn, "stage.json", stage: stage)
     end
   end
 
@@ -195,7 +195,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
 
     with %Stage{} = stage <- Document.get_pipe_stage(current_user, s_uuid),
          {:ok, %Stage{} = stage} <- Document.delete_pipe_stage(current_user, stage) do
-      conn |> render("delete.json", stage: stage)
+      render(conn, "delete.json", stage: stage)
     end
   end
 end

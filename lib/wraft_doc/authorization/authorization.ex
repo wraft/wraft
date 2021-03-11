@@ -4,7 +4,7 @@ defmodule WraftDoc.Authorization do
   """
   import Ecto.Query
   import Ecto
-  alias WraftDoc.{Authorization.Permission, Authorization.Resource, Account.Role, Repo}
+  alias WraftDoc.{Account.Role, Authorization.Permission, Authorization.Resource, Repo}
 
   @doc """
   Create a resource.
@@ -29,7 +29,7 @@ defmodule WraftDoc.Authorization do
   """
   @spec get_resource(binary) :: Resource.t()
   def get_resource(uuid) do
-    Resource |> Repo.get_by(uuid: uuid)
+    Repo.get_by(Resource, uuid: uuid)
   end
 
   @doc """
@@ -66,7 +66,7 @@ defmodule WraftDoc.Authorization do
     |> Repo.insert()
     |> case do
       {:ok, permission} ->
-        permission |> Repo.preload([:role, :resource])
+        Repo.preload(permission, [:role, :resource])
 
       {:error, _} = changeset ->
         changeset
@@ -96,6 +96,6 @@ defmodule WraftDoc.Authorization do
   """
   @spec delete_permission(Permission.t()) :: {:ok, Permission.t()}
   def delete_permission(permission) do
-    permission |> Repo.delete()
+    Repo.delete(permission)
   end
 end

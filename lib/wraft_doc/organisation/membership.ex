@@ -30,7 +30,7 @@ defmodule WraftDoc.Enterprise.Membership do
   end
 
   def update_changeset(%Membership{} = membership, attrs \\ %{}) do
-    attrs = attrs |> Map.put(:is_expired, false)
+    attrs = Map.put(attrs, :is_expired, false)
 
     membership
     |> cast(attrs, [:start_date, :end_date, :plan_duration, :plan_id, :is_expired])
@@ -39,8 +39,7 @@ defmodule WraftDoc.Enterprise.Membership do
   end
 
   def expired_changeset(%Membership{} = membership) do
-    membership
-    |> cast(%{is_expired: true}, [:is_expired])
+    cast(membership, %{is_expired: true}, [:is_expired])
   end
 
   # # Calculate duration of a membership

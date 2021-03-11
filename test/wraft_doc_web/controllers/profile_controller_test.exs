@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
 
   setup %{conn: conn} do
     profile = insert(:profile)
-    user = profile.user |> Repo.preload([:profile, :role])
+    user = Repo.preload(profile.user, [:profile, :role])
 
     conn =
       conn

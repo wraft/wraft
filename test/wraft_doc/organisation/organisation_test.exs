@@ -37,7 +37,7 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
   end
 
   test "test GSTIN unique constraint" do
-    params = @valid_attrs |> Map.put(:name, "Comapny 2")
+    params = Map.put(@valid_attrs, :name, "Comapny 2")
     {:ok, _} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
     {:error, changeset} = %Organisation{} |> Organisation.changeset(params) |> Repo.insert()
 

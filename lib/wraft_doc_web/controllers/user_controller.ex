@@ -234,8 +234,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     with %User{} = user <- Account.find(params["email"]),
          {:ok, token, _claims} <-
            Account.authenticate(%{user: user, password: params["password"]}) do
-      conn
-      |> render("sign-in.json", token: token, user: user)
+      render(conn, "sign-in.json", token: token, user: user)
     end
   end
 
@@ -253,8 +252,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
   @spec me(Plug.Conn.t(), map) :: Plug.Conn.t()
   def me(conn, _params) do
-    current_user = conn.assigns[:current_user]
-    conn |> render("me.json", user: current_user)
+    render(conn, "me.json", user: conn.assigns[:current_user])
   end
 
   @doc """
@@ -284,8 +282,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
            total_entries: total_entries
          } <- Account.get_activity_stream(current_user, params),
          activities <- Account.get_activity_datas(activities) do
-      conn
-      |> render("activities.json",
+      render(conn, "activities.json",
         activities: activities,
         page_number: page_number,
         total_pages: total_pages,
@@ -315,8 +312,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     with %AuthToken{} = auth_token <- Account.create_token(params) do
       auth_token |> Email.password_reset() |> Mailer.deliver_now()
 
-      conn
-      |> render("auth_token.json", auth_token: auth_token)
+      render(conn, "auth_token.json", auth_token: auth_token)
     end
   end
 
@@ -339,8 +335,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   @spec verify_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def verify_token(conn, %{"token" => token}) do
     with %AuthToken{} = auth_token <- Account.check_token(token) do
-      conn
-      |> render("check_token.json", token: auth_token.value)
+      render(conn, "check_token.json", token: auth_token.value)
     end
   end
 
@@ -363,8 +358,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   @spec reset(Plug.Conn.t(), map) :: Plug.Conn.t()
   def reset(conn, params) do
     with %User{} = user <- Account.reset_password(params) do
-      conn
-      |> render("user.json", user: user)
+      render(conn, "user.json", user: user)
     end
   end
 
@@ -391,8 +385,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     current_user = conn.assigns.current_user
 
     with %User{} = user <- Account.update_password(current_user, params) do
-      conn
-      |> render("user.json", user: user)
+      render(conn, "user.json", user: user)
     end
   end
 end

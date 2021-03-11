@@ -27,7 +27,7 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheck do
 
   # Checks if the user's organisation has a valid membership.
   defp has_valid_membership?(conn, user) do
-    user = user |> Repo.preload([:organisation])
+    user = Repo.preload(user, [:organisation])
     %{is_expired: is_expired} = Enterprise.get_organisation_membership(user.organisation.uuid)
 
     case is_expired do

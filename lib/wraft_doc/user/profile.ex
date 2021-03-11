@@ -42,8 +42,7 @@ defmodule WraftDoc.Account.Profile do
       age = Timex.diff(Timex.now(), dob, :years)
 
       if age > 15 do
-        current_changeset
-        |> put_change(:dob, dob)
+        put_change(current_changeset, :dob, dob)
       else
         add_error(current_changeset, :dob, "You are not old enough to use or services, sorry.!")
       end

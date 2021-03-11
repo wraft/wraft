@@ -55,7 +55,7 @@ defmodule WraftDoc.Account do
 
   @spec registration(map, Organisation.t()) :: User.t() | Ecto.Changeset.t()
   def registration(params, %Organisation{id: id}) do
-    params = params |> Map.merge(%{"organisation_id" => id})
+    params = Map.merge(params, %{"organisation_id" => id})
 
     get_role()
     |> build_assoc(:users)
@@ -67,7 +67,7 @@ defmodule WraftDoc.Account do
 
       {:ok, %User{} = user} ->
         create_profile(user, params)
-        user |> Repo.preload(:profile)
+        Repo.preload(user, :profile)
     end
   end
 
@@ -189,7 +189,7 @@ defmodule WraftDoc.Account do
   """
   @spec delete_profile(Profile.t()) :: {:ok, Profile.t()} | nil
   def delete_profile(%Profile{} = profile) do
-    profile |> Repo.delete()
+    Repo.delete(profile)
   end
 
   def delete_profile(_), do: nil
@@ -236,9 +236,7 @@ defmodule WraftDoc.Account do
     Repo.get_by(User, email: email)
   end
 
-  defp get_user_by_email(_email) do
-    nil
-  end
+  defp get_user_by_email(_email), do: nil
 
   @doc """
   Get the activity stream for current user.
@@ -269,7 +267,7 @@ defmodule WraftDoc.Account do
   """
   @spec get_activity_datas(list | map) :: list | map
   def get_activity_datas(activities) when is_list(activities) do
-    activities |> Enum.map(fn x -> get_activity_datas(x) end)
+    Enum.map(activities, fn x -> get_activity_datas(x) end)
   end
 
   def get_activity_datas(%{
@@ -279,7 +277,7 @@ defmodule WraftDoc.Account do
         meta: meta,
         inserted_at: inserted_at
       }) do
-    actor = actor_id |> get_user()
+    actor = get_user(actor_id)
     object_struct = get_activity_object_struct(object)
 
     %{
@@ -295,8 +293,8 @@ defmodule WraftDoc.Account do
   @spec get_activity_object_struct(String.t()) :: map | nil
 
   defp get_activity_object_struct(object) do
-    [model | [id]] = object |> String.split(":")
-    @activity_models[model] |> Repo.get(id)
+    [model | [id]] = String.split(object, ":")
+    Repo.get(@activity_models[model], id)
   end
 
   defp delete_token(user_id, type) do
@@ -317,7 +315,7 @@ defmodule WraftDoc.Account do
   and insert it to auth_tokens table.
   """
   def create_token(%{"email" => email}) do
-    email = email |> String.downcase()
+    email = String.downcase(email)
 
     case get_user_by_email(email) do
       %User{} = current_user ->
@@ -354,7 +352,7 @@ defmodule WraftDoc.Account do
         {:error, :fake}
 
       token_struct ->
-        {:ok, decoded_token} = token_struct.value |> Base.url_decode64()
+        {:ok, decoded_token} = Base.url_decode64(token_struct.value)
 
         Endpoint
         |> Phoenix.Token.verify("reset", decoded_token, max_age: 860)
@@ -366,7 +364,7 @@ defmodule WraftDoc.Account do
             {:error, :expired}
 
           {:ok, _} ->
-            token_struct |> Repo.preload(:user)
+            Repo.preload(token_struct, :user)
         end
     end
   end
