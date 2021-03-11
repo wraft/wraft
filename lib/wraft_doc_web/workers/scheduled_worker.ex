@@ -18,10 +18,7 @@ defmodule WraftDocWeb.Worker.ScheduledWorker do
         where: is_nil(la.asset_id)
       )
 
-    query
-    |> Repo.all()
-    |> Stream.map(fn x -> Repo.delete(x) end)
-    |> Enum.to_list()
+    Repo.delete_all(query)
 
     IO.puts("Job finished..!")
     :ok
