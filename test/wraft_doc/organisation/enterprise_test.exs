@@ -143,11 +143,12 @@ defmodule WraftDoc.EnterpriseTest do
     assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s2.state
   end
 
+  # TODO - No asserts added (M Sadique)
   test "shuffle order updates the order of state" do
     flow = insert(:flow)
     state = insert(:state, flow: flow)
-    order = state.order
-    states = Enterprise.shuffle_order(state, 1)
+    state.order
+    Enterprise.shuffle_order(state, 1)
   end
 
   test "delete states deletes and returns a state " do
@@ -754,8 +755,7 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user)
       count_before = Vendor |> Repo.all() |> length()
       vendor = Enterprise.create_vendor(user, @valid_vendor_attrs)
-      count_after = Vendor |> Repo.all() |> length()
-      count_before + 1 == count_after
+      assert count_before + 1 == Vendor |> Repo.all() |> length()
       assert vendor.name == @valid_vendor_attrs["name"]
       assert vendor.email == @valid_vendor_attrs["email"]
       assert vendor.phone == @valid_vendor_attrs["phone"]
@@ -855,7 +855,6 @@ defmodule WraftDoc.EnterpriseTest do
 
   describe "delete_vendor/1" do
     test "delete vendor deletes the vendor data" do
-      user = insert(:user)
       vendor = insert(:vendor)
       count_before = Vendor |> Repo.all() |> length()
       {:ok, v_vendor} = Enterprise.delete_vendor(vendor)

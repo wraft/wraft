@@ -123,7 +123,6 @@ defmodule WraftDoc.DocumentTest do
           organisation: user.organisation
         )
 
-      layout_asset = insert(:layout_asset, layout: layout, asset: asset, creator: user)
       s_layout = Document.show_layout(layout.uuid, user)
 
       assert s_layout.name == layout.name
@@ -311,7 +310,7 @@ defmodule WraftDoc.DocumentTest do
       flow = insert(:flow, creator: user, organisation: user.organisation)
       param = Map.put(@valid_content_type_attrs, "fields", fields)
       count_before = ContentType |> Repo.all() |> length()
-      content_type = Document.create_content_type(user, layout, flow, @valid_content_type_attrs)
+      content_type = Document.create_content_type(user, layout, flow, param)
       count_after = ContentType |> Repo.all() |> length()
       assert count_before + 1 == count_after
       assert content_type.name == @valid_content_type_attrs["name"]
@@ -358,9 +357,6 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       layout = insert(:layout, creator: user, organisation: user.organisation)
       flow = insert(:flow, creator: user, organisation: user.organisation)
-      state_1 = insert(:state, flow: flow)
-      state_2 = insert(:state, flow: flow)
-      field_type = insert(:field_type)
 
       content_type =
         insert(:content_type,
@@ -368,14 +364,6 @@ defmodule WraftDoc.DocumentTest do
           layout: layout,
           flow: flow,
           organisation: user.organisation
-        )
-
-      content_type =
-        insert(:content_type,
-          organisation: user.organisation,
-          creator: user,
-          layout: layout,
-          flow: flow
         )
 
       s_content_type = Document.show_content_type(user, content_type.uuid)
@@ -1106,7 +1094,7 @@ defmodule WraftDoc.DocumentTest do
       organisation = user.organisation
       params = Map.put(@valid_asset_attrs, "organisation_id", organisation.id)
       count_before = Asset |> Repo.all() |> length()
-      {:ok, asset} = Document.create_asset(user, @valid_asset_attrs)
+      {:ok, asset} = Document.create_asset(user, params)
       count_after = Asset |> Repo.all() |> length()
       count_before + 1 == count_after
       assert asset.name == @valid_asset_attrs["name"]
