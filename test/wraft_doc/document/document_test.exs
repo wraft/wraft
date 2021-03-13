@@ -113,7 +113,6 @@ defmodule WraftDoc.DocumentTest do
     test "show layout shows the layout data and preloads engine crator assets data" do
       user = insert(:user)
       engine = insert(:engine)
-      asset = insert(:asset, creator: user, organisation: user.organisation)
 
       layout =
         insert(:layout,
@@ -954,12 +953,19 @@ defmodule WraftDoc.DocumentTest do
       theme = insert(:theme, creator: user)
       count_before = Theme |> Repo.all() |> length()
 
-      {:error, changeset} = Document.update_theme(theme, user, @invalid_attrs)
+      {:error, changeset} =
+        Document.update_theme(theme, user, %{name: nil, font: nil, typescale: nil, file: nil})
+
       count_after = Theme |> Repo.all() |> length()
       assert count_before == count_after
 
-      %{name: ["can't be blank"], font: ["can't be blank"], typescale: ["can't be blank"]} ==
-        errors_on(changeset)
+      assert %{
+               name: ["can't be blank"],
+               font: ["can't be blank"],
+               typescale: ["can't be blank"],
+               file: ["can't be blank"]
+             } ==
+               errors_on(changeset)
     end
   end
 
@@ -1068,8 +1074,12 @@ defmodule WraftDoc.DocumentTest do
       count_after = DataTemplate |> Repo.all() |> length()
       assert count_before == count_after
 
-      %{title: ["can't be blank"], title_template: ["can't be blank"], data: ["can't be blank"]} ==
-        errors_on(changeset)
+      assert %{
+               title: ["can't be blank"],
+               title_template: ["can't be blank"],
+               data: ["can't be blank"]
+             } ==
+               errors_on(changeset)
     end
   end
 
@@ -1095,8 +1105,7 @@ defmodule WraftDoc.DocumentTest do
       params = Map.put(@valid_asset_attrs, "organisation_id", organisation.id)
       count_before = Asset |> Repo.all() |> length()
       {:ok, asset} = Document.create_asset(user, params)
-      count_after = Asset |> Repo.all() |> length()
-      count_before + 1 == count_after
+      assert count_before + 1 == Asset |> Repo.all() |> length()
       assert asset.name == @valid_asset_attrs["name"]
     end
 
@@ -1160,10 +1169,10 @@ defmodule WraftDoc.DocumentTest do
       asset = insert(:asset, creator: user)
       count_before = Asset |> Repo.all() |> length()
 
-      {:error, changeset} = Document.update_asset(asset, user, @invalid_attrs)
+      {:error, changeset} = Document.update_asset(asset, user, %{name: nil, file: nil})
       count_after = Asset |> Repo.all() |> length()
       assert count_before == count_after
-      %{name: ["can't be blank"]} == errors_on(changeset)
+      assert %{name: ["can't be blank"], file: ["can't be blank"]} == errors_on(changeset)
     end
   end
 
@@ -1193,8 +1202,7 @@ defmodule WraftDoc.DocumentTest do
 
       count_before = Comment |> Repo.all() |> length()
       comment = Document.create_comment(user, params)
-      count_after = Comment |> Repo.all() |> length()
-      count_before + 1 == count_after
+      assert count_before + 1 == Comment |> Repo.all() |> length()
       assert comment.comment == @valid_comment_attrs["comment"]
       assert comment.is_parent == @valid_comment_attrs["is_parent"]
       assert comment.master == @valid_comment_attrs["master"]
@@ -1254,12 +1262,13 @@ defmodule WraftDoc.DocumentTest do
       count_after = Comment |> Repo.all() |> length()
       assert count_before == count_after
 
-      %{
-        comment: ["can't be blank"],
-        is_parent: ["can't be blank"],
-        master: ["can't be blank"],
-        master_id: ["can't be blank"]
-      } == errors_on(changeset)
+      assert %{
+               comment: ["can't be blank"],
+               is_parent: ["can't be blank"],
+               master: ["can't be blank"],
+               master_id: ["can't be blank"],
+               organisation_id: ["can't be blank"]
+             } == errors_on(changeset)
     end
 
     test "update comment on valid attrs" do

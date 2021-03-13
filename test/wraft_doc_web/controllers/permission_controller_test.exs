@@ -86,7 +86,8 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
 
     permissions =
       conn
-      |> json_response(200)["permissions"]
+      |> json_response(200)
+      |> get_in(["permissions"])
       |> Enum.map(fn x -> Map.keys(x) end)
       |> List.flatten()
 

@@ -45,7 +45,7 @@ defmodule WraftDocWeb.VendorControllerTest do
 
       conn =
         conn
-        |> post(conn, Routes.v1_vendor_path(conn, :create, @valid_attrs))
+        |> post(Routes.v1_vendor_path(conn, :create), @valid_attrs)
         |> doc(operation_id: "create_resource")
 
       assert count_before + 1 == Vendor |> Repo.all() |> length()

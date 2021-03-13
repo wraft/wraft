@@ -1,7 +1,6 @@
 defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.{Enterprise.Membership.Payment, Repo}
 
   setup %{conn: conn} do
     user = insert(:user)
