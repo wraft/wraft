@@ -1,8 +1,9 @@
 defmodule AddContentTypePrefixes do
-  alias WraftDoc.{Repo, Document.ContentType}
+  alias WraftDoc.{Document.ContentType, Repo}
 
-  def get_all_content_types() do
-    Repo.all(ContentType)
+  def get_all_content_types do
+    ContentType
+    |> Repo.all()
     |> Task.async_stream(fn x -> create_prefix_and_update_c_type(x) end)
     |> Enum.to_list()
   end
@@ -11,7 +12,7 @@ defmodule AddContentTypePrefixes do
     prefix =
       name
       |> String.split(" ")
-      |> Enum.map(fn x -> x |> String.slice(0, 1) end)
+      |> Enum.map(fn x -> String.slice(x, 0, 1) end)
       |> List.to_string()
 
     c_type |> ContentType.update_changeset(%{prefix: prefix}) |> Repo.update!()

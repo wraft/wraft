@@ -1,16 +1,19 @@
 defmodule OrganisationMembershio do
   import Ecto
   import Ecto.Query
-  alias WraftDoc.{Repo, Enterprise.Organisation, Enterprise.Plan, Enterprise.Membership}
+  alias WraftDoc.{Enterprise.Membership, Enterprise.Organisation, Enterprise.Plan, Repo}
   @trial_plan_name "Free Trial"
   @trial_duration 14
 
-  def get_organisations_without_membership() do
-    from(o in Organisation,
-      left_join: m in Membership,
-      on: m.organisation_id == o.id,
-      where: is_nil(m.organisation_id)
-    )
+  def get_organisations_without_membership do
+    query =
+      from(o in Organisation,
+        left_join: m in Membership,
+        on: m.organisation_id == o.id,
+        where: is_nil(m.organisation_id)
+      )
+
+    query
     |> Repo.all()
     |> Enum.each(fn x -> create_membership(x) end)
   end
@@ -18,7 +21,7 @@ defmodule OrganisationMembershio do
   defp create_membership(organisation) do
     plan = Repo.get_by(Plan, name: @trial_plan_name)
     start_date = Timex.now()
-    end_date = start_date |> Timex.shift(days: @trial_duration)
+    end_date = Timex.shift(start_date, days: @trial_duration)
     params = %{start_date: start_date, end_date: end_date, plan_duration: @trial_duration}
 
     plan

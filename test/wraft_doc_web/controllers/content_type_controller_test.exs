@@ -48,10 +48,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     params = Map.merge(@valid_attrs, %{flow_uuid: flow_uuid, layout_uuid: layout_uuid})
 
     conn =
-      post(
-        conn,
-        Routes.v1_content_type_path(conn, :create, params)
-      )
+      conn
+      |> post(Routes.v1_content_type_path(conn, :create, params))
       |> doc(operation_id: "create_content_type")
 
     assert count_before + 1 == ContentType |> Repo.all() |> length()
@@ -73,7 +71,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     params = Map.merge(@invalid_attrs, %{flow_uuid: flow_uuid, layout_uuid: layout_uuid})
 
     conn =
-      post(conn, Routes.v1_content_type_path(conn, :create, params))
+      conn
+      |> post(Routes.v1_content_type_path(conn, :create, params))
       |> doc(operation_id: "create_content_type")
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -98,7 +97,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     params = Map.merge(@valid_attrs, %{flow_id: flow_uuid, layout_id: layout_uuid})
 
     conn =
-      put(conn, Routes.v1_content_type_path(conn, :update, content_type.uuid, params))
+      conn
+      |> put(Routes.v1_content_type_path(conn, :update, content_type.uuid, params))
       |> doc(operation_id: "update_content_type")
 
     assert json_response(conn, 200)["content_type"]["name"] == @valid_attrs.name
@@ -116,7 +116,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn =
-      put(conn, Routes.v1_content_type_path(conn, :update, content_type.uuid, @invalid_attrs))
+      conn
+      |> put(Routes.v1_content_type_path(conn, :update, content_type.uuid, @invalid_attrs))
       |> doc(operation_id: "update_content_type")
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]

@@ -35,7 +35,7 @@ defmodule WraftDoc.AccountTest do
     test "user registration with invalid email" do
       insert(:role, name: "user")
       organisation = insert(:organisation)
-      params = @valid_attrs |> Map.put("email", "not an email")
+      params = Map.put(@valid_attrs, "email", "not an email")
       {:error, changeset} = Account.registration(params, organisation)
 
       assert %{email: ["has invalid format"]} == errors_on(changeset)
@@ -99,7 +99,7 @@ defmodule WraftDoc.AccountTest do
           Endpoint,
           "organisation_invite",
           %{organisation: organisation, email: @email},
-          signed_at: -9_00_001
+          signed_at: -900_001
         )
 
       error = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
@@ -306,7 +306,7 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "test when invalid token is given" do
-      value = Phoenix.Token.sign(WraftDocWeb.Endpoint, "invalid", "email") |> Base.url_encode64()
+      value = Endpoint |> Phoenix.Token.sign("invalid", "email") |> Base.url_encode64()
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")
       response = Account.check_token(auth_token.value)
       assert response == {:error, :fake}
@@ -314,7 +314,8 @@ defmodule WraftDoc.AccountTest do
 
     test "test when expired token is given" do
       value =
-        Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", "email", signed_at: -861)
+        Endpoint
+        |> Phoenix.Token.sign("reset", "email", signed_at: -861)
         |> Base.url_encode64()
 
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")
@@ -346,7 +347,7 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "return error when token is invalid" do
-      value = Phoenix.Token.sign(WraftDocWeb.Endpoint, "invalid", "email") |> Base.url_encode64()
+      value = Endpoint |> Phoenix.Token.sign("invalid", "email") |> Base.url_encode64()
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")
       params = %{"token" => auth_token.value, "password" => "newpassword"}
       response = Account.reset_password(params)

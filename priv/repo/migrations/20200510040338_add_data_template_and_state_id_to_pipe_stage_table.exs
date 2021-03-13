@@ -7,7 +7,7 @@ defmodule WraftDoc.Repo.Migrations.AddDataTemplateAndStateIdToPipeStageTable do
       add(:state_id, references(:state))
       add(:creator_id, references(:user))
 
-      timestamps
+      timestamps()
     end
   end
 

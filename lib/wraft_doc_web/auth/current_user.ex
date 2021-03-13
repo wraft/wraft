@@ -5,7 +5,7 @@ defmodule WraftDocWeb.CurrentUser do
   """
   import Plug.Conn
   import Guardian.Plug
-  alias WraftDoc.{Repo, Account.User}
+  alias WraftDoc.{Account.User, Repo}
   alias WraftDocWeb.Guardian.AuthErrorHandler
 
   def init(opts), do: opts
@@ -18,7 +18,7 @@ defmodule WraftDocWeb.CurrentUser do
         AuthErrorHandler.auth_error(conn, {:error, :no_user})
 
       user ->
-        user = user |> Repo.preload([:profile, :role, :organisation])
+        user = Repo.preload(user, [:profile, :role, :organisation])
         assign(conn, :current_user, user)
     end
   end

@@ -87,10 +87,12 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
       p2 = insert(:plan)
 
       conn = get(conn, Routes.v1_plan_path(conn, :index))
-      plan_names = json_response(conn, 200) |> Enum.map(fn x -> x["name"] end) |> List.to_string()
+
+      plan_names =
+        conn |> json_response(200) |> Enum.map(fn x -> x["name"] end) |> List.to_string()
 
       plan_descriptions =
-        json_response(conn, 200) |> Enum.map(fn x -> x["description"] end) |> List.to_string()
+        conn |> json_response(200) |> Enum.map(fn x -> x["description"] end) |> List.to_string()
 
       assert plan_names =~ p1.name
       assert plan_names =~ p2.name
@@ -120,10 +122,12 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
       p2 = insert(:plan)
 
       conn = get(conn, Routes.v1_plan_path(conn, :index))
-      plan_names = json_response(conn, 200) |> Enum.map(fn x -> x["name"] end) |> List.to_string()
+
+      plan_names =
+        conn |> json_response(200) |> Enum.map(fn x -> x["name"] end) |> List.to_string()
 
       plan_descriptions =
-        json_response(conn, 200) |> Enum.map(fn x -> x["description"] end) |> List.to_string()
+        conn |> json_response(200) |> Enum.map(fn x -> x["description"] end) |> List.to_string()
 
       assert plan_names =~ p1.name
       assert plan_names =~ p2.name
@@ -136,10 +140,12 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
       p1 = insert(:plan)
       p2 = insert(:plan)
       conn = get(conn, Routes.v1_plan_path(conn, :index))
-      plan_names = json_response(conn, 200) |> Enum.map(fn x -> x["name"] end) |> List.to_string()
+
+      plan_names =
+        conn |> json_response(200) |> Enum.map(fn x -> x["name"] end) |> List.to_string()
 
       plan_descriptions =
-        json_response(conn, 200) |> Enum.map(fn x -> x["description"] end) |> List.to_string()
+        conn |> json_response(200) |> Enum.map(fn x -> x["description"] end) |> List.to_string()
 
       assert plan_names =~ p1.name
       assert plan_names =~ p2.name

@@ -1,4 +1,7 @@
 defmodule WraftDocWeb.Funda do
+  @moduledoc """
+  Doc creation engine.
+  """
   require Logger
   def convert(file_path, format \\ "pdf")
 
@@ -8,7 +11,7 @@ defmodule WraftDocWeb.Funda do
     System.cmd("pandoc", [file_path, "-o", "/Users/sk/offer_letter.#{format}"])
   end
 
-  def convert() do
+  def convert do
     bodyx1 = "--template=/Users/sk/pandoc/pandoc-letter/template-letter.tex"
 
     System.cmd("pandoc", [
@@ -19,7 +22,7 @@ defmodule WraftDocWeb.Funda do
     ])
   end
 
-  def template_render() do
+  def template_render do
     # get page
 
     # generate markdown
@@ -28,10 +31,10 @@ defmodule WraftDocWeb.Funda do
 
     # generate pandoc command => output.pdf
 
-    # 
+    #
     strt_time = Timex.now()
     Logger.info(strt_time)
-    files = File.read!("index.txt") |> String.split("\n")
+    files = String.split(File.read!("index.txt"), "\n")
 
     template = "--template=template2.tex"
     from = "--from=markdown"
@@ -40,7 +43,7 @@ defmodule WraftDocWeb.Funda do
     engine = "--pdf-engine=xelatex"
 
     args = [from, to, template, out, engine]
-    args = files |> Enum.reduce(args, fn x, acc -> acc ++ [x] end)
+    args = Enum.reduce(files, args, fn x, acc -> acc ++ [x] end)
     System.cmd("pandoc", args)
     end_time = Timex.now()
     Logger.info(end_time)

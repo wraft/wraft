@@ -6,8 +6,10 @@ defmodule WraftDoc.Document.ContentTypeField do
   import Ecto.Changeset
   import Ecto.Query
   alias __MODULE__
-  alias WraftDoc.{Document.ContentType, Account.User}
+  alias WraftDoc.{Account.User, Document.ContentType}
+
   @derive {Jason.Encoder, only: [:name]}
+
   defimpl Spur.Trackable, for: ContentTypeField do
     def actor(_content_type_field), do: ""
     def object(content_type_field), do: "ContentTypeField:#{content_type_field.id}"

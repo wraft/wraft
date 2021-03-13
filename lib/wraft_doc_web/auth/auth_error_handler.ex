@@ -12,7 +12,6 @@ defmodule WraftDocWeb.Guardian.AuthErrorHandler do
   def auth_error(conn, {:error, :no_user}) do
     body = Poison.encode!(%{errors: "No user found"})
 
-    send_resp(conn, 404, body)
-    |> halt
+    conn |> send_resp(404, body) |> halt
   end
 end

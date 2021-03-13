@@ -150,7 +150,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
          {:ok, %TriggerHistory{} = trigger_history} <-
            Document.create_trigger_history(current_user, pipeline, data),
          {:ok, %Oban.Job{}} <- Document.create_pipeline_job(trigger_history) do
-      conn |> render("create.json")
+      render(conn, "create.json")
     end
   end
 
@@ -185,8 +185,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.get_trigger_histories_of_a_pipeline(pipeline, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         triggers: triggers,
         page_number: page_number,
         total_pages: total_pages,

@@ -9,7 +9,7 @@ defmodule WraftDocWeb.Api.V1.ThemeView do
       name: theme.name,
       font: theme.font,
       typescale: theme.typescale,
-      file: theme |> generate_url(),
+      file: generate_url(theme),
       updated_at: theme.updated_at,
       inserted_at: theme.inserted_at
     }

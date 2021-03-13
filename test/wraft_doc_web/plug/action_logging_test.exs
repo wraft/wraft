@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Plug.AddActionLogTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, ActionLog}
+  alias WraftDoc.{ActionLog, Repo}
   alias WraftDocWeb.Plug.AddActionLog
 
   test "adds new log when an action is made by an authorized user" do
@@ -19,10 +19,10 @@ defmodule WraftDocWeb.Plug.AddActionLogTest do
 
     count_before = ActionLog |> Repo.all() |> length
     AddActionLog.call(conn, %{})
-    all_actions = ActionLog |> Repo.all()
-    last_action = all_actions |> List.last()
+    all_actions = Repo.all(ActionLog)
+    last_action = List.last(all_actions)
 
-    assert count_before + 1 == all_actions |> length
+    assert count_before + 1 == length(all_actions)
     assert last_action.action == "test"
 
     assert last_action.request_path == "/test"
@@ -44,10 +44,10 @@ defmodule WraftDocWeb.Plug.AddActionLogTest do
 
     count_before = ActionLog |> Repo.all() |> length
     AddActionLog.call(conn, %{})
-    all_actions = ActionLog |> Repo.all()
-    last_action = all_actions |> List.last()
+    all_actions = Repo.all(ActionLog)
+    last_action = List.last(all_actions)
 
-    assert count_before + 1 == all_actions |> length
+    assert count_before + 1 == length(all_actions)
     assert last_action.action == "test"
     assert last_action.request_path == "/"
     assert last_action.user_id == nil
