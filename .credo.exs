@@ -83,9 +83,12 @@
         # Priority values are: `low, normal, high, higher`
         #
         {Credo.Check.Design.AliasUsage,
-         [priority: :high, if_nested_deeper_than: 2, if_called_more_often_than: 1,
-         files: %{excluded: ["test/support/*_case.ex"]}]
-         },
+         [
+           priority: :high,
+           if_nested_deeper_than: 2,
+           if_called_more_often_than: 1,
+           files: %{excluded: ["test/support/*_case.ex"]}
+         ]},
         # You can also customize the exit_status of each check.
         # If you don't want TODO comments to cause `mix credo` to fail, just
         # set this value to 0 (zero).
@@ -174,7 +177,7 @@
         {Credo.Check.Readability.Specs, false},
         {Credo.Check.Readability.StrictModuleLayout, false},
         {Credo.Check.Readability.WithCustomTaggedTuple, false},
-        {Credo.Check.Refactor.ABCSize, [excluded_functions: [:swagger_definitions, :up], files: %{excluded: ["priv/repo/migrations/*.exs"]}]},
+        # {Credo.Check.Refactor.ABCSize, [excluded_functions: [:swagger_definitions, :up], files: %{excluded: ["priv/repo/migrations/*.exs"]}]},
         {Credo.Check.Refactor.AppendSingleItem, false},
         {Credo.Check.Refactor.DoubleBooleanNegation, false},
         {Credo.Check.Refactor.ModuleDependencies, false},

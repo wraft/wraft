@@ -6,23 +6,23 @@ defmodule OrganisationAssoications do
     Account.User,
     Document.ContentType,
     Document.Layout,
-    Enterprise.Flow
+    Enterprise.Flow,
     Enterprise.Organisation,
-    Repo,
+    Repo
   }
 
   def create_organisation do
-    %Organisation{name: "Functionary Labs Pvt Ltd."} |> Repo.insert!()
+    Repo.insert!(%Organisation{name: "Functionary Labs Pvt Ltd."})
   end
 
   def organisation_id do
-    from(r in Organisation, where: r.name == "Functionary Labs Pvt Ltd.", select: r.id)
-    |> Repo.one()
+    query = from(r in Organisation, where: r.name == "Functionary Labs Pvt Ltd.", select: r.id)
+    Repo.one(query)
   end
 
   def user_and_organisation do
-    from(u in User, join: r in Role, where: r.name == "user" and u.role_id == r.id)
-    |> Repo.update_all(set: [organisation_id: organisation_id()])
+    query = from(u in User, join: r in Role, where: r.name == "user" and u.role_id == r.id)
+    Repo.update_all(query, set: [organisation_id: organisation_id()])
   end
 
   def layout_and_organisation do
