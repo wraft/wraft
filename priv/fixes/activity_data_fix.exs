@@ -4,17 +4,19 @@ defmodule ActivityDataFix do
   import Ecto.Query
 
   def get_deletion_activity do
-    query = from(a in Activity,
-      where: a.action == "delete",
-      select: %{
-        id: a.id,
-        action: a.action,
-        actor: a.actor,
-        object: a.object,
-        meta: a.meta,
-        inserted_at: a.inserted_at
-      }
-    )
+    query =
+      from(a in Activity,
+        where: a.action == "delete",
+        select: %{
+          id: a.id,
+          action: a.action,
+          actor: a.actor,
+          object: a.object,
+          meta: a.meta,
+          inserted_at: a.inserted_at
+        }
+      )
+
     query
     |> Repo.all()
     |> Task.async_stream(fn x -> update_object(x) end)

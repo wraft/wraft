@@ -8,8 +8,9 @@ defmodule ContentTypeCount do
   end
 
   defp get_instances_and_udpate_count(c_type) do
-    c_type =  Repo.preload(c_type, :instances)
+    c_type = Repo.preload(c_type, :instances)
     count = length(c_type.instances)
+
     %Counter{}
     |> Counter.changeset(%{subject: "ContentType:" <> "#{c_type.id}", count: count})
     |> Repo.insert()

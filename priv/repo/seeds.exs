@@ -34,7 +34,7 @@ Repo.insert!(%Role{name: "admin"})
 Repo.insert!(%Role{name: "user"})
 
 # Populate DB with admin user and profile
-%{id: id} =   Repo.get_by(Role, name: "admin")
+%{id: id} = Repo.get_by(Role, name: "admin")
 
 # Populate DB with one organisation
 organisation =
@@ -103,7 +103,11 @@ content_type =
   })
 
 # Populate content type fields
-Repo.insert!(%ContentTypeField{name: "employee", content_type_id: content_type.id, field_type_id: field.id})
+Repo.insert!(%ContentTypeField{
+  name: "employee",
+  content_type_id: content_type.id,
+  field_type_id: field.id
+})
 
 # Populate State
 state =

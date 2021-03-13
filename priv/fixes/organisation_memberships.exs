@@ -6,11 +6,13 @@ defmodule OrganisationMembershio do
   @trial_duration 14
 
   def get_organisations_without_membership do
-    query = from(o in Organisation,
-      left_join: m in Membership,
-      on: m.organisation_id == o.id,
-      where: is_nil(m.organisation_id)
-    )
+    query =
+      from(o in Organisation,
+        left_join: m in Membership,
+        on: m.organisation_id == o.id,
+        where: is_nil(m.organisation_id)
+      )
+
     query
     |> Repo.all()
     |> Enum.each(fn x -> create_membership(x) end)
@@ -19,7 +21,7 @@ defmodule OrganisationMembershio do
   defp create_membership(organisation) do
     plan = Repo.get_by(Plan, name: @trial_plan_name)
     start_date = Timex.now()
-    end_date =   Timex.shift(start_date, days: @trial_duration)
+    end_date = Timex.shift(start_date, days: @trial_duration)
     params = %{start_date: start_date, end_date: end_date, plan_duration: @trial_duration}
 
     plan
