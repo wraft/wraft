@@ -1,8 +1,11 @@
 defmodule WraftDocWeb.Worker.BulkWorker do
+  @moduledoc """
+  Oban worker for bulk building of docs.
+  """
   use Oban.Worker, queue: :default
   @impl Oban.Worker
-  alias WraftDoc.{Repo, Account, Document, Document.Pipeline.TriggerHistory, Enterprise}
   alias Opus.PipelineError
+  alias WraftDoc.{Account, Document, Document.Pipeline.TriggerHistory, Enterprise, Repo}
 
   def perform(
         %{
@@ -17,7 +20,7 @@ defmodule WraftDocWeb.Worker.BulkWorker do
       ) do
     IO.puts("Job starting..")
 
-    mapping = mapping |> convert_to_map()
+    mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
     c_type = Document.get_content_type(current_user, c_type_uuid)
     state = Enterprise.get_state(current_user, state_uuid)
@@ -37,7 +40,7 @@ defmodule WraftDocWeb.Worker.BulkWorker do
         _job
       ) do
     IO.puts("Job starting..")
-    mapping = mapping |> convert_to_map()
+    mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
     c_type = Document.get_content_type(current_user, c_type_uuid)
     Document.data_template_bulk_insert(current_user, c_type, mapping, path)
@@ -49,7 +52,7 @@ defmodule WraftDocWeb.Worker.BulkWorker do
         tags: ["block template"]
       }) do
     IO.puts("Job starting..")
-    mapping = mapping |> convert_to_map()
+    mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
     Document.block_template_bulk_insert(current_user, mapping, path)
     IO.puts("Job end.!")
@@ -61,7 +64,8 @@ defmodule WraftDocWeb.Worker.BulkWorker do
     start_time = Timex.now()
     state = TriggerHistory.states()[:executing]
 
-    convert_map_to_trigger_struct(trigger)
+    trigger
+    |> convert_map_to_trigger_struct()
     |> update_trigger_history(%{state: state, start_time: start_time})
     |> WraftDoc.PipelineRunner.call()
     |> handle_exceptions()
@@ -73,9 +77,7 @@ defmodule WraftDocWeb.Worker.BulkWorker do
 
   defp convert_to_map(mapping) when is_map(mapping), do: mapping
 
-  defp convert_to_map(mapping) when is_binary(mapping) do
-    mapping |> Jason.decode!()
-  end
+  defp convert_to_map(mapping) when is_binary(mapping), do: Jason.decode!(mapping)
 
   # Convert a map to TriggerHistory struct
   @spec convert_map_to_trigger_struct(map) :: TriggerHistory.t()
@@ -158,10 +160,9 @@ defmodule WraftDocWeb.Worker.BulkWorker do
   @spec update_trigger_history_state_and_error(TriggerHistory.t(), integer, map) ::
           TriggerHistory.t()
   defp update_trigger_history_state_and_error(trigger, state, error) do
-    key = Timex.now() |> DateTime.to_iso8601()
-    error = trigger.error |> Map.put(key, error)
-    params = %{state: state, error: error}
-    trigger |> update_trigger_history(params)
+    key = DateTime.to_iso8601(Timex.now())
+    error = Map.put(trigger.error, key, error)
+    update_trigger_history(trigger, %{state: state, error: error})
   end
 
   # Update a trigger history
@@ -172,7 +173,6 @@ defmodule WraftDocWeb.Worker.BulkWorker do
 
   # Update trigger function, called after a trigger is run.
   defp trigger_end_update(trigger) do
-    end_time = Timex.now()
-    trigger |> TriggerHistory.trigger_end_changeset(%{end_time: end_time}) |> Repo.update!()
+    trigger |> TriggerHistory.trigger_end_changeset(%{end_time: Timex.now()}) |> Repo.update!()
   end
 end

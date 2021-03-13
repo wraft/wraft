@@ -34,21 +34,20 @@ defmodule WraftDoc.Account.Profile do
     # |> validate_dob
   end
 
-  @deprecated "Not used anymore"
-  defp validate_dob(current_changeset) do
-    if Map.has_key?(current_changeset.changes, :dob) do
-      dob = current_changeset.changes.dob
-      # {:ok, dob} = Timex.parse(current_changeset.changes.dob, "{YYYY}-{M}-{D}")
-      age = Timex.diff(Timex.now(), dob, :years)
+  # @deprecated "Not used anymore"
+  # defp validate_dob(current_changeset) do
+  #   if Map.has_key?(current_changeset.changes, :dob) do
+  #     dob = current_changeset.changes.dob
+  #     # {:ok, dob} = Timex.parse(current_changeset.changes.dob, "{YYYY}-{M}-{D}")
+  #     age = Timex.diff(Timex.now(), dob, :years)
 
-      if age > 15 do
-        current_changeset
-        |> put_change(:dob, dob)
-      else
-        add_error(current_changeset, :dob, "You are not old enough to use or services, sorry.!")
-      end
-    else
-      current_changeset
-    end
-  end
+  #     if age > 15 do
+  #       put_change(current_changeset, :dob, dob)
+  #     else
+  #       add_error(current_changeset, :dob, "You are not old enough to use or services, sorry.!")
+  #     end
+  #   else
+  #     current_changeset
+  #   end
+  # end
 end

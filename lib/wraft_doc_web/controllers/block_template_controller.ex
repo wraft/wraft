@@ -105,7 +105,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     current_user = conn.assigns.current_user
 
     with %BlockTemplate{} = block_template <- Document.create_block_template(current_user, params) do
-      conn |> render("block_template.json", block_template: block_template)
+      render(conn, "block_template.json", block_template: block_template)
     end
   end
 
@@ -131,8 +131,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.block_template_index(current_user, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         block_templates: block_templates,
         page_number: page_number,
         total_pages: total_pages,
@@ -160,8 +159,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     current_user = conn.assigns.current_user
 
     with %BlockTemplate{} = block_template <- Document.get_block_template(uuid, current_user) do
-      conn
-      |> render("block_template.json", block_template: block_template)
+      render(conn, "block_template.json", block_template: block_template)
     end
   end
 
@@ -191,8 +189,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     with %BlockTemplate{} = block_template <- Document.get_block_template(uuid, current_user),
          %BlockTemplate{} = block_template <-
            Document.update_block_template(current_user, block_template, params) do
-      conn
-      |> render("block_template.json", block_template: block_template)
+      render(conn, "block_template.json", block_template: block_template)
     end
   end
 
@@ -217,8 +214,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
 
     with %BlockTemplate{} = block_template <- Document.get_block_template(uuid, current_user),
          {:ok, %BlockTemplate{}} <- Document.delete_block_template(current_user, block_template) do
-      conn
-      |> render("block_template.json", block_template: block_template)
+      render(conn, "block_template.json", block_template: block_template)
     end
   end
 

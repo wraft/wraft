@@ -128,7 +128,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     current_user = conn.assigns.current_user
 
     with %Comment{} = comment <- Document.create_comment(current_user, params) do
-      conn |> render("comment.json", comment: comment)
+      render(conn, "comment.json", comment: comment)
     end
   end
 
@@ -154,8 +154,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.comment_index(current_user, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         comments: comments,
         page_number: page_number,
         total_pages: total_pages,
@@ -187,8 +186,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.comment_replies(current_user, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         comments: comments,
         page_number: page_number,
         total_pages: total_pages,
@@ -216,8 +214,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     current_user = conn.assigns.current_user
 
     with %Comment{} = comment <- Document.show_comment(uuid, current_user) do
-      conn
-      |> render("comment.json", comment: comment)
+      render(conn, "comment.json", comment: comment)
     end
   end
 
@@ -243,8 +240,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
     with %Comment{} = comment <- Document.get_comment(uuid, current_user),
          %Comment{} = comment <- Document.update_comment(comment, params) do
-      conn
-      |> render("comment.json", comment: comment)
+      render(conn, "comment.json", comment: comment)
     end
   end
 
@@ -269,8 +265,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
     with %Comment{} = comment <- Document.get_comment(uuid, current_user),
          {:ok, %Comment{}} <- Document.delete_comment(comment) do
-      conn
-      |> render("delete.json", comment: comment)
+      render(conn, "delete.json", comment: comment)
     end
   end
 end

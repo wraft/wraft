@@ -45,7 +45,7 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
     |> Enum.find(fn {_state, int} -> int == state_int end)
     |> case do
       {state, _} ->
-        state |> Atom.to_string()
+        Atom.to_string(state)
 
       _ ->
         nil

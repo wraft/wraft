@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       gstin: organisation.gstin,
       email: organisation.email,
       phone: organisation.phone,
-      logo: organisation |> generate_url()
+      logo: generate_url(organisation)
     }
   end
 
@@ -31,7 +31,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       gstin: organisation.gstin,
       email: organisation.email,
       phone: organisation.phone,
-      logo: organisation |> generate_url()
+      logo: generate_url(organisation)
     }
   end
 
@@ -47,7 +47,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       gstin: organisation.gstin,
       email: organisation.email,
       phone: organisation.phone,
-      logo: organisation |> generate_url()
+      logo: generate_url(organisation)
     }
   end
 

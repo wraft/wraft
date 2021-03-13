@@ -1,39 +1,42 @@
 defmodule WraftDoc.Factory do
+  @moduledoc """
+  Factory for creating test data. Used by ExMachina.
+  """
   use ExMachina.Ecto, repo: WraftDoc.Repo
 
   alias WraftDoc.{
-    Account.User,
-    Account.Country,
-    Account.Role,
-    Account.Profile,
     Account.AuthToken,
-    Document.ContentType,
-    Document.Block,
-    Document.Instance.History,
-    Document.Asset,
-    Document.Layout,
-    Document.Engine,
-    Document.Instance,
-    Document.DataTemplate,
-    Document.Theme,
-    Document.FieldType,
-    Document.Counter,
-    Document.ContentTypeField,
-    Enterprise.Flow.State,
-    Enterprise.Organisation,
-    Enterprise.Flow,
-    Authorization.Resource,
+    Account.Country,
+    Account.Profile,
+    Account.Role,
+    Account.User,
     Authorization.Permission,
+    Authorization.Resource,
+    Document.Asset,
+    Document.Block,
     Document.BlockTemplate,
     Document.Comment,
+    Document.ContentType,
+    Document.ContentTypeField,
+    Document.Counter,
+    Document.DataTemplate,
+    Document.Engine,
+    Document.FieldType,
+    Document.Instance,
+    Document.Instance.History,
+    Document.Layout,
+    Document.LayoutAsset,
     Document.Pipeline,
     Document.Pipeline.Stage,
+    Document.Pipeline.TriggerHistory,
+    Document.Theme,
     Enterprise.ApprovalSystem,
-    Enterprise.Plan,
+    Enterprise.Flow,
+    Enterprise.Flow.State,
     Enterprise.Membership,
     Enterprise.Membership.Payment,
-    Document.LayoutAsset,
-    Document.Pipeline.TriggerHistory,
+    Enterprise.Organisation,
+    Enterprise.Plan,
     Enterprise.Vendor
   }
 
@@ -333,7 +336,7 @@ defmodule WraftDoc.Factory do
     {:ok, start_time} = NaiveDateTime.new(2020, 03, 17, 20, 20, 20)
     {:ok, end_time} = NaiveDateTime.new(2020, 03, 17, 20, 21, 20)
     duration = Timex.diff(end_time, start_time, :milliseconds)
-    zip_file = Timex.now() |> DateTime.to_iso8601()
+    zip_file = DateTime.to_iso8601(Timex.now())
 
     %TriggerHistory{
       data: %{name: sequence(:name, &"Name-#{&1}")},
@@ -359,7 +362,7 @@ defmodule WraftDoc.Factory do
 
   def membership_factory do
     start_date = Timex.now()
-    end_date = start_date |> Timex.shift(days: 30)
+    end_date = Timex.shift(start_date, days: 30)
 
     %Membership{
       organisation: build(:organisation),
@@ -373,7 +376,7 @@ defmodule WraftDoc.Factory do
 
   def payment_factory do
     start_date = Timex.now()
-    end_date = start_date |> Timex.shift(days: 30)
+    end_date = Timex.shift(start_date, days: 30)
 
     %Payment{
       organisation: build(:organisation),

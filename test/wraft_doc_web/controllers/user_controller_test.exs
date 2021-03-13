@@ -1,11 +1,12 @@
 defmodule WraftDocWeb.Api.V1.UserControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Account.AuthToken}
+  alias WraftDoc.{Account.AuthToken, Repo}
+  alias WraftDocWeb.Endpoint
 
   setup %{conn: conn} do
     profile = insert(:profile)
-    user = profile.user |> Repo.preload([:profile, :role, :organisation])
+    user = Repo.preload(profile.user, [:profile, :role, :organisation])
 
     conn =
       conn
@@ -29,8 +30,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
 
       conn =
-        conn
-        |> post(
+        post(
+          conn,
           Routes.v1_user_path(conn, :signin, %{
             email: user.email,
             password: user.password
@@ -46,8 +47,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
 
       conn =
-        conn
-        |> post(
+        post(
+          conn,
           Routes.v1_user_path(conn, :signin, %{email: user.email, password: "wrong password"})
         )
 
@@ -59,8 +60,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
 
       conn =
-        conn
-        |> post(
+        post(
+          conn,
           Routes.v1_user_path(conn, :signin, %{
             email: "non.existing@email.com",
             password: "wrong password"
@@ -75,7 +76,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       user = insert(:user)
       conn = build_conn()
 
-      conn = conn |> post(Routes.v1_user_path(conn, :signin, %{email: user.email}))
+      conn = post(conn, Routes.v1_user_path(conn, :signin, %{email: user.email}))
 
       assert json_response(conn, 400)["errors"] == "Please provide all necessary datas to login.!"
     end
@@ -136,7 +137,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       user = insert(:user)
 
-      token = Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", user.email) |> Base.url_encode64()
+      token = Endpoint |> Phoenix.Token.sign("reset", user.email) |> Base.url_encode64()
 
       insert(:auth_token, value: token, token_type: "password_verify")
       conn = get(conn, Routes.v1_user_path(conn, :verify_token, token))
@@ -155,7 +156,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       user = insert(:user)
 
       token =
-        Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", user.email, signed_at: -861)
+        Endpoint
+        |> Phoenix.Token.sign("reset", user.email, signed_at: -861)
         |> Base.url_encode64()
 
       insert(:auth_token, value: token, token_type: "password_verify")
@@ -169,7 +171,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       user = insert(:user)
 
-      token = Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", user.email) |> Base.url_encode64()
+      token = Endpoint |> Phoenix.Token.sign("reset", user.email) |> Base.url_encode64()
 
       insert(:auth_token, value: token, token_type: "password_verify", user: user)
       attrs = %{token: token, password: "123456789"}
@@ -186,7 +188,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       user = insert(:user)
 
-      token = Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", user.email) |> Base.url_encode64()
+      token = Endpoint |> Phoenix.Token.sign("reset", user.email) |> Base.url_encode64()
 
       insert(:auth_token, value: token, token_type: "password_verify")
       attrs = %{token: token, password: "123"}
@@ -219,7 +221,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       user = insert(:user)
 
       token =
-        Phoenix.Token.sign(WraftDocWeb.Endpoint, "reset", user.email, signed_at: -861)
+        Endpoint
+        |> Phoenix.Token.sign("reset", user.email, signed_at: -861)
         |> Base.url_encode64()
 
       insert(:auth_token, value: token, token_type: "password_verify")

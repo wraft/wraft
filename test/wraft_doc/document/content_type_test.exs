@@ -25,9 +25,9 @@ defmodule WraftDoc.Document.ContentTypeTest do
     organisation = insert(:organisation)
     params = Map.put(@valid_attributes, :organisation_id, organisation.id)
 
-    {:ok, _content_type} = ContentType.changeset(%ContentType{}, params) |> Repo.insert()
+    {:ok, _content_type} = %ContentType{} |> ContentType.changeset(params) |> Repo.insert()
 
-    {:error, changeset} = ContentType.changeset(%ContentType{}, params) |> Repo.insert()
+    {:error, changeset} = %ContentType{} |> ContentType.changeset(params) |> Repo.insert()
 
     assert "Content type with the same name under your organisation exists.!" in errors_on(
              changeset,

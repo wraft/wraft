@@ -1,8 +1,8 @@
 defmodule WraftDocWeb.Api.V1.PaymentView do
   use WraftDocWeb, :view
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{OrganisationView, UserView, PlanView, MembershipView}
   alias WraftDoc.Enterprise.Membership.Payment
+  alias WraftDocWeb.Api.V1.{MembershipView, OrganisationView, PlanView, UserView}
 
   def render("payment.json", %{payment: payment}) do
     %{
@@ -11,10 +11,10 @@ defmodule WraftDocWeb.Api.V1.PaymentView do
       start_date: payment.start_date,
       end_date: payment.end_date,
       invoice_number: payment.invoice_number,
-      invoice: payment |> generate_url(),
+      invoice: generate_url(payment),
       amount: payment.amount,
-      action: payment |> Payment.get_action(),
-      status: payment |> Payment.get_status(),
+      action: Payment.get_action(payment),
+      status: Payment.get_status(payment),
       organisation:
         render_one(payment.organisation, OrganisationView, "organisation.json", as: :organisation),
       creator: render_one(payment.creator, UserView, "user.json", as: :user),
@@ -44,10 +44,10 @@ defmodule WraftDocWeb.Api.V1.PaymentView do
       start_date: payment.start_date,
       end_date: payment.end_date,
       invoice_number: payment.invoice_number,
-      invoice: payment |> generate_url(),
+      invoice: generate_url(payment),
       amount: payment.amount,
-      action: payment |> Payment.get_action(),
-      status: payment |> Payment.get_status(),
+      action: Payment.get_action(payment),
+      status: Payment.get_status(payment),
       organisation:
         render_one(payment.organisation, OrganisationView, "organisation.json", as: :organisation),
       creator: render_one(payment.creator, UserView, "user.json", as: :user),
@@ -62,30 +62,33 @@ defmodule WraftDocWeb.Api.V1.PaymentView do
 
   # Convert datetime struct to human readable date format
   defp humanize_date(end_date) do
-    end_date |> Timex.format!("%d-%b-%Y", :strftime)
+    Timex.format!(end_date, "%d-%b-%Y", :strftime)
   end
 
   # Convert datetime struct to human readable datetime format
   defp humanize_time(datetime) do
-    datetime |> Timex.format!("%d-%b-%Y %H:%m %P", :strftime)
+    Timex.format!(datetime, "%d-%b-%Y %H:%m %P", :strftime)
   end
 
   # Calculate GST amount from payment amount
   @spec calculate_gst(integer) :: binary()
   defp calculate_gst(amount) do
-    (18 * amount / 118) |> convert_to_rupee
+    gst_in_paisa = 18 * amount / 118
+    convert_to_rupee(gst_in_paisa)
   end
 
   # Calculate plan amount from payment amount
   @spec calculate_plan_amount(integer) :: binary()
   defp calculate_plan_amount(amount) do
-    (100 * amount / 118) |> convert_to_rupee
+    plan_amount_in_paisa = 100 * amount / 118
+    convert_to_rupee(plan_amount_in_paisa)
   end
 
   # Convert paisa to rupee and change float value to binary
   @spec convert_to_rupee(float) :: binary()
   defp convert_to_rupee(paisa) do
-    (paisa / 100) |> Float.round(2) |> :erlang.float_to_binary([{:decimals, 2}])
+    rupee = paisa / 100
+    rupee |> Float.round(2) |> :erlang.float_to_binary([{:decimals, 2}])
   end
 
   defp generate_url(%{invoice: invoice} = payment) do

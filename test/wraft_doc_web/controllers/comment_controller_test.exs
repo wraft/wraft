@@ -16,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
     role = insert(:role, name: "admin")
     user = insert(:user, role: role)
     insert(:profile, user: user)
-    user = user |> Repo.preload([:profile])
+    user = Repo.preload(user, [:profile])
 
     conn =
       conn
@@ -42,7 +42,8 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
     count_before = Comment |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_comment_path(conn, :create, @valid_attrs))
+      conn
+      |> post(Routes.v1_comment_path(conn, :create, @valid_attrs))
       |> doc(operation_id: "create_comment")
 
     assert count_before + 1 == Comment |> Repo.all() |> length()
@@ -59,7 +60,8 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
     count_before = Comment |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_comment_path(conn, :create, @invalid_attrs))
+      conn
+      |> post(Routes.v1_comment_path(conn, :create, @invalid_attrs))
       |> doc(operation_id: "create_comment")
 
     assert json_response(conn, 422)["errors"]["comment"] == ["can't be blank"]
@@ -78,7 +80,8 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
     count_before = Comment |> Repo.all() |> length()
 
     conn =
-      put(conn, Routes.v1_comment_path(conn, :update, comment.uuid, @valid_attrs))
+      conn
+      |> put(Routes.v1_comment_path(conn, :update, comment.uuid, @valid_attrs))
       |> doc(operation_id: "update_comment")
 
     assert json_response(conn, 200)["comment"] == @valid_attrs.comment
@@ -95,7 +98,8 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn =
-      put(conn, Routes.v1_comment_path(conn, :update, comment.uuid, @invalid_attrs))
+      conn
+      |> put(Routes.v1_comment_path(conn, :update, comment.uuid, @invalid_attrs))
       |> doc(operation_id: "update_comment")
 
     assert json_response(conn, 422)["errors"]["comment"] == ["can't be blank"]

@@ -12,8 +12,7 @@ defmodule WraftDoc.Document.Pipeline.StageTest do
     %{id: s_id} = insert(:state)
 
     stage_struct =
-      pipeline
-      |> build_assoc(:stages,
+      build_assoc(pipeline, :stages,
         content_type_id: c_id,
         data_template_id: d_id,
         state_id: s_id,
@@ -27,11 +26,7 @@ defmodule WraftDoc.Document.Pipeline.StageTest do
 
   test "changeset with invalid attrs" do
     pipeline = insert(:pipeline)
-
-    stage_struct =
-      pipeline
-      |> build_assoc(:stages, content_type_id: "")
-
+    stage_struct = build_assoc(pipeline, :stages, content_type_id: "")
     changeset = Stage.changeset(stage_struct, %{})
 
     refute changeset.valid?
@@ -45,16 +40,15 @@ defmodule WraftDoc.Document.Pipeline.StageTest do
     %{id: s_id} = insert(:state)
 
     stage_struct =
-      pipeline
-      |> build_assoc(:stages,
+      build_assoc(pipeline, :stages,
         content_type_id: c_id,
         data_template_id: d_id,
         state_id: s_id,
         creator_id: u_id
       )
 
-    {:ok, _stage} = Stage.changeset(stage_struct, %{}) |> Repo.insert()
-    {:error, changeset} = Stage.changeset(stage_struct, %{}) |> Repo.insert()
+    {:ok, _stage} = stage_struct |> Stage.changeset(%{}) |> Repo.insert()
+    {:error, changeset} = stage_struct |> Stage.changeset(%{}) |> Repo.insert()
 
     assert "Already added.!" in errors_on(changeset, :content_type_id)
   end

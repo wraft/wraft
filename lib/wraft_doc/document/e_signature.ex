@@ -1,4 +1,6 @@
 defmodule WraftDoc.Document.ESignature do
+  @moduledoc false
+
   use Ecto.Schema
   import Ecto.Changeset
 

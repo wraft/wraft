@@ -10,7 +10,7 @@ defmodule WraftDoc.Document.Instance.HistoryTest do
     exit_code: 0,
     start_time: start_time,
     end_time: end_time,
-    delay: 60000
+    delay: 60_000
   }
   @invalid_attrs %{status: "current_status"}
   test " changeset with valid attributes" do

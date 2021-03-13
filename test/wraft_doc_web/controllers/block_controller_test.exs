@@ -71,7 +71,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
       Plug.Conn.resp(conn, 200, "{\"url\":\"/test.jpg\"}")
     end)
 
-    params = @update_valid_attrs |> Map.put("api_route", "http://localhost:#{bypass.port}")
+    params = Map.put(@update_valid_attrs, "api_route", "http://localhost:#{bypass.port}")
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
 

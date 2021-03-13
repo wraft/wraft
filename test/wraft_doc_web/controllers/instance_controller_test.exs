@@ -49,7 +49,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     count_before = Instance |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_instance_path(conn, :create, content_type.uuid), params)
+      conn
+      |> post(Routes.v1_instance_path(conn, :create, content_type.uuid), params)
       |> doc(operation_id: "create_instance")
 
     assert count_before + 1 == Instance |> Repo.all() |> length()
@@ -72,7 +73,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     params = Map.merge(@invalid_attrs, %{state_uuid: state.uuid, vendor_uuid: vendor.uuid})
 
     conn =
-      post(conn, Routes.v1_instance_path(conn, :create, content_type.uuid), params)
+      conn
+      |> post(Routes.v1_instance_path(conn, :create, content_type.uuid), params)
       |> doc(operation_id: "create_instance")
 
     assert json_response(conn, 422)["errors"]["raw"] == ["can't be blank"]
@@ -94,12 +96,13 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     state = insert(:state)
 
     params =
-      Map.put(@valid_attrs, :content_type_id, content_type.uuid) |> Map.put(:state_id, state.id)
+      @valid_attrs |> Map.put(:content_type_id, content_type.uuid) |> Map.put(:state_id, state.id)
 
     count_before = Instance |> Repo.all() |> length()
 
     conn =
-      put(conn, Routes.v1_instance_path(conn, :update, instance.uuid, params))
+      conn
+      |> put(Routes.v1_instance_path(conn, :update, instance.uuid, params))
       |> doc(operation_id: "update_asset")
 
     assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
@@ -118,7 +121,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn =
-      put(conn, Routes.v1_instance_path(conn, :update, instance.uuid, @invalid_attrs))
+      conn
+      |> put(Routes.v1_instance_path(conn, :update, instance.uuid, @invalid_attrs))
       |> doc(operation_id: "update_asset")
 
     assert json_response(conn, 422)["errors"]["raw"] == ["can't be blank"]

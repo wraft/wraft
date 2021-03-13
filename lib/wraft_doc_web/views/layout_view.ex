@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.LayoutView do
   use WraftDocWeb, :view
-  alias WraftDocWeb.Api.V1.{EngineView, UserView, AssetView}
+  alias WraftDocWeb.Api.V1.{AssetView, EngineView, UserView}
   alias __MODULE__
 
   def render("create.json", %{doc_layout: layout}) do
@@ -12,8 +12,8 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       height: layout.height,
       unit: layout.unit,
       slug: layout.slug,
-      slug_file: layout |> generate_url(),
-      screenshot: layout |> generate_ss_url(),
+      slug_file: generate_url(layout),
+      screenshot: generate_ss_url(layout),
       inserted_at: layout.inserted_at,
       update_at: layout.updated_at,
       engine: render_one(layout.engine, EngineView, "create.json", as: :engine),
@@ -30,8 +30,8 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       height: layout.height,
       unit: layout.unit,
       slug: layout.slug,
-      slug_file: layout |> generate_url(),
-      screenshot: layout |> generate_ss_url(),
+      slug_file: generate_url(layout),
+      screenshot: generate_ss_url(layout),
       inserted_at: layout.inserted_at,
       update_at: layout.updated_at
     }
