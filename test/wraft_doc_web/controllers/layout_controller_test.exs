@@ -63,7 +63,8 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
 
       la_names =
         conn
-        |> json_response(200)["assets"]
+        |> json_response(200)
+        |> get_in(["assets"])
         |> Enum.map(fn x -> x["name"] end)
         |> List.to_string()
 
@@ -121,7 +122,8 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
 
       la_names =
         conn
-        |> json_response(200)["layout"]["assets"]
+        |> json_response(200)
+        |> get_in(["layout", "assets"])
         |> Enum.map(fn x -> x["name"] end)
         |> List.to_string()
 
@@ -187,7 +189,8 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
 
       la_names =
         conn
-        |> json_response(200)["layout"]["assets"]
+        |> json_response(200)
+        |> get_in(["layout", "assets"])
         |> Enum.map(fn x -> x["name"] end)
         |> List.to_string()
 

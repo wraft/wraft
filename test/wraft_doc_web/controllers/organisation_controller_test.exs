@@ -209,20 +209,22 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
         )
 
       assert conn
-             |> json_response(200)["organisations"]
+             |> json_response(200)
+             |> get_in(["organisations"])
              |> Enum.map(fn x -> x["name"] end)
              |> to_string() =~ o1.name
 
       assert conn
-             |> json_response(200)["organisations"]
+             |> json_response(200)
+             |> get_in(["organisations"])
              |> Enum.map(fn x -> x["address"] end)
              |> to_string() =~ o2.address
     end
   end
 
   test "search organisation by name", %{conn: conn} do
-    o1 = insert(:organisation, name: "ABC Ectr")
-    o2 = insert(:organisation, name: "KDY soft")
+    insert(:organisation, name: "ABC Ectr")
+    insert(:organisation, name: "KDY soft")
 
     conn = put_req_header(build_conn(), "authorization", "Bearer #{conn.assigns.token}")
 

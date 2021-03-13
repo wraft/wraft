@@ -1,12 +1,11 @@
 defmodule WraftDocWeb.Plug.ValidMembershipCheckTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.Repo
   alias WraftDocWeb.Plug.ValidMembershipCheck
 
   test "user is allowed to continue when user's organisation has a valid membership" do
     user = insert(:user)
-    membership = insert(:membership, organisation: user.organisation)
+    insert(:membership, organisation: user.organisation)
 
     conn = assign(build_conn(), :current_user, user)
     returned_conn = ValidMembershipCheck.call(conn, %{})
@@ -28,7 +27,7 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheckTest do
 
   test "user is blocked from accessing services when user's organisation does not have a valid membership" do
     user = insert(:user)
-    membership = insert(:membership, is_expired: true, organisation: user.organisation)
+    insert(:membership, is_expired: true, organisation: user.organisation)
 
     conn = assign(build_conn(), :current_user, user)
     returned_conn = ValidMembershipCheck.call(conn, %{})

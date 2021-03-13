@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Pipeline, Document.Pipeline.Stage, Repo}
+  alias WraftDoc.{Document.Pipeline, Repo}
 
   @valid_attrs %{
     name: "Official Letter",
@@ -59,19 +59,22 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
 
       content_types =
         conn
-        |> json_response(200)["stages"]
+        |> json_response(200)
+        |> get_in(["stages"])
         |> Enum.map(fn x -> x["content_type"]["name"] end)
         |> List.to_string()
 
       d_temps =
         conn
-        |> json_response(200)["stages"]
+        |> json_response(200)
+        |> get_in(["stages"])
         |> Enum.map(fn x -> x["data_template"]["title"] end)
         |> List.to_string()
 
       resp_states =
         conn
-        |> json_response(200)["stages"]
+        |> json_response(200)
+        |> get_in(["stages"])
         |> Enum.map(fn x -> x["state"]["state"] end)
         |> List.to_string()
 
@@ -119,7 +122,8 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
 
       pipelines =
         conn
-        |> json_response(200)["pipelines"]
+        |> json_response(200)
+        |> get_in(["pipelines"])
         |> Enum.map(fn %{"name" => name} -> name end)
         |> List.to_string()
 
@@ -141,7 +145,6 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       pipeline = insert(:pipeline, organisation: user.organisation)
       insert(:pipe_stage, pipeline: pipeline)
       c_type = insert(:content_type, organisation: user.organisation)
-      c_type_field = insert(:content_type_field, content_type: c_type)
       data_template = insert(:data_template, content_type: c_type)
       state = insert(:state, organisation: user.organisation)
 
@@ -161,19 +164,22 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
 
       c_types =
         conn
-        |> json_response(200)["stages"]
+        |> json_response(200)
+        |> get_in(["stages"])
         |> Enum.map(fn x -> x["content_type"]["name"] end)
         |> List.to_string()
 
       data_temps =
         conn
-        |> json_response(200)["stages"]
+        |> json_response(200)
+        |> get_in(["stages"])
         |> Enum.map(fn x -> x["data_template"]["title"] end)
         |> List.to_string()
 
       states =
         conn
-        |> json_response(200)["stages"]
+        |> json_response(200)
+        |> get_in(["stages"])
         |> Enum.map(fn x -> x["state"]["state"] end)
         |> List.to_string()
 

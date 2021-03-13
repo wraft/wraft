@@ -241,10 +241,13 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
 
       conn = get(conn, Routes.v1_approval_system_path(conn, :index), page: 1)
 
-      assert conn
-             |> json_response(200)["pending_approvals"]
-             |> Enum.map(fn x -> x["pre_state"]["state"] end)
-             |> to_string() =~ s1.state
+      pending_approvals =
+        conn
+        |> json_response(200)
+        |> get_in(["pending_approvals"])
+        |> Enum.map(fn x -> x["pre_state"]["state"] end)
+
+      assert to_string(pending_approvals) =~ s1.state
     end
   end
 end

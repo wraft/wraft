@@ -810,7 +810,7 @@ defmodule WraftDoc.EnterpriseTest do
       {:error, changeset} = Enterprise.update_vendor(vendor, user, @invalid_vendor_attrs)
       count_after = Vendor |> Repo.all() |> length()
       assert count_before == count_after
-      %{name: ["can't be blank"], email: ["can't be blank"]} == errors_on(changeset)
+      assert %{name: ["can't be blank"], email: ["can't be blank"]} == errors_on(changeset)
     end
   end
 
