@@ -1,4 +1,4 @@
-defmodule WraftDoc.Account.UserAdmin do
+defmodule WraftDocWeb.UserAdmin do
   alias WraftDoc.Account.{User, Role}
   alias WraftDoc.Repo
   import Ecto.Query

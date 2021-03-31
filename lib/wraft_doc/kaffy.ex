@@ -7,13 +7,16 @@ defmodule WraftDoc.Kaffy.Config do
       account: [
         name: "Account",
         resources: [
-          user: [schema: WraftDoc.Account.User, admin: WraftDoc.Account.UserAdmin]
+          user: [schema: WraftDoc.Account.User, admin: WraftDocWeb.UserAdmin]
         ]
       ],
       enterprise: [
         name: "Enterprise",
         resources: [
-          organisation: [schema: WraftDoc.Enterprise.Organisation]
+          organisation: [
+            schema: WraftDoc.Enterprise.Organisation,
+            admin: WraftDocWeb.OrganisationAdmin
+          ]
         ]
       ]
     ]

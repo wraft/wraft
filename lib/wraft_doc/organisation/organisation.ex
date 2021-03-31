@@ -39,7 +39,7 @@ defmodule WraftDoc.Enterprise.Organisation do
       :phone,
       :email
     ])
-    |> validate_required([:name, :legal_name])
+    |> validate_required([:name, :legal_name, :email])
     |> cast_attachments(attrs, [:logo])
     |> unique_constraint(:legal_name,
       message: "Organisation name already taken.! Try another one.",
