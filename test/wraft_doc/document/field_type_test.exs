@@ -16,8 +16,8 @@ defmodule WraftDoc.Document.FieldTypeTest do
   end
 
   test "field type name unique constraint" do
-    {:ok, _field_type} = FieldType.changeset(%FieldType{}, @valid_attrs) |> Repo.insert()
-    {:error, changeset} = FieldType.changeset(%FieldType{}, @valid_attrs) |> Repo.insert()
+    {:ok, _field_type} = %FieldType{} |> FieldType.changeset(@valid_attrs) |> Repo.insert()
+    {:error, changeset} = %FieldType{} |> FieldType.changeset(@valid_attrs) |> Repo.insert()
 
     assert "Field type with the same name exists. Use another name.!" in errors_on(
              changeset,

@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
       name: profile.name,
       dob: profile.dob,
       gender: profile.gender,
-      profile_pic: profile |> generate_url,
+      profile_pic: generate_url(profile),
       user: render_one(profile.user, UserView, "user_id_and_email.json", as: :user)
     }
   end
@@ -22,7 +22,7 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
       name: user.profile.name,
       dob: user.profile.dob,
       gender: user.profile.gender,
-      profile_pic: user.profile |> generate_url,
+      profile_pic: generate_url(user.profile),
       user: render_one(user, UserView, "user_id_and_email.json", as: :user)
     }
   end
@@ -33,7 +33,7 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
       name: profile.name,
       dob: profile.dob,
       gender: profile.gender,
-      profile_pic: profile |> generate_url()
+      profile_pic: generate_url(profile)
     }
   end
 

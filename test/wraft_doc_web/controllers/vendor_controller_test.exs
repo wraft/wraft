@@ -44,7 +44,8 @@ defmodule WraftDocWeb.VendorControllerTest do
       count_before = Vendor |> Repo.all() |> length()
 
       conn =
-        post(conn, Routes.v1_vendor_path(conn, :create, @valid_attrs))
+        conn
+        |> post(Routes.v1_vendor_path(conn, :create), @valid_attrs)
         |> doc(operation_id: "create_resource")
 
       assert count_before + 1 == Vendor |> Repo.all() |> length()
@@ -60,7 +61,8 @@ defmodule WraftDocWeb.VendorControllerTest do
       count_before = Vendor |> Repo.all() |> length()
 
       conn =
-        post(conn, Routes.v1_vendor_path(conn, :create, @invalid_attrs))
+        conn
+        |> post(Routes.v1_vendor_path(conn, :create, @invalid_attrs))
         |> doc(operation_id: "create_resource")
 
       assert json_response(conn, 422)["errors"]["email"] == ["can't be blank"]
@@ -81,7 +83,8 @@ defmodule WraftDocWeb.VendorControllerTest do
       count_before = Vendor |> Repo.all() |> length()
 
       conn =
-        put(conn, Routes.v1_vendor_path(conn, :update, vendor.uuid, @valid_attrs))
+        conn
+        |> put(Routes.v1_vendor_path(conn, :update, vendor.uuid, @valid_attrs))
         |> doc(operation_id: "update_resource")
 
       assert json_response(conn, 200)["email"] == @valid_attrs.email
@@ -98,7 +101,8 @@ defmodule WraftDocWeb.VendorControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       conn =
-        put(conn, Routes.v1_vendor_path(conn, :update, vendor.uuid, @invalid_attrs))
+        conn
+        |> put(Routes.v1_vendor_path(conn, :update, vendor.uuid, @invalid_attrs))
         |> doc(operation_id: "update_resource")
 
       assert json_response(conn, 422)["errors"]["email"] == ["can't be blank"]

@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.OrganisationController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  alias WraftDoc.{Enterprise.Organisation, Enterprise}
+  alias WraftDoc.{Enterprise, Enterprise.Organisation}
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -239,8 +239,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => uuid}) do
     with %Organisation{} = organisation <- Enterprise.get_organisation(uuid) do
-      conn
-      |> render("show.json", organisation: organisation)
+      render(conn, "show.json", organisation: organisation)
     end
   end
 
@@ -268,8 +267,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   def delete(conn, %{"id" => uuid}) do
     with %Organisation{} = organisation <- Enterprise.get_organisation(uuid),
          {:ok, %Organisation{}} <- Enterprise.delete_organisation(organisation) do
-      conn
-      |> render("organisation.json", organisation: organisation)
+      render(conn, "organisation.json", organisation: organisation)
     end
   end
 
@@ -298,8 +296,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     with %Organisation{} = organisation <- Enterprise.check_permission(current_user, id),
          :ok <- Enterprise.already_member?(email),
          {:ok, _} <- Enterprise.invite_team_member(current_user, organisation, email) do
-      conn
-      |> render("invite.json")
+      render(conn, "invite.json")
     end
   end
 
@@ -333,8 +330,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Enterprise.members_index(current_user, params) do
-      conn
-      |> render("members.json",
+      render(conn, "members.json",
         members: members,
         page_number: page_number,
         total_pages: total_pages,
@@ -366,8 +362,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Enterprise.list_organisations(params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         organisations: organisations,
         page_number: page_number,
         total_pages: total_pages,

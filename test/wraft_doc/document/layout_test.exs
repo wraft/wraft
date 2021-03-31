@@ -53,7 +53,7 @@ defmodule WraftDoc.Document.LayoutTest do
     layout = insert(:layout)
     params = Map.merge(@valid_attrs, %{organisation_id: organisation.id, name: layout.name})
 
-    {:error, changeset} = Layout.changeset(%Layout{}, params) |> Repo.insert()
+    {:error, changeset} = %Layout{} |> Layout.changeset(params) |> Repo.insert()
 
     assert "Layout with the same name exists. Use another name.!" in errors_on(changeset, :name)
   end

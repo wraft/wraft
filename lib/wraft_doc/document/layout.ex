@@ -95,7 +95,6 @@ defmodule WraftDoc.Document.Layout do
   end
 
   def file_changeset(%Layout{} = layout, attrs \\ %{}) do
-    layout
-    |> cast_attachments(attrs, [:slug_file, :screenshot])
+    cast_attachments(layout, attrs, [:slug_file, :screenshot])
   end
 end

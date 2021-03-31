@@ -19,16 +19,13 @@ defmodule WraftDoc.Document.ContentTypeFieldTest do
   end
 
   test "content type field name unique constraint" do
-    c_type = insert(:content_type)
-    f_type = insert(:field_type)
-
     changeset =
-      c_type
-      |> build_assoc(:fields, field_type: f_type)
+      insert(:content_type)
+      |> build_assoc(:fields, field_type: insert(:field_type))
       |> ContentTypeField.changeset(@valid_attrs)
 
-    {:ok, _c_type_field} = changeset |> Repo.insert()
-    {:error, changeset} = changeset |> Repo.insert()
+    {:ok, _c_type_field} = Repo.insert(changeset)
+    {:error, changeset} = Repo.insert(changeset)
     assert "Field type already added.!" in errors_on(changeset, :name)
   end
 end

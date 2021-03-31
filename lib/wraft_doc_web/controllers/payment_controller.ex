@@ -240,8 +240,7 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Enterprise.payment_index(org_id, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         payments: payments,
         page_number: page_number,
         total_pages: total_pages,
@@ -267,7 +266,7 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
     current_user = conn.assigns[:current_user]
 
     with %Payment{} = payment <- Enterprise.show_payment(p_uuid, current_user) do
-      conn |> render("show.json", payment: payment)
+      render(conn, "show.json", payment: payment)
     end
   end
 end

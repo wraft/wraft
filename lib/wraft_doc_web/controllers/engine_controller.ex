@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.EngineController do
   plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document}
+  alias WraftDoc.Document
 
   def swagger_definitions do
     %{
@@ -86,8 +86,7 @@ defmodule WraftDocWeb.Api.V1.EngineController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.engines_list(params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         engines: engines,
         page_number: page_number,
         total_pages: total_pages,

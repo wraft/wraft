@@ -5,22 +5,22 @@ defmodule WraftDoc.DocumentTest do
   use Bamboo.Test
 
   alias WraftDoc.{
-    Repo,
-    Document.Layout,
+    Document,
+    Document.Asset,
+    Document.BlockTemplate,
+    Document.Comment,
     Document.ContentType,
+    Document.Counter,
+    Document.DataTemplate,
     Document.Instance,
     Document.Instance.Version,
-    Document.DataTemplate,
+    Document.Layout,
     Document.LayoutAsset,
-    Document.Counter,
-    Document.BlockTemplate,
     Document.Pipeline,
     Document.Pipeline.Stage,
     Document.Pipeline.TriggerHistory,
     Document.Theme,
-    Document.Asset,
-    Document.Comment,
-    Document
+    Repo
   }
 
   @valid_layout_attrs %{
@@ -113,7 +113,6 @@ defmodule WraftDoc.DocumentTest do
     test "show layout shows the layout data and preloads engine crator assets data" do
       user = insert(:user)
       engine = insert(:engine)
-      asset = insert(:asset, creator: user, organisation: user.organisation)
 
       layout =
         insert(:layout,
@@ -123,7 +122,6 @@ defmodule WraftDoc.DocumentTest do
           organisation: user.organisation
         )
 
-      layout_asset = insert(:layout_asset, layout: layout, asset: asset, creator: user)
       s_layout = Document.show_layout(layout.uuid, user)
 
       assert s_layout.name == layout.name
@@ -311,7 +309,7 @@ defmodule WraftDoc.DocumentTest do
       flow = insert(:flow, creator: user, organisation: user.organisation)
       param = Map.put(@valid_content_type_attrs, "fields", fields)
       count_before = ContentType |> Repo.all() |> length()
-      content_type = Document.create_content_type(user, layout, flow, @valid_content_type_attrs)
+      content_type = Document.create_content_type(user, layout, flow, param)
       count_after = ContentType |> Repo.all() |> length()
       assert count_before + 1 == count_after
       assert content_type.name == @valid_content_type_attrs["name"]
@@ -358,9 +356,6 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       layout = insert(:layout, creator: user, organisation: user.organisation)
       flow = insert(:flow, creator: user, organisation: user.organisation)
-      state_1 = insert(:state, flow: flow)
-      state_2 = insert(:state, flow: flow)
-      field_type = insert(:field_type)
 
       content_type =
         insert(:content_type,
@@ -368,14 +363,6 @@ defmodule WraftDoc.DocumentTest do
           layout: layout,
           flow: flow,
           organisation: user.organisation
-        )
-
-      content_type =
-        insert(:content_type,
-          organisation: user.organisation,
-          creator: user,
-          layout: layout,
-          flow: flow
         )
 
       s_content_type = Document.show_content_type(user, content_type.uuid)
@@ -440,7 +427,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       content_type = insert(:content_type, creator: user)
       count_before = ContentType |> Repo.all() |> length()
-      params = @invalid_attrs |> Map.merge(%{name: "", description: "", prefix: ""})
+      params = Map.merge(@invalid_attrs, %{name: "", description: "", prefix: ""})
       {:error, changeset} = Document.update_content_type(content_type, user, params)
       count_after = ContentType |> Repo.all() |> length()
       assert count_before == count_after
@@ -624,7 +611,8 @@ defmodule WraftDoc.DocumentTest do
       count_before = DataTemplate |> Repo.all() |> length()
 
       data_templates =
-        Document.data_template_bulk_insert(user, c_type, mapping, path)
+        user
+        |> Document.data_template_bulk_insert(c_type, mapping, path)
         |> Enum.map(fn {:ok, x} -> x.title end)
         |> List.to_string()
 
@@ -694,7 +682,8 @@ defmodule WraftDoc.DocumentTest do
       count_before = BlockTemplate |> Repo.all() |> length()
 
       block_templates =
-        Document.block_template_bulk_insert(user, mapping, path)
+        user
+        |> Document.block_template_bulk_insert(mapping, path)
         |> Enum.map(fn x -> x.title end)
         |> List.to_string()
 
@@ -964,12 +953,19 @@ defmodule WraftDoc.DocumentTest do
       theme = insert(:theme, creator: user)
       count_before = Theme |> Repo.all() |> length()
 
-      {:error, changeset} = Document.update_theme(theme, user, @invalid_attrs)
+      {:error, changeset} =
+        Document.update_theme(theme, user, %{name: nil, font: nil, typescale: nil, file: nil})
+
       count_after = Theme |> Repo.all() |> length()
       assert count_before == count_after
 
-      %{name: ["can't be blank"], font: ["can't be blank"], typescale: ["can't be blank"]} ==
-        errors_on(changeset)
+      assert %{
+               name: ["can't be blank"],
+               font: ["can't be blank"],
+               typescale: ["can't be blank"],
+               file: ["can't be blank"]
+             } ==
+               errors_on(changeset)
     end
   end
 
@@ -1078,8 +1074,12 @@ defmodule WraftDoc.DocumentTest do
       count_after = DataTemplate |> Repo.all() |> length()
       assert count_before == count_after
 
-      %{title: ["can't be blank"], title_template: ["can't be blank"], data: ["can't be blank"]} ==
-        errors_on(changeset)
+      assert %{
+               title: ["can't be blank"],
+               title_template: ["can't be blank"],
+               data: ["can't be blank"]
+             } ==
+               errors_on(changeset)
     end
   end
 
@@ -1104,9 +1104,8 @@ defmodule WraftDoc.DocumentTest do
       organisation = user.organisation
       params = Map.put(@valid_asset_attrs, "organisation_id", organisation.id)
       count_before = Asset |> Repo.all() |> length()
-      {:ok, asset} = Document.create_asset(user, @valid_asset_attrs)
-      count_after = Asset |> Repo.all() |> length()
-      count_before + 1 == count_after
+      {:ok, asset} = Document.create_asset(user, params)
+      assert count_before + 1 == Asset |> Repo.all() |> length()
       assert asset.name == @valid_asset_attrs["name"]
     end
 
@@ -1170,10 +1169,10 @@ defmodule WraftDoc.DocumentTest do
       asset = insert(:asset, creator: user)
       count_before = Asset |> Repo.all() |> length()
 
-      {:error, changeset} = Document.update_asset(asset, user, @invalid_attrs)
+      {:error, changeset} = Document.update_asset(asset, user, %{name: nil, file: nil})
       count_after = Asset |> Repo.all() |> length()
       assert count_before == count_after
-      %{name: ["can't be blank"]} == errors_on(changeset)
+      assert %{name: ["can't be blank"], file: ["can't be blank"]} == errors_on(changeset)
     end
   end
 
@@ -1203,8 +1202,7 @@ defmodule WraftDoc.DocumentTest do
 
       count_before = Comment |> Repo.all() |> length()
       comment = Document.create_comment(user, params)
-      count_after = Comment |> Repo.all() |> length()
-      count_before + 1 == count_after
+      assert count_before + 1 == Comment |> Repo.all() |> length()
       assert comment.comment == @valid_comment_attrs["comment"]
       assert comment.is_parent == @valid_comment_attrs["is_parent"]
       assert comment.master == @valid_comment_attrs["master"]
@@ -1264,12 +1262,13 @@ defmodule WraftDoc.DocumentTest do
       count_after = Comment |> Repo.all() |> length()
       assert count_before == count_after
 
-      %{
-        comment: ["can't be blank"],
-        is_parent: ["can't be blank"],
-        master: ["can't be blank"],
-        master_id: ["can't be blank"]
-      } == errors_on(changeset)
+      assert %{
+               comment: ["can't be blank"],
+               is_parent: ["can't be blank"],
+               master: ["can't be blank"],
+               master_id: ["can't be blank"],
+               organisation_id: ["can't be blank"]
+             } == errors_on(changeset)
     end
 
     test "update comment on valid attrs" do

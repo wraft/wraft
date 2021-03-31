@@ -102,8 +102,12 @@ defmodule WraftDoc.Mixfile do
       {:razorpay, "~> 0.5.0"},
       # PDF generation using wkhtmltopdf
       {:pdf_generator, "~> 0.6.2"},
+
       # For admin pannel
-      {:kaffy, "~> 0.9.0"}
+      {:kaffy, "~> 0.9.0"},
+
+      # Code analysis tool
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
     ]
   end
 

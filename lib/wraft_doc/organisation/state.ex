@@ -43,7 +43,6 @@ defmodule WraftDoc.Enterprise.Flow.State do
   end
 
   def order_update_changeset(%State{} = flow, attrs \\ %{}) do
-    flow
-    |> cast(attrs, [:order])
+    cast(flow, attrs, [:order])
   end
 end

@@ -1,4 +1,5 @@
 defmodule WraftDoc.Document.BlockTemplate do
+  @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
   alias __MODULE__
