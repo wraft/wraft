@@ -101,7 +101,9 @@ defmodule WraftDoc.Mixfile do
       # Razorpay
       {:razorpay, "~> 0.5.0"},
       # PDF generation using wkhtmltopdf
-      {:pdf_generator, "~> 0.6.2"}
+      {:pdf_generator, "~> 0.6.2"},
+      # For admin pannel
+      {:kaffy, "~> 0.9.0"}
     ]
   end
 

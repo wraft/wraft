@@ -16,3 +16,5 @@ erl_crash.dump
 # secrets files as long as you replace their contents by environment
 # variables.
 # /config/*.secret.exs
+# The directory NPM downloads your dependencies sources to.
+/assets/node_modules/

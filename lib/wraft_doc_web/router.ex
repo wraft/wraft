@@ -26,6 +26,10 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.AdminCheck)
   end
 
+  pipeline :admin_authenticate do
+    plug(WraftDocWeb.Plug.AdminAuthenticate)
+  end
+
   # pipeline :can do
   # plug(WraftDocWeb.Plug.Authorized)
   # end
@@ -34,6 +38,18 @@ defmodule WraftDocWeb.Router do
     # Use the default browser stack
     pipe_through(:api)
     get("/", PageController, :index)
+  end
+
+  scope "/", WraftDocWeb do
+    pipe_through(:browser)
+
+    scope "/admin" do
+      # Admin login
+      get("/signin", SessionController, :new)
+      get("/signup/new", SignupController, :new)
+      post("/signin", SessionController, :create)
+      post("/signup", SignupController, :create)
+    end
   end
 
   # Scope which does not need authorization.
@@ -203,6 +219,13 @@ defmodule WraftDocWeb.Router do
       # List all organisation details
       get("/organisations", OrganisationController, :index)
     end
+  end
+
+  use Kaffy.Routes, scope: "/admin", pipe_through: [:admin_authenticate]
+
+  scope "/admin", WraftDocWeb do
+    pipe_through([:kaffy_browser, :admin_authenticate])
+    delete("/sign-out", SessionController, :delete)
   end
 
   scope "/" do

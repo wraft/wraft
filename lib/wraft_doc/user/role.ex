@@ -9,7 +9,8 @@ defmodule WraftDoc.Account.Role do
   schema "role" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
-    has_many(:users, WraftDoc.Account.User)
+
+    # has_many(:users, WraftDoc.Account.User)
 
     timestamps()
   end
