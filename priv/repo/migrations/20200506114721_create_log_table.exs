@@ -13,7 +13,7 @@ defmodule WraftDoc.Repo.Migrations.CreateLogTable do
       add(:action, :string)
       add(:params, :jsonb)
 
-      timestamps
+      timestamps()
     end
   end
 

@@ -7,15 +7,15 @@ defmodule WraftDoc.EnterpriseTest do
   use Bamboo.Test
 
   alias WraftDoc.{
-    Repo,
+    Enterprise,
+    Enterprise.ApprovalSystem,
     Enterprise.Flow,
     Enterprise.Flow.State,
-    Enterprise.Organisation,
-    Enterprise.ApprovalSystem,
-    Enterprise.Plan,
     Enterprise.Membership.Payment,
-    Enterprise,
-    Enterprise.Vendor
+    Enterprise.Organisation,
+    Enterprise.Plan,
+    Enterprise.Vendor,
+    Repo
   }
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
@@ -139,15 +139,16 @@ defmodule WraftDoc.EnterpriseTest do
 
     states = Enterprise.state_index(flow.uuid, %{page_number: 1})
 
-    assert Enum.map(states.entries, fn x -> x.state end) |> List.to_string() =~ s1.state
-    assert Enum.map(states.entries, fn x -> x.state end) |> List.to_string() =~ s2.state
+    assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s1.state
+    assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s2.state
   end
 
+  # TODO - No asserts added (M Sadique)
   test "shuffle order updates the order of state" do
     flow = insert(:flow)
     state = insert(:state, flow: flow)
-    order = state.order
-    states = Enterprise.shuffle_order(state, 1)
+    state.order
+    Enterprise.shuffle_order(state, 1)
   end
 
   test "delete states deletes and returns a state " do
@@ -224,7 +225,8 @@ defmodule WraftDoc.EnterpriseTest do
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     approval_system =
-      Enterprise.create_approval_system(user, %{
+      user
+      |> Enterprise.create_approval_system(%{
         "instance_id" => instance.uuid,
         "pre_state_id" => pre_state.uuid,
         "post_state_id" => post_state.uuid,
@@ -393,7 +395,7 @@ defmodule WraftDoc.EnterpriseTest do
 
       plans = Enterprise.plan_index()
       plan_names = plans |> Enum.map(fn x -> x.name end) |> List.to_string()
-      assert plans |> length() == 2
+      assert length(plans) == 2
       assert plan_names =~ p1.name
       assert plan_names =~ p2.name
     end
@@ -560,7 +562,7 @@ defmodule WraftDoc.EnterpriseTest do
       membership = insert(:membership)
       plan = insert(:plan, monthly_amount: 100_000)
       payment_count = Payment |> Repo.all() |> length
-      {:ok, razorpay} = @valid_razorpay_id |> Razorpay.Payment.get()
+      {:ok, razorpay} = Razorpay.Payment.get(@valid_razorpay_id)
       new_membership = Enterprise.update_membership(user, membership, plan, razorpay)
 
       assert payment_count + 1 == Payment |> Repo.all() |> length
@@ -573,7 +575,7 @@ defmodule WraftDoc.EnterpriseTest do
       membership = insert(:membership, organisation: user.organisation)
       plan = insert(:plan, monthly_amount: 100_000)
       payment_count = Payment |> Repo.all() |> length
-      {:ok, razorpay} = @failed_razorpay_id |> Razorpay.Payment.get()
+      {:ok, razorpay} = Razorpay.Payment.get(@failed_razorpay_id)
       {:ok, payment} = Enterprise.update_membership(user, membership, plan, razorpay)
 
       assert payment_count + 1 == Payment |> Repo.all() |> length
@@ -587,7 +589,7 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user)
       membership = insert(:membership)
       plan = insert(:plan)
-      {:error, razorpay} = "wrong_id" |> Razorpay.Payment.get()
+      {:error, razorpay} = Razorpay.Payment.get("wrong_id")
       payment_count = Payment |> Repo.all() |> length
       response = Enterprise.update_membership(user, membership, plan, razorpay)
 
@@ -599,7 +601,7 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user)
       membership = insert(:membership)
       plan = insert(:plan)
-      {:ok, razorpay} = @valid_razorpay_id |> Razorpay.Payment.get()
+      {:ok, razorpay} = Razorpay.Payment.get(@valid_razorpay_id)
       payment_count = Payment |> Repo.all() |> length
       response = Enterprise.update_membership(user, membership, plan, razorpay)
 
@@ -753,8 +755,7 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user)
       count_before = Vendor |> Repo.all() |> length()
       vendor = Enterprise.create_vendor(user, @valid_vendor_attrs)
-      count_after = Vendor |> Repo.all() |> length()
-      count_before + 1 == count_after
+      assert count_before + 1 == Vendor |> Repo.all() |> length()
       assert vendor.name == @valid_vendor_attrs["name"]
       assert vendor.email == @valid_vendor_attrs["email"]
       assert vendor.phone == @valid_vendor_attrs["phone"]
@@ -809,7 +810,7 @@ defmodule WraftDoc.EnterpriseTest do
       {:error, changeset} = Enterprise.update_vendor(vendor, user, @invalid_vendor_attrs)
       count_after = Vendor |> Repo.all() |> length()
       assert count_before == count_after
-      %{name: ["can't be blank"], email: ["can't be blank"]} == errors_on(changeset)
+      assert %{name: ["can't be blank"], email: ["can't be blank"]} == errors_on(changeset)
     end
   end
 
@@ -854,7 +855,6 @@ defmodule WraftDoc.EnterpriseTest do
 
   describe "delete_vendor/1" do
     test "delete vendor deletes the vendor data" do
-      user = insert(:user)
       vendor = insert(:vendor)
       count_before = Vendor |> Repo.all() |> length()
       {:ok, v_vendor} = Enterprise.delete_vendor(vendor)

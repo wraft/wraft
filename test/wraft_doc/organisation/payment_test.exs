@@ -1,12 +1,12 @@
 defmodule WraftDoc.Enterprise.Membership.PaymentTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Enterprise.Membership.Payment}
+  alias WraftDoc.{Enterprise.Membership.Payment, Repo}
 
   @valid_attrs %{
     razorpay_id: "FUNC-001-1",
     start_date: Timex.now(),
-    end_date: Timex.now() |> Timex.shift(days: 30),
+    end_date: Timex.shift(Timex.now(), days: 30),
     amount: 1000,
     action: 1,
     status: 1,
@@ -67,8 +67,7 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
       %{id: tp_id} = insert(:plan)
 
       params =
-        @valid_attrs
-        |> Map.merge(%{
+        Map.merge(@valid_attrs, %{
           organisation_id: org_id,
           creator_id: u_id,
           membership_id: m_id,
@@ -94,8 +93,7 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
       %{id: tp_id} = insert(:plan)
 
       params =
-        @valid_attrs
-        |> Map.merge(%{
+        Map.merge(@valid_attrs, %{
           organisation_id: org_id,
           creator_id: u_id,
           membership_id: m_id,
@@ -103,7 +101,7 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
           to_plan_id: tp_id
         })
 
-      {:error, changeset} = Payment.changeset(%Payment{}, params) |> Repo.insert()
+      {:error, changeset} = %Payment{} |> Payment.changeset(params) |> Repo.insert()
       assert "Something Wrong. Try again.!" in errors_on(changeset, :razorpay_id)
     end
   end
@@ -120,12 +118,12 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
     end
 
     test "invoice number unique index" do
-      {_, valid_attrs} = @valid_update_attrs |> Map.pop!(:invoice)
+      {_, valid_attrs} = Map.pop!(@valid_update_attrs, :invoice)
       insert(:payment, valid_attrs)
       payment = insert(:payment)
 
       {:error, changeset} =
-        Payment.invoice_changeset(payment, @valid_update_attrs) |> Repo.update()
+        payment |> Payment.invoice_changeset(@valid_update_attrs) |> Repo.update()
 
       File.rm_rf!("uploads/invoice/#{payment.id}")
 

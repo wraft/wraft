@@ -1,9 +1,13 @@
 defmodule WraftDocWeb.Plug.ValidMembershipCheck do
+  @moduledoc """
+  Plug to check if user has valid membership.
+  """
+
   import Plug.Conn
 
-  alias WraftDoc.Repo
   alias WraftDoc.Account.User
   alias WraftDoc.Enterprise
+  alias WraftDoc.Repo
 
   def init(_params) do
   end
@@ -23,7 +27,7 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheck do
 
   # Checks if the user's organisation has a valid membership.
   defp has_valid_membership?(conn, user) do
-    user = user |> Repo.preload([:organisation])
+    user = Repo.preload(user, [:organisation])
     %{is_expired: is_expired} = Enterprise.get_organisation_membership(user.organisation.uuid)
 
     case is_expired do

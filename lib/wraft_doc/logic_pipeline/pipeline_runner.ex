@@ -1,13 +1,17 @@
 defmodule WraftDoc.PipelineRunner do
+  @moduledoc """
+  Opus Pipeline for docs creation.
+  """
+
   use Opus.Pipeline
 
   alias WraftDoc.{
-    Repo,
     Account,
     Document,
-    Document.Pipeline,
     Document.Instance,
-    Document.Pipeline.TriggerHistory
+    Document.Pipeline,
+    Document.Pipeline.TriggerHistory,
+    Repo
   }
 
   step(:preload_pipeline_and_stages)
@@ -24,8 +28,7 @@ defmodule WraftDoc.PipelineRunner do
   """
   @spec preload_pipeline_and_stages(TriggerHistory.t()) :: TriggerHistory.t() | nil
   def preload_pipeline_and_stages(%TriggerHistory{} = trigger) do
-    trigger
-    |> Repo.preload(pipeline: [stages: [{:content_type, :fields}, :data_template, :state]])
+    Repo.preload(trigger, pipeline: [stages: [{:content_type, :fields}, :data_template, :state]])
   end
 
   def preload_pipeline_and_stages(_), do: nil
@@ -42,17 +45,14 @@ defmodule WraftDoc.PipelineRunner do
   """
   @spec values_provided?(map) :: boolean()
   def values_provided?(%{data: data, pipeline: %Pipeline{stages: stages}}) do
-    stages
-    |> Enum.map(fn stage -> stage.content_type.fields end)
-    |> List.flatten()
-    |> Enum.map(fn c_type_field -> Map.has_key?(data, c_type_field.name) end)
-    |> Enum.member?(false)
-    |> reverse_boolean()
-  end
+    value =
+      stages
+      |> Enum.map(fn stage -> stage.content_type.fields end)
+      |> List.flatten()
+      |> Enum.map(fn c_type_field -> Map.has_key?(data, c_type_field.name) end)
+      |> Enum.member?(false)
 
-  @spec reverse_boolean(boolean) :: boolean()
-  defp reverse_boolean(bool) do
-    !bool
+    !value
   end
 
   @doc """
@@ -65,9 +65,8 @@ defmodule WraftDoc.PipelineRunner do
     type = Instance.types()[:pipeline_api]
 
     instances =
-      stages
-      |> Enum.map(fn %{content_type: c_type, data_template: d_temp, state: state} ->
-        params = Document.do_create_instance_params(data, d_temp) |> Map.put("type", type)
+      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp, state: state} ->
+        params = data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
         Document.create_instance(user, c_type, state, params)
       end)
 
@@ -78,9 +77,8 @@ defmodule WraftDoc.PipelineRunner do
     type = Instance.types()[:pipeline_hook]
 
     instances =
-      stages
-      |> Enum.map(fn %{content_type: c_type, data_template: d_temp, state: state} ->
-        params = Document.do_create_instance_params(data, d_temp) |> Map.put("type", type)
+      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp, state: state} ->
+        params = data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
         Document.create_instance(c_type, state, params)
       end)
 
@@ -114,23 +112,23 @@ defmodule WraftDoc.PipelineRunner do
   def build(%{instances: instances, user: user} = input) do
     builds =
       Enum.map(instances, fn instance ->
-        instance = instance |> Repo.preload(content_type: [{:layout, :assets}])
+        instance = Repo.preload(instance, content_type: [{:layout, :assets}])
         resp = Document.bulk_build(user, instance, instance.content_type.layout)
         %{instance: instance, response: resp}
       end)
 
-    input |> Map.put(:builds, builds)
+    Map.put(input, :builds, builds)
   end
 
   def build(%{instances: instances} = input) do
     builds =
       Enum.map(instances, fn instance ->
-        instance = instance |> Repo.preload(content_type: [{:layout, :assets}])
+        instance = Repo.preload(instance, content_type: [{:layout, :assets}])
         resp = Document.bulk_build(instance, instance.content_type.layout)
         %{instance: instance, response: resp}
       end)
 
-    input |> Map.put(:builds, builds)
+    Map.put(input, :builds, builds)
   end
 
   @doc """
@@ -150,7 +148,7 @@ defmodule WraftDoc.PipelineRunner do
       |> Stream.filter(fn x -> x != nil end)
       |> Enum.to_list()
 
-    input |> Map.put(:failed_builds, failed_builds)
+    Map.put(input, :failed_builds, failed_builds)
   end
 
   @doc """
@@ -164,13 +162,13 @@ defmodule WraftDoc.PipelineRunner do
       |> Stream.filter(fn x -> x != nil end)
       |> Enum.map(&String.to_charlist/1)
 
-    time = Timex.now() |> DateTime.to_iso8601()
+    time = DateTime.to_iso8601(Timex.now())
     zip_name = "builds-#{time}.zip"
     dest_path = "temp/pipe_builds/#{zip_name}"
     :zip.create(zip_name, builds)
     File.mkdir_p!("temp/pipe_builds/")
     System.cmd("cp", [zip_name, dest_path])
     File.rm(zip_name)
-    input |> Map.put(:zip_file, zip_name)
+    Map.put(input, :zip_file, zip_name)
   end
 end

@@ -6,10 +6,10 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.{
-    Enterprise,
-    Enterprise.ApprovalSystem,
     Document,
-    Document.Instance
+    Document.Instance,
+    Enterprise,
+    Enterprise.ApprovalSystem
   }
 
   def swagger_definitions do
@@ -146,7 +146,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
 
     with %ApprovalSystem{} = approval_system <-
            Enterprise.create_approval_system(current_user, params) do
-      conn |> render("approval_system.json", approval_system: approval_system)
+      render(conn, "approval_system.json", approval_system: approval_system)
     end
   end
 
@@ -169,8 +169,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
     current_user = conn.assigns.current_user
 
     with %ApprovalSystem{} = approval_system <- Enterprise.get_approval_system(uuid, current_user) do
-      conn
-      |> render("approval_system.json", approval_system: approval_system)
+      render(conn, "approval_system.json", approval_system: approval_system)
     end
   end
 
@@ -201,8 +200,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
            Enterprise.get_approval_system(uuid, current_user),
          %ApprovalSystem{} = approval_system <-
            Enterprise.update_approval_system(current_user, approval_system, params) do
-      conn
-      |> render("approval_system.json", approval_system: approval_system)
+      render(conn, "approval_system.json", approval_system: approval_system)
     end
   end
 
@@ -228,8 +226,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
     with %ApprovalSystem{} = approval_system <-
            Enterprise.get_approval_system(uuid, current_user),
          {:ok, %ApprovalSystem{}} <- Enterprise.delete_approval_system(approval_system) do
-      conn
-      |> render("approval_system.json", approval_system: approval_system)
+      render(conn, "approval_system.json", approval_system: approval_system)
     end
   end
 
@@ -259,8 +256,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
          %ApprovalSystem{instance: instance} = approval_system <-
            Enterprise.approve_content(current_user, approval_system),
          %Instance{} = instance <- Document.get_instance(instance.uuid, current_user) do
-      conn
-      |> render("approve.json", approval_system: approval_system, instance: instance)
+      render(conn, "approve.json", approval_system: approval_system, instance: instance)
     else
       message -> conn |> put_status(:bad_request) |> render("error.json", message: message)
     end
@@ -291,8 +287,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Enterprise.get_pending_approvals(current_user, params) do
-      conn
-      |> render("pending_approvals.json",
+      render(conn, "pending_approvals.json",
         approval_systems: approval_systems,
         page_number: page_number,
         page_size: page_size,

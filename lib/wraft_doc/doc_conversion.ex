@@ -1,16 +1,18 @@
 defmodule WraftDoc.DocConversion do
+  @moduledoc false
+
   alias WraftDocWeb.Funda
 
   def doc_conversion(template_path, params) do
     # "/Users/sk/offerletter.md"
     content = File.read!(template_path)
-    a = params |> Enum.reduce(content, fn {k, v}, acc -> replace_content(k, v, acc) end)
+    a = Enum.reduce(params, content, fn {k, v}, acc -> replace_content(k, v, acc) end)
     updated_file_path = "/Users/sk/offerletter2.md"
-    updated_file_path |> File.write(a)
-    updated_file_path |> Funda.convert(params["new_format"])
+    File.write(updated_file_path, a)
+    Funda.convert(updated_file_path, params["new_format"])
   end
 
   def replace_content(key, value, content) do
-    content |> String.replace("[#{key}]", value)
+    String.replace(content, "[#{key}]", value)
   end
 end

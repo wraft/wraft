@@ -11,8 +11,8 @@ LaTeX2e <2018-12-01>
 
 See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
- ...                                              
-                                                  
+ ...
+
 l.3 $
      if(colorlinks)$
 You're in trouble here.  Try typing  <return>  to proceed.
@@ -46,8 +46,8 @@ Overfull \hbox (25.28087pt too wide) in paragraph at lines 3--405
 
 See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
- ...                                              
-                                                  
+ ...
+
 l.7 $
      if(fontfamily)$
 You're in trouble here.  Try typing  <return>  to proceed.
@@ -59,15 +59,15 @@ If that doesn't work, type  X <return>  to quit.
 Type X to quit or <RETURN> to proceed,
 or enter new name. (Default extension: sty)
 
-Enter file name: 
+Enter file name:
 /home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex:9: Emergency stop.
-<read *> 
-         
+<read *>
+
 l.9 $
      else$^^M
 *** (cannot \read from terminal in nonstop modes)
 
- 
+
 Here is how much of TeX's memory you used:
  148 strings out of 492623
  2065 string characters out of 6129538

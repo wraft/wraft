@@ -114,8 +114,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, %Asset{} = asset} <- Document.create_asset(current_user, params) do
-      conn
-      |> render(:asset, asset: asset)
+      render(conn, :asset, asset: asset)
     end
   end
 
@@ -143,8 +142,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.asset_index(org_id, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         assets: assets,
         page_number: page_number,
         total_pages: total_pages,
@@ -174,8 +172,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     current_user = conn.assigns.current_user
 
     with %Asset{} = asset <- Document.show_asset(asset_uuid, current_user) do
-      conn
-      |> render("show.json", asset: asset)
+      render(conn, "show.json", asset: asset)
     end
   end
 
@@ -205,8 +202,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
     with %Asset{} = asset <- Document.get_asset(uuid, current_user),
          {:ok, asset} <- Document.update_asset(asset, current_user, params) do
-      conn
-      |> render("asset.json", asset: asset)
+      render(conn, "asset.json", asset: asset)
     end
   end
 
@@ -234,8 +230,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
     with %Asset{} = asset <- Document.get_asset(uuid, current_user),
          {:ok, %Asset{}} <- Document.delete_asset(asset, current_user) do
-      conn
-      |> render("asset.json", asset: asset)
+      render(conn, "asset.json", asset: asset)
     end
   end
 end

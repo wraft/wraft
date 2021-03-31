@@ -81,9 +81,7 @@ defmodule WraftDoc.Account.UserTest do
     |> User.changeset(attrs)
     |> Repo.insert()
 
-    changeset_2 =
-      %User{}
-      |> User.changeset(attrs)
+    changeset_2 = User.changeset(%User{}, attrs)
 
     {:error, changeset} = Repo.insert(changeset_2)
     refute changeset.valid?

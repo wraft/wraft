@@ -30,23 +30,22 @@ alias WraftDoc.{
 }
 
 # Populate database with roles
-%Role{name: "admin"} |> Repo.insert!()
-%Role{name: "user"} |> Repo.insert!()
+Repo.insert!(%Role{name: "admin"})
+Repo.insert!(%Role{name: "user"})
 
 # Populate DB with admin user and profile
-%{id: id} = Role |> Repo.get_by(name: "admin")
+%{id: id} = Repo.get_by(Role, name: "admin")
 
 # Populate DB with one organisation
 organisation =
-  %Organisation{
+  Repo.insert!(%Organisation{
     name: "Functionary Labs Pvt Ltd.",
     legal_name: "Functionary Labs Pvt Ltd",
     address: "#24, Caravel Building",
     name_of_ceo: "Muneef Hameed",
     name_of_cto: "Salsabeel K",
     email: "hello@aurut.com"
-  }
-  |> Repo.insert!()
+  })
 
 user_params = %{
   name: "Admin",
@@ -58,16 +57,16 @@ user_params = %{
 }
 
 user = %User{} |> User.changeset(user_params) |> Repo.insert!()
-%Profile{name: "Admin", user_id: user.id} |> Repo.insert!()
+Repo.insert!(%Profile{name: "Admin", user_id: user.id})
 
 # Populate engine
-engine = %Engine{name: "PDF"} |> Repo.insert!()
-%Engine{name: "LaTex"} |> Repo.insert!()
-%Engine{name: "Pandoc"} |> Repo.insert!()
+engine = Repo.insert!(%Engine{name: "PDF"})
+Repo.insert!(%Engine{name: "LaTex"})
+Repo.insert!(%Engine{name: "Pandoc"})
 
 # Populate layout
 layout =
-  %Layout{
+  Repo.insert!(%Layout{
     name: "Official Letter",
     description: "An official letter",
     width: 30.0,
@@ -77,24 +76,22 @@ layout =
     engine_id: engine.id,
     creator_id: user.id,
     organisation_id: organisation.id
-  }
-  |> Repo.insert!()
+  })
 
 # Populate fields
-field = %FieldType{name: "String", creator_id: user.id} |> Repo.insert!()
+field = Repo.insert!(%FieldType{name: "String", creator_id: user.id})
 
 # Populate flow
 flow =
-  %Flow{
+  Repo.insert!(%Flow{
     name: "Flow 1",
     organisation_id: organisation.id,
     creator_id: user.id
-  }
-  |> Repo.insert!()
+  })
 
 # Populate Content Type
 content_type =
-  %ContentType{
+  Repo.insert!(%ContentType{
     name: "Offer Letter",
     description: "An offer letter",
     prefix: "OFFLET",
@@ -103,26 +100,27 @@ content_type =
     organisation_id: organisation.id,
     flow_id: flow.id,
     color: "#fff"
-  }
-  |> Repo.insert!()
+  })
 
 # Populate content type fields
-%ContentTypeField{name: "employee", content_type_id: content_type.id, field_type_id: field.id}
-|> Repo.insert!()
+Repo.insert!(%ContentTypeField{
+  name: "employee",
+  content_type_id: content_type.id,
+  field_type_id: field.id
+})
 
 # Populate State
 state =
-  %State{
+  Repo.insert!(%State{
     state: "Published",
     order: 1,
     creator_id: user.id,
     organisation_id: organisation.id,
     flow_id: flow.id
-  }
-  |> Repo.insert!()
+  })
 
 # Populate Instance
-%Instance{
+Repo.insert!(%Instance{
   instance_id: "OFFLET0001",
   raw: "Hi John Doe, We offer you the position of Elixir developer",
   serialized: %{
@@ -132,57 +130,50 @@ state =
   creator_id: user.id,
   content_type_id: content_type.id,
   state_id: state.id
-}
-|> Repo.insert!()
+})
 
 # Populate Counter
-%Counter{
+Repo.insert!(%Counter{
   subject: "ContentType:#{content_type.id}",
   count: 1
-}
-|> Repo.insert!()
+})
 
 # Populate theme
-%Theme{
+Repo.insert!(%Theme{
   name: "Offer letter theme",
   font: "Malery",
   typescale: %{h1: 10, h2: 8, p: 6},
   creator_id: user.id,
   organisation_id: organisation.id
-}
-|> Repo.insert!()
+})
 
 # Populate data template
-%DataTemplate{
+Repo.insert!(%DataTemplate{
   title: "Offer letter tempalate",
   title_template: "Offer Letter for [employee]",
   data: "Hi [employee], we welcome you to our [company]",
   content_type_id: content_type.id,
   creator_id: user.id
-}
-|> Repo.insert!()
+})
 
 # Populate plans
-%Plan{
+Repo.insert!(%Plan{
   name: "Free Trial",
   description: "Free trial where users can try out all the features",
   yearly_amount: 0,
   monthly_amount: 0
-}
-|> Repo.insert()
+})
 
-%Plan{
+Repo.insert!(%Plan{
   name: "Premium",
   description: "Premium plan with premium features only",
   yearly_amount: 0,
   monthly_amount: 0
-}
-|> Repo.insert()
+})
 
-%Plan{
+Repo.insert!(%Plan{
   name: "Pro",
   description: "Pro plan suitable for enterprises",
   yearly_amount: 0,
   monthly_amount: 0
-}
-|> Repo.insert()
+})

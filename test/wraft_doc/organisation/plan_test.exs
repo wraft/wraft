@@ -1,7 +1,7 @@
 defmodule WraftDoc.Enterprise.PlanTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Enterprise.Plan}
+  alias WraftDoc.{Enterprise.Plan, Repo}
 
   @valid_attrs %{
     name: "Basic",
@@ -22,7 +22,7 @@ defmodule WraftDoc.Enterprise.PlanTest do
 
   test "organisation name unique constraint" do
     insert(:plan, @valid_attrs)
-    {:error, changeset} = Plan.changeset(%Plan{}, @valid_attrs) |> Repo.insert()
+    {:error, changeset} = %Plan{} |> Plan.changeset(@valid_attrs) |> Repo.insert()
 
     assert "A plan with the same name exists.!" in errors_on(changeset, :name)
   end
