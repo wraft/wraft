@@ -48,6 +48,13 @@ defmodule WraftDocWeb.Endpoint do
     json_decoder: Jason
   )
 
+  plug(Plug.Static,
+    at: "/kaffy",
+    from: :kaffy,
+    gzip: false,
+    only: ~w(assets)
+  )
+
   plug(Plug.MethodOverride)
   plug(Plug.Head)
 

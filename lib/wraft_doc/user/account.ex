@@ -50,8 +50,11 @@ defmodule WraftDoc.Account do
   }
 
   @doc """
-    User Registration
+  User Registration
   """
+  def change_user() do
+    User.changeset(%User{})
+  end
 
   @spec registration(map, Organisation.t()) :: User.t() | Ecto.Changeset.t()
   def registration(params, %Organisation{id: id}) do
@@ -69,6 +72,12 @@ defmodule WraftDoc.Account do
         create_profile(user, params)
         Repo.preload(user, :profile)
     end
+  end
+
+  def create_user(params) do
+    %User{}
+    |> User.changeset(params)
+    |> Repo.insert()
   end
 
   @doc """
@@ -135,6 +144,14 @@ defmodule WraftDoc.Account do
     end
   end
 
+  def admin_find(email) do
+    get_user_by_email(email, :admin)
+    |> case do
+      user = %User{} -> user
+      _ -> {:error, :invalid}
+    end
+  end
+
   @doc """
     Authenticate user and generate token.
   """
@@ -150,6 +167,16 @@ defmodule WraftDoc.Account do
 
       _ ->
         {:error, :invalid}
+    end
+  end
+
+  @doc """
+  Authenticate admin
+  """
+  def authenticate_admin(%{user: user, password: password}) do
+    case Bcrypt.verify_pass(password, user.encrypted_password) do
+      true -> user
+      _ -> {:error, :invalid_credentials}
     end
   end
 
@@ -236,7 +263,18 @@ defmodule WraftDoc.Account do
     Repo.get_by(User, email: email)
   end
 
-  defp get_user_by_email(_email), do: nil
+  defp get_user_by_email(email, :admin) when is_binary(email) do
+    from(u in User,
+      where: u.email == ^email,
+      join: r in Role,
+      where: r.name == "admin" and r.id == u.role_id
+    )
+    |> Repo.one()
+  end
+
+  defp get_user_by_email(_email) do
+    nil
+  end
 
   @doc """
   Get the activity stream for current user.
