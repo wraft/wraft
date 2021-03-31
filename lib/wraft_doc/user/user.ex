@@ -58,6 +58,17 @@ defmodule WraftDoc.Account.User do
     |> generate_encrypted_password
   end
 
+  def create_changeset(users, attrs \\ %{}) do
+    users
+    |> cast(attrs, [:name, :email, :password, :role_id, :organisation_id])
+    |> validate_required([:email, :password])
+    |> validate_format(:email, ~r/@/)
+    |> validate_length(:name, min: 2)
+    |> validate_length(:password, min: 8, max: 16)
+    |> unique_constraint(:email, message: "Email already taken.! Try another email.")
+    |> generate_encrypted_password
+  end
+
   def update_changeset(users, attrs \\ %{}) do
     users
     |> cast(attrs, [:name])
