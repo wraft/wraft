@@ -1,4 +1,6 @@
 defmodule WraftDocWeb.OrganisationAdmin do
+  alias WraftDoc.Enterprise
+
   def index(_) do
     [
       name: %{name: "Name", value: fn x -> x.name end},
@@ -25,5 +27,15 @@ defmodule WraftDocWeb.OrganisationAdmin do
       phone: %{label: "Phone"},
       email: %{label: "Email"}
     ]
+  end
+
+  def after_insert(conn, organisation) do
+    user = conn.assigns[:current_user]
+    Enterprise.invite_team_member(user, organisation, organisation.email)
+  end
+
+  def after_update(conn, organisation) do
+    user = conn.assigns[:current_user]
+    Enterprise.invite_team_member(user, organisation, organisation.email)
   end
 end
