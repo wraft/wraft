@@ -378,6 +378,23 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+  Send invitation email to given organisation.
+  """
+
+  def invite_team_member(%User{name: name}, %{name: org_name} = organisation, email, role) do
+    token =
+      Phoenix.Token.sign(WraftDocWeb.Endpoint, "organisation_invite", %{
+        organisation: organisation,
+        email: email,
+        role: role
+      })
+
+    %{org_name: org_name, user_name: name, email: email, token: token}
+    |> EmailWorker.new(queue: "mailer", tags: ["invite"])
+    |> Oban.insert()
+  end
+
+  @doc """
   Fetches the list of all members of current users organisation.
   """
   @spec members_index(User.t(), map) :: any

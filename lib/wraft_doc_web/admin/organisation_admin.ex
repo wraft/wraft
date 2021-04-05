@@ -31,11 +31,11 @@ defmodule WraftDocWeb.OrganisationAdmin do
 
   def after_insert(conn, organisation) do
     user = conn.assigns[:current_user]
-    Enterprise.invite_team_member(user, organisation, organisation.email)
+    Enterprise.invite_team_member(user, organisation, organisation.email, "admin")
   end
 
   def after_update(conn, organisation) do
     user = conn.assigns[:current_user]
-    Enterprise.invite_team_member(user, organisation, organisation.email)
+    Enterprise.invite_team_member(user, organisation, organisation.email, "admin")
   end
 end

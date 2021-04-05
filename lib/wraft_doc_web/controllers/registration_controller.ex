@@ -48,7 +48,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
-    with %Organisation{} = org <- Account.get_organisation_from_token(params),
+    with {:ok, %Organisation{} = org, params} <- Account.get_organisation_from_token(params),
          %User{} = user <- Account.registration(params, org),
          {:ok, token, _claims} <-
            Account.authenticate(%{user: user, password: params["password"]}) do
