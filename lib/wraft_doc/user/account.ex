@@ -86,13 +86,14 @@ defmodule WraftDoc.Account do
   """
 
   @spec get_organisation_from_token(map) :: Organisation.t()
-  def get_organisation_from_token(%{"token" => token, "email" => email}) do
+  def get_organisation_from_token(%{"token" => token, "email" => email} = params) do
     Endpoint
     |> Phoenix.Token.verify("organisation_invite", token, max_age: 900_000)
     |> case do
-      {:ok, %{organisation: org, email: token_email}} ->
-        if token_email == email do
-          org
+      {:ok, %{organisation: org, email: token_email, role: role}} ->
+        if token_email === email do
+          params = Map.put(params, "role", role)
+          {:ok, org, params}
         else
           {:error, :no_permission}
         end
