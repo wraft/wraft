@@ -150,7 +150,7 @@ defmodule WraftDoc.Account do
   end
 
   def admin_find(email) do
-    get_user_by_email(email, :admin)
+    get_user_by_email(email, :super_admin)
     |> case do
       user = %User{} -> user
       _ -> {:error, :invalid}
@@ -273,6 +273,15 @@ defmodule WraftDoc.Account do
       where: u.email == ^email,
       join: r in Role,
       where: r.name == "admin" and r.id == u.role_id
+    )
+    |> Repo.one()
+  end
+
+  defp get_user_by_email(email, :super_admin) when is_binary(email) do
+    from(u in User,
+      where: u.email == ^email,
+      join: r in Role,
+      where: r.name == "super_admin" and r.id == u.role_id
     )
     |> Repo.one()
   end
