@@ -72,6 +72,9 @@ defmodule WraftDocWeb.Router do
 
       # Verify Token
       get("/token", UserController, :token)
+
+      get("/organisation/:id/roles", OrganisationRoleController, :show)
+      delete("/organisation/:o_id/roles/:id", OrganisationRoleController, :delete_organisation_role)
     end
   end
 
