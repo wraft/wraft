@@ -7,6 +7,7 @@ defmodule WraftDoc.Account.UserRole do
   alias WraftDoc.Account.{User, Role}
 
   schema "user_role" do
+    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     belongs_to(:user, User)
     belongs_to(:role, Role)
 

@@ -10,6 +10,7 @@ defmodule WraftDoc.Account do
     Account.Profile,
     Account.Role,
     Account.User,
+    Account.UserRole,
     Enterprise.Organisation,
     Repo
   }
@@ -59,18 +60,21 @@ defmodule WraftDoc.Account do
   @spec registration(map, Organisation.t()) :: User.t() | Ecto.Changeset.t()
   def registration(params, %Organisation{id: id}) do
     params = Map.merge(params, %{"organisation_id" => id})
+    role = get_role(params["role"])
 
-    get_role()
-    |> build_assoc(:users)
-    |> User.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(:user, User.changeset(%User{}, params))
+    |> Multi.insert(:user_role, fn %{user: user} ->
+      UserRole.changeset(%UserRole{}, %{user_id: user.id, role_id: role.id})
+    end)
+    |> Repo.transaction()
     |> case do
-      changeset = {:error, _} ->
-        changeset
+      {:error, _, changeset, _} ->
+        {:error, changeset}
 
-      {:ok, %User{} = user} ->
+      {:ok, %{user: %User{} = user}} ->
         create_profile(user, params)
-        Repo.preload(user, :profile)
+        Repo.preload(user, [:profile, :roles])
     end
   end
 

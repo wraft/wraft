@@ -16,12 +16,13 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
 
   test "register users for valid attrs", %{conn: conn} do
     organisation = insert(:organisation)
-    insert(:role)
+    role = insert(:role)
 
     token =
       Phoenix.Token.sign(WraftDocWeb.Endpoint, "organisation_invite", %{
         organisation: organisation,
-        email: @valid_attrs["email"]
+        email: @valid_attrs["email"],
+        role: role.name
       })
 
     params = Map.put(@valid_attrs, "token", token)
@@ -58,16 +59,21 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
     assert count_before + 1 == count_after
     assert json_response(conn, 201)["user"]["name"] == @valid_attrs["name"]
     assert json_response(conn, 201)["user"]["email"] == @valid_attrs["email"]
+
+    assert json_response(conn, 201)["user"]["role"]
+           |> Enum.map(fn x -> x["name"] end)
+           |> List.to_string() =~ "admin"
   end
 
   test "render error for invalid attributes", %{conn: conn} do
     organisation = insert(:organisation)
-    insert(:role)
+    role = insert(:role)
 
     token =
       Phoenix.Token.sign(WraftDocWeb.Endpoint, "organisation_invite", %{
         organisation: organisation,
-        email: @invalid_attrs["email"]
+        email: @invalid_attrs["email"],
+        role: role.name
       })
 
     params = Map.put(@invalid_attrs, "token", token)

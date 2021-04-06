@@ -10,7 +10,8 @@ defmodule WraftDoc.Account.Role do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
 
-    # has_many(:users, WraftDoc.Account.User)
+    has_many(:user_roles, WraftDoc.Account.UserRole)
+    has_many(:users, through: [:user_roles, :user])
 
     timestamps()
   end
