@@ -13,8 +13,13 @@ defmodule WraftDocWeb.Api.V1.RegistrationView do
         email: user.email,
         email_verify: user.email_verify,
         inserted_at: user.inserted_at,
-        updated_at: user.updated_at
+        updated_at: user.updated_at,
+        role: render_many(user.roles, __MODULE__, "role.json", as: :role)
       }
     }
+  end
+
+  def render("role.json", %{role: role}) do
+    %{id: role.uuid, name: role.name}
   end
 end
