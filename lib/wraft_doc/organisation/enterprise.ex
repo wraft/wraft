@@ -22,6 +22,8 @@ defmodule WraftDoc.Enterprise do
     Repo
   }
 
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Enterprise.OrganisationRole
   alias WraftDocWeb.Worker.{EmailWorker, ScheduledWorker}
 
   @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
@@ -1074,4 +1076,57 @@ defmodule WraftDoc.Enterprise do
   end
 
   def get_pending_approvals(_, _), do: nil
+
+  def create_organisation_role(%User{} = user, params) do
+    user
+    |> build_assoc(:organisation)
+    |> OrganisationRole.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:error, _changeset} = changeset ->
+        changeset
+
+      {:ok, organisation_role} ->
+        organisation_role
+    end
+  end
+
+  def update_organisation_role(%OrganisationRole{} = organisation_role, params) do
+    organisation_role
+    |> OrganisationRole.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, %OrganisationRole{} = organisation_role} ->
+        {:ok, organisation_role}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  def get_organisation_id_and_role_id(org_id, r_id) do
+    from(o in Organisation, where: o.uuid == ^org_id, join: r in Role, where: r.uuid == ^r_id)
+    |> Repo.one()
+  end
+
+  def get_role_of_the_organisation(id, o_id) do
+    from(r in Role, where: r.uuid == ^id, join: o in Organisation, where: o.uuid == ^o_id)
+    |> Repo.one()
+  end
+
+  def delete_role_of_the_organisation(role) do
+    role
+    |> Repo.delete()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, role} ->
+        role
+    end
+  end
+
+  def get_organisation_id_roles(id) do
+    from(o in Organisation, where: o.uuid == ^id) |> Repo.one() |> Repo.preload(:roles)
+  end
 end
