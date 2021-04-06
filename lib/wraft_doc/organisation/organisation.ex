@@ -6,6 +6,8 @@ defmodule WraftDoc.Enterprise.Organisation do
   import Ecto.Changeset
   use Arc.Ecto.Schema
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Enterprise.OrganisationRole
+
   @derive {Jason.Encoder, only: [:name]}
   schema "organisation" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
@@ -23,6 +25,8 @@ defmodule WraftDoc.Enterprise.Organisation do
     has_many(:approval_systems, WraftDoc.Enterprise.ApprovalSystem)
     has_many(:pipelines, WraftDoc.Document.Pipeline)
     has_many(:vendors, WraftDoc.Enterprise.Vendor)
+    has_many(:organisation_roles, OrganisationRole)
+    has_many(:roles, through: [:organisation_roles, :role])
     timestamps()
   end
 

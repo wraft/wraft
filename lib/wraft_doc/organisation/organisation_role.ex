@@ -1,4 +1,4 @@
-defmodule WraftDoc.Organisation.OrganisationRole do
+defmodule WraftDoc.Enterprise.OrganisationRole do
   @moduledoc """
     This is the OrganisationRole module
   """
@@ -8,6 +8,7 @@ defmodule WraftDoc.Organisation.OrganisationRole do
   alias WraftDoc.Account.Role
 
   schema "organisation_role" do
+    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     belongs_to(:organisation, Organisation)
     belongs_to(:role, Role)
 

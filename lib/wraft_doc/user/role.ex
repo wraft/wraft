@@ -4,11 +4,13 @@ defmodule WraftDoc.Account.Role do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias WraftDoc.Account.Role
+  alias WraftDoc.Enterprise.OrganisationRole
 
   schema "role" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
+    has_many(:organisation_roles, OrganisationRole)
+    has_many(:organisations, through: [:organisation_roles, :organisation])
 
     has_many(:user_roles, WraftDoc.Account.UserRole)
     has_many(:users, through: [:user_roles, :user])
@@ -16,7 +18,7 @@ defmodule WraftDoc.Account.Role do
     timestamps()
   end
 
-  def changeset(%Role{} = role, attrs \\ %{}) do
+  def changeset(role, attrs \\ %{}) do
     role
     |> cast(attrs, [:name])
     |> validate_required([:name])
