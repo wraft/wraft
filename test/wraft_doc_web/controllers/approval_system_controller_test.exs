@@ -6,8 +6,9 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
 
   @invalid_attrs %{instance_id: nil, pre_state_id: nil}
   setup %{conn: conn} do
-    role = insert(:role, name: "admin")
-    user = insert(:user, role: role)
+    role = insert(:role, name: "super_admin")
+    user = insert(:user)
+    insert(:user_role, role: role, user: user)
 
     conn =
       conn

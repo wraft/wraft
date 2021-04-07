@@ -26,6 +26,10 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.AdminCheck)
   end
 
+  pipeline :super_admin do
+    plug(WraftDocWeb.Plug.SuperAdminCheck)
+  end
+
   pipeline :admin_authenticate do
     plug(WraftDocWeb.Plug.AdminAuthenticate)
   end
@@ -74,7 +78,12 @@ defmodule WraftDocWeb.Router do
       get("/token", UserController, :token)
 
       get("/organisation/:id/roles", OrganisationRoleController, :show)
-      delete("/organisation/:o_id/roles/:id", OrganisationRoleController, :delete_organisation_role)
+
+      delete(
+        "/organisation/:o_id/roles/:id",
+        OrganisationRoleController,
+        :delete_organisation_role
+      )
     end
   end
 
@@ -205,7 +214,7 @@ defmodule WraftDocWeb.Router do
 
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth, :admin])
+    pipe_through([:api, :api_auth, :super_admin])
 
     scope "/v1", Api.V1, as: :v1 do
       resources("/resources", ResourceController, only: [:create, :index, :show, :update, :delete])

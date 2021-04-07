@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationView do
         email_verify: user.email_verify,
         inserted_at: user.inserted_at,
         updated_at: user.updated_at,
-        role: render_many(user.roles, __MODULE__, "role.json", as: :role)
+        roles: render_many(user.roles, __MODULE__, "role.json", as: :role)
       }
     }
   end

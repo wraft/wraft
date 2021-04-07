@@ -86,6 +86,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     test "returns the current logined user", %{conn: conn} do
       user = conn.assigns.current_user
       insert(:membership, organisation: user.organisation)
+      ur = insert(:user_role, user: user)
 
       conn =
         build_conn()
@@ -94,7 +95,11 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
       conn = get(conn, Routes.v1_user_path(conn, :me))
       assert json_response(conn, 200)["email"] == user.email
-      assert json_response(conn, 200)["role"] == user.role.name
+      # assert json_response(conn, 200)["role"] == user.role.name
+      assert json_response(conn, 200)["roles"]
+             |> Enum.map(fn x -> x["name"] end)
+             |> List.to_string() =~
+               ur.role.name
 
       assert json_response(conn, 200)["profile_pic"] ==
                WraftDocWeb.PropicUploader.url({user.profile.profile_pic, user.profile})
