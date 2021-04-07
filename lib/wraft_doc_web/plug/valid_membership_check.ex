@@ -14,10 +14,9 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheck do
 
   def call(conn, _params) do
     user = conn.assigns[:current_user]
-    %User{role: %{name: role_name}} = user
 
-    case role_name do
-      "admin" ->
+    case Enum.member?(user.role_names, "super_admin") do
+      true ->
         conn
 
       _ ->

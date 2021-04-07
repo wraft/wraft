@@ -49,10 +49,11 @@ defmodule WraftDoc.AccountTest do
       token =
         Phoenix.Token.sign(Endpoint, "organisation_invite", %{
           organisation: organisation,
-          email: @email
+          email: @email,
+          role: "user"
         })
 
-      org = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
+      {:ok, org, _} = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
       assert org == organisation
     end
 

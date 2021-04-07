@@ -12,7 +12,8 @@ defmodule WraftDoc.Account.Role do
     has_many(:organisation_roles, OrganisationRole)
     has_many(:organisations, through: [:organisation_roles, :organisation])
 
-    # has_many(:users, WraftDoc.Account.User)
+    has_many(:user_roles, WraftDoc.Account.UserRole)
+    has_many(:users, through: [:user_roles, :user])
 
     timestamps()
   end

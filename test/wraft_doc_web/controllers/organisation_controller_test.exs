@@ -15,8 +15,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   @invalid_attrs %{name: "abc"}
 
   setup %{conn: conn} do
-    role = insert(:role, name: "admin")
-    user = insert(:user, role: role)
+    role = insert(:role, name: "super_admin")
+    user = insert(:user)
+    insert(:user_role, role: role, user: user)
     insert(:profile, user: user)
 
     conn =
@@ -64,7 +65,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     count_before = Organisation |> Repo.all() |> length
 
     conn = post(conn, Routes.v1_organisation_path(conn, :create, @invalid_attrs))
-    assert json_response(conn, 422) == %{"errors" => %{"legal_name" => ["can't be blank"]}}
+
+    assert json_response(conn, 422) == %{
+             "errors" => %{"legal_name" => ["can't be blank"], "email" => ["can't be blank"]}
+           }
+
     assert count_before == Organisation |> Repo.all() |> length
   end
 

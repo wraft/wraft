@@ -380,6 +380,23 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+  Send invitation email to given organisation.
+  """
+
+  def invite_team_member(%User{name: name}, %{name: org_name} = organisation, email, role) do
+    token =
+      Phoenix.Token.sign(WraftDocWeb.Endpoint, "organisation_invite", %{
+        organisation: organisation,
+        email: email,
+        role: role
+      })
+
+    %{org_name: org_name, user_name: name, email: email, token: token}
+    |> EmailWorker.new(queue: "mailer", tags: ["invite"])
+    |> Oban.insert()
+  end
+
+  @doc """
   Fetches the list of all members of current users organisation.
   """
   @spec members_index(User.t(), map) :: any
@@ -388,7 +405,7 @@ defmodule WraftDoc.Enterprise do
       from(u in User,
         where: u.organisation_id == ^organisation_id,
         where: ilike(u.name, ^"%#{name}%"),
-        preload: [:profile, :role, :organisation]
+        preload: [:profile, :roles, :organisation]
       )
 
     Repo.paginate(query, params)
@@ -711,9 +728,15 @@ defmodule WraftDoc.Enterprise do
   When the user is admin no need to check the user's organisation.
   """
   @spec get_membership(Ecto.UUID.t(), User.t()) :: Membership.t() | nil
-  def get_membership(<<_::288>> = m_uuid, %User{role: %{name: "admin"}}) do
-    get_membership(m_uuid)
+  def get_membership(<<_::288>> = m_uuid, %{role_names: role_names}) do
+    if Enum.member?(role_names, "super_admin") do
+      get_membership(m_uuid)
+    end
   end
+
+  # def get_membership(<<_::288>> = m_uuid, %User{role: %{name: "super_admin"}}) do
+  #   get_membership(m_uuid)
+  # end
 
   def get_membership(<<_::288>> = m_uuid, %User{organisation_id: org_id}) do
     Repo.get_by(Membership, uuid: m_uuid, organisation_id: org_id)
@@ -953,9 +976,16 @@ defmodule WraftDoc.Enterprise do
   Get a payment from its UUID.
   """
   @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
-  def get_payment(<<_::288>> = payment_uuid, %{role: %{name: "admin"}}) do
-    Repo.get_by(Payment, uuid: payment_uuid)
+  def get_payment(<<_::288>> = payment_uuid, %{role_names: role_names}) do
+    if Enum.member?(role_names, "super_admin") do
+      Repo.get_by(Payment, uuid: payment_uuid)
+    end
   end
+
+  # @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
+  # def get_payment(<<_::288>> = payment_uuid, %{role: %{name: "super_admin"}}) do
+  #   Repo.get_by(Payment, uuid: payment_uuid)
+  # end
 
   def get_payment(<<_::288>> = payment_uuid, %{organisation_id: org_id}) do
     Repo.get_by(Payment, uuid: payment_uuid, organisation_id: org_id)

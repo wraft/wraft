@@ -37,7 +37,8 @@ defmodule WraftDoc.Factory do
     Enterprise.Membership.Payment,
     Enterprise.Organisation,
     Enterprise.Plan,
-    Enterprise.Vendor
+    Enterprise.Vendor,
+    Account.UserRole
   }
 
   def user_factory do
@@ -64,6 +65,13 @@ defmodule WraftDoc.Factory do
 
   def role_factory do
     %Role{name: "user"}
+  end
+
+  def user_role_factory do
+    %UserRole{
+      user: build(:user),
+      role: build(:role)
+    }
   end
 
   def profile_factory do

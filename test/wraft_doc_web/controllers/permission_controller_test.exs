@@ -10,8 +10,9 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
   @valid_attrs %{}
   @invalid_attrs %{}
   setup %{conn: conn} do
-    role = insert(:role, name: "admin")
-    user = insert(:user, role: role)
+    role = insert(:role, name: "super_admin")
+    user = insert(:user)
+    insert(:user_role, role: role, user: user)
 
     conn =
       conn
