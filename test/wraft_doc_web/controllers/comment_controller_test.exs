@@ -13,8 +13,9 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
 
   @invalid_attrs %{comment: nil}
   setup %{conn: conn} do
-    role = insert(:role, name: "admin")
-    user = insert(:user, role: role)
+    role = insert(:role, name: "super_admin")
+    user = insert(:user)
+    insert(:user_role, role: role, user: user)
     insert(:profile, user: user)
     user = Repo.preload(user, [:profile])
 

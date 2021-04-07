@@ -228,10 +228,15 @@ defmodule WraftDoc.Account do
 
   # Get the role struct from given role name
   @spec get_role(binary) :: Role.t()
-  defp get_role(role \\ "user")
+
+  # defp get_role(role \\ "user")
 
   defp get_role(role) when is_binary(role) do
     Repo.get_by(Role, name: role)
+  end
+
+  defp get_role(role) when is_nil(role) do
+    Repo.get_by(Role, name: "user")
   end
 
   @doc """
