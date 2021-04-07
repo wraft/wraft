@@ -1077,19 +1077,31 @@ defmodule WraftDoc.Enterprise do
 
   def get_pending_approvals(_, _), do: nil
 
-  def create_organisation_role(%User{} = user, params) do
-    user
-    |> build_assoc(:organisation)
-    |> OrganisationRole.changeset(params)
-    |> Repo.insert()
+  def create_organisation_role(id, params) do
+    role = get_role()
+    organisation = get_organisation(id)
+
+    Multi.new()
+    |> Multi.insert(:role, Role.changeset(%Role{}, params))
+    |> Multi.insert(:organisation_role, fn %{role: role} ->
+      OrganisationRole.changeset(%OrganisationRole{}, %{organisation_id: organisation.id, role_id: role.id})
+    end)
+    |> Repo.transaction()
     |> case do
       {:error, _changeset} = changeset ->
         changeset
 
-      {:ok, organisation_role} ->
-        organisation_role
+      {:ok, organisation} ->
+        organisation
     end
   end
+
+  def get_role(role \\ "admin")
+
+  def get_role(role) when is_binary(role) do
+    Repo.get_by(Role, name: role)
+  end
+
 
   def update_organisation_role(%OrganisationRole{} = organisation_role, params) do
     organisation_role
