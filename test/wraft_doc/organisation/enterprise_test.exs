@@ -175,6 +175,7 @@ defmodule WraftDoc.EnterpriseTest do
     params = %{
       "name" => "ACC Sru",
       "legal_name" => "Acc sru pvt ltd",
+      "email" => "dikku@kodappalaya.com",
       "address" => "Kodappalaya dikku estate",
       "gstin" => "32SDFASDF65SD6F"
     }
@@ -308,9 +309,10 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "check permission grand a permission for admin user to enter any organisation" do
-    role = insert(:role, name: "admin")
+    role = insert(:role, name: "super_admin")
     organisation = insert(:organisation)
-    user = insert(:user, role: role)
+    user = insert(:user)
+    insert(:user_role, user: user, role: role)
     assert Enterprise.check_permission(user, organisation.uuid) == organisation
   end
 
@@ -521,8 +523,12 @@ defmodule WraftDoc.EnterpriseTest do
     end
 
     test "returns membership irrespective of organisation when user has admin role" do
-      role = insert(:role, name: "admin")
-      user = insert(:user, role: role)
+      role = insert(:role, name: "super_admin")
+      user = insert(:user)
+      insert(:user_role, role: role, user: user)
+      user = user |> Repo.preload([:roles])
+      role_names = user.roles |> Enum.map(fn x -> x.name end)
+      user = user |> Map.put(:role_names, role_names)
       membership = insert(:membership)
       fetched_membership = Enterprise.get_membership(membership.uuid, user)
       assert fetched_membership.uuid == membership.uuid
@@ -648,8 +654,12 @@ defmodule WraftDoc.EnterpriseTest do
     end
 
     test "returns payment irrespective of organisation when user has admin role" do
-      role = insert(:role, name: "admin")
-      user = insert(:user, role: role)
+      role = insert(:role, name: "super_admin")
+      user = insert(:user)
+      insert(:user_role, role: role, user: user)
+      user = user |> Repo.preload(:roles)
+      role_names = user.roles |> Enum.map(fn x -> x.name end)
+      user = user |> Map.put(:role_names, role_names)
       payment = insert(:payment)
       fetched_payement = Enterprise.get_payment(payment.uuid, user)
       assert fetched_payement.razorpay_id == payment.razorpay_id

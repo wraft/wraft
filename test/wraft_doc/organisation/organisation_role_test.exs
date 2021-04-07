@@ -1,6 +1,6 @@
-defmodule WraftDoc.Organisation.OrganisationRoleTest do
+defmodule WraftDoc.Enterprise.OrganisationRoleTest do
   use WraftDoc.ModelCase
-  alias WraftDoc.Organisation.OrganisationRole
+  alias WraftDoc.Enterprise.OrganisationRole
 
   @valid_attrs %{
     organisation_id: "1234567",
