@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.OrganisationController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  alias WraftDoc.{Enterprise, Enterprise.Organisation}
+  alias WraftDoc.{Enterprise, Enterprise.Organisation, Account, Account.Role}
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -282,6 +282,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     parameters do
       id(:path, :string, "Organisation id", required: true)
       email(:body, :string, "Email of the user", required: true)
+      role_id(:body, :string, "role of the user", required: true)
     end
 
     response(200, "Ok", Schema.ref(:InvitedResponse))
@@ -290,12 +291,13 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def invite(conn, %{"id" => id, "email" => email}) do
+  def invite(conn, %{"id" => id, "email" => email, "role_id" => role_id}) do
     current_user = conn.assigns[:current_user]
 
     with %Organisation{} = organisation <- Enterprise.check_permission(current_user, id),
          :ok <- Enterprise.already_member?(email),
-         {:ok, _} <- Enterprise.invite_team_member(current_user, organisation, email) do
+         %Role{name: role_name} <- Account.get_role_from_uuid(role_id),
+         {:ok, _} <- Enterprise.invite_team_member(current_user, organisation, email, role_name) do
       render(conn, "invite.json")
     end
   end
