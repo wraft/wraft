@@ -47,8 +47,7 @@ defmodule WraftDoc.Factory do
       email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
-      organisation: build(:organisation),
-      role: build(:role)
+      organisation: build(:organisation)
     }
   end
 

@@ -415,7 +415,7 @@ defmodule WraftDoc.Enterprise do
     query =
       from(u in User,
         where: u.organisation_id == ^organisation_id,
-        preload: [:profile, :role, :organisation]
+        preload: [:profile, :roles, :organisation]
       )
 
     Repo.paginate(query, params)
@@ -728,9 +728,11 @@ defmodule WraftDoc.Enterprise do
   When the user is admin no need to check the user's organisation.
   """
   @spec get_membership(Ecto.UUID.t(), User.t()) :: Membership.t() | nil
-  def get_membership(<<_::288>> = m_uuid, %{role_names: role_names}) do
+  def get_membership(<<_::288>> = m_uuid, %{role_names: role_names, organisation_id: org_id}) do
     if Enum.member?(role_names, "super_admin") do
       get_membership(m_uuid)
+    else
+      Repo.get_by(Membership, uuid: m_uuid, organisation_id: org_id)
     end
   end
 
@@ -738,9 +740,9 @@ defmodule WraftDoc.Enterprise do
   #   get_membership(m_uuid)
   # end
 
-  def get_membership(<<_::288>> = m_uuid, %User{organisation_id: org_id}) do
-    Repo.get_by(Membership, uuid: m_uuid, organisation_id: org_id)
-  end
+  # def get_membership(<<_::288>> = m_uuid, %User{organisation_id: org_id}) do
+  #   Repo.get_by(Membership, uuid: m_uuid, organisation_id: org_id)
+  # end
 
   def get_membership(_, _), do: nil
 
@@ -976,9 +978,11 @@ defmodule WraftDoc.Enterprise do
   Get a payment from its UUID.
   """
   @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
-  def get_payment(<<_::288>> = payment_uuid, %{role_names: role_names}) do
+  def get_payment(<<_::288>> = payment_uuid, %{role_names: role_names, organisation_id: org_id}) do
     if Enum.member?(role_names, "super_admin") do
       Repo.get_by(Payment, uuid: payment_uuid)
+    else
+      Repo.get_by(Payment, uuid: payment_uuid, organisation_id: org_id)
     end
   end
 
@@ -987,9 +991,9 @@ defmodule WraftDoc.Enterprise do
   #   Repo.get_by(Payment, uuid: payment_uuid)
   # end
 
-  def get_payment(<<_::288>> = payment_uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Payment, uuid: payment_uuid, organisation_id: org_id)
-  end
+  # def get_payment(<<_::288>> = payment_uuid, %{organisation_id: org_id}) do
+  #   Repo.get_by(Payment, uuid: payment_uuid, organisation_id: org_id)
+  # end
 
   def get_payment(_, _), do: nil
 
