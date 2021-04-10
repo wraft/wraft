@@ -19,6 +19,15 @@ defmodule WraftDoc.Kaffy.Config do
             admin: WraftDocWeb.OrganisationAdmin
           ]
         ]
+      ],
+      authorization: [
+        name: "Authorisation",
+        resources: [
+          conroller: [
+            schema: WraftDoc.Authorization.Resource,
+            admin: WraftDocWeb.ResourceAdmin
+          ]
+        ]
       ]
     ]
   end
