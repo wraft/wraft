@@ -233,8 +233,9 @@ defmodule WraftDoc.Factory do
 
   def resource_factory do
     %Resource{
-      category: sequence(:resource, &"Flow-#{&1}"),
-      action: sequence(:action, &"Action-#{&1}")
+      name: "Flow",
+      category: WraftDocWeb.Api.V1.FlowController,
+      action: Enum.random([:create, :update, :delete, :index])
     }
   end
 
