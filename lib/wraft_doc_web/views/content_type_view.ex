@@ -19,6 +19,18 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
     }
   end
 
+  def render("role_content_type.json", %{content_type: c_type}) do
+    %{
+      id: c_type.uuid,
+      name: c_type.name,
+      decription: c_type.description,
+      color: c_type.color,
+      prefix: c_type.prefix,
+      inserted_at: c_type.inserted_at,
+      updated_at: c_type.updated_at
+    }
+  end
+
   def render("index.json", %{
         content_types: content_types,
         page_number: page_number,

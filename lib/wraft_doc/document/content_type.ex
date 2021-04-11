@@ -35,6 +35,8 @@ defmodule WraftDoc.Document.ContentType do
 
     has_many(:stages, WraftDoc.Document.Pipeline.Stage)
     has_many(:pipelines, through: [:stages, :pipeline])
+    has_many(:content_type_roles, WraftDoc.Document.ContentTypeRole)
+    has_many(:roles, through: [:content_type_roles, :role])
 
     timestamps()
   end

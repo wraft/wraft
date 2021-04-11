@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  alias WraftDoc.{Enterprise, Enterprise.OrganisationRole}
+  alias WraftDoc.{Enterprise}
   alias WraftDoc.Account.Role
 
   def swagger_definitions do
@@ -30,7 +30,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
   end
 
   swagger_path :show do
-    get("/organisation/:id/roles")
+    get("/organisation/{id}/roles")
     summary("show an organisation roles")
     description("API to list the roles under the organisation")
 
@@ -50,25 +50,29 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
     |> render("organisation_role.json", organisation_role: organisation_role)
   end
 
- def create_organisation_roles(conn, %{"id" => id} = params) do
+  swagger_path :create_organisation_roles do
+    post("/organisation/{id}/roles")
+    summary("Create an organisation roles")
+    description("create the role under the organisation")
+
+    parameters do
+      id(:path, :string, "organisation_id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:OrganisationRole))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def create_organisation_roles(conn, %{"id" => id} = params) do
     organisation_role = Enterprise.create_organisation_role(id, params)
 
     conn
     |> render("organisation_role.json", organisation_role: organisation_role)
- end
-
-  def update(conn, %{"id" => uuid} = params) do
-    with %OrganisationRole{} = organisation_role <- Enterprise.get_organisation(uuid),
-         {:ok, %OrganisationRole{} = organisation_role} <-
-           Enterprise.update_organisation_role(organisation_role, params) do
-      conn
-      |> put_status(:created)
-      |> render("organisation_role.json", organisation_role: organisation_role)
-    end
   end
 
   swagger_path :delete_organisation_role do
-    delete("/organisation/:o_id/roles/:id")
+    delete("/organisation/{o_id}/roles/{id}")
     summary("show an organisation roles")
     description("API to list the roles under the organisation")
 
@@ -81,7 +85,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not Found", Schema.ref(:Error))
   end
-
 
   def delete_organisation_role(conn, %{"id" => id, "o_id" => o_id}) do
     with %Role{} = role <- Enterprise.get_role_of_the_organisation(id, o_id),

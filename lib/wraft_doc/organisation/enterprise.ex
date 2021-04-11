@@ -1114,15 +1114,18 @@ defmodule WraftDoc.Enterprise do
     Multi.new()
     |> Multi.insert(:role, Role.changeset(%Role{}, params))
     |> Multi.insert(:organisation_role, fn %{role: role} ->
-      OrganisationRole.changeset(%OrganisationRole{}, %{organisation_id: organisation.id, role_id: role.id})
+      OrganisationRole.changeset(%OrganisationRole{}, %{
+        organisation_id: organisation.id,
+        role_id: role.id
+      })
     end)
     |> Repo.transaction()
     |> case do
-      {:error, _changeset} = changeset ->
-        changeset
+      {:error, _, changeset, _} ->
+        {:error, changeset}
 
-      {:ok, organisation} ->
-        organisation
+      {:ok, %{role: _role, organisation_role: organisation_role}} ->
+        organisation_role |> Repo.preload(:role)
     end
   end
 
@@ -1130,20 +1133,6 @@ defmodule WraftDoc.Enterprise do
 
   def get_role(role) when is_binary(role) do
     Repo.get_by(Role, name: role)
-  end
-
-
-  def update_organisation_role(%OrganisationRole{} = organisation_role, params) do
-    organisation_role
-    |> OrganisationRole.changeset(params)
-    |> Repo.update()
-    |> case do
-      {:ok, %OrganisationRole{} = organisation_role} ->
-        {:ok, organisation_role}
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
   end
 
   def get_organisation_id_and_role_id(org_id, r_id) do
