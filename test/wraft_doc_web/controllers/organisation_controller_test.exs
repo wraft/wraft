@@ -131,6 +131,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
   test "invite persons send the mail to the persons mail", %{conn: conn} do
     organisation = conn.assigns.current_user.organisation
+    role = insert(:role)
 
     conn =
       build_conn()
@@ -139,7 +140,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
     conn =
       post(conn, Routes.v1_organisation_path(conn, :invite, organisation.uuid), %{
-        email: "msadi@gmail.com"
+        email: "msadi@gmail.com",
+        role_id: role.uuid
       })
 
     assert json_response(conn, 200) == %{"info" => "Invited successfully.!"}
