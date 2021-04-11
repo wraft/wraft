@@ -311,8 +311,11 @@ defmodule WraftDoc.EnterpriseTest do
   test "check permission grand a permission for admin user to enter any organisation" do
     role = insert(:role, name: "super_admin")
     organisation = insert(:organisation)
-    user = insert(:user)
+    user = insert(:user, organisation: organisation)
     insert(:user_role, user: user, role: role)
+    user = user |> Repo.preload([:roles])
+    role_names = user.roles |> Enum.map(fn x -> x.name end)
+    user = user |> Map.put(:role_names, role_names)
     assert Enterprise.check_permission(user, organisation.uuid) == organisation
   end
 
@@ -483,6 +486,9 @@ defmodule WraftDoc.EnterpriseTest do
   describe "get_membership/2" do
     test "fetches a membership with valid parameters" do
       user = insert(:user)
+      user = user |> Repo.preload([:roles])
+      role_names = user.roles |> Enum.map(fn x -> x.name end)
+      user = user |> Map.put(:role_names, role_names)
       membership = insert(:membership, organisation: user.organisation)
       fetched_membership = Enterprise.get_membership(membership.uuid, user)
 
@@ -640,6 +646,10 @@ defmodule WraftDoc.EnterpriseTest do
   describe "get_payment/2" do
     test "returns the payment in the user's organisation with given id" do
       user = insert(:user)
+      insert(:user_role, user: user)
+      user = user |> Repo.preload([:roles])
+      role_names = user.roles |> Enum.map(fn x -> x.name end)
+      user = user |> Map.put(:role_names, role_names)
       payment = insert(:payment, organisation: user.organisation)
       fetched_payement = Enterprise.get_payment(payment.uuid, user)
       assert fetched_payement.razorpay_id == payment.razorpay_id
@@ -681,6 +691,9 @@ defmodule WraftDoc.EnterpriseTest do
   describe "show_payment/2" do
     test "returns the payment in the user's organisation with given id" do
       user = insert(:user)
+      user = user |> Repo.preload([:roles])
+      role_names = user.roles |> Enum.map(fn x -> x.name end)
+      user = user |> Map.put(:role_names, role_names)
       payment = insert(:payment, organisation: user.organisation)
       fetched_payement = Enterprise.show_payment(payment.uuid, user)
       assert fetched_payement.razorpay_id == payment.razorpay_id

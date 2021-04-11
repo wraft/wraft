@@ -6,14 +6,15 @@ defmodule WraftDoc.Authorization.Resource do
 
   schema "resource" do
     field(:uuid, Ecto.UUID, autogenerate: true)
-    field(:category, :string)
-    field(:action, :string)
+    field(:name, :string)
+    field(:category, AtomType)
+    field(:action, AtomType)
     has_many(:permissions, WraftDoc.Authorization.Permission)
   end
 
   def changeset(%Resource{} = resource, attrs \\ %{}) do
     resource
-    |> cast(attrs, [:category, :action])
+    |> cast(attrs, [:name, :category, :action])
     |> validate_required([:category, :action])
     |> unique_constraint(:category,
       name: :resource_unique_index,

@@ -11,7 +11,7 @@ defmodule WraftDoc.Account.Role do
     field(:name, :string)
     has_many(:organisation_roles, OrganisationRole)
     has_many(:organisations, through: [:organisation_roles, :organisation])
-
+    has_many(:permissions, WraftDoc.Authorization.Permission)
     has_many(:user_roles, WraftDoc.Account.UserRole)
     has_many(:users, through: [:user_roles, :user])
     has_many(:content_type_roles, WraftDoc.Document.ContentTypeRole)
