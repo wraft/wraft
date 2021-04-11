@@ -890,4 +890,6 @@ defmodule WraftDoc.EnterpriseTest do
     assert vendor_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ v1.name
     assert vendor_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ v2.name
   end
+
+
 end

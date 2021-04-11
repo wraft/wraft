@@ -4,6 +4,7 @@ defmodule WraftDoc.Document do
   """
   import Ecto
   import Ecto.Query
+  alias Ecto.Multi
 
   alias WraftDoc.{
     Account.User,
@@ -32,6 +33,8 @@ defmodule WraftDoc.Document do
     Repo
   }
 
+  alias WraftDoc.Document.ContentTypeRole
+  alias WraftDoc.Account.Role
   alias WraftDocWeb.AssetUploader
   alias WraftDocWeb.Worker.BulkWorker
 
@@ -2254,4 +2257,59 @@ defmodule WraftDoc.Document do
   end
 
   def get_trigger_histories_of_a_pipeline(_, _), do: nil
+
+  def get_content_type_roles(id) do
+    from(c in ContentType, where: c.uuid == ^id) |> Repo.one() |> Repo.preload(:roles)
+  end
+
+  def get_content_type_under_roles(id) do
+    from(r in Role, where: r.uuid == ^id) |> Repo.one() |> Repo.preload(:content_types)
+  end
+
+  def get_content_type(id) do
+    from(c in ContentType, where: c.uuid == ^id) |> Repo.one()
+  end
+
+  def create_content_role(id, params) do
+    content_type = get_content_type(id)
+
+    Multi.new()
+    |> Multi.insert(:role, Role.changeset(%Role{}, params))
+    |> Multi.insert(:content_type_role, fn %{role: role} ->
+      ContentTypeRole.changeset(%ContentTypeRole{}, %{
+        content_type_id: content_type.id,
+        role_id: role.id
+      })
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+
+      {:ok, %{role: _role, content_type: content_type}} ->
+        content_type |> Repo.preload(:role)
+    end
+  end
+
+  def get_role_of_content_type(id, c_id) do
+    from(r in Role, where: r.uuid == ^id, join: ct in ContentType, where: ct.uuid == ^c_id)
+    |> Repo.one()
+  end
+
+  def get_content_type_role(id, role_id) do
+    from(ct in ContentType, where: ct.uuid == ^id, join: r in Role, where: r.uuid == ^role_id)
+    |> Repo.one()
+  end
+
+  def delete_role_of_the_content_type(role) do
+    role
+    |> Repo.delete()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, role} ->
+        role
+    end
+  end
 end
