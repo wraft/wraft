@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## v0.0.30 - 2021-04-12
+
+## Added 
+- Members index
+- Search organisation api
+- Vendors
+- Credo
+- Webpack
+- Kaffy admin panel
+## Changed
+- Approval system
+- Credo modifications 
+- Warnings resolved
+
 ## v0.0.29 - 2020-06-08
 
 ## Added
