@@ -7,14 +7,15 @@ defmodule WraftDoc.EnterpriseTest do
   use Bamboo.Test
 
   alias WraftDoc.{
-    Repo,
+    Enterprise,
+    Enterprise.ApprovalSystem,
     Enterprise.Flow,
     Enterprise.Flow.State,
-    Enterprise.Organisation,
-    Enterprise.ApprovalSystem,
-    Enterprise.Plan,
     Enterprise.Membership.Payment,
-    Enterprise
+    Enterprise.Organisation,
+    Enterprise.Plan,
+    Enterprise.Vendor,
+    Repo
   }
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
@@ -138,15 +139,16 @@ defmodule WraftDoc.EnterpriseTest do
 
     states = Enterprise.state_index(flow.uuid, %{page_number: 1})
 
-    assert Enum.map(states.entries, fn x -> x.state end) |> List.to_string() =~ s1.state
-    assert Enum.map(states.entries, fn x -> x.state end) |> List.to_string() =~ s2.state
+    assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s1.state
+    assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s2.state
   end
 
+  # TODO - No asserts added (M Sadique)
   test "shuffle order updates the order of state" do
     flow = insert(:flow)
     state = insert(:state, flow: flow)
-    order = state.order
-    states = Enterprise.shuffle_order(state, 1)
+    state.order
+    Enterprise.shuffle_order(state, 1)
   end
 
   test "delete states deletes and returns a state " do
@@ -223,7 +225,8 @@ defmodule WraftDoc.EnterpriseTest do
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     approval_system =
-      Enterprise.create_approval_system(user, %{
+      user
+      |> Enterprise.create_approval_system(%{
         "instance_id" => instance.uuid,
         "pre_state_id" => pre_state.uuid,
         "post_state_id" => post_state.uuid,
@@ -392,7 +395,7 @@ defmodule WraftDoc.EnterpriseTest do
 
       plans = Enterprise.plan_index()
       plan_names = plans |> Enum.map(fn x -> x.name end) |> List.to_string()
-      assert plans |> length() == 2
+      assert length(plans) == 2
       assert plan_names =~ p1.name
       assert plan_names =~ p2.name
     end
@@ -559,7 +562,7 @@ defmodule WraftDoc.EnterpriseTest do
       membership = insert(:membership)
       plan = insert(:plan, monthly_amount: 100_000)
       payment_count = Payment |> Repo.all() |> length
-      {:ok, razorpay} = @valid_razorpay_id |> Razorpay.Payment.get()
+      {:ok, razorpay} = Razorpay.Payment.get(@valid_razorpay_id)
       new_membership = Enterprise.update_membership(user, membership, plan, razorpay)
 
       assert payment_count + 1 == Payment |> Repo.all() |> length
@@ -572,7 +575,7 @@ defmodule WraftDoc.EnterpriseTest do
       membership = insert(:membership, organisation: user.organisation)
       plan = insert(:plan, monthly_amount: 100_000)
       payment_count = Payment |> Repo.all() |> length
-      {:ok, razorpay} = @failed_razorpay_id |> Razorpay.Payment.get()
+      {:ok, razorpay} = Razorpay.Payment.get(@failed_razorpay_id)
       {:ok, payment} = Enterprise.update_membership(user, membership, plan, razorpay)
 
       assert payment_count + 1 == Payment |> Repo.all() |> length
@@ -586,7 +589,7 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user)
       membership = insert(:membership)
       plan = insert(:plan)
-      {:error, razorpay} = "wrong_id" |> Razorpay.Payment.get()
+      {:error, razorpay} = Razorpay.Payment.get("wrong_id")
       payment_count = Payment |> Repo.all() |> length
       response = Enterprise.update_membership(user, membership, plan, razorpay)
 
@@ -598,7 +601,7 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user)
       membership = insert(:membership)
       plan = insert(:plan)
-      {:ok, razorpay} = @valid_razorpay_id |> Razorpay.Payment.get()
+      {:ok, razorpay} = Razorpay.Payment.get(@valid_razorpay_id)
       payment_count = Payment |> Repo.all() |> length
       response = Enterprise.update_membership(user, membership, plan, razorpay)
 
@@ -696,5 +699,185 @@ defmodule WraftDoc.EnterpriseTest do
       response = Enterprise.show_payment(Ecto.UUID.generate(), nil)
       assert response == nil
     end
+  end
+
+  describe "members_index/2" do
+    test "returns the list of all members of current user's organisation" do
+      organisation = insert(:organisation)
+      user1 = insert(:user, organisation: organisation)
+      user2 = insert(:user, organisation: organisation)
+      user3 = insert(:user, organisation: organisation)
+
+      response = Enterprise.members_index(user1, %{"page" => 1})
+      user_ids = response.entries |> Enum.map(fn x -> x.uuid end) |> to_string()
+
+      assert user_ids =~ user1.uuid
+      assert user_ids =~ user2.uuid
+      assert user_ids =~ user3.uuid
+      assert response.page_number == 1
+      assert response.total_pages == 1
+      assert response.total_entries == 3
+    end
+
+    test "returns the list of all members of current user's organisation matching the given name" do
+      organisation = insert(:organisation)
+      user1 = insert(:user, organisation: organisation, name: "John")
+      user2 = insert(:user, organisation: organisation, name: "John Doe")
+      user3 = insert(:user, organisation: organisation)
+
+      response = Enterprise.members_index(user1, %{"page" => 1, "name" => "joh"})
+      user_ids = response.entries |> Enum.map(fn x -> x.uuid end) |> to_string()
+
+      assert user_ids =~ user1.uuid
+      assert user_ids =~ user2.uuid
+      refute user_ids =~ user3.uuid
+      assert response.page_number == 1
+      assert response.total_pages == 1
+      assert response.total_entries == 2
+    end
+  end
+
+  ################# <<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>####################
+
+  @valid_vendor_attrs %{
+    "name" => "vendor name",
+    "email" => "vendor email",
+    "phone" => "vendor phone",
+    "address" => "vendor address",
+    "gstin" => "vendor gstin",
+    "reg_no" => "vendor reg_no",
+    "contact_person" => "vendor contact_person"
+  }
+  @invalid_vendor_attrs %{"name" => nil, "email" => nil}
+
+  describe "create_vendor/2" do
+    test "create vendor on valid attributes" do
+      user = insert(:user)
+      count_before = Vendor |> Repo.all() |> length()
+      vendor = Enterprise.create_vendor(user, @valid_vendor_attrs)
+      assert count_before + 1 == Vendor |> Repo.all() |> length()
+      assert vendor.name == @valid_vendor_attrs["name"]
+      assert vendor.email == @valid_vendor_attrs["email"]
+      assert vendor.phone == @valid_vendor_attrs["phone"]
+      assert vendor.address == @valid_vendor_attrs["address"]
+      assert vendor.gstin == @valid_vendor_attrs["gstin"]
+      assert vendor.reg_no == @valid_vendor_attrs["reg_no"]
+
+      assert vendor.contact_person == @valid_vendor_attrs["contact_person"]
+    end
+
+    test "create vendor on invalid attrs" do
+      user = insert(:user)
+      count_before = Vendor |> Repo.all() |> length()
+
+      {:error, changeset} = Enterprise.create_vendor(user, @invalid_vendor_attrs)
+      count_after = Vendor |> Repo.all() |> length()
+      assert count_before == count_after
+
+      assert %{
+               name: ["can't be blank"],
+               email: ["can't be blank"],
+               phone: ["can't be blank"],
+               address: ["can't be blank"],
+               gstin: ["can't be blank"],
+               reg_no: ["can't be blank"]
+             } == errors_on(changeset)
+    end
+  end
+
+  describe "update_vendor/2" do
+    # test "update vendor on valid attrs" do
+    #   user = insert(:user)
+    #   vendor = insert(:vendor, creator: user, organisation: user.organisation)
+    #   count_before = Vendor |> Repo.all() |> length()
+
+    #   vendor = Enterprise.update_vendor(vendor, @valid_vendor_attrs)
+    #   count_after = Vendor |> Repo.all() |> length()
+    #   assert count_before == count_after
+    #   assert vendor.name == @valid_vendor_attrs["name"]
+    #   assert vendor.email == @valid_vendor_attrs["email"]
+    #   assert vendor.phone == @valid_vendor_attrs["phone"]
+    #   assert vendor.address == @valid_vendor_attrs["address"]
+    #   assert vendor.gstin == @valid_vendor_attrs["gstin"]
+    #   assert vendor.reg_no == @valid_vendor_attrs["reg_no"]
+    # end
+
+    test "update vendor on invalid attrs" do
+      user = insert(:user)
+      vendor = insert(:vendor, creator: user)
+      count_before = Vendor |> Repo.all() |> length()
+
+      {:error, changeset} = Enterprise.update_vendor(vendor, user, @invalid_vendor_attrs)
+      count_after = Vendor |> Repo.all() |> length()
+      assert count_before == count_after
+      assert %{name: ["can't be blank"], email: ["can't be blank"]} == errors_on(changeset)
+    end
+  end
+
+  describe "get_vendor/1" do
+    test "get vendor returns the vendor data" do
+      user = insert(:user)
+      vendor = insert(:vendor, creator: user, organisation: user.organisation)
+      v_vendor = Enterprise.get_vendor(user, vendor.uuid)
+      assert v_vendor.name == vendor.name
+      assert v_vendor.email == vendor.email
+      assert v_vendor.phone == vendor.phone
+      assert v_vendor.address == vendor.address
+      assert v_vendor.gstin == vendor.gstin
+      assert v_vendor.reg_no == vendor.reg_no
+
+      assert v_vendor.contact_person == vendor.contact_person
+    end
+
+    test "get vendor from another organisation will not be possible" do
+      user = insert(:user)
+      vendor = insert(:vendor, creator: user)
+      v_vendor = Enterprise.get_vendor(vendor.uuid, user)
+      assert v_vendor == nil
+    end
+  end
+
+  describe "show vendor" do
+    test "show vendor returns the vendor data and preloads" do
+      user = insert(:user)
+      vendor = insert(:vendor, creator: user, organisation: user.organisation)
+      v_vendor = Enterprise.show_vendor(vendor.uuid, user)
+      assert v_vendor.name == vendor.name
+      assert v_vendor.email == vendor.email
+      assert v_vendor.phone == vendor.phone
+      assert v_vendor.address == vendor.address
+      assert v_vendor.gstin == vendor.gstin
+      assert v_vendor.reg_no == vendor.reg_no
+
+      assert v_vendor.contact_person == vendor.contact_person
+    end
+  end
+
+  describe "delete_vendor/1" do
+    test "delete vendor deletes the vendor data" do
+      vendor = insert(:vendor)
+      count_before = Vendor |> Repo.all() |> length()
+      {:ok, v_vendor} = Enterprise.delete_vendor(vendor)
+      count_after = Vendor |> Repo.all() |> length()
+      assert count_before - 1 == count_after
+      assert v_vendor.name == vendor.name
+      assert v_vendor.email == vendor.email
+      assert v_vendor.phone == vendor.phone
+      assert v_vendor.address == vendor.address
+      assert v_vendor.gstin == vendor.gstin
+      assert v_vendor.reg_no == vendor.reg_no
+
+      assert v_vendor.contact_person == vendor.contact_person
+    end
+  end
+
+  test "vendor index lists the vendor data" do
+    user = insert(:user)
+    v1 = insert(:vendor, creator: user, organisation: user.organisation)
+    v2 = insert(:vendor, creator: user, organisation: user.organisation)
+    vendor_index = Enterprise.vendor_index(user, %{page_number: 1})
+
+    assert vendor_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ v1.name
+    assert vendor_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ v2.name
   end
 end

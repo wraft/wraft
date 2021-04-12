@@ -45,7 +45,8 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
     count_before = Theme |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_theme_path(conn, :create, @valid_attrs))
+      conn
+      |> post(Routes.v1_theme_path(conn, :create, @valid_attrs))
       |> doc(operation_id: "create_theme")
 
     assert count_before + 1 == Theme |> Repo.all() |> length()
@@ -64,7 +65,8 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
     count_before = Theme |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_theme_path(conn, :create, @invalid_attrs))
+      conn
+      |> post(Routes.v1_theme_path(conn, :create, @invalid_attrs))
       |> doc(operation_id: "create_theme")
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -88,7 +90,8 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
     count_before = Theme |> Repo.all() |> length()
 
     conn =
-      put(conn, Routes.v1_theme_path(conn, :update, theme.uuid), params)
+      conn
+      |> put(Routes.v1_theme_path(conn, :update, theme.uuid), params)
       |> doc(operation_id: "update_theme")
 
     assert json_response(conn, 200)["name"] == @valid_attrs.name
@@ -106,7 +109,8 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn =
-      put(conn, Routes.v1_theme_path(conn, :update, theme.uuid, @invalid_attrs))
+      conn
+      |> put(Routes.v1_theme_path(conn, :update, theme.uuid, @invalid_attrs))
       |> doc(operation_id: "update_theme")
 
     assert json_response(conn, 422)["errors"]["file"] == ["can't be blank"]

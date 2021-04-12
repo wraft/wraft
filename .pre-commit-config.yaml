@@ -1,0 +1,42 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  - repo: local
+    hooks:
+      - id: mix-deps-get
+        name: Check for mix.lock divergences
+        always_run: true
+        pass_filenames: false
+        language: system
+        entry: mix deps.get
+      - id: mix-test
+        name: Run test suite
+        entry: zsh -c 'source .env' && mix test
+        language: system
+        pass_filenames: false
+        files: \.exs*$
+      - id: mix-format
+        name: Format Elixir files
+        entry: mix format --check-formatted
+        language: system
+        files: \.exs*$
+      - id: mix-compile
+        name: Compile the codebase
+        entry: mix compile --force --warnings-as-errors
+        language: system
+        pass_filenames: false
+        files: \.ex$
+      - id: mix-credo
+        name: Check style with Credo
+        entry: mix credo
+        language: system
+        pass_filenames: false
+        files: \.exs*$
+  - repo: 'https://github.com/pre-commit/pre-commit-hooks'
+    rev: v3.2.0
+    hooks:
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files

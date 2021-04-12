@@ -80,6 +80,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
             updated_at(:string, "When was the user last updated", format: "ISO-8601")
             api_route(:string, "Api route to generate chart")
             endpoint(:string, "name of the endpoint going to choose")
+            input(:string, "Input file url")
             tex_chart(:string, "Latex code of the pie chart")
           end
 
@@ -91,6 +92,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
             file_url:
               "/home/sadique/Documents/org.functionary/go/src/blocks_api/002dc916-4444-4072-a8aa-85a32c5a65ea.svg",
             tex_chart: "\pie [rotate=180]{80/january}",
+            input: "uploads/block_input/name.csv",
             dataset: %{
               data: [
                 %{
@@ -143,10 +145,14 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     summary("Generate blocks")
     description("Create a block")
     operation_id("create_block")
+    consumes("multipart/form-data")
 
-    parameters do
-      block(:body, Schema.ref(:BlockRequest), "Block to Create", required: true)
-    end
+    parameter(:name, :formData, :string, "Block name", required: true)
+    parameter(:btype, :formData, :string, "Block type", required: true)
+    parameter(:dataset, :formData, :map, "Dataset for creating charts")
+    parameter(:api_route, :formData, :string, "Api route to generate chart")
+    parameter(:endpoint, :formData, :string, "name of the endpoint going to choose")
+    parameter(:input, :formData, :file, "Input file to upload")
 
     response(201, "Created", Schema.ref(:Block))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -158,19 +164,20 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %{"url" => file_url} <- Document.generate_chart(params) do
-      params =
-        Map.merge(params, %{
-          "file_url" => file_url,
-          "tex_chart" => Document.generate_tex_chart(params)
-        })
+    case Document.generate_chart(params) do
+      %{"url" => file_url} ->
+        params =
+          Map.merge(params, %{
+            "file_url" => file_url,
+            "tex_chart" => Document.generate_tex_chart(params)
+          })
 
-      with %Block{} = block <- Document.create_block(current_user, params) do
-        conn
-        |> put_status(:created)
-        |> render("create.json", block: block)
-      end
-    else
+        with %Block{} = block <- Document.create_block(current_user, params) do
+          conn
+          |> put_status(:created)
+          |> render("create.json", block: block)
+        end
+
       %{"error" => message} ->
         conn
         |> put_status(:bad_request)
@@ -199,18 +206,18 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns.current_user
 
-    with %{"url" => file_url} <- Document.generate_chart(params) do
-      Map.merge(params, %{
-        "file_url" => file_url,
-        "tex_chart" => Document.generate_tex_chart(params)
-      })
+    case Document.generate_chart(params) do
+      %{"url" => file_url} ->
+        Map.merge(params, %{
+          "file_url" => file_url,
+          "tex_chart" => Document.generate_tex_chart(params)
+        })
 
-      with %Block{} = block <- Document.get_block(uuid, current_user),
-           %Block{} = block <- Document.update_block(block, params) do
-        conn
-        |> render("update.json", block: block)
-      end
-    else
+        with %Block{} = block <- Document.get_block(uuid, current_user),
+             %Block{} = block <- Document.update_block(block, params) do
+          render(conn, "update.json", block: block)
+        end
+
       %{"error" => message} ->
         conn
         |> put_status(:bad_request)
@@ -237,8 +244,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     current_user = conn.assigns.current_user
 
     with %Block{} = block <- Document.get_block(uuid, current_user) do
-      conn
-      |> render("show.json", block: block)
+      render(conn, "show.json", block: block)
     end
   end
 
@@ -262,7 +268,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
     with %Block{} = block <- Document.get_block(uuid, current_user),
          {:ok, %Block{}} <- Document.delete_block(block) do
-      conn |> render("block.json", block: block)
+      render(conn, "block.json", block: block)
     end
   end
 end

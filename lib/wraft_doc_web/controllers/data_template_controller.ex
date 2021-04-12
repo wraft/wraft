@@ -198,8 +198,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_uuid),
          {:ok, %DataTemplate{} = d_template} <-
            Document.create_data_template(current_user, c_type, params) do
-      conn
-      |> render("create.json", d_template: d_template)
+      render(conn, "create.json", d_template: d_template)
     end
   end
 
@@ -228,8 +227,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.data_template_index(c_type_uuid, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         data_templates: data_templates,
         page_number: page_number,
         total_pages: total_pages,
@@ -260,8 +258,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.data_templates_index_of_an_organisation(current_user, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         data_templates: data_templates,
         page_number: page_number,
         total_pages: total_pages,
@@ -291,8 +288,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     current_user = conn.assigns[:current_user]
 
     with %DataTemplate{} = data_template <- Document.show_d_template(current_user, d_temp_uuid) do
-      conn
-      |> render("show.json", d_template: data_template)
+      render(conn, "show.json", d_template: data_template)
     end
   end
 
@@ -324,8 +320,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
     with %DataTemplate{} = d_temp <- Document.get_d_template(current_user, uuid),
          %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, current_user, params) do
-      conn
-      |> render("show.json", d_template: d_temp)
+      render(conn, "show.json", d_template: d_temp)
     end
   end
 
@@ -353,8 +348,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
     with %DataTemplate{} = d_temp <- Document.get_d_template(current_user, uuid),
          {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp, current_user) do
-      conn
-      |> render("create.json", d_template: d_temp)
+      render(conn, "create.json", d_template: d_temp)
     end
   end
 
@@ -385,8 +379,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     with %ContentType{} <- Document.get_content_type(user, c_type_uuid),
          {:ok, %Oban.Job{}} <-
            Document.insert_data_template_bulk_import_work(user.uuid, c_type_uuid, mapping, file) do
-      conn
-      |> render("bulk.json", resource: "Data Template")
+      render(conn, "bulk.json", resource: "Data Template")
     end
   end
 

@@ -1,6 +1,10 @@
 defmodule WraftDocWeb.Plug.AddActionLog do
+  @moduledoc """
+  Plug for creating and storing action log.
+  """
+
   import Plug.Conn
-  alias WraftDoc.{Repo, ActionLog}
+  alias WraftDoc.{ActionLog, Repo}
 
   def init(_params) do
   end
@@ -13,12 +17,12 @@ defmodule WraftDocWeb.Plug.AddActionLog do
   # Create log for an action.
   @spec create_log(Plug.Conn.t()) :: ActionLog.t()
   defp create_log(%Plug.Conn{assigns: %{current_user: _user}} = conn) do
-    params = conn |> create_action_log_params()
+    params = create_action_log_params(conn)
     %ActionLog{} |> ActionLog.authorized_action_changeset(params) |> Repo.insert!()
   end
 
   defp create_log(conn) do
-    params = conn |> create_action_log_params()
+    params = create_action_log_params(conn)
     %ActionLog{} |> ActionLog.unauthorized_action_changeset(params) |> Repo.insert!()
   end
 
@@ -33,10 +37,10 @@ defmodule WraftDocWeb.Plug.AddActionLog do
            params: params
          } = conn
        ) do
-    remote_ip = :inet_parse.ntoa(ip) |> to_string()
-    actor_agent = get_req_header(conn, "user-agent") |> List.first()
-    action = conn.private.phoenix_action |> Atom.to_string()
-    params = params |> change_structs_to_maps()
+    remote_ip = ip |> :inet_parse.ntoa() |> to_string()
+    actor_agent = conn |> get_req_header("user-agent") |> List.first()
+    action = Atom.to_string(conn.private.phoenix_action)
+    params = change_structs_to_maps(params)
 
     %{
       actor: user,
@@ -53,10 +57,10 @@ defmodule WraftDocWeb.Plug.AddActionLog do
   defp create_action_log_params(
          %Plug.Conn{method: method, request_path: path, remote_ip: ip, params: params} = conn
        ) do
-    remote_ip = :inet_parse.ntoa(ip) |> to_string()
-    actor_agent = get_req_header(conn, "user-agent") |> List.first()
-    action = conn.private.phoenix_action |> Atom.to_string()
-    params = params |> change_structs_to_maps()
+    remote_ip = ip |> :inet_parse.ntoa() |> to_string()
+    actor_agent = conn |> get_req_header("user-agent") |> List.first()
+    action = Atom.to_string(conn.private.phoenix_action)
+    params = change_structs_to_maps(params)
 
     %{
       request_path: path,
@@ -71,11 +75,9 @@ defmodule WraftDocWeb.Plug.AddActionLog do
   # Change the stucts in params to maps.
   @spec change_structs_to_maps(map) :: map
   defp change_structs_to_maps(params) do
-    params
-    |> Enum.reduce(%{}, fn
+    Enum.reduce(params, %{}, fn
       {k, %{__struct__: _} = v}, acc ->
-        v = v |> Map.from_struct()
-        Map.put(acc, k, v)
+        Map.put(acc, k, Map.from_struct(v))
 
       {k, v}, acc ->
         Map.put(acc, k, v)

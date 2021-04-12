@@ -26,6 +26,10 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.AdminCheck)
   end
 
+  pipeline :admin_authenticate do
+    plug(WraftDocWeb.Plug.AdminAuthenticate)
+  end
+
   # pipeline :can do
   # plug(WraftDocWeb.Plug.Authorized)
   # end
@@ -34,6 +38,18 @@ defmodule WraftDocWeb.Router do
     # Use the default browser stack
     pipe_through(:api)
     get("/", PageController, :index)
+  end
+
+  scope "/", WraftDocWeb do
+    pipe_through(:browser)
+
+    scope "/admin" do
+      # Admin login
+      get("/signin", SessionController, :new)
+      get("/signup/new", SignupController, :new)
+      post("/signin", SessionController, :create)
+      post("/signup", SignupController, :create)
+    end
   end
 
   # Scope which does not need authorization.
@@ -120,8 +136,12 @@ defmodule WraftDocWeb.Router do
       patch("/contents/:id/states", InstanceController, :state_update)
 
       # Organisations
-      resources("/organisations", OrganisationController, only: [:create, :update, :show, :delete])
+      scope "/organisations" do
+        resources("/", OrganisationController, only: [:create, :update, :show, :delete])
+        get("/:id/members", OrganisationController, :members)
+      end
 
+      resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
       # Update membership plan
       put("/memberships/:id", MembershipController, :update)
       # Get memberhsip
@@ -157,8 +177,11 @@ defmodule WraftDocWeb.Router do
       resources("/comments", CommentController)
       get("/comments/:id/replies", CommentController, :reply)
       # Approval system
-      resources("/approval_systems", ApprovalSystemController)
-      post("/approval_systems/approve", ApprovalSystemController, :approve)
+      resources("/approval_systems", ApprovalSystemController,
+        only: [:create, :index, :show, :update, :delete]
+      )
+
+      post("/approval_systems/:id/approve", ApprovalSystemController, :approve)
 
       scope "/pipelines" do
         # Pipeline
@@ -192,7 +215,17 @@ defmodule WraftDocWeb.Router do
 
       # Create, Update and delete plans
       resources("/plans", PlanController, only: [:create, :update, :delete])
+
+      # List all organisation details
+      get("/organisations", OrganisationController, :index)
     end
+  end
+
+  use Kaffy.Routes, scope: "/admin", pipe_through: [:admin_authenticate]
+
+  scope "/admin", WraftDocWeb do
+    pipe_through([:kaffy_browser, :admin_authenticate])
+    delete("/sign-out", SessionController, :delete)
   end
 
   scope "/" do

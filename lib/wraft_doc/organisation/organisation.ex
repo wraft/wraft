@@ -22,6 +22,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     has_many(:users, WraftDoc.Account.User)
     has_many(:approval_systems, WraftDoc.Enterprise.ApprovalSystem)
     has_many(:pipelines, WraftDoc.Document.Pipeline)
+    has_many(:vendors, WraftDoc.Enterprise.Vendor)
     timestamps()
   end
 

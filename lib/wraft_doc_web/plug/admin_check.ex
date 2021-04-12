@@ -1,4 +1,7 @@
 defmodule WraftDocWeb.Plug.AdminCheck do
+  @moduledoc """
+  Plug to check if user has admin role.
+  """
   import Plug.Conn
 
   alias WraftDoc.Account.User

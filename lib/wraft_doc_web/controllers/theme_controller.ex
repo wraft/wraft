@@ -131,8 +131,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, %Theme{} = theme} <- Document.create_theme(current_user, params) do
-      conn
-      |> render("create.json", theme: theme)
+      render(conn, "create.json", theme: theme)
     end
   end
 
@@ -158,8 +157,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.theme_index(current_user, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         themes: themes,
         page_number: page_number,
         total_pages: total_pages,
@@ -189,8 +187,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
     current_user = conn.assigns.current_user
 
     with %Theme{} = theme <- Document.show_theme(theme_uuid, current_user) do
-      conn
-      |> render("show.json", theme: theme)
+      render(conn, "show.json", theme: theme)
     end
   end
 
@@ -223,8 +220,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     with %Theme{} = theme <- Document.get_theme(theme_uuid, current_user),
          {:ok, %Theme{} = theme} <- Document.update_theme(theme, current_user, params) do
-      conn
-      |> render("create.json", theme: theme)
+      render(conn, "create.json", theme: theme)
     end
   end
 
@@ -251,8 +247,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     with %Theme{} = theme <- Document.get_theme(uuid, current_user),
          {:ok, %Theme{}} <- Document.delete_theme(theme, current_user) do
-      conn
-      |> render("create.json", theme: theme)
+      render(conn, "create.json", theme: theme)
     end
   end
 end

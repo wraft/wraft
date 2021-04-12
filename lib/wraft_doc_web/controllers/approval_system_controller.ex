@@ -6,10 +6,10 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.{
-    Enterprise,
-    Enterprise.ApprovalSystem,
     Document,
-    Document.Instance
+    Document.Instance,
+    Enterprise,
+    Enterprise.ApprovalSystem
   }
 
   def swagger_definitions do
@@ -146,7 +146,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
 
     with %ApprovalSystem{} = approval_system <-
            Enterprise.create_approval_system(current_user, params) do
-      conn |> render("approval_system.json", approval_system: approval_system)
+      render(conn, "approval_system.json", approval_system: approval_system)
     end
   end
 
@@ -169,8 +169,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
     current_user = conn.assigns.current_user
 
     with %ApprovalSystem{} = approval_system <- Enterprise.get_approval_system(uuid, current_user) do
-      conn
-      |> render("approval_system.json", approval_system: approval_system)
+      render(conn, "approval_system.json", approval_system: approval_system)
     end
   end
 
@@ -201,8 +200,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
            Enterprise.get_approval_system(uuid, current_user),
          %ApprovalSystem{} = approval_system <-
            Enterprise.update_approval_system(current_user, approval_system, params) do
-      conn
-      |> render("approval_system.json", approval_system: approval_system)
+      render(conn, "approval_system.json", approval_system: approval_system)
     end
   end
 
@@ -228,18 +226,17 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
     with %ApprovalSystem{} = approval_system <-
            Enterprise.get_approval_system(uuid, current_user),
          {:ok, %ApprovalSystem{}} <- Enterprise.delete_approval_system(approval_system) do
-      conn
-      |> render("approval_system.json", approval_system: approval_system)
+      render(conn, "approval_system.json", approval_system: approval_system)
     end
   end
 
   swagger_path :approve do
-    post("/approval_systems/approve")
+    post("/approval_systems/{id}/approve")
     summary("Approve a state")
     description("Api to approve a state")
 
     parameters do
-      id(:query, :string, "approval_system id", required: true)
+      id(:path, :string, "approval_system id", required: true)
     end
 
     response(200, "Ok", Schema.ref(:Approved))
@@ -259,10 +256,44 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
          %ApprovalSystem{instance: instance} = approval_system <-
            Enterprise.approve_content(current_user, approval_system),
          %Instance{} = instance <- Document.get_instance(instance.uuid, current_user) do
-      conn
-      |> render("approve.json", approval_system: approval_system, instance: instance)
+      render(conn, "approve.json", approval_system: approval_system, instance: instance)
     else
       message -> conn |> put_status(:bad_request) |> render("error.json", message: message)
+    end
+  end
+
+  swagger_path :index do
+    get("/approval_systems")
+    summary("List pending approvals")
+    description("Api to list pending approvals")
+
+    parameters do
+      page(:query, :string, "Page", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Approved))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(400, "Bad Request", Schema.ref(:Error))
+  end
+
+  def index(conn, params) do
+    current_user = conn.assigns.current_user
+
+    with %{
+           entries: approval_systems,
+           page_number: page_number,
+           page_size: page_size,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Enterprise.get_pending_approvals(current_user, params) do
+      render(conn, "pending_approvals.json",
+        approval_systems: approval_systems,
+        page_number: page_number,
+        page_size: page_size,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
     end
   end
 end

@@ -153,7 +153,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
     with %Flow{} = flow <- Enterprise.get_flow(flow_id, current_user),
          %State{} = state <- Enterprise.create_state(current_user, flow, params) do
-      conn |> render("create.json", state: state)
+      render(conn, "create.json", state: state)
     end
   end
 
@@ -182,8 +182,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Enterprise.state_index(flow_uuid, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         states: states,
         page_number: page_number,
         total_pages: total_pages,
@@ -217,8 +216,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
     with %State{} = state <- Enterprise.get_state(current_user, uuid),
          %State{} = %State{} = state <- Enterprise.update_state(state, current_user, params) do
-      conn
-      |> render("show.json", state: state)
+      render(conn, "show.json", state: state)
     end
   end
 
@@ -248,8 +246,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
          {:ok, %State{}} <- Enterprise.delete_state(state, current_user) do
       Task.start(fn -> Enterprise.shuffle_order(state, -1) end)
 
-      conn
-      |> render("create.json", state: state)
+      render(conn, "create.json", state: state)
     end
   end
 end

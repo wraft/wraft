@@ -1,4 +1,6 @@
 defmodule WraftDoc.Enterprise.ApprovalSystem do
+  @moduledoc false
+
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -12,6 +14,7 @@ defmodule WraftDoc.Enterprise.ApprovalSystem do
     belongs_to(:approver, WraftDoc.Account.User)
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+    has_one(:flow, through: [:pre_state, :flow])
 
     timestamps()
   end

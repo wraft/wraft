@@ -9,7 +9,7 @@ defmodule WraftDoc.Repo.Migrations.CreatePipelineTable do
       add(:creator_id, references(:user, on_delete: :nilify_all))
       add(:organisation_id, references(:organisation, on_delete: :delete_all))
 
-      timestamps
+      timestamps()
     end
 
     create table(:pipe_stage) do

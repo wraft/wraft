@@ -7,11 +7,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   alias WraftDoc.{
     Document,
-    Document.Instance,
     Document.ContentType,
+    Document.Instance,
     Document.Layout,
     Enterprise,
-    Enterprise.Flow.State
+    Enterprise.Flow.State,
+    Enterprise.Vendor
   }
 
   def swagger_definitions do
@@ -50,12 +51,14 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             raw(:string, "Content raw data", required: true)
             serialized(:string, "Content serialized data")
             state_uuid(:string, "state id", required: true)
+            vendor_uuid(:string, "Vendor id", required: true)
           end
 
           example(%{
             raw: "Content data",
             serialized: %{title: "Title of the content", body: "Body of the content"},
-            state_uuid: "kjb12389k23eyg"
+            state_uuid: "kjb12389k23eyg",
+            vendor_uuid: "15dsdf-s5d1f-1d51f-1sfd15-1s5df"
           })
         end,
       ContentUpdateRequest:
@@ -231,12 +234,47 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
                   order: 1,
                   updated_at: "2020-01-21T14:00:00Z",
                   inserted_at: "2020-02-21T14:00:00Z"
+                },
+                vendor: %{
+                  name: "Vos Services",
+                  email: "serv@vosmail.com",
+                  phone: "98565262262",
+                  address: "rose boru, hourbures",
+                  gstin: "32ADF22SDD2DFS32SDF",
+                  reg_no: "ASD21122",
+                  contact_person: "vikas abu"
                 }
               }
             ],
             page_number: 1,
             total_pages: 2,
             total_entries: 15
+          })
+        end,
+      Vendor:
+        swagger_schema do
+          title("Vendor")
+          description("A Vendor")
+
+          properties do
+            name(:string, "Vendors name")
+            email(:string, "Vendors email")
+            phone(:string, "Phone number")
+            address(:string, "The Address of the vendor")
+            gstin(:string, "The Gstin of the vendor")
+            reg_no(:string, "The RegNo of the vendor")
+
+            contact_person(:string, "The ContactPerson of the vendor")
+          end
+
+          example(%{
+            name: "Vos Services",
+            email: "serv@vosmail.com",
+            phone: "98565262262",
+            address: "rose boru, hourbures",
+            gstin: "32ADF22SDD2DFS32SDF",
+            reg_no: "ASD21122",
+            contact_person: "vikas abu"
           })
         end
     }
@@ -261,16 +299,21 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"c_type_id" => c_type_uuid, "state_uuid" => state_uuid} = params) do
+  def create(
+        conn,
+        %{"c_type_id" => c_type_uuid, "state_uuid" => state_uuid, "vendor_uuid" => vendor_uuid} =
+          params
+      ) do
     current_user = conn.assigns[:current_user]
     type = Instance.types()[:normal]
     params = Map.put(params, "type", type)
 
     with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_uuid),
          %State{} = state <- Enterprise.get_state(current_user, state_uuid),
-         %Instance{} = content <- Document.create_instance(current_user, c_type, state, params) do
-      conn
-      |> render(:create, content: content)
+         %Vendor{} = vendor <- Enterprise.get_vendor(current_user, vendor_uuid),
+         %Instance{} = content <-
+           Document.create_instance(current_user, c_type, state, vendor, params) do
+      render(conn, :create, content: content)
     end
   end
 
@@ -299,8 +342,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.instance_index(c_type_uuid, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         contents: contents,
         page_number: page_number,
         total_pages: total_pages,
@@ -335,8 +377,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.instance_index_of_an_organisation(current_user, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         contents: contents,
         page_number: page_number,
         total_pages: total_pages,
@@ -366,8 +407,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Document.show_instance(instance_uuid, current_user) do
-      conn
-      |> render("show.json", instance: instance)
+      render(conn, "show.json", instance: instance)
     end
   end
 
@@ -397,8 +437,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Document.get_instance(uuid, current_user),
          %Instance{} = instance <- Document.update_instance(instance, current_user, params) do
-      conn
-      |> render("show.json", instance: instance)
+      render(conn, "show.json", instance: instance)
     end
   end
 
@@ -426,8 +465,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Document.get_instance(uuid, current_user),
          {:ok, %Instance{}} <- Document.delete_instance(instance, current_user) do
-      conn
-      |> render("instance.json", instance: instance)
+      render(conn, "instance.json", instance: instance)
     end
   end
 
@@ -468,15 +506,19 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
         })
       end)
 
-      case exit_code do
-        0 ->
-          conn |> render("instance.json", instance: instance)
+      handle_response(conn, exit_code, instance)
+    end
+  end
 
-        _ ->
-          conn
-          |> put_status(:unprocessable_entity)
-          |> render("build_fail.json", %{exit_code: exit_code})
-      end
+  defp handle_response(conn, exit_code, instance) do
+    case exit_code do
+      0 ->
+        render(conn, "instance.json", instance: instance)
+
+      _ ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render("build_fail.json", %{exit_code: exit_code})
     end
   end
 
@@ -506,8 +548,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     with %Instance{} = instance <- Document.get_instance(instance_uuid, current_user),
          %State{} = state <- Enterprise.get_state(current_user, state_uuid),
          %Instance{} = instance <- Document.update_instance_state(current_user, instance, state) do
-      conn
-      |> render("show.json", instance: instance)
+      render(conn, "show.json", instance: instance)
     end
   end
 end

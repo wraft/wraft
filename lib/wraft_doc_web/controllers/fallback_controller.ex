@@ -16,29 +16,29 @@ defmodule WraftDocWeb.FallbackController do
     body =
       Jason.encode!(%{errors: "Your email-password combination doesn't match. Please try again.!"})
 
-    put_resp_content_type(conn, "application/json") |> send_resp(404, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(404, body)
   end
 
   def call(conn, {:error, :no_data}) do
     body = Jason.encode!(%{errors: "Please provide all necessary datas to login.!"})
-    put_resp_content_type(conn, "application/json") |> send_resp(400, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
   def call(conn, {:error, :invalid_email}) do
     body = Jason.encode!(%{errors: "No user with this email.!"})
 
-    put_resp_content_type(conn, "application/json") |> send_resp(404, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(404, body)
   end
 
   def call(conn, {:error, :fake}) do
     body = Jason.encode!(%{errors: "You are not authorized for this action.!"})
 
-    put_resp_content_type(conn, "application/json") |> send_resp(401, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(401, body)
   end
 
   def call(conn, {:error, :invalid_password}) do
     body = Jason.encode!(%{errors: "You have entered a wrong password.!"})
-    put_resp_content_type(conn, "application/json") |> send_resp(400, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
   def call(conn, {:error, :same_password}) do
@@ -47,37 +47,37 @@ defmodule WraftDocWeb.FallbackController do
         errors: "Please enter a password that does not match with your current one.!"
       })
 
-    put_resp_content_type(conn, "application/json") |> send_resp(400, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
   def call(conn, {:error, :no_permission}) do
     body = Jason.encode!(%{errors: "You are not authorized for this action.!"})
-    put_resp_content_type(conn, "application/json") |> send_resp(400, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
   def call(conn, {:error, :expired}) do
     body = Jason.encode!(%{errors: "Expired.!"})
-    put_resp_content_type(conn, "application/json") |> send_resp(400, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
   def call(conn, {:error, :already_member}) do
     body = Poison.encode!(%{errors: "User with this email exists.!"})
-    put_resp_content_type(conn, "application/json") |> send_resp(422, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 
   def call(conn, {:error, :wrong_flow}) do
     body = Poison.encode!(%{errors: "This instance follow a different flow.!"})
-    put_resp_content_type(conn, "application/json") |> send_resp(422, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 
   def call(conn, {:error, %Razorpay.Error{description: description}}) do
     body = Jason.encode!(%{errors: description})
-    put_resp_content_type(conn, "application/json") |> send_resp(422, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 
   def call(conn, {:error, :wrong_amount}) do
     body = Jason.encode!(%{errors: "No plan with paid amount..!!"})
-    put_resp_content_type(conn, "application/json") |> send_resp(422, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 
   def call(conn, nil) do

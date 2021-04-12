@@ -5,10 +5,10 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.{
-    Authorization,
-    Authorization.Permission,
     Account,
     Account.Role,
+    Authorization,
+    Authorization.Permission,
     Authorization.Resource
   }
 
@@ -115,7 +115,7 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
          %Role{} = role <- Account.get_role_from_uuid(role_uuid),
          %Permission{} = permission <-
            Authorization.create_permission(resource, role) do
-      conn |> render("create.json", permission: permission)
+      render(conn, "create.json", permission: permission)
     end
   end
 
@@ -142,8 +142,7 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Authorization.permission_index(params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         resources: resources,
         page_number: page_number,
         total_pages: total_pages,
@@ -174,8 +173,7 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
   def delete(conn, %{"id" => uuid}) do
     with %Permission{} = permission <- Authorization.get_permission(uuid),
          {:ok, %Permission{}} <- Authorization.delete_permission(permission) do
-      conn
-      |> render("delete.json", permission: permission)
+      render(conn, "delete.json", permission: permission)
     end
   end
 end

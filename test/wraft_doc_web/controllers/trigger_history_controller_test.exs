@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
   """
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Document.Pipeline.TriggerHistory}
+  alias WraftDoc.{Document.Pipeline.TriggerHistory, Repo}
 
   @valid_attrs %{
     data: %{name: "John Doe"}
@@ -43,11 +43,12 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
       history_count_before = TriggerHistory |> Repo.all() |> length()
 
       conn =
-        post(conn, Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), @valid_attrs)
+        conn
+        |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), @valid_attrs)
         |> doc(operation_id: "create_trigger_history")
 
-      created_jobs = Oban.Job |> Repo.all()
-      created_history = TriggerHistory |> Repo.all()
+      created_jobs = Repo.all(Oban.Job)
+      created_history = Repo.all(TriggerHistory)
 
       data =
         created_history
@@ -56,8 +57,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
 
       data = for {key, val} <- data, into: %{}, do: {String.to_atom(key), val}
 
-      assert job_count_before + 1 == created_jobs |> length()
-      assert history_count_before + 1 == created_history |> length()
+      assert job_count_before + 1 == length(created_jobs)
+      assert history_count_before + 1 == length(created_history)
       assert data == @valid_attrs.data
 
       assert json_response(conn, 200)["info"] ==
@@ -78,7 +79,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
       history_count_before = TriggerHistory |> Repo.all() |> length()
 
       conn =
-        post(conn, Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), %{
+        conn
+        |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), %{
           data: "wrong meta"
         })
         |> doc(operation_id: "create_trigger_history")
@@ -104,7 +106,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
       history_count_before = TriggerHistory |> Repo.all() |> length()
 
       conn =
-        post(conn, Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), @valid_attrs)
+        conn
+        |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), @valid_attrs)
         |> doc(operation_id: "create_trigger_history")
 
       assert job_count_before == Oban.Job |> Repo.all() |> length()
@@ -128,11 +131,13 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
 
       conn = get(conn, Routes.v1_trigger_history_path(conn, :index, pipeline.uuid))
       trigger_history_index = json_response(conn, 200)["triggers"]
-      trigger_uuids = Enum.map(trigger_history_index, fn x -> x["id"] end) |> List.to_string()
-      trigger_states = Enum.map(trigger_history_index, fn x -> x["state"] end) |> List.to_string()
+      trigger_uuids = trigger_history_index |> Enum.map(fn x -> x["id"] end) |> List.to_string()
+
+      trigger_states =
+        trigger_history_index |> Enum.map(fn x -> x["state"] end) |> List.to_string()
 
       trigger_user_uuid =
-        Enum.map(trigger_history_index, fn x -> x["creator"]["id"] end) |> List.to_string()
+        trigger_history_index |> Enum.map(fn x -> x["creator"]["id"] end) |> List.to_string()
 
       assert trigger_uuids =~ trigger1.uuid
       assert trigger_uuids =~ trigger2.uuid
