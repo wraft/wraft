@@ -16,13 +16,13 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
           properties do
             title(:string, "The Title of the Block Template", required: true)
             body(:string, "The Body of the block template", required: true)
-            serialised(:string, "The Serialised of the block template", required: true)
+            serialized(:string, "The serialized of the block template", required: true)
           end
 
           example(%{
             title: "a sample title",
             body: "a sample body",
-            serialised: "a sample serialised"
+            serialized: "a sample serialized"
           })
         end,
       BlockTemplate:
@@ -33,7 +33,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
           properties do
             title(:string, "The Title of the block template", required: true)
             body(:string, "The Body of the block template", required: true)
-            serialised(:string, "The Serialised of the block template", required: true)
+            serialized(:string, "The serialized of the block template", required: true)
 
             inserted_at(:string, "When was the block_template inserted", format: "ISO-8601")
             updated_at(:string, "When was the block_template last updated", format: "ISO-8601")
@@ -42,7 +42,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
           example(%{
             title: "a sample title",
             body: "a sample body",
-            serialised: "a sample serialised",
+            serialized: "a sample serialized",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -67,12 +67,12 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
               %{
                 title: "a sample title",
                 body: "a sample body",
-                serialised: "a sample serialised"
+                serialized: "a sample serialized"
               },
               %{
                 title: "a sample title",
                 body: "a sample body",
-                serialised: "a sample serialised"
+                serialized: "a sample serialized"
               }
             ],
             page_number: 1,
@@ -105,7 +105,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     current_user = conn.assigns.current_user
 
     with %BlockTemplate{} = block_template <- Document.create_block_template(current_user, params) do
-      conn |> render("block_template.json", block_template: block_template)
+      render(conn, "block_template.json", block_template: block_template)
     end
   end
 
@@ -131,8 +131,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.block_template_index(current_user, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         block_templates: block_templates,
         page_number: page_number,
         total_pages: total_pages,
@@ -160,8 +159,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     current_user = conn.assigns.current_user
 
     with %BlockTemplate{} = block_template <- Document.get_block_template(uuid, current_user) do
-      conn
-      |> render("block_template.json", block_template: block_template)
+      render(conn, "block_template.json", block_template: block_template)
     end
   end
 
@@ -191,8 +189,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     with %BlockTemplate{} = block_template <- Document.get_block_template(uuid, current_user),
          %BlockTemplate{} = block_template <-
            Document.update_block_template(current_user, block_template, params) do
-      conn
-      |> render("block_template.json", block_template: block_template)
+      render(conn, "block_template.json", block_template: block_template)
     end
   end
 
@@ -217,8 +214,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
 
     with %BlockTemplate{} = block_template <- Document.get_block_template(uuid, current_user),
          {:ok, %BlockTemplate{}} <- Document.delete_block_template(current_user, block_template) do
-      conn
-      |> render("block_template.json", block_template: block_template)
+      render(conn, "block_template.json", block_template: block_template)
     end
   end
 

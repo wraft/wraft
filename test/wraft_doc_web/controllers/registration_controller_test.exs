@@ -23,10 +23,11 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
         email: @valid_attrs["email"]
       })
 
-    params = @valid_attrs |> Map.put("token", token)
+    params = Map.put(@valid_attrs, "token", token)
 
     conn =
-      post(conn, Routes.v1_registration_path(conn, :create, params))
+      conn
+      |> post(Routes.v1_registration_path(conn, :create, params))
       |> doc(operation_id: "create_user")
 
     assert json_response(conn, 201)["user"]["name"] == @valid_attrs["name"]
@@ -43,10 +44,11 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
         email: @invalid_attrs["email"]
       })
 
-    params = @invalid_attrs |> Map.put("token", token)
+    params = Map.put(@invalid_attrs, "token", token)
 
     conn =
-      post(conn, Routes.v1_registration_path(conn, :create, params))
+      conn
+      |> post(Routes.v1_registration_path(conn, :create, params))
       |> doc(operation_id: "create_user")
 
     assert json_response(conn, 422)["errors"]["email"] == ["has invalid format"]

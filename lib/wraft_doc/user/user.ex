@@ -41,6 +41,7 @@ defmodule WraftDoc.Account.User do
     has_many(:approval_systems, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :user_id)
     has_many(:pipelines, WraftDoc.Document.Pipeline, foreign_key: :creator_id)
     has_many(:payments, WraftDoc.Enterprise.Membership.Payment, foreign_key: :creator_id)
+    has_many(:vendors, WraftDoc.Enterprise.Vendor, foreign_key: :creator_id)
 
     timestamps()
   end
@@ -51,6 +52,17 @@ defmodule WraftDoc.Account.User do
     |> validate_required([:name, :email, :password])
     |> validate_format(:email, ~r/@/)
     |> validate_format(:name, ~r/^[A-z ]+$/)
+    |> validate_length(:name, min: 2)
+    |> validate_length(:password, min: 8, max: 16)
+    |> unique_constraint(:email, message: "Email already taken.! Try another email.")
+    |> generate_encrypted_password
+  end
+
+  def create_changeset(users, attrs \\ %{}) do
+    users
+    |> cast(attrs, [:name, :email, :password, :role_id, :organisation_id])
+    |> validate_required([:email, :password])
+    |> validate_format(:email, ~r/@/)
     |> validate_length(:name, min: 2)
     |> validate_length(:password, min: 8, max: 16)
     |> unique_constraint(:email, message: "Email already taken.! Try another email.")

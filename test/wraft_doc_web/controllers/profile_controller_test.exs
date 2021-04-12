@@ -5,13 +5,13 @@ defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
 
   @valid_attrs %{
     name: "John Doe",
-    dob: Date.new(2020, 2, 29) |> elem(1),
+    dob: 2020 |> Date.new(2, 29) |> elem(1),
     gender: "male"
   }
 
   setup %{conn: conn} do
     profile = insert(:profile)
-    user = profile.user |> Repo.preload([:profile, :role])
+    user = Repo.preload(profile.user, [:profile, :role])
 
     conn =
       conn

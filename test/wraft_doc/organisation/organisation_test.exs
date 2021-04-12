@@ -1,6 +1,6 @@
 defmodule WraftDoc.Enterprise.OrganisationTest do
   use WraftDoc.ModelCase
-  alias WraftDoc.{Repo, Enterprise.Organisation}
+  alias WraftDoc.{Enterprise.Organisation, Repo}
 
   @valid_attrs %{
     name: "Company",
@@ -27,8 +27,8 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
   end
 
   test "test organisation name unique constraint" do
-    {:ok, _} = Organisation.changeset(%Organisation{}, @valid_attrs) |> Repo.insert()
-    {:error, changeset} = Organisation.changeset(%Organisation{}, @valid_attrs) |> Repo.insert()
+    {:ok, _} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
+    {:error, changeset} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
 
     assert "Organisation name already taken.! Try another one." in errors_on(
              changeset,
@@ -37,9 +37,9 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
   end
 
   test "test GSTIN unique constraint" do
-    params = @valid_attrs |> Map.put(:name, "Comapny 2")
-    {:ok, _} = Organisation.changeset(%Organisation{}, @valid_attrs) |> Repo.insert()
-    {:error, changeset} = Organisation.changeset(%Organisation{}, params) |> Repo.insert()
+    params = Map.put(@valid_attrs, :name, "Comapny 2")
+    {:ok, _} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
+    {:error, changeset} = %Organisation{} |> Organisation.changeset(params) |> Repo.insert()
 
     assert "GSTIN Already Registered" in errors_on(changeset, :gstin)
   end

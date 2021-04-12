@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Enterprise.Organisation}
+  alias WraftDoc.{Enterprise.Organisation, Repo}
   use WraftDocWeb.ConnCase
 
   @valid_attrs %{
@@ -17,6 +17,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   setup %{conn: conn} do
     role = insert(:role, name: "admin")
     user = insert(:user, role: role)
+    insert(:profile, user: user)
 
     conn =
       conn
@@ -42,7 +43,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     count_before = Organisation |> Repo.all() |> length
 
     conn =
-      post(conn, Routes.v1_organisation_path(conn, :create, @valid_attrs))
+      conn
+      |> post(Routes.v1_organisation_path(conn, :create, @valid_attrs))
       |> doc(operation_id: "create_organisation")
 
     assert json_response(conn, 201)["name"] == @valid_attrs["name"]
@@ -136,5 +138,109 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       })
 
     assert json_response(conn, 200) == %{"info" => "Invited successfully.!"}
+  end
+
+  describe "members/2" do
+    test "returns the list of all members of current user's organisation", %{conn: conn} do
+      user1 = conn.assigns[:current_user]
+      user2 = insert(:user, organisation: user1.organisation)
+      insert(:profile, user: user2)
+      user3 = insert(:user, organisation: user1.organisation)
+      insert(:profile, user: user3)
+
+      conn = put_req_header(build_conn(), "authorization", "Bearer #{conn.assigns.token}")
+
+      conn =
+        get(
+          conn,
+          Routes.v1_organisation_path(conn, :members, user1.organisation, %{page: 1})
+        )
+
+      user_ids =
+        json_response(conn, 200)["members"] |> Enum.map(fn x -> x["id"] end) |> to_string()
+
+      assert user_ids =~ user1.uuid
+      assert user_ids =~ user2.uuid
+      assert user_ids =~ user3.uuid
+      assert json_response(conn, 200)["page_number"] == 1
+      assert json_response(conn, 200)["total_pages"] == 1
+      assert json_response(conn, 200)["total_entries"] == 3
+    end
+
+    test "returns the list of all members of current user's organisation matching the given name",
+         %{conn: conn} do
+      user1 = conn.assigns[:current_user]
+      user2 = insert(:user, organisation: user1.organisation, name: "John")
+      insert(:profile, user: user2)
+      user3 = insert(:user, organisation: user1.organisation, name: "John Doe")
+      insert(:profile, user: user3)
+
+      conn = put_req_header(build_conn(), "authorization", "Bearer #{conn.assigns.token}")
+
+      conn =
+        get(
+          conn,
+          Routes.v1_organisation_path(conn, :members, user1.organisation, %{page: 1, name: "joh"})
+        )
+
+      user_ids =
+        json_response(conn, 200)["members"] |> Enum.map(fn x -> x["id"] end) |> to_string()
+
+      refute user_ids =~ user1.uuid
+      assert user_ids =~ user2.uuid
+      assert user_ids =~ user3.uuid
+      assert json_response(conn, 200)["page_number"] == 1
+      assert json_response(conn, 200)["total_pages"] == 1
+      assert json_response(conn, 200)["total_entries"] == 2
+    end
+  end
+
+  describe "index" do
+    test "list all existing organisation details", %{conn: conn} do
+      o1 = insert(:organisation)
+      o2 = insert(:organisation)
+
+      conn = put_req_header(build_conn(), "authorization", "Bearer #{conn.assigns.token}")
+
+      conn =
+        get(
+          conn,
+          Routes.v1_organisation_path(conn, :index, %{page: 1})
+        )
+
+      assert conn
+             |> json_response(200)
+             |> get_in(["organisations"])
+             |> Enum.map(fn x -> x["name"] end)
+             |> to_string() =~ o1.name
+
+      assert conn
+             |> json_response(200)
+             |> get_in(["organisations"])
+             |> Enum.map(fn x -> x["address"] end)
+             |> to_string() =~ o2.address
+    end
+  end
+
+  test "search organisation by name", %{conn: conn} do
+    insert(:organisation, name: "ABC Ectr")
+    insert(:organisation, name: "KDY soft")
+
+    conn = put_req_header(build_conn(), "authorization", "Bearer #{conn.assigns.token}")
+
+    conn =
+      get(
+        conn,
+        Routes.v1_organisation_path(conn, :index, %{page: 1, name: "KDY"})
+      )
+
+    assert length(json_response(conn, 200)["organisations"]) == 1
+    # assert json_response(conn, 200)["organisations"]
+    #        |> Enum.map(fn x -> x["name"] end)
+    #        |> to_string() =~ o1.name
+
+    # assert json_response(conn, 200)["organisations"]
+    #        |> Enum.map(fn x -> x["address"] end)
+    #        |> to_string() =~ o2.address
   end
 end

@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDoc.{Repo, Enterprise.Membership.Payment}
+  alias WraftDoc.{Enterprise.Membership.Payment, Repo}
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"

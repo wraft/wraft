@@ -44,7 +44,8 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     count_before = State |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_state_path(conn, :create, flow.uuid), @valid_attrs)
+      conn
+      |> post(Routes.v1_state_path(conn, :create, flow.uuid), @valid_attrs)
       |> doc(operation_id: "create_state")
 
     assert count_before + 1 == State |> Repo.all() |> length()
@@ -66,7 +67,8 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     count_before = State |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_state_path(conn, :create, flow.uuid), @invalid_attrs)
+      conn
+      |> post(Routes.v1_state_path(conn, :create, flow.uuid), @invalid_attrs)
       |> doc(operation_id: "create_state")
 
     assert json_response(conn, 422)["errors"]["state"] == ["can't be blank"]
@@ -86,7 +88,8 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     count_before = State |> Repo.all() |> length()
 
     conn =
-      put(conn, Routes.v1_state_path(conn, :update, state.uuid, @valid_attrs))
+      conn
+      |> put(Routes.v1_state_path(conn, :update, state.uuid, @valid_attrs))
       |> doc(operation_id: "update_state")
 
     assert json_response(conn, 200)["state"]["order"] == @valid_attrs.order
@@ -105,7 +108,8 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn =
-      put(conn, Routes.v1_state_path(conn, :update, state.uuid, @invalid_attrs))
+      conn
+      |> put(Routes.v1_state_path(conn, :update, state.uuid, @invalid_attrs))
       |> doc(operation_id: "update_state")
 
     assert json_response(conn, 422)["errors"]["state"] == ["can't be blank"]

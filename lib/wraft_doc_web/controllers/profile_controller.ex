@@ -98,8 +98,7 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
     current_user = conn.assigns[:current_user]
 
     with %Profile{} = profile <- Account.update_profile(current_user, params) do
-      conn
-      |> render("profile.json", profile: profile)
+      render(conn, "profile.json", profile: profile)
     end
   end
 
@@ -138,7 +137,6 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
   def show_current_profile(conn, _params) do
     current_user = conn.assigns[:current_user]
 
-    conn
-    |> render("current_profile.json", user: current_user)
+    render(conn, "current_profile.json", user: current_user)
   end
 end

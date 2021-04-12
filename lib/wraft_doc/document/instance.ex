@@ -34,6 +34,7 @@ defmodule WraftDoc.Document.Instance do
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
+    belongs_to(:vendor, WraftDoc.Enterprise.Vendor)
 
     has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :content_id)
     has_many(:versions, WraftDoc.Document.Instance.Version, foreign_key: :content_id)
@@ -43,7 +44,7 @@ defmodule WraftDoc.Document.Instance do
 
   def changeset(%Instance{} = instance, attrs \\ %{}) do
     instance
-    |> cast(attrs, [:instance_id, :raw, :serialized, :content_type_id, :type])
+    |> cast(attrs, [:instance_id, :raw, :serialized, :content_type_id, :type, :vendor_id])
     |> validate_required([:instance_id, :raw, :serialized, :type])
     |> unique_constraint(:instance_id,
       message: "Instance with the ID exists.!",

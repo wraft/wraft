@@ -468,8 +468,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
          %Flow{} = flow <- Enterprise.get_flow(flow_uuid, current_user),
          %ContentType{} = content_type <-
            Document.create_content_type(current_user, layout, flow, params) do
-      conn
-      |> render(:create, content_type: content_type)
+      render(conn, :create, content_type: content_type)
     end
   end
 
@@ -495,8 +494,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.content_type_index(current_user, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         content_types: content_types,
         page_number: page_number,
         total_pages: total_pages,
@@ -527,8 +525,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     current_user = conn.assigns[:current_user]
 
     with %ContentType{} = content_type <- Document.show_content_type(current_user, uuid) do
-      conn
-      |> render("show.json", content_type: content_type)
+      render(conn, "show.json", content_type: content_type)
     end
   end
 
@@ -558,8 +555,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     with %ContentType{} = content_type <- Document.get_content_type(current_user, uuid),
          %ContentType{} = content_type <-
            Document.update_content_type(content_type, current_user, params) do
-      conn
-      |> render("show.json", content_type: content_type)
+      render(conn, "show.json", content_type: content_type)
     end
   end
 
@@ -587,8 +583,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
     with %ContentType{} = content_type <- Document.get_content_type(current_user, uuid),
          {:ok, %ContentType{}} <- Document.delete_content_type(content_type, current_user) do
-      conn
-      |> render("content_type.json", content_type: content_type)
+      render(conn, "content_type.json", content_type: content_type)
     end
   end
 
@@ -634,7 +629,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
              mapping,
              file
            ) do
-      conn |> render("bulk.json")
+      render(conn, "bulk.json")
     end
   end
 end

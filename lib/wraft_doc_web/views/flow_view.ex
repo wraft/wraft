@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.FlowView do
   use WraftDocWeb, :view
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{UserView, StateView}
+  alias WraftDocWeb.Api.V1.{StateView, UserView}
 
   def render("flow.json", %{flow: flow}) do
     %{

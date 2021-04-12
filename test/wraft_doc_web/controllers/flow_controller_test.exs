@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Enterprise.Flow, Repo, Enterprise.Flow.State}
+  alias WraftDoc.{Enterprise.Flow, Enterprise.Flow.State, Repo}
 
   @valid_attrs %{
     name: "Authorised",
@@ -43,10 +43,8 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
     params = Map.put(@valid_attrs, :organisation_id, organisation_id)
 
     conn =
-      post(
-        conn,
-        Routes.v1_flow_path(conn, :create, params)
-      )
+      conn
+      |> post(Routes.v1_flow_path(conn, :create, params))
       |> doc(operation_id: "create_flow")
 
     state_count_after = State |> Repo.all() |> length()
@@ -68,7 +66,8 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
     count_before = Flow |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_flow_path(conn, :create, @invalid_attrs))
+      conn
+      |> post(Routes.v1_flow_path(conn, :create, @invalid_attrs))
       |> doc(operation_id: "create_flow")
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -90,7 +89,8 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
     params = Map.put(@valid_attrs, :organisation_id, organisation_id)
 
     conn =
-      put(conn, Routes.v1_flow_path(conn, :update, flow.uuid, params))
+      conn
+      |> put(Routes.v1_flow_path(conn, :update, flow.uuid, params))
       |> doc(operation_id: "update_flow")
 
     assert json_response(conn, 200)["flow"]["name"] == @valid_attrs.name
@@ -108,7 +108,8 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn =
-      put(conn, Routes.v1_flow_path(conn, :update, flow.uuid, @invalid_attrs))
+      conn
+      |> put(Routes.v1_flow_path(conn, :update, flow.uuid, @invalid_attrs))
       |> doc(operation_id: "update_flow")
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]

@@ -214,7 +214,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
     current_user = conn.assigns[:current_user]
 
     with %Pipeline{} = pipeline <- Document.create_pipeline(current_user, params) do
-      conn |> render("create.json", pipeline: pipeline)
+      render(conn, "create.json", pipeline: pipeline)
     end
   end
 
@@ -243,8 +243,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.pipeline_index(current_user, params) do
-      conn
-      |> render("index.json",
+      render(conn, "index.json",
         pipelines: pipelines,
         page_number: page_number,
         total_pages: total_pages,
@@ -277,8 +276,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
 
     with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, p_uuid),
          %Pipeline{} = pipeline <- Document.pipeline_update(pipeline, current_user, params) do
-      conn
-      |> render("show.json", pipeline: pipeline)
+      render(conn, "show.json", pipeline: pipeline)
     end
   end
 
@@ -304,8 +302,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
     current_user = conn.assigns[:current_user]
 
     with %Pipeline{} = pipeline <- Document.show_pipeline(current_user, p_uuid) do
-      conn
-      |> render("show.json", pipeline: pipeline)
+      render(conn, "show.json", pipeline: pipeline)
     end
   end
 
@@ -333,8 +330,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
 
     with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, uuid),
          {:ok, %Pipeline{}} <- Document.delete_pipeline(pipeline, current_user) do
-      conn
-      |> render("pipeline.json", pipeline: pipeline)
+      render(conn, "pipeline.json", pipeline: pipeline)
     end
   end
 end

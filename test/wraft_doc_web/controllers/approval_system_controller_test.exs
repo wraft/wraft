@@ -50,7 +50,8 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_approval_system_path(conn, :create, params))
+      conn
+      |> post(Routes.v1_approval_system_path(conn, :create, params))
       |> doc(operation_id: "create_resource")
 
     assert count_before + 1 == ApprovalSystem |> Repo.all() |> length()
@@ -66,7 +67,8 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     conn =
-      post(conn, Routes.v1_approval_system_path(conn, :create, @invalid_attrs))
+      conn
+      |> post(Routes.v1_approval_system_path(conn, :create, @invalid_attrs))
       |> doc(operation_id: "create_resource")
 
     assert json_response(conn, 422)["errors"]["instance_id"] == ["can't be blank"]
@@ -108,7 +110,8 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     conn =
-      put(conn, Routes.v1_approval_system_path(conn, :update, approval_system.uuid, params))
+      conn
+      |> put(Routes.v1_approval_system_path(conn, :update, approval_system.uuid, params))
       |> doc(operation_id: "update_resource")
 
     assert json_response(conn, 200)["instance"]["id"] == instance.uuid
@@ -126,10 +129,8 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn =
-      put(
-        conn,
-        Routes.v1_approval_system_path(conn, :update, approval_system.uuid, @invalid_attrs)
-      )
+      conn
+      |> put(Routes.v1_approval_system_path(conn, :update, approval_system.uuid, @invalid_attrs))
       |> doc(operation_id: "update_resource")
 
     assert json_response(conn, 422)["errors"]["instance_id"] == ["can't be blank"]
@@ -199,7 +200,7 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
         organisation: organisation
       )
 
-    conn = post(conn, Routes.v1_approval_system_path(conn, :approve), id: approval_system.uuid)
+    conn = post(conn, Routes.v1_approval_system_path(conn, :approve, approval_system.uuid))
     assert json_response(conn, 200)["approved"] == true
   end
 
@@ -216,5 +217,37 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
     conn = get(conn, Routes.v1_approval_system_path(conn, :show, approval_system.uuid))
 
     assert json_response(conn, 404) == "Not Found"
+  end
+
+  describe "pending_approvals" do
+    test "lists all pending approval systems to approve", %{conn: conn} do
+      user = conn.assigns.current_user
+      flow = insert(:flow, creator: user, organisation: user.organisation)
+      s1 = insert(:state, order: 1, flow: flow)
+      s2 = insert(:state, order: 2, flow: flow)
+
+      insert(:approval_system,
+        pre_state: s1,
+        post_state: s2,
+        approved: false,
+        approver: user,
+        organisation: user.organisation
+      )
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, conn.assigns.current_user)
+
+      conn = get(conn, Routes.v1_approval_system_path(conn, :index), page: 1)
+
+      pending_approvals =
+        conn
+        |> json_response(200)
+        |> get_in(["pending_approvals"])
+        |> Enum.map(fn x -> x["pre_state"]["state"] end)
+
+      assert to_string(pending_approvals) =~ s1.state
+    end
   end
 end
