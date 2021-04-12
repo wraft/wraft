@@ -1,7 +1,8 @@
 defmodule WraftDocWeb.Api.V1.FlowController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-
+  plug(WraftDocWeb.Plug.Authorized)
+  plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
   alias WraftDoc.{Enterprise, Enterprise.Flow}
 
@@ -14,10 +15,32 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
           properties do
             name(:string, "Flow's name", required: true)
+            controlled(:boolean, "Specifying controlled or uncontrolled flows", required: true)
           end
 
           example(%{
-            name: "Flow 1"
+            name: "Flow 1",
+            controlled: false
+          })
+        end,
+      ControlledFlowRequest:
+        swagger_schema do
+          description("Create controlled flow request")
+
+          properties do
+            name(:string, "Flow name", required: true)
+            controlled(:boolean, "Specifying controlled or uncontrolled flows", required: true)
+            control_data(:map, "Approval system data", required: true)
+          end
+
+          example(%{
+            name: "Flow 2",
+            controlled: true,
+            control_data: %{
+              pre_state: "review",
+              post_state: "publish",
+              approver: "user_uuid"
+            }
           })
         end,
       Flow:
@@ -28,6 +51,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
           properties do
             id(:string, "ID of the flow")
             name(:string, "Name of the flow")
+            controlled(:boolean, "Specifying controlled or uncontrolled flows", required: true)
             inserted_at(:string, "When was the flow inserted", format: "ISO-8601")
             updated_at(:string, "When was the flow last updated", format: "ISO-8601")
           end
@@ -35,8 +59,52 @@ defmodule WraftDocWeb.Api.V1.FlowController do
           example(%{
             id: "1232148nb3478",
             name: "Flow 1",
+            controlled: true,
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
+      ControlledFlow:
+        swagger_schema do
+          title("Controlled Flow")
+          description("Flows to be followed in an organisation")
+
+          properties do
+            id(:string, "ID of the flow")
+            name(:string, "Name of the flow")
+            controlled(:boolean, "Specifying controlled or uncontrolled flows", required: true)
+            control_data(:map, "Approval system data", required: true)
+
+            inserted_at(:string, "When was the flow inserted", format: "ISO-8601")
+            updated_at(:string, "When was the flow last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            name: "Flow 1",
+            controlled: true,
+            control_data: %{
+              pre_state: "review",
+              post_state: "publish",
+              approver: "user_uuid"
+            },
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
+      User:
+        swagger_schema do
+          title("User")
+          description("user deltails")
+
+          properties do
+            name(:string, "Users name")
+            email(:string, "Users email")
+          end
+
+          example(%{
+            name: "user name",
+            email: "user@gmai.com"
           })
         end,
       UpdateFlow:
@@ -107,6 +175,65 @@ defmodule WraftDocWeb.Api.V1.FlowController do
               }
             ]
           })
+        end,
+      FlowAndStatesWithoutCreator:
+        swagger_schema do
+          title("Show flow details and its states")
+          description("Show all details of a flow including all the states undet the flow")
+
+          properties do
+            flow(Schema.ref(:Flow))
+            states(Schema.ref(:State))
+          end
+
+          example(%{
+            flow: %{
+              id: "1232148nb3478",
+              name: "Flow 1",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
+            states: [
+              %{
+                id: "1232148nb3478",
+                state: "published",
+                order: 1
+              }
+            ]
+          })
+        end,
+      FlowIndex:
+        swagger_schema do
+          properties do
+            flows(Schema.ref(:ShowFlows))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            flows: [
+              %{
+                flow: %{
+                  id: "1232148nb3478",
+                  name: "Flow 1",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                creator: %{
+                  id: "1232148nb3478",
+                  name: "John Doe",
+                  email: "email@xyz.com",
+                  email_verify: true,
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                }
+              }
+            ],
+            page_number: 1,
+            total_pages: 2,
+            total_entries: 15
+          })
         end
     }
   end
@@ -120,10 +247,10 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     description("Create flow API")
 
     parameters do
-      flow(:body, Schema.ref(:FlowRequest), "Flow to be created", required: true)
+      flow(:body, Schema.ref(:ControlledFlowRequest), "Flow to be created", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:Flow))
+    response(200, "Ok", Schema.ref(:ControlledFlow))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
@@ -146,17 +273,30 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     summary("Flow index")
     description("Index of flows in current user's organisation")
 
-    response(200, "Ok", Schema.ref(:ShowFlows))
+    parameter(:page, :query, :string, "Page number")
+
+    response(200, "Ok", Schema.ref(:FlowIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, _params) do
+  def index(conn, params) do
     current_user = conn.assigns[:current_user]
-    flows = Enterprise.flow_index(current_user)
 
-    conn
-    |> render("index.json", flows: flows)
+    with %{
+           entries: flows,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Enterprise.flow_index(current_user, params) do
+      conn
+      |> render("index.json",
+        flows: flows,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 
   @doc """
@@ -177,7 +317,9 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => flow_uuid}) do
-    with %Flow{} = flow <- Enterprise.show_flow(flow_uuid) do
+    current_user = conn.assigns.current_user
+
+    with %Flow{} = flow <- Enterprise.show_flow(flow_uuid, current_user) do
       conn
       |> render("show.json", flow: flow)
     end
@@ -204,8 +346,15 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
-    with %Flow{} = flow <- Enterprise.get_flow(uuid),
-         %Flow{} = flow <- Enterprise.update_flow(flow, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %Flow{} = flow <- Enterprise.get_flow(uuid, current_user),
+         %Flow{} = flow <-
+           Enterprise.update_flow(
+             flow,
+             current_user,
+             params
+           ) do
       conn
       |> render("update.json", flow: flow)
     end
@@ -231,8 +380,10 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
-    with %Flow{} = flow <- Enterprise.get_flow(uuid),
-         {:ok, %Flow{}} <- Enterprise.delete_flow(flow) do
+    current_user = conn.assigns[:current_user]
+
+    with %Flow{} = flow <- Enterprise.get_flow(uuid, current_user),
+         {:ok, %Flow{}} <- Enterprise.delete_flow(flow, current_user) do
       conn
       |> render("flow.json", flow: flow)
     end

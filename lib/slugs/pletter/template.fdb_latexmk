@@ -1,0 +1,17 @@
+# Fdb version 3
+["pdflatex"] 1586407362 "/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex" "/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.pdf" "template" 1586407362
+  "$fontfamily$.sty" 0 -1 0 ""
+  "/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/$fontfamily$.sty" 0 -1 0 ""
+  "/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.aux" 1586407362 8 a94a2480d3289e625eea47cd1b285758 ""
+  "/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.tex" 1586352444 9751 1b87b879a85081298a90ccf877d3cb42 ""
+  "/usr/local/texlive/2019/texmf-dist/tex/latex/base/letter.cls" 1523050425 13667 3504aaa1ce7c8ee5868298a7fa3380f8 ""
+  "/usr/local/texlive/2019/texmf-dist/tex/latex/base/size10.clo" 1544567569 8294 6d6e23d5169c0d89d173f6c7e08a005a ""
+  "/usr/local/texlive/2019/texmf-dist/web2c/texmf.cnf" 1553552136 35430 ca24fb44b873d21ac4c63d01600decd4 ""
+  "/usr/local/texlive/2019/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1586046986 3236234 c9e1d7ee149f8ef432b113b25e4c11d7 ""
+  "/usr/local/texlive/2019/texmf-var/web2c/pdftex/pdflatex.fmt" 1586047028 4258183 d54548a8bbc389c01c2fb3ba8504e707 ""
+  "/usr/local/texlive/2019/texmf.cnf" 1586046980 455 5b996dcaa0eb4ef14a83b026bc0a008c ""
+  "template.tex" 1586352444 9751 1b87b879a85081298a90ccf877d3cb42 ""
+  (generated)
+  "/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.pdf"
+  "template.log"
+  "/home/sadique/Documents/org.functionary/elixir/wraft-docs-api/lib/slugs/pletter/template.log"

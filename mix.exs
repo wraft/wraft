@@ -33,12 +33,12 @@ defmodule WraftDoc.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.4.14"},
+      {:phoenix, "~> 1.4.14", override: true},
       {:phoenix_pubsub, "~> 1.1.2"},
       {:phoenix_ecto, "~> 4.1.0"},
       {:ecto_sql, "~> 3.3.4"},
       {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 2.13.3"},
+      {:phoenix_html, "~> 2.14.1"},
       {:phoenix_live_reload, "~> 1.2.1", only: :dev},
       {:gettext, "~> 0.17.4"},
       {:plug_cowboy, "~> 2.1.2"},
@@ -59,7 +59,36 @@ defmodule WraftDoc.Mixfile do
       {:jason, "~> 1.1"},
       {:poison, "~> 3.0", override: true},
       # API documentation
-      {:phoenix_swagger, "~> 0.8.2"}
+      {:phoenix_swagger, "~> 0.8.2"},
+
+      # For Writing Api documentation by slate
+      {:bureaucrat, "~> 0.2.5"},
+      {:ex_json_schema, "~> 0.5"},
+      # For testing
+      {:ex_machina, "~> 2.3", only: :test},
+      {:bypass, "~> 1.0", only: :test},
+      # Pagination
+      {:scrivener_ecto, "~> 2.3"},
+      # QR code generation
+      {:eqrcode, "~> 0.1.7"},
+      # Background jobs
+      {:oban, "~> 1.2"},
+      # Email client
+      {:bamboo, "~> 1.4"},
+      {:httpoison, "~> 1.6"},
+
+      # Activity stream
+      {:spur, git: "https://github.com/shijithkjayan/spur.git"},
+      # CSV parser
+      {:csv, "~> 2.3.1"},
+      # Live dashboard
+      {:phoenix_live_dashboard, "~> 0.1.0"},
+      # Business logic flow
+      {:opus, "~> 0.6.1"},
+      # Razorpay
+      {:razorpay, "~> 0.5.0"},
+      # PDF generation using wkhtmltopdf
+      {:pdf_generator, "~> 0.6.2"}
     ]
   end
 
@@ -73,7 +102,7 @@ defmodule WraftDoc.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      test: ["ecto.create --quiet", "ecto.migrate", "test --trace"],
       swagger: ["phx.swagger.generate priv/static/swagger.json"]
     ]
   end

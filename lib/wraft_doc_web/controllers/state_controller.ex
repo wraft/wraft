@@ -1,7 +1,8 @@
 defmodule WraftDocWeb.Api.V1.StateController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-
+  plug(WraftDocWeb.Plug.Authorized)
+  plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
   alias WraftDoc.{Enterprise, Enterprise.Flow, Enterprise.Flow.State}
 
@@ -84,6 +85,46 @@ defmodule WraftDocWeb.Api.V1.StateController do
           description("All states that have been created and their details")
           type(:array)
           items(Schema.ref(:ShowState))
+        end,
+      FlowIndex:
+        swagger_schema do
+          properties do
+            states(Schema.ref(:ShowStates))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            states: [
+              %{
+                state: %{
+                  id: "1232148nb3478",
+                  state: "published",
+                  order: 1,
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                creator: %{
+                  id: "1232148nb3478",
+                  name: "John Doe",
+                  email: "email@xyz.com",
+                  email_verify: true,
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                flow: %{
+                  id: "jnb234881adsad",
+                  name: "Flow 1",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                }
+              }
+            ],
+            page_number: 1,
+            total_pages: 2,
+            total_entries: 15
+          })
         end
     }
   end
@@ -110,8 +151,8 @@ defmodule WraftDocWeb.Api.V1.StateController do
   def create(conn, %{"flow_id" => flow_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Flow{} = flow <- Enterprise.get_flow(flow_id),
-         {:ok, %State{} = state} <- Enterprise.create_state(current_user, flow, params) do
+    with %Flow{} = flow <- Enterprise.get_flow(flow_id, current_user),
+         %State{} = state <- Enterprise.create_state(current_user, flow, params) do
       conn |> render("create.json", state: state)
     end
   end
@@ -126,18 +167,29 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
     parameters do
       flow_id(:path, :string, "flow id", required: true)
+      page(:query, :string, "Page number")
     end
 
-    response(200, "Ok", Schema.ref(:ShowStates))
+    response(200, "Ok", Schema.ref(:FlowIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, %{"flow_id" => flow_uuid}) do
-    states = Enterprise.state_index(flow_uuid)
-
-    conn
-    |> render("index.json", states: states)
+  def index(conn, %{"flow_id" => flow_uuid} = params) do
+    with %{
+           entries: states,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Enterprise.state_index(flow_uuid, params) do
+      conn
+      |> render("index.json",
+        states: states,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 
   @doc """
@@ -161,15 +213,17 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
-    with %State{} = state <- Enterprise.get_state(uuid),
-         %State{} = %State{} = state <- Enterprise.update_state(state, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %State{} = state <- Enterprise.get_state(current_user, uuid),
+         %State{} = %State{} = state <- Enterprise.update_state(state, current_user, params) do
       conn
       |> render("show.json", state: state)
     end
   end
 
   @doc """
-  Flow delete.
+  State delete.
   """
   swagger_path :delete do
     PhoenixSwagger.Path.delete("/states/{id}")
@@ -188,8 +242,10 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
-    with %State{} = state <- Enterprise.get_state(uuid),
-         {:ok, %State{}} <- Enterprise.delete_state(state) do
+    current_user = conn.assigns[:current_user]
+
+    with %State{} = state <- Enterprise.get_state(current_user, uuid),
+         {:ok, %State{}} <- Enterprise.delete_state(state, current_user) do
       Task.start(fn -> Enterprise.shuffle_order(state, -1) end)
 
       conn
