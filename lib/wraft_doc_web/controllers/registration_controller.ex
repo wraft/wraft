@@ -2,9 +2,8 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
   import Ecto.Query, warn: false
-
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Account, Account.User}
+  alias WraftDoc.{Account, Account.User, Enterprise.Organisation}
 
   def swagger_definitions do
     %{
@@ -32,11 +31,14 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
     New registration.
   """
   swagger_path :create do
-    post("/users/signup")
+    post("/users/signup/")
     summary("User registration")
     description("User registration API")
+    operation_id("create_user")
+    tag("Registration")
 
     parameters do
+      token(:query, :string, "Token obtained from invitation mail")
       user(:body, Schema.ref(:UserRegisterRequest), "User to register", required: true)
     end
 
@@ -46,7 +48,8 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
-    with %User{} = user <- Account.registration(params),
+    with %Organisation{} = org <- Account.get_organisation_from_token(params),
+         %User{} = user <- Account.registration(params, org),
          {:ok, token, _claims} <-
            Account.authenticate(%{user: user, password: params["password"]}) do
       conn

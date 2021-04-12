@@ -5,6 +5,18 @@ defmodule WraftDoc.Enterprise.Flow.State do
   use Ecto.Schema
   import Ecto.Changeset
   alias __MODULE__
+  alias WraftDoc.Account.User
+  import Ecto.Query
+  @derive {Jason.Encoder, only: [:state]}
+  defimpl Spur.Trackable, for: State do
+    def actor(state), do: "#{state.creator_id}"
+    def object(state), do: "State:#{state.id}"
+    def target(_chore), do: nil
+
+    def audience(%{organisation_id: id}) do
+      from(u in User, where: u.organisation_id == ^id)
+    end
+  end
 
   schema "state" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
@@ -15,6 +27,8 @@ defmodule WraftDoc.Enterprise.Flow.State do
     belongs_to(:flow, WraftDoc.Enterprise.Flow)
 
     has_many(:instances, WraftDoc.Document.Instance, foreign_key: :state_id)
+    has_many(:pre_states, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :pre_state_id)
+    has_many(:post_states, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :post_state_id)
     timestamps()
   end
 

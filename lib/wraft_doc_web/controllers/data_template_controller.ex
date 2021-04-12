@@ -1,7 +1,8 @@
 defmodule WraftDocWeb.Api.V1.DataTemplateController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-
+  plug(WraftDocWeb.Plug.Authorized)
+  plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
   alias WraftDoc.{Document, Document.ContentType, Document.DataTemplate}
 
@@ -13,13 +14,17 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
           description("Create data template request.")
 
           properties do
-            tag(:string, "Data templates's tag", required: true)
+            title(:string, "Data template's title", required: true)
+            title_template(:string, "Title template", required: true)
             data(:string, "Data template's contents", required: true)
+            serialized(:map, "Serialized data", required: true)
           end
 
           example(%{
-            tag: "Main template",
-            data: "Hi [user]"
+            title: "Template 1",
+            title_template: "Letter for [user]",
+            data: "Hi [user]",
+            serialized: %{title: "Offer letter of [client]", data: "Hi [user]"}
           })
         end,
       DataTemplate:
@@ -29,18 +34,57 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
           properties do
             id(:string, "The ID of the data template", required: true)
-            tag(:string, "Tag name of the data template", required: true)
+            title(:string, "Title of the data template", required: true)
+            title_template(:string, "Title content of the data template", required: true)
             data(:string, "Data template's contents")
+            serialized(:map, "Serialized data")
             inserted_at(:string, "When was the layout created", format: "ISO-8601")
             updated_at(:string, "When was the layout last updated", format: "ISO-8601")
           end
 
           example(%{
             id: "1232148nb3478",
-            tag: "Main template",
+            title: "Template 1",
+            title_template: "Letter for [user]",
             data: "Hi [user]",
+            serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
+      DataTemplateAndContentType:
+        swagger_schema do
+          title("Data Template and its content type")
+          description("A Data Template and its content type")
+
+          properties do
+            id(:string, "The ID of the data template", required: true)
+            title(:string, "Title of the data template", required: true)
+            title_template(:string, "Title content of the data template", required: true)
+            data(:string, "Data template's contents")
+            serialized(:map, "Serialized data")
+            inserted_at(:string, "When was the layout created", format: "ISO-8601")
+            updated_at(:string, "When was the layout last updated", format: "ISO-8601")
+            content_type(Schema.ref(:ContentTypeWithoutFields))
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            title: "Template 1",
+            title_template: "Letter for [user]",
+            data: "Hi [user]",
+            serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z",
+            content_type: %{
+              id: "1232148nb3478",
+              name: "Offer letter",
+              description: "An offer letter",
+              prefix: "OFFLET",
+              color: "#fffff",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            }
           })
         end,
       ShowDataTemplate:
@@ -51,14 +95,16 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
           properties do
             data_template(Schema.ref(:LayoutAndEngine))
             creator(Schema.ref(:User))
-            content_type(Schema.ref(:ContentType))
+            content_type(Schema.ref(:ContentTypeWithoutFields))
           end
 
           example(%{
             data_template: %{
               id: "1232148nb3478",
-              tag: "Main tag",
+              title: "Main Template",
+              title_template: "Letter for [user]",
               data: "Hi [user]",
+              serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             },
@@ -74,12 +120,6 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
               id: "1232148nb3478",
               name: "Offer letter",
               description: "An offer letter",
-              fields: %{
-                name: "string",
-                position: "string",
-                joining_date: "date",
-                approved_by: "string"
-              },
               prefix: "OFFLET",
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
@@ -92,6 +132,40 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
           description("All data template that have been created under a content type")
           type(:array)
           items(Schema.ref(:DataTemplate))
+        end,
+      DataTemplatesIndex:
+        swagger_schema do
+          properties do
+            data_templates(Schema.ref(:DataTemplateAndContentType))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            data_templates: [
+              %{
+                id: "1232148nb3478",
+                title: "Main template",
+                title_template: "Letter for [user]",
+                data: "Hi [user]",
+                serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z",
+                content_type: %{
+                  id: "1232148nb3478",
+                  name: "Offer letter",
+                  description: "An offer letter",
+                  prefix: "OFFLET",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                }
+              }
+            ],
+            page_number: 1,
+            total_pages: 2,
+            total_entries: 15
+          })
         end
     }
   end
@@ -121,7 +195,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   def create(conn, %{"c_type_id" => c_type_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = c_type <- Document.get_content_type(c_type_uuid),
+    with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_uuid),
          {:ok, %DataTemplate{} = d_template} <-
            Document.create_data_template(current_user, c_type, params) do
       conn
@@ -139,18 +213,61 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
     parameters do
       c_type_id(:path, :string, "ID of the content type", required: true)
+      page(:query, :string, "Page number")
     end
 
-    response(200, "Ok", Schema.ref(:DataTemplates))
+    response(200, "Ok", Schema.ref(:DataTemplatesIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, %{"c_type_id" => c_type_uuid}) do
-    data_templates = Document.data_template_index(c_type_uuid)
+  def index(conn, %{"c_type_id" => c_type_uuid} = params) do
+    with %{
+           entries: data_templates,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.data_template_index(c_type_uuid, params) do
+      conn
+      |> render("index.json",
+        data_templates: data_templates,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
 
-    conn
-    |> render("index.json", data_templates: data_templates)
+  @doc """
+  All Data templates.
+  """
+  swagger_path :all_templates do
+    get("/data_templates")
+    summary("All Data templates")
+    description("API to get the list of all data templates created so far under an organisation")
+    parameter(:page, :query, :string, "Page number")
+    response(200, "Ok", Schema.ref(:DataTemplatesIndex))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec all_templates(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def all_templates(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %{
+           entries: data_templates,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.data_templates_index_of_an_organisation(current_user, params) do
+      conn
+      |> render("index.json",
+        data_templates: data_templates,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 
   @doc """
@@ -171,7 +288,9 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => d_temp_uuid}) do
-    with %DataTemplate{} = data_template <- Document.show_d_template(d_temp_uuid) do
+    current_user = conn.assigns[:current_user]
+
+    with %DataTemplate{} = data_template <- Document.show_d_template(current_user, d_temp_uuid) do
       conn
       |> render("show.json", d_template: data_template)
     end
@@ -201,8 +320,10 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
-    with %DataTemplate{} = d_temp <- Document.get_d_template(uuid),
-         %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %DataTemplate{} = d_temp <- Document.get_d_template(current_user, uuid),
+         %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, current_user, params) do
       conn
       |> render("show.json", d_template: d_temp)
     end
@@ -228,10 +349,46 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
   def delete(conn, %{"id" => uuid}) do
-    with %DataTemplate{} = d_temp <- Document.get_d_template(uuid),
-         {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp) do
+    current_user = conn.assigns[:current_user]
+
+    with %DataTemplate{} = d_temp <- Document.get_d_template(current_user, uuid),
+         {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp, current_user) do
       conn
       |> render("create.json", d_template: d_temp)
     end
   end
+
+  @doc """
+  Bulk data template creation.
+  """
+  swagger_path :bulk_import do
+    post("/content_types/{c_type_id}/data_templates/bulk_import")
+    summary("Create data template in bulk")
+    description("API for data template bulk creation")
+    consumes("multipart/form-data")
+
+    parameter(:c_type_id, :path, :string, "Content type id", required: true)
+    parameter(:file, :formData, :file, "Bulk data template creation source file")
+    parameter(:mapping, :formData, :map, "Mappings for the CSV")
+
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec bulk_import(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def bulk_import(
+        conn,
+        %{"c_type_id" => c_type_uuid, "mapping" => mapping, "file" => file}
+      ) do
+    user = conn.assigns[:current_user]
+
+    with %ContentType{} <- Document.get_content_type(user, c_type_uuid),
+         {:ok, %Oban.Job{}} <-
+           Document.insert_data_template_bulk_import_work(user.uuid, c_type_uuid, mapping, file) do
+      conn
+      |> render("bulk.json", resource: "Data Template")
+    end
+  end
+
+  def bulk_import(_conn, _), do: nil
 end

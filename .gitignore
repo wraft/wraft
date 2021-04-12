@@ -4,6 +4,8 @@
 /deps
 /*.ez
 /uploads
+/temp
+/priv/static/swagger.json
 # Generated on crash by the VM
 erl_crash.dump
 

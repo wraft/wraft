@@ -7,6 +7,7 @@ defmodule WraftDoc.Account.Profile do
   import Ecto.Changeset
 
   schema "basic_profile" do
+    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
     field(:profile_pic, WraftDocWeb.PropicUploader.Type)
     field(:dob, :date)
@@ -22,10 +23,11 @@ defmodule WraftDoc.Account.Profile do
     |> cast(attrs, [
       :name,
       :dob,
-      :gender
+      :gender,
+      :user_id
     ])
     |> cast_attachments(attrs, [:profile_pic])
-    |> validate_required([:name])
+    |> validate_required([:name, :user_id])
     |> validate_format(:name, ~r/^[A-z ]+$/)
     |> validate_length(:name, min: 2)
 

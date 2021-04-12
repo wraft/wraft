@@ -15,8 +15,18 @@ defmodule WraftDocWeb.Api.V1.ThemeView do
     }
   end
 
-  def render("index.json", %{themes: themes}) do
-    render_many(themes, ThemeView, "create.json", as: :theme)
+  def render("index.json", %{
+        themes: themes,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      themes: render_many(themes, ThemeView, "create.json", as: :theme),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
   end
 
   def render("show.json", %{theme: theme}) do

@@ -1,4 +1,4 @@
-# Script for populating the database. You can run it as:
+# Script for populating the \base. You can run it as:
 #
 #     mix run priv/repo/seeds.exs
 #
@@ -11,7 +11,6 @@
 # and so on) as they will fail if something goes wrong.
 alias WraftDoc.{
   Repo,
-  Account,
   Account.Role,
   Account.User,
   Account.Profile,
@@ -22,10 +21,13 @@ alias WraftDoc.{
   Document.Theme,
   Enterprise.Organisation,
   Enterprise.Flow,
-  Enterprise.Flow.State
+  Enterprise.Flow.State,
+  Enterprise.Plan,
+  Document.FieldType,
+  Document.ContentTypeField,
+  Document.Counter,
+  Document.DataTemplate
 }
-
-import Plug
 
 # Populate database with roles
 %Role{name: "admin"} |> Repo.insert!()
@@ -35,7 +37,16 @@ import Plug
 %{id: id} = Role |> Repo.get_by(name: "admin")
 
 # Populate DB with one organisation
-organisation = %Organisation{name: "Functionary Labs Pvt Ltd."} |> Repo.insert!()
+organisation =
+  %Organisation{
+    name: "Functionary Labs Pvt Ltd.",
+    legal_name: "Functionary Labs Pvt Ltd",
+    address: "#24, Caravel Building",
+    name_of_ceo: "Muneef Hameed",
+    name_of_cto: "Salsabeel K",
+    email: "hello@aurut.com"
+  }
+  |> Repo.insert!()
 
 user_params = %{
   name: "Admin",
@@ -62,25 +73,15 @@ layout =
     width: 30.0,
     height: 40.0,
     unit: "cm",
-    slug: "letter",
+    slug: "pletter",
     engine_id: engine.id,
     creator_id: user.id,
     organisation_id: organisation.id
   }
   |> Repo.insert!()
 
-# Populate Content Type
-content_type =
-  %ContentType{
-    name: "Offer Letter",
-    description: "An offer letter",
-    fields: %{name: "John Doe", position: "Elixir Developer"},
-    prefix: "OFFLET",
-    layout_id: layout.id,
-    creator_id: user.id,
-    organisation_id: organisation.id
-  }
-  |> Repo.insert!()
+# Populate fields
+field = %FieldType{name: "String", creator_id: user.id} |> Repo.insert!()
 
 # Populate flow
 flow =
@@ -90,6 +91,24 @@ flow =
     creator_id: user.id
   }
   |> Repo.insert!()
+
+# Populate Content Type
+content_type =
+  %ContentType{
+    name: "Offer Letter",
+    description: "An offer letter",
+    prefix: "OFFLET",
+    layout_id: layout.id,
+    creator_id: user.id,
+    organisation_id: organisation.id,
+    flow_id: flow.id,
+    color: "#fff"
+  }
+  |> Repo.insert!()
+
+# Populate content type fields
+%ContentTypeField{name: "employee", content_type_id: content_type.id, field_type_id: field.id}
+|> Repo.insert!()
 
 # Populate State
 state =
@@ -116,6 +135,13 @@ state =
 }
 |> Repo.insert!()
 
+# Populate Counter
+%Counter{
+  subject: "ContentType:#{content_type.id}",
+  count: 1
+}
+|> Repo.insert!()
+
 # Populate theme
 %Theme{
   name: "Offer letter theme",
@@ -125,3 +151,38 @@ state =
   organisation_id: organisation.id
 }
 |> Repo.insert!()
+
+# Populate data template
+%DataTemplate{
+  title: "Offer letter tempalate",
+  title_template: "Offer Letter for [employee]",
+  data: "Hi [employee], we welcome you to our [company]",
+  content_type_id: content_type.id,
+  creator_id: user.id
+}
+|> Repo.insert!()
+
+# Populate plans
+%Plan{
+  name: "Free Trial",
+  description: "Free trial where users can try out all the features",
+  yearly_amount: 0,
+  monthly_amount: 0
+}
+|> Repo.insert()
+
+%Plan{
+  name: "Premium",
+  description: "Premium plan with premium features only",
+  yearly_amount: 0,
+  monthly_amount: 0
+}
+|> Repo.insert()
+
+%Plan{
+  name: "Pro",
+  description: "Pro plan suitable for enterprises",
+  yearly_amount: 0,
+  monthly_amount: 0
+}
+|> Repo.insert()

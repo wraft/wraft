@@ -1,0 +1,150 @@
+% !TEX TS-program = xelatex
+% !TEX encoding = UTF-8 Unicode
+
+% -----------------
+% START OF PREAMBLE
+% -----------------
+
+\PassOptionsToPackage{unicode=true}{hyperref} % options for packages loaded elsewhere
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+% Commands
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+
+% Packages
+\usepackage{fontspec}
+\usepackage{eurosym}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{upquote}
+\usepackage{microtype}
+\usepackage{polyglossia}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage[normalem]{ulem}
+\usepackage[setpagesize=false,
+            unicode=false,
+            colorlinks=true,
+            urlcolor=blue,
+            linkcolor=black]{hyperref}
+\usepackage{sectsty}
+\usepackage{xcolor}
+
+\usepackage{titlesec}
+\usepackage{multicol}
+\usepackage{pgfgantt}
+\usepackage{rotating,multirow,longtable,booktabs}
+
+% Typeface settings
+\usepackage{microtype}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{setspace}
+\usepackage{listings}
+
+\sectionfont{\color{cyan}}
+\definecolor{foo}{HTML}{2c41ac}
+\sectionfont{\color{foo}}
+
+$if(path)$
+\setmainfont[
+Path = $path$/fonts/,
+BoldFont = Mallory-Bold.otf]{Mallory-Book.otf}
+$endif$
+
+% Longtabe and friends
+\usepackage{rotating,multirow,longtable,booktabs}
+
+% Polyglossia settings
+\setmainlanguage{english} % or danish
+\addto\captionsenglish{%
+  \renewcommand{\contentsname}{Table of Contents}
+}
+\addto\captionsdanish{%
+  \renewcommand{\contentsname}{Indholdsfortegnelse}
+}
+
+\renewcommand{\baselinestretch}{1.25}
+
+$if(title)$
+\newcommand{\newCommandProposalTitle}{$title$}
+$endif$
+
+$if(id)$
+\newcommand{\newCommandProposalId}{$id$}
+$endif$
+
+\newcommand{\newCommandProposalParty}{Functionary Labs Pvt Ltd}
+% Required for syntax highlighting
+$highlighting-macros$
+
+
+% Don't let images overflow the page
+% Can still explicit set width/height/options for an image
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+
+
+% Make links footnotes instead of hotlinks
+\renewcommand{\href}[2]{#2\footnote{\url{#1}}}
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+% Avoid problems with \sout in headers with hyperref:
+\pdfstringdefDisableCommands{\renewcommand{\sout}{}}
+
+
+% No paragraph indentation
+% and set space between paragraphs
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1em plus 2pt minus 1pt}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+
+% Booktabs styling
+\setlength\heavyrulewidth{1.5pt}% Thick top and bottom lines
+\setlength{\defaultaddspace}{0.65ex}% Adjusted line spacing
+\let\originaltoprule\toprule
+\renewcommand{\toprule}{\originaltoprule[0pt]}% No top rule
+
+% Dotted lines, load after longtable
+\usepackage{arydshln}
+\renewcommand*\cmidrule{\hdashline[.6pt/1pt]}% Dashed middle lines
+
+% Adjust caption of floats (tables)
+\usepackage{floatrow}
+\floatsetup[longtable]{style=plaintop}% Does not work!
+
+\lstset{%
+	backgroundcolor=\color{cyan!10},
+	basicstyle=\ttfamily,
+	numbers=left,numberstyle=\scriptsize
+}
+\setlength{\tabcolsep}{0.8em} % for the horizontal padding
+{\renewcommand{\arraystretch}{1.7}% for the vertical padding
+
+% -----------------
+%  END OF PREAMBLE
+% -----------------
+\begin{document}
+$if(path)$
+\input{$path$/cover}
+$endif$
+
+% chapter: 0, section: 1, subsection: 2 etc
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{1}
+\tableofcontents
+\newpage
+$body$
+
+$if(qrcode)$
+  \includegraphics[scale=20.25]{$qrcode$}
+$endif$
+\end{document}
