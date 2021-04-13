@@ -1129,7 +1129,7 @@ defmodule WraftDoc.Enterprise do
         {:error, changeset}
 
       {:ok, %{role: _role, organisation_role: organisation_role}} ->
-        organisation_role |> Repo.preload(:role)
+        organisation_role
     end
   end
 
@@ -1161,7 +1161,7 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  def get_organisation_id_roles(id) do
-    from(o in Organisation, where: o.uuid == ^id) |> Repo.one() |> Repo.preload(:roles)
+  def get_organisation_id_roles(uuid) do
+    from(o in Organisation, where: o.uuid == ^uuid) |> Repo.one() |> Repo.preload(:roles)
   end
 end

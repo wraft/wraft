@@ -2258,17 +2258,33 @@ defmodule WraftDoc.Document do
 
   def get_trigger_histories_of_a_pipeline(_, _), do: nil
 
+  @doc """
+   Get the content type by there id with preloading the data roles
+  """
+
   def get_content_type_roles(id) do
     from(c in ContentType, where: c.uuid == ^id) |> Repo.one() |> Repo.preload(:roles)
   end
+
+  @doc """
+    Get the role name by there uuid with preloading the content types
+  """
 
   def get_content_type_under_roles(id) do
     from(r in Role, where: r.uuid == ^id) |> Repo.one() |> Repo.preload(:content_types)
   end
 
+  @doc """
+  Get the content type with the id
+  """
+
   def get_content_type(id) do
     from(c in ContentType, where: c.uuid == ^id) |> Repo.one()
   end
+
+  @doc """
+  create content type role function
+  """
 
   def create_content_role(id, params) do
     content_type = get_content_type(id)
@@ -2286,20 +2302,32 @@ defmodule WraftDoc.Document do
       {:error, _, changeset, _} ->
         {:error, changeset}
 
-      {:ok, %{role: _role, content_type: content_type}} ->
-        content_type |> Repo.preload(:role)
+      {:ok, %{role: _role, content_type_role: content_type_role}} ->
+        content_type_role
     end
   end
+
+  @doc """
+  get role from the respective content type
+  """
 
   def get_role_of_content_type(id, c_id) do
     from(r in Role, where: r.uuid == ^id, join: ct in ContentType, where: ct.uuid == ^c_id)
     |> Repo.one()
   end
 
+  @doc """
+  get the content type from the respective role
+  """
+
   def get_content_type_role(id, role_id) do
     from(ct in ContentType, where: ct.uuid == ^id, join: r in Role, where: r.uuid == ^role_id)
     |> Repo.one()
   end
+
+  @doc """
+  delete the role of the content type
+  """
 
   def delete_role_of_the_content_type(role) do
     role
