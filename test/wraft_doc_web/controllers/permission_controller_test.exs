@@ -92,8 +92,11 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
       |> Enum.map(fn x -> Map.keys(x) end)
       |> List.flatten()
 
-    assert List.to_string(permissions) =~ a1.resource.category <> "_" <> a1.resource.action
-    assert List.to_string(permissions) =~ a2.resource.category <> "_" <> a2.resource.action
+    assert List.to_string(permissions) =~
+             (a1.resource.category |> to_string()) <> "_" <> (a1.resource.action |> to_string())
+
+    assert List.to_string(permissions) =~
+             (a2.resource.category |> to_string()) <> "_" <> (a2.resource.action |> to_string())
   end
 
   test "delete permission by given id", %{conn: conn} do
