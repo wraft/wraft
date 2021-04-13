@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-
+  action_fallback(WraftDocWeb.FallbackController)
   alias WraftDoc.Document
 
   def swagger_definitions do
@@ -37,25 +37,23 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
             ]
           })
         end,
+      ContentType:
+        swagger_schema do
+          title("Create Content Type")
+          description("create a new content type")
 
-        ContentType:
-          swagger_schema do
-            title("Create Content Type")
-            description("create a new content type")
+          properties do
+            id(:string, "ID of the content_type")
+            description(:string, "Content Type's description", required: true)
+            layout_uuid(:string, "ID of the layout selected", required: true)
+            flow_uuid(:string, "ID of the flow selected", required: true)
+            color(:string, "Hex code of color")
 
-            properties do
-              id(:string, "ID of the content_type")
-              description(:string, "Content Type's description", required: true)
-              layout_uuid(:string, "ID of the layout selected", required: true)
-              flow_uuid(:string, "ID of the flow selected", required: true)
-              color(:string, "Hex code of color")
-
-              prefix(:string, "Prefix to be used for generating Unique ID for contents",
-                required: true
-              )
-            end
-
+            prefix(:string, "Prefix to be used for generating Unique ID for contents",
+              required: true
+            )
           end
+        end
     }
   end
 
@@ -73,8 +71,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def show(conn, %{"id" => id}) do
-    content_type_role = Document.get_content_type_roles(id)
+  def show(conn, %{"id" => uuid}) do
+    content_type_role = Document.get_content_type_roles(uuid)
 
     conn
     |> render("show.json", content_type_role: content_type_role)
@@ -94,10 +92,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def create(conn, %{"id" => id} = params) do
-    content_type_role = Document.create_content_role(id, params)
+  def create(conn, %{"id" => uuid} = params) do
+    content_type_role = Document.create_content_role(uuid, params)
 
     conn
-    |> render("show.json", content_type_role: content_type_role)
+    |> render("show_content_type.json", content_type_role: content_type_role)
   end
 end

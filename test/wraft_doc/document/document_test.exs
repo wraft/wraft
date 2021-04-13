@@ -23,6 +23,8 @@ defmodule WraftDoc.DocumentTest do
     Repo
   }
 
+  alias WraftDoc.Account.Role
+
   @valid_layout_attrs %{
     "name" => "layout name",
     "description" => "layout description",
@@ -1805,6 +1807,66 @@ defmodule WraftDoc.DocumentTest do
     test "retruns nil with wrong data" do
       response = Document.create_trigger_history(nil, nil, %{})
       assert response == nil
+    end
+  end
+
+  describe "content_type/2" do
+    test "get_content_type_roles" do
+      content_type = insert(:content_type)
+
+      response = Document.get_content_type_roles(content_type.uuid)
+
+      assert response.name == content_type.name
+    end
+
+    test "get_content_type_under_roles" do
+      role = insert(:role)
+
+      response = Document.get_content_type_under_roles(role.uuid)
+
+      assert response.name == role.name
+    end
+
+    test "get_content_type" do
+      content_type = insert(:content_type)
+
+      response = Document.get_content_type(content_type.uuid)
+
+      assert response.name == content_type.name
+    end
+  end
+
+  describe "delete_role_of_the_content_type/1" do
+    test "delete_role_of_the_content_type" do
+      role = insert(:role)
+
+      before_role_count = Repo.all(Role) |> length()
+
+      response = Document.delete_role_of_the_content_type(role)
+
+      after_role_count = Repo.all(Role) |> length()
+
+      assert after_role_count = before_role_count - 1
+    end
+  end
+
+  describe "content_type_and_role/2" do
+    test "get_role_of_content_type" do
+      role = insert(:role)
+      content_type = insert(:content_type)
+
+      response = Document.get_role_of_content_type(role.uuid, content_type.uuid)
+
+      assert response.name == role.name
+    end
+
+    test "get_content_type_role" do
+      role = insert(:role)
+      content_type = insert(:content_type)
+
+      response = Document.get_content_type_role(content_type.uuid, role.uuid)
+
+      assert response.name == content_type.name
     end
   end
 end

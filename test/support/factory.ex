@@ -38,7 +38,8 @@ defmodule WraftDoc.Factory do
     Enterprise.Organisation,
     Enterprise.Plan,
     Enterprise.Vendor,
-    Account.UserRole
+    Account.UserRole,
+    Document.ContentTypeRole
   }
 
   def user_factory do
@@ -412,6 +413,13 @@ defmodule WraftDoc.Factory do
       gstin: sequence(:gstin, &"Vendor gstin #{&1} "),
       reg_no: sequence(:reg_no, &"Vendor reg_no #{&1} "),
       contact_person: sequence(:contact_person, &"Vendor contact_person #{&1} ")
+    }
+  end
+
+  def content_type_role_factory do
+    %ContentTypeRole{
+      content_type: build(:content_type),
+      role: build(:role)
     }
   end
 end

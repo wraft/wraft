@@ -18,6 +18,8 @@ defmodule WraftDoc.EnterpriseTest do
     Repo
   }
 
+  alias WraftDoc.Account.Role
+
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
   test "get flow returns flow data by uuid" do
@@ -904,5 +906,48 @@ defmodule WraftDoc.EnterpriseTest do
     assert vendor_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ v2.name
   end
 
+  describe "delete_role_of_the_organisation/1" do
+    test "delete_role_of_the_organisation" do
+      role = insert(:role)
 
+      before_role_count = Repo.all(Role) |> length()
+
+      response = Enterprise.delete_role_of_the_organisation(role)
+
+      after_role_count = Repo.all(Role) |> length()
+
+      assert after_role_count = before_role_count - 1
+    end
+  end
+
+  describe "get_organisation_id_roles/1" do
+    test "get_organisation_id_roles" do
+      organisation = insert(:organisation)
+
+      response = Enterprise.get_organisation_id_roles(organisation.uuid)
+      assert response.name == organisation.name
+    end
+  end
+
+  describe "get_organisation/2" do
+    test "get_organisation_id_and_role_id" do
+      organisation = insert(:organisation)
+      role = insert(:role)
+
+      response = Enterprise.get_organisation_id_and_role_id(organisation.uuid, role.uuid)
+      assert response.name == organisation.name
+
+    end
+  end
+
+  describe "get_role/2" do
+    test "get_role_of_the_organisation" do
+      organisation = insert(:organisation)
+      role = insert(:role)
+
+      response = Enterprise.get_role_of_the_organisation(role.uuid, organisation.uuid)
+      assert role.name == role.name
+
+    end
+  end
 end

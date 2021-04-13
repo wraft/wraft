@@ -13,4 +13,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleView do
       role: render_many(content_type_role.roles, RoleView, "role.json", as: :role)
     }
   end
+
+  def render("show_content_type.json", %{content_type_role: content_type_role}) do
+    %{
+      uuid: content_type_role.uuid,
+      role_id: content_type_role.role_id,
+      content_type_id: content_type_role.content_type_id
+    }
+  end
 end

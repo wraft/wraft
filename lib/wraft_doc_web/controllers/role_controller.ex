@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Api.V1.RoleController do
 
   alias WraftDoc.Account.Role
   alias WraftDoc.Document
+  action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do
     %{
@@ -17,7 +18,7 @@ defmodule WraftDocWeb.Api.V1.RoleController do
             name(:string, "Name of the role")
           end
         end,
-    ContentType:
+      ContentType:
         swagger_schema do
           title("Content type")
           description("all the content type")
@@ -33,7 +34,6 @@ defmodule WraftDocWeb.Api.V1.RoleController do
               required: true
             )
           end
-
         end
     }
   end
