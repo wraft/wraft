@@ -26,6 +26,15 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
             id(:string, "The id of an organisation", required: true)
             roles(Schema.ref(:ListofRoles))
           end
+        end,
+        Role:
+        swagger_schema do
+          title("create organisation role")
+          description("create a new organisation role api")
+
+          properties do
+            name(:string, "Name of the role")
+          end
         end
     }
   end
@@ -58,9 +67,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
 
     parameters do
       id(:path, :string, "organisation_id", required: true)
+      role(:body, Schema.ref(:Role), "Organisation Role API")
     end
 
-    response(200, "Ok", Schema.ref(:OrganisationRole))
+    response(200, "Ok", Schema.ref(:Role))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not Found", Schema.ref(:Error))
   end
