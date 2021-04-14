@@ -53,12 +53,21 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
               required: true
             )
           end
+        end,
+      ContentTypeRole:
+        swagger_schema do
+          title("create content role")
+          description("create a new content type role api")
+
+          properties do
+            name(:string, "Name of the role")
+          end
         end
     }
   end
 
   swagger_path :show do
-    get("/content_type/:id")
+    get("/content_type/{id}")
     summary("show all the content type role")
     description("API to list all the roles under the content_type")
 
@@ -79,12 +88,13 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
   end
 
   swagger_path :create do
-    get("/content_role/{id}")
+    post("/content_role/{id}")
     summary("Create the content type role")
     description("Content Type role creation api")
 
     parameters do
       id(:path, :string, "id", required: true)
+      role(:body, Schema.ref(:ContentTypeRole), "Content Type Role API")
     end
 
     response(200, "Ok", Schema.ref(:ContentTypeRole))
