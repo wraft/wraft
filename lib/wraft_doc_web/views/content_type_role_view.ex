@@ -21,4 +21,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleView do
       content_type_id: content_type_role.content_type_id
     }
   end
+
+  def render("create_content_type.json", %{content_type_role: content_type_role}) do
+    %{
+      uuid: content_type_role.uuid,
+      role: content_type_role.role.uuid,
+      content_type: content_type_role.content_type.uuid
+    }
+  end
 end

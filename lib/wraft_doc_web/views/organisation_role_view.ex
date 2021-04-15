@@ -2,7 +2,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleView do
   use WraftDocWeb, :view
   alias WraftDocWeb.Api.V1.RoleView
 
-
   def render("organisation_role.json", %{organisation_role: organisation_role}) do
     %{
       id: organisation_role.uuid,

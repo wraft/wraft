@@ -27,7 +27,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
             roles(Schema.ref(:ListofRoles))
           end
         end,
-        Role:
+      Role:
         swagger_schema do
           title("create organisation role")
           description("create a new organisation role api")
@@ -99,7 +99,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
 
   def delete_organisation_role(conn, %{"id" => id, "o_id" => o_id}) do
     with %Role{} = organisation_role <- Enterprise.get_role_of_the_organisation(id, o_id),
-         %Role{} = organisation_role <- Enterprise.delete_role_of_the_organisation(organisation_role) do
+         %Role{} = organisation_role <-
+           Enterprise.delete_role_of_the_organisation(organisation_role) do
       conn |> render("organisations.json", organisation_role: organisation_role)
     end
   end

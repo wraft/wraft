@@ -936,7 +936,6 @@ defmodule WraftDoc.EnterpriseTest do
 
       response = Enterprise.get_organisation_id_and_role_id(organisation.uuid, role.uuid)
       assert response.name == organisation.name
-
     end
   end
 
@@ -947,7 +946,6 @@ defmodule WraftDoc.EnterpriseTest do
 
       response = Enterprise.get_role_of_the_organisation(role.uuid, organisation.uuid)
       assert role.name == role.name
-
     end
   end
 end
