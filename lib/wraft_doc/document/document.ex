@@ -2286,26 +2286,59 @@ defmodule WraftDoc.Document do
   create content type role function
   """
 
-  def create_content_role(id, params) do
-    content_type = get_content_type(id)
-
-    Multi.new()
-    |> Multi.insert(:role, Role.changeset(%Role{}, params))
-    |> Multi.insert(:content_type_role, fn %{role: role} ->
-      ContentTypeRole.changeset(%ContentTypeRole{}, %{
+  def create_content_type_role(%{"content_type_id" => content_type_id, "role_id" => role_id}) do
+    with %Role{} = role <- get_role_from_uuid(role_id),
+         %ContentType{} = content_type <- get_content_type(content_type_id) do
+      params = %{
         content_type_id: content_type.id,
         role_id: role.id
-      })
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:error, _, changeset, _} ->
-        {:error, changeset}
+      }
 
-      {:ok, %{role: _role, content_type_role: content_type_role}} ->
-        content_type_role
+      do_create_content_type_role(params)
     end
   end
+
+  def create_content_type_role(params) do
+    do_create_content_type_role(params)
+  end
+
+  def do_create_content_type_role(params) do
+    %ContentTypeRole{}
+    |> ContentTypeRole.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, content_type_role} ->
+        content_type_role |> Repo.preload([:role, :content_type])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def get_role_from_uuid(uuid) do
+    from(r in Role, where: r.uuid == ^uuid) |> Repo.one()
+  end
+
+  # def create_content_type_role(content_id, params) do
+  #   content_type = get_content_type(content_id)
+
+  #   Multi.new()
+  #   |> Multi.insert(:role, Role.changeset(%Role{}, params))
+  #   |> Multi.insert(:content_type_role, fn %{role: role} ->
+  #     ContentTypeRole.changeset(%ContentTypeRole{}, %{
+  #       content_type_id: content_type.id,
+  #       role_id: role.id
+  #     })
+  #   end)
+  #   |> Repo.transaction()
+  #   |> case do
+  #     {:error, _, changeset, _} ->
+  #       {:error, changeset}
+
+  #     {:ok, %{role: _role, content_type_role: content_type_role}} ->
+  #       content_type_role
+  #   end
+  # end
 
   @doc """
   get role from the respective content type

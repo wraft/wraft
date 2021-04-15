@@ -2,6 +2,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
   action_fallback(WraftDocWeb.FallbackController)
+  alias WraftDoc.Document.ContentTypeRole
   alias WraftDoc.Document
 
   def swagger_definitions do
@@ -60,7 +61,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
           description("create a new content type role api")
 
           properties do
-            name(:string, "Name of the role")
+            role_id(:uuid, "uuid for the role")
+            content_type_id(:uuid, "uuid for the content type")
           end
         end
     }
@@ -88,13 +90,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
   end
 
   swagger_path :create do
-    post("/content_role/{id}")
+    post("/content_type_roles")
     summary("Create the content type role")
     description("Content Type role creation api")
 
     parameters do
-      id(:path, :string, "id", required: true)
-      role(:body, Schema.ref(:ContentTypeRole), "Content Type Role API")
+      content_type_role(:body, Schema.ref(:ContentTypeRole), "Content Type Role API")
     end
 
     response(200, "Ok", Schema.ref(:ContentTypeRole))
@@ -102,10 +103,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def create(conn, %{"id" => uuid} = params) do
-    content_type_role = Document.create_content_role(uuid, params)
+  def create(conn, params) do
+    content_type_role = Document.create_content_type_role(params)
 
     conn
-    |> render("show_content_type.json", content_type_role: content_type_role)
+    |> render("create_content_type.json", content_type_role: content_type_role)
   end
 end

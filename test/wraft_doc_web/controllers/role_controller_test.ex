@@ -15,8 +15,8 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
     # build_conn()
     # |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
 
-   conn = get(conn, Routes.v1_role_path(conn, :show, role.uuid))
-   assert json_response(conn, 200)["name"] == role.name
+    conn = get(conn, Routes.v1_role_path(conn, :show, role.uuid))
+    assert json_response(conn, 200)["name"] == role.name
   end
 
   test "delete particular role by giving particular content type id", %{conn: conn} do
@@ -30,7 +30,12 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
 
     count_before = Role |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_role_path(conn, :delete_content_type_role, role.uuid, content_type.uuid))
+    conn =
+      delete(
+        conn,
+        Routes.v1_role_path(conn, :delete_content_type_role, role.uuid, content_type.uuid)
+      )
+
     assert count_before - 1 == Role |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == role.name
   end
