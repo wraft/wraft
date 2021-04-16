@@ -86,10 +86,11 @@ defmodule WraftDocWeb.Router do
         :delete_organisation_role
       )
 
+      # Content Type Role
       delete("/content_type_roles/:id", ContentTypeRoleController, :delete)
+      post("/content_type_roles", ContentTypeRoleController, :create)
       get("/content_types/roles/:id", ContentTypeController, :show_content_type_role)
       get("/roles/:id", RoleController, :show)
-      post("/content_type_roles", ContentTypeRoleController, :create)
     end
   end
 
