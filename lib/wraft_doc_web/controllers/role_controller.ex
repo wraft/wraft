@@ -39,7 +39,7 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   end
 
   swagger_path :show do
-    get("/role/{id}")
+    get("/roles/{id}")
     summary("show all the content type under the role")
     description("API to list all the content type under the role")
 
@@ -57,27 +57,5 @@ defmodule WraftDocWeb.Api.V1.RoleController do
 
     conn
     |> render("show.json", role: role)
-  end
-
-  swagger_path :delete_content_type_role do
-    delete("/role/{id}/content/{content_id}")
-    summary("show all the content type under the role")
-    description("API to list all the content type under the role")
-
-    parameters do
-      id(:path, :string, "id", required: true)
-      content_id(:path, :string, "content_id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Role))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-  end
-
-  def delete_content_type_role(conn, %{"id" => id, "content_id" => content_id}) do
-    with %Role{} = role <- Document.get_role_of_content_type(id, content_id),
-         %Role{} = role <- Document.delete_role_of_the_content_type(role) do
-      conn |> render("role.json", role: role)
-    end
   end
 end

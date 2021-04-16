@@ -2353,9 +2353,25 @@ defmodule WraftDoc.Document do
   get the content type from the respective role
   """
 
-  def get_content_type_role(id, role_id) do
+  def get_content_type_roles(id, role_id) do
     from(ct in ContentType, where: ct.uuid == ^id, join: r in Role, where: r.uuid == ^role_id)
     |> Repo.one()
+  end
+
+  def get_content_type_role(id) do
+    from(ctr in ContentTypeRole, where: ctr.uuid == ^id) |> Repo.one()
+  end
+
+  def delete_content_type_role(content_type_role) do
+    content_type_role
+    |> Repo.delete()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, content_type_role} ->
+        content_type_role
+    end
   end
 
   @doc """
