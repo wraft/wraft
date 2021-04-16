@@ -40,7 +40,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
   end
 
   swagger_path :show do
-    get("/organisation/{id}/roles")
+    get("/organisations/{id}/roles")
     summary("show an organisation roles")
     description("API to list the roles under the organisation")
 
@@ -61,7 +61,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
   end
 
   swagger_path :create_organisation_roles do
-    post("/organisation/{id}/roles")
+    post("/organisations/{id}/roles")
     summary("Create an organisation roles")
     description("create the role under the organisation")
 
@@ -75,7 +75,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def create_organisation_roles(conn, %{"id" => id} = params) do
+  def create(conn, %{"id" => id} = params) do
     organisation_role = Enterprise.create_organisation_role(id, params)
 
     conn
@@ -83,7 +83,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
   end
 
   swagger_path :delete_organisation_role do
-    delete("/organisation/{o_id}/roles/{id}")
+    delete("/organisations/{o_id}/roles/{id}")
     summary("show an organisation roles")
     description("API to list the roles under the organisation")
 

@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.ContentTypeRoleView do
   use WraftDocWeb, :view
 
-  alias WraftDocWeb.Api.V1.RoleView
+  alias WraftDocWeb.Api.V1.{RoleView, ContentTypeView}
 
   def render("show.json", %{content_type_role: content_type_role}) do
     %{
@@ -16,17 +16,18 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleView do
 
   def render("show_content_type.json", %{content_type_role: content_type_role}) do
     %{
-      uuid: content_type_role.uuid,
-      role_id: content_type_role.role_id,
-      content_type_id: content_type_role.content_type_id
+      uuid: content_type_role.uuid
     }
   end
 
   def render("create_content_type.json", %{content_type_role: content_type_role}) do
     %{
       uuid: content_type_role.uuid,
-      role: content_type_role.role.uuid,
-      content_type: content_type_role.content_type.uuid
+      role: render_one(content_type_role.role, RoleView, "role.json", as: :role),
+      content_type:
+        render_one(content_type_role.content_type, ContentTypeView, "role_content_type.json",
+          as: :content_type
+        )
     }
   end
 end

@@ -437,6 +437,23 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             total_pages: 2,
             total_entries: 15
           })
+        end,
+      ContentTypeRole:
+        swagger_schema do
+          title("Content type role")
+          description("List of roles under content type")
+
+          properties do
+            id(:string, "ID of the content_type")
+            description(:string, "Content Type's description", required: true)
+            layout_uuid(:string, "ID of the layout selected", required: true)
+            flow_uuid(:string, "ID of the flow selected", required: true)
+            color(:string, "Hex code of color")
+
+            prefix(:string, "Prefix to be used for generating Unique ID for contents",
+              required: true
+            )
+          end
         end
     }
   end
@@ -631,5 +648,26 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
            ) do
       render(conn, "bulk.json")
     end
+  end
+
+  swagger_path :show_content_type_role do
+    get("/content_types/roles/{id}")
+    summary("show all the content type role")
+    description("API to list all the roles under the content_type")
+
+    parameters do
+      id(:path, :string, "id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ContentTypeRole))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def show_content_type_role(conn, %{"id" => uuid}) do
+    content_type = Document.get_content_type_roles(uuid)
+
+    conn
+    |> render("role_content_types.json", content_type: content_type)
   end
 end
