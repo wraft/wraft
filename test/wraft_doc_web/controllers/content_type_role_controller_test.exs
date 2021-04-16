@@ -8,28 +8,54 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleControllerTest do
 
   import WraftDoc.Factory
 
-  @valid_attrs %{
-    "name" => "admin"
-  }
+  @invalid_attrs %{content_type_id: nil, role_id: nil}
 
-  @invalid_attrs %{
-    "one" => "123"
-  }
+  test "delete content type role", %{conn: conn} do
+    content_type_role = insert(:content_type_role)
 
-  test "show all the content type role", %{conn: conn} do
-    content_type = insert(:content_type)
+    count_before = ContentTypeRole |> Repo.all() |> length()
 
-    # conn =
-    # build_conn()
-    # |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+    conn =
+      delete(
+        conn,
+        Routes.v1_content_type_role_path(conn, :delete, content_type_role.uuid)
+      )
 
-    conn = get(conn, Routes.v1_content_type_role_path(conn, :show, content_type.uuid))
-    assert json_response(conn, 200)["name"] == content_type.name
+    assert count_before - 1 == ContentTypeRole |> Repo.all() |> length()
+    assert json_response(conn, 200)["uuid"] == content_type_role.uuid
   end
 
-  # test "error not found for id which does not exist", %{conn: conn} do
+  test "create content with valid attrs", %{conn: conn} do
+    role = insert(:role)
+    content_type = insert(:content_type)
 
-  #   conn = get(conn, Routes.v1_content_type_role_path(conn, :show, Ecto.UUID.generate()))
-  #   assert json_response(conn, 404) == "Not Found"
+    params = %{
+      role_id: role.uuid,
+      content_type_id: content_type.uuid
+    }
+
+    count_before = ContentTypeRole |> Repo.all() |> length()
+
+    conn =
+      post(
+        conn,
+        Routes.v1_content_type_role_path(conn, :create, params)
+      )
+
+    assert count_before + 1 == ContentTypeRole |> Repo.all() |> length()
+    assert json_response(conn, 200)["role"]["id"] == role.uuid
+  end
+
+  # test "does not create with invalid attrs", %{conn: conn} do
+  #   count_before = ContentTypeRole |> Repo.all() |> length()
+
+  #   conn =
+  #   post(
+  #       conn,
+  #       Routes.v1_content_type_role_path(conn, :create, @invalid_attrs)
+  #     )
+
+  #     assert json_response(conn, 422)["errors"]["role_id"] == ["can't be blank"]
+  #     assert count_before == ContentTypeRole |> Repo.all() |> length()
   # end
 end
