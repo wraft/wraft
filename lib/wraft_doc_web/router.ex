@@ -76,21 +76,6 @@ defmodule WraftDocWeb.Router do
 
       # Verify Token
       get("/token", UserController, :token)
-
-      get("/organisations/:id/roles", OrganisationRoleController, :show)
-      post("/organisations/:id/roles", OrganisationRoleController, :create)
-
-      delete(
-        "/organisations/:o_id/roles/:id",
-        OrganisationRoleController,
-        :delete_organisation_role
-      )
-
-      # Content Type Role
-      delete("/content_type_roles/:id", ContentTypeRoleController, :delete)
-      post("/content_type_roles", ContentTypeRoleController, :create)
-      get("/content_types/:id/roles", ContentTypeController, :show_content_type_role)
-      get("/roles/:id", RoleController, :show)
     end
   end
 
@@ -129,6 +114,21 @@ defmodule WraftDocWeb.Router do
           post("/data_templates/bulk_import", DataTemplateController, :bulk_import)
         end
       end
+
+      post("/content_type_roles", ContentTypeRoleController, :create)
+      delete("/content_type_roles/:id", ContentTypeRoleController, :delete)
+
+      get("/roles/:id", RoleController, :show)
+      get("/content_types/:id/roles", ContentTypeController, :show_content_type_role)
+
+      get("/organisations/:id/roles", OrganisationRoleController, :show)
+      post("/organisations/:id/roles", OrganisationRoleController, :create)
+
+      delete(
+        "/organisations/:o_id/roles/:id",
+        OrganisationRoleController,
+        :delete_organisation_role
+      )
 
       # Enginebody
       resources("/engines", EngineController, only: [:index])

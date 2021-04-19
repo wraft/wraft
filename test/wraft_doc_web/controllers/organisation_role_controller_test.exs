@@ -7,25 +7,48 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleControllerTest do
   alias WraftDoc.Repo
   import WraftDoc.Factory
 
-  test "show all the roles for the organisation", %{conn: conn} do
-    organisation = insert(:organisation)
+  setup %{conn: conn} do
+    user = insert(:user)
 
-    # conn =
-    # build_conn()
-    # |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+    conn =
+      conn
+      |> put_req_header("accept", "application/json")
+      |> post(
+        Routes.v1_user_path(conn, :signin, %{
+          email: user.email,
+          password: user.password
+        })
+      )
+
+    conn = assign(conn, :current_user, user)
+
+    {:ok, %{conn: conn}}
+  end
+
+  test "show all the roles for the organisation", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    organisation = insert(:organisation)
+    user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
 
     conn = get(conn, Routes.v1_organisation_role_path(conn, :show, organisation.uuid))
     assert json_response(conn, 200)["id"] == organisation.uuid
   end
 
   test "delete particular role for the organisation", %{conn: conn} do
-    # conn =
-    #   build_conn()
-    #   |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-    #   |> assign(:current_user, conn.assigns.current_user)
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
 
     role = insert(:role)
     organisation = insert(:organisation)
+    user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
 
     count_before = Role |> Repo.all() |> length()
 

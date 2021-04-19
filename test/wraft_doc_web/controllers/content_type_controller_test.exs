@@ -203,6 +203,13 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   end
 
   test "show the content type with roles", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type)
 
     conn =
