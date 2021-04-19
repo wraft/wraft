@@ -10,8 +10,9 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
   @valid_attrs %{}
   @invalid_attrs %{}
   setup %{conn: conn} do
-    role = insert(:role, name: "admin")
-    user = insert(:user, role: role)
+    role = insert(:role, name: "super_admin")
+    user = insert(:user)
+    insert(:user_role, role: role, user: user)
 
     conn =
       conn
@@ -91,8 +92,11 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
       |> Enum.map(fn x -> Map.keys(x) end)
       |> List.flatten()
 
-    assert List.to_string(permissions) =~ a1.resource.category <> "_" <> a1.resource.action
-    assert List.to_string(permissions) =~ a2.resource.category <> "_" <> a2.resource.action
+    assert List.to_string(permissions) =~
+             to_string(a1.resource.category) <> "_" <> to_string(a1.resource.action)
+
+    assert List.to_string(permissions) =~
+             to_string(a2.resource.category) <> "_" <> to_string(a2.resource.action)
   end
 
   test "delete permission by given id", %{conn: conn} do

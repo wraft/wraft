@@ -55,6 +55,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
         |> assign(:current_user, user)
 
       payment = insert(:payment, organisation: user.organisation)
+
       conn = get(conn, Routes.v1_payment_path(conn, :show, payment.uuid))
 
       assert json_response(conn, 200)["razorpay_id"] == payment.razorpay_id

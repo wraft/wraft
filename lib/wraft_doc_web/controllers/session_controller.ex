@@ -25,4 +25,14 @@ defmodule WraftDocWeb.SessionController do
         |> redirect(to: session_path(conn, :new))
     end
   end
+
+  @doc """
+  Delete a session.
+  """
+  def delete(conn, _) do
+    conn
+    |> delete_session(:admin_id)
+    |> put_flash(:info, "Signed out successfully.")
+    |> redirect(to: session_path(conn, :new))
+  end
 end

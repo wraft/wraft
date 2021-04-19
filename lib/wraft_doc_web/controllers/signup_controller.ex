@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.SignupController do
   use WraftDocWeb, :controller
 
-  alias WraftDoc.{Account}
+  alias WraftDoc.Account
 
   def new(conn, _params) do
     changeset = Account.change_user()

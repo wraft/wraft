@@ -10,6 +10,7 @@ defmodule WraftDoc.Factory do
     Account.Profile,
     Account.Role,
     Account.User,
+    Account.UserRole,
     Authorization.Permission,
     Authorization.Resource,
     Document.Asset,
@@ -18,6 +19,7 @@ defmodule WraftDoc.Factory do
     Document.Comment,
     Document.ContentType,
     Document.ContentTypeField,
+    Document.ContentTypeRole,
     Document.Counter,
     Document.DataTemplate,
     Document.Engine,
@@ -26,6 +28,7 @@ defmodule WraftDoc.Factory do
     Document.Instance.History,
     Document.Layout,
     Document.LayoutAsset,
+    Document.OrganisationField,
     Document.Pipeline,
     Document.Pipeline.Stage,
     Document.Pipeline.TriggerHistory,
@@ -46,8 +49,7 @@ defmodule WraftDoc.Factory do
       email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
-      organisation: build(:organisation),
-      role: build(:role)
+      organisation: build(:organisation)
     }
   end
 
@@ -64,6 +66,13 @@ defmodule WraftDoc.Factory do
 
   def role_factory do
     %Role{name: "user"}
+  end
+
+  def user_role_factory do
+    %UserRole{
+      user: build(:user),
+      role: build(:role)
+    }
   end
 
   def profile_factory do
@@ -226,8 +235,9 @@ defmodule WraftDoc.Factory do
 
   def resource_factory do
     %Resource{
-      category: sequence(:resource, &"Flow-#{&1}"),
-      action: sequence(:action, &"Action-#{&1}")
+      name: sequence(:name, &"Flow#{&1}"),
+      category: sequence(:category, &"WraftDocWeb.Api.V1.FlowController#{&1}"),
+      action: Enum.random([:create, :update, :delete, :index])
     }
   end
 
@@ -404,6 +414,22 @@ defmodule WraftDoc.Factory do
       gstin: sequence(:gstin, &"Vendor gstin #{&1} "),
       reg_no: sequence(:reg_no, &"Vendor reg_no #{&1} "),
       contact_person: sequence(:contact_person, &"Vendor contact_person #{&1} ")
+    }
+  end
+
+  def content_type_role_factory do
+    %ContentTypeRole{
+      content_type: build(:content_type),
+      role: build(:role)
+    }
+  end
+
+  def organisation_field_factory do
+    %OrganisationField{
+      name: sequence(:name, &"Field name #{&1}"),
+      description: sequence(:desription, &"Field description #{&1}"),
+      organisation: build(:organisation),
+      field_type: build(:field_type)
     }
   end
 end

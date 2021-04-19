@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
   use WraftDocWeb, :view
 
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{FieldTypeView, FlowView, LayoutView, UserView}
+  alias WraftDocWeb.Api.V1.{FieldTypeView, FlowView, LayoutView, RoleView, UserView}
 
   def render("create.json", %{content_type: c_type}) do
     %{
@@ -16,6 +16,31 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
       updated_at: c_type.updated_at,
       layout: render_one(c_type.layout, LayoutView, "layout.json", as: :doc_layout),
       flow: render_one(c_type.flow, FlowView, "flow.json", as: :flow)
+    }
+  end
+
+  def render("role_content_type.json", %{content_type: c_type}) do
+    %{
+      id: c_type.uuid,
+      name: c_type.name,
+      decription: c_type.description,
+      color: c_type.color,
+      prefix: c_type.prefix,
+      inserted_at: c_type.inserted_at,
+      updated_at: c_type.updated_at
+    }
+  end
+
+  def render("role_content_types.json", %{content_type: content_type}) do
+    %{
+      id: content_type.uuid,
+      name: content_type.name,
+      decription: content_type.description,
+      color: content_type.color,
+      prefix: content_type.prefix,
+      inserted_at: content_type.inserted_at,
+      updated_at: content_type.updated_at,
+      role: render_many(content_type.roles, RoleView, "role.json", as: :role)
     }
   end
 

@@ -18,7 +18,10 @@ defmodule WraftDocWeb.CurrentUser do
         AuthErrorHandler.auth_error(conn, {:error, :no_user})
 
       user ->
-        user = Repo.preload(user, [:profile, :role, :organisation])
+        user = Repo.preload(user, [:profile, :roles, :organisation])
+
+        role_names = Enum.map(user.roles, fn x -> x.name end)
+        user = Map.put(user, :role_names, role_names)
         assign(conn, :current_user, user)
     end
   end
