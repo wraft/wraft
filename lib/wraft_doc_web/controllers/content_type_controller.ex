@@ -651,7 +651,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   swagger_path :show_content_type_role do
-    get("/content_types/roles/{id}")
+    get("/content_types/{id}/roles")
     summary("show all the content type role")
     description("API to list all the roles under the content_type")
 
