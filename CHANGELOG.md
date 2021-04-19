@@ -9,6 +9,8 @@
 - Send invitation to primary email of organisation with admin role
 - Sign up with admin role
 - Super admin role
+- Organisation can create role
+- Control of content type on specific roles
 ## Changed
 - token signup with specific role
 - Resource schema resource type to atom
