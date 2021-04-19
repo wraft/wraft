@@ -1,4 +1,7 @@
 defmodule WraftDocWeb.UserRoleAdmin do
+  @moduledoc """
+  Admin panel for user role
+  """
   alias WraftDoc.{Account.Role, Account.User, Repo}
   import Ecto.Query
 
@@ -11,8 +14,8 @@ defmodule WraftDocWeb.UserRoleAdmin do
 
   def form_fields(_) do
     [
-      user_id: %{label: "User", choices: users() |> Enum.map(fn x -> {x.name, x.id} end)},
-      role_id: %{label: "Role", choices: roles() |> Enum.map(fn x -> {x.name, x.id} end)}
+      user_id: %{label: "User", choices: Enum.map(users(), fn x -> {x.name, x.id} end)},
+      role_id: %{label: "Role", choices: Enum.map(roles(), fn x -> {x.name, x.id} end)}
     ]
   end
 
@@ -32,11 +35,11 @@ defmodule WraftDocWeb.UserRoleAdmin do
 
   defp role_name(_), do: ""
 
-  defp users() do
-    User |> Repo.all()
+  defp users do
+    Repo.all(User)
   end
 
-  defp roles() do
-    Role |> Repo.all()
+  defp roles do
+    Repo.all(Role)
   end
 end

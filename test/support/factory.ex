@@ -10,6 +10,7 @@ defmodule WraftDoc.Factory do
     Account.Profile,
     Account.Role,
     Account.User,
+    Account.UserRole,
     Authorization.Permission,
     Authorization.Resource,
     Document.Asset,
@@ -18,6 +19,7 @@ defmodule WraftDoc.Factory do
     Document.Comment,
     Document.ContentType,
     Document.ContentTypeField,
+    Document.ContentTypeRole,
     Document.Counter,
     Document.DataTemplate,
     Document.Engine,
@@ -26,6 +28,7 @@ defmodule WraftDoc.Factory do
     Document.Instance.History,
     Document.Layout,
     Document.LayoutAsset,
+    Document.OrganisationField,
     Document.Pipeline,
     Document.Pipeline.Stage,
     Document.Pipeline.TriggerHistory,
@@ -37,9 +40,7 @@ defmodule WraftDoc.Factory do
     Enterprise.Membership.Payment,
     Enterprise.Organisation,
     Enterprise.Plan,
-    Enterprise.Vendor,
-    Account.UserRole,
-    Document.ContentTypeRole
+    Enterprise.Vendor
   }
 
   def user_factory do
@@ -420,6 +421,15 @@ defmodule WraftDoc.Factory do
     %ContentTypeRole{
       content_type: build(:content_type),
       role: build(:role)
+    }
+  end
+
+  def organisation_field_factory do
+    %OrganisationField{
+      name: sequence(:name, &"Field name #{&1}"),
+      description: sequence(:desription, &"Field description #{&1}"),
+      organisation: build(:organisation),
+      field_type: build(:field_type)
     }
   end
 end

@@ -4,8 +4,7 @@ defmodule WraftDoc.Enterprise.OrganisationRole do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.Account.Role
+  alias WraftDoc.{Account.Role, Enterprise.Organisation}
 
   schema "organisation_role" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)

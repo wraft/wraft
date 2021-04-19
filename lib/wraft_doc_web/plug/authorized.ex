@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Plug.Authorized do
   @moduledoc false
   import Plug.Conn
   import Ecto.Query
-  alias WraftDoc.{Authorization.Permission, Authorization.Resource, Repo, Account.Role}
+  alias WraftDoc.{Account.Role, Authorization.Permission, Authorization.Resource, Repo}
 
   def init(_params) do
   end
@@ -18,13 +18,14 @@ defmodule WraftDocWeb.Plug.Authorized do
 
   defp check_permission(%Resource{id: id}, conn) do
     %{roles: roles, role_names: role_names} =
-      conn.assigns[:current_user] |> Repo.preload(roles: [permissions: [:resource]])
+      Repo.preload(conn.assigns[:current_user], roles: [permissions: [:resource]])
 
     resources = list_of_resources(roles, [])
 
-    (Enum.member?(role_names, "super_admin") ||
-       Enum.member?(resources, id))
-    |> case do
+    case(
+      Enum.member?(role_names, "super_admin") ||
+        Enum.member?(resources, id)
+    ) do
       true ->
         conn
 
@@ -41,7 +42,7 @@ defmodule WraftDocWeb.Plug.Authorized do
 
   defp list_of_resources([%Role{permissions: permissions} | roles], resource_list) do
     rl = traverse_permission(permissions, [])
-    resouce_list = List.insert_at(resource_list, 0, rl) |> List.flatten()
+    resouce_list = resource_list |> List.insert_at(0, rl) |> List.flatten()
     list_of_resources(roles, resouce_list)
   end
 
@@ -50,7 +51,7 @@ defmodule WraftDocWeb.Plug.Authorized do
   defp list_of_resources(nil, rl), do: rl
 
   defp traverse_permission([%Permission{resource: %Resource{id: id}} | permissions], rl) do
-    rl = rl |> List.insert_at(0, id)
+    rl = List.insert_at(rl, 0, id)
     traverse_permission(permissions, rl)
   end
 

@@ -667,7 +667,6 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   def show_content_type_role(conn, %{"id" => uuid}) do
     content_type = Document.get_content_type_roles(uuid)
 
-    conn
-    |> render("role_content_types.json", content_type: content_type)
+    render(conn, "role_content_types.json", content_type: content_type)
   end
 end

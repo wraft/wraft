@@ -1112,7 +1112,6 @@ defmodule WraftDoc.Enterprise do
   def get_pending_approvals(_, _), do: nil
 
   def create_organisation_role(id, params) do
-    role = get_role()
     organisation = get_organisation(id)
 
     Multi.new()
@@ -1140,13 +1139,15 @@ defmodule WraftDoc.Enterprise do
   end
 
   def get_organisation_id_and_role_id(org_id, r_id) do
-    from(o in Organisation, where: o.uuid == ^org_id, join: r in Role, where: r.uuid == ^r_id)
-    |> Repo.one()
+    query =
+      from(o in Organisation, where: o.uuid == ^org_id, join: r in Role, where: r.uuid == ^r_id)
+
+    Repo.one(query)
   end
 
   def get_role_of_the_organisation(id, o_id) do
-    from(r in Role, where: r.uuid == ^id, join: o in Organisation, where: o.uuid == ^o_id)
-    |> Repo.one()
+    query = from(r in Role, where: r.uuid == ^id, join: o in Organisation, where: o.uuid == ^o_id)
+    Repo.one(query)
   end
 
   def delete_role_of_the_organisation(role) do
@@ -1162,6 +1163,7 @@ defmodule WraftDoc.Enterprise do
   end
 
   def get_organisation_id_roles(uuid) do
-    from(o in Organisation, where: o.uuid == ^uuid) |> Repo.one() |> Repo.preload(:roles)
+    query = from(o in Organisation, where: o.uuid == ^uuid)
+    query |> Repo.one() |> Repo.preload(:roles)
   end
 end

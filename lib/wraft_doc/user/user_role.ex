@@ -4,7 +4,7 @@ defmodule WraftDoc.Account.UserRole do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias WraftDoc.Account.{User, Role}
+  alias WraftDoc.Account.{Role, User}
 
   schema "user_role" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)
@@ -17,5 +17,6 @@ defmodule WraftDoc.Account.UserRole do
   def changeset(user_role, attrs \\ %{}) do
     user_role
     |> cast(attrs, [:user_id, :role_id])
+    |> validate_required([:user_id, :role_id])
   end
 end

@@ -1,4 +1,7 @@
 defmodule WraftDocWeb.OrganisationAdmin do
+  @moduledoc """
+  Admin panel for organisation
+  """
   alias WraftDoc.Enterprise
 
   def index(_) do

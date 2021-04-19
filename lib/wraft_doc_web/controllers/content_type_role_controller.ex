@@ -46,8 +46,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
   def create(conn, params) do
     content_type_role = Document.create_content_type_role(params)
 
-    conn
-    |> render("create_content_type.json", content_type_role: content_type_role)
+    render(conn, "create_content_type.json", content_type_role: content_type_role)
   end
 
   swagger_path :delete do
@@ -68,8 +67,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
     with %ContentTypeRole{} = content_type_role <- Document.get_content_type_role(id),
          %ContentTypeRole{} = content_type_role <-
            Document.delete_content_type_role(content_type_role) do
-      conn
-      |> render("show_content_type.json", content_type_role: content_type_role)
+      render(conn, "show_content_type.json", content_type_role: content_type_role)
     end
   end
 end

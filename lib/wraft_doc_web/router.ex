@@ -200,6 +200,8 @@ defmodule WraftDocWeb.Router do
         only: [:create, :index, :show, :update, :delete]
       )
 
+      resources("/organisation-fields", OrganisationFieldController, except: [:new, :edit])
+
       post("/approval_systems/:id/approve", ApprovalSystemController, :approve)
 
       scope "/pipelines" do

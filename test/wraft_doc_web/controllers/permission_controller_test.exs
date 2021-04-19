@@ -93,10 +93,10 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
       |> List.flatten()
 
     assert List.to_string(permissions) =~
-             (a1.resource.category |> to_string()) <> "_" <> (a1.resource.action |> to_string())
+             to_string(a1.resource.category) <> "_" <> to_string(a1.resource.action)
 
     assert List.to_string(permissions) =~
-             (a2.resource.category |> to_string()) <> "_" <> (a2.resource.action |> to_string())
+             to_string(a2.resource.category) <> "_" <> to_string(a2.resource.action)
   end
 
   test "delete permission by given id", %{conn: conn} do

@@ -53,7 +53,7 @@ defmodule WraftDoc.Account do
   @doc """
   User Registration
   """
-  def change_user() do
+  def change_user do
     User.changeset(%User{})
   end
 
@@ -150,7 +150,8 @@ defmodule WraftDoc.Account do
   end
 
   def admin_find(email) do
-    get_user_by_email(email, :super_admin)
+    email
+    |> get_user_by_email(:super_admin)
     |> case do
       user = %User{} -> user
       _ -> {:error, :invalid}
@@ -273,25 +274,33 @@ defmodule WraftDoc.Account do
     Repo.get_by(User, email: email)
   end
 
+  defp get_user_by_email(_email) do
+    nil
+  end
+
   defp get_user_by_email(email, :admin) when is_binary(email) do
-    from(u in User,
-      where: u.email == ^email,
-      join: r in Role,
-      where: r.name == "admin" and r.id == u.role_id
-    )
-    |> Repo.one()
+    query =
+      from(u in User,
+        where: u.email == ^email,
+        join: r in Role,
+        where: r.name == "admin" and r.id == u.role_id
+      )
+
+    Repo.one(query)
   end
 
   defp get_user_by_email(email, :super_admin) when is_binary(email) do
-    from(u in User,
-      where: u.email == ^email,
-      join: r in Role,
-      where: r.name == "super_admin" and r.id == u.role_id
-    )
-    |> Repo.one()
+    query =
+      from(u in User,
+        where: u.email == ^email,
+        join: r in Role,
+        where: r.name == "super_admin" and r.id == u.role_id
+      )
+
+    Repo.one(query)
   end
 
-  defp get_user_by_email(_email) do
+  defp get_user_by_email(_email, _) do
     nil
   end
 

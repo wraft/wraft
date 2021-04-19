@@ -1,4 +1,7 @@
 defmodule WraftDocWeb.ResourceAdmin do
+  @moduledoc """
+  Module for resource admin
+  """
   alias WraftDoc.Authorization.Resource
 
   def index(_) do
@@ -27,7 +30,7 @@ defmodule WraftDocWeb.ResourceAdmin do
 
   def before_insert(conn, changeset) do
     attrs = conn.body_params["resource"]
-    category = "Elixir.#{attrs["version"]}.#{attrs["controller"]}" |> String.to_atom()
+    category = String.to_atom("Elixir.#{attrs["version"]}.#{attrs["controller"]}")
     action = attrs["action"] || "" |> String.downcase() |> String.to_atom()
     attrs = %{"name" => attrs["name"], "action" => action, "category" => category}
     changeset = Resource.changeset(changeset.data, attrs)
@@ -41,7 +44,7 @@ defmodule WraftDocWeb.ResourceAdmin do
   defp category(_), do: ""
 
   defp action(%Resource{action: action}) do
-    action |> to_string()
+    to_string(action)
   end
 
   defp action(_), do: ""

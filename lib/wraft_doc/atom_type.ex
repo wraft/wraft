@@ -1,4 +1,7 @@
 defmodule AtomType do
+  @moduledoc """
+  An ecto type specified to store atomes
+  """
   use Ecto.Type
 
   def type, do: :string

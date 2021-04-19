@@ -1,8 +1,8 @@
 defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  alias WraftDoc.{Enterprise}
-  alias WraftDoc.Account.Role
+  alias WraftDoc.{Account.Role, Enterprise}
+
   action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do
@@ -56,8 +56,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
   def show(conn, %{"id" => uuid}) do
     organisation_role = Enterprise.get_organisation_id_roles(uuid)
 
-    conn
-    |> render("organisation_role.json", organisation_role: organisation_role)
+    render(conn, "organisation_role.json", organisation_role: organisation_role)
   end
 
   swagger_path :create_organisation_roles do
@@ -78,8 +77,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
   def create(conn, %{"id" => id} = params) do
     organisation_role = Enterprise.create_organisation_role(id, params)
 
-    conn
-    |> render("organisation.json", organisation_role: organisation_role)
+    render(conn, "organisation.json", organisation_role: organisation_role)
   end
 
   swagger_path :delete_organisation_role do
@@ -101,7 +99,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
     with %Role{} = organisation_role <- Enterprise.get_role_of_the_organisation(id, o_id),
          %Role{} = organisation_role <-
            Enterprise.delete_role_of_the_organisation(organisation_role) do
-      conn |> render("organisations.json", organisation_role: organisation_role)
+      render(conn, "organisations.json", organisation_role: organisation_role)
     end
   end
 end
