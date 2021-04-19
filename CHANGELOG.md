@@ -7,7 +7,7 @@
 - show, create, delete organisation role api
 - Role API - To list role with content type
 - create, delete content type role api
-- show api content type with role
+- show api, content type with role
 
 
 ## Added
