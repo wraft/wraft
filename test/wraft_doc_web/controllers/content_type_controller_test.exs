@@ -201,4 +201,20 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
     assert json_response(conn, 404) == "Not Found"
   end
+
+  test "show the content type with roles", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
+    content_type = insert(:content_type)
+
+    conn =
+      get(conn, Routes.v1_content_type_path(conn, :show_content_type_role, content_type.uuid))
+
+    assert json_response(conn, 200)["name"] == content_type.name
+  end
 end

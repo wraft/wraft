@@ -22,6 +22,8 @@ defmodule WraftDoc.Enterprise do
     Repo
   }
 
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Enterprise.OrganisationRole
   alias WraftDocWeb.Worker.{EmailWorker, ScheduledWorker}
 
   @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
@@ -378,6 +380,23 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+  Send invitation email to given organisation.
+  """
+
+  def invite_team_member(%User{name: name}, %{name: org_name} = organisation, email, role) do
+    token =
+      Phoenix.Token.sign(WraftDocWeb.Endpoint, "organisation_invite", %{
+        organisation: organisation,
+        email: email,
+        role: role
+      })
+
+    %{org_name: org_name, user_name: name, email: email, token: token}
+    |> EmailWorker.new(queue: "mailer", tags: ["invite"])
+    |> Oban.insert()
+  end
+
+  @doc """
   Fetches the list of all members of current users organisation.
   """
   @spec members_index(User.t(), map) :: any
@@ -386,7 +405,7 @@ defmodule WraftDoc.Enterprise do
       from(u in User,
         where: u.organisation_id == ^organisation_id,
         where: ilike(u.name, ^"%#{name}%"),
-        preload: [:profile, :role, :organisation]
+        preload: [:profile, :roles, :organisation]
       )
 
     Repo.paginate(query, params)
@@ -396,7 +415,7 @@ defmodule WraftDoc.Enterprise do
     query =
       from(u in User,
         where: u.organisation_id == ^organisation_id,
-        preload: [:profile, :role, :organisation]
+        preload: [:profile, :roles, :organisation]
       )
 
     Repo.paginate(query, params)
@@ -709,13 +728,21 @@ defmodule WraftDoc.Enterprise do
   When the user is admin no need to check the user's organisation.
   """
   @spec get_membership(Ecto.UUID.t(), User.t()) :: Membership.t() | nil
-  def get_membership(<<_::288>> = m_uuid, %User{role: %{name: "admin"}}) do
-    get_membership(m_uuid)
+  def get_membership(<<_::288>> = m_uuid, %{role_names: role_names, organisation_id: org_id}) do
+    if Enum.member?(role_names, "super_admin") do
+      get_membership(m_uuid)
+    else
+      Repo.get_by(Membership, uuid: m_uuid, organisation_id: org_id)
+    end
   end
 
-  def get_membership(<<_::288>> = m_uuid, %User{organisation_id: org_id}) do
-    Repo.get_by(Membership, uuid: m_uuid, organisation_id: org_id)
-  end
+  # def get_membership(<<_::288>> = m_uuid, %User{role: %{name: "super_admin"}}) do
+  #   get_membership(m_uuid)
+  # end
+
+  # def get_membership(<<_::288>> = m_uuid, %User{organisation_id: org_id}) do
+  #   Repo.get_by(Membership, uuid: m_uuid, organisation_id: org_id)
+  # end
 
   def get_membership(_, _), do: nil
 
@@ -951,13 +978,22 @@ defmodule WraftDoc.Enterprise do
   Get a payment from its UUID.
   """
   @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
-  def get_payment(<<_::288>> = payment_uuid, %{role: %{name: "admin"}}) do
-    Repo.get_by(Payment, uuid: payment_uuid)
+  def get_payment(<<_::288>> = payment_uuid, %{role_names: role_names, organisation_id: org_id}) do
+    if Enum.member?(role_names, "super_admin") do
+      Repo.get_by(Payment, uuid: payment_uuid)
+    else
+      Repo.get_by(Payment, uuid: payment_uuid, organisation_id: org_id)
+    end
   end
 
-  def get_payment(<<_::288>> = payment_uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Payment, uuid: payment_uuid, organisation_id: org_id)
-  end
+  # @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
+  # def get_payment(<<_::288>> = payment_uuid, %{role: %{name: "super_admin"}}) do
+  #   Repo.get_by(Payment, uuid: payment_uuid)
+  # end
+
+  # def get_payment(<<_::288>> = payment_uuid, %{organisation_id: org_id}) do
+  #   Repo.get_by(Payment, uuid: payment_uuid, organisation_id: org_id)
+  # end
 
   def get_payment(_, _), do: nil
 
@@ -1074,4 +1110,60 @@ defmodule WraftDoc.Enterprise do
   end
 
   def get_pending_approvals(_, _), do: nil
+
+  def create_organisation_role(id, params) do
+    organisation = get_organisation(id)
+
+    Multi.new()
+    |> Multi.insert(:role, Role.changeset(%Role{}, params))
+    |> Multi.insert(:organisation_role, fn %{role: role} ->
+      OrganisationRole.changeset(%OrganisationRole{}, %{
+        organisation_id: organisation.id,
+        role_id: role.id
+      })
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+
+      {:ok, %{role: _role, organisation_role: organisation_role}} ->
+        organisation_role
+    end
+  end
+
+  def get_role(role \\ "admin")
+
+  def get_role(role) when is_binary(role) do
+    Repo.get_by(Role, name: role)
+  end
+
+  def get_organisation_id_and_role_id(org_id, r_id) do
+    query =
+      from(o in Organisation, where: o.uuid == ^org_id, join: r in Role, where: r.uuid == ^r_id)
+
+    Repo.one(query)
+  end
+
+  def get_role_of_the_organisation(id, o_id) do
+    query = from(r in Role, where: r.uuid == ^id, join: o in Organisation, where: o.uuid == ^o_id)
+    Repo.one(query)
+  end
+
+  def delete_role_of_the_organisation(role) do
+    role
+    |> Repo.delete()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, role} ->
+        role
+    end
+  end
+
+  def get_organisation_id_roles(uuid) do
+    query = from(o in Organisation, where: o.uuid == ^uuid)
+    query |> Repo.one() |> Repo.preload(:roles)
+  end
 end

@@ -14,8 +14,9 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
 
   @invalid_attrs %{category: ""}
   setup %{conn: conn} do
-    role = insert(:role, name: "admin")
-    user = insert(:user, role: role)
+    role = insert(:role, name: "super_admin")
+    user = insert(:user)
+    insert(:user_role, role: role, user: user)
 
     conn =
       conn
@@ -115,8 +116,8 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
     conn = get(conn, Routes.v1_resource_path(conn, :index))
     resources_index = json_response(conn, 200)["resources"]
     resources = Enum.map(resources_index, fn %{"category" => category} -> category end)
-    assert List.to_string(resources) =~ a1.category
-    assert List.to_string(resources) =~ a2.category
+    assert List.to_string(resources) =~ to_string(a1.category)
+    assert List.to_string(resources) =~ to_string(a2.category)
   end
 
   test "show renders resource details by id", %{conn: conn} do
@@ -129,7 +130,7 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
 
     conn = get(conn, Routes.v1_resource_path(conn, :show, resource.uuid))
 
-    assert json_response(conn, 200)["category"] == resource.category
+    assert json_response(conn, 200)["category"] == to_string(resource.category)
   end
 
   test "error not found for id does not exists", %{conn: conn} do
@@ -153,6 +154,6 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
 
     conn = delete(conn, Routes.v1_resource_path(conn, :delete, resource.uuid))
     assert count_before - 1 == Resource |> Repo.all() |> length()
-    assert json_response(conn, 200)["category"] == resource.category
+    assert json_response(conn, 200)["category"] == to_string(resource.category)
   end
 end

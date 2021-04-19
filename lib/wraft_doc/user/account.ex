@@ -10,6 +10,7 @@ defmodule WraftDoc.Account do
     Account.Profile,
     Account.Role,
     Account.User,
+    Account.UserRole,
     Enterprise.Organisation,
     Repo
   }
@@ -52,25 +53,28 @@ defmodule WraftDoc.Account do
   @doc """
   User Registration
   """
-  def change_user() do
+  def change_user do
     User.changeset(%User{})
   end
 
   @spec registration(map, Organisation.t()) :: User.t() | Ecto.Changeset.t()
   def registration(params, %Organisation{id: id}) do
     params = Map.merge(params, %{"organisation_id" => id})
+    role = get_role(params["role"])
 
-    get_role()
-    |> build_assoc(:users)
-    |> User.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(:user, User.changeset(%User{}, params))
+    |> Multi.insert(:user_role, fn %{user: user} ->
+      UserRole.changeset(%UserRole{}, %{user_id: user.id, role_id: role.id})
+    end)
+    |> Repo.transaction()
     |> case do
-      changeset = {:error, _} ->
-        changeset
+      {:error, _, changeset, _} ->
+        {:error, changeset}
 
-      {:ok, %User{} = user} ->
+      {:ok, %{user: %User{} = user}} ->
         create_profile(user, params)
-        Repo.preload(user, :profile)
+        Repo.preload(user, [:profile, :roles])
     end
   end
 
@@ -86,13 +90,14 @@ defmodule WraftDoc.Account do
   """
 
   @spec get_organisation_from_token(map) :: Organisation.t()
-  def get_organisation_from_token(%{"token" => token, "email" => email}) do
+  def get_organisation_from_token(%{"token" => token, "email" => email} = params) do
     Endpoint
     |> Phoenix.Token.verify("organisation_invite", token, max_age: 900_000)
     |> case do
-      {:ok, %{organisation: org, email: token_email}} ->
-        if token_email == email do
-          org
+      {:ok, %{organisation: org, email: token_email, role: role}} ->
+        if token_email === email do
+          params = Map.put(params, "role", role)
+          {:ok, org, params}
         else
           {:error, :no_permission}
         end
@@ -145,7 +150,8 @@ defmodule WraftDoc.Account do
   end
 
   def admin_find(email) do
-    get_user_by_email(email, :admin)
+    email
+    |> get_user_by_email(:super_admin)
     |> case do
       user = %User{} -> user
       _ -> {:error, :invalid}
@@ -223,10 +229,15 @@ defmodule WraftDoc.Account do
 
   # Get the role struct from given role name
   @spec get_role(binary) :: Role.t()
-  defp get_role(role \\ "user")
+
+  # defp get_role(role \\ "user")
 
   defp get_role(role) when is_binary(role) do
     Repo.get_by(Role, name: role)
+  end
+
+  defp get_role(role) when is_nil(role) do
+    Repo.get_by(Role, name: "user")
   end
 
   @doc """
@@ -263,16 +274,33 @@ defmodule WraftDoc.Account do
     Repo.get_by(User, email: email)
   end
 
-  defp get_user_by_email(email, :admin) when is_binary(email) do
-    from(u in User,
-      where: u.email == ^email,
-      join: r in Role,
-      where: r.name == "admin" and r.id == u.role_id
-    )
-    |> Repo.one()
+  defp get_user_by_email(_email) do
+    nil
   end
 
-  defp get_user_by_email(_email) do
+  defp get_user_by_email(email, :admin) when is_binary(email) do
+    query =
+      from(u in User,
+        where: u.email == ^email,
+        join: r in Role,
+        where: r.name == "admin" and r.id == u.role_id
+      )
+
+    Repo.one(query)
+  end
+
+  defp get_user_by_email(email, :super_admin) when is_binary(email) do
+    query =
+      from(u in User,
+        where: u.email == ^email,
+        join: r in Role,
+        where: r.name == "super_admin" and r.id == u.role_id
+      )
+
+    Repo.one(query)
+  end
+
+  defp get_user_by_email(_email, _) do
     nil
   end
 

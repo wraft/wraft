@@ -1,6 +1,14 @@
 defmodule WraftDoc.Document.Instance do
   @moduledoc """
-    The instance model.
+    The model for contents every documents build is based on datas on instance
+    ## Fields
+    * Instance id - an unique id to reffer as a document number in organisation
+    * Raw - The raw content of the instance
+    * Serialized - the map contains the field values
+    * Type - Type of the document generation  [normal: 1, bulk_build: 2, pipeline_api: 3, pipeline_hook: 4]
+    * Build -
+    * Creator id - Creator of the document
+    * Content type id - Id of content type
   """
   use Ecto.Schema
   import Ecto.Changeset

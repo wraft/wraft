@@ -26,6 +26,10 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.AdminCheck)
   end
 
+  pipeline :super_admin do
+    plug(WraftDocWeb.Plug.SuperAdminCheck)
+  end
+
   pipeline :admin_authenticate do
     plug(WraftDocWeb.Plug.AdminAuthenticate)
   end
@@ -111,6 +115,21 @@ defmodule WraftDocWeb.Router do
         end
       end
 
+      post("/content_type_roles", ContentTypeRoleController, :create)
+      delete("/content_type_roles/:id", ContentTypeRoleController, :delete)
+
+      get("/roles/:id", RoleController, :show)
+      get("/content_types/:id/roles", ContentTypeController, :show_content_type_role)
+
+      get("/organisations/:id/roles", OrganisationRoleController, :show)
+      post("/organisations/:id/roles", OrganisationRoleController, :create)
+
+      delete(
+        "/organisations/:o_id/roles/:id",
+        OrganisationRoleController,
+        :delete_organisation_role
+      )
+
       # Enginebody
       resources("/engines", EngineController, only: [:index])
 
@@ -181,6 +200,8 @@ defmodule WraftDocWeb.Router do
         only: [:create, :index, :show, :update, :delete]
       )
 
+      resources("/organisation-fields", OrganisationFieldController, except: [:new, :edit])
+
       post("/approval_systems/:id/approve", ApprovalSystemController, :approve)
 
       scope "/pipelines" do
@@ -202,7 +223,7 @@ defmodule WraftDocWeb.Router do
 
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth, :admin])
+    pipe_through([:api, :api_auth, :super_admin])
 
     scope "/v1", Api.V1, as: :v1 do
       resources("/resources", ResourceController, only: [:create, :index, :show, :update, :delete])
