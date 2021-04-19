@@ -1,8 +1,9 @@
 # CHANGELOG
+## v0.031 - today
 
 ## v0.0.30 - 2021-04-12
 
-## Added 
+## Added
 - Members index
 - Search organisation api
 - Vendors
@@ -11,7 +12,7 @@
 - Kaffy admin panel
 ## Changed
 - Approval system
-- Credo modifications 
+- Credo modifications
 - Warnings resolved
 
 ## v0.0.29 - 2020-06-08
