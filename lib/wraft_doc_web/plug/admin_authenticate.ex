@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Plug.AdminAuthenticate do
   This is a plug that stores current admin user details in a aplug in Conn.
   """
   import Plug.Conn
-  alias WraftDoc.{Repo, Account.User, Account.Role, Account.UserRole}
+  alias WraftDoc.{Account.Role, Account.User, Account.UserRole, Repo}
   import Ecto.Query
   alias WraftDocWeb.Router.Helpers, as: Routes
 
@@ -12,9 +12,9 @@ defmodule WraftDocWeb.Plug.AdminAuthenticate do
   def call(conn, _opts) do
     with %{"admin_id" => admin_id} <- get_session(conn),
          %User{} = user <- get_admin(admin_id) do
-      user = user |> Repo.preload([:profile, :roles])
-      role_names = user.roles |> Enum.map(fn x -> x.name end)
-      user = user |> Map.put(:role_names, role_names)
+      user = Repo.preload(user, [:profile, :roles])
+      role_names = Enum.map(user.roles, fn x -> x.name end)
+      user = Map.put(user, :role_names, role_names)
       assign(conn, :current_user, user)
     else
       _ ->
@@ -29,14 +29,16 @@ defmodule WraftDocWeb.Plug.AdminAuthenticate do
   end
 
   defp get_admin(<<_::288>> = id) do
-    from(u in User,
-      where: u.uuid == ^id,
-      join: ur in UserRole,
-      on: ur.user_id == u.id,
-      join: r in Role,
-      on: ur.role_id == r.id,
-      where: r.name == "super_admin"
-    )
-    |> Repo.one()
+    query =
+      from(u in User,
+        where: u.uuid == ^id,
+        join: ur in UserRole,
+        on: ur.user_id == u.id,
+        join: r in Role,
+        on: ur.role_id == r.id,
+        where: r.name == "super_admin"
+      )
+
+    Repo.one(query)
   end
 end

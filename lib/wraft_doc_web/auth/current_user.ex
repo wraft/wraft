@@ -20,8 +20,8 @@ defmodule WraftDocWeb.CurrentUser do
       user ->
         user = Repo.preload(user, [:profile, :roles, :organisation])
 
-        role_names = user.roles |> Enum.map(fn x -> x.name end)
-        user = user |> Map.put(:role_names, role_names)
+        role_names = Enum.map(user.roles, fn x -> x.name end)
+        user = Map.put(user, :role_names, role_names)
         assign(conn, :current_user, user)
     end
   end

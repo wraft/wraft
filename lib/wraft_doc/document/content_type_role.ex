@@ -4,8 +4,7 @@ defmodule WraftDoc.Document.ContentTypeRole do
   """
   use Ecto.Schema
   import Ecto.Changeset
-  alias WraftDoc.Document.ContentType
-  alias WraftDoc.Account.Role
+  alias WraftDoc.{Account.Role, Document.ContentType}
 
   schema "content_type_role" do
     field(:uuid, Ecto.UUID, autogenerate: true, null: false)

@@ -1,16 +1,16 @@
 defmodule WraftDocWeb.Plug.AuthorizedTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
-  alias WraftDocWeb.Plug.Authorized
   alias WraftDoc.Repo
+  alias WraftDocWeb.Plug.Authorized
 
   test "user is authorised to continue if the user has permission in resource" do
     user = insert(:user)
     role = insert(:role, name: "hr_manager")
     insert(:user_role, user: user, role: role)
-    user = user |> Repo.preload(:roles)
-    role_names = user.roles |> Enum.map(fn x -> x.name end)
-    user = user |> Map.put(:role_names, role_names)
+    user = Repo.preload(user, :roles)
+    role_names = Enum.map(user.roles, fn x -> x.name end)
+    user = Map.put(user, :role_names, role_names)
     resource = insert(:resource, category: WraftDocWeb.Api.V1.LayoutController, action: :create)
     insert(:permission, resource: resource, role: role)
 
@@ -29,9 +29,9 @@ defmodule WraftDocWeb.Plug.AuthorizedTest do
     user = insert(:user)
     role = insert(:role, name: "hr_manager")
     insert(:user_role, user: user, role: role)
-    user = user |> Repo.preload(:roles)
-    role_names = user.roles |> Enum.map(fn x -> x.name end)
-    user = user |> Map.put(:role_names, role_names)
+    user = Repo.preload(user, :roles)
+    role_names = Enum.map(user.roles, fn x -> x.name end)
+    user = Map.put(user, :role_names, role_names)
     resource = insert(:resource, category: WraftDocWeb.Api.V1.LayoutController, action: :create)
 
     conn = assign(build_conn(), :current_user, user)
@@ -49,9 +49,9 @@ defmodule WraftDocWeb.Plug.AuthorizedTest do
     user = insert(:user)
     role = insert(:role, name: "super_admin")
     insert(:user_role, user: user, role: role)
-    user = user |> Repo.preload(:roles)
-    role_names = user.roles |> Enum.map(fn x -> x.name end)
-    user = user |> Map.put(:role_names, role_names)
+    user = Repo.preload(user, :roles)
+    role_names = Enum.map(user.roles, fn x -> x.name end)
+    user = Map.put(user, :role_names, role_names)
     conn = assign(build_conn(), :current_user, user)
     resource = insert(:resource, category: WraftDocWeb.Api.V1.LayoutController, action: :create)
 
@@ -68,9 +68,9 @@ defmodule WraftDocWeb.Plug.AuthorizedTest do
     user = insert(:user)
     role = insert(:role, name: "user")
     insert(:user_role, user: user, role: role)
-    user = user |> Repo.preload(:roles)
-    role_names = user.roles |> Enum.map(fn x -> x.name end)
-    user = user |> Map.put(:role_names, role_names)
+    user = Repo.preload(user, :roles)
+    role_names = Enum.map(user.roles, fn x -> x.name end)
+    user = Map.put(user, :role_names, role_names)
     conn = assign(build_conn(), :current_user, user)
 
     conn =

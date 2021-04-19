@@ -1,4 +1,7 @@
 defmodule WraftDocWeb.UserAdmin do
+  @moduledoc """
+  Admin panel for user
+  """
   import Ecto.Query
   alias WraftDocWeb.Router.Helpers, as: Routes
 

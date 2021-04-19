@@ -205,7 +205,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   test "show the content type with roles", %{conn: conn} do
     content_type = insert(:content_type)
 
-    conn = get(conn, Routes.v1_content_type_path(conn, :show_content_type_role, content_type.uuid))
+    conn =
+      get(conn, Routes.v1_content_type_path(conn, :show_content_type_role, content_type.uuid))
+
     assert json_response(conn, 200)["name"] == content_type.name
   end
 end

@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.OrganisationController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  alias WraftDoc.{Enterprise, Enterprise.Organisation, Account, Account.Role}
+  alias WraftDoc.{Account, Account.Role, Enterprise, Enterprise.Organisation}
 
   action_fallback(WraftDocWeb.FallbackController)
 

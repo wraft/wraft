@@ -1840,11 +1840,11 @@ defmodule WraftDoc.DocumentTest do
     test "delete_role_of_the_content_type" do
       role = insert(:role)
 
-      before_role_count = Repo.all(Role) |> length()
+      before_role_count = Role |> Repo.all() |> length()
 
       response = Document.delete_role_of_the_content_type(role)
 
-      after_role_count = Repo.all(Role) |> length()
+      after_role_count = Role |> Repo.all() |> length()
 
       assert after_role_count = before_role_count - 1
     end

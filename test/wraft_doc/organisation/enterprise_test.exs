@@ -315,9 +315,9 @@ defmodule WraftDoc.EnterpriseTest do
     organisation = insert(:organisation)
     user = insert(:user, organisation: organisation)
     insert(:user_role, user: user, role: role)
-    user = user |> Repo.preload([:roles])
-    role_names = user.roles |> Enum.map(fn x -> x.name end)
-    user = user |> Map.put(:role_names, role_names)
+    user = Repo.preload(user, [:roles])
+    role_names = Enum.map(user.roles, fn x -> x.name end)
+    user = Map.put(user, :role_names, role_names)
     assert Enterprise.check_permission(user, organisation.uuid) == organisation
   end
 
@@ -488,9 +488,9 @@ defmodule WraftDoc.EnterpriseTest do
   describe "get_membership/2" do
     test "fetches a membership with valid parameters" do
       user = insert(:user)
-      user = user |> Repo.preload([:roles])
-      role_names = user.roles |> Enum.map(fn x -> x.name end)
-      user = user |> Map.put(:role_names, role_names)
+      user = Repo.preload(user, [:roles])
+      role_names = Enum.map(user.roles, fn x -> x.name end)
+      user = Map.put(user, :role_names, role_names)
       membership = insert(:membership, organisation: user.organisation)
       fetched_membership = Enterprise.get_membership(membership.uuid, user)
 
@@ -534,9 +534,9 @@ defmodule WraftDoc.EnterpriseTest do
       role = insert(:role, name: "super_admin")
       user = insert(:user)
       insert(:user_role, role: role, user: user)
-      user = user |> Repo.preload([:roles])
-      role_names = user.roles |> Enum.map(fn x -> x.name end)
-      user = user |> Map.put(:role_names, role_names)
+      user = Repo.preload(user, [:roles])
+      role_names = Enum.map(user.roles, fn x -> x.name end)
+      user = Map.put(user, :role_names, role_names)
       membership = insert(:membership)
       fetched_membership = Enterprise.get_membership(membership.uuid, user)
       assert fetched_membership.uuid == membership.uuid
@@ -649,9 +649,9 @@ defmodule WraftDoc.EnterpriseTest do
     test "returns the payment in the user's organisation with given id" do
       user = insert(:user)
       insert(:user_role, user: user)
-      user = user |> Repo.preload([:roles])
-      role_names = user.roles |> Enum.map(fn x -> x.name end)
-      user = user |> Map.put(:role_names, role_names)
+      user = Repo.preload(user, [:roles])
+      role_names = Enum.map(user.roles, fn x -> x.name end)
+      user = Map.put(user, :role_names, role_names)
       payment = insert(:payment, organisation: user.organisation)
       fetched_payement = Enterprise.get_payment(payment.uuid, user)
       assert fetched_payement.razorpay_id == payment.razorpay_id
@@ -669,9 +669,9 @@ defmodule WraftDoc.EnterpriseTest do
       role = insert(:role, name: "super_admin")
       user = insert(:user)
       insert(:user_role, role: role, user: user)
-      user = user |> Repo.preload(:roles)
-      role_names = user.roles |> Enum.map(fn x -> x.name end)
-      user = user |> Map.put(:role_names, role_names)
+      user = Repo.preload(user, [:roles])
+      role_names = Enum.map(user.roles, fn x -> x.name end)
+      user = Map.put(user, :role_names, role_names)
       payment = insert(:payment)
       fetched_payement = Enterprise.get_payment(payment.uuid, user)
       assert fetched_payement.razorpay_id == payment.razorpay_id
@@ -693,9 +693,9 @@ defmodule WraftDoc.EnterpriseTest do
   describe "show_payment/2" do
     test "returns the payment in the user's organisation with given id" do
       user = insert(:user)
-      user = user |> Repo.preload([:roles])
-      role_names = user.roles |> Enum.map(fn x -> x.name end)
-      user = user |> Map.put(:role_names, role_names)
+      user = Repo.preload(user, [:roles])
+      role_names = Enum.map(user.roles, fn x -> x.name end)
+      user = Map.put(user, :role_names, role_names)
       payment = insert(:payment, organisation: user.organisation)
       fetched_payement = Enterprise.show_payment(payment.uuid, user)
       assert fetched_payement.razorpay_id == payment.razorpay_id
@@ -910,11 +910,11 @@ defmodule WraftDoc.EnterpriseTest do
     test "delete_role_of_the_organisation" do
       role = insert(:role)
 
-      before_role_count = Repo.all(Role) |> length()
+      before_role_count = Role |> Repo.all() |> length()
 
       response = Enterprise.delete_role_of_the_organisation(role)
 
-      after_role_count = Repo.all(Role) |> length()
+      after_role_count = Role |> Repo.all() |> length()
 
       assert after_role_count = before_role_count - 1
     end

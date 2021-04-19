@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.ContentTypeRoleView do
   use WraftDocWeb, :view
 
-  alias WraftDocWeb.Api.V1.{RoleView, ContentTypeView}
+  alias WraftDocWeb.Api.V1.{ContentTypeView, RoleView}
 
   def render("show.json", %{content_type_role: content_type_role}) do
     %{

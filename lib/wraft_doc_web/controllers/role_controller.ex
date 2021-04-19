@@ -2,7 +2,6 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  alias WraftDoc.Account.Role
   alias WraftDoc.Document
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -55,7 +54,6 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   def show(conn, %{"id" => id}) do
     role = Document.get_content_type_under_roles(id)
 
-    conn
-    |> render("show.json", role: role)
+    render(conn, "show.json", role: role)
   end
 end

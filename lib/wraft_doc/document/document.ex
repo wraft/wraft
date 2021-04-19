@@ -4,9 +4,9 @@ defmodule WraftDoc.Document do
   """
   import Ecto
   import Ecto.Query
-  alias Ecto.Multi
 
   alias WraftDoc.{
+    Account.Role,
     Account.User,
     Document.Asset,
     Document.Block,
@@ -14,6 +14,7 @@ defmodule WraftDoc.Document do
     Document.Comment,
     Document.ContentType,
     Document.ContentTypeField,
+    Document.ContentTypeRole,
     Document.Counter,
     Document.DataTemplate,
     Document.Engine,
@@ -23,6 +24,7 @@ defmodule WraftDoc.Document do
     Document.Instance.Version,
     Document.Layout,
     Document.LayoutAsset,
+    Document.OrganisationField,
     Document.Pipeline,
     Document.Pipeline.Stage,
     Document.Pipeline.TriggerHistory,
@@ -33,10 +35,7 @@ defmodule WraftDoc.Document do
     Repo
   }
 
-  alias WraftDoc.Document.ContentTypeRole
-  alias WraftDoc.Account.Role
-  alias WraftDocWeb.AssetUploader
-  alias WraftDocWeb.Worker.BulkWorker
+  alias WraftDocWeb.{AssetUploader, Worker.BulkWorker}
 
   @doc """
   Create a layout.
@@ -2263,7 +2262,8 @@ defmodule WraftDoc.Document do
   """
 
   def get_content_type_roles(id) do
-    from(c in ContentType, where: c.uuid == ^id) |> Repo.one() |> Repo.preload(:roles)
+    query = from(c in ContentType, where: c.uuid == ^id)
+    query |> Repo.one() |> Repo.preload(:roles)
   end
 
   @doc """
@@ -2271,7 +2271,8 @@ defmodule WraftDoc.Document do
   """
 
   def get_content_type_under_roles(id) do
-    from(r in Role, where: r.uuid == ^id) |> Repo.one() |> Repo.preload(:content_types)
+    query = from(r in Role, where: r.uuid == ^id)
+    query |> Repo.one() |> Repo.preload(:content_types)
   end
 
   @doc """
@@ -2279,7 +2280,8 @@ defmodule WraftDoc.Document do
   """
 
   def get_content_type(id) do
-    from(c in ContentType, where: c.uuid == ^id) |> Repo.one()
+    query = from(c in ContentType, where: c.uuid == ^id)
+    Repo.one(query)
   end
 
   @doc """
@@ -2308,7 +2310,7 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, content_type_role} ->
-        content_type_role |> Repo.preload([:role, :content_type])
+        Repo.preload(content_type_role, [:role, :content_type])
 
       {:error, _} = changeset ->
         changeset
@@ -2316,7 +2318,8 @@ defmodule WraftDoc.Document do
   end
 
   def get_role_from_uuid(uuid) do
-    from(r in Role, where: r.uuid == ^uuid) |> Repo.one()
+    query = from(r in Role, where: r.uuid == ^uuid)
+    Repo.one(query)
   end
 
   # def create_content_type_role(content_id, params) do
@@ -2345,21 +2348,26 @@ defmodule WraftDoc.Document do
   """
 
   def get_role_of_content_type(id, c_id) do
-    from(r in Role, where: r.uuid == ^id, join: ct in ContentType, where: ct.uuid == ^c_id)
-    |> Repo.one()
+    query =
+      from(r in Role, where: r.uuid == ^id, join: ct in ContentType, where: ct.uuid == ^c_id)
+
+    Repo.one(query)
   end
 
   @doc """
   get the content type from the respective role
   """
 
-  def get_content_type_roles(id, role_id) do
-    from(ct in ContentType, where: ct.uuid == ^id, join: r in Role, where: r.uuid == ^role_id)
-    |> Repo.one()
+  def get_content_type_role(id, role_id) do
+    query =
+      from(ct in ContentType, where: ct.uuid == ^id, join: r in Role, where: r.uuid == ^role_id)
+
+    Repo.one(query)
   end
 
   def get_content_type_role(id) do
-    from(ctr in ContentTypeRole, where: ctr.uuid == ^id) |> Repo.one()
+    query = from(ctr in ContentTypeRole, where: ctr.uuid == ^id)
+    Repo.one(query)
   end
 
   def delete_content_type_role(content_type_role) do
@@ -2388,5 +2396,144 @@ defmodule WraftDoc.Document do
       {:ok, role} ->
         role
     end
+  end
+
+  @doc """
+  Returns the list of organisation_field.
+
+  ## Examples
+
+      iex> list_organisation_field()
+      [%OrganisationField{}, ...]
+
+  """
+  def list_organisation_fields(%{organisation_id: org_id}, params) do
+    query =
+      from(of in OrganisationField,
+        where: of.organisation_id == ^org_id,
+        order_by: [desc: of.id],
+        preload: :field_type
+      )
+
+    Repo.paginate(query, params)
+  end
+
+  def list_organisation_fields(_, _), do: nil
+
+  @doc """
+  Gets a single organisation_field.
+
+  Raises `Ecto.NoResultsError` if the Organisation field does not exist.
+
+  ## Examples
+
+      iex> get_organisation_field!(123)
+      %OrganisationField{}
+
+      iex> get_organisation_field!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_organisation_field(uuid, %{organisation_id: org_id}) do
+    OrganisationField
+    |> Repo.get_by(uuid: uuid, organisation_id: org_id)
+    |> Repo.preload(:field_type)
+  end
+
+  @doc """
+  Creates a organisation_field.
+
+  ## Examples
+
+      iex> create_organisation_field(%{field: value})
+      {:ok, %OrganisationField{}}
+
+      iex> create_organisation_field(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_organisation_field(%{id: u_id, organisation_id: org_id}, field_type, attrs \\ %{}) do
+    field_type
+    |> build_assoc(:organisation_fields, organisation_id: org_id, creator_id: u_id)
+    |> OrganisationField.changeset(attrs)
+    |> Spur.insert()
+    |> case do
+      {:error, _} = changeset -> changeset
+      {:ok, organisation_field} -> Repo.preload(organisation_field, :field_type)
+    end
+  end
+
+  @doc """
+  Updates a organisation_field.
+
+  ## Examples
+
+      iex> update_organisation_field(organisation_field, %{field: new_value})
+      {:ok, %OrganisationField{}}
+
+      iex> update_organisation_field(organisation_field, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_organisation_field(
+        %{id: u_id},
+        %OrganisationField{} = organisation_field,
+        %{id: ft_id},
+        attrs
+      ) do
+    attrs = Map.merge(attrs, %{"field_type_id" => ft_id, "creator_id" => u_id})
+
+    organisation_field
+    |> OrganisationField.update_changeset(attrs)
+    |> Spur.update()
+    |> case do
+      {:error, _} = changeset -> changeset
+      {:ok, organisation_field} -> Repo.preload(organisation_field, :field_type)
+    end
+  end
+
+  def update_organisation_field(_, _, _, _), do: nil
+
+  def update_organisation_field(%{id: u_id}, %OrganisationField{} = organisation_field, attrs) do
+    attrs = Map.put(attrs, "creator_id", u_id)
+
+    organisation_field
+    |> OrganisationField.update_changeset(attrs)
+    |> Spur.update()
+    |> case do
+      {:error, _} = changeset -> changeset
+      {:ok, organisation_field} -> organisation_field
+    end
+  end
+
+  def update_organisation_field(_, _, _), do: nil
+
+  @doc """
+  Deletes a organisation_field.
+
+  ## Examples
+
+      iex> delete_organisation_field(organisation_field)
+      {:ok, %OrganisationField{}}
+
+      iex> delete_organisation_field(organisation_field)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_organisation_field(%OrganisationField{} = organisation_field) do
+    Repo.delete(organisation_field)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking organisation_field changes.
+
+  ## Examples
+
+      iex> change_organisation_field(organisation_field)
+      %Ecto.Changeset{source: %OrganisationField{}}
+
+  """
+  def change_organisation_field(%OrganisationField{} = organisation_field) do
+    OrganisationField.changeset(organisation_field, %{})
   end
 end
