@@ -1,5 +1,25 @@
 # CHANGELOG
-## v0.031 - today
+## v0.0.31 - today
+
+## Added
+
+- User with multiple roles
+- Organisation admin panel on kaffy
+- Specific role on invitation token
+- Send invitation to primary email of organisation with admin role
+- Sign up with admin role
+- Super admin role
+## Changed
+- token signup with specific role
+- Resource schema resource type to atom
+- Check permission for specific resource
+- Authorized plug to verify the user have permission on specific task
+
+## Fixed
+- Multiple email acceptance on token signup
+
+
+
 
 ## v0.0.30 - 2021-04-12
 
@@ -16,13 +36,6 @@
 - Warnings resolved
 
 ## v0.0.29 - 2020-06-08
-
-## Added
-
-- show, create, delete organisation role api
-- Role API - To list role with content type
-- create, delete content type role api
-- show api, content type with role
 
 
 ## Added
