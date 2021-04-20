@@ -388,4 +388,25 @@ defmodule WraftDocWeb.Api.V1.UserController do
       render(conn, "user.json", user: user)
     end
   end
+
+  swagger_path :show_user do
+    get("/users/{name}")
+    summary("Show User")
+    description("Filtered user by there name")
+
+    parameters do
+      name(:path, :string, "Name", requried: true)
+    end
+
+    response(201, "Accepted", Schema.ref(:User))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def show_user(conn, %{"name" => name}) do
+    user = Account.get_user_by_name(name)
+
+    render(conn, "user.json", user: user)
+  end
 end
