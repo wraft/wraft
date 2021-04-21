@@ -13,6 +13,7 @@ alias WraftDoc.{
   Repo,
   Account.Role,
   Account.User,
+  Account.UserRole,
   Account.Profile,
   Document.Engine,
   Document.Layout,
@@ -51,14 +52,14 @@ organisation =
 user_params = %{
   name: "Admin",
   email: "admin@wraftdocs.com",
-  role_id: id,
   email_verify: true,
   password: "Admin@WraftDocs",
   organisation_id: organisation.id
 }
 
-user = %User{} |> User.changeset(user_params) |> Repo.insert!()
+%{id: u_id} = user = %User{} |> User.changeset(user_params) |> Repo.insert!()
 Repo.insert!(%Profile{name: "Admin", user_id: user.id})
+Repo.insert!(%UserRole{user_id: u_id, role_id: id})
 
 # Populate engine
 engine = Repo.insert!(%Engine{name: "PDF"})
