@@ -11,14 +11,15 @@ defmodule WraftDoc.Document.Instance.Version do
     field(:version_number, :integer)
     field(:raw, :string)
     field(:serialized, :map, default: %{})
+    field(:naration, :string)
     belongs_to(:content, WraftDoc.Document.Instance)
-    belongs_to(:creator, WraftDoc.Account.User)
+    belongs_to(:author, WraftDoc.Account.User)
     timestamps()
   end
 
   def changeset(%Version{} = version, attrs \\ %{}) do
     version
-    |> cast(attrs, [:version_number, :raw, :serialized])
-    |> validate_required([:version_number])
+    |> cast(attrs, [:version_number, :raw, :serialized, :content_id, :author_id])
+    |> validate_required([:version_number, :raw, :serialized, :content_id, :author_id])
   end
 end
