@@ -293,11 +293,18 @@ defmodule WraftDoc.Account do
     query =
       from(u in User,
         where: u.email == ^email,
-        join: r in Role,
-        where: r.name == "super_admin" and r.id == u.role_id
+        preload: :roles
       )
 
-    Repo.one(query)
+    %{roles: roles} = user = Repo.one(query)
+
+    roles
+    |> Enum.map(fn x -> x.name end)
+    |> Enum.member?("super_admin")
+    |> case do
+      true -> user
+      _ -> nil
+    end
   end
 
   defp get_user_by_email(_email, _) do
