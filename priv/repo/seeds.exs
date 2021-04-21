@@ -31,10 +31,11 @@ alias WraftDoc.{
 
 # Populate database with roles
 Repo.insert!(%Role{name: "admin"})
+Repo.insert!(%Role{name: "super_admin"})
 Repo.insert!(%Role{name: "user"})
 
 # Populate DB with admin user and profile
-%{id: id} = Repo.get_by(Role, name: "admin")
+%{id: id} = Repo.get_by(Role, name: "super_admin")
 
 # Populate DB with one organisation
 organisation =
