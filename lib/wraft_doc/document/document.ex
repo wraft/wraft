@@ -2555,4 +2555,29 @@ defmodule WraftDoc.Document do
   def change_organisation_field(%OrganisationField{} = organisation_field) do
     OrganisationField.changeset(organisation_field, %{})
   end
+
+  @doc """
+  To disable instance on edit
+  ## Params
+  * `user` - User struct
+  * `instance` - Instance struct
+  * `params` - map contains the value of editable
+  """
+  def lock_unlock_instance(%{id: user_id}, %Instance{} = instance, params) do
+    instance
+    |> Instance.lock_modify_changeset(params)
+    |> Spur.update(%{actor: "#{user_id}"})
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, instance} ->
+        Repo.preload(instance, [
+          :creator,
+          [{:content_type, :layout}],
+          :state,
+          [{:versions, :author}]
+        ])
+    end
+  end
 end

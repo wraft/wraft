@@ -267,4 +267,24 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     assert json_response(conn, 404) == "Not Found"
   end
+
+  test "lock unlock locks if editable true", %{conn: conn} do
+    current_user = conn.assigns[:current_user]
+    insert(:membership, organisation: current_user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, current_user)
+
+    content_type =
+      insert(:content_type, creator: current_user, organisation: current_user.organisation)
+
+    instance = insert(:instance, creator: current_user, content_type: content_type)
+
+    conn =
+      patch(conn, Routes.v1_instance_path(conn, :lock_unlock, instance.uuid), %{editable: true})
+
+    assert json_response(conn, 200)["content"]["editable"] == true
+  end
 end

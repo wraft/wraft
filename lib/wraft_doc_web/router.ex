@@ -153,7 +153,7 @@ defmodule WraftDocWeb.Router do
       resources("/contents", InstanceController, only: [:show, :update, :delete])
       # Instance state update
       patch("/contents/:id/states", InstanceController, :state_update)
-
+      patch("/contents/:id/lock-unlock", InstanceController, :lock_unlock)
       # Organisations
       scope "/organisations" do
         resources("/", OrganisationController, only: [:create, :update, :show, :delete])
