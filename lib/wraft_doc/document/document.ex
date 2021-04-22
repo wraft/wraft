@@ -643,6 +643,7 @@ defmodule WraftDoc.Document do
 
   @doc """
   Update an instance and creates updated version
+  the instance is only available to edit if its editable field is true
   ## Parameters
   * `old_instance` - Instance struct before updation
   * `current_user` - User struct
@@ -653,7 +654,7 @@ defmodule WraftDoc.Document do
           %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
           | {:error, Ecto.Changeset.t()}
   def update_instance(
-        old_instance,
+        %Instance{editable: true} = old_instance,
         %User{id: id} = current_user,
         params
       ) do
@@ -676,6 +677,16 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
+
+  def update_instance(
+        %Instance{editable: false},
+        _current_user,
+        _params
+      ) do
+    {:error, :cant_update}
+  end
+
+  def update_instance(_, _, _), do: {:error, :cant_update}
 
   # Create a new version with old data, when an instance is updated.
   # The previous data will be stored in the versions. Latest one will
