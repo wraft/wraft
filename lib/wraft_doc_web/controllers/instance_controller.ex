@@ -69,11 +69,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           properties do
             raw(:string, "Content raw data", required: true)
             serialized(:string, "Content serialized data")
+            naration(:string, "Naration for updation")
           end
 
           example(%{
             raw: "Content data",
-            serialized: %{title: "Title of the content", body: "Body of the content"}
+            serialized: %{title: "Title of the content", body: "Body of the content"},
+            naration: "Revision by manager"
           })
         end,
       ContentStateUpdateRequest:
