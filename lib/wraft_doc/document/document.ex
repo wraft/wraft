@@ -32,6 +32,7 @@ defmodule WraftDoc.Document do
     Enterprise,
     Enterprise.Flow,
     Enterprise.Flow.State,
+    Enterprise.Vendor,
     Repo
   }
 
@@ -421,7 +422,7 @@ defmodule WraftDoc.Document do
   Create a new instance.
   """
   # TODO - improve tests
-  @spec create_instance(User.t(), ContentType.t(), State.t(), map) ::
+  @spec create_instance(User.t(), ContentType.t(), State.t(), Vendor.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
   def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, vendor, params) do
@@ -442,6 +443,9 @@ defmodule WraftDoc.Document do
     end
   end
 
+  @spec create_instance(User.t(), ContentType.t(), State.t(), map) ::
+          %Instance{content_type: ContentType.t(), state: State.t()}
+          | {:error, Ecto.Changeset.t()}
   def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
     params = Map.merge(params, %{"instance_id" => instance_id})
@@ -605,7 +609,7 @@ defmodule WraftDoc.Document do
   def show_instance(instance_uuid, user) do
     instance_uuid
     |> get_instance(user)
-    |> Repo.preload([:creator, [{:content_type, :layout}], :state])
+    |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
     |> get_built_document()
   end
 
@@ -638,23 +642,35 @@ defmodule WraftDoc.Document do
   def get_built_document(nil), do: nil
 
   @doc """
-  Update an instance.
+  Update an instance and creates updated version
+  ## Parameters
+  * `old_instance` - Instance struct before updation
+  * `current_user` - User struct
+  * `params` - Map contains attributes
   """
   # TODO - improve tests
   @spec update_instance(Instance.t(), User.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
           | {:error, Ecto.Changeset.t()}
-  def update_instance(old_instance, %User{id: id} = current_user, params) do
+  def update_instance(
+        old_instance,
+        %User{id: id} = current_user,
+        params
+      ) do
     old_instance
     |> Instance.update_changeset(params)
     |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, instance} ->
-        Task.start_link(fn -> create_version(current_user, old_instance, instance) end)
+        case create_version(current_user, old_instance, instance, params) do
+          {:ok, _version} ->
+            instance
+            |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
+            |> get_built_document()
 
-        instance
-        |> Repo.preload([:creator, [{:content_type, :layout}], :state])
-        |> get_built_document()
+          {:error, _} = changeset ->
+            changeset
+        end
 
       {:error, _} = changeset ->
         changeset
@@ -666,17 +682,17 @@ defmodule WraftDoc.Document do
   # be in the content.
   # A new version is added only if there is any difference in either the
   # raw or serialized fields of the instances.
-  @spec create_version(User.t(), Instance.t(), Instance.t()) ::
+  @spec create_version(User.t(), Instance.t(), Instance.t(), map()) ::
           {:ok, Version.t()} | {:error, Ecto.Changeset.t()}
-  defp create_version(current_user, old_instance, new_instance) do
+  defp create_version(current_user, old_instance, new_instance, params) do
     case instance_updated?(old_instance, new_instance) do
       true ->
-        params = create_version_params(old_instance)
+        params = create_version_params(old_instance, params)
 
         current_user
         |> build_assoc(:instance_versions, content: old_instance)
         |> Version.changeset(params)
-        |> Repo.insert()
+        |> Spur.insert()
 
       false ->
         nil
@@ -684,8 +700,8 @@ defmodule WraftDoc.Document do
   end
 
   # Create the params to create a new version.
-  @spec create_version_params(Instance.t()) :: map
-  defp create_version_params(%Instance{id: id} = instance) do
+  @spec create_version_params(Instance.t(), map()) :: map
+  defp create_version_params(%Instance{id: id} = instance, params) do
     query =
       from(v in Version,
         where: v.content_id == ^id,
@@ -705,13 +721,16 @@ defmodule WraftDoc.Document do
           version + 1
       end
 
-    instance |> Map.from_struct() |> Map.put(:version_number, version)
+    naration = params["naration"] || "Version-#{version / 10}"
+    instance |> Map.from_struct() |> Map.merge(%{version_number: version, naration: naration})
   end
 
   # Checks whether the raw and serialzed of old and new instances are same or not.
   # If they are both the same, returns false, else returns true
   @spec instance_updated?(Instance.t(), Instance.t()) :: boolean
-  defp instance_updated?(%{raw: raw, serialized: map}, %{raw: raw, serialized: map}), do: false
+  defp instance_updated?(%{raw: o_raw, serialized: o_map}, %{raw: n_raw, serialized: n_map}) do
+    !(o_raw === n_raw && o_map === n_map)
+  end
 
   defp instance_updated?(_old_instance, _new_instance), do: true
 
