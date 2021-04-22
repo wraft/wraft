@@ -12,7 +12,9 @@ defmodule WraftDoc.Document.InstanceTest do
   @invalid_attrs %{raw: ""}
 
   test "changeset with valid attributes" do
-    changeset = Instance.changeset(%Instance{}, @valid_attrs)
+    content_type = insert(:content_type)
+    params = Map.put(@valid_attrs, :content_type_id, content_type.id)
+    changeset = Instance.changeset(%Instance{}, params)
     assert changeset.valid?
   end
 

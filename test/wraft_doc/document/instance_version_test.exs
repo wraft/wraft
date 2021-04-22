@@ -1,6 +1,7 @@
 defmodule WraftDoc.Document.Instance.VersionTest do
   use WraftDoc.ModelCase
   alias WraftDoc.Document.Instance.Version
+  import WraftDoc.Factory
 
   @valid_attrs %{
     version_number: 1,
@@ -10,7 +11,9 @@ defmodule WraftDoc.Document.Instance.VersionTest do
   @invalid_attrs %{version_number: "v1"}
 
   test "changeset with valid attributes" do
-    changeset = Version.changeset(%Version{}, @valid_attrs)
+    user = insert(:user)
+    params = Map.put(@valid_attrs, :author_id, user.id)
+    changeset = Version.changeset(%Version{}, params)
     assert changeset.valid?
   end
 
