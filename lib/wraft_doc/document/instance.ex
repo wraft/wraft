@@ -39,6 +39,7 @@ defmodule WraftDoc.Document.Instance do
     field(:serialized, :map, default: %{})
     field(:type, :integer)
     field(:build, :string, virtual: true)
+    field(:editable, :boolean, default: true)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
@@ -82,5 +83,11 @@ defmodule WraftDoc.Document.Instance do
     instance
     |> cast(attrs, [:state_id])
     |> validate_required([:state_id])
+  end
+
+  def lock_modify_changeset(instance, attrs \\ %{}) do
+    instance
+    |> cast(attrs, [:editable])
+    |> validate_required([:editable])
   end
 end
