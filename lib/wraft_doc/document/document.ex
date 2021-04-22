@@ -643,6 +643,7 @@ defmodule WraftDoc.Document do
 
   @doc """
   Update an instance and creates updated version
+  the instance is only available to edit if its editable field is true
   ## Parameters
   * `old_instance` - Instance struct before updation
   * `current_user` - User struct
@@ -653,7 +654,7 @@ defmodule WraftDoc.Document do
           %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
           | {:error, Ecto.Changeset.t()}
   def update_instance(
-        old_instance,
+        %Instance{editable: true} = old_instance,
         %User{id: id} = current_user,
         params
       ) do
@@ -676,6 +677,16 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
+
+  def update_instance(
+        %Instance{editable: false},
+        _current_user,
+        _params
+      ) do
+    {:error, :cant_update}
+  end
+
+  def update_instance(_, _, _), do: {:error, :cant_update}
 
   # Create a new version with old data, when an instance is updated.
   # The previous data will be stored in the versions. Latest one will
@@ -2554,5 +2565,30 @@ defmodule WraftDoc.Document do
   """
   def change_organisation_field(%OrganisationField{} = organisation_field) do
     OrganisationField.changeset(organisation_field, %{})
+  end
+
+  @doc """
+  To disable instance on edit
+  ## Params
+  * `user` - User struct
+  * `instance` - Instance struct
+  * `params` - map contains the value of editable
+  """
+  def lock_unlock_instance(%{id: user_id}, %Instance{} = instance, params) do
+    instance
+    |> Instance.lock_modify_changeset(params)
+    |> Spur.update(%{actor: "#{user_id}"})
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, instance} ->
+        Repo.preload(instance, [
+          :creator,
+          [{:content_type, :layout}],
+          :state,
+          [{:versions, :author}]
+        ])
+    end
   end
 end

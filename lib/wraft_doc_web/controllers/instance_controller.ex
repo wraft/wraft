@@ -278,6 +278,19 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             reg_no: "ASD21122",
             contact_person: "vikas abu"
           })
+        end,
+      LockUnlockRequest:
+        swagger_schema do
+          title("Lock unlock request")
+          description("request to lock or unlock")
+
+          properties do
+            editable(:boolean, "Editable", required: true)
+          end
+
+          example(%{
+            editable: true
+          })
         end
     }
   end
@@ -566,6 +579,33 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     with %Instance{} = instance <- Document.get_instance(instance_uuid, current_user),
          %State{} = state <- Enterprise.get_state(current_user, state_uuid),
          %Instance{} = instance <- Document.update_instance_state(current_user, instance, state) do
+      render(conn, "show.json", instance: instance)
+    end
+  end
+
+  swagger_path :lock_unlock do
+    patch("/contents/{id}/lock-unlock")
+    summary("Lock or unlock and instance")
+    description("API to update an instanc")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+
+      content(:body, Schema.ref(:LockUnlockRequest), "Lock or unlock instance", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContent))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  def lock_unlock(conn, %{"id" => instance_uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with %Instance{} = instance <- Document.get_instance(instance_uuid, current_user),
+         %Instance{} = instance <-
+           Document.lock_unlock_instance(current_user, instance, params) do
       render(conn, "show.json", instance: instance)
     end
   end

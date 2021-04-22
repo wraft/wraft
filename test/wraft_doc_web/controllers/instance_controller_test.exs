@@ -113,7 +113,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
-    instance = insert(:instance, creator: user, content_type: content_type)
+    instance = insert(:instance, creator: user, content_type: content_type, editable: true)
 
     conn =
       build_conn()
@@ -266,5 +266,46 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     conn = get(conn, Routes.v1_instance_path(conn, :show, instance.uuid))
 
     assert json_response(conn, 404) == "Not Found"
+  end
+
+  test "lock unlock locks if editable true", %{conn: conn} do
+    current_user = conn.assigns[:current_user]
+    insert(:membership, organisation: current_user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, current_user)
+
+    content_type =
+      insert(:content_type, creator: current_user, organisation: current_user.organisation)
+
+    instance = insert(:instance, creator: current_user, content_type: content_type)
+
+    conn =
+      patch(conn, Routes.v1_instance_path(conn, :lock_unlock, instance.uuid), %{editable: true})
+
+    assert json_response(conn, 200)["content"]["editable"] == true
+  end
+
+  test "can't update if the instance is editable false", %{conn: conn} do
+    current_user = conn.assigns[:current_user]
+    insert(:membership, organisation: current_user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, current_user)
+
+    content_type =
+      insert(:content_type, creator: current_user, organisation: current_user.organisation)
+
+    instance =
+      insert(:instance, creator: current_user, content_type: content_type, editable: false)
+
+    conn = patch(conn, Routes.v1_instance_path(conn, :update, instance.uuid), @valid_attrs)
+
+    assert json_response(conn, 422)["errors"] ==
+             "The instance is not avaliable to edit..!!"
   end
 end

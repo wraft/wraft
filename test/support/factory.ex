@@ -194,6 +194,7 @@ defmodule WraftDoc.Factory do
       instance_id: sequence(:instance_id, &"Prefix#{&1}"),
       raw: "Content",
       serialized: %{title: "Title of the content", body: "Body of the content"},
+      editable: true,
       content_type: build(:content_type)
     }
   end

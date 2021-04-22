@@ -80,6 +80,11 @@ defmodule WraftDocWeb.FallbackController do
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 
+  def call(conn, {:error, :cant_update}) do
+    body = Jason.encode!(%{errors: "The instance is not avaliable to edit..!!"})
+    conn |> put_resp_content_type("application/json") |> send_resp(422, body)
+  end
+
   def call(conn, nil) do
     conn
     |> put_status(:not_found)
