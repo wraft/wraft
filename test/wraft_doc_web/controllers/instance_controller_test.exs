@@ -5,12 +5,12 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Instance, Repo}
+  alias WraftDoc.{Document.Instance, Document.Instance.Version, Repo}
 
   @valid_attrs %{
     instance_id: "OFFL01",
     raw: "Content",
-    serialized: %{title: "Title of the content", body: "Body of the content"}
+    serialized: %{title: "updated Title of the content", body: "updated Body of the content"}
   }
   @invalid_attrs %{raw: ""}
 
@@ -53,8 +53,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> post(Routes.v1_instance_path(conn, :create, content_type.uuid), params)
       |> doc(operation_id: "create_instance")
 
-    assert count_before + 1 == Instance |> Repo.all() |> length()
     assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
+    assert count_before + 1 == Instance |> Repo.all() |> length()
   end
 
   test "does not create instances by invalid attrs", %{conn: conn} do
@@ -107,6 +107,37 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
     assert count_before == Instance |> Repo.all() |> length()
+  end
+
+  test "update instances creates instance version too", %{conn: conn} do
+    user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    instance = insert(:instance, creator: user, content_type: content_type)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    content_type = insert(:content_type)
+    state = insert(:state)
+
+    params =
+      @valid_attrs |> Map.put(:content_type_id, content_type.uuid) |> Map.put(:state_id, state.id)
+
+    version_count_before = Version |> Repo.all() |> length()
+
+    conn =
+      conn
+      |> put(Routes.v1_instance_path(conn, :update, instance.uuid, params))
+      |> doc(operation_id: "update_asset")
+
+    version_count_after = Version |> Repo.all() |> length()
+
+    assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
+
+    assert version_count_before + 1 == version_count_after
   end
 
   test "does't update instances for invalid attrs", %{conn: conn} do
