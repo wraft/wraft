@@ -2595,7 +2595,7 @@ defmodule WraftDoc.Document do
   @doc """
   Search and list all by key
   """
-  # TODO - improve tests
+
   @spec instance_index(binary, map) :: map
   def instance_index(%{organisation_id: org_id}, key, params) do
     query =
@@ -2606,6 +2606,8 @@ defmodule WraftDoc.Document do
         order_by: [desc: i.id],
         preload: [:content_type, :state, :vendor]
       )
+
+    key = String.downcase(key)
 
     query
     |> Repo.all()
