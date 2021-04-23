@@ -609,4 +609,22 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       render(conn, "show.json", instance: instance)
     end
   end
+
+  def search(conn, %{"key" => key} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with %{
+           entries: contents,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.instance_index(current_user, key, params) do
+      render(conn, "index.json",
+        contents: contents,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
 end

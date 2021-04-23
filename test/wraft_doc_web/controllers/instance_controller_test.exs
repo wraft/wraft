@@ -308,4 +308,39 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert json_response(conn, 422)["errors"] ==
              "The instance is not avaliable to edit..!!"
   end
+
+  test "search instances searches instances from ", %{conn: conn} do
+    current_user = conn.assigns[:current_user]
+    insert(:membership, organisation: current_user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, current_user)
+
+    content_type =
+      insert(:content_type, creator: current_user, organisation: current_user.organisation)
+
+    i1 =
+      insert(:instance,
+        creator: current_user,
+        content_type: content_type,
+        serialized: %{title: "Offer letter", body: "Offer letter body"}
+      )
+
+    i2 =
+      insert(:instance,
+        creator: current_user,
+        content_type: content_type,
+        serialized: %{title: "Releival letter", body: "Releival letter body"}
+      )
+
+    conn = get(conn, Routes.v1_instance_path(conn, :search, "offer"))
+
+    contents = json_response(conn, 200)["contents"]
+
+    assert contents
+           |> Enum.map(fn x -> x["content"]["instance_id"] end)
+           |> List.to_string() =~ i1.instance_id
+  end
 end
