@@ -2591,4 +2591,36 @@ defmodule WraftDoc.Document do
         ])
     end
   end
+
+  @doc """
+  Search and list all by key
+  """
+  # TODO - improve tests
+  @spec instance_index(binary, map) :: map
+  def instance_index(%{organisation_id: org_id}, key, params) do
+    query =
+      from(i in Instance,
+        join: ct in ContentType,
+        on: i.content_type_id == ct.id,
+        where: ct.organisation_id == ^org_id,
+        order_by: [desc: i.id],
+        preload: [:content_type, :state, :vendor]
+      )
+
+    query
+    |> Repo.all()
+    |> Stream.filter(fn
+      %{serialized: %{"title" => title}} ->
+        title
+        |> String.downcase()
+        |> String.contains?(key)
+
+      _x ->
+        nil
+    end)
+    |> Enum.filter(fn x -> !is_nil(x) end)
+    |> Scrivener.paginate(params)
+  end
+
+  def instance_index(_, _, _), do: nil
 end
