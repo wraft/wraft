@@ -610,6 +610,23 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
+  swagger_path :search do
+    get("/contents/search")
+    summary("Search instances")
+
+    description(
+      "API to search instances by it title on serialized on instnaces under that organisation"
+    )
+
+    parameters do
+      key(:query, :string, "Search key")
+      page(:query, :string, "Page number")
+    end
+
+    response(200, "Ok", Schema.ref(:ContentsIndex))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
   def search(conn, %{"key" => key} = params) do
     current_user = conn.assigns[:current_user]
 

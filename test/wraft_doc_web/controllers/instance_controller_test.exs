@@ -309,7 +309,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
              "The instance is not avaliable to edit..!!"
   end
 
-  test "search instances searches instances from ", %{conn: conn} do
+  test "search instances searches instances by title on serialized", %{conn: conn} do
     current_user = conn.assigns[:current_user]
     insert(:membership, organisation: current_user.organisation)
 
@@ -335,7 +335,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
         serialized: %{title: "Releival letter", body: "Releival letter body"}
       )
 
-    conn = get(conn, Routes.v1_instance_path(conn, :search, "offer"))
+    conn = get(conn, Routes.v1_instance_path(conn, :search), key: "offer")
 
     contents = json_response(conn, 200)["contents"]
 
