@@ -21,4 +21,15 @@ defmodule WraftDocWeb.Api.V1.InstanceVersionView do
       content: render_one(version.content, InstanceView, "instance.json", as: :instance)
     }
   end
+
+  def render("change.json", %{change: change}) do
+    %{
+      ins: render_many(change.ins, __MODULE__, "line.json", as: :line),
+      del: render_many(change.del, __MODULE__, "line.json", as: :line)
+    }
+  end
+
+  def render("line.json", %{line: line}) do
+    line
+  end
 end

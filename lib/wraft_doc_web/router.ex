@@ -155,6 +155,7 @@ defmodule WraftDocWeb.Router do
       patch("/contents/:id/states", InstanceController, :state_update)
       patch("/contents/:id/lock-unlock", InstanceController, :lock_unlock)
       get("/contents/serch/by_title", InstanceController, :search)
+      get("/contents/:id/change/:v_id", InstanceController, :change)
       # Organisations
       scope "/organisations" do
         resources("/", OrganisationController, only: [:create, :update, :show, :delete])

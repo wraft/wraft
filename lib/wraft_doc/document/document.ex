@@ -2625,4 +2625,72 @@ defmodule WraftDoc.Document do
   end
 
   def instance_index(_, _, _), do: nil
+
+  @doc """
+  Returns list of changes on a single version
+  ## Parameters
+  * `instnace` - An instance struct
+  * `version_uuid` - uuid of version
+  """
+  @spec version_changes(Instance.t(), <<_::288>>) :: map()
+  def version_changes(instance, version_uuid) do
+    case get_version(instance, version_uuid) do
+      %Version{raw: current_raw} = version ->
+        case get_previous_version(instance, version) do
+          %Version{raw: previous_raw} ->
+            list_changes(current_raw, previous_raw)
+
+          _ ->
+            %{ins: [], del: []}
+        end
+
+      _ ->
+        {:error, :version_not_found}
+    end
+  end
+
+  defp list_changes(current_raw, previous_raw) do
+    current_raw
+    |> String.myers_difference(previous_raw)
+    |> Enum.reduce(%{}, fn x, acc ->
+      case x do
+        {:ins, v} -> add_ins(v, acc)
+        {:del, v} -> add_del(v, acc)
+        {_, _} -> acc
+      end
+    end)
+  end
+
+  defp add_ins(v, %{ins: ins} = acc) do
+    ins = ins |> List.insert_at(0, v) |> Enum.reverse()
+    Map.put(acc, :ins, ins)
+  end
+
+  defp add_ins(v, acc) do
+    ins = [v]
+    Map.put(acc, :ins, ins)
+  end
+
+  defp add_del(v, %{del: del} = acc) do
+    del = del |> List.insert_at(0, v) |> Enum.reverse()
+    Map.put(acc, :del, del)
+  end
+
+  defp add_del(v, acc) do
+    del = [v]
+    Map.put(acc, :del, del)
+  end
+
+  defp get_version(%{id: instance_id}, <<_::288>> = version_uuid) do
+    Repo.get_by(Version, content_id: instance_id, uuid: version_uuid)
+  end
+
+  defp get_version(_, _), do: nil
+
+  defp get_previous_version(%{id: instance_id}, %{version_number: version_number}) do
+    version_number = version_number - 1
+    Repo.get_by(Version, version_number: version_number, content_id: instance_id)
+  end
+
+  defp get_previous_version(_, _), do: nil
 end

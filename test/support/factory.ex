@@ -26,6 +26,7 @@ defmodule WraftDoc.Factory do
     Document.FieldType,
     Document.Instance,
     Document.Instance.History,
+    Document.Instance.Version,
     Document.Layout,
     Document.LayoutAsset,
     Document.OrganisationField,
@@ -196,6 +197,15 @@ defmodule WraftDoc.Factory do
       serialized: %{title: "Title of the content", body: "Body of the content"},
       editable: true,
       content_type: build(:content_type)
+    }
+  end
+
+  def instance_version_factory do
+    %Version{
+      version_number: 1,
+      raw: "Content",
+      serialized: %{title: "Title of the content", body: "Body of the content"},
+      content: build(:instance)
     }
   end
 
