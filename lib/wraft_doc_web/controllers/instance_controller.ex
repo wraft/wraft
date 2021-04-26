@@ -15,6 +15,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     Enterprise.Vendor
   }
 
+  alias WraftDocWeb.Api.V1.InstanceVersionView
+
   def swagger_definitions do
     %{
       Content:
@@ -290,6 +292,21 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
           example(%{
             editable: true
+          })
+        end,
+      Change:
+        swagger_schema do
+          title("List of changes")
+          description("Lists the chenges on a version")
+
+          properties do
+            ins(:array)
+            del(:array)
+          end
+
+          example(%{
+            ins: ["nm", "rame", "mohammed"],
+            del: ["test", "eng"]
           })
         end
     }
@@ -610,6 +627,23 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
+  swagger_path :search do
+    get("/contents/search")
+    summary("Search instances")
+
+    description(
+      "API to search instances by it title on serialized on instnaces under that organisation"
+    )
+
+    parameters do
+      key(:query, :string, "Search key")
+      page(:query, :string, "Page number")
+    end
+
+    response(200, "Ok", Schema.ref(:ContentsIndex))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
   def search(conn, %{"key" => key} = params) do
     current_user = conn.assigns[:current_user]
 
@@ -625,6 +659,30 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
         total_pages: total_pages,
         total_entries: total_entries
       )
+    end
+  end
+
+  swagger_path :change do
+    get("/contents/{id}/change/{v_id}")
+    summary("List changes")
+
+    description("API to List changes in a particular version")
+
+    parameters do
+      id(:path, :string, "Instance uuid")
+      v_id(:path, :string, "version uuid")
+    end
+
+    response(200, "Ok", Schema.ref(:Change))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def change(conn, %{"id" => instance_uuid, "v_id" => version_id}) do
+    current_user = conn.assigns[:current_user]
+
+    with %Instance{} = instance <- Document.get_instance(instance_uuid, current_user) do
+      change = Document.version_changes(instance, version_id)
+      render(conn, InstanceVersionView, "change.json", change: change)
     end
   end
 end
