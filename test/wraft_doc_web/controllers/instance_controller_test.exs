@@ -309,7 +309,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
              "The instance is not avaliable to edit..!!"
   end
 
-  test "search instances searches instances from ", %{conn: conn} do
+  test "search instances searches instances by title on serialized", %{conn: conn} do
     current_user = conn.assigns[:current_user]
     insert(:membership, organisation: current_user.organisation)
 
@@ -335,12 +335,45 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
         serialized: %{title: "Releival letter", body: "Releival letter body"}
       )
 
-    conn = get(conn, Routes.v1_instance_path(conn, :search, "offer"))
+    conn = get(conn, Routes.v1_instance_path(conn, :search), key: "offer")
 
     contents = json_response(conn, 200)["contents"]
 
     assert contents
            |> Enum.map(fn x -> x["content"]["instance_id"] end)
            |> List.to_string() =~ i1.instance_id
+  end
+
+  test "change/2 lists changes in a version with its previous version", %{conn: conn} do
+    current_user = conn.assigns[:current_user]
+    insert(:membership, organisation: current_user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, current_user)
+
+    content_type =
+      insert(:content_type, creator: current_user, organisation: current_user.organisation)
+
+    instance =
+      insert(:instance, creator: current_user, content_type: content_type, editable: false)
+
+    insert(:instance_version,
+      content: instance,
+      version_number: 1,
+      raw: "Offer letter to mohammed sadique"
+    )
+
+    iv2 =
+      insert(:instance_version,
+        content: instance,
+        version_number: 2,
+        raw: "Offer letter to ibrahim sadique to the position"
+      )
+
+    conn = get(conn, Routes.v1_instance_path(conn, :change, instance.uuid, iv2.uuid))
+    assert length(json_response(conn, 200)["del"]) > 0
+    assert length(json_response(conn, 200)["ins"]) > 0
   end
 end
