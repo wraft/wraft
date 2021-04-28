@@ -270,11 +270,11 @@ defmodule WraftDoc.Account do
 
   # Get the user struct from given email
   @spec get_user_by_email(binary) :: User.t() | nil
-  defp get_user_by_email(email) when is_binary(email) do
+  def get_user_by_email(email) when is_binary(email) do
     Repo.get_by(User, email: email)
   end
 
-  defp get_user_by_email(_email) do
+  def get_user_by_email(_email) do
     nil
   end
 
