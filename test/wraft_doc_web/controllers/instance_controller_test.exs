@@ -5,12 +5,12 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Instance, Repo}
+  alias WraftDoc.{Document.Instance, Document.Instance.Version, Repo}
 
   @valid_attrs %{
     instance_id: "OFFL01",
     raw: "Content",
-    serialized: %{title: "Title of the content", body: "Body of the content"}
+    serialized: %{title: "updated Title of the content", body: "updated Body of the content"}
   }
   @invalid_attrs %{raw: ""}
 
@@ -53,8 +53,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> post(Routes.v1_instance_path(conn, :create, content_type.uuid), params)
       |> doc(operation_id: "create_instance")
 
-    assert count_before + 1 == Instance |> Repo.all() |> length()
     assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
+    assert count_before + 1 == Instance |> Repo.all() |> length()
   end
 
   test "does not create instances by invalid attrs", %{conn: conn} do
@@ -107,6 +107,37 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
     assert count_before == Instance |> Repo.all() |> length()
+  end
+
+  test "update instances creates instance version too", %{conn: conn} do
+    user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
+    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    instance = insert(:instance, creator: user, content_type: content_type, editable: true)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    content_type = insert(:content_type)
+    state = insert(:state)
+
+    params =
+      @valid_attrs |> Map.put(:content_type_id, content_type.uuid) |> Map.put(:state_id, state.id)
+
+    version_count_before = Version |> Repo.all() |> length()
+
+    conn =
+      conn
+      |> put(Routes.v1_instance_path(conn, :update, instance.uuid, params))
+      |> doc(operation_id: "update_asset")
+
+    version_count_after = Version |> Repo.all() |> length()
+
+    assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
+
+    assert version_count_before + 1 == version_count_after
   end
 
   test "does't update instances for invalid attrs", %{conn: conn} do
@@ -235,5 +266,114 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     conn = get(conn, Routes.v1_instance_path(conn, :show, instance.uuid))
 
     assert json_response(conn, 404) == "Not Found"
+  end
+
+  test "lock unlock locks if editable true", %{conn: conn} do
+    current_user = conn.assigns[:current_user]
+    insert(:membership, organisation: current_user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, current_user)
+
+    content_type =
+      insert(:content_type, creator: current_user, organisation: current_user.organisation)
+
+    instance = insert(:instance, creator: current_user, content_type: content_type)
+
+    conn =
+      patch(conn, Routes.v1_instance_path(conn, :lock_unlock, instance.uuid), %{editable: true})
+
+    assert json_response(conn, 200)["content"]["editable"] == true
+  end
+
+  test "can't update if the instance is editable false", %{conn: conn} do
+    current_user = conn.assigns[:current_user]
+    insert(:membership, organisation: current_user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, current_user)
+
+    content_type =
+      insert(:content_type, creator: current_user, organisation: current_user.organisation)
+
+    instance =
+      insert(:instance, creator: current_user, content_type: content_type, editable: false)
+
+    conn = patch(conn, Routes.v1_instance_path(conn, :update, instance.uuid), @valid_attrs)
+
+    assert json_response(conn, 422)["errors"] ==
+             "The instance is not avaliable to edit..!!"
+  end
+
+  test "search instances searches instances by title on serialized", %{conn: conn} do
+    current_user = conn.assigns[:current_user]
+    insert(:membership, organisation: current_user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, current_user)
+
+    content_type =
+      insert(:content_type, creator: current_user, organisation: current_user.organisation)
+
+    i1 =
+      insert(:instance,
+        creator: current_user,
+        content_type: content_type,
+        serialized: %{title: "Offer letter", body: "Offer letter body"}
+      )
+
+    i2 =
+      insert(:instance,
+        creator: current_user,
+        content_type: content_type,
+        serialized: %{title: "Releival letter", body: "Releival letter body"}
+      )
+
+    conn = get(conn, Routes.v1_instance_path(conn, :search), key: "offer")
+
+    contents = json_response(conn, 200)["contents"]
+
+    assert contents
+           |> Enum.map(fn x -> x["content"]["instance_id"] end)
+           |> List.to_string() =~ i1.instance_id
+  end
+
+  test "change/2 lists changes in a version with its previous version", %{conn: conn} do
+    current_user = conn.assigns[:current_user]
+    insert(:membership, organisation: current_user.organisation)
+
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, current_user)
+
+    content_type =
+      insert(:content_type, creator: current_user, organisation: current_user.organisation)
+
+    instance =
+      insert(:instance, creator: current_user, content_type: content_type, editable: false)
+
+    insert(:instance_version,
+      content: instance,
+      version_number: 1,
+      raw: "Offer letter to mohammed sadique"
+    )
+
+    iv2 =
+      insert(:instance_version,
+        content: instance,
+        version_number: 2,
+        raw: "Offer letter to ibrahim sadique to the position"
+      )
+
+    conn = get(conn, Routes.v1_instance_path(conn, :change, instance.uuid, iv2.uuid))
+    assert length(json_response(conn, 200)["del"]) > 0
+    assert length(json_response(conn, 200)["ins"]) > 0
   end
 end

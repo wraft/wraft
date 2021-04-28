@@ -39,6 +39,7 @@ defmodule WraftDoc.Document.Instance do
     field(:serialized, :map, default: %{})
     field(:type, :integer)
     field(:build, :string, virtual: true)
+    field(:editable, :boolean, default: true)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
@@ -52,8 +53,16 @@ defmodule WraftDoc.Document.Instance do
 
   def changeset(%Instance{} = instance, attrs \\ %{}) do
     instance
-    |> cast(attrs, [:instance_id, :raw, :serialized, :content_type_id, :type, :vendor_id])
-    |> validate_required([:instance_id, :raw, :serialized, :type])
+    |> cast(attrs, [
+      :instance_id,
+      :raw,
+      :serialized,
+      :content_type_id,
+      :type,
+      :creator_id,
+      :vendor_id
+    ])
+    |> validate_required([:instance_id, :raw, :serialized, :type, :content_type_id])
     |> unique_constraint(:instance_id,
       message: "Instance with the ID exists.!",
       name: :content_organisation_unique_index
@@ -74,5 +83,11 @@ defmodule WraftDoc.Document.Instance do
     instance
     |> cast(attrs, [:state_id])
     |> validate_required([:state_id])
+  end
+
+  def lock_modify_changeset(instance, attrs \\ %{}) do
+    instance
+    |> cast(attrs, [:editable])
+    |> validate_required([:editable])
   end
 end

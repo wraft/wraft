@@ -65,6 +65,11 @@ defmodule WraftDocWeb.FallbackController do
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 
+  def call(conn, {:error, :version_not_found}) do
+    body = Poison.encode!(%{errors: "Version does not exist.!"})
+    conn |> put_resp_content_type("application/json") |> send_resp(422, body)
+  end
+
   def call(conn, {:error, :wrong_flow}) do
     body = Poison.encode!(%{errors: "This instance follow a different flow.!"})
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
@@ -77,6 +82,11 @@ defmodule WraftDocWeb.FallbackController do
 
   def call(conn, {:error, :wrong_amount}) do
     body = Jason.encode!(%{errors: "No plan with paid amount..!!"})
+    conn |> put_resp_content_type("application/json") |> send_resp(422, body)
+  end
+
+  def call(conn, {:error, :cant_update}) do
+    body = Jason.encode!(%{errors: "The instance is not avaliable to edit..!!"})
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 

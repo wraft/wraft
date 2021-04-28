@@ -15,6 +15,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     Enterprise.Vendor
   }
 
+  alias WraftDocWeb.Api.V1.InstanceVersionView
+
   def swagger_definitions do
     %{
       Content:
@@ -69,11 +71,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           properties do
             raw(:string, "Content raw data", required: true)
             serialized(:string, "Content serialized data")
+            naration(:string, "Naration for updation")
           end
 
           example(%{
             raw: "Content data",
-            serialized: %{title: "Title of the content", body: "Body of the content"}
+            serialized: %{title: "Title of the content", body: "Body of the content"},
+            naration: "Revision by manager"
           })
         end,
       ContentStateUpdateRequest:
@@ -275,6 +279,34 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             gstin: "32ADF22SDD2DFS32SDF",
             reg_no: "ASD21122",
             contact_person: "vikas abu"
+          })
+        end,
+      LockUnlockRequest:
+        swagger_schema do
+          title("Lock unlock request")
+          description("request to lock or unlock")
+
+          properties do
+            editable(:boolean, "Editable", required: true)
+          end
+
+          example(%{
+            editable: true
+          })
+        end,
+      Change:
+        swagger_schema do
+          title("List of changes")
+          description("Lists the chenges on a version")
+
+          properties do
+            ins(:array)
+            del(:array)
+          end
+
+          example(%{
+            ins: ["nm", "rame", "mohammed"],
+            del: ["test", "eng"]
           })
         end
     }
@@ -565,6 +597,92 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
          %State{} = state <- Enterprise.get_state(current_user, state_uuid),
          %Instance{} = instance <- Document.update_instance_state(current_user, instance, state) do
       render(conn, "show.json", instance: instance)
+    end
+  end
+
+  swagger_path :lock_unlock do
+    patch("/contents/{id}/lock-unlock")
+    summary("Lock or unlock and instance")
+    description("API to update an instanc")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+
+      content(:body, Schema.ref(:LockUnlockRequest), "Lock or unlock instance", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContent))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  def lock_unlock(conn, %{"id" => instance_uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with %Instance{} = instance <- Document.get_instance(instance_uuid, current_user),
+         %Instance{} = instance <-
+           Document.lock_unlock_instance(current_user, instance, params) do
+      render(conn, "show.json", instance: instance)
+    end
+  end
+
+  swagger_path :search do
+    get("/contents/search")
+    summary("Search instances")
+
+    description(
+      "API to search instances by it title on serialized on instnaces under that organisation"
+    )
+
+    parameters do
+      key(:query, :string, "Search key")
+      page(:query, :string, "Page number")
+    end
+
+    response(200, "Ok", Schema.ref(:ContentsIndex))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def search(conn, %{"key" => key} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with %{
+           entries: contents,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.instance_index(current_user, key, params) do
+      render(conn, "index.json",
+        contents: contents,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
+
+  swagger_path :change do
+    get("/contents/{id}/change/{v_id}")
+    summary("List changes")
+
+    description("API to List changes in a particular version")
+
+    parameters do
+      id(:path, :string, "Instance uuid")
+      v_id(:path, :string, "version uuid")
+    end
+
+    response(200, "Ok", Schema.ref(:Change))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def change(conn, %{"id" => instance_uuid, "v_id" => version_id}) do
+    current_user = conn.assigns[:current_user]
+
+    with %Instance{} = instance <- Document.get_instance(instance_uuid, current_user) do
+      change = Document.version_changes(instance, version_id)
+      render(conn, InstanceVersionView, "change.json", change: change)
     end
   end
 end
