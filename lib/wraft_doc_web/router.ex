@@ -86,6 +86,8 @@ defmodule WraftDocWeb.Router do
     scope "/v1", Api.V1, as: :v1 do
       # Current user details
       get("/users/me", UserController, :me)
+      # get user by there name
+      get("/users/:name", UserController, :show_user)
       # Get activity stream for current user user
       get("/activities", UserController, :activity)
       # Update profile
@@ -120,6 +122,7 @@ defmodule WraftDocWeb.Router do
 
       get("/roles/:id", RoleController, :show)
       get("/content_types/:id/roles", ContentTypeController, :show_content_type_role)
+      get("/content_types/:title/title", ContentTypeController, :show_content_type_title)
 
       get("/organisations/:id/roles", OrganisationRoleController, :show)
       post("/organisations/:id/roles", OrganisationRoleController, :create)
