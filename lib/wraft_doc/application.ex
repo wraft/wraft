@@ -1,6 +1,7 @@
 defmodule WraftDoc.Application do
   @moduledoc false
   use Application
+  # alias WraftDoc.Notifications.Listener
 
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
@@ -16,6 +17,12 @@ defmodule WraftDoc.Application do
       # Start your own worker by calling: WraftDoc.Worker.start_link(arg1, arg2, arg3)
       # worker(WraftDoc.Worker, [arg1, arg2, arg3]),
       {Oban, Application.get_env(:wraft_doc, Oban)}
+      # worker(WraftDoc.Notifications, ["content_type_changes"], id: :content_type_changes)
+      # worker(
+      #   WraftDoc.Notifications.Listener,
+      #   ["content_type_changes", [name: WraftDoc.Notifications.Listener]],
+      #   restart: :permanent
+      # )
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

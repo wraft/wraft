@@ -2347,6 +2347,11 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def filter_content_type_title(title) do
+    query = from(ct in ContentType, where: ct.name == ^title)
+    Repo.one(query)
+  end
+
   def get_role_from_uuid(uuid) do
     query = from(r in Role, where: r.uuid == ^uuid)
     Repo.one(query)
