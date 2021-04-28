@@ -32,7 +32,7 @@ defmodule WraftDoc.Account.User do
 
     has_many(:auth_tokens, WraftDoc.Account.AuthToken, foreign_key: :user_id)
 
-    has_many(:instance_versions, WraftDoc.Document.Instance.Version, foreign_key: :creator_id)
+    has_many(:instance_versions, WraftDoc.Document.Instance.Version, foreign_key: :author_id)
     has_many(:user_roles, WraftDoc.Account.UserRole)
     has_many(:roles, through: [:user_roles, :role])
     many_to_many(:activities, Spur.Activity, join_through: "audience")

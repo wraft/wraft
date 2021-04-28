@@ -10,7 +10,8 @@ defmodule WraftDocWeb.Plug.AdminCheck do
   def call(conn, _params) do
     current_user = conn.assigns.current_user
 
-    case Enum.member?(current_user.role_names, "admin") do
+    case Enum.member?(current_user.role_names, "admin") ||
+           Enum.member?(current_user.role_names, "super_admin") do
       true ->
         conn
 
