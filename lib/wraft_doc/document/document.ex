@@ -2348,7 +2348,7 @@ defmodule WraftDoc.Document do
   end
 
   def filter_content_type_title(title) do
-    query = from(ct in ContentType, where: ct.name == ^title)
+    query = from(ct in ContentType, where: ilike(ct.title, ^"%#{title}%"))
     Repo.one(query)
   end
 

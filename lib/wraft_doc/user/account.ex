@@ -527,7 +527,7 @@ defmodule WraftDoc.Account do
   defp insert_auth_token(_, _), do: nil
 
   def get_user_by_name(name) do
-    user = from(u in User, where: u.name == ^name)
+    user = from(u in User, where: ilike(u.name, ^"%#{name}%"))
     Repo.one(user)
   end
 end
