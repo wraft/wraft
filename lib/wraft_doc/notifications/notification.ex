@@ -12,6 +12,8 @@ defmodule WraftDoc.Notifications.Notification do
     field(:action, :string)
     field(:notifiable_id, :integer)
     field(:notifiable_type, AtomType)
+    belongs_to(:recipient, WraftDoc.Account.User)
+    belongs_to(:actor, WraftDoc.Account.User)
 
     timestamps()
   end

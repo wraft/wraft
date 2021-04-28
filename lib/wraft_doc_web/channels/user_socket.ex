@@ -1,8 +1,11 @@
 defmodule WraftDocWeb.UserSocket do
   use Phoenix.Socket
+  alias WraftDocWeb.Guardian
 
   ## Channels
-  # channel "room:*", WraftDocWeb.RoomChannel
+  # channel("notification:*", WraftDocWeb.NotificationChannel)
+  # # channel "room:*", WraftDocWeb.RoomChannel
+  # transport(:websocket, Phoenix.Transports.WebSocket)
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
@@ -15,8 +18,27 @@ defmodule WraftDocWeb.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
-  def connect(_params, socket) do
-    {:ok, socket}
+  # def connect(_params, socket) do
+  #   {:ok, socket}
+  # end
+
+  def connect(%{"token" => token}, socket) do
+    case Guardian.resource_from_token(token) do
+      {:ok, user, _claims} ->
+        {:ok, assign(socket, :current_user, user)}
+
+      _ ->
+        :error
+    end
+  end
+
+  def connect(_params, _socket), do: :error
+
+  # def id(socket), do: socket.assigns[:current_user].id |> to_string()
+
+  def id(socket) do
+    socket = socket.assigns[:current_user].id
+    to_string(socket)
   end
 
   # Socket id's are topics that allow you to identify all sockets for a given user:
@@ -29,5 +51,4 @@ defmodule WraftDocWeb.UserSocket do
   #     WraftDocWeb.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.
-  def id(_socket), do: nil
 end
