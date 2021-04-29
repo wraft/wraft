@@ -73,7 +73,7 @@ defmodule WraftDocWeb.Router do
 
       # Show and index plans
       resources("/plans", PlanController, only: [:show, :index])
-
+      post("/notifications", NotificationController, :create)
       # Verify Token
       get("/token", UserController, :token)
     end

@@ -7,7 +7,7 @@ defmodule WraftDoc.Repo.Migrations.CreateNotification do
       add(:read_at, :naive_datetime)
       add(:read, :boolean)
       add(:action, :string)
-      add(:notifiable_id, :integer)
+      add(:notifiable_id, :uuid)
       add(:notifiable_type, :string)
       add(:recipient_id, references(:user, on_delete: :nilify_all))
       add(:actor_id, references(:user, on_delete: :nilify_all))
