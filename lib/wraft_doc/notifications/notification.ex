@@ -10,7 +10,7 @@ defmodule WraftDoc.Notifications.Notification do
     field(:read_at, :naive_datetime)
     field(:read, :boolean, default: false)
     field(:action, :string)
-    field(:notifiable_id, :integer)
+    field(:notifiable_id, Ecto.UUID)
     field(:notifiable_type, AtomType)
     belongs_to(:recipient, WraftDoc.Account.User)
     belongs_to(:actor, WraftDoc.Account.User)
@@ -25,8 +25,19 @@ defmodule WraftDoc.Notifications.Notification do
       :notifiable_id,
       :notifiable_type,
       :read_at,
+      :read,
+      :actor_id,
+      :recipient_id
+    ])
+    |> validate_required([:actor_id, :recipient_id, :action])
+  end
+
+  def read_changeset(notification, attrs \\ %{}) do
+    notification
+    |> cast(attrs, [
+      :read_at,
       :read
     ])
-    |> validate_required([:notifiable_type])
+    |> validate_required([:read_at, :read])
   end
 end

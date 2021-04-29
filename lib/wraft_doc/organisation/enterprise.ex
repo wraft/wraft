@@ -19,6 +19,7 @@ defmodule WraftDoc.Enterprise do
     Enterprise.Organisation,
     Enterprise.Plan,
     Enterprise.Vendor,
+    Notifications,
     Repo
   }
 
@@ -478,12 +479,43 @@ defmodule WraftDoc.Enterprise do
         organisation_id: org_id
       }
 
-      do_create_approval_system(current_user, params)
+      do_create_approval_system(current_user, params, approver)
     end
   end
 
   def create_approval_system(current_user, params) do
     do_create_approval_system(current_user, params)
+  end
+
+  defp do_create_approval_system(current_user, params, approver) do
+    current_user
+    |> build_assoc(:approval_systems)
+    |> ApprovalSystem.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, approval_system} ->
+        Task.start_link(fn ->
+          Notifications.create_notification(
+            approver,
+            current_user.id,
+            "assigned_as_approver",
+            approval_system.uuid,
+            ApprovalSystem
+          )
+        end)
+
+        Repo.preload(approval_system, [
+          :instance,
+          :pre_state,
+          :post_state,
+          :approver,
+          :organisation,
+          :user
+        ])
+
+      {:error, _} = changeset ->
+        changeset
+    end
   end
 
   defp do_create_approval_system(current_user, params) do
@@ -548,6 +580,16 @@ defmodule WraftDoc.Enterprise do
           changeset
 
         {:ok, approval_system} ->
+          Task.start_link(fn ->
+            Notifications.create_notification(
+              approver.id,
+              current_user.id,
+              "assigned_as_approver",
+              approval_system.uuid,
+              ApprovalSystem
+            )
+          end)
+
           Repo.preload(approval_system, [
             :instance,
             :pre_state,

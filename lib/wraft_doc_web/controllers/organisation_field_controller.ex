@@ -58,6 +58,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
           description("List of field type in response.")
           type(:array)
           items(Schema.ref(:OrganisationField))
+        end,
+      OrganisationFieldIndex:
+        swagger_schema do
+          title("Organisation field index")
+
+          properties do
+            members(Schema.ref(:OrganisationField))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
         end
     }
   end

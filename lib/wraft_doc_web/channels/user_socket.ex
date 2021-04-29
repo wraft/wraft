@@ -1,11 +1,13 @@
 defmodule WraftDocWeb.UserSocket do
+  @moduledoc """
+  User socket module
+  """
   use Phoenix.Socket
-  alias WraftDocWeb.Guardian
 
   ## Channels
-  # channel("notification:*", WraftDocWeb.NotificationChannel)
+  channel("notification:*", WraftDocWeb.NotificationChannel)
+
   # # channel "room:*", WraftDocWeb.RoomChannel
-  # transport(:websocket, Phoenix.Transports.WebSocket)
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
@@ -22,17 +24,10 @@ defmodule WraftDocWeb.UserSocket do
   #   {:ok, socket}
   # end
 
-  def connect(%{"token" => token}, socket) do
-    case Guardian.resource_from_token(token) do
-      {:ok, user, _claims} ->
-        {:ok, assign(socket, :current_user, user)}
-
-      _ ->
-        :error
-    end
+  # This function will be called when there was no authentication information
+  def connect(_params, _socket) do
+    :error
   end
-
-  def connect(_params, _socket), do: :error
 
   # def id(socket), do: socket.assigns[:current_user].id |> to_string()
 
