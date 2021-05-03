@@ -40,7 +40,7 @@ defmodule WraftDocWeb.Router do
 
   scope "/", WraftDocWeb do
     # Use the default browser stack
-    pipe_through(:api)
+    pipe_through(:browser)
     get("/", PageController, :index)
   end
 

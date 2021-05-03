@@ -7,7 +7,7 @@ defmodule WraftDocWeb.UserSocket do
   ## Channels
   channel("notification:*", WraftDocWeb.NotificationChannel)
 
-  # # channel "room:*", WraftDocWeb.RoomChannel
+  # channel("room:*", WraftDocWeb.NotificationChannel)
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After
@@ -23,14 +23,19 @@ defmodule WraftDocWeb.UserSocket do
   # def connect(_params, socket) do
   #   {:ok, socket}
   # end
+  @impl true
+  def connect(_params, socket, _conntection_info) do
+    {:ok, socket}
+  end
 
   # This function will be called when there was no authentication information
+  @impl true
   def connect(_params, _socket) do
     :error
   end
 
   # def id(socket), do: socket.assigns[:current_user].id |> to_string()
-
+  @impl true
   def id(socket) do
     socket = socket.assigns[:current_user].id
     to_string(socket)

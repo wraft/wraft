@@ -13,6 +13,10 @@ defmodule WraftDocWeb.NotificationChannel do
     end
   end
 
+  # def join("notification:" <> _private_room_id, _params, _socket) do
+  #   {:error, %{reason: "unauthorized"}}
+  # end
+
   def handle_in("notifications:list", _payload, socket) do
     notifications =
       socket.assigns.current_user
@@ -23,6 +27,11 @@ defmodule WraftDocWeb.NotificationChannel do
     read_status = Enum.any?(notifications, fn x -> !x.read end)
     {:reply, {:ok, %{notifications: notifications, read_status: read_status}}, socket}
   end
+
+  # def handle_in("new_msg", %{"body" => body}, socket) do
+  #   broadcast!(socket, "new_msg", %{body: body})
+  #   {:noreply, socket}
+  # end
 
   def handle_in("ping", payload, socket) do
     {:reply, {:ok, payload}, socket}
@@ -41,10 +50,10 @@ defmodule WraftDocWeb.NotificationChannel do
 
   # It is also common to receive messages from the client and
   # broadcast to everyone in the current topic (room:lobby).
-  def handle_in("shout", payload, socket) do
-    broadcast(socket, "shout", payload)
-    {:noreply, socket}
-  end
+  # def handle_in("shout", payload, socket) do
+  #   broadcast(socket, "shout", payload)
+  #   {:noreply, socket}
+  # end
 
   def broad_cast(message, user) do
     socket = create_socket(user)
