@@ -13,6 +13,15 @@ defmodule WraftDocWeb.Mailer.Email do
     )
   end
 
+  def notification_email(notification, user) do
+    base_email()
+    |> to(user.email)
+    |> subject(" #{user.name} ")
+    |> html_body(
+      "Hi, #{user.name} #{WraftDoc.Notifications.get_notification_message(notification)}"
+    )
+  end
+
   defp base_email do
     from(new_email(), {"WraftDoc", "admin@wraftdocs.com"})
   end

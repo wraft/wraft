@@ -3,6 +3,8 @@ defmodule WraftDocWeb.UserSocket do
   User socket module
   """
   use Phoenix.Socket
+  alias WraftDoc.{Account, Repo}
+  import Guardian.Phoenix.Socket
 
   ## Channels
   channel("notification:*", WraftDocWeb.NotificationChannel)
@@ -24,21 +26,36 @@ defmodule WraftDocWeb.UserSocket do
   #   {:ok, socket}
   # end
   @impl true
-  def connect(_params, socket, _conntection_info) do
-    {:ok, socket}
+
+  def connect(%{"token" => token}, socket, _connect_info) do
+    case authenticate(socket, WraftDocWeb.Guardian, token) do
+      {:ok, authed_socket} ->
+        user = authed_socket |> current_resource() |> Account.get_user_by_email()
+        user = Repo.preload(user, [:profile, :roles])
+        role_names = Enum.map(user.roles, fn x -> x.name end)
+        user = Map.put(user, :role_names, role_names)
+        {:ok, assign(authed_socket, :current_user, user)}
+
+      {:error, _} ->
+        :error
+    end
   end
+
+  # def connect(_params, socket, _conntection_info) do
+
+  #   {:ok, socket}
+  # end
 
   # This function will be called when there was no authentication information
   @impl true
-  def connect(_params, _socket) do
+  def connect(_params, _socket, _) do
     :error
   end
 
   # def id(socket), do: socket.assigns[:current_user].id |> to_string()
   @impl true
-  def id(socket) do
-    socket = socket.assigns[:current_user].id
-    to_string(socket)
+  def id(_socket) do
+    "socket"
   end
 
   # Socket id's are topics that allow you to identify all sockets for a given user:
