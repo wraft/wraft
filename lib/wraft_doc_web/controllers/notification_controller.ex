@@ -16,13 +16,15 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
           description("Notification ")
 
           properties do
+            actor_id(:strign, "actor uuid")
             action(:string, "action")
             recipient_id(:string, "Recipient id")
           end
 
           example(%{
             action: "assigned_as_approver",
-            recipient_id: "125sdd1f51sf"
+            recipient_id: "125sdd1f51sf",
+            actor_id: "511d5sfad4-sdf55fd-sdf151"
           })
         end
     }
@@ -45,6 +47,7 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
 
   def create(conn, params) do
     notification = Notifications.create_notification(params)
+
     render(conn, "notification.json", notification: notification)
   end
 end
