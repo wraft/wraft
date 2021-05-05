@@ -670,7 +670,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     render(conn, "role_content_types.json", content_type: content_type)
   end
 
-  swagger_path :show_content_type_title do
+  swagger_path :search do
     get("/content_types/{title}/title")
     summary("show all the content type title")
     description("API to show content_type by there title")
@@ -684,9 +684,19 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def show_content_type_title(conn, %{"title" => title}) do
-    content_type = Document.filter_content_type_title(title)
-
-    render(conn, "role_content_type.json", content_type: content_type)
+  def search(conn, %{"title" => title} = params) do
+    with %{
+           entries: content_types,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.filter_content_type_title(params, title) do
+      render(conn, "index.json",
+        content_types: content_types,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 end
