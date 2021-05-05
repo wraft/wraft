@@ -5,6 +5,7 @@ defmodule WraftDoc.Notifications do
   import Ecto.Query
 
   alias WraftDoc.{Account.User, Notifications.Notification, Repo}
+  alias WraftDocWeb.Worker.EmailWorker
 
   @doc """
   Create notification entry
@@ -53,7 +54,20 @@ defmodule WraftDoc.Notifications do
     end
   end
 
+  def create_notification(_), do: nil
+
   def broad_cast_notifiation(notification, recipient) do
+    %{
+      user_name: recipient.name,
+      notification_message: get_email_message(notification),
+      email: recipient.email
+    }
+    |> EmailWorker.new(
+      queue: "mailer",
+      tags: ["notification"]
+    )
+    |> Oban.insert()
+
     message = get_notification_message(notification)
 
     WraftDocWeb.NotificationChannel.broad_cast(message, recipient)
@@ -97,6 +111,13 @@ defmodule WraftDoc.Notifications do
       notifiable_id: notification.notifiable_id,
       notifiable_type: notification.notifiable_type
     }
+  end
+
+  def get_email_message(notification) do
+    case notification.action do
+      "assigned_as_approver" ->
+        "You have been assigned to approve a document"
+    end
   end
 
   def read_notification(notification) do
