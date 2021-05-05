@@ -17,7 +17,7 @@ defmodule WraftDocWeb.NotificationChannel do
   #   {:error, %{reason: "unauthorized"}}
   # end
 
-  def handle_in("notifications:list", _payload, socket) do
+  def handle_in("list_notifications", _payload, socket) do
     notifications =
       socket.assigns.current_user
       |> Notifications.list_notifications()
@@ -37,7 +37,7 @@ defmodule WraftDocWeb.NotificationChannel do
     {:reply, {:ok, payload}, socket}
   end
 
-  def handle_in("notifications:read_all", _, socket) do
+  def handle_in("read_all", _, socket) do
     notifications =
       socket.assigns.current_user
       |> Notifications.list_notifications()
@@ -50,10 +50,10 @@ defmodule WraftDocWeb.NotificationChannel do
 
   # It is also common to receive messages from the client and
   # broadcast to everyone in the current topic (room:lobby).
-  # def handle_in("shout", payload, socket) do
-  #   broadcast(socket, "shout", payload)
-  #   {:noreply, socket}
-  # end
+  def handle_in("shout", payload, socket) do
+    broadcast!(socket, "shout", payload)
+    {:noreply, socket}
+  end
 
   def broad_cast(message, user) do
     socket = create_socket(user)
@@ -85,6 +85,6 @@ defmodule WraftDocWeb.NotificationChannel do
   end
 
   defp authorized?(user_id, current_user) do
-    user_id === current_user.id
+    String.to_integer(user_id) === current_user.id
   end
 end

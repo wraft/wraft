@@ -6,7 +6,10 @@ defmodule WraftDocWeb.Endpoint do
     cookie_key: "request_logger"
   )
 
-  socket("/socket", WraftDocWeb.UserSocket)
+  socket("/socket", WraftDocWeb.UserSocket,
+    websocket: true,
+    longpoll: false
+  )
 
   socket("/live", Phoenix.LiveView.Socket)
 
