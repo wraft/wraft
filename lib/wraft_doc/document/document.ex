@@ -2347,9 +2347,9 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def filter_content_type_title(title) do
+  def filter_content_type_title(title, params) do
     query = from(ct in ContentType, where: ilike(ct.title, ^"%#{title}%"))
-    Repo.one(query)
+    Repo.paginate(query, params)
   end
 
   def get_role_from_uuid(uuid) do

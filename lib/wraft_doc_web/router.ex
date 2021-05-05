@@ -87,7 +87,7 @@ defmodule WraftDocWeb.Router do
       # Current user details
       get("/users/me", UserController, :me)
       # get user by there name
-      get("/users/:name", UserController, :show_user)
+      get("/users/:name", UserController, :search)
       # Get activity stream for current user user
       get("/activities", UserController, :activity)
       # Update profile
@@ -122,7 +122,7 @@ defmodule WraftDocWeb.Router do
 
       get("/roles/:id", RoleController, :show)
       get("/content_types/:id/roles", ContentTypeController, :show_content_type_role)
-      get("/content_types/:title/title", ContentTypeController, :show_content_type_title)
+      get("/content_types/:title/title", ContentTypeController, :search)
 
       get("/organisations/:id/roles", OrganisationRoleController, :show)
       post("/organisations/:id/roles", OrganisationRoleController, :create)
