@@ -41,6 +41,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     conn =
       build_conn()
+      |> put_req_header("accept", "application/json")
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, user)
 

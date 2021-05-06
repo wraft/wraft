@@ -50,9 +50,9 @@ defmodule WraftDoc.Account.UserTest do
   end
 
   test "changeset does not accept long password" do
-    attrs = Map.put(@valid_attrs, :password, String.duplicate("q", 20))
+    attrs = Map.put(@valid_attrs, :password, String.duplicate("q", 23))
     changeset = User.changeset(%User{}, attrs)
-    assert "should be at most 16 character(s)" in errors_on(changeset, :password)
+    assert "should be at most 22 character(s)" in errors_on(changeset, :password)
   end
 
   test "changeset does not accept invalid email address" do

@@ -1,0 +1,17 @@
+WraftDocWeb.Api.V1.PlanController,:index
+WraftDocWeb.Api.V1.PlanController,:show
+WraftDocWeb.Api.V1.NotificationController,:create
+WraftDocWeb.Api.V1.OrganisationController,:show
+WraftDocWeb.Api.V1.OrganisationController,:create
+WraftDocWeb.Api.V1.OrganisationController,:update
+WraftDocWeb.Api.V1.OrganisationController,:delete
+WraftDocWeb.Api.V1.MembershipController,:update
+WraftDocWeb.Api.V1.MembershipController,:show
+WraftDocWeb.Api.V1.ResourceController,:index
+WraftDocWeb.Api.V1.ResourceController,:show
+WraftDocWeb.Api.V1.ResourceController,:create
+WraftDocWeb.Api.V1.ResourceController,:update
+WraftDocWeb.Api.V1.ResourceController,:delete
+WraftDocWeb.Api.V1.PlanController,:create
+WraftDocWeb.Api.V1.PlanController,:update
+WraftDocWeb.Api.V1.PlanController,:delete
