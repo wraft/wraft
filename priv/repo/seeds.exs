@@ -24,6 +24,7 @@ alias WraftDoc.{
   Enterprise.Flow,
   Enterprise.Flow.State,
   Enterprise.Plan,
+  Enterprise.Membership,
   Document.FieldType,
   Document.ContentTypeField,
   Document.Counter,
@@ -37,7 +38,7 @@ import WraftDoc.SeedGate
 %{id: role_id} = allow_once(%Role{name: "super_admin"}, name: "super_admin")
 
 role_user = allow_once(%Role{name: "user"}, name: "user")
-role_admin = allow_once(%Role{name: "amin"}, name: "admin")
+role_admin = allow_once(%Role{name: "admin"}, name: "admin")
 
 # Populate DB with admin user and profile
 
@@ -257,14 +258,19 @@ allow_once(
   name: "Premium"
 )
 
-allow_once(
-  %Plan{
-    name: "Pro",
-    description: "Pro plan suitable for enterprises",
-    yearly_amount: 0,
-    monthly_amount: 0
-  },
-  name: "Pro"
+plan =
+  allow_once(
+    %Plan{
+      name: "Pro",
+      description: "Pro plan suitable for enterprises",
+      yearly_amount: 0,
+      monthly_amount: 0
+    },
+    name: "Pro"
+  )
+
+allow_once(%Membership{is_expired: false, organisation_id: organisation.id},
+  organisation_id: organisation.id
 )
 
 File.stream!("priv/repo/data/super_resources.csv")

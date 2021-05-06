@@ -33,7 +33,7 @@ defmodule WraftDoc.SeedGate do
   end
 
   @doc """
-  Fuction to seed resource
+  Function to seed resource
   """
 
   def comeon_resource(data) do
