@@ -35,7 +35,7 @@ defmodule WraftDocWeb.Router do
   end
 
   # pipeline :can do
-  # plug(WraftDocWeb.Plug.Authorized)
+  #   plug(WraftDocWeb.Plug.Authorized)
   # end
 
   scope "/", WraftDocWeb do
