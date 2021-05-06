@@ -218,7 +218,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     assert json_response(conn, 200)["name"] == content_type.name
   end
 
-  test "show the content with title", %{conn: conn} do
+  test "search the content with title", %{conn: conn} do
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
@@ -228,9 +228,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type)
 
-    conn =
-      get(conn, Routes.v1_content_type_path(conn, :show_content_type_title, content_type.name))
+    conn = get(conn, Routes.v1_content_type_path(conn, :search), key: "name")
 
-    assert json_response(conn, 200)["name"] == content_type.name
+    contents = json_response(conn, 200)[""]
+
+    assert contents
+           |> Enum.map(fn x -> x["content"]["content_type_id"] end)
+           |> List.to_string() =~ content_type.content_type_id
   end
 end
