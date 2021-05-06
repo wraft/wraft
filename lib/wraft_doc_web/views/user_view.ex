@@ -24,6 +24,20 @@ defmodule WraftDocWeb.Api.V1.UserView do
     }
   end
 
+  def render("index.json", %{
+        users: users,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      users: render_many(users, UserView, "user.json", as: :user),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
+  end
+
   def render("user_id_and_email.json", %{user: user}) do
     %{
       id: user.uuid,

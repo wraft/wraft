@@ -389,7 +389,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     end
   end
 
-  swagger_path :show_user do
+  swagger_path :search do
     get("/users/{name}")
     summary("Show User")
     description("Filtered user by there name")
@@ -404,9 +404,19 @@ defmodule WraftDocWeb.Api.V1.UserController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def show_user(conn, %{"name" => name}) do
-    user = Account.get_user_by_name(name)
-
-    render(conn, "user.json", user: user)
+  def search_user(conn, %{"name" => name} = params) do
+    with %{
+           entries: users,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Account.get_user_by_name(name, params) do
+      render(conn, "index.json",
+        users: users,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
   end
 end

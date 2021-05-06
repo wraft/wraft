@@ -526,8 +526,8 @@ defmodule WraftDoc.Account do
 
   defp insert_auth_token(_, _), do: nil
 
-  def get_user_by_name(name) do
-    user = from(u in User, where: ilike(u.name, ^"%#{name}%"))
-    Repo.one(user)
+  def get_user_by_name(name, params) do
+    query = from(u in User, where: ilike(u.name, ^"%#{name}%"))
+    Repo.paginate(query, params)
   end
 end
