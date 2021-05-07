@@ -436,6 +436,7 @@ defmodule WraftDoc.Document do
     |> case do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
+        Task.start_link(fn -> create_initial_version(current_user, content) end)
         Repo.preload(content, [:content_type, :state, :vendor])
 
       changeset = {:error, _} ->
@@ -457,12 +458,33 @@ defmodule WraftDoc.Document do
     |> case do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
+        Task.start_link(fn -> create_initial_version(current_user, content) end)
         Repo.preload(content, [:content_type, :state, :vendor])
 
       changeset = {:error, _} ->
         changeset
     end
   end
+
+  defp create_initial_version(%{id: author_id}, instance) do
+    params = %{
+      "version_number" => 1,
+      "naration" => "Initial version",
+      "raw" => instance.raw,
+      "serialized" => instance.serialized,
+      "author_id" => author_id
+    }
+
+    IO.puts("Creating initial version...")
+
+    %Version{}
+    |> Version.changeset(params)
+    |> Repo.insert!()
+
+    IO.puts("Initial version generated")
+  end
+
+  defp create_initial_version(_, _), do: nil
 
   @doc """
   Same as create_instance/4, but does not add the insert activity to activity stream.
@@ -671,6 +693,11 @@ defmodule WraftDoc.Document do
 
           {:error, _} = changeset ->
             changeset
+
+          _ ->
+            instance
+            |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
+            |> get_built_document()
         end
 
       {:error, _} = changeset ->
@@ -2655,8 +2682,11 @@ defmodule WraftDoc.Document do
   end
 
   defp list_changes(current_raw, previous_raw) do
-    current_raw
-    |> String.myers_difference(previous_raw)
+    current_raw = String.split(current_raw, "\n")
+    previous_raw = String.split(previous_raw, "\n")
+
+    previous_raw
+    |> List.myers_difference(current_raw)
     |> Enum.reduce(%{}, fn x, acc ->
       case x do
         {:ins, v} -> add_ins(v, acc)
