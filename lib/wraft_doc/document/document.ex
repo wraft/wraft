@@ -2374,8 +2374,13 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def filter_content_type_title(title, params) do
-    query = from(ct in ContentType, where: ilike(ct.title, ^"%#{title}%"))
+  def filter_content_type_title(name, params) do
+    query =
+      from(ct in ContentType,
+        where: ilike(ct.name, ^"%#{name}%"),
+        preload: [:fields, :layout, :flow]
+      )
+
     Repo.paginate(query, params)
   end
 
