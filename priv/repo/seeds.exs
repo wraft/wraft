@@ -25,10 +25,12 @@ alias WraftDoc.{
   Enterprise.Flow.State,
   Enterprise.Plan,
   Enterprise.Membership,
+  Enterprise.Vendor,
   Document.FieldType,
   Document.ContentTypeField,
   Document.Counter,
-  Document.DataTemplate
+  Document.DataTemplate,
+  Document.Instance.Version
 }
 
 import WraftDoc.SeedGate
@@ -59,7 +61,7 @@ organisation =
 
 user =
   comeon_user(%{
-    name: "Admin",
+    name: "Super Admin",
     email: "admin@wraftdocs.com",
     email_verify: true,
     password: "Admin@WraftDocs",
@@ -104,7 +106,7 @@ allow_once(%UserRole{user_id: normal_user.id, role_id: role_user.id},
   role_id: role_user.id
 )
 
-allow_once(%Profile{name: "Admin", user_id: user.id}, name: "Admin")
+allow_once(%Profile{name: "Super Admin", user_id: user.id}, name: "Super Admin")
 
 allow_once(%Profile{name: "Organisation admin", user_id: org_admin.id}, name: "Organisation admin")
 
@@ -188,20 +190,65 @@ state =
     state: "Published"
   )
 
-# Populate Instance
 allow_once(
-  %Instance{
-    instance_id: "OFFLET0001",
-    raw: "Hi John Doe, We offer you the position of Elixir developer",
+  %Vendor{
+    name: "System 76",
+    email: "system76tes@gmail.com",
+    phone: "9826226226",
+    address: "DG, Roose agusting-60006 california",
+    gstin: "222asdfsd6",
+    reg_no: "32dsfs",
+    contact_person: "Sadique",
+    organisation_id: organisation.id,
+    creator_id: user.id
+  },
+  email: "system76tes@gmail.com"
+)
+
+# Populate Instance
+instance =
+  allow_once(
+    %Instance{
+      instance_id: "OFFLET0001",
+      raw: "Hi John Doe, We offer you the position of Elixir developer",
+      serialized: %{
+        title: "Offer Letter for Elixir",
+        body: "Hi John Doe, We offer you the position of Elixir developer"
+      },
+      creator_id: user.id,
+      content_type_id: content_type.id,
+      state_id: state.id
+    },
+    instance_id: "OFFLET0001"
+  )
+
+# Populate versions
+allow_once(
+  %Version{
+    version_number: 1,
+    raw: instance.raw,
+    serialized: instance.serialized,
+    author_id: user.id,
+    content_id: instance.id
+  },
+  content_id: instance.id,
+  version_number: 1
+)
+
+allow_once(
+  %Version{
+    version_number: 2,
+    raw: "Hi John Doe, We offer you the position of Elixir Backend developer",
     serialized: %{
       title: "Offer Letter for Elixir",
-      body: "Hi John Doe, We offer you the position of Elixir developer"
+      body: "Hi John Doe, We offer you the position of Elixir Backend developer"
     },
-    creator_id: user.id,
-    content_type_id: content_type.id,
-    state_id: state.id
+    author_id: user.id,
+    content_id: instance.id,
+    naration: "Version 0.2"
   },
-  instance_id: "OFFLET0001"
+  content_id: instance.id,
+  version_number: 2
 )
 
 # Populate Counter
