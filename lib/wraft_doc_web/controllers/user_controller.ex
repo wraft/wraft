@@ -74,6 +74,36 @@ defmodule WraftDocWeb.Api.V1.UserController do
             }
           })
         end,
+      UserSearch:
+        swagger_schema do
+          title("User")
+          description("A user of the application")
+
+          properties do
+            id(:string, "The ID of the user", required: true)
+            name(:string, "Users name", required: true)
+            email(:string, "Users email", required: true)
+            email_verify(:boolean, "Email verification status")
+            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
+            updated_at(:string, "When was the user last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            page_number: 1,
+            total_entries: 2,
+            total_pages: 1,
+            users: [
+              %{
+                email: "admin@wraftdocs.com",
+                email_verify: false,
+                id: "466f1fa1-9657-4166-b372-21e8135aeaf1",
+                inserted_at: "2021-05-06T15:26:52",
+                name: "Admin",
+                updated_at: "2021-05-06T15:26:52"
+              }
+            ]
+          })
+        end,
       CurrentUser:
         swagger_schema do
           title("Current User")
@@ -403,7 +433,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
       page(:query, :string, "Page number")
     end
 
-    response(201, "Accepted", Schema.ref(:User))
+    response(200, "ok", Schema.ref(:UserSearch))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(404, "Not Found", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))

@@ -454,6 +454,35 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               required: true
             )
           end
+        end,
+      ContentTypeSearch:
+        swagger_schema do
+          title("Content type role")
+          description("Search the content search")
+
+          properties do
+            id(:string, "ID of the content_type")
+            description(:string, "Content Type's description", required: true)
+            color(:string, "Hex code of color")
+
+            prefix(:string, "Prefix to be used for generating Unique ID for contents",
+              required: true
+            )
+          end
+
+          example(%{
+            page_number: 1,
+            total_entries: 2,
+            total_pages: 1,
+            content_types: [
+              %{
+                description: "content type",
+                id: "466f1fa1-9657-4166-b372-21e8135aeaf1",
+                color: "red",
+                prefix: "ex"
+              }
+            ]
+          })
         end
     }
   end
@@ -684,7 +713,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
       page(:query, :string, "Page number")
     end
 
-    response(200, "Ok", Schema.ref(:ContentTypeRole))
+    response(200, "Ok", Schema.ref(:ContentTypeSearch))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not Found", Schema.ref(:Error))
   end
