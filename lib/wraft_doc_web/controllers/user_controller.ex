@@ -395,7 +395,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
   swagger_path :search do
     get("/users/search")
-    summary("Show User")
+    summary("Search User")
     description("Filtered user by there name")
 
     parameters do
@@ -415,7 +415,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Account.get_user_by_name(key, params) do
+         } <- Account.get_user_by_name(params, key) do
       render(conn, "index.json",
         users: users,
         page_number: page_number,
