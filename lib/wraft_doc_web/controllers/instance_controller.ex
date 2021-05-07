@@ -305,8 +305,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           end
 
           example(%{
-            ins: ["nm", "rame", "mohammed"],
-            del: ["test", "eng"]
+            ins: ["testing version succesufll"],
+            del: ["testing version"]
           })
         end
     }
@@ -351,7 +351,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   def create(
         conn,
-        %{"c_type_uuid" => c_type_uuid, "state_uuid" => state_uuid} = params
+        %{"c_type_id" => c_type_uuid, "state_uuid" => state_uuid} = params
       ) do
     current_user = conn.assigns[:current_user]
     type = Instance.types()[:normal]
