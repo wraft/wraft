@@ -695,7 +695,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.filter_content_type_title(params, key) do
+         } <- Document.filter_content_type_title(key, params) do
       render(conn, "index.json",
         content_types: content_types,
         page_number: page_number,

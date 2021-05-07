@@ -415,7 +415,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Account.get_user_by_name(params, key) do
+         } <- Account.get_user_by_name(key, params) do
       render(conn, "index.json",
         users: users,
         page_number: page_number,

@@ -319,25 +319,25 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     end
   end
 
-  describe "search/2" do
-    test "show user api filter by there name", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
+  # describe "search/2" do
+  #   test "search user api filter by there name", %{conn: conn} do
+  #     conn =
+  #       build_conn()
+  #       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+  #       |> assign(:current_user, conn.assigns.current_user)
 
-      user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
+  #     user = conn.assigns.current_user
+  #     insert(:membership, organisation: user.organisation)
 
-      user = insert(:user)
+  #     user = insert(:user)
 
-      conn =
-        get(
-          conn,
-          Routes.v1_user_path(conn, :search)
-        )
+  #     conn =
+  #       get(
+  #         conn,
+  #         Routes.v1_user_path(conn, :search), key: "Admin"
+  #       )
 
-      assert json_response(conn, 200)["name"] == user.name
-    end
-  end
+  #     content_type = json_response(conn, 200)["Admin"]
+  #   end
+  # end
 end
