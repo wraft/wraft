@@ -59,7 +59,7 @@ organisation =
 
 user =
   comeon_user(%{
-    name: "Admin",
+    name: "Super Admin",
     email: "admin@wraftdocs.com",
     email_verify: true,
     password: "Admin@WraftDocs",
@@ -104,7 +104,7 @@ allow_once(%UserRole{user_id: normal_user.id, role_id: role_user.id},
   role_id: role_user.id
 )
 
-allow_once(%Profile{name: "Admin", user_id: user.id}, name: "Admin")
+allow_once(%Profile{name: "Super Admin", user_id: user.id}, name: "Super Admin")
 
 allow_once(%Profile{name: "Organisation admin", user_id: org_admin.id}, name: "Organisation admin")
 

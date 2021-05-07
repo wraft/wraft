@@ -671,6 +671,11 @@ defmodule WraftDoc.Document do
 
           {:error, _} = changeset ->
             changeset
+
+          _ ->
+            instance
+            |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
+            |> get_built_document()
         end
 
       {:error, _} = changeset ->
