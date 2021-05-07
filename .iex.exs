@@ -6,3 +6,4 @@ alias WraftDoc.Account
 alias WraftDoc.Document.ContentType
 alias WraftDoc.Document.ContentTypeRole
 alias WraftDoc.Document
+alias WraftDoc.Account.User

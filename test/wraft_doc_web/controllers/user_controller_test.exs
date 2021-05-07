@@ -334,7 +334,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn =
         get(
           conn,
-          Routes.v1_user_path(conn, :search, user.name)
+          Routes.v1_user_path(conn, :search)
         )
 
       assert json_response(conn, 200)["name"] == user.name
