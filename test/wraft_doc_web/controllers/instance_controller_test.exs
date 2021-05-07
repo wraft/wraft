@@ -41,6 +41,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     conn =
       build_conn()
+      |> put_req_header("accept", "application/json")
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, user)
 
@@ -373,6 +374,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       )
 
     conn = get(conn, Routes.v1_instance_path(conn, :change, instance.uuid, iv2.uuid))
+
     assert length(json_response(conn, 200)["del"]) > 0
     assert length(json_response(conn, 200)["ins"]) > 0
   end

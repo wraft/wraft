@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Endpoint do
   )
 
   socket("/socket", WraftDocWeb.UserSocket,
-    websocket: [timeout: :infinity],
+    websocket: true,
     longpoll: false
   )
 

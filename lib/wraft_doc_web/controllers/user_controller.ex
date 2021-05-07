@@ -74,6 +74,34 @@ defmodule WraftDocWeb.Api.V1.UserController do
             }
           })
         end,
+      UserSearch:
+        swagger_schema do
+          title("User")
+          description("A user of the application")
+
+          properties do
+            users(Schema.ref(:User))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+
+          example(%{
+            page_number: 1,
+            total_entries: 2,
+            total_pages: 1,
+            users: [
+              %{
+                email: "admin@wraftdocs.com",
+                email_verify: false,
+                id: "466f1fa1-9657-4166-b372-21e8135aeaf1",
+                inserted_at: "2021-05-06T15:26:52",
+                name: "Admin",
+                updated_at: "2021-05-06T15:26:52"
+              }
+            ]
+          })
+        end,
       CurrentUser:
         swagger_schema do
           title("Current User")
@@ -386,6 +414,42 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
     with %User{} = user <- Account.update_password(current_user, params) do
       render(conn, "user.json", user: user)
+    end
+  end
+
+  @doc """
+  Search a user by there name
+  """
+
+  swagger_path :search do
+    get("/users/search")
+    summary("Search User")
+    description("Filtered user by there name")
+
+    parameters do
+      key(:query, :string, "Search key")
+      page(:query, :string, "Page number")
+    end
+
+    response(200, "ok", Schema.ref(:UserSearch))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def search(conn, %{"key" => key} = params) do
+    with %{
+           entries: users,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Account.get_user_by_name(key, params) do
+      render(conn, "index.json",
+        users: users,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
     end
   end
 end
