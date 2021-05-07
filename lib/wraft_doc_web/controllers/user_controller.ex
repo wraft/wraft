@@ -80,12 +80,10 @@ defmodule WraftDocWeb.Api.V1.UserController do
           description("A user of the application")
 
           properties do
-            id(:string, "The ID of the user", required: true)
-            name(:string, "Users name", required: true)
-            email(:string, "Users email", required: true)
-            email_verify(:boolean, "Email verification status")
-            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
-            updated_at(:string, "When was the user last updated", format: "ISO-8601")
+            users(Schema.ref(:User))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
           end
 
           example(%{

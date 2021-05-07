@@ -713,7 +713,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
       page(:query, :string, "Page number")
     end
 
-    response(200, "Ok", Schema.ref(:ContentTypeSearch))
+    response(200, "Ok", Schema.ref(:ContentTypesIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not Found", Schema.ref(:Error))
   end
