@@ -54,7 +54,7 @@ defmodule WraftDoc.Account.User do
     |> validate_format(:email, ~r/@/)
     |> validate_format(:name, ~r/^[A-z ]+$/)
     |> validate_length(:name, min: 2)
-    |> validate_length(:password, min: 8, max: 16)
+    |> validate_length(:password, min: 8, max: 22)
     |> unique_constraint(:email, message: "Email already taken.! Try another email.")
     |> generate_encrypted_password
   end

@@ -35,12 +35,12 @@ defmodule WraftDocWeb.Router do
   end
 
   # pipeline :can do
-  # plug(WraftDocWeb.Plug.Authorized)
+  #   plug(WraftDocWeb.Plug.Authorized)
   # end
 
   scope "/", WraftDocWeb do
     # Use the default browser stack
-    pipe_through(:api)
+    pipe_through(:browser)
     get("/", PageController, :index)
   end
 
@@ -73,7 +73,7 @@ defmodule WraftDocWeb.Router do
 
       # Show and index plans
       resources("/plans", PlanController, only: [:show, :index])
-
+      post("/notifications", NotificationController, :create)
       # Verify Token
       get("/token", UserController, :token)
     end
@@ -86,6 +86,8 @@ defmodule WraftDocWeb.Router do
     scope "/v1", Api.V1, as: :v1 do
       # Current user details
       get("/users/me", UserController, :me)
+      # get user by there name
+      get("/users/search", UserController, :search)
       # Get activity stream for current user user
       get("/activities", UserController, :activity)
       # Update profile
@@ -120,6 +122,7 @@ defmodule WraftDocWeb.Router do
 
       get("/roles/:id", RoleController, :show)
       get("/content_types/:id/roles", ContentTypeController, :show_content_type_role)
+      get("/content_types/search", ContentTypeController, :search)
 
       get("/organisations/:id/roles", OrganisationRoleController, :show)
       post("/organisations/:id/roles", OrganisationRoleController, :create)

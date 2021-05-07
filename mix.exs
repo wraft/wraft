@@ -60,6 +60,7 @@ defmodule WraftDoc.Mixfile do
       {:bcrypt_elixir, "~> 2.0.3"},
       # User authentication
       {:guardian, "~> 2.0.0"},
+      {:guardian_phoenix, "~> 2.0"},
       # CORS
       {:cors_plug, "~> 2.0.2"},
       # File upload to AWS

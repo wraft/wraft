@@ -18,7 +18,8 @@ defmodule WraftDoc.Kaffy.Config do
             schema: WraftDoc.Enterprise.Organisation,
             admin: WraftDocWeb.OrganisationAdmin
           ],
-          membership: [schema: WraftDoc.Enterprise.Membership]
+          membership: [schema: WraftDoc.Enterprise.Membership, admin: WraftDocWeb.MembershipAdmin],
+          plan: [schema: WraftDoc.Enterprise.Plan, admin: WraftDocWeb.PlanAdmin]
         ]
       ],
       authorization: [

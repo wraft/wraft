@@ -16,4 +16,17 @@ defmodule WraftDocWeb.Worker.EmailWorker do
 
     :ok
   end
+
+  def perform(
+        %{
+          "user_name" => user_name,
+          "notification_message" => notification_message,
+          "email" => email
+        },
+        _job
+      ) do
+    IO.puts("Notification mail job started...!")
+    user_name |> Email.notification_email(notification_message, email) |> Mailer.deliver_later()
+    IO.puts("Notification mailer job end...!")
+  end
 end
