@@ -1,11 +1,9 @@
 defmodule WraftDoc.Authorization.Permission do
   @moduledoc false
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
   alias __MODULE__
 
   schema "permission" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
     belongs_to(:role, WraftDoc.Account.Role)
     belongs_to(:resource, WraftDoc.Authorization.Resource)
   end
