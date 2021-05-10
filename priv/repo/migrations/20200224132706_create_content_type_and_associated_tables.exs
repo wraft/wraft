@@ -42,14 +42,19 @@ defmodule WraftDoc.Repo.Migrations.CreateContentTypeAndAssociatedTables do
       timestamps()
     end
 
-    create table(:theme) do
-      add(:uuid, :uuid, null: false)
+    create table(:theme, primary_key: false) do
+      add(:uuid, :uuid, primary_key: true)
       add(:name, :string, null: false)
       add(:font, :string)
       add(:typescale, :jsonb)
       add(:file, :string)
-      add(:creator_id, references(:user))
-      add(:organisation_id, references(:organisation))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
+
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
       timestamps()
     end
 

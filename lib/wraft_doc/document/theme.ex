@@ -2,10 +2,8 @@ defmodule WraftDoc.Document.Theme do
   @moduledoc """
     The theme model.
   """
-  use Ecto.Schema
+  use WraftDoc.Schema
   use Arc.Ecto.Schema
-  import Ecto.Changeset
-  import Ecto.Query
   alias __MODULE__
   alias WraftDoc.Account.User
   @derive {Jason.Encoder, only: [:name]}
@@ -20,7 +18,6 @@ defmodule WraftDoc.Document.Theme do
   end
 
   schema "theme" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
     field(:font, :string)
     field(:typescale, :map, default: %{})
