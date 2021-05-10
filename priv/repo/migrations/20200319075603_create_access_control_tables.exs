@@ -6,6 +6,7 @@ defmodule WraftDoc.Repo.Migrations.CreateAccessControlTables do
       add(:id, primary_key: true)
       add(:category, :string, null: false)
       add(:action, :string, null: false)
+      add(:name, :string)
     end
 
     create table(:permission, primary_key: false) do
