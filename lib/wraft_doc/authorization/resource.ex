@@ -1,11 +1,9 @@
 defmodule WraftDoc.Authorization.Resource do
   @moduledoc false
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
   alias __MODULE__
 
   schema "resource" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
     field(:name, :string)
     field(:category, AtomType)
     field(:action, AtomType)
