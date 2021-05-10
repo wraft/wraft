@@ -42,11 +42,11 @@ defmodule WraftDoc.Repo.Migrations.CreateLayoutAndAssociatedTables do
       timestamps()
     end
 
-    create table(:layout_asset) do
-      add(:uuid, :uuid, null: false)
-      add(:layout_id, references(:layout))
-      add(:asset_id, references(:asset))
-      add(:creator_id, references(:user))
+    create table(:layout_asset, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
+      add(:layout_id, references(:layout, type: :uuid, column: :id, on_delete: :nilify_all))
+      add(:asset_id, references(:asset, type: :uuid, column: :id, on_delete: :nilify_all))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
       timestamps()
     end
 

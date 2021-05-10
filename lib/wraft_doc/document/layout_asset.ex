@@ -2,8 +2,8 @@ defmodule WraftDoc.Document.LayoutAsset do
   @moduledoc """
     The layout-asset association model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
+
   import Ecto.Query
   alias __MODULE__
   alias WraftDoc.{Account.User, Document.Layout}
@@ -23,7 +23,6 @@ defmodule WraftDoc.Document.LayoutAsset do
   end
 
   schema "layout_asset" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     belongs_to(:layout, WraftDoc.Document.Layout)
     belongs_to(:asset, WraftDoc.Document.Asset)
     belongs_to(:creator, WraftDoc.Account.User)
