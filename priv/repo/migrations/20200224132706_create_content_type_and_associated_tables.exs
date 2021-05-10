@@ -2,23 +2,32 @@ defmodule WraftDoc.Repo.Migrations.CreateContentTypeAndAssociatedTables do
   use Ecto.Migration
 
   def up do
-    create table(:content_type) do
-      add(:uuid, :uuid, null: false)
+    create table(:content_type, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:name, :string, null: false)
       add(:description, :string)
       add(:fields, :jsonb)
-      add(:layout_id, references(:layout))
-      add(:creator_id, references(:user))
-      add(:organisation_id, references(:organisation))
+      add(:layout_id, references(:layout, type: :uuid, column: :id, on_delete: :nilify_all))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
+
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
     end
 
-    create table(:content) do
-      add(:uuid, :uuid, null: false)
+    create table(:content, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:instance_id, :string, null: false)
       add(:raw, :text)
       add(:seralized, :jsonb)
-      add(:creator_id, references(:user))
-      add(:content_type_id, references(:content_type))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
+
+      add(
+        :content_type_id,
+        references(:content_type, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
       timestamps()
     end
 
@@ -58,12 +67,17 @@ defmodule WraftDoc.Repo.Migrations.CreateContentTypeAndAssociatedTables do
       timestamps()
     end
 
-    create table(:flow) do
-      add(:uuid, :uuid, null: false)
+    create table(:flow, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:state, :string, null: false)
       add(:order, :integer, null: false)
-      add(:creator_id, references(:user))
-      add(:organisation_id, references(:organisation))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
+
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
       timestamps()
     end
 
