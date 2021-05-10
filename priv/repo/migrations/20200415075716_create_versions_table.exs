@@ -2,13 +2,13 @@ defmodule WraftDoc.Repo.Migrations.CreateVersionsTable do
   use Ecto.Migration
 
   def up do
-    create table(:version) do
-      add(:uuid, :uuid, null: false)
+    create table(:version, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:version_number, :integer, default: 1)
       add(:raw, :string)
       add(:serialized, :jsonb)
-      add(:content_id, references(:content, on_delete: :delete_all))
-      add(:creator_id, references(:user, on_delete: :nilify_all))
+      add(:content_id, references(:content, type: :uuid, column: :id, on_delete: :nilify_all))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
       timestamps()
     end
 
