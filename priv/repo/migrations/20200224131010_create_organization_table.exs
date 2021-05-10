@@ -9,8 +9,6 @@ defmodule WraftDoc.Repo.Migrations.CreateOrganizationTable do
     end
 
     alter table(:user) do
-      add(:uuid, :uuid, null: false)
-
       add(
         :organisation_id,
         references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all)
@@ -22,7 +20,6 @@ defmodule WraftDoc.Repo.Migrations.CreateOrganizationTable do
 
   def down do
     alter table(:user) do
-      remove(:uuid)
       remove(:organisation_id)
     end
 
