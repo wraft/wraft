@@ -2,12 +2,17 @@ defmodule WraftDoc.Repo.Migrations.CreateDataTemplateTable do
   use Ecto.Migration
 
   def up do
-    create table(:data_template) do
+    create table(:data_template, primary_key: false) do
       add(:uuid, :uuid, null: false)
       add(:tag, :string, null: false)
       add(:data, :text, null: false)
-      add(:content_type_id, references(:content_type, on_delete: :nilify_all))
-      add(:creator_id, references(:user, on_delete: :nilify_all))
+
+      add(
+        :content_type_id,
+        references(:content_type, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
       timestamps()
     end
   end
