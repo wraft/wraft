@@ -1,11 +1,9 @@
 defmodule WraftDoc.Enterprise.ApprovalSystem do
   @moduledoc false
 
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
 
   schema "approval_system" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:approved, :boolean, default: false)
     field(:approved_log, :naive_datetime)
     belongs_to(:instance, WraftDoc.Document.Instance)
