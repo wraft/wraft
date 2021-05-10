@@ -2,12 +2,10 @@ defmodule WraftDoc.Account.UserRole do
   @moduledoc """
     This is the UserRole module
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
   alias WraftDoc.Account.{Role, User}
 
   schema "user_role" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     belongs_to(:user, User)
     belongs_to(:role, Role)
 
