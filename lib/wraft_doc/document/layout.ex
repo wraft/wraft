@@ -2,9 +2,9 @@ defmodule WraftDoc.Document.Layout do
   @moduledoc """
   The layout model.
   """
-  use Ecto.Schema
+  use WraftDoc.Schema
   use Arc.Ecto.Schema
-  import Ecto.Changeset
+
   import Ecto.Query
   alias __MODULE__
   alias WraftDoc.Account.User
@@ -20,7 +20,6 @@ defmodule WraftDoc.Document.Layout do
   end
 
   schema "layout" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
     field(:description, :string)
     field(:width, :float)

@@ -16,17 +16,22 @@ defmodule WraftDoc.Repo.Migrations.CreateLayoutAndAssociatedTables do
       timestamps()
     end
 
-    create table(:layout) do
-      add(:uuid, :uuid, null: false)
+    create table(:layout, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:name, :string, null: false)
       add(:description, :string)
       add(:width, :float)
       add(:height, :float)
       add(:unit, :string)
-      add(:slug_id, references(:slug))
-      add(:engine_id, references(:engine))
-      add(:creator_id, references(:user))
-      add(:organisation_id, references(:organisation))
+      add(:slug_id, references(:slug, type: :uuid, column: :id, on_delete: :nilify_all))
+      add(:engine_id, references(:engine, type: :uuid, column: :id, on_delete: :nilify_all))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
+
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
       timestamps()
     end
 
