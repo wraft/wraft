@@ -22,14 +22,23 @@ defmodule WraftDoc.Repo.Migrations.CreateContentTypeAndAssociatedTables do
       timestamps()
     end
 
-    create table(:block) do
-      add(:uuid, :uuid, null: false)
+    create table(:block, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:name, :string, null: false)
       add(:description, :string)
       add(:btype, :string)
-      add(:creator_id, references(:user))
-      add(:content_type_id, references(:content_type))
-      add(:organisation_id, references(:organisation))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
+
+      add(
+        :content_type_id,
+        references(:content_type, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
       timestamps()
     end
 
