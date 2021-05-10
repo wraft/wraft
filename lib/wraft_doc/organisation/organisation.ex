@@ -2,15 +2,13 @@ defmodule WraftDoc.Enterprise.Organisation do
   @moduledoc """
     The organisation model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
   use Arc.Ecto.Schema
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.OrganisationRole
 
   @derive {Jason.Encoder, only: [:name]}
   schema "organisation" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
     field(:legal_name, :string)
     field(:address, :string)
