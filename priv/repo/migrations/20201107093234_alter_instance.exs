@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.AlterInstance do
 
   def change do
     alter table(:content) do
-      add(:vendor_id, references(:vendor, on_delete: :nilify_all))
+      add(:vendor_id, references(:vendor, type: :uuid, column: :id, on_delete: :nilify_all))
     end
   end
 end
