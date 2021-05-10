@@ -3,7 +3,10 @@ defmodule WraftDoc.Repo.Migrations.AddOrganisationIdToAssetTable do
 
   def up do
     alter table(:asset) do
-      add(:organisation_id, references(:organisation, on_delete: :nilify_all))
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
     end
   end
 

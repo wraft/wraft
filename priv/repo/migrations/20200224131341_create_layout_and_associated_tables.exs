@@ -30,9 +30,10 @@ defmodule WraftDoc.Repo.Migrations.CreateLayoutAndAssociatedTables do
       timestamps()
     end
 
-    create table(:asset) do
-      add(:uuid, :uuid, null: false)
+    create table(:asset, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:name, :string, null: false)
+
       timestamps()
     end
 
