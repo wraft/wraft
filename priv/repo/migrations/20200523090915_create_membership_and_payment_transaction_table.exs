@@ -2,10 +2,15 @@ defmodule WraftDoc.Repo.Migrations.CreateMembershipAndPaymentTransactionTable do
   use Ecto.Migration
 
   def up do
-    create table(:membership) do
-      add(:uuid, :uuid, null: false)
-      add(:organisation_id, references(:organisation, on_delete: :nilify_all))
-      add(:plan_id, references(:plan, on_delete: :nilify_all))
+    create table(:membership, primary_key: false) do
+      add(:uuid, :uuid, primary_key: true)
+
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
+      add(:plan_id, references(:plan, type: :uuid, column: :id, on_delete: :nilify_all))
       add(:start_date, :naive_datetime)
       add(:end_date, :naive_datetime)
       add(:plan_duration, :integer)
@@ -13,11 +18,21 @@ defmodule WraftDoc.Repo.Migrations.CreateMembershipAndPaymentTransactionTable do
       timestamps()
     end
 
-    create table(:payment) do
-      add(:uuid, :uuid, null: false)
-      add(:organisation_id, references(:organisation, on_delete: :nilify_all))
-      add(:creator_id, references(:user, on_delete: :nilify_all))
-      add(:membership_id, references(:membership, on_delete: :nilify_all))
+    create table(:payment, primary_key: false) do
+      add(:uuid, :uuid, primary_key: true)
+
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
+
+      add(
+        :membership_id,
+        references(:membership, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
       add(:razorpay_id, :string, null: false)
       add(:start_date, :naive_datetime)
       add(:end_date, :naive_datetime)
@@ -25,8 +40,8 @@ defmodule WraftDoc.Repo.Migrations.CreateMembershipAndPaymentTransactionTable do
       add(:invoice_number, :string)
       add(:amount, :float, default: 0.0)
       add(:action, :integer)
-      add(:from_plan_id, references(:plan, on_delete: :nilify_all))
-      add(:to_plan_id, references(:plan, on_delete: :nilify_all))
+      add(:from_plan_id, references(:plan, type: :uuid, column: :id, on_delete: :nilify_all))
+      add(:to_plan_id, references(:plan, type: :uuid, column: :id, on_delete: :nilify_all))
       add(:status, :integer, null: false)
       add(:meta, :jsonb)
       timestamps()
