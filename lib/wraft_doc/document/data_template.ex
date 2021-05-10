@@ -1,7 +1,7 @@
 defmodule WraftDoc.Document.DataTemplate do
   @moduledoc false
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
+
   alias __MODULE__
   alias WraftDoc.{Account.User, Document.ContentType}
   import Ecto.Query
@@ -21,7 +21,6 @@ defmodule WraftDoc.Document.DataTemplate do
   end
 
   schema "data_template" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:title, :string)
     field(:title_template, :string)
     field(:data, :string)
