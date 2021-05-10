@@ -26,10 +26,10 @@ defmodule WraftDoc.Repo.Migrations.CreatePipelineTable do
       )
     end
 
-    create table(:hook_trigger_history) do
-      add(:uuid, :uuid, null: false)
+    create table(:hook_trigger_history, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:meta, :jsonb)
-      add(:pipeline_id, references(:pipeline))
+      add(:pipeline_id, references(:pipeline, type: :uuid, column: :id, on_delete: :nilify_all))
 
       timestamps()
     end
