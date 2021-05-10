@@ -4,10 +4,16 @@ defmodule WraftDoc.Repo.Migrations.CreateNewFlowTableAndUpdateExistingFlowTable 
   def up do
     rename(table(:flow), to: table(:state))
 
-    create table(:flow) do
-      add(:uuid, :uuid, null: false)
+    create table(:flow, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:name, :string, null: false)
-      add(:organisation_id, references(:organisation), null: false)
+
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all),
+        null: false
+      )
+
       add(:creator_id, references(:user))
 
       timestamps()

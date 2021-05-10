@@ -2,8 +2,8 @@ defmodule WraftDoc.Document.ContentTypeField do
   @moduledoc """
   The content type field model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
+
   import Ecto.Query
   alias __MODULE__
   alias WraftDoc.{Account.User, Document.ContentType}
@@ -25,7 +25,6 @@ defmodule WraftDoc.Document.ContentTypeField do
   end
 
   schema "content_type_field" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
     field(:meta, :map)
     field(:description, :string)
