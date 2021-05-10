@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.CreateMembershipAndPaymentTransactionTable do
 
   def up do
     create table(:membership, primary_key: false) do
-      add(:uuid, :uuid, primary_key: true)
+      add(:id, :uuid, primary_key: true)
 
       add(
         :organisation_id,
@@ -19,7 +19,7 @@ defmodule WraftDoc.Repo.Migrations.CreateMembershipAndPaymentTransactionTable do
     end
 
     create table(:payment, primary_key: false) do
-      add(:uuid, :uuid, primary_key: true)
+      add(:id, :uuid, primary_key: true)
 
       add(
         :organisation_id,
