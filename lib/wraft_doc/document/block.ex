@@ -2,8 +2,8 @@ defmodule WraftDoc.Document.Block do
   @moduledoc """
     The block model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
+
   use Arc.Ecto.Schema
   alias __MODULE__
   alias WraftDoc.Account.User
@@ -20,7 +20,6 @@ defmodule WraftDoc.Document.Block do
   end
 
   schema "block" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
     field(:btype, :string)
     field(:dataset, :map)
