@@ -6,7 +6,6 @@ defmodule WraftDoc.Enterprise.Membership do
   alias __MODULE__
 
   schema "membership" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
     field(:start_date, :naive_datetime)
     field(:end_date, :naive_datetime)
     field(:plan_duration, :integer)
