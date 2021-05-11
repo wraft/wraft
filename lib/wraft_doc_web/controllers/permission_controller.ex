@@ -112,7 +112,7 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, %{"role_uuid" => role_uuid, "resource_uuid" => resource_uuid}) do
     with %Resource{} = resource <- Authorization.get_resource(resource_uuid),
-         %Role{} = role <- Account.get_role_from_uuid(role_uuid),
+         %Role{} = role <- Account.get_role(role_uuid),
          %Permission{} = permission <-
            Authorization.create_permission(resource, role) do
       render(conn, "create.json", permission: permission)

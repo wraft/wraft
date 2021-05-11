@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
 
   def render("create.json", %{organisation: organisation}) do
     %{
-      id: organisation.uuid,
+      id: organisation.id,
       name: organisation.name,
       legal_name: organisation.legal_name,
       address: organisation.address,
@@ -21,7 +21,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
 
   def render("show.json", %{organisation: organisation}) do
     %{
-      id: organisation.uuid,
+      id: organisation.id,
       name: organisation.name,
       legal_name: organisation.legal_name,
       address: organisation.address,
@@ -37,7 +37,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
 
   def render("organisation.json", %{organisation: organisation}) do
     %{
-      id: organisation.uuid,
+      id: organisation.id,
       name: organisation.name,
       legal_name: organisation.legal_name,
       address: organisation.address,
