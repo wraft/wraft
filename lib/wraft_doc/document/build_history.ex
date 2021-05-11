@@ -2,12 +2,11 @@ defmodule WraftDoc.Document.Instance.History do
   @moduledoc """
     The instance build history model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
+
   alias __MODULE__
 
   schema "build_history" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:status, :string, null: false)
     field(:exit_code, :integer, null: false)
     field(:start_time, :naive_datetime, null: false)

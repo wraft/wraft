@@ -2,11 +2,9 @@ defmodule WraftDoc.Document.FieldType do
   @moduledoc """
     The field type model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
 
   schema "field_type" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
     field(:description, :string)
     belongs_to(:creator, WraftDoc.Account.User)

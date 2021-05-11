@@ -2,12 +2,10 @@ defmodule WraftDoc.Account.Profile do
   @moduledoc """
     This is the Profile model
   """
-  use Ecto.Schema
+  use WraftDoc.Schema
   use Arc.Ecto.Schema
-  import Ecto.Changeset
 
   schema "basic_profile" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
     field(:profile_pic, WraftDocWeb.PropicUploader.Type)
     field(:dob, :date)

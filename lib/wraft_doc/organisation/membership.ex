@@ -2,8 +2,7 @@ defmodule WraftDoc.Enterprise.Membership do
   @moduledoc """
   The membership model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
   alias __MODULE__
 
   schema "membership" do

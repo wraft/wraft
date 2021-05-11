@@ -2,11 +2,9 @@ defmodule WraftDoc.Account.User do
   @moduledoc """
   The user model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
   @derive {Jason.Encoder, only: [:name, :email, :organisation]}
   schema "user" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
     field(:email, :string)
     field(:encrypted_password, :string)

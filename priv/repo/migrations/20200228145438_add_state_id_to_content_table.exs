@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.AddStateIdToContentTable do
 
   def up do
     alter table(:content) do
-      add(:state_id, references(:flow))
+      add(:state_id, references(:flow, type: :uuid, column: :id, on_delete: :nilify_all))
     end
   end
 

@@ -2,10 +2,8 @@ defmodule WraftDoc.Document.Instance.Version do
   @moduledoc """
     The instance version model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
   alias __MODULE__
-  import Ecto.Query
   alias WraftDoc.{Account.User, Document.ContentType, Document.Instance}
 
   defimpl Spur.Trackable, for: __MODULE__ do
@@ -25,7 +23,6 @@ defmodule WraftDoc.Document.Instance.Version do
   end
 
   schema "version" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
     field(:version_number, :integer)
     field(:raw, :string)
     field(:serialized, :map, default: %{})

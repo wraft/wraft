@@ -4,9 +4,7 @@ defmodule WraftDoc.Document.Pipeline.Stage do
   """
   alias __MODULE__
   alias WraftDoc.Account.User
-  use Ecto.Schema
-  import Ecto.Changeset
-  import Ecto.Query
+  use WraftDoc.Schema
 
   defimpl Spur.Trackable, for: Stage do
     def actor(stage), do: "#{stage.creator_id}"
@@ -19,7 +17,6 @@ defmodule WraftDoc.Document.Pipeline.Stage do
   end
 
   schema "pipe_stage" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:pipeline, WraftDoc.Document.Pipeline)
     belongs_to(:data_template, WraftDoc.Document.DataTemplate)

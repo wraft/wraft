@@ -2,11 +2,9 @@ defmodule WraftDoc.Notifications.Notification do
   @moduledoc """
   Notification Module
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
 
   schema "notification" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:read_at, :naive_datetime)
     field(:read, :boolean, default: false)
     field(:action, :string)

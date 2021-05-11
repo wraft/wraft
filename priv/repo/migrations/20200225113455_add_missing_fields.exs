@@ -18,7 +18,7 @@ defmodule WraftDoc.Repo.Migrations.AddMissingFields do
     end
 
     alter table(:asset) do
-      add(:creator_id, references(:user))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
     end
   end
 

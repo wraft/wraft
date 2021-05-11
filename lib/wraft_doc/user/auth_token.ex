@@ -1,11 +1,9 @@
 defmodule WraftDoc.Account.AuthToken do
   @moduledoc false
 
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
 
   schema "auth_token" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:value, :string)
     field(:token_type, :string)
     field(:expiry_datetime, :naive_datetime)
