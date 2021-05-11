@@ -10,8 +10,8 @@ defmodule WraftDoc.Document.Instance do
     * Creator id - Creator of the document
     * Content type id - Id of content type
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
+
   alias __MODULE__
   alias WraftDoc.{Account.User, Document.ContentType}
   import Ecto.Query

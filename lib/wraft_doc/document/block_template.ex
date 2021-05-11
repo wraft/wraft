@@ -1,7 +1,7 @@
 defmodule WraftDoc.Document.BlockTemplate do
   @moduledoc false
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
+
   alias __MODULE__
   alias WraftDoc.{Account.User}
   import Ecto.Query
@@ -17,7 +17,6 @@ defmodule WraftDoc.Document.BlockTemplate do
   end
 
   schema "block_template" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:title, :string)
     field(:body, :string)
     field(:serialized, :string)

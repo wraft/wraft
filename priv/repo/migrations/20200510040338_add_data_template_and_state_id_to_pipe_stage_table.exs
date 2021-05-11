@@ -3,9 +3,13 @@ defmodule WraftDoc.Repo.Migrations.AddDataTemplateAndStateIdToPipeStageTable do
 
   def up do
     alter table(:pipe_stage) do
-      add(:data_template_id, references(:data_template))
-      add(:state_id, references(:state))
-      add(:creator_id, references(:user))
+      add(
+        :data_template_id,
+        references(:data_template, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
+      add(:state_id, references(:state, type: :uuid, column: :id, on_delete: :nilify_all))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
 
       timestamps()
     end

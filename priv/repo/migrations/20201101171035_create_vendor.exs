@@ -2,8 +2,8 @@ defmodule WraftDoc.Repo.Migrations.CreateVendor do
   use Ecto.Migration
 
   def change do
-    create table(:vendor) do
-      add(:uuid, :uuid, null: false)
+    create table(:vendor, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:name, :string)
       add(:email, :string)
       add(:phone, :string)
@@ -12,8 +12,13 @@ defmodule WraftDoc.Repo.Migrations.CreateVendor do
       add(:reg_no, :string)
       add(:logo, :string)
       add(:contact_person, :string)
-      add(:organisation_id, references(:organisation, on_delete: :nilify_all))
-      add(:creator_id, references(:user, on_delete: :nilify_all))
+
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
       timestamps()
     end
   end

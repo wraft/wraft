@@ -2,12 +2,10 @@ defmodule WraftDoc.Enterprise.OrganisationRole do
   @moduledoc """
     This is the OrganisationRole module
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
   alias WraftDoc.{Account.Role, Enterprise.Organisation}
 
   schema "organisation_role" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     belongs_to(:organisation, Organisation)
     belongs_to(:role, Role)
 

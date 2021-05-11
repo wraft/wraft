@@ -2,11 +2,9 @@ defmodule WraftDoc.ActionLog do
   @moduledoc """
   The action log model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
 
   schema "action_log" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
     field(:actor, :map, default: %{})
     field(:remote_ip, :string)
     field(:actor_agent, :string)

@@ -4,9 +4,9 @@ defmodule WraftDoc.Document.Asset do
   """
   alias __MODULE__
   alias WraftDoc.Account.User
-  use Ecto.Schema
+  use WraftDoc.Schema
   use Arc.Ecto.Schema
-  import Ecto.Changeset
+
   import Ecto.Query
   @derive {Jason.Encoder, only: [:name]}
   defimpl Spur.Trackable, for: Asset do
@@ -20,7 +20,6 @@ defmodule WraftDoc.Document.Asset do
   end
 
   schema "asset" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
     field(:file, WraftDocWeb.AssetUploader.Type)
     belongs_to(:creator, WraftDoc.Account.User)

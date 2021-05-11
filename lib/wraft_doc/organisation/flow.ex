@@ -2,8 +2,8 @@ defmodule WraftDoc.Enterprise.Flow do
   @moduledoc """
     The work flow model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
+
   alias __MODULE__
   alias WraftDoc.Account.User
   import Ecto.Query
@@ -19,7 +19,6 @@ defmodule WraftDoc.Enterprise.Flow do
   end
 
   schema "flow" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string, null: false)
     field(:controlled, :boolean, default: false)
     field(:control_data, :map)

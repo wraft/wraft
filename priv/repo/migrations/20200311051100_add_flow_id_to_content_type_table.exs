@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.AddFlowIdToContentTypeTable do
 
   def up do
     alter table(:content_type) do
-      add(:flow_id, references(:flow))
+      add(:flow_id, references(:flow, type: :uuid, column: :id, on_delete: :nilify_all))
     end
   end
 

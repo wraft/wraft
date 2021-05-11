@@ -2,8 +2,7 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   @moduledoc """
   The payment model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
   use Arc.Ecto.Schema
   alias __MODULE__
   require Protocol
@@ -13,7 +12,6 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   def actions, do: [downgrade: 1, renew: 2, upgrade: 3]
 
   schema "payment" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
     field(:razorpay_id, :string)
     field(:start_date, :naive_datetime)
     field(:end_date, :naive_datetime)

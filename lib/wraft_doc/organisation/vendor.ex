@@ -5,11 +5,9 @@ defmodule WraftDoc.Enterprise.Vendor do
   * If Company X is sending a proposal to Y the Y is the vendor and x is the issuing authority
   """
 
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
   import Arc.Ecto.Schema
   alias WraftDoc.Account.User
-  import Ecto.Query
   alias __MODULE__
   @derive {Jason.Encoder, only: [:name]}
   defimpl Spur.Trackable, for: __MODULE__ do
@@ -24,7 +22,6 @@ defmodule WraftDoc.Enterprise.Vendor do
   end
 
   schema "vendor" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
     field(:email, :string)
     field(:phone, :string)

@@ -2,16 +2,17 @@ defmodule WraftDoc.Repo.Migrations.CreateAccessControlTables do
   use Ecto.Migration
 
   def up do
-    create table(:resource) do
-      add(:uuid, :uuid, null: false)
+    create table(:resource, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:category, :string, null: false)
       add(:action, :string, null: false)
+      add(:name, :string)
     end
 
-    create table(:permission) do
-      add(:uuid, :uuid, null: false)
-      add(:resource_id, references(:resource))
-      add(:role_id, references(:role))
+    create table(:permission, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
+      add(:resource_id, references(:resource, type: :uuid, column: :id, on_delete: :nilify_all))
+      add(:role_id, references(:role, type: :uuid, column: :id, on_delete: :nilify_all))
     end
 
     create(unique_index(:permission, [:resource_id, :role_id], name: :permission_unique_index))

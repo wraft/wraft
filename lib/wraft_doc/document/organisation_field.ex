@@ -3,8 +3,7 @@ defmodule WraftDoc.Document.OrganisationField do
   Same as content type field for an organisation to collect data in dependant on content type
   """
   use Ecto.Schema
-  import Ecto.Changeset
-  import Ecto.Query
+  use WraftDoc.Schema
   alias WraftDoc.Account.User
   alias WraftDoc.Document.OrganisationField
   @derive {Jason.Encoder, only: [:name]}
@@ -19,7 +18,6 @@ defmodule WraftDoc.Document.OrganisationField do
   end
 
   schema "organisation_field" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:name, :string)
     field(:description, :string)
     field(:meta, :map)

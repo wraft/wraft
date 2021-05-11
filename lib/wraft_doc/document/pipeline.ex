@@ -4,9 +4,7 @@ defmodule WraftDoc.Document.Pipeline do
   """
   alias __MODULE__
   alias WraftDoc.Account.User
-  use Ecto.Schema
-  import Ecto.Changeset
-  import Ecto.Query
+  use WraftDoc.Schema
 
   defimpl Spur.Trackable, for: Pipeline do
     def actor(pipeline), do: "#{pipeline.creator_id}"
@@ -20,7 +18,6 @@ defmodule WraftDoc.Document.Pipeline do
 
   @derive {Jason.Encoder, only: [:id, :uuid, :name, :api_route]}
   schema "pipeline" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
     field(:name, :string)
     field(:api_route, :string)
     belongs_to(:creator, User)
