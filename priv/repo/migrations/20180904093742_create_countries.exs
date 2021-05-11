@@ -9,6 +9,10 @@ defmodule WraftDoc.Repo.Migrations.CreateCountries do
       add(:calling_code, :string)
     end
 
+    alter table(:basic_profile) do
+      add(:country_id, references(:country, type: :uuid, column: :id, on_delete: :nilify_all))
+    end
+
     create(unique_index(:country, [:country_code]))
   end
 end

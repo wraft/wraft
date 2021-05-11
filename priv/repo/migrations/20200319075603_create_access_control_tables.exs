@@ -3,14 +3,14 @@ defmodule WraftDoc.Repo.Migrations.CreateAccessControlTables do
 
   def up do
     create table(:resource, primary_key: false) do
-      add(:id, primary_key: true)
+      add(:id, :uuid, primary_key: true)
       add(:category, :string, null: false)
       add(:action, :string, null: false)
       add(:name, :string)
     end
 
     create table(:permission, primary_key: false) do
-      add(:id, primary_key: true)
+      add(:id, :uuid, primary_key: true)
       add(:resource_id, references(:resource, type: :uuid, column: :id, on_delete: :nilify_all))
       add(:role_id, references(:role, type: :uuid, column: :id, on_delete: :nilify_all))
     end

@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.CreatePipelineTable do
 
   def up do
     create table(:pipeline, primary_key: false) do
-      add(:uuid, :uuid, primary_key: true)
+      add(:id, :uuid, primary_key: true)
       add(:name, :string)
       add(:api_route, :string)
       add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
@@ -17,7 +17,7 @@ defmodule WraftDoc.Repo.Migrations.CreatePipelineTable do
     end
 
     create table(:pipe_stage, primary_key: false) do
-      add(:uuid, :uuid, primary_key: true)
+      add(:id, :uuid, primary_key: true)
       add(:pipeline_id, references(:pipeline, type: :uuid, column: :id, on_delete: :nilify_all))
 
       add(

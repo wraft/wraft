@@ -8,12 +8,6 @@ defmodule WraftDoc.Repo.Migrations.CreateUserRole do
       add(:role_id, references(:role, type: :uuid, column: :id, on_delete: :nilify_all))
       timestamps()
     end
-
-    execute("""
-    INSERT INTO public.user_role (role_id,user_id,uuid, inserted_at, updated_at) SELECT role_id, id, '#{
-      Ecto.UUID.autogenerate()
-    }', '#{NaiveDateTime.local_now()}', '#{NaiveDateTime.local_now()}'  FROM public.user;
-    """)
   end
 
   def down do

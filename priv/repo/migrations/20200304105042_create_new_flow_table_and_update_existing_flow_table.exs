@@ -14,13 +14,13 @@ defmodule WraftDoc.Repo.Migrations.CreateNewFlowTableAndUpdateExistingFlowTable 
         null: false
       )
 
-      add(:creator_id, references(:user))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
 
       timestamps()
     end
 
     alter table(:state) do
-      add(:flow_id, references(:flow))
+      add(:flow_id, references(:flow, type: :uuid, column: :id, on_delete: :nilify_all))
     end
 
     drop(index(:state, [:organisation_id, :state], name: :flow_organisation_unique_index))
