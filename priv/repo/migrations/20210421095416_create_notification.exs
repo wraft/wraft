@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.CreateNotification do
 
   def change do
     create table(:notification, primary_key: false) do
-      add(:uuid, :uuid, primary_key: true)
+      add(:id, :uuid, primary_key: true)
       add(:read_at, :naive_datetime)
       add(:read, :boolean)
       add(:action, :string)

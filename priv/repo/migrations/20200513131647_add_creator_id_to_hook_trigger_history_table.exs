@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.AddCreatorIdToHookTriggerHistoryTable do
 
   def up do
     alter table(:hook_trigger_history) do
-      add(:creator_id, references(:user, on_delete: :nilify_all))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
       add(:state, :integer)
     end
 

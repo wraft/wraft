@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.CreateDataTemplateTable do
 
   def up do
     create table(:data_template, primary_key: false) do
-      add(:uuid, :uuid, null: false)
+      add(:id, :uuid, primary_key: true)
       add(:tag, :string, null: false)
       add(:data, :text, null: false)
 

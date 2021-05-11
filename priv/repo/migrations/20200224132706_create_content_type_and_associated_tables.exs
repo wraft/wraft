@@ -52,7 +52,7 @@ defmodule WraftDoc.Repo.Migrations.CreateContentTypeAndAssociatedTables do
     end
 
     create table(:theme, primary_key: false) do
-      add(:uuid, :uuid, primary_key: true)
+      add(:id, :uuid, primary_key: true)
       add(:name, :string, null: false)
       add(:font, :string)
       add(:typescale, :jsonb)

@@ -12,7 +12,6 @@ defmodule WraftDoc.Repo.Migrations.CreateProfile do
         null: false
       )
 
-      add(:country_id, references(:country, type: :uuid, column: :id, on_delete: :nilify_all))
       add(:profile_pic, :string)
       timestamps()
     end
