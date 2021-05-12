@@ -697,9 +697,9 @@ defmodule WraftDoc.EnterpriseTest do
       role_names = Enum.map(user.roles, fn x -> x.name end)
       user = Map.put(user, :role_names, role_names)
       payment = insert(:payment, organisation: user.organisation)
-      fetched_payement = Enterprise.show_payment(payment.uuid, user)
+      fetched_payement = Enterprise.show_payment(payment.id, user)
       assert fetched_payement.razorpay_id == payment.razorpay_id
-      assert fetched_payement.uuid == payment.uuid
+      assert fetched_payement.id == payment.id
       assert fetched_payement.organisation.uuid == payment.organisation.uuid
       assert fetched_payement.creator.uuid == payment.creator.uuid
       assert fetched_payement.membership.uuid == payment.membership.uuid
