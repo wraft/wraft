@@ -298,8 +298,8 @@ defmodule WraftDoc.Enterprise do
         Task.start_link(fn -> create_membership(organisation) end)
         organisation
 
-      {:error, changeset} ->
-        {:error, changeset}
+      {:error, _} = changeset ->
+        changeset
     end
   end
 
@@ -341,13 +341,18 @@ defmodule WraftDoc.Enterprise do
   @spec check_permission(User.t(), binary) :: Organisation.t() | {:error, :no_permission}
 
   def check_permission(
-        %{organisation: %{id: cuo_id, role_names: role_names} = organisation},
+        %{organisation: %{id: cuo_id} = organisation, role_names: role_names},
         o_id
       ) do
     cond do
-      cuo_id === o_id -> organisation
-      "super_admin" in role_names -> organisation
-      true -> {:error, :no_permission}
+      cuo_id === o_id ->
+        organisation
+
+      "super_admin" in role_names ->
+        organisation
+
+      true ->
+        {:error, :no_permission}
     end
   end
 

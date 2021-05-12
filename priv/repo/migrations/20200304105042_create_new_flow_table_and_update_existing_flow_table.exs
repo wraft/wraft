@@ -14,8 +14,6 @@ defmodule WraftDoc.Repo.Migrations.CreateNewFlowTableAndUpdateExistingFlowTable 
         null: false
       )
 
-      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
-
       timestamps()
     end
 

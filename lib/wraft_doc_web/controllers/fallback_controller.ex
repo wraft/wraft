@@ -90,6 +90,11 @@ defmodule WraftDocWeb.FallbackController do
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 
+  def call(conn, {:error, :invalid_id}) do
+    body = Jason.encode!(%{errors: "The id does not exist..!"})
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
+  end
+
   def call(conn, nil) do
     conn
     |> put_status(:not_found)

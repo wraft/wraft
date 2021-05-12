@@ -126,7 +126,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_field_type_path(conn, :show, Ecto.UUID.generate()))
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
   end
 
   test "delete field type by given id", %{conn: conn} do

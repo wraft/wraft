@@ -160,7 +160,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
       |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_asset_path(conn, :show, Ecto.UUID.generate()))
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
   end
 
   test "delete asset by given id", %{conn: conn} do
