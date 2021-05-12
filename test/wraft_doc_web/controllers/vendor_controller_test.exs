@@ -152,7 +152,7 @@ defmodule WraftDocWeb.VendorControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       conn = get(conn, Routes.v1_vendor_path(conn, :show, Ecto.UUID.generate()))
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The id does not exist..!"
     end
   end
 

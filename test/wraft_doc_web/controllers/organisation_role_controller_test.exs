@@ -39,6 +39,20 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleControllerTest do
     assert json_response(conn, 200)["id"] == organisation.uuid
   end
 
+  test "returns not exist error for id does not exist", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    organisation = insert(:organisation)
+    user = conn.assigns.current_user
+    insert(:membership, organisation: user.organisation)
+
+    conn = get(conn, Routes.v1_organisation_role_path(conn, :show, Ecto.UUID.autogenerate()))
+    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+  end
+
   test "delete particular role for the organisation", %{conn: conn} do
     conn =
       build_conn()
