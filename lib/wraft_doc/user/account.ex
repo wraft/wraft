@@ -60,7 +60,7 @@ defmodule WraftDoc.Account do
   @spec registration(map, Organisation.t()) :: User.t() | Ecto.Changeset.t()
   def registration(params, %Organisation{id: id}) do
     params = Map.merge(params, %{"organisation_id" => id})
-    role = get_role(params["role"])
+    role = get_role_by_name(params["role"])
 
     Multi.new()
     |> Multi.insert(:user, User.changeset(%User{}, params))
@@ -227,28 +227,25 @@ defmodule WraftDoc.Account do
 
   def delete_profile(_), do: nil
 
-  # Get the role struct from given role name
-  @spec get_role(binary) :: Role.t()
-
   # defp get_role(role \\ "user")
 
-  defp get_role(role) when is_binary(role) do
+  defp get_role_by_name(role) when is_binary(role) do
     Repo.get_by(Role, name: role)
   end
 
-  defp get_role(role) when is_nil(role) do
+  defp get_role_by_name(role) when is_nil(role) do
     Repo.get_by(Role, name: "user")
   end
 
   @doc """
   Get a role type from its UUID.
   """
-  @spec get_role_from_uuid(Ecto.UUID.t()) :: Role.t() | nil
-  def get_role_from_uuid(<<_::288>> = uuid) when is_binary(uuid) do
-    Repo.get_by(Role, uuid: uuid)
+  @spec get_role(Ecto.UUID.t()) :: Role.t() | nil
+  def get_role(<<_::288>> = id) do
+    Repo.get(Role, id)
   end
 
-  def get_role_from_uuid(_id), do: nil
+  def get_role(_id), do: nil
 
   @doc """
   Get a user from its UUID.
@@ -485,7 +482,7 @@ defmodule WraftDoc.Account do
     end
   end
 
-  def update_password(_, _), do: nil
+  def update_password(_, _), do: {:error, :no_data}
 
   # Update the password if the new one is not same as the previous one.
   @spec check_and_update_password(User.t(), map) ::
