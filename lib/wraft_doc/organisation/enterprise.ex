@@ -810,7 +810,7 @@ defmodule WraftDoc.Enterprise do
       from(m in Membership,
         join: o in Organisation,
         on: o.id == m.organisation_id,
-        where: o.uuid == ^o_uuid,
+        where: o.id == ^o_uuid,
         preload: [:plan]
       )
 
