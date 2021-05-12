@@ -11,7 +11,6 @@ defmodule WraftDoc.Account.User do
     field(:password, :string, virtual: true)
     field(:email_verify, :boolean, default: false)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-    belongs_to(:role, WraftDoc.Account.Role)
     has_one(:profile, WraftDoc.Account.Profile)
 
     has_many(:layouts, WraftDoc.Document.Layout, foreign_key: :creator_id)
@@ -47,7 +46,7 @@ defmodule WraftDoc.Account.User do
 
   def changeset(users, attrs \\ %{}) do
     users
-    |> cast(attrs, [:name, :email, :password, :role_id, :organisation_id])
+    |> cast(attrs, [:name, :email, :password, :organisation_id])
     |> validate_required([:name, :email, :password])
     |> validate_format(:email, ~r/@/)
     |> validate_format(:name, ~r/^[A-z ]+$/)
@@ -59,7 +58,7 @@ defmodule WraftDoc.Account.User do
 
   def create_changeset(users, attrs \\ %{}) do
     users
-    |> cast(attrs, [:name, :email, :password, :role_id, :organisation_id])
+    |> cast(attrs, [:name, :email, :password, :organisation_id])
     |> validate_required([:email, :password])
     |> validate_format(:email, ~r/@/)
     |> validate_length(:name, min: 2)

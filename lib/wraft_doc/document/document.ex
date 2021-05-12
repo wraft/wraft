@@ -309,10 +309,12 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec show_content_type(User.t(), Ecto.UUID.t()) ::
           %ContentType{layout: Layout.t(), creator: User.t()} | nil
-  def show_content_type(user, uuid) do
+  def show_content_type(user, id) do
     user
-    |> get_content_type(uuid)
-    |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
+    |> get_content_type(id)
+    |> Repo.preload([:layout, :creator, [{:fields, :field_type}]])
+
+    # |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
   end
 
   @doc """
@@ -320,8 +322,8 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec get_content_type(User.t(), Ecto.UUID.t()) :: ContentType.t() | nil
-  def get_content_type(%User{organisation_id: org_id}, <<_::288>> = uuid) do
-    Repo.get_by(ContentType, uuid: uuid, organisation_id: org_id)
+  def get_content_type(%User{organisation_id: org_id}, <<_::288>> = id) do
+    Repo.get_by(ContentType, id: id, organisation_id: org_id)
   end
 
   def get_content_type(_, _), do: nil
@@ -1191,9 +1193,9 @@ defmodule WraftDoc.Document do
 
   # Generate QR code with the UUID of the given Instance.
   @spec generate_qr(Instance.t()) :: String.t()
-  defp generate_qr(%Instance{uuid: uuid, instance_id: i_id}) do
+  defp generate_qr(%Instance{id: id, instance_id: i_id}) do
     qr_code_png =
-      uuid
+      id
       |> EQRCode.encode()
       |> EQRCode.png()
 

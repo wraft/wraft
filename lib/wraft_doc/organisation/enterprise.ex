@@ -339,9 +339,10 @@ defmodule WraftDoc.Enterprise do
   Check the permission of the user wrt to the given organisation UUID.
   """
   @spec check_permission(User.t(), binary) :: Organisation.t() | nil | {:error, :no_permission}
-  def check_permission(%User{role: %{name: "admin"}}, id) do
-    get_organisation(id)
-  end
+
+  # def check_permission(%User{role: %{name: "admin"}}, id) do
+  #   get_organisation(id)
+  # end
 
   def check_permission(%User{organisation: %{uuid: id} = organisation}, id), do: organisation
   def check_permission(_, _), do: {:error, :no_permission}
@@ -544,9 +545,9 @@ defmodule WraftDoc.Enterprise do
   """
 
   @spec get_approval_system(Ecto.UUID.t(), User.t()) :: ApprovalSystem.t()
-  def get_approval_system(uuid, %{organisation_id: org_id}) do
+  def get_approval_system(id, %{organisation_id: org_id}) do
     ApprovalSystem
-    |> Repo.get_by(uuid: uuid, organisation_id: org_id)
+    |> Repo.get_by(id: id, organisation_id: org_id)
     |> Repo.preload([:instance, :pre_state, :post_state, :approver, :organisation, :user])
   end
 

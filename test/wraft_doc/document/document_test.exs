@@ -367,7 +367,7 @@ defmodule WraftDoc.DocumentTest do
           organisation: user.organisation
         )
 
-      s_content_type = Document.show_content_type(user, content_type.uuid)
+      s_content_type = Document.show_content_type(user, content_type.id)
       assert s_content_type.name == content_type.name
       assert s_content_type.description == content_type.description
       assert s_content_type.color == content_type.color
