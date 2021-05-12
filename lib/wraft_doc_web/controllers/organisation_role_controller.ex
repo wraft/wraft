@@ -53,8 +53,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def show(conn, %{"id" => uuid}) do
-    organisation_role = Enterprise.get_organisation_id_roles(uuid)
+  def show(conn, %{"id" => id}) do
+    organisation_role = Enterprise.get_organisation_id_roles(id)
 
     render(conn, "organisation_role.json", organisation_role: organisation_role)
   end
