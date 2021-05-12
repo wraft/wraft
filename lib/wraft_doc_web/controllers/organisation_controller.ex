@@ -174,11 +174,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with {:ok, %Organisation{} = organisation} <-
+    with organisation <-
            Enterprise.create_organisation(current_user, params) do
-      conn
-      |> put_status(:created)
-      |> render("create.json", organisation: organisation)
+      render(conn, "create.json", organisation: organisation)
     end
   end
 
@@ -209,13 +207,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
-    with %Organisation{} = organisation <- Enterprise.get_organisation(uuid),
-         {:ok, %Organisation{} = organisation} <-
+  def update(conn, %{"id" => id} = params) do
+    with %Organisation{} = organisation <- Enterprise.get_organisation(id),
+         organisation <-
            Enterprise.update_organisation(organisation, params) do
-      conn
-      |> put_status(:created)
-      |> render("create.json", organisation: organisation)
+      render(conn, "create.json", organisation: organisation)
     end
   end
 
@@ -237,8 +233,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => uuid}) do
-    with %Organisation{} = organisation <- Enterprise.get_organisation(uuid) do
+  def show(conn, %{"id" => id}) do
+    with %Organisation{} = organisation <- Enterprise.get_organisation(id) do
       render(conn, "show.json", organisation: organisation)
     end
   end
@@ -264,8 +260,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
-    with %Organisation{} = organisation <- Enterprise.get_organisation(uuid),
+  def delete(conn, %{"id" => id}) do
+    with %Organisation{} = organisation <- Enterprise.get_organisation(id),
          {:ok, %Organisation{}} <- Enterprise.delete_organisation(organisation) do
       render(conn, "organisation.json", organisation: organisation)
     end
@@ -291,13 +287,19 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def invite(conn, %{"id" => id, "email" => email, "role_id" => role_id}) do
+  def invite(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
     with %Organisation{} = organisation <- Enterprise.check_permission(current_user, id),
-         :ok <- Enterprise.already_member?(email),
-         %Role{name: role_name} <- Account.get_role_from_uuid(role_id),
-         {:ok, _} <- Enterprise.invite_team_member(current_user, organisation, email, role_name) do
+         :ok <- Enterprise.already_member(params["email"]),
+         %Role{name: role_name} <- Account.get_role(params["role_id"]),
+         {:ok, _} <-
+           Enterprise.invite_team_member(
+             current_user,
+             organisation,
+             params["email"],
+             role_name
+           ) do
       render(conn, "invite.json")
     end
   end

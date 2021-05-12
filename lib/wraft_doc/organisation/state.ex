@@ -2,8 +2,8 @@ defmodule WraftDoc.Enterprise.Flow.State do
   @moduledoc """
     The state model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
+
   alias __MODULE__
   alias WraftDoc.Account.User
   import Ecto.Query
@@ -19,7 +19,6 @@ defmodule WraftDoc.Enterprise.Flow.State do
   end
 
   schema "state" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:state, :string, null: false)
     field(:order, :integer, null: false)
     belongs_to(:creator, WraftDoc.Account.User)
