@@ -5,14 +5,14 @@ defmodule WraftDocWeb.Api.V1.RoleView do
 
   def render("role.json", %{role: role}) do
     %{
-      id: role.uuid,
+      id: role.id,
       name: role.name
     }
   end
 
   def render("show.json", %{role: role}) do
     %{
-      id: role.uuid,
+      id: role.id,
       name: role.name,
       content_type: render_many(role.content_types, ContentTypeView, "role_content_type.json")
     }

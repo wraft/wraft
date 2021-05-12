@@ -4,6 +4,7 @@ defmodule WraftDoc.Account.User do
   """
   use WraftDoc.Schema
   @derive {Jason.Encoder, only: [:name, :email, :organisation]}
+
   schema "user" do
     field(:name, :string)
     field(:email, :string)
@@ -33,7 +34,12 @@ defmodule WraftDoc.Account.User do
     has_many(:instance_versions, WraftDoc.Document.Instance.Version, foreign_key: :author_id)
     has_many(:user_roles, WraftDoc.Account.UserRole)
     has_many(:roles, through: [:user_roles, :role])
-    many_to_many(:activities, Spur.Activity, join_through: "audience")
+
+    many_to_many(:activities, Spur.Activity,
+      join_through: WraftDoc.User.Audience,
+      join_keys: [user_id: :id, activity_id: :id]
+    )
+
     has_many(:block_templates, WraftDoc.Document.BlockTemplate, foreign_key: :creator_id)
     has_many(:comments, WraftDoc.Document.Comment)
     has_many(:approvers, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :approver_id)

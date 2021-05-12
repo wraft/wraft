@@ -42,10 +42,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
     count_before = ContentType |> Repo.all() |> length()
-    %{uuid: flow_uuid} = insert(:flow, creator: user, organisation: user.organisation)
-    %{uuid: layout_uuid} = insert(:layout, creator: user, organisation: user.organisation)
+    %{id: flow_id} = insert(:flow, creator: user, organisation: user.organisation)
+    %{id: layout_id} = insert(:layout, creator: user, organisation: user.organisation)
 
-    params = Map.merge(@valid_attrs, %{flow_uuid: flow_uuid, layout_uuid: layout_uuid})
+    params = Map.merge(@valid_attrs, %{flow_id: flow_id, layout_id: layout_id})
 
     conn =
       conn
@@ -151,7 +151,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_content_type_path(conn, :show, content_type.uuid))
+    conn = get(conn, Routes.v1_content_type_path(conn, :show, content_type.id))
 
     assert json_response(conn, 200)["content_type"]["name"] == content_type.name
   end
@@ -181,7 +181,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
     count_before = ContentType |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_content_type_path(conn, :delete, content_type.uuid))
+    conn = delete(conn, Routes.v1_content_type_path(conn, :delete, content_type.id))
     assert count_before - 1 == ContentType |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == content_type.name
   end
@@ -197,7 +197,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, user)
 
-    conn = get(conn, Routes.v1_content_type_path(conn, :show, content_type.uuid))
+    conn = get(conn, Routes.v1_content_type_path(conn, :show, content_type.id))
 
     assert json_response(conn, 404) == "Not Found"
   end
@@ -212,27 +212,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type)
 
-    conn =
-      get(conn, Routes.v1_content_type_path(conn, :show_content_type_role, content_type.uuid))
+    conn = get(conn, Routes.v1_content_type_path(conn, :show_content_type_role, content_type.id))
 
     assert json_response(conn, 200)["name"] == content_type.name
   end
-
-  # test "search the content with title", %{conn: conn} do
-  #   conn =
-  #     build_conn()
-  #     |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-  #     |> assign(:current_user, conn.assigns.current_user)
-
-  #   user = conn.assigns.current_user
-  #   insert(:membership, organisation: user.organisation)
-  #   content_type = insert(:content_type)
-  #   conn = get(conn, Routes.v1_content_type_path(conn, :search), key: "wrafts user")
-  #   require IEx
-  #   IEx.pry()
-  #   contents = json_response(conn, 200)["contents"]
-
-  #   require IEx
-  #   IEx.pry()
-  # end
 end

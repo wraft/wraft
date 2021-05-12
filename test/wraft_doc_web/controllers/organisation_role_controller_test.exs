@@ -35,8 +35,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleControllerTest do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
 
-    conn = get(conn, Routes.v1_organisation_role_path(conn, :show, organisation.uuid))
-    assert json_response(conn, 200)["id"] == organisation.uuid
+    conn = get(conn, Routes.v1_organisation_role_path(conn, :show, organisation.id))
+    assert json_response(conn, 200)["id"] == organisation.id
   end
 
   test "delete particular role for the organisation", %{conn: conn} do
@@ -58,8 +58,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationRoleControllerTest do
         Routes.v1_organisation_role_path(
           conn,
           :delete_organisation_role,
-          organisation.uuid,
-          role.uuid
+          organisation.id,
+          role.id
         )
       )
 
