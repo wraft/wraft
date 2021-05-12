@@ -8,7 +8,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationView do
     %{
       token: token,
       user: %{
-        id: user.uuid,
+        id: user.id,
         name: user.name,
         email: user.email,
         email_verify: user.email_verify,
@@ -20,6 +20,6 @@ defmodule WraftDocWeb.Api.V1.RegistrationView do
   end
 
   def render("role.json", %{role: role}) do
-    %{id: role.uuid, name: role.name}
+    %{id: role.id, name: role.name}
   end
 end

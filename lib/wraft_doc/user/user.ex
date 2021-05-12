@@ -11,6 +11,7 @@ defmodule WraftDoc.Account.User do
     field(:password, :string, virtual: true)
     field(:email_verify, :boolean, default: false)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+
     has_one(:profile, WraftDoc.Account.Profile)
 
     has_many(:layouts, WraftDoc.Document.Layout, foreign_key: :creator_id)

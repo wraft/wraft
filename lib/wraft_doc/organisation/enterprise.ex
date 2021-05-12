@@ -279,8 +279,8 @@ defmodule WraftDoc.Enterprise do
   """
 
   @spec get_organisation(binary) :: Organisation.t() | nil
-  def get_organisation(org_uuid) do
-    Repo.get_by(Organisation, uuid: org_uuid)
+  def get_organisation(id) do
+    Repo.get(Organisation, id)
   end
 
   @doc """
@@ -296,7 +296,7 @@ defmodule WraftDoc.Enterprise do
     |> case do
       {:ok, organisation} ->
         Task.start_link(fn -> create_membership(organisation) end)
-        {:ok, organisation}
+        organisation
 
       {:error, changeset} ->
         {:error, changeset}
@@ -308,16 +308,16 @@ defmodule WraftDoc.Enterprise do
   """
 
   @spec update_organisation(Organisation.t(), map) :: {:ok, Organisation.t()}
-  def update_organisation(%Organisation{} = organisation, params) do
+  def update_organisation(organisation, params) do
     organisation
     |> Organisation.changeset(params)
     |> Repo.update()
     |> case do
-      {:ok, %Organisation{} = organisation} ->
-        {:ok, organisation}
+      {:ok, organisation} ->
+        organisation
 
-      {:error, changeset} ->
-        {:error, changeset}
+      {:error, _} = changeset ->
+        changeset
     end
   end
 
@@ -336,22 +336,30 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
-  Check the permission of the user wrt to the given organisation UUID.
+  Check the permission of the user wrt to the given organisation ID.
   """
-  @spec check_permission(User.t(), binary) :: Organisation.t() | nil | {:error, :no_permission}
+  @spec check_permission(User.t(), binary) :: Organisation.t() | {:error, :no_permission}
 
-  # def check_permission(%User{role: %{name: "admin"}}, id) do
-  #   get_organisation(id)
-  # end
+  def check_permission(
+        %{organisation: %{id: cuo_id, role_names: role_names} = organisation},
+        o_id
+      ) do
+    cond do
+      cuo_id === o_id -> organisation
+      "super_admin" in role_names -> organisation
+      true -> {:error, :no_permission}
+    end
+  end
 
-  def check_permission(%User{organisation: %{uuid: id} = organisation}, id), do: organisation
   def check_permission(_, _), do: {:error, :no_permission}
 
   @doc """
   Check if a user with the given Email ID exists or not.
   """
-  @spec already_member?(String.t()) :: :ok | {:error, :already_member}
-  def already_member?(email) do
+  @spec already_member(String.t()) :: :ok | {:error, :already_member}
+  def already_member(email) when is_nil(email), do: {:error, :no_data}
+
+  def already_member(email) do
     email
     |> Account.find()
     |> case do
@@ -385,7 +393,9 @@ defmodule WraftDoc.Enterprise do
   Send invitation email to given organisation.
   """
 
-  def invite_team_member(%User{name: name}, %{name: org_name} = organisation, email, role) do
+  def invite_team_member(%User{name: name}, %{name: org_name} = organisation, email, role)
+      when is_binary(email)
+      when is_binary(role) do
     token =
       Phoenix.Token.sign(WraftDocWeb.Endpoint, "organisation_invite", %{
         organisation: organisation,
@@ -397,6 +407,8 @@ defmodule WraftDoc.Enterprise do
     |> EmailWorker.new(queue: "mailer", tags: ["invite"])
     |> Oban.insert()
   end
+
+  def invite_team_member(_, _, _, _), do: {:error, :no_data}
 
   @doc """
   Fetches the list of all members of current users organisation.
@@ -545,9 +557,9 @@ defmodule WraftDoc.Enterprise do
   """
 
   @spec get_approval_system(Ecto.UUID.t(), User.t()) :: ApprovalSystem.t()
-  def get_approval_system(id, %{organisation_id: org_id}) do
+  def get_approval_system(uuid, %{organisation_id: org_id}) do
     ApprovalSystem
-    |> Repo.get_by(id: id, organisation_id: org_id)
+    |> Repo.get_by(uuid: uuid, organisation_id: org_id)
     |> Repo.preload([:instance, :pre_state, :post_state, :approver, :organisation, :user])
   end
 
@@ -798,7 +810,7 @@ defmodule WraftDoc.Enterprise do
       from(m in Membership,
         join: o in Organisation,
         on: o.id == m.organisation_id,
-        where: o.uuid == ^o_uuid,
+        where: o.id == ^o_uuid,
         preload: [:plan]
       )
 
@@ -968,8 +980,8 @@ defmodule WraftDoc.Enterprise do
 
   # Creates a background job that checks if the membership is expired on the date of membership expiry
   @spec create_membership_expiry_check_job(Membership.t()) :: Oban.Job.t()
-  defp create_membership_expiry_check_job(%Membership{uuid: uuid, end_date: end_date}) do
-    %{membership_uuid: uuid}
+  defp create_membership_expiry_check_job(%Membership{id: id, end_date: end_date}) do
+    %{membership_id: id}
     |> ScheduledWorker.new(scheduled_at: end_date, tags: ["plan_expiry"])
     |> Oban.insert!()
   end
