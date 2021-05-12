@@ -1191,9 +1191,9 @@ defmodule WraftDoc.Document do
 
   # Generate QR code with the UUID of the given Instance.
   @spec generate_qr(Instance.t()) :: String.t()
-  defp generate_qr(%Instance{uuid: uuid, instance_id: i_id}) do
+  defp generate_qr(%Instance{id: id, instance_id: i_id}) do
     qr_code_png =
-      uuid
+      id
       |> EQRCode.encode()
       |> EQRCode.png()
 

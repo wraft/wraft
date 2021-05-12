@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
   setup %{conn: conn} do
     profile = insert(:profile)
-    user = Repo.preload(profile.user, [:profile, :role, :organisation])
+    user = Repo.preload(profile.user, [:profile, :organisation])
 
     conn =
       conn
@@ -186,7 +186,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       assert before_count - 1 == AuthToken |> Repo.all() |> length()
       assert json_response(conn, 200)["name"] == user.name
       assert json_response(conn, 200)["email"] == user.email
-      assert json_response(conn, 200)["id"] == user.uuid
+      assert json_response(conn, 200)["id"] == user.id
     end
 
     test "does not reset password with valid token and invalid attrs" do
@@ -249,7 +249,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       attrs = %{current_password: "encrypt", password: "password"}
       conn = put(conn, Routes.v1_user_path(conn, :update_password, attrs))
 
-      assert json_response(conn, 200)["id"] == user.uuid
+      assert json_response(conn, 200)["id"] == user.id
       assert json_response(conn, 200)["email"] == user.email
       refute json_response(conn, 200)["updated_at"] == user.updated_at
     end
@@ -304,7 +304,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
                "Please enter a password that does not match with your current one.!"
     end
 
-    test "returns not found error when attrs does not contain all required values", %{conn: conn} do
+    test "returns  error when attrs does not contain all required values", %{conn: conn} do
       user = conn.assigns[:current_user]
       insert(:membership, organisation: user.organisation)
 
@@ -315,7 +315,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
       conn = put(conn, Routes.v1_user_path(conn, :update_password, %{}))
 
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "Please provide all necessary datas to login.!"
     end
   end
 

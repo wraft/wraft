@@ -33,7 +33,6 @@ defmodule WraftDoc.Document.Instance do
   end
 
   schema "content" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:instance_id, :string, null: false)
     field(:raw, :string)
     field(:serialized, :map, default: %{})

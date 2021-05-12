@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
 
   def render("user.json", %{user: user}) do
     %{
-      id: user.uuid,
+      id: user.id,
       name: user.name,
       email: user.email,
       email_verify: user.email_verify,
@@ -40,18 +40,18 @@ defmodule WraftDocWeb.Api.V1.UserView do
 
   def render("user_id_and_email.json", %{user: user}) do
     %{
-      id: user.uuid,
+      id: user.id,
       email: user.email
     }
   end
 
   def render("me.json", %{user: me}) do
     %{
-      id: me.uuid,
+      id: me.id,
       name: me.name,
       email: me.email,
       email_verify: me.email_verify,
-      organisation_id: me.organisation.uuid,
+      organisation_id: me.organisation.id,
       inserted_at: me.inserted_at,
       updated_at: me.updated_at,
       profile_pic: me.profile.profile_pic,
@@ -74,7 +74,6 @@ defmodule WraftDocWeb.Api.V1.UserView do
   end
 
   def render("activity.json", %{activity: activity}) do
-    actor = get_actor_name(activity.actor)
     object_details = get_object_data(activity.object_struct, activity.meta)
 
     %{
@@ -82,7 +81,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
       object: activity.object,
       meta: activity.meta,
       inserted_at: activity.inserted_at,
-      actor: actor,
+      actor: render_one(activity.actor, UserView, "user.json", as: :user),
       object_details: object_details
     }
   end
@@ -114,33 +113,30 @@ defmodule WraftDocWeb.Api.V1.UserView do
     }
   end
 
-  defp get_actor_name(%{name: name}), do: name
-  defp get_actor_name(nil), do: nil
-
-  defp get_object_data(%{name: name, uuid: uuid}, _meta) do
+  defp get_object_data(%{name: name, id: id}, _meta) do
     %{
-      id: uuid,
+      id: id,
       name: name
     }
   end
 
-  defp get_object_data(%{title: name, uuid: uuid}, _meta) do
+  defp get_object_data(%{title: name, id: id}, _meta) do
     %{
-      id: uuid,
+      id: id,
       name: name
     }
   end
 
-  defp get_object_data(%{instance_id: name, uuid: uuid}, _meta) do
+  defp get_object_data(%{instance_id: name, id: id}, _meta) do
     %{
-      id: uuid,
+      id: id,
       name: name
     }
   end
 
-  defp get_object_data(%{state: name, uuid: uuid}, _meta) do
+  defp get_object_data(%{state: name, id: id}, _meta) do
     %{
-      id: uuid,
+      id: id,
       name: name
     }
   end
