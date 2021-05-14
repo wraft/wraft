@@ -60,6 +60,8 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def create_layout(_, _, _), do: {:error, :fake}
+
   @doc """
   Upload layout slug file.
   """
@@ -101,10 +103,10 @@ defmodule WraftDoc.Document do
     |> Enum.to_list()
   end
 
-  defp fetch_and_associcate_assets(_layout, _current_user, _params), do: nil
+  defp fetch_and_associcate_assets(_layout, _current_user, _params), do: {:error, :invalid_data}
 
   # Associate the asset with the given layout, ie; insert a LayoutAsset entry.
-  defp associate_layout_and_asset(_layout, _current_user, nil), do: nil
+  defp associate_layout_and_asset(_layout, _current_user, nil), do: {:error, :invalid_data}
 
   defp associate_layout_and_asset(layout, current_user, asset) do
     layout
@@ -199,50 +201,66 @@ defmodule WraftDoc.Document do
   Show a layout.
   """
   @spec show_layout(binary, User.t()) :: %Layout{engine: Engine.t(), creator: User.t()}
-  def show_layout(uuid, user) do
-    uuid
-    |> get_layout(user)
-    |> Repo.preload([:engine, :creator, :assets])
+  def show_layout(id, user) do
+    with %Layout{} = layout <-
+           get_layout(id, user) do
+      Repo.preload(layout, [:engine, :creator, :assets])
+    end
   end
 
   @doc """
   Get a layout from its UUID.
   """
   @spec get_layout(binary, User.t()) :: Layout.t()
-  def get_layout(<<_::288>> = uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Layout, uuid: uuid, organisation_id: org_id)
+  def get_layout(<<_::288>> = id, %{organisation_id: org_id}) do
+    case Repo.get_by(Layout, id: id, organisation_id: org_id) do
+      %Layout{} = layout ->
+        layout
+
+      _ ->
+        {:error, :invalid_id, Layout}
+    end
   end
 
-  def get_layout(_, _), do: nil
+  def get_layout(_, %{organisation_id: _}), do: {:error, :invalid_id, Layout}
+  def get_layout(<<_::288>>, _), do: {:error, :fake}
+  def get_layout(_, _), do: {:error, :invalid_id}
 
   @doc """
   Get a layout asset from its layout's and asset's UUIDs.
   """
   # TODO - improve tests
   @spec get_layout_asset(binary, binary) :: LayoutAsset.t()
-  def get_layout_asset(l_uuid, a_uuid) do
+  def get_layout_asset(<<_::288>> = l_id, <<_::288>> = a_id) do
     query =
       from(la in LayoutAsset,
         join: l in Layout,
-        where: l.uuid == ^l_uuid,
+        where: l.id == ^l_id,
         join: a in Asset,
-        where: a.uuid == ^a_uuid,
+        where: a.id == ^a_id,
         where: la.layout_id == l.id and la.asset_id == a.id
       )
 
-    Repo.one(query)
+    case Repo.one(query) do
+      %LayoutAsset{} = layout_asset -> layout_asset
+      _ -> {:error, :invalid_id}
+    end
   end
+
+  def get_layout_asset(<<_::288>>, _), do: {:error, :invalid_id, Layout}
+  def get_layout_asset(_, <<_::288>>), do: {:error, :invalid_id, Asset}
 
   @doc """
   Update a layout.
   """
   # TODO - improve tests
   @spec update_layout(Layout.t(), User.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
-  def update_layout(layout, current_user, %{"engine_uuid" => engine_uuid} = params) do
-    %Engine{id: id} = get_engine(engine_uuid)
-    {_, params} = Map.pop(params, "engine_uuid")
-    params = Map.merge(params, %{"engine_id" => id})
-    update_layout(layout, current_user, params)
+  def update_layout(layout, current_user, %{"engine_id" => engine_id} = params) do
+    with %Engine{id: id} <- get_engine(engine_id) do
+      {_, params} = Map.pop(params, "engine_id")
+      params = Map.merge(params, %{"engine_id" => id})
+      update_layout(layout, current_user, params)
+    end
   end
 
   def update_layout(layout, %{id: user_id} = current_user, params) do
@@ -846,9 +864,14 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec get_engine(binary) :: Engine.t() | nil
-  def get_engine(engine_uuid) do
-    Repo.get_by(Engine, uuid: engine_uuid)
+  def get_engine(<<_::288>> = engine_id) do
+    case Repo.get(Engine, engine_id) do
+      %Engine{} = engine -> engine
+      _ -> {:error, :invalid_id, Engine}
+    end
   end
+
+  def get_engine(_), do: {:error, :invalid_id, Engine}
 
   @doc """
   Create a theme.
