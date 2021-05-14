@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.InstanceVersionView do
 
   def render("version.json", %{version: version}) do
     %{
-      id: version.uuid,
+      id: version.id,
       version_number: version.version_number,
       raw: version.raw,
       serialised: version.serialized,
