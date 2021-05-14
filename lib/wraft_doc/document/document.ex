@@ -255,18 +255,11 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec update_layout(Layout.t(), User.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
-  def update_layout(layout, current_user, %{"engine_id" => engine_id} = params) do
-    with %Engine{id: id} <- get_engine(engine_id) do
-      {_, params} = Map.pop(params, "engine_id")
-      params = Map.merge(params, %{"engine_id" => id})
-      update_layout(layout, current_user, params)
-    end
-  end
 
   def update_layout(layout, %{id: user_id} = current_user, params) do
     layout
     |> Layout.update_changeset(params)
-    |> Spur.update(%{actor: "#{user_id}"})
+    |> Spur.update(%{actor: user_id})
     |> case do
       {:error, _} = changeset ->
         changeset
