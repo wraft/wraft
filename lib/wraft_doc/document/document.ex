@@ -445,6 +445,25 @@ defmodule WraftDoc.Document do
   Same as create_instance/4, but does not add the insert activity to activity stream.
   """
   # TODO write tests
+  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
+    instance_id = create_instance_id(c_id, prefix)
+    params = Map.merge(params, %{"instance_id" => instance_id})
+
+    c_type
+    |> build_assoc(:instances, creator: current_user, state: state)
+    |> Instance.changeset(params)
+    |> Spur.insert()
+    |> case do
+      {:ok, content} ->
+        Task.start_link(fn -> create_or_update_counter(c_type) end)
+        Task.start_link(fn -> create_initial_version(current_user, content) end)
+        Repo.preload(content, [:content_type, :state, :vendor])
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
   @spec create_instance(ContentType.t(), State.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
