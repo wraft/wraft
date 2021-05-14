@@ -93,7 +93,7 @@ defmodule WraftDoc.Mixfile do
       {:httpoison, "~> 1.6"},
 
       # Activity stream
-      {:spur, git: "https://github.com/shijithkjayan/spur.git", branch: :master},
+      {:spur, git: "https://github.com/shijithkjayan/spur.git"},
       # CSV parser
       {:csv, "~> 2.3.1"},
       # Live dashboard
