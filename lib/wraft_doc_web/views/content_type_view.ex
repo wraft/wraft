@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("create.json", %{content_type: c_type}) do
     %{
-      id: c_type.uuid,
+      id: c_type.id,
       name: c_type.name,
       decription: c_type.description,
       fields: render_many(c_type.fields, ContentTypeView, "field.json", as: :field),
@@ -21,7 +21,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("role_content_type.json", %{content_type: c_type}) do
     %{
-      id: c_type.uuid,
+      id: c_type.id,
       name: c_type.name,
       decription: c_type.description,
       color: c_type.color,
@@ -33,7 +33,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("role_content_types.json", %{content_type: content_type}) do
     %{
-      id: content_type.uuid,
+      id: content_type.id,
       name: content_type.name,
       decription: content_type.description,
       color: content_type.color,
@@ -69,7 +69,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("content_type.json", %{content_type: c_type}) do
     %{
-      id: c_type.uuid,
+      id: c_type.id,
       name: c_type.name,
       decription: c_type.description,
       color: c_type.color,
@@ -81,7 +81,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("c_type_with_layout.json", %{content_type: c_type}) do
     %{
-      id: c_type.uuid,
+      id: c_type.id,
       name: c_type.name,
       decription: c_type.description,
       color: c_type.color,
@@ -94,7 +94,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("c_type_and_fields.json", %{c_type: c_type}) do
     %{
-      id: c_type.uuid,
+      id: c_type.id,
       name: c_type.name,
       decription: c_type.description,
       fields: render_many(c_type.fields, ContentTypeView, "field.json", as: :field),
@@ -107,7 +107,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("show_c_type.json", %{content_type: c_type}) do
     %{
-      id: c_type.uuid,
+      id: c_type.id,
       name: c_type.name,
       decription: c_type.description,
       fields: render_many(c_type.fields, ContentTypeView, "field.json", as: :field),
@@ -122,7 +122,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("field.json", %{field: field}) do
     %{
-      id: field.uuid,
+      id: field.id,
       name: field.name,
       field_type: render_one(field.field_type, FieldTypeView, "field_type.json", as: :field_type)
     }
