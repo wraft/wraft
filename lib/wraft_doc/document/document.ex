@@ -633,10 +633,11 @@ defmodule WraftDoc.Document do
   @spec show_instance(binary, User.t()) ::
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
   def show_instance(instance_id, user) do
-    instance_id
-    |> get_instance(user)
-    |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
-    |> get_built_document()
+    with %Instance{} = instance <- get_instance(instance_id, user) do
+      instance
+      |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
+      |> get_built_document()
+    end
   end
 
   @doc """
@@ -2736,8 +2737,8 @@ defmodule WraftDoc.Document do
     Map.put(acc, :del, del)
   end
 
-  defp get_version(%{id: instance_id}, <<_::288>> = version_uuid) do
-    Repo.get_by(Version, content_id: instance_id, uuid: version_uuid)
+  defp get_version(%{id: instance_id}, <<_::288>> = version_id) do
+    Repo.get_by(Version, content_id: instance_id, id: version_id)
   end
 
   defp get_version(_, _), do: nil

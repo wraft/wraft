@@ -251,7 +251,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert json_response(conn, 200)["raw"] == instance.raw
   end
 
-  test "error not found for user from another organisation", %{conn: conn} do
+  test "error invalid id for user from another organisation", %{conn: conn} do
     current_user = conn.assigns[:current_user]
     insert(:membership, organisation: current_user.organisation)
     user = insert(:user)
@@ -266,7 +266,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     conn = get(conn, Routes.v1_instance_path(conn, :show, instance.id))
 
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
   end
 
   test "lock unlock locks if editable true", %{conn: conn} do
