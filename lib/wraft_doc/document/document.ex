@@ -1055,6 +1055,8 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def create_asset(_, _), do: {:error, :fake}
+
   @doc """
   Upload asset file.
   """
@@ -1073,20 +1075,23 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec asset_index(integer, map) :: map
-  def asset_index(organisation_id, params) do
+  def asset_index(%{organisation_id: organisation_id}, params) do
     query = from(a in Asset, where: a.organisation_id == ^organisation_id, order_by: [desc: a.id])
     Repo.paginate(query, params)
   end
+
+  def asset_index(_, _), do: {:error, :fake}
 
   @doc """
   Show an asset.
   """
   # TODO - improve tests
   @spec show_asset(binary, User.t()) :: %Asset{creator: User.t()}
-  def show_asset(asset_uuid, user) do
-    asset_uuid
-    |> get_asset(user)
-    |> Repo.preload([:creator])
+  def show_asset(asset_id, user) do
+    with %Asset{} = asset <-
+           get_asset(asset_id, user) do
+      Repo.preload(asset, [:creator])
+    end
   end
 
   @doc """
@@ -1094,9 +1099,15 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec get_asset(binary, User.t()) :: Asset.t()
-  def get_asset(uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Asset, uuid: uuid, organisation_id: org_id)
+  def get_asset(<<_::288>> = id, %{organisation_id: org_id}) do
+    case Repo.get_by(Asset, id: id, organisation_id: org_id) do
+      %Asset{} = asset -> asset
+      _ -> {:error, :invalid_id}
+    end
   end
+
+  def get_asset(<<_::288>>, _), do: {:error, :fake}
+  def get_asset(_, %{organisation_id: _}), do: {:error, :invalid_id}
 
   @doc """
   Update an asset.
