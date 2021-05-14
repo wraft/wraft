@@ -193,6 +193,6 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
 
     conn = get(conn, Routes.v1_asset_path(conn, :show, asset.id))
 
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
   end
 end
