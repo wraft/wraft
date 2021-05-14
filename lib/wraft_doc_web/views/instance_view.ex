@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
   def render("create.json", %{content: content}) do
     %{
       content: %{
-        id: content.uuid,
+        id: content.id,
         instance_id: content.instance_id,
         raw: content.raw,
         serialized: content.serialized,
@@ -22,7 +22,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
 
   def render("instance.json", %{instance: instance}) do
     %{
-      id: instance.uuid,
+      id: instance.id,
       instance_id: instance.instance_id,
       raw: instance.raw,
       serialized: instance.serialized,
