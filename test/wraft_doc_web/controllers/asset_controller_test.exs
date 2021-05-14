@@ -88,7 +88,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_asset_path(conn, :update, asset.uuid), params)
+      |> put(Routes.v1_asset_path(conn, :update, asset.id), params)
       |> doc(operation_id: "update_asset")
 
     assert json_response(conn, 200)["name"] == @valid_attrs.name
@@ -109,7 +109,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_asset_path(conn, :update, asset.uuid, @invalid_attrs))
+      |> put(Routes.v1_asset_path(conn, :update, asset.id, @invalid_attrs))
       |> doc(operation_id: "update_asset")
 
     assert json_response(conn, 422)["errors"]["file"] == ["can't be blank"]
@@ -145,7 +145,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_asset_path(conn, :show, asset.uuid))
+    conn = get(conn, Routes.v1_asset_path(conn, :show, asset.id))
 
     assert json_response(conn, 200)["asset"]["name"] == asset.name
   end
@@ -175,7 +175,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
     asset = insert(:asset, creator: user, organisation: user.organisation)
     count_before = Asset |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_asset_path(conn, :delete, asset.uuid))
+    conn = delete(conn, Routes.v1_asset_path(conn, :delete, asset.id))
     assert count_before - 1 == Asset |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == asset.name
   end
@@ -191,7 +191,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_asset_path(conn, :show, asset.uuid))
+    conn = get(conn, Routes.v1_asset_path(conn, :show, asset.id))
 
     assert json_response(conn, 404) == "Not Found"
   end
