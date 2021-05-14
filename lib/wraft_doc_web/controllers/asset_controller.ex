@@ -134,14 +134,14 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, params) do
-    %{organisation_id: org_id} = conn.assigns[:current_user]
+    current_user = conn.assigns[:current_user]
 
     with %{
            entries: assets,
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.asset_index(org_id, params) do
+         } <- Document.asset_index(current_user, params) do
       render(conn, "index.json",
         assets: assets,
         page_number: page_number,
@@ -168,10 +168,10 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => asset_uuid}) do
+  def show(conn, %{"id" => asset_id}) do
     current_user = conn.assigns.current_user
 
-    with %Asset{} = asset <- Document.show_asset(asset_uuid, current_user) do
+    with %Asset{} = asset <- Document.show_asset(asset_id, current_user) do
       render(conn, "show.json", asset: asset)
     end
   end
@@ -197,10 +197,10 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset{} = asset <- Document.get_asset(uuid, current_user),
+    with %Asset{} = asset <- Document.get_asset(id, current_user),
          {:ok, asset} <- Document.update_asset(asset, current_user, params) do
       render(conn, "asset.json", asset: asset)
     end
@@ -225,10 +225,10 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset{} = asset <- Document.get_asset(uuid, current_user),
+    with %Asset{} = asset <- Document.get_asset(id, current_user),
          {:ok, %Asset{}} <- Document.delete_asset(asset, current_user) do
       render(conn, "asset.json", asset: asset)
     end
