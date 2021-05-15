@@ -203,7 +203,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
     case Document.generate_chart(params) do
@@ -213,7 +213,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
           "tex_chart" => Document.generate_tex_chart(params)
         })
 
-        with %Block{} = block <- Document.get_block(uuid, current_user),
+        with %Block{} = block <- Document.get_block(id, current_user),
              %Block{} = block <- Document.update_block(block, params) do
           render(conn, "update.json", block: block)
         end
@@ -240,10 +240,10 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def show(conn, %{"id" => uuid}) do
+  def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Block{} = block <- Document.get_block(uuid, current_user) do
+    with %Block{} = block <- Document.get_block(id, current_user) do
       render(conn, "show.json", block: block)
     end
   end
@@ -263,10 +263,10 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Block{} = block <- Document.get_block(uuid, current_user),
+    with %Block{} = block <- Document.get_block(id, current_user),
          {:ok, %Block{}} <- Document.delete_block(block) do
       render(conn, "block.json", block: block)
     end
