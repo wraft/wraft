@@ -82,7 +82,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_comment_path(conn, :update, comment.uuid, @valid_attrs))
+      |> put(Routes.v1_comment_path(conn, :update, comment.id, @valid_attrs))
       |> doc(operation_id: "update_comment")
 
     assert json_response(conn, 200)["comment"] == @valid_attrs.comment
@@ -100,7 +100,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_comment_path(conn, :update, comment.uuid, @invalid_attrs))
+      |> put(Routes.v1_comment_path(conn, :update, comment.id, @invalid_attrs))
       |> doc(operation_id: "update_comment")
 
     assert json_response(conn, 422)["errors"]["comment"] == ["can't be blank"]
@@ -157,11 +157,11 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
     conn =
       get(
         conn,
-        Routes.v1_comment_path(conn, :reply, comment.uuid, %{
+        Routes.v1_comment_path(conn, :reply, comment.id, %{
           page: 1,
           per_page: 10,
           master_id: a1.master_id,
-          comment_id: comment.uuid
+          comment_id: comment.id
         })
       )
 
@@ -180,7 +180,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_comment_path(conn, :show, comment.uuid))
+    conn = get(conn, Routes.v1_comment_path(conn, :show, comment.id))
 
     assert json_response(conn, 200)["comment"] == comment.comment
   end
@@ -192,7 +192,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_comment_path(conn, :show, Ecto.UUID.generate()))
-    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+    assert json_response(conn, 400)["errors"] == "The Comment id does not exist..!"
   end
 
   test "delete comment by given id", %{conn: conn} do
@@ -205,7 +205,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
     comment = insert(:comment, user: user, organisation: user.organisation)
     count_before = Comment |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_comment_path(conn, :delete, comment.uuid))
+    conn = delete(conn, Routes.v1_comment_path(conn, :delete, comment.id))
     assert count_before - 1 == Comment |> Repo.all() |> length()
     assert json_response(conn, 200)["comment"] == comment.comment
   end
@@ -219,8 +219,8 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_comment_path(conn, :show, comment.uuid))
+    conn = get(conn, Routes.v1_comment_path(conn, :show, comment.id))
 
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The Comment id does not exist..!"
   end
 end

@@ -83,7 +83,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Block |> Repo.all() |> length()
-    conn = put(conn, Routes.v1_block_path(conn, :update, block.uuid), params)
+    conn = put(conn, Routes.v1_block_path(conn, :update, block.id), params)
 
     assert json_response(conn, 200)["name"] == @update_valid_attrs["name"]
     count_after = Block |> Repo.all() |> length()
@@ -100,7 +100,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = put(conn, Routes.v1_block_path(conn, :update, block.uuid), @invalid_attrs)
+    conn = put(conn, Routes.v1_block_path(conn, :update, block.id), @invalid_attrs)
     assert json_response(conn, 400)["message"] == "invalid endpoint"
   end
 
@@ -115,7 +115,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_block_path(conn, :show, block.uuid))
+    conn = get(conn, Routes.v1_block_path(conn, :show, block.id))
     assert json_response(conn, 200)["name"] == block.name
   end
 
@@ -129,7 +129,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
       |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_block_path(conn, :show, Ecto.UUID.autogenerate()))
-    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+    assert json_response(conn, 400)["errors"] == "The Block id does not exist..!"
   end
 
   test "deletes the block and renders the block.json", %{conn: conn} do
@@ -143,7 +143,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Block |> Repo.all() |> length()
-    conn = delete(conn, Routes.v1_block_path(conn, :delete, block.uuid))
+    conn = delete(conn, Routes.v1_block_path(conn, :delete, block.id))
     count_after = Block |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == block.name
     assert count_before - 1 == count_after
@@ -159,7 +159,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, user)
 
-    conn = get(conn, Routes.v1_block_path(conn, :show, block.uuid))
-    assert json_response(conn, 404) == "Not Found"
+    conn = get(conn, Routes.v1_block_path(conn, :show, block.id))
+    assert json_response(conn, 400)["errors"] == "The Block id does not exist..!"
   end
 end

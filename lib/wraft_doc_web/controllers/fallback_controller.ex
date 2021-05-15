@@ -106,7 +106,7 @@ defmodule WraftDocWeb.FallbackController do
   end
 
   def call(conn, {:error, :invalid_data}) do
-    body = Jason.encode!(%{errors: "Did't have enough data or associates..!"})
+    body = Jason.encode!(%{errors: "Did't have enough body parameters..!"})
     conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 

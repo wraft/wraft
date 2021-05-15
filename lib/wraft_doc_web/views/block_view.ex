@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.BlockView do
 
   def render("block.json", %{block: block}) do
     %{
-      id: block.uuid,
+      id: block.id,
       name: block.name,
       btype: block.btype,
       dataset: block.dataset,
@@ -18,7 +18,7 @@ defmodule WraftDocWeb.Api.V1.BlockView do
 
   def render("create.json", %{block: block}) do
     %{
-      id: block.uuid,
+      id: block.id,
       name: block.name,
       btype: block.btype,
       dataset: block.dataset,
@@ -33,7 +33,7 @@ defmodule WraftDocWeb.Api.V1.BlockView do
 
   def render("update.json", %{block: block}) do
     %{
-      id: block.uuid,
+      id: block.id,
       name: block.name,
       btype: block.btype,
       dataset: block.dataset,
@@ -47,7 +47,7 @@ defmodule WraftDocWeb.Api.V1.BlockView do
 
   def render("show.json", %{block: block}) do
     %{
-      id: block.uuid,
+      id: block.id,
       name: block.name,
       btype: block.btype,
       dataset: block.dataset,

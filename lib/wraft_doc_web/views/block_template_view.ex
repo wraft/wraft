@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateView do
 
   def render("block_template.json", %{block_template: block_template}) do
     %{
-      id: block_template.uuid,
+      id: block_template.id,
       title: block_template.title,
       body: block_template.body,
       serialized: block_template.serialized,
