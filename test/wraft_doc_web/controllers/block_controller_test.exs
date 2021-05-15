@@ -129,7 +129,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
       |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_block_path(conn, :show, Ecto.UUID.autogenerate()))
-    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+    assert json_response(conn, 400)["errors"] == "The Block id does not exist..!"
   end
 
   test "deletes the block and renders the block.json", %{conn: conn} do
@@ -160,6 +160,6 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
       |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_block_path(conn, :show, block.id))
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The Block id does not exist..!"
   end
 end
