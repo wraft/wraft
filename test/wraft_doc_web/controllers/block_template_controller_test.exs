@@ -78,7 +78,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_block_template_path(conn, :update, block_template.uuid, @valid_attrs))
+      |> put(Routes.v1_block_template_path(conn, :update, block_template.id, @valid_attrs))
       |> doc(operation_id: "update_resource")
 
     assert json_response(conn, 200)["title"] == @valid_attrs.title
@@ -97,7 +97,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_block_template_path(conn, :update, block_template.uuid, @invalid_attrs))
+      |> put(Routes.v1_block_template_path(conn, :update, block_template.id, @invalid_attrs))
       |> doc(operation_id: "update_resource")
 
     assert json_response(conn, 422)["errors"]["title"] == ["can't be blank"]
@@ -130,7 +130,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_block_template_path(conn, :show, block_template.uuid))
+    conn = get(conn, Routes.v1_block_template_path(conn, :show, block_template.id))
 
     assert json_response(conn, 200)["title"] == block_template.title
   end
@@ -142,7 +142,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_block_template_path(conn, :show, Ecto.UUID.generate()))
-    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+    assert json_response(conn, 400)["errors"] == "The BlockTemplate id does not exist..!"
   end
 
   test "delete block_template by given id", %{conn: conn} do
@@ -155,7 +155,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
     block_template = insert(:block_template, organisation: user.organisation)
     count_before = BlockTemplate |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_block_template_path(conn, :delete, block_template.uuid))
+    conn = delete(conn, Routes.v1_block_template_path(conn, :delete, block_template.id))
     assert count_before - 1 == BlockTemplate |> Repo.all() |> length()
     assert json_response(conn, 200)["title"] == block_template.title
   end
@@ -187,8 +187,8 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_block_template_path(conn, :show, block_template.uuid))
+    conn = get(conn, Routes.v1_block_template_path(conn, :show, block_template.id))
 
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The BlockTemplate id does not exist..!"
   end
 end
