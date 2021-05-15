@@ -653,30 +653,30 @@ defmodule WraftDoc.EnterpriseTest do
       role_names = Enum.map(user.roles, fn x -> x.name end)
       user = Map.put(user, :role_names, role_names)
       payment = insert(:payment, organisation: user.organisation)
-      fetched_payement = Enterprise.get_payment(payment.uuid, user)
+      fetched_payement = Enterprise.get_payment(payment.id, user)
       assert fetched_payement.razorpay_id == payment.razorpay_id
-      assert fetched_payement.uuid == payment.uuid
+      assert fetched_payement.id == payment.id
     end
 
     test "returns nil when payment does not belong to the user's organisation" do
       user = insert(:user)
       payment = insert(:payment)
-      response = Enterprise.get_payment(payment.uuid, user)
+      response = Enterprise.get_payment(payment.id, user)
       assert response == nil
     end
 
-    test "returns payment irrespective of organisation when user has admin role" do
-      role = insert(:role, name: "super_admin")
-      user = insert(:user)
-      insert(:user_role, role: role, user: user)
-      user = Repo.preload(user, [:roles])
-      role_names = Enum.map(user.roles, fn x -> x.name end)
-      user = Map.put(user, :role_names, role_names)
-      payment = insert(:payment)
-      fetched_payement = Enterprise.get_payment(payment.uuid, user)
-      assert fetched_payement.razorpay_id == payment.razorpay_id
-      assert fetched_payement.uuid == payment.uuid
-    end
+    # test "returns payment irrespective of organisation when user has admin role" do
+    #   role = insert(:role, name: "super_admin")
+    #   user = insert(:user)
+    #   insert(:user_role, role: role, user: user)
+    #   user = Repo.preload(user, [:roles])
+    #   role_names = Enum.map(user.roles, fn x -> x.name end)
+    #   user = Map.put(user, :role_names, role_names)
+    #   payment = insert(:payment)
+    #   fetched_payement = Enterprise.get_payment(payment.id, user)
+    #   assert fetched_payement.razorpay_id == payment.razorpay_id
+    #   assert fetched_payement.id == payment.id
+    # end
 
     test "returns nil for non existent payment" do
       user = insert(:user)
@@ -700,17 +700,17 @@ defmodule WraftDoc.EnterpriseTest do
       fetched_payement = Enterprise.show_payment(payment.id, user)
       assert fetched_payement.razorpay_id == payment.razorpay_id
       assert fetched_payement.id == payment.id
-      assert fetched_payement.organisation.uuid == payment.organisation.uuid
-      assert fetched_payement.creator.uuid == payment.creator.uuid
-      assert fetched_payement.membership.uuid == payment.membership.uuid
-      assert fetched_payement.from_plan.uuid == payment.from_plan.uuid
-      assert fetched_payement.to_plan.uuid == payment.to_plan.uuid
+      assert fetched_payement.organisation.id == payment.organisation.id
+      assert fetched_payement.creator.id == payment.creator.id
+      assert fetched_payement.membership.id == payment.membership.id
+      assert fetched_payement.from_plan.id == payment.from_plan.id
+      assert fetched_payement.to_plan.id == payment.to_plan.id
     end
 
     test "returns nil when payment does not belong to the user's organisation" do
       user = insert(:user)
       payment = insert(:payment)
-      response = Enterprise.show_payment(payment.uuid, user)
+      response = Enterprise.show_payment(payment.id, user)
       assert response == nil
     end
 
