@@ -190,7 +190,7 @@ defmodule WraftDoc.Document do
     query =
       from(l in Layout,
         where: l.organisation_id == ^org_id,
-        order_by: [desc: l.id],
+        order_by: [desc: l.inserted_at],
         preload: [:engine, :assets]
       )
 
