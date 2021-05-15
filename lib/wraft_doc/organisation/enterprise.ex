@@ -47,13 +47,18 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Get a state from its UUID and user's organisation.
   """
-  @spec get_state(User.t(), Ecto.UUID.t()) :: State.t() | nil
+  @spec get_state(User.t(), Ecto.UUID.t()) :: State.t() | {:error, :invalid_id}
   def get_state(%User{organisation_id: org_id}, <<_::288>> = state_id) do
     query = from(s in State, where: s.id == ^state_id and s.organisation_id == ^org_id)
-    Repo.one(query)
+
+    case Repo.one(query) do
+      %State{} = state -> state
+      _ -> {:error, :invalid_id}
+    end
   end
 
-  def get_state(_, _), do: nil
+  def get_state(%User{organisation_id: _org_id}, _), do: {:error, :invalid_id}
+  def get_state(_, <<_::288>>), do: {:error, :fake}
 
   @doc """
   Create a controlled flow flow.
@@ -298,8 +303,8 @@ defmodule WraftDoc.Enterprise do
         Task.start_link(fn -> create_membership(organisation) end)
         organisation
 
-      {:error, changeset} ->
-        {:error, changeset}
+      {:error, _} = changeset ->
+        changeset
     end
   end
 
@@ -341,13 +346,18 @@ defmodule WraftDoc.Enterprise do
   @spec check_permission(User.t(), binary) :: Organisation.t() | {:error, :no_permission}
 
   def check_permission(
-        %{organisation: %{id: cuo_id, role_names: role_names} = organisation},
+        %{organisation: %{id: cuo_id} = organisation, role_names: role_names},
         o_id
       ) do
     cond do
-      cuo_id === o_id -> organisation
-      "super_admin" in role_names -> organisation
-      true -> {:error, :no_permission}
+      cuo_id === o_id ->
+        organisation
+
+      "super_admin" in role_names ->
+        organisation
+
+      true ->
+        {:error, :no_permission}
     end
   end
 

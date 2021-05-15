@@ -1,6 +1,8 @@
 defmodule WraftDocWeb.Api.V1.OrganisationController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
+  plug(WraftDocWeb.Plug.Authorized)
+  plug(WraftDocWeb.Plug.AddActionLog)
   alias WraftDoc.{Account, Account.Role, Enterprise, Enterprise.Organisation}
 
   action_fallback(WraftDocWeb.FallbackController)
@@ -174,7 +176,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with organisation <-
+    with %Organisation{} = organisation <-
            Enterprise.create_organisation(current_user, params) do
       render(conn, "create.json", organisation: organisation)
     end
@@ -234,8 +236,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    with %Organisation{} = organisation <- Enterprise.get_organisation(id) do
-      render(conn, "show.json", organisation: organisation)
+    case Enterprise.get_organisation(id) do
+      %Organisation{} = organisation -> render(conn, "show.json", organisation: organisation)
+      _ -> {:error, :invalid_id}
     end
   end
 

@@ -45,13 +45,13 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, user)
 
-    params = Map.merge(@valid_attrs, %{state_uuid: state.uuid, vendor_uuid: vendor.uuid})
+    params = Map.merge(@valid_attrs, %{state_id: state.id, vendor_id: vendor.id})
 
     count_before = Instance |> Repo.all() |> length()
 
     conn =
       conn
-      |> post(Routes.v1_instance_path(conn, :create, content_type.uuid), params)
+      |> post(Routes.v1_instance_path(conn, :create, content_type.id), params)
       |> doc(operation_id: "create_instance")
 
     assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
@@ -71,11 +71,11 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> assign(:current_user, user)
 
     count_before = Instance |> Repo.all() |> length()
-    params = Map.merge(@invalid_attrs, %{state_uuid: state.uuid, vendor_uuid: vendor.uuid})
+    params = Map.merge(@invalid_attrs, %{state_id: state.id, vendor_id: vendor.id})
 
     conn =
       conn
-      |> post(Routes.v1_instance_path(conn, :create, content_type.uuid), params)
+      |> post(Routes.v1_instance_path(conn, :create, content_type.id), params)
       |> doc(operation_id: "create_instance")
 
     assert json_response(conn, 422)["errors"]["raw"] == ["can't be blank"]
@@ -97,13 +97,13 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     state = insert(:state)
 
     params =
-      @valid_attrs |> Map.put(:content_type_id, content_type.uuid) |> Map.put(:state_id, state.id)
+      @valid_attrs |> Map.put(:content_type_id, content_type.id) |> Map.put(:state_id, state.id)
 
     count_before = Instance |> Repo.all() |> length()
 
     conn =
       conn
-      |> put(Routes.v1_instance_path(conn, :update, instance.uuid, params))
+      |> put(Routes.v1_instance_path(conn, :update, instance.id, params))
       |> doc(operation_id: "update_asset")
 
     assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
@@ -125,13 +125,13 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     state = insert(:state)
 
     params =
-      @valid_attrs |> Map.put(:content_type_id, content_type.uuid) |> Map.put(:state_id, state.id)
+      @valid_attrs |> Map.put(:content_type_id, content_type.id) |> Map.put(:state_id, state.id)
 
     version_count_before = Version |> Repo.all() |> length()
 
     conn =
       conn
-      |> put(Routes.v1_instance_path(conn, :update, instance.uuid, params))
+      |> put(Routes.v1_instance_path(conn, :update, instance.id, params))
       |> doc(operation_id: "update_asset")
 
     version_count_after = Version |> Repo.all() |> length()
@@ -154,7 +154,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_instance_path(conn, :update, instance.uuid, @invalid_attrs))
+      |> put(Routes.v1_instance_path(conn, :update, instance.id, @invalid_attrs))
       |> doc(operation_id: "update_asset")
 
     assert json_response(conn, 422)["errors"]["raw"] == ["can't be blank"]
@@ -175,7 +175,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_instance_path(conn, :index, content_type.uuid))
+    conn = get(conn, Routes.v1_instance_path(conn, :index, content_type.id))
     dt_index = json_response(conn, 200)["contents"]
     instances = Enum.map(dt_index, fn %{"content" => %{"raw" => raw}} -> raw end)
     assert List.to_string(instances) =~ dt1.raw
@@ -215,7 +215,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_instance_path(conn, :show, instance.uuid))
+    conn = get(conn, Routes.v1_instance_path(conn, :show, instance.id))
 
     assert json_response(conn, 200)["content"]["raw"] == instance.raw
   end
@@ -230,7 +230,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_instance_path(conn, :show, Ecto.UUID.generate()))
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
   end
 
   test "delete instance by given id", %{conn: conn} do
@@ -246,12 +246,12 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     instance = insert(:instance, creator: user, content_type: content_type)
     count_before = Instance |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_instance_path(conn, :delete, instance.uuid))
+    conn = delete(conn, Routes.v1_instance_path(conn, :delete, instance.id))
     assert count_before - 1 == Instance |> Repo.all() |> length()
     assert json_response(conn, 200)["raw"] == instance.raw
   end
 
-  test "error not found for user from another organisation", %{conn: conn} do
+  test "error invalid id for user from another organisation", %{conn: conn} do
     current_user = conn.assigns[:current_user]
     insert(:membership, organisation: current_user.organisation)
     user = insert(:user)
@@ -264,9 +264,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, current_user)
 
-    conn = get(conn, Routes.v1_instance_path(conn, :show, instance.uuid))
+    conn = get(conn, Routes.v1_instance_path(conn, :show, instance.id))
 
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
   end
 
   test "lock unlock locks if editable true", %{conn: conn} do
@@ -284,7 +284,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     instance = insert(:instance, creator: current_user, content_type: content_type)
 
     conn =
-      patch(conn, Routes.v1_instance_path(conn, :lock_unlock, instance.uuid), %{editable: true})
+      patch(conn, Routes.v1_instance_path(conn, :lock_unlock, instance.id), %{editable: true})
 
     assert json_response(conn, 200)["content"]["editable"] == true
   end
@@ -304,7 +304,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     instance =
       insert(:instance, creator: current_user, content_type: content_type, editable: false)
 
-    conn = patch(conn, Routes.v1_instance_path(conn, :update, instance.uuid), @valid_attrs)
+    conn = patch(conn, Routes.v1_instance_path(conn, :update, instance.id), @valid_attrs)
 
     assert json_response(conn, 422)["errors"] ==
              "The instance is not avaliable to edit..!!"
@@ -373,7 +373,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
         raw: "Offer letter to ibrahim sadique to the position"
       )
 
-    conn = get(conn, Routes.v1_instance_path(conn, :change, instance.uuid, iv2.uuid))
+    conn = get(conn, Routes.v1_instance_path(conn, :change, instance.id, iv2.id))
 
     assert length(json_response(conn, 200)["del"]) > 0
     assert length(json_response(conn, 200)["ins"]) > 0

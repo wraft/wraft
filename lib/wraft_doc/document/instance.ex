@@ -59,9 +59,10 @@ defmodule WraftDoc.Document.Instance do
       :content_type_id,
       :type,
       :creator_id,
-      :vendor_id
+      :vendor_id,
+      :state_id
     ])
-    |> validate_required([:instance_id, :raw, :serialized, :type, :content_type_id])
+    |> validate_required([:instance_id, :raw, :serialized, :type, :content_type_id, :state_id])
     |> unique_constraint(:instance_id,
       message: "Instance with the ID exists.!",
       name: :content_organisation_unique_index
