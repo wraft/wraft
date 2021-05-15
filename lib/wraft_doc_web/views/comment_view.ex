@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Api.V1.CommentView do
 
   def render("comment.json", %{comment: comment}) do
     %{
-      id: comment.uuid,
+      id: comment.id,
       comment: comment.comment,
       is_parent: comment.is_parent,
       parent_id: comment.parent_id,
@@ -39,7 +39,7 @@ defmodule WraftDocWeb.Api.V1.CommentView do
 
   def render("delete.json", %{comment: comment}) do
     %{
-      id: comment.uuid,
+      id: comment.id,
       comment: comment.comment,
       is_parent: comment.is_parent,
       parent_id: comment.parent_id,

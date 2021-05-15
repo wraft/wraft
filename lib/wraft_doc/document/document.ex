@@ -1993,7 +1993,7 @@ defmodule WraftDoc.Document do
   Create a comment
   """
   # TODO - improve tests
-  def create_comment(%{organisation_id: org_id} = current_user, params \\ %{}) do
+  def create_comment(%{organisation_id: org_id} = current_user, params) do
     params = Map.put(params, "organisation_id", org_id)
 
     current_user
@@ -2009,26 +2009,34 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def create_comment(_, _), do: {:error, :fake}
+
   @doc """
   Get a comment by uuid.
   """
   # TODO - improve tests
   @spec get_comment(Ecto.UUID.t(), User.t()) :: Comment.t() | nil
-  def get_comment(<<_::288>> = uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Comment, uuid: uuid, organisation_id: org_id)
+  def get_comment(<<_::288>> = id, %{organisation_id: org_id}) do
+    case Repo.get_by(Comment, id: id, organisation_id: org_id) do
+      %Comment{} = comment -> comment
+      _ -> {:error, :invalid_id, "Comment"}
+    end
   end
+
+  def get_comment(<<_::288>>, _), do: {:error, :fake}
+  def get_comment(_, %{organisation_id: _}), do: {:error, :invalid_id, "Comment"}
+  def get_comment(_, _), do: {:error, :invalid_id, "Comment"}
 
   @doc """
   Fetch a comment and all its details.
   """
   # TODO - improve tests
   @spec show_comment(Ecto.UUID.t(), User.t()) :: Comment.t() | nil
-  def show_comment(<<_::288>> = uuid, user) do
-    uuid |> get_comment(user) |> Repo.preload([{:user, :profile}])
+  def show_comment(id, user) do
+    with %Comment{} = comment <- get_comment(id, user) do
+      Repo.preload(comment, [{:user, :profile}])
+    end
   end
-
-  @spec show_comment(any) :: nil
-  def show_comment(_), do: nil
 
   @doc """
   Updates a comment
@@ -2071,6 +2079,10 @@ defmodule WraftDoc.Document do
     Repo.paginate(query, params)
   end
 
+  def comment_index(%{organisation_id: _}, _), do: {:error, :invalid_data}
+  def comment_index(_, %{"master_id" => _}), do: {:error, :fake}
+  def comment_index(_, _), do: {:error, :invalid_data}
+
   @doc """
    Replies under a comment
   """
@@ -2094,6 +2106,10 @@ defmodule WraftDoc.Document do
       Repo.paginate(query, params)
     end
   end
+
+  def comment_replies(_, %{"master_id" => _, "comment_id" => _}), do: {:error, :fake}
+  def comment_replies(%{organisation_id: _}, _), do: {:error, :invalid_data}
+  def comment_replies(_, _), do: {:error, :invalid_data}
 
   @doc """
   Create a pipeline.
