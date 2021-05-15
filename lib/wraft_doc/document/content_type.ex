@@ -55,7 +55,6 @@ defmodule WraftDoc.Document.ContentType do
   def update_changeset(%ContentType{} = content_type, attrs \\ %{}) do
     content_type
     |> cast(attrs, [:name, :description, :color, :layout_id, :flow_id, :prefix])
-    |> validate_required([:name, :description, :layout_id, :flow_id, :prefix])
     |> unique_constraint(:name,
       message: "Content type with the same name under your organisation exists.!",
       name: :content_type_organisation_unique_index

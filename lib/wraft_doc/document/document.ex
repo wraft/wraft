@@ -30,7 +30,7 @@ defmodule WraftDoc.Document do
     Document.Pipeline.TriggerHistory,
     Document.Theme,
     Enterprise,
-    Enterprise.Flow,
+    # Enterprise.Flow,
     Enterprise.Flow.State,
     Enterprise.Vendor,
     Repo
@@ -121,6 +121,19 @@ defmodule WraftDoc.Document do
     |> build_assoc(:content_types)
     |> ContentType.changeset(params)
     |> Spur.insert()
+    |> case do
+      {:ok, %ContentType{} = content_type} ->
+        Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
+  def update_content_type(content_type, %{id: user_id}, params) do
+    content_type
+    |> ContentType.update_changeset(params)
+    |> Spur.update(%{actor: "#{user_id}"})
     |> case do
       {:ok, %ContentType{} = content_type} ->
         Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
@@ -369,28 +382,25 @@ defmodule WraftDoc.Document do
     Repo.one(query)
   end
 
-  @doc """
-  Update a content type.
-  """
   # TODO - write tests
-  @spec update_content_type(ContentType.t(), User.t(), map) ::
-          %ContentType{
-            layout: Layout.t(),
-            creator: User.t()
-          }
-          | {:error, Ecto.Changeset.t()}
-  def update_content_type(
-        content_type,
-        user,
-        %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
-      ) do
-    %Layout{id: id} = get_layout(layout_uuid, user)
-    %Flow{id: f_id} = Enterprise.get_flow(f_uuid, user)
-    {_, params} = Map.pop(params, "layout_uuid")
-    {_, params} = Map.pop(params, "flow_uuid")
-    params = Map.merge(params, %{"layout_id" => id, "flow_id" => f_id})
-    update_content_type(content_type, user, params)
-  end
+  # @spec update_content_type(ContentType.t(), User.t(), map) ::
+  #         %ContentType{
+  #           layout: Layout.t(),
+  #           creator: User.t()
+  #         }
+  #         | {:error, Ecto.Changeset.t()}
+  # def update_content_type(
+  #       content_type,
+  #       user,
+  #       %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
+  #     ) do
+  #   %Layout{id: id} = get_layout(layout_uuid, user)
+  #   %Flow{id: f_id} = Enterprise.get_flow(f_uuid, user)
+  #   {_, params} = Map.pop(params, "layout_uuid")
+  #   {_, params} = Map.pop(params, "flow_uuid")
+  #   params = Map.merge(params, %{"layout_id" => id, "flow_id" => f_id})
+  #   update_content_type(content_type, user, params)
+  # end
 
   # def update_content_type(content_type, %User{id: id} = user, params) do
   #   content_type
