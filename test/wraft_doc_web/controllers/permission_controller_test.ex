@@ -39,7 +39,7 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Permission |> Repo.all() |> length()
-    params = Map.merge(@valid_attrs, %{role_uuid: role.uuid, resource_uuid: resource.uuid})
+    params = Map.merge(@valid_attrs, %{role_id: role.id, resource_id: resource.id})
 
     conn =
       conn
@@ -48,30 +48,6 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
 
     assert count_before + 1 == Permission |> Repo.all() |> length()
     assert json_response(conn, 200)["#{resource.category}_#{resource.action}"] == [role.name]
-  end
-
-  test "does not create permissions by invalid attrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
-    count_before = Permission |> Repo.all() |> length()
-
-    params =
-      Map.merge(@invalid_attrs, %{
-        role_uuid: Ecto.UUID.generate(),
-        resource_uuid: Ecto.UUID.generate()
-      })
-
-    conn =
-      conn
-      |> post(Routes.v1_permission_path(conn, :create, params))
-      |> doc(operation_id: "create_permission")
-
-    # assert json_response(conn, 422)["errors"]["role"] == ["can't be blank"]
-    assert json_response(conn, 404) == "Not Found"
-    assert count_before == Permission |> Repo.all() |> length()
   end
 
   test "index lists permissions by current user", %{conn: conn} do
@@ -108,7 +84,7 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
     permission = insert(:permission)
     count_before = Permission |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_permission_path(conn, :delete, permission.uuid))
+    conn = delete(conn, Routes.v1_permission_path(conn, :delete, permission.id))
     assert count_before - 1 == Permission |> Repo.all() |> length()
     assert json_response(conn, 200)["role_id"] == permission.role.id
   end
