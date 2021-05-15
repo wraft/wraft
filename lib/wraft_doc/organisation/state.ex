@@ -33,8 +33,8 @@ defmodule WraftDoc.Enterprise.Flow.State do
 
   def changeset(%State{} = flow, attrs \\ %{}) do
     flow
-    |> cast(attrs, [:state, :order, :organisation_id])
-    |> validate_required([:state, :order, :organisation_id])
+    |> cast(attrs, [:state, :order, :organisation_id, :flow_id])
+    |> validate_required([:state, :order, :organisation_id, :flow_id])
     |> unique_constraint(:state,
       message: "State already created.!",
       name: :flow_state_unique_index

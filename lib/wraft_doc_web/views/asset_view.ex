@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.AssetView do
 
   def render("asset.json", %{asset: asset}) do
     %{
-      id: asset.uuid,
+      id: asset.id,
       name: asset.name,
       file: generate_url(asset),
       inserted_at: asset.inserted_at,

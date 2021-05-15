@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.ContentType, Document.Layout, Enterprise, Enterprise.Flow}
+  alias WraftDoc.{Document, Document.ContentType}
 
   def swagger_definitions do
     %{
@@ -507,15 +507,11 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"layout_uuid" => layout_uuid, "flow_uuid" => flow_uuid} = params) do
+  def create(conn, params) do
     current_user = conn.assigns[:current_user]
+    content_type = Document.create_content_type(current_user, params)
 
-    with %Layout{} = layout <- Document.get_layout(layout_uuid, current_user),
-         %Flow{} = flow <- Enterprise.get_flow(flow_uuid, current_user),
-         %ContentType{} = content_type <-
-           Document.create_content_type(current_user, layout, flow, params) do
-      render(conn, :create, content_type: content_type)
-    end
+    render(conn, "create.json", content_type: content_type)
   end
 
   @doc """
@@ -567,10 +563,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => uuid}) do
+  def show(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <- Document.show_content_type(current_user, uuid) do
+    with %ContentType{} = content_type <- Document.show_content_type(current_user, id) do
       render(conn, "show.json", content_type: content_type)
     end
   end
@@ -624,10 +620,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <- Document.get_content_type(current_user, uuid),
+    with %ContentType{} = content_type <- Document.get_content_type(current_user, id),
          {:ok, %ContentType{}} <- Document.delete_content_type(content_type, current_user) do
       render(conn, "content_type.json", content_type: content_type)
     end
@@ -693,8 +689,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def show_content_type_role(conn, %{"id" => uuid}) do
-    content_type = Document.get_content_type_roles(uuid)
+  def show_content_type_role(conn, %{"id" => id}) do
+    content_type = Document.get_content_type_roles(id)
 
     render(conn, "role_content_types.json", content_type: content_type)
   end

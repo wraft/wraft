@@ -47,13 +47,18 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Get a state from its UUID and user's organisation.
   """
-  @spec get_state(User.t(), Ecto.UUID.t()) :: State.t() | nil
-  def get_state(%User{organisation_id: org_id}, <<_::288>> = state_uuid) do
-    query = from(s in State, where: s.uuid == ^state_uuid and s.organisation_id == ^org_id)
-    Repo.one(query)
+  @spec get_state(User.t(), Ecto.UUID.t()) :: State.t() | {:error, :invalid_id}
+  def get_state(%User{organisation_id: org_id}, <<_::288>> = state_id) do
+    query = from(s in State, where: s.id == ^state_id and s.organisation_id == ^org_id)
+
+    case Repo.one(query) do
+      %State{} = state -> state
+      _ -> {:error, :invalid_id}
+    end
   end
 
-  def get_state(_, _), do: nil
+  def get_state(%User{organisation_id: _org_id}, _), do: {:error, :invalid_id}
+  def get_state(_, <<_::288>>), do: {:error, :fake}
 
   @doc """
   Create a controlled flow flow.
@@ -517,7 +522,7 @@ defmodule WraftDoc.Enterprise do
             approver,
             current_user.id,
             "assigned_as_approver",
-            approval_system.uuid,
+            approval_system.id,
             ApprovalSystem
           )
         end)
@@ -562,9 +567,9 @@ defmodule WraftDoc.Enterprise do
   """
 
   @spec get_approval_system(Ecto.UUID.t(), User.t()) :: ApprovalSystem.t()
-  def get_approval_system(uuid, %{organisation_id: org_id}) do
+  def get_approval_system(id, %{organisation_id: org_id}) do
     ApprovalSystem
-    |> Repo.get_by(uuid: uuid, organisation_id: org_id)
+    |> Repo.get_by(id: id, organisation_id: org_id)
     |> Repo.preload([:instance, :pre_state, :post_state, :approver, :organisation, :user])
   end
 
@@ -644,10 +649,10 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Check the user and approver is same while approving the content
   """
-  def same_user?(current_user_uuid, approver_uuid) when current_user_uuid != approver_uuid,
+  def same_user?(current_user_id, approver_id) when current_user_id != approver_id,
     do: :invalid_user
 
-  def same_user?(current_user_uuid, approver_uuid) when current_user_uuid === approver_uuid,
+  def same_user?(current_user_id, approver_id) when current_user_id === approver_id,
     do: true
 
   @doc """
@@ -1206,7 +1211,7 @@ defmodule WraftDoc.Enterprise do
   end
 
   def get_role_of_the_organisation(id, o_id) do
-    query = from(r in Role, where: r.uuid == ^id, join: o in Organisation, where: o.uuid == ^o_id)
+    query = from(r in Role, where: r.id == ^id, join: o in Organisation, where: o.id == ^o_id)
     Repo.one(query)
   end
 
@@ -1222,8 +1227,8 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  def get_organisation_id_roles(uuid) do
-    query = from(o in Organisation, where: o.uuid == ^uuid)
+  def get_organisation_id_roles(id) do
+    query = from(o in Organisation, where: o.id == ^id)
     query |> Repo.one() |> Repo.preload(:roles)
   end
 end

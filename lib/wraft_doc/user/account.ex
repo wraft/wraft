@@ -251,8 +251,8 @@ defmodule WraftDoc.Account do
   Get a user from its UUID.
   """
   @spec get_user_by_uuid(Ecto.UUID.t()) :: User.t() | nil
-  def get_user_by_uuid(<<_::288>> = uuid) when is_binary(uuid) do
-    Repo.get_by(User, uuid: uuid)
+  def get_user_by_uuid(<<_::288>> = id) when is_binary(id) do
+    Repo.get_by(User, id: id)
   end
 
   def get_user_by_uuid(_), do: nil
