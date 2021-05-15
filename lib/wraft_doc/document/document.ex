@@ -219,7 +219,7 @@ defmodule WraftDoc.Document do
     query =
       from(l in Layout,
         where: l.organisation_id == ^org_id,
-        order_by: [desc: l.id],
+        order_by: [desc: l.inserted_at],
         preload: [:engine, :assets]
       )
 
@@ -1366,14 +1366,22 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def create_block(_, _), do: {:error, :fake}
+
   @doc """
   Get a block by id
   """
   # TODO - write tests
   @spec get_block(Ecto.UUID.t(), User.t()) :: Block.t()
-  def get_block(uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Block, uuid: uuid, organisation_id: org_id)
+  def get_block(<<_::288>> = id, %{organisation_id: org_id}) do
+    case Repo.get_by(Block, id: id, organisation_id: org_id) do
+      %Block{} = block -> block
+      _ -> {:error, :invalid_id, "Block"}
+    end
   end
+
+  def get_block(<<_::288>>, _), do: {:error, :fake}
+  def get_block(_, %{organisation_id: _}), do: {:error, :invalid_id, "Block"}
 
   @doc """
   Update a block
@@ -1676,9 +1684,9 @@ defmodule WraftDoc.Document do
   @doc """
   Creates a background job for block template bulk import.
   """
-  @spec insert_block_template_bulk_import_work(binary, map, Plug.Uploap.t()) ::
+  @spec insert_block_template_bulk_import_work(User.t(), map, Plug.Uploap.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  def insert_block_template_bulk_import_work(<<_::288>> = user_uuid, mapping, %Plug.Upload{
+  def insert_block_template_bulk_import_work(%User{id: user_id}, mapping, %Plug.Upload{
         filename: filename,
         path: path
       }) do
@@ -1687,7 +1695,7 @@ defmodule WraftDoc.Document do
     System.cmd("cp", [path, dest_path])
 
     data = %{
-      user_uuid: user_uuid,
+      user_id: user_id,
       mapping: mapping,
       file: dest_path
     }
@@ -1946,14 +1954,23 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def create_block_template(_, _), do: {:error, :fake}
+
   @doc """
   Get a block template by its uuid
   """
   # TODO - write tests
   @spec get_block_template(Ecto.UUID.t(), User.t()) :: BlockTemplate.t()
-  def get_block_template(uuid, %{organisation_id: org_id}) do
-    Repo.get_by(BlockTemplate, uuid: uuid, organisation_id: org_id)
+  def get_block_template(<<_::288>> = id, %{organisation_id: org_id}) do
+    case Repo.get_by(BlockTemplate, id: id, organisation_id: org_id) do
+      %BlockTemplate{} = block_template -> block_template
+      _ -> {:error, :invalid_id, "BlockTemplate"}
+    end
   end
+
+  def get_block_template(<<_::288>>, _), do: {:error, :invalid_id, "BlockTemplate"}
+  def get_block_template(_, %{organisation_id: _org_id}), do: {:error, :fake}
+  def get_block_template(_, _), do: {:error, :invalid_id, "BlockTemplate"}
 
   @doc """
   Updates a block template
@@ -1973,6 +1990,8 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def update_block_template(_, _, _), do: {:error, :fake}
+
   @doc """
   Delete a block template by uuid
   """
@@ -1981,6 +2000,8 @@ defmodule WraftDoc.Document do
   def delete_block_template(%User{id: id}, %BlockTemplate{} = block_template) do
     Spur.delete(block_template, %{actor: "#{id}", meta: block_template})
   end
+
+  def delete_block_template(_, _), do: {:error, :fake}
 
   @doc """
   Index of a block template by organisation
@@ -1998,7 +2019,7 @@ defmodule WraftDoc.Document do
   Create a comment
   """
   # TODO - improve tests
-  def create_comment(%{organisation_id: org_id} = current_user, params \\ %{}) do
+  def create_comment(%{organisation_id: org_id} = current_user, params) do
     params = Map.put(params, "organisation_id", org_id)
 
     current_user
@@ -2014,26 +2035,34 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def create_comment(_, _), do: {:error, :fake}
+
   @doc """
   Get a comment by uuid.
   """
   # TODO - improve tests
   @spec get_comment(Ecto.UUID.t(), User.t()) :: Comment.t() | nil
-  def get_comment(<<_::288>> = uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Comment, uuid: uuid, organisation_id: org_id)
+  def get_comment(<<_::288>> = id, %{organisation_id: org_id}) do
+    case Repo.get_by(Comment, id: id, organisation_id: org_id) do
+      %Comment{} = comment -> comment
+      _ -> {:error, :invalid_id, "Comment"}
+    end
   end
+
+  def get_comment(<<_::288>>, _), do: {:error, :fake}
+  def get_comment(_, %{organisation_id: _}), do: {:error, :invalid_id, "Comment"}
+  def get_comment(_, _), do: {:error, :invalid_id, "Comment"}
 
   @doc """
   Fetch a comment and all its details.
   """
   # TODO - improve tests
   @spec show_comment(Ecto.UUID.t(), User.t()) :: Comment.t() | nil
-  def show_comment(<<_::288>> = uuid, user) do
-    uuid |> get_comment(user) |> Repo.preload([{:user, :profile}])
+  def show_comment(id, user) do
+    with %Comment{} = comment <- get_comment(id, user) do
+      Repo.preload(comment, [{:user, :profile}])
+    end
   end
-
-  @spec show_comment(any) :: nil
-  def show_comment(_), do: nil
 
   @doc """
   Updates a comment
@@ -2076,6 +2105,10 @@ defmodule WraftDoc.Document do
     Repo.paginate(query, params)
   end
 
+  def comment_index(%{organisation_id: _}, _), do: {:error, :invalid_data}
+  def comment_index(_, %{"master_id" => _}), do: {:error, :fake}
+  def comment_index(_, _), do: {:error, :invalid_data}
+
   @doc """
    Replies under a comment
   """
@@ -2099,6 +2132,10 @@ defmodule WraftDoc.Document do
       Repo.paginate(query, params)
     end
   end
+
+  def comment_replies(_, %{"master_id" => _, "comment_id" => _}), do: {:error, :fake}
+  def comment_replies(%{organisation_id: _}, _), do: {:error, :invalid_data}
+  def comment_replies(_, _), do: {:error, :invalid_data}
 
   @doc """
   Create a pipeline.
