@@ -2247,7 +2247,7 @@ defmodule WraftDoc.Document do
   """
   @spec get_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
   def get_pipeline(%User{organisation_id: org_id}, <<_::288>> = p_uuid) do
-    query = from(p in Pipeline, where: p.uuid == ^p_uuid, where: p.organisation_id == ^org_id)
+    query = from(p in Pipeline, where: p.id == ^p_uuid, where: p.organisation_id == ^org_id)
     Repo.one(query)
   end
 
