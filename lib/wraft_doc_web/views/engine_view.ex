@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.EngineView do
 
   def render("create.json", %{engine: engine}) do
     %{
-      id: engine.uuid,
+      id: engine.id,
       name: engine.name,
       api_route: engine.api_route,
       inserted_at: engine.inserted_at,

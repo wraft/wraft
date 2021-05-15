@@ -30,9 +30,8 @@ defmodule WraftDoc.Document do
     Document.Pipeline.TriggerHistory,
     Document.Theme,
     Enterprise,
-    Enterprise.Flow,
+    # Enterprise.Flow,
     Enterprise.Flow.State,
-    Enterprise.Vendor,
     Repo
   }
 
@@ -60,6 +59,8 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
+
+  def create_layout(_, _, _), do: {:error, :fake}
 
   @doc """
   Upload layout slug file.
@@ -102,10 +103,10 @@ defmodule WraftDoc.Document do
     |> Enum.to_list()
   end
 
-  defp fetch_and_associcate_assets(_layout, _current_user, _params), do: nil
+  defp fetch_and_associcate_assets(_layout, _current_user, _params), do: {:error, :invalid_data}
 
   # Associate the asset with the given layout, ie; insert a LayoutAsset entry.
-  defp associate_layout_and_asset(_layout, _current_user, nil), do: nil
+  defp associate_layout_and_asset(_layout, _current_user, nil), do: {:error, :invalid_data}
 
   defp associate_layout_and_asset(layout, current_user, asset) do
     layout
@@ -114,22 +115,15 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
   end
 
-  @doc """
-  Create a content type.
-  """
-  # TODO - improve tests
-  @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
-          ContentType.t() | {:error, Ecto.Changeset.t()}
-  def create_content_type(%{organisation_id: org_id} = current_user, layout, flow, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id})
+  def create_content_type(%{organisation_id: org_id} = current_user, params) do
+    params = Map.merge(params, %{organisation_id: org_id})
 
     current_user
-    |> build_assoc(:content_types, layout: layout, flow: flow)
+    |> build_assoc(:content_types)
     |> ContentType.changeset(params)
     |> Spur.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
-        fetch_and_associate_fields(content_type, params, current_user)
         Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
 
       changeset = {:error, _} ->
@@ -137,39 +131,75 @@ defmodule WraftDoc.Document do
     end
   end
 
-  @spec fetch_and_associate_fields(ContentType.t(), map, User.t()) :: list
-  # Iterate throught the list of field types and associate with the content type
-  defp fetch_and_associate_fields(content_type, %{"fields" => fields}, user) do
-    fields
-    |> Stream.map(fn x -> associate_c_type_and_fields(content_type, x, user) end)
-    |> Enum.to_list()
-  end
-
-  defp fetch_and_associate_fields(_content_type, _params, _user), do: nil
-
-  @spec associate_c_type_and_fields(ContentType.t(), map, User.t()) ::
-          {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()} | nil
-  # Fetch and associate field types with the content type
-  defp associate_c_type_and_fields(
-         c_type,
-         %{"key" => key, "field_type_id" => field_type_id},
-         user
-       ) do
-    field_type_id
-    |> get_field_type(user)
+  def update_content_type(content_type, %{id: user_id}, params) do
+    content_type
+    |> ContentType.update_changeset(params)
+    |> Spur.update(%{actor: "#{user_id}"})
     |> case do
-      %FieldType{} = field_type ->
-        field_type
-        |> build_assoc(:fields, content_type: c_type)
-        |> ContentTypeField.changeset(%{name: key})
-        |> Repo.insert()
+      {:ok, %ContentType{} = content_type} ->
+        Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
 
-      nil ->
-        nil
+      changeset = {:error, _} ->
+        changeset
     end
   end
 
-  defp associate_c_type_and_fields(_c_type, _field, _user), do: nil
+  # @doc """
+  # Create a content type.
+  # """
+  # # TODO - improve tests
+  # @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
+  #         ContentType.t() | {:error, Ecto.Changeset.t()}
+  # def create_content_type(%{organisation_id: org_id} = current_user, layout, flow, params) do
+  #   params = Map.merge(params, %{"organisation_id" => org_id})
+
+  #   current_user
+  #   |> build_assoc(:content_types, layout: layout, flow: flow)
+  #   |> ContentType.changeset(params)
+  #   |> Spur.insert()
+  #   |> case do
+  #     {:ok, %ContentType{} = content_type} ->
+  #       fetch_and_associate_fields(content_type, params, current_user)
+  #       Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
+
+  #     changeset = {:error, _} ->
+  #       changeset
+  #   end
+  # end
+
+  # @spec fetch_and_associate_fields(ContentType.t(), map, User.t()) :: list
+  # # Iterate throught the list of field types and associate with the content type
+  # defp fetch_and_associate_fields(content_type, %{"fields" => fields}, user) do
+  #   fields
+  #   |> Stream.map(fn x -> associate_c_type_and_fields(content_type, x, user) end)
+  #   |> Enum.to_list()
+  # end
+
+  # defp fetch_and_associate_fields(_content_type, _params, _user), do: nil
+
+  # @spec associate_c_type_and_fields(ContentType.t(), map, User.t()) ::
+  #         {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()} | nil
+  # # Fetch and associate field types with the content type
+  # defp associate_c_type_and_fields(
+  #        c_type,
+  #        %{"key" => key, "field_type_id" => field_type_id},
+  #        user
+  #      ) do
+  #   field_type_id
+  #   |> get_field_type(user)
+  #   |> case do
+  #     %FieldType{} = field_type ->
+  #       field_type
+  #       |> build_assoc(:fields, content_type: c_type)
+  #       |> ContentTypeField.changeset(%{name: key})
+  #       |> Repo.insert()
+
+  #     nil ->
+  #       nil
+  #   end
+  # end
+
+  # defp associate_c_type_and_fields(_c_type, _field, _user), do: nil
 
   @doc """
   List all engines.
@@ -200,56 +230,65 @@ defmodule WraftDoc.Document do
   Show a layout.
   """
   @spec show_layout(binary, User.t()) :: %Layout{engine: Engine.t(), creator: User.t()}
-  def show_layout(uuid, user) do
-    uuid
-    |> get_layout(user)
-    |> Repo.preload([:engine, :creator, :assets])
+  def show_layout(id, user) do
+    with %Layout{} = layout <-
+           get_layout(id, user) do
+      Repo.preload(layout, [:engine, :creator, :assets])
+    end
   end
 
   @doc """
   Get a layout from its UUID.
   """
   @spec get_layout(binary, User.t()) :: Layout.t()
-  def get_layout(<<_::288>> = uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Layout, uuid: uuid, organisation_id: org_id)
+  def get_layout(<<_::288>> = id, %{organisation_id: org_id}) do
+    case Repo.get_by(Layout, id: id, organisation_id: org_id) do
+      %Layout{} = layout ->
+        layout
+
+      _ ->
+        {:error, :invalid_id, Layout}
+    end
   end
 
-  def get_layout(_, _), do: nil
+  def get_layout(_, %{organisation_id: _}), do: {:error, :invalid_id, Layout}
+  def get_layout(<<_::288>>, _), do: {:error, :fake}
+  def get_layout(_, _), do: {:error, :invalid_id}
 
   @doc """
   Get a layout asset from its layout's and asset's UUIDs.
   """
   # TODO - improve tests
   @spec get_layout_asset(binary, binary) :: LayoutAsset.t()
-  def get_layout_asset(l_uuid, a_uuid) do
+  def get_layout_asset(<<_::288>> = l_id, <<_::288>> = a_id) do
     query =
       from(la in LayoutAsset,
         join: l in Layout,
-        where: l.uuid == ^l_uuid,
+        where: l.id == ^l_id,
         join: a in Asset,
-        where: a.uuid == ^a_uuid,
+        where: a.id == ^a_id,
         where: la.layout_id == l.id and la.asset_id == a.id
       )
 
-    Repo.one(query)
+    case Repo.one(query) do
+      %LayoutAsset{} = layout_asset -> layout_asset
+      _ -> {:error, :invalid_id}
+    end
   end
+
+  def get_layout_asset(<<_::288>>, _), do: {:error, :invalid_id, Layout}
+  def get_layout_asset(_, <<_::288>>), do: {:error, :invalid_id, Asset}
 
   @doc """
   Update a layout.
   """
   # TODO - improve tests
   @spec update_layout(Layout.t(), User.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
-  def update_layout(layout, current_user, %{"engine_uuid" => engine_uuid} = params) do
-    %Engine{id: id} = get_engine(engine_uuid)
-    {_, params} = Map.pop(params, "engine_uuid")
-    params = Map.merge(params, %{"engine_id" => id})
-    update_layout(layout, current_user, params)
-  end
 
   def update_layout(layout, %{id: user_id} = current_user, params) do
     layout
     |> Layout.update_changeset(params)
-    |> Spur.update(%{actor: "#{user_id}"})
+    |> Spur.update(%{actor: user_id})
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -309,10 +348,10 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec show_content_type(User.t(), Ecto.UUID.t()) ::
           %ContentType{layout: Layout.t(), creator: User.t()} | nil
-  def show_content_type(user, uuid) do
+  def show_content_type(user, id) do
     user
-    |> get_content_type(uuid)
-    |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
+    |> get_content_type(id)
+    |> Repo.preload([:layout, :creator, [{:fields, :field_type}, {:flow, :states}]])
   end
 
   @doc """
@@ -320,11 +359,15 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec get_content_type(User.t(), Ecto.UUID.t()) :: ContentType.t() | nil
-  def get_content_type(%User{organisation_id: org_id}, <<_::288>> = uuid) do
-    Repo.get_by(ContentType, uuid: uuid, organisation_id: org_id)
+  def get_content_type(%User{organisation_id: org_id}, <<_::288>> = id) do
+    case Repo.get_by(ContentType, id: id, organisation_id: org_id) do
+      %ContentType{} = content_type -> content_type
+      _ -> {:error, :invalid_id}
+    end
   end
 
-  def get_content_type(_, _), do: nil
+  def get_content_type(%User{organisation_id: _org_id}, _), do: {:error, :invalid_id}
+  def get_content_type(_, <<_::288>>), do: {:error, :fake}
 
   @doc """
   Get a content type from its ID. Also fetches all its related datas.
@@ -353,43 +396,40 @@ defmodule WraftDoc.Document do
     Repo.one(query)
   end
 
-  @doc """
-  Update a content type.
-  """
   # TODO - write tests
-  @spec update_content_type(ContentType.t(), User.t(), map) ::
-          %ContentType{
-            layout: Layout.t(),
-            creator: User.t()
-          }
-          | {:error, Ecto.Changeset.t()}
-  def update_content_type(
-        content_type,
-        user,
-        %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
-      ) do
-    %Layout{id: id} = get_layout(layout_uuid, user)
-    %Flow{id: f_id} = Enterprise.get_flow(f_uuid, user)
-    {_, params} = Map.pop(params, "layout_uuid")
-    {_, params} = Map.pop(params, "flow_uuid")
-    params = Map.merge(params, %{"layout_id" => id, "flow_id" => f_id})
-    update_content_type(content_type, user, params)
-  end
+  # @spec update_content_type(ContentType.t(), User.t(), map) ::
+  #         %ContentType{
+  #           layout: Layout.t(),
+  #           creator: User.t()
+  #         }
+  #         | {:error, Ecto.Changeset.t()}
+  # def update_content_type(
+  #       content_type,
+  #       user,
+  #       %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
+  #     ) do
+  #   %Layout{id: id} = get_layout(layout_uuid, user)
+  #   %Flow{id: f_id} = Enterprise.get_flow(f_uuid, user)
+  #   {_, params} = Map.pop(params, "layout_uuid")
+  #   {_, params} = Map.pop(params, "flow_uuid")
+  #   params = Map.merge(params, %{"layout_id" => id, "flow_id" => f_id})
+  #   update_content_type(content_type, user, params)
+  # end
 
-  def update_content_type(content_type, %User{id: id} = user, params) do
-    content_type
-    |> ContentType.update_changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
-    |> case do
-      {:error, _} = changeset ->
-        changeset
+  # def update_content_type(content_type, %User{id: id} = user, params) do
+  #   content_type
+  #   |> ContentType.update_changeset(params)
+  #   |> Spur.update(%{actor: "#{id}"})
+  #   |> case do
+  #     {:error, _} = changeset ->
+  #       changeset
 
-      {:ok, content_type} ->
-        fetch_and_associate_fields(content_type, params, user)
+  #     {:ok, content_type} ->
+  #       fetch_and_associate_fields(content_type, params, user)
 
-        Repo.preload(content_type, [:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
-    end
-  end
+  #       Repo.preload(content_type, [:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
+  #   end
+  # end
 
   @doc """
   Delete a content type.
@@ -418,54 +458,6 @@ defmodule WraftDoc.Document do
     Spur.delete(content_type_field, %{actor: "#{id}", meta: content_type_field})
   end
 
-  @doc """
-  Create a new instance.
-  """
-  # TODO - improve tests
-  @spec create_instance(User.t(), ContentType.t(), State.t(), Vendor.t(), map) ::
-          %Instance{content_type: ContentType.t(), state: State.t()}
-          | {:error, Ecto.Changeset.t()}
-  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, vendor, params) do
-    instance_id = create_instance_id(c_id, prefix)
-    params = Map.merge(params, %{"instance_id" => instance_id})
-
-    c_type
-    |> build_assoc(:instances, state: state, creator: current_user, vendor: vendor)
-    |> Instance.changeset(params)
-    |> Spur.insert()
-    |> case do
-      {:ok, content} ->
-        Task.start_link(fn -> create_or_update_counter(c_type) end)
-        Task.start_link(fn -> create_initial_version(current_user, content) end)
-        Repo.preload(content, [:content_type, :state, :vendor])
-
-      changeset = {:error, _} ->
-        changeset
-    end
-  end
-
-  @spec create_instance(User.t(), ContentType.t(), State.t(), map) ::
-          %Instance{content_type: ContentType.t(), state: State.t()}
-          | {:error, Ecto.Changeset.t()}
-  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
-    instance_id = create_instance_id(c_id, prefix)
-    params = Map.merge(params, %{"instance_id" => instance_id})
-
-    c_type
-    |> build_assoc(:instances, state: state, creator: current_user)
-    |> Instance.changeset(params)
-    |> Spur.insert()
-    |> case do
-      {:ok, content} ->
-        Task.start_link(fn -> create_or_update_counter(c_type) end)
-        Task.start_link(fn -> create_initial_version(current_user, content) end)
-        Repo.preload(content, [:content_type, :state, :vendor])
-
-      changeset = {:error, _} ->
-        changeset
-    end
-  end
-
   defp create_initial_version(%{id: author_id}, instance) do
     params = %{
       "version_number" => 1,
@@ -490,6 +482,25 @@ defmodule WraftDoc.Document do
   Same as create_instance/4, but does not add the insert activity to activity stream.
   """
   # TODO write tests
+  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
+    instance_id = create_instance_id(c_id, prefix)
+    params = Map.merge(params, %{"instance_id" => instance_id})
+
+    c_type
+    |> build_assoc(:instances, creator: current_user, state: state)
+    |> Instance.changeset(params)
+    |> Spur.insert()
+    |> case do
+      {:ok, content} ->
+        Task.start_link(fn -> create_or_update_counter(c_type) end)
+        Task.start_link(fn -> create_initial_version(current_user, content) end)
+        Repo.preload(content, [:content_type, :state, :vendor])
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
   @spec create_instance(ContentType.t(), State.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
@@ -505,6 +516,32 @@ defmodule WraftDoc.Document do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
         Repo.preload(content, [:content_type, :state])
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
+  @doc """
+  Create a new instance.
+  """
+  # TODO - improve tests
+  @spec create_instance(User.t(), ContentType.t(), map) ::
+          %Instance{content_type: ContentType.t(), state: State.t()}
+          | {:error, Ecto.Changeset.t()}
+  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, params) do
+    instance_id = create_instance_id(c_id, prefix)
+    params = Map.merge(params, %{"instance_id" => instance_id})
+
+    c_type
+    |> build_assoc(:instances, creator: current_user)
+    |> Instance.changeset(params)
+    |> Spur.insert()
+    |> case do
+      {:ok, content} ->
+        Task.start_link(fn -> create_or_update_counter(c_type) end)
+        Task.start_link(fn -> create_initial_version(current_user, content) end)
+        Repo.preload(content, [:content_type, :state, :vendor])
 
       changeset = {:error, _} ->
         changeset
@@ -590,11 +627,11 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec instance_index(binary, map) :: map
-  def instance_index(c_type_uuid, params) do
+  def instance_index(<<_::288>> = c_type_id, params) do
     query =
       from(i in Instance,
         join: ct in ContentType,
-        where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id,
+        where: ct.id == ^c_type_id and i.content_type_id == ct.id,
         order_by: [desc: i.id],
         preload: [:content_type, :state, :vendor]
       )
@@ -602,25 +639,29 @@ defmodule WraftDoc.Document do
     Repo.paginate(query, params)
   end
 
+  def instance_index(_, _), do: {:error, :invalid_id}
+
   @doc """
   Get an instance from its UUID.
   """
   # TODO - improve tests
   @spec get_instance(binary, User.t()) :: Instance.t()
-  def get_instance(uuid, %{organisation_id: org_id}) do
+  def get_instance(<<_::288>> = id, %{organisation_id: org_id}) do
     query =
       from(i in Instance,
-        where: i.uuid == ^uuid,
+        where: i.id == ^id,
         join: c in ContentType,
         where: c.id == i.content_type_id and c.organisation_id == ^org_id
       )
 
-    query
-    |> Repo.one()
-    |> Repo.preload([:state])
-
-    # Repo.get_by(Instance, uuid: uuid) |> Repo.preload([:state])
+    case Repo.one(query) do
+      %Instance{} = instance -> instance
+      _ -> {:error, :invalid_id}
+    end
   end
+
+  def get_instance(_, %{organisation_id: _}), do: {:error, :invalid_id}
+  def get_instance(<<_::288>>, _), do: {:error, :fake}
 
   @doc """
   Show an instance.
@@ -628,11 +669,12 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec show_instance(binary, User.t()) ::
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
-  def show_instance(instance_uuid, user) do
-    instance_uuid
-    |> get_instance(user)
-    |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
-    |> get_built_document()
+  def show_instance(instance_id, user) do
+    with %Instance{} = instance <- get_instance(instance_id, user) do
+      instance
+      |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
+      |> get_built_document()
+    end
   end
 
   @doc """
@@ -784,15 +826,20 @@ defmodule WraftDoc.Document do
         state: new_state,
         flow_id: flow_id
       }) do
-    %{content_type: %{flow_id: f_id}, state: %{state: state}} =
-      Repo.preload(instance, [:content_type, :state])
+    case Repo.preload(instance, [:content_type, :state]) do
+      %{content_type: %{flow_id: f_id}, state: %{state: state}} ->
+        if flow_id == f_id do
+          instance_state_upadate(instance, user_id, state_id, state, new_state)
+        else
+          {:error, :wrong_flow}
+        end
 
-    if flow_id == f_id do
-      instance_state_upadate(instance, user_id, state_id, state, new_state)
-    else
-      {:error, :wrong_flow}
+      _ ->
+        {:error, :not_sufficient}
     end
   end
+
+  def update_instance_state(_, _, _), do: {:error, :not_sufficient}
 
   @doc """
   Update instance's state. Also add the from and to state of in the activity meta.
@@ -829,14 +876,21 @@ defmodule WraftDoc.Document do
     Spur.delete(instance, %{actor: "#{id}", meta: instance})
   end
 
+  def delete_instance(_, _), do: {:error, :fake}
+
   @doc """
   Get an engine from its UUID.
   """
   # TODO - improve tests
   @spec get_engine(binary) :: Engine.t() | nil
-  def get_engine(engine_uuid) do
-    Repo.get_by(Engine, uuid: engine_uuid)
+  def get_engine(<<_::288>> = engine_id) do
+    case Repo.get(Engine, engine_id) do
+      %Engine{} = engine -> engine
+      _ -> {:error, :invalid_id, Engine}
+    end
   end
+
+  def get_engine(_), do: {:error, :invalid_id, Engine}
 
   @doc """
   Create a theme.
@@ -1043,6 +1097,8 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def create_asset(_, _), do: {:error, :fake}
+
   @doc """
   Upload asset file.
   """
@@ -1061,20 +1117,23 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec asset_index(integer, map) :: map
-  def asset_index(organisation_id, params) do
+  def asset_index(%{organisation_id: organisation_id}, params) do
     query = from(a in Asset, where: a.organisation_id == ^organisation_id, order_by: [desc: a.id])
     Repo.paginate(query, params)
   end
+
+  def asset_index(_, _), do: {:error, :fake}
 
   @doc """
   Show an asset.
   """
   # TODO - improve tests
   @spec show_asset(binary, User.t()) :: %Asset{creator: User.t()}
-  def show_asset(asset_uuid, user) do
-    asset_uuid
-    |> get_asset(user)
-    |> Repo.preload([:creator])
+  def show_asset(asset_id, user) do
+    with %Asset{} = asset <-
+           get_asset(asset_id, user) do
+      Repo.preload(asset, [:creator])
+    end
   end
 
   @doc """
@@ -1082,9 +1141,15 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec get_asset(binary, User.t()) :: Asset.t()
-  def get_asset(uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Asset, uuid: uuid, organisation_id: org_id)
+  def get_asset(<<_::288>> = id, %{organisation_id: org_id}) do
+    case Repo.get_by(Asset, id: id, organisation_id: org_id) do
+      %Asset{} = asset -> asset
+      _ -> {:error, :invalid_id}
+    end
   end
+
+  def get_asset(<<_::288>>, _), do: {:error, :fake}
+  def get_asset(_, %{organisation_id: _}), do: {:error, :invalid_id}
 
   @doc """
   Update an asset.
@@ -1706,8 +1771,8 @@ defmodule WraftDoc.Document do
     serialized = update_keys(serialized, mapping)
     params = do_create_instance_params(serialized, d_temp)
     type = Instance.types()[:bulk_build]
-    params = Map.put(params, "type", type)
-    create_instance_for_bulk_build(current_user, c_type, state, params)
+    params = Map.merge(params, %{"type" => type, "state_id" => state.id})
+    create_instance_for_bulk_build(current_user, c_type, params)
   end
 
   @doc """
@@ -1736,16 +1801,16 @@ defmodule WraftDoc.Document do
   # Since we are iterating over list of params to create instances, there is a high chance of
   # unique ID of instances to repeat and hence for instance creation failures. This is why
   # we loop the fucntion until instance is successfully created.
-  @spec create_instance_for_bulk_build(User.t(), ContentType.t(), State.t(), map) :: Instance.t()
-  defp create_instance_for_bulk_build(current_user, c_type, state, params) do
-    instance = create_instance(current_user, c_type, state, params)
+  @spec create_instance_for_bulk_build(User.t(), ContentType.t(), map) :: Instance.t()
+  defp create_instance_for_bulk_build(current_user, c_type, params) do
+    instance = create_instance(current_user, c_type, params)
 
     case instance do
       %Instance{} = instance ->
         instance
 
       _ ->
-        create_instance_for_bulk_build(current_user, c_type, state, params)
+        create_instance_for_bulk_build(current_user, c_type, params)
     end
   end
 
@@ -2319,7 +2384,7 @@ defmodule WraftDoc.Document do
   """
 
   def get_content_type_roles(id) do
-    query = from(c in ContentType, where: c.uuid == ^id)
+    query = from(c in ContentType, where: c.id == ^id)
     query |> Repo.one() |> Repo.preload(:roles)
   end
 
@@ -2328,7 +2393,7 @@ defmodule WraftDoc.Document do
   """
 
   def get_content_type_under_roles(id) do
-    query = from(r in Role, where: r.uuid == ^id)
+    query = from(r in Role, where: r.id == ^id)
     query |> Repo.one() |> Repo.preload(:content_types)
   end
 
@@ -2337,7 +2402,7 @@ defmodule WraftDoc.Document do
   """
 
   def get_content_type(id) do
-    query = from(c in ContentType, where: c.uuid == ^id)
+    query = from(c in ContentType, where: c.id == ^id)
     Repo.one(query)
   end
 
@@ -2345,23 +2410,7 @@ defmodule WraftDoc.Document do
   create content type role function
   """
 
-  def create_content_type_role(%{"content_type_id" => content_type_id, "role_id" => role_id}) do
-    with %Role{} = role <- get_role_from_uuid(role_id),
-         %ContentType{} = content_type <- get_content_type(content_type_id) do
-      params = %{
-        content_type_id: content_type.id,
-        role_id: role.id
-      }
-
-      do_create_content_type_role(params)
-    end
-  end
-
   def create_content_type_role(params) do
-    do_create_content_type_role(params)
-  end
-
-  def do_create_content_type_role(params) do
     %ContentTypeRole{}
     |> ContentTypeRole.changeset(params)
     |> Repo.insert()
@@ -2384,8 +2433,8 @@ defmodule WraftDoc.Document do
     Repo.paginate(query, params)
   end
 
-  def get_role_from_uuid(uuid) do
-    query = from(r in Role, where: r.uuid == ^uuid)
+  def get_role_from_uuid(id) do
+    query = from(r in Role, where: r.id == ^id)
     Repo.one(query)
   end
 
@@ -2415,8 +2464,7 @@ defmodule WraftDoc.Document do
   """
 
   def get_role_of_content_type(id, c_id) do
-    query =
-      from(r in Role, where: r.uuid == ^id, join: ct in ContentType, where: ct.uuid == ^c_id)
+    query = from(r in Role, where: r.id == ^id, join: ct in ContentType, where: ct.id == ^c_id)
 
     Repo.one(query)
   end
@@ -2426,14 +2474,13 @@ defmodule WraftDoc.Document do
   """
 
   def get_content_type_role(id, role_id) do
-    query =
-      from(ct in ContentType, where: ct.uuid == ^id, join: r in Role, where: r.uuid == ^role_id)
+    query = from(ct in ContentType, where: ct.id == ^id, join: r in Role, where: r.id == ^role_id)
 
     Repo.one(query)
   end
 
-  def get_content_type_role(id) do
-    query = from(ctr in ContentTypeRole, where: ctr.uuid == ^id)
+  def get_content_type_and_role(id) do
+    query = from(ctr in ContentTypeRole, where: ctr.id == ^id)
     Repo.one(query)
   end
 
@@ -2629,6 +2676,8 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def lock_unloack_instance(_, _, _), do: {:error, :not_sufficient}
+
   @doc """
   Search and list all by key
   """
@@ -2670,8 +2719,8 @@ defmodule WraftDoc.Document do
   * `version_uuid` - uuid of version
   """
   @spec version_changes(Instance.t(), <<_::288>>) :: map()
-  def version_changes(instance, version_uuid) do
-    case get_version(instance, version_uuid) do
+  def version_changes(instance, <<_::288>> = version_id) do
+    case get_version(instance, version_id) do
       %Version{raw: current_raw} = version ->
         case get_previous_version(instance, version) do
           %Version{raw: previous_raw} ->
@@ -2685,6 +2734,8 @@ defmodule WraftDoc.Document do
         {:error, :version_not_found}
     end
   end
+
+  def version_changes(_, _), do: {:error, :invalid_id}
 
   defp list_changes(current_raw, previous_raw) do
     current_raw = String.split(current_raw, "\n")
@@ -2721,8 +2772,8 @@ defmodule WraftDoc.Document do
     Map.put(acc, :del, del)
   end
 
-  defp get_version(%{id: instance_id}, <<_::288>> = version_uuid) do
-    Repo.get_by(Version, content_id: instance_id, uuid: version_uuid)
+  defp get_version(%{id: instance_id}, <<_::288>> = version_id) do
+    Repo.get_by(Version, content_id: instance_id, id: version_id)
   end
 
   defp get_version(_, _), do: nil

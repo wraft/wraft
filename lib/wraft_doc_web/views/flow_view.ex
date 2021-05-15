@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.FlowView do
 
   def render("flow.json", %{flow: flow}) do
     %{
-      id: flow.uuid,
+      id: flow.id,
       name: flow.name,
       controlled: flow.controlled,
       control_data: flow.control_data,

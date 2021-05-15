@@ -247,11 +247,11 @@ defmodule WraftDoc.EnterpriseTest do
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     instance = insert(:instance, creator: user, content_type: content_type)
 
-    %{uuid: uuid, instance: instance, pre_state: _pre_state} =
+    %{id: id, instance: instance, pre_state: _pre_state} =
       insert(:approval_system, user: user, organisation: user.organisation, instance: instance)
 
-    approval_system = Enterprise.get_approval_system(uuid, user)
-    assert approval_system.instance.uuid == instance.uuid
+    approval_system = Enterprise.get_approval_system(id, user)
+    assert approval_system.instance.id == instance.id
   end
 
   test "update approval system updates a system" do

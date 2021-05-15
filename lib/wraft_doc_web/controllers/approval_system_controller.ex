@@ -165,10 +165,10 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => uuid}) do
+  def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %ApprovalSystem{} = approval_system <- Enterprise.get_approval_system(uuid, current_user) do
+    with %ApprovalSystem{} = approval_system <- Enterprise.get_approval_system(id, current_user) do
       render(conn, "approval_system.json", approval_system: approval_system)
     end
   end
@@ -245,17 +245,17 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  def approve(conn, %{"id" => uuid}) do
+  def approve(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
     with %ApprovalSystem{approver: approver, instance: instance, pre_state: pre_state} =
            approval_system <-
-           Enterprise.get_approval_system(uuid, current_user),
-         true <- Enterprise.same_user?(current_user.uuid, approver.uuid),
+           Enterprise.get_approval_system(id, current_user),
+         true <- Enterprise.same_user?(current_user.id, approver.id),
          true <- Enterprise.same_state?(pre_state.id, instance.state_id),
          %ApprovalSystem{instance: instance} = approval_system <-
            Enterprise.approve_content(current_user, approval_system),
-         %Instance{} = instance <- Document.get_instance(instance.uuid, current_user) do
+         %Instance{} = instance <- Document.get_instance(instance.id, current_user) do
       render(conn, "approve.json", approval_system: approval_system, instance: instance)
     else
       message -> conn |> put_status(:bad_request) |> render("error.json", message: message)
