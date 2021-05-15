@@ -7,6 +7,8 @@ defmodule WraftDoc.Repo.Migrations.CreateCountries do
       add(:country_name, :string)
       add(:country_code, :string)
       add(:calling_code, :string)
+
+      timestamps()
     end
 
     alter table(:basic_profile) do

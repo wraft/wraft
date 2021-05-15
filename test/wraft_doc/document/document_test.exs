@@ -367,7 +367,7 @@ defmodule WraftDoc.DocumentTest do
           organisation: user.organisation
         )
 
-      s_content_type = Document.show_content_type(user, content_type.uuid)
+      s_content_type = Document.show_content_type(user, content_type.id)
       assert s_content_type.name == content_type.name
       assert s_content_type.description == content_type.description
       assert s_content_type.color == content_type.color
@@ -381,7 +381,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
 
       content_type = insert(:content_type, organisation: user.organisation)
-      s_content_type = Document.get_content_type(user, content_type.uuid)
+      s_content_type = Document.get_content_type(user, content_type.id)
 
       assert s_content_type.name == content_type.name
       assert s_content_type.description == content_type.description
@@ -1814,7 +1814,7 @@ defmodule WraftDoc.DocumentTest do
     test "get_content_type_roles" do
       content_type = insert(:content_type)
 
-      response = Document.get_content_type_roles(content_type.uuid)
+      response = Document.get_content_type_roles(content_type.id)
 
       assert response.name == content_type.name
     end
@@ -1822,7 +1822,7 @@ defmodule WraftDoc.DocumentTest do
     test "get_content_type_under_roles" do
       role = insert(:role)
 
-      response = Document.get_content_type_under_roles(role.uuid)
+      response = Document.get_content_type_under_roles(role.id)
 
       assert response.name == role.name
     end
@@ -1830,7 +1830,7 @@ defmodule WraftDoc.DocumentTest do
     test "get_content_type" do
       content_type = insert(:content_type)
 
-      response = Document.get_content_type(content_type.uuid)
+      response = Document.get_content_type(content_type.id)
 
       assert response.name == content_type.name
     end
@@ -1855,7 +1855,7 @@ defmodule WraftDoc.DocumentTest do
       role = insert(:role)
       content_type = insert(:content_type)
 
-      response = Document.get_role_of_content_type(role.uuid, content_type.uuid)
+      response = Document.get_role_of_content_type(role.id, content_type.id)
 
       assert response.name == role.name
     end
@@ -1864,7 +1864,7 @@ defmodule WraftDoc.DocumentTest do
       role = insert(:role)
       content_type = insert(:content_type)
 
-      response = Document.get_content_type_role(content_type.uuid, role.uuid)
+      response = Document.get_content_type_role(content_type.id, role.id)
 
       assert response.name == content_type.name
     end
