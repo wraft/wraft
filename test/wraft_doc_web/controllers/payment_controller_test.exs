@@ -56,15 +56,15 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
 
       payment = insert(:payment, organisation: user.organisation)
 
-      conn = get(conn, Routes.v1_payment_path(conn, :show, payment.uuid))
+      conn = get(conn, Routes.v1_payment_path(conn, :show, payment.id))
 
       assert json_response(conn, 200)["razorpay_id"] == payment.razorpay_id
-      assert json_response(conn, 200)["id"] == payment.uuid
-      assert json_response(conn, 200)["organisation"]["id"] == payment.organisation.uuid
-      assert json_response(conn, 200)["creator"]["id"] == payment.creator.uuid
-      assert json_response(conn, 200)["membership"]["id"] == payment.membership.uuid
-      assert json_response(conn, 200)["from_plan"]["id"] == payment.from_plan.uuid
-      assert json_response(conn, 200)["to_plan"]["id"] == payment.to_plan.uuid
+      assert json_response(conn, 200)["id"] == payment.id
+      assert json_response(conn, 200)["organisation"]["id"] == payment.organisation.id
+      assert json_response(conn, 200)["creator"]["id"] == payment.creator.id
+      assert json_response(conn, 200)["membership"]["id"] == payment.membership.id
+      assert json_response(conn, 200)["from_plan"]["id"] == payment.from_plan.id
+      assert json_response(conn, 200)["to_plan"]["id"] == payment.to_plan.id
     end
 
     test "returns nil when payment does not belong to the user's organisation", %{conn: conn} do
@@ -77,8 +77,8 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
         |> assign(:current_user, user)
 
       payment = insert(:payment)
-      conn = get(conn, Routes.v1_payment_path(conn, :show, payment.uuid))
-      assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+      conn = get(conn, Routes.v1_payment_path(conn, :show, payment.id))
+      assert json_response(conn, 404) == "Not Found"
     end
 
     test "returns nil for non existent payment", %{conn: conn} do
@@ -91,7 +91,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
         |> assign(:current_user, user)
 
       conn = get(conn, Routes.v1_payment_path(conn, :show, Ecto.UUID.generate()))
-      assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+      assert json_response(conn, 404) == "Not Found"
     end
 
     test "returns nil for invalid data", %{conn: conn} do
@@ -103,8 +103,8 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
         |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
         |> assign(:current_user, user)
 
-      conn = get(conn, Routes.v1_payment_path(conn, :show, 1))
-      assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+      conn = get(conn, Routes.v1_payment_path(conn, :show, Ecto.UUID.generate()))
+      assert json_response(conn, 404) == "Not Found"
     end
   end
 end

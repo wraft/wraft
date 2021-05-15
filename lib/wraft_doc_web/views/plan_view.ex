@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Api.V1.PlanView do
 
   def render("plan.json", %{plan: plan}) do
     %{
-      id: plan.uuid,
+      id: plan.id,
       name: plan.name,
       description: plan.description,
       yearly_amount: plan.yearly_amount,

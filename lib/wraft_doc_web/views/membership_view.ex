@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.MembershipView do
 
   def render("membership.json", %{membership: membership}) do
     %{
-      id: membership.uuid,
+      id: membership.id,
       start_date: membership.start_date,
       end_date: membership.end_date,
       plan_duration: membership.plan_duration,
@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.MembershipView do
 
   def render("only_membership.json", %{membership: membership}) do
     %{
-      id: membership.uuid,
+      id: membership.id,
       start_date: membership.start_date,
       end_date: membership.end_date,
       plan_duration: membership.plan_duration,
