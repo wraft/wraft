@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleView do
 
   def render("show.json", %{content_type_role: content_type_role}) do
     %{
-      id: content_type_role.uuid,
+      id: content_type_role.id,
       name: content_type_role.name,
       decription: content_type_role.description,
       color: content_type_role.color,
@@ -16,13 +16,13 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleView do
 
   def render("show_content_type.json", %{content_type_role: content_type_role}) do
     %{
-      uuid: content_type_role.uuid
+      uuid: content_type_role.id
     }
   end
 
   def render("create_content_type.json", %{content_type_role: content_type_role}) do
     %{
-      uuid: content_type_role.uuid,
+      uuid: content_type_role.id,
       role: render_one(content_type_role.role, RoleView, "role.json", as: :role),
       content_type:
         render_one(content_type_role.content_type, ContentTypeView, "role_content_type.json",

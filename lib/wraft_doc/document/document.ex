@@ -30,7 +30,7 @@ defmodule WraftDoc.Document do
     Document.Pipeline.TriggerHistory,
     Document.Theme,
     Enterprise,
-    Enterprise.Flow,
+    # Enterprise.Flow,
     Enterprise.Flow.State,
     Repo
   }
@@ -115,22 +115,15 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
   end
 
-  @doc """
-  Create a content type.
-  """
-  # TODO - improve tests
-  @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
-          ContentType.t() | {:error, Ecto.Changeset.t()}
-  def create_content_type(%{organisation_id: org_id} = current_user, layout, flow, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id})
+  def create_content_type(%{organisation_id: org_id} = current_user, params) do
+    params = Map.merge(params, %{organisation_id: org_id})
 
     current_user
-    |> build_assoc(:content_types, layout: layout, flow: flow)
+    |> build_assoc(:content_types)
     |> ContentType.changeset(params)
     |> Spur.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
-        fetch_and_associate_fields(content_type, params, current_user)
         Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
 
       changeset = {:error, _} ->
@@ -138,39 +131,75 @@ defmodule WraftDoc.Document do
     end
   end
 
-  @spec fetch_and_associate_fields(ContentType.t(), map, User.t()) :: list
-  # Iterate throught the list of field types and associate with the content type
-  defp fetch_and_associate_fields(content_type, %{"fields" => fields}, user) do
-    fields
-    |> Stream.map(fn x -> associate_c_type_and_fields(content_type, x, user) end)
-    |> Enum.to_list()
-  end
-
-  defp fetch_and_associate_fields(_content_type, _params, _user), do: nil
-
-  @spec associate_c_type_and_fields(ContentType.t(), map, User.t()) ::
-          {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()} | nil
-  # Fetch and associate field types with the content type
-  defp associate_c_type_and_fields(
-         c_type,
-         %{"key" => key, "field_type_id" => field_type_id},
-         user
-       ) do
-    field_type_id
-    |> get_field_type(user)
+  def update_content_type(content_type, %{id: user_id}, params) do
+    content_type
+    |> ContentType.update_changeset(params)
+    |> Spur.update(%{actor: "#{user_id}"})
     |> case do
-      %FieldType{} = field_type ->
-        field_type
-        |> build_assoc(:fields, content_type: c_type)
-        |> ContentTypeField.changeset(%{name: key})
-        |> Repo.insert()
+      {:ok, %ContentType{} = content_type} ->
+        Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
 
-      nil ->
-        nil
+      changeset = {:error, _} ->
+        changeset
     end
   end
 
-  defp associate_c_type_and_fields(_c_type, _field, _user), do: nil
+  # @doc """
+  # Create a content type.
+  # """
+  # # TODO - improve tests
+  # @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
+  #         ContentType.t() | {:error, Ecto.Changeset.t()}
+  # def create_content_type(%{organisation_id: org_id} = current_user, layout, flow, params) do
+  #   params = Map.merge(params, %{"organisation_id" => org_id})
+
+  #   current_user
+  #   |> build_assoc(:content_types, layout: layout, flow: flow)
+  #   |> ContentType.changeset(params)
+  #   |> Spur.insert()
+  #   |> case do
+  #     {:ok, %ContentType{} = content_type} ->
+  #       fetch_and_associate_fields(content_type, params, current_user)
+  #       Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
+
+  #     changeset = {:error, _} ->
+  #       changeset
+  #   end
+  # end
+
+  # @spec fetch_and_associate_fields(ContentType.t(), map, User.t()) :: list
+  # # Iterate throught the list of field types and associate with the content type
+  # defp fetch_and_associate_fields(content_type, %{"fields" => fields}, user) do
+  #   fields
+  #   |> Stream.map(fn x -> associate_c_type_and_fields(content_type, x, user) end)
+  #   |> Enum.to_list()
+  # end
+
+  # defp fetch_and_associate_fields(_content_type, _params, _user), do: nil
+
+  # @spec associate_c_type_and_fields(ContentType.t(), map, User.t()) ::
+  #         {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()} | nil
+  # # Fetch and associate field types with the content type
+  # defp associate_c_type_and_fields(
+  #        c_type,
+  #        %{"key" => key, "field_type_id" => field_type_id},
+  #        user
+  #      ) do
+  #   field_type_id
+  #   |> get_field_type(user)
+  #   |> case do
+  #     %FieldType{} = field_type ->
+  #       field_type
+  #       |> build_assoc(:fields, content_type: c_type)
+  #       |> ContentTypeField.changeset(%{name: key})
+  #       |> Repo.insert()
+
+  #     nil ->
+  #       nil
+  #   end
+  # end
+
+  # defp associate_c_type_and_fields(_c_type, _field, _user), do: nil
 
   @doc """
   List all engines.
@@ -319,10 +348,10 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec show_content_type(User.t(), Ecto.UUID.t()) ::
           %ContentType{layout: Layout.t(), creator: User.t()} | nil
-  def show_content_type(user, uuid) do
+  def show_content_type(user, id) do
     user
-    |> get_content_type(uuid)
-    |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
+    |> get_content_type(id)
+    |> Repo.preload([:layout, :creator, [{:fields, :field_type}, {:flow, :states}]])
   end
 
   @doc """
@@ -367,43 +396,40 @@ defmodule WraftDoc.Document do
     Repo.one(query)
   end
 
-  @doc """
-  Update a content type.
-  """
   # TODO - write tests
-  @spec update_content_type(ContentType.t(), User.t(), map) ::
-          %ContentType{
-            layout: Layout.t(),
-            creator: User.t()
-          }
-          | {:error, Ecto.Changeset.t()}
-  def update_content_type(
-        content_type,
-        user,
-        %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
-      ) do
-    %Layout{id: id} = get_layout(layout_uuid, user)
-    %Flow{id: f_id} = Enterprise.get_flow(f_uuid, user)
-    {_, params} = Map.pop(params, "layout_uuid")
-    {_, params} = Map.pop(params, "flow_uuid")
-    params = Map.merge(params, %{"layout_id" => id, "flow_id" => f_id})
-    update_content_type(content_type, user, params)
-  end
+  # @spec update_content_type(ContentType.t(), User.t(), map) ::
+  #         %ContentType{
+  #           layout: Layout.t(),
+  #           creator: User.t()
+  #         }
+  #         | {:error, Ecto.Changeset.t()}
+  # def update_content_type(
+  #       content_type,
+  #       user,
+  #       %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
+  #     ) do
+  #   %Layout{id: id} = get_layout(layout_uuid, user)
+  #   %Flow{id: f_id} = Enterprise.get_flow(f_uuid, user)
+  #   {_, params} = Map.pop(params, "layout_uuid")
+  #   {_, params} = Map.pop(params, "flow_uuid")
+  #   params = Map.merge(params, %{"layout_id" => id, "flow_id" => f_id})
+  #   update_content_type(content_type, user, params)
+  # end
 
-  def update_content_type(content_type, %User{id: id} = user, params) do
-    content_type
-    |> ContentType.update_changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
-    |> case do
-      {:error, _} = changeset ->
-        changeset
+  # def update_content_type(content_type, %User{id: id} = user, params) do
+  #   content_type
+  #   |> ContentType.update_changeset(params)
+  #   |> Spur.update(%{actor: "#{id}"})
+  #   |> case do
+  #     {:error, _} = changeset ->
+  #       changeset
 
-      {:ok, content_type} ->
-        fetch_and_associate_fields(content_type, params, user)
+  #     {:ok, content_type} ->
+  #       fetch_and_associate_fields(content_type, params, user)
 
-        Repo.preload(content_type, [:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
-    end
-  end
+  #       Repo.preload(content_type, [:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
+  #   end
+  # end
 
   @doc """
   Delete a content type.
@@ -2358,7 +2384,7 @@ defmodule WraftDoc.Document do
   """
 
   def get_content_type_roles(id) do
-    query = from(c in ContentType, where: c.uuid == ^id)
+    query = from(c in ContentType, where: c.id == ^id)
     query |> Repo.one() |> Repo.preload(:roles)
   end
 
@@ -2367,7 +2393,7 @@ defmodule WraftDoc.Document do
   """
 
   def get_content_type_under_roles(id) do
-    query = from(r in Role, where: r.uuid == ^id)
+    query = from(r in Role, where: r.id == ^id)
     query |> Repo.one() |> Repo.preload(:content_types)
   end
 
@@ -2376,7 +2402,7 @@ defmodule WraftDoc.Document do
   """
 
   def get_content_type(id) do
-    query = from(c in ContentType, where: c.uuid == ^id)
+    query = from(c in ContentType, where: c.id == ^id)
     Repo.one(query)
   end
 
@@ -2384,23 +2410,7 @@ defmodule WraftDoc.Document do
   create content type role function
   """
 
-  def create_content_type_role(%{"content_type_id" => content_type_id, "role_id" => role_id}) do
-    with %Role{} = role <- get_role_from_uuid(role_id),
-         %ContentType{} = content_type <- get_content_type(content_type_id) do
-      params = %{
-        content_type_id: content_type.id,
-        role_id: role.id
-      }
-
-      do_create_content_type_role(params)
-    end
-  end
-
   def create_content_type_role(params) do
-    do_create_content_type_role(params)
-  end
-
-  def do_create_content_type_role(params) do
     %ContentTypeRole{}
     |> ContentTypeRole.changeset(params)
     |> Repo.insert()
@@ -2423,8 +2433,8 @@ defmodule WraftDoc.Document do
     Repo.paginate(query, params)
   end
 
-  def get_role_from_uuid(uuid) do
-    query = from(r in Role, where: r.uuid == ^uuid)
+  def get_role_from_uuid(id) do
+    query = from(r in Role, where: r.id == ^id)
     Repo.one(query)
   end
 
@@ -2454,8 +2464,7 @@ defmodule WraftDoc.Document do
   """
 
   def get_role_of_content_type(id, c_id) do
-    query =
-      from(r in Role, where: r.uuid == ^id, join: ct in ContentType, where: ct.uuid == ^c_id)
+    query = from(r in Role, where: r.id == ^id, join: ct in ContentType, where: ct.id == ^c_id)
 
     Repo.one(query)
   end
@@ -2465,14 +2474,13 @@ defmodule WraftDoc.Document do
   """
 
   def get_content_type_role(id, role_id) do
-    query =
-      from(ct in ContentType, where: ct.uuid == ^id, join: r in Role, where: r.uuid == ^role_id)
+    query = from(ct in ContentType, where: ct.id == ^id, join: r in Role, where: r.id == ^role_id)
 
     Repo.one(query)
   end
 
-  def get_content_type_role(id) do
-    query = from(ctr in ContentTypeRole, where: ctr.uuid == ^id)
+  def get_content_type_and_role(id) do
+    query = from(ctr in ContentTypeRole, where: ctr.id == ^id)
     Repo.one(query)
   end
 
