@@ -1043,22 +1043,23 @@ defmodule WraftDoc.Enterprise do
   Get a payment from its UUID.
   """
   @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
-  def get_payment(<<_::288>> = payment_uuid, %{role_names: role_names, organisation_id: org_id}) do
-    if Enum.member?(role_names, "super_admin") do
-      Repo.get_by(Payment, uuid: payment_uuid)
-    else
-      Repo.get_by(Payment, uuid: payment_uuid, organisation_id: org_id)
-    end
+
+  # def get_payment(payment_id, %{role_names: role_names, organisation_id: org_id}) do
+  #   if Enum.member?(role_names, "super_admin") do
+  #     Repo.get_by(Payment, id: payment_id)
+  #   else
+  #     Repo.get_by(Payment, id: payment_id, organisation_id: org_id)
+  #   end
+  # end
+
+  @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
+  def get_payment(payment_id, %{role: %{name: "super_admin"}}) do
+    Repo.get_by(Payment, id: payment_id)
   end
 
-  # @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
-  # def get_payment(<<_::288>> = payment_uuid, %{role: %{name: "super_admin"}}) do
-  #   Repo.get_by(Payment, uuid: payment_uuid)
-  # end
-
-  # def get_payment(<<_::288>> = payment_uuid, %{organisation_id: org_id}) do
-  #   Repo.get_by(Payment, uuid: payment_uuid, organisation_id: org_id)
-  # end
+  def get_payment(payment_id, %{organisation_id: org_id}) do
+    Repo.get_by(Payment, id: payment_id, organisation_id: org_id)
+  end
 
   def get_payment(_, _), do: nil
 
@@ -1066,8 +1067,8 @@ defmodule WraftDoc.Enterprise do
   Show a payment.
   """
   @spec show_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
-  def show_payment(payment_uuid, user) do
-    payment_uuid
+  def show_payment(payment_id, user) do
+    payment_id
     |> get_payment(user)
     |> Repo.preload([:organisation, :creator, :membership, :from_plan, :to_plan])
   end
