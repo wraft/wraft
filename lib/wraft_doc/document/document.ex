@@ -1340,14 +1340,22 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def create_block(_, _), do: {:error, :fake}
+
   @doc """
   Get a block by id
   """
   # TODO - write tests
   @spec get_block(Ecto.UUID.t(), User.t()) :: Block.t()
-  def get_block(uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Block, uuid: uuid, organisation_id: org_id)
+  def get_block(<<_::288>> = id, %{organisation_id: org_id}) do
+    case Repo.get_by(Block, id: id, organisation_id: org_id) do
+      %Block{} = block -> block
+      _ -> {:error, :invalid_id, "Block"}
+    end
   end
+
+  def get_block(<<_::288>>, _), do: {:error, :fake}
+  def get_block(_, %{organisation_id: _}), do: {:error, :invalid_id, "Block"}
 
   @doc """
   Update a block
