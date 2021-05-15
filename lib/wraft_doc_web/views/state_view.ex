@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.StateView do
 
   def render("create.json", %{state: state}) do
     %{
-      id: state.uuid,
+      id: state.id,
       state: state.state,
       order: state.order,
       updated_at: state.updated_at,

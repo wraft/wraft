@@ -38,4 +38,17 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
     conn = get(conn, Routes.v1_role_path(conn, :show, role.uuid))
     assert json_response(conn, 200)["name"] == role.name
   end
+
+  test "error not found for id does not exits", %{conn: conn} do
+    conn =
+      build_conn()
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, conn.assigns.current_user)
+
+    user = conn.assigns.current_user
+    role = insert(:role)
+    insert(:membership, organisation: user.organisation)
+    conn = get(conn, Routes.v1_role_path(conn, :show, Ecto.UUID.autogenerate()))
+    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+  end
 end

@@ -55,7 +55,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
         |> assign(:current_user, user)
 
       conn = get(conn, Routes.v1_membership_path(conn, :show, Ecto.UUID.generate()))
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The id does not exist..!"
     end
   end
 

@@ -75,6 +75,11 @@ defmodule WraftDocWeb.FallbackController do
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 
+  def call(conn, {:error, :not_sufficient}) do
+    body = Poison.encode!(%{errors: "This data does not have sufficient associates.!"})
+    conn |> put_resp_content_type("application/json") |> send_resp(422, body)
+  end
+
   def call(conn, {:error, %Razorpay.Error{description: description}}) do
     body = Jason.encode!(%{errors: description})
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
@@ -88,6 +93,21 @@ defmodule WraftDocWeb.FallbackController do
   def call(conn, {:error, :cant_update}) do
     body = Jason.encode!(%{errors: "The instance is not avaliable to edit..!!"})
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
+  end
+
+  def call(conn, {:error, :invalid_id}) do
+    body = Jason.encode!(%{errors: "The id does not exist..!"})
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
+  end
+
+  def call(conn, {:error, :invalid_id, module}) do
+    body = Jason.encode!(%{errors: "The #{module} id does not exist..!"})
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
+  end
+
+  def call(conn, {:error, :invalid_data}) do
+    body = Jason.encode!(%{errors: "Did't have enough data or associates..!"})
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
   def call(conn, nil) do

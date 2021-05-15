@@ -78,7 +78,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
 
       payment = insert(:payment)
       conn = get(conn, Routes.v1_payment_path(conn, :show, payment.uuid))
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The id does not exist..!"
     end
 
     test "returns nil for non existent payment", %{conn: conn} do
@@ -91,7 +91,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
         |> assign(:current_user, user)
 
       conn = get(conn, Routes.v1_payment_path(conn, :show, Ecto.UUID.generate()))
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The id does not exist..!"
     end
 
     test "returns nil for invalid data", %{conn: conn} do
@@ -104,7 +104,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
         |> assign(:current_user, user)
 
       conn = get(conn, Routes.v1_payment_path(conn, :show, 1))
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The id does not exist..!"
     end
   end
 end

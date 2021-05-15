@@ -142,7 +142,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_block_template_path(conn, :show, Ecto.UUID.generate()))
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
   end
 
   test "delete block_template by given id", %{conn: conn} do

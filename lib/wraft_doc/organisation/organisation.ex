@@ -44,7 +44,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     |> validate_required([:name, :legal_name, :email])
     |> cast_attachments(attrs, [:logo])
     |> unique_constraint(:legal_name,
-      message: "Organisation name already taken.! Try another one.",
+      message: "Organisation Already Registered.",
       name: :organisation_unique_index
     )
     |> unique_constraint(:gstin,
