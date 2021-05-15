@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.PipelineView do
 
   def render("create.json", %{pipeline: pipeline}) do
     %{
-      id: pipeline.uuid,
+      id: pipeline.id,
       name: pipeline.name,
       api_route: pipeline.api_route,
       inserted_at: pipeline.inserted_at,
@@ -30,7 +30,7 @@ defmodule WraftDocWeb.Api.V1.PipelineView do
 
   def render("pipeline.json", %{pipeline: pipeline}) do
     %{
-      id: pipeline.uuid,
+      id: pipeline.id,
       name: pipeline.name,
       api_route: pipeline.api_route,
       inserted_at: pipeline.inserted_at,
@@ -40,7 +40,7 @@ defmodule WraftDocWeb.Api.V1.PipelineView do
 
   def render("show.json", %{pipeline: pipeline}) do
     %{
-      id: pipeline.uuid,
+      id: pipeline.id,
       name: pipeline.name,
       api_route: pipeline.api_route,
       inserted_at: pipeline.inserted_at,
