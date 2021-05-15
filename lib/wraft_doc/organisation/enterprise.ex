@@ -522,7 +522,7 @@ defmodule WraftDoc.Enterprise do
             approver,
             current_user.id,
             "assigned_as_approver",
-            approval_system.uuid,
+            approval_system.id,
             ApprovalSystem
           )
         end)
@@ -567,9 +567,9 @@ defmodule WraftDoc.Enterprise do
   """
 
   @spec get_approval_system(Ecto.UUID.t(), User.t()) :: ApprovalSystem.t()
-  def get_approval_system(uuid, %{organisation_id: org_id}) do
+  def get_approval_system(id, %{organisation_id: org_id}) do
     ApprovalSystem
-    |> Repo.get_by(uuid: uuid, organisation_id: org_id)
+    |> Repo.get_by(id: id, organisation_id: org_id)
     |> Repo.preload([:instance, :pre_state, :post_state, :approver, :organisation, :user])
   end
 
@@ -649,10 +649,10 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Check the user and approver is same while approving the content
   """
-  def same_user?(current_user_uuid, approver_uuid) when current_user_uuid != approver_uuid,
+  def same_user?(current_user_id, approver_id) when current_user_id != approver_id,
     do: :invalid_user
 
-  def same_user?(current_user_uuid, approver_uuid) when current_user_uuid === approver_uuid,
+  def same_user?(current_user_id, approver_id) when current_user_id === approver_id,
     do: true
 
   @doc """
@@ -1043,22 +1043,23 @@ defmodule WraftDoc.Enterprise do
   Get a payment from its UUID.
   """
   @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
-  def get_payment(<<_::288>> = payment_uuid, %{role_names: role_names, organisation_id: org_id}) do
-    if Enum.member?(role_names, "super_admin") do
-      Repo.get_by(Payment, uuid: payment_uuid)
-    else
-      Repo.get_by(Payment, uuid: payment_uuid, organisation_id: org_id)
-    end
+
+  # def get_payment(payment_id, %{role_names: role_names, organisation_id: org_id}) do
+  #   if Enum.member?(role_names, "super_admin") do
+  #     Repo.get_by(Payment, id: payment_id)
+  #   else
+  #     Repo.get_by(Payment, id: payment_id, organisation_id: org_id)
+  #   end
+  # end
+
+  @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
+  def get_payment(payment_id, %{role: %{name: "super_admin"}}) do
+    Repo.get_by(Payment, id: payment_id)
   end
 
-  # @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
-  # def get_payment(<<_::288>> = payment_uuid, %{role: %{name: "super_admin"}}) do
-  #   Repo.get_by(Payment, uuid: payment_uuid)
-  # end
-
-  # def get_payment(<<_::288>> = payment_uuid, %{organisation_id: org_id}) do
-  #   Repo.get_by(Payment, uuid: payment_uuid, organisation_id: org_id)
-  # end
+  def get_payment(payment_id, %{organisation_id: org_id}) do
+    Repo.get_by(Payment, id: payment_id, organisation_id: org_id)
+  end
 
   def get_payment(_, _), do: nil
 
@@ -1066,8 +1067,8 @@ defmodule WraftDoc.Enterprise do
   Show a payment.
   """
   @spec show_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
-  def show_payment(payment_uuid, user) do
-    payment_uuid
+  def show_payment(payment_id, user) do
+    payment_id
     |> get_payment(user)
     |> Repo.preload([:organisation, :creator, :membership, :from_plan, :to_plan])
   end
@@ -1211,7 +1212,7 @@ defmodule WraftDoc.Enterprise do
   end
 
   def get_role_of_the_organisation(id, o_id) do
-    query = from(r in Role, where: r.uuid == ^id, join: o in Organisation, where: o.uuid == ^o_id)
+    query = from(r in Role, where: r.id == ^id, join: o in Organisation, where: o.id == ^o_id)
     Repo.one(query)
   end
 
@@ -1227,8 +1228,8 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  def get_organisation_id_roles(uuid) do
-    query = from(o in Organisation, where: o.uuid == ^uuid)
+  def get_organisation_id_roles(id) do
+    query = from(o in Organisation, where: o.id == ^id)
     query |> Repo.one() |> Repo.preload(:roles)
   end
 end

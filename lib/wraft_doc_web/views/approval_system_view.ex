@@ -4,10 +4,10 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemView do
 
   def render("approval_system.json", %{approval_system: approval_system}) do
     %{
-      instance: %{id: approval_system.instance.uuid},
-      pre_state: %{id: approval_system.pre_state.uuid, state: approval_system.pre_state.state},
-      post_state: %{id: approval_system.post_state.uuid, state: approval_system.post_state.state},
-      approver: %{id: approval_system.approver.uuid, name: approval_system.approver.name},
+      instance: %{id: approval_system.instance.id},
+      pre_state: %{id: approval_system.pre_state.id, state: approval_system.pre_state.state},
+      post_state: %{id: approval_system.post_state.id, state: approval_system.post_state.state},
+      approver: %{id: approval_system.approver.id, name: approval_system.approver.name},
       inserted_at: approval_system.inserted_at,
       updated_at: approval_system.updated_at
     }
@@ -16,12 +16,12 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemView do
   def render("approve.json", %{approval_system: approval_system, instance: instance}) do
     %{
       instance: %{
-        id: instance.uuid,
-        state_id: instance.state.uuid,
+        id: instance.id,
+        state_id: instance.state.id,
         state: instance.state.state
       },
-      pre_state: %{id: approval_system.pre_state.uuid, state: approval_system.pre_state.state},
-      post_state: %{id: approval_system.post_state.uuid, state: approval_system.post_state.state},
+      pre_state: %{id: approval_system.pre_state.id, state: approval_system.pre_state.state},
+      post_state: %{id: approval_system.post_state.id, state: approval_system.post_state.state},
       approved: approval_system.approved
     }
   end
