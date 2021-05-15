@@ -1658,9 +1658,9 @@ defmodule WraftDoc.Document do
   @doc """
   Creates a background job for block template bulk import.
   """
-  @spec insert_block_template_bulk_import_work(binary, map, Plug.Uploap.t()) ::
+  @spec insert_block_template_bulk_import_work(User.t(), map, Plug.Uploap.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  def insert_block_template_bulk_import_work(<<_::288>> = user_uuid, mapping, %Plug.Upload{
+  def insert_block_template_bulk_import_work(%User{id: user_id}, mapping, %Plug.Upload{
         filename: filename,
         path: path
       }) do
@@ -1669,7 +1669,7 @@ defmodule WraftDoc.Document do
     System.cmd("cp", [path, dest_path])
 
     data = %{
-      user_uuid: user_uuid,
+      user_id: user_id,
       mapping: mapping,
       file: dest_path
     }
@@ -1928,14 +1928,23 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def create_block_template(_, _), do: {:error, :fake}
+
   @doc """
   Get a block template by its uuid
   """
   # TODO - write tests
   @spec get_block_template(Ecto.UUID.t(), User.t()) :: BlockTemplate.t()
-  def get_block_template(uuid, %{organisation_id: org_id}) do
-    Repo.get_by(BlockTemplate, uuid: uuid, organisation_id: org_id)
+  def get_block_template(<<_::288>> = id, %{organisation_id: org_id}) do
+    case Repo.get_by(BlockTemplate, id: id, organisation_id: org_id) do
+      %BlockTemplate{} = block_template -> block_template
+      _ -> {:error, :invalid_id, "BlockTemplate"}
+    end
   end
+
+  def get_block_template(<<_::288>>, _), do: {:error, :invalid_id, "BlockTemplate"}
+  def get_block_template(_, %{organisation_id: _org_id}), do: {:error, :fake}
+  def get_block_template(_, _), do: {:error, :invalid_id, "BlockTemplate"}
 
   @doc """
   Updates a block template
@@ -1955,6 +1964,8 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def update_block_template(_, _, _), do: {:error, :fake}
+
   @doc """
   Delete a block template by uuid
   """
@@ -1963,6 +1974,8 @@ defmodule WraftDoc.Document do
   def delete_block_template(%User{id: id}, %BlockTemplate{} = block_template) do
     Spur.delete(block_template, %{actor: "#{id}", meta: block_template})
   end
+
+  def delete_block_template(_, _), do: {:error, :fake}
 
   @doc """
   Index of a block template by organisation
