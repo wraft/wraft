@@ -27,8 +27,8 @@ defmodule WraftDoc.Document.BlockTemplate do
 
   def changeset(block_template, attrs \\ %{}) do
     block_template
-    |> cast(attrs, [:title, :body, :serialized, :organisation_id])
-    |> validate_required([:title, :body, :serialized, :organisation_id])
+    |> cast(attrs, [:title, :body, :serialized, :organisation_id, :creator_id])
+    |> validate_required([:title, :body, :serialized, :organisation_id, :creator_id])
     |> unique_constraint(:title,
       message: "A block template with the same name exists.!",
       name: :organisation_block_template_unique_index
