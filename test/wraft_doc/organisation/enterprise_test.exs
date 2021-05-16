@@ -843,7 +843,7 @@ defmodule WraftDoc.EnterpriseTest do
     test "get vendor returns the vendor data" do
       user = insert(:user)
       vendor = insert(:vendor, creator: user, organisation: user.organisation)
-      v_vendor = Enterprise.get_vendor(user, vendor.uuid)
+      v_vendor = Enterprise.get_vendor(user, vendor.id)
       assert v_vendor.name == vendor.name
       assert v_vendor.email == vendor.email
       assert v_vendor.phone == vendor.phone
@@ -857,7 +857,7 @@ defmodule WraftDoc.EnterpriseTest do
     test "get vendor from another organisation will not be possible" do
       user = insert(:user)
       vendor = insert(:vendor, creator: user)
-      v_vendor = Enterprise.get_vendor(vendor.uuid, user)
+      v_vendor = Enterprise.get_vendor(vendor.id, user)
       assert v_vendor == nil
     end
   end
@@ -866,7 +866,7 @@ defmodule WraftDoc.EnterpriseTest do
     test "show vendor returns the vendor data and preloads" do
       user = insert(:user)
       vendor = insert(:vendor, creator: user, organisation: user.organisation)
-      v_vendor = Enterprise.show_vendor(vendor.uuid, user)
+      v_vendor = Enterprise.show_vendor(vendor.id, user)
       assert v_vendor.name == vendor.name
       assert v_vendor.email == vendor.email
       assert v_vendor.phone == vendor.phone

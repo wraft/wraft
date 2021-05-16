@@ -1103,14 +1103,14 @@ defmodule WraftDoc.Enterprise do
 
   """
   @spec get_vendor(Organisation.t(), Ecto.UUID.t()) :: Vendor.t()
-  def get_vendor(%User{organisation_id: id}, uuid) do
-    Repo.get_by(Vendor, uuid: uuid, organisation_id: id)
+  def get_vendor(%User{organisation_id: id}, id) do
+    Repo.get_by(Vendor, id: id, organisation_id: id)
   end
 
   def get_vendor(_, _), do: nil
   @spec show_vendor(Ecto.UUID.t(), User.t()) :: Vendor.t()
-  def show_vendor(uuid, user) do
-    user |> get_vendor(uuid) |> Repo.preload([:creator, :organisation])
+  def show_vendor(id, user) do
+    user |> get_vendor(id) |> Repo.preload([:creator, :organisation])
   end
 
   @doc """
