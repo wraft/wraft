@@ -163,7 +163,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       plan = insert(:plan)
-      conn = get(conn, Routes.v1_plan_path(conn, :show, plan.uuid))
+      conn = get(conn, Routes.v1_plan_path(conn, :show, plan.id))
 
       assert json_response(conn, 200)["name"] == plan.name
       assert json_response(conn, 200)["description"] == plan.description
@@ -191,7 +191,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
 
       plan = insert(:plan)
 
-      conn = get(conn, Routes.v1_plan_path(conn, :show, plan.uuid))
+      conn = get(conn, Routes.v1_plan_path(conn, :show, plan.id))
 
       assert json_response(conn, 200)["name"] == plan.name
       assert json_response(conn, 200)["description"] == plan.description
@@ -202,7 +202,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
     test "shows a plan on valid uuid when there is no user logged in" do
       conn = build_conn()
       plan = insert(:plan)
-      conn = get(conn, Routes.v1_plan_path(conn, :show, plan.uuid))
+      conn = get(conn, Routes.v1_plan_path(conn, :show, plan.id))
 
       assert json_response(conn, 200)["name"] == plan.name
       assert json_response(conn, 200)["description"] == plan.description
@@ -214,7 +214,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
       conn = build_conn()
       plan = insert(:plan)
       conn = get(conn, Routes.v1_plan_path(conn, :show, Ecto.UUID.autogenerate()))
-      assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+      assert json_response(conn, 404) == "Not Found"
     end
 
     test "returns nil when plan with given uuid does not exist", %{conn: conn} do
@@ -246,7 +246,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       plan = insert(:plan)
-      conn = put(conn, Routes.v1_plan_path(conn, :update, plan.uuid), @valid_attrs)
+      conn = put(conn, Routes.v1_plan_path(conn, :update, plan.id), @valid_attrs)
 
       assert json_response(conn, 200)["name"] == @valid_attrs.name
       assert json_response(conn, 200)["description"] == @valid_attrs.description
@@ -261,7 +261,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       plan = insert(:plan)
-      conn = put(conn, Routes.v1_plan_path(conn, :update, plan.uuid), %{name: ""})
+      conn = put(conn, Routes.v1_plan_path(conn, :update, plan.id), %{name: ""})
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
     end
 
@@ -303,7 +303,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
         build_conn()
         |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
         |> assign(:current_user, user)
-        |> put(Routes.v1_plan_path(conn, :update, plan.uuid), %{})
+        |> put(Routes.v1_plan_path(conn, :update, plan.id), %{})
 
       assert json_response(conn, 400)["errors"] == "You are not authorized for this action.!"
     end
@@ -318,7 +318,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
         |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
         |> assign(:current_user, conn.assigns.current_user)
 
-      conn = delete(conn, Routes.v1_plan_path(conn, :delete, plan.uuid))
+      conn = delete(conn, Routes.v1_plan_path(conn, :delete, plan.id))
       assert json_response(conn, 200)["name"] == plan.name
       assert json_response(conn, 200)["description"] == plan.description
       assert json_response(conn, 200)["yearly_amount"] == plan.yearly_amount
@@ -363,7 +363,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
         build_conn()
         |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
         |> assign(:current_user, user)
-        |> delete(Routes.v1_plan_path(conn, :delete, plan.uuid))
+        |> delete(Routes.v1_plan_path(conn, :delete, plan.id))
 
       assert json_response(conn, 400)["errors"] == "You are not authorized for this action.!"
     end

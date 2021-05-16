@@ -723,7 +723,7 @@ defmodule WraftDoc.Enterprise do
   """
   @spec get_plan(Ecto.UUID.t()) :: Plan.t() | nil
   def get_plan(<<_::288>> = p_uuid) do
-    Repo.get_by(Plan, uuid: p_uuid)
+    Repo.get_by(Plan, id: p_uuid)
   end
 
   def get_plan(_), do: nil
