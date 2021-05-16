@@ -311,7 +311,7 @@ defmodule WraftDoc.DocumentTest do
       flow = insert(:flow, creator: user, organisation: user.organisation)
       param = Map.put(@valid_content_type_attrs, "fields", fields)
       count_before = ContentType |> Repo.all() |> length()
-      content_type = Document.create_content_type(user, layout, flow, param)
+      content_type = Document.create_content_type(user, param)
       count_after = ContentType |> Repo.all() |> length()
       assert count_before + 1 == count_after
       assert content_type.name == @valid_content_type_attrs["name"]
@@ -326,7 +326,7 @@ defmodule WraftDoc.DocumentTest do
       flow = insert(:flow, creator: user)
       count_before = ContentType |> Repo.all() |> length()
 
-      {:error, changeset} = Document.create_content_type(user, layout, flow, @invalid_attrs)
+      {:error, changeset} = Document.create_content_type(user, @invalid_attrs)
       count_after = ContentType |> Repo.all() |> length()
       assert count_before == count_after
 
@@ -1344,9 +1344,9 @@ defmodule WraftDoc.DocumentTest do
         "organisation_id" => user.organisation_id,
         "stages" => [
           %{
-            "state_id" => state.uuid,
-            "content_type_id" => c_type.uuid,
-            "data_template_id" => d_temp.uuid
+            "state_id" => state.id,
+            "content_type_id" => c_type.id,
+            "data_template_id" => d_temp.id
           }
         ]
       }
@@ -1379,9 +1379,9 @@ defmodule WraftDoc.DocumentTest do
       state = insert(:state, organisation: user.organisation)
 
       attrs = %{
-        "state_id" => state.uuid,
-        "content_type_id" => c_type.uuid,
-        "data_template_id" => d_temp.uuid
+        "state_id" => state.id,
+        "content_type_id" => c_type.id,
+        "data_template_id" => d_temp.id
       }
 
       count_before = Stage |> Repo.all() |> length()
@@ -1406,9 +1406,9 @@ defmodule WraftDoc.DocumentTest do
       insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
 
       attrs = %{
-        "state_id" => state.uuid,
-        "content_type_id" => c_type.uuid,
-        "data_template_id" => d_temp.uuid
+        "state_id" => state.id,
+        "content_type_id" => c_type.id,
+        "data_template_id" => d_temp.id
       }
 
       count_before = Stage |> Repo.all() |> length()
@@ -1473,9 +1473,9 @@ defmodule WraftDoc.DocumentTest do
       state = insert(:state)
 
       attrs = %{
-        "state_id" => state.uuid,
-        "content_type_id" => c_type.uuid,
-        "data_template_id" => d_temp.uuid
+        "state_id" => state.id,
+        "content_type_id" => c_type.id,
+        "data_template_id" => d_temp.id
       }
 
       count_before = Stage |> Repo.all() |> length()
@@ -1508,15 +1508,15 @@ defmodule WraftDoc.DocumentTest do
     test "returns the pipeline in the user's organisation with given id" do
       user = insert(:user)
       pipe = insert(:pipeline, organisation: user.organisation)
-      pipeline = Document.get_pipeline(user, pipe.uuid)
+      pipeline = Document.get_pipeline(user, pipe.id)
       assert pipeline.name == pipe.name
-      assert pipeline.uuid == pipe.uuid
+      assert pipeline.id == pipe.id
     end
 
     test "returns nil when pipeline does not belong to the user's organisation" do
       user = insert(:user)
       pipeline = insert(:pipeline)
-      response = Document.get_pipeline(user, pipeline.uuid)
+      response = Document.get_pipeline(user, pipeline.id)
       assert response == nil
     end
 
@@ -1536,15 +1536,15 @@ defmodule WraftDoc.DocumentTest do
     test "returns the pipeline in the user's organisation with given id" do
       user = insert(:user)
       pipe = insert(:pipeline, organisation: user.organisation)
-      pipeline = Document.show_pipeline(user, pipe.uuid)
+      pipeline = Document.show_pipeline(user, pipe.id)
       assert pipeline.name == pipe.name
-      assert pipeline.uuid == pipe.uuid
+      assert pipeline.id == pipe.id
     end
 
     test "returns nil when pipeline does not belong to the user's organisation" do
       user = insert(:user)
       pipeline = insert(:pipeline)
-      response = Document.show_pipeline(user, pipeline.uuid)
+      response = Document.show_pipeline(user, pipeline.id)
       assert response == nil
     end
 
@@ -1573,9 +1573,9 @@ defmodule WraftDoc.DocumentTest do
         "api_route" => "www.crm.com",
         "stages" => [
           %{
-            "content_type_id" => c_type.uuid,
-            "data_template_id" => d_temp.uuid,
-            "state_id" => state.uuid
+            "content_type_id" => c_type.id,
+            "data_template_id" => d_temp.id,
+            "state_id" => state.id
           }
         ]
       }

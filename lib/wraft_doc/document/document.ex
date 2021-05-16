@@ -994,7 +994,7 @@ defmodule WraftDoc.Document do
     query =
       from(dt in DataTemplate,
         join: ct in ContentType,
-        where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id,
+        where: ct.id == ^c_type_uuid and dt.content_type_id == ct.id,
         order_by: [desc: dt.id],
         preload: [:content_type]
       )
@@ -1027,7 +1027,7 @@ defmodule WraftDoc.Document do
   def get_d_template(%User{organisation_id: org_id}, <<_::288>> = d_temp_uuid) do
     query =
       from(d in DataTemplate,
-        where: d.uuid == ^d_temp_uuid,
+        where: d.id == ^d_temp_uuid,
         join: c in ContentType,
         where: c.id == d.content_type_id and c.organisation_id == ^org_id
       )
