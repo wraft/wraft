@@ -376,9 +376,9 @@ defmodule WraftDoc.EnterpriseTest do
   describe "get_plan/1" do
     test "fetches a plan with valid uuid" do
       plan = insert(:plan)
-      fetched_plan = Enterprise.get_plan(plan.uuid)
+      fetched_plan = Enterprise.get_plan(plan.id)
 
-      assert fetched_plan.uuid == plan.uuid
+      assert fetched_plan.id == plan.id
       assert fetched_plan.name == plan.name
     end
 
@@ -419,7 +419,7 @@ defmodule WraftDoc.EnterpriseTest do
       attrs = %{name: "Basic", description: "Basic plan", yearly_amount: 200, monthly_amount: 105}
       {:ok, updated_plan} = Enterprise.update_plan(plan, attrs)
 
-      assert updated_plan.uuid == plan.uuid
+      assert updated_plan.id == plan.id
       assert updated_plan.name == attrs.name
       assert updated_plan.description == attrs.description
       assert updated_plan.yearly_amount == attrs.yearly_amount
@@ -450,7 +450,7 @@ defmodule WraftDoc.EnterpriseTest do
       {:ok, deleted_plan} = Enterprise.delete_plan(plan)
 
       assert before_count - 1 == Plan |> Repo.all() |> length()
-      assert deleted_plan.uuid == plan.uuid
+      assert deleted_plan.id == plan.id
     end
 
     test "returns nil when given input is not a plan struct" do
