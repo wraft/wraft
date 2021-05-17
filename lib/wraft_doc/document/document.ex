@@ -2310,7 +2310,7 @@ defmodule WraftDoc.Document do
       from(s in Stage,
         join: p in Pipeline,
         where: p.organisation_id == ^org_id and s.pipeline_id == p.id,
-        where: s.uuid == ^s_uuid
+        where: s.id == ^s_uuid
       )
 
     Repo.one(query)
