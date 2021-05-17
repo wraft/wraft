@@ -47,7 +47,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
 
       params =
         Map.put(@valid_attrs, :stages, [
-          %{content_type_id: c_type.uuid, data_template_id: data_temp.uuid, state_id: state.uuid}
+          %{content_type_id: c_type.uuid, data_template_id: data_temp.id, state_id: state.id}
         ])
 
       count_before = Pipeline |> Repo.all() |> length()
@@ -151,15 +151,15 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       params =
         Map.put(@valid_attrs, :stages, [
           %{
-            content_type_id: c_type.uuid,
-            data_template_id: data_template.uuid,
-            state_id: state.uuid
+            content_type_id: c_type.id,
+            data_template_id: data_template.id,
+            state_id: state.id
           }
         ])
 
       conn =
         conn
-        |> put(Routes.v1_pipeline_path(conn, :update, pipeline.uuid), params)
+        |> put(Routes.v1_pipeline_path(conn, :update, pipeline.id), params)
         |> doc(operation_id: "update_pipeline")
 
       c_types =
@@ -202,7 +202,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
 
       conn =
         conn
-        |> put(Routes.v1_pipeline_path(conn, :update, pipeline.uuid, %{name: ""}))
+        |> put(Routes.v1_pipeline_path(conn, :update, pipeline.id, %{name: ""}))
         |> doc(operation_id: "update_pipeline")
 
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -226,7 +226,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       conn = get(conn, Routes.v1_pipeline_path(conn, :show, pipeline.uuid))
 
       assert json_response(conn, 200)["name"] == pipeline.name
-      assert json_response(conn, 200)["id"] == pipeline.uuid
+      assert json_response(conn, 200)["id"] == pipeline.id
     end
 
     test "show returns not found for non-existent ID", %{conn: conn} do
