@@ -1625,15 +1625,15 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       pipeline = insert(:pipeline, organisation: user.organisation)
       stage = insert(:pipe_stage, pipeline: pipeline)
-      response = Document.get_pipe_stage(user, stage.uuid)
+      response = Document.get_pipe_stage(user, stage.id)
       assert response.pipeline_id == pipeline.id
-      assert response.uuid == stage.uuid
+      assert response.id == stage.id
     end
 
     test "returns nil when stage does not belong to user's organisation" do
       user = insert(:user)
       stage = insert(:pipe_stage)
-      response = Document.get_pipe_stage(user, stage.uuid)
+      response = Document.get_pipe_stage(user, stage.id)
       assert response == nil
     end
 
@@ -1658,14 +1658,14 @@ defmodule WraftDoc.DocumentTest do
       state = insert(:state, organisation: user.organisation)
 
       attrs = %{
-        "state_id" => state.uuid,
-        "content_type_id" => c_type.uuid,
-        "data_template_id" => d_temp.uuid
+        "state_id" => state.id,
+        "content_type_id" => c_type.id,
+        "data_template_id" => d_temp.id
       }
 
       {:ok, updated_stage} = Document.update_pipe_stage(user, stage, attrs)
 
-      assert updated_stage.uuid == stage.uuid
+      assert updated_stage.id == stage.id
       assert updated_stage.content_type_id == c_type.id
       assert updated_stage.data_template_id == d_temp.id
       assert updated_stage.state_id == state.id
@@ -1681,9 +1681,9 @@ defmodule WraftDoc.DocumentTest do
       stage = insert(:pipe_stage, pipeline: pipeline)
 
       attrs = %{
-        "state_id" => state.uuid,
-        "content_type_id" => c_type.uuid,
-        "data_template_id" => d_temp.uuid
+        "state_id" => state.id,
+        "content_type_id" => c_type.id,
+        "data_template_id" => d_temp.id
       }
 
       {:error, changeset} = Document.update_pipe_stage(user, stage, attrs)
@@ -1719,7 +1719,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       stage = insert(:pipe_stage)
       state = insert(:state)
-      attrs = %{"state_id" => state.uuid}
+      attrs = %{"state_id" => state.id}
 
       stage = Document.update_pipe_stage(user, stage, attrs)
 
@@ -1734,9 +1734,9 @@ defmodule WraftDoc.DocumentTest do
       state = insert(:state)
 
       attrs = %{
-        "state_id" => state.uuid,
-        "content_type_id" => c_type.uuid,
-        "data_template_id" => d_temp.uuid
+        "state_id" => state.id,
+        "content_type_id" => c_type.id,
+        "data_template_id" => d_temp.id
       }
 
       response = Document.update_pipe_stage(user, stage, attrs)
