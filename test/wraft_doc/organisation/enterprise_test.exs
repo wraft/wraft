@@ -139,7 +139,7 @@ defmodule WraftDoc.EnterpriseTest do
     s1 = insert(:state, flow: flow, creator: flow.creator)
     s2 = insert(:state, flow: flow, creator: flow.creator)
 
-    states = Enterprise.state_index(flow.uuid, %{page_number: 1})
+    states = Enterprise.state_index(flow.id, %{page_number: 1})
 
     assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s1.state
     assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s2.state

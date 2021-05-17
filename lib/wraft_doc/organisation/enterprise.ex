@@ -217,7 +217,7 @@ defmodule WraftDoc.Enterprise do
     query =
       from(s in State,
         join: f in Flow,
-        where: f.uuid == ^flow_uuid and s.flow_id == f.id,
+        where: f.id == ^flow_uuid and s.flow_id == f.id,
         order_by: [desc: s.id],
         preload: [:flow, :creator]
       )
