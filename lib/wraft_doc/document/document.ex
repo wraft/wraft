@@ -942,7 +942,7 @@ defmodule WraftDoc.Document do
   # TODO - improve test
   @spec get_theme(binary, User.t()) :: Theme.t() | nil
   def get_theme(theme_uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Theme, uuid: theme_uuid, organisation_id: org_id)
+    Repo.get_by(Theme, id: theme_uuid, organisation_id: org_id)
   end
 
   @doc """
