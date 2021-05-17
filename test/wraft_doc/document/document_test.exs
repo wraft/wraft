@@ -918,7 +918,7 @@ defmodule WraftDoc.DocumentTest do
     test "get theme returns the theme data" do
       user = insert(:user)
       theme = insert(:theme, creator: user, organisation: user.organisation)
-      t_theme = Document.get_theme(theme.uuid, user)
+      t_theme = Document.get_theme(theme.id, user)
       assert t_theme.name == theme.name
       assert t_theme.font == theme.font
     end
@@ -928,7 +928,7 @@ defmodule WraftDoc.DocumentTest do
     test "show theme returns the theme data and preloads the creator" do
       user = insert(:user)
       theme = insert(:theme, creator: user, organisation: user.organisation)
-      t_theme = Document.show_theme(theme.uuid, user)
+      t_theme = Document.show_theme(theme.id, user)
       assert t_theme.name == theme.name
       assert t_theme.font == theme.font
 
