@@ -212,7 +212,7 @@ defmodule WraftDoc.Account do
   """
   @spec get_profile(Ecto.UUID.t()) :: Profile.t() | nil
   def get_profile(<<_::288>> = id) do
-    Profile |> Repo.get_by(uuid: id) |> Repo.preload(:user) |> Repo.preload(:country)
+    Profile |> Repo.get_by(id: id) |> Repo.preload(:user) |> Repo.preload(:country)
   end
 
   def get_profile(_id), do: nil
