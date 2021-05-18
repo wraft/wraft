@@ -36,7 +36,7 @@ defmodule WraftDoc.Account.User do
     has_many(:roles, through: [:user_roles, :role])
 
     many_to_many(:activities, Spur.Activity,
-      join_through: WraftDoc.User.Audience,
+      join_through: WraftDoc.Account.User.Audience,
       join_keys: [user_id: :id, activity_id: :id]
     )
 
