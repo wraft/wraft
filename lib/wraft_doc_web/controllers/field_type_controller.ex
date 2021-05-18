@@ -153,10 +153,10 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => field_type_uuid}) do
+  def show(conn, %{"id" => field_type_id}) do
     current_user = conn.assigns.current_user
 
-    with %FieldType{} = field_type <- Document.get_field_type(field_type_uuid, current_user) do
+    with %FieldType{} = field_type <- Document.get_field_type(field_type_id, current_user) do
       render(conn, "field_type.json", field_type: field_type)
     end
   end
@@ -181,10 +181,10 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
-    with %FieldType{} = field_type <- Document.get_field_type(uuid, current_user),
+    with %FieldType{} = field_type <- Document.get_field_type(id, current_user),
          {:ok, field_type} <- Document.update_field_type(field_type, params) do
       render(conn, "field_type.json", field_type: field_type)
     end
@@ -208,10 +208,10 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %FieldType{} = field_type <- Document.get_field_type(uuid, current_user),
+    with %FieldType{} = field_type <- Document.get_field_type(id, current_user),
          {:ok, %FieldType{}} <- Document.delete_field_type(field_type) do
       render(conn, "field_type.json", field_type: field_type)
     end
