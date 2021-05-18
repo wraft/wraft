@@ -16,7 +16,7 @@ defmodule WraftDoc.Document.Pipeline do
     end
   end
 
-  @derive {Jason.Encoder, only: [:id, :uuid, :name, :api_route]}
+  @derive {Jason.Encoder, only: [:id, :name, :api_route]}
   schema "pipeline" do
     field(:name, :string)
     field(:api_route, :string)

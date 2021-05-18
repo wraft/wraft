@@ -139,7 +139,7 @@ defmodule WraftDoc.EnterpriseTest do
     s1 = insert(:state, flow: flow, creator: flow.creator)
     s2 = insert(:state, flow: flow, creator: flow.creator)
 
-    states = Enterprise.state_index(flow.uuid, %{page_number: 1})
+    states = Enterprise.state_index(flow.id, %{page_number: 1})
 
     assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s1.state
     assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s2.state
@@ -376,9 +376,9 @@ defmodule WraftDoc.EnterpriseTest do
   describe "get_plan/1" do
     test "fetches a plan with valid uuid" do
       plan = insert(:plan)
-      fetched_plan = Enterprise.get_plan(plan.uuid)
+      fetched_plan = Enterprise.get_plan(plan.id)
 
-      assert fetched_plan.uuid == plan.uuid
+      assert fetched_plan.id == plan.id
       assert fetched_plan.name == plan.name
     end
 
@@ -419,7 +419,7 @@ defmodule WraftDoc.EnterpriseTest do
       attrs = %{name: "Basic", description: "Basic plan", yearly_amount: 200, monthly_amount: 105}
       {:ok, updated_plan} = Enterprise.update_plan(plan, attrs)
 
-      assert updated_plan.uuid == plan.uuid
+      assert updated_plan.id == plan.id
       assert updated_plan.name == attrs.name
       assert updated_plan.description == attrs.description
       assert updated_plan.yearly_amount == attrs.yearly_amount
@@ -450,7 +450,7 @@ defmodule WraftDoc.EnterpriseTest do
       {:ok, deleted_plan} = Enterprise.delete_plan(plan)
 
       assert before_count - 1 == Plan |> Repo.all() |> length()
-      assert deleted_plan.uuid == plan.uuid
+      assert deleted_plan.id == plan.id
     end
 
     test "returns nil when given input is not a plan struct" do
@@ -843,7 +843,7 @@ defmodule WraftDoc.EnterpriseTest do
     test "get vendor returns the vendor data" do
       user = insert(:user)
       vendor = insert(:vendor, creator: user, organisation: user.organisation)
-      v_vendor = Enterprise.get_vendor(user, vendor.uuid)
+      v_vendor = Enterprise.get_vendor(user, vendor.id)
       assert v_vendor.name == vendor.name
       assert v_vendor.email == vendor.email
       assert v_vendor.phone == vendor.phone
@@ -857,7 +857,7 @@ defmodule WraftDoc.EnterpriseTest do
     test "get vendor from another organisation will not be possible" do
       user = insert(:user)
       vendor = insert(:vendor, creator: user)
-      v_vendor = Enterprise.get_vendor(vendor.uuid, user)
+      v_vendor = Enterprise.get_vendor(vendor.id, user)
       assert v_vendor == nil
     end
   end
@@ -866,7 +866,7 @@ defmodule WraftDoc.EnterpriseTest do
     test "show vendor returns the vendor data and preloads" do
       user = insert(:user)
       vendor = insert(:vendor, creator: user, organisation: user.organisation)
-      v_vendor = Enterprise.show_vendor(vendor.uuid, user)
+      v_vendor = Enterprise.show_vendor(vendor.id, user)
       assert v_vendor.name == vendor.name
       assert v_vendor.email == vendor.email
       assert v_vendor.phone == vendor.phone

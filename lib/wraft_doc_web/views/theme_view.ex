@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.ThemeView do
 
   def render("create.json", %{theme: theme}) do
     %{
-      id: theme.uuid,
+      id: theme.id,
       name: theme.name,
       font: theme.font,
       typescale: theme.typescale,
