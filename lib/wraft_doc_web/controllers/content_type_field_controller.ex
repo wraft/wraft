@@ -25,11 +25,11 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
     with %ContentTypeField{content_type_id: c_type_id} = content_type_field <-
-           Document.get_content_type_field(uuid, current_user),
+           Document.get_content_type_field(id, current_user),
          {:ok, %ContentTypeField{}} <-
            Document.delete_content_type_field(content_type_field, current_user),
          %ContentType{} = c_type <- Document.get_content_type_from_id(c_type_id) do
