@@ -47,7 +47,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
 
       params =
         Map.put(@valid_attrs, :stages, [
-          %{content_type_id: c_type.uuid, data_template_id: data_temp.id, state_id: state.id}
+          %{content_type_id: c_type.id, data_template_id: data_temp.id, state_id: state.id}
         ])
 
       count_before = Pipeline |> Repo.all() |> length()
@@ -223,7 +223,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       c_type = insert(:content_type)
       insert(:content_type_field, content_type: c_type)
       insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
-      conn = get(conn, Routes.v1_pipeline_path(conn, :show, pipeline.uuid))
+      conn = get(conn, Routes.v1_pipeline_path(conn, :show, pipeline.id))
 
       assert json_response(conn, 200)["name"] == pipeline.name
       assert json_response(conn, 200)["id"] == pipeline.id
@@ -239,7 +239,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
         |> assign(:current_user, user)
 
       conn = get(conn, Routes.v1_pipeline_path(conn, :show, Ecto.UUID.generate()))
-      assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+      assert json_response(conn, 404) == "Not Found"
     end
   end
 
@@ -256,7 +256,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       pipeline = insert(:pipeline, organisation: user.organisation)
       count_before = Pipeline |> Repo.all() |> length()
 
-      conn = delete(conn, Routes.v1_pipeline_path(conn, :delete, pipeline.uuid))
+      conn = delete(conn, Routes.v1_pipeline_path(conn, :delete, pipeline.id))
       assert count_before - 1 == Pipeline |> Repo.all() |> length()
       assert json_response(conn, 200)["name"] == pipeline.name
     end
