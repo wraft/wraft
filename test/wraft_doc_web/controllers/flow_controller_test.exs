@@ -39,7 +39,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
     state_count_before = State |> Repo.all() |> length()
     count_before = Flow |> Repo.all() |> length()
-    %{uuid: organisation_id} = insert(:organisation)
+    %{id: organisation_id} = insert(:organisation)
     params = Map.put(@valid_attrs, :organisation_id, organisation_id)
 
     conn =
@@ -90,7 +90,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_flow_path(conn, :update, flow.uuid, params))
+      |> put(Routes.v1_flow_path(conn, :update, flow.id, params))
       |> doc(operation_id: "update_flow")
 
     assert json_response(conn, 200)["flow"]["name"] == @valid_attrs.name
@@ -109,7 +109,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_flow_path(conn, :update, flow.uuid, @invalid_attrs))
+      |> put(Routes.v1_flow_path(conn, :update, flow.id, @invalid_attrs))
       |> doc(operation_id: "update_flow")
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -144,7 +144,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_flow_path(conn, :show, flow.uuid))
+    conn = get(conn, Routes.v1_flow_path(conn, :show, flow.id))
 
     assert json_response(conn, 200)["flow"]["name"] == flow.name
   end
@@ -159,7 +159,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
       |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_flow_path(conn, :show, Ecto.UUID.generate()))
-    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+    assert json_response(conn, 400)["errors"] == "The Flow id does not exist..!"
   end
 
   test "delete flow by given id", %{conn: conn} do
@@ -173,7 +173,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
     flow = insert(:flow, creator: user, organisation: user.organisation)
     count_before = Flow |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_flow_path(conn, :delete, flow.uuid))
+    conn = delete(conn, Routes.v1_flow_path(conn, :delete, flow.id))
     assert count_before - 1 == Flow |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == flow.name
   end
@@ -189,8 +189,8 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, current_user)
 
-    conn = get(conn, Routes.v1_flow_path(conn, :show, flow.uuid))
+    conn = get(conn, Routes.v1_flow_path(conn, :show, flow.id))
 
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The Flow id does not exist..!"
   end
 end
