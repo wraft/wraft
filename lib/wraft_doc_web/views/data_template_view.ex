@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateView do
 
   def render("create.json", %{d_template: d_temp}) do
     %{
-      id: d_temp.uuid,
+      id: d_temp.id,
       title: d_temp.title,
       title_template: d_temp.title_template,
       data: d_temp.data,
@@ -32,7 +32,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateView do
 
   def render("d_temp_and_c_type.json", %{d_template: d_temp}) do
     %{
-      id: d_temp.uuid,
+      id: d_temp.id,
       title: d_temp.title,
       title_template: d_temp.title_template,
       data: d_temp.data,
