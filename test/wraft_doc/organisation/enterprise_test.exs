@@ -32,7 +32,7 @@ defmodule WraftDoc.EnterpriseTest do
   test "get state returns states data " do
     user = insert(:user)
     state = insert(:state, organisation: user.organisation)
-    r_state = Enterprise.get_state(user, state.uuid)
+    r_state = Enterprise.get_state(user, state.id)
     assert state.state == r_state.state
   end
 
