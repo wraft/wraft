@@ -738,11 +738,15 @@ defmodule WraftDoc.Enterprise do
   Get a plan from its UUID.
   """
   @spec get_plan(Ecto.UUID.t()) :: Plan.t() | nil
-  def get_plan(<<_::288>> = p_uuid) do
-    Repo.get_by(Plan, id: p_uuid)
+
+  def get_plan(<<_::288>> = p_id) do
+    case Repo.get(Plan, p_id) do
+      %Plan{} = plan -> plan
+      _ -> {:error, :invalid_id, "Plan"}
+    end
   end
 
-  def get_plan(_), do: nil
+  def get_plan(_), do: {:error, :invalid_id, "Plan"}
 
   @doc """
   Get all plans.
@@ -798,22 +802,25 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Gets a membership from its UUID.
   """
-  def get_membership(<<_::288>> = m_uuid) do
-    Repo.get_by(Membership, uuid: m_uuid)
+  def get_membership(<<_::288>> = m_id) do
+    case Repo.get(Membership, m_id) do
+      %Membership{} = membership -> membership
+      _ -> {:error, :invalid_id, "Membership"}
+    end
   end
 
-  def get_membership(_), do: nil
+  def get_membership(_), do: {:error, :invalid_id, "Membership"}
 
   @doc """
   Same as get_membership/2, but also uses user's organisation ID to get the membership.
   When the user is admin no need to check the user's organisation.
   """
   @spec get_membership(Ecto.UUID.t(), User.t()) :: Membership.t() | nil
-  def get_membership(<<_::288>> = m_uuid, %{role_names: role_names, organisation_id: org_id}) do
+  def get_membership(<<_::288>> = m_id, %{role_names: role_names, organisation_id: org_id}) do
     if Enum.member?(role_names, "super_admin") do
-      get_membership(m_uuid)
+      get_membership(m_id)
     else
-      Repo.get_by(Membership, uuid: m_uuid, organisation_id: org_id)
+      Repo.get_by(Membership, id: m_id, organisation_id: org_id)
     end
   end
 
@@ -825,7 +832,7 @@ defmodule WraftDoc.Enterprise do
   #   Repo.get_by(Membership, uuid: m_uuid, organisation_id: org_id)
   # end
 
-  def get_membership(_, _), do: nil
+  def get_membership(_, _), do: {:error, :invalid_id, "Membership"}
 
   @doc """
   Get membership of an organisation with the given UUID.
@@ -843,7 +850,7 @@ defmodule WraftDoc.Enterprise do
     Repo.one(query)
   end
 
-  def get_organisation_membership(_), do: nil
+  def get_organisation_membership(_), do: {:error, :invalid_id, "Organisation"}
 
   @doc """
   Updates a membership.
@@ -876,7 +883,7 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  def update_membership(_, _, _, _), do: nil
+  def update_membership(%User{}, %Plan{}, %Membership{}, _), do: {:error, :invalid_id, "RazorPay"}
 
   # Update the membership and insert a new payment.
   @spec do_update_membership(User.t(), Membership.t(), map) ::

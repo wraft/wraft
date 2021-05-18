@@ -1586,12 +1586,14 @@ defmodule WraftDoc.Document do
   """
   # TODO - write tests
   @spec create_field_type(User.t(), map) :: {:ok, FieldType.t()}
-  def create_field_type(current_user, params) do
+  def create_field_type(%User{} = current_user, params) do
     current_user
     |> build_assoc(:field_types)
     |> FieldType.changeset(params)
     |> Repo.insert()
   end
+
+  def create_field_type(_, _), do: {:error, :fake}
 
   @doc """
   Index of all field types.
@@ -1608,18 +1610,24 @@ defmodule WraftDoc.Document do
   """
   # TODO - write tests
   @spec get_field_type(binary, User.t()) :: FieldType.t()
-  def get_field_type(field_type_uuid, %{organisation_id: org_id}) do
+  def get_field_type(<<_::288>> = field_type_id, %{organisation_id: org_id}) do
     query =
       from(ft in FieldType,
-        where: ft.uuid == ^field_type_uuid,
+        where: ft.id == ^field_type_id,
         join: u in User,
         where: u.id == ft.creator_id and u.organisation_id == ^org_id
       )
 
-    Repo.one(query)
+    case Repo.one(query) do
+      %FieldType{} = field_type -> field_type
+      _ -> {:error, :invalid_id, "FieldType"}
+    end
 
     # Repo.get_by(FieldType, uuid: field_type_uuid, organisation_id: org_id)
   end
+
+  def get_field_type(_, %{organisation_id: _}), do: {:error, :invalid_id, "FieldType"}
+  def get_field_type(_, _), do: {:error, :fake}
 
   @doc """
   Update a field type
