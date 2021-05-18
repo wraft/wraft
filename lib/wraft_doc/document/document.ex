@@ -362,11 +362,13 @@ defmodule WraftDoc.Document do
   def get_content_type(%User{organisation_id: org_id}, <<_::288>> = id) do
     case Repo.get_by(ContentType, id: id, organisation_id: org_id) do
       %ContentType{} = content_type -> content_type
-      _ -> {:error, :invalid_id}
+      _ -> {:error, :invalid_id, "ContentType"}
     end
   end
 
-  def get_content_type(%User{organisation_id: _org_id}, _), do: {:error, :invalid_id}
+  def get_content_type(%User{organisation_id: _org_id}, _),
+    do: {:error, :invalid_id, "ContentType"}
+
   def get_content_type(_, <<_::288>>), do: {:error, :fake}
 
   @doc """
@@ -385,16 +387,22 @@ defmodule WraftDoc.Document do
   """
   # TODO - write tests
   @spec get_content_type_field(binary, User.t()) :: ContentTypeField.t()
-  def get_content_type_field(uuid, %{organisation_id: org_id}) do
+  def get_content_type_field(<<_::288>> = id, %{organisation_id: org_id}) do
     query =
       from(cf in ContentTypeField,
-        where: cf.uuid == ^uuid,
+        where: cf.id == ^id,
         join: c in ContentType,
         where: c.id == cf.content_type_id and c.organisation_id == ^org_id
       )
 
-    Repo.one(query)
+    case Repo.one(query) do
+      %ContentTypeField{} = content_type_field -> content_type_field
+      _ -> {:error, :invalid_id, "ContentTypeField"}
+    end
   end
+
+  def get_content_type_field(<<_::288>>, _), do: {:error, :invalid_id, "ContentTypeField"}
+  def get_content_type_field(_, %{organisation_id: _}), do: {:error, :fake}
 
   # TODO - write tests
   # @spec update_content_type(ContentType.t(), User.t(), map) ::
@@ -455,8 +463,10 @@ defmodule WraftDoc.Document do
   @spec delete_content_type_field(ContentTypeField.t(), User.t()) ::
           {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()}
   def delete_content_type_field(content_type_field, %User{id: id}) do
-    Spur.delete(content_type_field, %{actor: "#{id}", meta: content_type_field})
+    Spur.delete(content_type_field, %{actor: id, meta: content_type_field})
   end
+
+  def delete_content_type_field(_, _), do: {:error, :fake}
 
   defp create_initial_version(%{id: author_id}, instance) do
     params = %{
@@ -978,29 +988,35 @@ defmodule WraftDoc.Document do
   @spec create_data_template(User.t(), ContentType.t(), map) ::
           {:ok, DataTemplate.t()} | {:error, Ecto.Changeset.t()}
   # TODO - imprvove tests
-  def create_data_template(current_user, c_type, params) do
-    current_user
-    |> build_assoc(:data_templates, content_type: c_type)
+  def create_data_template(%User{id: user_id}, %ContentType{id: c_type_id}, params) do
+    params = Map.merge(params, %{"creator_id" => user_id, "content_type_id" => c_type_id})
+
+    %DataTemplate{}
     |> DataTemplate.changeset(params)
     |> Spur.insert()
   end
+
+  def create_data_template(%User{}, _, _), do: {:error, :invalid_id, "ContentType"}
+  def create_data_template(_, _, _), do: {:error, :fake}
 
   @doc """
   List all data templates under a content types.
   """
   # TODO - imprvove tests
   @spec data_template_index(binary, map) :: map
-  def data_template_index(c_type_uuid, params) do
+  def data_template_index(<<_::288>> = c_type_id, params) do
     query =
       from(dt in DataTemplate,
         join: ct in ContentType,
-        where: ct.id == ^c_type_uuid and dt.content_type_id == ct.id,
+        where: ct.id == ^c_type_id and dt.content_type_id == ct.id,
         order_by: [desc: dt.id],
         preload: [:content_type]
       )
 
     Repo.paginate(query, params)
   end
+
+  def data_template_index(_, _), do: {:error, :invalid_id, "ContentType"}
 
   @doc """
   List all data templates under current user's organisation.
@@ -1019,23 +1035,30 @@ defmodule WraftDoc.Document do
     Repo.paginate(query, params)
   end
 
+  def data_templates_index_of_an_organisation(_, _), do: {:error, :fake}
+
   @doc """
   Get a data template from its uuid and organisation ID of user.
   """
   # TODO - imprvove tests
   @spec get_d_template(User.t(), Ecto.UUID.t()) :: DataTemplat.t() | nil
-  def get_d_template(%User{organisation_id: org_id}, <<_::288>> = d_temp_uuid) do
+  def get_d_template(%User{organisation_id: org_id}, <<_::288>> = d_temp_id) do
     query =
       from(d in DataTemplate,
-        where: d.id == ^d_temp_uuid,
+        where: d.id == ^d_temp_id,
         join: c in ContentType,
         where: c.id == d.content_type_id and c.organisation_id == ^org_id
       )
 
-    Repo.one(query)
+    case Repo.one(query) do
+      %DataTemplate{} = data_template -> data_template
+      _ -> {:error, :invalid_id, "DataTemplate"}
+    end
   end
 
-  def get_d_template(_, _), do: nil
+  def get_d_template(%{organisation_id: _}, _), do: {:error, :invalid_id, "DataTemplate"}
+  def get_d_template(_, <<_::288>>), do: {:error, :fake}
+  def get_d_template(_, _), do: {:error, :fake}
 
   @doc """
   Show a data template.
@@ -1043,8 +1066,10 @@ defmodule WraftDoc.Document do
   # TODO - imprvove tests
   @spec show_d_template(User.t(), Ecto.UUID.t()) ::
           %DataTemplate{creator: User.t(), content_type: ContentType.t()} | nil
-  def show_d_template(user, d_temp_uuid) do
-    user |> get_d_template(d_temp_uuid) |> Repo.preload([:creator, :content_type])
+  def show_d_template(user, d_temp_id) do
+    with %DataTemplate{} = data_template <- get_d_template(user, d_temp_id) do
+      Repo.preload(data_template, [:creator, :content_type])
+    end
   end
 
   @doc """
@@ -1066,6 +1091,8 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
+
+  def update_data_template(_, _, _), do: {:error, :fake}
 
   @doc """
   Delete a data template
@@ -1356,7 +1383,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:blocks)
     |> Block.changeset(params)
-    |> Repo.insert()
+    |> Spur.insert()
     |> case do
       {:ok, block} ->
         block
@@ -1387,10 +1414,10 @@ defmodule WraftDoc.Document do
   Update a block
   """
   # TODO - write tests
-  def update_block(%Block{} = block, params) do
+  def update_block(%User{id: id}, %Block{} = block, params) do
     block
     |> Block.changeset(params)
-    |> Repo.update()
+    |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, block} ->
         block
@@ -1399,6 +1426,8 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
+
+  def update_block(_, _, _), do: {:error, :fake}
 
   @doc """
   Delete a block
@@ -1656,9 +1685,11 @@ defmodule WraftDoc.Document do
   """
   @spec insert_data_template_bulk_import_work(binary, binary, map, Plug.Uploap.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
+  def insert_data_template_bulk_import_work(user_id, c_type_id, mapping \\ %{}, file)
+
   def insert_data_template_bulk_import_work(
-        <<_::288>> = user_uuid,
-        <<_::288>> = c_type_uuid,
+        <<_::288>> = user_id,
+        <<_::288>> = c_type_id,
         mapping,
         %Plug.Upload{
           filename: filename,
@@ -1670,8 +1701,8 @@ defmodule WraftDoc.Document do
     System.cmd("cp", [path, dest_path])
 
     data = %{
-      user_uuid: user_uuid,
-      c_type_uuid: c_type_uuid,
+      user_id: user_id,
+      c_type_uuid: c_type_id,
       mapping: mapping,
       file: dest_path
     }
@@ -1679,13 +1710,27 @@ defmodule WraftDoc.Document do
     create_bulk_job(data, ["data template"])
   end
 
-  def insert_data_template_bulk_import_work(_, _, _, _), do: nil
+  def insert_data_template_bulk_import_work(_, <<_::288>>, _mapping, %Plug.Upload{
+        filename: _filename,
+        path: _path
+      }),
+      do: {:error, :fake}
+
+  def insert_data_template_bulk_import_work(<<_::288>>, _, _mapping, %Plug.Upload{
+        filename: _filename,
+        path: _path
+      }),
+      do: {:error, :invalid_id, "ContentType"}
+
+  def insert_data_template_bulk_import_work(_, _, _, _), do: {:error, :invalid_data}
 
   @doc """
   Creates a background job for block template bulk import.
   """
   @spec insert_block_template_bulk_import_work(User.t(), map, Plug.Uploap.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
+  def insert_block_template_bulk_import_work(user, mapping \\ %{}, file)
+
   def insert_block_template_bulk_import_work(%User{id: user_id}, mapping, %Plug.Upload{
         filename: filename,
         path: path
@@ -1703,7 +1748,10 @@ defmodule WraftDoc.Document do
     create_bulk_job(data, ["block template"])
   end
 
-  def insert_block_template_bulk_import_work(_, _, _), do: nil
+  def insert_block_template_bulk_import_work(_, _, %Plug.Upload{filename: _, path: _}),
+    do: {:error, :fake}
+
+  def insert_block_template_bulk_import_work(_, _, _), do: {:error, :invalid_data}
 
   @doc """
   Creates a background job to run a pipeline.

@@ -48,7 +48,7 @@ defmodule WraftDoc.Mixfile do
       {:phoenix, "~> 1.4.14", override: true},
       {:phoenix_pubsub, "~> 1.1.2"},
       {:phoenix_ecto, "~> 4.1.0"},
-      {:ecto_sql, "~> 3.3.4"},
+      {:ecto_sql, "~> 3.4"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 2.14.1"},
       {:phoenix_live_reload, "~> 1.2.1", only: :dev},
@@ -94,6 +94,8 @@ defmodule WraftDoc.Mixfile do
 
       # Activity stream
       {:spur, git: "https://github.com/shijithkjayan/spur.git", branch: :master},
+      # {:spur, path: "/home/sadique/Documents/org.functionary/elixir/spur"},
+
       # CSV parser
       {:csv, "~> 2.3.1"},
       # Live dashboard

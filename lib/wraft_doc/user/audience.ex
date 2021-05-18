@@ -1,4 +1,4 @@
-defmodule WraftDoc.User.Audience do
+defmodule WraftDoc.Account.User.Audience do
   @moduledoc """
   The action log model.
   """
@@ -6,7 +6,7 @@ defmodule WraftDoc.User.Audience do
   alias WraftDoc.Account.User
 
   schema "audience" do
-    belongs_to(:user, User, type: Ecto.UUID)
-    belongs_to(:activity, Spur.Activity, type: Ecto.UUID)
+    belongs_to(:user, User)
+    belongs_to(:activity, Spur.Activity)
   end
 end

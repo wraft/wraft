@@ -39,7 +39,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
             control_data: %{
               pre_state: "review",
               post_state: "publish",
-              approver: "user_uuid"
+              approver: "user_id"
             }
           })
         end,
@@ -86,7 +86,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
             control_data: %{
               pre_state: "review",
               post_state: "publish",
-              approver: "user_uuid"
+              approver: "user_id"
             },
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
@@ -315,10 +315,10 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => flow_uuid}) do
+  def show(conn, %{"id" => flow_id}) do
     current_user = conn.assigns.current_user
 
-    with %Flow{} = flow <- Enterprise.show_flow(flow_uuid, current_user) do
+    with %Flow{} = flow <- Enterprise.show_flow(flow_id, current_user) do
       render(conn, "show.json", flow: flow)
     end
   end
@@ -343,10 +343,10 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Flow{} = flow <- Enterprise.get_flow(uuid, current_user),
+    with %Flow{} = flow <- Enterprise.get_flow(id, current_user),
          %Flow{} = flow <-
            Enterprise.update_flow(
              flow,
@@ -376,10 +376,10 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Flow{} = flow <- Enterprise.get_flow(uuid, current_user),
+    with %Flow{} = flow <- Enterprise.get_flow(id, current_user),
          {:ok, %Flow{}} <- Enterprise.delete_flow(flow, current_user) do
       render(conn, "flow.json", flow: flow)
     end
