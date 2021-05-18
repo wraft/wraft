@@ -408,8 +408,8 @@ defmodule WraftDoc.DocumentTest do
 
       params =
         Map.merge(@valid_content_type_attrs, %{
-          "flow_uuid" => flow.uuid,
-          "layout_uuid" => layout.uuid,
+          "flow_uuid" => flow.id,
+          "layout_uuid" => layout.id,
           "fields" => [
             insert(:content_type_field, content_type: content_type),
             insert(:content_type_field, content_type: content_type)
