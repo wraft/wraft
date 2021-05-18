@@ -37,7 +37,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldControllerTest do
     content_type_field = insert(:content_type_field, content_type: content_type)
     count_before = ContentTypeField |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_content_type_field_path(conn, :delete, content_type_field.uuid))
+    conn = delete(conn, Routes.v1_content_type_field_path(conn, :delete, content_type_field.id))
+
     assert count_before - 1 == ContentTypeField |> Repo.all() |> length()
 
     assert json_response(conn, 200)["content_type"]["name"] ==
@@ -56,7 +57,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldControllerTest do
     user = insert(:user)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     content_type_field = insert(:content_type_field, content_type: content_type)
-    conn = delete(conn, Routes.v1_content_type_field_path(conn, :delete, content_type_field.uuid))
-    assert json_response(conn, 404) == "Not Found"
+    conn = delete(conn, Routes.v1_content_type_field_path(conn, :delete, content_type_field.id))
+    assert json_response(conn, 400)["errors"] == "The ContentTypeField id does not exist..!"
   end
 end
