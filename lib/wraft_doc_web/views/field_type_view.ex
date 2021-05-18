@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeView do
 
   def render("field_type.json", %{field_type: field_type}) do
     %{
-      id: field_type.uuid,
+      id: field_type.id,
       name: field_type.name,
       description: field_type.description,
       inserted_at: field_type.inserted_at,
