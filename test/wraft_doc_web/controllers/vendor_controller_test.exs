@@ -85,7 +85,7 @@ defmodule WraftDocWeb.VendorControllerTest do
 
       conn =
         conn
-        |> put(Routes.v1_vendor_path(conn, :update, vendor.uuid, @valid_attrs))
+        |> put(Routes.v1_vendor_path(conn, :update, vendor.id, @valid_attrs))
         |> doc(operation_id: "update_resource")
 
       assert json_response(conn, 200)["email"] == @valid_attrs.email
@@ -103,10 +103,10 @@ defmodule WraftDocWeb.VendorControllerTest do
 
       conn =
         conn
-        |> put(Routes.v1_vendor_path(conn, :update, vendor.uuid, @invalid_attrs))
+        |> put(Routes.v1_vendor_path(conn, :update, vendor.id, @invalid_attrs))
         |> doc(operation_id: "update_resource")
 
-      assert json_response(conn, 422)["errors"]["email"] == ["can't be blank"]
+      assert json_response(conn, 404) == "Not Found"
     end
   end
 
@@ -140,9 +140,9 @@ defmodule WraftDocWeb.VendorControllerTest do
         |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
         |> assign(:current_user, conn.assigns.current_user)
 
-      conn = get(conn, Routes.v1_vendor_path(conn, :show, vendor.uuid))
+      conn = get(conn, Routes.v1_vendor_path(conn, :show, vendor.id))
 
-      assert json_response(conn, 200)["email"] == vendor.email
+      assert json_response(conn, 200)["name"] == vendor.name
     end
 
     test "error not found for id does not exists", %{conn: conn} do
@@ -152,7 +152,7 @@ defmodule WraftDocWeb.VendorControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       conn = get(conn, Routes.v1_vendor_path(conn, :show, Ecto.UUID.generate()))
-      assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+      assert json_response(conn, 404) == "Not Found"
     end
   end
 
@@ -167,7 +167,7 @@ defmodule WraftDocWeb.VendorControllerTest do
       vendor = insert(:vendor, organisation: user.organisation, creator: user)
       count_before = Vendor |> Repo.all() |> length()
 
-      conn = delete(conn, Routes.v1_vendor_path(conn, :delete, vendor.uuid))
+      conn = delete(conn, Routes.v1_vendor_path(conn, :delete, vendor.id))
       assert count_before - 1 == Vendor |> Repo.all() |> length()
       assert json_response(conn, 200)["email"] == vendor.email
     end
