@@ -91,7 +91,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_theme_path(conn, :update, theme.uuid), params)
+      |> put(Routes.v1_theme_path(conn, :update, theme.id), params)
       |> doc(operation_id: "update_theme")
 
     assert json_response(conn, 200)["name"] == @valid_attrs.name
@@ -110,7 +110,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_theme_path(conn, :update, theme.uuid, @invalid_attrs))
+      |> put(Routes.v1_theme_path(conn, :update, theme.id, @invalid_attrs))
       |> doc(operation_id: "update_theme")
 
     assert json_response(conn, 422)["errors"]["file"] == ["can't be blank"]
@@ -144,7 +144,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_theme_path(conn, :show, theme.uuid))
+    conn = get(conn, Routes.v1_theme_path(conn, :show, theme.id))
 
     assert json_response(conn, 200)["theme"]["name"] == theme.name
   end
@@ -159,7 +159,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
       |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_theme_path(conn, :show, Ecto.UUID.generate()))
-    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+    assert json_response(conn, 404) == "Not Found"
   end
 
   test "delete theme by given id", %{conn: conn} do
@@ -175,7 +175,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
     theme = insert(:theme, creator: user, organisation: user.organisation)
     count_before = Theme |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_theme_path(conn, :delete, theme.uuid))
+    conn = delete(conn, Routes.v1_theme_path(conn, :delete, theme.id))
     assert count_before - 1 == Theme |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == theme.name
   end
@@ -191,7 +191,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, current_user)
 
-    conn = get(conn, Routes.v1_theme_path(conn, :show, theme.uuid))
+    conn = get(conn, Routes.v1_theme_path(conn, :show, theme.id))
 
     assert json_response(conn, 404) == "Not Found"
   end

@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageView do
 
   def render("stage.json", %{stage: stage}) do
     %{
-      id: stage.uuid,
+      id: stage.id,
       content_type:
         render_one(stage.content_type, ContentTypeView, "c_type_and_fields.json", as: :c_type),
       data_template:

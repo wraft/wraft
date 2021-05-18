@@ -45,7 +45,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
     conn =
       conn
-      |> post(Routes.v1_state_path(conn, :create, flow.uuid), @valid_attrs)
+      |> post(Routes.v1_state_path(conn, :create, flow.id), @valid_attrs)
       |> doc(operation_id: "create_state")
 
     assert count_before + 1 == State |> Repo.all() |> length()
@@ -89,7 +89,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_state_path(conn, :update, state.uuid, @valid_attrs))
+      |> put(Routes.v1_state_path(conn, :update, state.id, @valid_attrs))
       |> doc(operation_id: "update_state")
 
     assert json_response(conn, 200)["state"]["order"] == @valid_attrs.order
@@ -109,7 +109,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_state_path(conn, :update, state.uuid, @invalid_attrs))
+      |> put(Routes.v1_state_path(conn, :update, state.id, @invalid_attrs))
       |> doc(operation_id: "update_state")
 
     assert json_response(conn, 422)["errors"]["state"] == ["can't be blank"]
@@ -128,7 +128,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_state_path(conn, :index, flow.uuid))
+    conn = get(conn, Routes.v1_state_path(conn, :index, flow.id))
     states_index = json_response(conn, 200)["states"]
     states = Enum.map(states_index, fn %{"state" => state} -> state["state"] end)
     assert List.to_string(states) =~ a1.state
@@ -148,7 +148,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     state = insert(:state, organisation: user.organisation)
     count_before = State |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_state_path(conn, :delete, state.uuid))
+    conn = delete(conn, Routes.v1_state_path(conn, :delete, state.id))
     assert count_before - 1 == State |> Repo.all() |> length()
     assert json_response(conn, 200)["state"] == state.state
   end
@@ -165,7 +165,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     user = insert(:user)
     state = insert(:state, creator: user, organisation: user.organisation)
 
-    conn = delete(conn, Routes.v1_state_path(conn, :delete, state.uuid))
+    conn = delete(conn, Routes.v1_state_path(conn, :delete, state.id))
     assert json_response(conn, 404) == "Not Found"
   end
 end

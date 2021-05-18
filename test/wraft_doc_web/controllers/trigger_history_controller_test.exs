@@ -44,7 +44,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
 
       conn =
         conn
-        |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), @valid_attrs)
+        |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.id), @valid_attrs)
         |> doc(operation_id: "create_trigger_history")
 
       created_jobs = Repo.all(Oban.Job)
@@ -80,7 +80,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
 
       conn =
         conn
-        |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), %{
+        |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.id), %{
           data: "wrong meta"
         })
         |> doc(operation_id: "create_trigger_history")
@@ -107,7 +107,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
 
       conn =
         conn
-        |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.uuid), @valid_attrs)
+        |> post(Routes.v1_trigger_history_path(conn, :create, pipeline.id), @valid_attrs)
         |> doc(operation_id: "create_trigger_history")
 
       assert job_count_before == Oban.Job |> Repo.all() |> length()
@@ -129,7 +129,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
         |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
         |> assign(:current_user, conn.assigns.current_user)
 
-      conn = get(conn, Routes.v1_trigger_history_path(conn, :index, pipeline.uuid))
+      conn = get(conn, Routes.v1_trigger_history_path(conn, :index, pipeline.id))
       trigger_history_index = json_response(conn, 200)["triggers"]
       trigger_uuids = trigger_history_index |> Enum.map(fn x -> x["id"] end) |> List.to_string()
 
@@ -139,11 +139,11 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
       trigger_user_uuid =
         trigger_history_index |> Enum.map(fn x -> x["creator"]["id"] end) |> List.to_string()
 
-      assert trigger_uuids =~ trigger1.uuid
-      assert trigger_uuids =~ trigger2.uuid
+      assert trigger_uuids =~ trigger1.id
+      assert trigger_uuids =~ trigger2.id
       assert trigger_states =~ "enqued"
       assert trigger_states =~ "executing"
-      assert trigger_user_uuid =~ user.uuid
+      assert trigger_user_uuid =~ user.id
       assert json_response(conn, 200)["total_entries"] == 2
       assert json_response(conn, 200)["total_pages"] == 1
     end

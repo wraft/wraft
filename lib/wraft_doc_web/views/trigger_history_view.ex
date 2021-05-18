@@ -13,7 +13,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryView do
 
   def render("trigger.json", %{trigger: trigger}) do
     %{
-      id: trigger.uuid,
+      id: trigger.id,
       data: trigger.data,
       error: trigger.error,
       state: TriggerHistory.get_state(trigger),

@@ -952,7 +952,7 @@ defmodule WraftDoc.Document do
   # TODO - improve test
   @spec get_theme(binary, User.t()) :: Theme.t() | nil
   def get_theme(theme_uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Theme, uuid: theme_uuid, organisation_id: org_id)
+    Repo.get_by(Theme, id: theme_uuid, organisation_id: org_id)
   end
 
   @doc """
@@ -2295,7 +2295,7 @@ defmodule WraftDoc.Document do
   """
   @spec get_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
   def get_pipeline(%User{organisation_id: org_id}, <<_::288>> = p_uuid) do
-    query = from(p in Pipeline, where: p.uuid == ^p_uuid, where: p.organisation_id == ^org_id)
+    query = from(p in Pipeline, where: p.id == ^p_uuid, where: p.organisation_id == ^org_id)
     Repo.one(query)
   end
 
@@ -2358,7 +2358,7 @@ defmodule WraftDoc.Document do
       from(s in Stage,
         join: p in Pipeline,
         where: p.organisation_id == ^org_id and s.pipeline_id == p.id,
-        where: s.uuid == ^s_uuid
+        where: s.id == ^s_uuid
       )
 
     Repo.one(query)
