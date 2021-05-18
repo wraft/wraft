@@ -33,7 +33,7 @@ defmodule WraftDoc.Document.DataTemplate do
 
   def changeset(%DataTemplate{} = d_template, attrs \\ %{}) do
     d_template
-    |> cast(attrs, [:title, :title_template, :data, :serialized])
-    |> validate_required([:title, :title_template, :data])
+    |> cast(attrs, [:title, :title_template, :data, :serialized, :content_type_id, :creator_id])
+    |> validate_required([:title, :title_template, :data, :content_type_id])
   end
 end

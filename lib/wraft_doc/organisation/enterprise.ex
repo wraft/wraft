@@ -40,9 +40,16 @@ defmodule WraftDoc.Enterprise do
   Get a flow from its UUID.
   """
   @spec get_flow(binary, User.t()) :: Flow.t() | nil
-  def get_flow(flow_uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Flow, uuid: flow_uuid, organisation_id: org_id)
+  def get_flow(<<_::288>> = flow_id, %{organisation_id: org_id}) do
+    case Repo.get_by(Flow, id: flow_id, organisation_id: org_id) do
+      %Flow{} = flow -> flow
+      _ -> {:error, :invalid_id, "Flow"}
+    end
   end
+
+  def get_flow(_, %{organisation_id: _}), do: {:error, :invalid_id, "Flow"}
+
+  def get_flow(_, _), do: {:error, :fake}
 
   @doc """
   Get a state from its UUID and user's organisation.
@@ -97,12 +104,15 @@ defmodule WraftDoc.Enterprise do
     |> case do
       {:ok, flow} ->
         Task.start_link(fn -> create_default_states(current_user, flow) end)
+
         Repo.preload(flow, :creator)
 
       {:error, _} = changeset ->
         changeset
     end
   end
+
+  def create_flow(_, _), do: {:error, :fake}
 
   @doc """
   List of all flows.
@@ -119,12 +129,16 @@ defmodule WraftDoc.Enterprise do
     Repo.paginate(query, params)
   end
 
+  def flow_index(_, _), do: {:error, :fake}
+
   @doc """
   Show a flow.
   """
   @spec show_flow(binary, User.t()) :: Flow.t() | nil
-  def show_flow(flow_uuid, user) do
-    flow_uuid |> get_flow(user) |> Repo.preload([:creator, :states])
+  def show_flow(flow_id, user) do
+    with %Flow{} = flow <- get_flow(flow_id, user) do
+      Repo.preload(flow, [:creator, :states])
+    end
   end
 
   @doc """
@@ -159,6 +173,8 @@ defmodule WraftDoc.Enterprise do
         changeset
     end
   end
+
+  def update_flow(_, _), do: {:error, :fake}
 
   @doc """
   Delete a  flow.
@@ -197,10 +213,10 @@ defmodule WraftDoc.Enterprise do
   """
   @spec create_state(User.t(), Flow.t(), map) :: State.t() | {:error, Ecto.Changeset.t()}
   def create_state(%User{organisation_id: org_id} = current_user, flow, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id})
+    params = Map.merge(params, %{"organisation_id" => org_id, "flow_id" => flow.id})
 
     current_user
-    |> build_assoc(:states, flow: flow)
+    |> build_assoc(:states)
     |> State.changeset(params)
     |> Spur.insert()
     |> case do
