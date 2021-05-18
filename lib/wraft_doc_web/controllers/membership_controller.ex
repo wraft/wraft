@@ -105,15 +105,15 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => o_uuid}) do
+  def show(conn, %{"id" => o_id}) do
     current_user = conn.assigns[:current_user]
 
-    with true <- o_uuid == current_user.organisation.uuid,
-         %Membership{} = membership <- Enterprise.get_organisation_membership(o_uuid) do
+    with true <- o_id == current_user.organisation.id,
+         %Membership{} = membership <- Enterprise.get_organisation_membership(o_id) do
       render(conn, "membership.json", membership: membership)
     else
       _ ->
-        nil
+        {:error, :invalid_id, "Organisation"}
     end
   end
 
@@ -135,12 +135,13 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => m_uuid, "plan_id" => p_uuid, "razorpay_id" => r_id}) do
+  def update(conn, %{"id" => m_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Membership{} = membership <- Enterprise.get_membership(m_uuid, current_user),
-         %Plan{} = plan <- Enterprise.get_plan(p_uuid),
-         {:ok, %Razorpay.Payment{} = razorpay} <- Enterprise.get_razorpay_data(r_id),
+    with %Membership{} = membership <- Enterprise.get_membership(m_id, current_user),
+         %Plan{} = plan <- Enterprise.get_plan(params["plan_id"]),
+         {:ok, %Razorpay.Payment{} = razorpay} <-
+           Enterprise.get_razorpay_data(params["razorpay_id"]),
          %Membership{} = membership <-
            Enterprise.update_membership(current_user, membership, plan, razorpay) do
       render(conn, "membership.json", membership: membership)
@@ -154,6 +155,4 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
         error
     end
   end
-
-  def update(_conn, _), do: nil
 end
