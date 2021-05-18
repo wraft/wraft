@@ -5,11 +5,8 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.{
-    Account,
-    Account.Role,
     Authorization,
-    Authorization.Permission,
-    Authorization.Resource
+    Authorization.Permission
   }
 
   def swagger_definitions do
@@ -110,13 +107,9 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"role_uuid" => role_uuid, "resource_uuid" => resource_uuid}) do
-    with %Resource{} = resource <- Authorization.get_resource(resource_uuid),
-         %Role{} = role <- Account.get_role(role_uuid),
-         %Permission{} = permission <-
-           Authorization.create_permission(resource, role) do
-      render(conn, "create.json", permission: permission)
-    end
+  def create(conn, params) do
+    permission = Authorization.create_permission(params)
+    render(conn, "create.json", permission: permission)
   end
 
   @doc """

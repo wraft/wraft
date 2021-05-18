@@ -3,8 +3,7 @@ defmodule WraftDoc.Authorization do
   Module that handles the repo connections of the authorization context.
   """
   import Ecto.Query
-  import Ecto
-  alias WraftDoc.{Account.Role, Authorization.Permission, Authorization.Resource, Repo}
+  alias WraftDoc.{Authorization.Permission, Authorization.Resource, Repo}
 
   @doc """
   Create a resource.
@@ -55,14 +54,9 @@ defmodule WraftDoc.Authorization do
     |> Repo.delete()
   end
 
-  @doc """
-  Create a permission.
-  """
-  @spec create_permission(Resource.t(), Role.t()) :: Permission.t() | {:error, Ecto.Changeset.t()}
-  def create_permission(resource, role) do
-    resource
-    |> build_assoc(:permissions, role: role)
-    |> Permission.changeset()
+  def create_permission(params \\ %{}) do
+    %Permission{}
+    |> Permission.changeset(params)
     |> Repo.insert()
     |> case do
       {:ok, permission} ->
@@ -87,8 +81,8 @@ defmodule WraftDoc.Authorization do
   Get a permission from its UUID.
   """
   @spec get_permission(binary) :: Permission.t()
-  def get_permission(uuid) do
-    Repo.get_by(Permission, uuid: uuid)
+  def get_permission(id) do
+    Repo.get_by(Permission, id: id)
   end
 
   @doc """
