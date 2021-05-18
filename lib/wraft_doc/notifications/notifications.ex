@@ -32,8 +32,8 @@ defmodule WraftDoc.Notifications do
   end
 
   def create_notification(%{"recipient_id" => recipient_uuid, "actor_id" => actor_uuid} = params) do
-    recipient = Repo.get_by(User, uuid: recipient_uuid)
-    actor = Repo.get_by(User, uuid: actor_uuid)
+    recipient = Repo.get_by(User, id: recipient_uuid)
+    actor = Repo.get_by(User, id: actor_uuid)
 
     params =
       Map.merge(params, %{
@@ -103,7 +103,7 @@ defmodule WraftDoc.Notifications do
       end
 
     %{
-      id: notification.uuid,
+      id: notification.id,
       read_at: notification.read_at,
       read: notification.read,
       action: notification.action,

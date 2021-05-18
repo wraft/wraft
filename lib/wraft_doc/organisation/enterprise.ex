@@ -233,7 +233,7 @@ defmodule WraftDoc.Enterprise do
     query =
       from(s in State,
         join: f in Flow,
-        where: f.uuid == ^flow_uuid and s.flow_id == f.id,
+        where: f.id == ^flow_uuid and s.flow_id == f.id,
         order_by: [desc: s.id],
         preload: [:flow, :creator]
       )
@@ -739,7 +739,7 @@ defmodule WraftDoc.Enterprise do
   """
   @spec get_plan(Ecto.UUID.t()) :: Plan.t() | nil
   def get_plan(<<_::288>> = p_uuid) do
-    Repo.get_by(Plan, uuid: p_uuid)
+    Repo.get_by(Plan, id: p_uuid)
   end
 
   def get_plan(_), do: nil
@@ -1119,14 +1119,14 @@ defmodule WraftDoc.Enterprise do
 
   """
   @spec get_vendor(Organisation.t(), Ecto.UUID.t()) :: Vendor.t()
-  def get_vendor(%User{organisation_id: id}, uuid) do
-    Repo.get_by(Vendor, uuid: uuid, organisation_id: id)
+  def get_vendor(%User{organisation_id: id}, id) do
+    Repo.get_by(Vendor, id: id, organisation_id: id)
   end
 
   def get_vendor(_, _), do: nil
   @spec show_vendor(Ecto.UUID.t(), User.t()) :: Vendor.t()
-  def show_vendor(uuid, user) do
-    user |> get_vendor(uuid) |> Repo.preload([:creator, :organisation])
+  def show_vendor(id, user) do
+    user |> get_vendor(id) |> Repo.preload([:creator, :organisation])
   end
 
   @doc """

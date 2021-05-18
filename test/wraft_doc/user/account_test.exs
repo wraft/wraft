@@ -205,9 +205,9 @@ defmodule WraftDoc.AccountTest do
   describe "get_profile/1" do
     test "get profile when correct UUID is given" do
       profile = insert(:profile)
-      response = Account.get_profile(profile.uuid)
+      response = Account.get_profile(profile.id)
       refute response == nil
-      assert response.uuid == profile.uuid
+      assert response.id == profile.id
     end
 
     test "return nil when incorrect UUID is given" do
@@ -225,8 +225,8 @@ defmodule WraftDoc.AccountTest do
     test "successfully delete profile when profile struct is given" do
       profile = insert(:profile)
       {:ok, deleted_profile} = Account.delete_profile(profile)
-      fetched_deleted_profile = Account.get_profile(profile.uuid)
-      assert deleted_profile.uuid == profile.uuid
+      fetched_deleted_profile = Account.get_profile(profile.id)
+      assert deleted_profile.id == profile.id
       assert fetched_deleted_profile == nil
     end
 
