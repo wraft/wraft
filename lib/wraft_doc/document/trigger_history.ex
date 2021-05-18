@@ -8,7 +8,6 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
   @derive {Jason.Encoder,
            only: [
              :id,
-             :uuid,
              :data,
              :error,
              :state,
