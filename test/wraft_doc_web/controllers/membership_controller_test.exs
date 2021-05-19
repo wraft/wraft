@@ -35,9 +35,9 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
 
       membership = insert(:membership, organisation: user.organisation)
 
-      conn = get(conn, Routes.v1_membership_path(conn, :show, user.organisation.uuid))
+      conn = get(conn, Routes.v1_membership_path(conn, :show, user.organisation.id))
 
-      assert json_response(conn, 200)["id"] == membership.uuid
+      assert json_response(conn, 200)["id"] == membership.id
       assert json_response(conn, 200)["plan_duration"] == membership.plan_duration
       assert json_response(conn, 200)["plan"]["name"] == membership.plan.name
       assert json_response(conn, 200)["plan"]["yearly_amount"] == membership.plan.yearly_amount
@@ -55,7 +55,7 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
         |> assign(:current_user, user)
 
       conn = get(conn, Routes.v1_membership_path(conn, :show, Ecto.UUID.generate()))
-      assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+      assert json_response(conn, 400)["errors"] == "The Organisation id does not exist..!"
     end
   end
 
@@ -70,10 +70,10 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
 
       plan = insert(:plan, yearly_amount: 100_000)
       membership = insert(:membership, organisation: user.organisation)
-      attrs = %{plan_id: plan.uuid, razorpay_id: @valid_razorpay_id}
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.uuid), attrs)
+      attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}
+      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
-      assert json_response(conn, 200)["id"] == membership.uuid
+      assert json_response(conn, 200)["id"] == membership.id
       assert json_response(conn, 200)["plan_duration"] == 365
       assert json_response(conn, 200)["plan"]["name"] == plan.name
       assert json_response(conn, 200)["plan"]["yearly_amount"] == plan.yearly_amount
@@ -91,12 +91,12 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
 
       membership = insert(:membership, organisation: user.organisation)
       plan = insert(:plan)
-      attrs = %{plan_id: plan.uuid, razorpay_id: @failed_razorpay_id}
+      attrs = %{plan_id: plan.id, razorpay_id: @failed_razorpay_id}
       payment_count = Payment |> Repo.all() |> length
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.uuid), attrs)
+      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
-      assert payment_count + 1 == Payment |> Repo.all() |> length
       assert json_response(conn, 400)["info"] == "Payment failed. Membership not updated.!"
+      assert payment_count + 1 == Payment |> Repo.all() |> length
     end
 
     test "does not update membership and returns error with invalid razorpay ID", %{conn: conn} do
@@ -109,9 +109,9 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
 
       membership = insert(:membership, organisation: user.organisation)
       plan = insert(:plan)
-      attrs = %{plan_id: plan.uuid, razorpay_id: "wrong_id"}
+      attrs = %{plan_id: plan.id, razorpay_id: "wrong_id"}
       payment_count = Payment |> Repo.all() |> length
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.uuid), attrs)
+      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
       assert payment_count == Payment |> Repo.all() |> length
       assert json_response(conn, 422)["errors"] == "The id provided does not exist"
@@ -128,9 +128,9 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
 
       membership = insert(:membership, organisation: user.organisation)
       plan = insert(:plan, yearly_amount: 1000)
-      attrs = %{plan_id: plan.uuid, razorpay_id: @valid_razorpay_id}
+      attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}
       payment_count = Payment |> Repo.all() |> length
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.uuid), attrs)
+      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
       assert payment_count == Payment |> Repo.all() |> length
       assert json_response(conn, 422)["errors"] == "No plan with paid amount..!!"
@@ -150,10 +150,10 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
 
       membership = insert(:membership)
       plan = insert(:plan)
-      attrs = %{plan_id: plan.uuid, razorpay_id: @valid_razorpay_id}
+      attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}
 
       payment_count = Payment |> Repo.all() |> length
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.uuid), attrs)
+      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
       assert payment_count == Payment |> Repo.all() |> length
       assert json_response(conn, 404) == "Not Found"
@@ -171,10 +171,10 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       attrs = %{plan_id: Ecto.UUID.generate(), razorpay_id: @valid_razorpay_id}
 
       payment_count = Payment |> Repo.all() |> length
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.uuid), attrs)
+      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
       assert payment_count == Payment |> Repo.all() |> length
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
     test "does not update membership with wrong parameters", %{conn: conn} do
@@ -188,10 +188,10 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       membership = insert(:membership, organisation: user.organisation)
 
       payment_count = Payment |> Repo.all() |> length
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.uuid), %{})
+      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), %{})
 
       assert payment_count == Payment |> Repo.all() |> length
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
   end
 end
