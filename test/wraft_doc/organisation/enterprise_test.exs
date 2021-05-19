@@ -230,10 +230,10 @@ defmodule WraftDoc.EnterpriseTest do
     approval_system =
       user
       |> Enterprise.create_approval_system(%{
-        "instance_id" => instance.uuid,
-        "pre_state_id" => pre_state.uuid,
-        "post_state_id" => post_state.uuid,
-        "approver_id" => approver.uuid
+        "instance_id" => instance.id,
+        "pre_state_id" => pre_state.id,
+        "post_state_id" => post_state.id,
+        "approver_id" => approver.id
       })
       |> Repo.preload([:instance])
 
@@ -269,10 +269,10 @@ defmodule WraftDoc.EnterpriseTest do
 
     updated_approval_system =
       Enterprise.update_approval_system(user, approval_system, %{
-        "instance_id" => instance.uuid,
-        "pre_state_id" => pre_state.uuid,
-        "post_state_id" => post_state.uuid,
-        "approver_id" => approval_system.approver.uuid
+        "instance_id" => instance.id,
+        "pre_state_id" => pre_state.id,
+        "post_state_id" => post_state.id,
+        "approver_id" => approval_system.approver.id
       })
 
     count_after = ApprovalSystem |> Repo.all() |> length()
@@ -287,7 +287,7 @@ defmodule WraftDoc.EnterpriseTest do
     {:ok, d_approval_system} = Enterprise.delete_approval_system(approval_system)
     count_after = ApprovalSystem |> Repo.all() |> length()
     assert count_before - 1 == count_after
-    assert approval_system.instance.uuid == d_approval_system.instance.uuid
+    assert approval_system.instance.uuid == d_approval_system.instance.id
   end
 
   test "approve content changes the state of instace from pre state to post state" do

@@ -98,7 +98,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_content_type_path(conn, :update, content_type.uuid, params))
+      |> put(Routes.v1_content_type_path(conn, :update, content_type.id, params))
       |> doc(operation_id: "update_content_type")
 
     assert json_response(conn, 200)["content_type"]["name"] == @valid_attrs.name
@@ -117,7 +117,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_content_type_path(conn, :update, content_type.uuid, @invalid_attrs))
+      |> put(Routes.v1_content_type_path(conn, :update, content_type.id, @invalid_attrs))
       |> doc(operation_id: "update_content_type")
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
