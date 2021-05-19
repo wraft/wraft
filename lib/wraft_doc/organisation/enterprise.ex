@@ -1126,14 +1126,20 @@ defmodule WraftDoc.Enterprise do
 
   """
   @spec get_vendor(Organisation.t(), Ecto.UUID.t()) :: Vendor.t()
-  def get_vendor(%User{organisation_id: id}, id) do
-    Repo.get_by(Vendor, id: id, organisation_id: id)
+  def get_vendor(%{organisation_id: o_id}, <<_::288>> = id) do
+    case Repo.get_by(Vendor, id: id, organisation_id: o_id) do
+      %Vendor{} = vendor -> vendor
+      _ -> {:error, :invalid_id, "Vendor"}
+    end
   end
 
-  def get_vendor(_, _), do: nil
+  def get_vendor(_, <<_::288>>), do: {:error, :fake}
+  def get_vendor(_, _), do: {:error, :invalid_id, "Vendor"}
   @spec show_vendor(Ecto.UUID.t(), User.t()) :: Vendor.t()
   def show_vendor(id, user) do
-    user |> get_vendor(id) |> Repo.preload([:creator, :organisation])
+    with %Vendor{} = vendor <- get_vendor(user, id) do
+      Repo.preload(vendor, [:creator, :organisation])
+    end
   end
 
   @doc """
@@ -1158,6 +1164,8 @@ defmodule WraftDoc.Enterprise do
         Repo.preload(vendor, [:organisation, :creator])
     end
   end
+
+  def update_vendor(_, _, _), do: {:error, :fake}
 
   @doc """
   Deletes vendor data

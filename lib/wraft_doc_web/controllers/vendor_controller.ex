@@ -182,10 +182,10 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => uuid}) do
+  def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Vendor{} = vendor <- Enterprise.show_vendor(uuid, current_user) do
+    with %Vendor{} = vendor <- Enterprise.show_vendor(id, current_user) do
       render(conn, "create.json", vendor: vendor)
     end
   end
@@ -207,10 +207,10 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, uuid),
+    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, id),
          %Vendor{} = vendor <- Enterprise.update_vendor(vendor, current_user, params) do
       render(conn, "vendor.json", vendor: vendor)
     end
@@ -232,10 +232,10 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, uuid),
+    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, id),
          {:ok, %Vendor{}} <- Enterprise.delete_vendor(vendor) do
       render(conn, "vendor.json", vendor: vendor)
     end
