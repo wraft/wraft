@@ -68,7 +68,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
 
     count_before = FieldType |> Repo.all() |> length()
 
-    conn = put(conn, Routes.v1_field_type_path(conn, :update, field_type.uuid), @valid_attrs)
+    conn = put(conn, Routes.v1_field_type_path(conn, :update, field_type.id), @valid_attrs)
 
     assert json_response(conn, 200)["name"] == @valid_attrs.name
     assert count_before == FieldType |> Repo.all() |> length()
@@ -84,7 +84,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = put(conn, Routes.v1_field_type_path(conn, :update, field_type.uuid), @invalid_attrs)
+    conn = put(conn, Routes.v1_field_type_path(conn, :update, field_type.id), @invalid_attrs)
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
   end
 
@@ -114,7 +114,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_field_type_path(conn, :show, field_type.uuid))
+    conn = get(conn, Routes.v1_field_type_path(conn, :show, field_type.id))
 
     assert json_response(conn, 200)["name"] == field_type.name
   end
@@ -126,7 +126,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_field_type_path(conn, :show, Ecto.UUID.generate()))
-    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+    assert json_response(conn, 400)["errors"] == "The FieldType id does not exist..!"
   end
 
   test "delete field type by given id", %{conn: conn} do
@@ -139,7 +139,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
     field_type = insert(:field_type, creator: user)
     count_before = FieldType |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_field_type_path(conn, :delete, field_type.uuid))
+    conn = delete(conn, Routes.v1_field_type_path(conn, :delete, field_type.id))
     assert count_before - 1 == FieldType |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == field_type.name
   end
@@ -153,8 +153,8 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_field_type_path(conn, :show, field_type.uuid))
+    conn = get(conn, Routes.v1_field_type_path(conn, :show, field_type.id))
 
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The FieldType id does not exist..!"
   end
 end
