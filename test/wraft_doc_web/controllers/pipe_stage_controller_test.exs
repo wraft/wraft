@@ -50,7 +50,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
 
       conn =
         conn
-        |> post(Routes.v1_pipe_stage_path(conn, :create, pipeline.uuid), params)
+        |> post(Routes.v1_pipe_stage_path(conn, :create, pipeline.id), params)
         |> doc(operation_id: "create_pipe_stage")
 
       assert count_before + 1 == Stage |> Repo.all() |> length()
@@ -106,16 +106,16 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       state = insert(:state)
 
       params = %{
-        content_type_id: c_type.uuid,
-        data_template_id: d_temp.uuid,
-        state_id: state.uuid
+        content_type_id: c_type.id,
+        data_template_id: d_temp.id,
+        state_id: state.id
       }
 
       count_before = Stage |> Repo.all() |> length()
 
       conn =
         conn
-        |> post(Routes.v1_pipe_stage_path(conn, :create, pipeline.uuid), params)
+        |> post(Routes.v1_pipe_stage_path(conn, :create, pipeline.id), params)
         |> doc(operation_id: "create_pipe_stage")
 
       assert count_before == Stage |> Repo.all() |> length()
@@ -138,7 +138,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
 
       conn =
         conn
-        |> post(Routes.v1_pipe_stage_path(conn, :create, pipeline.uuid), params)
+        |> post(Routes.v1_pipe_stage_path(conn, :create, pipeline.id), params)
         |> doc(operation_id: "create_pipe_stage")
 
       assert count_before == Stage |> Repo.all() |> length()
@@ -168,16 +168,16 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       )
 
       params = %{
-        content_type_id: c_type.uuid,
-        data_template_id: d_temp.uuid,
-        state_id: state.uuid
+        content_type_id: c_type.id,
+        data_template_id: d_temp.id,
+        state_id: state.id
       }
 
       count_before = Stage |> Repo.all() |> length()
 
       conn =
         conn
-        |> post(Routes.v1_pipe_stage_path(conn, :create, pipeline.uuid), params)
+        |> post(Routes.v1_pipe_stage_path(conn, :create, pipeline.id), params)
         |> doc(operation_id: "create_pipe_stage")
 
       assert count_before == Stage |> Repo.all() |> length()
@@ -209,10 +209,10 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
 
       conn =
         conn
-        |> put(Routes.v1_pipe_stage_path(conn, :update, stage.uuid), params)
+        |> put(Routes.v1_pipe_stage_path(conn, :update, stage.id), params)
         |> doc(operation_id: "update_pipe_stage")
 
-      assert json_response(conn, 200)["id"] == stage.uuid
+      assert json_response(conn, 200)["id"] == stage.id
       assert json_response(conn, 200)["content_type"]["name"] == c_type.name
       assert json_response(conn, 200)["content_type"]["id"] == c_type.id
       assert json_response(conn, 200)["data_template"]["title"] == data_temp.title
@@ -365,7 +365,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       conn = delete(conn, Routes.v1_pipe_stage_path(conn, :delete, stage.id))
 
       assert count_before - 1 == Stage |> Repo.all() |> length()
-      assert json_response(conn, 200)["id"] == stage.uuid
+      assert json_response(conn, 200)["id"] == stage.id
     end
 
     test "delete stage returns not found for non-existent ID", %{conn: conn} do

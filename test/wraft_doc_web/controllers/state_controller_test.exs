@@ -68,7 +68,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
     conn =
       conn
-      |> post(Routes.v1_state_path(conn, :create, flow.uuid), @invalid_attrs)
+      |> post(Routes.v1_state_path(conn, :create, flow.id), @invalid_attrs)
       |> doc(operation_id: "create_state")
 
     assert json_response(conn, 422)["errors"]["state"] == ["can't be blank"]
@@ -166,6 +166,6 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     state = insert(:state, creator: user, organisation: user.organisation)
 
     conn = delete(conn, Routes.v1_state_path(conn, :delete, state.id))
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
   end
 end

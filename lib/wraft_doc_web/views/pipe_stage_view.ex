@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageView do
 
   def render("delete.json", %{stage: stage}) do
     %{
-      id: stage.uuid,
+      id: stage.id,
       inserted_at: stage.inserted_at,
       updated_at: stage.updated_at
     }
