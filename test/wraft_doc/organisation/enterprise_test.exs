@@ -25,7 +25,7 @@ defmodule WraftDoc.EnterpriseTest do
   test "get flow returns flow data by uuid" do
     user = insert(:user)
     flow = insert(:flow, creator: user, organisation: user.organisation)
-    r_flow = Enterprise.get_flow(flow.uuid, user)
+    r_flow = Enterprise.get_flow(flow.id, user)
     assert flow.name == r_flow.name
   end
 
@@ -88,7 +88,7 @@ defmodule WraftDoc.EnterpriseTest do
     user = insert(:user)
     flow = insert(:flow, creator: user, organisation: user.organisation)
     state = insert(:state, creator: user, flow: flow)
-    flow = Enterprise.show_flow(flow.uuid, user)
+    flow = Enterprise.show_flow(flow.id, user)
 
     assert Enum.map(flow.states, fn x -> x.state end) == [state.state]
   end
@@ -167,7 +167,7 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "get organisation returns the organisation by id" do
     organisation = insert(:organisation)
-    g_organisation = Enterprise.get_organisation(organisation.uuid)
+    g_organisation = Enterprise.get_organisation(organisation.id)
     assert organisation.name == g_organisation.name
   end
 
@@ -230,10 +230,10 @@ defmodule WraftDoc.EnterpriseTest do
     approval_system =
       user
       |> Enterprise.create_approval_system(%{
-        "instance_id" => instance.uuid,
-        "pre_state_id" => pre_state.uuid,
-        "post_state_id" => post_state.uuid,
-        "approver_id" => approver.uuid
+        "instance_id" => instance.id,
+        "pre_state_id" => pre_state.id,
+        "post_state_id" => post_state.id,
+        "approver_id" => approver.id
       })
       |> Repo.preload([:instance])
 
@@ -269,10 +269,10 @@ defmodule WraftDoc.EnterpriseTest do
 
     updated_approval_system =
       Enterprise.update_approval_system(user, approval_system, %{
-        "instance_id" => instance.uuid,
-        "pre_state_id" => pre_state.uuid,
-        "post_state_id" => post_state.uuid,
-        "approver_id" => approval_system.approver.uuid
+        "instance_id" => instance.id,
+        "pre_state_id" => pre_state.id,
+        "post_state_id" => post_state.id,
+        "approver_id" => approval_system.approver.id
       })
 
     count_after = ApprovalSystem |> Repo.all() |> length()
@@ -287,7 +287,7 @@ defmodule WraftDoc.EnterpriseTest do
     {:ok, d_approval_system} = Enterprise.delete_approval_system(approval_system)
     count_after = ApprovalSystem |> Repo.all() |> length()
     assert count_before - 1 == count_after
-    assert approval_system.instance.uuid == d_approval_system.instance.uuid
+    assert approval_system.instance.uuid == d_approval_system.instance.id
   end
 
   test "approve content changes the state of instace from pre state to post state" do
@@ -924,7 +924,7 @@ defmodule WraftDoc.EnterpriseTest do
     test "get_organisation_id_roles" do
       organisation = insert(:organisation)
 
-      response = Enterprise.get_organisation_id_roles(organisation.uuid)
+      response = Enterprise.get_organisation_id_roles(organisation.id)
       assert response.name == organisation.name
     end
   end
@@ -934,7 +934,7 @@ defmodule WraftDoc.EnterpriseTest do
       organisation = insert(:organisation)
       role = insert(:role)
 
-      response = Enterprise.get_organisation_id_and_role_id(organisation.uuid, role.uuid)
+      response = Enterprise.get_organisation_id_and_role_id(organisation.id, role.id)
       assert response.name == organisation.name
     end
   end
@@ -944,7 +944,7 @@ defmodule WraftDoc.EnterpriseTest do
       organisation = insert(:organisation)
       role = insert(:role)
 
-      response = Enterprise.get_role_of_the_organisation(role.uuid, organisation.uuid)
+      response = Enterprise.get_role_of_the_organisation(role.uuid, organisation.id)
       assert role.name == role.name
     end
   end
