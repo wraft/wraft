@@ -116,7 +116,7 @@ defmodule WraftDoc.Document do
   end
 
   def create_content_type(%{organisation_id: org_id} = current_user, params) do
-    params = Map.merge(params, %{organisation_id: org_id})
+    params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
     |> build_assoc(:content_types)
@@ -126,7 +126,7 @@ defmodule WraftDoc.Document do
       {:ok, %ContentType{} = content_type} ->
         Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
 
-      changeset = {:error, _} ->
+      {:error, _} = changeset ->
         changeset
     end
   end
@@ -137,15 +137,15 @@ defmodule WraftDoc.Document do
     |> Spur.update(%{actor: "#{user_id}"})
     |> case do
       {:ok, %ContentType{} = content_type} ->
-        Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
+        Repo.preload(content_type, [:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
 
-      changeset = {:error, _} ->
+      {:error, _} = changeset ->
         changeset
     end
   end
 
   # @doc """
-  # Create a content type.
+  # Create a content type.get
   # """
   # # TODO - improve tests
   # @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
@@ -349,9 +349,9 @@ defmodule WraftDoc.Document do
   @spec show_content_type(User.t(), Ecto.UUID.t()) ::
           %ContentType{layout: Layout.t(), creator: User.t()} | nil
   def show_content_type(user, id) do
-    user
-    |> get_content_type(id)
-    |> Repo.preload([:layout, :creator, [{:fields, :field_type}, {:flow, :states}]])
+    with %ContentType{} = content_type <- get_content_type(user, id) do
+      Repo.preload(content_type, [:layout, :creator, [{:fields, :field_type}, {:flow, :states}]])
+    end
   end
 
   @doc """
@@ -360,9 +360,11 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec get_content_type(User.t(), Ecto.UUID.t()) :: ContentType.t() | nil
   def get_content_type(%User{organisation_id: org_id}, <<_::288>> = id) do
-    case Repo.get_by(ContentType, id: id, organisation_id: org_id) do
+    query = Repo.get_by(ContentType, id: id, organisation_id: org_id)
+
+    case query do
       %ContentType{} = content_type -> content_type
-      _ -> {:error, :invalid_id, "ContentType"}
+      _ -> {:error, :invalid_id}
     end
   end
 
