@@ -533,7 +533,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       instance = insert(:instance, creator: user, content_type: content_type)
-      i_instance = Document.get_instance(instance.uuid, user)
+      i_instance = Document.get_instance(instance.id, user)
       assert i_instance.instance_id == instance.instance_id
       assert i_instance.raw == instance.raw
     end
