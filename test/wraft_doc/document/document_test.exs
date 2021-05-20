@@ -124,7 +124,7 @@ defmodule WraftDoc.DocumentTest do
           organisation: user.organisation
         )
 
-      s_layout = Document.show_layout(layout.uuid, user)
+      s_layout = Document.show_layout(layout.id, user)
 
       assert s_layout.name == layout.name
       assert s_layout.description == layout.description
@@ -141,7 +141,7 @@ defmodule WraftDoc.DocumentTest do
     test "returns nil when layout does not belong to user's organisation" do
       user = insert(:user)
       layout = insert(:layout)
-      s_layout = Document.show_layout(layout.uuid, user)
+      s_layout = Document.show_layout(layout.id, user)
       assert s_layout == nil
     end
 
@@ -155,7 +155,7 @@ defmodule WraftDoc.DocumentTest do
     test "get layout returns the layout data by uuid" do
       user = insert(:user)
       layout = insert(:layout, creator: user, organisation: user.organisation)
-      s_layout = Document.get_layout(layout.uuid, user)
+      s_layout = Document.get_layout(layout.id, user)
       assert s_layout.name == layout.name
       assert s_layout.description == layout.description
       assert s_layout.width == layout.width
@@ -173,7 +173,7 @@ defmodule WraftDoc.DocumentTest do
     test "returns nil when layout does not belong to user's organisation" do
       user = insert(:user)
       layout = insert(:layout)
-      s_layout = Document.get_layout(layout.uuid, user)
+      s_layout = Document.get_layout(layout.id, user)
       assert s_layout == nil
     end
 
@@ -190,8 +190,8 @@ defmodule WraftDoc.DocumentTest do
       asset = insert(:asset, creator: user, organisation: user.organisation)
       layout = insert(:layout, creator: user, engine: engine)
       layout_asset = insert(:layout_asset, layout: layout, asset: asset, creator: user)
-      g_layout_asset = Document.get_layout_asset(layout.uuid, asset.uuid)
-      assert layout_asset.uuid == g_layout_asset.uuid
+      g_layout_asset = Document.get_layout_asset(layout.id, asset.id)
+      assert layout_asset.id == g_layout_asset.id
     end
   end
 
@@ -201,7 +201,7 @@ defmodule WraftDoc.DocumentTest do
       engine = insert(:engine)
       layout = insert(:layout, creator: user, organisation: user.organisation)
       count_before = Layout |> Repo.all() |> length()
-      params = Map.put(@valid_layout_attrs, "engine_uuid", engine.uuid)
+      params = Map.put(@valid_layout_attrs, "engine_uuid", engine.id)
 
       layout = Document.update_layout(layout, user, params)
       count_after = Layout |> Repo.all() |> length()
@@ -499,7 +499,7 @@ defmodule WraftDoc.DocumentTest do
       content_type = insert(:content_type)
       i1 = insert(:instance, creator: user, content_type: content_type)
       i2 = insert(:instance, creator: user, content_type: content_type)
-      instance_index = Document.instance_index(content_type.uuid, %{page_number: 1})
+      instance_index = Document.instance_index(content_type.id, %{page_number: 1})
 
       assert instance_index.entries |> Enum.map(fn x -> x.raw end) |> List.to_string() =~
                i1.raw
@@ -547,7 +547,7 @@ defmodule WraftDoc.DocumentTest do
       state = insert(:state, flow: flow, organisation: user.organisation)
       instance = insert(:instance, creator: user, content_type: content_type, state: state)
 
-      i_instance = Document.show_instance(instance.uuid, user)
+      i_instance = Document.show_instance(instance.id, user)
       assert i_instance.instance_id == instance.instance_id
       assert i_instance.raw == instance.raw
 
@@ -737,9 +737,9 @@ defmodule WraftDoc.DocumentTest do
   describe "insert_bulk_build_work/6" do
     test "test creates bulk build backgroung job with valid attrs" do
       user = insert(:user)
-      %{uuid: c_type_id} = insert(:content_type)
-      %{uuid: state_id} = insert(:state)
-      %{uuid: d_temp_id} = insert(:data_template)
+      %{id: c_type_id} = insert(:content_type)
+      %{id: state_id} = insert(:state)
+      %{id: d_temp_id} = insert(:data_template)
       mapping = %{test: "map"}
       file = Plug.Upload.random_file!("test")
       tmp_file_source = "temp/bulk_build_source/" <> file
@@ -762,7 +762,7 @@ defmodule WraftDoc.DocumentTest do
                state_uuid: state_id,
                d_temp_uuid: d_temp_id,
                mapping: mapping,
-               user_uuid: user.uuid,
+               user_uuid: user.id,
                file: tmp_file_source
              }
     end
@@ -775,8 +775,8 @@ defmodule WraftDoc.DocumentTest do
 
   describe "insert_data_template_bulk_import_work/4" do
     test "test creates bulk import data template backgroung job with valid attrs" do
-      %{uuid: user_id} = insert(:user)
-      %{uuid: c_type_id} = insert(:content_type)
+      %{id: user_id} = insert(:user)
+      %{id: c_type_id} = insert(:content_type)
       mapping = %{test: "map"}
       file = Plug.Upload.random_file!("test")
       tmp_file_source = "temp/bulk_import_source/d_template/" <> file
@@ -806,7 +806,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "insert_block_template_bulk_import_work/3" do
     test "test creates bulk import block template backgroung job with valid attrs" do
-      %{uuid: user_id} = insert(:user)
+      %{id: user_id} = insert(:user)
       mapping = %{test: "map"}
       file = Plug.Upload.random_file!("test")
       tmp_file_source = "temp/bulk_import_source/b_template/" <> file
@@ -833,7 +833,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       content_type_field = insert(:content_type_field, content_type: content_type)
-      c_content_type_field = Document.get_content_type_field(content_type_field.uuid, user)
+      c_content_type_field = Document.get_content_type_field(content_type_field.id, user)
       assert content_type_field.name == c_content_type_field.name
       assert content_type_field.description == c_content_type_field.description
     end
@@ -871,7 +871,7 @@ defmodule WraftDoc.DocumentTest do
   describe "get_engine/1" do
     test "get engine returns the engine data" do
       engine = insert(:engine)
-      e_engine = Document.get_engine(engine.uuid)
+      e_engine = Document.get_engine(engine.id)
       assert engine.name == e_engine.name
       assert engine.api_route == e_engine.api_route
     end
@@ -991,7 +991,7 @@ defmodule WraftDoc.DocumentTest do
       content_type = insert(:content_type, creator: user)
       d1 = insert(:data_template, creator: user, content_type: content_type)
       d2 = insert(:data_template, creator: user, content_type: content_type)
-      data_template_index = Document.data_template_index(content_type.uuid, %{page_number: 1})
+      data_template_index = Document.data_template_index(content_type.id, %{page_number: 1})
 
       assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
                d1.title
@@ -1025,7 +1025,7 @@ defmodule WraftDoc.DocumentTest do
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
 
       data_template = insert(:data_template, creator: user, content_type: content_type)
-      d_data_template = Document.get_d_template(user, data_template.uuid)
+      d_data_template = Document.get_d_template(user, data_template.id)
       assert d_data_template.title == data_template.title
       assert d_data_template.title_template == data_template.title_template
       assert d_data_template.data == data_template.data
@@ -1038,7 +1038,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       data_template = insert(:data_template, creator: user, content_type: content_type)
-      d_data_template = Document.show_d_template(user, data_template.uuid)
+      d_data_template = Document.show_d_template(user, data_template.id)
       assert d_data_template.title == data_template.title
       assert d_data_template.title_template == data_template.title_template
       assert d_data_template.data == data_template.data
@@ -1139,7 +1139,7 @@ defmodule WraftDoc.DocumentTest do
     test "get asset returns the asset data" do
       user = insert(:user)
       asset = insert(:asset, creator: user, organisation: user.organisation)
-      a_asset = Document.get_asset(asset.uuid, user)
+      a_asset = Document.get_asset(asset.id, user)
       assert a_asset.name == asset.name
     end
   end
@@ -1148,7 +1148,7 @@ defmodule WraftDoc.DocumentTest do
     test "show asset returns the asset data and preloads" do
       user = insert(:user)
       asset = insert(:asset, creator: user, organisation: user.organisation)
-      a_asset = Document.show_asset(asset.uuid, user)
+      a_asset = Document.show_asset(asset.id, user)
       assert a_asset.name == asset.name
       assert a_asset.creator.name == user.name
     end
@@ -1198,7 +1198,7 @@ defmodule WraftDoc.DocumentTest do
 
       params =
         Map.merge(@valid_comment_attrs, %{
-          "master_id" => instance.uuid,
+          "master_id" => instance.id,
           "organisation_id" => organisation.id
         })
 
@@ -1208,7 +1208,7 @@ defmodule WraftDoc.DocumentTest do
       assert comment.comment == @valid_comment_attrs["comment"]
       assert comment.is_parent == @valid_comment_attrs["is_parent"]
       assert comment.master == @valid_comment_attrs["master"]
-      assert comment.master_id == instance.uuid
+      assert comment.master_id == instance.id
       assert comment.organisation_id == organisation.id
     end
 
@@ -1233,7 +1233,7 @@ defmodule WraftDoc.DocumentTest do
     test "get comment returns the comment data" do
       user = insert(:user)
       comment = insert(:comment, user: user, organisation: user.organisation)
-      c_comment = Document.get_comment(comment.uuid, user)
+      c_comment = Document.get_comment(comment.id, user)
       assert c_comment.comment == comment.comment
       assert c_comment.is_parent == comment.is_parent
       assert c_comment.master == comment.master
@@ -1245,7 +1245,7 @@ defmodule WraftDoc.DocumentTest do
     test "show comment returns the comment data and preloads user and profile" do
       user = insert(:user)
       comment = insert(:comment, user: user, organisation: user.organisation)
-      c_comment = Document.show_comment(comment.uuid, user)
+      c_comment = Document.show_comment(comment.id, user)
       assert c_comment.comment == comment.comment
       assert c_comment.is_parent == comment.is_parent
       assert c_comment.master == comment.master
@@ -1280,11 +1280,11 @@ defmodule WraftDoc.DocumentTest do
 
       params =
         Map.merge(@valid_comment_attrs, %{
-          "master_id" => instance.uuid,
+          "master_id" => instance.id,
           "organisation_id" => organisation.id
         })
 
-      comment = insert(:comment, user: user, master_id: instance.uuid)
+      comment = insert(:comment, user: user, master_id: instance.id)
 
       count_before = Comment |> Repo.all() |> length()
 
@@ -1294,7 +1294,7 @@ defmodule WraftDoc.DocumentTest do
       assert comment.comment == @valid_comment_attrs["comment"]
       assert comment.is_parent == @valid_comment_attrs["is_parent"]
       assert comment.master == @valid_comment_attrs["master"]
-      assert comment.master_id == instance.uuid
+      assert comment.master_id == instance.id
       assert comment.organisation_id == organisation.id
     end
   end
@@ -1303,11 +1303,11 @@ defmodule WraftDoc.DocumentTest do
     test "comment index lists the comment data" do
       user = insert(:user)
       instance = insert(:instance, creator: user)
-      c1 = insert(:comment, user: user, organisation: user.organisation, master_id: instance.uuid)
-      c2 = insert(:comment, user: user, organisation: user.organisation, master_id: instance.uuid)
+      c1 = insert(:comment, user: user, organisation: user.organisation, master_id: instance.id)
+      c2 = insert(:comment, user: user, organisation: user.organisation, master_id: instance.id)
 
       comment_index =
-        Document.comment_index(user, %{"page_number" => 1, "master_id" => instance.uuid})
+        Document.comment_index(user, %{"page_number" => 1, "master_id" => instance.id})
 
       assert comment_index.entries |> Enum.map(fn x -> x.comment end) |> List.to_string() =~
                c1.comment
@@ -1455,7 +1455,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       pipeline = insert(:pipeline)
       state = insert(:state)
-      attrs = %{"state_id" => state.uuid}
+      attrs = %{"state_id" => state.id}
 
       count_before = Stage |> Repo.all() |> length()
       stage = Document.create_pipe_stage(user, pipeline, attrs)
