@@ -131,7 +131,9 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def update_content_type(content_type, %{id: user_id}, params) do
+  def update_content_type(content_type, %{id: user_id, organisation_id: organisation_id}, params) do
+    params = Map.put(params, "organisation_id", organisation_id)
+
     content_type
     |> ContentType.update_changeset(params)
     |> Spur.update(%{actor: "#{user_id}"})
@@ -363,7 +365,7 @@ defmodule WraftDoc.Document do
 
     case query do
       %ContentType{} = content_type -> content_type
-      _ -> {:error, :invalid_id}
+      _ -> {:error, :invalid_id, "ContentType"}
     end
   end
 
