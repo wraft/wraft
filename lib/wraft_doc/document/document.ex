@@ -369,7 +369,7 @@ defmodule WraftDoc.Document do
   def get_content_type(%User{organisation_id: _org_id}, _),
     do: {:error, :invalid_id, "ContentType"}
 
-  def get_content_type(_, <<_::288>>), do: {:error, :fake}
+  def get_content_type(_, _), do: {:error, :fake}
 
   @doc """
   Get a content type from its ID. Also fetches all its related datas.
@@ -666,12 +666,12 @@ defmodule WraftDoc.Document do
 
     case Repo.one(query) do
       %Instance{} = instance -> instance
-      _ -> {:error, :invalid_id}
+      _ -> {:error, :invalid_id, "Instance"}
     end
   end
 
   def get_instance(_, %{organisation_id: _}), do: {:error, :invalid_id}
-  def get_instance(<<_::288>>, _), do: {:error, :fake}
+  def get_instance(_, _), do: {:error, :fake}
 
   @doc """
   Show an instance.
