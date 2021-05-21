@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.VendorControllerTest do
   use WraftDocWeb.ConnCase
-
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Enterprise.Vendor, Repo}
 

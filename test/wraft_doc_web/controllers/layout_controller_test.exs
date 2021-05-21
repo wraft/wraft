@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   Test module for layout controller
   """
   use WraftDocWeb.ConnCase
-
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Document.Layout, Repo}
 

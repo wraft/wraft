@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
   use WraftDocWeb.ConnCase
-
+  @moduletag :controller
   alias WraftDoc.Document
   alias WraftDoc.{Document.OrganisationField, Repo}
   import WraftDoc.Factory

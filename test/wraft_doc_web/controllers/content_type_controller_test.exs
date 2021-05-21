@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   Test module for content type controller
   """
   use WraftDocWeb.ConnCase
-
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Document.ContentType, Repo}
 

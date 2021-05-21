@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
   Test module for trigger history controller
   """
   use WraftDocWeb.ConnCase
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Document.Pipeline.TriggerHistory, Repo}
 
