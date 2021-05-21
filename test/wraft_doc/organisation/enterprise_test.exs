@@ -22,10 +22,10 @@ defmodule WraftDoc.EnterpriseTest do
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
-  test "get flow returns flow data by uuid" do
+  test "get flow returns flow data by id" do
     user = insert(:user)
     flow = insert(:flow, creator: user, organisation: user.organisation)
-    r_flow = Enterprise.get_flow(flow.uuid, user)
+    r_flow = Enterprise.get_flow(flow.id, user)
     assert flow.name == r_flow.name
   end
 
@@ -88,7 +88,7 @@ defmodule WraftDoc.EnterpriseTest do
     user = insert(:user)
     flow = insert(:flow, creator: user, organisation: user.organisation)
     state = insert(:state, creator: user, flow: flow)
-    flow = Enterprise.show_flow(flow.uuid, user)
+    flow = Enterprise.show_flow(flow.id, user)
 
     assert Enum.map(flow.states, fn x -> x.state end) == [state.state]
   end
@@ -167,7 +167,7 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "get organisation returns the organisation by id" do
     organisation = insert(:organisation)
-    g_organisation = Enterprise.get_organisation(organisation.uuid)
+    g_organisation = Enterprise.get_organisation(organisation.id)
     assert organisation.name == g_organisation.name
   end
 
@@ -230,16 +230,16 @@ defmodule WraftDoc.EnterpriseTest do
     approval_system =
       user
       |> Enterprise.create_approval_system(%{
-        "instance_id" => instance.uuid,
-        "pre_state_id" => pre_state.uuid,
-        "post_state_id" => post_state.uuid,
-        "approver_id" => approver.uuid
+        "instance_id" => instance.id,
+        "pre_state_id" => pre_state.id,
+        "post_state_id" => post_state.id,
+        "approver_id" => approver.id
       })
       |> Repo.preload([:instance])
 
     count_after = ApprovalSystem |> Repo.all() |> length()
     assert count_before + 1 == count_after
-    assert approval_system.instance.uuid == instance.uuid
+    assert approval_system.instance.id == instance.id
   end
 
   test "get approval system returns apprval system data" do
@@ -269,15 +269,15 @@ defmodule WraftDoc.EnterpriseTest do
 
     updated_approval_system =
       Enterprise.update_approval_system(user, approval_system, %{
-        "instance_id" => instance.uuid,
-        "pre_state_id" => pre_state.uuid,
-        "post_state_id" => post_state.uuid,
-        "approver_id" => approval_system.approver.uuid
+        "instance_id" => instance.id,
+        "pre_state_id" => pre_state.id,
+        "post_state_id" => post_state.id,
+        "approver_id" => approval_system.approver.id
       })
 
     count_after = ApprovalSystem |> Repo.all() |> length()
     assert count_before == count_after
-    assert updated_approval_system.instance.uuid == approval_system.instance.uuid
+    assert updated_approval_system.instance.id == approval_system.instance.id
   end
 
   test "delete approval system deletes and returns the data" do
@@ -287,7 +287,7 @@ defmodule WraftDoc.EnterpriseTest do
     {:ok, d_approval_system} = Enterprise.delete_approval_system(approval_system)
     count_after = ApprovalSystem |> Repo.all() |> length()
     assert count_before - 1 == count_after
-    assert approval_system.instance.uuid == d_approval_system.instance.uuid
+    assert approval_system.instance.id == d_approval_system.instance.id
   end
 
   test "approve content changes the state of instace from pre state to post state" do
@@ -318,21 +318,21 @@ defmodule WraftDoc.EnterpriseTest do
     user = Repo.preload(user, [:roles])
     role_names = Enum.map(user.roles, fn x -> x.name end)
     user = Map.put(user, :role_names, role_names)
-    assert Enterprise.check_permission(user, organisation.uuid) == organisation
+    assert Enterprise.check_permission(user, organisation.id) == organisation
   end
 
   test "check permission grand permission for user within organisation" do
     role = insert(:role, name: "user")
     organisation = insert(:organisation)
     user = insert(:user, role: role, organisation: organisation)
-    assert Enterprise.check_permission(user, organisation.uuid) == organisation
+    assert Enterprise.check_permission(user, organisation.id) == organisation
   end
 
   test "check permission reject permmision to enter another organisation" do
     role = insert(:role, name: "user")
     organisation = insert(:organisation)
     user = insert(:user, role: role)
-    assert Enterprise.check_permission(user, organisation.uuid) == {:error, :no_permission}
+    assert Enterprise.check_permission(user, organisation.id) == {:error, :no_permission}
   end
 
   test "already a member return error for existing email" do
@@ -374,7 +374,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   describe "get_plan/1" do
-    test "fetches a plan with valid uuid" do
+    test "fetches a plan with valid id" do
       plan = insert(:plan)
       fetched_plan = Enterprise.get_plan(plan.id)
 
@@ -382,13 +382,13 @@ defmodule WraftDoc.EnterpriseTest do
       assert fetched_plan.name == plan.name
     end
 
-    test "returns nil with non-existent uuid" do
+    test "returns nil with non-existent id" do
       fetched_plan = Enterprise.get_plan(Ecto.UUID.generate())
 
       assert fetched_plan == nil
     end
 
-    test "returns nil with invalid uuid" do
+    test "returns nil with invalid id" do
       fetched_plan = Enterprise.get_plan(1)
 
       assert fetched_plan == nil
@@ -460,11 +460,11 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   describe "get_membership/1" do
-    test "fetches a membership with valid uuid" do
+    test "fetches a membership with valid id" do
       membership = insert(:membership)
-      fetched_membership = Enterprise.get_membership(membership.uuid)
+      fetched_membership = Enterprise.get_membership(membership.id)
 
-      assert fetched_membership.uuid == membership.uuid
+      assert fetched_membership.id == membership.id
       assert fetched_membership.plan_id == membership.plan_id
       assert fetched_membership.organisation_id == membership.organisation_id
       assert fetched_membership.start_date == membership.start_date
@@ -472,13 +472,13 @@ defmodule WraftDoc.EnterpriseTest do
       assert fetched_membership.plan_duration == membership.plan_duration
     end
 
-    test "returns nil with non-existent uuid" do
+    test "returns nil with non-existent id" do
       fetched_membership = Enterprise.get_membership(Ecto.UUID.generate())
 
       assert fetched_membership == nil
     end
 
-    test "returns nil with invalid uuid" do
+    test "returns nil with invalid id" do
       fetched_membership = Enterprise.get_membership(1)
 
       assert fetched_membership == nil
@@ -492,9 +492,9 @@ defmodule WraftDoc.EnterpriseTest do
       role_names = Enum.map(user.roles, fn x -> x.name end)
       user = Map.put(user, :role_names, role_names)
       membership = insert(:membership, organisation: user.organisation)
-      fetched_membership = Enterprise.get_membership(membership.uuid, user)
+      fetched_membership = Enterprise.get_membership(membership.id, user)
 
-      assert fetched_membership.uuid == membership.uuid
+      assert fetched_membership.id == membership.id
       assert fetched_membership.plan_id == membership.plan_id
       assert fetched_membership.organisation_id == membership.organisation_id
       assert fetched_membership.start_date == membership.start_date
@@ -502,7 +502,7 @@ defmodule WraftDoc.EnterpriseTest do
       assert fetched_membership.plan_duration == membership.plan_duration
     end
 
-    test "returns nil with non-existent uuid" do
+    test "returns nil with non-existent id" do
       user = insert(:user)
       fetched_membership = Enterprise.get_membership(Ecto.UUID.generate(), user)
 
@@ -516,7 +516,7 @@ defmodule WraftDoc.EnterpriseTest do
       assert fetched_membership == nil
     end
 
-    test "returns nil with invalid uuid" do
+    test "returns nil with invalid id" do
       user = insert(:user)
       fetched_membership = Enterprise.get_membership(1, user)
 
@@ -526,7 +526,7 @@ defmodule WraftDoc.EnterpriseTest do
     test "returns nil when membership does not belongs to user's organisation" do
       user = insert(:user)
       membership = insert(:membership)
-      fetched_membership = Enterprise.get_membership(membership.uuid, user)
+      fetched_membership = Enterprise.get_membership(membership.id, user)
       assert fetched_membership == nil
     end
 
@@ -538,8 +538,8 @@ defmodule WraftDoc.EnterpriseTest do
       role_names = Enum.map(user.roles, fn x -> x.name end)
       user = Map.put(user, :role_names, role_names)
       membership = insert(:membership)
-      fetched_membership = Enterprise.get_membership(membership.uuid, user)
-      assert fetched_membership.uuid == membership.uuid
+      fetched_membership = Enterprise.get_membership(membership.id, user)
+      assert fetched_membership.id == membership.id
       assert fetched_membership.plan_id == membership.plan_id
       assert fetched_membership.organisation_id == membership.organisation_id
       assert fetched_membership.start_date == membership.start_date
@@ -551,19 +551,19 @@ defmodule WraftDoc.EnterpriseTest do
   describe "get_organisation_membership/1" do
     test "fetches a membership with valid parameters" do
       membership = insert(:membership)
-      fetched_membership = Enterprise.get_organisation_membership(membership.organisation.uuid)
-      assert fetched_membership.uuid == membership.uuid
+      fetched_membership = Enterprise.get_organisation_membership(membership.organisation.id)
+      assert fetched_membership.id == membership.id
       assert fetched_membership.plan_id == membership.plan_id
       assert fetched_membership.plan.yearly_amount == membership.plan.yearly_amount
     end
 
-    test "returns nil with non-existent uuid" do
+    test "returns nil with non-existent id" do
       fetched_membership = Enterprise.get_organisation_membership(Ecto.UUID.generate())
 
       assert fetched_membership == nil
     end
 
-    test "returns nil with invalid uuid" do
+    test "returns nil with invalid id" do
       fetched_membership = Enterprise.get_organisation_membership(1)
 
       assert fetched_membership == nil
@@ -734,11 +734,11 @@ defmodule WraftDoc.EnterpriseTest do
       user3 = insert(:user, organisation: organisation)
 
       response = Enterprise.members_index(user1, %{"page" => 1})
-      user_ids = response.entries |> Enum.map(fn x -> x.uuid end) |> to_string()
+      user_ids = response.entries |> Enum.map(fn x -> x.id end) |> to_string()
 
-      assert user_ids =~ user1.uuid
-      assert user_ids =~ user2.uuid
-      assert user_ids =~ user3.uuid
+      assert user_ids =~ user1.id
+      assert user_ids =~ user2.id
+      assert user_ids =~ user3.id
       assert response.page_number == 1
       assert response.total_pages == 1
       assert response.total_entries == 3
@@ -751,11 +751,11 @@ defmodule WraftDoc.EnterpriseTest do
       user3 = insert(:user, organisation: organisation)
 
       response = Enterprise.members_index(user1, %{"page" => 1, "name" => "joh"})
-      user_ids = response.entries |> Enum.map(fn x -> x.uuid end) |> to_string()
+      user_ids = response.entries |> Enum.map(fn x -> x.id end) |> to_string()
 
-      assert user_ids =~ user1.uuid
-      assert user_ids =~ user2.uuid
-      refute user_ids =~ user3.uuid
+      assert user_ids =~ user1.id
+      assert user_ids =~ user2.id
+      refute user_ids =~ user3.id
       assert response.page_number == 1
       assert response.total_pages == 1
       assert response.total_entries == 2
@@ -924,7 +924,7 @@ defmodule WraftDoc.EnterpriseTest do
     test "get_organisation_id_roles" do
       organisation = insert(:organisation)
 
-      response = Enterprise.get_organisation_id_roles(organisation.uuid)
+      response = Enterprise.get_organisation_id_roles(organisation.id)
       assert response.name == organisation.name
     end
   end
@@ -934,7 +934,7 @@ defmodule WraftDoc.EnterpriseTest do
       organisation = insert(:organisation)
       role = insert(:role)
 
-      response = Enterprise.get_organisation_id_and_role_id(organisation.uuid, role.uuid)
+      response = Enterprise.get_organisation_id_and_role_id(organisation.id, role.id)
       assert response.name == organisation.name
     end
   end
@@ -944,7 +944,7 @@ defmodule WraftDoc.EnterpriseTest do
       organisation = insert(:organisation)
       role = insert(:role)
 
-      response = Enterprise.get_role_of_the_organisation(role.uuid, organisation.uuid)
+      response = Enterprise.get_role_of_the_organisation(role.id, organisation.id)
       assert role.name == role.name
     end
   end

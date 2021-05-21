@@ -65,8 +65,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
     count_before = ContentType |> Repo.all() |> length()
-    %{uuid: flow_uuid} = insert(:flow, creator: user, organisation: user.organisation)
-    %{uuid: layout_uuid} = insert(:layout, creator: user, organisation: user.organisation)
+    %{id: flow_uuid} = insert(:flow, creator: user, organisation: user.organisation)
+    %{id: layout_uuid} = insert(:layout, creator: user, organisation: user.organisation)
 
     params = Map.merge(@invalid_attrs, %{flow_uuid: flow_uuid, layout_uuid: layout_uuid})
 
@@ -98,7 +98,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_content_type_path(conn, :update, content_type.uuid, params))
+      |> put(Routes.v1_content_type_path(conn, :update, content_type.id, params))
       |> doc(operation_id: "update_content_type")
 
     assert json_response(conn, 200)["content_type"]["name"] == @valid_attrs.name
@@ -117,7 +117,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_content_type_path(conn, :update, content_type.uuid, @invalid_attrs))
+      |> put(Routes.v1_content_type_path(conn, :update, content_type.id, @invalid_attrs))
       |> doc(operation_id: "update_content_type")
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -199,7 +199,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
     conn = get(conn, Routes.v1_content_type_path(conn, :show, content_type.id))
 
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
   end
 
   test "show the content type with roles", %{conn: conn} do
