@@ -385,13 +385,13 @@ defmodule WraftDoc.EnterpriseTest do
     test "returns nil with non-existent id" do
       fetched_plan = Enterprise.get_plan(Ecto.UUID.generate())
 
-      assert fetched_plan == nil
+      assert fetched_plan == {:error, :invalid_id, "Plan"}
     end
 
     test "returns nil with invalid id" do
       fetched_plan = Enterprise.get_plan(1)
 
-      assert fetched_plan == nil
+      assert fetched_plan == {:error, :invalid_id, "Plan"}
     end
   end
 
@@ -475,13 +475,13 @@ defmodule WraftDoc.EnterpriseTest do
     test "returns nil with non-existent id" do
       fetched_membership = Enterprise.get_membership(Ecto.UUID.generate())
 
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Membership"}
     end
 
     test "returns nil with invalid id" do
       fetched_membership = Enterprise.get_membership(1)
 
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Membership"}
     end
   end
 
@@ -506,28 +506,28 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user)
       fetched_membership = Enterprise.get_membership(Ecto.UUID.generate(), user)
 
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Membership"}
     end
 
     test "returns nil with invalid parameter" do
       membership = insert(:membership)
       fetched_membership = Enterprise.get_membership(membership, nil)
 
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Membership"}
     end
 
     test "returns nil with invalid id" do
       user = insert(:user)
       fetched_membership = Enterprise.get_membership(1, user)
 
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Membership"}
     end
 
     test "returns nil when membership does not belongs to user's organisation" do
       user = insert(:user)
       membership = insert(:membership)
       fetched_membership = Enterprise.get_membership(membership.id, user)
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Membership"}
     end
 
     test "returns membership irrespective of organisation when user has admin role" do
@@ -566,7 +566,7 @@ defmodule WraftDoc.EnterpriseTest do
     test "returns nil with invalid id" do
       fetched_membership = Enterprise.get_organisation_membership(1)
 
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Organisation"}
     end
   end
 
