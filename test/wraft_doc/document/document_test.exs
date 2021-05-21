@@ -152,6 +152,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "get_layout/2" do
+    @tag individual_test: "yup"
     test "get layout returns the layout data by uuid" do
       user = insert(:user)
       layout = insert(:layout, creator: user, organisation: user.organisation)
@@ -164,22 +165,25 @@ defmodule WraftDoc.DocumentTest do
       assert s_layout.slug == layout.slug
     end
 
-    test "returns nil with non-existent UUIDs" do
+    @tag individual_test: "yup"
+    test "returns error invalid id with non-existent UUIDs" do
       user = insert(:user)
       s_layout = Document.get_layout(Ecto.UUID.generate(), user)
-      assert s_layout == nil
+      assert s_layout == {:error, :invalid_id, "Layout"}
     end
 
-    test "returns nil when layout does not belong to user's organisation" do
+    @tag individual_test: "yup"
+    test "returns error  when layout does not belong to user's organisation" do
       user = insert(:user)
       layout = insert(:layout)
       s_layout = Document.get_layout(layout.id, user)
-      assert s_layout == nil
+      assert s_layout == {:error, :invalid_id, "Layout"}
     end
 
-    test "returns nil when wrong datas are given" do
+    @tag individual_test: "yup"
+    test "returns error when wrong datas are given" do
       s_layout = Document.get_layout(1, nil)
-      assert s_layout == nil
+      assert s_layout == {:error, :fake}
     end
   end
 
