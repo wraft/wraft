@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
   Test module for role controller test
   """
   use WraftDocWeb.ConnCase
+  @moduletag :controller
   alias WraftDoc.Account.Role
   alias WraftDoc.Repo
   import WraftDoc.Factory

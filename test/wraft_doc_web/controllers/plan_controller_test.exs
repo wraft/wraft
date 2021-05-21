@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Api.V1.PlanControllerTest do
   use WraftDocWeb.ConnCase
+  @moduletag :controller
   import WraftDoc.Factory
 
   @valid_attrs %{

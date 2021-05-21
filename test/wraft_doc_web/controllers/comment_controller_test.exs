@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Api.V1.CommentControllerTest do
   use WraftDocWeb.ConnCase
+  @moduletag :controller
 
   import WraftDoc.Factory
   alias WraftDoc.{Document.Comment, Repo}

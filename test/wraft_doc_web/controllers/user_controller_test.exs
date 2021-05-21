@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Api.V1.UserControllerTest do
   use WraftDocWeb.ConnCase
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Account.AuthToken, Repo}
   alias WraftDocWeb.Endpoint

@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
   Test module for resource controller
   """
   use WraftDocWeb.ConnCase
+  @moduletag :controller
 
   import WraftDoc.Factory
   alias WraftDoc.{Authorization.Resource, Repo}

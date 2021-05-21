@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
   use WraftDocWeb.ConnCase
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Enterprise.Membership.Payment, Repo}
 
