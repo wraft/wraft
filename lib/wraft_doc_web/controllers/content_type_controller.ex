@@ -17,8 +17,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description", required: true)
             fields(Schema.ref(:ContentTypeFieldRequests))
-            layout_uuid(:string, "ID of the layout selected", required: true)
-            flow_uuid(:string, "ID of the flow selected", required: true)
+            layout_id(:string, "ID of the layout selected", required: true)
+            flow_id(:string, "ID of the flow selected", required: true)
             color(:string, "Hex code of color")
 
             prefix(:string, "Prefix to be used for generating Unique ID for contents",
@@ -38,8 +38,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               },
               %{key: "name", field_type_id: "kjb2347mnsad"}
             ],
-            layout_uuid: "1232148nb3478",
-            flow_uuid: "234okjnskjb8234",
+            layout_id: "1232148nb3478",
+            flow_id: "234okjnskjb8234",
             prefix: "OFFLET",
             color: "#fff"
           })
@@ -446,8 +446,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           properties do
             id(:string, "ID of the content_type")
             description(:string, "Content Type's description", required: true)
-            layout_uuid(:string, "ID of the layout selected", required: true)
-            flow_uuid(:string, "ID of the flow selected", required: true)
+            layout_id(:string, "ID of the layout selected", required: true)
+            flow_id(:string, "ID of the flow selected", required: true)
             color(:string, "Hex code of color")
 
             prefix(:string, "Prefix to be used for generating Unique ID for contents",
@@ -509,9 +509,11 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
-    content_type = Document.create_content_type(current_user, params)
 
-    render(conn, "create.json", content_type: content_type)
+    with %ContentType{} = content_type <-
+           Document.create_content_type(current_user, params) do
+      render(conn, "create.json", content_type: content_type)
+    end
   end
 
   @doc """
@@ -591,10 +593,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <- Document.get_content_type(current_user, uuid),
+    with %ContentType{} = content_type <- Document.get_content_type(current_user, id),
          %ContentType{} = content_type <-
            Document.update_content_type(content_type, current_user, params) do
       render(conn, "show.json", content_type: content_type)
@@ -641,7 +643,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
     parameter(:c_type_id, :path, :string, "Content type id", required: true)
     parameter(:state_id, :formData, :string, "State id", required: true)
-    parameter(:d_temp_uuid, :formData, :string, "Data template id", required: true)
+    parameter(:d_temp_id, :formData, :string, "Data template id", required: true)
     parameter(:file, :formData, :file, "Bulk build source file")
     parameter(:mapping, :formData, :map, "Mappings for the CSV")
 
@@ -653,9 +655,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   def bulk_build(
         conn,
         %{
-          "c_type_id" => c_type_uuid,
-          "state_id" => state_uuid,
-          "d_temp_uuid" => d_temp_uuid,
+          "c_type_id" => c_type_id,
+          "state_id" => state_id,
+          "d_temp_id" => d_temp_id,
           "mapping" => mapping,
           "file" => file
         }
@@ -665,9 +667,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     with {:ok, %Oban.Job{}} <-
            Document.insert_bulk_build_work(
              current_user,
-             c_type_uuid,
-             state_uuid,
-             d_temp_uuid,
+             c_type_id,
+             state_id,
+             d_temp_id,
              mapping,
              file
            ) do
