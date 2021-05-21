@@ -1126,11 +1126,17 @@ defmodule WraftDoc.Enterprise do
 
   """
   @spec get_vendor(Organisation.t(), Ecto.UUID.t()) :: Vendor.t()
-  def get_vendor(%User{organisation_id: id}, id) do
-    Repo.get_by(Vendor, id: id, organisation_id: id)
+  def get_vendor(%User{organisation_id: org_id}, id) do
+    query = from(v in Vendor, where: v.id == ^id and v.organisation_id == ^org_id)
+
+    case Repo.one(query) do
+      %Vendor{} = vendor -> vendor
+      _ -> {:error, :invalid_id}
+    end
   end
 
   def get_vendor(_, _), do: nil
+
   @spec show_vendor(Ecto.UUID.t(), User.t()) :: Vendor.t()
   def show_vendor(id, user) do
     user |> get_vendor(id) |> Repo.preload([:creator, :organisation])
