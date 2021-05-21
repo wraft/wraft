@@ -247,13 +247,12 @@ defmodule WraftDoc.Document do
         layout
 
       _ ->
-        {:error, :invalid_id, Layout}
+        {:error, :invalid_id, "Layout"}
     end
   end
 
-  def get_layout(_, %{organisation_id: _}), do: {:error, :invalid_id, Layout}
-  def get_layout(<<_::288>>, _), do: {:error, :fake}
-  def get_layout(_, _), do: {:error, :invalid_id}
+  def get_layout(_, %{organisation_id: _}), do: {:error, :invalid_id, "Layout"}
+  def get_layout(_, _), do: {:error, :fake}
 
   @doc """
   Get a layout asset from its layout's and asset's UUIDs.
