@@ -1234,8 +1234,7 @@ defmodule WraftDoc.Enterprise do
   end
 
   def get_organisation_id_and_role_id(org_id, r_id) do
-    query =
-      from(o in Organisation, where: o.uuid == ^org_id, join: r in Role, where: r.uuid == ^r_id)
+    query = from(o in Organisation, where: o.id == ^org_id, join: r in Role, where: r.id == ^r_id)
 
     Repo.one(query)
   end
