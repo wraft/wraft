@@ -106,7 +106,8 @@ defmodule WraftDoc.DocumentTest do
                width: ["can't be blank"],
                height: ["can't be blank"],
                unit: ["can't be blank"],
-               slug: ["can't be blank"]
+               slug: ["can't be blank"],
+               engine_id: ["can't be blank"]
              } == errors_on(changeset)
     end
   end
@@ -135,19 +136,19 @@ defmodule WraftDoc.DocumentTest do
     test "returns nil with non-existent UUIDs" do
       user = insert(:user)
       s_layout = Document.show_layout(Ecto.UUID.generate(), user)
-      assert s_layout == nil
+      assert s_layout == {:error, :invalid_id, "Layout"}
     end
 
     test "returns nil when layout does not belong to user's organisation" do
       user = insert(:user)
       layout = insert(:layout)
       s_layout = Document.show_layout(layout.id, user)
-      assert s_layout == nil
+      assert s_layout == {:error, :invalid_id, "Layout"}
     end
 
     test "returns nil when wrong datas are given" do
       s_layout = Document.show_layout(1, nil)
-      assert s_layout == nil
+      assert s_layout == {:error, :fake}
     end
   end
 
@@ -433,8 +434,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       content_type = insert(:content_type, creator: user)
       count_before = ContentType |> Repo.all() |> length()
-      params = Map.merge(@invalid_attrs, %{name: "", description: "", prefix: ""})
-      {:error, changeset} = Document.update_content_type(content_type, user, params)
+      {:error, changeset} = Document.update_content_type(content_type, user, @invalid_attrs)
       count_after = ContentType |> Repo.all() |> length()
       assert count_before == count_after
 
@@ -492,7 +492,8 @@ defmodule WraftDoc.DocumentTest do
 
       assert %{
                raw: ["can't be blank"],
-               type: ["can't be blank"]
+               type: ["can't be blank"],
+               state_id: ["can't be blank"]
              } == errors_on(changeset)
     end
   end
@@ -795,7 +796,7 @@ defmodule WraftDoc.DocumentTest do
       assert count_before + 1 == Oban.Job |> Repo.all() |> length()
 
       assert job.args == %{
-               user_uuid: user_id,
+               user_id: user_id,
                c_type_uuid: c_type_id,
                mapping: mapping,
                file: tmp_file_source
@@ -804,7 +805,7 @@ defmodule WraftDoc.DocumentTest do
 
     test "does not create bulk import data template backgroung job with invalid attrs" do
       response = Document.insert_data_template_bulk_import_work(nil, nil, nil, nil)
-      assert response == nil
+      assert response == {:error, :invalid_data}
     end
   end
 
@@ -816,7 +817,7 @@ defmodule WraftDoc.DocumentTest do
       tmp_file_source = "temp/bulk_import_source/b_template/" <> file
       count_before = Oban.Job |> Repo.all() |> length()
 
-      {:ok, job} =
+      job =
         Document.insert_block_template_bulk_import_work(user_id, mapping, %Plug.Upload{
           filename: file,
           path: file
@@ -828,7 +829,7 @@ defmodule WraftDoc.DocumentTest do
 
     test "does not create bulk import block template backgroung job with invalid attrs" do
       response = Document.insert_block_template_bulk_import_work(nil, nil, nil)
-      assert response == nil
+      assert response == {:error, :invalid_data}
     end
   end
 
