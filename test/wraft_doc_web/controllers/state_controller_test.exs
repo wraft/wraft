@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   Test module for state controller
   """
   use WraftDocWeb.ConnCase
+  @moduletag :controller
 
   import WraftDoc.Factory
   alias WraftDoc.{Enterprise.Flow.State, Repo}

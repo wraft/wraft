@@ -120,18 +120,10 @@ defmodule WraftDocWeb.Router do
       post("/content_type_roles", ContentTypeRoleController, :create)
       delete("/content_type_roles/:id", ContentTypeRoleController, :delete)
 
-      get("/roles/:id", RoleController, :show)
+      resources("/roles", RoleController, only: [:create, :show, :delete])
+
       get("/content_types/:id/roles", ContentTypeController, :show_content_type_role)
       get("/content_types/search", ContentTypeController, :search)
-
-      get("/organisations/:id/roles", OrganisationRoleController, :show)
-      post("/organisations/:id/roles", OrganisationRoleController, :create)
-
-      delete(
-        "/organisations/:o_id/roles/:id",
-        OrganisationRoleController,
-        :delete_organisation_role
-      )
 
       # Enginebody
       resources("/engines", EngineController, only: [:index])

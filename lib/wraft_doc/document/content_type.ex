@@ -5,8 +5,8 @@ defmodule WraftDoc.Document.ContentType do
   use WraftDoc.Schema
 
   alias __MODULE__
-  alias WraftDoc.Account.User
-  alias WraftDoc.Document.ContentType
+  alias WraftDoc.{Account.User, Document.ContentType, Document.Layout, Enterprise.Flow}
+
   import Ecto.Query
   @derive {Jason.Encoder, only: [:name]}
   defimpl Spur.Trackable, for: ContentType do
@@ -25,10 +25,10 @@ defmodule WraftDoc.Document.ContentType do
     # field(:fields, :map)
     field(:color, :string)
     field(:prefix, :string)
-    belongs_to(:layout, WraftDoc.Document.Layout)
+    belongs_to(:layout, Layout)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-    belongs_to(:flow, WraftDoc.Enterprise.Flow)
+    belongs_to(:flow, Flow)
 
     has_many(:instances, WraftDoc.Document.Instance)
     has_many(:fields, WraftDoc.Document.ContentTypeField)
@@ -55,12 +55,15 @@ defmodule WraftDoc.Document.ContentType do
   def update_changeset(%ContentType{} = content_type, attrs \\ %{}) do
     content_type
     |> cast(attrs, [:name, :description, :color, :layout_id, :flow_id, :prefix])
+    |> validate_required([:name, :description])
     |> unique_constraint(:name,
       message: "Content type with the same name under your organisation exists.!",
       name: :content_type_organisation_unique_index
     )
     |> validate_length(:prefix, min: 2, max: 6)
     |> validate_format(:color, ~r/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
+    |> organisation_constraint(Layout, :layout_id)
+    |> organisation_constraint(Flow, :flow_id)
   end
 
   defimpl Poison.Encoder, for: WraftDoc.Document.ContentType do

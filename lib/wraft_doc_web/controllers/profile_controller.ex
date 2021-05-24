@@ -117,8 +117,8 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
   #   response(401, "Unauthorized", Schema.ref(:Error))
   # end
 
-  # def show(conn, %{"id" => uuid}) do
-  #   with %Profile{} = profile <- Account.get_profile(uuid) do
+  # def show(conn, %{"id" => id}) do
+  #   with %Profile{} = profile <- Account.get_profile(id) do
   #     conn
   #     |> render("profile.json", profile: profile)
   #   end

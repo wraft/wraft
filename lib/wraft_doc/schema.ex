@@ -18,6 +18,23 @@ defmodule WraftDoc.Schema do
   end
 
   def organisation_constraint(
+        %Ecto.Changeset{changes: %{organisation_id: organisation_id}} = changeset,
+        schema,
+        field
+      ) do
+    cond do
+      is_nil(changeset.changes[field]) ->
+        changeset
+
+      is_nil(Repo.get_by(schema, id: changeset.changes[field], organisation_id: organisation_id)) ->
+        add_error(changeset, field, "Invalid #{field}")
+
+      true ->
+        changeset
+    end
+  end
+
+  def organisation_constraint(
         %Ecto.Changeset{params: %{"organisation_id" => organisation_id}} = changeset,
         schema,
         field

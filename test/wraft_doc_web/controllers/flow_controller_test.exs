@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   use WraftDocWeb.ConnCase
+  @moduletag :controller
 
   import WraftDoc.Factory
   alias WraftDoc.{Enterprise.Flow, Enterprise.Flow.State, Repo}

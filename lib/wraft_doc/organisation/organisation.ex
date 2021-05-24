@@ -5,7 +5,6 @@ defmodule WraftDoc.Enterprise.Organisation do
   use WraftDoc.Schema
   use Arc.Ecto.Schema
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.Enterprise.OrganisationRole
 
   @derive {Jason.Encoder, only: [:name]}
   schema "organisation" do
@@ -22,8 +21,8 @@ defmodule WraftDoc.Enterprise.Organisation do
     has_many(:users, WraftDoc.Account.User)
     has_many(:pipelines, WraftDoc.Document.Pipeline)
     has_many(:vendors, WraftDoc.Enterprise.Vendor)
-    has_many(:organisation_roles, OrganisationRole)
-    has_many(:roles, through: [:organisation_roles, :role])
+
+    has_many(:roles, WraftDoc.Account.Role)
     timestamps()
   end
 

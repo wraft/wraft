@@ -2,8 +2,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   @moduledoc """
   Test module for instance controller
   """
-  use WraftDocWeb.ConnCase
 
+  use WraftDocWeb.ConnCase
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Document.Instance, Document.Instance.Version, Repo}
 

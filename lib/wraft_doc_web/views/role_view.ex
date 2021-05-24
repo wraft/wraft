@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.RoleView do
   use WraftDocWeb, :view
 
-  alias WraftDocWeb.Api.V1.ContentTypeView
+  alias WraftDocWeb.Api.V1.{ContentTypeView, OrganisationView}
 
   def render("role.json", %{role: role}) do
     %{
@@ -14,7 +14,8 @@ defmodule WraftDocWeb.Api.V1.RoleView do
     %{
       id: role.id,
       name: role.name,
-      content_type: render_many(role.content_types, ContentTypeView, "role_content_type.json")
+      organisation: render_one(role.organisation, OrganisationView, "organisation.json"),
+      content_types: render_many(role.content_types, ContentTypeView, "role_content_type.json")
     }
   end
 end

@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Api.V1.PlanControllerTest do
   use WraftDocWeb.ConnCase
+  @moduletag :controller
   import WraftDoc.Factory
 
   @valid_attrs %{
@@ -214,7 +215,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
       conn = build_conn()
       plan = insert(:plan)
       conn = get(conn, Routes.v1_plan_path(conn, :show, Ecto.UUID.autogenerate()))
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
     test "returns nil when plan with given uuid does not exist", %{conn: conn} do
@@ -224,7 +225,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       conn = put(conn, Routes.v1_plan_path(conn, :update, Ecto.UUID.generate()), %{name: ""})
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
     test "returns nil with non UUID value", %{conn: conn} do
@@ -234,7 +235,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       conn = delete(conn, Routes.v1_plan_path(conn, :delete, 1))
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
   end
 
@@ -272,7 +273,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       conn = put(conn, Routes.v1_plan_path(conn, :update, Ecto.UUID.generate()), %{name: ""})
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
     test "returns nil with non UUID value", %{conn: conn} do
@@ -282,7 +283,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       conn = delete(conn, Routes.v1_plan_path(conn, :delete, 1))
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
     test "returns error if current user is not admin" do
@@ -332,7 +333,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       conn = delete(conn, Routes.v1_plan_path(conn, :delete, Ecto.UUID.generate()))
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
     test "returns nil with non UUID value", %{conn: conn} do
@@ -342,7 +343,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       conn = delete(conn, Routes.v1_plan_path(conn, :delete, 1))
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
     test "returns error if current user is not admin" do
