@@ -6,7 +6,6 @@ defmodule WraftDoc.Repo.Migrations.CreateFieldTypeTable do
       add(:id, :uuid, primary_key: true)
       add(:name, :string, null: false)
       add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
-
       timestamps()
     end
 

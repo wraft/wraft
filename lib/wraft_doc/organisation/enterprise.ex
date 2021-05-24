@@ -22,7 +22,7 @@ defmodule WraftDoc.Enterprise do
   }
 
   alias WraftDoc.Account.Role
-  alias WraftDoc.Enterprise.OrganisationRole
+
   alias WraftDocWeb.Worker.{EmailWorker, ScheduledWorker}
 
   @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
@@ -1150,26 +1150,26 @@ defmodule WraftDoc.Enterprise do
 
   def get_pending_approvals(_, _), do: nil
 
-  def create_organisation_role(id, params) do
-    organisation = get_organisation(id)
+  # def create_organisation_role(id, params) do
+  #   organisation = get_organisation(id)
 
-    Multi.new()
-    |> Multi.insert(:role, Role.changeset(%Role{}, params))
-    |> Multi.insert(:organisation_role, fn %{role: role} ->
-      OrganisationRole.changeset(%OrganisationRole{}, %{
-        organisation_id: organisation.id,
-        role_id: role.id
-      })
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:error, _, changeset, _} ->
-        {:error, changeset}
+  #   Multi.new()
+  #   |> Multi.insert(:role, Role.changeset(%Role{}, params))
+  #   |> Multi.insert(:organisation_role, fn %{role: role} ->
+  #     OrganisationRole.changeset(%OrganisationRole{}, %{
+  #       organisation_id: organisation.id,
+  #       role_id: role.id
+  #     })
+  #   end)
+  #   |> Repo.transaction()
+  #   |> case do
+  #     {:error, _, changeset, _} ->
+  #       {:error, changeset}
 
-      {:ok, %{role: _role, organisation_role: organisation_role}} ->
-        organisation_role
-    end
-  end
+  #     {:ok, %{role: _role, organisation_role: organisation_role}} ->
+  #       organisation_role
+  #   end
+  # end
 
   def get_role(role \\ "admin")
 

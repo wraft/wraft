@@ -150,8 +150,8 @@ defmodule WraftDocWeb.Api.V1.ResourceController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => uuid}) do
-    with %Resource{} = resource <- Authorization.get_resource(uuid) do
+  def show(conn, %{"id" => id}) do
+    with %Resource{} = resource <- Authorization.get_resource(id) do
       render(conn, "create.json", resource: resource)
     end
   end
@@ -176,8 +176,8 @@ defmodule WraftDocWeb.Api.V1.ResourceController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
-    with %Resource{} = resource <- Authorization.get_resource(uuid),
+  def update(conn, %{"id" => id} = params) do
+    with %Resource{} = resource <- Authorization.get_resource(id),
          {:ok, %Resource{} = resource} <- Authorization.update_resource(resource, params) do
       render(conn, "create.json", resource: resource)
     end
@@ -202,8 +202,8 @@ defmodule WraftDocWeb.Api.V1.ResourceController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
-    with %Resource{} = resource <- Authorization.get_resource(uuid),
+  def delete(conn, %{"id" => id}) do
+    with %Resource{} = resource <- Authorization.get_resource(id),
          {:ok, %Resource{}} <- Authorization.delete_resource(resource) do
       render(conn, "create.json", resource: resource)
     end

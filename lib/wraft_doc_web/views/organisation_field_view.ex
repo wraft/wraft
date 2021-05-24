@@ -23,7 +23,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldView do
 
   def render("organisation_field.json", %{organisation_field: organisation_field}) do
     %{
-      uuid: organisation_field.uuid,
+      id: organisation_field.id,
       name: organisation_field.name,
       meta: organisation_field.meta,
       description: organisation_field.description,

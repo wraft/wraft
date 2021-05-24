@@ -3,12 +3,11 @@ defmodule WraftDoc.Account.Role do
     This is the Roles module
   """
   use WraftDoc.Schema
-  alias WraftDoc.Enterprise.OrganisationRole
 
   schema "role" do
     field(:name, :string)
-    has_many(:organisation_roles, OrganisationRole)
-    has_many(:organisations, through: [:organisation_roles, :organisation])
+    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+
     has_many(:permissions, WraftDoc.Authorization.Permission)
     has_many(:user_roles, WraftDoc.Account.UserRole)
     has_many(:users, through: [:user_roles, :user])
@@ -21,6 +20,13 @@ defmodule WraftDoc.Account.Role do
     role
     |> cast(attrs, [:name])
     |> validate_required([:name])
-    |> unique_constraint(:role, message: "Role already exists")
+  end
+
+  def organisation_changeset(role, attrs \\ %{}) do
+    role
+    |> cast(attrs, [:organisation_id, :name])
+    |> validate_required([:name, :organisation_id])
+    |> validate_exclusion(:name, ~w(admin super_admin))
+    |> unique_constraint(:name, message: "Role exist in this organisation")
   end
 end
