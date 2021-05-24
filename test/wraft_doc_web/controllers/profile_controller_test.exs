@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
   use WraftDocWeb.ConnCase
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.Repo
 
@@ -11,7 +12,7 @@ defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
 
   setup %{conn: conn} do
     profile = insert(:profile)
-    user = Repo.preload(profile.user, [:profile, :role])
+    user = Repo.preload(profile.user, [:profile])
 
     conn =
       conn

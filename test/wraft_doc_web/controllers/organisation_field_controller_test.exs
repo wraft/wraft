@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
   use WraftDocWeb.ConnCase
-
+  @moduletag :controller
   alias WraftDoc.Document
   alias WraftDoc.{Document.OrganisationField, Repo}
   import WraftDoc.Factory
@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
     meta: %{},
     name: "some updated name"
   }
-  @invalid_attrs %{description: nil, meta: nil, name: nil, uuid: nil}
+  @invalid_attrs %{description: nil, meta: nil, name: nil, id: nil}
 
   setup %{conn: conn} do
     user = insert(:user)
@@ -70,7 +70,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
     test "renders organisation_field when data is valid", %{conn: conn} do
       user = conn.assigns.current_user
       field_type = insert(:field_type, creator: user)
-      params = Map.put(@create_attrs, :field_type_uuid, field_type.uuid)
+      params = Map.put(@create_attrs, :field_type_id, field_type.id)
 
       conn =
         build_conn()
@@ -94,7 +94,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       field_type = insert(:field_type, creator: user)
-      params = Map.put(@invalid_attrs, :field_type_uuid, field_type.uuid)
+      params = Map.put(@invalid_attrs, :field_type_id, field_type.id)
       count_before = OrganisationField |> Repo.all() |> length()
       conn = post(conn, Routes.v1_organisation_field_path(conn, :create), params)
 
@@ -117,7 +117,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
       conn =
         put(
           conn,
-          Routes.v1_organisation_field_path(conn, :update, organisation_field.uuid),
+          Routes.v1_organisation_field_path(conn, :update, organisation_field.id),
           @update_attrs
         )
 
@@ -136,7 +136,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
       conn =
         put(
           conn,
-          Routes.v1_organisation_field_path(conn, :update, organisation_field.uuid),
+          Routes.v1_organisation_field_path(conn, :update, organisation_field.id),
           @invalid_attrs
         )
 
@@ -156,8 +156,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
 
       count_before = OrganisationField |> Repo.all() |> length()
 
-      conn =
-        delete(conn, Routes.v1_organisation_field_path(conn, :delete, organisation_field.uuid))
+      conn = delete(conn, Routes.v1_organisation_field_path(conn, :delete, organisation_field.id))
 
       count_after = OrganisationField |> Repo.all() |> length()
       assert count_before - 1 == count_after

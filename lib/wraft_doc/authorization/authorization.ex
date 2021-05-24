@@ -27,9 +27,14 @@ defmodule WraftDoc.Authorization do
   Get a resource from its UUID.
   """
   @spec get_resource(binary) :: Resource.t()
-  def get_resource(uuid) do
-    Repo.get_by(Resource, uuid: uuid)
+  def get_resource(<<_::288>> = id) do
+    case Repo.get(Resource, id) do
+      %Resource{} = resource -> resource
+      _ -> {:error, :invalid_id, "Resource"}
+    end
   end
+
+  def get_resource(_), do: {:error, :invalid_id, "Resource"}
 
   @doc """
   Update given resource.

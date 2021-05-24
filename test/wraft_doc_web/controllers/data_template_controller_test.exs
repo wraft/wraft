@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   Test module for data template controller
   """
   use WraftDocWeb.ConnCase
+  @moduletag :controller
 
   import WraftDoc.Factory
   alias WraftDoc.{Document.DataTemplate, Repo}

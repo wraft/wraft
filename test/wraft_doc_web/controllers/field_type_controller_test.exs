@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   Test module for field type controller.
   """
   use WraftDocWeb.ConnCase
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Document.FieldType, Repo}
 

@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
   Test module for permission controller
   """
   use WraftDocWeb.ConnCase
+  @moduletag :controller
 
   import WraftDoc.Factory
   alias WraftDoc.{Authorization.Permission, Repo}

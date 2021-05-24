@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   Test module for layout controller
   """
   use WraftDocWeb.ConnCase
-
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Document.Layout, Repo}
 
@@ -208,7 +208,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
         |> assign(:current_user, user)
 
       conn = get(conn, Routes.v1_layout_path(conn, :show, Ecto.UUID.generate()))
-      assert json_response(conn, 400)["errors"] == "The #{Layout} id does not exist..!"
+      assert json_response(conn, 400)["errors"] == "The Layout id does not exist..!"
     end
 
     test "error not found for user from another organisation", %{conn: conn} do
@@ -224,7 +224,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
 
       conn = get(conn, Routes.v1_layout_path(conn, :show, layout.id))
 
-      assert json_response(conn, 400)["errors"] == "The #{Layout} id does not exist..!"
+      assert json_response(conn, 400)["errors"] == "The Layout id does not exist..!"
     end
   end
 

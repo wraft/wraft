@@ -15,6 +15,15 @@ defmodule WraftDoc.Repo.Migrations.CreateOrganizationTable do
       )
     end
 
+    alter table(:role) do
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :delete_all)
+      )
+    end
+
+    create(unique_index(:role, [:name, :organisation_id], name: :organisation_role_unique_index))
+
     create(unique_index(:organisation, :name, name: :organisation_unique_index))
   end
 
