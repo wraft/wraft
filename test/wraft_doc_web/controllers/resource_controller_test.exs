@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
   Test module for resource controller
   """
   use WraftDocWeb.ConnCase
+  @moduletag :controller
 
   import WraftDoc.Factory
   alias WraftDoc.{Authorization.Resource, Repo}
@@ -79,7 +80,7 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_resource_path(conn, :update, resource.uuid, @valid_attrs))
+      |> put(Routes.v1_resource_path(conn, :update, resource.id, @valid_attrs))
       |> doc(operation_id: "update_resource")
 
     assert json_response(conn, 200)["category"] == @valid_attrs.category
@@ -96,7 +97,7 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_resource_path(conn, :update, resource.uuid, @invalid_attrs))
+      |> put(Routes.v1_resource_path(conn, :update, resource.id, @invalid_attrs))
       |> doc(operation_id: "update_resource")
 
     assert json_response(conn, 422)["errors"]["category"] == ["can't be blank"]
@@ -128,7 +129,7 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    conn = get(conn, Routes.v1_resource_path(conn, :show, resource.uuid))
+    conn = get(conn, Routes.v1_resource_path(conn, :show, resource.id))
 
     assert json_response(conn, 200)["category"] == to_string(resource.category)
   end
@@ -140,7 +141,7 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_resource_path(conn, :show, Ecto.UUID.generate()))
-    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+    assert json_response(conn, 400)["errors"] == "The Resource id does not exist..!"
   end
 
   test "delete resource by given id", %{conn: conn} do
@@ -152,7 +153,7 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
     resource = insert(:resource)
     count_before = Resource |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_resource_path(conn, :delete, resource.uuid))
+    conn = delete(conn, Routes.v1_resource_path(conn, :delete, resource.id))
     assert count_before - 1 == Resource |> Repo.all() |> length()
     assert json_response(conn, 200)["category"] == to_string(resource.category)
   end

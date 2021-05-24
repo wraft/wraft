@@ -7,7 +7,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
 
   alias WraftDoc.{
     Document,
-    Document.FieldType,
     Document.OrganisationField
   }
 
@@ -22,14 +21,14 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
 
           properties do
             name(:string, "Name of the field", required: true)
-            field_type_uuid(:string, "Id of the field type", required: true)
+            field_type_id(:string, "Id of the field type", required: true)
             meta(:map, "Attributes of the field")
             description(:application, "Field description")
           end
 
           example(%{
             name: "position",
-            field_type_uuid: "asdlkne4781234123clk",
+            field_type_id: "asdlkne4781234123clk",
             meta: %{"src" => "/img/img.png", "alt" => "Image"},
             descrtiption: "text input"
           })
@@ -122,12 +121,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def create(conn, %{"field_type_uuid" => field_type_uuid} = params) do
+  def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %FieldType{} = field_type <- Document.get_field_type(field_type_uuid, current_user),
-         %OrganisationField{} = organisation_field <-
-           Document.create_organisation_field(current_user, field_type, params) do
+    with %OrganisationField{} = organisation_field <-
+           Document.create_organisation_field(current_user, params) do
       render(conn, "show.json", organisation_field: organisation_field)
     end
   end
@@ -149,11 +147,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def show(conn, %{"id" => uuid}) do
+  def show(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
     with %OrganisationField{} = organisation_field <-
-           Document.get_organisation_field(uuid, current_user) do
+           Document.get_organisation_field(id, current_user) do
       render(conn, "show.json", organisation_field: organisation_field)
     end
   end
@@ -180,30 +178,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def update(conn, %{"id" => uuid, "field_type_uuid" => field_type_uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %FieldType{} = field_type <- Document.get_field_type(field_type_uuid, current_user),
-         %OrganisationField{} = organisation_field <-
-           Document.get_organisation_field(uuid, current_user),
+    with %OrganisationField{} = organisation_field <-
+           Document.get_organisation_field(id, current_user),
          %OrganisationField{} = organisation_field <-
            Document.update_organisation_field(
              current_user,
              organisation_field,
-             field_type,
              params
            ) do
-      render(conn, "show.json", organisation_field: organisation_field)
-    end
-  end
-
-  def update(conn, %{"id" => uuid} = params) do
-    current_user = conn.assigns[:current_user]
-
-    with %OrganisationField{} = organisation_field <-
-           Document.get_organisation_field(uuid, current_user),
-         %OrganisationField{} = organisation_field <-
-           Document.update_organisation_field(current_user, organisation_field, params) do
       render(conn, "show.json", organisation_field: organisation_field)
     end
   end
@@ -226,11 +211,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with organisation_field <- Document.get_organisation_field(uuid, current_user),
-         {:ok, %OrganisationField{} = organisation_field} <-
+    with organisation_field <- Document.show_organisation_field(id, current_user),
+         {:ok, %OrganisationField{}} <-
            Document.delete_organisation_field(organisation_field) do
       render(conn, "show.json", organisation_field: organisation_field)
     end

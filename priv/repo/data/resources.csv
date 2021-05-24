@@ -21,9 +21,6 @@ WraftDocWeb.Api.V1.ContentTypeRoleController,:delete
 WraftDocWeb.Api.V1.RoleController,:show
 WraftDocWeb.Api.V1.ContentTypeController,:show_content_type_role
 WraftDocWeb.Api.V1.ContentTypeController,:show_content_type_title
-WraftDocWeb.Api.V1.OrganisationRoleController,:show
-WraftDocWeb.Api.V1.OrganisationRoleController,:create
-WraftDocWeb.Api.V1.OrganisationRoleController,:delete_organisation_role
 WraftDocWeb.Api.V1.EngineController,:index
 WraftDocWeb.Api.V1.ThemeController,:index
 WraftDocWeb.Api.V1.ThemeController,:show

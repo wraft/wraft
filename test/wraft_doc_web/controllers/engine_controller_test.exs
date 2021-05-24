@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Api.V1.EngineControllerTest do
   use WraftDocWeb.ConnCase
+  @moduletag :controller
   import WraftDoc.Factory
 
   setup %{conn: conn} do

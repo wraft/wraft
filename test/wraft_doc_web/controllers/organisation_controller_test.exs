@@ -2,6 +2,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   import WraftDoc.Factory
   alias WraftDoc.{Enterprise.Organisation, Repo}
   use WraftDocWeb.ConnCase
+  @moduletag :controller
 
   @valid_attrs %{
     "name" => "ABC enterprices",

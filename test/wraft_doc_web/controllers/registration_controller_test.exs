@@ -1,6 +1,7 @@
 defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
   import WraftDoc.Factory
   use WraftDocWeb.ConnCase
+  @moduletag :controller
   alias WraftDoc.{Account.User, Repo}
 
   @valid_attrs %{

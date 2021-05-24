@@ -292,12 +292,12 @@ defmodule WraftDoc.Factory do
 
   def approval_system_factory do
     %ApprovalSystem{
-      instance: build(:instance),
+      name: "Review",
+      flow: build(:flow),
       pre_state: build(:state),
       post_state: build(:state),
       approver: build(:user),
-      user: build(:user),
-      organisation: build(:organisation)
+      creator: build(:user)
     }
   end
 

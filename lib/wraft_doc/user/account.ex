@@ -84,6 +84,38 @@ defmodule WraftDoc.Account do
     |> Repo.insert()
   end
 
+  def show_role(user, id) do
+    with %Role{} = role <- get_role(user, id) do
+      Repo.preload(role, [:content_types, :organisation])
+    end
+  end
+
+  def get_role(%User{organisation_id: org_id}, <<_::288>> = id) do
+    case Repo.get_by(Role, id: id, organisation_id: org_id) do
+      %Role{} = role -> role
+      _ -> {:error, :invalid_id, "Role"}
+    end
+  end
+
+  def get_role(%User{organisation_id: _org_id}, _), do: {:error, :invalid_id, "Role"}
+  def get_role(_, _), do: {:error, :fake}
+
+  def create_role(%User{organisation_id: org_id}, params) do
+    params = Map.put(params, "organisation_id", org_id)
+
+    %Role{}
+    |> Role.organisation_changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:error, _} = changeset -> changeset
+      {:ok, role} -> Repo.preload(role, [:organisation, :content_types])
+    end
+  end
+
+  def delete_role(role) do
+    Repo.delete(role)
+  end
+
   @doc """
   Get the organisation from the token, if there is  token in the params.
   If no token is present in the params, then get the default organisation

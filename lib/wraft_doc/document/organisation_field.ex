@@ -4,8 +4,8 @@ defmodule WraftDoc.Document.OrganisationField do
   """
   use Ecto.Schema
   use WraftDoc.Schema
-  alias WraftDoc.Account.User
-  alias WraftDoc.Document.OrganisationField
+  alias WraftDoc.{Account.User, Document.FieldType, Document.OrganisationField}
+
   @derive {Jason.Encoder, only: [:name]}
   defimpl Spur.Trackable, for: OrganisationField do
     def actor(organisation_field), do: "#{organisation_field.creator_id}"
@@ -21,7 +21,7 @@ defmodule WraftDoc.Document.OrganisationField do
     field(:name, :string)
     field(:description, :string)
     field(:meta, :map)
-    belongs_to(:field_type, WraftDoc.Document.FieldType)
+    belongs_to(:field_type, FieldType)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:creator, User)
 
