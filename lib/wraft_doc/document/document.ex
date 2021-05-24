@@ -132,7 +132,7 @@ defmodule WraftDoc.Document do
   end
 
   def update_content_type(content_type, %{id: user_id, organisation_id: organisation_id}, params) do
-    params = Map.put(params, "organisation_id", organisation_id)
+    params = Map.merge(params, %{"organisation_id" => organisation_id})
 
     content_type
     |> ContentType.update_changeset(params)
@@ -992,7 +992,7 @@ defmodule WraftDoc.Document do
           {:ok, DataTemplate.t()} | {:error, Ecto.Changeset.t()}
   # TODO - imprvove tests
   def create_data_template(%User{id: user_id}, %ContentType{id: c_type_id}, params) do
-    params = Map.merge(params, %{"creator_id" => user_id, "content_type_id" => c_type_id})
+    params = Map.merge(params, %{creator_id: user_id, content_type_id: c_type_id})
 
     %DataTemplate{}
     |> DataTemplate.changeset(params)
@@ -1680,7 +1680,7 @@ defmodule WraftDoc.Document do
     System.cmd("cp", [path, dest_path])
 
     create_bulk_job(%{
-      user_uuid: current_user.uuid,
+      user_uuid: current_user.id,
       c_type_uuid: c_type_uuid,
       state_uuid: state_uuid,
       d_temp_uuid: d_temp_uuid,
