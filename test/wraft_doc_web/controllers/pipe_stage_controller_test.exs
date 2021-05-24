@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
   Test module for pipestage controller
   """
   use WraftDocWeb.ConnCase
-
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Document.Pipeline.Stage, Repo}
 

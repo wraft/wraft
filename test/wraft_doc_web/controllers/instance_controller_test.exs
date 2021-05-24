@@ -2,8 +2,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   @moduledoc """
   Test module for instance controller
   """
-  use WraftDocWeb.ConnCase
 
+  use WraftDocWeb.ConnCase
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Document.Instance, Document.Instance.Version, Repo}
 
@@ -230,7 +231,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_instance_path(conn, :show, Ecto.UUID.generate()))
-    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+    assert json_response(conn, 400)["errors"] == "The Instance id does not exist..!"
   end
 
   test "delete instance by given id", %{conn: conn} do
@@ -266,7 +267,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     conn = get(conn, Routes.v1_instance_path(conn, :show, instance.id))
 
-    assert json_response(conn, 400)["errors"] == "The id does not exist..!"
+    assert json_response(conn, 400)["errors"] == "The Instance id does not exist..!"
   end
 
   test "lock unlock locks if editable true", %{conn: conn} do

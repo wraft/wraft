@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.VendorControllerTest do
   use WraftDocWeb.ConnCase
-
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Enterprise.Vendor, Repo}
 
@@ -106,7 +106,7 @@ defmodule WraftDocWeb.VendorControllerTest do
         |> put(Routes.v1_vendor_path(conn, :update, vendor.id, @invalid_attrs))
         |> doc(operation_id: "update_resource")
 
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 422)["errors"]["email"] == ["can't be blank"]
     end
   end
 
@@ -152,7 +152,7 @@ defmodule WraftDocWeb.VendorControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       conn = get(conn, Routes.v1_vendor_path(conn, :show, Ecto.UUID.generate()))
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The Vendor id does not exist..!"
     end
   end
 

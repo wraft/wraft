@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleControllerTest do
   Test module for content type role controller test
   """
   use WraftDocWeb.ConnCase
+  @moduletag :controller
   alias WraftDoc.Document.ContentTypeRole
   alias WraftDoc.Repo
 

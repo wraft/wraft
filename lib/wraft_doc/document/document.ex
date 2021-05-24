@@ -131,7 +131,9 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def update_content_type(content_type, %{id: user_id}, params) do
+  def update_content_type(content_type, %{id: user_id, organisation_id: organisation_id}, params) do
+    params = Map.put(params, "organisation_id", organisation_id)
+
     content_type
     |> ContentType.update_changeset(params)
     |> Spur.update(%{actor: "#{user_id}"})
@@ -247,13 +249,12 @@ defmodule WraftDoc.Document do
         layout
 
       _ ->
-        {:error, :invalid_id, Layout}
+        {:error, :invalid_id, "Layout"}
     end
   end
 
-  def get_layout(_, %{organisation_id: _}), do: {:error, :invalid_id, Layout}
-  def get_layout(<<_::288>>, _), do: {:error, :fake}
-  def get_layout(_, _), do: {:error, :invalid_id}
+  def get_layout(_, %{organisation_id: _}), do: {:error, :invalid_id, "Layout"}
+  def get_layout(_, _), do: {:error, :fake}
 
   @doc """
   Get a layout asset from its layout's and asset's UUIDs.
@@ -364,14 +365,14 @@ defmodule WraftDoc.Document do
 
     case query do
       %ContentType{} = content_type -> content_type
-      _ -> {:error, :invalid_id}
+      _ -> {:error, :invalid_id, "ContentType"}
     end
   end
 
   def get_content_type(%User{organisation_id: _org_id}, _),
     do: {:error, :invalid_id, "ContentType"}
 
-  def get_content_type(_, <<_::288>>), do: {:error, :fake}
+  def get_content_type(_, _), do: {:error, :fake}
 
   @doc """
   Get a content type from its ID. Also fetches all its related datas.
@@ -668,12 +669,12 @@ defmodule WraftDoc.Document do
 
     case Repo.one(query) do
       %Instance{} = instance -> instance
-      _ -> {:error, :invalid_id}
+      _ -> {:error, :invalid_id, "Instance"}
     end
   end
 
   def get_instance(_, %{organisation_id: _}), do: {:error, :invalid_id}
-  def get_instance(<<_::288>>, _), do: {:error, :fake}
+  def get_instance(_, _), do: {:error, :fake}
 
   @doc """
   Show an instance.
@@ -2528,11 +2529,6 @@ defmodule WraftDoc.Document do
     Repo.paginate(query, params)
   end
 
-  def get_role_from_uuid(id) do
-    query = from(r in Role, where: r.id == ^id)
-    Repo.one(query)
-  end
-
   # def create_content_type_role(content_id, params) do
   #   content_type = get_content_type(content_id)
 
@@ -2643,10 +2639,22 @@ defmodule WraftDoc.Document do
       ** (Ecto.NoResultsError)
 
   """
-  def get_organisation_field(uuid, %{organisation_id: org_id}) do
-    OrganisationField
-    |> Repo.get_by(uuid: uuid, organisation_id: org_id)
-    |> Repo.preload(:field_type)
+  def get_organisation_field(<<_::288>> = id, %{organisation_id: org_id}) do
+    case Repo.get_by(OrganisationField, id: id, organisation_id: org_id) do
+      %OrganisationField{} = organisation_field -> organisation_field
+      _ -> {:error, :invalid_id, "OrganisationField"}
+    end
+  end
+
+  def organisation_field(_, %{organisation_field: _}),
+    do: {:error, :invalid_id, "OrganisationField"}
+
+  def organisation_field(_, _), do: {:error, :fake}
+  @spec show_organisation_field(Ecto.UUID.t(), User.t()) :: OrganisationField.t()
+  def show_organisation_field(id, user) do
+    with %OrganisationField{} = organisation_field <- get_organisation_field(id, user) do
+      Repo.preload(organisation_field, :field_type)
+    end
   end
 
   @doc """
@@ -2661,9 +2669,11 @@ defmodule WraftDoc.Document do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_organisation_field(%{id: u_id, organisation_id: org_id}, field_type, attrs \\ %{}) do
-    field_type
-    |> build_assoc(:organisation_fields, organisation_id: org_id, creator_id: u_id)
+  def create_organisation_field(%{organisation_id: org_id} = current_user, attrs) do
+    attrs = Map.put(attrs, "organisation_id", org_id)
+
+    current_user
+    |> build_assoc(:organisation_fields)
     |> OrganisationField.changeset(attrs)
     |> Spur.insert()
     |> case do
@@ -2671,6 +2681,8 @@ defmodule WraftDoc.Document do
       {:ok, organisation_field} -> Repo.preload(organisation_field, :field_type)
     end
   end
+
+  def create_organisation_field(_, _, _), do: {:error, :fake}
 
   @doc """
   Updates a organisation_field.
@@ -2685,37 +2697,22 @@ defmodule WraftDoc.Document do
 
   """
   def update_organisation_field(
-        %{id: u_id},
+        %{id: u_id, organisation_id: org_id},
         %OrganisationField{} = organisation_field,
-        %{id: ft_id},
         attrs
       ) do
-    attrs = Map.merge(attrs, %{"field_type_id" => ft_id, "creator_id" => u_id})
+    attrs = Map.put(attrs, "organisation_id", org_id)
 
     organisation_field
     |> OrganisationField.update_changeset(attrs)
-    |> Spur.update()
+    |> Spur.update(%{actor: u_id})
     |> case do
       {:error, _} = changeset -> changeset
       {:ok, organisation_field} -> Repo.preload(organisation_field, :field_type)
     end
   end
 
-  def update_organisation_field(_, _, _, _), do: nil
-
-  def update_organisation_field(%{id: u_id}, %OrganisationField{} = organisation_field, attrs) do
-    attrs = Map.put(attrs, "creator_id", u_id)
-
-    organisation_field
-    |> OrganisationField.update_changeset(attrs)
-    |> Spur.update()
-    |> case do
-      {:error, _} = changeset -> changeset
-      {:ok, organisation_field} -> organisation_field
-    end
-  end
-
-  def update_organisation_field(_, _, _), do: nil
+  def update_organisation_field(_, _, _), do: {:error, :fake}
 
   @doc """
   Deletes a organisation_field.

@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   Test module for asset controller
   """
   use WraftDocWeb.ConnCase
-
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Document.Asset, Repo}
 
