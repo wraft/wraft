@@ -1,5 +1,6 @@
 defmodule WraftDoc.Enterprise.OrganisationTest do
   use WraftDoc.ModelCase
+  @moduletag :enterprise
   alias WraftDoc.{Enterprise.Organisation, Repo}
 
   @valid_attrs %{
@@ -30,7 +31,7 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
     {:ok, _} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
     {:error, changeset} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
 
-    assert "Organisation name already taken.! Try another one." in errors_on(
+    assert "Organisation Already Registered." in errors_on(
              changeset,
              :legal_name
            )

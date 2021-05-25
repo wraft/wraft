@@ -4,6 +4,7 @@ defmodule WraftDoc.EnterpriseTest do
   import WraftDoc.Factory
   use WraftDoc.DataCase
   use ExUnit.Case
+  @moduletag :enterprise
   use Bamboo.Test
 
   alias WraftDoc.{
@@ -220,12 +221,12 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "create aprroval system create a solution to create a system" do
     user = insert(:user)
-    c_type = insert(:content_type, organisation: user.organisation)
+
     pre_state = insert(:state, organisation: user.organisation)
     post_state = insert(:state, organisation: user.organisation)
-    approver = insert(:user)
+    approver = insert(:user, organisation: user.organisation)
     flow = insert(:flow, organisation: user.organisation)
-    creator = insert(:user)
+
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     params = %{
@@ -238,38 +239,35 @@ defmodule WraftDoc.EnterpriseTest do
     approval_system = Enterprise.create_approval_system(user, params)
 
     count_after = ApprovalSystem |> Repo.all() |> length()
+
     assert count_before + 1 == count_after
-    assert approval_system.c_type.id == c_type.id
   end
 
-  test "get approval system returns apprval system data" do
+  test "show approval system returns apprval system data" do
     user = insert(:user)
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
-    instance = insert(:instance, creator: user, content_type: content_type)
+    flow = insert(:flow, creator: user, organisation: user.organisation)
 
-    %{id: id, instance: instance, pre_state: _pre_state} =
-      insert(:approval_system, user: user, organisation: user.organisation, instance: instance)
+    %{id: id, flow: flow, pre_state: _pre_state} =
+      insert(:approval_system, creator: user, flow: flow)
 
-    approval_system = Enterprise.get_approval_system(id, user)
-    assert approval_system.instance.id == instance.id
+    approval_system = Enterprise.show_approval_system(id, user)
+    assert approval_system.flow.id == flow.id
   end
 
   test "update approval system updates a system" do
     user = insert(:user)
+    flow = insert(:flow, creator: user, organisation: user.organisation)
 
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
-    instance = insert(:instance, creator: user, content_type: content_type)
     pre_state = insert(:state, creator: user, organisation: user.organisation)
     post_state = insert(:state, creator: user, organisation: user.organisation)
 
-    approval_system =
-      insert(:approval_system, user: user, organisation: user.organisation, instance: instance)
+    approval_system = insert(:approval_system, creator: user, flow: flow)
 
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     updated_approval_system =
       Enterprise.update_approval_system(user, approval_system, %{
-        "instance_id" => instance.id,
+        "flow_id" => flow.id,
         "pre_state_id" => pre_state.id,
         "post_state_id" => post_state.id,
         "approver_id" => approval_system.approver.id
@@ -277,38 +275,38 @@ defmodule WraftDoc.EnterpriseTest do
 
     count_after = ApprovalSystem |> Repo.all() |> length()
     assert count_before == count_after
-    assert updated_approval_system.instance.id == approval_system.instance.id
+    assert updated_approval_system.flow.id == approval_system.flow.id
   end
 
   test "delete approval system deletes and returns the data" do
     user = insert(:user)
-    approval_system = insert(:approval_system, user: user)
+    approval_system = insert(:approval_system, creator: user)
     count_before = ApprovalSystem |> Repo.all() |> length()
-    {:ok, d_approval_system} = Enterprise.delete_approval_system(approval_system)
+    d_approval_system = Enterprise.delete_approval_system(approval_system)
     count_after = ApprovalSystem |> Repo.all() |> length()
     assert count_before - 1 == count_after
-    assert approval_system.instance.id == d_approval_system.instance.id
+    assert approval_system.flow.id == d_approval_system.flow.id
   end
 
-  test "approve content changes the state of instace from pre state to post state" do
-    user = insert(:user)
-    content_type = insert(:content_type, creator: user)
-    state = insert(:state, creator: user, flow: content_type.flow)
-    instance = insert(:instance, content_type: content_type, creator: user, state: state)
-    post_state = insert(:state, flow: content_type.flow, creator: user)
+  # test "approve content changes the state of instace from pre state to post state" do
+  #   user = insert(:user)
+  #   content_type = insert(:content_type, creator: user)
+  #   state = insert(:state, creator: user, flow: content_type.flow)
+  #   flow = insert(:flow, content_type: content_type, creator: user)
+  #   post_state = insert(:state, flow: content_type.flow, creator: user)
 
-    approval_system =
-      insert(:approval_system,
-        user: user,
-        instance: instance,
-        pre_state: state,
-        post_state: post_state
-      )
+  #   approval_system =
+  #     insert(:approval_system,
+  #       user: user,
 
-    approved = Enterprise.approve_content(user, approval_system)
+  #       pre_state: state,
+  #       post_state: post_state
+  #     )
 
-    assert approval_system.post_state.id == approved.instance.state_id
-  end
+  #   approved = Enterprise.approve_content(user, approval_system)
+
+  #   assert approval_system.post_state.id == approved.instance.state_id
+  # end
 
   test "check permission grand a permission for admin user to enter any organisation" do
     role = insert(:role, name: "super_admin")
@@ -324,24 +322,27 @@ defmodule WraftDoc.EnterpriseTest do
   test "check permission grand permission for user within organisation" do
     role = insert(:role, name: "user")
     organisation = insert(:organisation)
-    user = insert(:user, role: role, organisation: organisation)
+    user = insert(:user, organisation: organisation)
+    user = Map.put(user, :role_names, [role.name])
+    insert(:user_role, user: user, role: role)
     assert Enterprise.check_permission(user, organisation.id) == organisation
   end
 
   test "check permission reject permmision to enter another organisation" do
     role = insert(:role, name: "user")
     organisation = insert(:organisation)
-    user = insert(:user, role: role)
+    user = insert(:user)
+    insert(:user_role, user: user, role: role)
     assert Enterprise.check_permission(user, organisation.id) == {:error, :no_permission}
   end
 
   test "already a member return error for existing email" do
     user = insert(:user)
-    assert Enterprise.already_member?(user.email) == {:error, :already_member}
+    assert Enterprise.already_member(user.email) == {:error, :already_member}
   end
 
   test "already a member return ok for email does not exist" do
-    assert Enterprise.already_member?("kdgasd@gami.com") == :ok
+    assert Enterprise.already_member("kdgasd@gami.com") == :ok
   end
 
   test "invite member send a E-mail to invite a member and returns an oban job" do
@@ -608,7 +609,7 @@ defmodule WraftDoc.EnterpriseTest do
       response = Enterprise.update_membership(user, membership, plan, razorpay)
 
       assert payment_count == Payment |> Repo.all() |> length
-      assert response == nil
+      assert response == {:error, :invalid_id, "RazorPay"}
     end
 
     test "does not update membership and returns wrong amount error when razorpay amount does not match any plan amount" do
@@ -625,7 +626,7 @@ defmodule WraftDoc.EnterpriseTest do
 
     test "does not update membership with wrong parameters" do
       response = Enterprise.update_membership(nil, nil, nil, nil)
-      assert response == nil
+      assert response == {:error, :invalid_data}
     end
   end
 

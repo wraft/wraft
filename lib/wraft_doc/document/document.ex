@@ -992,7 +992,7 @@ defmodule WraftDoc.Document do
           {:ok, DataTemplate.t()} | {:error, Ecto.Changeset.t()}
   # TODO - imprvove tests
   def create_data_template(%User{id: user_id}, %ContentType{id: c_type_id}, params) do
-    params = Map.merge(params, %{creator_id: user_id, content_type_id: c_type_id})
+    params = Map.merge(params, %{"creator_id" => user_id, "content_type_id" => c_type_id})
 
     %DataTemplate{}
     |> DataTemplate.changeset(params)
