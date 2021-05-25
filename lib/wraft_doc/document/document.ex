@@ -132,7 +132,7 @@ defmodule WraftDoc.Document do
   end
 
   def update_content_type(content_type, %{id: user_id, organisation_id: organisation_id}, params) do
-    params = Map.put(params, "organisation_id", organisation_id)
+    params = Map.merge(params, %{"organisation_id" => organisation_id})
 
     content_type
     |> ContentType.update_changeset(params)
@@ -992,7 +992,7 @@ defmodule WraftDoc.Document do
           {:ok, DataTemplate.t()} | {:error, Ecto.Changeset.t()}
   # TODO - imprvove tests
   def create_data_template(%User{id: user_id}, %ContentType{id: c_type_id}, params) do
-    params = Map.merge(params, %{"creator_id" => user_id, "content_type_id" => c_type_id})
+    params = Map.merge(params, %{creator_id: user_id, content_type_id: c_type_id})
 
     %DataTemplate{}
     |> DataTemplate.changeset(params)
@@ -1680,7 +1680,7 @@ defmodule WraftDoc.Document do
     System.cmd("cp", [path, dest_path])
 
     create_bulk_job(%{
-      user_uuid: current_user.uuid,
+      user_uuid: current_user.id,
       c_type_uuid: c_type_uuid,
       state_uuid: state_uuid,
       d_temp_uuid: d_temp_uuid,
@@ -1759,8 +1759,8 @@ defmodule WraftDoc.Document do
     create_bulk_job(data, ["block template"])
   end
 
-  def insert_block_template_bulk_import_work(_, _, %Plug.Upload{filename: _, path: _}),
-    do: {:error, :fake}
+  # def insert_block_template_bulk_import_work(_, _, %Plug.Upload{filename: _, path: _}),
+  #   do: {:error, :fake}
 
   def insert_block_template_bulk_import_work(_, _, _), do: {:error, :invalid_data}
 
@@ -1948,8 +1948,6 @@ defmodule WraftDoc.Document do
     |> Stream.map(fn x -> bulk_d_temp_creation(x, current_user, c_type, mapping) end)
     |> Enum.to_list()
   end
-
-  def data_template_bulk_insert(_, _, _, _), do: {:error, :not_found}
 
   @spec bulk_d_temp_creation(map, User.t(), ContentType.t(), map) :: {:ok, DataTemplate.t()}
   defp bulk_d_temp_creation(data, user, c_type, mapping) do

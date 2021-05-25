@@ -184,7 +184,7 @@ defmodule WraftDoc.EnterpriseTest do
 
     count_before = Organisation |> Repo.all() |> length()
 
-    {:ok, organisation} = Enterprise.create_organisation(user, params)
+    organisation = Enterprise.create_organisation(user, params)
 
     count_ater = Organisation |> Repo.all() |> length()
 
@@ -197,7 +197,7 @@ defmodule WraftDoc.EnterpriseTest do
     organisation = insert(:organisation)
     count_before = Organisation |> Repo.all() |> length()
 
-    {:ok, organisation} =
+    organisation =
       Enterprise.update_organisation(organisation, %{
         "name" => "Abc enterprices",
         "legal_name" => "Abc pvt ltd"
@@ -218,28 +218,28 @@ defmodule WraftDoc.EnterpriseTest do
     assert organisation.name == d_organisation.name
   end
 
-  test "create aprroval system create a solution to creat a system" do
+  test "create aprroval system create a solution to create a system" do
     user = insert(:user)
     c_type = insert(:content_type, organisation: user.organisation)
-    instance = insert(:instance, creator: user, content_type: c_type)
     pre_state = insert(:state, organisation: user.organisation)
     post_state = insert(:state, organisation: user.organisation)
     approver = insert(:user)
+    flow = insert(:flow, organisation: user.organisation)
+    creator = insert(:user)
     count_before = ApprovalSystem |> Repo.all() |> length()
 
-    approval_system =
-      user
-      |> Enterprise.create_approval_system(%{
-        "instance_id" => instance.id,
-        "pre_state_id" => pre_state.id,
-        "post_state_id" => post_state.id,
-        "approver_id" => approver.id
-      })
-      |> Repo.preload([:instance])
+    params = %{
+      "pre_state_id" => pre_state.id,
+      "post_state_id" => post_state.id,
+      "approver_id" => approver.id,
+      "flow_id" => flow.id
+    }
+
+    approval_system = Enterprise.create_approval_system(user, params)
 
     count_after = ApprovalSystem |> Repo.all() |> length()
     assert count_before + 1 == count_after
-    assert approval_system.instance.id == instance.id
+    assert approval_system.c_type.id == c_type.id
   end
 
   test "get approval system returns apprval system data" do
@@ -385,13 +385,13 @@ defmodule WraftDoc.EnterpriseTest do
     test "returns nil with non-existent id" do
       fetched_plan = Enterprise.get_plan(Ecto.UUID.generate())
 
-      assert fetched_plan == nil
+      assert fetched_plan == {:error, :invalid_id, "Plan"}
     end
 
     test "returns nil with invalid id" do
       fetched_plan = Enterprise.get_plan(1)
 
-      assert fetched_plan == nil
+      assert fetched_plan == {:error, :invalid_id, "Plan"}
     end
   end
 
@@ -475,13 +475,13 @@ defmodule WraftDoc.EnterpriseTest do
     test "returns nil with non-existent id" do
       fetched_membership = Enterprise.get_membership(Ecto.UUID.generate())
 
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Membership"}
     end
 
     test "returns nil with invalid id" do
       fetched_membership = Enterprise.get_membership(1)
 
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Membership"}
     end
   end
 
@@ -506,28 +506,28 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user)
       fetched_membership = Enterprise.get_membership(Ecto.UUID.generate(), user)
 
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Membership"}
     end
 
     test "returns nil with invalid parameter" do
       membership = insert(:membership)
       fetched_membership = Enterprise.get_membership(membership, nil)
 
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Membership"}
     end
 
     test "returns nil with invalid id" do
       user = insert(:user)
       fetched_membership = Enterprise.get_membership(1, user)
 
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Membership"}
     end
 
     test "returns nil when membership does not belongs to user's organisation" do
       user = insert(:user)
       membership = insert(:membership)
       fetched_membership = Enterprise.get_membership(membership.id, user)
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Membership"}
     end
 
     test "returns membership irrespective of organisation when user has admin role" do
@@ -566,7 +566,7 @@ defmodule WraftDoc.EnterpriseTest do
     test "returns nil with invalid id" do
       fetched_membership = Enterprise.get_organisation_membership(1)
 
-      assert fetched_membership == nil
+      assert fetched_membership == {:error, :invalid_id, "Organisation"}
     end
   end
 
@@ -904,48 +904,5 @@ defmodule WraftDoc.EnterpriseTest do
 
     assert vendor_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ v1.name
     assert vendor_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ v2.name
-  end
-
-  describe "delete_role_of_the_organisation/1" do
-    test "delete_role_of_the_organisation" do
-      role = insert(:role)
-
-      before_role_count = Role |> Repo.all() |> length()
-
-      response = Enterprise.delete_role_of_the_organisation(role)
-
-      after_role_count = Role |> Repo.all() |> length()
-
-      assert after_role_count = before_role_count - 1
-    end
-  end
-
-  describe "get_organisation_id_roles/1" do
-    test "get_organisation_id_roles" do
-      organisation = insert(:organisation)
-
-      response = Enterprise.get_organisation_id_roles(organisation.id)
-      assert response.name == organisation.name
-    end
-  end
-
-  describe "get_organisation/2" do
-    test "get_organisation_id_and_role_id" do
-      organisation = insert(:organisation)
-      role = insert(:role)
-
-      response = Enterprise.get_organisation_id_and_role_id(organisation.id, role.id)
-      assert response.name == organisation.name
-    end
-  end
-
-  describe "get_role/2" do
-    test "get_role_of_the_organisation" do
-      organisation = insert(:organisation)
-      role = insert(:role)
-
-      response = Enterprise.get_role_of_the_organisation(role.id, organisation.id)
-      assert role.name == role.name
-    end
   end
 end

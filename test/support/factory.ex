@@ -171,7 +171,8 @@ defmodule WraftDoc.Factory do
       width: :rand.uniform(16),
       height: :rand.uniform(16),
       unit: sequence(:name, &"layout-#{&1}"),
-      organisation: build(:organisation)
+      organisation: build(:organisation),
+      engine: build(:engine)
     }
   end
 
