@@ -621,53 +621,6 @@ defmodule WraftDoc.Enterprise do
 
   def same_state?(prestate_id, state_id) when prestate_id === state_id, do: true
 
-  # @doc """
-  # Approve a content by approval system
-  # """
-
-  # @spec approve_content(User.t(), ApprovalSystem.t()) :: ApprovalSystem.t()
-  # def approve_content(
-  #       current_user,
-  #       %ApprovalSystem{
-  #         instance: instance,
-  #         post_state: post_state
-  #       } = approval_system
-  #     ) do
-  #   Document.update_instance_state(current_user, instance, post_state)
-
-  #   approval_system
-  #   |> proceed_approval()
-  #   |> Repo.preload(
-  #     [
-  #       :instance,
-  #       :pre_state,
-  #       :post_state,
-  #       :approver,
-  #       :user,
-  #       :organisation
-  #     ],
-  #     force: true
-  #   )
-  # end
-
-  # Proceed approval make the status of approval system as approved
-
-  # @spec proceed_approval(ApprovalSystem.t()) :: ApprovalSystem.t()
-  # defp proceed_approval(approval_system) do
-  #   params = %{approved: true, approved_log: NaiveDateTime.local_now()}
-
-  #   approval_system
-  #   |> ApprovalSystem.approve_changeset(params)
-  #   |> Repo.update()
-  #   |> case do
-  #     {:ok, approval_system} ->
-  #       approval_system
-
-  #     {:error, changeset} = changeset ->
-  #       changeset
-  #   end
-  # end
-
   @doc """
   Creates a plan.
   """
@@ -1068,15 +1021,17 @@ defmodule WraftDoc.Enterprise do
 
   """
   @spec get_vendor(Organisation.t(), Ecto.UUID.t()) :: Vendor.t()
-  def get_vendor(%{organisation_id: o_id}, <<_::288>> = id) do
-    case Repo.get_by(Vendor, id: id, organisation_id: o_id) do
+  def get_vendor(%User{organisation_id: org_id}, id) do
+    query = from(v in Vendor, where: v.id == ^id and v.organisation_id == ^org_id)
+
+    case Repo.one(query) do
       %Vendor{} = vendor -> vendor
-      _ -> {:error, :invalid_id, "Vendor"}
+      _ -> {:error, :invalid_id}
     end
   end
 
-  def get_vendor(_, <<_::288>>), do: {:error, :fake}
-  def get_vendor(_, _), do: {:error, :invalid_id, "Vendor"}
+  def get_vendor(_, _), do: nil
+
   @spec show_vendor(Ecto.UUID.t(), User.t()) :: Vendor.t()
   def show_vendor(id, user) do
     with %Vendor{} = vendor <- get_vendor(user, id) do
@@ -1150,59 +1105,9 @@ defmodule WraftDoc.Enterprise do
 
   def get_pending_approvals(_, _), do: nil
 
-  # def create_organisation_role(id, params) do
-  #   organisation = get_organisation(id)
-
-  #   Multi.new()
-  #   |> Multi.insert(:role, Role.changeset(%Role{}, params))
-  #   |> Multi.insert(:organisation_role, fn %{role: role} ->
-  #     OrganisationRole.changeset(%OrganisationRole{}, %{
-  #       organisation_id: organisation.id,
-  #       role_id: role.id
-  #     })
-  #   end)
-  #   |> Repo.transaction()
-  #   |> case do
-  #     {:error, _, changeset, _} ->
-  #       {:error, changeset}
-
-  #     {:ok, %{role: _role, organisation_role: organisation_role}} ->
-  #       organisation_role
-  #   end
-  # end
-
   def get_role(role \\ "admin")
 
   def get_role(role) when is_binary(role) do
     Repo.get_by(Role, name: role)
-  end
-
-  def get_organisation_id_and_role_id(org_id, r_id) do
-    query =
-      from(o in Organisation, where: o.uuid == ^org_id, join: r in Role, where: r.uuid == ^r_id)
-
-    Repo.one(query)
-  end
-
-  def get_role_of_the_organisation(id, o_id) do
-    query = from(r in Role, where: r.id == ^id, join: o in Organisation, where: o.id == ^o_id)
-    Repo.one(query)
-  end
-
-  def delete_role_of_the_organisation(role) do
-    role
-    |> Repo.delete()
-    |> case do
-      {:error, _} = changeset ->
-        changeset
-
-      {:ok, role} ->
-        role
-    end
-  end
-
-  def get_organisation_id_roles(id) do
-    query = from(o in Organisation, where: o.id == ^id)
-    query |> Repo.one() |> Repo.preload(:roles)
   end
 end
