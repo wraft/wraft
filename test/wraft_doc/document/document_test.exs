@@ -32,12 +32,14 @@ defmodule WraftDoc.DocumentTest do
     "height" => 44.0,
     "unit" => "cm",
     "slug" => "layout slug"
+    # "engine_id" => "00f47af7-6db5-4b93-bafb-99d453929aea"
   }
   @valid_instance_attrs %{
     "instance_id" => "OFFR0001",
     "raw" => "instance raw",
     "serialized" => %{"body" => "body of the content", "title" => "title of the content"},
-    "type" => 1
+    "type" => 1,
+    "state_id" => "a041a482-202c-4c53-99f3-79a8dab252d5"
   }
   @valid_content_type_attrs %{
     "name" => "content_type name",
@@ -81,8 +83,21 @@ defmodule WraftDoc.DocumentTest do
     test "create layout on valid attributes" do
       user = insert(:user)
       engine = insert(:engine)
+      engine_id = engine.id
+
+      params = %{
+        "name" => "layout name",
+        "description" => "layout description",
+        "width" => 25.0,
+        "height" => 44.0,
+        "unit" => "cm",
+        "slug" => "layout slug"
+        # "engine_id" => "00f47af7-6db5-4b93-bafb-99d453929aea"
+      }
+
+      params = Map.merge(params, %{"engine_id" => engine_id})
       count_before = Layout |> Repo.all() |> length()
-      layout = Document.create_layout(user, engine, @valid_layout_attrs)
+      layout = Document.create_layout(user, engine, params)
       assert count_before + 1 == Layout |> Repo.all() |> length()
       assert layout.name == @valid_layout_attrs["name"]
       assert layout.description == @valid_layout_attrs["description"]
@@ -229,7 +244,6 @@ defmodule WraftDoc.DocumentTest do
       assert count_before == count_after
 
       assert %{
-               engine_id: ["can't be blank"],
                slug: ["can't be blank"]
              } == errors_on(changeset)
     end
@@ -467,9 +481,21 @@ defmodule WraftDoc.DocumentTest do
       content_type = insert(:content_type)
       flow = content_type.flow
       state = insert(:state, flow: flow)
+      state_id = state.id
+
+      params = %{
+        "instance_id" => "OFFR0001",
+        "raw" => "instance raw",
+        "serialized" => %{"body" => "body of the content", "title" => "title of the content"},
+        "type" => 1,
+        "state_id" => "a041a482-202c-4c53-99f3-79a8dab252d5"
+      }
+
+      params = Map.merge(params, %{"state_id" => state_id})
       counter_count = Counter |> Repo.all() |> length()
       count_before = Instance |> Repo.all() |> length()
-      instance = Document.create_instance(user, content_type, state, @valid_instance_attrs)
+
+      instance = Document.create_instance(user, content_type, state, params)
 
       count_after = Instance |> Repo.all() |> length()
       counter_count_after = Counter |> Repo.all() |> length()
@@ -612,6 +638,7 @@ defmodule WraftDoc.DocumentTest do
   describe "data_template_bulk_insert/4" do
     test "test bulk data template creation with valid data" do
       c_type = insert(:content_type)
+      c_type = %{"c_type" => c_type.id}
       user = insert(:user)
       mapping = %{"Title" => "title", "TitleTemplate" => "title_template", "Data" => "data"}
       path = "test/helper/data_template_source.csv"
@@ -811,7 +838,8 @@ defmodule WraftDoc.DocumentTest do
 
   describe "insert_block_template_bulk_import_work/3" do
     test "test creates bulk import block template backgroung job with valid attrs" do
-      %{id: user_id} = insert(:user)
+      user = insert(:user)
+      user_id = user.id
       mapping = %{test: "map"}
       file = Plug.Upload.random_file!("test")
       tmp_file_source = "temp/bulk_import_source/b_template/" <> file

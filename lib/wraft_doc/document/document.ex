@@ -1759,8 +1759,8 @@ defmodule WraftDoc.Document do
     create_bulk_job(data, ["block template"])
   end
 
-  def insert_block_template_bulk_import_work(_, _, %Plug.Upload{filename: _, path: _}),
-    do: {:error, :fake}
+  # def insert_block_template_bulk_import_work(_, _, %Plug.Upload{filename: _, path: _}),
+  #   do: {:error, :fake}
 
   def insert_block_template_bulk_import_work(_, _, _), do: {:error, :invalid_data}
 
@@ -1948,8 +1948,6 @@ defmodule WraftDoc.Document do
     |> Stream.map(fn x -> bulk_d_temp_creation(x, current_user, c_type, mapping) end)
     |> Enum.to_list()
   end
-
-  def data_template_bulk_insert(_, _, _, _), do: {:error, :not_found}
 
   @spec bulk_d_temp_creation(map, User.t(), ContentType.t(), map) :: {:ok, DataTemplate.t()}
   defp bulk_d_temp_creation(data, user, c_type, mapping) do
