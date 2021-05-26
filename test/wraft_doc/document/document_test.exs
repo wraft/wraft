@@ -78,6 +78,11 @@ defmodule WraftDoc.DocumentTest do
   }
   @invalid_instance_attrs %{raw: nil}
   @invalid_attrs %{}
+  @content_type_invalid_attrs %{
+    "name" => nil,
+    "description" => nil,
+    "prefix" => nil
+  }
 
   describe "create_layout/3" do
     test "create layout on valid attributes" do
@@ -448,14 +453,16 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       content_type = insert(:content_type, creator: user)
       count_before = ContentType |> Repo.all() |> length()
-      {:error, changeset} = Document.update_content_type(content_type, user, @invalid_attrs)
+
+      {:error, changeset} =
+        Document.update_content_type(content_type, user, @content_type_invalid_attrs)
+
       count_after = ContentType |> Repo.all() |> length()
       assert count_before == count_after
 
       assert %{
                name: ["can't be blank"],
-               description: ["can't be blank"],
-               prefix: ["can't be blank"]
+               description: ["can't be blank"]
              } == errors_on(changeset)
     end
   end
@@ -637,9 +644,8 @@ defmodule WraftDoc.DocumentTest do
 
   describe "data_template_bulk_insert/4" do
     test "test bulk data template creation with valid data" do
-      c_type = insert(:content_type)
-      c_type = %{"c_type" => c_type.id}
-      user = insert(:user)
+      %{id: c_type} = insert(:content_type)
+      %{id: user} = insert(:user)
       mapping = %{"Title" => "title", "TitleTemplate" => "title_template", "Data" => "data"}
       path = "test/helper/data_template_source.csv"
       count_before = DataTemplate |> Repo.all() |> length()
@@ -1161,7 +1167,8 @@ defmodule WraftDoc.DocumentTest do
       organisation = user.organisation
       a1 = insert(:asset, creator: user, organisation: organisation)
       a2 = insert(:asset, creator: user, organisation: organisation)
-      asset_index = Document.asset_index(organisation.id, %{page_number: 1})
+      params = %{page_number: 1}
+      asset_index = Document.asset_index(organisation.id, params)
 
       assert asset_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ a1.name
       assert asset_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ a2.name
