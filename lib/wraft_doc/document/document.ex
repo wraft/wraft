@@ -1147,12 +1147,12 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec asset_index(integer, map) :: map
-  def asset_index(%{organisation_id: organisation_id}, params) do
+  def asset_index(organisation_id, params) do
     query = from(a in Asset, where: a.organisation_id == ^organisation_id, order_by: [desc: a.id])
     Repo.paginate(query, params)
   end
 
-  def asset_index(_, _), do: {:error, :fake}
+  # def asset_index(_, _), do: {:error, :fake}
 
   @doc """
   Show an asset.
@@ -1938,7 +1938,7 @@ defmodule WraftDoc.Document do
   ## TODO - improve tests
   @spec data_template_bulk_insert(User.t(), ContentType.t(), map, String.t()) ::
           [{:ok, DataTemplate.t()}] | {:error, :not_found}
-  def data_template_bulk_insert(%User{} = current_user, %ContentType{} = c_type, mapping, path) do
+  def data_template_bulk_insert(current_user, c_type, mapping, path) do
     # TODO Map will be arranged in the ascending order
     # of keys. This causes unexpected changes in decoded CSV
     mapping_keys = Map.keys(mapping)
