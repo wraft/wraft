@@ -1,5 +1,6 @@
 defmodule WraftDoc.Enterprise.MembershipTest do
   use WraftDoc.ModelCase
+  @moduletag :enterprise
   import WraftDoc.Factory
   alias WraftDoc.{Enterprise.Membership, Repo}
 

@@ -778,7 +778,8 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  def update_membership(%User{}, %Plan{}, %Membership{}, _), do: {:error, :invalid_id, "RazorPay"}
+  def update_membership(%User{}, %Membership{}, %Plan{}, _), do: {:error, :invalid_id, "RazorPay"}
+  def update_membership(_, _, _, _), do: {:error, :invalid_data}
 
   # Update the membership and insert a new payment.
   @spec do_update_membership(User.t(), Membership.t(), map) ::
@@ -1026,7 +1027,7 @@ defmodule WraftDoc.Enterprise do
 
     case Repo.one(query) do
       %Vendor{} = vendor -> vendor
-      _ -> {:error, :invalid_id}
+      _ -> {:error, :invalid_id, "Vendor"}
     end
   end
 

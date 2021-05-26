@@ -19,7 +19,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
     organisation_id: 12
   }
 
-  @invalid_attrs %{}
+  @invalid_attrs %{engine_id: nil}
   setup %{conn: conn} do
     user = insert(:user)
 

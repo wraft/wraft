@@ -2,6 +2,7 @@ defmodule WraftDoc.DocumentTest do
   use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
   use ExUnit.Case
+  @moduletag :document
   use Bamboo.Test
 
   alias WraftDoc.{
