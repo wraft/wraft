@@ -2,6 +2,7 @@ defmodule WraftDoc.Document.ContentTypeFieldTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
   alias WraftDoc.Document.ContentTypeField
+  @moduletag :document
   import Ecto
 
   @valid_attrs %{name: "employee"}

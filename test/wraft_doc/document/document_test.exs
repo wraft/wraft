@@ -526,8 +526,7 @@ defmodule WraftDoc.DocumentTest do
 
       assert %{
                raw: ["can't be blank"],
-               type: ["can't be blank"],
-               state_id: ["can't be blank"]
+               type: ["can't be blank"]
              } == errors_on(changeset)
     end
   end
@@ -643,10 +642,11 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  @tag :individual
   describe "data_template_bulk_insert/4" do
     test "test bulk data template creation with valid data" do
-      %{id: c_type} = insert(:content_type)
-      %{id: user} = insert(:user)
+      c_type = insert(:content_type)
+      user = insert(:user)
       mapping = %{"Title" => "title", "TitleTemplate" => "title_template", "Data" => "data"}
       path = "test/helper/data_template_source.csv"
       count_before = DataTemplate |> Repo.all() |> length()
@@ -677,10 +677,10 @@ defmodule WraftDoc.DocumentTest do
       c_type = insert(:content_type)
 
       params = %{
-        title: "Offer letter tempalate",
-        title_template: "Hi [employee], we welcome you to our [company], [address]",
-        data: "Hi [employee], we welcome you to our [company], [address]",
-        serialized: %{employee: "John", company: "Apple", address: "Silicon Valley"}
+        "title" => "Offer letter tempalate",
+        "title_template" => "Hi [employee], we welcome you to our [company], [address]",
+        "data" => "Hi [employee], we welcome you to our [company], [address]",
+        "serialized" => %{employee: "John", company: "Apple", address: "Silicon Valley"}
       }
 
       count_before = DataTemplate |> Repo.all() |> length()
@@ -843,23 +843,24 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  @tag :individual
   describe "insert_block_template_bulk_import_work/3" do
     test "test creates bulk import block template backgroung job with valid attrs" do
       user = insert(:user)
-      user_id = user.id
+
       mapping = %{test: "map"}
       file = Plug.Upload.random_file!("test")
       tmp_file_source = "temp/bulk_import_source/b_template/" <> file
       count_before = Oban.Job |> Repo.all() |> length()
 
-      job =
-        Document.insert_block_template_bulk_import_work(user_id, mapping, %Plug.Upload{
+      {:ok, job} =
+        Document.insert_block_template_bulk_import_work(user, mapping, %Plug.Upload{
           filename: file,
           path: file
         })
 
       assert count_before + 1 == Oban.Job |> Repo.all() |> length()
-      assert job.args == %{user_uuid: user_id, mapping: mapping, file: tmp_file_source}
+      assert job.args == %{user_id: user.id, mapping: mapping, file: tmp_file_source}
     end
 
     test "does not create bulk import block template backgroung job with invalid attrs" do
@@ -1169,7 +1170,7 @@ defmodule WraftDoc.DocumentTest do
       a1 = insert(:asset, creator: user, organisation: organisation)
       a2 = insert(:asset, creator: user, organisation: organisation)
       params = %{page_number: 1}
-      asset_index = Document.asset_index(organisation.id, params)
+      asset_index = Document.asset_index(user, params)
 
       assert asset_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ a1.name
       assert asset_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ a2.name

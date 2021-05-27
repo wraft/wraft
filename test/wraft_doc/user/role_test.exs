@@ -1,7 +1,7 @@
 defmodule WraftDoc.Account.RoleTest do
   use WraftDoc.ModelCase
   alias WraftDoc.Account.Role
-
+  @moduletag :account
   @valid_attrs %{name: "user"}
   @invalid_attrs %{}
 

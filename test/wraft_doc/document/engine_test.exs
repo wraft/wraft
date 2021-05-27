@@ -1,6 +1,7 @@
 defmodule WraftDoc.Document.EngineTest do
   use WraftDoc.ModelCase
   alias WraftDoc.Document.Engine
+  @moduletag :document
 
   @valid_attrs %{
     name: "engine-1",

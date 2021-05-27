@@ -2,7 +2,7 @@ defmodule WraftDoc.Document.PipelineTest do
   use WraftDoc.ModelCase
   alias WraftDoc.Document.Pipeline
   import WraftDoc.Factory
-
+  @moduletag :document
   @valid_attrs %{
     name: "Official Letter",
     api_route: "newclient.example.crm.com"

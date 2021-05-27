@@ -195,6 +195,7 @@ defmodule WraftDoc.Account do
   """
   @spec authenticate(%{user: User.t(), password: binary}) ::
           {:error, atom} | {:ok, Guardian.Token.token(), Guardian.Token.claims()}
+
   def authenticate(%{user: _, password: ""}), do: {:error, :no_data}
   def authenticate(%{user: _, password: nil}), do: {:error, :no_data}
 
@@ -284,7 +285,7 @@ defmodule WraftDoc.Account do
   """
   @spec get_user_by_uuid(Ecto.UUID.t()) :: User.t() | nil
   def get_user_by_uuid(<<_::288>> = id) when is_binary(id) do
-    Repo.get_by(User, id: id)
+    Repo.get(User, id)
   end
 
   def get_user_by_uuid(_), do: nil
