@@ -2,7 +2,7 @@ defmodule WraftDoc.Account.AuthTokenTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
   alias WraftDoc.Account.AuthToken
-
+  @moduletag :account
   @valid_attrs %{
     value: "token value",
     token_type: "token type",

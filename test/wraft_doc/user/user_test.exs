@@ -1,6 +1,6 @@
 defmodule WraftDoc.Account.UserTest do
   use WraftDoc.ModelCase
-
+  @moduletag :account
   @moduledoc """
     # Cases Covered
     # 1. Valid Data entry

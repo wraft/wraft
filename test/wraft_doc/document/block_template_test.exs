@@ -2,7 +2,7 @@ defmodule WraftDoc.Document.BlockTemplateTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
   alias WraftDoc.Document.BlockTemplate
-
+  @moduletag :document
   @valid_attrs %{
     title: "a sample title",
     body: "a sample body",
@@ -12,7 +12,8 @@ defmodule WraftDoc.Document.BlockTemplateTest do
 
   test "changeset with valid data" do
     organisation = insert(:organisation)
-    params = Map.put(@valid_attrs, :organisation_id, organisation.id)
+    user = insert(:user)
+    params = Map.merge(@valid_attrs, %{organisation_id: organisation.id, creator_id: user.id})
     changeset = BlockTemplate.changeset(%BlockTemplate{}, params)
     assert changeset.valid?
   end

@@ -2,7 +2,7 @@ defmodule WraftDoc.Document.InstanceTest do
   use WraftDoc.ModelCase
   alias WraftDoc.{Document.Instance, Repo}
   import WraftDoc.Factory
-
+  @moduletag :document
   @valid_attrs %{
     instance_id: "OFFL01",
     raw: "Content",
@@ -13,7 +13,8 @@ defmodule WraftDoc.Document.InstanceTest do
 
   test "changeset with valid attributes" do
     content_type = insert(:content_type)
-    params = Map.put(@valid_attrs, :content_type_id, content_type.id)
+    state = insert(:state)
+    params = Map.merge(@valid_attrs, %{content_type_id: content_type.id, state_id: state.id})
     changeset = Instance.changeset(%Instance{}, params)
     assert changeset.valid?
   end
@@ -37,7 +38,9 @@ defmodule WraftDoc.Document.InstanceTest do
 
   test "instance id unique constraint" do
     %{id: id} = insert(:content_type)
-    params = Map.put(@valid_attrs, :content_type_id, id)
+    state = insert(:state)
+    content_type = insert(:content_type)
+    params = Map.merge(@valid_attrs, %{content_type_id: content_type.id, state_id: state.id})
 
     {:ok, _instance} = %Instance{} |> Instance.changeset(params) |> Repo.insert()
     {:error, changeset} = %Instance{} |> Instance.changeset(params) |> Repo.insert()

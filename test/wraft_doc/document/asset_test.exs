@@ -1,5 +1,6 @@
 defmodule WraftDoc.Document.AssetTest do
   use WraftDoc.ModelCase
+  @moduletag :document
   import WraftDoc.Factory
   alias WraftDoc.Document.Asset
 

@@ -2,6 +2,7 @@ defmodule WraftDoc.Document.Instance.VersionTest do
   use WraftDoc.ModelCase
   alias WraftDoc.Document.Instance.Version
   import WraftDoc.Factory
+  @moduletag :document
 
   @valid_attrs %{
     version_number: 1,

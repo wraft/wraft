@@ -85,6 +85,8 @@ defmodule WraftDoc.PipelineRunner do
     %{trigger: trigger, instances: instances}
   end
 
+  def create_instances(_), do: {:error, :invalid_data}
+
   @doc """
   Check if all the instances were successfully created or not.
   """

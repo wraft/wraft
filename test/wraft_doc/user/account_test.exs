@@ -3,7 +3,7 @@ defmodule WraftDoc.AccountTest do
   import WraftDoc.Factory
   alias WraftDoc.Account
   alias WraftDocWeb.Endpoint
-
+  @moduletag :account
   @valid_attrs %{
     "password" => "Password",
     "name" => "John Doe",
@@ -143,7 +143,6 @@ defmodule WraftDoc.AccountTest do
 
       assert user.email == found_user.email
       assert user.id == found_user.id
-      assert user.uuid == found_user.uuid
     end
 
     test "returns error when incorrect email is provided" do
@@ -157,10 +156,12 @@ defmodule WraftDoc.AccountTest do
     end
   end
 
+  @tag :authenticate
   describe "authenticate/1" do
     test "successfully authenticate when correct password is given" do
       user = insert(:user)
       response = Account.authenticate(%{user: user, password: "encrypt"})
+
       assert tuple_size(response) == 3
       assert elem(response, 0) == :ok
     end
@@ -236,31 +237,12 @@ defmodule WraftDoc.AccountTest do
     end
   end
 
-  describe "get_role_from_uuid/1" do
-    test "get role when correct UUID is given" do
-      role = insert(:role)
-      response = Account.get_role_from_uuid(role.uuid)
-      refute response == nil
-      assert response == role
-    end
-
-    test "return nil when incorrect UUID is given" do
-      response = Account.get_role_from_uuid(Ecto.UUID.generate())
-      assert response == nil
-    end
-
-    test "return nil when non-UUID value is given" do
-      response = Account.get_role_from_uuid(1)
-      assert response == nil
-    end
-  end
-
   describe "get_user_by_uuid/1" do
     test "get user when correct UUID is given" do
       user = insert(:user)
-      response = Account.get_user_by_uuid(user.uuid)
+      response = Account.get_user_by_uuid(user.id)
       refute response == nil
-      assert response.uuid == user.uuid
+
       assert response.name == user.name
     end
 

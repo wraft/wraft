@@ -76,6 +76,7 @@ defmodule WraftDoc.PipelineRunnerTest do
   describe "create_instances/1" do
     test "creates instance and returns a map with created instance when trigger has a creator_id" do
       pipeline = insert(:pipeline)
+      user = insert(:user)
       c_type1 = insert(:content_type)
       c_type2 = insert(:content_type)
       insert(:pipe_stage, pipeline: pipeline, content_type: c_type1)

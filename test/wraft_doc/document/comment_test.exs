@@ -2,6 +2,7 @@ defmodule WraftDoc.Document.CommentTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
   alias WraftDoc.Document.Comment
+  @moduletag :document
 
   @valid_attrs_for_comment %{
     comment: "a sample comment",

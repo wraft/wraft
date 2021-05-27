@@ -500,7 +500,7 @@ defmodule WraftDoc.Document do
     params = Map.merge(params, %{"instance_id" => instance_id})
 
     c_type
-    |> build_assoc(:instances, creator: current_user, state: state)
+    |> build_assoc(:instances, creator: current_user, state_id: state.id)
     |> Instance.changeset(params)
     |> Spur.insert()
     |> case do
@@ -522,7 +522,7 @@ defmodule WraftDoc.Document do
     params = Map.merge(params, %{"instance_id" => instance_id})
 
     c_type
-    |> build_assoc(:instances, state: state)
+    |> build_assoc(:instances, state_id: state.id)
     |> Instance.changeset(params)
     |> Repo.insert()
     |> case do
@@ -542,7 +542,7 @@ defmodule WraftDoc.Document do
   @spec create_instance(User.t(), ContentType.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
-  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, params) do
+  def create_instance(%User{} = current_user, %{id: c_id, prefix: prefix} = c_type, params) do
     instance_id = create_instance_id(c_id, prefix)
     params = Map.merge(params, %{"instance_id" => instance_id})
 
@@ -1147,12 +1147,17 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec asset_index(integer, map) :: map
-  def asset_index(organisation_id, params) do
-    query = from(a in Asset, where: a.organisation_id == ^organisation_id, order_by: [desc: a.id])
+  def asset_index(%{organisation_id: organisation_id}, params) do
+    query =
+      from(a in Asset,
+        where: a.organisation_id == ^organisation_id,
+        order_by: [desc: a.inserted_at]
+      )
+
     Repo.paginate(query, params)
   end
 
-  # def asset_index(_, _), do: {:error, :fake}
+  def asset_index(_, _), do: {:error, :fake}
 
   @doc """
   Show an asset.
@@ -1938,7 +1943,7 @@ defmodule WraftDoc.Document do
   ## TODO - improve tests
   @spec data_template_bulk_insert(User.t(), ContentType.t(), map, String.t()) ::
           [{:ok, DataTemplate.t()}] | {:error, :not_found}
-  def data_template_bulk_insert(current_user, c_type, mapping, path) do
+  def data_template_bulk_insert(%User{} = current_user, %ContentType{} = c_type, mapping, path) do
     # TODO Map will be arranged in the ascending order
     # of keys. This causes unexpected changes in decoded CSV
     mapping_keys = Map.keys(mapping)
@@ -1948,6 +1953,8 @@ defmodule WraftDoc.Document do
     |> Stream.map(fn x -> bulk_d_temp_creation(x, current_user, c_type, mapping) end)
     |> Enum.to_list()
   end
+
+  def data_template_bulk_insert(_, _, _, _), do: {:error, :not_found}
 
   @spec bulk_d_temp_creation(map, User.t(), ContentType.t(), map) :: {:ok, DataTemplate.t()}
   defp bulk_d_temp_creation(data, user, c_type, mapping) do

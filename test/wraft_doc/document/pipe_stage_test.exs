@@ -3,7 +3,7 @@ defmodule WraftDoc.Document.Pipeline.StageTest do
   alias WraftDoc.Document.Pipeline.Stage
   import WraftDoc.Factory
   import Ecto
-
+  @moduletag :document
   test "changeset with valid attrs" do
     %{id: u_id} = insert(:user)
     %{id: c_id} = insert(:content_type)

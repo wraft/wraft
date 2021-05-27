@@ -1,6 +1,7 @@
 defmodule WraftDoc.Document.FieldTypeTest do
   use WraftDoc.ModelCase
   alias WraftDoc.Document.FieldType
+  @moduletag :document
 
   @valid_attrs %{name: "Date", description: "A data field"}
   @invalid_attrs %{name: ""}
