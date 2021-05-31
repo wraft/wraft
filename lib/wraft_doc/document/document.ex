@@ -1208,9 +1208,11 @@ defmodule WraftDoc.Document do
   """
   # TODO - write tests
   @spec preload_asset(Layout.t()) :: Layout.t()
-  def preload_asset(layout) do
+  def preload_asset(%Layout{} = layout) do
     Repo.preload(layout, [:assets])
   end
+
+  def preload_asset(_), do: {:error, :not_sufficient}
 
   @doc """
   Build a PDF document.
