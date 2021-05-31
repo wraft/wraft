@@ -520,21 +520,25 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
     start_time = Timex.now()
 
-    with %Instance{content_type: %{layout: layout}} = instance <-
-           Document.show_instance(instance_id, current_user),
-         %Layout{} = layout <- Document.preload_asset(layout),
-         {_, exit_code} <- Document.build_doc(instance, layout) do
-      end_time = Timex.now()
+    case Document.show_instance(instance_id, current_user) do
+      %Instance{content_type: %{layout: layout}} = instance ->
+        with %Layout{} = layout <- Document.preload_asset(layout),
+             {_, exit_code} <- Document.build_doc(instance, layout) do
+          end_time = Timex.now()
 
-      Task.start_link(fn ->
-        Document.add_build_history(current_user, instance, %{
-          start_time: start_time,
-          end_time: end_time,
-          exit_code: exit_code
-        })
-      end)
+          Task.start_link(fn ->
+            Document.add_build_history(current_user, instance, %{
+              start_time: start_time,
+              end_time: end_time,
+              exit_code: exit_code
+            })
+          end)
 
-      handle_response(conn, exit_code, instance)
+          handle_response(conn, exit_code, instance)
+        end
+
+      _ ->
+        {:error, :not_sufficient}
     end
   end
 
