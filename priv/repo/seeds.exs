@@ -18,6 +18,9 @@ alias WraftDoc.{
   Document.Engine,
   Document.Layout,
   Document.ContentType,
+  Document.ContentTypeField,
+  Document.DataTemplate,
+  Document.FieldType,
   Document.Instance,
   Document.Theme,
   Enterprise.Organisation,
@@ -30,7 +33,8 @@ alias WraftDoc.{
   Document.ContentTypeField,
   Document.Counter,
   Document.DataTemplate,
-  Document.Instance.Version
+  Document.Instance.Version,
+  Repo
 }
 
 import WraftDoc.SeedGate
@@ -58,6 +62,28 @@ organisation =
     },
     email: "hello@aurut.com"
   )
+
+aurut =
+  allow_once(
+    %Organisation{
+      name: "Aurut",
+      legal_name: "Aurut",
+      address: "#24, Caravel Building",
+      name_of_ceo: "Muneef Hameed",
+      name_of_cto: "Salsabeel K",
+      email: "admin@aurut.com"
+    },
+    email: "admin@aurut.com"
+  )
+
+aurut_admin =
+  comeon_user(%{
+    name: "Aurut Admin",
+    email: "admin@aurut.com",
+    email_verify: true,
+    password: "Admin@Aurut",
+    organisation_id: aurut.id
+  })
 
 user =
   comeon_user(%{
@@ -98,6 +124,11 @@ allow_once(%UserRole{user_id: user.id, role_id: role_id}, user_id: user.id, role
 
 allow_once(%UserRole{user_id: org_admin.id, role_id: role_admin.id},
   user_id: org_admin.id,
+  role_id: role_admin.id
+)
+
+allow_once(%UserRole{user_id: aurut_admin.id, role_id: role_admin.id},
+  user_id: aurut_admin.id,
   role_id: role_admin.id
 )
 
@@ -383,5 +414,78 @@ File.stream!("priv/repo/data/user_resources.csv")
   allow_once(%Permission{role_id: role_user.id, resource_id: resource_id},
     role_id: role_user.id,
     resource_id: resource_id
+  )
+end)
+
+File.stream!("priv/repo/data/layout.csv")
+|> CSV.decode(headers: ["name", "description", "width", "height", "unit", "slug"])
+|> Enum.each(fn {:ok, x} ->
+  allow_once(
+    %Layout{
+      name: x["name"],
+      description: x["description"],
+      width: String.to_float(x["width"]),
+      height: String.to_float(x["height"]),
+      unit: x["unit"],
+      slug: x["slug"],
+      creator_id: user.id,
+      organisation_id: organisation.id
+    },
+    name: x["name"]
+  )
+end)
+
+File.stream!("priv/repo/data/content_type.csv")
+|> CSV.decode(headers: ["name", "color", "description", "prefix", "layout"])
+|> Enum.each(fn {:ok, x} ->
+  layout = Repo.get_by(Layout, name: x["layout"])
+
+  allow_once(
+    %ContentType{
+      name: x["name"],
+      color: x["color"],
+      description: x["description"],
+      prefix: x["prefix"],
+      layout_id: layout.id,
+      organisation_id: organisation.id,
+      creator_id: user.id
+    },
+    name: x["name"]
+  )
+end)
+
+File.stream!("priv/repo/data/data_template.csv")
+|> CSV.decode(headers: ["title", "content_type", "title_template", "data", "serialized"])
+|> Enum.each(fn {:ok, x} ->
+  data = File.read!("priv/repo/data/#{x["data"]}")
+  content_type = Repo.get_by(ContentType, name: x["content_type"])
+
+  serialized =
+    with {:ok, body} <- File.read("priv/repo/data/#{x["serialized"]}"),
+         {:ok, json} <- Poison.decode(body) do
+      json
+    end
+
+  allow_once(
+    %DataTemplate{
+      title: x["title"],
+      content_type_id: content_type.id,
+      title_template: x["title_template"],
+      data: data,
+      serialized: serialized
+    },
+    title: x["title"]
+  )
+end)
+
+File.stream!("priv/repo/data/fields.csv")
+|> CSV.decode(headers: ["name", "type", "content_type"])
+|> Enum.each(fn {:ok, x} ->
+  content_type = Repo.get_by(ContentType, name: x["content_type"])
+  type = allow_once(%FieldType{name: x["type"]}, name: x["type"])
+
+  allow_once(
+    %ContentTypeField{name: x["name"], field_type_id: type.id, content_type_id: content_type.id},
+    name: x["name"]
   )
 end)
