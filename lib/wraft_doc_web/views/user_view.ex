@@ -54,7 +54,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
       organisation_id: me.organisation.id,
       inserted_at: me.inserted_at,
       updated_at: me.updated_at,
-      profile_pic: me.profile.profile_pic,
+      profile_pic: generate_url(me.profile),
       roles: render_many(me.roles, RegistrationView, "role.json", as: :role)
     }
   end
@@ -147,5 +147,9 @@ defmodule WraftDocWeb.Api.V1.UserView do
 
   defp get_object_data(_, meta) do
     Map.new(meta, fn {_, address} -> {:name, address} end)
+  end
+
+  def generate_url(%{profile_pic: pic} = profile) do
+    WraftDocWeb.PropicUploader.url({pic, profile})
   end
 end
