@@ -22,6 +22,7 @@ defmodule WraftDoc.Document do
     Document.Instance,
     Document.Instance.History,
     Document.Instance.Version,
+    Document.InstanceApprovalSystem,
     Document.Layout,
     Document.LayoutAsset,
     Document.OrganisationField,
@@ -30,7 +31,8 @@ defmodule WraftDoc.Document do
     Document.Pipeline.TriggerHistory,
     Document.Theme,
     Enterprise,
-    # Enterprise.Flow,
+    Enterprise.ApprovalSystem,
+    Enterprise.Flow,
     Enterprise.Flow.State,
     Repo
   }
@@ -492,8 +494,9 @@ defmodule WraftDoc.Document do
   defp create_initial_version(_, _), do: nil
 
   @doc """
-  Same as create_instance/4, but does not add the insert activity to activity stream.
+  Same as create_instance/4, to create instance and its approval system
   """
+
   # TODO write tests
   def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
@@ -507,6 +510,7 @@ defmodule WraftDoc.Document do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
         Task.start_link(fn -> create_initial_version(current_user, content) end)
+        Task.start_link(fn -> create_instance_approval_systems(c_type, content) end)
         Repo.preload(content, [:content_type, :state, :vendor])
 
       changeset = {:error, _} ->
@@ -528,6 +532,7 @@ defmodule WraftDoc.Document do
     |> case do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
+        Task.start_link(fn -> create_instance_approval_systems(c_type, content) end)
         Repo.preload(content, [:content_type, :state])
 
       changeset = {:error, _} ->
@@ -554,11 +559,46 @@ defmodule WraftDoc.Document do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
         Task.start_link(fn -> create_initial_version(current_user, content) end)
+        Task.start_link(fn -> create_instance_approval_systems(c_type, content) end)
         Repo.preload(content, [:content_type, :state, :vendor])
 
       changeset = {:error, _} ->
         changeset
     end
+  end
+
+  @doc """
+  Relate instace with approval system on creation
+  ## Params
+  * content_type - A content type struct
+  * content - a Instance struct
+  """
+  @spec create_instance_approval_systems(ContentType.t(), Instance.t()) :: :ok
+  def create_instance_approval_systems(content_type, content) do
+    with %ContentType{flow: %Flow{approval_systems: approval_systems}} <-
+           Repo.preload(content_type, [{:flow, :approval_systems}]) do
+      Enum.each(approval_systems, fn x ->
+        with %ApprovalSystem{pre_state: state} <- Repo.preload(x, :pre_state) do
+          create_instance_approval_system(%{
+            instance_id: content.id,
+            approval_system_id: x.id,
+            order: state.order
+          })
+        end
+      end)
+    end
+  end
+
+  @doc """
+  Create an approval system from params
+
+  """
+  @spec create_instance_approval_system(map) ::
+          {:ok, InstanceApprovalSystem.t()} | {:error, Ecto.Changeset.t()}
+  def create_instance_approval_system(params) do
+    %InstanceApprovalSystem{}
+    |> InstanceApprovalSystem.changeset(params)
+    |> Repo.insert()
   end
 
   # Create Instance ID from the prefix of the content type
