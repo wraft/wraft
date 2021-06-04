@@ -15,6 +15,7 @@ defmodule WraftDoc.DocumentTest do
     Document.DataTemplate,
     Document.Instance,
     Document.Instance.Version,
+    Document.InstanceApprovalSystem,
     Document.Layout,
     Document.LayoutAsset,
     Document.Pipeline,
@@ -1909,6 +1910,23 @@ defmodule WraftDoc.DocumentTest do
       response = Document.get_content_type_role(content_type.id, role.id)
 
       assert response.name == content_type.name
+    end
+  end
+
+  @tag :cict
+  describe "create_instance_content_types" do
+    test "creates relations for approval systems of content type" do
+      user = insert(:user)
+
+      flow = insert(:flow, organisation: user.organisation)
+      insert(:approval_system, flow: flow)
+      insert(:approval_system, flow: flow)
+      content_type = insert(:content_type, flow: flow, organisation: user.organisation)
+      instance = insert(:instance, content_type: content_type)
+      count_before = InstanceApprovalSystem |> Repo.all() |> length()
+      Document.create_instance_approval_systems(content_type, instance)
+      count_after = InstanceApprovalSystem |> Repo.all() |> length()
+      assert count_before + 2 == count_after
     end
   end
 end
