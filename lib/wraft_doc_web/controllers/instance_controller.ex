@@ -612,7 +612,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   swagger_path :search do
-    get("/contents/search")
+    get("/contents/title/search")
     summary("Search instances")
 
     description(

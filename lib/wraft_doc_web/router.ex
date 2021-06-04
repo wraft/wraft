@@ -123,7 +123,7 @@ defmodule WraftDocWeb.Router do
       resources("/roles", RoleController, only: [:create, :show, :delete])
 
       get("/content_types/:id/roles", ContentTypeController, :show_content_type_role)
-      get("/content_types/search", ContentTypeController, :search)
+      get("/content_types/title/search", ContentTypeController, :search)
 
       # Enginebody
       resources("/engines", EngineController, only: [:index])
@@ -149,7 +149,7 @@ defmodule WraftDocWeb.Router do
       # Instance state update
       patch("/contents/:id/states", InstanceController, :state_update)
       patch("/contents/:id/lock-unlock", InstanceController, :lock_unlock)
-      get("/contents/serch/by_title", InstanceController, :search)
+      get("/contents/title/search", InstanceController, :search)
       get("/contents/:id/change/:v_id", InstanceController, :change)
       # Organisations
       scope "/organisations" do

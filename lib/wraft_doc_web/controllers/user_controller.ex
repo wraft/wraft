@@ -308,8 +308,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Account.get_activity_stream(current_user, params),
-         activities <- Account.get_activity_datas(activities) do
+         } <- Account.get_activity_stream(current_user, params) do
       render(conn, "activities.json",
         activities: activities,
         page_number: page_number,
