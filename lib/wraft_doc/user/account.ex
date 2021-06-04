@@ -28,6 +28,9 @@ defmodule WraftDoc.Account do
     Theme
   }
 
+  alias WraftDoc.Account.Activity
+  alias WraftDoc.Account.User.Audience
+
   alias WraftDoc.Enterprise.{Flow, Flow.State}
 
   alias WraftDocWeb.Endpoint
@@ -349,8 +352,8 @@ defmodule WraftDoc.Account do
   @spec get_activity_stream(User.t(), map) :: map
   def get_activity_stream(%User{id: id}, params) do
     query =
-      from(a in Spur.Activity,
-        join: au in "audience",
+      from(a in Activity,
+        join: au in Audience,
         where: au.user_id == ^id and au.activity_id == a.id,
         order_by: [desc: a.inserted_at],
         select: %{

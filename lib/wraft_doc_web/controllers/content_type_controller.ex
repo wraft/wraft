@@ -702,7 +702,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   """
 
   swagger_path :search do
-    get("/content_types/search")
+    get("/content_types/title/search")
     summary("show all the content type title")
     description("API to show content_type by there title")
 
@@ -712,6 +712,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     end
 
     response(200, "Ok", Schema.ref(:ContentTypesIndex))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not Found", Schema.ref(:Error))
   end

@@ -51,6 +51,9 @@ defmodule WraftDoc.Document.Instance do
   end
 
   def changeset(%Instance{} = instance, attrs \\ %{}) do
+    require IEx
+    IEx.Pry
+
     instance
     |> cast(attrs, [
       :instance_id,
