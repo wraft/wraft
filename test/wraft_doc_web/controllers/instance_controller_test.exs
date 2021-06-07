@@ -251,9 +251,13 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "show renders instance details by id", %{conn: conn} do
     user = conn.assigns.current_user
+    u2 = insert(:user, organisation: user.organisation)
     insert(:membership, organisation: user.organisation)
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
-    instance = insert(:instance, creator: user, content_type: content_type)
+    flow = insert(:flow, organisation: user.organisation)
+    s = insert(:state, organisation: user.organisation, flow: flow, order: 1)
+    as = insert(:approval_system, flow: flow, approver: u2, pre_state: s)
+    content_type = insert(:content_type, organisation: user.organisation, flow: flow)
+    instance = insert(:instance, creator: user, content_type: content_type, state: s)
 
     conn =
       build_conn()
@@ -263,6 +267,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     conn = get(conn, Routes.v1_instance_path(conn, :show, instance.id))
 
     assert json_response(conn, 200)["content"]["raw"] == instance.raw
+
+    assert json_response(conn, 200)["state"]["approval_system"]["approval_system"]["id"] == as.id
   end
 
   test "error not found for id does not exists", %{conn: conn} do
