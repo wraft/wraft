@@ -28,7 +28,8 @@ defmodule WraftDoc.Notifications do
     %Notification{}
     |> Notification.changeset(attrs)
     |> Repo.insert!()
-    |> broad_cast_notifiation(recipient)
+
+    # |> broad_cast_notifiation(recipient)
   end
 
   def create_notification(%{"recipient_id" => recipient_uuid, "actor_id" => actor_uuid} = params) do
