@@ -6,7 +6,13 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Instance, Document.Instance.Version, Repo}
+
+  alias WraftDoc.{
+    Document.Instance,
+    Document.Instance.Version,
+    Document.InstanceApprovalSystem,
+    Repo
+  }
 
   @valid_attrs %{
     instance_id: "OFFL01",
@@ -35,10 +41,12 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "create instances by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
+    u2 = insert(:user, organisation: user.organisation)
     insert(:membership, organisation: user.organisation)
-    content_type = insert(:content_type, organisation: user.organisation)
-    state = insert(:state, organisation: user.organisation)
-    vendor = insert(:vendor, organisation: user.organisation, creator: user)
+    flow = insert(:flow, organisation: user.organisation)
+    insert(:state, organisation: user.organisation, flow: flow, order: 1)
+    insert(:approval_system, flow: flow, approver: u2)
+    content_type = insert(:content_type, organisation: user.organisation, flow: flow)
 
     conn =
       build_conn()
@@ -46,13 +54,11 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, user)
 
-    params = Map.merge(@valid_attrs, %{state_id: state.id, vendor_id: vendor.id})
-
     count_before = Instance |> Repo.all() |> length()
 
     conn =
       conn
-      |> post(Routes.v1_instance_path(conn, :create, content_type.id), params)
+      |> post(Routes.v1_instance_path(conn, :create, content_type.id), @valid_attrs)
       |> doc(operation_id: "create_instance")
 
     assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
@@ -61,10 +67,13 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "does not create instances by invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
+
+    u2 = insert(:user, organisation: user.organisation)
     insert(:membership, organisation: user.organisation)
-    content_type = insert(:content_type, organisation: user.organisation)
-    state = insert(:state, organisation: user.organisation)
-    vendor = insert(:vendor, organisation: user.organisation, creator: user)
+    flow = insert(:flow, organisation: user.organisation)
+    insert(:state, organisation: user.organisation, flow: flow, order: 1)
+    insert(:approval_system, flow: flow, approver: u2)
+    content_type = insert(:content_type, organisation: user.organisation, flow: flow)
 
     conn =
       build_conn()
@@ -72,15 +81,50 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       |> assign(:current_user, user)
 
     count_before = Instance |> Repo.all() |> length()
-    params = Map.merge(@invalid_attrs, %{state_id: state.id, vendor_id: vendor.id})
 
     conn =
       conn
-      |> post(Routes.v1_instance_path(conn, :create, content_type.id), params)
+      |> post(Routes.v1_instance_path(conn, :create, content_type.id), @invalid_attrs)
       |> doc(operation_id: "create_instance")
 
     assert json_response(conn, 422)["errors"]["raw"] == ["can't be blank"]
     assert count_before == Instance |> Repo.all() |> length()
+  end
+
+  test "create instance from content type with approval system also create instance approval systems",
+       %{conn: conn} do
+    user = conn.assigns.current_user
+    u2 = insert(:user, organisation: user.organisation)
+    insert(:membership, organisation: user.organisation)
+    flow = insert(:flow, organisation: user.organisation)
+    insert(:state, organisation: user.organisation, flow: flow, order: 1)
+    insert(:approval_system, flow: flow, approver: u2)
+    content_type = insert(:content_type, organisation: user.organisation, flow: flow)
+
+    conn =
+      build_conn()
+      |> put_req_header("accept", "application/json")
+      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+      |> assign(:current_user, user)
+
+    ias_count_before = InstanceApprovalSystem |> Repo.all() |> length()
+
+    count_before = Instance |> Repo.all() |> length()
+
+    conn =
+      conn
+      |> post(Routes.v1_instance_path(conn, :create, content_type.id), @valid_attrs)
+      |> doc(operation_id: "create_instance")
+
+    ias_count_after = InstanceApprovalSystem |> Repo.all() |> length()
+
+    assert json_response(conn, 200)["content"]["raw"] == @valid_attrs.raw
+
+    assert List.first(json_response(conn, 200)["instance_approval_systems"])["approver"]["name"] ==
+             u2.name
+
+    assert ias_count_before + 1 == ias_count_after
+    assert count_before + 1 == Instance |> Repo.all() |> length()
   end
 
   test "update instances on valid attributes", %{conn: conn} do

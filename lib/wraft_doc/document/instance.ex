@@ -43,7 +43,7 @@ defmodule WraftDoc.Document.Instance do
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:vendor, WraftDoc.Enterprise.Vendor)
-
+    has_many(:instance_approval_systems, WraftDoc.Document.InstanceApprovalSystem)
     has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :content_id)
     has_many(:versions, WraftDoc.Document.Instance.Version, foreign_key: :content_id)
 

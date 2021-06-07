@@ -5,7 +5,7 @@ defmodule WraftDoc.Enterprise.Flow do
   use WraftDoc.Schema
 
   alias __MODULE__
-  alias WraftDoc.Account.User
+  alias WraftDoc.{Account.User, Repo}
   import Ecto.Query
   @derive {Jason.Encoder, only: [:name]}
   defimpl Spur.Trackable, for: Flow do
@@ -68,4 +68,16 @@ defmodule WraftDoc.Enterprise.Flow do
       name: :flow_organisation_unique_index
     )
   end
+
+  @doc """
+  Function to return initial state of a flow
+  """
+
+  def initial_state(%Flow{} = flow) do
+    with %Flow{states: states} <- Repo.preload(flow, :states) do
+      Enum.min_by(states, fn x -> x.order end)
+    end
+  end
+
+  def initial_state(_), do: nil
 end

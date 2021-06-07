@@ -510,8 +510,9 @@ defmodule WraftDoc.Document do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
         Task.start_link(fn -> create_initial_version(current_user, content) end)
-        Task.start_link(fn -> create_instance_approval_systems(c_type, content) end)
-        Repo.preload(content, [:content_type, :state, :vendor])
+        create_instance_approval_systems(c_type, content)
+
+        Repo.preload(content, [:content_type, :state, :vendor, :instance_approval_systems])
 
       changeset = {:error, _} ->
         changeset
@@ -547,9 +548,14 @@ defmodule WraftDoc.Document do
   @spec create_instance(User.t(), ContentType.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
-  def create_instance(%User{} = current_user, %{id: c_id, prefix: prefix} = c_type, params) do
+  def create_instance(
+        %User{} = current_user,
+        %{id: c_id, prefix: prefix, flow: flow} = c_type,
+        params
+      ) do
     instance_id = create_instance_id(c_id, prefix)
-    params = Map.merge(params, %{"instance_id" => instance_id})
+    initial_state = Flow.initial_state(flow)
+    params = Map.merge(params, %{"instance_id" => instance_id, "state_id" => initial_state.id})
 
     c_type
     |> build_assoc(:instances, creator: current_user)
@@ -559,8 +565,14 @@ defmodule WraftDoc.Document do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
         Task.start_link(fn -> create_initial_version(current_user, content) end)
-        Task.start_link(fn -> create_instance_approval_systems(c_type, content) end)
-        Repo.preload(content, [:content_type, :state, :vendor])
+        create_instance_approval_systems(c_type, content)
+
+        Repo.preload(content, [
+          :content_type,
+          :state,
+          :vendor,
+          {:instance_approval_systems, :approver}
+        ])
 
       changeset = {:error, _} ->
         changeset
@@ -669,7 +681,7 @@ defmodule WraftDoc.Document do
         join: u in User,
         where: u.organisation_id == ^org_id and i.creator_id == u.id,
         order_by: [desc: i.id],
-        preload: [:content_type, :state, :vendor]
+        preload: [:content_type, :state, :vendor, {:instance_approval_systems, :approver}]
       )
 
     Repo.paginate(query, params)
@@ -686,7 +698,7 @@ defmodule WraftDoc.Document do
         join: ct in ContentType,
         where: ct.id == ^c_type_id and i.content_type_id == ct.id,
         order_by: [desc: i.id],
-        preload: [:content_type, :state, :vendor]
+        preload: [:content_type, :state, :vendor, {:instance_approval_systems, :approver}]
       )
 
     Repo.paginate(query, params)
@@ -2829,7 +2841,7 @@ defmodule WraftDoc.Document do
         on: i.content_type_id == ct.id,
         where: ct.organisation_id == ^org_id,
         order_by: [desc: i.id],
-        preload: [:content_type, :state, :vendor]
+        preload: [:content_type, :state, :vendor, {:instance_approval_systems, :approver}]
       )
 
     key = String.downcase(key)
