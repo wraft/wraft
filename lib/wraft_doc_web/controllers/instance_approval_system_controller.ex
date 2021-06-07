@@ -8,7 +8,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemController do
 
   def swagger_definitions do
     %{
-      Content:
+      Instance:
         swagger_schema do
           title("Content")
           description("A content, which is then used to generate the out files.")
@@ -178,7 +178,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemController do
   end
 
   swagger_path :index do
-    get("users/{id}/instance-approval-systems")
+    get("/users/{id}/instance-approval-systems")
     summary("List all instance approval systems")
     description("Api to list all approval system under an user")
 
