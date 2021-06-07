@@ -2864,6 +2864,35 @@ defmodule WraftDoc.Document do
   def instance_index(_, _, _), do: nil
 
   @doc """
+  Function to list and paginate instance approval system under  an user
+  """
+  def instance_approval_system_index(<<_::288>> = user_id, params) do
+    query =
+      from(ias in InstanceApprovalSystem,
+        join: as in ApprovalSystem,
+        on: as.id == ias.approval_system_id,
+        where: ias.flag == false,
+        where: as.approver_id == ^user_id,
+        preload: [:instance, :approval_system]
+      )
+
+    Repo.paginate(query, params)
+  end
+
+  def instance_approval_system_index(%User{} = current_user, params) do
+    query =
+      from(ias in InstanceApprovalSystem,
+        join: as in ApprovalSystem,
+        on: as.id == ias.approval_system_id,
+        where: ias.flag == false,
+        where: as.approver_id == ^current_user.id,
+        preload: [:instance, :approval_system]
+      )
+
+    Repo.paginate(query, params)
+  end
+
+  @doc """
   Returns list of changes on a single version
   ## Parameters
   * `instnace` - An instance struct

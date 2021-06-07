@@ -88,6 +88,8 @@ defmodule WraftDocWeb.Router do
       get("/users/me", UserController, :me)
       # get user by there name
       get("/users/search", UserController, :search)
+      get("/users/:id/instances-to-approve", InstanceApprovalSystemController, :index)
+      get("/users/instances-to-approve", InstanceApprovalSystemController, :instances_to_approve)
       # Get activity stream for current user user
       get("/activities", UserController, :activity)
       # Update profile

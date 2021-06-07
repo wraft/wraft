@@ -26,7 +26,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemView do
     }
   end
 
-  def render("show.json", %{instnace_approval_system: instance_approval_system}) do
+  def render("show.json", %{instance_approval_system: instance_approval_system}) do
     %{
       instance_approval_system:
         render_one(instance_approval_system, __MODULE__, "instance_approval_system.json",
