@@ -338,7 +338,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     type = Instance.types()[:normal]
     params = Map.put(params, "type", type)
 
-    with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_id),
+    with %ContentType{} = c_type <- Document.show_content_type(current_user, c_type_id),
          %Instance{} = content <-
            Document.create_instance(current_user, c_type, params) do
       render(conn, :create, content: content)

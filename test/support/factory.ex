@@ -297,8 +297,7 @@ defmodule WraftDoc.Factory do
       flow: build(:flow),
       pre_state: build(:state),
       post_state: build(:state),
-      approver: build(:user),
-      creator: build(:user)
+      approver: build(:user)
     }
   end
 

@@ -15,6 +15,7 @@ defmodule WraftDoc.Document.InstanceApprovalSystem do
     field(:approved_at, :naive_datetime)
     belongs_to(:instance, WraftDoc.Document.Instance)
     belongs_to(:approval_system, WraftDoc.Enterprise.ApprovalSystem)
+    has_one(:approver, through: [:approval_system, :approver])
   end
 
   def changeset(instance_approval_system, attrs) do
