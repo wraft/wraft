@@ -67,9 +67,13 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         render_one(instance.content_type, ContentTypeView, "c_type_with_layout.json",
           as: :content_type
         ),
-      state: render_one(instance.state, StateView, "create.json", as: :state),
+      state: render_one(instance.state, StateView, "instance_state.json", as: :state),
       creator: render_one(instance.creator, UserView, "user.json", as: :user),
-      versions: render_many(instance.versions, InstanceVersionView, "version.json", as: :version)
+      versions: render_many(instance.versions, InstanceVersionView, "version.json", as: :version),
+      instance_approval_systems:
+        render_many(instance.instance_approval_systems, InstanceApprovalSystemView, "create.json",
+          as: :instance_approval_system
+        )
     }
   end
 

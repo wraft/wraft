@@ -737,7 +737,13 @@ defmodule WraftDoc.Document do
   def show_instance(instance_id, user) do
     with %Instance{} = instance <- get_instance(instance_id, user) do
       instance
-      |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
+      |> Repo.preload([
+        :creator,
+        {:content_type, :layout},
+        {:versions, :author},
+        {:instance_approval_systems, :approver},
+        state: [approval_system: [:post_state, :approver]]
+      ])
       |> get_built_document()
     end
   end
@@ -795,7 +801,13 @@ defmodule WraftDoc.Document do
         case create_version(current_user, old_instance, instance, params) do
           {:ok, _version} ->
             instance
-            |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
+            |> Repo.preload([
+              :creator,
+              {:content_type, :layout},
+              {:versions, :author},
+              {:instance_approval_systems, :approver},
+              state: [approval_system: [:post_state, :approver]]
+            ])
             |> get_built_document()
 
           {:error, _} = changeset ->
@@ -2820,9 +2832,10 @@ defmodule WraftDoc.Document do
       {:ok, instance} ->
         Repo.preload(instance, [
           :creator,
-          [{:content_type, :layout}],
-          :state,
-          [{:versions, :author}]
+          {:content_type, :layout},
+          {:versions, :author},
+          {:instance_approval_systems, :approver},
+          state: [approval_system: [:post_state, :approver]]
         ])
     end
   end
