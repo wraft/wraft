@@ -23,8 +23,6 @@ defmodule WraftDoc.Enterprise.ApprovalSystem do
 
   schema "approval_system" do
     field(:name, :string)
-    field(:approved, :boolean, default: false)
-    field(:approved_log, :naive_datetime)
     belongs_to(:pre_state, State)
     belongs_to(:post_state, State)
     belongs_to(:approver, User)
@@ -72,11 +70,5 @@ defmodule WraftDoc.Enterprise.ApprovalSystem do
     |> organisation_constraint(State, :pre_state_id)
     |> organisation_constraint(State, :post_state_id)
     |> organisation_constraint(User, :approver_id)
-  end
-
-  def approve_changeset(approval_system, attrs \\ %{}) do
-    approval_system
-    |> cast(attrs, [:approved, :approved_log])
-    |> validate_required([:approved, :approved_log])
   end
 end
