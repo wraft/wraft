@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.ContentType}
+  alias WraftDoc.{Document, Document.ContentType, Document.Layout, Enterprise, Enterprise.Flow}
 
   def swagger_definitions do
     %{
@@ -507,12 +507,14 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, params) do
+  def create(conn, %{"layout_id" => layout_id, "flow_id" => flow_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <-
-           Document.create_content_type(current_user, params) do
-      render(conn, "create.json", content_type: content_type)
+    with %Layout{} = layout <- Document.get_layout(layout_id, current_user),
+         %Flow{} = flow <- Enterprise.get_flow(flow_id, current_user),
+         %ContentType{} = content_type <-
+           Document.create_content_type(current_user, layout, flow, params) do
+      render(conn, :create, content_type: content_type)
     end
   end
 
@@ -593,10 +595,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => id} = params) do
+  def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <- Document.get_content_type(current_user, id),
+    with %ContentType{} = content_type <- Document.get_content_type(current_user, uuid),
          %ContentType{} = content_type <-
            Document.update_content_type(content_type, current_user, params) do
       render(conn, "show.json", content_type: content_type)
@@ -702,7 +704,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   """
 
   swagger_path :search do
-    get("/content_types/search")
+    get("/content_types/title/search")
     summary("show all the content type title")
     description("API to show content_type by there title")
 
@@ -712,6 +714,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     end
 
     response(200, "Ok", Schema.ref(:ContentTypesIndex))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not Found", Schema.ref(:Error))
   end
