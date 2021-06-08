@@ -69,6 +69,12 @@ defmodule WraftDoc.Enterprise.Flow do
     )
   end
 
+  def align_order_changeset(flow, attrs \\ %{}) do
+    flow
+    |> cast(attrs, [])
+    |> cast_assoc(:states, with: &Flow.State.order_update_changeset/2)
+  end
+
   @doc """
   Function to return initial state of a flow
   """

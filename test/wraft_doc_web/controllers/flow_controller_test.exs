@@ -194,4 +194,35 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
     assert json_response(conn, 400)["errors"] == "The Flow id does not exist..!"
   end
+
+  describe "align_states/2" do
+    test "align order of state under a flow ", %{conn: conn} do
+      user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
+      flow = insert(:flow, creator: user, organisation: user.organisation)
+      s1 = insert(:state, flow: flow, organisation: user.organisation, order: 1)
+      s2 = insert(:state, flow: flow, organisation: user.organisation, order: 2)
+      params = %{states: [%{id: s1.id, order: 2}, %{id: s2.id, order: 1}]}
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, user)
+
+      conn = put(conn, Routes.v1_flow_path(conn, :align_states, flow.id), params)
+
+      state1_in_response =
+        json_response(conn, 200)["states"]
+        |> Enum.filter(fn x -> x["id"] == s1.id end)
+        |> List.first()
+
+      state2_in_response =
+        json_response(conn, 200)["states"]
+        |> Enum.filter(fn x -> x["id"] == s2.id end)
+        |> List.first()
+
+      assert state1_in_response["order"] == 2
+      assert state2_in_response["order"] == 1
+    end
+  end
 end

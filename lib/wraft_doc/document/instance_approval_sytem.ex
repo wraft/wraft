@@ -11,7 +11,6 @@ defmodule WraftDoc.Document.InstanceApprovalSystem do
 
   schema "instance_approval_system" do
     field(:flag, :boolean, default: false)
-    field(:order, :integer)
     field(:approved_at, :naive_datetime)
     belongs_to(:instance, WraftDoc.Document.Instance)
     belongs_to(:approval_system, WraftDoc.Enterprise.ApprovalSystem)
