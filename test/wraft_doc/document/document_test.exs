@@ -336,7 +336,7 @@ defmodule WraftDoc.DocumentTest do
       flow = insert(:flow, creator: user, organisation: user.organisation)
       param = Map.put(@valid_content_type_attrs, "fields", fields)
       count_before = ContentType |> Repo.all() |> length()
-      content_type = Document.create_content_type(user, param)
+      content_type = Document.create_content_type(user, layout, flow, param)
       count_after = ContentType |> Repo.all() |> length()
       assert count_before + 1 == count_after
       assert content_type.name == @valid_content_type_attrs["name"]
@@ -351,7 +351,7 @@ defmodule WraftDoc.DocumentTest do
       flow = insert(:flow, creator: user)
       count_before = ContentType |> Repo.all() |> length()
 
-      {:error, changeset} = Document.create_content_type(user, @invalid_attrs)
+      {:error, changeset} = Document.create_content_type(user, layout, flow, @invalid_attrs)
       count_after = ContentType |> Repo.all() |> length()
       assert count_before == count_after
 
@@ -454,16 +454,15 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       content_type = insert(:content_type, creator: user)
       count_before = ContentType |> Repo.all() |> length()
-
-      {:error, changeset} =
-        Document.update_content_type(content_type, user, @content_type_invalid_attrs)
-
+      params = Map.merge(@invalid_attrs, %{name: "", description: "", prefix: ""})
+      {:error, changeset} = Document.update_content_type(content_type, user, params)
       count_after = ContentType |> Repo.all() |> length()
       assert count_before == count_after
 
       assert %{
                name: ["can't be blank"],
-               description: ["can't be blank"]
+               description: ["can't be blank"],
+               prefix: ["can't be blank"]
              } == errors_on(changeset)
     end
   end
