@@ -613,6 +613,57 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
   end
 
+  def approve_instance(
+        %User{id: user_id},
+        %Instance{
+          state: %State{
+            approval_system:
+              %ApprovalSystem{approver: %User{id: user_id}, post_state: post_state} =
+                approval_system
+          }
+        } = instance
+      ) do
+    instance
+    |> Instance.update_state_changeset(%{state_id: post_state.id})
+    |> Repo.update()
+    |> case do
+      {:ok, instance} ->
+        Task.start_link(fn -> update_instance_approval_system(instance, approval_system) end)
+
+        instance =
+          Map.put(instance, :state, %Ecto.Association.NotLoaded{
+            __field__: :state,
+            __owner__: Instance.__struct__(),
+            __cardinality__: :one
+          })
+
+        Repo.preload(instance, [
+          :creator,
+          {:content_type, :layout},
+          {:versions, :author},
+          {:instance_approval_systems, :approver},
+          state: [approval_system: [:post_state, :approver]]
+        ])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def approve_instance(_, _), do: {:error, :no_permission}
+
+  def update_instance_approval_system(instance, approval_system) do
+    with %InstanceApprovalSystem{} = ias <-
+           Repo.get_by(InstanceApprovalSystem,
+             instance_id: instance.id,
+             approval_system_id: approval_system.id
+           ) do
+      ias
+      |> InstanceApprovalSystem.update_changeset(%{flag: true, approved_at: Timex.now()})
+      |> Repo.update()
+    end
+  end
+
   # Create Instance ID from the prefix of the content type
   @spec create_instance_id(integer, binary) :: binary
   defp create_instance_id(c_id, prefix) do

@@ -669,4 +669,28 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       render(conn, InstanceVersionView, "change.json", change: change)
     end
   end
+
+  swagger_path :approve do
+    put("/instances/{id}/approve")
+    summary("Approve an instance")
+    description("Api to approve an instance")
+
+    parameters do
+      id(:path, :string, "Instance id")
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContent))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  def approve(conn, %{"id" => id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Document.show_instance(id, current_user),
+         %Instance{} = instance <- Document.approve_instance(current_user, instance) do
+      render(conn, "show.json", %{instance: instance})
+    end
+  end
 end

@@ -429,4 +429,28 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert length(json_response(conn, 200)["del"]) > 0
     assert length(json_response(conn, 200)["ins"]) > 0
   end
+
+  describe "approve/2" do
+    test "approve instance changes the state of instance to post state of approval system", %{
+      conn: conn
+    } do
+      user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
+      flow = insert(:flow, organisation: user.organisation)
+      s1 = insert(:state, organisation: user.organisation, flow: flow, order: 1)
+      s2 = insert(:state, organisation: user.organisation, flow: flow, order: 2)
+      as = insert(:approval_system, flow: flow, approver: user, pre_state: s1, post_state: s2)
+      content_type = insert(:content_type, organisation: user.organisation, flow: flow)
+      instance = insert(:instance, creator: user, content_type: content_type, state: s1)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, user)
+
+      conn = put(conn, Routes.v1_instance_path(conn, :approve, instance.id))
+
+      assert json_response(conn, 200)["state"]["state"] == s2.state
+    end
+  end
 end
