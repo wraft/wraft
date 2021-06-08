@@ -14,5 +14,11 @@ defmodule WraftDoc.Repo.Migrations.InstanceApprovalSystem do
         references(:approval_system, type: :uuid, column: :id, on_delete: :nilify_all)
       )
     end
+
+    create(
+      unique_index(:instance_approval_system, [:instance_id, :approval_system_id],
+        name: :instance_approval_system_unique_constraint
+      )
+    )
   end
 end
