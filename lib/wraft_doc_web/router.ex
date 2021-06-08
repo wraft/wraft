@@ -88,6 +88,14 @@ defmodule WraftDocWeb.Router do
       get("/users/me", UserController, :me)
       # get user by there name
       get("/users/search", UserController, :search)
+      get("/users/:id/instance-approval-systems", InstanceApprovalSystemController, :index)
+
+      get(
+        "/users/instance-approval-systems",
+        InstanceApprovalSystemController,
+        :instances_to_approve
+      )
+
       # Get activity stream for current user user
       get("/activities", UserController, :activity)
       # Update profile
@@ -136,6 +144,7 @@ defmodule WraftDocWeb.Router do
         resources("/", FlowController, only: [:create, :index, :show, :update, :delete])
         # States
         resources("/:flow_id/states", StateController, only: [:create, :index])
+        put("/:id/align-states", FlowController, :align_states)
       end
 
       # State delete and update
@@ -151,6 +160,8 @@ defmodule WraftDocWeb.Router do
       patch("/contents/:id/lock-unlock", InstanceController, :lock_unlock)
       get("/contents/title/search", InstanceController, :search)
       get("/contents/:id/change/:v_id", InstanceController, :change)
+      # Approve a document
+      put("/contents/:id/approve", InstanceController, :approve)
       # Organisations
       scope "/organisations" do
         resources("/", OrganisationController, only: [:create, :update, :show, :delete])

@@ -357,6 +357,31 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     end
   end
 
+  swagger_path :align_states do
+    put("/flows/{id}/update-states")
+    summary("Update states")
+    description("Api to update order of states of a flow")
+
+    parameters do
+      id(:path, :string, "Flow id", required: true)
+      flow(:body, Schema.ref(:FlowStatesRequest), "Flow and states to be updated", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:FlowStates))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  def align_states(conn, %{"id" => id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Flow{} = flow <- Enterprise.show_flow(id, current_user),
+         %Flow{} = flow <- Enterprise.align_states(current_user, flow, params) do
+      render(conn, "show.json", %{flow: flow})
+    end
+  end
+
   @doc """
   Flow delete.
   """

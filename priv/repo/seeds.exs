@@ -23,6 +23,7 @@ alias WraftDoc.{
   Document.FieldType,
   Document.Instance,
   Document.Theme,
+  Enterprise.ApprovalSystem,
   Enterprise.Organisation,
   Enterprise.Flow,
   Enterprise.Flow.State,
@@ -208,18 +209,64 @@ allow_once(
   name: "employee"
 )
 
+draft =
+  allow_once(
+    %State{
+      state: "Draft",
+      order: 1,
+      creator_id: user.id,
+      organisation_id: organisation.id,
+      flow_id: flow.id
+    },
+    state: "Draft"
+  )
+
 # Populate State
-state =
+review =
+  allow_once(
+    %State{
+      state: "Review",
+      order: 2,
+      creator_id: user.id,
+      organisation_id: organisation.id,
+      flow_id: flow.id
+    },
+    state: "Review"
+  )
+
+published =
   allow_once(
     %State{
       state: "Published",
-      order: 1,
+      order: 3,
       creator_id: user.id,
       organisation_id: organisation.id,
       flow_id: flow.id
     },
     state: "Published"
   )
+
+allow_once(
+  %ApprovalSystem{
+    pre_state_id: draft.id,
+    post_state_id: review.id,
+    flow_id: flow.id,
+    approver_id: user.id,
+    creator_id: user.id
+  },
+  pre_state_id: draft.id
+)
+
+allow_once(
+  %ApprovalSystem{
+    pre_state_id: review.id,
+    post_state_id: published.id,
+    flow_id: flow.id,
+    approver_id: user.id,
+    creator_id: user.id
+  },
+  pre_state_id: published.id
+)
 
 allow_once(
   %Vendor{
@@ -248,7 +295,7 @@ instance =
       },
       creator_id: user.id,
       content_type_id: content_type.id,
-      state_id: state.id
+      state_id: draft.id
     },
     instance_id: "OFFLET0001"
   )
@@ -448,7 +495,8 @@ File.stream!("priv/repo/data/content_type.csv")
       prefix: x["prefix"],
       layout_id: layout.id,
       organisation_id: organisation.id,
-      creator_id: user.id
+      creator_id: user.id,
+      flow_id: flow.id
     },
     name: x["name"]
   )
