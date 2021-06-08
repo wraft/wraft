@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
   use WraftDocWeb, :view
 
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{FieldTypeView, FlowView, LayoutView, RoleView, UserView}
+  alias WraftDocWeb.Api.V1.{FieldTypeView, FlowView, LayoutView, UserView}
 
   def render("create.json", %{content_type: c_type}) do
     %{
@@ -52,7 +52,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
       }) do
     %{
       content_types:
-        render_many(content_types, ContentTypeView, "role_content_type.json", as: :content_type),
+        render_many(content_types, ContentTypeView, "create.json", as: :content_type),
       page_number: page_number,
       total_pages: total_pages,
       total_entries: total_entries
