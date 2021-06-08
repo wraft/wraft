@@ -671,7 +671,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   swagger_path :approve do
-    put("/instances/{id}/approve")
+    put("/contents/{id}/approve")
     summary("Approve an instance")
     description("Api to approve an instance")
 
