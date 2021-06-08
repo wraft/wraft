@@ -442,6 +442,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       as = insert(:approval_system, flow: flow, approver: user, pre_state: s1, post_state: s2)
       content_type = insert(:content_type, organisation: user.organisation, flow: flow)
       instance = insert(:instance, creator: user, content_type: content_type, state: s1)
+      insert(:instance_approval_system, instance: instance, approval_system: as)
 
       conn =
         build_conn()
@@ -451,6 +452,27 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       conn = put(conn, Routes.v1_instance_path(conn, :approve, instance.id))
 
       assert json_response(conn, 200)["state"]["state"] == s2.state
+    end
+
+    test "return error no permission for a worng approver", %{conn: conn} do
+      user = conn.assigns.current_user
+      u2 = insert(:user, organisation: user.organisation)
+      insert(:membership, organisation: user.organisation)
+      flow = insert(:flow, organisation: user.organisation)
+      s1 = insert(:state, organisation: user.organisation, flow: flow, order: 1)
+      s2 = insert(:state, organisation: user.organisation, flow: flow, order: 2)
+      as = insert(:approval_system, flow: flow, approver: u2, pre_state: s1, post_state: s2)
+      content_type = insert(:content_type, organisation: user.organisation, flow: flow)
+      instance = insert(:instance, creator: user, content_type: content_type, state: s1)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, user)
+
+      conn = put(conn, Routes.v1_instance_path(conn, :approve, instance.id))
+
+      assert json_response(conn, 400)["errors"] == "You are not authorized for this action.!"
     end
   end
 end
