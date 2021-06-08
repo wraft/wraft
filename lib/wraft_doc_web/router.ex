@@ -144,6 +144,7 @@ defmodule WraftDocWeb.Router do
         resources("/", FlowController, only: [:create, :index, :show, :update, :delete])
         # States
         resources("/:flow_id/states", StateController, only: [:create, :index])
+        put("/:id/align-states", FlowController, :align_states)
       end
 
       # State delete and update

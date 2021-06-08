@@ -113,6 +113,27 @@ defmodule WraftDoc.Enterprise do
   def create_flow(_, _), do: {:error, :fake}
 
   @doc """
+  Funtion to align order of states under  a flow
+  ## Params
+  * current_user - User struct
+  * flow - Flow struct
+  * params - a map with states key
+  ## Example
+  iex(1)> params = %{"states"=> [%{"id"=> "262sda-sdf5-dsf55-ddfs","order"=>1},%{"id"=>"12sd66-6d211f-1261d2f","order"=> 2}]}
+  iex(2)> align_state(%User{},%Flow{},params)
+  iex(3)> %Flow{states: [%State{},%State{}]}
+  """
+  def align_states(current_user, flow, params) do
+    flow
+    |> Flow.align_order_changeset(params)
+    |> Spur.update(%{actor: current_user.id})
+    |> case do
+      {:ok, flow} -> flow
+      {:error, _} = changeset -> changeset
+    end
+  end
+
+  @doc """
   List of all flows.
   """
   @spec flow_index(User.t(), map) :: map
