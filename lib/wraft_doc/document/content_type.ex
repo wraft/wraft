@@ -55,15 +55,13 @@ defmodule WraftDoc.Document.ContentType do
   def update_changeset(%ContentType{} = content_type, attrs \\ %{}) do
     content_type
     |> cast(attrs, [:name, :description, :color, :layout_id, :flow_id, :prefix])
-    |> validate_required([:name, :description])
+    |> validate_required([:name, :description, :layout_id, :flow_id, :prefix])
     |> unique_constraint(:name,
       message: "Content type with the same name under your organisation exists.!",
       name: :content_type_organisation_unique_index
     )
     |> validate_length(:prefix, min: 2, max: 6)
     |> validate_format(:color, ~r/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
-    |> organisation_constraint(Layout, :layout_id)
-    |> organisation_constraint(Flow, :flow_id)
   end
 
   defimpl Poison.Encoder, for: WraftDoc.Document.ContentType do

@@ -105,10 +105,10 @@ defmodule WraftDoc.Document do
     |> Enum.to_list()
   end
 
-  defp fetch_and_associcate_assets(_layout, _current_user, _params), do: {:error, :invalid_data}
+  defp fetch_and_associcate_assets(_layout, _current_user, _params), do: nil
 
   # Associate the asset with the given layout, ie; insert a LayoutAsset entry.
-  defp associate_layout_and_asset(_layout, _current_user, nil), do: {:error, :invalid_data}
+  defp associate_layout_and_asset(_layout, _current_user, nil), do: nil
 
   defp associate_layout_and_asset(layout, current_user, asset) do
     layout
@@ -117,93 +117,62 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
   end
 
-  def create_content_type(%{organisation_id: org_id} = current_user, params) do
+  @doc """
+  Create a content type.
+  """
+  # TODO - improve tests
+  @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
+          ContentType.t() | {:error, Ecto.Changeset.t()}
+  def create_content_type(%{organisation_id: org_id} = current_user, layout, flow, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
-    |> build_assoc(:content_types)
+    |> build_assoc(:content_types, layout: layout, flow: flow)
     |> ContentType.changeset(params)
     |> Spur.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
+        fetch_and_associate_fields(content_type, params, current_user)
         Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
 
-      {:error, _} = changeset ->
+      changeset = {:error, _} ->
         changeset
     end
   end
 
-  def update_content_type(content_type, %{id: user_id, organisation_id: organisation_id}, params) do
-    params = Map.merge(params, %{"organisation_id" => organisation_id})
+  @spec fetch_and_associate_fields(ContentType.t(), map, User.t()) :: list
+  # Iterate throught the list of field types and associate with the content type
+  defp fetch_and_associate_fields(content_type, %{"fields" => fields}, user) do
+    fields
+    |> Stream.map(fn x -> associate_c_type_and_fields(content_type, x, user) end)
+    |> Enum.to_list()
+  end
 
-    content_type
-    |> ContentType.update_changeset(params)
-    |> Spur.update(%{actor: "#{user_id}"})
+  defp fetch_and_associate_fields(_content_type, _params, _user), do: nil
+
+  @spec associate_c_type_and_fields(ContentType.t(), map, User.t()) ::
+          {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()} | nil
+  # Fetch and associate field types with the content type
+  defp associate_c_type_and_fields(
+         c_type,
+         %{"key" => key, "field_type_id" => field_type_id},
+         user
+       ) do
+    field_type_id
+    |> get_field_type(user)
     |> case do
-      {:ok, %ContentType{} = content_type} ->
-        Repo.preload(content_type, [:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
+      %FieldType{} = field_type ->
+        field_type
+        |> build_assoc(:fields, content_type: c_type)
+        |> ContentTypeField.changeset(%{name: key})
+        |> Repo.insert()
 
-      {:error, _} = changeset ->
-        changeset
+      nil ->
+        nil
     end
   end
 
-  # @doc """
-  # Create a content type.get
-  # """
-  # # TODO - improve tests
-  # @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
-  #         ContentType.t() | {:error, Ecto.Changeset.t()}
-  # def create_content_type(%{organisation_id: org_id} = current_user, layout, flow, params) do
-  #   params = Map.merge(params, %{"organisation_id" => org_id})
-
-  #   current_user
-  #   |> build_assoc(:content_types, layout: layout, flow: flow)
-  #   |> ContentType.changeset(params)
-  #   |> Spur.insert()
-  #   |> case do
-  #     {:ok, %ContentType{} = content_type} ->
-  #       fetch_and_associate_fields(content_type, params, current_user)
-  #       Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
-
-  #     changeset = {:error, _} ->
-  #       changeset
-  #   end
-  # end
-
-  # @spec fetch_and_associate_fields(ContentType.t(), map, User.t()) :: list
-  # # Iterate throught the list of field types and associate with the content type
-  # defp fetch_and_associate_fields(content_type, %{"fields" => fields}, user) do
-  #   fields
-  #   |> Stream.map(fn x -> associate_c_type_and_fields(content_type, x, user) end)
-  #   |> Enum.to_list()
-  # end
-
-  # defp fetch_and_associate_fields(_content_type, _params, _user), do: nil
-
-  # @spec associate_c_type_and_fields(ContentType.t(), map, User.t()) ::
-  #         {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()} | nil
-  # # Fetch and associate field types with the content type
-  # defp associate_c_type_and_fields(
-  #        c_type,
-  #        %{"key" => key, "field_type_id" => field_type_id},
-  #        user
-  #      ) do
-  #   field_type_id
-  #   |> get_field_type(user)
-  #   |> case do
-  #     %FieldType{} = field_type ->
-  #       field_type
-  #       |> build_assoc(:fields, content_type: c_type)
-  #       |> ContentTypeField.changeset(%{name: key})
-  #       |> Repo.insert()
-
-  #     nil ->
-  #       nil
-  #   end
-  # end
-
-  # defp associate_c_type_and_fields(_c_type, _field, _user), do: nil
+  defp associate_c_type_and_fields(_c_type, _field, _user), do: nil
 
   @doc """
   List all engines.
@@ -409,40 +378,43 @@ defmodule WraftDoc.Document do
   def get_content_type_field(<<_::288>>, _), do: {:error, :invalid_id, "ContentTypeField"}
   def get_content_type_field(_, %{organisation_id: _}), do: {:error, :fake}
 
+  @doc """
+  Update a content type.
+  """
   # TODO - write tests
-  # @spec update_content_type(ContentType.t(), User.t(), map) ::
-  #         %ContentType{
-  #           layout: Layout.t(),
-  #           creator: User.t()
-  #         }
-  #         | {:error, Ecto.Changeset.t()}
-  # def update_content_type(
-  #       content_type,
-  #       user,
-  #       %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
-  #     ) do
-  #   %Layout{id: id} = get_layout(layout_uuid, user)
-  #   %Flow{id: f_id} = Enterprise.get_flow(f_uuid, user)
-  #   {_, params} = Map.pop(params, "layout_uuid")
-  #   {_, params} = Map.pop(params, "flow_uuid")
-  #   params = Map.merge(params, %{"layout_id" => id, "flow_id" => f_id})
-  #   update_content_type(content_type, user, params)
-  # end
+  @spec update_content_type(ContentType.t(), User.t(), map) ::
+          %ContentType{
+            layout: Layout.t(),
+            creator: User.t()
+          }
+          | {:error, Ecto.Changeset.t()}
+  def update_content_type(
+        content_type,
+        user,
+        %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
+      ) do
+    %Layout{id: id} = get_layout(layout_uuid, user)
+    %Flow{id: f_id} = Enterprise.get_flow(f_uuid, user)
+    {_, params} = Map.pop(params, "layout_uuid")
+    {_, params} = Map.pop(params, "flow_uuid")
+    params = Map.merge(params, %{"layout_id" => id, "flow_id" => f_id})
+    update_content_type(content_type, user, params)
+  end
 
-  # def update_content_type(content_type, %User{id: id} = user, params) do
-  #   content_type
-  #   |> ContentType.update_changeset(params)
-  #   |> Spur.update(%{actor: "#{id}"})
-  #   |> case do
-  #     {:error, _} = changeset ->
-  #       changeset
+  def update_content_type(content_type, %User{id: id} = user, params) do
+    content_type
+    |> ContentType.update_changeset(params)
+    |> Spur.update(%{actor: "#{id}"})
+    |> case do
+      {:error, _} = changeset ->
+        changeset
 
-  #     {:ok, content_type} ->
-  #       fetch_and_associate_fields(content_type, params, user)
+      {:ok, content_type} ->
+        fetch_and_associate_fields(content_type, params, user)
 
-  #       Repo.preload(content_type, [:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
-  #   end
-  # end
+        Repo.preload(content_type, [:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
+    end
+  end
 
   @doc """
   Delete a content type.

@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   Test module for content type controller
   """
   use WraftDocWeb.ConnCase
-  @moduletag :controller
+
   import WraftDoc.Factory
   alias WraftDoc.{Document.ContentType, Repo}
 
@@ -65,10 +65,14 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
     count_before = ContentType |> Repo.all() |> length()
+    %{id: flow_id} = insert(:flow, creator: user, organisation: user.organisation)
+    %{id: layout_id} = insert(:layout, creator: user, organisation: user.organisation)
+
+    params = Map.merge(@invalid_attrs, %{flow_id: flow_id, layout_id: layout_id})
 
     conn =
       conn
-      |> post(Routes.v1_content_type_path(conn, :create, @invalid_attrs))
+      |> post(Routes.v1_content_type_path(conn, :create, params))
       |> doc(operation_id: "create_content_type")
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -87,8 +91,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
     count_before = ContentType |> Repo.all() |> length()
 
-    %{id: flow_uuid} = insert(:flow, organisation: user.organisation)
-    %{id: layout_uuid} = insert(:layout, organisation: user.organisation)
+    %{id: flow_uuid} = insert(:flow)
+    %{id: layout_uuid} = insert(:layout)
 
     params = Map.merge(@valid_attrs, %{flow_id: flow_uuid, layout_id: layout_uuid})
 
@@ -104,7 +108,6 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   test "does't update content types for invalid attrs", %{conn: conn} do
     user = conn.assigns[:current_user]
     insert(:membership, organisation: user.organisation)
-
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
 
     conn =
@@ -197,20 +200,5 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     conn = get(conn, Routes.v1_content_type_path(conn, :show, content_type.id))
 
     assert json_response(conn, 400)["errors"] == "The ContentType id does not exist..!"
-  end
-
-  test "show the content type with roles", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
-    user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-    content_type = insert(:content_type)
-
-    conn = get(conn, Routes.v1_content_type_path(conn, :show_content_type_role, content_type.id))
-
-    assert json_response(conn, 200)["name"] == content_type.name
   end
 end
