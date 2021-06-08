@@ -27,6 +27,7 @@ defmodule WraftDoc.Factory do
     Document.Instance,
     Document.Instance.History,
     Document.Instance.Version,
+    Document.InstanceApprovalSystem,
     Document.Layout,
     Document.LayoutAsset,
     Document.OrganisationField,
@@ -297,8 +298,7 @@ defmodule WraftDoc.Factory do
       flow: build(:flow),
       pre_state: build(:state),
       post_state: build(:state),
-      approver: build(:user),
-      creator: build(:user)
+      approver: build(:user)
     }
   end
 
@@ -442,6 +442,14 @@ defmodule WraftDoc.Factory do
       description: sequence(:desription, &"Field description #{&1}"),
       organisation: build(:organisation),
       field_type: build(:field_type)
+    }
+  end
+
+  def instance_approval_system_factory do
+    %InstanceApprovalSystem{
+      flag: false,
+      instance: build(:instance),
+      approval_system: build(:approval_system)
     }
   end
 end

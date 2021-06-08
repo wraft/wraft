@@ -24,9 +24,8 @@ defmodule WraftDoc.Enterprise.Flow.State do
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:flow, WraftDoc.Enterprise.Flow)
-
     has_many(:instances, WraftDoc.Document.Instance, foreign_key: :state_id)
-    has_many(:pre_states, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :pre_state_id)
+    has_one(:approval_system, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :pre_state_id)
     has_many(:post_states, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :post_state_id)
     timestamps()
   end
