@@ -7,7 +7,6 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemView do
     %{
       id: approval_system.id,
       name: approval_system.name,
-      approved_log: approval_system.approved_log,
       pre_state: render_one(approval_system.pre_state, StateView, "create.json", as: :state),
       post_state: render_one(approval_system.post_state, StateView, "create.json", as: :state),
       flow: render_one(approval_system.flow, FlowView, "flow.json", as: :flow),
