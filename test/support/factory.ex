@@ -448,7 +448,6 @@ defmodule WraftDoc.Factory do
   def instance_approval_system_factory do
     %InstanceApprovalSystem{
       flag: false,
-      order: 1,
       instance: build(:instance),
       approval_system: build(:approval_system)
     }

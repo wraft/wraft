@@ -590,13 +590,10 @@ defmodule WraftDoc.Document do
     with %ContentType{flow: %Flow{approval_systems: approval_systems}} <-
            Repo.preload(content_type, [{:flow, :approval_systems}]) do
       Enum.each(approval_systems, fn x ->
-        with %ApprovalSystem{pre_state: state} <- Repo.preload(x, :pre_state) do
-          create_instance_approval_system(%{
-            instance_id: content.id,
-            approval_system_id: x.id,
-            order: state.order
-          })
-        end
+        create_instance_approval_system(%{
+          instance_id: content.id,
+          approval_system_id: x.id
+        })
       end)
     end
   end
