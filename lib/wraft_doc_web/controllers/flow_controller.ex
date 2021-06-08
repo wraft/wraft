@@ -202,6 +202,28 @@ defmodule WraftDocWeb.Api.V1.FlowController do
             ]
           })
         end,
+      AlignStateRequest:
+        swagger_schema do
+          title("Show flow details and its states")
+          description("Show all details of a flow including all the states undet the flow")
+
+          properties do
+            states(Schema.ref(:State))
+          end
+
+          example(%{
+            states: [
+              %{
+                id: "1232148nb3478",
+                order: 1
+              },
+              %{
+                id: "1232148nb3478",
+                order: 2
+              }
+            ]
+          })
+        end,
       FlowIndex:
         swagger_schema do
           properties do
@@ -358,16 +380,17 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   end
 
   swagger_path :align_states do
-    put("/flows/{id}/update-states")
+    put("/flows/{id}/align-states")
     summary("Update states")
     description("Api to update order of states of a flow")
 
     parameters do
       id(:path, :string, "Flow id", required: true)
-      flow(:body, Schema.ref(:FlowStatesRequest), "Flow and states to be updated", required: true)
+
+      flow(:body, Schema.ref(:AlignStateRequest), "Flow and states to be updated", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:FlowStates))
+    response(200, "Ok", Schema.ref(:FlowAndStates))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not found", Schema.ref(:Error))
