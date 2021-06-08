@@ -27,6 +27,7 @@ defmodule WraftDoc.Enterprise.ApprovalSystem do
     belongs_to(:post_state, State)
     belongs_to(:approver, User)
     belongs_to(:flow, Flow)
+    belongs_to(:creator, User)
     has_many(:instance_approval_systems, WraftDoc.Document.InstanceApprovalSystem)
     timestamps()
   end

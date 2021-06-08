@@ -58,11 +58,25 @@ defmodule WraftDocWeb.Api.V1.UserView do
       roles: render_many(me.roles, RegistrationView, "role.json", as: :role),
       instances_to_approve:
         render_many(
-          me.instances_to_apprve,
+          me.instances_to_approve,
           InstanceApprovalSystemView,
           "instance_approval_system.json",
           as: :instance_approval_system
         )
+    }
+  end
+
+  def render("show.json", %{user: me}) do
+    %{
+      id: me.id,
+      name: me.name,
+      email: me.email,
+      email_verify: me.email_verify,
+      organisation_id: me.organisation.id,
+      inserted_at: me.inserted_at,
+      updated_at: me.updated_at,
+      profile_pic: generate_url(me.profile),
+      roles: render_many(me.roles, RegistrationView, "role.json", as: :role)
     }
   end
 

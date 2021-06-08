@@ -496,7 +496,7 @@ defmodule WraftDoc.Enterprise do
   @spec create_approval_system(User.t(), map) ::
           ApprovalSystem.t() | {:error, Ecto.Changeset.t()}
   def create_approval_system(%User{organisation_id: organisation_id} = current_user, params) do
-    params = Map.put(params, "organisation_id", organisation_id)
+    params = Map.merge(params, %{"organisation_id" => organisation_id})
 
     current_user
     |> build_assoc(:approval_systems)
