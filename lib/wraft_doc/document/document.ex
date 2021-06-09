@@ -482,8 +482,9 @@ defmodule WraftDoc.Document do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
         Task.start_link(fn -> create_initial_version(current_user, content) end)
-        Task.start_link(fn -> create_instance_approval_systems(c_type, content) end)
-        Repo.preload(content, [:content_type, :state, :vendor])
+        create_instance_approval_systems(c_type, content)
+
+        Repo.preload(content, [:content_type, :state, :vendor, :instance_approval_systems])
 
       changeset = {:error, _} ->
         changeset
@@ -519,9 +520,14 @@ defmodule WraftDoc.Document do
   @spec create_instance(User.t(), ContentType.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
-  def create_instance(%User{} = current_user, %{id: c_id, prefix: prefix} = c_type, params) do
+  def create_instance(
+        %User{} = current_user,
+        %{id: c_id, prefix: prefix, flow: flow} = c_type,
+        params
+      ) do
     instance_id = create_instance_id(c_id, prefix)
-    params = Map.merge(params, %{"instance_id" => instance_id})
+    initial_state = Flow.initial_state(flow)
+    params = Map.merge(params, %{"instance_id" => instance_id, "state_id" => initial_state.id})
 
     c_type
     |> build_assoc(:instances, creator: current_user)
@@ -531,8 +537,14 @@ defmodule WraftDoc.Document do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
         Task.start_link(fn -> create_initial_version(current_user, content) end)
-        Task.start_link(fn -> create_instance_approval_systems(c_type, content) end)
-        Repo.preload(content, [:content_type, :state, :vendor])
+        create_instance_approval_systems(c_type, content)
+
+        Repo.preload(content, [
+          :content_type,
+          :state,
+          :vendor,
+          {:instance_approval_systems, :approver}
+        ])
 
       changeset = {:error, _} ->
         changeset
@@ -550,13 +562,10 @@ defmodule WraftDoc.Document do
     with %ContentType{flow: %Flow{approval_systems: approval_systems}} <-
            Repo.preload(content_type, [{:flow, :approval_systems}]) do
       Enum.each(approval_systems, fn x ->
-        with %ApprovalSystem{pre_state: state} <- Repo.preload(x, :pre_state) do
-          create_instance_approval_system(%{
-            instance_id: content.id,
-            approval_system_id: x.id,
-            order: state.order
-          })
-        end
+        create_instance_approval_system(%{
+          instance_id: content.id,
+          approval_system_id: x.id
+        })
       end)
     end
   end
@@ -571,6 +580,57 @@ defmodule WraftDoc.Document do
     %InstanceApprovalSystem{}
     |> InstanceApprovalSystem.changeset(params)
     |> Repo.insert()
+  end
+
+  def approve_instance(
+        %User{id: user_id},
+        %Instance{
+          state: %State{
+            approval_system:
+              %ApprovalSystem{approver: %User{id: user_id}, post_state: post_state} =
+                approval_system
+          }
+        } = instance
+      ) do
+    instance
+    |> Instance.update_state_changeset(%{state_id: post_state.id})
+    |> Repo.update()
+    |> case do
+      {:ok, instance} ->
+        Task.start_link(fn -> update_instance_approval_system(instance, approval_system) end)
+
+        instance =
+          Map.put(instance, :state, %Ecto.Association.NotLoaded{
+            __field__: :state,
+            __owner__: Instance.__struct__(),
+            __cardinality__: :one
+          })
+
+        Repo.preload(instance, [
+          :creator,
+          {:content_type, :layout},
+          {:versions, :author},
+          {:instance_approval_systems, :approver},
+          state: [approval_system: [:post_state, :approver]]
+        ])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def approve_instance(_, _), do: {:error, :no_permission}
+
+  def update_instance_approval_system(instance, approval_system) do
+    with %InstanceApprovalSystem{} = ias <-
+           Repo.get_by(InstanceApprovalSystem,
+             instance_id: instance.id,
+             approval_system_id: approval_system.id
+           ) do
+      ias
+      |> InstanceApprovalSystem.update_changeset(%{flag: true, approved_at: Timex.now()})
+      |> Repo.update()
+    end
   end
 
   # Create Instance ID from the prefix of the content type
@@ -641,7 +701,7 @@ defmodule WraftDoc.Document do
         join: u in User,
         where: u.organisation_id == ^org_id and i.creator_id == u.id,
         order_by: [desc: i.id],
-        preload: [:content_type, :state, :vendor]
+        preload: [:content_type, :state, :vendor, {:instance_approval_systems, :approver}]
       )
 
     Repo.paginate(query, params)
@@ -658,7 +718,7 @@ defmodule WraftDoc.Document do
         join: ct in ContentType,
         where: ct.id == ^c_type_id and i.content_type_id == ct.id,
         order_by: [desc: i.id],
-        preload: [:content_type, :state, :vendor]
+        preload: [:content_type, :state, :vendor, {:instance_approval_systems, :approver}]
       )
 
     Repo.paginate(query, params)
@@ -697,7 +757,13 @@ defmodule WraftDoc.Document do
   def show_instance(instance_id, user) do
     with %Instance{} = instance <- get_instance(instance_id, user) do
       instance
-      |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
+      |> Repo.preload([
+        :creator,
+        {:content_type, :layout},
+        {:versions, :author},
+        {:instance_approval_systems, :approver},
+        state: [approval_system: [:post_state, :approver]]
+      ])
       |> get_built_document()
     end
   end
@@ -755,7 +821,13 @@ defmodule WraftDoc.Document do
         case create_version(current_user, old_instance, instance, params) do
           {:ok, _version} ->
             instance
-            |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
+            |> Repo.preload([
+              :creator,
+              {:content_type, :layout},
+              {:versions, :author},
+              {:instance_approval_systems, :approver},
+              state: [approval_system: [:post_state, :approver]]
+            ])
             |> get_built_document()
 
           {:error, _} = changeset ->
@@ -2780,9 +2852,10 @@ defmodule WraftDoc.Document do
       {:ok, instance} ->
         Repo.preload(instance, [
           :creator,
-          [{:content_type, :layout}],
-          :state,
-          [{:versions, :author}]
+          {:content_type, :layout},
+          {:versions, :author},
+          {:instance_approval_systems, :approver},
+          state: [approval_system: [:post_state, :approver]]
         ])
     end
   end
@@ -2801,7 +2874,7 @@ defmodule WraftDoc.Document do
         on: i.content_type_id == ct.id,
         where: ct.organisation_id == ^org_id,
         order_by: [desc: i.id],
-        preload: [:content_type, :state, :vendor]
+        preload: [:content_type, :state, :vendor, {:instance_approval_systems, :approver}]
       )
 
     key = String.downcase(key)
@@ -2822,6 +2895,35 @@ defmodule WraftDoc.Document do
   end
 
   def instance_index(_, _, _), do: nil
+
+  @doc """
+  Function to list and paginate instance approval system under  an user
+  """
+  def instance_approval_system_index(<<_::288>> = user_id, params) do
+    query =
+      from(ias in InstanceApprovalSystem,
+        join: as in ApprovalSystem,
+        on: as.id == ias.approval_system_id,
+        where: ias.flag == false,
+        where: as.approver_id == ^user_id,
+        preload: [:instance, :approval_system]
+      )
+
+    Repo.paginate(query, params)
+  end
+
+  def instance_approval_system_index(%User{} = current_user, params) do
+    query =
+      from(ias in InstanceApprovalSystem,
+        join: as in ApprovalSystem,
+        on: as.id == ias.approval_system_id,
+        where: ias.flag == false,
+        where: as.approver_id == ^current_user.id,
+        preload: [:instance, :approval_system]
+      )
+
+    Repo.paginate(query, params)
+  end
 
   @doc """
   Returns list of changes on a single version

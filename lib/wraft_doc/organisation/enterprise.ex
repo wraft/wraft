@@ -113,6 +113,27 @@ defmodule WraftDoc.Enterprise do
   def create_flow(_, _), do: {:error, :fake}
 
   @doc """
+  Funtion to align order of states under  a flow
+  ## Params
+  * current_user - User struct
+  * flow - Flow struct
+  * params - a map with states key
+  ## Example
+  iex(1)> params = %{"states"=> [%{"id"=> "262sda-sdf5-dsf55-ddfs","order"=>1},%{"id"=>"12sd66-6d211f-1261d2f","order"=> 2}]}
+  iex(2)> align_state(%User{},%Flow{},params)
+  iex(3)> %Flow{states: [%State{},%State{}]}
+  """
+  def align_states(current_user, flow, params) do
+    flow
+    |> Flow.align_order_changeset(params)
+    |> Spur.update(%{actor: current_user.id})
+    |> case do
+      {:ok, flow} -> flow
+      {:error, _} = changeset -> changeset
+    end
+  end
+
+  @doc """
   List of all flows.
   """
   @spec flow_index(User.t(), map) :: map
@@ -135,7 +156,7 @@ defmodule WraftDoc.Enterprise do
   @spec show_flow(binary, User.t()) :: Flow.t() | nil
   def show_flow(flow_id, user) do
     with %Flow{} = flow <- get_flow(flow_id, user) do
-      Repo.preload(flow, [:creator, :states])
+      Repo.preload(flow, [:creator, :states, :approval_systems])
     end
   end
 
@@ -496,7 +517,7 @@ defmodule WraftDoc.Enterprise do
   @spec create_approval_system(User.t(), map) ::
           ApprovalSystem.t() | {:error, Ecto.Changeset.t()}
   def create_approval_system(%User{organisation_id: organisation_id} = current_user, params) do
-    params = Map.put(params, "organisation_id", organisation_id)
+    params = Map.merge(params, %{"organisation_id" => organisation_id})
 
     current_user
     |> build_assoc(:approval_systems)
@@ -1105,6 +1126,18 @@ defmodule WraftDoc.Enterprise do
   end
 
   def get_pending_approvals(_, _), do: nil
+
+  def list_approval_systems(%User{organisation_id: org_id}, params) do
+    query =
+      from(as in ApprovalSystem,
+        join: f in Flow,
+        on: as.flow_id == f.id,
+        where: f.organisation_id == ^org_id,
+        preload: [:pre_state, :post_state, :approver, :flow]
+      )
+
+    Repo.paginate(query, params)
+  end
 
   def get_role(role \\ "admin")
 
