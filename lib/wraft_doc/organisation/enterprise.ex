@@ -156,7 +156,7 @@ defmodule WraftDoc.Enterprise do
   @spec show_flow(binary, User.t()) :: Flow.t() | nil
   def show_flow(flow_id, user) do
     with %Flow{} = flow <- get_flow(flow_id, user) do
-      Repo.preload(flow, [:creator, :states])
+      Repo.preload(flow, [:creator, :states, :approval_systems])
     end
   end
 
@@ -1126,6 +1126,18 @@ defmodule WraftDoc.Enterprise do
   end
 
   def get_pending_approvals(_, _), do: nil
+
+  def list_approval_systems(%User{organisation_id: org_id}, params) do
+    query =
+      from(as in ApprovalSystem,
+        join: f in Flow,
+        on: as.flow_id == f.id,
+        where: f.organisation_id == ^org_id,
+        preload: [:pre_state, :post_state, :approver, :flow]
+      )
+
+    Repo.paginate(query, params)
+  end
 
   def get_role(role \\ "admin")
 

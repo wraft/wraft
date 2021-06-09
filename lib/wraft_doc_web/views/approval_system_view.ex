@@ -56,7 +56,7 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemView do
     }
   end
 
-  def render("pending_approvals.json", %{
+  def render("index.json", %{
         approval_systems: approval_systems,
         page_number: page_number,
         page_size: page_size,
@@ -64,10 +64,8 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemView do
         total_entries: total_entries
       }) do
     %{
-      pending_approvals:
-        render_many(approval_systems, ApprovalSystemView, "approval_system.json",
-          as: :approval_system
-        ),
+      approval_systems:
+        render_many(approval_systems, ApprovalSystemView, "show.json", as: :approval_system),
       page_number: page_number,
       page_size: page_size,
       total_pages: total_pages,
