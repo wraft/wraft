@@ -74,15 +74,12 @@ defmodule WraftDocWeb.Api.V1.UserView do
   end
 
   def render("activity.json", %{activity: activity}) do
-    object_details = get_object_data(activity.object_struct, activity.meta)
-
     %{
       action: activity.action,
       object: activity.object,
       meta: activity.meta,
       inserted_at: activity.inserted_at,
-      actor: render_one(activity.actor, UserView, "user.json", as: :user),
-      object_details: object_details
+      actor: activity.actor
     }
   end
 
@@ -113,41 +110,41 @@ defmodule WraftDocWeb.Api.V1.UserView do
     }
   end
 
-  defp get_object_data(%{name: name, id: id}, _meta) do
-    %{
-      id: id,
-      name: name
-    }
-  end
+  # defp get_object_data(%{name: name, id: id}, _meta) do
+  #   %{
+  #     id: id,
+  #     name: name
+  #   }
+  # end
 
-  defp get_object_data(%{title: name, id: id}, _meta) do
-    %{
-      id: id,
-      name: name
-    }
-  end
+  # defp get_object_data(%{title: name, id: id}, _meta) do
+  #   %{
+  #     id: id,
+  #     name: name
+  #   }
+  # end
 
-  defp get_object_data(%{instance_id: name, id: id}, _meta) do
-    %{
-      id: id,
-      name: name
-    }
-  end
+  # defp get_object_data(%{instance_id: name, id: id}, _meta) do
+  #   %{
+  #     id: id,
+  #     name: name
+  #   }
+  # end
 
-  defp get_object_data(%{state: name, id: id}, _meta) do
-    %{
-      id: id,
-      name: name
-    }
-  end
+  # defp get_object_data(%{state: name, id: id}, _meta) do
+  #   %{
+  #     id: id,
+  #     name: name
+  #   }
+  # end
 
   # defp get_object_data(map) when is_map(map) do
   #   map
   # end
 
-  defp get_object_data(_, meta) do
-    Map.new(meta, fn {_, address} -> {:name, address} end)
-  end
+  # defp get_object_data(_, meta) do
+  #   Map.new(meta, fn {_, address} -> {:name, address} end)
+  # end
 
   def generate_url(%{profile_pic: pic} = profile) do
     WraftDocWeb.PropicUploader.url({pic, profile})
