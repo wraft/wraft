@@ -116,20 +116,9 @@ defmodule WraftDocWeb.Api.V1.ResourceController do
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, params) do
-    with %{
-           entries: resources,
-           page_number: page_number,
-           total_pages: total_pages,
-           total_entries: total_entries
-         } <- Authorization.resource_index(params) do
-      render(conn, "index.json",
-        resources: resources,
-        page_number: page_number,
-        total_pages: total_pages,
-        total_entries: total_entries
-      )
-    end
+  def index(conn, _params) do
+    resources = Authorization.list_resources()
+    render(conn, "index.json", resources: resources)
   end
 
   @doc """

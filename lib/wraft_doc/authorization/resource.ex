@@ -7,12 +7,14 @@ defmodule WraftDoc.Authorization.Resource do
     field(:name, :string)
     field(:category, AtomType)
     field(:action, AtomType)
+    field(:label, :string)
     has_many(:permissions, WraftDoc.Authorization.Permission)
+    has_many(:roles, through: [:permissions, :role])
   end
 
   def changeset(%Resource{} = resource, attrs \\ %{}) do
     resource
-    |> cast(attrs, [:name, :category, :action])
+    |> cast(attrs, [:name, :category, :action, :label])
     |> validate_required([:category, :action])
     |> unique_constraint(:category,
       name: :resource_unique_index,

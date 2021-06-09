@@ -1,6 +1,7 @@
 defmodule WraftDocWeb.Api.V1.PermissionView do
   use WraftDocWeb, :view
   alias __MODULE__
+  alias WraftDocWeb.Api.V1.ResourceView
 
   def render("create.json", %{permission: permission}) do
     key = "#{permission.resource.category}_#{permission.resource.action}"
@@ -13,27 +14,28 @@ defmodule WraftDocWeb.Api.V1.PermissionView do
   end
 
   def render("index.json", %{
-        resources: resources,
-        page_number: page_number,
-        total_pages: total_pages,
-        total_entries: total_entries
+        permissions: permissions
       }) do
     %{
-      permissions: render_many(resources, PermissionView, "permission.json", as: :resource),
-      page_number: page_number,
-      total_pages: total_pages,
-      total_entries: total_entries
+      permissions: render_many(permissions, PermissionView, "permission.json", as: :permission)
     }
   end
 
-  def render("permission.json", %{resource: resource}) do
-    key = "#{resource.category}_#{resource.action}"
-
+  def render("permission.json", %{permission: permission}) do
     %{
-      "#{key}":
-        render_many(resource.permissions, PermissionView, "permission_role.json", as: :permission)
+      "#{permission.label}":
+        render_many(permission.resources, ResourceView, "show.json", as: :resource)
     }
   end
+
+  # def render("permission.json", %{resource: resource}) do
+  #   key = "#{resource.category}_#{resource.action}"
+
+  #   %{
+  #     "#{key}":
+  #       render_many(resource.permissions, PermissionView, "permission_role.json", as: :permission)
+  #   }
+  # end
 
   def render("permission_role.json", %{permission: permission}) do
     %{
