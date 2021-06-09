@@ -128,20 +128,10 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, params) do
-    with %{
-           entries: resources,
-           page_number: page_number,
-           total_pages: total_pages,
-           total_entries: total_entries
-         } <- Authorization.permission_index(params) do
-      render(conn, "index.json",
-        resources: resources,
-        page_number: page_number,
-        total_pages: total_pages,
-        total_entries: total_entries
-      )
-    end
+  def index(conn, _params) do
+    current_user = conn.assigns.current_user
+    permissions = Authorization.list_permissions(current_user)
+    render(conn, "index.json", permissions: permissions)
   end
 
   @doc """

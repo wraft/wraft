@@ -412,7 +412,8 @@ File.stream!("priv/repo/data/super_resources.csv")
   comeon_resource(%Resource{
     name: function <> "_" <> controller,
     category: String.to_atom("Elixir." <> x["category"]),
-    action: String.to_atom(function)
+    action: String.to_atom(function),
+    label: controller
   })
 end)
 
@@ -431,7 +432,8 @@ File.stream!("priv/repo/data/resources.csv")
     comeon_resource(%Resource{
       name: function <> "_" <> controller,
       category: String.to_atom("Elixir." <> x["category"]),
-      action: String.to_atom(function)
+      action: String.to_atom(function),
+      label: controller
     })
 
   allow_once(%Permission{role_id: role_admin.id, resource_id: resource_id},
@@ -455,7 +457,8 @@ File.stream!("priv/repo/data/user_resources.csv")
     comeon_resource(%Resource{
       name: function <> "_" <> controller,
       category: String.to_atom("Elixir." <> x["category"]),
-      action: String.to_atom(function)
+      action: String.to_atom(function),
+      label: controller
     })
 
   allow_once(%Permission{role_id: role_user.id, resource_id: resource_id},

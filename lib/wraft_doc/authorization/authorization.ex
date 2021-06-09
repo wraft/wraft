@@ -3,7 +3,14 @@ defmodule WraftDoc.Authorization do
   Module that handles the repo connections of the authorization context.
   """
   import Ecto.Query
-  alias WraftDoc.{Authorization.Permission, Authorization.Resource, Repo}
+
+  alias WraftDoc.{
+    Account.Role,
+    Account.User,
+    Authorization.Permission,
+    Authorization.Resource,
+    Repo
+  }
 
   @doc """
   Create a resource.
@@ -21,6 +28,13 @@ defmodule WraftDoc.Authorization do
     query = from(r in Resource, order_by: [asc: r.category])
 
     Repo.paginate(query, params)
+  end
+
+  def list_resources do
+    Resource
+    |> Repo.all()
+    |> Enum.group_by(fn x -> x.label end)
+    |> Enum.map(fn {k, v} -> %{label: k, resources: v} end)
   end
 
   @doc """
@@ -80,6 +94,24 @@ defmodule WraftDoc.Authorization do
     query = from(r in Resource, order_by: [asc: r.category], preload: [{:permissions, :role}])
 
     Repo.paginate(query, params)
+  end
+
+  def list_permissions(%User{organisation_id: organisation_id}) do
+    query =
+      from(r in Resource,
+        join: p in Permission,
+        on: p.resource_id == r.id,
+        join: ro in Role,
+        on: p.role_id == ro.id,
+        where: ro.organisation_id == ^organisation_id,
+        or_where: ro.name == "admin",
+        preload: [:roles]
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.group_by(fn x -> x.label end)
+    |> Enum.map(fn {k, v} -> %{label: k, resources: v} end)
   end
 
   @doc """
