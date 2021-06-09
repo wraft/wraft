@@ -8,7 +8,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
     %{
       id: c_type.id,
       name: c_type.name,
-      decription: c_type.description,
+      description: c_type.description,
       fields: render_many(c_type.fields, ContentTypeView, "field.json", as: :field),
       color: c_type.color,
       prefix: c_type.prefix,
@@ -23,7 +23,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
     %{
       id: c_type.id,
       name: c_type.name,
-      decription: c_type.description,
+      description: c_type.description,
       color: c_type.color,
       prefix: c_type.prefix,
       inserted_at: c_type.inserted_at,
@@ -35,7 +35,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
     %{
       id: content_type.id,
       name: content_type.name,
-      decription: content_type.description,
+      description: content_type.description,
       color: content_type.color,
       prefix: content_type.prefix,
       inserted_at: content_type.inserted_at,
@@ -71,7 +71,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
     %{
       id: c_type.id,
       name: c_type.name,
-      decription: c_type.description,
+      description: c_type.description,
       color: c_type.color,
       prefix: c_type.prefix,
       inserted_at: c_type.inserted_at,
@@ -83,7 +83,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
     %{
       id: c_type.id,
       name: c_type.name,
-      decription: c_type.description,
+      description: c_type.description,
       color: c_type.color,
       prefix: c_type.prefix,
       inserted_at: c_type.inserted_at,
@@ -96,7 +96,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
     %{
       id: c_type.id,
       name: c_type.name,
-      decription: c_type.description,
+      description: c_type.description,
       fields: render_many(c_type.fields, ContentTypeView, "field.json", as: :field),
       color: c_type.color,
       prefix: c_type.prefix,
@@ -109,7 +109,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
     %{
       id: c_type.id,
       name: c_type.name,
-      decription: c_type.description,
+      description: c_type.description,
       fields: render_many(c_type.fields, ContentTypeView, "field.json", as: :field),
       color: c_type.color,
       prefix: c_type.prefix,
