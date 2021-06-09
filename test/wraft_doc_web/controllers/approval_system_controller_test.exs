@@ -244,35 +244,34 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
   #   assert json_response(conn, 404) == "Not Found"
   # end
 
-  # describe "pending_approvals" do
-  #   test "lists all pending approval systems to approve", %{conn: conn} do
-  #     user = conn.assigns.current_user
-  #     flow = insert(:flow, creator: user, organisation: user.organisation)
-  #     s1 = insert(:state, order: 1, flow: flow)
-  #     s2 = insert(:state, order: 2, flow: flow)
+  describe "index/2" do
+    test "lists all approval systems in organisation", %{conn: conn} do
+      user = conn.assigns.current_user
+      flow = insert(:flow, creator: user, organisation: user.organisation)
+      s1 = insert(:state, order: 1, flow: flow)
+      s2 = insert(:state, order: 2, flow: flow)
 
-  #     insert(:approval_system,
-  #       pre_state: s1,
-  #       post_state: s2,
-  #       approved: false,
-  #       approver: user,
-  #       organisation: user.organisation
-  #     )
+      insert(:approval_system,
+        pre_state: s1,
+        post_state: s2,
+        approver: user,
+        flow: flow
+      )
 
-  #     conn =
-  #       build_conn()
-  #       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-  #       |> assign(:current_user, conn.assigns.current_user)
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, conn.assigns.current_user)
 
-  #     conn = get(conn, Routes.v1_approval_system_path(conn, :index), page: 1)
+      conn = get(conn, Routes.v1_approval_system_path(conn, :index), page: 1)
 
-  #     pending_approvals =
-  #       conn
-  #       |> json_response(200)
-  #       |> get_in(["pending_approvals"])
-  #       |> Enum.map(fn x -> x["pre_state"]["state"] end)
+      approval_systems =
+        conn
+        |> json_response(200)
+        |> get_in(["approval_systems"])
+        |> Enum.map(fn x -> x["pre_state"]["state"] end)
 
-  #     assert to_string(pending_approvals) =~ s1.state
-  #   end
-  # end
+      assert to_string(approval_systems) =~ s1.state
+    end
+  end
 end

@@ -11,16 +11,16 @@ defmodule WraftDoc.Document.InstanceApprovalSystem do
 
   schema "instance_approval_system" do
     field(:flag, :boolean, default: false)
-    field(:order, :integer)
     field(:approved_at, :naive_datetime)
     belongs_to(:instance, WraftDoc.Document.Instance)
     belongs_to(:approval_system, WraftDoc.Enterprise.ApprovalSystem)
+    has_one(:approver, through: [:approval_system, :approver])
   end
 
   def changeset(instance_approval_system, attrs) do
     instance_approval_system
-    |> cast(attrs, [:order, :instance_id, :approval_system_id])
-    |> validate_required([:order, :instance_id, :approval_system_id])
+    |> cast(attrs, [:instance_id, :approval_system_id])
+    |> validate_required([:instance_id, :approval_system_id])
   end
 
   def update_changeset(instance_approval_system, attrs) do

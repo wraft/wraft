@@ -5,7 +5,7 @@ defmodule WraftDoc.Enterprise.Flow do
   use WraftDoc.Schema
 
   alias __MODULE__
-  alias WraftDoc.Account.User
+  alias WraftDoc.{Account.User, Repo}
   import Ecto.Query
   @derive {Jason.Encoder, only: [:name]}
   defimpl Spur.Trackable, for: Flow do
@@ -24,7 +24,7 @@ defmodule WraftDoc.Enterprise.Flow do
     field(:control_data, :map)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-    has_many(:states, WraftDoc.Enterprise.Flow.State)
+    has_many(:states, WraftDoc.Enterprise.Flow.State, preload_order: [asc: :order])
     has_many(:approval_systems, WraftDoc.Enterprise.ApprovalSystem)
     timestamps()
   end
@@ -68,4 +68,22 @@ defmodule WraftDoc.Enterprise.Flow do
       name: :flow_organisation_unique_index
     )
   end
+
+  def align_order_changeset(flow, attrs \\ %{}) do
+    flow
+    |> cast(attrs, [])
+    |> cast_assoc(:states, with: &Flow.State.order_update_changeset/2)
+  end
+
+  @doc """
+  Function to return initial state of a flow
+  """
+
+  def initial_state(%Flow{} = flow) do
+    with %Flow{states: states} <- Repo.preload(flow, :states) do
+      Enum.min_by(states, fn x -> x.order end)
+    end
+  end
+
+  def initial_state(_), do: nil
 end
