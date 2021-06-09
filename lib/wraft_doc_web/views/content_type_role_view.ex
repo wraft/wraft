@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleView do
     %{
       id: content_type_role.id,
       name: content_type_role.name,
-      decription: content_type_role.description,
+      description: content_type_role.description,
       color: content_type_role.color,
       prefix: content_type_role.prefix,
       role: render_many(content_type_role.roles, RoleView, "role.json", as: :role)
