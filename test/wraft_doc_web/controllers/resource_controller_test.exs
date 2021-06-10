@@ -48,7 +48,7 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
       |> doc(operation_id: "create_resource")
 
     assert count_before + 1 == Resource |> Repo.all() |> length()
-    assert json_response(conn, 200)["category"] == @valid_attrs.category
+    assert json_response(conn, 200)["action"] == @valid_attrs.action
   end
 
   test "does not create resources by invalid attrs", %{conn: conn} do
@@ -83,7 +83,7 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
       |> put(Routes.v1_resource_path(conn, :update, resource.id, @valid_attrs))
       |> doc(operation_id: "update_resource")
 
-    assert json_response(conn, 200)["category"] == @valid_attrs.category
+    assert json_response(conn, 200)["action"] == @valid_attrs.action
     assert count_before == Resource |> Repo.all() |> length()
   end
 
@@ -103,11 +103,12 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
     assert json_response(conn, 422)["errors"]["category"] == ["can't be blank"]
   end
 
+  @label "flow"
   test "index lists assests by current user", %{conn: conn} do
     user = conn.assigns.current_user
 
-    a1 = insert(:resource)
-    a2 = insert(:resource)
+    a1 = insert(:resource, label: @label)
+    a2 = insert(:resource, label: @label)
 
     conn =
       build_conn()
@@ -115,10 +116,11 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
       |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_resource_path(conn, :index))
-    resources_index = json_response(conn, 200)["resources"]
-    resources = Enum.map(resources_index, fn %{"category" => category} -> category end)
-    assert List.to_string(resources) =~ to_string(a1.category)
-    assert List.to_string(resources) =~ to_string(a2.category)
+    resources_index = List.first(json_response(conn, 200)["resources"])
+
+    resources = Enum.map(resources_index["flow"], fn %{"action" => action} -> action end)
+    assert List.to_string(resources) =~ to_string(a1.action)
+    assert List.to_string(resources) =~ to_string(a2.action)
   end
 
   test "show renders resource details by id", %{conn: conn} do
@@ -131,7 +133,7 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
 
     conn = get(conn, Routes.v1_resource_path(conn, :show, resource.id))
 
-    assert json_response(conn, 200)["category"] == to_string(resource.category)
+    assert json_response(conn, 200)["action"] == to_string(resource.action)
   end
 
   test "error not found for id does not exists", %{conn: conn} do
@@ -155,6 +157,6 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
 
     conn = delete(conn, Routes.v1_resource_path(conn, :delete, resource.id))
     assert count_before - 1 == Resource |> Repo.all() |> length()
-    assert json_response(conn, 200)["category"] == to_string(resource.category)
+    assert json_response(conn, 200)["action"] == to_string(resource.action)
   end
 end
