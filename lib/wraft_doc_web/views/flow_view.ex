@@ -27,7 +27,7 @@ defmodule WraftDocWeb.Api.V1.FlowView do
       creator: render_one(flow.creator, UserView, "user.json", as: :user),
       states: render_many(flow.states, StateView, "create.json", as: :state),
       approval_systems:
-        render_many(flow.approval_systems, ApprovalSystemView, "approval_system.json",
+        render_many(flow.approval_systems, ApprovalSystemView, "flow_approval_system.json",
           as: :approval_system
         )
     }

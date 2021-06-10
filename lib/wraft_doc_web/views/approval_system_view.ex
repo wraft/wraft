@@ -14,6 +14,16 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemView do
     }
   end
 
+  def render("flow_approval_system.json", %{approval_system: approval_system}) do
+    %{
+      approval_system:
+        render_one(approval_system, __MODULE__, "approval_system.json", as: :approval_system),
+      pre_state: render_one(approval_system.pre_state, StateView, "create.json", as: :state),
+      post_state: render_one(approval_system.post_state, StateView, "create.json", as: :state),
+      approver: render_one(approval_system.approver, UserView, "user.json", as: :user)
+    }
+  end
+
   def render("state_approval_system.json", %{approval_system: approval_system}) do
     %{
       approval_system:
