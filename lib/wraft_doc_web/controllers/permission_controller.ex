@@ -79,10 +79,7 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
                   }
                 ]
               }
-            ],
-            page_number: 1,
-            total_pages: 2,
-            total_entries: 15
+            ]
           })
         end
     }
@@ -119,8 +116,6 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
     get("/permissions")
     summary("Permission index")
     description("API to get the list of all permissions created so far")
-
-    parameter(:page, :query, :string, "Page number")
 
     response(200, "Ok", Schema.ref(:PermissionIndex))
     response(401, "Unauthorized", Schema.ref(:Error))

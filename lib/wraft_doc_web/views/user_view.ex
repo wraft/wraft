@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
   View module for user controller.
   """
   use WraftDocWeb, :view
-  alias WraftDocWeb.Api.V1.{InstanceApprovalSystemView, RegistrationView}
+  alias WraftDocWeb.Api.V1.{InstanceApprovalSystemView, ProfileView, RegistrationView}
   alias __MODULE__
 
   def render("sign-in.json", %{token: token, user: user}) do
@@ -100,7 +100,8 @@ defmodule WraftDocWeb.Api.V1.UserView do
       object: activity.object,
       meta: activity.meta,
       inserted_at: activity.inserted_at,
-      actor: activity.actor
+      actor: render_one(activity.actor, __MODULE__, "user.json", as: :user),
+      actor_profile: render_one(activity.profile, ProfileView, "base_profile.json", as: :profile)
     }
   end
 

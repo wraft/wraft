@@ -49,9 +49,6 @@ defmodule WraftDocWeb.Api.V1.ResourceController do
         swagger_schema do
           properties do
             resources(Schema.ref(:Resources))
-            page_number(:integer, "Page number")
-            total_pages(:integer, "Total number of pages")
-            total_entries(:integer, "Total number of contents")
           end
 
           example(%{
@@ -66,10 +63,7 @@ defmodule WraftDocWeb.Api.V1.ResourceController do
                 category: "Flow",
                 action: "update"
               }
-            ],
-            page_number: 1,
-            total_pages: 2,
-            total_entries: 15
+            ]
           })
         end
     }
@@ -107,8 +101,6 @@ defmodule WraftDocWeb.Api.V1.ResourceController do
     get("/resources")
     summary("Resource index")
     description("API to get the list of all resources created so far")
-
-    parameter(:page, :query, :string, "Page number")
 
     response(200, "Ok", Schema.ref(:ResourceIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
