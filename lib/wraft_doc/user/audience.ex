@@ -7,6 +7,6 @@ defmodule WraftDoc.Account.User.Audience do
 
   schema "audience" do
     belongs_to(:user, User)
-    belongs_to(:activity, Spur.Activity)
+    belongs_to(:activity, WraftDoc.Account.Activity)
   end
 end

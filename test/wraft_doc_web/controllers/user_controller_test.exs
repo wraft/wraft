@@ -320,6 +320,29 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     end
   end
 
+  describe "activities" do
+    test "list all audible activities for  current user ", %{conn: conn} do
+      user = conn.assigns[:current_user]
+      insert(:membership, organisation: user.organisation)
+      insert(:profile, name: user.name)
+      a1 = insert(:activity, actor: user.id)
+      a2 = insert(:activity, actor: user.id)
+      insert(:audience, activity: a1, user: user)
+      insert(:audience, activity: a2, user: user)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, user)
+
+      conn = get(conn, Routes.v1_user_path(conn, :activity, %{}))
+      assert List.first(json_response(conn, 200)["activities"])["actor"]["email"] == user.email
+
+      assert List.first(json_response(conn, 200)["activities"])["actor_profile"]["name"] ==
+               user.name
+    end
+  end
+
   # describe "search/2" do
   #   test "search user api filter by there name", %{conn: conn} do
   #     conn =

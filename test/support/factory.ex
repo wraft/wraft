@@ -5,11 +5,13 @@ defmodule WraftDoc.Factory do
   use ExMachina.Ecto, repo: WraftDoc.Repo
 
   alias WraftDoc.{
+    Account.Activity,
     Account.AuthToken,
     Account.Country,
     Account.Profile,
     Account.Role,
     Account.User,
+    Account.User.Audience,
     Account.UserRole,
     Authorization.Permission,
     Authorization.Resource,
@@ -451,6 +453,23 @@ defmodule WraftDoc.Factory do
       flag: false,
       instance: build(:instance),
       approval_system: build(:approval_system)
+    }
+  end
+
+  def activity_factory do
+    %Activity{
+      action: sequence(:activity, &"Activity#{&1}"),
+      actor: "6122-d5sf-15sdf1-2s56df",
+      object: sequence(:object, &"Object#{&1}"),
+      target: sequence(:target, &"Target#{&1}"),
+      inserted_at: Timex.now()
+    }
+  end
+
+  def audience_factory do
+    %Audience{
+      activity: build(:activity),
+      user: build(:user)
     }
   end
 end

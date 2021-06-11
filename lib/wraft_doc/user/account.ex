@@ -365,7 +365,17 @@ defmodule WraftDoc.Account do
         }
       )
 
-    Repo.paginate(query, params)
+    query
+    |> Repo.all()
+    |> Enum.map(fn x ->
+      actor = get_user(x.actor)
+      profile = Repo.get_by!(Profile, user_id: x.actor)
+
+      x
+      |> Map.put(:actor, actor)
+      |> Map.put(:profile, profile)
+    end)
+    |> Scrivener.paginate(params)
   end
 
   @doc """
