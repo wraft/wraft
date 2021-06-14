@@ -303,6 +303,19 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             ins: ["testing version succesufll"],
             del: ["testing version"]
           })
+        end,
+      BuildRequest:
+        swagger_schema do
+          title("Build request")
+          description("Request to build a document")
+
+          properties do
+            naration(:string, "Naration for this version")
+          end
+
+          example(%{
+            naration: "New year edition"
+          })
         end
     }
   end
@@ -503,6 +516,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     parameters do
       id(:path, :string, "instance id", required: true)
+      version(:body, Schema.ref(:BuildRequest), "Params for version")
     end
 
     response(200, "Ok", Schema.ref(:Content))
@@ -512,7 +526,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec build(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def build(conn, %{"id" => instance_id}) do
+  def build(conn, %{"id" => instance_id} = params) do
     current_user = conn.assigns[:current_user]
     start_time = Timex.now()
 
@@ -530,7 +544,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             })
           end)
 
-          handle_response(conn, exit_code, instance)
+          handle_response(conn, exit_code, instance, params)
         end
 
       _ ->
@@ -538,9 +552,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
-  defp handle_response(conn, exit_code, instance) do
+  defp handle_response(conn, exit_code, instance, params) do
     case exit_code do
       0 ->
+        Task.start_link(fn ->
+          Document.create_version(conn.assigns.current_user, instance, params)
+        end)
+
         render(conn, "instance.json", instance: instance)
 
       _ ->
