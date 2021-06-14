@@ -12,9 +12,11 @@ defmodule WraftDoc.Document.InstanceApprovalSystem do
   schema "instance_approval_system" do
     field(:flag, :boolean, default: false)
     field(:approved_at, :naive_datetime)
+    field(:rejected_at, :naive_datetime)
     belongs_to(:instance, WraftDoc.Document.Instance)
     belongs_to(:approval_system, WraftDoc.Enterprise.ApprovalSystem)
     has_one(:approver, through: [:approval_system, :approver])
+    timestamps()
   end
 
   def changeset(instance_approval_system, attrs) do
@@ -25,7 +27,7 @@ defmodule WraftDoc.Document.InstanceApprovalSystem do
 
   def update_changeset(instance_approval_system, attrs) do
     instance_approval_system
-    |> cast(attrs, [:flag, :approved_at])
-    |> validate_required([:flag, :approved_at])
+    |> cast(attrs, [:flag, :approved_at, :rejected_at])
+    |> validate_required([:flag])
   end
 end
