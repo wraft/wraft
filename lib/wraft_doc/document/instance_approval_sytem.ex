@@ -27,7 +27,7 @@ defmodule WraftDoc.Document.InstanceApprovalSystem do
 
   def update_changeset(instance_approval_system, attrs) do
     instance_approval_system
-    |> cast(attrs, [:flag, :approved_at])
-    |> validate_required([:flag, :approved_at])
+    |> cast(attrs, [:flag, :approved_at, :rejected_at])
+    |> validate_required([:flag])
   end
 end
