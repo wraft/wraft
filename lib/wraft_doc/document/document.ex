@@ -481,7 +481,7 @@ defmodule WraftDoc.Document do
     |> case do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
-        Task.start_link(fn -> create_initial_version(current_user, content) end)
+
         create_instance_approval_systems(c_type, content)
 
         Repo.preload(content, [:content_type, :state, :vendor, :instance_approval_systems])
@@ -876,7 +876,7 @@ defmodule WraftDoc.Document do
           | {:error, Ecto.Changeset.t()}
   def update_instance(
         %Instance{editable: true} = old_instance,
-        %User{id: id} = current_user,
+        %User{id: id},
         params
       ) do
     old_instance
@@ -884,26 +884,15 @@ defmodule WraftDoc.Document do
     |> Spur.update(%{actor: "#{id}"})
     |> case do
       {:ok, instance} ->
-        case create_version(current_user, old_instance, instance, params) do
-          {:ok, _version} ->
-            instance
-            |> Repo.preload([
-              :creator,
-              {:content_type, :layout},
-              {:versions, :author},
-              {:instance_approval_systems, :approver},
-              state: [approval_system: [:post_state, :approver]]
-            ])
-            |> get_built_document()
-
-          {:error, _} = changeset ->
-            changeset
-
-          _ ->
-            instance
-            |> Repo.preload([:creator, [{:content_type, :layout}], :state, [{:versions, :author}]])
-            |> get_built_document()
-        end
+        instance
+        |> Repo.preload([
+          :creator,
+          {:content_type, :layout},
+          {:versions, :author},
+          {:instance_approval_systems, :approver},
+          state: [approval_system: [:post_state, :approver]]
+        ])
+        |> get_built_document()
 
       {:error, _} = changeset ->
         changeset
@@ -925,57 +914,57 @@ defmodule WraftDoc.Document do
   # be in the content.
   # A new version is added only if there is any difference in either the
   # raw or serialized fields of the instances.
-  @spec create_version(User.t(), Instance.t(), Instance.t(), map()) ::
-          {:ok, Version.t()} | {:error, Ecto.Changeset.t()}
-  defp create_version(current_user, old_instance, new_instance, params) do
-    case instance_updated?(old_instance, new_instance) do
-      true ->
-        params = create_version_params(old_instance, params)
+  # @spec create_version(User.t(), Instance.t(), Instance.t(), map()) ::
+  #         {:ok, Version.t()} | {:error, Ecto.Changeset.t()}
+  # defp create_version(current_user, old_instance, new_instance, params) do
+  #   case instance_updated?(old_instance, new_instance) do
+  #     true ->
+  #       params = create_version_params(old_instance, params)
 
-        current_user
-        |> build_assoc(:instance_versions, content: old_instance)
-        |> Version.changeset(params)
-        |> Spur.insert()
+  #       current_user
+  #       |> build_assoc(:instance_versions, content: old_instance)
+  #       |> Version.changeset(params)
+  #       |> Spur.insert()
 
-      false ->
-        nil
-    end
-  end
+  #     false ->
+  #       nil
+  #   end
+  # end
 
   # Create the params to create a new version.
-  @spec create_version_params(Instance.t(), map()) :: map
-  defp create_version_params(%Instance{id: id} = instance, params) do
-    query =
-      from(v in Version,
-        where: v.content_id == ^id,
-        order_by: [desc: v.inserted_at],
-        limit: 1,
-        select: v.version_number
-      )
+  # @spec create_version_params(Instance.t(), map()) :: map
+  # defp create_version_params(%Instance{id: id} = instance, params) do
+  #   query =
+  #     from(v in Version,
+  #       where: v.content_id == ^id,
+  #       order_by: [desc: v.inserted_at],
+  #       limit: 1,
+  #       select: v.version_number
+  #     )
 
-    version =
-      query
-      |> Repo.one()
-      |> case do
-        nil ->
-          1
+  #   version =
+  #     query
+  #     |> Repo.one()
+  #     |> case do
+  #       nil ->
+  #         1
 
-        version ->
-          version + 1
-      end
+  #       version ->
+  #         version + 1
+  #     end
 
-    naration = params["naration"] || "Version-#{version / 10}"
-    instance |> Map.from_struct() |> Map.merge(%{version_number: version, naration: naration})
-  end
+  #   naration = params["naration"] || "Version-#{version / 10}"
+  #   instance |> Map.from_struct() |> Map.merge(%{version_number: version, naration: naration})
+  # end
 
   # Checks whether the raw and serialzed of old and new instances are same or not.
   # If they are both the same, returns false, else returns true
-  @spec instance_updated?(Instance.t(), Instance.t()) :: boolean
-  defp instance_updated?(%{raw: o_raw, serialized: o_map}, %{raw: n_raw, serialized: n_map}) do
-    !(o_raw === n_raw && o_map === n_map)
-  end
+  # @spec instance_updated?(Instance.t(), Instance.t()) :: boolean
+  # defp instance_updated?(%{raw: o_raw, serialized: o_map}, %{raw: n_raw, serialized: n_map}) do
+  #   !(o_raw === n_raw && o_map === n_map)
+  # end
 
-  defp instance_updated?(_old_instance, _new_instance), do: true
+  # defp instance_updated?(_old_instance, _new_instance), do: true
 
   @doc """
   Update instance's state if the flow IDs of both
