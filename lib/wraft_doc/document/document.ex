@@ -639,8 +639,9 @@ defmodule WraftDoc.Document do
         %User{id: user_id},
         %Instance{
           state: %State{
-            approval_system: %ApprovalSystem{approver: %User{id: user_id}} = approval_system,
-            rejection_system: %ApprovalSystem{pre_state: pre_state}
+            rejection_system:
+              %ApprovalSystem{approver: %User{id: user_id}, pre_state: pre_state} =
+                approval_system
           }
         } = instance
       ) do
@@ -814,7 +815,10 @@ defmodule WraftDoc.Document do
         {:content_type, :layout},
         {:versions, :author},
         {:instance_approval_systems, :approver},
-        state: [approval_system: [:post_state, :approver], rejection_system: [:pre_state]]
+        state: [
+          approval_system: [:post_state, :approver],
+          rejection_system: [:pre_state, :approver]
+        ]
       ])
       |> get_built_document()
     end

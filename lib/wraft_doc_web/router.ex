@@ -162,6 +162,7 @@ defmodule WraftDocWeb.Router do
       get("/contents/:id/change/:v_id", InstanceController, :change)
       # Approve a document
       put("/contents/:id/approve", InstanceController, :approve)
+      put("/contents/:id/reject", InstanceController, :reject)
       # Organisations
       scope "/organisations" do
         resources("/", OrganisationController, only: [:create, :update, :show, :delete])
@@ -210,7 +211,7 @@ defmodule WraftDocWeb.Router do
 
       resources("/organisation-fields", OrganisationFieldController, except: [:new, :edit])
 
-      post("/approval_systems/:id/approve", ApprovalSystemController, :approve)
+      # post("/approval_systems/:id/approve", ApprovalSystemController, :approve)
 
       scope "/pipelines" do
         # Pipeline
