@@ -10,6 +10,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemView do
       id: instance_approval_system.id,
       flag: instance_approval_system.flag,
       approved_at: instance_approval_system.approved_at,
+      rejected_at: instance_approval_system.rejected_at,
       instance_id: instance_approval_system.instance_id,
       approval_system_id: instance_approval_system.approval_system_id
     }

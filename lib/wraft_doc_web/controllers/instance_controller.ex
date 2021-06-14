@@ -51,15 +51,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           properties do
             raw(:string, "Content raw data", required: true)
             serialized(:string, "Content serialized data")
-            state_id(:string, "state id", required: true)
-            vendor_id(:string, "Vendor id", required: true)
           end
 
           example(%{
             raw: "Content data",
-            serialized: %{title: "Title of the content", body: "Body of the content"},
-            state_id: "kjb12389k23eyg",
-            vendor_id: "15dsdf-s5d1f-1d51f-1sfd15-1s5df"
+            serialized: %{title: "Title of the content", body: "Body of the content"}
           })
         end,
       ContentUpdateRequest:

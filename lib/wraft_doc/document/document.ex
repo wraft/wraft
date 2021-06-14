@@ -537,6 +537,7 @@ defmodule WraftDoc.Document do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
         Task.start_link(fn -> create_initial_version(current_user, content) end)
+
         create_instance_approval_systems(c_type, content)
 
         Repo.preload(content, [
@@ -562,6 +563,16 @@ defmodule WraftDoc.Document do
     with %ContentType{flow: %Flow{approval_systems: approval_systems}} <-
            Repo.preload(content_type, [{:flow, :approval_systems}]) do
       Enum.each(approval_systems, fn x ->
+        # Task.start_link(fn ->
+        #   Notifications.create_notification(
+        #    %{"recipient_id" x.approver_id,
+        #    "actor_id"=> content.creator_id,
+        #     "assigned_as_approver",
+        #     x.id,
+        #     ApprovalSystem
+        #   )
+        # end)
+
         create_instance_approval_system(%{
           instance_id: content.id,
           approval_system_id: x.id
@@ -604,14 +615,13 @@ defmodule WraftDoc.Document do
     |> Repo.update()
     |> case do
       {:ok, instance} ->
-        Task.start_link(fn ->
-          update_instance_approval_system(instance, approval_system, %{
-            flag: true,
-            approved_at: Timex.now()
-          })
-        end)
+        update_instance_approval_system(instance, approval_system, %{
+          flag: true,
+          approved_at: Timex.now()
+        })
 
-        instance = Repo.unpreload(instance, :state)
+        instance =
+          instance |> Repo.unpreload(:state) |> Repo.unpreload(:instance_approval_systems)
 
         Repo.preload(instance, [
           :creator,
@@ -634,6 +644,7 @@ defmodule WraftDoc.Document do
   * User - User struct
   * Instance - instance struct
   """
+  # TODO-  Approval System log
   @spec reject_instance(User.t(), Instance.t()) :: Instance.t() | {:error, :no_permission}
   def reject_instance(
         %User{id: user_id},
@@ -650,14 +661,13 @@ defmodule WraftDoc.Document do
     |> Repo.update()
     |> case do
       {:ok, instance} ->
-        Task.start_link(fn ->
-          update_instance_approval_system(instance, approval_system, %{
-            flag: false,
-            rejected_at: Timex.now()
-          })
-        end)
+        update_instance_approval_system(instance, approval_system, %{
+          flag: false,
+          rejected_at: Timex.now()
+        })
 
-        instance = Repo.unpreload(instance, :state)
+        instance =
+          instance |> Repo.unpreload(:state) |> Repo.unpreload(:instance_approval_systems)
 
         Repo.preload(instance, [
           :creator,

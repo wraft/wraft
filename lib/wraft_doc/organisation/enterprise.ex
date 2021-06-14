@@ -17,7 +17,6 @@ defmodule WraftDoc.Enterprise do
     Enterprise.Organisation,
     Enterprise.Plan,
     Enterprise.Vendor,
-    Notifications,
     Repo
   }
 
@@ -529,16 +528,6 @@ defmodule WraftDoc.Enterprise do
     |> Spur.insert()
     |> case do
       {:ok, approval_system} ->
-        Task.start_link(fn ->
-          Notifications.create_notification(
-            approval_system.approver_id,
-            current_user.id,
-            "assigned_as_approver",
-            approval_system.id,
-            ApprovalSystem
-          )
-        end)
-
         approval_system_preload(approval_system)
 
       {:error, _} = changeset ->
