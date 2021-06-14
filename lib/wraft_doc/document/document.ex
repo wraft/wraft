@@ -582,6 +582,13 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
   end
 
+  @doc """
+  To approve an instance with associated approval systems
+  ## Parameters
+  * User - User struct
+  * Instance - instance struct
+  """
+  @spec approve_instance(User.t(), Instance.t()) :: Instance.t() | {:error, :no_permission}
   def approve_instance(
         %User{id: user_id},
         %Instance{
@@ -597,14 +604,14 @@ defmodule WraftDoc.Document do
     |> Repo.update()
     |> case do
       {:ok, instance} ->
-        Task.start_link(fn -> update_instance_approval_system(instance, approval_system) end)
-
-        instance =
-          Map.put(instance, :state, %Ecto.Association.NotLoaded{
-            __field__: :state,
-            __owner__: Instance.__struct__(),
-            __cardinality__: :one
+        Task.start_link(fn ->
+          update_instance_approval_system(instance, approval_system, %{
+            flag: true,
+            approved_at: Timex.now()
           })
+        end)
+
+        instance = Repo.unpreload(instance, :state)
 
         Repo.preload(instance, [
           :creator,
@@ -621,14 +628,59 @@ defmodule WraftDoc.Document do
 
   def approve_instance(_, _), do: {:error, :no_permission}
 
-  def update_instance_approval_system(instance, approval_system) do
+  @doc """
+  To reject an instance with associated approval systems
+  ## Parameters
+  * User - User struct
+  * Instance - instance struct
+  """
+  @spec reject_instance(User.t(), Instance.t()) :: Instance.t() | {:error, :no_permission}
+  def reject_instance(
+        %User{id: user_id},
+        %Instance{
+          state: %State{
+            approval_system: %ApprovalSystem{approver: %User{id: user_id}} = approval_system,
+            rejection_system: %ApprovalSystem{pre_state: pre_state}
+          }
+        } = instance
+      ) do
+    instance
+    |> Instance.update_state_changeset(%{state_id: pre_state.id})
+    |> Repo.update()
+    |> case do
+      {:ok, instance} ->
+        Task.start_link(fn ->
+          update_instance_approval_system(instance, approval_system, %{
+            flag: false,
+            rejected_at: Timex.now()
+          })
+        end)
+
+        instance = Repo.unpreload(instance, :state)
+
+        Repo.preload(instance, [
+          :creator,
+          {:content_type, :layout},
+          {:versions, :author},
+          {:instance_approval_systems, :approver},
+          state: [approval_system: [:post_state, :approver]]
+        ])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def reject_instance(_, _), do: {:error, :no_permission}
+
+  def update_instance_approval_system(instance, approval_system, params) do
     with %InstanceApprovalSystem{} = ias <-
            Repo.get_by(InstanceApprovalSystem,
              instance_id: instance.id,
              approval_system_id: approval_system.id
            ) do
       ias
-      |> InstanceApprovalSystem.update_changeset(%{flag: true, approved_at: Timex.now()})
+      |> InstanceApprovalSystem.update_changeset(params)
       |> Repo.update()
     end
   end
@@ -762,7 +814,7 @@ defmodule WraftDoc.Document do
         {:content_type, :layout},
         {:versions, :author},
         {:instance_approval_systems, :approver},
-        state: [approval_system: [:post_state, :approver]]
+        state: [approval_system: [:post_state, :approver], rejection_system: [:pre_state]]
       ])
       |> get_built_document()
     end
