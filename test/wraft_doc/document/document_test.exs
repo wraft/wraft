@@ -1928,4 +1928,20 @@ defmodule WraftDoc.DocumentTest do
       assert count_before + 2 == count_after
     end
   end
+
+  @tag :version
+  describe "create_version/3" do
+    test "create version for valid attrs" do
+      user = insert(:user)
+      instance = insert(:instance)
+      count_before = Version |> Repo.all() |> length()
+
+      {:ok, version} = Document.create_version(user, instance, %{naration: "New year edition"})
+
+      count_after = Version |> Repo.all() |> length()
+      assert count_before + 1 == count_after
+
+      assert version.content_id == instance.id
+    end
+  end
 end

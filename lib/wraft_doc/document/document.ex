@@ -921,10 +921,10 @@ defmodule WraftDoc.Document do
 
     case instance_updated?(old_instance, new_instance) do
       true ->
-        params = create_version_params(old_instance, params)
+        params = create_version_params(new_instance, params)
 
         current_user
-        |> build_assoc(:instance_versions, content: old_instance)
+        |> build_assoc(:instance_versions, content: new_instance)
         |> Version.changeset(params)
         |> Spur.insert()
 
@@ -967,6 +967,8 @@ defmodule WraftDoc.Document do
     naration = params["naration"] || "Version-#{version / 10}"
     instance |> Map.from_struct() |> Map.merge(%{version_number: version, naration: naration})
   end
+
+  defp create_version_params(_, params), do: params
 
   # Checks whether the raw and serialzed of old and new instances are same or not.
   # If they are both the same, returns false, else returns true
