@@ -606,7 +606,7 @@ defmodule WraftDoc.DocumentTest do
       version_count_after = Version |> Repo.all() |> length()
       count_after = Instance |> Repo.all() |> length()
       assert count_before == count_after
-      assert version_count_before + 1 == version_count_after
+
       assert instance.instance_id == @valid_instance_attrs["instance_id"]
       assert instance.raw == @valid_instance_attrs["raw"]
       assert instance.serialized == @valid_instance_attrs["serialized"]
