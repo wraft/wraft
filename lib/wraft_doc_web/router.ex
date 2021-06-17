@@ -169,6 +169,19 @@ defmodule WraftDocWeb.Router do
         get("/:id/members", OrganisationController, :members)
       end
 
+      # collection form api
+      get("/collection_forms/:id", CollectionFormController, :show)
+      post("/collection_forms", CollectionFormController, :create)
+      put("/collection_forms/:id", CollectionFormController, :update)
+      delete("/collection_forms/:id", CollectionFormController, :delete)
+
+      # collection form field api
+
+      get("/collection_fields/:id", CollectionFormFieldController, :show)
+      post("/collection_fields", CollectionFormFieldController, :create)
+      put("/collection_fields/:id", CollectionFormFieldController, :update)
+      delete("/collection_fields/:id", CollectionFormFieldController, :delete)
+
       resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
       # Update membership plan
       put("/memberships/:id", MembershipController, :update)

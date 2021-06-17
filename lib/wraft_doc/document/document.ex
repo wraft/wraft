@@ -11,6 +11,8 @@ defmodule WraftDoc.Document do
     Document.Asset,
     Document.Block,
     Document.BlockTemplate,
+    Document.CollectionForm,
+    Document.CollectionFormField,
     Document.Comment,
     Document.ContentType,
     Document.ContentTypeField,
@@ -3063,4 +3065,84 @@ defmodule WraftDoc.Document do
   end
 
   defp get_previous_version(_, _), do: nil
+
+  def get_collection_form_field(id) do
+    case Repo.get_by(CollectionFormField, id: id) do
+      %CollectionFormField{} = collection_form_field ->
+        collection_form_field
+
+      _ ->
+        {:error, :invalid_id, "CollectionFormField"}
+    end
+  end
+
+  def create_collection_form_field(params) do
+    %CollectionFormField{}
+    |> CollectionFormField.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, %CollectionFormField{} = collection_form} ->
+        collection_form
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
+  def update_collection_form_field(collection_form_field, params) do
+    collection_form_field
+    |> CollectionFormField.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, collection_form} ->
+        collection_form
+    end
+  end
+
+  def delete_collection_form_field(%CollectionFormField{} = collection_form_field) do
+    Repo.delete(collection_form_field)
+  end
+
+  def get_collection_form(id) do
+    case Repo.get_by(CollectionForm, id: id) do
+      %CollectionForm{} = collection_form ->
+        collection_form
+
+      _ ->
+        {:error, :invalid_id, "CollectionForm"}
+    end
+  end
+
+  def create_collection_form(params) do
+    %CollectionForm{}
+    |> CollectionForm.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, %CollectionForm{} = collection_form} ->
+        Repo.preload(collection_form, [:collection_form_fields])
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
+  def update_collection_form(collection_form, params) do
+    collection_form
+    |> CollectionForm.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, collection_form} ->
+        collection_form
+    end
+  end
+
+  def delete_collection_form(%CollectionForm{} = collection_form) do
+    Repo.delete(collection_form)
+  end
 end
