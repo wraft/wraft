@@ -7,6 +7,8 @@ alias WraftDoc.Document.ContentType
 alias WraftDoc.Document.ContentTypeRole
 alias WraftDoc.Document
 alias WraftDoc.Account.User
+alias WraftDoc.Document.CollectionForm
+alias WraftDoc.Document.CollectionFormField
 
 alias WraftDoc.{
   Account,
