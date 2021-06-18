@@ -15,7 +15,7 @@ defmodule WraftDocWeb.SessionController do
     with %User{} = user <- Account.admin_find(params["email"]),
          %User{} = user <- Account.authenticate_admin(%{user: user, password: params["password"]}) do
       conn
-      |> put_session(:admin_id, user.uuid)
+      |> put_session(:admin_id, user.id)
       |> put_flash(:info, "Signed in succesfully")
       |> redirect(to: kaffy_home_path(conn, :index))
     else

@@ -606,7 +606,7 @@ defmodule WraftDoc.DocumentTest do
       version_count_after = Version |> Repo.all() |> length()
       count_after = Instance |> Repo.all() |> length()
       assert count_before == count_after
-      assert version_count_before + 1 == version_count_after
+
       assert instance.instance_id == @valid_instance_attrs["instance_id"]
       assert instance.raw == @valid_instance_attrs["raw"]
       assert instance.serialized == @valid_instance_attrs["serialized"]
@@ -1926,6 +1926,22 @@ defmodule WraftDoc.DocumentTest do
       Document.create_instance_approval_systems(content_type, instance)
       count_after = InstanceApprovalSystem |> Repo.all() |> length()
       assert count_before + 2 == count_after
+    end
+  end
+
+  @tag :version
+  describe "create_version/3" do
+    test "create version for valid attrs" do
+      user = insert(:user)
+      instance = insert(:instance)
+      count_before = Version |> Repo.all() |> length()
+
+      {:ok, version} = Document.create_version(user, instance, %{naration: "New year edition"})
+
+      count_after = Version |> Repo.all() |> length()
+      assert count_before + 1 == count_after
+
+      assert version.content_id == instance.id
     end
   end
 end

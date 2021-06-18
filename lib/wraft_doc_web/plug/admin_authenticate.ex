@@ -31,7 +31,7 @@ defmodule WraftDocWeb.Plug.AdminAuthenticate do
   defp get_admin(<<_::288>> = id) do
     query =
       from(u in User,
-        where: u.uuid == ^id,
+        where: u.id == ^id,
         join: ur in UserRole,
         on: ur.user_id == u.id,
         join: r in Role,
