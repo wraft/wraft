@@ -35,22 +35,22 @@ defmodule WraftDocWeb.Plug.AddActionLogTest do
            }
   end
 
-  test "adds new log when an action is made by an unauthorized user" do
-    conn =
-      build_conn()
-      |> put_req_header("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)")
-      |> put_private(:phoenix_action, :test)
-      |> Map.put(:params, %{})
+  # test "adds new log when an action is made by an unauthorized user" do
+  #   conn =
+  #     build_conn()
+  #     |> put_req_header("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)")
+  #     |> put_private(:phoenix_action, :test)
+  #     |> Map.put(:params, %{})
 
-    count_before = ActionLog |> Repo.all() |> length
-    AddActionLog.call(conn, %{})
-    all_actions = Repo.all(ActionLog)
-    last_action = List.last(all_actions)
+  #   count_before = ActionLog |> Repo.all() |> length
+  #   AddActionLog.call(conn, %{})
+  #   all_actions = Repo.all(ActionLog)
+  #   last_action = List.last(all_actions)
 
-    assert count_before + 1 == length(all_actions)
-    assert last_action.action == "test"
-    assert last_action.request_path == "/"
-    assert last_action.user_id == nil
-    assert last_action.actor == %{}
-  end
+  #   assert count_before + 1 == length(all_actions)
+  #   assert last_action.action == "test"
+  #   assert last_action.request_path == "/"
+  #   assert last_action.user_id == nil
+  #   assert last_action.actor == %{}
+  # end
 end

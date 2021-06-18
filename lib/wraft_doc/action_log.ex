@@ -41,7 +41,16 @@ defmodule WraftDoc.ActionLog do
 
   def unauthorized_action_changeset(log, attrs \\ %{}) do
     log
-    |> cast(attrs, [:remote_ip, :actor_agent, :request_path, :request_method, :action, :params])
+    |> cast(attrs, [
+      :remote_ip,
+      :actor_agent,
+      :request_path,
+      :request_method,
+      :action,
+      :params,
+      :actor,
+      :user_id
+    ])
     |> validate_required([:remote_ip, :request_path, :request_method, :action])
   end
 end
