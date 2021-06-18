@@ -18,6 +18,8 @@ defmodule WraftDoc.Factory do
     Document.Asset,
     Document.Block,
     Document.BlockTemplate,
+    Document.CollectionForm,
+    Document.CollectionFormField,
     Document.Comment,
     Document.ContentType,
     Document.ContentTypeField,
@@ -470,6 +472,21 @@ defmodule WraftDoc.Factory do
     %Audience{
       activity: build(:activity),
       user: build(:user)
+    }
+  end
+
+  def collection_form_factory do
+    %CollectionForm{
+      title: "WraftDoc",
+      description: "WraftDoc Des"
+    }
+  end
+
+  def collection_form_field_factory do
+    %CollectionFormField{
+      name: "WraftDoc",
+      description: "WraftDoc des",
+      collection_form: build(:collection_form)
     }
   end
 end
