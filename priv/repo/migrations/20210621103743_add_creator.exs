@@ -13,6 +13,11 @@ defmodule WraftDoc.Repo.Migrations.AddCreator do
 
     alter table(:collection_form_field) do
       add(:meta, :jsonb)
+
+      add(
+        :field_type,
+        :string
+      )
     end
   end
 end

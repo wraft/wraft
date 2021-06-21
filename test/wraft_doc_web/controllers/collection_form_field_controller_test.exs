@@ -59,7 +59,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
     collection_form = insert(:collection_form)
     collection_form_id = collection_form.id
-    params = %{"name" => "collection form"}
+    params = %{"name" => "collection form", "field_type" => "string"}
     param = Map.put(params, "collection_form_id", collection_form_id)
 
     conn =
@@ -79,6 +79,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
     assert count_before + 1 == CollectionFormField |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == param["name"]
+    assert json_response(conn, 200)["field_type"] == param["field_type"]
   end
 
   test "create collection form field with invalid attrs", %{conn: conn} do
@@ -122,7 +123,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
     user = conn.assigns.current_user
 
-    param = %{name: "collection form field"}
+    param = %{name: "collection form field", field_type: "string"}
 
     count_before = CollectionFormField |> Repo.all() |> length()
 
@@ -134,6 +135,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
     assert json_response(conn, 200)["name"] == param.name
     assert count_before == CollectionFormField |> Repo.all() |> length()
+    assert json_response(conn, 200)["field_type"] == param.field_type
   end
 
   test "update collection form with invalid attrs", %{conn: conn} do
