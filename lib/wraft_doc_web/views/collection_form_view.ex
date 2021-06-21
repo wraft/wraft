@@ -17,8 +17,8 @@ defmodule WraftDocWeb.Api.V1.CollectionFormView do
     %{
       collection_form: render_one(collection_form, __MODULE__, "collection_form.json"),
       creator: render_one(collection_form.creator, UserView, "user.json", as: :user),
-      collection_form_fields:
-        render_many(collection_form.collection_form_fields, CollectionFormFieldView, "show.json",
+      fields:
+        render_many(collection_form.fields, CollectionFormFieldView, "show.json",
           as: :collection_form_field
         )
     }

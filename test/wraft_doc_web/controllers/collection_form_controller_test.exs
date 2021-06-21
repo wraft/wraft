@@ -4,12 +4,15 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
   """
   use WraftDocWeb.ConnCase
   @moduletag :controller
-  alias WraftDoc.Document.CollectionForm
-  alias WraftDoc.Repo
+  alias WraftDoc.{Document.CollectionForm, Document.CollectionFormField, Repo}
 
   import WraftDoc.Factory
 
-  @valid_attrs %{title: "collection form", description: "collection form"}
+  @valid_attrs %{
+    title: "collection form",
+    description: "collection form",
+    fields: %{"0" => %{name: "Title", meta: %{color: "black"}, field_type: "string"}}
+  }
   @invalid_attrs %{title: nil}
 
   setup %{conn: conn} do
@@ -65,6 +68,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
     user = conn.assigns.current_user
 
     count_before = CollectionForm |> Repo.all() |> length()
+    field_count_before = CollectionFormField |> Repo.all() |> length()
 
     conn =
       post(
@@ -72,8 +76,10 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
         Routes.v1_collection_form_path(conn, :create, @valid_attrs)
       )
 
-    assert count_before + 1 == CollectionForm |> Repo.all() |> length()
+    field_count_after = CollectionFormField |> Repo.all() |> length()
     assert json_response(conn, 200)["collection_form"]["title"] == @valid_attrs.title
+    assert count_before + 1 == CollectionForm |> Repo.all() |> length()
+    assert field_count_before + 1 == field_count_after
   end
 
   test "create collection form with invalid attrs", %{conn: conn} do
@@ -103,6 +109,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
     collection_form = insert(:collection_form, organisation: user.organisation)
+    valid_attrs = Map.put(@valid_attrs, :collection_form_id, collection_form.id)
 
     conn =
       build_conn()

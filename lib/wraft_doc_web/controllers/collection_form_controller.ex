@@ -15,11 +15,15 @@ defmodule WraftDocWeb.Api.V1.CollectionFormController do
           properties do
             title(:string, "title of the collection form")
             description(:string, "description for collection form")
+            fields(:array, "Form fields")
           end
 
           example(%{
             title: "Collection Form",
-            description: "collection form"
+            description: "collection form",
+            fields: [
+              %{name: "Title", meta: %{color: "black"}, field_type: "string"}
+            ]
           })
         end,
       CollectionFormShow:
