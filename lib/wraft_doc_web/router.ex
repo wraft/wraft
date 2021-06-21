@@ -174,6 +174,7 @@ defmodule WraftDocWeb.Router do
       post("/collection_forms", CollectionFormController, :create)
       put("/collection_forms/:id", CollectionFormController, :update)
       delete("/collection_forms/:id", CollectionFormController, :delete)
+      get("/collection_forms", CollectionFormController, :index)
 
       # collection form field api
 
