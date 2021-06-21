@@ -20,7 +20,7 @@ defmodule WraftDoc.Document.CollectionFormField do
   def changeset(collection_form_field, attrs \\ %{}) do
     collection_form_field
     |> cast(attrs, [:name, :description, :meta, :field_type, :collection_form_id])
-    |> validate_required([:name, :field_type, :collection_form_id])
+    |> validate_required([:name, :field_type])
     |> foreign_key_constraint(:collection_form_id)
   end
 

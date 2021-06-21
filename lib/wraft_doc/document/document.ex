@@ -3145,15 +3145,20 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, %CollectionForm{} = collection_form} ->
-        Repo.preload(collection_form, [:collection_form_fields, :creator])
+        Repo.preload(collection_form, [:fields, :creator])
 
       changeset = {:error, _} ->
         changeset
     end
   end
 
+  # defp create_form_fields(collection_form, fields) do
+  #   Enum.each(fields, fn x -> create_collection_form_field(collection_form.id, x) end)
+  # end
+
   def update_collection_form(collection_form, params) do
     collection_form
+    |> Repo.preload(:fields)
     |> CollectionForm.update_changeset(params)
     |> Repo.update()
     |> case do
@@ -3161,7 +3166,7 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, collection_form} ->
-        Repo.preload(collection_form, [:creator, :collection_form_fields])
+        Repo.preload(collection_form, [:creator, :fields])
     end
   end
 
@@ -3170,7 +3175,7 @@ defmodule WraftDoc.Document do
   end
 
   def list_collection_form(params) do
-    query = from(c in CollectionForm, preload: [:collection_form_fields])
+    query = from(c in CollectionForm, preload: [:fields])
     Repo.paginate(query, params)
   end
 end
