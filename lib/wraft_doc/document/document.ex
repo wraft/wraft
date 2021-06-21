@@ -3147,4 +3147,9 @@ defmodule WraftDoc.Document do
   def delete_collection_form(%CollectionForm{} = collection_form) do
     Repo.delete(collection_form)
   end
+
+  def list_collection_form(params) do
+    query = from(c in CollectionForm, preload: [:collection_form_fields])
+    Repo.paginate(query, params)
+  end
 end
