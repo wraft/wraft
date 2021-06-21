@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.CollectionFormView do
   use WraftDocWeb, :view
-  alias WraftDocWeb.Api.V1.CollectionFormFieldView
-  alias WraftDocWeb.Api.V1.CollectionFormView
+
+  alias WraftDocWeb.Api.V1.{CollectionFormFieldView, UserView}
 
   def render("show.json", %{collection_form: collection_form}) do
     %{
@@ -15,11 +15,12 @@ defmodule WraftDocWeb.Api.V1.CollectionFormView do
 
   def render("create.json", %{collection_form: collection_form}) do
     %{
-      id: collection_form.id,
-      title: collection_form.title,
-      description: collection_form.description,
-      inserted_at: collection_form.inserted_at,
-      updated_at: collection_form.updated_at
+      collection_form: render_one(collection_form, __MODULE__, "collection_form.json"),
+      creator: render_one(collection_form.creator, UserView, "user.json", as: :user),
+      collection_form_fields:
+        render_many(collection_form.collection_form_fields, CollectionFormFieldView, "show.json",
+          as: :collection_form_field
+        )
     }
   end
 
@@ -29,11 +30,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormView do
       title: collection_form.title,
       description: collection_form.description,
       inserted_at: collection_form.inserted_at,
-      updated_at: collection_form.updated_at,
-      collection_form_fields:
-        render_many(collection_form.collection_form_fields, CollectionFormFieldView, "show.json",
-          as: :collection_form_field
-        )
+      updated_at: collection_form.updated_at
     }
   end
 

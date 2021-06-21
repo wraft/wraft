@@ -3108,8 +3108,14 @@ defmodule WraftDoc.Document do
     Repo.delete(collection_form_field)
   end
 
-  def get_collection_form(id) do
-    case Repo.get_by(CollectionForm, id: id) do
+  @doc """
+  Return collection form by user and collection form id
+  ## Parameters
+  * User - user struct
+  * id - Collection form field
+  """
+  def get_collection_form(%{organisation_id: org_id}, <<_::288>> = id) do
+    case Repo.get_by(CollectionForm, id: id, organisation_id: org_id) do
       %CollectionForm{} = collection_form ->
         collection_form
 
@@ -3118,13 +3124,17 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def create_collection_form(params) do
+  def get_collection_form(_, _), do: {:error, :invalid_id, "CollectionForm"}
+
+  def create_collection_form(%{id: usr_id, organisation_id: org_id}, params) do
+    params = Map.merge(params, %{"creator_id" => usr_id, "organisation_id" => org_id})
+
     %CollectionForm{}
     |> CollectionForm.changeset(params)
     |> Repo.insert()
     |> case do
       {:ok, %CollectionForm{} = collection_form} ->
-        Repo.preload(collection_form, [:collection_form_fields])
+        Repo.preload(collection_form, [:collection_form_fields, :creator])
 
       changeset = {:error, _} ->
         changeset

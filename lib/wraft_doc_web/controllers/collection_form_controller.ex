@@ -109,7 +109,8 @@ defmodule WraftDocWeb.Api.V1.CollectionFormController do
   end
 
   def create(conn, params) do
-    with %CollectionForm{} = collection_form <- Document.create_collection_form(params) do
+    with %CollectionForm{} = collection_form <-
+           Document.create_collection_form(conn.assigns.current_user, params) do
       render(conn, "create.json", collection_form: collection_form)
     end
   end
@@ -134,7 +135,8 @@ defmodule WraftDocWeb.Api.V1.CollectionFormController do
   end
 
   def update(conn, %{"id" => id} = params) do
-    with %CollectionForm{} = collection_form <- Document.get_collection_form(id),
+    with %CollectionForm{} = collection_form <-
+           Document.get_collection_form(conn.assigns.current_user, id),
          %CollectionForm{} = collection_form <-
            Document.update_collection_form(collection_form, params) do
       render(conn, "create.json", collection_form: collection_form)
@@ -157,9 +159,10 @@ defmodule WraftDocWeb.Api.V1.CollectionFormController do
   end
 
   def delete(conn, %{"id" => id}) do
-    with %CollectionForm{} = collection_form <- Document.get_collection_form(id),
+    with %CollectionForm{} = collection_form <-
+           Document.get_collection_form(conn.assigns.current_user, id),
          {:ok, collection_form} <- Document.delete_collection_form(collection_form) do
-      render(conn, "create.json", collection_form: collection_form)
+      render(conn, "collection_form.json", collection_form: collection_form)
     end
   end
 
