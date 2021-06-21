@@ -2,8 +2,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.CollectionForm
+  alias WraftDoc.{Document, Document.CollectionForm}
   action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do

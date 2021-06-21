@@ -3068,8 +3068,15 @@ defmodule WraftDoc.Document do
 
   defp get_previous_version(_, _), do: nil
 
-  def get_collection_form_field(id) do
-    case Repo.get_by(CollectionFormField, id: id) do
+  def get_collection_form_field(%{organisation_id: org_id}, id) do
+    query =
+      from(cff in CollectionFormField,
+        join: cf in CollectionForm,
+        on: cff.collection_form_id == cf.id,
+        where: cff.id == ^id and cf.organisation_id == ^org_id
+      )
+
+    case Repo.one(query) do
       %CollectionFormField{} = collection_form_field ->
         collection_form_field
 
@@ -3078,7 +3085,11 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def create_collection_form_field(params) do
+  def get_collection_form_field(_, _), do: {:error, :fake}
+
+  def create_collection_form_field(c_form_id, params) do
+    params = Map.put(params, "collection_form_id", c_form_id)
+
     %CollectionFormField{}
     |> CollectionFormField.changeset(params)
     |> Repo.insert()
