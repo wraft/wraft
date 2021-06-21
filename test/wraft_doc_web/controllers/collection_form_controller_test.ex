@@ -39,7 +39,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    collection_form = insert(:collection_form)
+    collection_form = insert(:collection_form, organisation: user.organisation)
 
     count_before = CollectionForm |> Repo.all() |> length()
 
@@ -73,7 +73,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
       )
 
     assert count_before + 1 == CollectionForm |> Repo.all() |> length()
-    assert json_response(conn, 200)["title"] == @valid_attrs.title
+    assert json_response(conn, 200)["collection_form"]["title"] == @valid_attrs.title
   end
 
   test "create collection form with invalid attrs", %{conn: conn} do
@@ -102,7 +102,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
   test "update collection form with valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
-    collection_form = insert(:collection_form)
+    collection_form = insert(:collection_form, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -119,14 +119,14 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
         Routes.v1_collection_form_path(conn, :update, collection_form.id, @valid_attrs)
       )
 
-    assert json_response(conn, 200)["title"] == @valid_attrs.title
+    assert json_response(conn, 200)["collection_form"]["title"] == @valid_attrs.title
     assert count_before == CollectionForm |> Repo.all() |> length()
   end
 
   test "update collection form with invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
-    collection_form = insert(:collection_form)
+    collection_form = insert(:collection_form, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -150,7 +150,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
   test "show renders collection form by id", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
-    collection_form = insert(:collection_form)
+    collection_form = insert(:collection_form, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -171,7 +171,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
   test "error not found for id does not exists", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
-    collection_form = insert(:collection_form)
 
     conn =
       build_conn()

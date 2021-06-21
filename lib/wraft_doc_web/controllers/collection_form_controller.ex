@@ -86,7 +86,8 @@ defmodule WraftDocWeb.Api.V1.CollectionFormController do
   end
 
   def show(conn, %{"id" => collection_form_id}) do
-    with %CollectionForm{} = collection_form <- Document.get_collection_form(collection_form_id) do
+    with %CollectionForm{} = collection_form <-
+           Document.get_collection_form(conn.assigns.current_user, collection_form_id) do
       render(conn, "show.json", collection_form: collection_form)
     end
   end

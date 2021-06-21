@@ -3150,7 +3150,7 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, collection_form} ->
-        collection_form
+        Repo.preload(collection_form, [:creator, :collection_form_fields])
     end
   end
 
