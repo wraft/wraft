@@ -2,8 +2,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.CollectionFormField
+  alias WraftDoc.{Document, Document.CollectionForm, Document.CollectionFormField}
   action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do
@@ -49,7 +48,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
   end
 
   swagger_path :show do
-    get("/collection_fields/{id}")
+    get("/collection_forms/{c_form_id}/collection_fields/{id}")
     summary("Show an collection form fields")
     description("API to get all details of an collection form fields")
 
@@ -63,13 +62,13 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
 
   def show(conn, %{"id" => collection_form_id}) do
     with %CollectionFormField{} = collection_form_field <-
-           Document.get_collection_form_field(collection_form_id) do
+           Document.get_collection_form_field(conn.assigns.current_user, collection_form_id) do
       render(conn, "show.json", collection_form_field: collection_form_field)
     end
   end
 
   swagger_path :create do
-    post("/collection_fields")
+    post("/collection_forms/{c_form_id}/collection_fields")
     summary("Create an collection form fields api")
     description("Create an collection form fields api")
     operation_id("create_collection_forms_fields")
@@ -88,15 +87,16 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def create(conn, params) do
-    with %CollectionFormField{} = collection_form_field <-
-           Document.create_collection_form_field(params) do
+  def create(conn, %{"c_form_id" => c_form_id} = params) do
+    with %CollectionForm{} <- Document.get_collection_form(conn.assigns.current_user, c_form_id),
+         %CollectionFormField{} = collection_form_field <-
+           Document.create_collection_form_field(c_form_id, params) do
       render(conn, "create.json", collection_form_field: collection_form_field)
     end
   end
 
   swagger_path :update do
-    put("/collection_fields/{id}")
+    put("/collection_forms/{c_form_id}/collection_fields/{id}")
     summary("Update a Collection Form fields")
     description("API to update a collection form fields")
 
@@ -118,7 +118,8 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
   end
 
   def update(conn, %{"id" => id} = params) do
-    with %CollectionFormField{} = collection_form_field <- Document.get_collection_form_field(id),
+    with %CollectionFormField{} = collection_form_field <-
+           Document.get_collection_form_field(conn.assigns.current_user, id),
          %CollectionFormField{} = collection_form_field <-
            Document.update_collection_form_field(collection_form_field, params) do
       render(conn, "create.json", collection_form_field: collection_form_field)
@@ -126,7 +127,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
   end
 
   swagger_path :delete do
-    PhoenixSwagger.Path.delete("/collection_fields/{id}")
+    PhoenixSwagger.Path.delete("/collection_forms/{c_form_id}/collection_fields/{id}")
     summary("Delete a Collection Form Field")
     description("API to delete a collection form field")
 
@@ -141,7 +142,8 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
   end
 
   def delete(conn, %{"id" => id}) do
-    with %CollectionFormField{} = collection_form_field <- Document.get_collection_form_field(id),
+    with %CollectionFormField{} = collection_form_field <-
+           Document.get_collection_form_field(conn.assigns.current_user, id),
          {:ok, collection_form_field} <-
            Document.delete_collection_form_field(collection_form_field) do
       render(conn, "create.json", collection_form_field: collection_form_field)

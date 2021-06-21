@@ -7,6 +7,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldView do
       name: collection_form_field.name,
       description: collection_form_field.description,
       field_type: collection_form_field.field_type,
+      meta: collection_form_field.meta,
       inserted_at: collection_form_field.inserted_at,
       updated_at: collection_form_field.updated_at
     }
@@ -18,6 +19,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldView do
       name: collection_form_field.name,
       description: collection_form_field.description,
       field_type: collection_form_field.field_type,
+      meta: collection_form_field.meta,
       inserted_at: collection_form_field.inserted_at,
       updated_at: collection_form_field.updated_at
     }

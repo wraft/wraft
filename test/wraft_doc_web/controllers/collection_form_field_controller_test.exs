@@ -39,14 +39,20 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    collection_form_field = insert(:collection_form_field)
+    collection_form = insert(:collection_form, organisation: user.organisation)
+    collection_form_field = insert(:collection_form_field, collection_form: collection_form)
 
     count_before = CollectionFormField |> Repo.all() |> length()
 
     conn =
       delete(
         conn,
-        Routes.v1_collection_form_field_path(conn, :delete, collection_form_field.id)
+        Routes.v1_collection_form_field_path(
+          conn,
+          :delete,
+          collection_form.id,
+          collection_form_field.id
+        )
       )
 
     assert count_before - 1 == CollectionFormField |> Repo.all() |> length()
@@ -57,9 +63,15 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
 
-    collection_form = insert(:collection_form)
+    collection_form = insert(:collection_form, organisation: user.organisation)
     collection_form_id = collection_form.id
-    params = %{"name" => "collection form", "field_type" => "string"}
+
+    params = %{
+      "name" => "collection form",
+      "field_type" => "string",
+      "meta" => %{"color" => "blue"}
+    }
+
     param = Map.put(params, "collection_form_id", collection_form_id)
 
     conn =
@@ -74,17 +86,19 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
     conn =
       post(
         conn,
-        Routes.v1_collection_form_field_path(conn, :create, param)
+        Routes.v1_collection_form_field_path(conn, :create, collection_form_id, param)
       )
 
     assert count_before + 1 == CollectionFormField |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == param["name"]
     assert json_response(conn, 200)["field_type"] == param["field_type"]
+    assert json_response(conn, 200)["meta"] == param["meta"]
   end
 
   test "create collection form field with invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
+    cf = insert(:collection_form, organisation: user.organisation)
 
     conn =
       build_conn()
@@ -98,7 +112,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
     conn =
       post(
         conn,
-        Routes.v1_collection_form_field_path(conn, :create, @invalid_attrs)
+        Routes.v1_collection_form_field_path(conn, :create, cf.id, @invalid_attrs)
       )
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -109,12 +123,13 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
 
-    # collection_form = insert(:collection_form)
+    collection_form = insert(:collection_form, organisation: user.organisation)
+
     # collection_form_id = collection_form.id
     # params = %{"name" => "collection form"}
     # param = Map.put(params, "collection_form_id", collection_form_id)
 
-    collection_form_field = insert(:collection_form_field)
+    collection_form_field = insert(:collection_form_field, collection_form: collection_form)
 
     conn =
       build_conn()
@@ -130,7 +145,13 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
     conn =
       put(
         conn,
-        Routes.v1_collection_form_field_path(conn, :update, collection_form_field.id, param)
+        Routes.v1_collection_form_field_path(
+          conn,
+          :update,
+          collection_form.id,
+          collection_form_field.id,
+          param
+        )
       )
 
     assert json_response(conn, 200)["name"] == param.name
@@ -141,7 +162,9 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
   test "update collection form with invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
-    collection_form_field = insert(:collection_form_field)
+    collection_form = insert(:collection_form, organisation: user.organisation)
+
+    collection_form_field = insert(:collection_form_field, collection_form: collection_form)
 
     conn =
       build_conn()
@@ -158,6 +181,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
         Routes.v1_collection_form_field_path(
           conn,
           :update,
+          collection_form.id,
           collection_form_field.id,
           @invalid_attrs
         )
@@ -170,7 +194,8 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
   test "show renders collection form field by id", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
-    collection_form_field = insert(:collection_form_field)
+    collection_form = insert(:collection_form, organisation: user.organisation)
+    collection_form_field = insert(:collection_form_field, collection_form: collection_form)
 
     conn =
       build_conn()
@@ -182,7 +207,12 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
     conn =
       get(
         conn,
-        Routes.v1_collection_form_field_path(conn, :show, collection_form_field.id)
+        Routes.v1_collection_form_field_path(
+          conn,
+          :show,
+          collection_form.id,
+          collection_form_field.id
+        )
       )
 
     assert json_response(conn, 200)["name"] == collection_form_field.name
@@ -191,6 +221,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
   test "error not found for id does not exists", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
+    collection_form = insert(:collection_form)
     collection_form_field = insert(:collection_form_field)
 
     conn =
@@ -203,7 +234,12 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
     conn =
       get(
         conn,
-        Routes.v1_collection_form_field_path(conn, :show, Ecto.UUID.generate())
+        Routes.v1_collection_form_field_path(
+          conn,
+          :show,
+          collection_form.id,
+          Ecto.UUID.generate()
+        )
       )
 
     assert json_response(conn, 400)["errors"] == "The CollectionFormField id does not exist..!"
