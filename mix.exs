@@ -109,6 +109,7 @@ defmodule WraftDoc.Mixfile do
 
       # For admin pannel
       {:kaffy, "~> 0.9.0"},
+      {:ecto_enum, "~> 1.4"},
 
       # Code analysis tool
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
