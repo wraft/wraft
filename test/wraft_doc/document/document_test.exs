@@ -1949,19 +1949,19 @@ defmodule WraftDoc.DocumentTest do
 
   describe "create_collection_form" do
     test "created collection form with valid attrs" do
-      collection_form = insert(:collection_form)
-      params = %{title: "WraftDoc", description: "Wraft Doc"}
+      user = insert(:user)
+      params = %{"title" => "WraftDoc", "description" => "Wraft Doc"}
       count_before = CollectionForm |> Repo.all() |> length()
-      Document.create_collection_form(params)
+      Document.create_collection_form(user, params)
       count_after = CollectionForm |> Repo.all() |> length()
       assert count_before + 1 == count_after
     end
 
     test "created collection form with invalid attrs" do
-      collection_form = insert(:collection_form)
+      user = insert(:user)
       params = %{}
       count_before = CollectionForm |> Repo.all() |> length()
-      {:error, changeset} = Document.create_collection_form(params)
+      {:error, changeset} = Document.create_collection_form(user, params)
       count_after = CollectionForm |> Repo.all() |> length()
       assert count_before == count_after
 
@@ -1973,17 +1973,20 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_collection_form" do
     test "get_collection_form with valid id" do
-      collection_form = insert(:collection_form)
+      user = insert(:user)
 
-      response = Document.get_collection_form(collection_form.id)
+      collection_form = insert(:collection_form, organisation: user.organisation)
+
+      response = Document.get_collection_form(user, collection_form.id)
 
       assert response.title == collection_form.title
     end
 
     test "get_collection_form_with_invalid_id" do
-      collection_form = insert(:collection_form)
+      user = insert(:user)
+      collection_form = insert(:collection_form, organisation: user.organisation)
 
-      response = Document.get_collection_form(Ecto.UUID.generate())
+      response = Document.get_collection_form(user, Ecto.UUID.generate())
 
       assert response == {:error, :invalid_id, "CollectionForm"}
     end
@@ -1991,7 +1994,8 @@ defmodule WraftDoc.DocumentTest do
 
   describe "update_collection_form" do
     test "update collection form with valid attrs" do
-      collection_form = insert(:collection_form)
+      user = insert(:user)
+      collection_form = insert(:collection_form, organisation: user.organisation)
       params = %{title: "WraftDoc", description: "Wraft Doc"}
       count_before = CollectionForm |> Repo.all() |> length()
       Document.update_collection_form(collection_form, params)
@@ -2027,21 +2031,27 @@ defmodule WraftDoc.DocumentTest do
 
   describe "create_collection_form_field" do
     test "created collection form field with valid attrs" do
-      collection = insert(:collection_form)
-      collection_form_id = collection.id
-      params = %{"name" => "collection form"}
-      param = Map.put(params, "collection_form_id", collection_form_id)
+      user = insert(:user)
+      collection = insert(:collection_form, organisation: user.organisation)
+
+      param = %{
+        "name" => "collection form",
+        "field_type" => "string"
+      }
+
       count_before = CollectionFormField |> Repo.all() |> length()
-      a = Document.create_collection_form_field(param)
+      a = Document.create_collection_form_field(collection.id, param)
+
       count_after = CollectionFormField |> Repo.all() |> length()
       assert count_before + 1 == count_after
     end
 
     test "created collection form with invalid attrs" do
-      collection_form = insert(:collection_form_field)
+      user = insert(:user)
+      collection_form = insert(:collection_form, organisation: user.organisation)
       params = %{}
       count_before = CollectionFormField |> Repo.all() |> length()
-      Document.create_collection_form_field(params)
+      Document.create_collection_form_field(collection_form, params)
       count_after = CollectionFormField |> Repo.all() |> length()
       assert count_before == count_after
 
@@ -2053,17 +2063,18 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_collection_form_field" do
     test "get_collection_form_field with valid id" do
-      collection_form_field = insert(:collection_form_field)
+      user = insert(:user)
+      collection_form = insert(:collection_form, organisation: user.organisation)
+      collection_form_field = insert(:collection_form_field, collection_form: collection_form)
 
-      response = Document.get_collection_form_field(collection_form_field.id)
+      response = Document.get_collection_form_field(user, collection_form_field.id)
 
       assert response.name == collection_form_field.name
     end
 
     test "get_collection_form_with_invalid_id" do
-      collection_form_field = insert(:collection_form_field)
-
-      response = Document.get_collection_form_field(Ecto.UUID.generate())
+      user = insert(:user)
+      response = Document.get_collection_form_field(user, Ecto.UUID.generate())
 
       assert response == {:error, :invalid_id, "CollectionFormField"}
     end
@@ -2071,7 +2082,9 @@ defmodule WraftDoc.DocumentTest do
 
   describe "update_collection_form_field" do
     test "update collection form field with valid attrs" do
-      collection_form_field = insert(:collection_form_field)
+      user = insert(:user)
+      collection_form = insert(:collection_form, organisation: user.organisation)
+      collection_form_field = insert(:collection_form_field, collection_form: collection_form)
       params = %{title: "WraftDoc", description: "Wraft Doc"}
       count_before = CollectionFormField |> Repo.all() |> length()
       Document.update_collection_form_field(collection_form_field, params)
@@ -2088,13 +2101,16 @@ defmodule WraftDoc.DocumentTest do
       assert count_before == count_after
 
       assert %{
-               name: ["can't be blank"]
+               name: ["can't be blank"],
+               field_type: ["can't be blank"]
              } == errors_on(changeset)
     end
   end
 
   test "delete_collection_form_field" do
-    collection_form_field = insert(:collection_form_field)
+    user = insert(:user)
+    collection_form = insert(:collection_form, organisation: user.organisation)
+    collection_form_field = insert(:collection_form_field, collection_form: collection_form)
 
     before_collection_count = CollectionFormField |> Repo.all() |> length()
 
