@@ -191,7 +191,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.list_collection_form(params) do
+         } <- Document.list_collection_form(conn.assigns.current_user, params) do
       render(conn, "index.json",
         collection_forms: collection_forms,
         page_number: page_number,
