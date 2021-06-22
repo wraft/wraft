@@ -467,6 +467,7 @@ defmodule WraftDoc.Enterprise do
       from(u in User,
         where: u.organisation_id == ^organisation_id,
         where: ilike(u.name, ^"%#{name}%"),
+        where: is_nil(u.deleted_at),
         preload: [:profile, :roles, :organisation]
       )
 
@@ -477,6 +478,7 @@ defmodule WraftDoc.Enterprise do
     query =
       from(u in User,
         where: u.organisation_id == ^organisation_id,
+        where: is_nil(u.deleted_at),
         preload: [:profile, :roles, :organisation]
       )
 
