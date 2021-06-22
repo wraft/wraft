@@ -11,6 +11,7 @@ defmodule WraftDoc.Account.User do
     field(:encrypted_password, :string)
     field(:password, :string, virtual: true)
     field(:email_verify, :boolean, default: false)
+    field(:deleted_at, :naive_datetime)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     has_one(:profile, WraftDoc.Account.Profile)
@@ -92,6 +93,12 @@ defmodule WraftDoc.Account.User do
     |> validate_required([:password])
     |> validate_length(:password, min: 8, max: 16)
     |> generate_encrypted_password
+  end
+
+  def delete_changeset(user, attrs \\ %{}) do
+    user
+    |> cast(attrs, [:deleted_at])
+    |> validate_required([:deleted_at])
   end
 
   defp generate_encrypted_password(current_changeset) do

@@ -24,6 +24,18 @@ defmodule WraftDocWeb.Api.V1.UserView do
     }
   end
 
+  def render("remove.json", %{user: user}) do
+    %{
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      email_verify: user.email_verify,
+      inserted_at: user.inserted_at,
+      updated_at: user.updated_at,
+      deleted_at: user.deleted_at
+    }
+  end
+
   def render("index.json", %{
         users: users,
         page_number: page_number,
