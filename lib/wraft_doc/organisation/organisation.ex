@@ -18,7 +18,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     field(:phone, :string)
     field(:email, :string)
     field(:logo, WraftDocWeb.LogoUploader.Type)
-    has_many(:users, WraftDoc.Account.User)
+    has_many(:users, WraftDoc.Account.User, where: [deleted_at: nil])
     has_many(:pipelines, WraftDoc.Document.Pipeline)
     has_many(:vendors, WraftDoc.Enterprise.Vendor)
 

@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   import WraftDoc.Factory
-  alias WraftDoc.{Enterprise.Organisation, Repo}
+  alias WraftDoc.{Account.User, Enterprise.Organisation, Repo}
   use WraftDocWeb.ConnCase
   @moduletag :controller
 
@@ -200,6 +200,31 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 200)["page_number"] == 1
       assert json_response(conn, 200)["total_pages"] == 1
       assert json_response(conn, 200)["total_entries"] == 2
+    end
+
+    test "only list existing members ", %{conn: conn} do
+      user1 = conn.assigns[:current_user]
+      user2 = insert(:user, organisation: user1.organisation, name: "John")
+      insert(:profile, user: user2)
+
+      user3 =
+        insert(:user,
+          organisation: user1.organisation,
+          name: "John Doe",
+          deleted_at: NaiveDateTime.local_now()
+        )
+
+      insert(:profile, user: user3)
+      conn = put_req_header(build_conn(), "authorization", "Bearer #{conn.assigns.token}")
+
+      conn =
+        get(
+          conn,
+          Routes.v1_organisation_path(conn, :members, user1.organisation)
+        )
+
+      assert length(json_response(conn, 200)["members"]) == 2
+      assert User |> Repo.all() |> length() == 3
     end
   end
 
