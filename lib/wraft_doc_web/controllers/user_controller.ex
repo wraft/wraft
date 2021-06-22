@@ -451,4 +451,25 @@ defmodule WraftDocWeb.Api.V1.UserController do
       )
     end
   end
+
+  swagger_path :remove do
+    post("users/remove")
+    summary("Api to remove a user")
+    description("Api to remove a user from an organisation")
+
+    parameters do
+      id(:path, :string, "User id")
+    end
+
+    response(200, "ok", Schema.ref(:User))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def remove(conn, %{"id" => user_id}) do
+    with %User{} = user <- Account.remove_user(conn.assigns.current_user, user_id) do
+      render(conn, "remove.json", user: user)
+    end
+  end
 end

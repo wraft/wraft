@@ -343,6 +343,23 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     end
   end
 
+  describe "remove" do
+    test "removes a user by marking deleted at", %{conn: conn} do
+      user = conn.assigns[:current_user]
+      insert(:membership, organisation: user.organisation)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, user)
+
+      user = insert(:user, organisation: user.organisation)
+
+      conn = put(conn, Routes.v1_user_path(conn, :remove, user.id))
+      assert json_response(conn, 200)["deleted_at"] != nil
+    end
+  end
+
   # describe "search/2" do
   #   test "search user api filter by there name", %{conn: conn} do
   #     conn =

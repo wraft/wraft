@@ -296,10 +296,16 @@ defmodule WraftDoc.Account do
   @doc """
   Get a user from its ID.
   """
-  @spec get_user(integer() | String.t()) :: User.t() | nil
+  @spec get_user(String.t()) :: User.t() | nil
   def get_user(id) do
     Repo.get(User, id)
   end
+
+  def get_user(<<_::288>> = organisation_id, <<_::288>> = user_id) do
+    Repo.get_by(User, id: user_id, organisation_id: organisation_id)
+  end
+
+  def get_user(_, _), do: nil
 
   # Get the user struct from given email
   @spec get_user_by_email(binary) :: User.t() | nil
@@ -529,6 +535,18 @@ defmodule WraftDoc.Account do
   end
 
   def update_password(_, _), do: {:error, :no_data}
+
+  def remove_user(%User{organisation_id: org_id}, user_id) do
+    with %User{} = user <- get_user(org_id, user_id) do
+      user
+      |> User.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
+      |> Repo.update()
+      |> case do
+        {:ok, user} -> user
+        {:error, _} = changeset -> changeset
+      end
+    end
+  end
 
   # Update the password if the new one is not same as the previous one.
   @spec check_and_update_password(User.t(), map) ::

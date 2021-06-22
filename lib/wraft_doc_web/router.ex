@@ -89,6 +89,7 @@ defmodule WraftDocWeb.Router do
       # get user by there name
       get("/users/search", UserController, :search)
       get("/users/:id/instance-approval-systems", InstanceApprovalSystemController, :index)
+      put("/users/:id/remove", UserController, :remove)
 
       get(
         "/users/instance-approval-systems",
