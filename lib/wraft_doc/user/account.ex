@@ -9,6 +9,7 @@ defmodule WraftDoc.Account do
     Account.AuthToken,
     Account.Profile,
     Account.Role,
+    Account.RoleGroup,
     Account.User,
     Account.UserRole,
     Enterprise.Organisation,
@@ -585,10 +586,43 @@ defmodule WraftDoc.Account do
     |> Repo.insert()
   end
 
-  defp insert_auth_token(_, _), do: nil
-
   def get_user_by_name(name, params) do
     query = from(u in User, where: ilike(u.name, ^"%#{name}%"))
     Repo.paginate(query, params)
+  end
+
+  def get_role_group(%{organisation_id: org_id}, <<_::288>> = id) do
+    Repo.get_by(RoleGroup, id: id, organisation_id: org_id)
+  end
+
+  def get_role_group(_, _), do: nil
+
+  def create_role_group(%{organisation_id: org_id}, params) do
+    params = Map.put(params, "organisation_id", org_id)
+
+    %RoleGroup{}
+    |> RoleGroup.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, role_group} ->
+        Repo.preload(role_group, :roles)
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def update_role_group(role_group, params) do
+    role_group
+    |> RoleGroup.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, role_group} -> role_group
+      {:error, _} = changeset -> changeset
+    end
+  end
+
+  def delete_role_group(role_group) do
+    Repo.delete(role_group)
   end
 end
