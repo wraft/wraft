@@ -631,4 +631,11 @@ defmodule WraftDoc.Account do
   def delete_role_group(role_group) do
     Repo.delete(role_group)
   end
+
+  def list_role_groups(%{organisation_id: org_id}) do
+    query = from(rg in RoleGroup, where: rg.organisation_id == ^org_id)
+    Repo.all(query)
+  end
+
+  def list_role_groups(_), do: nil
 end
