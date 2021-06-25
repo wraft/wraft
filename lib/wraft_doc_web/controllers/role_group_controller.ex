@@ -52,6 +52,27 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
               %{name: "CEO"}
             ]
           })
+        end,
+      RoleGroups:
+        swagger_schema do
+          title("Role group list")
+          type(:array)
+          items(Schema.ref(:RoleGroup))
+        end,
+      RoleGroupIndex:
+        swagger_schema do
+          title("Role group index")
+
+          properties do
+            role_groups(Schema.ref(:RoleGroups))
+          end
+
+          example(%{
+            role_groups: [
+              %{name: "Chatura", description: "Team containg 4 roles on management"},
+              %{name: "Chatura", description: "Team containg 4 roles on management"}
+            ]
+          })
         end
     }
   end
@@ -135,5 +156,19 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
          {:ok, role_group} <- Account.delete_role_group(role_group) do
       render(conn, "role_group.json", role_group: role_group)
     end
+  end
+
+  swagger_path :index do
+    get("/role_groups")
+    description("api to list all role groups")
+
+    response(204, "Deleted", Schema.ref(:RoleGroupIndex))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def index(conn, _params) do
+    role_groups = Account.list_role_groups(conn.assigns.current_user)
+    render(conn, "index.json", role_groups: role_groups)
   end
 end

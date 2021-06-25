@@ -126,4 +126,25 @@ defmodule WraftDocWeb.Api.V1.RoleGroupControllerTest do
       assert json_response(conn, 200)["name"] == role_group.name
     end
   end
+
+  describe "index/2" do
+    test "list all role groups", %{conn: conn} do
+      user = conn.assigns.current_user
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, conn.assigns.current_user)
+
+      rg1 = insert(:role_group, organisation: user.organisation)
+      rg2 = insert(:role_group, organisation: user.organisation)
+      conn = get(conn, Routes.v1_role_group_path(conn, :index))
+
+      list = json_response(conn, 200)["role_groups"]
+
+      assert list
+             |> Enum.map(fn x -> x["name"] end)
+             |> List.to_string() =~ rg1.name
+    end
+  end
 end

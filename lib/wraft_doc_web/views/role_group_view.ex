@@ -18,4 +18,8 @@ defmodule WraftDocWeb.Api.V1.RoleGroupView do
       roles: render_many(role_group.roles, RoleView, "role.json", as: :role)
     }
   end
+
+  def render("index.json", %{role_groups: role_groups}) do
+    %{role_groups: render_many(role_groups, __MODULE__, "role_group.json", as: :role_group)}
+  end
 end
