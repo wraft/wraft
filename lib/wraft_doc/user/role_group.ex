@@ -19,13 +19,13 @@ defmodule WraftDoc.Account.RoleGroup do
     role_group
     |> cast(attrs, [:name, :description, :organisation_id])
     |> validate_required([:name, :organisation_id])
-    |> cast_assoc(:group_roles, with: &GroupRole.changeset/2, on_replace: :update)
+    |> cast_assoc(:group_roles, with: &GroupRole.changeset/2)
   end
 
   def update_changeset(role_group, attrs \\ %{}) do
     role_group
     |> cast(attrs, [:name, :description])
     |> validate_required([:name])
-    |> cast_assoc(:group_roles, with: &GroupRole.changeset/2, on_replace: :update)
+    |> cast_assoc(:group_roles, with: &GroupRole.changeset/2)
   end
 end

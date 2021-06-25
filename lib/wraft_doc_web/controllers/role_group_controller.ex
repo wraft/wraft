@@ -23,7 +23,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
           example(%{
             name: "Chatura",
             description: "Team containg 4 roles on management",
-            roles: [
+            group_roles: [
               %{role_id: "sdfsdf-541sdfsd-2256sdf1-1221sd5f"},
               %{role_id: "sdfsdf-541sdfsd-2256sdf1-1221sd5f"},
               %{role_id: "sdfsdf-541sdfsd-2256sdf1-1221sd5f"}
@@ -140,6 +140,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
 
   swagger_path :delete do
     PhoenixSwagger.Path.delete("/role_groups/{id}")
+    summary("delete a role group")
     description("Delete a role group")
 
     parameters do
@@ -160,6 +161,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
 
   swagger_path :index do
     get("/role_groups")
+    summary("list role groups")
     description("api to list all role groups")
 
     response(204, "Deleted", Schema.ref(:RoleGroupIndex))
