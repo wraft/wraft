@@ -70,7 +70,7 @@ defmodule WraftDoc.Mixfile do
       {:timex, "~>  3.6.1"},
       # JSON parser
       {:jason, "~> 1.1"},
-      {:poison, "~> 3.0", override: true},
+      {:poison, "~> 3.1", override: true},
       # API documentation
       {:phoenix_swagger, "~> 0.8.2"},
 

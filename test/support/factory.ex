@@ -10,6 +10,7 @@ defmodule WraftDoc.Factory do
     Account.Country,
     Account.Profile,
     Account.Role,
+    Account.RoleGroup,
     Account.User,
     Account.User.Audience,
     Account.UserRole,
@@ -487,6 +488,14 @@ defmodule WraftDoc.Factory do
       name: "WraftDoc",
       description: "WraftDoc des",
       collection_form: build(:collection_form)
+    }
+  end
+
+  def role_group_factory do
+    %RoleGroup{
+      name: sequence(:name, &"Role group-#{&1}"),
+      description: sequence(:description, &"Role group-#{&1}"),
+      organisation: build(:organisation)
     }
   end
 end
