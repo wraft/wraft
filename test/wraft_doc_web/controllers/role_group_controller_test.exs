@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupControllerTest do
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
 
-  alias WraftDoc.{Account.RoleGroup, Repo}
+  alias WraftDoc.{Account.GroupRole, Account.RoleGroup, Repo}
 
   @valid_attrs %{name: "Silver", description: "Silver category"}
   @invalid_attrs %{name: nil}
@@ -35,12 +35,17 @@ defmodule WraftDocWeb.Api.V1.RoleGroupControllerTest do
         |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
         |> assign(:current_user, conn.assigns.current_user)
 
+      user = conn.assigns.current_user
       count_before = RoleGroup |> Repo.all() |> length()
-
-      conn = post(conn, Routes.v1_role_group_path(conn, :create), @valid_attrs)
+      role = insert(:role, organisation: user.organisation)
+      valid_attrs = Map.put(@valid_attrs, :group_roles, [%{role_id: role.id}])
+      gr_count_befoer = GroupRole |> Repo.all() |> length()
+      conn = post(conn, Routes.v1_role_group_path(conn, :create), valid_attrs)
+      gr_count_after = GroupRole |> Repo.all() |> length()
 
       assert json_response(conn, 200)["role_group"]["name"] == @valid_attrs.name
       assert count_before + 1 == RoleGroup |> Repo.all() |> length()
+      assert gr_count_befoer + 1 == gr_count_after
     end
 
     test "with invalid attrs", %{conn: conn} do
