@@ -17,7 +17,12 @@ defmodule WraftDoc.Repo.Migrations.CreateRoleGroup do
 
     create table(:group_role, primary_key: false) do
       add(:id, :uuid, primary_key: true)
-      add(:group_id, references(:group, type: :uuid, column: :id, on_delete: :nilify_all))
+
+      add(
+        :role_group_id,
+        references(:role_group, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
+
       add(:role_id, references(:role, type: :uuid, column: :id, on_delete: :nilify_all))
       timestamps()
     end

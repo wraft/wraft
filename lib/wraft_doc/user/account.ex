@@ -597,6 +597,10 @@ defmodule WraftDoc.Account do
 
   def get_role_group(_, _), do: nil
 
+  def show_role_group(user, id) do
+    user |> get_role_group(id) |> Repo.preload(:roles)
+  end
+
   def create_role_group(%{organisation_id: org_id}, params) do
     params = Map.put(params, "organisation_id", org_id)
 
@@ -612,12 +616,14 @@ defmodule WraftDoc.Account do
     end
   end
 
+  def create_role_group(_, _), do: nil
+
   def update_role_group(role_group, params) do
     role_group
     |> RoleGroup.update_changeset(params)
     |> Repo.update()
     |> case do
-      {:ok, role_group} -> role_group
+      {:ok, role_group} -> Repo.preload(role_group, :roles)
       {:error, _} = changeset -> changeset
     end
   end

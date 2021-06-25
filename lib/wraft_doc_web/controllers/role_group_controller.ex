@@ -72,7 +72,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
 
   def create(conn, params) do
     with %RoleGroup{} = role_group <- Account.create_role_group(conn.assigns.current_user, params) do
-      render(conn, "role_group.json", role_group: role_group)
+      render(conn, "show.json", role_group: role_group)
     end
   end
 
@@ -81,7 +81,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
     summary("get a role group")
 
     parameters do
-      id(:path, "Role group id", required: true)
+      id(:path, :string, "Role group id", required: true)
     end
 
     response(200, "Created", Schema.ref(:RoleGroup))
@@ -90,8 +90,8 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
   end
 
   def show(conn, %{"id" => id}) do
-    with %RoleGroup{} = role_group <- Account.get_role_group(conn.assigns.current_user, id) do
-      render(conn, "role_group.json", role_group: role_group)
+    with %RoleGroup{} = role_group <- Account.show_role_group(conn.assigns.current_user, id) do
+      render(conn, "show.json", role_group: role_group)
     end
   end
 
@@ -101,7 +101,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
     description("/updates a role group")
 
     parameters do
-      id(:path, "Role group id", required: true)
+      id(:path, :string, "Role group id", required: true)
       role_group(:body, Schema.ref(:RoleGroupRequest), "Role group to update", required: true)
     end
 
@@ -113,7 +113,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
   def update(conn, %{"id" => id} = params) do
     with %RoleGroup{} = role_group <- Account.get_role_group(conn.assigns.current_user, id),
          %RoleGroup{} = role_group <- Account.update_role_group(role_group, params) do
-      render(conn, "role_group.json", role_group: role_group)
+      render(conn, "show.json", role_group: role_group)
     end
   end
 
@@ -122,7 +122,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
     description("Delete a role group")
 
     parameters do
-      id(:path, "Role group id", required: true)
+      id(:path, :string, "Role group id", required: true)
     end
 
     response(204, "Deleted", Schema.ref(:RoleGroup))

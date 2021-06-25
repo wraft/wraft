@@ -182,6 +182,11 @@ defmodule WraftDocWeb.Router do
         only: [:create, :update, :show, :delete, :index]
       )
 
+      # Role group apis
+      resources("/role_groups", RoleGroupController,
+        only: [:create, :update, :show, :delete, :index]
+      )
+
       # get("/collection_forms/:c_form_id/collection_fields/:id", CollectionFormFieldController, :show)
       # post("/collection_fields", CollectionFormFieldController, :create)
       # put("/collection_fields/:id", CollectionFormFieldController, :update)
