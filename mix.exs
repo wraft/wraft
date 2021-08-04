@@ -81,6 +81,7 @@ defmodule WraftDoc.Mixfile do
       {:ex_machina, "~> 2.3", only: :test},
       {:bypass, "~> 1.0", only: :test},
       {:excoveralls, "~> 0.10", only: :test},
+      {:faker, "~> 0.16", only: :test},
       # Pagination
       {:scrivener_ecto, "~> 2.3"},
       {:scrivener_list, "~> 2.0"},
@@ -94,7 +95,6 @@ defmodule WraftDoc.Mixfile do
 
       # Activity stream
       {:spur, git: "https://github.com/shijithkjayan/spur.git", branch: :master},
-      # {:spur, path: "/home/sadique/Documents/org.functionary/elixir/spur"},
 
       # CSV parser
       {:csv, "~> 2.3.1"},
@@ -126,7 +126,7 @@ defmodule WraftDoc.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test --trace"],
+      test: ["ecto.create --quiet", "ecto.migrate", "test"],
       swagger: ["phx.swagger.generate priv/static/swagger.json"]
     ]
   end

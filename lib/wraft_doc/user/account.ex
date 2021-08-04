@@ -12,6 +12,7 @@ defmodule WraftDoc.Account do
     Account.RoleGroup,
     Account.User,
     Account.UserRole,
+    Enterprise,
     Enterprise.Organisation,
     Repo
   }
@@ -124,28 +125,17 @@ defmodule WraftDoc.Account do
   Get the organisation from the token, if there is  token in the params.
   If no token is present in the params, then get the default organisation
   """
-
-  @spec get_organisation_from_token(map) :: Organisation.t()
+  @spec get_organisation_from_token(map) :: Organisation.t() | {:error, atom()}
   def get_organisation_from_token(%{"token" => token, "email" => email} = params) do
-    Endpoint
-    |> Phoenix.Token.verify("organisation_invite", token, max_age: 900_000)
-    |> case do
-      {:ok, %{organisation: org, email: token_email, role: role}} ->
-        if token_email === email do
-          params = Map.put(params, "role", role)
-          {:ok, org, params}
-        else
-          {:error, :no_permission}
-        end
+    case check_token(token, :invite) do
+      {:ok, %{organisation_id: org_id, email: ^email, role: role}} ->
+        params = Map.put(params, "role", role)
+        {:ok, Enterprise.get_organisation(org_id), params}
 
-      # When token is valid, but encoded data is not what we expected
       {:ok, _} ->
         {:error, :no_permission}
 
-      {:error, :invalid} ->
-        {:error, :no_permission}
-
-      {:error, _} = error ->
+      error ->
         error
     end
   end
@@ -420,7 +410,26 @@ defmodule WraftDoc.Account do
     Repo.get(@activity_models[model], id)
   end
 
-  defp delete_token(user_id, type) do
+  @doc """
+  Deletes a token.
+  If an %AuthToken{} is given, it will be deleted.
+  If the parameter is a string value, the token is fetch and then deleted.
+  Raises if anything goes wrong.
+  """
+  @spec delete_auth_token!(AuthToken.t() | String.t()) :: AuthToken.t()
+  def delete_auth_token!(%AuthToken{} = auth_token) do
+    Repo.delete!(auth_token)
+  end
+
+  def delete_auth_token!(token_value) when is_binary(token_value) do
+    AuthToken |> Repo.get_by(value: token_value) |> Repo.delete!()
+  end
+
+  @doc """
+  Deletes all tokens of given type associated with the user_id.
+  """
+  @spec delete_auth_token(Ecto.UUID.t(), String.t()) :: {integer(), [AuthToken.t()]}
+  def delete_auth_token(user_id, type) do
     query =
       from(
         a in AuthToken,
@@ -428,67 +437,98 @@ defmodule WraftDoc.Account do
         where: a.token_type == ^type
       )
 
-    query
-    |> Repo.all()
-    |> Enum.each(fn x -> Repo.delete!(x) end)
+    Repo.delete_all(query)
   end
 
   @doc """
   Generate auth token for password reset for the user with the given email ID
   and insert it to auth_tokens table.
   """
-  def create_token(%{"email" => email}) do
+  def create_password_token(%{"email" => email}) do
     email = String.downcase(email)
 
     case get_user_by_email(email) do
       %User{} = current_user ->
-        delete_token(current_user.id, "password_verify")
-        token = Endpoint |> Phoenix.Token.sign("reset", current_user.email) |> Base.url_encode64()
-        new_params = %{value: token, token_type: "password_verify"}
+        delete_auth_token(current_user.id, "password_verify")
+        token = WraftDoc.create_phx_token("reset", current_user.email)
+        params = %{value: token, token_type: "password_verify"}
 
-        {:ok, auth_struct} = insert_auth_token(current_user, new_params)
-
-        Repo.preload(auth_struct, :user)
+        current_user |> insert_auth_token!(params) |> Repo.preload(:user)
 
       nil ->
         {:error, :invalid_email}
     end
   end
 
-  def create_token(_), do: {:error, :invalid_email}
+  def create_password_token(_), do: {:error, :invalid_email}
 
   @doc """
-  Validate the password reset link, ie; token in the link to verify and
-  authenticate the password reset request.
+  Validate the phoenix token.
   """
-  def check_token(token) do
-    query =
-      from(
-        tok in AuthToken,
-        where: tok.value == ^token,
-        where: tok.token_type == "password_verify",
-        select: tok
-      )
-
-    case Repo.one(query) do
+  @spec check_token(String.t(), atom()) :: AuthToken.t() | {:ok, any()} | {:error, atom()}
+  def check_token(token, token_type) when token_type == :password_verify do
+    case get_auth_token(token, token_type) do
       nil ->
         {:error, :fake}
 
       token_struct ->
         {:ok, decoded_token} = Base.url_decode64(token_struct.value)
 
-        Endpoint
-        |> Phoenix.Token.verify("reset", decoded_token, max_age: 860)
-        |> case do
-          {:error, :invalid} ->
-            {:error, :fake}
+        case phoenix_token_verify(decoded_token, "reset", 860) do
+          {:ok, _} ->
+            Repo.preload(token_struct, :user)
+
+          error ->
+            error
+        end
+    end
+  end
+
+  def check_token(token, token_type) when token_type == :invite do
+    case get_auth_token(token, token_type) do
+      nil ->
+        {:error, :fake}
+
+      token_struct ->
+        {:ok, decoded_token} = Base.url_decode64(token_struct.value)
+
+        case phoenix_token_verify(decoded_token, "organisation_invite", 900_000) do
+          {:ok, payload} ->
+            {:ok, payload}
 
           {:error, :expired} ->
             {:error, :expired}
 
-          {:ok, _} ->
-            Repo.preload(token_struct, :user)
+          _ ->
+            {:error, :fake}
         end
+    end
+  end
+
+  defp get_auth_token(token, token_type) do
+    query =
+      from(
+        tok in AuthToken,
+        where: tok.value == ^token,
+        where: tok.token_type == ^token_type,
+        select: tok
+      )
+
+    Repo.one(query)
+  end
+
+  defp phoenix_token_verify(token, secret, max_age) do
+    Endpoint
+    |> Phoenix.Token.verify(secret, token, max_age: max_age)
+    |> case do
+      {:error, :invalid} ->
+        {:error, :fake}
+
+      {:error, :expired} ->
+        {:error, :expired}
+
+      {:ok, payload} ->
+        {:ok, payload}
     end
   end
 
@@ -499,7 +539,7 @@ defmodule WraftDoc.Account do
 
   @spec reset_password(map) :: User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
   def reset_password(%{"token" => token, "password" => _} = params) do
-    case check_token(token) do
+    case check_token(token, :password_verify) do
       %AuthToken{} = auth_token ->
         User
         |> Repo.get_by(email: auth_token.user.email)
@@ -509,7 +549,7 @@ defmodule WraftDoc.Account do
             changeset
 
           %User{} = user_struct ->
-            Repo.delete!(auth_token)
+            delete_auth_token!(auth_token)
             user_struct
         end
 
@@ -576,15 +616,18 @@ defmodule WraftDoc.Account do
     end
   end
 
-  # Insert auth token without expiry date.
-  @spec insert_auth_token(User.t() | any(), map) ::
-          {:ok, AuthToken.t()} | {:error, Ecto.Changeset.t()} | nil
-  defp insert_auth_token(%User{} = current_user, params) do
-    current_user
+  @doc """
+  Insert auth token without expiry date.
+  """
+  @spec insert_auth_token!(User.t() | any(), map) :: AuthToken.t()
+  def insert_auth_token!(%User{} = user, params) do
+    user
     |> build_assoc(:auth_tokens)
     |> AuthToken.changeset(params)
-    |> Repo.insert()
+    |> Repo.insert!()
   end
+
+  def insert_auth_token!(_, _), do: raise("Unexpected arguments passed.")
 
   def get_user_by_name(name, params) do
     query = from(u in User, where: ilike(u.name, ^"%#{name}%"))
