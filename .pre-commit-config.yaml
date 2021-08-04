@@ -9,15 +9,9 @@ repos:
         pass_filenames: false
         language: system
         entry: mix deps.get
-      - id: mix-test
-        name: Run test suite
-        entry: zsh -c 'source .env' && mix test
-        language: system
-        pass_filenames: false
-        files: \.exs*$
       - id: mix-format
         name: Format Elixir files
-        entry: mix format --check-formatted
+        entry: mix format
         language: system
         files: \.exs*$
       - id: mix-compile

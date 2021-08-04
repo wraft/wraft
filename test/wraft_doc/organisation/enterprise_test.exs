@@ -8,6 +8,7 @@ defmodule WraftDoc.EnterpriseTest do
   use Bamboo.Test
 
   alias WraftDoc.{
+    Account.AuthToken,
     Enterprise,
     Enterprise.ApprovalSystem,
     Enterprise.Flow,
@@ -347,9 +348,19 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "invite member send a E-mail to invite a member and returns an oban job" do
     user = insert(:user)
+    role = insert(:role)
     to_email = "myemail@app.com"
-    {:ok, oban_job} = Enterprise.invite_team_member(user, user.organisation, to_email)
+    {:ok, oban_job} = Enterprise.invite_team_member(user, user.organisation, to_email, role)
     assert oban_job.args.email == to_email
+  end
+
+  test "invite member creates an auth token of type invite" do
+    user = insert(:user)
+    role = insert(:role)
+    to_email = "myemail@app.com"
+    auth_token_count = AuthToken |> Repo.all() |> length()
+    Enterprise.invite_team_member(user, user.organisation, to_email, role)
+    assert AuthToken |> Repo.all() |> length() == auth_token_count + 1
   end
 
   describe "create_plan/1" do

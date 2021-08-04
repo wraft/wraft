@@ -22,6 +22,7 @@ defmodule WraftDoc.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import WraftDoc.DataCase
+      import WraftDoc.Factory
     end
   end
 
