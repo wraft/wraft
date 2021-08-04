@@ -52,6 +52,13 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
          %User{} = user <- Account.registration(params, org),
          {:ok, token, _claims} <-
            Account.authenticate(%{user: user, password: params["password"]}) do
+      pid = self()
+
+      Task.start_link(fn ->
+        send(pid, {:status, "Deleting Auth Token"})
+        Account.delete_auth_token!(token)
+      end)
+
       conn
       |> put_status(:created)
       |> render("create.json", user: user, token: token)

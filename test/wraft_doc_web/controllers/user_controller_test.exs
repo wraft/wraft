@@ -143,7 +143,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       user = insert(:user)
 
-      token = Endpoint |> Phoenix.Token.sign("reset", user.email) |> Base.url_encode64()
+      token = WraftDoc.create_phx_token("reset", user.email)
 
       insert(:auth_token, value: token, token_type: "password_verify")
       conn = get(conn, Routes.v1_user_path(conn, :verify_token, token))
@@ -161,10 +161,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       user = insert(:user)
 
-      token =
-        Endpoint
-        |> Phoenix.Token.sign("reset", user.email, signed_at: -861)
-        |> Base.url_encode64()
+      token = WraftDoc.create_phx_token("reset", user.email, signed_at: -861)
 
       insert(:auth_token, value: token, token_type: "password_verify")
       conn = get(conn, Routes.v1_user_path(conn, :verify_token, token))
@@ -177,7 +174,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       user = insert(:user)
 
-      token = Endpoint |> Phoenix.Token.sign("reset", user.email) |> Base.url_encode64()
+      token = WraftDoc.create_phx_token("reset", user.email)
 
       insert(:auth_token, value: token, token_type: "password_verify", user: user)
       attrs = %{token: token, password: "123456789"}
@@ -194,7 +191,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       user = insert(:user)
 
-      token = Endpoint |> Phoenix.Token.sign("reset", user.email) |> Base.url_encode64()
+      token = WraftDoc.create_phx_token("reset", user.email)
 
       insert(:auth_token, value: token, token_type: "password_verify")
       attrs = %{token: token, password: "123"}
@@ -226,10 +223,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       user = insert(:user)
 
-      token =
-        Endpoint
-        |> Phoenix.Token.sign("reset", user.email, signed_at: -861)
-        |> Base.url_encode64()
+      token = WraftDoc.create_phx_token("reset", user.email, signed_at: -861)
 
       insert(:auth_token, value: token, token_type: "password_verify")
       conn = post(conn, Routes.v1_user_path(conn, :reset, %{token: token, password: "eeqeqe"}))

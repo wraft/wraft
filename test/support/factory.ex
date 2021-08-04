@@ -335,7 +335,7 @@ defmodule WraftDoc.Factory do
   def auth_token_factory do
     %AuthToken{
       value: "token",
-      token_type: "token",
+      token_type: "password_verify",
       expiry_datetime: Timex.shift(Timex.now(), days: 1),
       user: build(:user)
     }

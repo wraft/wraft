@@ -1,8 +1,8 @@
 defmodule WraftDoc.AccountTest do
   use WraftDoc.DataCase, async: true
-  import WraftDoc.Factory
   alias WraftDoc.Account
-  alias WraftDocWeb.Endpoint
+  alias WraftDoc.Account.AuthToken
+
   @moduletag :account
   @valid_attrs %{
     "password" => "Password",
@@ -47,24 +47,29 @@ defmodule WraftDoc.AccountTest do
       organisation = insert(:organisation)
 
       token =
-        Phoenix.Token.sign(Endpoint, "organisation_invite", %{
-          organisation: organisation,
+        WraftDoc.create_phx_token("organisation_invite", %{
+          organisation_id: organisation.id,
           email: @email,
           role: "user"
         })
 
-      {:ok, org, _} = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
-      assert org == organisation
+      insert(:auth_token, value: token, token_type: "invite")
+
+      {:ok, ^organisation, %{"token" => ^token, "email" => @email, "role" => "user"}} =
+        Account.get_organisation_from_token(%{"token" => token, "email" => @email})
     end
 
     test "return error for valid token and different email" do
       organisation = insert(:organisation)
 
       token =
-        Phoenix.Token.sign(Endpoint, "organisation_invite", %{
-          organisation: organisation,
-          email: @email
+        WraftDoc.create_phx_token("organisation_invite", %{
+          organisation_id: organisation.id,
+          email: @email,
+          role: "user"
         })
+
+      insert(:auth_token, value: token, token_type: "invite")
 
       error =
         Account.get_organisation_from_token(%{"token" => token, "email" => "anotheremail@xyz.com"})
@@ -74,35 +79,63 @@ defmodule WraftDoc.AccountTest do
 
     test "return error for valid token but with unexpected encoded data" do
       token =
-        Phoenix.Token.sign(
-          Endpoint,
+        WraftDoc.create_phx_token(
           "organisation_invite",
-          "expects a map with organisation and email keys, giving a string"
+          "expects a map with organisation, email and role keys, giving a string"
         )
 
+      insert(:auth_token, value: token, token_type: "invite")
       error = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
 
       assert error == {:error, :no_permission}
     end
 
     test "return error for invalid token" do
-      token = Phoenix.Token.sign(Endpoint, "different salt", "")
+      organisation = insert(:organisation)
+
+      token =
+        WraftDoc.create_phx_token("different salt", %{
+          organisation_id: organisation.id,
+          email: @email,
+          role: "user"
+        })
+
+      insert(:auth_token, value: token, token_type: "invite")
       error = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
 
-      assert error == {:error, :no_permission}
+      assert error == {:error, :fake}
+    end
+
+    test "return error when token does not exist" do
+      organisation = insert(:organisation)
+
+      token =
+        WraftDoc.create_phx_token("organisation_invite", %{
+          organisation_id: organisation.id,
+          email: @email,
+          role: "user"
+        })
+
+      error = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
+
+      assert error == {:error, :fake}
     end
 
     test "return error for expired token" do
       organisation = build(:organisation)
 
       token =
-        Phoenix.Token.sign(
-          Endpoint,
+        WraftDoc.create_phx_token(
           "organisation_invite",
-          %{organisation: organisation, email: @email},
+          %{
+            organisation_id: organisation.id,
+            email: @email,
+            role: "user"
+          },
           signed_at: -900_001
         )
 
+      insert(:auth_token, value: token, token_type: "invite")
       error = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
 
       assert error == {:error, :expired}
@@ -257,65 +290,146 @@ defmodule WraftDoc.AccountTest do
     end
   end
 
-  describe "create_token/1" do
+  describe "create_password_token/1" do
     test "create token when the email of a valid user is given" do
       user = insert(:user)
-      token = Account.create_token(%{"email" => user.email})
+      token = Account.create_password_token(%{"email" => user.email})
       refute token.value == nil
       assert token.user.email == user.email
-      assert token.token_type == "password_verify"
+      assert token.token_type == :password_verify
     end
 
     test "return error when the email given is not of valid user" do
-      response = Account.create_token(%{"email" => "testamail@xyz.com"})
+      response = Account.create_password_token(%{"email" => "testamail@xyz.com"})
       assert response == {:error, :invalid_email}
     end
 
     test "return error for invalid attrs" do
-      response = Account.create_token(%{})
+      response = Account.create_password_token(%{})
       assert response == {:error, :invalid_email}
     end
   end
 
-  describe "check_token/1" do
+  describe "check_token/2" do
     test "test when valid token is given" do
       user = insert(:user)
-      auth_token = Account.create_token(%{"email" => user.email})
-      response = Account.check_token(auth_token.value)
+      auth_token = Account.create_password_token(%{"email" => user.email})
+      response = Account.check_token(auth_token.value, :password_verify)
       assert response.value == auth_token.value
       assert response.token_type == auth_token.token_type
       assert response.expiry_datetime == auth_token.expiry_datetime
       assert response.user_id == auth_token.user_id
     end
 
+    test "returns the payload and not auth token with valid token for invite token type" do
+      user = insert(:user)
+      email = Faker.Internet.email()
+      org_id = Faker.UUID.v4()
+
+      token =
+        WraftDoc.create_phx_token("organisation_invite", %{organisation_id: org_id, email: email})
+
+      Account.insert_auth_token!(user, %{value: token, token_type: "invite"})
+
+      assert {:ok, response} = Account.check_token(token, :invite)
+      assert %{organisation_id: org_id, email: email} == response
+    end
+
     test "test when invalid token is given" do
-      value = Endpoint |> Phoenix.Token.sign("invalid", "email") |> Base.url_encode64()
+      value = WraftDoc.create_phx_token("invalid", "email")
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")
-      response = Account.check_token(auth_token.value)
+      response = Account.check_token(auth_token.value, :password_verify)
       assert response == {:error, :fake}
     end
 
     test "test when expired token is given" do
-      value =
-        Endpoint
-        |> Phoenix.Token.sign("reset", "email", signed_at: -861)
-        |> Base.url_encode64()
+      value = WraftDoc.create_phx_token("reset", "email", signed_at: -861)
 
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")
-      response = Account.check_token(auth_token.value)
+      response = Account.check_token(auth_token.value, :password_verify)
       assert response == {:error, :expired}
     end
 
     test "test when token does not exist" do
-      response = Account.check_token("invalid token")
+      response = Account.check_token("invalid_token", :password_verify)
       assert response == {:error, :fake}
+    end
+  end
+
+  describe "insert_auth_token!/2" do
+    test "inserts new auth token with valid params" do
+      user = insert(:user)
+      params = %{value: "value", token_type: "invite"}
+      assert %AuthToken{} = auth_token = Account.insert_auth_token!(user, params)
+      assert [^auth_token] = Repo.all(AuthToken)
+    end
+
+    test "raises with invalid params" do
+      user = insert(:user)
+      params = %{value: "value", token_type: "wrong"}
+      assert_raise(Ecto.InvalidChangesetError, fn -> Account.insert_auth_token!(user, params) end)
+    end
+
+    test "raises with invalid arguments" do
+      params = %{value: "value", token_type: "invite"}
+
+      assert_raise(RuntimeError, "Unexpected arguments passed.", fn ->
+        Account.insert_auth_token!("invalid", params)
+      end)
+    end
+  end
+
+  describe "delete_auth_token!/1" do
+    test "deletes the given auth token" do
+      auth_token = insert(:auth_token)
+      deleted_auth_token = Account.delete_auth_token!(auth_token)
+
+      assert auth_token.id == deleted_auth_token.id
+      assert [] == Repo.all(AuthToken)
+    end
+
+    test "deletes the auth token with the given value" do
+      auth_token = insert(:auth_token)
+      deleted_auth_token = Account.delete_auth_token!(auth_token.value)
+
+      assert auth_token.id == deleted_auth_token.id
+      assert [] == Repo.all(AuthToken)
+    end
+
+    test "raises with non existing auth token" do
+      auth_token = insert(:auth_token)
+      assert Account.delete_auth_token!(auth_token)
+      assert_raise(Ecto.StaleEntryError, fn -> Account.delete_auth_token!(auth_token) end)
+    end
+
+    test "raises with non existing auth token value" do
+      assert_raise(FunctionClauseError, fn -> Account.delete_auth_token!("non-exitest-token") end)
+    end
+  end
+
+  describe "delete_auth_token/2" do
+    test "deletes all auth tokens of given type belonging to the given user ID" do
+      user = insert(:user)
+      auth_token1 = insert(:auth_token, token_type: "password_verify", user: user)
+      auth_token2 = insert(:auth_token, token_type: "password_verify", user: user)
+
+      auth_token3 = insert(:auth_token, token_type: "invite", user: user)
+      auth_token4 = insert(:auth_token)
+
+      assert {2, nil} = Account.delete_auth_token(user.id, "password_verify")
+
+      auth_token_ids = AuthToken |> Repo.all() |> Enum.map(& &1.id) |> Enum.sort()
+
+      refute Enum.member?(auth_token_ids, auth_token1.id)
+      refute Enum.member?(auth_token_ids, auth_token2.id)
+      assert Enum.sort([auth_token3.id, auth_token4.id]) == auth_token_ids
     end
   end
 
   describe "reset_password/1" do
     test "update user password when valid token and password are given" do
       user = insert(:user)
-      auth_token = Account.create_token(%{"email" => user.email})
+      auth_token = Account.create_password_token(%{"email" => user.email})
       params = %{"token" => auth_token.value, "password" => "newpassword"}
       updated_user = Account.reset_password(params)
       assert Bcrypt.verify_pass("newpassword", updated_user.encrypted_password) == true
@@ -323,14 +437,14 @@ defmodule WraftDoc.AccountTest do
 
     test "does not update user password when password is not valid" do
       user = insert(:user)
-      auth_token = Account.create_token(%{"email" => user.email})
+      auth_token = Account.create_password_token(%{"email" => user.email})
       params = %{"token" => auth_token.value, "password" => "invalid"}
       {:error, changeset} = Account.reset_password(params)
       assert %{password: ["should be at least 8 character(s)"]} == errors_on(changeset)
     end
 
     test "return error when token is invalid" do
-      value = Endpoint |> Phoenix.Token.sign("invalid", "email") |> Base.url_encode64()
+      value = WraftDoc.create_phx_token("invalid", "email")
       auth_token = insert(:auth_token, value: value, token_type: "password_verify")
       params = %{"token" => auth_token.value, "password" => "newpassword"}
       response = Account.reset_password(params)
