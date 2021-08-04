@@ -1,7 +1,9 @@
 defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
   import WraftDoc.Factory
   use WraftDocWeb.ConnCase
+
   @moduletag :controller
+
   alias WraftDoc.{Account.User, Repo}
 
   @valid_attrs %{
@@ -20,12 +22,13 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
     role = insert(:role)
 
     token =
-      Phoenix.Token.sign(WraftDocWeb.Endpoint, "organisation_invite", %{
-        organisation: organisation,
+      WraftDoc.create_phx_token("organisation_invite", %{
+        organisation_id: organisation.id,
         email: @valid_attrs["email"],
         role: role.name
       })
 
+    insert(:auth_token, value: token, token_type: "invite")
     params = Map.put(@valid_attrs, "token", token)
 
     conn =
@@ -42,12 +45,13 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
     insert(:role, name: "super_admin")
 
     token =
-      Phoenix.Token.sign(WraftDocWeb.Endpoint, "organisation_invite", %{
-        organisation: organisation,
+      WraftDoc.create_phx_token("organisation_invite", %{
+        organisation_id: organisation.id,
         email: @valid_attrs["email"],
         role: "super_admin"
       })
 
+    insert(:auth_token, value: token, token_type: "invite")
     params = Map.put(@valid_attrs, "token", token)
     count_before = User |> Repo.all() |> length()
 
@@ -66,17 +70,40 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
            |> List.to_string() =~ "super_admin"
   end
 
+  test "invite auth token is deleted on successfull registration", %{conn: conn} do
+    organisation = insert(:organisation)
+    role = insert(:role)
+
+    token =
+      WraftDoc.create_phx_token("organisation_invite", %{
+        organisation_id: organisation.id,
+        email: @valid_attrs["email"],
+        role: role.name
+      })
+
+    insert(:auth_token, value: token, token_type: "invite")
+
+    params = Map.put(@valid_attrs, "token", token)
+
+    conn
+    |> post(Routes.v1_registration_path(conn, :create, params))
+    |> doc(operation_id: "create_user")
+
+    assert_receive({:status, "Deleting Auth Token"})
+  end
+
   test "render error for invalid attributes", %{conn: conn} do
     organisation = insert(:organisation)
     role = insert(:role)
 
     token =
-      Phoenix.Token.sign(WraftDocWeb.Endpoint, "organisation_invite", %{
-        organisation: organisation,
+      WraftDoc.create_phx_token("organisation_invite", %{
+        organisation_id: organisation.id,
         email: @invalid_attrs["email"],
         role: role.name
       })
 
+    insert(:auth_token, value: token, token_type: "invite")
     params = Map.put(@invalid_attrs, "token", token)
 
     conn =

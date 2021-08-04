@@ -420,36 +420,22 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
-  Send invitation email to given email.
+  Sends invitation email to the email with the role.
   """
 
-  @spec invite_team_member(User.t(), Organisation.t(), String.t()) ::
-          {:ok, Oban.Job.t()} | {:error, any}
-  def invite_team_member(%User{name: name}, %{name: org_name} = organisation, email) do
-    token =
-      Phoenix.Token.sign(WraftDocWeb.Endpoint, "organisation_invite", %{
-        organisation: organisation,
-        email: email
-      })
-
-    %{org_name: org_name, user_name: name, email: email, token: token}
-    |> EmailWorker.new(queue: "mailer", tags: ["invite"])
-    |> Oban.insert()
-  end
-
-  @doc """
-  Send invitation email to given organisation.
-  """
-
-  def invite_team_member(%User{name: name}, %{name: org_name} = organisation, email, role)
+  def invite_team_member(%User{name: name} = user, %{name: org_name} = organisation, email, role)
       when is_binary(email)
       when is_binary(role) do
     token =
-      Phoenix.Token.sign(WraftDocWeb.Endpoint, "organisation_invite", %{
+      WraftDoc.create_phx_token("organisation_invite", %{
         organisation: organisation,
         email: email,
         role: role
       })
+
+    Task.start_link(fn ->
+      Account.insert_auth_token!(user, %{value: token, token_type: "invite"})
+    end)
 
     %{org_name: org_name, user_name: name, email: email, token: token}
     |> EmailWorker.new(queue: "mailer", tags: ["invite"])

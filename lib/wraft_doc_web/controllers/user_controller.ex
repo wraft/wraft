@@ -336,7 +336,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
   @spec generate_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def generate_token(conn, params) do
-    with %AuthToken{} = auth_token <- Account.create_token(params) do
+    with %AuthToken{} = auth_token <- Account.create_password_token(params) do
       auth_token |> Email.password_reset() |> Mailer.deliver_now()
 
       render(conn, "auth_token.json", auth_token: auth_token)
@@ -361,7 +361,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
   @spec verify_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def verify_token(conn, %{"token" => token}) do
-    with %AuthToken{} = auth_token <- Account.check_token(token) do
+    with %AuthToken{} = auth_token <- Account.check_token(token, :password_verify) do
       render(conn, "check_token.json", token: auth_token.value)
     end
   end
