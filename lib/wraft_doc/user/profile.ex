@@ -3,7 +3,7 @@ defmodule WraftDoc.Account.Profile do
     This is the Profile model
   """
   use WraftDoc.Schema
-  use Arc.Ecto.Schema
+  use Waffle.Ecto.Schema
 
   schema "basic_profile" do
     field(:name, :string)

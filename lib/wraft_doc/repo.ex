@@ -2,6 +2,8 @@ defmodule WraftDoc.Repo do
   use Ecto.Repo, otp_app: :wraft_doc, adapter: Ecto.Adapters.Postgres
   use Scrivener, page_size: 10
 
+  # use ExAudit.Repo
+
   @doc """
   Dynamically loads the repository url from the
   DATABASE_URL environment variable.

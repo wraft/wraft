@@ -169,7 +169,7 @@ defmodule WraftDoc.Document do
         |> ContentTypeField.changeset(%{name: key})
         |> Repo.insert()
 
-      nil ->
+      _ ->
         nil
     end
   end
@@ -493,9 +493,9 @@ defmodule WraftDoc.Document do
     end
   end
 
-  @spec create_instance(ContentType.t(), State.t(), map) ::
-          %Instance{content_type: ContentType.t(), state: State.t()}
-          | {:error, Ecto.Changeset.t()}
+  # @spec create_instance(ContentType.t(), State.t(), map) ::
+  #         %Instance{content_type: ContentType.t(), state: State.t()}
+  #         | {:error, Ecto.Changeset.t()}
   def create_instance(%{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
     params = Map.merge(params, %{"instance_id" => instance_id})
@@ -776,7 +776,7 @@ defmodule WraftDoc.Document do
   List all instances under a content types.
   """
   # TODO - improve tests
-  @spec instance_index(binary, map) :: map
+  # @spec instance_index(binary, map) :: map
   def instance_index(<<_::288>> = c_type_id, params) do
     query =
       from(i in Instance,

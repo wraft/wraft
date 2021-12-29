@@ -3,30 +3,41 @@ defmodule WraftDocWeb.Worker.EmailWorker do
   Oban worker for sending emails.
   """
   use Oban.Worker, queue: :mailer
-  @impl Oban.Worker
   alias WraftDocWeb.{Mailer, Mailer.Email}
 
-  def perform(
-        %{"org_name" => org_name, "user_name" => user_name, "email" => email, "token" => token},
-        _job
-      ) do
+  @impl Oban.Worker
+  def perform(%Job{
+        args: %{
+          "org_name" => org_name,
+          "user_name" => user_name,
+          "email" => email,
+          "token" => token
+        }
+      }) do
     IO.puts("Job started..!")
-    org_name |> Email.invite_email(user_name, email, token) |> Mailer.deliver_later()
+
+    org_name
+    |> Email.invite_email(user_name, email, token)
+    |> Mailer.deliver_later()
+
     IO.puts("Job finished..!")
 
     :ok
   end
 
-  def perform(
-        %{
+  def perform(%Job{
+        args: %{
           "user_name" => user_name,
           "notification_message" => notification_message,
           "email" => email
-        },
-        _job
-      ) do
+        }
+      }) do
     IO.puts("Notification mail job started...!")
-    user_name |> Email.notification_email(notification_message, email) |> Mailer.deliver_later()
+
+    user_name
+    |> Email.notification_email(notification_message, email)
+    |> Mailer.deliver_later()
+
     IO.puts("Notification mailer job end...!")
   end
 end

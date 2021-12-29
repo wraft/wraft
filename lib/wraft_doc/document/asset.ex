@@ -5,7 +5,7 @@ defmodule WraftDoc.Document.Asset do
   alias __MODULE__
   alias WraftDoc.Account.User
   use WraftDoc.Schema
-  use Arc.Ecto.Schema
+  use Waffle.Ecto.Schema
 
   import Ecto.Query
   @derive {Jason.Encoder, only: [:name]}

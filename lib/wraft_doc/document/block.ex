@@ -4,7 +4,7 @@ defmodule WraftDoc.Document.Block do
   """
   use WraftDoc.Schema
 
-  use Arc.Ecto.Schema
+  use Waffle.Ecto.Schema
   alias __MODULE__
   alias WraftDoc.Account.User
   import Ecto.Query
