@@ -1,4 +1,4 @@
-defmodule WraftDocWeb.Worker.BulkWorker do
+defmodule WraftDoc.Workers.BulkWorker do
   @moduledoc """
   Oban worker for bulk building of docs.
   """

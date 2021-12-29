@@ -171,7 +171,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   Createm new organisation
   """
 
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t() | any()
 
   def create(conn, params) do
     current_user = conn.assigns.current_user
