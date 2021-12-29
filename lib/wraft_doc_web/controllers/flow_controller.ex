@@ -95,7 +95,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
       User:
         swagger_schema do
           title("User")
-          description("user deltails")
+          description("user details")
 
           properties do
             name(:string, "Users name")

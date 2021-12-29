@@ -17,12 +17,12 @@ defmodule WraftDoc.Enterprise do
     Enterprise.Organisation,
     Enterprise.Plan,
     Enterprise.Vendor,
-    Repo
+    Repo,
+    Workers.EmailWorker,
+    Workers.ScheduledWorker
   }
 
   alias WraftDoc.Account.Role
-
-  alias WraftDocWeb.Worker.{EmailWorker, ScheduledWorker}
 
   @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
   @default_controlled_states [
@@ -323,7 +323,7 @@ defmodule WraftDoc.Enterprise do
   Create an Organisation
   """
 
-  @spec create_organisation(User.t(), map) :: {:ok, Organisation.t()}
+  @spec create_organisation(User.t(), map) :: Organisation.t()
   def create_organisation(%User{} = user, params) do
     user
     |> build_assoc(:organisation)
