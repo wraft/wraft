@@ -334,7 +334,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec generate_token(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec generate_token(Plug.Conn.t(), map) :: Plug.Conn.t() | any()
   def generate_token(conn, params) do
     with %AuthToken{} = auth_token <- Account.create_password_token(params) do
       auth_token |> Email.password_reset() |> Mailer.deliver_now()
