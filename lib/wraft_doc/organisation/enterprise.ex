@@ -87,10 +87,6 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  @doc """
-  Create an uncontrolled flow flow.
-  """
-
   def create_flow(%{organisation_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
@@ -179,9 +175,6 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  @doc """
-  Update a uncontrolled flow.
-  """
   @spec update_flow(Flow.t(), User.t(), map) :: Flow.t() | {:error, Ecto.Changeset.t()}
   def update_flow(flow, %User{id: id}, params) do
     flow
@@ -482,22 +475,12 @@ defmodule WraftDoc.Enterprise do
   organisation.entries= [%Organisation{name: "ABC Enterprices"}]
   """
 
+  @spec list_organisations(map) :: Scrivener.Page.t()
   def list_organisations(%{"name" => name} = params) do
     query = from(o in Organisation, where: ilike(o.name, ^"%#{name}%"))
     Repo.paginate(query, params)
   end
 
-  @doc """
-  Function to list all organisation
-
-  ## Parameters
-  - `params` - A map of params to paginate list of organisation
-
-  ## Examples
-  organisations=list_organisations(%{"page"=>1})
-  organisation.entries= [%Organisation{}]
-  """
-  @spec list_organisations(map) :: Scrivener.Page.t()
   def list_organisations(params) do
     Repo.paginate(Organisation, params)
   end
@@ -963,7 +946,8 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Get a payment from its UUID.
   """
-  @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
+
+  # @spec get_payment(Ecto.UUID.t(), User.t()) :: Payment.t() | nil
 
   # def get_payment(payment_id, %{role_names: role_names, organisation_id: org_id}) do
   #   if Enum.member?(role_names, "super_admin") do

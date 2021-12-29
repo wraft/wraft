@@ -5,12 +5,14 @@ defmodule WraftDocWeb.ConnCase do
 
   Such tests rely on `Phoenix.ConnTest` and also
   import other functionality to make it easier
-  to build common datastructures and query the data layer.
+  to build common data structures and query the data layer.
 
   Finally, if the test case interacts with the database,
-  it cannot be async. For this reason, every test runs
-  inside a transaction which is reset at the beginning
-  of the test unless the test case is marked as async.
+  we enable the SQL sandbox, so changes done to the database
+  are reverted at the end of every test. If you are using
+  PostgreSQL, you can even run database tests asynchronously
+  by setting `use WraftDocWeb.ConnCase, async: true`, although
+  this option is not recommended for other databases.
   """
 
   use ExUnit.CaseTemplate
@@ -18,23 +20,20 @@ defmodule WraftDocWeb.ConnCase do
   using do
     quote do
       # Import conveniences for testing with connections
-      use Phoenix.ConnTest
+      import Plug.Conn
+      import Phoenix.ConnTest
+      import WraftDocWeb.ConnCase
       alias WraftDocWeb.Router.Helpers, as: Routes
       import Bureaucrat.Helpers
+
       # The default endpoint for testing
       @endpoint WraftDocWeb.Endpoint
     end
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(WraftDoc.Repo)
-
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, {:shared, self()})
-    end
-
-    conn = Phoenix.ConnTest.build_conn()
-
-    {:ok, conn: conn}
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WraftDoc.Repo, shared: not tags[:async])
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
+    {:ok, conn: Phoenix.ConnTest.build_conn()}
   end
 end

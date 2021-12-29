@@ -3,7 +3,7 @@ defmodule WraftDoc.Document.Theme do
     The theme model.
   """
   use WraftDoc.Schema
-  use Arc.Ecto.Schema
+  use Waffle.Ecto.Schema
   alias __MODULE__
   alias WraftDoc.Account.User
   @derive {Jason.Encoder, only: [:name]}

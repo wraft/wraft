@@ -3,7 +3,7 @@ defmodule WraftDoc.Document.Layout do
   The layout model.
   """
   use WraftDoc.Schema
-  use Arc.Ecto.Schema
+  use Waffle.Ecto.Schema
 
   import Ecto.Query
   alias __MODULE__

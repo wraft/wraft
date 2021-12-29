@@ -1,8 +1,8 @@
 <div class="bg-gy-lighter height-full flex item-center -mt-8">
   <div class="login container">
     <div class="login-container">
-      <h4 class="text-center mb-1">Signup your account</h4>
-      <%= form_for @changeset, signup_path(@conn, :create), [ class: "bg-white mb-8"], fn f -> %>
+      <h4 class="text-center mb-1">Login to your account</h4>
+      <%= form_for @changeset, Routes.session_path(@conn, :create), [ class: "bg-white mb-8"], fn f -> %>
       <div class="mb-4">
         <label class="block label mb-2" for="username">
           Email
