@@ -1,11 +1,12 @@
 defmodule WraftDoc.Mixfile do
+  @moduledoc false
   use Mix.Project
 
   def project do
     [
       app: :wraft_doc,
       version: "0.0.1",
-      elixir: "~> 1.10.2",
+      elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,
@@ -32,7 +33,7 @@ defmodule WraftDoc.Mixfile do
   def application do
     [
       mod: {WraftDoc.Application, []},
-      extra_applications: [:logger, :runtime_tools, :arc_ecto]
+      extra_applications: [:logger, :runtime_tools, :waffle_ecto]
     ]
   end
 
@@ -45,63 +46,70 @@ defmodule WraftDoc.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.4.14", override: true},
-      {:phoenix_pubsub, "~> 1.1.2"},
-      {:phoenix_ecto, "~> 4.1.0"},
-      {:ecto_sql, "~> 3.4"},
+      {:phoenix, "~> 1.6.4", override: true},
+      {:phoenix_pubsub, "~> 2.0.0"},
+      {:phoenix_ecto, "~> 4.4.0"},
+      {:ecto_sql, "~> 3.7.1"},
       {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 2.14.1"},
-      {:phoenix_live_reload, "~> 1.2.1", only: :dev},
-      {:gettext, "~> 0.17.4"},
-      {:plug_cowboy, "~> 2.1.2"},
+      {:phoenix_html, "~> 3.1.0", override: true},
+      {:phoenix_live_reload, "~> 1.3.3", only: :dev},
+      {:esbuild, "~> 0.3", runtime: Mix.env() == :dev},
+      {:gettext, "~> 0.18.2"},
+      {:plug_cowboy, "~> 2.5.2"},
       {:distillery, "~> 2.1.1"},
       # Password encryption
-      {:comeonin, "~> 5.1.3"},
-      {:bcrypt_elixir, "~> 2.0.3"},
+      {:comeonin, "~> 5.3.2"},
+      {:bcrypt_elixir, "~> 2.3.0"},
       # User authentication
-      {:guardian, "~> 2.0.0"},
+      {:guardian, "~> 2.2.1"},
       {:guardian_phoenix, "~> 2.0"},
       # CORS
       {:cors_plug, "~> 2.0.2"},
       # File upload to AWS
-      {:arc, "~> 0.11.0"},
-      {:arc_ecto, "~> 0.11.3"},
+      {:waffle, "~> 1.1.5"},
+      {:waffle_ecto, "~> 0.0.11"},
+      # Waffle support for AWS S3
+      {:ex_aws, "~> 2.2.9"},
+      {:ex_aws_s3, "~> 2.0"},
+      {:hackney, "~> 1.18.0"},
+      {:sweet_xml, "~> 0.7.2"},
       # Time and date formating
-      {:timex, "~>  3.6.1"},
+      {:timex, "~>  3.7.6"},
       # JSON parser
-      {:jason, "~> 1.1"},
-      {:poison, "~> 3.1", override: true},
+      {:jason, "~> 1.2.2"},
+      {:poison, "~> 5.0.0", override: true},
       # API documentation
       {:phoenix_swagger, "~> 0.8.2"},
 
       # For Writing Api documentation by slate
       {:bureaucrat, "~> 0.2.5"},
-      {:ex_json_schema, "~> 0.5"},
+      {:ex_json_schema, "~> 0.7.1"},
       # For testing
-      {:ex_machina, "~> 2.3", only: :test},
-      {:bypass, "~> 1.0", only: :test},
-      {:excoveralls, "~> 0.10", only: :test},
-      {:faker, "~> 0.16", only: :test},
+      {:ex_machina, "~> 2.7", only: :test},
+      {:bypass, "~> 2.1.0", only: :test},
+      {:excoveralls, "~> 0.14.4", only: :test},
+      {:faker, "~> 0.17", only: :test},
       # Pagination
-      {:scrivener_ecto, "~> 2.3"},
-      {:scrivener_list, "~> 2.0"},
+      {:scrivener_ecto, "~> 2.7.0"},
+      {:scrivener_list, "~> 2.0.1"},
       # QR code generation
-      {:eqrcode, "~> 0.1.7"},
+      {:eqrcode, "~> 0.1.10"},
       # Background jobs
-      {:oban, "~> 1.2"},
+      {:oban, "~> 2.10.1"},
       # Email client
-      {:bamboo, "~> 1.4"},
-      {:httpoison, "~> 1.6"},
+      {:bamboo, "~> 2.2.0"},
+      {:httpoison, "~> 1.8.0"},
 
       # Activity stream
       {:spur, git: "https://github.com/shijithkjayan/spur.git", branch: :master},
+      {:ex_audit, "~> 0.9.0"},
 
       # CSV parser
-      {:csv, "~> 2.3.1"},
+      {:csv, "~> 2.4.1"},
       # Live dashboard
-      {:phoenix_live_dashboard, "~> 0.1.0"},
+      {:phoenix_live_dashboard, "~> 0.6.2"},
       # Business logic flow
-      {:opus, "~> 0.6.1"},
+      {:opus, "~> 0.8.3"},
       # Razorpay
       {:razorpay, "~> 0.5.0"},
       # PDF generation using wkhtmltopdf
@@ -112,7 +120,7 @@ defmodule WraftDoc.Mixfile do
       {:ecto_enum, "~> 1.4"},
 
       # Code analysis tool
-      {:credo, "~> 1.5", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.6.1", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -124,10 +132,12 @@ defmodule WraftDoc.Mixfile do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
+      setup: ["deps.get", "ecto.setup"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"],
-      swagger: ["phx.swagger.generate priv/static/swagger.json"]
+      swagger: ["phx.swagger.generate priv/static/swagger.json"],
+      "assets.deploy": ["esbuild default --minify", "phx.digest"]
     ]
   end
 end

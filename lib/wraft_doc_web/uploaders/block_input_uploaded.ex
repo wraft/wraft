@@ -1,11 +1,10 @@
 defmodule WraftDocWeb.BlockInputUploader do
   @moduledoc false
+  use Waffle.Definition
+  use Waffle.Ecto.Definition
 
-  use Arc.Definition
-  use Arc.Ecto.Definition
-
-  # Include ecto support (requires package arc_ecto installed):
-  # use Arc.Ecto.Definition
+  # Include ecto support (requires package waffle_ecto installed):
+  # use Waffle.Ecto.Definition
 
   @versions [:original]
 

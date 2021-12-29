@@ -2,7 +2,7 @@
   <div class="login container">
       <div class="login-container">
           <h4 class="text-center mb-1">Login to your account</h4>
-          <%= form_for @conn, session_path(@conn, :create), [as: :session, class: "bg-white mb-8"], fn f -> %>
+          <%= form_for @conn, Routes.session_path(@conn, :create), [as: :session, class: "bg-white mb-8"], fn f -> %>
             <div class="mb-4">
               <label class="block label mb-2" for="username">
                 Email

@@ -3,7 +3,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     The organisation model.
   """
   use WraftDoc.Schema
-  use Arc.Ecto.Schema
+  use Waffle.Ecto.Schema
   alias WraftDoc.Enterprise.Organisation
 
   @derive {Jason.Encoder, only: [:name]}

@@ -85,7 +85,7 @@ The dependencies used, other than the default ones, are listed below
   - Used for user authentication.
 - cors_plug v2.0.2
   - CORS validation
-- arc v0.11.0 and arc_ecto v0.11.3
+- waffle v0.11.0 and waffle_ecto v0.11.3
   - File upload
 - Timex v3.6.1
   - Date/Time library

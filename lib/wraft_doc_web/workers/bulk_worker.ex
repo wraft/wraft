@@ -2,22 +2,21 @@ defmodule WraftDocWeb.Worker.BulkWorker do
   @moduledoc """
   Oban worker for bulk building of docs.
   """
-  use Oban.Worker, queue: :default
-  @impl Oban.Worker
+  use Oban.Worker, queue: :events, tags: ["block template", "pipeline"]
   alias Opus.PipelineError
   alias WraftDoc.{Account, Document, Document.Pipeline.TriggerHistory, Enterprise, Repo}
 
-  def perform(
-        %{
+  @impl Oban.Worker
+  def perform(%Job{
+        args: %{
           "user_uuid" => user_uuid,
           "c_type_uuid" => c_type_uuid,
           "state_uuid" => state_uuid,
           "d_temp_uuid" => d_temp_uuid,
           "mapping" => mapping,
           "file" => path
-        },
-        _job
-      ) do
+        }
+      }) do
     IO.puts("Job starting..")
 
     mapping = convert_to_map(mapping)
@@ -30,15 +29,14 @@ defmodule WraftDocWeb.Worker.BulkWorker do
     :ok
   end
 
-  def perform(
-        %{
+  def perform(%Job{
+        args: %{
           "user_uuid" => user_uuid,
           "c_type_uuid" => c_type_uuid,
           "mapping" => mapping,
           "file" => path
-        },
-        _job
-      ) do
+        }
+      }) do
     IO.puts("Job starting..")
     mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
@@ -48,9 +46,7 @@ defmodule WraftDocWeb.Worker.BulkWorker do
     :ok
   end
 
-  def perform(%{"user_uuid" => user_uuid, "mapping" => mapping, "file" => path}, %{
-        tags: ["block template"]
-      }) do
+  def perform(%Job{args: %{"user_uuid" => user_uuid, "mapping" => mapping, "file" => path}}) do
     IO.puts("Job starting..")
     mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
@@ -59,7 +55,7 @@ defmodule WraftDocWeb.Worker.BulkWorker do
     :ok
   end
 
-  def perform(trigger, %{tags: ["pipeline_job"]}) do
+  def perform(%Job{} = trigger) do
     IO.puts("Job starting..")
     start_time = Timex.now()
     state = TriggerHistory.states()[:executing]

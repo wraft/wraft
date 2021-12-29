@@ -7,7 +7,8 @@ defmodule WraftDoc.Document.CollectionFormTest do
 
   alias WraftDoc.Document.CollectionForm
 
-  @create_attrs %{title: "asset one"}
+  uuid = Ecto.UUID.bingenerate()
+  @create_attrs %{title: "asset one", organisation_id: uuid, creator_id: uuid}
   @invalid_attrs %{title: 23}
 
   test "changeset with valid data" do
