@@ -115,7 +115,7 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
     pre_state = insert(:state, creator: current_user, organisation: organisation)
     post_state = insert(:state, creator: current_user, organisation: organisation)
     flow = insert(:flow, organisation: current_user.organisation)
-    approver = insert(:user, organisation: current_user.organisation)
+    _approver = insert(:user, organisation: current_user.organisation)
 
     approval_system =
       insert(:approval_system,
@@ -185,7 +185,7 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
     pre_state = insert(:state, creator: user, organisation: organisation)
     post_state = insert(:state, creator: user, organisation: organisation)
     flow = insert(:flow, organisation: user.organisation)
-    approver = insert(:user, organisation: user.organisation)
+    _approver = insert(:user, organisation: user.organisation)
 
     approval_system =
       insert(:approval_system,

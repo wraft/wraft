@@ -6,7 +6,7 @@ defmodule WraftDoc.Document.CollectionFormFieldTest do
   """
   alias WraftDoc.Document.CollectionFormField
 
-  @create_attrs %{name: "asset one"}
+  @create_attrs %{name: "asset one", field_type: "string"}
   @invalid_attrs %{name: 23}
 
   test "changeset with valid data" do

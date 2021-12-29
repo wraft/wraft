@@ -2,13 +2,13 @@ defmodule WraftDocWeb.Worker.ScheduledWorker do
   @moduledoc """
   Oban worker for running scheduled jobs.
   """
-  use Oban.Worker, queue: :scheduled
-  @impl Oban.Worker
+  use Oban.Worker, queue: :scheduled, tags: ["plan_expiry", "unused_assets"]
   import Ecto.Query
   alias WraftDoc.{Document.Asset, Document.LayoutAsset, Repo}
   alias WraftDoc.{Enterprise, Enterprise.Membership}
 
-  def perform(_args, %{tags: ["unused_assets"]}) do
+  @impl Oban.Worker
+  def perform(%Job{}) do
     IO.puts("Job started..!")
 
     query =
@@ -24,7 +24,7 @@ defmodule WraftDocWeb.Worker.ScheduledWorker do
     :ok
   end
 
-  def perform(%{"membership_uuid" => m_uuid}, %{tags: ["plan_expiry"]}) do
+  def perform(%Job{args: %{"membership_uuid" => m_uuid}}) do
     IO.puts("Job started..!")
 
     with %Membership{end_date: end_date} = membership <- Enterprise.get_membership(m_uuid) do

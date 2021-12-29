@@ -1,11 +1,10 @@
 defmodule WraftDocWeb.AssetUploader do
   @moduledoc false
+  use Waffle.Definition
+  use Waffle.Ecto.Definition
 
-  use Arc.Definition
-  use Arc.Ecto.Definition
-
-  # Include ecto support (requires package arc_ecto installed):
-  # use Arc.Ecto.Definition
+  # Include ecto support (requires package waffle_ecto installed):
+  # use Waffle.Ecto.Definition
 
   @versions [:original]
 
@@ -19,7 +18,12 @@ defmodule WraftDocWeb.AssetUploader do
 
   # Whitelist file extensions:
   # def validate({file, _}) do
-  #   ~w(.jpg .jpeg .gif .png) |> Enum.member?(Path.extname(file.file_name))
+  #   file_extension = file.file_name |> Path.extname() |> String.downcase()
+  #
+  #   case Enum.member?(~w(.jpg .jpeg .gif .png), file_extension) do
+  #     true -> :ok
+  #     false -> {:error, "invalid file type"}
+  #   end
   # end
 
   # Define a thumbnail transformation:

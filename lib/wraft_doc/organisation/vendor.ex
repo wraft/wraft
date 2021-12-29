@@ -6,7 +6,7 @@ defmodule WraftDoc.Enterprise.Vendor do
   """
 
   use WraftDoc.Schema
-  import Arc.Ecto.Schema
+  import Waffle.Ecto.Schema
   alias WraftDoc.Account.User
   alias __MODULE__
   @derive {Jason.Encoder, only: [:name]}
