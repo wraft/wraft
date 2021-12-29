@@ -4,8 +4,7 @@ defmodule WraftDoc.Notifications do
   """
   import Ecto.Query
 
-  alias WraftDoc.{Account.User, Notifications.Notification, Repo}
-  alias WraftDocWeb.Worker.EmailWorker
+  alias WraftDoc.{Account.User, Notifications.Notification, Repo, Workers.EmailWorker}
 
   @doc """
   Create notification entry

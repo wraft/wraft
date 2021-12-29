@@ -36,10 +36,11 @@ defmodule WraftDoc.Document do
     Enterprise.ApprovalSystem,
     Enterprise.Flow,
     Enterprise.Flow.State,
-    Repo
+    Repo,
+    Workers.BulkWorker
   }
 
-  alias WraftDocWeb.{AssetUploader, Worker.BulkWorker}
+  alias WraftDocWeb.AssetUploader
 
   @doc """
   Create a layout.

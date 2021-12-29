@@ -1,4 +1,4 @@
-defmodule WraftDocWeb.Worker.ScheduledWorker do
+defmodule WraftDoc.Workers.ScheduledWorker do
   @moduledoc """
   Oban worker for running scheduled jobs.
   """
