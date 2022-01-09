@@ -176,6 +176,33 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  describe "layout_files_upload/2" do
+    # i'm trying to write test
+    test "layout file upload with slug file uploads a file to slug" do
+      user = insert(:user)
+      layout = insert(:layout, creator: user)
+
+      params = %{
+        "slug_file" => %Plug.Upload{path: "test/fixtures/example.png", filename: "example.png"}
+      }
+
+      u_layout = Document.layout_files_upload(layout, params)
+      assert u_layout.slug_file.filename == "example.png"
+    end
+
+  test "layout file upload with screen shot files upload a file as screenshot" do
+    user = insert(:user)
+    layout = insert(:layout, creator: user)
+
+    params = %{
+      "screenshot" => %Plug.Upload{path: "test/fixtures/example.png", filename: "example.png"}
+    }
+
+    u_layout = Document.layout_files_upload(layout, params)
+    assert u_layout.screenshot.filename == "example.png"
+  end
+  end
+
   describe "get_layout/2" do
     @tag individual_test: "yup"
     test "get layout returns the layout data by uuid" do
