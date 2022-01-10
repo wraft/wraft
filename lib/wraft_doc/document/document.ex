@@ -92,6 +92,7 @@ defmodule WraftDoc.Document do
     |> Repo.update()
     |> case do
       {:ok, layout} ->
+        IO.inspect(layout, label: "layout")
         layout
 
       {:error, _} = changeset ->
