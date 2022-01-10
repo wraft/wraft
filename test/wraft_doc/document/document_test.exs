@@ -187,20 +187,21 @@ defmodule WraftDoc.DocumentTest do
       }
 
       u_layout = Document.layout_files_upload(layout, params)
-      assert u_layout.slug_file.filename == "example.png"
+      # IO.inspect(u_layout.slug_file)
+      assert u_layout.slug_file.file_name == "example.png"
     end
 
-  test "layout file upload with screen shot files upload a file as screenshot" do
-    user = insert(:user)
-    layout = insert(:layout, creator: user)
+    test "layout file upload with screen shot files upload a file as screenshot" do
+      user = insert(:user)
+      layout = insert(:layout, creator: user)
 
-    params = %{
-      "screenshot" => %Plug.Upload{path: "test/fixtures/example.png", filename: "example.png"}
-    }
+      params = %{
+        "screenshot" => %Plug.Upload{path: "test/fixtures/example.png", filename: "example.png"}
+      }
 
-    u_layout = Document.layout_files_upload(layout, params)
-    assert u_layout.screenshot.filename == "example.png"
-  end
+      u_layout = Document.layout_files_upload(layout, params)
+      assert u_layout.screenshot.file_name == "example.png"
+    end
   end
 
   describe "get_layout/2" do
