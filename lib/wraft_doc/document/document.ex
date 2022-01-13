@@ -70,7 +70,6 @@ defmodule WraftDoc.Document do
   @doc """
   Upload layout slug file.
   """
-  # TODO - write test
   @spec layout_files_upload(Layout.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
   def layout_files_upload(layout, %{"slug_file" => _} = params) do
     layout_update_files(layout, params)
@@ -92,7 +91,6 @@ defmodule WraftDoc.Document do
     |> Repo.update()
     |> case do
       {:ok, layout} ->
-        IO.inspect(layout, label: "layout")
         layout
 
       {:error, _} = changeset ->
