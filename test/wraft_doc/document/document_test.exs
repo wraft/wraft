@@ -177,7 +177,6 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "layout_files_upload/2" do
-    # i'm trying to write test
     test "layout file upload with slug file uploads a file to slug" do
       user = insert(:user)
       layout = insert(:layout, creator: user)
@@ -187,7 +186,6 @@ defmodule WraftDoc.DocumentTest do
       }
 
       u_layout = Document.layout_files_upload(layout, params)
-      # IO.inspect(u_layout.slug_file)
       assert u_layout.slug_file.file_name == "example.png"
     end
 
@@ -330,29 +328,6 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  # test "layout file upload with slug file uploads a file to slug" do
-  #   user = insert(:user)
-  #   layout = insert(:layout, creator: user)
-
-  #   params = %{
-  #     "slug_file" => %Plug.Upload{path: "test/fixtures/example.png", filename: "example.png"}
-  #   }
-
-  #   u_layout = Document.layout_files_upload(layout, params)
-  #   assert u_layout.slug_file.filename == "example.png"
-  # end
-
-  # test "layout file upload with screen shot files upload a file as screenshot" do
-  #   user = insert(:user)
-  #   layout = insert(:layout, creator: user)
-
-  #   params = %{
-  #     "screenshot" => %Plug.Upload{path: "test/fixtures/example.png", filename: "example.png"}
-  #   }
-
-  #   u_layout = Document.layout_files_upload(layout, params)
-  #   assert u_layout.screenshot.filename == "example.png"
-  # end
   describe "create_content_type/4" do
     test "create content_type on valid attributes" do
       user = insert(:user)
