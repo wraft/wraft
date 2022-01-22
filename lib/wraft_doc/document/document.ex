@@ -178,8 +178,10 @@ defmodule WraftDoc.Document do
 
   @doc """
   List all engines.
+  #Example
+    iex()engines_list(%{})
+    list of available engines
   """
-  # TODO - write tests
   @spec engines_list(map) :: map
   def engines_list(params) do
     Repo.paginate(Engine, params)
@@ -350,7 +352,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type from its ID. Also fetches all its related datas.
   """
-  # TODO - write tests
+  # TODO - improve tests
   @spec get_content_type_from_id(integer()) :: %ContentType{layout: %Layout{}, creator: %User{}}
   def get_content_type_from_id(id) do
     ContentType
