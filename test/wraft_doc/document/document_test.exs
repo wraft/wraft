@@ -136,8 +136,17 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  describe "engine_list/1" do
+    test "list all engines" do
+      engin_params = %{name: "engin", api_route: "api_route"}
+      engine = Document.engines_list(engin_params)
+      assert true == is_list(engine.entries)
+      assert true == engine.entries |> length() |> is_number()
+    end
+  end
+
   describe "show_layout/2" do
-    test "show layout shows the layout data and preloads engine crator assets data" do
+    test "show layout shows the layout data and preloads engine creator assets data" do
       user = insert(:user)
       engine = insert(:engine)
 
@@ -333,7 +342,6 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       layout = insert(:layout, creator: user, organisation: user.organisation)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
-
       fields = [
         insert(:content_type_field, content_type: content_type),
         insert(:content_type_field, content_type: content_type)
@@ -418,6 +426,18 @@ defmodule WraftDoc.DocumentTest do
       assert s_content_type.description == content_type.description
       assert s_content_type.color == content_type.color
       assert s_content_type.prefix == content_type.prefix
+    end
+  end
+
+  describe "get_content_type_from_id/1" do
+    test "get content type from id" do
+      user = insert(:user)
+      layout = insert(:layout, creator: user, organisation: user.organisation)
+      content = insert(:content_type, creator: user, organisation: user.organisation)
+      id = content.id
+      content_type = Document.get_content_type_from_id(id)
+      assert true == is_struct(content_type)
+
     end
   end
 
