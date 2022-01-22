@@ -33,6 +33,6 @@ defmodule WraftDocWeb.UserAdmin do
   end
 
   def custom_index_query(_conn, _schema, query) do
-    from(q in query, preload: [:role])
+    from(q in query, preload: [:roles])
   end
 end
