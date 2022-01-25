@@ -46,9 +46,10 @@ defmodule WraftDoc.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.6.4", override: true},
+      {:phoenix, "~> 1.6.6", override: true},
       {:phoenix_pubsub, "~> 2.0.0"},
       {:phoenix_ecto, "~> 4.4.0"},
+      {:phoenix_view, "~> 1.1.0"},
       {:ecto_sql, "~> 3.7.1"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 3.2.0", override: true},
