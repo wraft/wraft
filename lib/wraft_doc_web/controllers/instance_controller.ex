@@ -680,7 +680,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Document.get_instance(instance_id, current_user) do
       change = Document.version_changes(instance, version_id)
-      render(conn, InstanceVersionView, "change.json", change: change)
+      conn
+      |> put_view(InstanceVersionView)
+      |> render("change.json", change: change)
     end
   end
 

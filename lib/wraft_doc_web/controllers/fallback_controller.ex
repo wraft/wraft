@@ -9,7 +9,8 @@ defmodule WraftDocWeb.FallbackController do
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)
-    |> render(WraftDocWeb.ChangesetView, "error.json", changeset: changeset)
+    |> put_view(WraftDocWeb.ChangesetView)
+    |> render("error.json", changeset: changeset)
   end
 
   def call(conn, {:error, :invalid}) do
@@ -113,6 +114,7 @@ defmodule WraftDocWeb.FallbackController do
   def call(conn, nil) do
     conn
     |> put_status(:not_found)
-    |> render(WraftDocWeb.ErrorView, :"404")
+    |> put_view(WraftDocWeb.ErrorView)
+    |> render(:"404")
   end
 end
