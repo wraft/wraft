@@ -500,6 +500,7 @@ defmodule WraftDoc.DocumentTest do
       count_before = ContentType |> Repo.all() |> length()
       {:ok, s_content_type} = Document.delete_content_type(content_type, user)
       count_after = ContentType |> Repo.all() |> length()
+
       assert count_before - 1 == count_after
       assert s_content_type.name == content_type.name
       assert s_content_type.description == content_type.description
@@ -527,11 +528,10 @@ defmodule WraftDoc.DocumentTest do
       params = Map.merge(params, %{"state_id" => state_id})
       counter_count = Counter |> Repo.all() |> length()
       count_before = Instance |> Repo.all() |> length()
-
       instance = Document.create_instance(user, content_type, state, params)
-
       count_after = Instance |> Repo.all() |> length()
       counter_count_after = Counter |> Repo.all() |> length()
+
       assert count_before + 1 == count_after
       assert counter_count + 1 == counter_count_after
       assert instance.raw == @valid_instance_attrs["raw"]
@@ -545,6 +545,53 @@ defmodule WraftDoc.DocumentTest do
       state = insert(:state, flow: content_type.flow)
 
       {:error, changeset} = Document.create_instance(user, content_type, state, @invalid_attrs)
+
+      count_after = Instance |> Repo.all() |> length()
+      assert count_before == count_after
+
+      assert %{
+               raw: ["can't be blank"],
+               type: ["can't be blank"]
+             } == errors_on(changeset)
+    end
+  end
+
+  describe "create_instance/3" do
+    test "create instance on valid attributes and updates count of instances at counter" do
+      user = insert(:user)
+      content_type = insert(:content_type)
+      flow = content_type.flow
+      state = insert(:state, flow: flow)
+      state_id = state.id
+
+      params = %{
+        "instance_id" => "OFFR0001",
+        "raw" => "instance raw",
+        "serialized" => %{"body" => "body of the content", "title" => "title of the content"},
+        "type" => 1,
+        "state_id" => "a041a482-202c-4c53-99f3-79a8dab252d5"
+      }
+
+      params = Map.merge(params, %{"state_id" => state_id})
+      counter_count = Counter |> Repo.all() |> length()
+      count_before = Instance |> Repo.all() |> length()
+      instance = Document.create_instance(user, content_type, params)
+      count_after = Instance |> Repo.all() |> length()
+      counter_count_after = Counter |> Repo.all() |> length()
+
+      assert count_before + 1 == count_after
+      assert counter_count + 1 == counter_count_after
+      assert instance.raw == @valid_instance_attrs["raw"]
+      assert instance.serialized == @valid_instance_attrs["serialized"]
+    end
+
+    test "create instance on invalid attrs" do
+      user = insert(:user)
+      count_before = Instance |> Repo.all() |> length()
+      content_type = insert(:content_type)
+      state = insert(:state, flow: content_type.flow)
+
+      {:error, changeset} = Document.create_instance(user, content_type, @invalid_attrs)
 
       count_after = Instance |> Repo.all() |> length()
       assert count_before == count_after
@@ -603,7 +650,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "show_instance/2" do
-    test "show instance shows and preloads creator content thype layout and state instance data" do
+    test "show instance shows and preloads creator content type layout and state instance data" do
       user = insert(:user)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       flow = content_type.flow
@@ -617,6 +664,21 @@ defmodule WraftDoc.DocumentTest do
       assert i_instance.creator.name == user.name
       assert i_instance.content_type.name == content_type.name
       assert i_instance.state.state == state.state
+    end
+  end
+
+  describe "get_built_document/1" do
+    test "Get the build document of the given instance." do
+      user = insert(:user)
+      content_type = insert(:content_type, creator: user, organisation: user.organisation)
+      flow = content_type.flow
+      state = insert(:state, flow: flow, organisation: user.organisation)
+      instance = insert(:instance, build: "build", creator: user, content_type: content_type, state: state)
+      get_built_document = Document.get_built_document(instance)
+
+      assert instance.build == get_built_document.build
+      assert instance.id == get_built_document.id
+      assert instance.instance_id == get_built_document.instance_id
     end
   end
 
@@ -666,6 +728,19 @@ defmodule WraftDoc.DocumentTest do
       assert instance.state_id == post_state.id
     end
   end
+
+  # describe "instance_state_upadate/5" do
+  #   test "Update instance's state. Also add the from and to state of in the activity meta." do
+  #     user = insert(:user)
+  #     content_type = insert(:content_type, creator: user)
+  #     from_state = insert(:state, flow: content_type.flow)
+  #     to_state = insert(:state, flow: content_type.flow)
+  #     instance = insert(:instance, creator: user, content_type: content_type)
+
+  #     instance_state = Document.instance_state_upadate(instance, user.id, from_state.id, from_state, to_state)
+
+  #   end
+  # end
 
   @tag :individual
   describe "data_template_bulk_insert/4" do
@@ -900,6 +975,7 @@ defmodule WraftDoc.DocumentTest do
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       content_type_field = insert(:content_type_field, content_type: content_type)
       c_content_type_field = Document.get_content_type_field(content_type_field.id, user)
+
       assert content_type_field.name == c_content_type_field.name
       assert content_type_field.description == c_content_type_field.description
     end
