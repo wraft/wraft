@@ -363,7 +363,6 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type field from its UUID.
   """
-  # TODO - write tests
   @spec get_content_type_field(binary, User.t()) :: ContentTypeField.t()
   def get_content_type_field(<<_::288>> = id, %{organisation_id: org_id}) do
     query =
@@ -385,7 +384,6 @@ defmodule WraftDoc.Document do
   @doc """
   Update a content type.
   """
-  # TODO - write tests
   @spec update_content_type(ContentType.t(), User.t(), map) ::
           %ContentType{
             layout: Layout.t(),
@@ -423,7 +421,6 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a content type.
   """
-  # TODO - write tests
   @spec delete_content_type(ContentType.t(), User.t()) ::
           {:ok, ContentType.t()} | {:error, Ecto.Changeset.t()}
   def delete_content_type(content_type, %User{id: id}) do
@@ -472,8 +469,6 @@ defmodule WraftDoc.Document do
   @doc """
   Same as create_instance/4, to create instance and its approval system
   """
-
-  # TODO write tests
   def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
     params = Map.merge(params, %{"instance_id" => instance_id})
@@ -520,7 +515,6 @@ defmodule WraftDoc.Document do
   @doc """
   Create a new instance.
   """
-  # TODO - improve tests
   @spec create_instance(User.t(), ContentType.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
@@ -841,7 +835,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get the build document of the given instance.
   """
-  # TODO - write tests
+  # TODO - improve tests
   @spec get_built_document(Instance.t()) :: Instance.t() | nil
   def get_built_document(%{id: id, instance_id: instance_id} = instance) do
     query =
@@ -1024,6 +1018,7 @@ defmodule WraftDoc.Document do
       object: "Instance-State:#{instance.id}",
       meta: %{from: old_state, to: new_state}
     })
+    |> IO.inspect()
     |> case do
       {:ok, instance} ->
         instance
