@@ -213,7 +213,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
 
     test "error not found on invalid id" do
       conn = build_conn()
-      plan = insert(:plan)
+      _plan = insert(:plan)
       conn = get(conn, Routes.v1_plan_path(conn, :show, Ecto.UUID.autogenerate()))
       assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end

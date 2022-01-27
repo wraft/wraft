@@ -1007,7 +1007,7 @@ defmodule WraftDoc.Document do
   @doc """
   Update instance's state. Also add the from and to state of in the activity meta.
   """
-  # TODO - write tests
+  # TODO - improve tests
   @spec instance_state_upadate(Instance.t(), integer, integer, String.t(), String.t()) ::
           Instance.t() | {:error, Ecto.Changeset.t()}
   def instance_state_upadate(instance, user_id, state_id, old_state, new_state) do
@@ -1018,7 +1018,6 @@ defmodule WraftDoc.Document do
       object: "Instance-State:#{instance.id}",
       meta: %{from: old_state, to: new_state}
     })
-    |> IO.inspect()
     |> case do
       {:ok, instance} ->
         instance
@@ -1033,7 +1032,6 @@ defmodule WraftDoc.Document do
   @doc """
   Delete an instance.
   """
-  # TODO - write tests
   @spec delete_instance(Instance.t(), User.t()) ::
           {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
   def delete_instance(instance, %User{id: id}) do
@@ -1060,6 +1058,7 @@ defmodule WraftDoc.Document do
   Create a theme.
   """
   # TODO Improve tests
+  # file not being generated in the tests
   @spec create_theme(User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
   def create_theme(%{organisation_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
@@ -1080,7 +1079,7 @@ defmodule WraftDoc.Document do
   @doc """
   Upload theme file.
   """
-  # TODO - write tests
+  # TODO - improve tests
   @spec theme_file_upload(Theme.t(), map) :: {:ok, %Theme{}} | {:error, Ecto.Changeset.t()}
   def theme_file_upload(theme, %{"file" => _} = params) do
     theme |> Theme.file_changeset(params) |> Repo.update()
@@ -2748,7 +2747,7 @@ defmodule WraftDoc.Document do
   @doc """
   delete the role of the content type
   """
-
+  # TODO improve tests
   def delete_role_of_the_content_type(role) do
     role
     |> Repo.delete()
