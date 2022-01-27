@@ -55,7 +55,8 @@ defmodule WraftDoc.DocumentTest do
   @valid_theme_attrs %{
     "name" => "theme name",
     "font" => "theme font",
-    "typescale" => %{"heading1" => 22, "heading2" => 16, "paragraph" => 12}
+    "typescale" => %{"heading1" => 22, "heading2" => 16, "paragraph" => 12},
+    # "file" => "../../../screenshot.png"
   }
   @valid_data_template_attrs %{
     "title" => "data_template title",
@@ -82,11 +83,11 @@ defmodule WraftDoc.DocumentTest do
   }
   @invalid_instance_attrs %{raw: nil}
   @invalid_attrs %{}
-  @content_type_invalid_attrs %{
-    "name" => nil,
-    "description" => nil,
-    "prefix" => nil
-  }
+  # @content_type_invalid_attrs %{
+  #   "name" => nil,
+  #   "description" => nil,
+  #   "prefix" => nil
+  # }
 
   describe "create_layout/3" do
     test "create layout on valid attributes" do
@@ -430,13 +431,20 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "get_content_type_from_id/1" do
-    test "get content type from id" do
+    test "  Get a content type from its ID. Also fetches all its related datas." do
       user = insert(:user)
-      layout = insert(:layout, creator: user, organisation: user.organisation)
-      content = insert(:content_type, creator: user, organisation: user.organisation)
-      id = content.id
-      content_type = Document.get_content_type_from_id(id)
+      layout = insert(:layout)
+      content = insert(:content_type, creator: user, layout: layout, organisation: user.organisation)
+      content_type = Document.get_content_type_from_id(content.id)
+      data1 = get_in(content_type, [Access.key(:flow)])
+      data2 = get_in(content_type, [Access.key(:layout)])
+      data3 = get_in(content_type, [Access.key(:creator)])
+
+      assert layout |> map_size() == content_type.layout |> map_size()
       assert true == is_struct(content_type)
+      assert true == is_struct(data1)
+      assert true == is_struct(data2)
+      assert true == is_struct(data3)
 
     end
   end
@@ -589,7 +597,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       count_before = Instance |> Repo.all() |> length()
       content_type = insert(:content_type)
-      state = insert(:state, flow: content_type.flow)
+      _state = insert(:state, flow: content_type.flow)
 
       {:error, changeset} = Document.create_instance(user, content_type, @invalid_attrs)
 
@@ -603,6 +611,17 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  describe "delete_instance/2" do
+    test "delete_instance" do
+      user = insert(:user)
+      instance = insert(:instance)
+      count_before = Instance |> Repo.all() |> length()
+      _del_instance = Document.delete_instance(instance, user)
+      count_after = Instance |> Repo.all() |> length()
+
+      assert count_before - 1 == count_after
+    end
+  end
   describe "instance_index/2" do
     test "instance index lists the instance data" do
       user = insert(:user)
@@ -688,9 +707,9 @@ defmodule WraftDoc.DocumentTest do
 
       instance = insert(:instance, creator: user)
       count_before = Instance |> Repo.all() |> length()
-      version_count_before = Version |> Repo.all() |> length()
+      # version_count_before = Version |> Repo.all() |> length()
       instance = Document.update_instance(instance, user, @valid_instance_attrs)
-      version_count_after = Version |> Repo.all() |> length()
+      # version_count_after = Version |> Repo.all() |> length()
       count_after = Instance |> Repo.all() |> length()
       assert count_before == count_after
 
@@ -729,18 +748,20 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  # describe "instance_state_upadate/5" do
-  #   test "Update instance's state. Also add the from and to state of in the activity meta." do
-  #     user = insert(:user)
-  #     content_type = insert(:content_type, creator: user)
-  #     from_state = insert(:state, flow: content_type.flow)
-  #     to_state = insert(:state, flow: content_type.flow)
-  #     instance = insert(:instance, creator: user, content_type: content_type)
+  describe "instance_state_upadate/5" do
+    test "Update instance's state. Also add the from and to state of in the activity meta." do
+      user = insert(:user)
+      content_type = insert(:content_type, creator: user)
+      state = insert(:state)
+      instance = insert(:instance, creator: user, content_type: content_type, state: state)
+      instance_state = Document.instance_state_upadate(instance, user.id, state.id, state.state, instance.state)
+      old_state_length = instance.state |> map_size()
+      new_state_length = instance_state.state |> map_size()
 
-  #     instance_state = Document.instance_state_upadate(instance, user.id, from_state.id, from_state, to_state)
-
-  #   end
-  # end
+      assert instance_state.state == instance.state
+      assert old_state_length == new_state_length
+    end
+  end
 
   @tag :individual
   describe "data_template_bulk_insert/4" do
@@ -1043,6 +1064,16 @@ defmodule WraftDoc.DocumentTest do
                errors_on(changeset)
     end
   end
+
+  # describe "theme_file_upload/2" do
+  #   test "theme file upload" do
+  #     theme = insert(:theme)
+  #     file = %{file: "screenshot-location.png"}
+  #     file_upload = Document.theme_file_upload(theme, file)
+  #     # file not being generated while running the test
+
+  #   end
+  # end
 
   describe "theme_index/2" do
     test "theme index lists the theme data" do
@@ -1985,11 +2016,11 @@ defmodule WraftDoc.DocumentTest do
 
       before_role_count = Role |> Repo.all() |> length()
 
-      response = Document.delete_role_of_the_content_type(role)
+      _response = Document.delete_role_of_the_content_type(role)
 
       after_role_count = Role |> Repo.all() |> length()
 
-      assert after_role_count = before_role_count - 1
+      assert after_role_count == before_role_count - 1
     end
   end
 
@@ -2083,7 +2114,7 @@ defmodule WraftDoc.DocumentTest do
 
     test "get_collection_form_with_invalid_id" do
       user = insert(:user)
-      collection_form = insert(:collection_form, organisation: user.organisation)
+      # collection_form = insert(:collection_form, organisation: user.organisation)
 
       response = Document.get_collection_form(user, Ecto.UUID.generate())
 
@@ -2121,7 +2152,7 @@ defmodule WraftDoc.DocumentTest do
 
     before_collection_count = CollectionForm |> Repo.all() |> length()
 
-    response = Document.delete_collection_form(collection_form)
+    _response = Document.delete_collection_form(collection_form)
 
     after_collection_count = CollectionForm |> Repo.all() |> length()
 
@@ -2139,7 +2170,7 @@ defmodule WraftDoc.DocumentTest do
       }
 
       count_before = CollectionFormField |> Repo.all() |> length()
-      a = Document.create_collection_form_field(collection.id, param)
+      _a = Document.create_collection_form_field(collection.id, param)
 
       count_after = CollectionFormField |> Repo.all() |> length()
       assert count_before + 1 == count_after
@@ -2213,7 +2244,7 @@ defmodule WraftDoc.DocumentTest do
 
     before_collection_count = CollectionFormField |> Repo.all() |> length()
 
-    response = Document.delete_collection_form_field(collection_form_field)
+    _response = Document.delete_collection_form_field(collection_form_field)
 
     after_collection_count = CollectionFormField |> Repo.all() |> length()
 

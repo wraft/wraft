@@ -20,7 +20,6 @@ defmodule WraftDoc.EnterpriseTest do
     Repo
   }
 
-  alias WraftDoc.Account.Role
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
@@ -237,7 +236,7 @@ defmodule WraftDoc.EnterpriseTest do
       "flow_id" => flow.id
     }
 
-    approval_system = Enterprise.create_approval_system(user, params)
+    _approval_system = Enterprise.create_approval_system(user, params)
 
     count_after = ApprovalSystem |> Repo.all() |> length()
 
