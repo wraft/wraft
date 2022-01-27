@@ -37,7 +37,6 @@ defmodule WraftDoc.Document.InstanceTest do
   end
 
   test "instance id unique constraint" do
-    %{id: id} = insert(:content_type)
     state = insert(:state)
     content_type = insert(:content_type)
     params = Map.merge(@valid_attrs, %{content_type_id: content_type.id, state_id: state.id})
