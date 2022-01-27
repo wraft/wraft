@@ -6,7 +6,6 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
   import WraftDoc.Factory
-  alias WraftDoc.Document.InstanceApprovalSystem
 
   setup %{conn: conn} do
     role = insert(:role, name: "super_admin")
