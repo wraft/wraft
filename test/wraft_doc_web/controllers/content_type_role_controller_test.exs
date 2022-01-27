@@ -9,7 +9,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleControllerTest do
 
   import WraftDoc.Factory
 
-  @invalid_attrs %{content_type_id: nil, role_id: nil}
+  # @invalid_attrs %{content_type_id: nil, role_id: nil}
 
   setup %{conn: conn} do
     user = insert(:user)
