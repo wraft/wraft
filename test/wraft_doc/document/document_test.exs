@@ -9,6 +9,7 @@ defmodule WraftDoc.DocumentTest do
     Document,
     Document.Asset,
     Document.BlockTemplate,
+    Document.Block,
     Document.CollectionForm,
     Document.CollectionFormField,
     Document.Comment,
@@ -16,6 +17,7 @@ defmodule WraftDoc.DocumentTest do
     Document.Counter,
     Document.DataTemplate,
     Document.Instance,
+    Document.Instance.History,
     Document.Instance.Version,
     Document.InstanceApprovalSystem,
     Document.Layout,
@@ -1330,11 +1332,13 @@ defmodule WraftDoc.DocumentTest do
 
   describe "update_asset/3" do
     # test "update asset on valid attrs" do
+      # file uploading is throwing errors
     #   user = insert(:user)
     #   asset = insert(:asset, creator: user)
     #   count_before = Asset |> Repo.all() |> length()
 
     #   asset = Document.update_asset(asset, user, @valid_asset_attrs)
+    #   # IO.inspect(asset, label: "----------------------")
     #   count_after = Asset |> Repo.all() |> length()
     #   assert count_before == count_after
     #   assert asset.name == @valid_asset_attrs["name"]
@@ -1359,8 +1363,120 @@ defmodule WraftDoc.DocumentTest do
       count_before = Asset |> Repo.all() |> length()
       {:ok, a_asset} = Document.delete_asset(asset, user)
       count_after = Asset |> Repo.all() |> length()
+
       assert count_before - 1 == count_after
       assert a_asset.name == asset.name
+    end
+  end
+
+  describe "preload_asset/1" do
+    test "preload_asset" do
+      layout = insert(:layout)
+      preload_assets = Document.preload_asset(layout)
+
+      assert is_list(layout.assets) == false
+      assert is_list(preload_assets.assets) == true
+
+    end
+  end
+
+  # describe "build_doc/2" do
+  #   test "build document" do
+  #     c_type = insert(:content_type)
+  #     instance = insert(:instance, [content_type: c_type])
+  #     layout = insert(:layout)
+  #     build_doc = Document.build_doc(instance, layout)
+  #     # IO.inspect(build_doc, label: "-------------------------------------------")
+  #     assert 1 == 1
+  #   end
+  # end
+
+  describe "add_build_history" do
+    test "add_build_history/3 Insert the build history of the given instance." do
+      params = insert(:build_history) |> Map.from_struct()
+      instance = insert(:instance)
+      user = insert(:user)
+      count_before = History |> Repo.all() |> length()
+      add_build_history = Document.add_build_history(user, instance, params)
+      count_after = History |> Repo.all() |> length()
+      changeset = History.changeset(%History{}, params)
+
+      assert changeset.valid?
+      assert is_struct(add_build_history) == true
+      assert is_struct(add_build_history.content.build_histories) == true
+      assert count_before + 1 == count_after
+      end
+
+      test "Same as add_build_history/3, but creator will not be stored." do
+      params = insert(:build_history) |> Map.from_struct()
+      instance = insert(:instance)
+      count_before = History |> Repo.all() |> length()
+      add_build_history = Document.add_build_history(instance, params)
+      count_after = History |> Repo.all() |> length()
+
+      assert is_struct(add_build_history) == true
+      assert count_before + 1 == count_after
+      end
+  end
+
+  describe "create_block/2" do
+    test "create block" do
+      block = insert(:block) |> Map.from_struct()
+      user = insert(:user)
+      create_block = Document.create_block(user, block)
+      changeset = Block.changeset(%Block{}, block)
+
+      assert changeset.valid?
+      assert is_struct(create_block)
+      refute is_nil(create_block.dataset)
+      assert create_block.name =~ ~r/([a-z]|[A-Z])/
+    end
+  end
+
+  describe "get_block/2" do
+    test "get block by its ID" do
+      block = insert(:block) |> Map.from_struct()
+      get_block = Document.get_block(block.id, block)
+
+      assert is_struct(get_block)
+      refute is_nil(get_block.dataset)
+      assert get_block.name =~ ~r/([a-z]|[A-Z])/
+
+    end
+  end
+
+  describe "update_block/3" do
+    test "update block" do
+      user = insert(:user)
+      block = insert(:block)
+      params = %{name: "new_name", api_route: "new/route"}
+      update_block = Document.update_block(user, block, params)
+
+      assert is_struct(update_block)
+      assert update_block.api_route =~ "new/route"
+      refute block.name == update_block.name
+    end
+  end
+
+  describe "delete_block/1" do
+    test "delete block" do
+      block = insert(:block)
+      count_before = Block |> Repo.all() |> length()
+      _delete_block = Document.delete_block(block)
+      count_after = Block |> Repo.all() |> length()
+
+      assert count_before - 1 == count_after
+    end
+  end
+
+  describe "generate_chart/1" do
+    # it has to test with real data
+    test "Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create" do
+      block = insert(:block) |> Map.from_struct()
+      # bb = %{"dataset" => "dataset", "api_route" => "api_route", "endpoint" => "blocks_api"}
+      generate_chart = Document.generate_chart(block)
+      assert is_map(generate_chart)
+
     end
   end
 
