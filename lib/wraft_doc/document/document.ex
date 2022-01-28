@@ -1340,6 +1340,7 @@ defmodule WraftDoc.Document do
   Update an asset.
   """
   # TODO - improve tests
+  # file uploading is throwing errors, in tests
   @spec update_asset(Asset.t(), User.t(), map) :: {:ok, Asset.t()}
   def update_asset(asset, %User{id: id}, params) do
     asset |> Asset.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
@@ -1356,7 +1357,6 @@ defmodule WraftDoc.Document do
   @doc """
   Preload assets of a layout.
   """
-  # TODO - write tests
   @spec preload_asset(Layout.t()) :: Layout.t()
   def preload_asset(%Layout{} = layout) do
     Repo.preload(layout, [:assets])
@@ -1488,7 +1488,6 @@ defmodule WraftDoc.Document do
   @doc """
   Insert the build history of the given instance.
   """
-  # TODO - write tests
   @spec add_build_history(User.t(), Instance.t(), map) :: History.t()
   def add_build_history(current_user, instance, params) do
     params = create_build_history_params(params)
@@ -1502,7 +1501,6 @@ defmodule WraftDoc.Document do
   @doc """
   Same as add_build_history/3, but creator will not be stored.
   """
-  # TODO - write tests
   @spec add_build_history(Instance.t(), map) :: History.t()
   def add_build_history(instance, params) do
     params = create_build_history_params(params)
@@ -1535,10 +1533,9 @@ defmodule WraftDoc.Document do
   @doc """
   Create a Block
   """
-  # TODO - write tests
   @spec create_block(User.t(), map) :: Block.t()
   def create_block(%{organisation_id: org_id} = current_user, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id})
+    params = Map.merge(params, %{organisation_id: org_id})
 
     current_user
     |> build_assoc(:blocks)
@@ -1558,7 +1555,6 @@ defmodule WraftDoc.Document do
   @doc """
   Get a block by id
   """
-  # TODO - write tests
   @spec get_block(Ecto.UUID.t(), User.t()) :: Block.t()
   def get_block(<<_::288>> = id, %{organisation_id: org_id}) do
     case Repo.get_by(Block, id: id, organisation_id: org_id) do
@@ -1573,7 +1569,6 @@ defmodule WraftDoc.Document do
   @doc """
   Update a block
   """
-  # TODO - write tests
   def update_block(%User{id: id}, %Block{} = block, params) do
     block
     |> Block.changeset(params)
@@ -1592,7 +1587,6 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a block
   """
-  # TODO - write tests
   def delete_block(%Block{} = block) do
     Repo.delete(block)
   end
@@ -1600,7 +1594,8 @@ defmodule WraftDoc.Document do
   @doc """
   Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create
   """
-  # TODO - write tests
+  # TODO - tests being failed, improve tests
+  # NOTE: the return data type supposed to be same with same arity/1 but there is diff
   @spec generate_chart(map) :: map
   def generate_chart(%{"btype" => "gantt"}) do
     %{"url" => "gant_chart_url"}
@@ -1631,6 +1626,7 @@ defmodule WraftDoc.Document do
     Poison.decode!(response_body)
   end
 
+  # test results returning this function values
   def generate_chart(_params) do
     %{"status" => false, "error" => "invalid endpoint"}
   end
