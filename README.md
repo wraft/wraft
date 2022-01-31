@@ -1,34 +1,61 @@
 # Wraft Docs
 
-Wraft Docs is a simple, yet powerful document generation app. Using Wraft Doc it is very easy to generate and manage documents.
+Wraft Docs is a simple, yet powerful document generation app. Using Wraft Doc it is very easy to generate and manage
+documents.
 
 The aim of Wraft Docs is to maintain a single source of truth for document generation.
 
-To start your Wraft docs app:
+# Table of contents
+* [Development](#development)
+  * [Pre-requisite](#pre-requisite)
+  * [Initial Setup](#initial-setup)
+  * [Commit Hooks](#commit-hooks)
+  * [Running Wraft Docs](#running-wraft-docs)
+  * [Testing Wraft Docs](#testing-wraft-docs)
+  * [Others](#others)
+    * [Additional Mix tasks](#few-additional-mix-tasks)
 
-- Install dependencies with `mix deps.get`
-- Create and migrate your database with `mix ecto.create && mix ecto.migrate`
-- Source the .env file with `source .env`
-- Start Phoenix endpoint with `mix phoenix.server`
+## Development
+#### Pre-requisite
+* Elixir 1.13
+* Erlang/OTP 24.0
+* Postgres
+* Pandoc
+* Latex
+* Gnuplot
+* wkhtmltopdf
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+`.tools_version` will have the exact versions defined in it.
 
-Get the API documentation
 
-- After starting the Pheonix server, go to `http://localhost:4000/api/swagger/index.html#/`
 
-Test the app
+#### Initial setup
 
-- Source the .env file with `source .env`
-- Start testing with `mix test`
+**Elixir & Erlang**
 
-## Pre-requisite
-
-### Pandoc
-
-This assumes you have `pandoc` installed in your device. The easiest way to install it on OSX is via brew:
-
+As these 2 are defined in the `.tools_version`, `asdf` will install the right versions with the following command:
+```shell
+$ asdf install
 ```
+
+**Postgres**
+
+Select your OS from the options [here](https://www.postgresql.org/download/) and follow the instruction to
+install the latest version of postgres.
+Check your installation using:
+```shell
+$  postgres -V
+```
+Test your connectivity:
+```shell
+$ psql -h 127.0.0.1 -p 5432 -U postgres postgres
+```
+
+**Pandoc**
+
+The easiest way to install it on OSX is via brew:
+
+```shell
 $ brew install pandoc
 ```
 
@@ -37,79 +64,118 @@ For Linux machines, follow the instructions below.
 - Download the pandoc package that suits your device [here](https://github.com/jgm/pandoc/releases/tag/2.9.2.1)
 - To install the deb:
 
+```shell
+$ sudo dpkg -i $DEB
 ```
-sudo dpkg -i $DEB
-```
 
-where \$DEB is the path to the downloaded deb.
+where `$DEB` is the path to the downloaded deb.
 
-These instructions are taken from [Official Pandoc Documentations](https://pandoc.org/installing.html). You may refer if the official documentation if you have any doubts.
+These instructions are taken from [Official Pandoc Documentations](https://pandoc.org/installing.html).
+You may refer if the official documentation if you have any doubts.
 
-### Latex
+**Latex**
 
-To use Latex in macOS, its better to install the MacTex Distribution. You can download MacTex [here](https://www.tug.org/mactex/). Choose the correct version that supports your device, download and install. Latex editor comes with the distribution.
+To use Latex in OSX, install the MacTex Distribution. You can download MacTex [here](https://www.tug.org/mactex/).
+Choose the correct version that supports your device, download and install. Latex editor comes with the distribution.
 
-In Linux machines, we suggest to use Tex Live LaTeX distribution. Easiest way to install Tex Live distribution in Linux/Ubuntu is to use `apt-get`.
+In Linux machines, we suggest to use Tex Live LaTeX distribution. Easiest way to install Tex Live distribution in
+Linux/Ubuntu is to use `apt-get`.
 
-```
-sudo apt-get install texlive-full
+```shell
+$ sudo apt-get install texlive-full
 ```
 
 In case you need latex editor, type in:
 
-```
-sudo apt-get install texmaker
+```shell
+$ sudo apt-get install texmaker
 ```
 
-### Gnuplot
+**Gnuplot**
 
 In macOS:
 
-```
-brew install gnuplot
+```shell
+$ brew install gnuplot
 ```
 
 In Linux:
 
+```shell
+$ sudo apt-get install gnuplot
 ```
-sudo apt-get install gnuplot
+
+**wkhtmltopdf**
+
+Download the latest package installer that matches your OS [here](https://wkhtmltopdf.org/downloads.html).
+Open it and follow the instructions to install `wkhtmltopdf`.
+
+To check your installation:
+
+```shell
+$ wkhtmltopdf -V
 ```
 
-##### Extra Dependencies used
+#### Commit Hooks
+Wraft Docs uses `pre-commit` to standardise the code quality and style.
 
-The dependencies used, other than the default ones, are listed below
+To install pre-commit:
+```shell
+$ pre-commit install
+```
 
-- Comeonin v5.1.3 and bcrypt_elixir v2.0.3
-  - Used for password encryption and verification.
-- Guardian v2.0.0
-  - Used for user authentication.
-- cors_plug v2.0.2
-  - CORS validation
-- waffle v0.11.0 and waffle_ecto v0.11.3
-  - File upload
-- Timex v3.6.1
-  - Date/Time library
-- Jason v1.1 and Poison v3.0
-  - JSON parser
-- phoenix_swagger v0.8.2
-  - Swagger API documentation
-- Bureaucrat v0.2.5 and ex_json_schema v0.5
-  - SLATE API documentation
-- ex_machina v2.3
-  - Build datas for tests
-- scrivener_ecto v2.3
-  - Pagination
-- Eqrcode v0.1.7
-  - Generate QR code in SVG/PNG formats
-- Oban v1.2
-  - Job processing library
-- Bamboo v1.4
-  - Email client
-- HTTPoision v1.6
-  - HTTP client for elixir
-- Spur
-  - Activity stream
-- CSV
-  - CSV parser
-- Phoenix Live Dashboard v0.1.0
-  - Dashboard
+## Running Wraft Docs
+To start your Wraft docs app:
+
+**Install dependencies with**
+```shell
+$ mix deps.get
+```
+
+**Setup Database**
+- With seed data
+
+```shell
+$ ecto.setup
+```
+
+- Without seed data
+```shell
+$ mix ecto.create && mix ecto.migrate
+```
+
+**Source ENV variables**
+```shell
+$ source .env
+```
+
+**Start Phoenix endpoint**
+- With interactive shell
+```shell
+$ ies -S mix phoenix.server
+```
+
+- Without interactive shell
+```shell
+$ mix phx.server
+```
+
+Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+
+To get the API documentation, go [here](http://localhost:4000/api/swagger/index.html#/).
+
+## Testing Wraft Docs
+```shell
+$ source .env && mix test
+```
+
+## Others
+#### Few additional `mix tasks`
+- Set up the project in one go
+```shell
+$ mix setup
+```
+- Generate API documentation
+```shell
+$ mix swagger
+```
