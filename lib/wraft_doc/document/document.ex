@@ -1595,7 +1595,7 @@ defmodule WraftDoc.Document do
   Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create
   """
   # TODO - tests being failed, improve tests
-  # NOTE: the return data type supposed to be same with same arity/1 but there is diff
+  # NOTE: the return data type supposed to be same with same arity/1 but there is diff, check it again
   @spec generate_chart(map) :: map
   def generate_chart(%{"btype" => "gantt"}) do
     %{"url" => "gant_chart_url"}
@@ -1740,7 +1740,6 @@ defmodule WraftDoc.Document do
   @doc """
   Create a field type
   """
-  # TODO - write tests
   @spec create_field_type(User.t(), map) :: {:ok, FieldType.t()}
   def create_field_type(%User{} = current_user, params) do
     current_user
@@ -1753,8 +1752,8 @@ defmodule WraftDoc.Document do
 
   @doc """
   Index of all field types.
+  Creates Scrivener pagination
   """
-  # TODO - write tests
   @spec field_type_index(map) :: map
   def field_type_index(params) do
     query = from(ft in FieldType, order_by: [desc: ft.id])
@@ -1764,9 +1763,8 @@ defmodule WraftDoc.Document do
   @doc """
   Get a field type from its UUID.
   """
-  # TODO - write tests
   @spec get_field_type(binary, User.t()) :: FieldType.t()
-  def get_field_type(<<_::288>> = field_type_id, %{organisation_id: org_id}) do
+  def get_field_type(<<_::288>> = field_type_id, %{organisation_id: org_id} = _user_struct) do
     query =
       from(ft in FieldType,
         where: ft.id == ^field_type_id,
@@ -1788,7 +1786,6 @@ defmodule WraftDoc.Document do
   @doc """
   Update a field type
   """
-  # TODO - write tests
   @spec update_field_type(FieldType.t(), map) :: FieldType.t() | {:error, Ecto.Changeset.t()}
   def update_field_type(field_type, params) do
     field_type
@@ -1799,7 +1796,6 @@ defmodule WraftDoc.Document do
   @doc """
   Deleta a field type
   """
-  # TODO - write tests
   @spec delete_field_type(FieldType.t()) :: {:ok, FieldType.t()} | {:error, Ecto.Changeset.t()}
   def delete_field_type(field_type) do
     field_type
@@ -1920,7 +1916,7 @@ defmodule WraftDoc.Document do
   @doc """
   Creates a background job to run a pipeline.
   """
-  # TODO - write tests
+  # TODO - improve tests
   @spec create_pipeline_job(TriggerHistory.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
   def create_pipeline_job(%TriggerHistory{} = trigger_history) do
