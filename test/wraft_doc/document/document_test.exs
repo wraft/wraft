@@ -16,6 +16,7 @@ defmodule WraftDoc.DocumentTest do
     Document.ContentType,
     Document.Counter,
     Document.DataTemplate,
+    Document.FieldType,
     Document.Instance,
     Document.Instance.History,
     Document.Instance.Version,
@@ -1480,6 +1481,88 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  describe "create_field_type/2" do
+    test "Create a field type" do
+      # this will create FieldType struct with name "String 0"
+      f_type = insert(:field_type) |> Map.from_struct()
+      # so updating the new name to avoid unique name constraints error
+      f_type = Map.update!(f_type, :name, fn _v -> "name1" end)
+      user = insert(:user)
+      field_type_changeset = FieldType.changeset(%FieldType{}, f_type)
+
+      assert field_type_changeset.valid?
+      assert {:ok, _create_field_type} = Document.create_field_type(user, f_type)
+    end
+
+    test "check unique name constraint" do
+      user = insert(:user)
+      f_type = insert(:field_type) |> Map.from_struct()
+
+      assert {:error, _error_msg} = Document.create_field_type(user, f_type)
+    end
+  end
+
+  describe "field_type_index/1" do
+    test "Index of all field types." do
+      f_type = insert(:field_type) |> Map.from_struct()
+      type_index = Document.field_type_index(f_type)
+
+      refute is_nil type_index
+      assert Map.has_key?(type_index, :entries)
+      assert Map.has_key?(type_index, :page_size)
+      assert Map.has_key?(type_index, :page_number)
+    end
+  end
+
+
+  describe "get_field_type/2" do
+    test "Get a field type from its UUID" do
+      f_type = insert(:field_type)
+      get_field_type = Document.get_field_type(f_type.id, f_type.creator)
+
+      assert get_field_type.id == f_type.id
+      assert get_field_type.name == f_type.name
+    end
+
+    test "test with invalid UUID" do
+      f_type = insert(:field_type)
+      get_field_type = Document.get_field_type(f_type, f_type.creator)
+
+      assert {:error, _, _} = get_field_type
+    end
+
+    test "test with invalid params" do
+      f_type = insert(:field_type)
+      get_field_type = Document.get_field_type(f_type, f_type)
+
+      assert {:error, _} = get_field_type
+    end
+  end
+
+  describe "update_field_type/2" do
+    test "update_field_type" do
+      f_type = insert(:field_type)
+      new_values = %{name: "new", description: "new desc"}
+
+      assert {:ok, update_field_type} = Document.update_field_type(f_type, new_values)
+      assert update_field_type.name =~ "new"
+      assert update_field_type.description =~ "new desc"
+    end
+  end
+
+  describe "delete_field_type/1" do
+    test "delete_field_type" do
+      f_type = insert(:field_type)
+      f_type2 = insert(:field_type)
+      count_before = FieldType |> Repo.all() |> length()
+      _delete_field_type = Document.delete_field_type(f_type)
+      count_after = FieldType |> Repo.all() |> length()
+
+      assert {:ok, _struct} = Document.delete_field_type(f_type2)
+      assert count_before - 1 == count_after
+    end
+  end
+
   describe "create_comment/2" do
     test "create comment on valid attributes" do
       user = insert(:user)
@@ -1791,6 +1874,14 @@ defmodule WraftDoc.DocumentTest do
     test "returns nil with invalid attrs" do
       response = Document.pipeline_index(nil, %{})
       assert response == nil
+    end
+  end
+
+  describe "create_pipeline_job/1" do
+    test "Creates a background job to run a pipeline" do
+      trigger_history = insert(:trigger_history)
+      
+      assert {:ok, _dd} = Document.create_pipeline_job(trigger_history)
     end
   end
 
