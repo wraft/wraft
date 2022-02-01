@@ -146,6 +146,7 @@
         {Credo.Check.Warning.IoInspect, []},
         # {Credo.Check.Warning.LazyLogging, []},
         {Credo.Check.Warning.MixEnv, false},
+        {Credo.Check.Warning.SpecWithStruct, false},
         {Credo.Check.Warning.OperationOnSameValues, []},
         {Credo.Check.Warning.OperationWithConstantResult, []},
         {Credo.Check.Warning.RaiseInsideRescue, []},

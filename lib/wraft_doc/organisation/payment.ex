@@ -8,6 +8,8 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   require Protocol
   Protocol.derive(Jason.Encoder, Razorpay.Payment)
 
+  @type t :: %__MODULE__{}
+
   def statuses, do: [failed: 1, captured: 2]
   def actions, do: [downgrade: 1, renew: 2, upgrade: 3]
 
@@ -33,7 +35,7 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   @doc """
   Get the status value from its integer
   """
-  @spec get_status(%Payment{}) :: String.t() | nil
+  @spec get_status(t()) :: String.t() | nil
   def get_status(%Payment{status: status_int}) do
     find_value(statuses(), status_int)
   end
@@ -43,7 +45,7 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   @doc """
   Get the action value from its integer
   """
-  @spec get_action(%Payment{}) :: String.t() | nil
+  @spec get_action(t()) :: String.t() | nil
   def get_action(%Payment{action: action_int}) do
     find_value(actions(), action_int)
   end

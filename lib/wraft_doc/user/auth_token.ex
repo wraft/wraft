@@ -3,7 +3,7 @@ defmodule WraftDoc.Account.AuthToken do
 
   use WraftDoc.Schema
 
-  @type t :: __MODULE__
+  @type t :: %__MODULE__{}
 
   schema "auth_token" do
     field(:value, :string)
