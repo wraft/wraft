@@ -5,6 +5,8 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
   alias __MODULE__
   use WraftDoc.Schema
 
+  @type t :: %__MODULE__{}
+
   @derive {Jason.Encoder,
            only: [
              :id,
@@ -36,7 +38,7 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
   @doc """
   Get the state value of a trigger history from its integer.
   """
-  @spec get_state(%TriggerHistory{}) :: nil | binary
+  @spec get_state(TriggerHistory.t()) :: nil | binary
   def get_state(%TriggerHistory{state: state_int}) do
     states()
     |> Enum.find(fn {_state, int} -> int == state_int end)
