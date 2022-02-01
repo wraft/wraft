@@ -30,7 +30,7 @@ defmodule WraftDocWeb.Plug.Authorized do
         conn
 
       _ ->
-        body = Poison.encode!(%{errors: "You are not authorized for this action.!"})
+        body = Jason.encode!(%{errors: "You are not authorized for this action.!"})
 
         conn |> put_resp_content_type("application/json") |> send_resp(400, body) |> halt()
     end

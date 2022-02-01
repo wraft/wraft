@@ -1617,22 +1617,22 @@ defmodule WraftDoc.Document do
       }) do
     %HTTPoison.Response{body: response_body} =
       HTTPoison.post!(api_route,
-        body: Poison.encode!(dataset),
+        body: Jason.encode!(dataset),
         headers: [{"Accept", "application/json"}, {"Content-Type", "application/json"}]
       )
 
-    Poison.decode!(response_body)
+    Jason.decode!(response_body)
   end
 
   def generate_chart(%{"dataset" => dataset, "api_route" => api_route, "endpoint" => "blocks_api"}) do
     %HTTPoison.Response{body: response_body} =
       HTTPoison.post!(
         api_route,
-        Poison.encode!(dataset),
+        Jason.encode!(dataset),
         [{"Accept", "application./json"}, {"Content-Type", "application/json"}]
       )
 
-    Poison.decode!(response_body)
+    Jason.decode!(response_body)
   end
 
   def generate_chart(_params) do
