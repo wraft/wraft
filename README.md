@@ -120,6 +120,23 @@ $ wkhtmltopdf -V
 Wraft Docs uses `pre-commit` to standardise the code quality and style.
 
 To install pre-commit:
+Using pip:
+```shell
+$ pip install pre-commit
+```
+Using homebrew:
+```shell
+$ brew install pre-commit
+```
+
+To verify installation:
+
+```shell
+$ pre-commit --version
+```
+
+Now to setup pre commit for Wraft Docs:
+
 ```shell
 $ pre-commit install
 ```
