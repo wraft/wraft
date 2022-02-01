@@ -62,22 +62,22 @@ defmodule WraftDocWeb.FallbackController do
   end
 
   def call(conn, {:error, :already_member}) do
-    body = Poison.encode!(%{errors: "User with this email exists.!"})
+    body = Jason.encode!(%{errors: "User with this email exists.!"})
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 
   def call(conn, {:error, :version_not_found}) do
-    body = Poison.encode!(%{errors: "Version does not exist.!"})
+    body = Jason.encode!(%{errors: "Version does not exist.!"})
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 
   def call(conn, {:error, :wrong_flow}) do
-    body = Poison.encode!(%{errors: "This instance follow a different flow.!"})
+    body = Jason.encode!(%{errors: "This instance follow a different flow.!"})
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 
   def call(conn, {:error, :not_sufficient}) do
-    body = Poison.encode!(%{errors: "This data does not have sufficient associates.!"})
+    body = Jason.encode!(%{errors: "This data does not have sufficient associates.!"})
     conn |> put_resp_content_type("application/json") |> send_resp(422, body)
   end
 

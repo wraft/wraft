@@ -63,15 +63,4 @@ defmodule WraftDoc.Document.ContentType do
     |> validate_length(:prefix, min: 2, max: 6)
     |> validate_format(:color, ~r/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
   end
-
-  defimpl Poison.Encoder, for: WraftDoc.Document.ContentType do
-    def encode(%{__struct__: _} = struct, options) do
-      map =
-        struct
-        |> Map.from_struct()
-        |> Map.drop([:__meta__, :__struct__])
-
-      Poison.Encoder.Map.encode(map, options)
-    end
-  end
 end
