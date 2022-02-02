@@ -79,7 +79,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-
     count_before = CollectionFormField |> Repo.all() |> length()
 
     conn =
@@ -103,7 +102,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
-
 
     count_before = CollectionFormField |> Repo.all() |> length()
 
@@ -167,7 +165,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-
     count_before = CollectionFormField |> Repo.all() |> length()
 
     conn =
@@ -220,7 +217,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
-
 
     conn =
       get(

@@ -1367,7 +1367,7 @@ defmodule WraftDoc.Document do
   @doc """
   Build a PDF document.
   """
-  # TODO - write tests
+  # TODO - write tests, tests are failing
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %Layout{
         slug: slug,
@@ -1594,8 +1594,7 @@ defmodule WraftDoc.Document do
   @doc """
   Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create
   """
-  # TODO - tests being failed, improve tests
-  # NOTE: the return data type supposed to be same with same arity/1 but there is diff, check it again
+  # TODO - tests being failed with fake data test with real data,
   @spec generate_chart(map) :: map
   def generate_chart(%{"btype" => "gantt"}) do
     %{"url" => "gant_chart_url"}
@@ -1634,7 +1633,7 @@ defmodule WraftDoc.Document do
   @doc """
   Generate tex code for the chart
   """
-  # TODO - write tests
+  # TODO - improve tests, test with more data points
   @spec generate_tex_chart(map) :: <<_::64, _::_*8>>
   def generate_tex_chart(%{"dataset" => dataset, "btype" => "gantt"}) do
     generate_tex_gantt_chart(dataset)
@@ -1644,6 +1643,7 @@ defmodule WraftDoc.Document do
     generate_gnu_gantt_chart(input, name)
   end
 
+  # current test giving this function output
   def generate_tex_chart(%{"dataset" => %{"data" => data}}) do
     "\\pie [rotate = 180 ]{#{tex_chart(data, "")}}"
   end
@@ -1660,6 +1660,7 @@ defmodule WraftDoc.Document do
   @doc """
   Generate latex of ganttchart
   """
+  # TODO write test
   def generate_tex_gantt_chart(%{
         "caption" => caption,
         "title_list" => %{"start" => tl_start, "end" => tl_end},
@@ -1994,7 +1995,6 @@ defmodule WraftDoc.Document do
   @doc """
   Generate params to create instance.
   """
-  # TODO - write tests
   @spec do_create_instance_params(map, DataTemplate.t()) :: map
   def do_create_instance_params(serialized, %{title_template: title_temp, data: template}) do
     title =
@@ -2167,9 +2167,8 @@ defmodule WraftDoc.Document do
   @doc """
   Get a block template by its uuid
   """
-  # TODO - write tests
-  @spec get_block_template(Ecto.UUID.t(), User.t()) :: BlockTemplate.t()
-  def get_block_template(<<_::288>> = id, %{organisation_id: org_id}) do
+  @spec get_block_template(Ecto.UUID.t(), BlockTemplate.t()) :: BlockTemplate.t()
+  def get_block_template(<<_::288>> = id, %{organisation_id: org_id} = _block_template) do
     case Repo.get_by(BlockTemplate, id: id, organisation_id: org_id) do
       %BlockTemplate{} = block_template -> block_template
       _ -> {:error, :invalid_id, "BlockTemplate"}
@@ -2183,7 +2182,6 @@ defmodule WraftDoc.Document do
   @doc """
   Updates a block template
   """
-  # TODO - write tests
   @spec update_block_template(User.t(), BlockTemplate.t(), map) :: BlockTemplate.t()
   def update_block_template(%User{id: id}, block_template, params) do
     block_template
@@ -2203,7 +2201,6 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a block template by uuid
   """
-  # TODO - write tests
   @spec delete_block_template(User.t(), BlockTemplate.t()) :: BlockTemplate.t()
   def delete_block_template(%User{id: id}, %BlockTemplate{} = block_template) do
     Spur.delete(block_template, %{actor: "#{id}", meta: block_template})
@@ -2214,7 +2211,6 @@ defmodule WraftDoc.Document do
   @doc """
   Index of a block template by organisation
   """
-  # TODO - write tests
   @spec block_template_index(User.t(), map) :: List.t()
   def block_template_index(%{organisation_id: org_id}, params) do
     query =
