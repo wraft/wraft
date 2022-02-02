@@ -20,7 +20,6 @@ defmodule WraftDoc.EnterpriseTest do
     Repo
   }
 
-
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
   test "get flow returns flow data by id" do

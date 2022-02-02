@@ -513,7 +513,7 @@ File.stream!("priv/repo/data/data_template.csv")
 
   serialized =
     with {:ok, body} <- File.read("priv/repo/data/#{x["serialized"]}"),
-         {:ok, json} <- Poison.decode(body) do
+         {:ok, json} <- Jason.decode(body) do
       json
     end
 
