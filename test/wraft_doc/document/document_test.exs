@@ -1967,7 +1967,6 @@ defmodule WraftDoc.DocumentTest do
   describe "create_pipeline_job/1" do
     test "Creates a background job to run a pipeline" do
       trigger_history = insert(:trigger_history)
-
       assert {:ok, _dd} = Document.create_pipeline_job(trigger_history)
     end
   end
