@@ -8,8 +8,8 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.{
     Document,
     Document.Asset,
-    Document.BlockTemplate,
     Document.Block,
+    Document.BlockTemplate,
     Document.CollectionForm,
     Document.CollectionFormField,
     Document.Comment,
@@ -58,7 +58,7 @@ defmodule WraftDoc.DocumentTest do
   @valid_theme_attrs %{
     "name" => "theme name",
     "font" => "theme font",
-    "typescale" => %{"heading1" => 22, "heading2" => 16, "paragraph" => 12},
+    "typescale" => %{"heading1" => 22, "heading2" => 16, "paragraph" => 12}
     # "file" => "../../../screenshot.png"
   }
   @valid_data_template_attrs %{
@@ -91,6 +91,31 @@ defmodule WraftDoc.DocumentTest do
   #   "description" => nil,
   #   "prefix" => nil
   # }
+
+  @data [
+    %{"label" => "January", "value" => 10},
+    %{"label" => "February", "value" => 20},
+    %{"label" => "March", "value" => 5},
+    %{"label" => "April", "value" => 60},
+    %{"label" => "May", "value" => 80},
+    %{"label" => "June", "value" => 70},
+    %{"label" => "Julay", "value" => 90}
+  ]
+  @update_valid_attrs %{
+    "btype" => "gantt",
+    "file_url" => "/usr/local/hoem/filex.svg",
+    "api_route" => "http://localhost:4000",
+    "dataset" => %{
+      "backgroundColor" => "transparent",
+      "data" => @data,
+      "format" => "svg",
+      "height" => 512,
+      "type" => "pie",
+      "width" => 512
+    },
+    "endpoint" => "blocks_api",
+    "name" => "Farming"
+  }
 
   describe "create_layout/3" do
     test "create layout on valid attributes" do
@@ -346,6 +371,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       layout = insert(:layout, creator: user, organisation: user.organisation)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
+
       fields = [
         insert(:content_type_field, content_type: content_type),
         insert(:content_type_field, content_type: content_type)
@@ -437,18 +463,20 @@ defmodule WraftDoc.DocumentTest do
     test "  Get a content type from its ID. Also fetches all its related datas." do
       user = insert(:user)
       layout = insert(:layout)
-      content = insert(:content_type, creator: user, layout: layout, organisation: user.organisation)
+
+      content =
+        insert(:content_type, creator: user, layout: layout, organisation: user.organisation)
+
       content_type = Document.get_content_type_from_id(content.id)
       data1 = get_in(content_type, [Access.key(:flow)])
       data2 = get_in(content_type, [Access.key(:layout)])
       data3 = get_in(content_type, [Access.key(:creator)])
 
-      assert layout |> map_size() == content_type.layout |> map_size()
+      assert map_size(layout) == map_size(content_type.layout)
       assert true == is_struct(content_type)
       assert true == is_struct(data1)
       assert true == is_struct(data2)
       assert true == is_struct(data3)
-
     end
   end
 
@@ -625,6 +653,7 @@ defmodule WraftDoc.DocumentTest do
       assert count_before - 1 == count_after
     end
   end
+
   describe "instance_index/2" do
     test "instance index lists the instance data" do
       user = insert(:user)
@@ -695,7 +724,10 @@ defmodule WraftDoc.DocumentTest do
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       flow = content_type.flow
       state = insert(:state, flow: flow, organisation: user.organisation)
-      instance = insert(:instance, build: "build", creator: user, content_type: content_type, state: state)
+
+      instance =
+        insert(:instance, build: "build", creator: user, content_type: content_type, state: state)
+
       get_built_document = Document.get_built_document(instance)
 
       assert instance.build == get_built_document.build
@@ -757,9 +789,12 @@ defmodule WraftDoc.DocumentTest do
       content_type = insert(:content_type, creator: user)
       state = insert(:state)
       instance = insert(:instance, creator: user, content_type: content_type, state: state)
-      instance_state = Document.instance_state_upadate(instance, user.id, state.id, state.state, instance.state)
-      old_state_length = instance.state |> map_size()
-      new_state_length = instance_state.state |> map_size()
+
+      instance_state =
+        Document.instance_state_upadate(instance, user.id, state.id, state.state, instance.state)
+
+      old_state_length = map_size(instance.state)
+      new_state_length = map_size(instance_state.state)
 
       assert instance_state.state == instance.state
       assert old_state_length == new_state_length
@@ -866,8 +901,8 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "create_block_template/2" do
-    test "test creates block template with valid attrs" do
+  describe "block_template functions" do
+    test "create_block_template/2, test creates block template with valid attrs" do
       user = insert(:user)
 
       params = %{
@@ -885,7 +920,7 @@ defmodule WraftDoc.DocumentTest do
       assert block_template.serialized == "Hi [employee], we welcome you to our family"
     end
 
-    test "test does not create block template with invalid attrs" do
+    test "create_block_template/2, test does not create block template with invalid attrs" do
       user = insert(:user)
       {:error, changeset} = Document.create_block_template(user, %{})
 
@@ -894,6 +929,45 @@ defmodule WraftDoc.DocumentTest do
                serialized: ["can't be blank"],
                body: ["can't be blank"]
              } == errors_on(changeset)
+    end
+
+    test "get_block_template/2, Create a block template" do
+      block_template = insert(:block_template)
+      get_block_template = Document.get_block_template(block_template.id, block_template)
+
+      assert block_template.id == get_block_template.id
+      assert block_template.organisation_id == get_block_template.organisation_id
+    end
+
+    test "update_block_template/3," do
+      block_template = insert(:block_template)
+      user = block_template.creator
+      params = %{"title" => "new title", "body" => "new body"}
+      update_btemplate = Document.update_block_template(user, block_template, params)
+
+      assert update_btemplate.title =~ "new title"
+      assert update_btemplate.body =~ "new body"
+      refute block_template.title == update_btemplate.title
+    end
+
+    test "delete_block_template/2" do
+      block_template = insert(:block_template)
+      user = block_template.creator
+      count_before = BlockTemplate |> Repo.all() |> length()
+      _delete_btemp = Document.delete_block_template(user, block_template)
+      count_after = BlockTemplate |> Repo.all() |> length()
+
+      assert count_before - 1 == count_after
+    end
+
+    test "block_template_index/2, Index of a block template by organisation" do
+      user = insert(:user)
+      b_temp = :block_template |> insert() |> Map.from_struct()
+      bt_index = Document.block_template_index(user, b_temp)
+
+      assert Map.has_key?(bt_index, :entries)
+      assert Map.has_key?(bt_index, :total_entries)
+      assert is_number(bt_index.total_pages)
     end
   end
 
@@ -1333,7 +1407,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "update_asset/3" do
     # test "update asset on valid attrs" do
-      # file uploading is throwing errors
+    # file uploading is throwing errors
     #   user = insert(:user)
     #   asset = insert(:asset, creator: user)
     #   count_before = Asset |> Repo.all() |> length()
@@ -1377,24 +1451,28 @@ defmodule WraftDoc.DocumentTest do
 
       assert is_list(layout.assets) == false
       assert is_list(preload_assets.assets) == true
-
     end
   end
 
   # describe "build_doc/2" do
   #   test "build document" do
-  #     c_type = insert(:content_type)
-  #     instance = insert(:instance, [content_type: c_type])
+  #     # c_type = insert(:content_type)
+  #     # instance = insert(:instance, [content_type: c_type])
+  #     # assets = insert(:layout_asset) |> Map.from_struct()
+  #     # layout = insert(:layout, [assets: assets, slug: "slug"])
+  #     # assets = insert(:layout_asset)
+  #     instance = insert(:instance)
   #     layout = insert(:layout)
   #     build_doc = Document.build_doc(instance, layout)
-  #     # IO.inspect(build_doc, label: "-------------------------------------------")
-  #     assert 1 == 1
+  #     IO.inspect(build_doc, label: "-------------------------------------------")
+  #     # IO.inspect(instance, label: "-------------------------------------------")
+  #     # IO.inspect(layout.assets, label: "-------------------------------------------")
   #   end
   # end
 
   describe "add_build_history" do
     test "add_build_history/3 Insert the build history of the given instance." do
-      params = insert(:build_history) |> Map.from_struct()
+      params = :build_history |> insert() |> Map.from_struct()
       instance = insert(:instance)
       user = insert(:user)
       count_before = History |> Repo.all() |> length()
@@ -1406,10 +1484,10 @@ defmodule WraftDoc.DocumentTest do
       assert is_struct(add_build_history) == true
       assert is_struct(add_build_history.content.build_histories) == true
       assert count_before + 1 == count_after
-      end
+    end
 
-      test "Same as add_build_history/3, but creator will not be stored." do
-      params = insert(:build_history) |> Map.from_struct()
+    test "Same as add_build_history/3, but creator will not be stored." do
+      params = :build_history |> insert() |> Map.from_struct()
       instance = insert(:instance)
       count_before = History |> Repo.all() |> length()
       add_build_history = Document.add_build_history(instance, params)
@@ -1417,12 +1495,12 @@ defmodule WraftDoc.DocumentTest do
 
       assert is_struct(add_build_history) == true
       assert count_before + 1 == count_after
-      end
+    end
   end
 
   describe "create_block/2" do
     test "create block" do
-      block = insert(:block) |> Map.from_struct()
+      block = :block |> insert() |> Map.from_struct()
       user = insert(:user)
       create_block = Document.create_block(user, block)
       changeset = Block.changeset(%Block{}, block)
@@ -1436,13 +1514,12 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_block/2" do
     test "get block by its ID" do
-      block = insert(:block) |> Map.from_struct()
+      block = :block |> insert() |> Map.from_struct()
       get_block = Document.get_block(block.id, block)
 
       assert is_struct(get_block)
       refute is_nil(get_block.dataset)
       assert get_block.name =~ ~r/([a-z]|[A-Z])/
-
     end
   end
 
@@ -1473,18 +1550,29 @@ defmodule WraftDoc.DocumentTest do
   describe "generate_chart/1" do
     # it has to test with real data
     test "Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create" do
-      block = insert(:block) |> Map.from_struct()
+      block = :block |> insert() |> Map.from_struct()
       # bb = %{"dataset" => "dataset", "api_route" => "api_route", "endpoint" => "blocks_api"}
       generate_chart = Document.generate_chart(block)
       assert is_map(generate_chart)
+    end
+  end
 
+  describe "generate_tex_chart/1" do
+    test "Generate tex code for the chart" do
+      # data = %{"dataset" => %{}, "btype" => "gantt"}
+      data2 = %{"dataset" => @update_valid_attrs["dataset"]}
+
+      dd = Document.generate_tex_chart(data2)
+
+      refute is_nil(dd)
+      assert dd =~ ~r/(pie)/
     end
   end
 
   describe "create_field_type/2" do
     test "Create a field type" do
       # this will create FieldType struct with name "String 0"
-      f_type = insert(:field_type) |> Map.from_struct()
+      f_type = :field_type |> insert() |> Map.from_struct()
       # so updating the new name to avoid unique name constraints error
       f_type = Map.update!(f_type, :name, fn _v -> "name1" end)
       user = insert(:user)
@@ -1496,7 +1584,7 @@ defmodule WraftDoc.DocumentTest do
 
     test "check unique name constraint" do
       user = insert(:user)
-      f_type = insert(:field_type) |> Map.from_struct()
+      f_type = :field_type |> insert() |> Map.from_struct()
 
       assert {:error, _error_msg} = Document.create_field_type(user, f_type)
     end
@@ -1504,16 +1592,15 @@ defmodule WraftDoc.DocumentTest do
 
   describe "field_type_index/1" do
     test "Index of all field types." do
-      f_type = insert(:field_type) |> Map.from_struct()
+      f_type = :field_type |> insert() |> Map.from_struct()
       type_index = Document.field_type_index(f_type)
 
-      refute is_nil type_index
+      refute is_nil(type_index)
       assert Map.has_key?(type_index, :entries)
       assert Map.has_key?(type_index, :page_size)
       assert Map.has_key?(type_index, :page_number)
     end
   end
-
 
   describe "get_field_type/2" do
     test "Get a field type from its UUID" do
@@ -1880,10 +1967,51 @@ defmodule WraftDoc.DocumentTest do
   describe "create_pipeline_job/1" do
     test "Creates a background job to run a pipeline" do
       trigger_history = insert(:trigger_history)
-      
+
       assert {:ok, _dd} = Document.create_pipeline_job(trigger_history)
     end
   end
+
+  # describe "bulk_doc_build/6" do
+  #   test "Bulk build function" do
+  #     user = insert(:user)
+  #     c_type = insert(:content_type)
+  #     state = insert(:state)
+  #     d_temp = insert(:data_template)
+  #     k = Faker.Person.first_name()
+  #     v = Faker.Person.last_name()
+  #     map = %{k => v}
+  #     path = "/home/functionary/Downloads/sample4.csv"
+  #     bulk_doc_build = Document.bulk_doc_build(user, c_type, state, d_temp, map, path)
+  #     IO.inspect(bulk_doc_build)
+  #   end
+  # end
+
+  describe "do_create_instance_params/2" do
+    test "Generate params to create instance." do
+      k = Faker.Person.first_name()
+      v = Faker.Person.last_name()
+      map = %{k => v}
+      d_temp = insert(:data_template)
+
+      assert %{"raw" => _raw, "serialized" => ss} =
+               Document.do_create_instance_params(map, d_temp)
+
+      assert is_map(ss)
+      assert %{"title" => _} = ss
+    end
+  end
+
+  # describe "bulk_build" do
+  #   test "bulk_build/3, Builds the doc using `build_doc/2`.
+  #     Here we also records the build history using `add_build_history/3`." do
+  #     user = insert(:user)
+  #     instance = insert(:instance)
+  #     layout = insert(:layout)
+  #     bulk_build = Document.bulk_build(user, instance, layout)
+  #     IO.inspect(bulk_build)
+  #   end
+  # end
 
   describe "get_pipeline/2" do
     test "returns the pipeline in the user's organisation with given id" do

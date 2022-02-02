@@ -25,6 +25,7 @@ defmodule WraftDoc.DataCase do
       import Ecto.Query
       import WraftDoc.DataCase
       import WraftDoc.Factory
+      use Oban.Testing, repo: WraftDoc.Repo
     end
   end
 
