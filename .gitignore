@@ -7,6 +7,8 @@
 /temp
 /priv/static/swagger.json
 /priv/static/assets
+# coveralls files
+/cover
 # Generated on crash by the VM
 erl_crash.dump
 
