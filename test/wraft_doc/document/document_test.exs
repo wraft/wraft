@@ -316,6 +316,7 @@ defmodule WraftDoc.DocumentTest do
       count_after = Layout |> Repo.all() |> length()
 
       assert count_before == count_after
+
       assert %{
                slug: ["can't be blank"]
              } == errors_on(changeset)
@@ -1371,10 +1372,16 @@ defmodule WraftDoc.DocumentTest do
 
     test "asset_file_upload/2" do
       assert {:ok, asset} =
-        Document.asset_file_upload(
-          insert(:asset),
-          %{"file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}}
-        )
+               Document.asset_file_upload(
+                 insert(:asset),
+                 %{
+                   "file" => %Plug.Upload{
+                     filename: "invoice.pdf",
+                     path: "test/helper/invoice.pdf"
+                   }
+                 }
+               )
+
       assert asset.file.file_name =~ "invoice.pdf"
     end
   end
