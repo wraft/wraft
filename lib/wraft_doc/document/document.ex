@@ -1282,7 +1282,6 @@ defmodule WraftDoc.Document do
   @doc """
   Upload asset file.
   """
-  # TODO - write tests
   @spec asset_file_upload(Asset.t(), map) :: {:ok, %Asset{}} | {:error, Ecto.Changeset.t()}
   def asset_file_upload(asset, %{"file" => _} = params) do
     asset |> Asset.file_changeset(params) |> Repo.update()
@@ -1367,7 +1366,7 @@ defmodule WraftDoc.Document do
   @doc """
   Build a PDF document.
   """
-  # TODO - write tests, tests are failing
+  # TODO - improve tests
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %Layout{
         slug: slug,
@@ -1935,7 +1934,7 @@ defmodule WraftDoc.Document do
   @doc """
   Bulk build function.
   """
-  # TODO - write tests
+  # TODO - improve tests
   @spec bulk_doc_build(User.t(), ContentType.t(), State.t(), DataTemplate.t(), map, String.t()) ::
           list | {:error, :not_found}
   def bulk_doc_build(
@@ -2034,7 +2033,7 @@ defmodule WraftDoc.Document do
   Builds the doc using `build_doc/2`.
   Here we also records the build history using `add_build_history/3`.
   """
-  # TODO - write tests
+  # TODO - improve tests
   @spec bulk_build(User.t(), Instance.t(), Layout.t()) :: tuple
   def bulk_build(current_user, instance, layout) do
     start_time = Timex.now()
@@ -2053,7 +2052,6 @@ defmodule WraftDoc.Document do
   @doc """
   Same as bulk_buil/3, but does not store the creator in build history.
   """
-  # TODO - write tests
   @spec bulk_build(Instance.t(), Layout.t()) :: {Collectable.t(), non_neg_integer()}
   def bulk_build(instance, layout) do
     start_time = Timex.now()

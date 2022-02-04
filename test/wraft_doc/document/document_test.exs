@@ -314,8 +314,8 @@ defmodule WraftDoc.DocumentTest do
 
       {:error, changeset} = Document.update_layout(layout, user, @invalid_attrs)
       count_after = Layout |> Repo.all() |> length()
-      assert count_before == count_after
 
+      assert count_before == count_after
       assert %{
                slug: ["can't be blank"]
              } == errors_on(changeset)
@@ -548,8 +548,8 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "create_instance/4" do
-    test "create instance on valid attributes and updates count of instances at counter" do
+  describe "create_instance" do
+    test "create_instance/4, create instance on valid attributes and updates count of instances at counter" do
       user = insert(:user)
       content_type = insert(:content_type)
       flow = content_type.flow
@@ -577,7 +577,7 @@ defmodule WraftDoc.DocumentTest do
       assert instance.serialized == @valid_instance_attrs["serialized"]
     end
 
-    test "create instance on invalid attrs" do
+    test "create_instance/4, on invalid attrs" do
       user = insert(:user)
       count_before = Instance |> Repo.all() |> length()
       content_type = insert(:content_type)
@@ -593,10 +593,8 @@ defmodule WraftDoc.DocumentTest do
                type: ["can't be blank"]
              } == errors_on(changeset)
     end
-  end
 
-  describe "create_instance/3" do
-    test "create instance on valid attributes and updates count of instances at counter" do
+    test "create_instance/3, create instance on valid attributes and updates count of instances at counter" do
       user = insert(:user)
       content_type = insert(:content_type)
       flow = content_type.flow
@@ -624,7 +622,7 @@ defmodule WraftDoc.DocumentTest do
       assert instance.serialized == @valid_instance_attrs["serialized"]
     end
 
-    test "create instance on invalid attrs" do
+    test "create_instance/3, on invalid attrs" do
       user = insert(:user)
       count_before = Instance |> Repo.all() |> length()
       content_type = insert(:content_type)
@@ -1370,6 +1368,15 @@ defmodule WraftDoc.DocumentTest do
       assert count_before == count_after
       assert %{name: ["can't be blank"]} == errors_on(changeset)
     end
+
+    test "asset_file_upload/2" do
+      assert {:ok, asset} =
+        Document.asset_file_upload(
+          insert(:asset),
+          %{"file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}}
+        )
+      assert asset.file.file_name =~ "invoice.pdf"
+    end
   end
 
   describe "asset_index/2" do
@@ -1454,21 +1461,24 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  # describe "build_doc/2" do
-  #   test "build document" do
-  #     # c_type = insert(:content_type)
-  #     # instance = insert(:instance, [content_type: c_type])
-  #     # assets = insert(:layout_asset) |> Map.from_struct()
-  #     # layout = insert(:layout, [assets: assets, slug: "slug"])
-  #     # assets = insert(:layout_asset)
-  #     instance = insert(:instance)
-  #     layout = insert(:layout)
-  #     build_doc = Document.build_doc(instance, layout)
-  #     IO.inspect(build_doc, label: "-------------------------------------------")
-  #     # IO.inspect(instance, label: "-------------------------------------------")
-  #     # IO.inspect(layout.assets, label: "-------------------------------------------")
-  #   end
-  # end
+  describe "build_doc/2" do
+    test "build document" do
+      instance = insert(:instance)
+
+      {:ok, _asset} =
+        Document.asset_file_upload(
+          insert(:asset),
+          %{"file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}}
+        )
+
+      layout = insert(:layout)
+      layout = Layout |> Repo.get(layout.id) |> Repo.preload(:assets)
+      build_doc = Document.build_doc(instance, layout)
+
+      assert is_tuple(build_doc)
+      # assert tuple_size(build_doc) = 2
+    end
+  end
 
   describe "add_build_history" do
     test "add_build_history/3 Insert the build history of the given instance." do
@@ -1977,9 +1987,9 @@ defmodule WraftDoc.DocumentTest do
   #     c_type = insert(:content_type)
   #     state = insert(:state)
   #     d_temp = insert(:data_template)
-  #     k = Faker.Person.first_name()
+  #     # k = Faker.Person.first_name()
   #     v = Faker.Person.last_name()
-  #     map = %{k => v}
+  #     map = %{"hey" => v}
   #     path = "/home/functionary/Downloads/sample4.csv"
   #     bulk_doc_build = Document.bulk_doc_build(user, c_type, state, d_temp, map, path)
   #     IO.inspect(bulk_doc_build)
@@ -2001,16 +2011,45 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  # describe "bulk_build" do
-  #   test "bulk_build/3, Builds the doc using `build_doc/2`.
-  #     Here we also records the build history using `add_build_history/3`." do
-  #     user = insert(:user)
-  #     instance = insert(:instance)
-  #     layout = insert(:layout)
-  #     bulk_build = Document.bulk_build(user, instance, layout)
-  #     IO.inspect(bulk_build)
-  #   end
-  # end
+  describe "bulk_build" do
+    test "bulk_buil/2, Same as bulk_buil/3, but does not store the creator in build history." do
+      instance = insert(:instance)
+
+      {:ok, _asset} =
+        Document.asset_file_upload(
+          insert(:asset),
+          %{"file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}}
+        )
+
+      layout = insert(:layout)
+      layout = Layout |> Repo.get(layout.id) |> Repo.preload(:assets)
+      _build_doc = Document.build_doc(instance, layout)
+
+      assert {_, exit_code} = bulk_build = Document.bulk_build(instance, layout)
+      assert is_nil(bulk_build) == false
+      assert is_number(exit_code)
+    end
+
+    test "bulk_build/3, Builds the doc using `build_doc/2`.
+      Here we also records the build history using `add_build_history/3`." do
+      instance = insert(:instance)
+
+      {:ok, _asset} =
+        Document.asset_file_upload(
+          insert(:asset),
+          %{"file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}}
+        )
+
+      layout = insert(:layout)
+      layout = Layout |> Repo.get(layout.id) |> Repo.preload(:assets)
+      _build_doc = Document.build_doc(instance, layout)
+      user = insert(:user)
+
+      assert {_, exit_code} = bulk_build = Document.bulk_build(user, instance, layout)
+      assert is_nil(bulk_build) == false
+      assert is_number(exit_code)
+    end
+  end
 
   describe "get_pipeline/2" do
     test "returns the pipeline in the user's organisation with given id" do

@@ -168,8 +168,8 @@ defmodule WraftDoc.Factory do
     %Asset{
       name: sequence(:name, &"asset-#{&1}"),
       creator: build(:user),
-      organisation: build(:organisation)
-      # file: "/home/functionary/Documents/elixir/wraft-docs-api/uploads/layout-screenshots/0c37f959-4589-46e9-96ba-2fdc67fdadd1/screenshot_layout-1074_2022-01-28 12:41:17.png"
+      organisation: build(:organisation),
+      file: nil
     }
   end
 
@@ -182,6 +182,7 @@ defmodule WraftDoc.Factory do
       unit: sequence(:name, &"layout-#{&1}"),
       organisation: build(:organisation),
       engine: build(:engine)
+      # slug: "contract"
     }
   end
 
