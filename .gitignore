@@ -1,15 +1,33 @@
-# App artifacts
+# The directory Mix will write compiled artifacts to.
 /_build
 /db
+
+# The directory Mix downloads your dependencies sources to.
 /deps
-/*.ez
+
+# Also ignore archive artifacts (built via "mix archive.build").
+*.ez
+
 /uploads
 /temp
 /priv/static/swagger.json
-/priv/static/assets
-# coveralls files
+
+# Ignore assets that are produced by build tools.
+/priv/static/assets/
+
+# Ignore digested assets cache.
+/priv/static/cache_manifest.json
+
+# Where 3rd-party dependencies like ExDoc output generated docs.
+/doc/
+
+# Ignore .fetch files in case you like to edit your project deps locally.
+/.fetch
+
+# If you run "mix test --cover", coverage assets end up here.
 /cover
-# Generated on crash by the VM
+
+# If the VM crashes, it generates a dump, let's ignore it too.
 erl_crash.dump
 
 # Files matching config/*.secret.exs pattern contain sensitive
@@ -19,6 +37,7 @@ erl_crash.dump
 # secrets files as long as you replace their contents by environment
 # variables.
 # /config/*.secret.exs
-# The directory NPM downloads your dependencies sources to.
+# In case you use Node.js/npm, you want to ignore these.
+npm-debug.log
 /assets/node_modules/
 .idea/
