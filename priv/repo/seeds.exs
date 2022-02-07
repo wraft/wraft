@@ -15,6 +15,8 @@ alias WraftDoc.{
   Account.Role,
   Account.UserRole,
   Account.Profile,
+  Document.Asset,
+  Document.BlockTemplate,
   Document.Engine,
   Document.Layout,
   Document.ContentType,
@@ -417,6 +419,20 @@ File.stream!("priv/repo/data/super_resources.csv")
   })
 end)
 
+# Populate BlockTemplate
+Enum.each(1..10, fn n ->
+  allow_once(
+    %BlockTemplate{
+      title: "title#{n}",
+      body: "body#{n}",
+      serialized: "serialized#{n}",
+      creator_id: user.id,
+      organisation_id: organisation.id
+    },
+    title: "title#{n}"
+  )
+end)
+
 File.stream!("priv/repo/data/resources.csv")
 |> CSV.decode(headers: ["category", "action"])
 |> Enum.each(fn {:ok, x} ->
@@ -513,7 +529,7 @@ File.stream!("priv/repo/data/data_template.csv")
 
   serialized =
     with {:ok, body} <- File.read("priv/repo/data/#{x["serialized"]}"),
-         {:ok, json} <- Poison.decode(body) do
+         {:ok, json} <- Jason.decode(body) do
       json
     end
 
@@ -537,6 +553,10 @@ File.stream!("priv/repo/data/fields.csv")
 
   allow_once(
     %ContentTypeField{name: x["name"], field_type_id: type.id, content_type_id: content_type.id},
+    name: x["name"]
+  )
+
+  allow_once(%Asset{name: x["name"], creator_id: user.id, organisation_id: organisation.id},
     name: x["name"]
   )
 end)
