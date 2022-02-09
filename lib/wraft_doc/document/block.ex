@@ -21,6 +21,7 @@ defmodule WraftDoc.Document.Block do
 
   schema "block" do
     field(:name, :string, null: false)
+    field(:description, :string)
     field(:btype, :string)
     field(:dataset, :map)
     field(:input, WraftDocWeb.BlockInputUploader.Type)

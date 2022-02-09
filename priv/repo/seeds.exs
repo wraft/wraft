@@ -9,6 +9,7 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
+
 alias WraftDoc.{
   Authorization.Resource,
   Authorization.Permission,
@@ -16,6 +17,7 @@ alias WraftDoc.{
   Account.UserRole,
   Account.Profile,
   Document.Asset,
+  Document.Block,
   Document.BlockTemplate,
   Document.Engine,
   Document.Layout,
@@ -302,6 +304,24 @@ instance =
     instance_id: "OFFLET0001"
   )
 
+  Enum.each(1..5, fn _x ->
+    allow_once(
+      %Instance{
+        instance_id: "#{Faker.Code.iban()}",
+        raw: "#{Faker.Company.buzzword_prefix()}",
+        serialized: %{
+          title: "#{Faker.Company.catch_phrase()}",
+          body: "Hi #{Faker.Person.name()}, We offer you the position of Elixir developer"
+        },
+        creator_id: user.id,
+        content_type_id: content_type.id,
+        state_id: draft.id
+      },
+      instance_id: "OFFLET00"
+    )
+
+end)
+
 # Populate versions
 allow_once(
   %Version{
@@ -417,6 +437,27 @@ File.stream!("priv/repo/data/super_resources.csv")
     action: String.to_atom(function),
     label: controller
   })
+end)
+
+# Populate Block
+Enum.each(1..10, fn _n ->
+  allow_once(
+    %Block{
+      name: Faker.Commerce.product_name(),
+      description: Faker.Lorem.Shakespeare.romeo_and_juliet(),
+      btype: Faker.Industry.sub_sector(),
+      file_url: Faker.Avatar.image_url(),
+      api_route: Faker.Internet.url(),
+      endpoint: Faker.Internet.image_url(),
+      dataset: %{Faker.Commerce.product_name() => Faker.Lorem.words(8..12)},
+      tex_chart: "pie [rotate=180]{80/january}",
+      # input: "uploads/block_input/name.csv",
+      creator_id: user.id,
+      organisation_id: organisation.id,
+
+    },
+    name: "hey"
+  )
 end)
 
 # Populate BlockTemplate
