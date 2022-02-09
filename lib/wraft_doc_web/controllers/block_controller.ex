@@ -86,6 +86,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
           example(%{
             name: "Farming",
+            description: "Description about block",
             btype: "pie",
             api_route: "http://localhost:8080/chart",
             endpoint: "blocks_api",
@@ -149,6 +150,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
     parameter(:name, :formData, :string, "Block name", required: true)
     parameter(:btype, :formData, :string, "Block type", required: true)
+    parameter(:description, :formData, :string, "Description about Block")
     parameter(:dataset, :formData, :map, "Dataset for creating charts")
     parameter(:api_route, :formData, :string, "Api route to generate chart")
     parameter(:endpoint, :formData, :string, "name of the endpoint going to choose")
