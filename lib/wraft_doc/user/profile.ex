@@ -1,6 +1,7 @@
 defmodule WraftDoc.Account.Profile do
   @moduledoc """
     This is the Profile model
+    # name: would be position name in the organisation or role name
   """
   use WraftDoc.Schema
   use Waffle.Ecto.Schema

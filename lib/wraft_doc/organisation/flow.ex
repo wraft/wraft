@@ -61,7 +61,7 @@ defmodule WraftDoc.Enterprise.Flow do
 
   def update_controlled_changeset(%Flow{} = flow, attrs \\ %{}) do
     flow
-    |> cast(attrs, [:name, :control_data, :organisation_id])
+    |> cast(attrs, [:name, :controlled, :control_data, :organisation_id])
     |> validate_required([:name, :control_data, :organisation_id])
     |> unique_constraint(:name,
       message: "Flow already created.!",
