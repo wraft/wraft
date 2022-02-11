@@ -21,11 +21,13 @@ alias WraftDoc.{
   Document.BlockTemplate,
   Document.Engine,
   Document.Layout,
+  Document.LayoutAsset,
   Document.ContentType,
   Document.ContentTypeField,
   Document.DataTemplate,
   Document.FieldType,
   Document.Instance,
+  Document.Instance.History,
   Document.Theme,
   Enterprise.ApprovalSystem,
   Enterprise.Organisation,
@@ -42,6 +44,7 @@ alias WraftDoc.{
   Repo
 }
 
+alias WraftDoc.Account.Country
 import WraftDoc.SeedGate
 
 # Populate database with roles
@@ -142,11 +145,35 @@ allow_once(%UserRole{user_id: normal_user.id, role_id: role_user.id},
   role_id: role_user.id
 )
 
-allow_once(%Profile{name: "Super Admin", user_id: user.id}, name: "Super Admin")
+allow_once(
+  %Profile{
+    name: "Super Admin",
+    dob: Faker.Date.date_of_birth(),
+    gender: "male",
+    user_id: user.id
+  },
+  name: "Super Admin"
+)
 
-allow_once(%Profile{name: "Organisation admin", user_id: org_admin.id}, name: "Organisation admin")
+allow_once(
+  %Profile{
+    name: "Organisation admin",
+    dob: Faker.Date.date_of_birth(),
+    gender: "male",
+    user_id: org_admin.id
+  },
+  name: "Organisation admin"
+)
 
-allow_once(%Profile{name: "User", user_id: normal_user.id}, name: "User")
+allow_once(
+  %Profile{
+    name: "User",
+    dob: Faker.Date.date_of_birth(),
+    gender: "male",
+    user_id: normal_user.id
+  },
+  name: "User"
+)
 
 # Populate engine
 engine = allow_once(%Engine{name: "PDF"}, name: "PDF")
@@ -155,8 +182,14 @@ allow_once(%Engine{name: "LaTex"}, name: "LaTex")
 
 allow_once(%Engine{name: "Pandoc"}, name: "Pandoc")
 
-# Populate layout
+# Asset
+asset =
+  allow_once(
+    %Asset{name: "asset-name", creator_id: user.id, organisation_id: organisation.id},
+    name: "asset-name"
+  )
 
+# Populate layout
 layout =
   allow_once(
     %Layout{
@@ -173,6 +206,32 @@ layout =
     slug: "pletter"
   )
 
+# Populate layoutAsset
+allow_once(
+  %LayoutAsset{
+    asset_id: asset.id,
+    creator_id: user.id,
+    layout_id: layout.id
+  },
+  asset_id: asset.id
+)
+
+# Populate BuildHistory
+{:ok, start_time} = NaiveDateTime.new(2020, 03, 17, 20, 20, 20)
+{:ok, end_time} = NaiveDateTime.new(2020, 03, 17, 20, 21, 20)
+
+allow_once(
+  %History{
+    status: "current_status",
+    exit_code: 0,
+    start_time: start_time,
+    end_time: end_time,
+    delay: 60_000,
+    creator_id: user.id
+  },
+  status: "user"
+)
+
 # Populate fields
 field = allow_once(%FieldType{name: "String", creator_id: user.id}, name: "String")
 
@@ -186,6 +245,17 @@ flow =
     },
     name: "Flow 1"
   )
+
+Enum.each(1..6, fn x ->
+  allow_once(
+    %Flow{
+      name: "Flow #{x}",
+      organisation_id: organisation.id,
+      creator_id: user.id
+    },
+    name: "Flow"
+  )
+end)
 
 # Populate Content Type
 content_type =
@@ -287,6 +357,23 @@ allow_once(
   email: "system76tes@gmail.com"
 )
 
+Enum.each(1..5, fn _ ->
+  allow_once(
+    %Vendor{
+      name: Faker.Company.name(),
+      email: Faker.Internet.email(),
+      phone: Faker.Phone.EnUs.phone(),
+      address: Faker.Address.En.street_address(),
+      gstin: Faker.Code.iban(),
+      reg_no: Faker.Code.isbn(),
+      contact_person: Faker.Person.name(),
+      organisation_id: organisation.id,
+      creator_id: user.id
+    },
+    email: "system76tel.com"
+  )
+end)
+
 # Populate Instance
 instance =
   allow_once(
@@ -304,22 +391,21 @@ instance =
     instance_id: "OFFLET0001"
   )
 
-  Enum.each(1..5, fn _x ->
-    allow_once(
-      %Instance{
-        instance_id: "#{Faker.Code.iban()}",
-        raw: "#{Faker.Company.buzzword_prefix()}",
-        serialized: %{
-          title: "#{Faker.Company.catch_phrase()}",
-          body: "Hi #{Faker.Person.name()}, We offer you the position of Elixir developer"
-        },
-        creator_id: user.id,
-        content_type_id: content_type.id,
-        state_id: draft.id
+Enum.each(1..5, fn _x ->
+  allow_once(
+    %Instance{
+      instance_id: "#{Faker.Code.iban()}",
+      raw: "#{Faker.Company.buzzword_prefix()}",
+      serialized: %{
+        title: "#{Faker.Company.catch_phrase()}",
+        body: "Hi #{Faker.Person.name()}, We offer you the position of Elixir developer"
       },
-      instance_id: "OFFLET00"
-    )
-
+      creator_id: user.id,
+      content_type_id: content_type.id,
+      state_id: draft.id
+    },
+    instance_id: "OFFLET00"
+  )
 end)
 
 # Populate versions
@@ -453,8 +539,7 @@ Enum.each(1..10, fn _n ->
       tex_chart: "pie [rotate=180]{80/january}",
       # input: "uploads/block_input/name.csv",
       creator_id: user.id,
-      organisation_id: organisation.id,
-
+      organisation_id: organisation.id
     },
     name: "hey"
   )
@@ -471,6 +556,18 @@ Enum.each(1..10, fn n ->
       organisation_id: organisation.id
     },
     title: "title#{n}"
+  )
+end)
+
+# Populate Country
+Enum.each(1..5, fn _ ->
+  allow_once(
+    %Country{
+      country_name: Faker.Address.country(),
+      calling_code: Faker.Phone.EnUs.area_code(),
+      country_code: Faker.Address.country_code()
+    },
+    country_name: "Europ"
   )
 end)
 
