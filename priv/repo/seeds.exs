@@ -9,14 +9,14 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
-# new seeds added
 
 alias WraftDoc.{
   Authorization.Resource,
   Authorization.Permission,
+  Account.Country,
+  Account.Profile,
   Account.Role,
   Account.UserRole,
-  Account.Profile,
   Document.Asset,
   Document.Block,
   Document.BlockTemplate,
@@ -45,7 +45,6 @@ alias WraftDoc.{
   Repo
 }
 
-alias WraftDoc.Account.Country
 import WraftDoc.SeedGate
 
 # Populate database with roles
@@ -247,10 +246,10 @@ flow =
     name: "Flow 1"
   )
 
-Enum.each(1..6, fn x ->
+Enum.each(1..5, fn x ->
   allow_once(
     %Flow{
-      name: "Flow #{x}",
+      name: "#{Faker.Lorem.word()}_#{x}",
       organisation_id: organisation.id,
       creator_id: user.id
     },
@@ -527,10 +526,10 @@ File.stream!("priv/repo/data/super_resources.csv")
 end)
 
 # Populate Block
-Enum.each(1..10, fn _n ->
+Enum.each(1..10, fn x ->
   allow_once(
     %Block{
-      name: Faker.Commerce.product_name(),
+      name: "#{Faker.Commerce.product_name()}_#{x}",
       description: Faker.Lorem.Shakespeare.romeo_and_juliet(),
       btype: Faker.Industry.sub_sector(),
       file_url: Faker.Avatar.image_url(),
@@ -550,9 +549,9 @@ end)
 Enum.each(1..10, fn n ->
   allow_once(
     %BlockTemplate{
-      title: "title#{n}",
-      body: "body#{n}",
-      serialized: "serialized#{n}",
+      title: "#{Faker.Lorem.word()}_#{n}",
+      body: "#{Faker.Lorem.paragraphs()}. #{n}",
+      serialized: "serialized_#{n}",
       creator_id: user.id,
       organisation_id: organisation.id
     },
