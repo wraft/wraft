@@ -246,7 +246,7 @@ flow =
     name: "Flow 1"
   )
 
-Enum.each(1..5, fn x ->
+Enum.each(0..5, fn x ->
   allow_once(
     %Flow{
       name: "#{Faker.Lorem.word()}_#{x}",
@@ -322,6 +322,7 @@ published =
 
 allow_once(
   %ApprovalSystem{
+    name: Faker.Company.buzzword(),
     pre_state_id: draft.id,
     post_state_id: review.id,
     flow_id: flow.id,
@@ -333,6 +334,7 @@ allow_once(
 
 allow_once(
   %ApprovalSystem{
+    name: Faker.Company.buzzword(),
     pre_state_id: review.id,
     post_state_id: published.id,
     flow_id: flow.id,
@@ -458,6 +460,19 @@ allow_once(
   font: "Malery"
 )
 
+Enum.each(0..5, fn _ ->
+  allow_once(
+    %Theme{
+      name: Faker.Company.bullshit(),
+      font: Faker.Color.fancy_name(),
+      typescale: %{h1: Enum.random(0..10), h2: Enum.random(0..10), p: Enum.random(0..10)},
+      creator_id: user.id,
+      organisation_id: organisation.id
+    },
+    font: "Maler"
+  )
+end)
+
 # Populate data template
 allow_once(
   %DataTemplate{
@@ -526,7 +541,7 @@ File.stream!("priv/repo/data/super_resources.csv")
 end)
 
 # Populate Block
-Enum.each(1..10, fn x ->
+Enum.each(0..5, fn x ->
   allow_once(
     %Block{
       name: "#{Faker.Commerce.product_name()}_#{x}",
@@ -545,22 +560,21 @@ Enum.each(1..10, fn x ->
   )
 end)
 
-# Populate BlockTemplate
-Enum.each(1..10, fn n ->
+Enum.each(0..5, fn x ->
   allow_once(
     %BlockTemplate{
-      title: "#{Faker.Lorem.word()}_#{n}",
-      body: "#{Faker.Lorem.paragraphs()}. #{n}",
-      serialized: "serialized_#{n}",
+      title: "#{Faker.Lorem.word()}_#{x}",
+      body: "#{Faker.Lorem.paragraphs()}",
+      serialized: "serialized",
       creator_id: user.id,
       organisation_id: organisation.id
     },
-    title: "title#{n}"
+    title: "hey"
   )
 end)
 
 # Populate Country
-Enum.each(1..5, fn _ ->
+Enum.each(0..5, fn _ ->
   allow_once(
     %Country{
       country_name: Faker.Address.country(),
