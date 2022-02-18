@@ -24,6 +24,8 @@ defmodule WraftDoc.Document.Theme do
     field(:file, WraftDocWeb.ThemeUploader.Type)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+    belongs_to(:content_type, WraftDoc.Document.ContentType)
+
     timestamps()
   end
 
