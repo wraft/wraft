@@ -18,9 +18,19 @@ defmodule WraftDocWeb.ThemeUploader do
   # end
 
   # Whitelist file extensions:
-  # def validate({file, _}) do
-  #   ~w(.jpg .jpeg .gif .png) |> Enum.member?(Path.extname(file.file_name))
-  # end
+  @extension_whitelist ~w(.pdf .ttf .otf)
+
+  def validate({file, _}) do
+    file_extension = file.file_name |> Path.extname() |> String.downcase()
+
+    case Enum.member?(@extension_whitelist, file_extension) do
+      true ->
+        :ok
+
+      false ->
+        {:error, "file type is invalid, currently supporting files are: [.pdf, .ttf, .otf]"}
+    end
+  end
 
   # Define a thumbnail transformation:
   # def transform(:thumb, _) do
