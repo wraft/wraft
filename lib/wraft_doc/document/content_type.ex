@@ -22,7 +22,6 @@ defmodule WraftDoc.Document.ContentType do
   schema "content_type" do
     field(:name, :string, null: false)
     field(:description, :string)
-    # field(:fields, :map)
     field(:color, :string)
     field(:prefix, :string)
     belongs_to(:layout, Layout)
@@ -37,6 +36,7 @@ defmodule WraftDoc.Document.ContentType do
     has_many(:pipelines, through: [:stages, :pipeline])
     has_many(:content_type_roles, WraftDoc.Document.ContentTypeRole)
     has_many(:roles, through: [:content_type_roles, :role])
+    has_many(:themes, WraftDoc.Document.Theme)
 
     timestamps()
   end

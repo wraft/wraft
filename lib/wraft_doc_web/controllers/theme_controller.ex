@@ -115,11 +115,11 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     parameter(:name, :formData, :string, "Theme's name", required: true)
 
-    parameter(:font, :formData, :string, "Font to be used in the theme", required: true)
+    parameter(:font, :formData, :string, "Font to be used in the theme")
 
-    parameter(:typescale, :formData, :string, "Typescale of the theme", required: true)
+    parameter(:typescale, :formData, :map, "Typescale of the theme")
 
-    parameter(:file, :formData, :file, "Theme file to upload")
+    parameter(:file, :formData, :file, "Font file to upload, e.g. a roboto.ttf file")
 
     response(200, "Ok", Schema.ref(:Theme))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
