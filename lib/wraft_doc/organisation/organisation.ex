@@ -21,6 +21,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     has_many(:users, WraftDoc.Account.User, where: [deleted_at: nil])
     has_many(:pipelines, WraftDoc.Document.Pipeline)
     has_many(:vendors, WraftDoc.Enterprise.Vendor)
+    has_many(:themes, WraftDoc.Document.Theme)
 
     has_many(:roles, WraftDoc.Account.Role)
     timestamps()
