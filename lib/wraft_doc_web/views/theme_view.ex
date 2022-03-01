@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.ThemeView do
   use WraftDocWeb, :view
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.UserView
+  alias WraftDocWeb.Api.V1.{ContentTypeView, UserView}
 
   def render("create.json", %{theme: theme}) do
     %{
@@ -38,7 +38,9 @@ defmodule WraftDocWeb.Api.V1.ThemeView do
   def render("show.json", %{theme: theme}) do
     %{
       theme: render_one(theme, ThemeView, "create.json", as: :theme),
-      creator: render_one(theme.creator, UserView, "user.json", as: :user)
+      creator: render_one(theme.creator, UserView, "user.json", as: :user),
+      content_type:
+        render_one(theme.content_type, ContentTypeView, "content_type.json", as: :content_type)
     }
   end
 
