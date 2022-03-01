@@ -28,15 +28,14 @@ defmodule WraftDoc.Document.ContentType do
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:flow, Flow)
+    belongs_to(:theme, WraftDoc.Document.Theme)
 
     has_many(:instances, WraftDoc.Document.Instance)
     has_many(:fields, WraftDoc.Document.ContentTypeField)
-
     has_many(:stages, WraftDoc.Document.Pipeline.Stage)
     has_many(:pipelines, through: [:stages, :pipeline])
     has_many(:content_type_roles, WraftDoc.Document.ContentTypeRole)
     has_many(:roles, through: [:content_type_roles, :role])
-    has_many(:themes, WraftDoc.Document.Theme)
 
     timestamps()
   end
