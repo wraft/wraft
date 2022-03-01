@@ -1,14 +1,12 @@
-defmodule WraftDocWeb.ThemeUploader do
+defmodule WraftDocWeb.ThemePreviewUploader do
   @moduledoc """
   This module provides a simple interface for uploading
-  font files to `WraftDoc.Document.Theme`
+  preview files to `WraftDoc.Document.Theme`
   """
-
   use Waffle.Definition
   use Waffle.Ecto.Definition
 
   # Include ecto support (requires package waffle_ecto installed):
-  # use Waffle.Ecto.Definition
 
   @versions [:original]
 
@@ -21,7 +19,8 @@ defmodule WraftDocWeb.ThemeUploader do
   # end
 
   # Whitelist file extensions:
-  @extension_whitelist ~w(.pdf .ttf .otf)
+
+  @extension_whitelist ~w(.pdf .jpg .jpeg .gif .png)
 
   def validate({file, _}) do
     file_extension = file.file_name |> Path.extname() |> String.downcase()
@@ -31,14 +30,15 @@ defmodule WraftDocWeb.ThemeUploader do
         :ok
 
       false ->
-        {:error, "file type is invalid, currently supporting files are: [.pdf, .ttf, .otf]"}
+        {:error,
+         "file type is invalid, currently supporting files are: [.pdf .jpg .jpeg .gif .png]"}
     end
   end
 
   # Define a thumbnail transformation:
-  # def transform(:thumb, _) do
-  #   {:convert, "-strip -thumbnail 250x250^ -gravity center -extent 250x250 -format png", :png}
-  # end
+  def transform(:thumb, _) do
+    {:convert, "-strip -thumbnail 250x250^ -gravity center -extent 250x250 -format png", :png}
+  end
 
   # Override the persisted filenames:
   # def filename(version, _) do
@@ -47,7 +47,7 @@ defmodule WraftDocWeb.ThemeUploader do
 
   # Override the storage directory:
   def storage_dir(_version, {_file, scope}) do
-    "uploads/theme/fonts/#{scope.id}"
+    "uploads/theme/theme_preview/#{scope.id}"
   end
 
   # Provide a default URL if there hasn't been a file uploaded
