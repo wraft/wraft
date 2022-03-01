@@ -14,6 +14,7 @@ alias WraftDoc.{
   Account,
   Account.User,
   Document,
+  Document.Theme,
   Document.Instance,
   Enterprise.ApprovalSystem,
   Enterprise.Flow,
