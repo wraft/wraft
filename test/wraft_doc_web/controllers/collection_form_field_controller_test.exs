@@ -9,7 +9,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
   import WraftDoc.Factory
 
-  # @valid_attrs %{name: "collection form", description: "collection form"}
   @invalid_attrs %{name: nil, collection_form_id: nil}
 
   setup %{conn: conn} do

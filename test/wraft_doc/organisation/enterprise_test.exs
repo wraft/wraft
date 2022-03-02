@@ -218,7 +218,7 @@ defmodule WraftDoc.EnterpriseTest do
     assert organisation.name == d_organisation.name
   end
 
-  test "create aprroval system create a solution to create a system" do
+  test "create aprroval system" do
     user = insert(:user)
 
     pre_state = insert(:state, organisation: user.organisation)

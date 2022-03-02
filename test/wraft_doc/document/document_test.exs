@@ -59,7 +59,6 @@ defmodule WraftDoc.DocumentTest do
     "name" => "theme name",
     "font" => "theme font",
     "typescale" => %{"heading1" => 22, "heading2" => 16, "paragraph" => 12}
-    # "file" => "../../../screenshot.png"
   }
   @valid_data_template_attrs %{
     "title" => "data_template title",
@@ -86,11 +85,6 @@ defmodule WraftDoc.DocumentTest do
   }
   @invalid_instance_attrs %{raw: nil}
   @invalid_attrs %{}
-  # @content_type_invalid_attrs %{
-  #   "name" => nil,
-  #   "description" => nil,
-  #   "prefix" => nil
-  # }
 
   @data [
     %{"label" => "January", "value" => 10},
@@ -215,7 +209,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "layout_files_upload/2" do
-    test "layout file upload with slug file uploads a file to slug" do
+    test "slug file upload for a layout" do
       user = insert(:user)
       layout = insert(:layout, creator: user)
 
@@ -224,10 +218,13 @@ defmodule WraftDoc.DocumentTest do
       }
 
       u_layout = Document.layout_files_upload(layout, params)
+      dir = "uploads/slug/#{layout.id}"
+      assert {:ok, _ls} = File.ls(dir)
+      assert File.exists?(dir)
       assert u_layout.slug_file.file_name == "example.png"
     end
 
-    test "layout file upload with screen shot files upload a file as screenshot" do
+    test "screenshot file upload for a layout" do
       user = insert(:user)
       layout = insert(:layout, creator: user)
 
@@ -236,6 +233,9 @@ defmodule WraftDoc.DocumentTest do
       }
 
       u_layout = Document.layout_files_upload(layout, params)
+      dir = "uploads/layout-screenshots/#{layout.id}"
+      assert {:ok, _ls} = File.ls(dir)
+      assert File.exists?(dir)
       assert u_layout.screenshot.file_name == "example.png"
     end
   end
@@ -461,7 +461,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "get_content_type_from_id/1" do
-    test "  Get a content type from its ID. Also fetches all its related datas." do
+    test "gets a content type from its ID and fetches all its related data" do
       user = insert(:user)
       layout = insert(:layout)
 
@@ -469,15 +469,7 @@ defmodule WraftDoc.DocumentTest do
         insert(:content_type, creator: user, layout: layout, organisation: user.organisation)
 
       content_type = Document.get_content_type_from_id(content.id)
-      data1 = get_in(content_type, [Access.key(:flow)])
-      data2 = get_in(content_type, [Access.key(:layout)])
-      data3 = get_in(content_type, [Access.key(:creator)])
-
-      assert map_size(layout) == map_size(content_type.layout)
-      assert true == is_struct(content_type)
-      assert true == is_struct(data1)
-      assert true == is_struct(data2)
-      assert true == is_struct(data3)
+      assert content_type.name == content.name
     end
   end
 
@@ -741,9 +733,7 @@ defmodule WraftDoc.DocumentTest do
 
       instance = insert(:instance, creator: user)
       count_before = Instance |> Repo.all() |> length()
-      # version_count_before = Version |> Repo.all() |> length()
       instance = Document.update_instance(instance, user, @valid_instance_attrs)
-      # version_count_after = Version |> Repo.all() |> length()
       count_after = Instance |> Repo.all() |> length()
       assert count_before == count_after
 
@@ -783,7 +773,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "instance_state_upadate/5" do
-    test "Update instance's state. Also add the from and to state of in the activity meta." do
+    test "updates instance's state and add the from and to state in the activity meta." do
       user = insert(:user)
       content_type = insert(:content_type, creator: user)
       state = insert(:state)
@@ -900,7 +890,7 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "block_template functions" do
+  describe "create block_template" do
     test "create_block_template/2, test creates block template with valid attrs" do
       user = insert(:user)
 
@@ -929,7 +919,9 @@ defmodule WraftDoc.DocumentTest do
                body: ["can't be blank"]
              } == errors_on(changeset)
     end
+  end
 
+  describe "get block_template" do
     test "get_block_template/2, Create a block template" do
       block_template = insert(:block_template)
       get_block_template = Document.get_block_template(block_template.id, block_template)
@@ -937,7 +929,9 @@ defmodule WraftDoc.DocumentTest do
       assert block_template.id == get_block_template.id
       assert block_template.organisation_id == get_block_template.organisation_id
     end
+  end
 
+  describe "update block_template" do
     test "update_block_template/3," do
       block_template = insert(:block_template)
       user = block_template.creator
@@ -948,7 +942,9 @@ defmodule WraftDoc.DocumentTest do
       assert update_btemplate.body =~ "new body"
       refute block_template.title == update_btemplate.title
     end
+  end
 
+  describe "delete block_template" do
     test "delete_block_template/2" do
       block_template = insert(:block_template)
       user = block_template.creator
@@ -958,7 +954,9 @@ defmodule WraftDoc.DocumentTest do
 
       assert count_before - 1 == count_after
     end
+  end
 
+  describe "get index of block_template" do
     test "block_template_index/2, Index of a block template by organisation" do
       user = insert(:user)
       b_temp = :block_template |> insert() |> Map.from_struct()
