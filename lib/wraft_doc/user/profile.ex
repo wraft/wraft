@@ -1,17 +1,16 @@
 defmodule WraftDoc.Account.Profile do
   @moduledoc """
     This is the Profile model
-    ### Fields
-    * name: - would be position name or role name in the organisation
-    * profile_pic: - Profile picture of the user
-    * dob: - Date of Birth
-    * gender: - Male or Female
+    ## Fields
+    * `name` - would be position name or role name in the organisation
+    * `profile_pic` - Profile picture of the user
+    * `dob` - Date of Birth
+    * `gender` - Male or Female
   """
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
 
   schema "basic_profile" do
-    # name: would be position name in the organisation or role name
     field(:name, :string)
     field(:profile_pic, WraftDocWeb.PropicUploader.Type)
     field(:dob, :date)
