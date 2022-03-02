@@ -182,7 +182,6 @@ defmodule WraftDoc.Factory do
       unit: sequence(:name, &"layout-#{&1}"),
       organisation: build(:organisation),
       engine: build(:engine)
-      # slug: "contract"
     }
   end
 
