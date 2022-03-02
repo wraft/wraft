@@ -415,7 +415,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       assert json_response(conn, 200)["state"]["state"] == s2.state
     end
 
-    test "return error no permission for a worng approver", %{conn: conn} do
+    test "return error no permission for a wrong approver", %{conn: conn} do
       user = conn.assigns.current_user
       u2 = insert(:user, organisation: user.organisation)
       insert(:membership, organisation: user.organisation)

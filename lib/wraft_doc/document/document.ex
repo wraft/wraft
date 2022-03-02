@@ -178,7 +178,7 @@ defmodule WraftDoc.Document do
 
   @doc """
   List all engines.
-  #Example
+  ## Example
     iex()engines_list(%{})
     list of available engines
   """
@@ -1764,7 +1764,7 @@ defmodule WraftDoc.Document do
   Get a field type from its UUID.
   """
   @spec get_field_type(binary, User.t()) :: FieldType.t()
-  def get_field_type(<<_::288>> = field_type_id, %{organisation_id: org_id} = _user_struct) do
+  def get_field_type(<<_::288>> = field_type_id, %{organisation_id: org_id} = _user) do
     query =
       from(ft in FieldType,
         where: ft.id == ^field_type_id,
@@ -2166,7 +2166,7 @@ defmodule WraftDoc.Document do
   Get a block template by its uuid
   """
   @spec get_block_template(Ecto.UUID.t(), BlockTemplate.t()) :: BlockTemplate.t()
-  def get_block_template(<<_::288>> = id, %{organisation_id: org_id} = _block_template) do
+  def get_block_template(<<_::288>> = id, %{organisation_id: org_id}) do
     case Repo.get_by(BlockTemplate, id: id, organisation_id: org_id) do
       %BlockTemplate{} = block_template -> block_template
       _ -> {:error, :invalid_id, "BlockTemplate"}

@@ -1,12 +1,9 @@
 defmodule WraftDocWeb.Api.V1.UserControllerTest do
-  @moduledoc """
-  UserControllerTests
-  """
+  @moduledoc false
   use WraftDocWeb.ConnCase
   @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Account.AuthToken, Repo}
-  # alias WraftDocWeb.Endpoint
 
   setup %{conn: conn} do
     profile = insert(:profile)
