@@ -1110,6 +1110,32 @@ defmodule WraftDoc.Document do
   defp update_default_theme(_, _, params), do: params
 
   @doc """
+  Update a default theme.
+  """
+  # TODO - write tests
+  # TODO - this function is not used anywhere yet.
+  def update_default_theme(%Theme{default_theme: true} = theme) do
+    case Repo.exists?(Theme) do
+      true ->
+        query =
+          from(
+            t in Theme,
+            where: t.default_theme == true
+          )
+
+        # do I have to use Spur.update? here?
+        Repo.update_all(query, set: [default_theme: false])
+
+      false ->
+        nil
+    end
+
+    theme
+  end
+
+  def update_default_theme(theme), do: theme
+
+  @doc """
   Upload theme file.
   """
   # TODO - improve tests
@@ -1446,7 +1472,11 @@ defmodule WraftDoc.Document do
       |> concat_strings("path: #{mkdir}\n")
       |> concat_strings("title: #{page_title}\n")
       |> concat_strings("id: #{u_id}\n")
+<<<<<<< HEAD
       |> concat_strings("mainfont: #{font_name}\n")
+=======
+      # |> concat_strings("mainfont: #{get_theme.file}\n")
+>>>>>>> added theme_id to content_type
       # |> concat_strings("body_color: #{get_theme.body_color}\n")
       # |> concat_strings("primary_color: #{get_theme.primary_color}\n")
       # |> concat_strings("secondary_color: #{get_theme.secondary_color}\n")
