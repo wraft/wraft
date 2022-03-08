@@ -1,4 +1,5 @@
 defmodule WraftDoc.Repo.Migrations.AddColorsToTheme do
+  @moduledoc false
   use Ecto.Migration
 
   def change do
