@@ -541,8 +541,8 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "create_instance" do
-    test "create_instance/4, create instance on valid attributes and updates count of instances at counter" do
+  describe "create_instance/4" do
+    test "create instance on valid attributes and updates count of instances at counter" do
       user = insert(:user)
       content_type = insert(:content_type)
       flow = content_type.flow
@@ -570,7 +570,7 @@ defmodule WraftDoc.DocumentTest do
       assert instance.serialized == @valid_instance_attrs["serialized"]
     end
 
-    test "create_instance/4, on invalid attrs" do
+    test "does not create instance, on invalid attrs" do
       user = insert(:user)
       count_before = Instance |> Repo.all() |> length()
       content_type = insert(:content_type)
@@ -586,8 +586,10 @@ defmodule WraftDoc.DocumentTest do
                type: ["can't be blank"]
              } == errors_on(changeset)
     end
+  end
 
-    test "create_instance/3, create instance on valid attributes and updates count of instances at counter" do
+  describe "create_instance/3" do
+    test "create an instance on valid attributes and updates count of instances at counter" do
       user = insert(:user)
       content_type = insert(:content_type)
       flow = content_type.flow
@@ -615,7 +617,7 @@ defmodule WraftDoc.DocumentTest do
       assert instance.serialized == @valid_instance_attrs["serialized"]
     end
 
-    test "create_instance/3, on invalid attrs" do
+    test "does not create instance, on invalid attrs" do
       user = insert(:user)
       count_before = Instance |> Repo.all() |> length()
       content_type = insert(:content_type)
