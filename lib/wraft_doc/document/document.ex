@@ -1079,6 +1079,32 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+  Update a default theme.
+  """
+  # TODO - write tests
+  # TODO - this function is not used anywhere yet.
+  def update_default_theme(%Theme{default_theme: true} = theme) do
+    case Repo.exists?(Theme) do
+      true ->
+        query =
+          from(
+            t in Theme,
+            where: t.default_theme == true
+          )
+
+        # do I have to use Spur.update? here?
+        Repo.update_all(query, set: [default_theme: false])
+
+      false ->
+        nil
+    end
+
+    theme
+  end
+
+  def update_default_theme(theme), do: theme
+
+  @doc """
   Upload theme file.
   """
   # TODO - improve tests
@@ -1375,10 +1401,15 @@ defmodule WraftDoc.Document do
         assets: assets
       }) do
     File.mkdir_p("uploads/contents/#{u_id}")
+    # slug files: there are only two types of templates: contract and pletter
     System.cmd("cp", ["-a", "lib/slugs/#{slug}/.", "uploads/contents/#{u_id}"])
     task = Task.async(fn -> generate_qr(instance) end)
     Task.start(fn -> move_old_builds(u_id) end)
     c_type = Repo.preload(c_type, [:fields])
+    # check if the font path available to latex template
+    # we can give all theme data to the template
+    # TODO - determine default theme
+    get_theme = get_theme(c_type.theme_id, instance.creator_id)
 
     header =
       Enum.reduce(c_type.fields, "--- \n", fn x, acc ->
@@ -1395,6 +1426,11 @@ defmodule WraftDoc.Document do
       |> concat_strings("path: uploads/contents/#{u_id}\n")
       |> concat_strings("title: #{page_title}\n")
       |> concat_strings("id: #{u_id}\n")
+      # |> concat_strings("mainfont: #{get_theme.file}\n")
+      # |> concat_strings("body_color: #{get_theme.body_color}\n")
+      # |> concat_strings("primary_color: #{get_theme.primary_color}\n")
+      # |> concat_strings("secondary_color: #{get_theme.secondary_color}\n")
+      # |> concat_strings("typescale: #{get_theme.typescale}\n")
       |> concat_strings("--- \n")
 
     content = """
