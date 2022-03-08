@@ -218,8 +218,8 @@ defmodule WraftDoc.EnterpriseTest do
     assert organisation.name == d_organisation.name
   end
 
-  describe "create approval system" do
-    test "create_approval_system/2 on valid attributes" do
+  describe "create_approval_system/2" do
+    test "create approval system on valid attributes" do
       user = insert(:user)
 
       pre_state = insert(:state, organisation: user.organisation)
@@ -243,7 +243,7 @@ defmodule WraftDoc.EnterpriseTest do
       assert count_before + 1 == count_after
     end
 
-    test "create_approval_system/2 on invalid attributes" do
+    test "do not create approval system on invalid attributes" do
       user = insert(:user)
       count_before = ApprovalSystem |> Repo.all() |> length()
       params = %{}

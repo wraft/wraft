@@ -178,8 +178,10 @@ defmodule WraftDoc.Document do
 
   @doc """
   List all engines.
+
   ## Example
-    iex()engines_list(%{})
+
+    iex> engines_list(%{})
     list of available engines
   """
   @spec engines_list(map) :: map
