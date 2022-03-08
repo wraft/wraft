@@ -4,7 +4,9 @@ defmodule WraftDoc.Enterprise.Organisation do
   """
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
-  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Account.{Role, User}
+  alias WraftDoc.Enterprise.{Organisation, Vendor}
+  alias WraftDoc.Document.{Pipeline, Theme}
 
   @derive {Jason.Encoder, only: [:name]}
   schema "organisation" do
@@ -18,12 +20,12 @@ defmodule WraftDoc.Enterprise.Organisation do
     field(:phone, :string)
     field(:email, :string)
     field(:logo, WraftDocWeb.LogoUploader.Type)
-    has_many(:users, WraftDoc.Account.User, where: [deleted_at: nil])
-    has_many(:pipelines, WraftDoc.Document.Pipeline)
-    has_many(:vendors, WraftDoc.Enterprise.Vendor)
-    has_many(:themes, WraftDoc.Document.Theme)
+    has_many(:users, User, where: [deleted_at: nil])
+    has_many(:pipelines, Pipeline)
+    has_many(:vendors, Vendor)
+    has_many(:themes, Theme)
 
-    has_many(:roles, WraftDoc.Account.Role)
+    has_many(:roles, Role)
     timestamps()
   end
 
