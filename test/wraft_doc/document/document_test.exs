@@ -634,7 +634,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "delete_instance/2" do
-    test "delete_instance" do
+    test "delete an instance" do
       user = insert(:user)
       instance = insert(:instance)
       count_before = Instance |> Repo.all() |> length()
@@ -1139,16 +1139,6 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  # describe "theme_file_upload/2" do
-  #   test "theme file upload" do
-  #     theme = insert(:theme)
-  #     file = %{file: "screenshot-location.png"}
-  #     file_upload = Document.theme_file_upload(theme, file)
-  #     # file not being generated while running the test
-
-  #   end
-  # end
-
   describe "theme_index/2" do
     test "theme index lists the theme data" do
       user = insert(:user)
@@ -1368,10 +1358,12 @@ defmodule WraftDoc.DocumentTest do
       assert %{name: ["can't be blank"]} == errors_on(changeset)
     end
 
-    test "asset_file_upload/2" do
+    test "asset_file_upload/2 Upload asset file" do
+      asset = insert(:asset)
+
       assert {:ok, asset} =
                Document.asset_file_upload(
-                 insert(:asset),
+                 asset,
                  %{
                    "file" => %Plug.Upload{
                      filename: "invoice.pdf",
@@ -1380,6 +1372,10 @@ defmodule WraftDoc.DocumentTest do
                  }
                )
 
+      dir = "uploads/assets/#{asset.id}"
+      assert {:ok, ls} = File.ls(dir)
+      assert File.exists?(dir)
+      assert Enum.member?(ls, "invoice.pdf")
       assert asset.file.file_name =~ "invoice.pdf"
     end
   end
