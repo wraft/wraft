@@ -41,7 +41,7 @@ defmodule WraftDoc.Document.Theme do
     field(:preview_file, WraftDocWeb.ThemePreviewUploader.Type)
     field(:file, WraftDocWeb.ThemeUploader.Type)
 
-    belongs_to(:creator, WraftDoc.Account.User)
+    belongs_to(:creator, User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     has_many(:content_type, WraftDoc.Document.ContentType)
 
