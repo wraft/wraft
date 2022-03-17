@@ -34,8 +34,13 @@ $endif$
 $for(fontfamilies)$
   \newfontfamily{$fontfamilies.name$}[$fontfamilies.options$]{$fontfamilies.font$}
 $endfor$
+\usepackage{fontspec}
+\usepackage{graphicx, grffile}
 $if(mainfont)$
-
+  \setmainfont[
+    Path=$path$/,
+    BoldFont = $mainfont$
+  ]{$mainfont$}
 $endif$
 $if(sansfont)$
     \setsansfont[$for(sansfontoptions)$$sansfontoptions$$sep$,$endfor$]{$sansfont$}
@@ -273,18 +278,13 @@ $if(toc)$
   }
 $endif$
 
-\setmainfont[
-    Path=$path$/fonts/,
-    BoldFont = Mallory-Bold.otf
-    ]{Mallory-Book.otf}
-
-
 \begin{letter}{$for(address)$$address$$sep$\\$endfor$$if(subject)$\\ ~ \\$subject$$endif$}
     \opening{$opening$}
 
-<<<<<<< HEAD
   $body$
+  $if(qrcode)$
     \includegraphics[scale=0.25]{$qrcode$}
+  $endif$
   $if(closing)$
   $if(closing-indentation)$
     \longindentation=$closing-indentation$
@@ -300,27 +300,6 @@ $endif$
   $if(ps)$
     \ps{$ps$}
   $endif$
-=======
-$body$
-$if(qrcode)$
-  \includegraphics[scale=0.25]{$qrcode$}
-$endif$
-$if(closing)$
-$if(closing-indentation)$
-\longindentation=$closing-indentation$
-$endif$
-\closing{$closing$}
-$endif$
-$if(encl)$
-\encl{$for(encl)$$encl$$sep$\\$endfor$}
-$endif$
-$if(cc)$
-\cc{$for(cc)$$cc$$sep$\\$endfor$}
-$endif$
-$if(ps)$
-\ps{$ps$}
-$endif$
->>>>>>> a42fecc5a79ed0d9b4f167f4701263e9b9c3e799
 
 \end{letter}
 
