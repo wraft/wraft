@@ -20,3 +20,7 @@ erl_crash.dump
 # The directory NPM downloads your dependencies sources to.
 /assets/node_modules/
 .idea/
+/lib/slugs/pletter/templlate.aux
+/lib/slugs/pletter/templlate.fdb_latexmk
+/lib/slugs/pletter/templlate.fls
+/lib/slugs/pletter/templlate.log
