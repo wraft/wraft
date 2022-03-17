@@ -42,9 +42,9 @@ defmodule WraftDocWeb.AssetUploader do
   end
 
   # Provide a default URL if there hasn't been a file uploaded
-  # def default_url(version, scope) do
-  #   "/images/avatars/default_#{version}.png"
-  # end
+  def default_url(_version, _scope) do
+    WraftDocWeb.Endpoint.url() <> "/test/helper/images.png"
+  end
 
   # Specify custom headers for s3 objects
   # Available options are [:cache_control, :content_disposition,

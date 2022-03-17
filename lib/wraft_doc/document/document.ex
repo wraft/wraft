@@ -4,6 +4,7 @@ defmodule WraftDoc.Document do
   """
   import Ecto
   import Ecto.Query
+  require Logger
 
   alias WraftDoc.{
     Account.Role,
@@ -416,7 +417,12 @@ defmodule WraftDoc.Document do
       {:ok, content_type} ->
         fetch_and_associate_fields(content_type, params, user)
 
-        Repo.preload(content_type, [:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
+        Repo.preload(content_type, [
+          :layout,
+          :creator,
+          :theme,
+          [{:flow, :states}, {:fields, :field_type}]
+        ])
     end
   end
 
@@ -1136,6 +1142,11 @@ defmodule WraftDoc.Document do
     Repo.get_by(Theme, id: theme_uuid, organisation_id: org_id)
   end
 
+  def get_theme(theme_id, org_id) do
+    Logger.info("Theme not found for theme_id #{theme_id} - organisation_id #{org_id}")
+    nil
+  end
+
   @doc """
   Show a theme.
   """
@@ -1398,18 +1409,28 @@ defmodule WraftDoc.Document do
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %Layout{
         slug: slug,
-        assets: assets
+        assets: assets,
+        organisation_id: organisation_id
       }) do
-    File.mkdir_p("uploads/contents/#{u_id}")
+    mkdir = "uploads/contents/#{u_id}"
+    File.mkdir_p("#{mkdir}")
     # slug files: there are only two types of templates: contract and pletter
-    System.cmd("cp", ["-a", "lib/slugs/#{slug}/.", "uploads/contents/#{u_id}"])
+    System.cmd("cp", ["-a", "lib/slugs/#{slug}/.", "#{mkdir}"])
     task = Task.async(fn -> generate_qr(instance) end)
     Task.start(fn -> move_old_builds(u_id) end)
     c_type = Repo.preload(c_type, [:fields])
     # check if the font path available to latex template
-    # we can give all theme data to the template
     # TODO - determine default theme
-    get_theme = get_theme(c_type.theme_id, instance.creator_id)
+    get_theme = get_theme(c_type.theme_id, %User{organisation_id: organisation_id})
+    url = generate_url(WraftDocWeb.ThemeUploader, get_theme.file, get_theme)
+
+    font_path =
+      url
+      |> Path.dirname()
+      |> Path.relative_to("/")
+
+    System.cmd("cp", ["-a", "#{font_path}/.", "#{mkdir}/fonts/"])
+    font_name = get_font_name(url)
 
     header =
       Enum.reduce(c_type.fields, "--- \n", fn x, acc ->
@@ -1423,10 +1444,10 @@ defmodule WraftDoc.Document do
     header =
       header
       |> concat_strings("qrcode: #{qr_code} \n")
-      |> concat_strings("path: uploads/contents/#{u_id}\n")
+      |> concat_strings("path: #{mkdir}/fonts\n")
       |> concat_strings("title: #{page_title}\n")
       |> concat_strings("id: #{u_id}\n")
-      # |> concat_strings("mainfont: #{get_theme.file}\n")
+      |> concat_strings("mainfont: #{font_name}\n")
       # |> concat_strings("body_color: #{get_theme.body_color}\n")
       # |> concat_strings("primary_color: #{get_theme.primary_color}\n")
       # |> concat_strings("secondary_color: #{get_theme.secondary_color}\n")
@@ -1470,6 +1491,21 @@ defmodule WraftDoc.Document do
   defp find_header_values(%Asset{name: name, file: file} = asset, acc) do
     <<_first::utf8, rest::binary>> = generate_url(AssetUploader, file, asset)
     concat_strings(acc, "#{name}: #{rest} \n")
+  end
+
+  @doc """
+  Get the font full name out of the path.
+  ## Example
+  iex(1)> get_font_name("/uploads/theme/fonts/d17664cb-b6cf-4e39-aec8-5b665f1e75b4/Roboto-BlackItalic.ttf?v=63813346445")\n
+  "Roboto-BlackItalic.ttf"
+  """
+  @spec get_font_name(String.t()) :: String.t()
+  def get_font_name(font_file_path) do
+    font_file_path
+    |> String.split("/")
+    |> List.last()
+    |> String.split("?")
+    |> List.first()
   end
 
   # Generate url.
