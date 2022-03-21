@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.ThemeView do
   use WraftDocWeb, :view
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{ContentTypeView, UserView}
+  alias WraftDocWeb.Api.V1.UserView
 
   def render("create.json", %{theme: theme}) do
     %{
