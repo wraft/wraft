@@ -14,6 +14,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
       prefix: c_type.prefix,
       inserted_at: c_type.inserted_at,
       updated_at: c_type.updated_at,
+      theme_id: c_type.theme_id,
       layout: render_one(c_type.layout, LayoutView, "layout.json", as: :doc_layout),
       flow: render_one(c_type.flow, FlowView, "flow.json", as: :flow)
     }
