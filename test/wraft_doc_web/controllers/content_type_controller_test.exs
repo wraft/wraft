@@ -81,6 +81,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "update content type on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
+    theme = insert(:theme, creator: user, organisation: user.organisation)
     insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
 
@@ -94,7 +95,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     %{id: flow_uuid} = insert(:flow)
     %{id: layout_uuid} = insert(:layout)
 
-    params = Map.merge(@valid_attrs, %{flow_id: flow_uuid, layout_id: layout_uuid})
+    params =
+      Map.merge(@valid_attrs, %{flow_id: flow_uuid, layout_id: layout_uuid, theme_id: theme.id})
 
     conn =
       conn

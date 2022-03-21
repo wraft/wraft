@@ -478,13 +478,15 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       layout = insert(:layout, creator: user, organisation: user.organisation)
       flow = insert(:flow, creator: user, organisation: user.organisation)
+      theme = insert(:theme, creator: user, organisation: user.organisation)
 
       content_type =
         insert(:content_type,
           creator: user,
           layout: layout,
           flow: flow,
-          organisation: user.organisation
+          organisation: user.organisation,
+          theme: theme
         )
 
       count_before = ContentType |> Repo.all() |> length()
@@ -520,7 +522,8 @@ defmodule WraftDoc.DocumentTest do
       assert %{
                name: ["can't be blank"],
                description: ["can't be blank"],
-               prefix: ["can't be blank"]
+               prefix: ["can't be blank"],
+               theme_id: ["can't be blank"]
              } == errors_on(changeset)
     end
   end
@@ -1128,7 +1131,7 @@ defmodule WraftDoc.DocumentTest do
       assert theme.typescale == @valid_theme_attrs["typescale"]
     end
 
-    test "create theme on invalid attrs" do
+    test "does not create theme on invalid attrs" do
       user = insert(:user)
       count_before = Theme |> Repo.all() |> length()
 
@@ -1482,6 +1485,16 @@ defmodule WraftDoc.DocumentTest do
   #     # assert tuple_size(build_doc) = 2
   #   end
   # end
+
+  describe "get_fontname/2" do
+    test "get fontname" do
+      path =
+        "/uploads/theme/fonts/d17664cb-b6cf-4e39-aec8-5b665f1e75b4/Roboto-BlackItalic.ttf?v=63813346445"
+
+      fontname = Document.get_font_name(path)
+      assert "Roboto-BlackItalic.ttf" == fontname
+    end
+  end
 
   describe "add_build_history" do
     test "add_build_history/3 Insert the build history of the given instance." do
