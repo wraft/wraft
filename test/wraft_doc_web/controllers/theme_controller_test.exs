@@ -78,10 +78,10 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
     theme = insert(:theme, creator: user, organisation: user.organisation)
-    content_type = insert(:content_type)
-    filename = Plug.Upload.random_file!("test")
+    content_type = insert(:content_type, organisation: user.organisation)
+    filename = "test/helper/invoice.pdf"
     file = %Plug.Upload{content_type: content_type, filename: filename, path: filename}
-    params = Map.merge(@valid_attrs, %{file: file})
+    params = Map.merge(@valid_attrs, %{file: file, organisation_id: user.organisation.id})
 
     conn =
       build_conn()
