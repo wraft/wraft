@@ -1085,12 +1085,8 @@ defmodule WraftDoc.Document do
     end
   end
 
-  @doc """
-  Update a default theme.
-  """
-  # TODO - write tests
   # there must be single %{default_theme: true} per organisation
-  def update_default_theme(%User{id: id}, theme, %{"default_theme" => "true"}) do
+  defp update_default_theme(%User{id: id}, theme, %{"default_theme" => "true"}) do
     case Repo.exists?(theme) do
       true ->
         # uncomment this code if there is more then one %{default_theme: true} records
@@ -1102,7 +1098,8 @@ defmodule WraftDoc.Document do
 
         # params = Repo.all(query)
         # Repo.update_all(query, set: [default_theme: false])
-        Repo.get_by(theme, default_theme: true)
+        theme
+        |> Repo.get_by(default_theme: true)
         |> update_theme(%User{id: id}, %{"default_theme" => "false"})
 
       false ->
@@ -1110,7 +1107,7 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def update_default_theme(_, _, params), do: params
+  defp update_default_theme(_, _, params), do: params
 
   @doc """
   Upload theme file.
@@ -1446,7 +1443,7 @@ defmodule WraftDoc.Document do
     header =
       header
       |> concat_strings("qrcode: #{qr_code} \n")
-      |> concat_strings("path: #{mkdir}/fonts\n")
+      |> concat_strings("path: #{mkdir}\n")
       |> concat_strings("title: #{page_title}\n")
       |> concat_strings("id: #{u_id}\n")
       |> concat_strings("mainfont: #{font_name}\n")
