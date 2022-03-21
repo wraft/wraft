@@ -275,6 +275,10 @@ defmodule WraftDoc.Factory do
       name: sequence(:name, &"Official Letter Theme-#{&1}"),
       font: sequence(:font, &"Malery-#{&1}"),
       typescale: %{h1: "10", p: "6", h2: "8"},
+      body_color: sequence(:body_color, &"#eeff0#{&1}"),
+      primary_color: sequence(:primary_color, &"#eeff0#{&1}"),
+      secondary_color: sequence(:secondary_color, &"#eeff0#{&1}"),
+      default_theme: true,
       organisation: build(:organisation),
       creator: build(:user)
     }
