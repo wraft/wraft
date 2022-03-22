@@ -41,7 +41,7 @@ erl_crash.dump
 npm-debug.log
 /assets/node_modules/
 .idea/
-/lib/slugs/pletter/templlate.aux
-/lib/slugs/pletter/templlate.fdb_latexmk
-/lib/slugs/pletter/templlate.fls
-/lib/slugs/pletter/templlate.log
+/lib/slugs/pletter/template.aux
+/lib/slugs/pletter/template.fdb_latexmk
+/lib/slugs/pletter/template.fls
+/lib/slugs/pletter/template.log
