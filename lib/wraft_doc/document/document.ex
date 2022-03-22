@@ -1086,7 +1086,9 @@ defmodule WraftDoc.Document do
   end
 
   # there must be single %{default_theme: true} per organisation
-  defp update_default_theme(%User{id: id}, theme, %{"default_theme" => "true"}) do
+  defp update_default_theme(%User{id: id}, theme, %{"default_theme" => value})
+       when value == true
+       when value == "true" do
     case Repo.exists?(theme) do
       true ->
         # uncomment this code if there is more then one %{default_theme: true} records
@@ -1098,9 +1100,14 @@ defmodule WraftDoc.Document do
 
         # params = Repo.all(query)
         # Repo.update_all(query, set: [default_theme: false])
-        theme
-        |> Repo.get_by(default_theme: true)
-        |> update_theme(%User{id: id}, %{"default_theme" => "false"})
+
+        case Repo.get_by(theme, default_theme: true) do
+          nil ->
+            theme
+
+          record ->
+            update_theme(record, %User{id: id}, %{"default_theme" => "false"})
+        end
 
       false ->
         theme
@@ -1108,33 +1115,6 @@ defmodule WraftDoc.Document do
   end
 
   defp update_default_theme(_, _, params), do: params
-
-  @doc """
-  Update a default theme.
-  """
-  # TODO - write tests
-  # there must be single %{default_theme: true} per organisation
-  def update_default_theme(%User{id: id}, theme, %{"default_theme" => "true"}) do
-    case Repo.exists?(theme) do
-      true ->
-        # uncomment this code if there is more then one %{default_theme: true} records
-        # query =
-        #   from(
-        #     t in theme,
-        #     where: t.default_theme == true
-        #   )
-
-        # params = Repo.all(query)
-        # Repo.update_all(query, set: [default_theme: false])
-        Repo.get_by(theme, default_theme: true)
-        |> update_theme(%User{id: id}, %{"default_theme" => "false"})
-
-      false ->
-        theme
-    end
-  end
-
-  def update_default_theme(_, _, params), do: params
 
   @doc """
   Upload theme file.
