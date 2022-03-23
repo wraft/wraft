@@ -769,7 +769,7 @@ defmodule WraftDoc.Document do
       from(i in Instance,
         join: u in User,
         where: u.organisation_id == ^org_id and i.creator_id == u.id,
-        order_by: [desc: i.id],
+        order_by: [desc: i.inserted_at],
         preload: [:content_type, :state, :vendor, {:instance_approval_systems, :approver}]
       )
 
@@ -1446,10 +1446,10 @@ defmodule WraftDoc.Document do
       |> concat_strings("title: #{page_title}\n")
       |> concat_strings("id: #{u_id}\n")
       |> concat_strings("mainfont: #{font_name}\n")
-      # |> concat_strings("body_color: #{get_theme.body_color}\n")
-      # |> concat_strings("primary_color: #{get_theme.primary_color}\n")
-      # |> concat_strings("secondary_color: #{get_theme.secondary_color}\n")
-      # |> concat_strings("typescale: #{get_theme.typescale}\n")
+      |> concat_strings("body_color: #{get_theme.body_color}\n")
+      |> concat_strings("primary_color: #{get_theme.primary_color}\n")
+      |> concat_strings("secondary_color: #{get_theme.secondary_color}\n")
+      |> concat_strings("typescale: #{get_theme.typescale}\n")
       |> concat_strings("--- \n")
 
     content = """
