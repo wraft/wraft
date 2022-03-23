@@ -14,8 +14,7 @@ defmodule WraftDocWeb.Api.V1.ThemeView do
       default_theme: theme.default_theme,
       typescale: theme.typescale,
       file: generate_url(theme),
-      # send preview_file
-      # preview_file: theme.preview_file
+      preview_file: theme.preview_file,
       updated_at: theme.updated_at,
       inserted_at: theme.inserted_at
     }
