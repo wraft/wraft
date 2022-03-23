@@ -1066,7 +1066,6 @@ defmodule WraftDoc.Document do
   Create a theme.
   """
   # TODO Improve tests
-  # file not being generated in the tests
   @spec create_theme(User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
   def create_theme(%{organisation_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
@@ -1091,16 +1090,6 @@ defmodule WraftDoc.Document do
        when value == "true" do
     case Repo.exists?(theme) do
       true ->
-        # uncomment this code if there is more then one %{default_theme: true} records
-        # query =
-        #   from(
-        #     t in theme,
-        #     where: t.default_theme == true
-        #   )
-
-        # params = Repo.all(query)
-        # Repo.update_all(query, set: [default_theme: false])
-
         case Repo.get_by(theme, default_theme: true) do
           nil ->
             theme
@@ -1149,7 +1138,10 @@ defmodule WraftDoc.Document do
   end
 
   def get_theme(theme_id, org_id) do
-    Logger.info("Theme not found for theme_id #{theme_id} - organisation_id #{org_id}")
+    Logger.info(
+      "Theme not found for theme_id #{inspect(theme_id)} - organisation_id #{inspect(org_id)}"
+    )
+
     nil
   end
 
@@ -1419,9 +1411,9 @@ defmodule WraftDoc.Document do
         organisation_id: organisation_id
       }) do
     mkdir = "uploads/contents/#{u_id}"
-    File.mkdir_p("#{mkdir}")
+    File.mkdir_p(mkdir)
     # slug files: there are only two types of templates: contract and pletter
-    System.cmd("cp", ["-a", "lib/slugs/#{slug}/.", "#{mkdir}"])
+    System.cmd("cp", ["-a", "lib/slugs/#{slug}/.", mkdir])
     task = Task.async(fn -> generate_qr(instance) end)
     Task.start(fn -> move_old_builds(u_id) end)
     c_type = Repo.preload(c_type, [:fields])
@@ -1501,8 +1493,10 @@ defmodule WraftDoc.Document do
 
   @doc """
   Get the font full name out of the path.
+
   ## Example
-  iex(1)> get_font_name("/uploads/theme/fonts/d17664cb-b6cf-4e39-aec8-5b665f1e75b4/Roboto-BlackItalic.ttf?v=63813346445")\n
+
+  iex()> get_font_name("/uploads/theme/fonts/d17664cb-b6cf-4e39-aec8-5b665f1e75b4/Roboto-BlackItalic.ttf?v=63813346445")\n
   "Roboto-BlackItalic.ttf"
   """
   @spec get_font_name(String.t()) :: String.t()
