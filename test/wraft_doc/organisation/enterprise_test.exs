@@ -20,8 +20,6 @@ defmodule WraftDoc.EnterpriseTest do
     Repo
   }
 
-  alias WraftDoc.Account.Role
-
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
   test "get flow returns flow data by id" do
@@ -220,28 +218,47 @@ defmodule WraftDoc.EnterpriseTest do
     assert organisation.name == d_organisation.name
   end
 
-  test "create aprroval system create a solution to create a system" do
-    user = insert(:user)
+  describe "create_approval_system/2" do
+    test "create approval system on valid attributes" do
+      user = insert(:user)
 
-    pre_state = insert(:state, organisation: user.organisation)
-    post_state = insert(:state, organisation: user.organisation)
-    approver = insert(:user, organisation: user.organisation)
-    flow = insert(:flow, organisation: user.organisation)
+      pre_state = insert(:state, organisation: user.organisation)
+      post_state = insert(:state, organisation: user.organisation)
+      approver = insert(:user, organisation: user.organisation)
+      flow = insert(:flow, organisation: user.organisation)
 
-    count_before = ApprovalSystem |> Repo.all() |> length()
+      count_before = ApprovalSystem |> Repo.all() |> length()
 
-    params = %{
-      "pre_state_id" => pre_state.id,
-      "post_state_id" => post_state.id,
-      "approver_id" => approver.id,
-      "flow_id" => flow.id
-    }
+      params = %{
+        "pre_state_id" => pre_state.id,
+        "post_state_id" => post_state.id,
+        "approver_id" => approver.id,
+        "flow_id" => flow.id
+      }
 
-    approval_system = Enterprise.create_approval_system(user, params)
+      _approval_system = Enterprise.create_approval_system(user, params)
 
-    count_after = ApprovalSystem |> Repo.all() |> length()
+      count_after = ApprovalSystem |> Repo.all() |> length()
 
-    assert count_before + 1 == count_after
+      assert count_before + 1 == count_after
+    end
+
+    test "do not create approval system on invalid attributes" do
+      user = insert(:user)
+      count_before = ApprovalSystem |> Repo.all() |> length()
+      params = %{}
+      {:error, approval_system} = Enterprise.create_approval_system(user, params)
+      count_after = ApprovalSystem |> Repo.all() |> length()
+
+      assert count_before == count_after
+
+      assert %{
+               post_state_id: ["can't be blank"],
+               pre_state_id: ["can't be blank"],
+               approver_id: ["can't be blank"],
+               flow_id: ["can't be blank"]
+             } == errors_on(approval_system)
+    end
   end
 
   test "show approval system returns apprval system data" do

@@ -8,6 +8,7 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.{
     Document,
     Document.Asset,
+    Document.Block,
     Document.BlockTemplate,
     Document.CollectionForm,
     Document.CollectionFormField,
@@ -15,7 +16,9 @@ defmodule WraftDoc.DocumentTest do
     Document.ContentType,
     Document.Counter,
     Document.DataTemplate,
+    Document.FieldType,
     Document.Instance,
+    Document.Instance.History,
     Document.Instance.Version,
     Document.InstanceApprovalSystem,
     Document.Layout,
@@ -82,10 +85,30 @@ defmodule WraftDoc.DocumentTest do
   }
   @invalid_instance_attrs %{raw: nil}
   @invalid_attrs %{}
-  @content_type_invalid_attrs %{
-    "name" => nil,
-    "description" => nil,
-    "prefix" => nil
+
+  @data [
+    %{"label" => "January", "value" => 10},
+    %{"label" => "February", "value" => 20},
+    %{"label" => "March", "value" => 5},
+    %{"label" => "April", "value" => 60},
+    %{"label" => "May", "value" => 80},
+    %{"label" => "June", "value" => 70},
+    %{"label" => "Julay", "value" => 90}
+  ]
+  @update_valid_attrs %{
+    "btype" => "gantt",
+    "file_url" => "/usr/local/hoem/filex.svg",
+    "api_route" => "http://localhost:4000",
+    "dataset" => %{
+      "backgroundColor" => "transparent",
+      "data" => @data,
+      "format" => "svg",
+      "height" => 512,
+      "type" => "pie",
+      "width" => 512
+    },
+    "endpoint" => "blocks_api",
+    "name" => "Farming"
   }
 
   describe "create_layout/3" do
@@ -136,8 +159,17 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  describe "engine_list/1" do
+    test "list all engines" do
+      engin_params = %{name: "engin", api_route: "api_route"}
+      engine = Document.engines_list(engin_params)
+      assert true == is_list(engine.entries)
+      assert true == engine.entries |> length() |> is_number()
+    end
+  end
+
   describe "show_layout/2" do
-    test "show layout shows the layout data and preloads engine crator assets data" do
+    test "show layout shows the layout data and preloads engine creator assets data" do
       user = insert(:user)
       engine = insert(:engine)
 
@@ -173,6 +205,38 @@ defmodule WraftDoc.DocumentTest do
     test "returns nil when wrong datas are given" do
       s_layout = Document.show_layout(1, nil)
       assert s_layout == {:error, :fake}
+    end
+  end
+
+  describe "layout_files_upload/2" do
+    test "slug file upload for a layout" do
+      user = insert(:user)
+      layout = insert(:layout, creator: user)
+
+      params = %{
+        "slug_file" => %Plug.Upload{path: "test/fixtures/example.png", filename: "example.png"}
+      }
+
+      u_layout = Document.layout_files_upload(layout, params)
+      dir = "uploads/slug/#{layout.id}"
+      assert {:ok, _ls} = File.ls(dir)
+      assert File.exists?(dir)
+      assert u_layout.slug_file.file_name == "example.png"
+    end
+
+    test "screenshot file upload for a layout" do
+      user = insert(:user)
+      layout = insert(:layout, creator: user)
+
+      params = %{
+        "screenshot" => %Plug.Upload{path: "test/fixtures/example.png", filename: "example.png"}
+      }
+
+      u_layout = Document.layout_files_upload(layout, params)
+      dir = "uploads/layout-screenshots/#{layout.id}"
+      assert {:ok, _ls} = File.ls(dir)
+      assert File.exists?(dir)
+      assert u_layout.screenshot.file_name == "example.png"
     end
   end
 
@@ -250,6 +314,7 @@ defmodule WraftDoc.DocumentTest do
 
       {:error, changeset} = Document.update_layout(layout, user, @invalid_attrs)
       count_after = Layout |> Repo.all() |> length()
+
       assert count_before == count_after
 
       assert %{
@@ -302,29 +367,6 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  # test "layout file upload with slug file uploads a file to slug" do
-  #   user = insert(:user)
-  #   layout = insert(:layout, creator: user)
-
-  #   params = %{
-  #     "slug_file" => %Plug.Upload{path: "test/fixtures/example.png", filename: "example.png"}
-  #   }
-
-  #   u_layout = Document.layout_files_upload(layout, params)
-  #   assert u_layout.slug_file.filename == "example.png"
-  # end
-
-  # test "layout file upload with screen shot files upload a file as screenshot" do
-  #   user = insert(:user)
-  #   layout = insert(:layout, creator: user)
-
-  #   params = %{
-  #     "screenshot" => %Plug.Upload{path: "test/fixtures/example.png", filename: "example.png"}
-  #   }
-
-  #   u_layout = Document.layout_files_upload(layout, params)
-  #   assert u_layout.screenshot.filename == "example.png"
-  # end
   describe "create_content_type/4" do
     test "create content_type on valid attributes" do
       user = insert(:user)
@@ -418,6 +460,19 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  describe "get_content_type_from_id/1" do
+    test "gets a content type from its ID and fetches all its related data" do
+      user = insert(:user)
+      layout = insert(:layout)
+
+      content =
+        insert(:content_type, creator: user, layout: layout, organisation: user.organisation)
+
+      content_type = Document.get_content_type_from_id(content.id)
+      assert content_type.name == content.name
+    end
+  end
+
   describe "update_content_type/3" do
     test "update content_type on valid attrs" do
       user = insert(:user)
@@ -477,6 +532,7 @@ defmodule WraftDoc.DocumentTest do
       count_before = ContentType |> Repo.all() |> length()
       {:ok, s_content_type} = Document.delete_content_type(content_type, user)
       count_after = ContentType |> Repo.all() |> length()
+
       assert count_before - 1 == count_after
       assert s_content_type.name == content_type.name
       assert s_content_type.description == content_type.description
@@ -504,18 +560,17 @@ defmodule WraftDoc.DocumentTest do
       params = Map.merge(params, %{"state_id" => state_id})
       counter_count = Counter |> Repo.all() |> length()
       count_before = Instance |> Repo.all() |> length()
-
       instance = Document.create_instance(user, content_type, state, params)
-
       count_after = Instance |> Repo.all() |> length()
       counter_count_after = Counter |> Repo.all() |> length()
+
       assert count_before + 1 == count_after
       assert counter_count + 1 == counter_count_after
       assert instance.raw == @valid_instance_attrs["raw"]
       assert instance.serialized == @valid_instance_attrs["serialized"]
     end
 
-    test "create instance on invalid attrs" do
+    test "does not create instance, on invalid attrs" do
       user = insert(:user)
       count_before = Instance |> Repo.all() |> length()
       content_type = insert(:content_type)
@@ -530,6 +585,65 @@ defmodule WraftDoc.DocumentTest do
                raw: ["can't be blank"],
                type: ["can't be blank"]
              } == errors_on(changeset)
+    end
+  end
+
+  describe "create_instance/3" do
+    test "create an instance on valid attributes and updates count of instances at counter" do
+      user = insert(:user)
+      content_type = insert(:content_type)
+      flow = content_type.flow
+      state = insert(:state, flow: flow)
+      state_id = state.id
+
+      params = %{
+        "instance_id" => "OFFR0001",
+        "raw" => "instance raw",
+        "serialized" => %{"body" => "body of the content", "title" => "title of the content"},
+        "type" => 1,
+        "state_id" => "a041a482-202c-4c53-99f3-79a8dab252d5"
+      }
+
+      params = Map.merge(params, %{"state_id" => state_id})
+      counter_count = Counter |> Repo.all() |> length()
+      count_before = Instance |> Repo.all() |> length()
+      instance = Document.create_instance(user, content_type, params)
+      count_after = Instance |> Repo.all() |> length()
+      counter_count_after = Counter |> Repo.all() |> length()
+
+      assert count_before + 1 == count_after
+      assert counter_count + 1 == counter_count_after
+      assert instance.raw == @valid_instance_attrs["raw"]
+      assert instance.serialized == @valid_instance_attrs["serialized"]
+    end
+
+    test "does not create instance, on invalid attrs" do
+      user = insert(:user)
+      count_before = Instance |> Repo.all() |> length()
+      content_type = insert(:content_type)
+      _state = insert(:state, flow: content_type.flow)
+
+      {:error, changeset} = Document.create_instance(user, content_type, @invalid_attrs)
+
+      count_after = Instance |> Repo.all() |> length()
+      assert count_before == count_after
+
+      assert %{
+               raw: ["can't be blank"],
+               type: ["can't be blank"]
+             } == errors_on(changeset)
+    end
+  end
+
+  describe "delete_instance/2" do
+    test "delete an instance" do
+      user = insert(:user)
+      instance = insert(:instance)
+      count_before = Instance |> Repo.all() |> length()
+      _del_instance = Document.delete_instance(instance, user)
+      count_after = Instance |> Repo.all() |> length()
+
+      assert count_before - 1 == count_after
     end
   end
 
@@ -580,7 +694,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "show_instance/2" do
-    test "show instance shows and preloads creator content thype layout and state instance data" do
+    test "show instance shows and preloads creator content type layout and state instance data" do
       user = insert(:user)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       flow = content_type.flow
@@ -597,15 +711,31 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  describe "get_built_document/1" do
+    test "Get the build document of the given instance." do
+      user = insert(:user)
+      content_type = insert(:content_type, creator: user, organisation: user.organisation)
+      flow = content_type.flow
+      state = insert(:state, flow: flow, organisation: user.organisation)
+
+      instance =
+        insert(:instance, build: "build", creator: user, content_type: content_type, state: state)
+
+      get_built_document = Document.get_built_document(instance)
+
+      assert instance.build == get_built_document.build
+      assert instance.id == get_built_document.id
+      assert instance.instance_id == get_built_document.instance_id
+    end
+  end
+
   describe "update_instance/3" do
     test "update instance on valid attrs and add a version data" do
       user = insert(:user)
 
       instance = insert(:instance, creator: user)
       count_before = Instance |> Repo.all() |> length()
-      version_count_before = Version |> Repo.all() |> length()
       instance = Document.update_instance(instance, user, @valid_instance_attrs)
-      version_count_after = Version |> Repo.all() |> length()
       count_after = Instance |> Repo.all() |> length()
       assert count_before == count_after
 
@@ -641,6 +771,24 @@ defmodule WraftDoc.DocumentTest do
       instance = Document.update_instance_state(user, instance, post_state)
 
       assert instance.state_id == post_state.id
+    end
+  end
+
+  describe "instance_state_upadate/5" do
+    test "updates instance's state and add the from and to state in the activity meta." do
+      user = insert(:user)
+      content_type = insert(:content_type, creator: user)
+      state = insert(:state)
+      instance = insert(:instance, creator: user, content_type: content_type, state: state)
+
+      instance_state =
+        Document.instance_state_upadate(instance, user.id, state.id, state.state, instance.state)
+
+      old_state_length = map_size(instance.state)
+      new_state_length = map_size(instance_state.state)
+
+      assert instance_state.state == instance.state
+      assert old_state_length == new_state_length
     end
   end
 
@@ -744,8 +892,8 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "create_block_template/2" do
-    test "test creates block template with valid attrs" do
+  describe "create block_template" do
+    test "create_block_template/2, test creates block template with valid attrs" do
       user = insert(:user)
 
       params = %{
@@ -763,7 +911,7 @@ defmodule WraftDoc.DocumentTest do
       assert block_template.serialized == "Hi [employee], we welcome you to our family"
     end
 
-    test "test does not create block template with invalid attrs" do
+    test "create_block_template/2, test does not create block template with invalid attrs" do
       user = insert(:user)
       {:error, changeset} = Document.create_block_template(user, %{})
 
@@ -772,6 +920,53 @@ defmodule WraftDoc.DocumentTest do
                serialized: ["can't be blank"],
                body: ["can't be blank"]
              } == errors_on(changeset)
+    end
+  end
+
+  describe "get block_template" do
+    test "get_block_template/2, Create a block template" do
+      block_template = insert(:block_template)
+      get_block_template = Document.get_block_template(block_template.id, block_template)
+
+      assert block_template.id == get_block_template.id
+      assert block_template.organisation_id == get_block_template.organisation_id
+    end
+  end
+
+  describe "update block_template" do
+    test "update_block_template/3," do
+      block_template = insert(:block_template)
+      user = block_template.creator
+      params = %{"title" => "new title", "body" => "new body"}
+      update_btemplate = Document.update_block_template(user, block_template, params)
+
+      assert update_btemplate.title =~ "new title"
+      assert update_btemplate.body =~ "new body"
+      refute block_template.title == update_btemplate.title
+    end
+  end
+
+  describe "delete block_template" do
+    test "delete_block_template/2" do
+      block_template = insert(:block_template)
+      user = block_template.creator
+      count_before = BlockTemplate |> Repo.all() |> length()
+      _delete_btemp = Document.delete_block_template(user, block_template)
+      count_after = BlockTemplate |> Repo.all() |> length()
+
+      assert count_before - 1 == count_after
+    end
+  end
+
+  describe "get index of block_template" do
+    test "block_template_index/2, Index of a block template by organisation" do
+      user = insert(:user)
+      b_temp = :block_template |> insert() |> Map.from_struct()
+      bt_index = Document.block_template_index(user, b_temp)
+
+      assert Map.has_key?(bt_index, :entries)
+      assert Map.has_key?(bt_index, :total_entries)
+      assert is_number(bt_index.total_pages)
     end
   end
 
@@ -877,6 +1072,7 @@ defmodule WraftDoc.DocumentTest do
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       content_type_field = insert(:content_type_field, content_type: content_type)
       c_content_type_field = Document.get_content_type_field(content_type_field.id, user)
+
       assert content_type_field.name == c_content_type_field.name
       assert content_type_field.description == c_content_type_field.description
     end
@@ -1163,6 +1359,27 @@ defmodule WraftDoc.DocumentTest do
       assert count_before == count_after
       assert %{name: ["can't be blank"]} == errors_on(changeset)
     end
+
+    test "asset_file_upload/2 Upload asset file" do
+      asset = insert(:asset)
+
+      assert {:ok, asset} =
+               Document.asset_file_upload(
+                 asset,
+                 %{
+                   "file" => %Plug.Upload{
+                     filename: "invoice.pdf",
+                     path: "test/helper/invoice.pdf"
+                   }
+                 }
+               )
+
+      dir = "uploads/assets/#{asset.id}"
+      assert {:ok, ls} = File.ls(dir)
+      assert File.exists?(dir)
+      assert Enum.member?(ls, "invoice.pdf")
+      assert asset.file.file_name =~ "invoice.pdf"
+    end
   end
 
   describe "asset_index/2" do
@@ -1200,11 +1417,13 @@ defmodule WraftDoc.DocumentTest do
 
   describe "update_asset/3" do
     # test "update asset on valid attrs" do
+    # file uploading is throwing errors
     #   user = insert(:user)
     #   asset = insert(:asset, creator: user)
     #   count_before = Asset |> Repo.all() |> length()
 
     #   asset = Document.update_asset(asset, user, @valid_asset_attrs)
+    #   # IO.inspect(asset, label: "----------------------")
     #   count_after = Asset |> Repo.all() |> length()
     #   assert count_before == count_after
     #   assert asset.name == @valid_asset_attrs["name"]
@@ -1229,8 +1448,218 @@ defmodule WraftDoc.DocumentTest do
       count_before = Asset |> Repo.all() |> length()
       {:ok, a_asset} = Document.delete_asset(asset, user)
       count_after = Asset |> Repo.all() |> length()
+
       assert count_before - 1 == count_after
       assert a_asset.name == asset.name
+    end
+  end
+
+  describe "preload_asset/1" do
+    test "preload_asset" do
+      layout = insert(:layout)
+      preload_assets = Document.preload_asset(layout)
+
+      assert is_list(layout.assets) == false
+      assert is_list(preload_assets.assets) == true
+    end
+  end
+
+  # describe "build_doc/2" do
+  #   test "build document" do
+  #     instance = insert(:instance)
+
+  #     {:ok, _asset} =
+  #       Document.asset_file_upload(
+  #         insert(:asset),
+  #         %{"file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}}
+  #       )
+
+  #     layout = insert(:layout)
+  #     layout = Layout |> Repo.get(layout.id) |> Repo.preload(:assets)
+  #     build_doc = Document.build_doc(instance, layout)
+
+  #     assert is_tuple(build_doc)
+  #     # assert tuple_size(build_doc) = 2
+  #   end
+  # end
+
+  describe "add_build_history" do
+    test "add_build_history/3 Insert the build history of the given instance." do
+      params = :build_history |> insert() |> Map.from_struct()
+      instance = insert(:instance)
+      user = insert(:user)
+      count_before = History |> Repo.all() |> length()
+      add_build_history = Document.add_build_history(user, instance, params)
+      count_after = History |> Repo.all() |> length()
+      changeset = History.changeset(%History{}, params)
+
+      assert changeset.valid?
+      assert is_struct(add_build_history) == true
+      assert is_struct(add_build_history.content.build_histories) == true
+      assert count_before + 1 == count_after
+    end
+
+    test "Same as add_build_history/3, but creator will not be stored." do
+      params = :build_history |> insert() |> Map.from_struct()
+      instance = insert(:instance)
+      count_before = History |> Repo.all() |> length()
+      add_build_history = Document.add_build_history(instance, params)
+      count_after = History |> Repo.all() |> length()
+
+      assert is_struct(add_build_history) == true
+      assert count_before + 1 == count_after
+    end
+  end
+
+  describe "create_block/2" do
+    test "create block" do
+      block = :block |> insert() |> Map.from_struct()
+      user = insert(:user)
+      create_block = Document.create_block(user, block)
+      changeset = Block.changeset(%Block{}, block)
+
+      assert changeset.valid?
+      assert is_struct(create_block)
+      refute is_nil(create_block.dataset)
+      assert create_block.name =~ ~r/([a-z]|[A-Z])/
+    end
+  end
+
+  describe "get_block/2" do
+    test "get block by its ID" do
+      block = :block |> insert() |> Map.from_struct()
+      get_block = Document.get_block(block.id, block)
+
+      assert is_struct(get_block)
+      refute is_nil(get_block.dataset)
+      assert get_block.name =~ ~r/([a-z]|[A-Z])/
+    end
+  end
+
+  describe "update_block/3" do
+    test "update block" do
+      user = insert(:user)
+      block = insert(:block)
+      params = %{name: "new_name", api_route: "new/route"}
+      update_block = Document.update_block(user, block, params)
+
+      assert is_struct(update_block)
+      assert update_block.api_route =~ "new/route"
+      refute block.name == update_block.name
+    end
+  end
+
+  describe "delete_block/1" do
+    test "delete block" do
+      block = insert(:block)
+      count_before = Block |> Repo.all() |> length()
+      _delete_block = Document.delete_block(block)
+      count_after = Block |> Repo.all() |> length()
+
+      assert count_before - 1 == count_after
+    end
+  end
+
+  describe "generate_chart/1" do
+    # it has to test with real data
+    test "Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create" do
+      block = :block |> insert() |> Map.from_struct()
+      # bb = %{"dataset" => "dataset", "api_route" => "api_route", "endpoint" => "blocks_api"}
+      generate_chart = Document.generate_chart(block)
+      assert is_map(generate_chart)
+    end
+  end
+
+  describe "generate_tex_chart/1" do
+    test "Generate tex code for the chart" do
+      # data = %{"dataset" => %{}, "btype" => "gantt"}
+      data2 = %{"dataset" => @update_valid_attrs["dataset"]}
+
+      dd = Document.generate_tex_chart(data2)
+
+      refute is_nil(dd)
+      assert dd =~ ~r/(pie)/
+    end
+  end
+
+  describe "create_field_type/2" do
+    test "Create a field type" do
+      # this will create FieldType struct with name "String 0"
+      f_type = :field_type |> insert() |> Map.from_struct()
+      # so updating the new name to avoid unique name constraints error
+      f_type = Map.update!(f_type, :name, fn _v -> "name1" end)
+      user = insert(:user)
+      field_type_changeset = FieldType.changeset(%FieldType{}, f_type)
+
+      assert field_type_changeset.valid?
+      assert {:ok, _create_field_type} = Document.create_field_type(user, f_type)
+    end
+
+    test "check unique name constraint" do
+      user = insert(:user)
+      f_type = :field_type |> insert() |> Map.from_struct()
+
+      assert {:error, _error_msg} = Document.create_field_type(user, f_type)
+    end
+  end
+
+  describe "field_type_index/1" do
+    test "Index of all field types." do
+      f_type = :field_type |> insert() |> Map.from_struct()
+      type_index = Document.field_type_index(f_type)
+
+      refute is_nil(type_index)
+      assert Map.has_key?(type_index, :entries)
+      assert Map.has_key?(type_index, :page_size)
+      assert Map.has_key?(type_index, :page_number)
+    end
+  end
+
+  describe "get_field_type/2" do
+    test "Get a field type from its UUID" do
+      f_type = insert(:field_type)
+      get_field_type = Document.get_field_type(f_type.id, f_type.creator)
+
+      assert get_field_type.id == f_type.id
+      assert get_field_type.name == f_type.name
+    end
+
+    test "test with invalid UUID" do
+      f_type = insert(:field_type)
+      get_field_type = Document.get_field_type(f_type, f_type.creator)
+
+      assert {:error, _, _} = get_field_type
+    end
+
+    test "test with invalid params" do
+      f_type = insert(:field_type)
+      get_field_type = Document.get_field_type(f_type, f_type)
+
+      assert {:error, _} = get_field_type
+    end
+  end
+
+  describe "update_field_type/2" do
+    test "update_field_type" do
+      f_type = insert(:field_type)
+      new_values = %{name: "new", description: "new desc"}
+
+      assert {:ok, update_field_type} = Document.update_field_type(f_type, new_values)
+      assert update_field_type.name =~ "new"
+      assert update_field_type.description =~ "new desc"
+    end
+  end
+
+  describe "delete_field_type/1" do
+    test "delete_field_type" do
+      f_type = insert(:field_type)
+      f_type2 = insert(:field_type)
+      count_before = FieldType |> Repo.all() |> length()
+      _delete_field_type = Document.delete_field_type(f_type)
+      count_after = FieldType |> Repo.all() |> length()
+
+      assert {:ok, _struct} = Document.delete_field_type(f_type2)
+      assert count_before - 1 == count_after
     end
   end
 
@@ -1547,6 +1976,83 @@ defmodule WraftDoc.DocumentTest do
       assert response == nil
     end
   end
+
+  describe "create_pipeline_job/1" do
+    test "Creates a background job to run a pipeline" do
+      trigger_history = insert(:trigger_history)
+      assert {:ok, _dd} = Document.create_pipeline_job(trigger_history)
+    end
+  end
+
+  # describe "bulk_doc_build/6" do
+  #   test "Bulk build function" do
+  #     user = insert(:user)
+  #     c_type = insert(:content_type)
+  #     state = insert(:state)
+  #     d_temp = insert(:data_template)
+  #     # k = Faker.Person.first_name()
+  #     v = Faker.Person.last_name()
+  #     map = %{"hey" => v}
+  #     path = "/home/functionary/Downloads/sample4.csv"
+  #     bulk_doc_build = Document.bulk_doc_build(user, c_type, state, d_temp, map, path)
+  #     IO.inspect(bulk_doc_build)
+  #   end
+  # end
+
+  describe "do_create_instance_params/2" do
+    test "Generate params to create instance." do
+      k = Faker.Person.first_name()
+      v = Faker.Person.last_name()
+      map = %{k => v}
+      d_temp = insert(:data_template)
+
+      assert %{"raw" => _raw, "serialized" => ss} =
+               Document.do_create_instance_params(map, d_temp)
+
+      assert is_map(ss)
+      assert %{"title" => _} = ss
+    end
+  end
+
+  # describe "bulk_build" do
+  #   test "bulk_buil/2, Same as bulk_buil/3, but does not store the creator in build history." do
+  #     instance = insert(:instance)
+
+  #     {:ok, _asset} =
+  #       Document.asset_file_upload(
+  #         insert(:asset),
+  #         %{"file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}}
+  #       )
+
+  #     layout = insert(:layout)
+  #     layout = Layout |> Repo.get(layout.id) |> Repo.preload(:assets)
+  #     _build_doc = Document.build_doc(instance, layout)
+
+  #     assert {_, exit_code} = bulk_build = Document.bulk_build(instance, layout)
+  #     assert is_nil(bulk_build) == false
+  #     assert is_number(exit_code)
+  #   end
+
+  #   test "bulk_build/3, Builds the doc using `build_doc/2`.
+  #     Here we also records the build history using `add_build_history/3`." do
+  #     instance = insert(:instance)
+
+  #     {:ok, _asset} =
+  #       Document.asset_file_upload(
+  #         insert(:asset),
+  #         %{"file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}}
+  #       )
+
+  #     layout = insert(:layout)
+  #     layout = Layout |> Repo.get(layout.id) |> Repo.preload(:assets)
+  #     _build_doc = Document.build_doc(instance, layout)
+  #     user = insert(:user)
+
+  #     assert {_, exit_code} = bulk_build = Document.bulk_build(user, instance, layout)
+  #     assert is_nil(bulk_build) == false
+  #     assert is_number(exit_code)
+  #   end
+  # end
 
   describe "get_pipeline/2" do
     test "returns the pipeline in the user's organisation with given id" do
@@ -1886,11 +2392,11 @@ defmodule WraftDoc.DocumentTest do
 
       before_role_count = Role |> Repo.all() |> length()
 
-      response = Document.delete_role_of_the_content_type(role)
+      _response = Document.delete_role_of_the_content_type(role)
 
       after_role_count = Role |> Repo.all() |> length()
 
-      assert after_role_count = before_role_count - 1
+      assert after_role_count == before_role_count - 1
     end
   end
 
@@ -1984,7 +2490,7 @@ defmodule WraftDoc.DocumentTest do
 
     test "get_collection_form_with_invalid_id" do
       user = insert(:user)
-      collection_form = insert(:collection_form, organisation: user.organisation)
+      # collection_form = insert(:collection_form, organisation: user.organisation)
 
       response = Document.get_collection_form(user, Ecto.UUID.generate())
 
@@ -2022,7 +2528,7 @@ defmodule WraftDoc.DocumentTest do
 
     before_collection_count = CollectionForm |> Repo.all() |> length()
 
-    response = Document.delete_collection_form(collection_form)
+    _response = Document.delete_collection_form(collection_form)
 
     after_collection_count = CollectionForm |> Repo.all() |> length()
 
@@ -2040,7 +2546,7 @@ defmodule WraftDoc.DocumentTest do
       }
 
       count_before = CollectionFormField |> Repo.all() |> length()
-      a = Document.create_collection_form_field(collection.id, param)
+      _a = Document.create_collection_form_field(collection.id, param)
 
       count_after = CollectionFormField |> Repo.all() |> length()
       assert count_before + 1 == count_after
@@ -2114,7 +2620,7 @@ defmodule WraftDoc.DocumentTest do
 
     before_collection_count = CollectionFormField |> Repo.all() |> length()
 
-    response = Document.delete_collection_form_field(collection_form_field)
+    _response = Document.delete_collection_form_field(collection_form_field)
 
     after_collection_count = CollectionFormField |> Repo.all() |> length()
 

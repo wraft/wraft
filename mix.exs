@@ -47,12 +47,13 @@ defmodule WraftDoc.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.6.4", override: true},
+      {:phoenix, "~> 1.6.6"},
       {:phoenix_pubsub, "~> 2.0.0"},
       {:phoenix_ecto, "~> 4.4.0"},
+      {:phoenix_view, "~> 1.1.0"},
       {:ecto_sql, "~> 3.7.1"},
       {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 3.1.0", override: true},
+      {:phoenix_html, "~> 3.2.0", override: true},
       {:phoenix_live_reload, "~> 1.3.3", only: :dev},
       {:esbuild, "~> 0.3", runtime: Mix.env() == :dev},
       {:gettext, "~> 0.18.2"},
@@ -77,7 +78,7 @@ defmodule WraftDoc.Mixfile do
       # Time and date formating
       {:timex, "~>  3.7.6"},
       # JSON parser
-      {:jason, "~> 1.2.2"},
+      {:jason, "~> 1.3.0"},
       # API documentation
       {:phoenix_swagger, "~> 0.8.2"},
 

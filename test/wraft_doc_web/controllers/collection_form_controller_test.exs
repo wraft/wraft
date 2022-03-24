@@ -65,8 +65,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    user = conn.assigns.current_user
-
     count_before = CollectionForm |> Repo.all() |> length()
     field_count_before = CollectionFormField |> Repo.all() |> length()
 
@@ -91,8 +89,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    user = conn.assigns.current_user
-
     count_before = CollectionForm |> Repo.all() |> length()
 
     conn =
@@ -109,14 +105,11 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
     collection_form = insert(:collection_form, organisation: user.organisation)
-    valid_attrs = Map.put(@valid_attrs, :collection_form_id, collection_form.id)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
-
-    user = conn.assigns.current_user
 
     count_before = CollectionForm |> Repo.all() |> length()
 
@@ -140,8 +133,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    user = conn.assigns.current_user
-
     count_before = CollectionForm |> Repo.all() |> length()
 
     conn =
@@ -164,8 +155,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    user = conn.assigns.current_user
-
     conn =
       get(
         conn,
@@ -183,8 +172,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
-
-    user = conn.assigns.current_user
 
     conn =
       get(

@@ -1,4 +1,4 @@
-defmodule WraftDocWeb.Worker.EmailWorker do
+defmodule WraftDoc.Workers.EmailWorker do
   @moduledoc """
   Oban worker for sending emails.
   """
