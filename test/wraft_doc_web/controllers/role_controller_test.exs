@@ -7,7 +7,6 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
   alias WraftDoc.Account.Role
   alias WraftDoc.Repo
   import WraftDoc.Factory
-  alias WraftDoc.Document.ContentType
 
   @valid_attrs %{name: "manager"}
   @invalid_attrs %{name: nil}
@@ -83,7 +82,6 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
       |> assign(:current_user, conn.assigns.current_user)
 
     user = conn.assigns.current_user
-    role = insert(:role, organisation: user.organisation)
     insert(:membership, organisation: user.organisation)
     conn = get(conn, Routes.v1_role_path(conn, :show, Ecto.UUID.autogenerate()))
     assert json_response(conn, 400)["errors"] == "The Role id does not exist..!"
