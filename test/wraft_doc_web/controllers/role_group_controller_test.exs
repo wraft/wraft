@@ -142,7 +142,6 @@ defmodule WraftDocWeb.Api.V1.RoleGroupControllerTest do
         |> assign(:current_user, conn.assigns.current_user)
 
       rg1 = insert(:role_group, organisation: user.organisation)
-      rg2 = insert(:role_group, organisation: user.organisation)
       conn = get(conn, Routes.v1_role_group_path(conn, :index))
 
       list = json_response(conn, 200)["role_groups"]

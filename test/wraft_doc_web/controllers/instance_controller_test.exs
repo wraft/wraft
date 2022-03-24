@@ -9,7 +9,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   alias WraftDoc.{
     Document.Instance,
-    Document.Instance.Version,
     Document.InstanceApprovalSystem,
     Repo
   }
@@ -349,13 +348,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
         serialized: %{title: "Offer letter", body: "Offer letter body"}
       )
 
-    i2 =
-      insert(:instance,
-        creator: current_user,
-        content_type: content_type,
-        serialized: %{title: "Releival letter", body: "Releival letter body"}
-      )
-
     conn = get(conn, Routes.v1_instance_path(conn, :search), key: "offer")
 
     contents = json_response(conn, 200)["contents"]
@@ -423,14 +415,14 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       assert json_response(conn, 200)["state"]["state"] == s2.state
     end
 
-    test "return error no permission for a worng approver", %{conn: conn} do
+    test "return error no permission for a wrong approver", %{conn: conn} do
       user = conn.assigns.current_user
       u2 = insert(:user, organisation: user.organisation)
       insert(:membership, organisation: user.organisation)
       flow = insert(:flow, organisation: user.organisation)
       s1 = insert(:state, organisation: user.organisation, flow: flow, order: 1)
       s2 = insert(:state, organisation: user.organisation, flow: flow, order: 2)
-      as = insert(:approval_system, flow: flow, approver: u2, pre_state: s1, post_state: s2)
+      _as = insert(:approval_system, flow: flow, approver: u2, pre_state: s1, post_state: s2)
       content_type = insert(:content_type, organisation: user.organisation, flow: flow)
       instance = insert(:instance, creator: user, content_type: content_type, state: s1)
 

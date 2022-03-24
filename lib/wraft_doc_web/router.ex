@@ -282,10 +282,13 @@ defmodule WraftDocWeb.Router do
     delete("/sign-out", SessionController, :delete)
   end
 
+  # coveralls-ignore-start
   scope "/" do
     pipe_through([:browser, :api_auth, :admin])
     live_dashboard("/dashboard")
   end
+
+  # coveralls-ignore-stop
 
   scope "/api/swagger" do
     forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :wraft_doc, swagger_file: "swagger.json")

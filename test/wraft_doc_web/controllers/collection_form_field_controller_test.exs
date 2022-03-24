@@ -9,7 +9,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
   import WraftDoc.Factory
 
-  @valid_attrs %{name: "collection form", description: "collection form"}
   @invalid_attrs %{name: nil, collection_form_id: nil}
 
   setup %{conn: conn} do
@@ -79,8 +78,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    user = conn.assigns.current_user
-
     count_before = CollectionFormField |> Repo.all() |> length()
 
     conn =
@@ -104,8 +101,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
-
-    user = conn.assigns.current_user
 
     count_before = CollectionFormField |> Repo.all() |> length()
 
@@ -135,8 +130,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
-
-    user = conn.assigns.current_user
 
     param = %{name: "collection form field", field_type: "string"}
 
@@ -171,8 +164,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    user = conn.assigns.current_user
-
     count_before = CollectionFormField |> Repo.all() |> length()
 
     conn =
@@ -202,8 +193,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
 
-    user = conn.assigns.current_user
-
     conn =
       get(
         conn,
@@ -222,14 +211,11 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
     user = conn.assigns.current_user
     insert(:membership, organisation: user.organisation)
     collection_form = insert(:collection_form)
-    collection_form_field = insert(:collection_form_field)
 
     conn =
       build_conn()
       |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
       |> assign(:current_user, conn.assigns.current_user)
-
-    user = conn.assigns.current_user
 
     conn =
       get(

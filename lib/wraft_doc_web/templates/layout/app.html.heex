@@ -2,6 +2,9 @@
   <p class="alert alert-info" role="alert"><%= get_flash(@conn, :info) %></p>
   <p class="alert alert-danger" role="alert"><%= get_flash(@conn, :error) %></p>
   <li style="color:DodgerBlue;text-align:right;">
+    <%=link "Sign in", to: Routes.session_path(@conn, :create) %>
+  </li>
+  <li style="color:DodgerBlue;text-align:right;">
     <%=link "Sign up", to: Routes.signup_path(@conn, :new)%>
   </li>
   <%= @inner_content %>

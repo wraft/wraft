@@ -172,7 +172,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   """
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
