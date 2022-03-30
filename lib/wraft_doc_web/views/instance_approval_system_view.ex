@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemView do
   use WraftDocWeb, :view
 
-  alias WraftDocWeb.Api.V1.{ApprovalSystemView, InstanceView, UserView}
+  alias WraftDocWeb.Api.V1.{ApprovalSystemView, InstanceView, StateView, UserView}
 
   def render("instance_approval_system.json", %{
         instance_approval_system: instance_approval_system
@@ -44,6 +44,23 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemView do
     }
   end
 
+  def render("show_instance_state.json", %{instance_approval_system: instance_approval_system}) do
+    %{
+      instance_approval_system:
+        render_one(instance_approval_system, __MODULE__, "instance_approval_system.json",
+          as: :instance_approval_system
+        ),
+      instance:
+        render_one(instance_approval_system.instance, InstanceView, "instance.json", as: :instance),
+      state:
+        render_one(instance_approval_system.instance.state, StateView, "state.json", as: :state),
+      creator:
+        render_one(instance_approval_system.instance.creator, UserView, "user_id_and_name.json",
+          as: :user
+        )
+    }
+  end
+
   def render("index.json", %{
         instance_approval_systems: instance_approval_systems,
         page_number: page_number,
@@ -52,7 +69,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemView do
       }) do
     %{
       instance_approval_systems:
-        render_many(instance_approval_systems, __MODULE__, "show.json",
+        render_many(instance_approval_systems, __MODULE__, "show_instance_state.json",
           as: :instance_approval_system
         ),
       page_number: page_number,

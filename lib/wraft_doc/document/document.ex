@@ -33,6 +33,7 @@ defmodule WraftDoc.Document do
     Document.Pipeline.Stage,
     Document.Pipeline.TriggerHistory,
     Document.Theme,
+    Document.ThemeAsset,
     Enterprise,
     Enterprise.ApprovalSystem,
     Enterprise.Flow,
@@ -314,7 +315,7 @@ defmodule WraftDoc.Document do
     query =
       from(ct in ContentType,
         where: ct.organisation_id == ^org_id,
-        order_by: [desc: ct.id],
+        order_by: [desc: ct.inseted_at],
         preload: [:layout, :flow, {:fields, :field_type}]
       )
 
@@ -1170,6 +1171,15 @@ defmodule WraftDoc.Document do
   @spec delete_theme(Theme.t(), User.t()) :: {:ok, Theme.t()}
   def delete_theme(theme, %User{id: id}) do
     Spur.delete(theme, %{actor: "#{id}", meta: theme})
+  end
+
+  # function not used anywhere yet
+  # TODO - it has Spur implementation so waiting for Ex_audit
+  def associate_theme_and_asset(theme, asset) do
+    theme
+    |> build_assoc(:theme_assets, asset_id: asset.id)
+    |> ThemeAsset.changeset()
+    |> Repo.insert()
   end
 
   @doc """
@@ -3032,7 +3042,7 @@ defmodule WraftDoc.Document do
         on: as.id == ias.approval_system_id,
         where: ias.flag == false,
         where: as.approver_id == ^user_id,
-        preload: [:instance, :approval_system]
+        preload: [:approval_system, instance: [:state, creator: [:profile]]]
       )
 
     Repo.paginate(query, params)
@@ -3045,7 +3055,7 @@ defmodule WraftDoc.Document do
         on: as.id == ias.approval_system_id,
         where: ias.flag == false,
         where: as.approver_id == ^current_user.id,
-        preload: [:instance, :approval_system]
+        preload: [:approval_system, instance: [:state, creator: [:profile]]]
       )
 
     Repo.paginate(query, params)
