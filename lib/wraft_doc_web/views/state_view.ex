@@ -25,6 +25,14 @@ defmodule WraftDocWeb.Api.V1.StateView do
     }
   end
 
+  def render("state.json", %{state: state}) do
+    %{
+      id: state.id,
+      state: state.state,
+      order: state.order
+    }
+  end
+
   def render("show.json", %{state: state}) do
     %{
       state: render_one(state, StateView, "create.json", as: :state),
