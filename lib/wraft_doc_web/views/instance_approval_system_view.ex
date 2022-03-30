@@ -34,6 +34,12 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemView do
         ),
       instance:
         render_one(instance_approval_system.instance, InstanceView, "instance.json", as: :instance),
+      state:
+        render_one(instance_approval_system.instance.state, StateView, "state.json", as: :state),
+      creator:
+        render_one(instance_approval_system.instance.creator, UserView, "user_id_and_name.json",
+          as: :user
+        ),
       approval_system:
         render_one(
           instance_approval_system.approval_system,
@@ -69,7 +75,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemView do
       }) do
     %{
       instance_approval_systems:
-        render_many(instance_approval_systems, __MODULE__, "show_instance_state.json",
+        render_many(instance_approval_systems, __MODULE__, "show.json",
           as: :instance_approval_system
         ),
       page_number: page_number,
