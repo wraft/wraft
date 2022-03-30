@@ -315,7 +315,7 @@ defmodule WraftDoc.Document do
     query =
       from(ct in ContentType,
         where: ct.organisation_id == ^org_id,
-        order_by: [desc: ct.inseted_at],
+        order_by: [desc: ct.inserted_at],
         preload: [:layout, :flow, {:fields, :field_type}]
       )
 
