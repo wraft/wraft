@@ -8,7 +8,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   import Ecto.Query, warn: false
-  alias WraftDoc.{Account, Account.AuthToken, Account.User}
+  alias WraftDoc.{Account, Account.AuthToken, Account.User, Document}
   alias WraftDocWeb.{Mailer, Mailer.Email}
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -279,8 +279,18 @@ defmodule WraftDocWeb.Api.V1.UserController do
   end
 
   @spec me(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def me(conn, _params) do
-    render(conn, "me.json", user: conn.assigns[:current_user])
+  def me(conn, params) do
+    current_user = conn.assigns.current_user
+
+    with %{
+           entries: instance_approval_systems
+         } <-
+           Document.instance_approval_system_index(current_user, params) do
+      render(conn, "me.json", %{
+        user: current_user,
+        instance_approval_systems: instance_approval_systems
+      })
+    end
   end
 
   @doc """
