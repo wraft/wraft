@@ -1458,32 +1458,14 @@ defmodule WraftDoc.Document do
     header =
       header
       |> concat_strings("qrcode: #{qr_code} \n")
-<<<<<<< HEAD
       |> concat_strings("path: #{mkdir}\n")
       |> concat_strings("title: #{page_title}\n")
       |> concat_strings("id: #{u_id}\n")
-<<<<<<< HEAD
       |> concat_strings("mainfont: #{font_name}\n")
-<<<<<<< HEAD
-=======
-      # |> concat_strings("mainfont: #{get_theme.file}\n")
->>>>>>> added theme_id to content_type
-=======
-      |> concat_strings("path: #{mkdir}/fonts\n")
-      |> concat_strings("title: #{page_title}\n")
-      |> concat_strings("id: #{u_id}\n")
-      |> concat_strings("mainfont: #{font_name}\n")
->>>>>>> theme font can be used in build_doc() now
-      # |> concat_strings("body_color: #{get_theme.body_color}\n")
-      # |> concat_strings("primary_color: #{get_theme.primary_color}\n")
-      # |> concat_strings("secondary_color: #{get_theme.secondary_color}\n")
-      # |> concat_strings("typescale: #{get_theme.typescale}\n")
-=======
       |> concat_strings("body_color: #{get_theme.body_color}\n")
       |> concat_strings("primary_color: #{get_theme.primary_color}\n")
       |> concat_strings("secondary_color: #{get_theme.secondary_color}\n")
       |> concat_strings("typescale: #{get_theme.typescale}\n")
->>>>>>> uncommented font-matter keys, changed content order_by to date-time
       |> concat_strings("--- \n")
 
     content = """
