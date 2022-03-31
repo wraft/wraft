@@ -29,7 +29,8 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       instance_approval_systems:
         render_many(content.instance_approval_systems, InstanceApprovalSystemView, "create.json",
           as: :instance_approval_system
-        )
+        ),
+      creator: render_one(content.creator, UserView, "user_id_and_name.json", as: :user)
     }
   end
 
