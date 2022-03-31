@@ -771,7 +771,13 @@ defmodule WraftDoc.Document do
         join: u in User,
         where: u.organisation_id == ^org_id and i.creator_id == u.id,
         order_by: [desc: i.inserted_at],
-        preload: [:content_type, :state, :vendor, {:instance_approval_systems, :approver}]
+        preload: [
+          :content_type,
+          :state,
+          :vendor,
+          {:instance_approval_systems, :approver},
+          creator: [:profile]
+        ]
       )
 
     Repo.paginate(query, params)
