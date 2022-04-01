@@ -787,14 +787,20 @@ defmodule WraftDoc.Document do
   List all instances under a content types.
   """
   # TODO - improve tests
-  # @spec instance_index(binary, map) :: map
+  @spec instance_index(binary, map) :: map
   def instance_index(<<_::288>> = c_type_id, params) do
     query =
       from(i in Instance,
         join: ct in ContentType,
         where: ct.id == ^c_type_id and i.content_type_id == ct.id,
         order_by: [desc: i.id],
-        preload: [:content_type, :state, :vendor, {:instance_approval_systems, :approver}]
+        preload: [
+          :content_type,
+          :state,
+          :vendor,
+          {:instance_approval_systems, :approver},
+          creator: [:profile]
+        ]
       )
 
     Repo.paginate(query, params)
@@ -3016,7 +3022,13 @@ defmodule WraftDoc.Document do
         on: i.content_type_id == ct.id,
         where: ct.organisation_id == ^org_id,
         order_by: [desc: i.id],
-        preload: [:content_type, :state, :vendor, {:instance_approval_systems, :approver}]
+        preload: [
+          :content_type,
+          :state,
+          :vendor,
+          {:instance_approval_systems, :approver},
+          creator: [:profile]
+        ]
       )
 
     key = String.downcase(key)

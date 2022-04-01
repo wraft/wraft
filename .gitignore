@@ -42,7 +42,7 @@ erl_crash.dump
 npm-debug.log
 /assets/node_modules/
 .idea/
-/lib/slugs/pletter/template.aux
-/lib/slugs/pletter/template.fdb_latexmk
-/lib/slugs/pletter/template.fls
-/lib/slugs/pletter/template.log
+/lib/slugs/**/template.aux
+/lib/slugs/**/template.fdb_latexmk
+/lib/slugs/**/template.fls
+/lib/slugs/**/template.log

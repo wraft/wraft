@@ -29,4 +29,9 @@ defmodule WraftDocWeb.PropicUploader do
   def storage_dir(_, {_file, user}) do
     "uploads/avatars/#{user.id}"
   end
+
+  # Provide a default URL if there hasn't been a file uploaded
+  def default_url(_version, _scope) do
+    WraftDocWeb.Endpoint.url() <> "/test/helper/images.png"
+  end
 end
