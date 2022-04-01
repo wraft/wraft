@@ -191,4 +191,6 @@ defmodule WraftDocWeb.Api.V1.UserView do
   def generate_url(%{profile_pic: pic} = profile) do
     WraftDocWeb.PropicUploader.url({pic, profile})
   end
+
+  def generate_url(_), do: nil
 end
