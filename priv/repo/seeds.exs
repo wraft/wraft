@@ -452,10 +452,12 @@ allow_once(
 allow_once(
   %Theme{
     name: "Offer letter theme",
-    font: "Malery",
+    font: "Mallory-Bold.otf",
     typescale: %{h1: 10, h2: 8, p: 6},
     creator_id: user.id,
-    organisation_id: organisation.id
+    organisation_id: organisation.id,
+    body_color: "#ffae23",
+    default_theme: false
   },
   font: "Malery"
 )
@@ -464,10 +466,12 @@ Enum.each(0..5, fn _ ->
   allow_once(
     %Theme{
       name: Faker.Company.bullshit(),
-      font: Faker.Color.fancy_name(),
+      font: "Mallory-Bold.otf",
       typescale: %{h1: Enum.random(0..10), h2: Enum.random(0..10), p: Enum.random(0..10)},
       creator_id: user.id,
-      organisation_id: organisation.id
+      organisation_id: organisation.id,
+      default_theme: false,
+      body_color: "#11aa33ff"
     },
     font: "Maler"
   )

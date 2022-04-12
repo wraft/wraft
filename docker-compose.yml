@@ -5,7 +5,6 @@ services:
       context: .
     environment:
       MIX_ENV: dev
-      # DATABASE_URL: postgres://postgres:postgres@db:5432/wraft_doc_?
       PGUSER: postgres
       PGPASSWORD: postgres
       PGDATABASE: wraft_doc_dev
@@ -18,7 +17,6 @@ services:
 
     depends_on:
       - db
-      - pandoc-latex
   db:
     image: postgres:14
     environment:
@@ -28,11 +26,10 @@ services:
     restart: always
     volumes:
       - ./db:/var/lib/postgresql/data
-
-  pandoc-latex:
-    image: pandoc/latex:2.18
-    volumes:
-      - .:/data
+  # pandoc-latex:
+  #   image: pandoc/latex:2.18
+  #   volumes:
+  #     - .:/data
 
 volumes:
   db:
