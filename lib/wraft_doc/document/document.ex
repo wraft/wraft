@@ -1101,18 +1101,12 @@ defmodule WraftDoc.Document do
   defp update_default_theme(%User{id: id}, theme, %{"default_theme" => value})
        when value == true
        when value == "true" do
-    case Repo.exists?(theme) do
-      true ->
-        case Repo.get_by(theme, default_theme: true) do
-          nil ->
-            theme
-
-          record ->
-            update_theme(record, %User{id: id}, %{"default_theme" => "false"})
-        end
-
-      false ->
+    case get_default_theme() do
+      nil ->
         theme
+
+      record ->
+        update_theme(record, %User{id: id}, %{"default_theme" => "false"})
     end
   end
 
@@ -1156,6 +1150,10 @@ defmodule WraftDoc.Document do
     )
 
     nil
+  end
+
+  def get_default_theme() do
+    Repo.get_by(Theme, default_theme: true)
   end
 
   @doc """
@@ -1439,18 +1437,11 @@ defmodule WraftDoc.Document do
     task = Task.async(fn -> generate_qr(instance) end)
     Task.start(fn -> move_old_builds(u_id) end)
     c_type = Repo.preload(c_type, [:fields])
-    # check if the font path available to latex template
-    # TODO - determine default theme
-    get_theme = get_theme(c_type.theme_id, %User{organisation_id: organisation_id})
-    url = generate_url(WraftDocWeb.ThemeUploader, get_theme.file, get_theme)
-
-    font_path =
-      url
-      |> Path.dirname()
-      |> Path.relative_to("/")
-
-    System.cmd("cp", ["-a", "#{font_path}/.", "#{mkdir}/fonts/"])
-    font_name = get_font_name(url)
+    get_theme = get_theme_details()
+    # copy fonts to the template
+    if get_theme.font_path != "" do
+      System.cmd("cp", ["-a", "#{get_theme.font_path}/.", "#{mkdir}/fonts/"])
+    end
 
     header =
       Enum.reduce(c_type.fields, "--- \n", fn x, acc ->
@@ -1467,7 +1458,7 @@ defmodule WraftDoc.Document do
       |> concat_strings("path: #{mkdir}\n")
       |> concat_strings("title: #{page_title}\n")
       |> concat_strings("id: #{u_id}\n")
-      |> concat_strings("mainfont: #{font_name}\n")
+      |> concat_strings("mainfont: #{get_theme.font_name}\n")
       |> concat_strings("body_color: #{get_theme.body_color}\n")
       |> concat_strings("primary_color: #{get_theme.primary_color}\n")
       |> concat_strings("secondary_color: #{get_theme.secondary_color}\n")
@@ -1511,6 +1502,40 @@ defmodule WraftDoc.Document do
   defp find_header_values(%Asset{name: name, file: file} = asset, acc) do
     <<_first::utf8, rest::binary>> = generate_url(AssetUploader, file, asset)
     concat_strings(acc, "#{name}: #{rest} \n")
+  end
+
+  @spec get_theme_details() :: map()
+  def get_theme_details() do
+    case get_default_theme() do
+      nil ->
+        %{
+          mainfont: "",
+          body_color: "",
+          primary_color: "",
+          secondary_color: "",
+          typescale: "",
+          font_path: "",
+          font_name: ""
+        }
+
+      theme ->
+        url = generate_url(WraftDocWeb.ThemeUploader, theme.file, theme)
+
+        font_path =
+          url
+          |> Path.dirname()
+          |> Path.relative_to("/")
+
+        %{
+          mainfont: theme.mainfont,
+          body_color: theme.body_color,
+          primary_color: theme.primary_color,
+          secondary_color: theme.secondary_color,
+          typescale: theme.typescale,
+          font_path: font_path,
+          font_name: get_font_name(url)
+        }
+    end
   end
 
   @doc """

@@ -1,0 +1,46 @@
+# The directory Mix will write compiled artifacts to.
+_build
+.elixir_ls
+# database directory
+db
+
+# The directory Mix downloads your dependencies sources to.
+deps
+
+# Also ignore archive artifacts (built via "mix archive.build").
+*.ez
+
+uploads
+temp
+tmp
+priv/static/swagger.json
+
+# Ignore assets that are produced by build tools.
+priv/static/assets/
+
+# Ignore digested assets cache.
+/priv/static/cache_manifest.json
+
+# Where 3rd-party dependencies like ExDoc output generated docs.
+doc
+
+# Ignore .fetch files in case you like to edit your project deps locally.
+.fetch
+# Ignore .git files
+.git
+.gitlab-ci.yml
+README.md
+# If you run "mix test --cover", coverage assets end up here.
+/cover
+
+# If the VM crashes, it generates a dump, let's ignore it too.
+erl_crash.dump
+
+# In case you use Node.js/npm, you want to ignore these.
+npm-debug.log
+assets/node_modules/
+.idea/
+lib/slugs/**/template.aux
+lib/slugs/**/template.fdb_latexmk
+lib/slugs/**/template.fls
+lib/slugs/**/template.log
