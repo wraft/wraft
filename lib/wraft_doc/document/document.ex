@@ -1427,8 +1427,7 @@ defmodule WraftDoc.Document do
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %Layout{
         slug: slug,
-        assets: assets,
-        organisation_id: organisation_id
+        assets: assets
       }) do
     mkdir = "uploads/contents/#{u_id}"
     File.mkdir_p(mkdir)
@@ -1509,7 +1508,6 @@ defmodule WraftDoc.Document do
     case get_default_theme() do
       nil ->
         %{
-          mainfont: "",
           body_color: "",
           primary_color: "",
           secondary_color: "",
@@ -1527,11 +1525,10 @@ defmodule WraftDoc.Document do
           |> Path.relative_to("/")
 
         %{
-          mainfont: theme.mainfont,
           body_color: theme.body_color,
           primary_color: theme.primary_color,
           secondary_color: theme.secondary_color,
-          typescale: theme.typescale,
+          typescale: Jason.encode!(theme.typescale),
           font_path: font_path,
           font_name: get_font_name(url)
         }
