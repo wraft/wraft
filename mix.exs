@@ -100,6 +100,7 @@ defmodule WraftDoc.Mixfile do
       # Email client
       {:bamboo, "~> 2.2.0"},
       {:httpoison, "~> 1.8.0"},
+      {:poison, "~> 5.0.0", override: true},
 
       # Activity stream
       {:spur, git: "https://github.com/shijithkjayan/spur.git", branch: :master},
