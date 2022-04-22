@@ -19,7 +19,7 @@ priv/static/swagger.json
 priv/static/assets/
 
 # Ignore digested assets cache.
-/priv/static/cache_manifest.json
+priv/static/cache_manifest.json
 
 # Where 3rd-party dependencies like ExDoc output generated docs.
 doc
@@ -31,7 +31,7 @@ doc
 .gitlab-ci.yml
 README.md
 # If you run "mix test --cover", coverage assets end up here.
-/cover
+cover/
 
 # If the VM crashes, it generates a dump, let's ignore it too.
 erl_crash.dump
