@@ -809,6 +809,46 @@ defmodule WraftDoc.Document do
   def instance_index(_, _), do: {:error, :invalid_id}
 
   @doc """
+  Search and list all by key
+  """
+
+  @spec instance_index(binary, map) :: map
+  def instance_index(%{organisation_id: org_id}, key, params) do
+    query =
+      from(i in Instance,
+        join: ct in ContentType,
+        on: i.content_type_id == ct.id,
+        where: ct.organisation_id == ^org_id,
+        order_by: [desc: i.id],
+        preload: [
+          :content_type,
+          :state,
+          :vendor,
+          {:instance_approval_systems, :approver},
+          creator: [:profile]
+        ]
+      )
+
+    key = String.downcase(key)
+
+    query
+    |> Repo.all()
+    |> Stream.filter(fn
+      %{serialized: %{"title" => title}} ->
+        title
+        |> String.downcase()
+        |> String.contains?(key)
+
+      _x ->
+        nil
+    end)
+    |> Enum.filter(fn x -> !is_nil(x) end)
+    |> Scrivener.paginate(params)
+  end
+
+  def instance_index(_, _, _), do: nil
+
+  @doc """
   Get an instance from its UUID.
   """
   # TODO - improve tests
@@ -3031,46 +3071,6 @@ defmodule WraftDoc.Document do
   end
 
   def lock_unloack_instance(_, _, _), do: {:error, :not_sufficient}
-
-  @doc """
-  Search and list all by key
-  """
-
-  @spec instance_index(binary, map) :: map
-  def instance_index(%{organisation_id: org_id}, key, params) do
-    query =
-      from(i in Instance,
-        join: ct in ContentType,
-        on: i.content_type_id == ct.id,
-        where: ct.organisation_id == ^org_id,
-        order_by: [desc: i.id],
-        preload: [
-          :content_type,
-          :state,
-          :vendor,
-          {:instance_approval_systems, :approver},
-          creator: [:profile]
-        ]
-      )
-
-    key = String.downcase(key)
-
-    query
-    |> Repo.all()
-    |> Stream.filter(fn
-      %{serialized: %{"title" => title}} ->
-        title
-        |> String.downcase()
-        |> String.contains?(key)
-
-      _x ->
-        nil
-    end)
-    |> Enum.filter(fn x -> !is_nil(x) end)
-    |> Scrivener.paginate(params)
-  end
-
-  def instance_index(_, _, _), do: nil
 
   @doc """
   Function to list and paginate instance approval system under  an user
