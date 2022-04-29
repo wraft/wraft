@@ -3,13 +3,6 @@ services:
   web:
     build:
       context: .
-    environment:
-      MIX_ENV: dev
-      PGUSER: postgres
-      PGPASSWORD: postgres
-      PGDATABASE: wraft_doc_dev
-      PGHOST: db
-      PGPORT: 5432
     env_file:
       - .env
     ports:
@@ -19,10 +12,8 @@ services:
       - db
   db:
     image: postgres:14
-    environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
-      PGDATA: /var/lib/postgresql/data/pgdata
+    env_file:
+      - .env
     restart: always
     volumes:
       - ./db:/var/lib/postgresql/data
