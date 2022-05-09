@@ -23,7 +23,8 @@ priv/static/cache_manifest.json
 
 # Where 3rd-party dependencies like ExDoc output generated docs.
 doc
-
+# Ignore .env file
+.env
 # Ignore .fetch files in case you like to edit your project deps locally.
 .fetch
 # Ignore .git files
