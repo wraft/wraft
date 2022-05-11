@@ -3,24 +3,13 @@ defmodule WraftDoc.Document.Pipeline do
   The pipeline model.
   """
   alias __MODULE__
-  alias WraftDoc.Account.User
   use WraftDoc.Schema
-
-  defimpl Spur.Trackable, for: Pipeline do
-    def actor(pipeline), do: "#{pipeline.creator_id}"
-    def object(pipeline), do: "Pipeline:#{pipeline.id}"
-    def target(_chore), do: nil
-
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
 
   @derive {Jason.Encoder, only: [:id, :name, :api_route]}
   schema "pipeline" do
     field(:name, :string)
     field(:api_route, :string)
-    belongs_to(:creator, User)
+    belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     has_many(:stages, WraftDoc.Document.Pipeline.Stage)
     has_many(:trigger_histories, WraftDoc.Document.Pipeline.TriggerHistory)

@@ -201,7 +201,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     current_user = conn.assigns[:current_user]
 
     with %Asset{} = asset <- Document.get_asset(id, current_user),
-         {:ok, asset} <- Document.update_asset(asset, current_user, params) do
+         {:ok, asset} <- Document.update_asset(asset, params) do
       render(conn, "asset.json", asset: asset)
     end
   end
@@ -229,7 +229,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     current_user = conn.assigns[:current_user]
 
     with %Asset{} = asset <- Document.get_asset(id, current_user),
-         {:ok, %Asset{}} <- Document.delete_asset(asset, current_user) do
+         {:ok, %Asset{}} <- Document.delete_asset(asset) do
       render(conn, "asset.json", asset: asset)
     end
   end

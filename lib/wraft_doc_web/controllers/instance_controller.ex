@@ -473,7 +473,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Document.get_instance(id, current_user),
-         %Instance{} = instance <- Document.update_instance(instance, current_user, params) do
+         %Instance{} = instance <- Document.update_instance(instance, params) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -501,7 +501,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Document.get_instance(id, current_user),
-         {:ok, %Instance{}} <- Document.delete_instance(instance, current_user) do
+         {:ok, %Instance{}} <- Document.delete_instance(instance) do
       render(conn, "instance.json", instance: instance)
     end
   end
@@ -588,12 +588,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec state_update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def state_update(conn, %{"id" => instance_id} = params) do
+  def state_update(conn, %{"id" => instance_id, "state_id" => state_id}) do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Document.get_instance(instance_id, current_user),
-         %State{} = state <- Enterprise.get_state(current_user, params["state_id"]),
-         %Instance{} = instance <- Document.update_instance_state(current_user, instance, state) do
+         %State{} = state <- Enterprise.get_state(current_user, state_id),
+         %Instance{} = instance <- Document.update_instance_state(instance, state) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -620,7 +620,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Document.get_instance(instance_id, current_user),
          %Instance{} = instance <-
-           Document.lock_unlock_instance(current_user, instance, params) do
+           Document.lock_unlock_instance(instance, params) do
       render(conn, "show.json", instance: instance)
     end
   end

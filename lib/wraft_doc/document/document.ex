@@ -55,7 +55,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:layouts, engine: engine)
     |> Layout.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, layout} ->
         layout = layout_files_upload(layout, params)
@@ -133,7 +133,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:content_types, layout: layout, flow: flow)
     |> ContentType.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
         fetch_and_associate_fields(content_type, params, current_user)
@@ -265,10 +265,10 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec update_layout(Layout.t(), User.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
 
-  def update_layout(layout, %{id: user_id} = current_user, params) do
+  def update_layout(layout, current_user, params) do
     layout
     |> Layout.update_changeset(params)
-    |> Spur.update(%{actor: user_id})
+    |> Repo.update()
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -283,8 +283,8 @@ defmodule WraftDoc.Document do
   Delete a layout.
   """
   # TODO - improve tests
-  @spec delete_layout(Layout.t(), User.t()) :: {:ok, Layout.t()} | {:error, Ecto.Changeset.t()}
-  def delete_layout(layout, %User{id: id}) do
+  @spec delete_layout(Layout.t()) :: {:ok, Layout.t()} | {:error, Ecto.Changeset.t()}
+  def delete_layout(layout) do
     layout
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -292,19 +292,16 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!"
     )
-    |> Spur.delete(%{actor: "#{id}", meta: layout})
+    |> Repo.delete()
   end
 
   @doc """
   Delete a layout asset.
   """
   # TODO - improve tests
-  @spec delete_layout_asset(LayoutAsset.t(), User.t()) ::
+  @spec delete_layout_asset(LayoutAsset.t()) ::
           {:ok, LayoutAsset.t()} | {:error, Ecto.Changeset.t()}
-  def delete_layout_asset(layout_asset, %User{id: id}) do
-    %{asset: asset} = Repo.preload(layout_asset, [:asset])
-    Spur.delete(layout_asset, %{actor: "#{id}", meta: asset})
-  end
+  def delete_layout_asset(layout_asset), do: Repo.delete(layout_asset)
 
   @doc """
   List all content types.
@@ -407,10 +404,10 @@ defmodule WraftDoc.Document do
     update_content_type(content_type, user, params)
   end
 
-  def update_content_type(content_type, %User{id: id} = user, params) do
+  def update_content_type(content_type, user, params) do
     content_type
     |> ContentType.update_changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -430,9 +427,9 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a content type.
   """
-  @spec delete_content_type(ContentType.t(), User.t()) ::
+  @spec delete_content_type(ContentType.t()) ::
           {:ok, ContentType.t()} | {:error, Ecto.Changeset.t()}
-  def delete_content_type(content_type, %User{id: id}) do
+  def delete_content_type(content_type) do
     content_type
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -440,18 +437,16 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
     )
-    |> Spur.delete(%{actor: "#{id}", meta: content_type})
+    |> Repo.delete()
   end
 
   @doc """
   Delete a content type field.
   """
   # TODO - improve tests
-  @spec delete_content_type_field(ContentTypeField.t(), User.t()) ::
+  @spec delete_content_type_field(ContentTypeField.t()) ::
           {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()}
-  def delete_content_type_field(content_type_field, %User{id: id}) do
-    Spur.delete(content_type_field, %{actor: id, meta: content_type_field})
-  end
+  def delete_content_type_field(content_type_field), do: Repo.delete(content_type_field)
 
   def delete_content_type_field(_, _), do: {:error, :fake}
 
@@ -485,7 +480,7 @@ defmodule WraftDoc.Document do
     c_type
     |> build_assoc(:instances, creator: current_user, state_id: state.id)
     |> Instance.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
@@ -533,13 +528,13 @@ defmodule WraftDoc.Document do
         params
       ) do
     instance_id = create_instance_id(c_id, prefix)
-    initial_state = Flow.initial_state(flow)
+    initial_state = Enterprise.initial_state(flow)
     params = Map.merge(params, %{"instance_id" => instance_id, "state_id" => initial_state.id})
 
     c_type
     |> build_assoc(:instances, creator: current_user)
     |> Instance.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
@@ -812,7 +807,7 @@ defmodule WraftDoc.Document do
   Search and list all by key
   """
 
-  @spec instance_index(binary, map) :: map
+  @spec instance_index(map(), map()) :: map
   def instance_index(%{organisation_id: org_id}, key, params) do
     query =
       from(i in Instance,
@@ -930,17 +925,13 @@ defmodule WraftDoc.Document do
   * `params` - Map contains attributes
   """
   # TODO - improve tests
-  @spec update_instance(Instance.t(), User.t(), map) ::
+  @spec update_instance(Instance.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
           | {:error, Ecto.Changeset.t()}
-  def update_instance(
-        %Instance{editable: true} = old_instance,
-        %User{id: id},
-        params
-      ) do
+  def update_instance(%Instance{editable: true} = old_instance, params) do
     old_instance
     |> Instance.update_changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:ok, instance} ->
         instance
@@ -958,15 +949,9 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def update_instance(
-        %Instance{editable: false},
-        _current_user,
-        _params
-      ) do
-    {:error, :cant_update}
-  end
+  def update_instance(%Instance{editable: false}, _params), do: {:error, :cant_update}
 
-  def update_instance(_, _, _), do: {:error, :cant_update}
+  def update_instance(_, _), do: {:error, :cant_update}
 
   # Create a new version with old data, when an instance is updated.
   # The previous data will be stored in the versions. Latest one will
@@ -985,7 +970,7 @@ defmodule WraftDoc.Document do
         current_user
         |> build_assoc(:instance_versions, content: new_instance)
         |> Version.changeset(params)
-        |> Spur.insert()
+        |> Repo.insert()
 
       false ->
         nil
@@ -1043,46 +1028,34 @@ defmodule WraftDoc.Document do
   the new state and the instance's content type are same.
   """
   # TODO - impove tests
-  @spec update_instance_state(User.t(), Instance.t(), State.t()) ::
+  @spec update_instance_state(Instance.t(), State.t()) ::
           Instance.t() | {:error, Ecto.Changeset.t()} | {:error, :wrong_flow}
-  def update_instance_state(%{id: user_id}, instance, %{
-        id: state_id,
-        state: new_state,
-        flow_id: flow_id
-      }) do
-    case Repo.preload(instance, [:content_type, :state]) do
-      %{content_type: %{flow_id: f_id}, state: %{state: state}} ->
-        if flow_id == f_id do
-          instance_state_upadate(instance, user_id, state_id, state, new_state)
-        else
-          {:error, :wrong_flow}
-        end
+  def update_instance_state(instance, %{id: state_id, flow_id: flow_id}) do
+    case Repo.preload(instance, [:content_type]) do
+      %{content_type: %{flow_id: ^flow_id}} ->
+        instance_state_update(instance, state_id)
 
       _ ->
-        {:error, :not_sufficient}
+        :error
     end
   end
 
-  def update_instance_state(_, _, _), do: {:error, :not_sufficient}
-
-  @doc """
-  Update instance's state. Also add the from and to state of in the activity meta.
-  """
-  # TODO - improve tests
-  @spec instance_state_upadate(Instance.t(), integer, integer, String.t(), String.t()) ::
+  @spec instance_state_update(Instance.t(), integer) ::
           Instance.t() | {:error, Ecto.Changeset.t()}
-  def instance_state_upadate(instance, user_id, state_id, old_state, new_state) do
+  defp instance_state_update(instance, state_id) do
     instance
     |> Instance.update_state_changeset(%{state_id: state_id})
-    |> Spur.update(%{
-      actor: "#{user_id}",
-      object: "Instance-State:#{instance.id}",
-      meta: %{from: old_state, to: new_state}
-    })
+    |> Repo.update()
     |> case do
       {:ok, instance} ->
         instance
-        |> Repo.preload([:creator, [{:content_type, :layout}], :state])
+        |> Repo.preload([
+          :creator,
+          [content_type: [:flow, :layout]],
+          {:state, :approval_system},
+          :versions,
+          :instance_approval_systems
+        ])
         |> get_built_document()
 
       {:error, _} = changeset ->
@@ -1093,13 +1066,8 @@ defmodule WraftDoc.Document do
   @doc """
   Delete an instance.
   """
-  @spec delete_instance(Instance.t(), User.t()) ::
-          {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def delete_instance(instance, %User{id: id}) do
-    Spur.delete(instance, %{actor: "#{id}", meta: instance})
-  end
-
-  def delete_instance(_, _), do: {:error, :fake}
+  @spec delete_instance(Instance.t()) :: {:ok, Instance.t()} | {:error, any()}
+  def delete_instance(instance), do: Repo.delete(instance)
 
   @doc """
   Get an engine from its UUID.
@@ -1122,12 +1090,12 @@ defmodule WraftDoc.Document do
   @spec create_theme(User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
   def create_theme(%{organisation_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
-    update_default_theme(current_user, Theme, params)
+    update_default_theme(Theme, params)
 
     current_user
     |> build_assoc(:themes)
     |> Theme.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, theme} ->
         theme_file_upload(theme, params)
@@ -1138,19 +1106,25 @@ defmodule WraftDoc.Document do
   end
 
   # there must be single %{default_theme: true} per organisation
-  defp update_default_theme(%User{id: id}, theme, %{"default_theme" => value})
+  defp update_default_theme(theme, %{"default_theme" => value})
        when value == true
        when value == "true" do
-    case get_default_theme() do
-      nil ->
-        theme
+    case Repo.exists?(theme) do
+      true ->
+        case Repo.get_by(theme, default_theme: true) do
+          nil ->
+            theme
 
-      record ->
-        update_theme(record, %User{id: id}, %{"default_theme" => "false"})
+          record ->
+            update_theme(record, %{"default_theme" => "false"})
+        end
+
+      false ->
+        theme
     end
   end
 
-  defp update_default_theme(_, _, params), do: params
+  defp update_default_theme(_, params), do: params
 
   @doc """
   Upload theme file.
@@ -1209,19 +1183,17 @@ defmodule WraftDoc.Document do
   Update a theme.
   """
   # TODO - improve test
-  @spec update_theme(Theme.t(), User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
-  def update_theme(theme, %User{id: id}, params) do
-    theme |> Theme.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
+  @spec update_theme(Theme.t(), map()) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
+  def update_theme(theme, params) do
+    theme |> Theme.update_changeset(params) |> Repo.update()
   end
 
   @doc """
   Delete a theme.
   """
   # TODO - improve test
-  @spec delete_theme(Theme.t(), User.t()) :: {:ok, Theme.t()}
-  def delete_theme(theme, %User{id: id}) do
-    Spur.delete(theme, %{actor: "#{id}", meta: theme})
-  end
+  @spec delete_theme(Theme.t()) :: {:ok, Theme.t()}
+  def delete_theme(theme), do: Repo.delete(theme)
 
   # function not used anywhere yet
   # TODO - it has Spur implementation so waiting for Ex_audit
@@ -1243,7 +1215,7 @@ defmodule WraftDoc.Document do
 
     %DataTemplate{}
     |> DataTemplate.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
   end
 
   def create_data_template(%User{}, _, _), do: {:error, :invalid_id, "ContentType"}
@@ -1326,13 +1298,13 @@ defmodule WraftDoc.Document do
   Update a data template
   """
   # TODO - imprvove tests
-  @spec update_data_template(DataTemplate.t(), User.t(), map) ::
+  @spec update_data_template(DataTemplate.t(), map) ::
           %DataTemplate{creator: User.t(), content_type: ContentType.t()}
           | {:error, Ecto.Changeset.t()}
-  def update_data_template(d_temp, %User{id: id}, params) do
+  def update_data_template(d_temp, params) do
     d_temp
     |> DataTemplate.changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:ok, d_temp} ->
         Repo.preload(d_temp, [:creator, :content_type])
@@ -1342,16 +1314,12 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def update_data_template(_, _, _), do: {:error, :fake}
-
   @doc """
   Delete a data template
   """
   # TODO - imprvove tests
-  @spec delete_data_template(DataTemplate.t(), User.t()) :: {:ok, DataTemplate.t()}
-  def delete_data_template(d_temp, %User{id: id}) do
-    Spur.delete(d_temp, %{actor: "#{id}", meta: d_temp})
-  end
+  @spec delete_data_template(DataTemplate.t()) :: {:ok, DataTemplate.t()}
+  def delete_data_template(d_temp), do: Repo.delete(d_temp)
 
   @doc """
   Create an asset.
@@ -1364,7 +1332,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:assets)
     |> Asset.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, asset} ->
         asset_file_upload(asset, params)
@@ -1437,17 +1405,17 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   # file uploading is throwing errors, in tests
-  @spec update_asset(Asset.t(), User.t(), map) :: {:ok, Asset.t()}
-  def update_asset(asset, %User{id: id}, params) do
-    asset |> Asset.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
+  @spec update_asset(Asset.t(), map) :: {:ok, Asset.t()} | {:error, Ecto.Changset.t()}
+  def update_asset(asset, params) do
+    asset |> Asset.update_changeset(params) |> Repo.update()
   end
 
   @doc """
   Delete an asset.
   """
-  @spec delete_asset(Asset.t(), User.t()) :: {:ok, Asset.t()}
-  def delete_asset(asset, %User{id: id}) do
-    Spur.delete(asset, %{actor: "#{id}", meta: asset})
+  @spec delete_asset(Asset.t()) :: {:ok, Asset.t()}
+  def delete_asset(asset) do
+    Repo.delete(asset)
   end
 
   @doc """
@@ -1697,7 +1665,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:blocks)
     |> Block.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, block} ->
         block
@@ -1726,10 +1694,10 @@ defmodule WraftDoc.Document do
   @doc """
   Update a block
   """
-  def update_block(%User{id: id}, %Block{} = block, params) do
+  def update_block(%Block{} = block, params) do
     block
     |> Block.changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:ok, block} ->
         block
@@ -1739,7 +1707,7 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def update_block(_, _, _), do: {:error, :fake}
+  def update_block(_, _), do: {:error, :fake}
 
   @doc """
   Delete a block
@@ -2308,7 +2276,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:block_templates, organisation_id: org_id)
     |> BlockTemplate.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, block_template} ->
         block_template
@@ -2338,11 +2306,11 @@ defmodule WraftDoc.Document do
   @doc """
   Updates a block template
   """
-  @spec update_block_template(User.t(), BlockTemplate.t(), map) :: BlockTemplate.t()
-  def update_block_template(%User{id: id}, block_template, params) do
+  @spec update_block_template(BlockTemplate.t(), map) :: BlockTemplate.t()
+  def update_block_template(block_template, params) do
     block_template
     |> BlockTemplate.update_changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -2352,17 +2320,13 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def update_block_template(_, _, _), do: {:error, :fake}
-
   @doc """
-  Delete a block template by uuid
+  Delete a block template
   """
-  @spec delete_block_template(User.t(), BlockTemplate.t()) :: BlockTemplate.t()
-  def delete_block_template(%User{id: id}, %BlockTemplate{} = block_template) do
-    Spur.delete(block_template, %{actor: "#{id}", meta: block_template})
-  end
+  @spec delete_block_template(BlockTemplate.t()) :: {:ok, BlockTemplate.t()}
+  def delete_block_template(%BlockTemplate{} = block_template), do: Repo.delete(block_template)
 
-  def delete_block_template(_, _), do: {:error, :fake}
+  def delete_block_template(_), do: {:error, :fake}
 
   @doc """
   Index of a block template by organisation
@@ -2507,7 +2471,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:pipelines)
     |> Pipeline.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, pipeline} ->
         create_pipe_stages(current_user, pipeline, params)
@@ -2630,10 +2594,10 @@ defmodule WraftDoc.Document do
   Updates a pipeline.
   """
   @spec pipeline_update(Pipeline.t(), User.t(), map) :: Pipeline.t()
-  def pipeline_update(%Pipeline{} = pipeline, %User{id: user_id} = user, params) do
+  def pipeline_update(%Pipeline{} = pipeline, %User{} = user, params) do
     pipeline
     |> Pipeline.update_changeset(params)
-    |> Spur.update(%{actor: "#{user_id}"})
+    |> Repo.update()
     |> case do
       {:ok, pipeline} ->
         create_pipe_stages(user, pipeline, params)
@@ -2653,13 +2617,10 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a pipeline.
   """
-  @spec delete_pipeline(Pipeline.t(), User.t()) ::
-          {:ok, Pipeline.t()} | {:error, Ecto.Changeset.t()}
-  def delete_pipeline(%Pipeline{} = pipeline, %User{id: id}) do
-    Spur.delete(pipeline, %{actor: "#{id}", meta: pipeline})
-  end
+  @spec delete_pipeline(Pipeline.t()) :: {:ok, Pipeline.t()} | {:error, Ecto.Changeset.t()} | nil
+  def delete_pipeline(%Pipeline{} = pipeline), do: Repo.delete(pipeline)
 
-  def delete_pipeline(_, _), do: nil
+  def delete_pipeline(_), do: nil
 
   @doc """
   Get a pipeline stage from its UUID and user's organisation.
@@ -2692,38 +2653,31 @@ defmodule WraftDoc.Document do
     d_temp = get_d_template(current_user, d_uuid)
     state = Enterprise.get_state(current_user, s_uuid)
 
-    do_update_pipe_stage(current_user, stage, c_type, d_temp, state)
+    do_update_pipe_stage(stage, c_type, d_temp, state)
   end
 
   def update_pipe_stage(_, _, _), do: nil
 
   # Update a stage.
-  @spec do_update_pipe_stage(User.t(), Stage.t(), ContentType.t(), DataTemplate.t(), State.t()) ::
+  @spec do_update_pipe_stage(Stage.t(), ContentType.t(), DataTemplate.t(), State.t()) ::
           {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
-  defp do_update_pipe_stage(user, stage, %ContentType{id: c_id}, %DataTemplate{id: d_id}, %State{
+  defp do_update_pipe_stage(stage, %ContentType{id: c_id}, %DataTemplate{id: d_id}, %State{
          id: s_id
        }) do
     stage
     |> Stage.update_changeset(%{content_type_id: c_id, data_template_id: d_id, state_id: s_id})
-    |> Spur.update(%{actor: "#{user.id}"})
+    |> Repo.update()
   end
 
-  defp do_update_pipe_stage(_, _, _, _, _), do: nil
+  defp do_update_pipe_stage(_, _, _, _), do: nil
 
   @doc """
-  Delete a pipe stage.
+  Deletes a pipe stage.
   """
-  @spec delete_pipe_stage(User.t(), Stage.t()) :: {:ok, Stage.t()}
-  def delete_pipe_stage(%User{id: id}, %Stage{} = pipe_stage) do
-    %{pipeline: pipeline, content_type: c_type, data_template: d_temp, state: state} =
-      Repo.preload(pipe_stage, [:pipeline, :content_type, :data_template, :state])
+  @spec delete_pipe_stage(Stage.t()) :: {:ok, Stage.t()} | nil
+  def delete_pipe_stage(%Stage{} = pipe_stage), do: Repo.delete(pipe_stage)
 
-    meta = %{pipeline: pipeline, content_type: c_type, data_template: d_temp, state: state}
-
-    Spur.delete(pipe_stage, %{actor: "#{id}", meta: meta})
-  end
-
-  def delete_pipe_stage(_, _), do: nil
+  def delete_pipe_stage(_), do: nil
 
   @doc """
   Preload all datas of a pipe stage excluding pipeline.
@@ -2976,7 +2930,7 @@ defmodule WraftDoc.Document do
     current_user
     |> build_assoc(:organisation_fields)
     |> OrganisationField.changeset(attrs)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:error, _} = changeset -> changeset
       {:ok, organisation_field} -> Repo.preload(organisation_field, :field_type)
@@ -2998,7 +2952,7 @@ defmodule WraftDoc.Document do
 
   """
   def update_organisation_field(
-        %{id: u_id, organisation_id: org_id},
+        %{organisation_id: org_id},
         %OrganisationField{} = organisation_field,
         attrs
       ) do
@@ -3006,7 +2960,7 @@ defmodule WraftDoc.Document do
 
     organisation_field
     |> OrganisationField.update_changeset(attrs)
-    |> Spur.update(%{actor: u_id})
+    |> Repo.update()
     |> case do
       {:error, _} = changeset -> changeset
       {:ok, organisation_field} -> Repo.preload(organisation_field, :field_type)
@@ -3047,14 +3001,14 @@ defmodule WraftDoc.Document do
   @doc """
   To disable instance on edit
   ## Params
-  * `user` - User struct
   * `instance` - Instance struct
   * `params` - map contains the value of editable
   """
-  def lock_unlock_instance(%{id: user_id}, %Instance{} = instance, params) do
+  # TODO - Missing tests
+  def lock_unlock_instance(%Instance{} = instance, params) do
     instance
     |> Instance.lock_modify_changeset(params)
-    |> Spur.update(%{actor: "#{user_id}"})
+    |> Repo.update()
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -3071,6 +3025,46 @@ defmodule WraftDoc.Document do
   end
 
   def lock_unloack_instance(_, _, _), do: {:error, :not_sufficient}
+
+  # @doc """
+  # Search and list all by key
+  # """
+
+  # @spec instance_index(map(), map()) :: map
+  # def instance_index(%{organisation_id: org_id}, key, params) do
+  #   query =
+  #     from(i in Instance,
+  #       join: ct in ContentType,
+  #       on: i.content_type_id == ct.id,
+  #       where: ct.organisation_id == ^org_id,
+  #       order_by: [desc: i.id],
+  #       preload: [
+  #         :content_type,
+  #         :state,
+  #         :vendor,
+  #         {:instance_approval_systems, :approver},
+  #         creator: [:profile]
+  #       ]
+  #     )
+
+  #   key = String.downcase(key)
+
+  #   query
+  #   |> Repo.all()
+  #   |> Stream.filter(fn
+  #     %{serialized: %{"title" => title}} ->
+  #       title
+  #       |> String.downcase()
+  #       |> String.contains?(key)
+
+  #     _x ->
+  #       nil
+  #   end)
+  #   |> Enum.filter(fn x -> !is_nil(x) end)
+  #   |> Scrivener.paginate(params)
+  # end
+
+  # def instance_index(_, _, _), do: nil
 
   @doc """
   Function to list and paginate instance approval system under  an user

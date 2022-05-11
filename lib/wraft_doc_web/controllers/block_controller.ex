@@ -216,7 +216,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
         })
 
         with %Block{} = block <- Document.get_block(id, current_user),
-             %Block{} = block <- Document.update_block(current_user, block, params) do
+             %Block{} = block <- Document.update_block(block, params) do
           render(conn, "update.json", block: block)
         end
 

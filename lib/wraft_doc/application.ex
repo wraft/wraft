@@ -17,7 +17,8 @@ defmodule WraftDoc.Application do
       {Phoenix.PubSub, [name: WraftDoc.PubSub, adapter: Phoenix.PubSub.PG2]},
       # Start your own worker by calling: WraftDoc.Worker.start_link(arg1, arg2, arg3)
       # worker(WraftDoc.Worker, [arg1, arg2, arg3]),
-      {Oban, oban_config()}
+      {Oban, oban_config()},
+      {Task.Supervisor, name: WraftDoc.TaskSupervisor}
       # worker(WraftDoc.Notifications, ["content_type_changes"], id: :content_type_changes)
       # worker(
       #   WraftDoc.Notifications.Listener,

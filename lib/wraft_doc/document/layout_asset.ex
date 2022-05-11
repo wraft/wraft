@@ -3,24 +3,7 @@ defmodule WraftDoc.Document.LayoutAsset do
     The layout-asset association model.
   """
   use WraftDoc.Schema
-
-  import Ecto.Query
   alias __MODULE__
-  alias WraftDoc.{Account.User, Document.Layout}
-
-  defimpl Spur.Trackable, for: LayoutAsset do
-    def actor(layout_asset), do: "#{layout_asset.creator_id}"
-    def object(layout_asset), do: "LayoutAsset:#{layout_asset.id}"
-    def target(_chore), do: nil
-
-    def audience(%{layout_id: id}) do
-      from(u in User,
-        join: l in Layout,
-        where: l.id == ^id,
-        where: u.organisation_id == l.organisation_id
-      )
-    end
-  end
 
   schema "layout_asset" do
     belongs_to(:layout, WraftDoc.Document.Layout)

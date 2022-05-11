@@ -369,12 +369,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     current_user = conn.assigns[:current_user]
 
     with %Flow{} = flow <- Enterprise.get_flow(id, current_user),
-         %Flow{} = flow <-
-           Enterprise.update_flow(
-             flow,
-             current_user,
-             params
-           ) do
+         %Flow{} = flow <- Enterprise.update_flow(flow, params) do
       render(conn, "update.json", flow: flow)
     end
   end
@@ -400,7 +395,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     current_user = conn.assigns.current_user
 
     with %Flow{} = flow <- Enterprise.show_flow(id, current_user),
-         %Flow{} = flow <- Enterprise.align_states(current_user, flow, params) do
+         %Flow{} = flow <- Enterprise.align_states(flow, params) do
       render(conn, "show.json", %{flow: flow})
     end
   end
@@ -428,7 +423,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     current_user = conn.assigns[:current_user]
 
     with %Flow{} = flow <- Enterprise.get_flow(id, current_user),
-         {:ok, %Flow{}} <- Enterprise.delete_flow(flow, current_user) do
+         {:ok, %Flow{}} <- Enterprise.delete_flow(flow) do
       render(conn, "flow.json", flow: flow)
     end
   end

@@ -628,7 +628,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     current_user = conn.assigns[:current_user]
 
     with %ContentType{} = content_type <- Document.get_content_type(current_user, id),
-         {:ok, %ContentType{}} <- Document.delete_content_type(content_type, current_user) do
+         {:ok, %ContentType{}} <- Document.delete_content_type(content_type) do
       render(conn, "content_type.json", content_type: content_type)
     end
   end

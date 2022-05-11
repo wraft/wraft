@@ -97,8 +97,7 @@ defmodule WraftDoc.EnterpriseTest do
     flow = insert(:flow)
     count_before = Flow |> Repo.all() |> length()
 
-    %Flow{name: name} =
-      Enterprise.update_flow(flow, flow.creator, %{"name" => "flow 2", "controlled" => false})
+    %Flow{name: name} = Enterprise.update_flow(flow, %{"name" => "flow 2", "controlled" => false})
 
     count_after = Flow |> Repo.all() |> length()
     assert name == "flow 2"
@@ -108,7 +107,7 @@ defmodule WraftDoc.EnterpriseTest do
   test "delete flow deletes a flow" do
     flow = insert(:flow)
     count_before = Flow |> Repo.all() |> length()
-    Enterprise.delete_flow(flow, flow.creator)
+    Enterprise.delete_flow(flow)
     count_after = Flow |> Repo.all() |> length()
     assert count_before - 1 == count_after
   end
@@ -158,7 +157,7 @@ defmodule WraftDoc.EnterpriseTest do
     flow = insert(:flow, creator: user, organisation: user.organisation)
     state = insert(:state, creator: user, organisation: user.organisation, flow: flow)
     count_before = State |> Repo.all() |> length()
-    {:ok, d_state} = Enterprise.delete_state(state, user)
+    {:ok, d_state} = Enterprise.delete_state(state)
     count_after = State |> Repo.all() |> length()
 
     assert count_before - 1 == count_after
@@ -840,28 +839,28 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   describe "update_vendor/2" do
-    # test "update vendor on valid attrs" do
-    #   user = insert(:user)
-    #   vendor = insert(:vendor, creator: user, organisation: user.organisation)
-    #   count_before = Vendor |> Repo.all() |> length()
+    test "update vendor on valid attrs" do
+      user = insert(:user)
+      vendor = insert(:vendor, creator: user, organisation: user.organisation)
+      count_before = Vendor |> Repo.all() |> length()
 
-    #   vendor = Enterprise.update_vendor(vendor, @valid_vendor_attrs)
-    #   count_after = Vendor |> Repo.all() |> length()
-    #   assert count_before == count_after
-    #   assert vendor.name == @valid_vendor_attrs["name"]
-    #   assert vendor.email == @valid_vendor_attrs["email"]
-    #   assert vendor.phone == @valid_vendor_attrs["phone"]
-    #   assert vendor.address == @valid_vendor_attrs["address"]
-    #   assert vendor.gstin == @valid_vendor_attrs["gstin"]
-    #   assert vendor.reg_no == @valid_vendor_attrs["reg_no"]
-    # end
+      vendor = Enterprise.update_vendor(vendor, @valid_vendor_attrs)
+      count_after = Vendor |> Repo.all() |> length()
+      assert count_before == count_after
+      assert vendor.name == @valid_vendor_attrs["name"]
+      assert vendor.email == @valid_vendor_attrs["email"]
+      assert vendor.phone == @valid_vendor_attrs["phone"]
+      assert vendor.address == @valid_vendor_attrs["address"]
+      assert vendor.gstin == @valid_vendor_attrs["gstin"]
+      assert vendor.reg_no == @valid_vendor_attrs["reg_no"]
+    end
 
-    test "update vendor on invalid attrs" do
+    test "returns error on invalid attrs" do
       user = insert(:user)
       vendor = insert(:vendor, creator: user)
       count_before = Vendor |> Repo.all() |> length()
 
-      {:error, changeset} = Enterprise.update_vendor(vendor, user, @invalid_vendor_attrs)
+      {:error, changeset} = Enterprise.update_vendor(vendor, @invalid_vendor_attrs)
       count_after = Vendor |> Repo.all() |> length()
       assert count_before == count_after
       assert %{name: ["can't be blank"], email: ["can't be blank"]} == errors_on(changeset)

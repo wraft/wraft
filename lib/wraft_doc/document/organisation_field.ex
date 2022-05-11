@@ -2,20 +2,8 @@ defmodule WraftDoc.Document.OrganisationField do
   @moduledoc """
   Same as content type field for an organisation to collect data in dependant on content type
   """
-  use Ecto.Schema
   use WraftDoc.Schema
-  alias WraftDoc.{Account.User, Document.FieldType, Document.OrganisationField}
-
-  @derive {Jason.Encoder, only: [:name]}
-  defimpl Spur.Trackable, for: OrganisationField do
-    def actor(organisation_field), do: "#{organisation_field.creator_id}"
-    def object(organisation_field), do: "OrganisationField:#{organisation_field.id}"
-    def target(_chore), do: nil
-
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
+  alias WraftDoc.Document.FieldType
 
   schema "organisation_field" do
     field(:name, :string)
@@ -23,7 +11,7 @@ defmodule WraftDoc.Document.OrganisationField do
     field(:meta, :map)
     belongs_to(:field_type, FieldType)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-    belongs_to(:creator, User)
+    belongs_to(:creator, WraftDoc.Account.User)
 
     timestamps()
   end

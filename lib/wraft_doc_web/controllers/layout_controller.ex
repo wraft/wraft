@@ -386,7 +386,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     current_user = conn.assigns[:current_user]
 
     with %Layout{} = layout <- Document.get_layout(id, current_user),
-         {:ok, %Layout{}} <- Document.delete_layout(layout, current_user) do
+         {:ok, %Layout{}} <- Document.delete_layout(layout) do
       render(conn, "layout.json", doc_layout: layout)
     end
   end
@@ -414,7 +414,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     current_user = conn.assigns[:current_user]
 
     with %LayoutAsset{} = layout_asset <- Document.get_layout_asset(l_id, a_id),
-         {:ok, %LayoutAsset{}} <- Document.delete_layout_asset(layout_asset, current_user),
+         {:ok, %LayoutAsset{}} <- Document.delete_layout_asset(layout_asset),
          %Layout{} = layout <- Document.show_layout(l_id, current_user) do
       render(conn, "show.json", doc_layout: layout)
     end

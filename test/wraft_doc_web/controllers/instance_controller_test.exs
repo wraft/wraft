@@ -252,22 +252,23 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert json_response(conn, 400)["errors"] == "The Instance id does not exist..!"
   end
 
-  test "delete instance by given id", %{conn: conn} do
-    user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
+  describe "DELETE /contents/:id" do
+    test "delete instance by given id", %{conn: conn} do
+      user = conn.assigns.current_user
+      insert(:membership, organisation: user.organisation)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, user)
 
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
-    instance = insert(:instance, creator: user, content_type: content_type)
-    count_before = Instance |> Repo.all() |> length()
+      content_type = insert(:content_type, creator: user, organisation: user.organisation)
+      instance = insert(:instance, creator: user, content_type: content_type)
 
-    conn = delete(conn, Routes.v1_instance_path(conn, :delete, instance.id))
-    assert count_before - 1 == Instance |> Repo.all() |> length()
-    assert json_response(conn, 200)["raw"] == instance.raw
+      conn = delete(conn, Routes.v1_instance_path(conn, :delete, instance.id))
+      assert json_response(conn, 200)["raw"] == instance.raw
+      refute Repo.get(Instance, instance.id)
+    end
   end
 
   test "error invalid id for user from another organisation", %{conn: conn} do
@@ -286,6 +287,92 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     conn = get(conn, Routes.v1_instance_path(conn, :show, instance.id))
 
     assert json_response(conn, 400)["errors"] == "The Instance id does not exist..!"
+  end
+
+  describe "state_update" do
+    test "returns success response on updating instance state successfully", %{conn: conn} do
+      current_user = conn.assigns[:current_user]
+      insert(:membership, organisation: current_user.organisation)
+      content_type = insert(:content_type, organisation: current_user.organisation)
+      state = insert(:state, flow: content_type.flow, organisation: current_user.organisation)
+      instance = insert(:instance, content_type: content_type)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, current_user)
+
+      conn =
+        patch(conn, Routes.v1_instance_path(conn, :state_update, instance.id), %{
+          state_id: state.id
+        })
+
+      assert response = json_response(conn, 200)
+      assert response["state"]["id"] == state.id
+    end
+
+    test "returns 400 when update fails", %{conn: conn} do
+      current_user = conn.assigns[:current_user]
+      insert(:membership, organisation: current_user.organisation)
+      content_type = insert(:content_type, organisation: current_user.organisation)
+      state = insert(:state, organisation: current_user.organisation)
+      instance = insert(:instance, content_type: content_type)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, current_user)
+
+      conn =
+        patch(conn, Routes.v1_instance_path(conn, :state_update, instance.id), %{
+          state_id: state.id
+        })
+
+      assert response = json_response(conn, 400)
+      assert %{"errors" => "Something went wrong.!"} == response
+    end
+
+    test "returns 400 when instance is not found", %{conn: conn} do
+      current_user = conn.assigns[:current_user]
+      insert(:membership, organisation: current_user.organisation)
+      content_type = insert(:content_type)
+      state = insert(:state, flow: content_type.flow, organisation: current_user.organisation)
+      instance = insert(:instance, content_type: content_type)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, current_user)
+
+      conn =
+        patch(conn, Routes.v1_instance_path(conn, :state_update, instance.id), %{
+          state_id: state.id
+        })
+
+      assert response = json_response(conn, 400)
+      assert %{"errors" => "The Instance id does not exist..!"} == response
+    end
+
+    test "returns 400 when state is not found", %{conn: conn} do
+      current_user = conn.assigns[:current_user]
+      insert(:membership, organisation: current_user.organisation)
+      content_type = insert(:content_type, organisation: current_user.organisation)
+      state = insert(:state, flow: content_type.flow)
+      instance = insert(:instance, content_type: content_type)
+
+      conn =
+        build_conn()
+        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
+        |> assign(:current_user, current_user)
+
+      conn =
+        patch(conn, Routes.v1_instance_path(conn, :state_update, instance.id), %{
+          state_id: state.id
+        })
+
+      assert response = json_response(conn, 400)
+      assert %{"errors" => "The id does not exist..!"} == response
+    end
   end
 
   test "lock unlock locks if editable true", %{conn: conn} do

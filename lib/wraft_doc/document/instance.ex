@@ -13,24 +13,7 @@ defmodule WraftDoc.Document.Instance do
   use WraftDoc.Schema
 
   alias __MODULE__
-  alias WraftDoc.{Account.User, Document.ContentType}
-  import Ecto.Query
-  @derive {Jason.Encoder, only: [:instance_id]}
   def types, do: [normal: 1, bulk_build: 2, pipeline_api: 3, pipeline_hook: 4]
-
-  defimpl Spur.Trackable, for: Instance do
-    def actor(instance), do: "#{instance.creator_id}"
-    def object(instance), do: "Instance:#{instance.id}"
-    def target(_chore), do: nil
-
-    def audience(%{content_type_id: id}) do
-      from(u in User,
-        join: ct in ContentType,
-        where: ct.id == ^id,
-        where: u.organisation_id == ct.organisation_id
-      )
-    end
-  end
 
   schema "content" do
     field(:instance_id, :string, null: false)
