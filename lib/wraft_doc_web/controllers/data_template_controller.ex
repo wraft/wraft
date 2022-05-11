@@ -319,7 +319,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     current_user = conn.assigns[:current_user]
 
     with %DataTemplate{} = d_temp <- Document.get_d_template(current_user, id),
-         %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, current_user, params) do
+         %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, params) do
       render(conn, "show.json", d_template: d_temp)
     end
   end
@@ -347,7 +347,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     current_user = conn.assigns[:current_user]
 
     with %DataTemplate{} = d_temp <- Document.get_d_template(current_user, id),
-         {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp, current_user) do
+         {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp) do
       render(conn, "create.json", d_template: d_temp)
     end
   end

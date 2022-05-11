@@ -4,23 +4,6 @@ defmodule WraftDoc.Document.Instance.Version do
   """
   use WraftDoc.Schema
   alias __MODULE__
-  alias WraftDoc.{Account.User, Document.ContentType, Document.Instance}
-
-  defimpl Spur.Trackable, for: __MODULE__ do
-    def actor(version), do: "#{version.author_id}"
-    def object(version), do: "Version:#{version.id}"
-    def target(_chore), do: nil
-
-    def audience(%{content_id: id}) do
-      from(u in User,
-        join: i in Instance,
-        where: i.id == ^id,
-        join: ct in ContentType,
-        on: i.content_type_id == ct.id,
-        where: u.organisation_id == ct.organisation_id
-      )
-    end
-  end
 
   schema "version" do
     field(:version_number, :integer)

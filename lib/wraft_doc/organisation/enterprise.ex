@@ -23,6 +23,7 @@ defmodule WraftDoc.Enterprise do
   }
 
   alias WraftDoc.Account.Role
+  alias WraftDoc.TaskSupervisor
 
   @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
   @default_controlled_states [
@@ -47,6 +48,17 @@ defmodule WraftDoc.Enterprise do
   def get_flow(_, %{organisation_id: _}), do: {:error, :invalid_id, "Flow"}
 
   def get_flow(_, _), do: {:error, :fake}
+
+  @doc """
+  Returns initial state of a flow
+  """
+  def initial_state(%Flow{} = flow) do
+    with %Flow{states: states} <- Repo.preload(flow, :states) do
+      Enum.min_by(states, fn x -> x.order end)
+    end
+  end
+
+  def initial_state(_), do: nil
 
   @doc """
   Get a state from its UUID and user's organisation.
@@ -76,7 +88,7 @@ defmodule WraftDoc.Enterprise do
     current_user
     |> build_assoc(:flows)
     |> Flow.controlled_changeset(params)
-    |> Spur.insert()
+    |> Repo.insert(ex_audit_custom: [user_id: current_user.id])
     |> case do
       {:ok, flow} ->
         Task.start_link(fn -> create_default_states(current_user, flow, true) end)
@@ -93,10 +105,12 @@ defmodule WraftDoc.Enterprise do
     current_user
     |> build_assoc(:flows)
     |> Flow.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, flow} ->
-        Task.start_link(fn -> create_default_states(current_user, flow) end)
+        Task.Supervisor.start_child(TaskSupervisor, fn ->
+          create_default_states(current_user, flow)
+        end)
 
         Repo.preload(flow, :creator)
 
@@ -110,7 +124,6 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Funtion to align order of states under  a flow
   ## Params
-  * current_user - User struct
   * flow - Flow struct
   * params - a map with states key
   ## Example
@@ -118,10 +131,10 @@ defmodule WraftDoc.Enterprise do
   iex(2)> align_state(%User{},%Flow{},params)
   iex(3)> %Flow{states: [%State{},%State{}]}
   """
-  def align_states(current_user, flow, params) do
+  def align_states(flow, params) do
     flow
     |> Flow.align_order_changeset(params)
-    |> Spur.update(%{actor: current_user.id})
+    |> Repo.update()
     |> case do
       {:ok, flow} -> flow
       {:error, _} = changeset -> changeset
@@ -162,10 +175,11 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Update a controlled flow
   """
-  def update_flow(flow, %User{id: id}, %{"controlled" => true} = params) do
+  @spec update_flow(Flow.t(), map()) :: Flow.t() | {:error, Ecto.Changeset.t()}
+  def update_flow(flow, %{"controlled" => true} = params) do
     flow
     |> Flow.update_controlled_changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:ok, flow} ->
         Repo.preload(flow, :creator)
@@ -175,11 +189,10 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  @spec update_flow(Flow.t(), User.t(), map) :: Flow.t() | {:error, Ecto.Changeset.t()}
-  def update_flow(flow, %User{id: id}, params) do
+  def update_flow(flow, params) do
     flow
     |> Flow.update_changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:ok, flow} ->
         Repo.preload(flow, :creator)
@@ -188,14 +201,12 @@ defmodule WraftDoc.Enterprise do
         changeset
     end
   end
-
-  def update_flow(_, _), do: {:error, :fake}
 
   @doc """
   Delete a  flow.
   """
-  @spec delete_flow(Flow.t(), User.t()) :: {:ok, Flow.t()} | {:error, Ecto.Changeset.t()}
-  def delete_flow(flow, %User{id: id}) do
+  @spec delete_flow(Flow.t()) :: {:ok, Flow.t()} | {:error, Ecto.Changeset.t()}
+  def delete_flow(flow) do
     flow
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -203,7 +214,7 @@ defmodule WraftDoc.Enterprise do
       message:
         "Cannot delete the flow. Some States depend on this flow. Delete those states and then try again.!"
     )
-    |> Spur.delete(%{actor: "#{id}", meta: flow})
+    |> Repo.delete()
   end
 
   @doc """
@@ -233,7 +244,7 @@ defmodule WraftDoc.Enterprise do
     current_user
     |> build_assoc(:states)
     |> State.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, state} -> state
       {:error, _} = changeset -> changeset
@@ -259,12 +270,13 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Update a state.
   """
-  @spec update_state(State.t(), User.t(), map) ::
+  # TODO - Missing tests
+  @spec update_state(State.t(), map()) ::
           %State{creator: User.t(), flow: Flow.t()} | {:error, Ecto.Changeset.t()}
-  def update_state(state, %User{id: id}, params) do
+  def update_state(state, params) do
     state
     |> State.changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:ok, state} ->
         Repo.preload(state, [:creator, :flow])
@@ -298,8 +310,8 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Delete a state.
   """
-  @spec delete_state(State.t(), User.t()) :: {:ok, State.t()} | {:error, Ecto.Changeset.t()}
-  def delete_state(state, %User{id: id}) do
+  @spec delete_state(State.t()) :: {:ok, State.t()} | {:error, Ecto.Changeset.t()}
+  def delete_state(state) do
     state
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -307,7 +319,7 @@ defmodule WraftDoc.Enterprise do
       message:
         "Cannot delete the state. Some contents depend on this state. Update those states and then try again.!"
     )
-    |> Spur.delete(%{actor: "#{id}", meta: state})
+    |> Repo.delete()
   end
 
   @doc """
@@ -496,7 +508,7 @@ defmodule WraftDoc.Enterprise do
     current_user
     |> build_assoc(:approval_systems)
     |> ApprovalSystem.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, approval_system} ->
         approval_system_preload(approval_system)
@@ -541,12 +553,12 @@ defmodule WraftDoc.Enterprise do
   """
   @spec update_approval_system(User.t(), ApprovalSystem.t(), map) ::
           ApprovalSystem.t() | {:error, Ecto.Changeset.t()}
-  def update_approval_system(%{id: id, organisation_id: org_id}, approval_system, params) do
+  def update_approval_system(%{organisation_id: org_id}, approval_system, params) do
     params = Map.put(params, "organisation_id", org_id)
 
     approval_system
     |> ApprovalSystem.update_changeset(params)
-    |> Spur.update(%{actor: id})
+    |> Repo.update()
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -990,7 +1002,7 @@ defmodule WraftDoc.Enterprise do
     current_user
     |> build_assoc(:vendors, organisation_id: current_user.organisation.id)
     |> Vendor.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, vendor} ->
         Repo.preload(vendor, [:organisation, :creator])
@@ -1032,14 +1044,11 @@ defmodule WraftDoc.Enterprise do
   ## Parameters
   -`vendor`- a Vendor struct
   -`params`- a map contains vendor fields
-
-
   """
-
-  def update_vendor(vendor, %User{id: id}, params) do
+  def update_vendor(vendor, params) do
     vendor
     |> Vendor.update_changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -1048,8 +1057,6 @@ defmodule WraftDoc.Enterprise do
         Repo.preload(vendor, [:organisation, :creator])
     end
   end
-
-  def update_vendor(_, _, _), do: {:error, :fake}
 
   @doc """
   Deletes vendor data

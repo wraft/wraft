@@ -188,7 +188,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
 
     with %BlockTemplate{} = block_template <- Document.get_block_template(id, current_user),
          %BlockTemplate{} = block_template <-
-           Document.update_block_template(current_user, block_template, params) do
+           Document.update_block_template(block_template, params) do
       render(conn, "block_template.json", block_template: block_template)
     end
   end
@@ -213,7 +213,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     current_user = conn.assigns[:current_user]
 
     with %BlockTemplate{} = block_template <- Document.get_block_template(id, current_user),
-         {:ok, %BlockTemplate{}} <- Document.delete_block_template(current_user, block_template) do
+         {:ok, %BlockTemplate{}} <- Document.delete_block_template(block_template) do
       render(conn, "block_template.json", block_template: block_template)
     end
   end

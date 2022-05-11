@@ -194,7 +194,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
     current_user = conn.assigns[:current_user]
 
     with %Stage{} = stage <- Document.get_pipe_stage(current_user, s_uuid),
-         {:ok, %Stage{} = stage} <- Document.delete_pipe_stage(current_user, stage) do
+         {:ok, %Stage{} = stage} <- Document.delete_pipe_stage(stage) do
       render(conn, "delete.json", stage: stage)
     end
   end

@@ -5,18 +5,6 @@ defmodule WraftDoc.Enterprise.Flow.State do
   use WraftDoc.Schema
 
   alias __MODULE__
-  alias WraftDoc.Account.User
-  import Ecto.Query
-  @derive {Jason.Encoder, only: [:state]}
-  defimpl Spur.Trackable, for: State do
-    def actor(state), do: "#{state.creator_id}"
-    def object(state), do: "State:#{state.id}"
-    def target(_chore), do: nil
-
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
 
   schema "state" do
     field(:state, :string, null: false)

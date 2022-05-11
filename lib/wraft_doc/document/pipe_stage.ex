@@ -3,18 +3,7 @@ defmodule WraftDoc.Document.Pipeline.Stage do
   The pipeline stages model.
   """
   alias __MODULE__
-  alias WraftDoc.Account.User
   use WraftDoc.Schema
-
-  defimpl Spur.Trackable, for: Stage do
-    def actor(stage), do: "#{stage.creator_id}"
-    def object(stage), do: "Stage:#{stage.id}"
-    def target(_chore), do: nil
-
-    def audience(%{creator_id: id}) do
-      from(u in User, where: u.id == ^id)
-    end
-  end
 
   schema "pipe_stage" do
     belongs_to(:content_type, WraftDoc.Document.ContentType)

@@ -5,19 +5,9 @@ defmodule WraftDoc.Document.ContentType do
   use WraftDoc.Schema
 
   alias __MODULE__
-  alias WraftDoc.{Account.User, Document.ContentType, Document.Layout, Enterprise.Flow}
+  alias WraftDoc.{Document.ContentType, Document.Layout, Enterprise.Flow}
 
-  import Ecto.Query
-  @derive {Jason.Encoder, only: [:name]}
-  defimpl Spur.Trackable, for: ContentType do
-    def actor(content_type), do: "#{content_type.creator_id}"
-    def object(content_type), do: "ContentType:#{content_type.id}"
-    def target(_chore), do: nil
-
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
+  @derive {Jason.Encoder, only: [:id]}
 
   schema "content_type" do
     field(:name, :string, null: false)

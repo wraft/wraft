@@ -23,6 +23,10 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.ValidMembershipCheck)
   end
 
+  pipeline :ex_audit_track do
+    plug(WraftDocWeb.Plug.ExAuditTrack)
+  end
+
   pipeline :admin do
     plug(WraftDocWeb.Plug.AdminCheck)
   end
@@ -82,7 +86,7 @@ defmodule WraftDocWeb.Router do
 
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth, :valid_membership])
+    pipe_through([:api, :api_auth, :valid_membership, :ex_audit_track])
 
     scope "/v1", Api.V1, as: :v1 do
       # Current user details
@@ -256,7 +260,7 @@ defmodule WraftDocWeb.Router do
 
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth, :super_admin])
+    pipe_through([:api, :api_auth, :super_admin, :ex_audit_track])
 
     scope "/v1", Api.V1, as: :v1 do
       resources("/resources", ResourceController, only: [:create, :index, :show, :update, :delete])

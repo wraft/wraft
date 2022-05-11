@@ -36,11 +36,6 @@ defmodule WraftDoc.Account.User do
     has_many(:user_roles, WraftDoc.Account.UserRole)
     has_many(:roles, through: [:user_roles, :role])
 
-    many_to_many(:activities, Spur.Activity,
-      join_through: WraftDoc.Account.User.Audience,
-      join_keys: [user_id: :id, activity_id: :id]
-    )
-
     has_many(:block_templates, WraftDoc.Document.BlockTemplate, foreign_key: :creator_id)
     has_many(:comments, WraftDoc.Document.Comment)
     has_many(:approval_systems, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :creator_id)

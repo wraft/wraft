@@ -2,24 +2,9 @@ defmodule WraftDoc.Enterprise.ApprovalSystem do
   @moduledoc false
 
   use WraftDoc.Schema
-  alias __MODULE__
-  import Ecto.Query
-  alias WraftDoc.{Account.User, Enterprise.Flow, Enterprise.Flow.State}
-
-  @derive {Jason.Encoder, only: [:name]}
-  defimpl Spur.Trackable, for: ApprovalSystem do
-    def actor(approval_system), do: "#{approval_system.creator_id}"
-    def object(approval_system), do: "ApprovalSystem:#{approval_system.id}"
-    def target(_), do: nil
-
-    def audience(%{flow_id: id}) do
-      from(u in User,
-        join: f in Flow,
-        where: f.id == ^id,
-        where: u.organisation_id == f.organisation_id
-      )
-    end
-  end
+  alias WraftDoc.Account.User
+  alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Enterprise.Flow.State
 
   schema "approval_system" do
     field(:name, :string)

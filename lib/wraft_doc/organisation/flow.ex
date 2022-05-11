@@ -5,18 +5,6 @@ defmodule WraftDoc.Enterprise.Flow do
   use WraftDoc.Schema
 
   alias __MODULE__
-  alias WraftDoc.{Account.User, Repo}
-  import Ecto.Query
-  @derive {Jason.Encoder, only: [:name]}
-  defimpl Spur.Trackable, for: Flow do
-    def actor(flow), do: "#{flow.creator_id}"
-    def object(flow), do: "Flow:#{flow.id}"
-    def target(_chore), do: nil
-
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
 
   schema "flow" do
     field(:name, :string, null: false)
@@ -74,16 +62,4 @@ defmodule WraftDoc.Enterprise.Flow do
     |> cast(attrs, [])
     |> cast_assoc(:states, with: &Flow.State.order_update_changeset/2)
   end
-
-  @doc """
-  Function to return initial state of a flow
-  """
-
-  def initial_state(%Flow{} = flow) do
-    with %Flow{states: states} <- Repo.preload(flow, :states) do
-      Enum.min_by(states, fn x -> x.order end)
-    end
-  end
-
-  def initial_state(_), do: nil
 end
