@@ -403,7 +403,7 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "raises with non existing auth token value" do
-      assert_raise(FunctionClauseError, fn -> Account.delete_auth_token!("non-exitest-token") end)
+      assert_raise(BadMapError, fn -> Account.delete_auth_token!("non-exitest-token") end)
     end
   end
 

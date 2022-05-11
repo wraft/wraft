@@ -103,8 +103,8 @@ defmodule WraftDoc.Mixfile do
       {:poison, "~> 5.0.0", override: true},
 
       # Activity stream
-      {:spur, git: "https://github.com/shijithkjayan/spur.git", branch: :master},
-      {:ex_audit, "~> 0.9.0"},
+      {:ex_audit,
+       git: "https://github.com/MMore/ex_audit", branch: "fix_conflicting_behaviour_warning"},
 
       # CSV parser
       {:csv, "~> 2.4.1"},

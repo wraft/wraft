@@ -15,20 +15,7 @@ defmodule WraftDoc.Document.Theme do
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
   alias __MODULE__
-  alias WraftDoc.Account.User
-
   @hex_code_warning_msg "hex-code must be in the format of `#RRGGBB`"
-  @derive {Jason.Encoder, only: [:name]}
-
-  defimpl Spur.Trackable, for: Theme do
-    def actor(theme), do: "#{theme.creator_id}"
-    def object(theme), do: "Theme:#{theme.id}"
-    def target(_chore), do: nil
-
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
 
   @fields [
     :name,
@@ -52,7 +39,7 @@ defmodule WraftDoc.Document.Theme do
     field(:preview_file, WraftDocWeb.ThemePreviewUploader.Type)
     field(:file, WraftDocWeb.ThemeUploader.Type)
 
-    belongs_to(:creator, User)
+    belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     has_many(:content_type, WraftDoc.Document.ContentType)
 

@@ -211,7 +211,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
     current_user = conn.assigns.current_user
 
     with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, id),
-         %Vendor{} = vendor <- Enterprise.update_vendor(vendor, current_user, params) do
+         %Vendor{} = vendor <- Enterprise.update_vendor(vendor, params) do
       render(conn, "vendor.json", vendor: vendor)
     end
   end

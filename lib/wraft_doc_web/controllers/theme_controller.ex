@@ -248,7 +248,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
     current_user = conn.assigns[:current_user]
 
     with %Theme{} = theme <- Document.get_theme(theme_uuid, current_user),
-         {:ok, %Theme{} = theme} <- Document.update_theme(theme, current_user, params) do
+         {:ok, %Theme{} = theme} <- Document.update_theme(theme, params) do
       render(conn, "create.json", theme: theme)
     end
   end
@@ -275,7 +275,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
     current_user = conn.assigns[:current_user]
 
     with %Theme{} = theme <- Document.get_theme(uuid, current_user),
-         {:ok, %Theme{}} <- Document.delete_theme(theme, current_user) do
+         {:ok, %Theme{}} <- Document.delete_theme(theme) do
       render(conn, "create.json", theme: theme)
     end
   end

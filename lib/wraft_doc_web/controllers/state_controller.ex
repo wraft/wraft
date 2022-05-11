@@ -210,12 +210,13 @@ defmodule WraftDocWeb.Api.V1.StateController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
+  # TODO - Missing tests
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns[:current_user]
 
     with %State{} = state <- Enterprise.get_state(current_user, uuid),
-         %State{} = %State{} = state <- Enterprise.update_state(state, current_user, params) do
+         %State{} = %State{} = state <- Enterprise.update_state(state, params) do
       render(conn, "show.json", state: state)
     end
   end
@@ -243,7 +244,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
     current_user = conn.assigns[:current_user]
 
     with %State{} = state <- Enterprise.get_state(current_user, uuid),
-         {:ok, %State{}} <- Enterprise.delete_state(state, current_user) do
+         {:ok, %State{}} <- Enterprise.delete_state(state) do
       Task.start(fn -> Enterprise.shuffle_order(state, -1) end)
 
       render(conn, "create.json", state: state)

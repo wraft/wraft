@@ -413,7 +413,7 @@ defmodule WraftDoc.Account do
   @doc """
   Deletes a token.
   If an %AuthToken{} is given, it will be deleted.
-  If the parameter is a string value, the token is fetch and then deleted.
+  If the parameter is a string value, the token is fetched and then deleted.
   Raises if anything goes wrong.
   """
   @spec delete_auth_token!(AuthToken.t() | String.t()) :: AuthToken.t()

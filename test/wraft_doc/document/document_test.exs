@@ -14,6 +14,7 @@ defmodule WraftDoc.DocumentTest do
     Document.CollectionFormField,
     Document.Comment,
     Document.ContentType,
+    Document.ContentTypeField,
     Document.Counter,
     Document.DataTemplate,
     Document.FieldType,
@@ -58,7 +59,8 @@ defmodule WraftDoc.DocumentTest do
   @valid_theme_attrs %{
     "name" => "theme name",
     "font" => "theme font",
-    "typescale" => %{"heading1" => 22, "heading2" => 16, "paragraph" => 12}
+    "typescale" => %{"heading1" => 22, "heading2" => 16, "paragraph" => 12},
+    "file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}
   }
   @valid_data_template_attrs %{
     "title" => "data_template title",
@@ -67,7 +69,10 @@ defmodule WraftDoc.DocumentTest do
     "serialized" => %{"company" => "Apple"}
   }
   @invalid_data_template_attrs %{title: nil, title_template: nil, data: nil}
-  @valid_asset_attrs %{"name" => "asset name"}
+  @valid_asset_attrs %{
+    "name" => "asset name",
+    "file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}
+  }
 
   @valid_comment_attrs %{
     "comment" => "comment comment",
@@ -323,34 +328,21 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "delete_layout/2" do
+  describe "delete_layout/1" do
     test "delete layout deletes the layout and returns its data" do
-      user = insert(:user)
       layout = insert(:layout)
-      count_before = Layout |> Repo.all() |> length()
-      {:ok, model} = Document.delete_layout(layout, user)
-      count_after = Layout |> Repo.all() |> length()
-      assert count_before - 1 == count_after
-      assert model.name == layout.name
-      assert model.description == layout.description
-      assert model.width == layout.width
-      assert model.height == layout.height
-      assert model.unit == layout.unit
-      assert model.slug == layout.slug
+      {:ok, _layout} = Document.delete_layout(layout)
+
+      refute Repo.get(Layout, layout.id)
     end
   end
 
-  describe "delete_layout_asset/2" do
+  describe "delete_layout_asset/1" do
     test "delete layout asset deletes a layouts asset and returns the data" do
-      user = insert(:user)
-      layout = insert(:layout)
-      asset = insert(:asset)
-      layout_asset = insert(:layout_asset, layout: layout, asset: asset, creator: user)
-      count_before = LayoutAsset |> Repo.all() |> length()
-      {:ok, l_asset} = Document.delete_layout_asset(layout_asset, user)
-      count_after = LayoutAsset |> Repo.all() |> length()
-      assert count_before - 1 == count_after
-      assert l_asset.asset.name == asset.name
+      layout_asset = insert(:layout_asset)
+      {:ok, _l_asset} = Document.delete_layout_asset(layout_asset)
+
+      refute Repo.get(LayoutAsset, layout_asset.id)
     end
   end
 
@@ -530,17 +522,10 @@ defmodule WraftDoc.DocumentTest do
 
   describe "delete_content_type/2" do
     test "delete content_type deletes the content_type data" do
-      user = insert(:user)
       content_type = insert(:content_type)
-      count_before = ContentType |> Repo.all() |> length()
-      {:ok, s_content_type} = Document.delete_content_type(content_type, user)
-      count_after = ContentType |> Repo.all() |> length()
+      {:ok, _content_type} = Document.delete_content_type(content_type)
 
-      assert count_before - 1 == count_after
-      assert s_content_type.name == content_type.name
-      assert s_content_type.description == content_type.description
-      assert s_content_type.color == content_type.color
-      assert s_content_type.prefix == content_type.prefix
+      refute Repo.get(ContentType, content_type.id)
     end
   end
 
@@ -638,15 +623,12 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "delete_instance/2" do
-    test "delete an instance" do
-      user = insert(:user)
+  describe "delete_instance/1" do
+    test "deletes an instance" do
       instance = insert(:instance)
-      count_before = Instance |> Repo.all() |> length()
-      _del_instance = Document.delete_instance(instance, user)
-      count_after = Instance |> Repo.all() |> length()
+      {:ok, _del_instance} = Document.delete_instance(instance)
 
-      assert count_before - 1 == count_after
+      refute Repo.get(Instance, instance.id)
     end
   end
 
@@ -732,28 +714,23 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "update_instance/3" do
-    test "update instance on valid attrs and add a version data" do
-      user = insert(:user)
-
-      instance = insert(:instance, creator: user)
-      count_before = Instance |> Repo.all() |> length()
-      instance = Document.update_instance(instance, user, @valid_instance_attrs)
-      count_after = Instance |> Repo.all() |> length()
-      assert count_before == count_after
+  describe "update_instance/2" do
+    test "updates instance on valid attrs" do
+      instance = insert(:instance)
+      instance = Document.update_instance(instance, @valid_instance_attrs)
 
       assert instance.instance_id == @valid_instance_attrs["instance_id"]
       assert instance.raw == @valid_instance_attrs["raw"]
       assert instance.serialized == @valid_instance_attrs["serialized"]
     end
 
-    test "update instance on invalid attrs" do
+    test "returns error changeset on invalid attrs" do
       user = insert(:user)
 
       instance = insert(:instance, creator: user)
       count_before = Instance |> Repo.all() |> length()
 
-      {:error, changeset} = Document.update_instance(instance, user, @invalid_instance_attrs)
+      {:error, changeset} = Document.update_instance(instance, @invalid_instance_attrs)
 
       count_after = Instance |> Repo.all() |> length()
       assert count_before == count_after
@@ -763,35 +740,21 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "update_instance_state/3" do
-    test "update instance state updates state of an instance to new state" do
-      user = insert(:user)
-      content_type = insert(:content_type, creator: user)
-      pre_state = insert(:state, flow: content_type.flow)
-      post_state = insert(:state, flow: content_type.flow)
-      instance = insert(:instance, creator: user, content_type: content_type, state: pre_state)
+  describe "update_instance_state/2" do
+    test "updates state of an instance when flow ID of state and flow ID of instance's content type" do
+      content_type = insert(:content_type)
+      state = insert(:state, flow: content_type.flow)
+      instance = insert(:instance, content_type: content_type)
 
-      instance = Document.update_instance_state(user, instance, post_state)
+      instance = Document.update_instance_state(instance, state)
 
-      assert instance.state_id == post_state.id
+      assert instance.state_id == state.id
     end
-  end
 
-  describe "instance_state_upadate/5" do
-    test "updates instance's state and add the from and to state in the activity meta." do
-      user = insert(:user)
-      content_type = insert(:content_type, creator: user)
+    test "retrurns :error when flow ID of new state doesnt match with flow ID of instance's content type" do
+      instance = insert(:instance)
       state = insert(:state)
-      instance = insert(:instance, creator: user, content_type: content_type, state: state)
-
-      instance_state =
-        Document.instance_state_upadate(instance, user.id, state.id, state.state, instance.state)
-
-      old_state_length = map_size(instance.state)
-      new_state_length = map_size(instance_state.state)
-
-      assert instance_state.state == instance.state
-      assert old_state_length == new_state_length
+      assert :error = Document.update_instance_state(instance, state)
     end
   end
 
@@ -936,28 +899,34 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "update block_template" do
-    test "update_block_template/3," do
+  describe "update_block_template/2" do
+    test "updates block template with valid attrs" do
       block_template = insert(:block_template)
-      user = block_template.creator
       params = %{"title" => "new title", "body" => "new body"}
-      update_btemplate = Document.update_block_template(user, block_template, params)
+      update_btemplate = Document.update_block_template(block_template, params)
 
       assert update_btemplate.title =~ "new title"
       assert update_btemplate.body =~ "new body"
-      refute block_template.title == update_btemplate.title
+    end
+
+    test "returns error with invalid attrs" do
+      block_template = insert(:block_template)
+      params = %{"title" => nil, "body" => "new body"}
+      {:error, changeset} = Document.update_block_template(block_template, params)
+
+      assert %{title: ["can't be blank"]} == errors_on(changeset)
     end
   end
 
-  describe "delete block_template" do
-    test "delete_block_template/2" do
+  describe "delete_block_template" do
+    test "deletes block_template with valid attrs" do
       block_template = insert(:block_template)
-      user = block_template.creator
-      count_before = BlockTemplate |> Repo.all() |> length()
-      _delete_btemp = Document.delete_block_template(user, block_template)
-      count_after = BlockTemplate |> Repo.all() |> length()
+      {:ok, _delete_btemp} = Document.delete_block_template(block_template)
+      refute Repo.get(BlockTemplate, block_template.id)
+    end
 
-      assert count_before - 1 == count_after
+    test "returns error with invalid attrs" do
+      assert {:error, :fake} = Document.delete_block_template(nil)
     end
   end
 
@@ -1081,15 +1050,14 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "delete_content_type_field/2" do
-    test "delete content type field deletes the content type field and returns the data" do
-      user = insert(:user)
-      content_type = insert(:content_type, creator: user)
-
+  describe "delete_content_type_field/1" do
+    test "deletes the content type field" do
+      content_type = insert(:content_type)
       content_type_field = insert(:content_type_field, content_type: content_type)
-      {:ok, c_content_type_field} = Document.delete_content_type_field(content_type_field, user)
-      assert content_type_field.name == c_content_type_field.name
-      assert content_type_field.description == c_content_type_field.description
+
+      {:ok, _content_type_field} = Document.delete_content_type_field(content_type_field)
+
+      refute Repo.get(ContentTypeField, content_type_field.id)
     end
   end
 
@@ -1178,27 +1146,27 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "update_theme/3" do
-    # test "update theme on valid attrs" do
-    #   user = insert(:user)
-    #   theme = insert(:theme, creator: user)
-    #   count_before = Theme |> Repo.all() |> length()
+  describe "update_theme/2" do
+    test "update theme on valid attrs" do
+      user = insert(:user)
+      theme = insert(:theme, creator: user)
+      count_before = Theme |> Repo.all() |> length()
 
-    #   {:ok, theme} = Document.update_theme(theme, user, @valid_theme_attrs)
-    #   count_after = Theme |> Repo.all() |> length()
-    #   assert count_before == count_after
-    #   assert theme.name == @valid_theme_attrs["name"]
-    #   assert theme.font == @valid_theme_attrs["font"]
-    #   assert theme.typescale == @valid_theme_attrs["typescale"]
-    # end
+      {:ok, theme} = Document.update_theme(theme, @valid_theme_attrs)
+      count_after = Theme |> Repo.all() |> length()
+      assert count_before == count_after
+      assert theme.name == @valid_theme_attrs["name"]
+      assert theme.font == @valid_theme_attrs["font"]
+      assert theme.typescale == @valid_theme_attrs["typescale"]
+    end
 
-    test "update theme on invalid attrs" do
+    test "returns error on invalid attrs" do
       user = insert(:user)
       theme = insert(:theme, creator: user)
       count_before = Theme |> Repo.all() |> length()
 
       {:error, changeset} =
-        Document.update_theme(theme, user, %{name: nil, font: nil, typescale: nil, file: nil})
+        Document.update_theme(theme, %{name: nil, font: nil, typescale: nil, file: nil})
 
       count_after = Theme |> Repo.all() |> length()
       assert count_before == count_after
@@ -1213,12 +1181,11 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "delete_theme/2" do
+  describe "delete_theme/1" do
     test "delete theme deletes and return the theme data" do
-      user = insert(:user)
       theme = insert(:theme)
       count_before = Theme |> Repo.all() |> length()
-      {:ok, t_theme} = Document.delete_theme(theme, user)
+      {:ok, t_theme} = Document.delete_theme(theme)
       count_after = Theme |> Repo.all() |> length()
       assert count_before - 1 == count_after
       assert t_theme.name == theme.name
@@ -1290,33 +1257,23 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "update_data_template/3" do
-    test "update data_template on valid attrs" do
-      user = insert(:user)
-      data_template = insert(:data_template, creator: user)
-      count_before = DataTemplate |> Repo.all() |> length()
+  describe "update_data_template/2" do
+    test "updates data_template on valid attrs" do
+      data_template = insert(:data_template)
 
-      data_template =
-        Document.update_data_template(data_template, user, @valid_data_template_attrs)
+      data_template = Document.update_data_template(data_template, @valid_data_template_attrs)
 
-      count_after = DataTemplate |> Repo.all() |> length()
-      assert count_before == count_after
       assert data_template.title == @valid_data_template_attrs["title"]
       assert data_template.title_template == @valid_data_template_attrs["title_template"]
       assert data_template.data == @valid_data_template_attrs["data"]
       assert data_template.serialized == @valid_data_template_attrs["serialized"]
     end
 
-    test "update data_template on invalid attrs" do
-      user = insert(:user)
-      data_template = insert(:data_template, creator: user)
-      count_before = DataTemplate |> Repo.all() |> length()
+    test "does not update data_template on invalid attrs" do
+      data_template = insert(:data_template)
 
       {:error, changeset} =
-        Document.update_data_template(data_template, user, @invalid_data_template_attrs)
-
-      count_after = DataTemplate |> Repo.all() |> length()
-      assert count_before == count_after
+        Document.update_data_template(data_template, @invalid_data_template_attrs)
 
       assert %{
                title: ["can't be blank"],
@@ -1327,18 +1284,12 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "delete_data_template/2" do
-    test "delete data_template deletes the data_template data" do
-      user = insert(:user)
-      data_template = insert(:data_template, creator: user)
-      count_before = DataTemplate |> Repo.all() |> length()
-      {:ok, d_data_template} = Document.delete_data_template(data_template, user)
-      count_after = DataTemplate |> Repo.all() |> length()
-      assert count_before - 1 == count_after
-      assert d_data_template.title == data_template.title
-      assert d_data_template.title_template == data_template.title_template
-      assert d_data_template.data == data_template.data
-      assert d_data_template.serialized == data_template.serialized
+  describe "delete_data_template/1" do
+    test "deletes the data_template data" do
+      data_template = insert(:data_template)
+      {:ok, _data_template} = Document.delete_data_template(data_template)
+
+      refute Repo.get(DataTemplate, data_template.id)
     end
   end
 
@@ -1418,42 +1369,33 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "update_asset/3" do
-    # test "update asset on valid attrs" do
-    # file uploading is throwing errors
-    #   user = insert(:user)
-    #   asset = insert(:asset, creator: user)
-    #   count_before = Asset |> Repo.all() |> length()
+  describe "update_asset/2" do
+    test "update asset on valid attrs" do
+      # file uploading is throwing errors
+      asset = insert(:asset)
+      {:ok, asset} = Document.update_asset(asset, @valid_asset_attrs)
 
-    #   asset = Document.update_asset(asset, user, @valid_asset_attrs)
-    #   # IO.inspect(asset, label: "----------------------")
-    #   count_after = Asset |> Repo.all() |> length()
-    #   assert count_before == count_after
-    #   assert asset.name == @valid_asset_attrs["name"]
-    # end
+      assert asset.name == @valid_asset_attrs["name"]
+    end
 
     test "update asset on invalid attrs" do
       user = insert(:user)
       asset = insert(:asset, creator: user)
       count_before = Asset |> Repo.all() |> length()
 
-      {:error, changeset} = Document.update_asset(asset, user, %{name: nil, file: nil})
+      {:error, changeset} = Document.update_asset(asset, %{name: nil, file: nil})
       count_after = Asset |> Repo.all() |> length()
       assert count_before == count_after
       assert %{name: ["can't be blank"], file: ["can't be blank"]} == errors_on(changeset)
     end
   end
 
-  describe "delete_asset/2" do
+  describe "delete_asset/1" do
     test "delete asset deletes the asset data" do
-      user = insert(:user)
-      asset = insert(:asset, creator: user)
-      count_before = Asset |> Repo.all() |> length()
-      {:ok, a_asset} = Document.delete_asset(asset, user)
-      count_after = Asset |> Repo.all() |> length()
+      asset = insert(:asset)
+      {:ok, _} = Document.delete_asset(asset)
 
-      assert count_before - 1 == count_after
-      assert a_asset.name == asset.name
+      refute Repo.get(Asset, asset.id)
     end
   end
 
@@ -1549,12 +1491,11 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "update_block/3" do
+  describe "update_block/2" do
     test "update block" do
-      user = insert(:user)
       block = insert(:block)
       params = %{name: "new_name", api_route: "new/route"}
-      update_block = Document.update_block(user, block, params)
+      update_block = Document.update_block(block, params)
 
       assert is_struct(update_block)
       assert update_block.api_route =~ "new/route"
@@ -2165,21 +2106,16 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "delete_pipeline/2" do
+  describe "delete_pipeline/1" do
     test "deletes pipeline with correct data" do
-      user = insert(:user)
       pipeline = insert(:pipeline)
-      count_before = Pipeline |> Repo.all() |> length()
-      {:ok, deleted_pipeline} = Document.delete_pipeline(pipeline, user)
-      count_after = Pipeline |> Repo.all() |> length()
-      assert count_before - 1 == count_after
-      assert deleted_pipeline.name == pipeline.name
-      assert deleted_pipeline.api_route == pipeline.api_route
+      {:ok, _pipeline} = Document.delete_pipeline(pipeline)
+
+      refute Repo.get(Pipeline, pipeline.id)
     end
 
     test "returns nil with invalid data" do
-      response = Document.delete_pipeline(nil, nil)
-      assert response == nil
+      assert nil == Document.delete_pipeline(nil)
     end
   end
 
@@ -2308,21 +2244,16 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "delete_pipe_stage/2" do
+  describe "delete_pipe_stage/1" do
     test "deletes stage with correct data" do
-      user = insert(:user)
       stage = insert(:pipe_stage)
-      count_before = Stage |> Repo.all() |> length()
-      {:ok, deleted_stage} = Document.delete_pipe_stage(user, stage)
-      count_after = Stage |> Repo.all() |> length()
-      assert count_before - 1 == count_after
-      assert deleted_stage.pipeline_id == stage.pipeline_id
-      assert deleted_stage.content_type_id == stage.content_type_id
+      {:ok, _stage} = Document.delete_pipe_stage(stage)
+
+      refute Repo.get(Stage, stage.id)
     end
 
     test "returns nil with invalid data" do
-      response = Document.delete_pipe_stage(nil, nil)
-      assert response == nil
+      assert nil == Document.delete_pipe_stage(nil)
     end
   end
 

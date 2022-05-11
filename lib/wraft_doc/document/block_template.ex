@@ -2,20 +2,6 @@ defmodule WraftDoc.Document.BlockTemplate do
   @moduledoc false
   use WraftDoc.Schema
 
-  alias __MODULE__
-  alias WraftDoc.{Account.User}
-  import Ecto.Query
-  @derive {Jason.Encoder, only: [:title]}
-  defimpl Spur.Trackable, for: BlockTemplate do
-    def actor(block_template), do: "#{block_template.creator_id}"
-    def object(block_template), do: "BlockTemplate:#{block_template.id}"
-    def target(_chore), do: nil
-
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
-
   schema "block_template" do
     field(:title, :string)
     field(:body, :string)

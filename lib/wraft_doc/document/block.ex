@@ -6,18 +6,6 @@ defmodule WraftDoc.Document.Block do
 
   use Waffle.Ecto.Schema
   alias __MODULE__
-  alias WraftDoc.Account.User
-  import Ecto.Query
-  @derive {Jason.Encoder, only: [:name]}
-  defimpl Spur.Trackable, for: Block do
-    def actor(block), do: "#{block.creator_id}"
-    def object(block), do: "Block:#{block.id}"
-    def target(_chore), do: nil
-
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
 
   schema "block" do
     field(:name, :string, null: false)

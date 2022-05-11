@@ -4,20 +4,7 @@ defmodule WraftDoc.Document.Layout do
   """
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
-
-  import Ecto.Query
   alias __MODULE__
-  alias WraftDoc.Account.User
-  @derive {Jason.Encoder, only: [:name]}
-  defimpl Spur.Trackable, for: Layout do
-    def actor(layout), do: "#{layout.creator_id}"
-    def object(layout), do: "Layout:#{layout.id}"
-    def target(_chore), do: nil
-
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
 
   schema "layout" do
     field(:name, :string, null: false)

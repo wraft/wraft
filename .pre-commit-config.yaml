@@ -17,6 +17,7 @@ repos:
       - id: mix-compile
         name: Compile the codebase
         entry: mix compile --force --warnings-as-errors
+
         language: system
         pass_filenames: false
         files: \.ex$

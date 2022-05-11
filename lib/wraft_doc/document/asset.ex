@@ -3,21 +3,8 @@ defmodule WraftDoc.Document.Asset do
     The asset model.
   """
   alias __MODULE__
-  alias WraftDoc.Account.User
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
-
-  import Ecto.Query
-  @derive {Jason.Encoder, only: [:name]}
-  defimpl Spur.Trackable, for: Asset do
-    def actor(asset), do: "#{asset.creator_id}"
-    def object(asset), do: "Asset:#{asset.id}"
-    def target(_chore), do: nil
-
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
 
   schema "asset" do
     field(:name, :string, null: false)
