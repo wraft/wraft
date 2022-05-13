@@ -6,8 +6,11 @@ do
   echo "$(date) - waiting for database to start"
   sleep 2
 done
+
 echo "$(date) - PostgreSQL is ready"
 mix ecto.create
+mix ecto.migrate
+
 # Create migrate and seed database if it does't exist.
 if [[ -z `psql -Atqc "\\list $PGDATABASE"` ]]; then
   echo "Database $PGDATABASE does not exist. Creating..."
