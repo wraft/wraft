@@ -1166,7 +1166,7 @@ defmodule WraftDoc.Document do
     nil
   end
 
-  def get_default_theme() do
+  def get_default_theme do
     Repo.get_by(Theme, default_theme: true)
   end
 
@@ -1512,7 +1512,7 @@ defmodule WraftDoc.Document do
   end
 
   @spec get_theme_details() :: map()
-  def get_theme_details() do
+  def get_theme_details do
     case get_default_theme() do
       nil ->
         %{
