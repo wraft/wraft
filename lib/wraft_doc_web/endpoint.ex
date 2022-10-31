@@ -74,7 +74,7 @@ defmodule WraftDocWeb.Endpoint do
     signing_salt: "OZYS2y3c"
   )
 
-  plug(CORSPlug, origin: ["https://beta.wraft.app"])
+  plug(CORSPlug, origin: ["https://beta.wraft.app/*"])
   plug(WraftDocWeb.Router)
 
   @doc """
