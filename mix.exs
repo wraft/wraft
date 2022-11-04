@@ -47,7 +47,7 @@ defmodule WraftDoc.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.6.6"},
+      {:phoenix, "~> 1.6.15"},
       {:phoenix_pubsub, "~> 2.0.0"},
       {:phoenix_ecto, "~> 4.4.0"},
       {:phoenix_view, "~> 1.1.0"},
@@ -55,7 +55,7 @@ defmodule WraftDoc.Mixfile do
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 3.2.0", override: true},
       {:phoenix_live_reload, "~> 1.3.3", only: :dev},
-      {:esbuild, "~> 0.3", runtime: Mix.env() == :dev},
+      {:esbuild, "~> 0.5", runtime: Mix.env() == :dev},
       {:gettext, "~> 0.18.2"},
       {:plug_cowboy, "~> 2.5.2"},
       {:distillery, "~> 2.1.1"},
