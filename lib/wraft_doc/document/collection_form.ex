@@ -8,7 +8,7 @@ defmodule WraftDoc.Document.CollectionForm do
   alias WraftDoc.Document.CollectionFormField
 
   schema "collection_form" do
-    field(:title, :string, null: false)
+    field(:title, :string)
     field(:description, :string)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:creator, WraftDoc.Account.User)

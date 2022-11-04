@@ -7,7 +7,7 @@ defmodule WraftDoc.Enterprise.Flow do
   alias __MODULE__
 
   schema "flow" do
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:controlled, :boolean, default: false)
     field(:control_data, :map)
     belongs_to(:creator, WraftDoc.Account.User)

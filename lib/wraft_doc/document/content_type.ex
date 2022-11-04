@@ -10,7 +10,7 @@ defmodule WraftDoc.Document.ContentType do
   @derive {Jason.Encoder, only: [:id]}
 
   schema "content_type" do
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:description, :string)
     field(:color, :string)
     field(:prefix, :string)

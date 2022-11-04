@@ -7,7 +7,7 @@ defmodule WraftDoc.Document.Asset do
   use Waffle.Ecto.Schema
 
   schema "asset" do
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:file, WraftDocWeb.AssetUploader.Type)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
