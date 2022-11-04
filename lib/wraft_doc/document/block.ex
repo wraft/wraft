@@ -8,7 +8,7 @@ defmodule WraftDoc.Document.Block do
   alias __MODULE__
 
   schema "block" do
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:description, :string)
     field(:btype, :string)
     field(:dataset, :map)

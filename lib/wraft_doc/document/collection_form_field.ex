@@ -8,7 +8,7 @@ defmodule WraftDoc.Document.CollectionFormField do
   use WraftDoc.Schema
 
   schema "collection_form_field" do
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:description, :string)
     field(:meta, :map)
     field(:field_type, WraftDoc.Document.FieldTypeEnum)

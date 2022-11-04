@@ -10,7 +10,7 @@ defmodule WraftDoc.Enterprise.Organisation do
 
   @derive {Jason.Encoder, only: [:name]}
   schema "organisation" do
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:legal_name, :string)
     field(:address, :string)
     field(:name_of_ceo, :string)

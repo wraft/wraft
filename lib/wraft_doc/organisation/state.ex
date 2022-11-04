@@ -7,8 +7,8 @@ defmodule WraftDoc.Enterprise.Flow.State do
   alias __MODULE__
 
   schema "state" do
-    field(:state, :string, null: false)
-    field(:order, :integer, null: false)
+    field(:state, :string)
+    field(:order, :integer)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:flow, WraftDoc.Enterprise.Flow)
