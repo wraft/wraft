@@ -29,7 +29,7 @@ defmodule WraftDoc.Document.Theme do
   ]
 
   schema "theme" do
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:font, :string)
     field(:typescale, :map, default: %{})
     field(:body_color, :string)
