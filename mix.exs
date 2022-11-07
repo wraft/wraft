@@ -105,8 +105,7 @@ defmodule WraftDoc.Mixfile do
       {:poison, "~> 5.0.0", override: true},
 
       # Activity stream
-      {:ex_audit,
-       git: "https://github.com/MMore/ex_audit", branch: "fix_conflicting_behaviour_warning"},
+      {:ex_audit, git: "https://github.com/Kry10-NZ/ex_audit", branch: "fix-ecto-3.8"},
 
       # CSV parser
       {:csv, "~> 3.0.3"},
