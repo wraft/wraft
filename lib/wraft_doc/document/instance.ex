@@ -16,7 +16,7 @@ defmodule WraftDoc.Document.Instance do
   def types, do: [normal: 1, bulk_build: 2, pipeline_api: 3, pipeline_hook: 4]
 
   schema "content" do
-    field(:instance_id, :string, null: false)
+    field(:instance_id, :string)
     field(:raw, :string)
     field(:serialized, :map, default: %{})
     field(:type, :integer)

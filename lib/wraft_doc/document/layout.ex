@@ -7,7 +7,7 @@ defmodule WraftDoc.Document.Layout do
   alias __MODULE__
 
   schema "layout" do
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:description, :string)
     field(:width, :float)
     field(:height, :float)

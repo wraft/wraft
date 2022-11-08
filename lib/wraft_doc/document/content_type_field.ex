@@ -5,7 +5,7 @@ defmodule WraftDoc.Document.ContentTypeField do
   use WraftDoc.Schema
 
   schema "content_type_field" do
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:meta, :map)
     field(:description, :string)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
