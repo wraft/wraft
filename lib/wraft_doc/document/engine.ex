@@ -7,7 +7,7 @@ defmodule WraftDoc.Document.Engine do
   alias WraftDoc.Document.Engine
 
   schema "engine" do
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:api_route, :string)
     timestamps()
   end
