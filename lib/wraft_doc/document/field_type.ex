@@ -5,7 +5,7 @@ defmodule WraftDoc.Document.FieldType do
   use WraftDoc.Schema
 
   schema "field_type" do
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:description, :string)
     belongs_to(:creator, WraftDoc.Account.User)
 

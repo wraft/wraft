@@ -8,7 +8,7 @@ defmodule WraftDoc.Mixfile do
       version: "0.0.1",
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers() ++ [:phoenix_swagger],
+      compilers: [:phoenix] ++ Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
@@ -47,48 +47,50 @@ defmodule WraftDoc.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.6.6"},
-      {:phoenix_pubsub, "~> 2.0.0"},
+      {:phoenix, "~> 1.6.15"},
+      {:phoenix_pubsub, "~> 2.1.1"},
       {:phoenix_ecto, "~> 4.4.0"},
-      {:phoenix_view, "~> 1.1.0"},
-      {:ecto_sql, "~> 3.7.1"},
+      {:phoenix_view, "~> 2.0.1"},
+      {:ecto_sql, "~> 3.9.0"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 3.2.0", override: true},
-      {:phoenix_live_reload, "~> 1.3.3", only: :dev},
-      {:esbuild, "~> 0.3", runtime: Mix.env() == :dev},
-      {:gettext, "~> 0.18.2"},
-      {:plug_cowboy, "~> 2.5.2"},
+      {:phoenix_live_reload, "~> 1.4.0", only: :dev},
+      # Live dashboard
+      {:phoenix_live_dashboard, "~> 0.7.2", override: true},
+      {:esbuild, "~> 0.5", runtime: Mix.env() == :dev},
+      {:gettext, "~> 0.20.0"},
+      {:plug_cowboy, "~> 2.6.0"},
       {:distillery, "~> 2.1.1"},
       # Password encryption
       {:comeonin, "~> 5.3.2"},
-      {:bcrypt_elixir, "~> 2.3.0"},
+      {:bcrypt_elixir, "~> 3.0.1"},
       # User authentication
-      {:guardian, "~> 2.2.1"},
+      {:guardian, "~> 2.3.0"},
       {:guardian_phoenix, "~> 2.0"},
       # CORS
-      {:cors_plug, "~> 2.0.2"},
+      {:cors_plug, "~> 3.0.1"},
       # File upload to AWS
       {:waffle, "~> 1.1.5"},
       {:waffle_ecto, "~> 0.0.11"},
       # Waffle support for AWS S3
-      {:ex_aws, "~> 2.2.9"},
-      {:ex_aws_s3, "~> 2.0"},
+      {:ex_aws, "~> 2.4.0"},
+      {:ex_aws_s3, "~> 2.3.3"},
       {:hackney, "~> 1.18.0"},
-      {:sweet_xml, "~> 0.7.2"},
+      {:sweet_xml, "~> 0.7.3"},
       # Time and date formating
-      {:timex, "~>  3.7.6"},
+      {:timex, "~>  3.7.9"},
       # JSON parser
-      {:jason, "~> 1.3.0"},
+      {:jason, "~> 1.4.0"},
       # API documentation
-      {:phoenix_swagger, "~> 0.8.2"},
+      {:phoenix_swagger, "~> 0.8.3"},
 
       # For Writing Api documentation by slate
-      {:bureaucrat, "~> 0.2.5"},
-      {:ex_json_schema, "~> 0.7.1"},
+      {:bureaucrat, "~> 0.2.9"},
+      {:ex_json_schema, "~> 0.9.2", override: true},
       # For testing
       {:ex_machina, "~> 2.7", only: :test},
       {:bypass, "~> 2.1.0", only: :test},
-      {:excoveralls, "~> 0.14.4", only: :test},
+      {:excoveralls, "~> 0.15.0", only: :test},
       {:faker, "~> 0.17", only: [:test, :dev]},
       # Pagination
       {:scrivener_ecto, "~> 2.7.0"},
@@ -96,20 +98,17 @@ defmodule WraftDoc.Mixfile do
       # QR code generation
       {:eqrcode, "~> 0.1.10"},
       # Background jobs
-      {:oban, "~> 2.10.1"},
+      {:oban, "~> 2.13.4"},
       # Email client
       {:bamboo, "~> 2.2.0"},
-      {:httpoison, "~> 1.8.0"},
+      {:httpoison, "~> 1.8.2"},
       {:poison, "~> 5.0.0", override: true},
 
       # Activity stream
-      {:ex_audit,
-       git: "https://github.com/MMore/ex_audit", branch: "fix_conflicting_behaviour_warning"},
+      {:ex_audit, git: "https://github.com/Kry10-NZ/ex_audit", branch: "fix-ecto-3.8"},
 
       # CSV parser
-      {:csv, "~> 2.4.1"},
-      # Live dashboard
-      {:phoenix_live_dashboard, "~> 0.6.2"},
+      {:csv, "~> 3.0.3"},
       # Business logic flow
       {:opus, "~> 0.8.3"},
       # Razorpay
@@ -118,11 +117,11 @@ defmodule WraftDoc.Mixfile do
       {:pdf_generator, "~> 0.6.2"},
 
       # For admin pannel
-      {:kaffy, "~> 0.9.0"},
+      {:kaffy, "~> 0.9.4"},
       {:ecto_enum, "~> 1.4"},
 
       # Code analysis tool
-      {:credo, "~> 1.6.1", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.6.7", only: [:dev, :test], runtime: false}
     ]
   end
 
