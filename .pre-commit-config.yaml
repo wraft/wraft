@@ -11,13 +11,12 @@ repos:
         entry: mix deps.get
       - id: mix-format
         name: Format Elixir files
-        entry: mix format
+        entry: mix format --check-formatted
         language: system
         files: \.exs*$
       - id: mix-compile
         name: Compile the codebase
         entry: mix compile --force --warnings-as-errors
-
         language: system
         pass_filenames: false
         files: \.ex$
