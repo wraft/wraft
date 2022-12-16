@@ -12,33 +12,76 @@ defmodule WraftDoc.AccountTest do
 
   @email "newemail@xyz.com"
 
-  describe "registration/2" do
-    test "user registration with valid data" do
+  describe "registration/1" do
+    test "user successfully registers with valid data and without organisation token" do
       insert(:role, name: "user")
-      organisation = insert(:organisation)
-      user = Account.registration(@valid_attrs, organisation)
+      insert(:plan, name: "Free Trial")
+
+      {:ok, %{user: user, organisations: [personal_org]}} = Account.registration(@valid_attrs)
 
       assert user.name == @valid_attrs["name"]
       assert user.email == @valid_attrs["email"]
-      assert user.profile.name == @valid_attrs["name"]
+      assert personal_org.name == "Personal"
     end
 
-    test "user registration with invalid data" do
-      insert(:role, name: "user")
+    test "user successfully registers with valid data and an organisation invite token" do
+      role = insert(:role, name: "user")
+      insert(:plan, name: "Free Trial")
+
       organisation = insert(:organisation)
-      {:error, changeset} = Account.registration(%{"email" => ""}, organisation)
+
+      token =
+        WraftDoc.create_phx_token("organisation_invite", %{
+          organisation_id: organisation.id,
+          email: @valid_attrs["email"],
+          role: role.name
+        })
+
+      insert(:auth_token, value: token, token_type: "invite")
+
+      params = Map.put(@valid_attrs, "token", token)
+
+      {:ok, %{user: user, organisations: [personal_org, invited_org]}} =
+        Account.registration(params)
+
+      assert user.name == @valid_attrs["name"]
+      assert user.email == @valid_attrs["email"]
+      assert personal_org.name == "Personal"
+      assert invited_org.name == organisation.name
+    end
+
+    test "returns error changeset with invalid data" do
+      insert(:role, name: "user")
+      {:error, changeset} = Account.registration(%{"email" => ""})
 
       assert %{email: ["can't be blank"], name: ["can't be blank"], password: ["can't be blank"]} ==
                errors_on(changeset)
     end
 
-    test "user registration with invalid email" do
+    test "returns error with invalid email" do
       insert(:role, name: "user")
-      organisation = insert(:organisation)
       params = Map.put(@valid_attrs, "email", "not an email")
-      {:error, changeset} = Account.registration(params, organisation)
+      {:error, changeset} = Account.registration(params)
 
       assert %{email: ["has invalid format"]} == errors_on(changeset)
+    end
+
+    test "returns error for invalid organisation" do
+      organisation = insert(:organisation)
+
+      token =
+        WraftDoc.create_phx_token("different salt", %{
+          organisation_id: organisation.id,
+          email: @email,
+          role: "user"
+        })
+
+      insert(:auth_token, value: token, token_type: "invite")
+      params = Map.put(@valid_attrs, "token", token)
+
+      error = Account.registration(params)
+
+      assert error == {:error, :fake}
     end
   end
 
@@ -141,7 +184,7 @@ defmodule WraftDoc.AccountTest do
       assert error == {:error, :expired}
     end
 
-    test "returns not found when params doens't contain token or email or both" do
+    test "returns not found when params doesn't contain token or email or both" do
       resp1 = Account.get_organisation_from_token(%{"token" => nil})
       resp2 = Account.get_organisation_from_token(%{"email" => nil})
       resp3 = Account.get_organisation_from_token(%{})

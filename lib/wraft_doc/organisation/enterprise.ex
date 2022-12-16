@@ -6,26 +6,24 @@ defmodule WraftDoc.Enterprise do
   import Ecto
   alias Ecto.Multi
 
-  alias WraftDoc.{
-    Account,
-    Account.User,
-    Enterprise.ApprovalSystem,
-    Enterprise.Flow,
-    Enterprise.Flow.State,
-    Enterprise.Membership,
-    Enterprise.Membership.Payment,
-    Enterprise.Organisation,
-    Enterprise.Plan,
-    Enterprise.Vendor,
-    Repo,
-    Workers.EmailWorker,
-    Workers.ScheduledWorker
-  }
-
+  alias WraftDoc.Account
   alias WraftDoc.Account.Role
+  alias WraftDoc.Account.User
+  alias WraftDoc.Enterprise.ApprovalSystem
+  alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Enterprise.Membership
+  alias WraftDoc.Enterprise.Membership.Payment
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Enterprise.Plan
+  alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Repo
   alias WraftDoc.TaskSupervisor
+  alias WraftDoc.Workers.EmailWorker
+  alias WraftDoc.Workers.ScheduledWorker
 
   @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
+
   @default_controlled_states [
     %{"state" => "Draft", "order" => 1},
     %{"state" => "Review", "order" => 2},
@@ -325,7 +323,6 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Get an organisation from its UUID.
   """
-
   @spec get_organisation(binary) :: Organisation.t() | nil
   def get_organisation(id) do
     Repo.get(Organisation, id)
@@ -334,7 +331,6 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Create an Organisation
   """
-
   @spec create_organisation(User.t(), map) :: Organisation.t()
   def create_organisation(%User{} = user, params) do
     user
@@ -352,9 +348,24 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+  Create a personal organisation when the user first sign up for wraft
+  """
+  @spec create_personal_organisation(User.t(), map) :: Organisation.t()
+  def create_personal_organisation(%User{} = user, params) do
+    Multi.new()
+    |> Multi.insert(
+      :organisation,
+      user |> build_assoc(:organisation) |> Organisation.personal_organisation_changeset(params)
+    )
+    |> Multi.run(:membership, fn _repo, %{organisation: organisation} ->
+      create_membership(organisation)
+    end)
+    |> Repo.transaction()
+  end
+
+  @doc """
   Update an Organisation
   """
-
   @spec update_organisation(Organisation.t(), map) :: {:ok, Organisation.t()}
   def update_organisation(organisation, params) do
     organisation
@@ -670,7 +681,7 @@ defmodule WraftDoc.Enterprise do
 
   # Create free trial membership for the given organisation.
   @spec create_membership(Organisation.t()) :: Membership.t()
-  defp create_membership(%Organisation{id: id}) do
+  defp create_membership(%Organisation{id: id} = _organisation) do
     plan = Repo.get_by(Plan, name: @trial_plan_name)
     start_date = Timex.now()
     end_date = find_end_date(start_date, @trial_duration)
@@ -680,6 +691,10 @@ defmodule WraftDoc.Enterprise do
     |> build_assoc(:memberships, organisation_id: id)
     |> Membership.changeset(params)
     |> Repo.insert!()
+    |> case do
+      %Membership{} = membership -> {:ok, membership}
+      changeset -> {:error, changeset}
+    end
   end
 
   # Find the end date of a membership from the start date and duration of the

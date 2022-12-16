@@ -14,6 +14,10 @@ defmodule WraftDoc.Account.User do
     field(:deleted_at, :naive_datetime)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
+    many_to_many(:organisations, WraftDoc.Enterprise.Organisation,
+      join_through: "users_organisations"
+    )
+
     has_one(:profile, WraftDoc.Account.Profile)
 
     has_many(:layouts, WraftDoc.Document.Layout, foreign_key: :creator_id)
@@ -54,7 +58,7 @@ defmodule WraftDoc.Account.User do
 
   def changeset(users, attrs \\ %{}) do
     users
-    |> cast(attrs, [:name, :email, :password, :organisation_id])
+    |> cast(attrs, [:name, :email, :password])
     |> validate_required([:name, :email, :password])
     |> validate_format(:email, ~r/@/)
     |> validate_format(:name, ~r/^[A-z ]+$/)

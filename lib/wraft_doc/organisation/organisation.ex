@@ -8,6 +8,8 @@ defmodule WraftDoc.Enterprise.Organisation do
   alias WraftDoc.Enterprise.{Organisation, Vendor}
   alias WraftDoc.Document.{Pipeline, Theme}
 
+  @fields ~w(name legal_name email address name_of_ceo name_of_cto gstin corporate_id phone)a
+
   @derive {Jason.Encoder, only: [:name]}
   schema "organisation" do
     field(:name, :string)
@@ -20,7 +22,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     field(:phone, :string)
     field(:email, :string)
     field(:logo, WraftDocWeb.LogoUploader.Type)
-    has_many(:users, User, where: [deleted_at: nil])
+    many_to_many(:users, User, join_through: "users_organisations")
     has_many(:pipelines, Pipeline)
     has_many(:vendors, Vendor)
     has_many(:themes, Theme)
@@ -31,17 +33,7 @@ defmodule WraftDoc.Enterprise.Organisation do
 
   def changeset(%Organisation{} = organisation, attrs \\ %{}) do
     organisation
-    |> cast(attrs, [
-      :name,
-      :legal_name,
-      :address,
-      :name_of_ceo,
-      :name_of_cto,
-      :gstin,
-      :corporate_id,
-      :phone,
-      :email
-    ])
+    |> cast(attrs, @fields)
     |> validate_required([:name, :legal_name, :email])
     |> cast_attachments(attrs, [:logo])
     |> unique_constraint(:legal_name,
@@ -52,5 +44,13 @@ defmodule WraftDoc.Enterprise.Organisation do
       message: "GSTIN Already Registered",
       name: :organisation_gstin_unique_index
     )
+  end
+
+  def personal_organisation_changeset(%Organisation{} = organisation, attrs \\ %{}) do
+    organisation
+    |> cast(attrs, @fields)
+    |> validate_required([:name, :email])
+    |> validate_format(:name, ~r/^Personal$/)
+    |> cast_attachments(attrs, [:logo])
   end
 end

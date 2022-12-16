@@ -7,18 +7,16 @@ defmodule WraftDoc.EnterpriseTest do
   @moduletag :enterprise
   use Bamboo.Test
 
-  alias WraftDoc.{
-    Account.AuthToken,
-    Enterprise,
-    Enterprise.ApprovalSystem,
-    Enterprise.Flow,
-    Enterprise.Flow.State,
-    Enterprise.Membership.Payment,
-    Enterprise.Organisation,
-    Enterprise.Plan,
-    Enterprise.Vendor,
-    Repo
-  }
+  alias WraftDoc.Account.AuthToken
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.ApprovalSystem
+  alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Enterprise.Membership.Payment
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Enterprise.Plan
+  alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Repo
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
@@ -190,6 +188,46 @@ defmodule WraftDoc.EnterpriseTest do
     assert count_before + 1 == count_ater
     assert organisation.name == params["name"]
     assert organisation.legal_name == params["legal_name"]
+  end
+
+  describe "create_personal_organisation/2" do
+    test "creates organisation on valid attributes" do
+      user = insert(:user)
+      insert(:plan, name: "Free Trial")
+
+      params = %{
+        "name" => "Personal",
+        "email" => "dikku@kodappalaya.com"
+      }
+
+      count_before = Organisation |> Repo.all() |> length()
+
+      {:ok, %{organisation: organisation}} = Enterprise.create_personal_organisation(user, params)
+
+      count_after = Organisation |> Repo.all() |> length()
+
+      assert count_before + 1 == count_after
+      assert organisation.name == params["name"]
+    end
+
+    test "returns error on invalid attributes" do
+      user = insert(:user)
+      insert(:plan, name: "Free Trial")
+
+      params = %{
+        "name" => "Not Personal",
+        "email" => "dikku@kodappalaya.com"
+      }
+
+      count_before = Organisation |> Repo.all() |> length()
+
+      {:error, _, changeset, _} = Enterprise.create_personal_organisation(user, params)
+
+      count_after = Organisation |> Repo.all() |> length()
+
+      assert count_before == count_after
+      assert %{name: ["has invalid format"]} == errors_on(changeset)
+    end
   end
 
   test "update organisation updates an organisation" do
