@@ -5,39 +5,24 @@ defmodule WraftDoc.Account do
   import Ecto.Query
   import Ecto
 
-  alias WraftDoc.{
-    Account.AuthToken,
-    Account.Profile,
-    Account.Role,
-    Account.RoleGroup,
-    Account.User,
-    Account.UserRole,
-    Enterprise,
-    Enterprise.Organisation,
-    Repo
-  }
-
-  alias WraftDoc.Document.{
-    Asset,
-    Block,
-    BlockTemplate,
-    ContentType,
-    ContentTypeField,
-    DataTemplate,
-    Instance,
-    Layout,
-    LayoutAsset,
-    Theme
-  }
-
-  alias WraftDoc.Account.Activity
-  alias WraftDoc.Account.User.Audience
-
-  alias WraftDoc.Enterprise.{Flow, Flow.State}
-
-  alias WraftDocWeb.Endpoint
-
   alias Ecto.Multi
+  alias WraftDoc.Account.Activity
+  alias WraftDoc.Account.AuthToken
+  alias WraftDoc.Account.Profile
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Account.RoleGroup
+  alias WraftDoc.Account.User
+  alias WraftDoc.Account.User.Audience
+  alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.Document.Asset
+  alias WraftDoc.Document.Block
+  alias WraftDoc.Document.BlockTemplate
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Repo
+  alias WraftDocWeb.Endpoint
 
   @activity_models %{
     "Asset" => Asset,
@@ -62,27 +47,66 @@ defmodule WraftDoc.Account do
     User.changeset(%User{})
   end
 
-  @spec registration(map, Organisation.t()) :: User.t() | Ecto.Changeset.t()
-  def registration(params, %Organisation{id: id}) do
-    params = Map.merge(params, %{"organisation_id" => id})
-    role = get_role_by_name(params["role"])
+  @doc """
+   Creates a user, generates a personal organisation for the user
+   and adds the user to an organisation when the user has an invite token
+  """
+  @spec registration(map) :: {:ok, map()} | {:error, Ecto.Changeset.t()}
+  def registration(%{"token" => token} = params) do
+    {_token_params, user_params} = Map.split(params, ["token"])
 
     Multi.new()
-    |> Multi.insert(:user, User.changeset(%User{}, params))
-    |> Multi.insert(:user_role, fn %{user: user} ->
-      UserRole.changeset(%UserRole{}, %{user_id: user.id, role_id: role.id})
+    |> Multi.run(:get_org, fn _, _ -> get_organisation_from_token(params) end)
+    |> basic_registration_multi(user_params)
+    |> Multi.insert(:users_organisations, fn %{user: user, get_org: organisation} ->
+      UserOrganisation.changeset(%UserOrganisation{}, %{
+        user_id: user.id,
+        organisation_id: organisation.id
+      })
     end)
+    |> Multi.run(:delete_auth_token, fn _, _ -> delete_auth_token(token) end)
     |> Repo.transaction()
     |> case do
+      {:ok,
+       %{user: user, personal_organisation: %{organisation: personal_org}, get_org: invited_org}} ->
+        {:ok, %{user: user, organisations: [personal_org, invited_org]}}
+
+      {:error, :get_org, error, _} ->
+        {:error, error}
+
       {:error, _, changeset, _} ->
         {:error, changeset}
-
-      {:ok, %{user: %User{} = user}} ->
-        create_profile(user, params)
-        Repo.preload(user, [:profile, :roles])
     end
   end
 
+  def registration(params) do
+    Multi.new()
+    |> basic_registration_multi(params)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user, personal_organisation: %{organisation: personal_org}}} ->
+        {:ok, %{user: user, organisations: [personal_org]}}
+
+      {:error, :user, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  defp basic_registration_multi(multi, params) do
+    multi
+    |> Multi.insert(:user, User.changeset(%User{}, params))
+    |> Multi.insert(:profile, fn %{user: user} ->
+      user |> build_assoc(:profile) |> Profile.changeset(params)
+    end)
+    |> Multi.run(:personal_organisation, fn _repo, %{user: user} ->
+      WraftDoc.Enterprise.create_personal_organisation(user, %{
+        email: params["email"],
+        name: "Personal"
+      })
+    end)
+  end
+
+  @spec create_user(map()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
   def create_user(params) do
     %User{}
     |> User.changeset(params)
@@ -126,11 +150,10 @@ defmodule WraftDoc.Account do
   If no token is present in the params, then get the default organisation
   """
   @spec get_organisation_from_token(map) :: Organisation.t() | {:error, atom()}
-  def get_organisation_from_token(%{"token" => token, "email" => email} = params) do
+  def get_organisation_from_token(%{"token" => token, "email" => email} = _params) do
     case check_token(token, :invite) do
-      {:ok, %{organisation_id: org_id, email: ^email, role: role}} ->
-        params = Map.put(params, "role", role)
-        {:ok, Enterprise.get_organisation(org_id), params}
+      {:ok, %{organisation_id: org_id, email: ^email, role: _role}} ->
+        {:ok, Enterprise.get_organisation(org_id)}
 
       {:ok, _} ->
         {:error, :no_permission}
@@ -256,13 +279,13 @@ defmodule WraftDoc.Account do
 
   # defp get_role(role \\ "user")
 
-  defp get_role_by_name(role) when is_binary(role) do
-    Repo.get_by(Role, name: role)
-  end
+  # defp get_role_by_name(role) when is_binary(role) do
+  #   Repo.get_by(Role, name: role)
+  # end
 
-  defp get_role_by_name(role) when is_nil(role) do
-    Repo.get_by(Role, name: "user")
-  end
+  # defp get_role_by_name(role) when is_nil(role) do
+  #   Repo.get_by(Role, name: "user")
+  # end
 
   @doc """
   Get a role type from its UUID.
@@ -421,8 +444,13 @@ defmodule WraftDoc.Account do
     Repo.delete!(auth_token)
   end
 
-  def delete_auth_token!(token_value) when is_binary(token_value) do
-    AuthToken |> Repo.get_by(value: token_value) |> Repo.delete!()
+  def delete_auth_token(token_value) when is_binary(token_value) do
+    AuthToken
+    |> Repo.get_by(value: token_value)
+    |> case do
+      %AuthToken{} = token -> Repo.delete(token)
+      nil -> {:error, :invalid}
+    end
   end
 
   @doc """
@@ -628,6 +656,13 @@ defmodule WraftDoc.Account do
   end
 
   def insert_auth_token!(_, _), do: raise("Unexpected arguments passed.")
+
+  @spec insert_auth_token!(map) :: AuthToken.t()
+  def insert_auth_token!(params) do
+    %AuthToken{}
+    |> AuthToken.changeset(params)
+    |> Repo.insert()
+  end
 
   def get_user_by_name(name, params) do
     query = from(u in User, where: ilike(u.name, ^"%#{name}%"))

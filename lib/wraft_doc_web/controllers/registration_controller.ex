@@ -2,8 +2,10 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
   import Ecto.Query, warn: false
+  alias WraftDoc.Account
+  alias WraftDoc.Account.User
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Account, Account.User, Enterprise.Organisation}
 
   def swagger_definitions do
     %{
@@ -16,12 +18,21 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
             name(:string, "User's name", required: true)
             email(:string, "User's email", required: true)
             password(:string, "User's password", required: true)
+            token(:string, "Organisation invite token")
           end
 
           example(%{
             name: "John Doe",
             email: "email@xyz.com",
             password: "Password"
+          })
+
+          example(%{
+            name: "John Doe",
+            email: "email@xyz.com",
+            password: "Password",
+            token:
+              "U0ZNeU5UWS5nMmdEZEFBQUFBSmtBQVZsYldGcGJHMEFBQUFWYldGMGFHbHNaR0V4TWpoQVoyMWhhV3d1WTI5dFpBQUhkWE5sY2w5cFpHMEFBQUFrTTJFNU1tSTBOMlF0TnpnNU1pMDBaR1kxTFRneU1HWXRZek0xTWpWak9XWTJPRE5sYmdZQXNzTGJESVVCWWdBQlVZQS5DLTEzMVN5YkJmLVJvdHlWcElESXNFOVlPajFMSE9sZXNNOEk1eTVFam1B"
           })
         end
     }
@@ -48,20 +59,13 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
-    with {:ok, %Organisation{} = org, params} <- Account.get_organisation_from_token(params),
-         %User{} = user <- Account.registration(params, org),
+    with {:ok, %{organisations: organisations, user: %User{} = user}} <-
+           Account.registration(params),
          {:ok, token, _claims} <-
            Account.authenticate(%{user: user, password: params["password"]}) do
-      pid = self()
-
-      Task.start_link(fn ->
-        send(pid, {:status, "Deleting Auth Token"})
-        Account.delete_auth_token!(token)
-      end)
-
       conn
       |> put_status(:created)
-      |> render("create.json", user: user, token: token)
+      |> render("create.json", user: user, token: token, organisations: organisations)
     end
   end
 end

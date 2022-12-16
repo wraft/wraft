@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationView do
   """
   use WraftDocWeb, :view
 
-  def render("create.json", %{user: user, token: token}) do
+  def render("create.json", %{user: user, token: token, organisations: organisations}) do
     %{
       token: token,
       user: %{
@@ -13,13 +13,20 @@ defmodule WraftDocWeb.Api.V1.RegistrationView do
         email: user.email,
         email_verify: user.email_verify,
         inserted_at: user.inserted_at,
-        updated_at: user.updated_at,
-        roles: render_many(user.roles, __MODULE__, "role.json", as: :role)
-      }
+        updated_at: user.updated_at
+        # TODO
+        #  roles: render_many(user.roles, __MODULE__, "role.json", as: :role)
+      },
+      organisations:
+        render_many(organisations, __MODULE__, "organisation.json", as: :organisation)
     }
   end
 
-  def render("role.json", %{role: role}) do
-    %{id: role.id, name: role.name}
+  def render("organisation.json", %{organisation: organisation}) do
+    %{id: organisation.id, name: organisation.name}
   end
+
+  # def render("role.json", %{role: role}) do
+  #   %{id: role.id, name: role.name}
+  # end
 end

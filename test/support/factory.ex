@@ -4,51 +4,50 @@ defmodule WraftDoc.Factory do
   """
   use ExMachina.Ecto, repo: WraftDoc.Repo
 
-  alias WraftDoc.{
-    Account.Activity,
-    Account.AuthToken,
-    Account.Country,
-    Account.Profile,
-    Account.Role,
-    Account.RoleGroup,
-    Account.User,
-    Account.User.Audience,
-    Account.UserRole,
-    Authorization.Permission,
-    Authorization.Resource,
-    Document.Asset,
-    Document.Block,
-    Document.BlockTemplate,
-    Document.CollectionForm,
-    Document.CollectionFormField,
-    Document.Comment,
-    Document.ContentType,
-    Document.ContentTypeField,
-    Document.ContentTypeRole,
-    Document.Counter,
-    Document.DataTemplate,
-    Document.Engine,
-    Document.FieldType,
-    Document.Instance,
-    Document.Instance.History,
-    Document.Instance.Version,
-    Document.InstanceApprovalSystem,
-    Document.Layout,
-    Document.LayoutAsset,
-    Document.OrganisationField,
-    Document.Pipeline,
-    Document.Pipeline.Stage,
-    Document.Pipeline.TriggerHistory,
-    Document.Theme,
-    Enterprise.ApprovalSystem,
-    Enterprise.Flow,
-    Enterprise.Flow.State,
-    Enterprise.Membership,
-    Enterprise.Membership.Payment,
-    Enterprise.Organisation,
-    Enterprise.Plan,
-    Enterprise.Vendor
-  }
+  alias WraftDoc.Account.Activity
+  alias WraftDoc.Account.AuthToken
+  alias WraftDoc.Account.Country
+  alias WraftDoc.Account.Profile
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Account.RoleGroup
+  alias WraftDoc.Account.User
+  alias WraftDoc.Account.User.Audience
+  alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.Account.UserRole
+  alias WraftDoc.Authorization.Permission
+  alias WraftDoc.Authorization.Resource
+  alias WraftDoc.Document.Asset
+  alias WraftDoc.Document.Block
+  alias WraftDoc.Document.BlockTemplate
+  alias WraftDoc.Document.CollectionForm
+  alias WraftDoc.Document.CollectionFormField
+  alias WraftDoc.Document.Comment
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.ContentTypeField
+  alias WraftDoc.Document.ContentTypeRole
+  alias WraftDoc.Document.Counter
+  alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.Document.Engine
+  alias WraftDoc.Document.FieldType
+  alias WraftDoc.Document.Instance
+  alias WraftDoc.Document.Instance.History
+  alias WraftDoc.Document.Instance.Version
+  alias WraftDoc.Document.InstanceApprovalSystem
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Document.LayoutAsset
+  alias WraftDoc.Document.OrganisationField
+  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Document.Pipeline.Stage
+  alias WraftDoc.Document.Pipeline.TriggerHistory
+  alias WraftDoc.Document.Theme
+  alias WraftDoc.Enterprise.ApprovalSystem
+  alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Enterprise.Membership
+  alias WraftDoc.Enterprise.Membership.Payment
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Enterprise.Plan
+  alias WraftDoc.Enterprise.Vendor
 
   def user_factory do
     %User{
@@ -79,6 +78,13 @@ defmodule WraftDoc.Factory do
     %UserRole{
       user: build(:user),
       role: build(:role)
+    }
+  end
+
+  def user_organisation_factory do
+    %UserOrganisation{
+      user: build(:user),
+      organisation: build(:organisation)
     }
   end
 

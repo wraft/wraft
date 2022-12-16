@@ -1,7 +1,8 @@
 defmodule WraftDoc.Enterprise.OrganisationTest do
   use WraftDoc.ModelCase
   @moduletag :enterprise
-  alias WraftDoc.{Enterprise.Organisation, Repo}
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Repo
 
   @valid_attrs %{
     name: "Company",
@@ -12,36 +13,71 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
     gstin: "n1235kjqw81",
     corporate_id: "F5783NJUG",
     phone: "9090909090",
-    email: "hello@comapny.com"
+    email: "hello@company.com"
+  }
+
+  @valid_attrs_personal %{
+    name: "Personal",
+    email: "hello@company.com"
   }
 
   @invalid_attrs %{name: ""}
 
-  test "changeset with valid attributes" do
-    changeset = Organisation.changeset(%Organisation{}, @valid_attrs)
-    assert changeset.valid?
+  describe "changeset/2" do
+    test "changeset with valid attributes" do
+      changeset = Organisation.changeset(%Organisation{}, @valid_attrs)
+      assert changeset.valid?
+    end
+
+    test "changeset with invalid attributes" do
+      changeset = Organisation.changeset(%Organisation{}, @invalid_attrs)
+      refute changeset.valid?
+    end
+
+    test "checks organisation name unique constraint" do
+      {:ok, _} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
+
+      {:error, changeset} =
+        %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
+
+      assert "Organisation Already Registered." in errors_on(
+               changeset,
+               :legal_name
+             )
+    end
+
+    test "checks GSTIN unique constraint" do
+      params = Map.put(@valid_attrs, :name, "Company 2")
+      {:ok, _} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
+      {:error, changeset} = %Organisation{} |> Organisation.changeset(params) |> Repo.insert()
+
+      assert "GSTIN Already Registered" in errors_on(changeset, :gstin)
+    end
   end
 
-  test "changeset with invalid attributes" do
-    changeset = Organisation.changeset(%Organisation{}, @invalid_attrs)
-    refute changeset.valid?
-  end
+  describe "personal_organisation_changeset/2" do
+    test "changeset with valid attributes" do
+      changeset =
+        Organisation.personal_organisation_changeset(%Organisation{}, @valid_attrs_personal)
 
-  test "test organisation name unique constraint" do
-    {:ok, _} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
-    {:error, changeset} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
+      assert changeset.valid?
+    end
 
-    assert "Organisation Already Registered." in errors_on(
-             changeset,
-             :legal_name
-           )
-  end
+    test "changeset with invalid attributes" do
+      changeset = Organisation.personal_organisation_changeset(%Organisation{}, @invalid_attrs)
+      refute changeset.valid?
+    end
 
-  test "test GSTIN unique constraint" do
-    params = Map.put(@valid_attrs, :name, "Comapny 2")
-    {:ok, _} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
-    {:error, changeset} = %Organisation{} |> Organisation.changeset(params) |> Repo.insert()
+    test "returns error changeset when all the required fields are missing" do
+      changeset = Organisation.personal_organisation_changeset(%Organisation{}, %{})
+      assert "can't be blank" in errors_on(changeset, :name)
+      assert "can't be blank" in errors_on(changeset, :email)
+    end
 
-    assert "GSTIN Already Registered" in errors_on(changeset, :gstin)
+    test "returns error on incorrect personal organisation name" do
+      params = Map.put(@valid_attrs_personal, :name, "Not Personal")
+      changeset = Organisation.personal_organisation_changeset(%Organisation{}, params)
+      assert "has invalid format" == Enum.at(errors_on(changeset, :name), 0)
+    end
   end
 end
