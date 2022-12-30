@@ -2,6 +2,7 @@ defmodule WraftDoc.AccountTest do
   use WraftDoc.DataCase, async: true
   alias WraftDoc.Account
   alias WraftDoc.Account.AuthToken
+  alias WraftDoc.Workers.EmailWorker
 
   @moduletag :account
   @valid_attrs %{
@@ -337,7 +338,7 @@ defmodule WraftDoc.AccountTest do
     test "create token when the email of a valid user is given" do
       user = insert(:user)
       token = Account.create_password_token(%{"email" => user.email})
-      refute token.value == nil
+      assert token.value != nil
       assert token.user.email == user.email
       assert token.token_type == :password_verify
     end
@@ -350,6 +351,70 @@ defmodule WraftDoc.AccountTest do
     test "return error for invalid attrs" do
       response = Account.create_password_token(%{})
       assert response == {:error, :invalid_email}
+    end
+  end
+
+  describe "create_email_verification_token/1" do
+    test "create token when the email of a valid user is given" do
+      user = insert(:user)
+      {:ok, token} = Account.create_email_verification_token(user.email)
+
+      {:ok, %{email: email}} = Account.check_token(token.value, :email_verify)
+
+      assert user.email == email
+      assert token.value != nil
+      assert token.user_id == user.id
+      assert token.token_type == :email_verify
+    end
+
+    test "return error when the email given is not of valid user" do
+      response = Account.create_email_verification_token("testamail@xyz.com")
+      assert response == {:error, :invalid_email}
+    end
+
+    test "return error for invalid attrs" do
+      response = Account.create_email_verification_token("invalid email format")
+      assert response == {:error, :invalid_email}
+    end
+  end
+
+  describe "send_email/2" do
+    test "creates email background job for valid email and token" do
+      token =
+        WraftDoc.create_phx_token("organisation_invite", %{
+          email: @email
+        })
+
+      auth_token = insert(:auth_token, value: token, token_type: "email_verify")
+
+      {:ok, job} = Account.send_email(@email, auth_token)
+
+      assert job.args == %{
+               email: @email,
+               token: token
+             }
+
+      assert_enqueued(
+        worker: EmailWorker,
+        args: %{email: job.args.email, token: job.args.token},
+        queue: :mailer
+      )
+    end
+  end
+
+  describe "send_password_reset_mail/1" do
+    test "creates email background job for valid token" do
+      auth_token = insert(:auth_token, token_type: "password_verify")
+
+      {:ok, job} = Account.send_password_reset_mail(auth_token)
+
+      assert job.args == %{email: "wraftuser-0@wmail.com", name: "wrafts user", token: "token"}
+
+      assert_enqueued(
+        worker: EmailWorker,
+        args: %{email: job.args.email, token: job.args.token, name: job.args.name},
+        queue: :mailer
+      )
     end
   end
 
