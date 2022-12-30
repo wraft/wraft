@@ -5,7 +5,6 @@ defmodule WraftDoc.EnterpriseTest do
   use WraftDoc.DataCase
   use ExUnit.Case
   @moduletag :enterprise
-  use Bamboo.Test
 
   alias WraftDoc.Account.AuthToken
   alias WraftDoc.Enterprise

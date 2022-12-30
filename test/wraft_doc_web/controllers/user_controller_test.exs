@@ -3,7 +3,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
   import WraftDoc.Factory
-  alias WraftDoc.{Account.AuthToken, Repo}
+  alias WraftDoc.Account.AuthToken
+  alias WraftDoc.Repo
 
   setup %{conn: conn} do
     profile = insert(:profile)
@@ -84,7 +85,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   end
 
   describe "me/2" do
-    test "returns the current logined user", %{conn: conn} do
+    test "returns the current logged in user", %{conn: conn} do
       user = conn.assigns.current_user
       insert(:membership, organisation: user.organisation)
       ur = insert(:user_role, user: user)
@@ -117,7 +118,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       count_after = AuthToken |> Repo.all() |> length()
 
       assert json_response(conn, 200)["info"] ==
-               "A password reset link has been sent to your email.!"
+               "Success"
 
       assert count_before + 1 == count_after
     end
@@ -351,6 +352,83 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
       conn = put(conn, Routes.v1_user_path(conn, :remove, user.id))
       assert json_response(conn, 200)["deleted_at"] != nil
+    end
+  end
+
+  describe "resend_email_token/2" do
+    test "generates token and renders confirmation message with valid token" do
+      insert(:user, email: "temp@gmail.com")
+      {:ok, auth_token} = WraftDoc.Account.create_email_verification_token("temp@gmail.com")
+
+      conn = build_conn()
+
+      count_before = AuthToken |> Repo.all() |> length()
+
+      conn =
+        post(conn, Routes.v1_user_path(conn, :resend_email_token, %{token: auth_token.value}))
+
+      count_after = AuthToken |> Repo.all() |> length()
+
+      assert json_response(conn, 200)["info"] ==
+               "Success"
+
+      assert count_before + 1 == count_after
+    end
+
+    test "returns error for invalid token" do
+      conn = build_conn()
+
+      count_before = AuthToken |> Repo.all() |> length()
+
+      conn = post(conn, Routes.v1_user_path(conn, :resend_email_token, "invalid_token", %{}))
+
+      count_after = AuthToken |> Repo.all() |> length()
+
+      assert json_response(conn, 404) == "Not Found"
+
+      assert count_before == count_after
+    end
+  end
+
+  describe "verify_email_token/2" do
+    test "returns email verified with valid token" do
+      conn = build_conn()
+      user = insert(:user)
+
+      token =
+        WraftDoc.create_phx_token("email_verification", %{
+          email: user.email
+        })
+
+      insert(:auth_token, value: token, token_type: "email_verify")
+      conn = get(conn, Routes.v1_user_path(conn, :verify_email_token, token))
+      assert json_response(conn, 200)["info"] == "Email Verified"
+      assert json_response(conn, 200)["verification_status"] == true
+    end
+
+    test "returns error with invalid token" do
+      conn = build_conn()
+      insert(:auth_token, value: "_3_-_A==", token_type: "email_verify")
+      conn = get(conn, Routes.v1_user_path(conn, :verify_email_token, "_3_-_A=="))
+      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+    end
+
+    test "returns error with expired token" do
+      conn = build_conn()
+      user = insert(:user)
+
+      token =
+        WraftDoc.create_phx_token(
+          "email_verification",
+          %{
+            email: user.email
+          },
+          signed_at: -861
+        )
+
+      insert(:auth_token, value: token, token_type: "email_verify")
+      conn = get(conn, Routes.v1_user_path(conn, :verify_email_token, token))
+      assert json_response(conn, 400)["errors"] == "Expired.!"
     end
   end
 

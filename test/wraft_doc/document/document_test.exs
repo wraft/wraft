@@ -3,35 +3,31 @@ defmodule WraftDoc.DocumentTest do
   import WraftDoc.Factory
   use ExUnit.Case
   @moduletag :document
-  use Bamboo.Test
-
-  alias WraftDoc.{
-    Document,
-    Document.Asset,
-    Document.Block,
-    Document.BlockTemplate,
-    Document.CollectionForm,
-    Document.CollectionFormField,
-    Document.Comment,
-    Document.ContentType,
-    Document.ContentTypeField,
-    Document.Counter,
-    Document.DataTemplate,
-    Document.FieldType,
-    Document.Instance,
-    Document.Instance.History,
-    Document.Instance.Version,
-    Document.InstanceApprovalSystem,
-    Document.Layout,
-    Document.LayoutAsset,
-    Document.Pipeline,
-    Document.Pipeline.Stage,
-    Document.Pipeline.TriggerHistory,
-    Document.Theme,
-    Repo
-  }
 
   alias WraftDoc.Account.Role
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Asset
+  alias WraftDoc.Document.Block
+  alias WraftDoc.Document.BlockTemplate
+  alias WraftDoc.Document.CollectionForm
+  alias WraftDoc.Document.CollectionFormField
+  alias WraftDoc.Document.Comment
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.ContentTypeField
+  alias WraftDoc.Document.Counter
+  alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.Document.FieldType
+  alias WraftDoc.Document.Instance
+  alias WraftDoc.Document.Instance.History
+  alias WraftDoc.Document.Instance.Version
+  alias WraftDoc.Document.InstanceApprovalSystem
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Document.LayoutAsset
+  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Document.Pipeline.Stage
+  alias WraftDoc.Document.Pipeline.TriggerHistory
+  alias WraftDoc.Document.Theme
+  alias WraftDoc.Repo
 
   @valid_layout_attrs %{
     "name" => "layout name",

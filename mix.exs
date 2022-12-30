@@ -100,7 +100,7 @@ defmodule WraftDoc.Mixfile do
       # Background jobs
       {:oban, "~> 2.13.4"},
       # Email client
-      {:bamboo, "~> 2.2.0"},
+      {:swoosh, "~> 1.8.3"},
       {:httpoison, "~> 1.8.2"},
       {:poison, "~> 5.0.0", override: true},
 
