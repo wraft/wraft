@@ -11,8 +11,8 @@ defmodule WraftDoc.Account.UserTest do
     # 6. Invalid email address
     # 7. Special characters in name
     # 8. Special characters in lastname
-    # 9. Uniquness of email address
-    # 10. Uniquness of mobile number
+    # 9. Uniqueness of email address
+    # 10. Uniqueness of mobile number
   """
   alias WraftDoc.Account.User
 

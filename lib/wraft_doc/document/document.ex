@@ -6,41 +6,39 @@ defmodule WraftDoc.Document do
   import Ecto.Query
   require Logger
 
-  alias WraftDoc.{
-    Account.Role,
-    Account.User,
-    Document.Asset,
-    Document.Block,
-    Document.BlockTemplate,
-    Document.CollectionForm,
-    Document.CollectionFormField,
-    Document.Comment,
-    Document.ContentType,
-    Document.ContentTypeField,
-    Document.ContentTypeRole,
-    Document.Counter,
-    Document.DataTemplate,
-    Document.Engine,
-    Document.FieldType,
-    Document.Instance,
-    Document.Instance.History,
-    Document.Instance.Version,
-    Document.InstanceApprovalSystem,
-    Document.Layout,
-    Document.LayoutAsset,
-    Document.OrganisationField,
-    Document.Pipeline,
-    Document.Pipeline.Stage,
-    Document.Pipeline.TriggerHistory,
-    Document.Theme,
-    Document.ThemeAsset,
-    Enterprise,
-    Enterprise.ApprovalSystem,
-    Enterprise.Flow,
-    Enterprise.Flow.State,
-    Repo,
-    Workers.BulkWorker
-  }
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Account.User
+  alias WraftDoc.Document.Asset
+  alias WraftDoc.Document.Block
+  alias WraftDoc.Document.BlockTemplate
+  alias WraftDoc.Document.CollectionForm
+  alias WraftDoc.Document.CollectionFormField
+  alias WraftDoc.Document.Comment
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.ContentTypeField
+  alias WraftDoc.Document.ContentTypeRole
+  alias WraftDoc.Document.Counter
+  alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.Document.Engine
+  alias WraftDoc.Document.FieldType
+  alias WraftDoc.Document.Instance
+  alias WraftDoc.Document.Instance.History
+  alias WraftDoc.Document.Instance.Version
+  alias WraftDoc.Document.InstanceApprovalSystem
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Document.LayoutAsset
+  alias WraftDoc.Document.OrganisationField
+  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Document.Pipeline.Stage
+  alias WraftDoc.Document.Pipeline.TriggerHistory
+  alias WraftDoc.Document.Theme
+  alias WraftDoc.Document.ThemeAsset
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.ApprovalSystem
+  alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Repo
+  alias WraftDoc.Workers.BulkWorker
 
   alias WraftDocWeb.AssetUploader
 

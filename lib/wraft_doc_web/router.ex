@@ -23,6 +23,10 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.ValidMembershipCheck)
   end
 
+  pipeline :email_verify do
+    plug(WraftDocWeb.Plug.VerifiedEmailCheck)
+  end
+
   pipeline :ex_audit_track do
     plug(WraftDocWeb.Plug.ExAuditTrack)
   end
@@ -75,7 +79,10 @@ defmodule WraftDocWeb.Router do
       get("/user/password/reset/:token", UserController, :verify_token)
       # Reset the password
       post("/user/password/reset", UserController, :reset)
-
+      # Generate Email Verification Token
+      post("/user/resend_email_token", UserController, :resend_email_token)
+      # Verify Email Verification Token
+      get("/user/verify_email_token/:token", UserController, :verify_email_token)
       # Show and index plans
       resources("/plans", PlanController, only: [:show, :index])
       post("/notifications", NotificationController, :create)
@@ -86,7 +93,7 @@ defmodule WraftDocWeb.Router do
 
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth, :valid_membership, :ex_audit_track])
+    pipe_through([:api, :api_auth, :valid_membership, :ex_audit_track, :email_verify])
 
     scope "/v1", Api.V1, as: :v1 do
       # Current user details
@@ -260,7 +267,7 @@ defmodule WraftDocWeb.Router do
 
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth, :super_admin, :ex_audit_track])
+    pipe_through([:api, :api_auth, :super_admin, :ex_audit_track, :email_verify])
 
     scope "/v1", Api.V1, as: :v1 do
       resources("/resources", ResourceController, only: [:create, :index, :show, :update, :delete])

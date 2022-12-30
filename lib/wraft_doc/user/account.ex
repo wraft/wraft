@@ -22,6 +22,7 @@ defmodule WraftDoc.Account do
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Repo
+  alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Endpoint
 
   @activity_models %{
@@ -491,6 +492,75 @@ defmodule WraftDoc.Account do
   def create_password_token(_), do: {:error, :invalid_email}
 
   @doc """
+   Create email verification token and send email
+  """
+  @spec create_token_and_send_email(binary()) :: {:ok, Oban.Job.t()} | {:error, atom()}
+  def create_token_and_send_email(email) do
+    email
+    |> create_email_verification_token()
+    |> case do
+      {:ok, %AuthToken{} = auth_token} ->
+        send_email(email, auth_token)
+
+      {:error, :invalid_email} ->
+        {:error, :invalid_email}
+        # TODO add logger for testing
+    end
+  end
+
+  @doc """
+  Generate and insert auth_token for email verification
+  """
+  @spec create_email_verification_token(binary()) :: {:ok, AuthToken.t()} | {:error, atom()}
+  def create_email_verification_token(email) do
+    case get_user_by_email(email) do
+      %User{} = user ->
+        token =
+          WraftDoc.create_phx_token("email_verification", %{
+            email: user.email
+          })
+
+        params = %{value: token, token_type: "email_verify"}
+
+        auth_token = insert_auth_token!(user, params)
+
+        {:ok, auth_token}
+
+      nil ->
+        {:error, :invalid_email}
+    end
+  end
+
+  @doc """
+   Enqueue verification email to be sent
+  """
+  @spec send_email(binary(), AuthToken.t()) :: {:ok, Oban.Job.t()}
+  def send_email(email, %AuthToken{} = token) do
+    %{email: email, token: token.value}
+    |> EmailWorker.new()
+    |> Oban.insert()
+  end
+
+  @doc """
+    Enqueue password reset email to be sent
+  """
+  @spec send_password_reset_mail(AuthToken.t()) :: {:ok, Oban.Job.t()}
+  def send_password_reset_mail(%AuthToken{} = token) do
+    %{email: token.user.email, token: token.value, name: token.user.name}
+    |> EmailWorker.new()
+    |> Oban.insert()
+  end
+
+  @doc """
+     Update email verification status to true for the user
+  """
+  @spec update_email_status(User.t()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  def update_email_status(user) do
+    changeset = User.email_status_update_changeset(user, %{email_verify: true})
+    Repo.update(changeset)
+  end
+
+  @doc """
   Validate the phoenix token.
   """
   @spec check_token(String.t(), atom()) :: AuthToken.t() | {:ok, any()} | {:error, atom()}
@@ -533,7 +603,28 @@ defmodule WraftDoc.Account do
     end
   end
 
-  defp get_auth_token(token, token_type) do
+  def check_token(token, token_type) when token_type == :email_verify do
+    case get_auth_token(token, token_type) do
+      nil ->
+        {:error, :fake}
+
+      token_struct ->
+        {:ok, decoded_token} = Base.url_decode64(token_struct.value)
+
+        case phoenix_token_verify(decoded_token, "email_verification", 7200) do
+          {:ok, payload} ->
+            {:ok, payload}
+
+          {:error, :expired} ->
+            {:error, :expired}
+
+          _ ->
+            {:error, :fake}
+        end
+    end
+  end
+
+  def get_auth_token(token, token_type) do
     query =
       from(
         tok in AuthToken,

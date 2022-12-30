@@ -86,6 +86,12 @@ defmodule WraftDoc.Account.User do
     |> validate_length(:name, min: 2)
   end
 
+  def email_status_update_changeset(user, attrs \\ %{}) do
+    user
+    |> cast(attrs, [:email_verify])
+    |> validate_required([:email_verify])
+  end
+
   def password_changeset(password, attrs \\ %{}) do
     password
     |> cast(attrs, [:password, :encrypted_password])

@@ -8,8 +8,11 @@ defmodule WraftDocWeb.Api.V1.UserController do
   plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   import Ecto.Query, warn: false
-  alias WraftDoc.{Account, Account.AuthToken, Account.User, Document}
-  alias WraftDocWeb.{Mailer, Mailer.Email}
+  alias WraftDoc.Account
+  alias WraftDoc.Account.AuthToken
+  alias WraftDoc.Account.User
+  alias WraftDoc.Document
+
   action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do
@@ -212,7 +215,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
           description("Response for reset password request")
 
           properties do
-            info(:string, "Response info")
+            info(:string, "Response Info")
           end
 
           example(%{
@@ -225,7 +228,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
           description("Token verified info")
 
           properties do
-            info(:string, "info")
+            info(:string, "Info")
           end
         end,
       UpdatePasswordRequest:
@@ -237,6 +240,30 @@ defmodule WraftDocWeb.Api.V1.UserController do
             current_password(:string, "Current password", required: true)
             password(:string, "Password to update", required: true)
           end
+        end,
+      EmailTokenVerifiedInfo:
+        swagger_schema do
+          title("Email Token verified info")
+          description("Email Token verified info")
+
+          properties do
+            info(:string, "Info")
+            verification_status(:boolean, true)
+          end
+        end,
+      ResendEmailTokenRequest:
+        swagger_schema do
+          title("Resend Email Token")
+          description("Resend token for account verification")
+
+          properties do
+            token(:string, "Token is given in email", required: true)
+          end
+
+          example(%{
+            token:
+              "asddff23a2ds_f3asdf3a21fds23f2as32f3as3f213a2df3s2f3a213sad12f13df13adsf-21f1d3sf"
+          })
         end
     }
   end
@@ -347,9 +374,11 @@ defmodule WraftDocWeb.Api.V1.UserController do
   @spec generate_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def generate_token(conn, params) do
     with %AuthToken{} = auth_token <- Account.create_password_token(params) do
-      auth_token |> Email.password_reset() |> Mailer.deliver_now()
+      Account.send_password_reset_mail(auth_token)
 
-      render(conn, "auth_token.json", auth_token: auth_token)
+      conn
+      |> put_resp_header("content-type", "application/json")
+      |> send_resp(200, Jason.encode!(%{info: "Success"}))
     end
   end
 
@@ -358,7 +387,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   """
   swagger_path :verify_token do
     get("/user/password/reset/{token}")
-    summary("Veriy password")
+    summary("Verify password")
     description("Verify password reset link")
 
     parameters do
@@ -385,7 +414,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     description("Reseting password of user")
 
     parameters do
-      token(:body, Schema.ref(:ResetPasswordRequest), "Password deteails to reset", required: true)
+      token(:body, Schema.ref(:ResetPasswordRequest), "Password details to reset", required: true)
     end
 
     response(200, "Ok", Schema.ref(:User))
@@ -429,7 +458,6 @@ defmodule WraftDocWeb.Api.V1.UserController do
   @doc """
   Search a user by there name
   """
-
   swagger_path :search do
     get("/users/search")
     summary("Search User")
@@ -480,6 +508,58 @@ defmodule WraftDocWeb.Api.V1.UserController do
   def remove(conn, %{"id" => user_id}) do
     with %User{} = user <- Account.remove_user(conn.assigns.current_user, user_id) do
       render(conn, "remove.json", user: user)
+    end
+  end
+
+  @doc """
+    Resend email token from expired token sent to mail
+  """
+  swagger_path :resend_email_token do
+    post("/user/resend_email_token")
+    summary("Resend email token")
+    description("Api to resend the email token especially if the token is expired")
+
+    parameters do
+      token(:body, Schema.ref(:ResendEmailTokenRequest), "Token", required: true)
+    end
+
+    response(200, "ok", Schema.ref(:TokenVerifiedInfo))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec resend_email_token(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def resend_email_token(conn, %{"token" => token}) do
+    with %AuthToken{} = auth_token <- Account.get_auth_token(token, :email_verify),
+         %User{} = user <- Account.get_user(auth_token.user_id),
+         {:ok, %Oban.Job{}} <- Account.create_token_and_send_email(user.email) do
+      conn
+      |> put_resp_header("content-type", "application/json")
+      |> send_resp(200, Jason.encode!(%{info: "Success"}))
+    end
+  end
+
+  @doc """
+    Verify email token using token sent to mail
+  """
+  swagger_path :verify_email_token do
+    get("/user/verify_email_token/{token}")
+    summary("Verify email token")
+    description("Api to verify whether the user email to validate the account")
+
+    parameters do
+      token(:path, :string, "Token", required: true)
+    end
+
+    response(200, "ok", Schema.ref(:EmailTokenVerifiedInfo))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec verify_email_token(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def verify_email_token(conn, %{"token" => token}) do
+    with {:ok, %{email: email}} <- Account.check_token(token, :email_verify),
+         %User{} = user <- Account.get_user_by_email(email),
+         {:ok, %User{email_verify: true} = user} <- Account.update_email_status(user) do
+      render(conn, "check_email_token.json", verification_status: user.email_verify)
     end
   end
 end

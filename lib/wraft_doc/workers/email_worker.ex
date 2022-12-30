@@ -3,7 +3,9 @@ defmodule WraftDoc.Workers.EmailWorker do
   Oban worker for sending emails.
   """
   use Oban.Worker, queue: :mailer
-  alias WraftDocWeb.{Mailer, Mailer.Email}
+  require Logger
+  alias WraftDocWeb.Mailer
+  alias WraftDocWeb.Mailer.Email
 
   @impl Oban.Worker
   def perform(%Job{
@@ -14,15 +16,13 @@ defmodule WraftDoc.Workers.EmailWorker do
           "token" => token
         }
       }) do
-    IO.puts("Job started..!")
+    Logger.info("Organisation invite mailer job started...!")
 
     org_name
     |> Email.invite_email(user_name, email, token)
-    |> Mailer.deliver_later()
+    |> Mailer.deliver()
 
-    IO.puts("Job finished..!")
-
-    :ok
+    Logger.info("Organisation invite mailer job end...!")
   end
 
   def perform(%Job{
@@ -32,12 +32,43 @@ defmodule WraftDoc.Workers.EmailWorker do
           "email" => email
         }
       }) do
-    IO.puts("Notification mail job started...!")
+    Logger.info("Notification mailer job started...!")
 
     user_name
     |> Email.notification_email(notification_message, email)
-    |> Mailer.deliver_later()
+    |> Mailer.deliver()
 
-    IO.puts("Notification mailer job end...!")
+    Logger.info("Notification mailer job end...!")
+  end
+
+  def perform(%Job{
+        args: %{
+          "name" => name,
+          "email" => email,
+          "token" => token
+        }
+      }) do
+    Logger.info("Password reset mailer job started")
+
+    name
+    |> Email.password_reset(token, email)
+    |> Mailer.deliver()
+
+    Logger.info("Password reset mailer job end")
+  end
+
+  def perform(%Job{
+        args: %{
+          "token" => token,
+          "email" => email
+        }
+      }) do
+    Logger.info("Email verification mailer job started...!")
+
+    email
+    |> Email.email_verification(token)
+    |> Mailer.deliver()
+
+    Logger.info("Email verification mailer job end...!")
   end
 end
