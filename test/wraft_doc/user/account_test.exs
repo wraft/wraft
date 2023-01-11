@@ -237,10 +237,12 @@ defmodule WraftDoc.AccountTest do
   describe "authenticate/1" do
     test "successfully authenticate when correct password is given" do
       user = insert(:user)
+      personal_org = insert(:organisation, name: "Personal", email: user.email)
       response = Account.authenticate(%{user: user, password: "encrypt"})
 
       assert tuple_size(response) == 3
       assert elem(response, 0) == :ok
+      assert elem(response, 2)["organisation_id"] == personal_org.id
     end
 
     test "does not authenticate when nil or empty password is given" do

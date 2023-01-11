@@ -329,6 +329,14 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+  Get personal organisation from user email
+  """
+  @spec get_personal_org_by_email(binary) :: Organisation.t() | nil
+  def get_personal_org_by_email(email) do
+    Repo.get_by(Organisation, email: email, name: "Personal")
+  end
+
+  @doc """
   Create an Organisation
   """
   @spec create_organisation(User.t(), map) :: Organisation.t()

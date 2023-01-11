@@ -220,7 +220,8 @@ defmodule WraftDoc.Account do
   def authenticate(%{user: user, password: password}) do
     case Bcrypt.verify_pass(password, user.encrypted_password) do
       true ->
-        WraftDocWeb.Guardian.encode_and_sign(user)
+        personal_org = Enterprise.get_personal_org_by_email(user.email)
+        WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: personal_org.id})
 
       _ ->
         {:error, :invalid}
