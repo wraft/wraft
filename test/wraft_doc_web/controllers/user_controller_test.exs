@@ -9,6 +9,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   setup %{conn: conn} do
     profile = insert(:profile)
     user = Repo.preload(profile.user, [:profile, :organisation])
+    insert(:organisation, name: "Personal", email: user.email)
 
     conn =
       conn
@@ -28,6 +29,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   describe "signin/2" do
     test "succesfully logs in with correct email-password combination" do
       user = insert(:user)
+      insert(:organisation, name: "Personal", email: user.email)
 
       conn = build_conn()
 

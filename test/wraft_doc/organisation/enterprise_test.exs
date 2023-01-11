@@ -167,6 +167,13 @@ defmodule WraftDoc.EnterpriseTest do
     assert organisation.name == g_organisation.name
   end
 
+  test "get personal organisation by email returns personal organisation" do
+    organisation = insert(:organisation, name: "Personal")
+    personal_org = Enterprise.get_personal_org_by_email(organisation.email)
+    assert personal_org.name == "Personal"
+    assert personal_org.id == organisation.id
+  end
+
   test "create organisation creates a organisation " do
     user = insert(:user)
 
