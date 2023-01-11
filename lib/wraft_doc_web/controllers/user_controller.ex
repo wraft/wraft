@@ -287,7 +287,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   @spec signin(Plug.Conn.t(), map) :: Plug.Conn.t()
   def signin(conn, params) do
     with %User{} = user <- Account.find(params["email"]),
-         {:ok, token, _claims} <-
+         {:ok, token, _} <-
            Account.authenticate(%{user: user, password: params["password"]}) do
       render(conn, "sign-in.json", token: token, user: user)
     end
