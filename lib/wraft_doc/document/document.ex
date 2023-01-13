@@ -47,7 +47,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec create_layout(User.t(), Engine.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
-  def create_layout(%{organisation_id: org_id} = current_user, engine, params) do
+  def create_layout(%{current_org_id: org_id} = current_user, engine, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
@@ -125,7 +125,7 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
           ContentType.t() | {:error, Ecto.Changeset.t()}
-  def create_content_type(%{organisation_id: org_id} = current_user, layout, flow, params) do
+  def create_content_type(%{current_org_id: org_id} = current_user, layout, flow, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
@@ -194,7 +194,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec layout_index(User.t(), map) :: map
-  def layout_index(%{organisation_id: org_id}, params) do
+  def layout_index(%{current_org_id: org_id}, params) do
     query =
       from(l in Layout,
         where: l.organisation_id == ^org_id,
@@ -220,7 +220,7 @@ defmodule WraftDoc.Document do
   Get a layout from its UUID.
   """
   @spec get_layout(binary, User.t()) :: Layout.t()
-  def get_layout(<<_::288>> = id, %{organisation_id: org_id}) do
+  def get_layout(<<_::288>> = id, %{current_org_id: org_id}) do
     case Repo.get_by(Layout, id: id, organisation_id: org_id) do
       %Layout{} = layout ->
         layout
@@ -230,7 +230,7 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def get_layout(_, %{organisation_id: _}), do: {:error, :invalid_id, "Layout"}
+  def get_layout(_, %{current_org_id: _}), do: {:error, :invalid_id, "Layout"}
   def get_layout(_, _), do: {:error, :fake}
 
   @doc """
@@ -306,7 +306,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec content_type_index(User.t(), map) :: map
-  def content_type_index(%{organisation_id: org_id}, params) do
+  def content_type_index(%{current_org_id: org_id}, params) do
     query =
       from(ct in ContentType,
         where: ct.organisation_id == ^org_id,
@@ -334,7 +334,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec get_content_type(User.t(), Ecto.UUID.t()) :: ContentType.t() | nil
-  def get_content_type(%User{organisation_id: org_id}, <<_::288>> = id) do
+  def get_content_type(%User{current_org_id: org_id}, <<_::288>> = id) do
     query = Repo.get_by(ContentType, id: id, organisation_id: org_id)
 
     case query do
@@ -343,7 +343,7 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def get_content_type(%User{organisation_id: _org_id}, _),
+  def get_content_type(%User{current_org_id: _org_id}, _),
     do: {:error, :invalid_id, "ContentType"}
 
   def get_content_type(_, _), do: {:error, :fake}
@@ -363,7 +363,7 @@ defmodule WraftDoc.Document do
   Get a content type field from its UUID.
   """
   @spec get_content_type_field(binary, User.t()) :: ContentTypeField.t()
-  def get_content_type_field(<<_::288>> = id, %{organisation_id: org_id}) do
+  def get_content_type_field(<<_::288>> = id, %{current_org_id: org_id}) do
     query =
       from(cf in ContentTypeField,
         where: cf.id == ^id,
@@ -378,7 +378,7 @@ defmodule WraftDoc.Document do
   end
 
   def get_content_type_field(<<_::288>>, _), do: {:error, :invalid_id, "ContentTypeField"}
-  def get_content_type_field(_, %{organisation_id: _}), do: {:error, :fake}
+  def get_content_type_field(_, %{current_org_id: _}), do: {:error, :fake}
 
   @doc """
   Update a content type.
@@ -758,7 +758,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec instance_index_of_an_organisation(User.t(), map) :: map
-  def instance_index_of_an_organisation(%{organisation_id: org_id}, params) do
+  def instance_index_of_an_organisation(%{current_org_id: org_id}, params) do
     query =
       from(i in Instance,
         join: u in User,
@@ -806,7 +806,7 @@ defmodule WraftDoc.Document do
   """
 
   @spec instance_index(map(), map()) :: map
-  def instance_index(%{organisation_id: org_id}, key, params) do
+  def instance_index(%{current_org_id: org_id}, key, params) do
     query =
       from(i in Instance,
         join: ct in ContentType,
@@ -846,7 +846,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec get_instance(binary, User.t()) :: Instance.t()
-  def get_instance(<<_::288>> = id, %{organisation_id: org_id}) do
+  def get_instance(<<_::288>> = id, %{current_org_id: org_id}) do
     query =
       from(i in Instance,
         where: i.id == ^id,
@@ -860,7 +860,7 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def get_instance(_, %{organisation_id: _}), do: {:error, :invalid_id}
+  def get_instance(_, %{current_org_id: _}), do: {:error, :invalid_id}
   def get_instance(_, _), do: {:error, :fake}
 
   @doc """
@@ -1086,7 +1086,7 @@ defmodule WraftDoc.Document do
   """
   # TODO Improve tests
   @spec create_theme(User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
-  def create_theme(%{organisation_id: org_id} = current_user, params) do
+  def create_theme(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
     update_default_theme(Theme, params)
 
@@ -1142,7 +1142,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec theme_index(User.t(), map) :: map
-  def theme_index(%User{organisation_id: org_id}, params) do
+  def theme_index(%User{current_org_id: org_id}, params) do
     query = from(t in Theme, where: t.organisation_id == ^org_id, order_by: [desc: t.id])
     Repo.paginate(query, params)
   end
@@ -1152,7 +1152,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve test
   @spec get_theme(binary, User.t()) :: Theme.t() | nil
-  def get_theme(theme_uuid, %{organisation_id: org_id}) do
+  def get_theme(theme_uuid, %{current_org_id: org_id}) do
     Repo.get_by(Theme, id: theme_uuid, organisation_id: org_id)
   end
 
@@ -1243,7 +1243,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - imprvove tests
   @spec data_templates_index_of_an_organisation(User.t(), map) :: map
-  def data_templates_index_of_an_organisation(%{organisation_id: org_id}, params) do
+  def data_templates_index_of_an_organisation(%{current_org_id: org_id}, params) do
     query =
       from(dt in DataTemplate,
         join: u in User,
@@ -1262,7 +1262,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - imprvove tests
   @spec get_d_template(User.t(), Ecto.UUID.t()) :: DataTemplat.t() | nil
-  def get_d_template(%User{organisation_id: org_id}, <<_::288>> = d_temp_id) do
+  def get_d_template(%User{current_org_id: org_id}, <<_::288>> = d_temp_id) do
     query =
       from(d in DataTemplate,
         where: d.id == ^d_temp_id,
@@ -1276,7 +1276,7 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def get_d_template(%{organisation_id: _}, _), do: {:error, :invalid_id, "DataTemplate"}
+  def get_d_template(%{current_org_id: _}, _), do: {:error, :invalid_id, "DataTemplate"}
   def get_d_template(_, <<_::288>>), do: {:error, :fake}
   def get_d_template(_, _), do: {:error, :fake}
 
@@ -1324,7 +1324,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - imprvove tests
   @spec create_asset(User.t(), map) :: {:ok, Asset.t()}
-  def create_asset(%{organisation_id: org_id} = current_user, params) do
+  def create_asset(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
@@ -1359,7 +1359,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec asset_index(integer, map) :: map
-  def asset_index(%{organisation_id: organisation_id}, params) do
+  def asset_index(%{current_org_id: organisation_id}, params) do
     query =
       from(a in Asset,
         where: a.organisation_id == ^organisation_id,
@@ -1388,7 +1388,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec get_asset(binary, User.t()) :: Asset.t()
-  def get_asset(<<_::288>> = id, %{organisation_id: org_id}) do
+  def get_asset(<<_::288>> = id, %{current_org_id: org_id}) do
     case Repo.get_by(Asset, id: id, organisation_id: org_id) do
       %Asset{} = asset -> asset
       _ -> {:error, :invalid_id}
@@ -1396,7 +1396,7 @@ defmodule WraftDoc.Document do
   end
 
   def get_asset(<<_::288>>, _), do: {:error, :fake}
-  def get_asset(_, %{organisation_id: _}), do: {:error, :invalid_id}
+  def get_asset(_, %{current_org_id: _}), do: {:error, :invalid_id}
 
   @doc """
   Update an asset.
@@ -1657,7 +1657,7 @@ defmodule WraftDoc.Document do
   Create a Block
   """
   @spec create_block(User.t(), map) :: Block.t()
-  def create_block(%{organisation_id: org_id} = current_user, params) do
+  def create_block(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{organisation_id: org_id})
 
     current_user
@@ -1679,7 +1679,7 @@ defmodule WraftDoc.Document do
   Get a block by id
   """
   @spec get_block(Ecto.UUID.t(), User.t()) :: Block.t()
-  def get_block(<<_::288>> = id, %{organisation_id: org_id}) do
+  def get_block(<<_::288>> = id, %{current_org_id: org_id}) do
     case Repo.get_by(Block, id: id, organisation_id: org_id) do
       %Block{} = block -> block
       _ -> {:error, :invalid_id, "Block"}
@@ -1687,7 +1687,7 @@ defmodule WraftDoc.Document do
   end
 
   def get_block(<<_::288>>, _), do: {:error, :fake}
-  def get_block(_, %{organisation_id: _}), do: {:error, :invalid_id, "Block"}
+  def get_block(_, %{current_org_id: _}), do: {:error, :invalid_id, "Block"}
 
   @doc """
   Update a block
@@ -1888,7 +1888,7 @@ defmodule WraftDoc.Document do
   Get a field type from its UUID.
   """
   @spec get_field_type(binary, User.t()) :: FieldType.t()
-  def get_field_type(<<_::288>> = field_type_id, %{organisation_id: org_id} = _user) do
+  def get_field_type(<<_::288>> = field_type_id, %{current_org_id: org_id} = _user) do
     query =
       from(ft in FieldType,
         where: ft.id == ^field_type_id,
@@ -1904,7 +1904,7 @@ defmodule WraftDoc.Document do
     # Repo.get_by(FieldType, uuid: field_type_uuid, organisation_id: org_id)
   end
 
-  def get_field_type(_, %{organisation_id: _}), do: {:error, :invalid_id, "FieldType"}
+  def get_field_type(_, %{current_org_id: _}), do: {:error, :invalid_id, "FieldType"}
   def get_field_type(_, _), do: {:error, :fake}
 
   @doc """
@@ -2270,7 +2270,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec create_block_template(User.t(), map) :: BlockTemplate.t()
-  def create_block_template(%{organisation_id: org_id} = current_user, params) do
+  def create_block_template(%{current_org_id: org_id} = current_user, params) do
     current_user
     |> build_assoc(:block_templates, organisation_id: org_id)
     |> BlockTemplate.changeset(params)
@@ -2290,7 +2290,7 @@ defmodule WraftDoc.Document do
   Get a block template by its uuid
   """
   @spec get_block_template(Ecto.UUID.t(), BlockTemplate.t()) :: BlockTemplate.t()
-  def get_block_template(<<_::288>> = id, %{organisation_id: org_id}) do
+  def get_block_template(<<_::288>> = id, %{current_org_id: org_id}) do
     case Repo.get_by(BlockTemplate, id: id, organisation_id: org_id) do
       %BlockTemplate{} = block_template -> block_template
       _ -> {:error, :invalid_id, "BlockTemplate"}
@@ -2298,7 +2298,7 @@ defmodule WraftDoc.Document do
   end
 
   def get_block_template(<<_::288>>, _), do: {:error, :invalid_id, "BlockTemplate"}
-  def get_block_template(_, %{organisation_id: _org_id}), do: {:error, :fake}
+  def get_block_template(_, %{current_org_id: _org_id}), do: {:error, :fake}
   def get_block_template(_, _), do: {:error, :invalid_id, "BlockTemplate"}
 
   @doc """
@@ -2330,7 +2330,7 @@ defmodule WraftDoc.Document do
   Index of a block template by organisation
   """
   @spec block_template_index(User.t(), map) :: List.t()
-  def block_template_index(%{organisation_id: org_id}, params) do
+  def block_template_index(%{current_org_id: org_id}, params) do
     query =
       from(bt in BlockTemplate, where: bt.organisation_id == ^org_id, order_by: [desc: bt.id])
 
@@ -2341,7 +2341,7 @@ defmodule WraftDoc.Document do
   Create a comment
   """
   # TODO - improve tests
-  def create_comment(%{organisation_id: org_id} = current_user, params) do
+  def create_comment(%{current_org_id: org_id} = current_user, params) do
     params = Map.put(params, "organisation_id", org_id)
 
     current_user
@@ -2364,7 +2364,7 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec get_comment(Ecto.UUID.t(), User.t()) :: Comment.t() | nil
-  def get_comment(<<_::288>> = id, %{organisation_id: org_id}) do
+  def get_comment(<<_::288>> = id, %{current_org_id: org_id}) do
     case Repo.get_by(Comment, id: id, organisation_id: org_id) do
       %Comment{} = comment -> comment
       _ -> {:error, :invalid_id, "Comment"}
@@ -2372,7 +2372,7 @@ defmodule WraftDoc.Document do
   end
 
   def get_comment(<<_::288>>, _), do: {:error, :fake}
-  def get_comment(_, %{organisation_id: _}), do: {:error, :invalid_id, "Comment"}
+  def get_comment(_, %{current_org_id: _}), do: {:error, :invalid_id, "Comment"}
   def get_comment(_, _), do: {:error, :invalid_id, "Comment"}
 
   @doc """
@@ -2414,7 +2414,7 @@ defmodule WraftDoc.Document do
   Comments under a master
   """
   # TODO - improve tests
-  def comment_index(%{organisation_id: org_id}, %{"master_id" => master_id} = params) do
+  def comment_index(%{current_org_id: org_id}, %{"master_id" => master_id} = params) do
     query =
       from(c in Comment,
         where: c.organisation_id == ^org_id,
@@ -2427,7 +2427,7 @@ defmodule WraftDoc.Document do
     Repo.paginate(query, params)
   end
 
-  def comment_index(%{organisation_id: _}, _), do: {:error, :invalid_data}
+  def comment_index(%{current_org_id: _}, _), do: {:error, :invalid_data}
   def comment_index(_, %{"master_id" => _}), do: {:error, :fake}
   def comment_index(_, _), do: {:error, :invalid_data}
 
@@ -2435,9 +2435,9 @@ defmodule WraftDoc.Document do
    Replies under a comment
   """
   # TODO - improve tests
-  @spec comment_replies(%{organisation_id: any}, map) :: Scrivener.Page.t()
+  @spec comment_replies(%{current_org_id: any}, map) :: Scrivener.Page.t()
   def comment_replies(
-        %{organisation_id: org_id} = user,
+        %{current_org_id: org_id} = user,
         %{"master_id" => master_id, "comment_id" => comment_id} = params
       ) do
     with %Comment{id: parent_id} <- get_comment(comment_id, user) do
@@ -2456,14 +2456,14 @@ defmodule WraftDoc.Document do
   end
 
   def comment_replies(_, %{"master_id" => _, "comment_id" => _}), do: {:error, :fake}
-  def comment_replies(%{organisation_id: _}, _), do: {:error, :invalid_data}
+  def comment_replies(%{current_org_id: _}, _), do: {:error, :invalid_data}
   def comment_replies(_, _), do: {:error, :invalid_data}
 
   @doc """
   Create a pipeline.
   """
   @spec create_pipeline(User.t(), map) :: Pipeline.t() | {:error, Ecto.Changeset.t()}
-  def create_pipeline(%{organisation_id: org_id} = current_user, params) do
+  def create_pipeline(%{current_org_id: org_id} = current_user, params) do
     params = Map.put(params, "organisation_id", org_id)
 
     current_user
@@ -2557,7 +2557,7 @@ defmodule WraftDoc.Document do
   List of all pipelines in the user's organisation.
   """
   @spec pipeline_index(User.t(), map) :: map | nil
-  def pipeline_index(%User{organisation_id: org_id}, params) do
+  def pipeline_index(%User{current_org_id: org_id}, params) do
     query = from(p in Pipeline, where: p.organisation_id == ^org_id)
     Repo.paginate(query, params)
   end
@@ -2568,7 +2568,7 @@ defmodule WraftDoc.Document do
   Get a pipeline from its UUID and user's organisation.
   """
   @spec get_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
-  def get_pipeline(%User{organisation_id: org_id}, <<_::288>> = p_uuid) do
+  def get_pipeline(%User{current_org_id: org_id}, <<_::288>> = p_uuid) do
     query = from(p in Pipeline, where: p.id == ^p_uuid, where: p.organisation_id == ^org_id)
     Repo.one(query)
   end
@@ -2624,7 +2624,7 @@ defmodule WraftDoc.Document do
   Get a pipeline stage from its UUID and user's organisation.
   """
   @spec get_pipe_stage(User.t(), Ecto.UUID.t()) :: Stage.t() | nil
-  def get_pipe_stage(%User{organisation_id: org_id}, <<_::288>> = s_uuid) do
+  def get_pipe_stage(%User{current_org_id: org_id}, <<_::288>> = s_uuid) do
     query =
       from(s in Stage,
         join: p in Pipeline,
@@ -2865,7 +2865,7 @@ defmodule WraftDoc.Document do
       [%OrganisationField{}, ...]
 
   """
-  def list_organisation_fields(%{organisation_id: org_id}, params) do
+  def list_organisation_fields(%{current_org_id: org_id}, params) do
     query =
       from(of in OrganisationField,
         where: of.organisation_id == ^org_id,
@@ -2892,7 +2892,7 @@ defmodule WraftDoc.Document do
       ** (Ecto.NoResultsError)
 
   """
-  def get_organisation_field(<<_::288>> = id, %{organisation_id: org_id}) do
+  def get_organisation_field(<<_::288>> = id, %{current_org_id: org_id}) do
     case Repo.get_by(OrganisationField, id: id, organisation_id: org_id) do
       %OrganisationField{} = organisation_field -> organisation_field
       _ -> {:error, :invalid_id, "OrganisationField"}
@@ -2922,7 +2922,7 @@ defmodule WraftDoc.Document do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_organisation_field(%{organisation_id: org_id} = current_user, attrs) do
+  def create_organisation_field(%{current_org_id: org_id} = current_user, attrs) do
     attrs = Map.put(attrs, "organisation_id", org_id)
 
     current_user
@@ -2950,7 +2950,7 @@ defmodule WraftDoc.Document do
 
   """
   def update_organisation_field(
-        %{organisation_id: org_id},
+        %{current_org_id: org_id},
         %OrganisationField{} = organisation_field,
         attrs
       ) do
@@ -3029,7 +3029,7 @@ defmodule WraftDoc.Document do
   # """
 
   # @spec instance_index(map(), map()) :: map
-  # def instance_index(%{organisation_id: org_id}, key, params) do
+  # def instance_index(%{current_org_id: org_id}, key, params) do
   #   query =
   #     from(i in Instance,
   #       join: ct in ContentType,
@@ -3166,7 +3166,7 @@ defmodule WraftDoc.Document do
 
   defp get_previous_version(_, _), do: nil
 
-  def get_collection_form_field(%{organisation_id: org_id}, id) do
+  def get_collection_form_field(%{current_org_id: org_id}, id) do
     query =
       from(cff in CollectionFormField,
         join: cf in CollectionForm,
@@ -3223,7 +3223,7 @@ defmodule WraftDoc.Document do
   * User - user struct
   * id - Collection form field
   """
-  def get_collection_form(%{organisation_id: org_id}, <<_::288>> = id) do
+  def get_collection_form(%{current_org_id: org_id}, <<_::288>> = id) do
     case Repo.get_by(CollectionForm, id: id, organisation_id: org_id) do
       %CollectionForm{} = collection_form ->
         collection_form
@@ -3235,7 +3235,7 @@ defmodule WraftDoc.Document do
 
   def get_collection_form(_, _), do: {:error, :invalid_id, "CollectionForm"}
 
-  def create_collection_form(%{id: usr_id, organisation_id: org_id}, params) do
+  def create_collection_form(%{id: usr_id, current_org_id: org_id}, params) do
     params = Map.merge(params, %{"creator_id" => usr_id, "organisation_id" => org_id})
 
     %CollectionForm{}
@@ -3272,7 +3272,7 @@ defmodule WraftDoc.Document do
     Repo.delete(collection_form)
   end
 
-  def list_collection_form(%{organisation_di: org_id}, params) do
+  def list_collection_form(%{current_org_id: org_id}, params) do
     query = from(c in CollectionForm, preload: [:fields], where: c.organisation_id == ^org_id)
     Repo.paginate(query, params)
   end

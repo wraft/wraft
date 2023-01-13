@@ -1,4 +1,5 @@
 defmodule WraftDocWeb.Plug.VerifiedEmailCheckTest do
+  @moduledoc false
   use WraftDocWeb.ConnCase
   import WraftDoc.Factory
   alias WraftDocWeb.Plug.VerifiedEmailCheck

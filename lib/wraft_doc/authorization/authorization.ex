@@ -96,7 +96,7 @@ defmodule WraftDoc.Authorization do
     Repo.paginate(query, params)
   end
 
-  def list_permissions(%User{organisation_id: organisation_id}) do
+  def list_permissions(%User{current_org_id: organisation_id}) do
     query =
       from(r in Resource,
         join: p in Permission,

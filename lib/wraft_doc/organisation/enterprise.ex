@@ -36,14 +36,14 @@ defmodule WraftDoc.Enterprise do
   Get a flow from its UUID.
   """
   @spec get_flow(binary, User.t()) :: Flow.t() | nil
-  def get_flow(<<_::288>> = flow_id, %{organisation_id: org_id}) do
+  def get_flow(<<_::288>> = flow_id, %{current_org_id: org_id}) do
     case Repo.get_by(Flow, id: flow_id, organisation_id: org_id) do
       %Flow{} = flow -> flow
       _ -> {:error, :invalid_id, "Flow"}
     end
   end
 
-  def get_flow(_, %{organisation_id: _}), do: {:error, :invalid_id, "Flow"}
+  def get_flow(_, %{current_org_id: _}), do: {:error, :invalid_id, "Flow"}
 
   def get_flow(_, _), do: {:error, :fake}
 
@@ -62,7 +62,7 @@ defmodule WraftDoc.Enterprise do
   Get a state from its UUID and user's organisation.
   """
   @spec get_state(User.t(), Ecto.UUID.t()) :: State.t() | {:error, :invalid_id}
-  def get_state(%User{organisation_id: org_id}, <<_::288>> = state_id) do
+  def get_state(%User{current_org_id: org_id}, <<_::288>> = state_id) do
     query = from(s in State, where: s.id == ^state_id and s.organisation_id == ^org_id)
 
     case Repo.one(query) do
@@ -71,7 +71,7 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  def get_state(%User{organisation_id: _org_id}, _), do: {:error, :invalid_id}
+  def get_state(%User{current_org_id: _org_id}, _), do: {:error, :invalid_id}
   def get_state(_, <<_::288>>), do: {:error, :fake}
 
   @doc """
@@ -80,7 +80,7 @@ defmodule WraftDoc.Enterprise do
   @spec create_flow(User.t(), map) ::
           %Flow{creator: User.t()} | {:error, Ecto.Changeset.t()}
 
-  def create_flow(%{organisation_id: org_id} = current_user, %{"controlled" => true} = params) do
+  def create_flow(%{current_org_id: org_id} = current_user, %{"controlled" => true} = params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
@@ -97,7 +97,7 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  def create_flow(%{organisation_id: org_id} = current_user, params) do
+  def create_flow(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
@@ -143,7 +143,7 @@ defmodule WraftDoc.Enterprise do
   List of all flows.
   """
   @spec flow_index(User.t(), map) :: map
-  def flow_index(%User{organisation_id: org_id}, params) do
+  def flow_index(%User{current_org_id: org_id}, params) do
     query =
       from(f in Flow,
         where: f.organisation_id == ^org_id,
@@ -236,7 +236,7 @@ defmodule WraftDoc.Enterprise do
   Create a state under a flow.
   """
   @spec create_state(User.t(), Flow.t(), map) :: State.t() | {:error, Ecto.Changeset.t()}
-  def create_state(%User{organisation_id: org_id} = current_user, flow, params) do
+  def create_state(%User{current_org_id: org_id} = current_user, flow, params) do
     params = Map.merge(params, %{"organisation_id" => org_id, "flow_id" => flow.id})
 
     current_user
@@ -472,7 +472,7 @@ defmodule WraftDoc.Enterprise do
   Fetches the list of all members of current users organisation.
   """
   @spec members_index(User.t(), map) :: any
-  def members_index(%User{organisation_id: organisation_id}, %{"name" => name} = params) do
+  def members_index(%User{current_org_id: organisation_id}, %{"name" => name} = params) do
     query =
       from(u in User,
         where: u.organisation_id == ^organisation_id,
@@ -484,7 +484,7 @@ defmodule WraftDoc.Enterprise do
     Repo.paginate(query, params)
   end
 
-  def members_index(%User{organisation_id: organisation_id}, params) do
+  def members_index(%User{current_org_id: organisation_id}, params) do
     query =
       from(u in User,
         where: u.organisation_id == ^organisation_id,
@@ -521,7 +521,7 @@ defmodule WraftDoc.Enterprise do
   """
   @spec create_approval_system(User.t(), map) ::
           ApprovalSystem.t() | {:error, Ecto.Changeset.t()}
-  def create_approval_system(%User{organisation_id: organisation_id} = current_user, params) do
+  def create_approval_system(%User{current_org_id: organisation_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => organisation_id})
 
     current_user
@@ -544,7 +544,7 @@ defmodule WraftDoc.Enterprise do
   """
 
   @spec get_approval_system(Ecto.UUID.t(), User.t()) :: ApprovalSystem.t()
-  def get_approval_system(<<_::288>> = id, %{organisation_id: org_id}) do
+  def get_approval_system(<<_::288>> = id, %{current_org_id: org_id}) do
     query =
       from(as in ApprovalSystem,
         join: f in Flow,
@@ -558,7 +558,7 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  def get_approval_system(_, %{organisation_id: _}), do: {:error, :invalid_id, "ApprovalSystem"}
+  def get_approval_system(_, %{current_org_id: _}), do: {:error, :invalid_id, "ApprovalSystem"}
   def get_approval_system(_, _), do: {:error, :fake}
 
   def show_approval_system(id, user) do
@@ -572,7 +572,7 @@ defmodule WraftDoc.Enterprise do
   """
   @spec update_approval_system(User.t(), ApprovalSystem.t(), map) ::
           ApprovalSystem.t() | {:error, Ecto.Changeset.t()}
-  def update_approval_system(%{organisation_id: org_id}, approval_system, params) do
+  def update_approval_system(%{current_org_id: org_id}, approval_system, params) do
     params = Map.put(params, "organisation_id", org_id)
 
     approval_system
@@ -743,7 +743,7 @@ defmodule WraftDoc.Enterprise do
   #   get_membership(m_uuid)
   # end
 
-  # def get_membership(<<_::288>> = m_uuid, %User{organisation_id: org_id}) do
+  # def get_membership(<<_::288>> = m_uuid, %User{current_org_id: org_id}) do
   #   Repo.get_by(Membership, uuid: m_uuid, organisation_id: org_id)
   # end
 
@@ -997,7 +997,7 @@ defmodule WraftDoc.Enterprise do
     Repo.get_by(Payment, id: payment_id)
   end
 
-  def get_payment(payment_id, %{organisation_id: org_id}) do
+  def get_payment(payment_id, %{current_org_id: org_id}) do
     Repo.get_by(Payment, id: payment_id, organisation_id: org_id)
   end
 
@@ -1043,7 +1043,7 @@ defmodule WraftDoc.Enterprise do
 
   """
   @spec get_vendor(Organisation.t(), Ecto.UUID.t()) :: Vendor.t()
-  def get_vendor(%User{organisation_id: org_id}, id) do
+  def get_vendor(%User{current_org_id: org_id}, id) do
     query = from(v in Vendor, where: v.id == ^id and v.organisation_id == ^org_id)
 
     case Repo.one(query) do
@@ -1095,7 +1095,7 @@ defmodule WraftDoc.Enterprise do
   -`params` - a map contains params for pagination
   """
   @spec vendor_index(Organisation.t(), map()) :: Scrivener.Paginater.t()
-  def vendor_index(%User{organisation_id: organisation_id}, params) do
+  def vendor_index(%User{current_org_id: organisation_id}, params) do
     query = from(v in Vendor, where: v.organisation_id == ^organisation_id)
     Repo.paginate(query, params)
   end
@@ -1122,7 +1122,7 @@ defmodule WraftDoc.Enterprise do
 
   def get_pending_approvals(_, _), do: nil
 
-  def list_approval_systems(%User{organisation_id: org_id}, params) do
+  def list_approval_systems(%User{current_org_id: org_id}, params) do
     query =
       from(as in ApprovalSystem,
         join: f in Flow,

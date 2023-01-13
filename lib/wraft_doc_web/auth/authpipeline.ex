@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Guardian.AuthPipeline do
   @moduledoc """
-  The pipeline that guradian follows to check and verify the users JWT token.
+  The pipeline that guardian follows to check and verify the users JWT token.
   """
   use Guardian.Plug.Pipeline,
     otp_app: :wraft_doc,
@@ -11,4 +11,5 @@ defmodule WraftDocWeb.Guardian.AuthPipeline do
   plug(Guardian.Plug.EnsureAuthenticated)
   plug(Guardian.Plug.LoadResource)
   plug(WraftDocWeb.CurrentUser)
+  plug(WraftDocWeb.CurrentOrganisation)
 end
