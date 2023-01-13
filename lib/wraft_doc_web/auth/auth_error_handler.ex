@@ -12,6 +12,12 @@ defmodule WraftDocWeb.Guardian.AuthErrorHandler do
   def auth_error(conn, {:error, :no_user}) do
     body = Jason.encode!(%{errors: "No user found"})
 
-    conn |> send_resp(404, body) |> halt
+    conn |> send_resp(404, body) |> halt()
+  end
+
+  def auth_error(conn, {:error, :no_org}) do
+    body = Jason.encode!(%{errors: "No organisation found"})
+
+    conn |> send_resp(404, body) |> halt()
   end
 end
