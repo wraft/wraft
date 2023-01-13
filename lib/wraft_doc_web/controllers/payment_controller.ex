@@ -232,7 +232,7 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, params) do
-    %{organisation_id: org_id} = conn.assigns[:current_user]
+    %{current_org_id: org_id} = conn.assigns[:current_user]
 
     with %{
            entries: payments,

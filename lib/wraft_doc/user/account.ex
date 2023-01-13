@@ -120,17 +120,17 @@ defmodule WraftDoc.Account do
     end
   end
 
-  def get_role(%User{organisation_id: org_id}, <<_::288>> = id) do
+  def get_role(%User{current_org_id: org_id}, <<_::288>> = id) do
     case Repo.get_by(Role, id: id, organisation_id: org_id) do
       %Role{} = role -> role
       _ -> {:error, :invalid_id, "Role"}
     end
   end
 
-  def get_role(%User{organisation_id: _org_id}, _), do: {:error, :invalid_id, "Role"}
+  def get_role(%User{current_org_id: _org_id}, _), do: {:error, :invalid_id, "Role"}
   def get_role(_, _), do: {:error, :fake}
 
-  def create_role(%User{organisation_id: org_id}, params) do
+  def create_role(%User{current_org_id: org_id}, params) do
     params = Map.put(params, "organisation_id", org_id)
 
     %Role{}
@@ -697,7 +697,7 @@ defmodule WraftDoc.Account do
 
   def update_password(_, _), do: {:error, :no_data}
 
-  def remove_user(%User{organisation_id: org_id}, user_id) do
+  def remove_user(%User{current_org_id: org_id}, user_id) do
     with %User{} = user <- get_user(org_id, user_id) do
       user
       |> User.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
@@ -761,7 +761,7 @@ defmodule WraftDoc.Account do
     Repo.paginate(query, params)
   end
 
-  def get_role_group(%{organisation_id: org_id}, <<_::288>> = id) do
+  def get_role_group(%{current_org_id: org_id}, <<_::288>> = id) do
     Repo.get_by(RoleGroup, id: id, organisation_id: org_id)
   end
 
@@ -771,7 +771,7 @@ defmodule WraftDoc.Account do
     user |> get_role_group(id) |> Repo.preload(:roles)
   end
 
-  def create_role_group(%{organisation_id: org_id}, params) do
+  def create_role_group(%{curent_org_id: org_id}, params) do
     params = Map.put(params, "organisation_id", org_id)
 
     %RoleGroup{}
@@ -802,7 +802,7 @@ defmodule WraftDoc.Account do
     Repo.delete(role_group)
   end
 
-  def list_role_groups(%{organisation_id: org_id}) do
+  def list_role_groups(%{current_org_id: org_id}) do
     query = from(rg in RoleGroup, where: rg.organisation_id == ^org_id)
     Repo.all(query)
   end

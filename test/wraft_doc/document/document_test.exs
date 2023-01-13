@@ -887,8 +887,9 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get block_template" do
     test "get_block_template/2, Create a block template" do
-      block_template = insert(:block_template)
-      get_block_template = Document.get_block_template(block_template.id, block_template)
+      user = insert(:user)
+      block_template = insert(:block_template, organisation: user.organisation)
+      get_block_template = Document.get_block_template(block_template.id, user)
 
       assert block_template.id == get_block_template.id
       assert block_template.organisation_id == get_block_template.organisation_id
@@ -1478,8 +1479,9 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_block/2" do
     test "get block by its ID" do
-      block = :block |> insert() |> Map.from_struct()
-      get_block = Document.get_block(block.id, block)
+      user = insert(:user)
+      block = insert(:block, organisation: user.organisation)
+      get_block = Document.get_block(block.id, user)
 
       assert is_struct(get_block)
       refute is_nil(get_block.dataset)

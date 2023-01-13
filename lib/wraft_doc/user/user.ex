@@ -12,6 +12,7 @@ defmodule WraftDoc.Account.User do
     field(:password, :string, virtual: true)
     field(:email_verify, :boolean, default: false)
     field(:deleted_at, :naive_datetime)
+    field(:current_org_id, Ecto.UUID, virtual: true)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     many_to_many(:organisations, WraftDoc.Enterprise.Organisation,

@@ -6,7 +6,10 @@ defmodule WraftDocWeb.CurrentUser do
   import Plug.Conn
   import Guardian.Plug
   import Ecto.Query
-  alias WraftDoc.{Account.User, Document.InstanceApprovalSystem, Repo}
+
+  alias WraftDoc.Account.User
+  alias WraftDoc.Document.InstanceApprovalSystem
+  alias WraftDoc.Repo
 
   alias WraftDocWeb.Guardian.AuthErrorHandler
 
@@ -26,7 +29,6 @@ defmodule WraftDocWeb.CurrentUser do
           Repo.preload(user, [
             :profile,
             :roles,
-            :organisation,
             instances_to_approve: instances_to_approve
           ])
 
