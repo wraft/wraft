@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
   use PhoenixSwagger
   action_fallback(WraftDocWeb.FallbackController)
-  plug(WraftDocWeb.Plug.Authorized)
+  # plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
 
   alias WraftDoc.{Document, Document.Block}
