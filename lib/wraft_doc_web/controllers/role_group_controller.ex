@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.RoleGroupController do
   use WraftDocWeb, :controller
-  plug(WraftDocWeb.Plug.Authorized)
+  # plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
 
