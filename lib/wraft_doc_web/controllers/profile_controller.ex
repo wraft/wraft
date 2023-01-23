@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.ProfileController do
   use WraftDocWeb, :controller
-  plug(WraftDocWeb.Plug.Authorized)
+  # plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   import Ecto.Query, warn: false
   alias WraftDoc.{Account, Account.Profile}
