@@ -2,16 +2,15 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   @moduledoc """
   Test module for instance controller
   """
-
   use WraftDocWeb.ConnCase
-  @moduletag :controller
-  import WraftDoc.Factory
 
-  alias WraftDoc.{
-    Document.Instance,
-    Document.InstanceApprovalSystem,
-    Repo
-  }
+  @moduletag :controller
+
+  import ExUnit.CaptureLog
+
+  alias WraftDoc.Document.Instance
+  alias WraftDoc.Document.InstanceApprovalSystem
+  alias WraftDoc.Repo
 
   @valid_attrs %{
     instance_id: "OFFL01",
@@ -20,38 +19,11 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   }
   @invalid_attrs %{raw: ""}
 
-  setup %{conn: conn} do
-    user = insert(:user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
-
   test "create instances by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
-    u2 = insert(:user, organisation: user.organisation)
-    insert(:membership, organisation: user.organisation)
     flow = insert(:flow, organisation: user.organisation)
     insert(:state, organisation: user.organisation, flow: flow, order: 1)
-    insert(:approval_system, flow: flow, approver: u2)
     content_type = insert(:content_type, organisation: user.organisation, flow: flow)
-
-    conn =
-      build_conn()
-      |> put_req_header("accept", "application/json")
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
 
     count_before = Instance |> Repo.all() |> length()
 
@@ -64,20 +36,25 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert count_before + 1 == Instance |> Repo.all() |> length()
   end
 
-  test "does not create instances by invalid attrs", %{conn: conn} do
+  test "adds log on succesfully creating an instance", %{conn: conn} do
+    Logger.configure(level: :info)
     user = conn.assigns.current_user
-
-    u2 = insert(:user, organisation: user.organisation)
-    insert(:membership, organisation: user.organisation)
     flow = insert(:flow, organisation: user.organisation)
     insert(:state, organisation: user.organisation, flow: flow, order: 1)
-    insert(:approval_system, flow: flow, approver: u2)
     content_type = insert(:content_type, organisation: user.organisation, flow: flow)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
+    assert capture_log([level: :info], fn ->
+             post(conn, Routes.v1_instance_path(conn, :create, content_type.id), @valid_attrs)
+           end) =~ "Create content success"
+
+    Logger.configure(level: :warn)
+  end
+
+  test "does not create instances by invalid attrs", %{conn: conn} do
+    user = conn.assigns.current_user
+    flow = insert(:flow, organisation: user.organisation)
+    insert(:state, organisation: user.organisation, flow: flow, order: 1)
+    content_type = insert(:content_type, organisation: user.organisation, flow: flow)
 
     count_before = Instance |> Repo.all() |> length()
 
@@ -90,6 +67,17 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert count_before == Instance |> Repo.all() |> length()
   end
 
+  test "adds error log when create instance fails", %{conn: conn} do
+    user = conn.assigns.current_user
+    flow = insert(:flow, organisation: user.organisation)
+    insert(:state, organisation: user.organisation, flow: flow, order: 1)
+    content_type = insert(:content_type, organisation: user.organisation, flow: flow)
+
+    assert capture_log([level: :info], fn ->
+             post(conn, Routes.v1_instance_path(conn, :create, content_type.id), @invalid_attrs)
+           end) =~ "Create content failed"
+  end
+
   test "create instance from content type with approval system also create instance approval systems",
        %{conn: conn} do
     user = conn.assigns.current_user
@@ -99,12 +87,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     insert(:state, organisation: user.organisation, flow: flow, order: 1)
     insert(:approval_system, flow: flow, approver: u2)
     content_type = insert(:content_type, organisation: user.organisation, flow: flow)
-
-    conn =
-      build_conn()
-      |> put_req_header("accept", "application/json")
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
 
     ias_count_before = InstanceApprovalSystem |> Repo.all() |> length()
 
@@ -132,11 +114,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     instance = insert(:instance, creator: user, content_type: content_type)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     content_type = insert(:content_type)
     state = insert(:state)
 
@@ -161,11 +138,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     instance = insert(:instance, creator: user, content_type: content_type)
 
     conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
-    conn =
       conn
       |> put(Routes.v1_instance_path(conn, :update, instance.id, @invalid_attrs))
       |> doc(operation_id: "update_asset")
@@ -174,19 +146,11 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   test "index lists all instances under a content type", %{conn: conn} do
-    # u1 = insert(:user)
-    # u2 = insert(:user)
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type)
 
     dt1 = insert(:instance, creator: user, content_type: content_type)
     dt2 = insert(:instance, creator: user, content_type: insert(:content_type))
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_instance_path(conn, :index, content_type.id))
     dt_index = json_response(conn, 200)["contents"]
@@ -203,11 +167,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     dt1 = insert(:instance, creator: user, content_type: ct1)
     dt2 = insert(:instance, creator: user, content_type: ct2)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_instance_path(conn, :all_contents))
 
@@ -227,11 +186,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     content_type = insert(:content_type, organisation: user.organisation, flow: flow)
     instance = insert(:instance, creator: user, content_type: content_type, state: s)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn = get(conn, Routes.v1_instance_path(conn, :show, instance.id))
 
     assert json_response(conn, 200)["content"]["raw"] == instance.raw
@@ -243,11 +197,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     user = conn.assigns[:current_user]
     insert(:membership, organisation: user.organisation)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
-
     conn = get(conn, Routes.v1_instance_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 400)["errors"] == "The Instance id does not exist..!"
   end
@@ -255,12 +204,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   describe "DELETE /contents/:id" do
     test "delete instance by given id", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
 
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       instance = insert(:instance, creator: user, content_type: content_type)
@@ -279,11 +222,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     instance = insert(:instance, creator: user, content_type: content_type)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, current_user)
-
     conn = get(conn, Routes.v1_instance_path(conn, :show, instance.id))
 
     assert json_response(conn, 400)["errors"] == "The Instance id does not exist..!"
@@ -296,11 +234,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       content_type = insert(:content_type, organisation: current_user.organisation)
       state = insert(:state, flow: content_type.flow, organisation: current_user.organisation)
       instance = insert(:instance, content_type: content_type)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, current_user)
 
       conn =
         patch(conn, Routes.v1_instance_path(conn, :state_update, instance.id), %{
@@ -319,11 +252,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       instance = insert(:instance, content_type: content_type)
 
       conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, current_user)
-
-      conn =
         patch(conn, Routes.v1_instance_path(conn, :state_update, instance.id), %{
           state_id: state.id
         })
@@ -338,11 +266,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       content_type = insert(:content_type)
       state = insert(:state, flow: content_type.flow, organisation: current_user.organisation)
       instance = insert(:instance, content_type: content_type)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, current_user)
 
       conn =
         patch(conn, Routes.v1_instance_path(conn, :state_update, instance.id), %{
@@ -361,11 +284,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       instance = insert(:instance, content_type: content_type)
 
       conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, current_user)
-
-      conn =
         patch(conn, Routes.v1_instance_path(conn, :state_update, instance.id), %{
           state_id: state.id
         })
@@ -378,11 +296,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   test "lock unlock locks if editable true", %{conn: conn} do
     current_user = conn.assigns[:current_user]
     insert(:membership, organisation: current_user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, current_user)
 
     content_type =
       insert(:content_type, creator: current_user, organisation: current_user.organisation)
@@ -399,11 +312,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     current_user = conn.assigns[:current_user]
     insert(:membership, organisation: current_user.organisation)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, current_user)
-
     content_type =
       insert(:content_type, creator: current_user, organisation: current_user.organisation)
 
@@ -419,11 +327,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   test "search instances searches instances by title on serialized", %{conn: conn} do
     current_user = conn.assigns[:current_user]
     insert(:membership, organisation: current_user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, current_user)
 
     content_type =
       insert(:content_type, creator: current_user, organisation: current_user.organisation)
@@ -447,11 +350,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   test "change/2 lists changes in a version with its previous version", %{conn: conn} do
     current_user = conn.assigns[:current_user]
     insert(:membership, organisation: current_user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, current_user)
 
     content_type =
       insert(:content_type, creator: current_user, organisation: current_user.organisation)
@@ -483,7 +381,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       conn: conn
     } do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
       flow = insert(:flow, organisation: user.organisation)
       s1 = insert(:state, organisation: user.organisation, flow: flow, order: 1)
       s2 = insert(:state, organisation: user.organisation, flow: flow, order: 2)
@@ -491,11 +388,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       content_type = insert(:content_type, organisation: user.organisation, flow: flow)
       instance = insert(:instance, creator: user, content_type: content_type, state: s1)
       insert(:instance_approval_system, instance: instance, approval_system: as)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
 
       conn = put(conn, Routes.v1_instance_path(conn, :approve, instance.id))
 
@@ -505,7 +397,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     test "return error no permission for a wrong approver", %{conn: conn} do
       user = conn.assigns.current_user
       u2 = insert(:user, organisation: user.organisation)
-      insert(:membership, organisation: user.organisation)
       flow = insert(:flow, organisation: user.organisation)
       s1 = insert(:state, organisation: user.organisation, flow: flow, order: 1)
       s2 = insert(:state, organisation: user.organisation, flow: flow, order: 2)
@@ -513,14 +404,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       content_type = insert(:content_type, organisation: user.organisation, flow: flow)
       instance = insert(:instance, creator: user, content_type: content_type, state: s1)
 
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
       conn = put(conn, Routes.v1_instance_path(conn, :approve, instance.id))
 
-      assert json_response(conn, 400)["errors"] == "You are not authorized for this action.!"
+      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
     end
   end
 
@@ -539,11 +425,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       content_type = insert(:content_type, organisation: user.organisation, flow: flow)
       instance = insert(:instance, creator: user, content_type: content_type, state: s2)
       insert(:instance_approval_system, instance: instance, approval_system: as)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
 
       conn = put(conn, Routes.v1_instance_path(conn, :reject, instance.id))
 

@@ -5,6 +5,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
 
+  require Logger
+
   alias WraftDoc.{
     Document,
     Document.ContentType,
@@ -350,7 +352,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     with %ContentType{} = c_type <- Document.show_content_type(current_user, c_type_id),
          %Instance{} = content <-
            Document.create_instance(current_user, c_type, params) do
+      Logger.info("Create content success")
       render(conn, :create, content: content)
+    else
+      error ->
+        Logger.error("Create content failed", error: error)
+        error
     end
   end
 
