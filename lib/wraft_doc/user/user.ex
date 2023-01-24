@@ -3,7 +3,7 @@ defmodule WraftDoc.Account.User do
   The user model.
   """
   use WraftDoc.Schema
-  @derive {Jason.Encoder, only: [:name, :email, :organisation]}
+  @derive {Jason.Encoder, only: [:name, :email]}
 
   schema "user" do
     field(:name, :string)
