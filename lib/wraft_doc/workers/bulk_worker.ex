@@ -3,6 +3,8 @@ defmodule WraftDoc.Workers.BulkWorker do
   Oban worker for bulk building of docs.
   """
   use Oban.Worker, queue: :events, tags: ["block template", "pipeline"]
+  require Logger
+
   alias Opus.PipelineError
   alias WraftDoc.{Account, Document, Document.Pipeline.TriggerHistory, Enterprise, Repo}
 
@@ -17,7 +19,7 @@ defmodule WraftDoc.Workers.BulkWorker do
           "file" => path
         }
       }) do
-    IO.puts("Job starting..")
+    Logger.info("Job starting..")
 
     mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
@@ -25,7 +27,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     state = Enterprise.get_state(current_user, state_uuid)
     data_template = Document.get_d_template(current_user, d_temp_uuid)
     Document.bulk_doc_build(current_user, c_type, state, data_template, mapping, path)
-    IO.puts("Job end.!")
+    Logger.info("Job end.!")
     :ok
   end
 
@@ -37,26 +39,26 @@ defmodule WraftDoc.Workers.BulkWorker do
           "file" => path
         }
       }) do
-    IO.puts("Job starting..")
+    Logger.info("Job starting..")
     mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
     c_type = Document.get_content_type(current_user, c_type_uuid)
     Document.data_template_bulk_insert(current_user, c_type, mapping, path)
-    IO.puts("Job end.!")
+    Logger.info("Job end.!")
     :ok
   end
 
   def perform(%Job{args: %{"user_uuid" => user_uuid, "mapping" => mapping, "file" => path}}) do
-    IO.puts("Job starting..")
+    Logger.info("Job starting..")
     mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
     Document.block_template_bulk_insert(current_user, mapping, path)
-    IO.puts("Job end.!")
+    Logger.info("Job end.!")
     :ok
   end
 
   def perform(%Job{} = trigger) do
-    IO.puts("Job starting..")
+    Logger.info("Job starting..")
     start_time = Timex.now()
     state = TriggerHistory.states()[:executing]
 
@@ -67,7 +69,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     |> handle_exceptions()
     |> trigger_end_update()
 
-    IO.puts("Job end.!")
+    Logger.info("Job end.!")
     :ok
   end
 
@@ -95,7 +97,7 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
-    IO.puts("Required values not provided. Pipeline execution is now pending.")
+    Logger.error("Required values not provided. Pipeline execution is now pending.")
     trigger
   end
 
@@ -110,7 +112,7 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
-    IO.puts("Pipeline not found. Pipeline execution failed.")
+    Logger.error("Pipeline not found. Pipeline execution failed.")
     trigger
   end
 
@@ -125,7 +127,7 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
-    IO.puts("Instance creation failed. Pipeline execution failed.")
+    Logger.error("Instance creation failed. Pipeline execution failed.")
     trigger
   end
 
@@ -141,14 +143,14 @@ defmodule WraftDoc.Workers.BulkWorker do
         zip_file: zip_file
       })
 
-    IO.puts("Pipeline partially completed.! Some builds failed.!")
+    Logger.error("Pipeline partially completed.! Some builds failed.!")
     trigger
   end
 
   defp handle_exceptions({:ok, %{trigger: trigger, zip_file: zip_file}}) do
     state = TriggerHistory.states()[:success]
     trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
-    IO.puts("Pipeline completed succesfully.!")
+    Logger.info("Pipeline completed succesfully.!")
     trigger
   end
 

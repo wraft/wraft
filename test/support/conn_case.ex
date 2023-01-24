@@ -25,6 +25,7 @@ defmodule WraftDocWeb.ConnCase do
       import WraftDocWeb.ConnCase
       alias WraftDocWeb.Router.Helpers, as: Routes
       import Bureaucrat.Helpers
+      import WraftDoc.Factory
 
       # The default endpoint for testing
       @endpoint WraftDocWeb.Endpoint
@@ -34,6 +35,18 @@ defmodule WraftDocWeb.ConnCase do
   setup tags do
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WraftDoc.Repo, shared: not tags[:async])
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+
+    user = WraftDoc.Factory.insert(:user)
+
+    {:ok, token, _} =
+      WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})
+
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Conn.put_req_header("accept", "application/json")
+      |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+      |> Plug.Conn.assign(:current_user, user)
+
+    {:ok, conn: conn}
   end
 end

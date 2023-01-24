@@ -457,13 +457,13 @@ defmodule WraftDoc.Document do
       "author_id" => author_id
     }
 
-    IO.puts("Creating initial version...")
+    Logger.info("Creating initial version...")
 
     %Version{}
     |> Version.changeset(params)
     |> Repo.insert!()
 
-    IO.puts("Initial version generated")
+    Logger.info("Initial version generated")
   end
 
   defp create_initial_version(_, _), do: nil
