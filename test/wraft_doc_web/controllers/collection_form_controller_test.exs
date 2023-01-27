@@ -15,33 +15,8 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
   }
   @invalid_attrs %{title: nil}
 
-  setup %{conn: conn} do
-    user = insert(:user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
-
   test "delete collection form", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     collection_form = insert(:collection_form, organisation: user.organisation)
 
     count_before = CollectionForm |> Repo.all() |> length()
@@ -57,14 +32,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
   end
 
   test "create collection form with valid attrs", %{conn: conn} do
-    user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     count_before = CollectionForm |> Repo.all() |> length()
     field_count_before = CollectionFormField |> Repo.all() |> length()
 
@@ -81,14 +48,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
   end
 
   test "create collection form with invalid attrs", %{conn: conn} do
-    user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     count_before = CollectionForm |> Repo.all() |> length()
 
     conn =
@@ -103,13 +62,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
 
   test "update collection form with valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     collection_form = insert(:collection_form, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     count_before = CollectionForm |> Repo.all() |> length()
 
@@ -125,13 +78,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
 
   test "update collection form with invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     collection_form = insert(:collection_form, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     count_before = CollectionForm |> Repo.all() |> length()
 
@@ -147,13 +94,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
 
   test "show renders collection form by id", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     collection_form = insert(:collection_form, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn =
       get(
@@ -165,14 +106,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
   end
 
   test "error not found for id does not exists", %{conn: conn} do
-    user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn =
       get(
         conn,

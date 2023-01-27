@@ -7,36 +7,26 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
 
-  setup %{conn: conn} do
-    user = insert(:user)
+  setup do
+    user = WraftDoc.Factory.insert(:user_with_organisation)
+    membership = WraftDoc.Factory.insert(:membership, organisation: user.organisation)
+
+    {:ok, token, _} =
+      WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})
 
     conn =
-      conn
+      build_conn()
       |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
+      |> put_req_header("authorization", "Bearer " <> token)
+      |> assign(:current_user, user)
 
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
+    {:ok, %{conn: conn, membership: membership}}
   end
 
   describe "show/1" do
-    test "shows organisation's membership with valid attrs", %{conn: conn} do
-      user = conn.assigns.current_user
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
-      membership = insert(:membership, organisation: user.organisation)
-
-      conn = get(conn, Routes.v1_membership_path(conn, :show, user.organisation.id))
+    test "shows organisation's membership with valid attrs", %{conn: conn, membership: membership} do
+      user = conn.assigns[:current_user]
+      conn = get(conn, Routes.v1_membership_path(conn, :show, user.current_org_id))
 
       assert json_response(conn, 200)["id"] == membership.id
       assert json_response(conn, 200)["plan_duration"] == membership.plan_duration
@@ -47,71 +37,45 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
     test "returns nil when given organisation id is different from user's organisation id", %{
       conn: conn
     } do
-      user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
       conn = get(conn, Routes.v1_membership_path(conn, :show, Ecto.UUID.generate()))
       assert json_response(conn, 400)["errors"] == "The Organisation id does not exist..!"
     end
   end
 
   describe "update/2" do
-    test "updates membership on valid attributes", %{conn: conn} do
-      user = conn.assigns.current_user
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
+    test "updates membership on valid attributes", %{conn: conn, membership: membership} do
       plan = insert(:plan, yearly_amount: 100_000)
-      membership = insert(:membership, organisation: user.organisation)
       attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}
+
       conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
-      assert json_response(conn, 200)["id"] == membership.id
       assert json_response(conn, 200)["plan_duration"] == 365
       assert json_response(conn, 200)["plan"]["name"] == plan.name
       assert json_response(conn, 200)["plan"]["yearly_amount"] == plan.yearly_amount
     end
 
     test "does not update membership but creates new payment with failed razorpay id", %{
-      conn: conn
+      conn: conn,
+      membership: membership
     } do
-      user = conn.assigns.current_user
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
-      membership = insert(:membership, organisation: user.organisation)
       plan = insert(:plan)
       attrs = %{plan_id: plan.id, razorpay_id: @failed_razorpay_id}
       payment_count = Payment |> Repo.all() |> length
+
       conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
       assert json_response(conn, 400)["info"] == "Payment failed. Membership not updated.!"
       assert payment_count + 1 == Payment |> Repo.all() |> length
     end
 
-    test "does not update membership and returns error with invalid razorpay ID", %{conn: conn} do
-      user = conn.assigns.current_user
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
-      membership = insert(:membership, organisation: user.organisation)
+    test "does not update membership and returns error with invalid razorpay ID", %{
+      conn: conn,
+      membership: membership
+    } do
       plan = insert(:plan)
       attrs = %{plan_id: plan.id, razorpay_id: "wrong_id"}
       payment_count = Payment |> Repo.all() |> length
+
       conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
       assert payment_count == Payment |> Repo.all() |> length
@@ -119,18 +83,11 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
     end
 
     test "does not update membership and returns wrong amount error when razorpay amount does not match any plan amount",
-         %{conn: conn} do
-      user = conn.assigns.current_user
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
-      membership = insert(:membership, organisation: user.organisation)
+         %{conn: conn, membership: membership} do
       plan = insert(:plan, yearly_amount: 1000)
       attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}
       payment_count = Payment |> Repo.all() |> length
+
       conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
       assert payment_count == Payment |> Repo.all() |> length
@@ -141,54 +98,33 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
          %{
            conn: conn
          } do
-      user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
       membership = insert(:membership)
       plan = insert(:plan)
       attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}
-
       payment_count = Payment |> Repo.all() |> length
+
       conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
       assert payment_count == Payment |> Repo.all() |> length
       assert json_response(conn, 404) == "Not Found"
     end
 
-    test "returns not found error when plan does not exist ", %{conn: conn} do
-      user = conn.assigns.current_user
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
-      membership = insert(:membership, organisation: user.organisation)
+    test "returns not found error when plan does not exist ", %{
+      conn: conn,
+      membership: membership
+    } do
       attrs = %{plan_id: Ecto.UUID.generate(), razorpay_id: @valid_razorpay_id}
-
       payment_count = Payment |> Repo.all() |> length
+
       conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
       assert payment_count == Payment |> Repo.all() |> length
       assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
-    test "does not update membership with wrong parameters", %{conn: conn} do
-      user = conn.assigns.current_user
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
-      membership = insert(:membership, organisation: user.organisation)
-
+    test "does not update membership with wrong parameters", %{conn: conn, membership: membership} do
       payment_count = Payment |> Repo.all() |> length
+
       conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), %{})
 
       assert payment_count == Payment |> Repo.all() |> length

@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Plug.AddActionLog do
   """
 
   import Plug.Conn
+  alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.{Account.User, ActionLog, Repo}
 
   def init(_params) do
@@ -43,9 +44,10 @@ defmodule WraftDocWeb.Plug.AddActionLog do
     actor_agent = conn |> get_req_header("user-agent") |> List.first()
     action = Atom.to_string(conn.private.phoenix_action)
     params = change_structs_to_maps(params)
+    organisation = Repo.get(Organisation, user.current_org_id)
 
     %{
-      actor: user,
+      actor: Map.put(user, :organisation, organisation),
       user_id: id,
       request_path: path,
       request_method: method,

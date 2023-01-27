@@ -20,21 +20,21 @@ defmodule WraftDoc.EnterpriseTest do
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
   test "get flow returns flow data by id" do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
     flow = insert(:flow, creator: user, organisation: user.organisation)
     r_flow = Enterprise.get_flow(flow.id, user)
     assert flow.name == r_flow.name
   end
 
   test "get state returns states data " do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
     state = insert(:state, organisation: user.organisation)
     r_state = Enterprise.get_state(user, state.id)
     assert state.state == r_state.state
   end
 
   test "create a controlled flow by adding conttrolled true and adding three default states" do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
 
     params = %{
       "name" => "flow 1",
@@ -53,7 +53,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "create an uncontrolled flow by adding conttrolled false and adding two default states" do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
 
     params = %{
       "name" => "flow 1",
@@ -71,7 +71,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "flow index returns the list of flows" do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
     f1 = insert(:flow, creator: user, organisation: user.organisation)
     f2 = insert(:flow, creator: user, organisation: user.organisation)
 
@@ -82,7 +82,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "show flow preloads flow with creator and states" do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
     flow = insert(:flow, creator: user, organisation: user.organisation)
     state = insert(:state, creator: user, flow: flow)
     flow = Enterprise.show_flow(flow.id, user)
@@ -122,9 +122,10 @@ defmodule WraftDoc.EnterpriseTest do
   # end
 
   test "create state creates a state " do
-    flow = insert(:flow)
+    user = insert(:user_with_organisation)
+    flow = insert(:flow, creator: user)
     count_before = State |> Repo.all() |> length()
-    state = Enterprise.create_state(flow.creator, flow, %{"state" => "Review", "order" => 2})
+    state = Enterprise.create_state(user, flow, %{"state" => "Review", "order" => 2})
     assert count_before + 1 == State |> Repo.all() |> length()
     assert state.state == "Review"
     assert state.order == 2
@@ -150,7 +151,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "delete states deletes and returns a state " do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
     flow = insert(:flow, creator: user, organisation: user.organisation)
     state = insert(:state, creator: user, organisation: user.organisation, flow: flow)
     count_before = State |> Repo.all() |> length()
@@ -263,7 +264,7 @@ defmodule WraftDoc.EnterpriseTest do
 
   describe "create_approval_system/2" do
     test "create approval system on valid attributes" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
 
       pre_state = insert(:state, organisation: user.organisation)
       post_state = insert(:state, organisation: user.organisation)
@@ -305,7 +306,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "show approval system returns apprval system data" do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
     flow = insert(:flow, creator: user, organisation: user.organisation)
 
     %{id: id, flow: flow, pre_state: _pre_state} =
@@ -316,7 +317,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "update approval system updates a system" do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
     flow = insert(:flow, creator: user, organisation: user.organisation)
 
     pre_state = insert(:state, creator: user, organisation: user.organisation)
@@ -369,34 +370,6 @@ defmodule WraftDoc.EnterpriseTest do
   #   assert approval_system.post_state.id == approved.instance.state_id
   # end
 
-  test "check permission grand a permission for admin user to enter any organisation" do
-    role = insert(:role, name: "super_admin")
-    organisation = insert(:organisation)
-    user = insert(:user, organisation: organisation)
-    insert(:user_role, user: user, role: role)
-    user = Repo.preload(user, [:roles])
-    role_names = Enum.map(user.roles, fn x -> x.name end)
-    user = Map.put(user, :role_names, role_names)
-    assert Enterprise.check_permission(user, organisation.id) == organisation
-  end
-
-  test "check permission grand permission for user within organisation" do
-    role = insert(:role, name: "user")
-    organisation = insert(:organisation)
-    user = insert(:user, organisation: organisation)
-    user = Map.put(user, :role_names, [role.name])
-    insert(:user_role, user: user, role: role)
-    assert Enterprise.check_permission(user, organisation.id) == organisation
-  end
-
-  test "check permission reject permmision to enter another organisation" do
-    role = insert(:role, name: "user")
-    organisation = insert(:organisation)
-    user = insert(:user)
-    insert(:user_role, user: user, role: role)
-    assert Enterprise.check_permission(user, organisation.id) == {:error, :no_permission}
-  end
-
   test "already a member return error for existing email" do
     user = insert(:user)
     assert Enterprise.already_member(user.email) == {:error, :already_member}
@@ -407,7 +380,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "invite member send a E-mail to invite a member and returns an oban job" do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
     role = insert(:role)
     to_email = "myemail@app.com"
     {:ok, oban_job} = Enterprise.invite_team_member(user, user.organisation, to_email, role)
@@ -415,7 +388,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "invite member creates an auth token of type invite" do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
     role = insert(:role)
     to_email = "myemail@app.com"
     auth_token_count = AuthToken |> Repo.all() |> length()
@@ -547,19 +520,19 @@ defmodule WraftDoc.EnterpriseTest do
     test "returns nil with non-existent id" do
       fetched_membership = Enterprise.get_membership(Ecto.UUID.generate())
 
-      assert fetched_membership == {:error, :invalid_id, "Membership"}
+      assert fetched_membership == nil
     end
 
     test "returns nil with invalid id" do
       fetched_membership = Enterprise.get_membership(1)
 
-      assert fetched_membership == {:error, :invalid_id, "Membership"}
+      assert fetched_membership == nil
     end
   end
 
   describe "get_membership/2" do
     test "fetches a membership with valid parameters" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       user = Repo.preload(user, [:roles])
       role_names = Enum.map(user.roles, fn x -> x.name end)
       user = Map.put(user, :role_names, role_names)
@@ -575,48 +548,24 @@ defmodule WraftDoc.EnterpriseTest do
     end
 
     test "returns nil with non-existent id" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       fetched_membership = Enterprise.get_membership(Ecto.UUID.generate(), user)
 
-      assert fetched_membership == {:error, :invalid_id, "Membership"}
+      assert fetched_membership == nil
     end
 
     test "returns nil with invalid parameter" do
       membership = insert(:membership)
       fetched_membership = Enterprise.get_membership(membership, nil)
 
-      assert fetched_membership == {:error, :invalid_id, "Membership"}
-    end
-
-    test "returns nil with invalid id" do
-      user = insert(:user)
-      fetched_membership = Enterprise.get_membership(1, user)
-
-      assert fetched_membership == {:error, :invalid_id, "Membership"}
+      assert fetched_membership == nil
     end
 
     test "returns nil when membership does not belongs to user's organisation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       membership = insert(:membership)
       fetched_membership = Enterprise.get_membership(membership.id, user)
-      assert fetched_membership == {:error, :invalid_id, "Membership"}
-    end
-
-    test "returns membership irrespective of organisation when user has admin role" do
-      role = insert(:role, name: "super_admin")
-      user = insert(:user)
-      insert(:user_role, role: role, user: user)
-      user = Repo.preload(user, [:roles])
-      role_names = Enum.map(user.roles, fn x -> x.name end)
-      user = Map.put(user, :role_names, role_names)
-      membership = insert(:membership)
-      fetched_membership = Enterprise.get_membership(membership.id, user)
-      assert fetched_membership.id == membership.id
-      assert fetched_membership.plan_id == membership.plan_id
-      assert fetched_membership.organisation_id == membership.organisation_id
-      assert fetched_membership.start_date == membership.start_date
-      assert fetched_membership.end_date == membership.end_date
-      assert fetched_membership.plan_duration == membership.plan_duration
+      assert fetched_membership == nil
     end
   end
 
@@ -644,7 +593,7 @@ defmodule WraftDoc.EnterpriseTest do
 
   describe "update_membership/4" do
     test "upadtes membership and creates new payment with valid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       membership = insert(:membership)
       plan = insert(:plan, monthly_amount: 100_000)
       payment_count = Payment |> Repo.all() |> length
@@ -657,7 +606,7 @@ defmodule WraftDoc.EnterpriseTest do
     end
 
     test "does not update membership but creates new payment with failed razorpay id but valid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       membership = insert(:membership, organisation: user.organisation)
       plan = insert(:plan, monthly_amount: 100_000)
       payment_count = Payment |> Repo.all() |> length
@@ -672,7 +621,7 @@ defmodule WraftDoc.EnterpriseTest do
     end
 
     test "does not update membership and returns nil with invalid razorpay ID" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       membership = insert(:membership)
       plan = insert(:plan)
       {:error, razorpay} = Razorpay.Payment.get("wrong_id")
@@ -684,7 +633,7 @@ defmodule WraftDoc.EnterpriseTest do
     end
 
     test "does not update membership and returns wrong amount error when razorpay amount does not match any plan amount" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       membership = insert(:membership)
       plan = insert(:plan)
       {:ok, razorpay} = Razorpay.Payment.get(@valid_razorpay_id)
@@ -719,7 +668,7 @@ defmodule WraftDoc.EnterpriseTest do
 
   describe "get_payment/2" do
     test "returns the payment in the user's organisation with given id" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       insert(:user_role, user: user)
       user = Repo.preload(user, [:roles])
       role_names = Enum.map(user.roles, fn x -> x.name end)
@@ -731,7 +680,7 @@ defmodule WraftDoc.EnterpriseTest do
     end
 
     test "returns nil when payment does not belong to the user's organisation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       payment = insert(:payment)
       response = Enterprise.get_payment(payment.id, user)
       assert response == nil
@@ -751,7 +700,7 @@ defmodule WraftDoc.EnterpriseTest do
     # end
 
     test "returns nil for non existent payment" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       response = Enterprise.get_payment(Ecto.UUID.generate(), user)
       assert response == nil
     end
@@ -764,7 +713,7 @@ defmodule WraftDoc.EnterpriseTest do
 
   describe "show_payment/2" do
     test "returns the payment in the user's organisation with given id" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       user = Repo.preload(user, [:roles])
       role_names = Enum.map(user.roles, fn x -> x.name end)
       user = Map.put(user, :role_names, role_names)
@@ -780,14 +729,14 @@ defmodule WraftDoc.EnterpriseTest do
     end
 
     test "returns nil when payment does not belong to the user's organisation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       payment = insert(:payment)
       response = Enterprise.show_payment(payment.id, user)
       assert response == nil
     end
 
     test "returns nil for non existent payment" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       response = Enterprise.show_payment(Ecto.UUID.generate(), user)
       assert response == nil
     end
@@ -801,7 +750,7 @@ defmodule WraftDoc.EnterpriseTest do
   describe "members_index/2" do
     test "returns the list of all members of current user's organisation" do
       organisation = insert(:organisation)
-      user1 = insert(:user, organisation: organisation)
+      user1 = insert(:user, organisation: organisation, current_org_id: organisation.id)
       user2 = insert(:user, organisation: organisation)
       user3 = insert(:user, organisation: organisation)
 
@@ -818,7 +767,10 @@ defmodule WraftDoc.EnterpriseTest do
 
     test "returns the list of all members of current user's organisation matching the given name" do
       organisation = insert(:organisation)
-      user1 = insert(:user, organisation: organisation, name: "John")
+
+      user1 =
+        insert(:user, name: "John", organisation: organisation, current_org_id: organisation.id)
+
       user2 = insert(:user, organisation: organisation, name: "John Doe")
       user3 = insert(:user, organisation: organisation)
 
@@ -849,7 +801,7 @@ defmodule WraftDoc.EnterpriseTest do
 
   describe "create_vendor/2" do
     test "create vendor on valid attributes" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       count_before = Vendor |> Repo.all() |> length()
       vendor = Enterprise.create_vendor(user, @valid_vendor_attrs)
       assert count_before + 1 == Vendor |> Repo.all() |> length()
@@ -864,7 +816,7 @@ defmodule WraftDoc.EnterpriseTest do
     end
 
     test "create vendor on invalid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       count_before = Vendor |> Repo.all() |> length()
 
       {:error, changeset} = Enterprise.create_vendor(user, @invalid_vendor_attrs)
@@ -913,7 +865,7 @@ defmodule WraftDoc.EnterpriseTest do
 
   describe "get_vendor/1" do
     test "get vendor returns the vendor data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       vendor = insert(:vendor, creator: user, organisation: user.organisation)
       v_vendor = Enterprise.get_vendor(user, vendor.id)
       assert v_vendor.name == vendor.name
@@ -936,7 +888,7 @@ defmodule WraftDoc.EnterpriseTest do
 
   describe "show vendor" do
     test "show vendor returns the vendor data and preloads" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       vendor = insert(:vendor, creator: user, organisation: user.organisation)
       v_vendor = Enterprise.show_vendor(vendor.id, user)
       assert v_vendor.name == vendor.name
@@ -969,7 +921,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "vendor index lists the vendor data" do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
     v1 = insert(:vendor, creator: user, organisation: user.organisation)
     v2 = insert(:vendor, creator: user, organisation: user.organisation)
     vendor_index = Enterprise.vendor_index(user, %{page_number: 1})

@@ -15,32 +15,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   }
 
   @invalid_attrs %{name: ""}
-  setup %{conn: conn} do
-    user = insert(:user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
 
   test "create content types by valid attrrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     count_before = ContentType |> Repo.all() |> length()
     %{id: flow_id} = insert(:flow, creator: user, organisation: user.organisation)
     %{id: layout_id} = insert(:layout, creator: user, organisation: user.organisation)
@@ -57,13 +34,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   end
 
   test "does not create content types by invalid attrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     count_before = ContentType |> Repo.all() |> length()
     %{id: flow_id} = insert(:flow, creator: user, organisation: user.organisation)
     %{id: layout_id} = insert(:layout, creator: user, organisation: user.organisation)
@@ -82,13 +53,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   test "update content type on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
     theme = insert(:theme, creator: user, organisation: user.organisation)
-    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     count_before = ContentType |> Repo.all() |> length()
 
@@ -109,13 +74,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "does't update content types for invalid attrs", %{conn: conn} do
     user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn =
       conn
@@ -127,14 +86,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "index lists content type by current user", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     ct1 = insert(:content_type, creator: user, organisation: user.organisation)
     ct2 = insert(:content_type, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_content_type_path(conn, :index))
     ct_index = json_response(conn, 200)["content_types"]
@@ -145,13 +98,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "show renders content type details by id", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_content_type_path(conn, :show, content_type.id))
 
@@ -159,26 +106,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   end
 
   test "error not found for id does not exists", %{conn: conn} do
-    user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
-
     conn = get(conn, Routes.v1_asset_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 400)["errors"] == "The id does not exist..!"
   end
 
   test "delete content type by given id", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
 
     count_before = ContentType |> Repo.all() |> length()
@@ -189,15 +122,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   end
 
   test "error not found for users from another organisation", %{conn: conn} do
-    user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
-
     content_type = insert(:content_type)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_content_type_path(conn, :show, content_type.id))
 

@@ -220,7 +220,7 @@ defmodule WraftDocWeb.Router do
       resources("/content_type_fields", ContentTypeFieldController, only: [:delete])
 
       # Invite new user
-      post("/organisations/:id/invite", OrganisationController, :invite)
+      post("/organisations/users/invite", OrganisationController, :invite)
 
       # All instances in an organisation
       get("/contents", InstanceController, :all_contents)

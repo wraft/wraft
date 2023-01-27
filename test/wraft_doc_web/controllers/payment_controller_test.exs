@@ -3,35 +3,11 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
   @moduletag :controller
   import WraftDoc.Factory
 
-  setup %{conn: conn} do
-    user = insert(:user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
-
   describe "index/2" do
     test "index lists all payments in current user's organisation", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
       p1 = insert(:payment, organisation: user.organisation)
       p2 = insert(:payment, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
 
       conn = get(conn, Routes.v1_payment_path(conn, :index))
 
@@ -48,12 +24,6 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
   describe "show/2" do
     test "show renders the payment in the user's organisation with given id", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
 
       payment = insert(:payment, organisation: user.organisation)
 
@@ -69,41 +39,17 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
     end
 
     test "returns nil when payment does not belong to the user's organisation", %{conn: conn} do
-      user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
       payment = insert(:payment)
       conn = get(conn, Routes.v1_payment_path(conn, :show, payment.id))
       assert json_response(conn, 404) == "Not Found"
     end
 
     test "returns nil for non existent payment", %{conn: conn} do
-      user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
       conn = get(conn, Routes.v1_payment_path(conn, :show, Ecto.UUID.generate()))
       assert json_response(conn, 404) == "Not Found"
     end
 
     test "returns nil for invalid data", %{conn: conn} do
-      user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
       conn = get(conn, Routes.v1_payment_path(conn, :show, Ecto.UUID.generate()))
       assert json_response(conn, 404) == "Not Found"
     end

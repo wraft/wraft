@@ -114,7 +114,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "create_layout/3" do
     test "create layout on valid attributes" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       engine = insert(:engine)
       engine_id = engine.id
 
@@ -141,7 +141,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "create layout on invalid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       count_before = Layout |> Repo.all() |> length()
       engine = insert(:engine)
       {:error, changeset} = Document.create_layout(user, engine, @invalid_attrs)
@@ -171,7 +171,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "show_layout/2" do
     test "show layout shows the layout data and preloads engine creator assets data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       engine = insert(:engine)
 
       layout =
@@ -191,13 +191,13 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns nil with non-existent UUIDs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       s_layout = Document.show_layout(Ecto.UUID.generate(), user)
       assert s_layout == {:error, :invalid_id, "Layout"}
     end
 
     test "returns nil when layout does not belong to user's organisation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       layout = insert(:layout)
       s_layout = Document.show_layout(layout.id, user)
       assert s_layout == {:error, :invalid_id, "Layout"}
@@ -242,9 +242,8 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "get_layout/2" do
-    @tag individual_test: "yup"
     test "get layout returns the layout data by uuid" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       layout = insert(:layout, creator: user, organisation: user.organisation)
       s_layout = Document.get_layout(layout.id, user)
       assert s_layout.name == layout.name
@@ -255,22 +254,19 @@ defmodule WraftDoc.DocumentTest do
       assert s_layout.slug == layout.slug
     end
 
-    @tag individual_test: "yup"
     test "returns error invalid id with non-existent UUIDs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       s_layout = Document.get_layout(Ecto.UUID.generate(), user)
       assert s_layout == {:error, :invalid_id, "Layout"}
     end
 
-    @tag individual_test: "yup"
     test "returns error  when layout does not belong to user's organisation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       layout = insert(:layout)
       s_layout = Document.get_layout(layout.id, user)
       assert s_layout == {:error, :invalid_id, "Layout"}
     end
 
-    @tag individual_test: "yup"
     test "returns error when wrong datas are given" do
       s_layout = Document.get_layout(1, nil)
       assert s_layout == {:error, :fake}
@@ -344,7 +340,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "layout_index/2" do
     test "layout index returns the list of layouts" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       engine = insert(:engine)
       l1 = insert(:layout, creator: user, organisation: user.organisation, engine: engine)
       l2 = insert(:layout, creator: user, organisation: user.organisation, engine: engine)
@@ -357,7 +353,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "create_content_type/4" do
     test "create content_type on valid attributes" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       layout = insert(:layout, creator: user, organisation: user.organisation)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
 
@@ -378,8 +374,8 @@ defmodule WraftDoc.DocumentTest do
       assert content_type.prefix == @valid_content_type_attrs["prefix"]
     end
 
-    test "create content_type on invalid attrs" do
-      user = insert(:user)
+    test "returns error on invalid attrs" do
+      user = insert(:user_with_organisation)
       layout = insert(:layout, creator: user)
       flow = insert(:flow, creator: user)
       count_before = ContentType |> Repo.all() |> length()
@@ -398,7 +394,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "content_type_index/2" do
     test "content_type index lists the content_type data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       c1 = insert(:content_type, creator: user, organisation: user.organisation)
       c2 = insert(:content_type, creator: user, organisation: user.organisation)
       content_type_index = Document.content_type_index(user, %{page_number: 1})
@@ -413,7 +409,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "show_content_type/2" do
     test "show content_type shows the content_type data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       layout = insert(:layout, creator: user, organisation: user.organisation)
       flow = insert(:flow, creator: user, organisation: user.organisation)
 
@@ -436,7 +432,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_content_type/2" do
     test "get content_type shows the content_type data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
 
       content_type = insert(:content_type, organisation: user.organisation)
       s_content_type = Document.get_content_type(user, content_type.id)
@@ -463,7 +459,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "update_content_type/3" do
     test "update content_type on valid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       layout = insert(:layout, creator: user, organisation: user.organisation)
       flow = insert(:flow, creator: user, organisation: user.organisation)
       theme = insert(:theme, creator: user, organisation: user.organisation)
@@ -645,7 +641,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "instance_index_of_an_organisation/2" do
     test "instance index of an organisation lists instances under an organisation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       i1 = insert(:instance, creator: user)
       i2 = insert(:instance, creator: user)
 
@@ -665,7 +661,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_instance/2" do
     test "get instance shows the instance data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       instance = insert(:instance, creator: user, content_type: content_type)
       i_instance = Document.get_instance(instance.id, user)
@@ -676,7 +672,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "show_instance/2" do
     test "show instance shows and preloads creator content type layout and state instance data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       flow = content_type.flow
       state = insert(:state, flow: flow, organisation: user.organisation)
@@ -829,7 +825,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "block_template_bulk_insert/3" do
     test "test bulk block template creation with valid data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       mapping = %{"Body" => "body", "Serialized" => "serialized", "Title" => "title"}
       path = "test/helper/block_template_source.csv"
       count_before = BlockTemplate |> Repo.all() |> length()
@@ -856,7 +852,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "create block_template" do
     test "create_block_template/2, test creates block template with valid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
 
       params = %{
         title: "Introduction",
@@ -874,7 +870,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "create_block_template/2, test does not create block template with invalid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       {:error, changeset} = Document.create_block_template(user, %{})
 
       assert %{
@@ -887,7 +883,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get block_template" do
     test "get_block_template/2, Create a block template" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       block_template = insert(:block_template, organisation: user.organisation)
       get_block_template = Document.get_block_template(block_template.id, user)
 
@@ -929,7 +925,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get index of block_template" do
     test "block_template_index/2, Index of a block template by organisation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       b_temp = :block_template |> insert() |> Map.from_struct()
       bt_index = Document.block_template_index(user, b_temp)
 
@@ -1037,7 +1033,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_content_type_field/2" do
     test "get content type field returns content type field data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       content_type_field = insert(:content_type_field, content_type: content_type)
       c_content_type_field = Document.get_content_type_field(content_type_field.id, user)
@@ -1086,7 +1082,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "create_theme/2" do
     test "create theme on valid attributes" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       count_before = Theme |> Repo.all() |> length()
       {:ok, theme} = Document.create_theme(user, @valid_theme_attrs)
       count_after = Theme |> Repo.all() |> length()
@@ -1097,7 +1093,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "does not create theme on invalid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       count_before = Theme |> Repo.all() |> length()
 
       {:error, changeset} = Document.create_theme(user, @invalid_attrs)
@@ -1111,7 +1107,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "theme_index/2" do
     test "theme index lists the theme data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       t1 = insert(:theme, creator: user, organisation: user.organisation)
       t2 = insert(:theme, creator: user, organisation: user.organisation)
       theme_index = Document.theme_index(user, %{page_number: 1})
@@ -1123,7 +1119,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_theme/2" do
     test "get theme returns the theme data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       theme = insert(:theme, creator: user, organisation: user.organisation)
       t_theme = Document.get_theme(theme.id, user)
       assert t_theme.name == theme.name
@@ -1133,7 +1129,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "show_theme/2" do
     test "show theme returns the theme data and preloads the creator" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       theme = insert(:theme, creator: user, organisation: user.organisation)
       t_theme = Document.show_theme(theme.id, user)
       assert t_theme.name == theme.name
@@ -1209,7 +1205,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "data_templates_index_of_an_organisation/2" do
     test "data_template index_under_organisation lists the data_template data under an organisation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       content_type = insert(:content_type, creator: user)
       d1 = insert(:data_template, creator: user, content_type: content_type)
       d2 = insert(:data_template, creator: user, content_type: content_type)
@@ -1227,7 +1223,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_d_template/2" do
     test "get data_template returns the data_template data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
 
       data_template = insert(:data_template, creator: user, content_type: content_type)
@@ -1241,7 +1237,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "show_d_template/2" do
     test "show data_template returns the data_template data and preloads creator and content type" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       content_type = insert(:content_type, creator: user, organisation: user.organisation)
       data_template = insert(:data_template, creator: user, content_type: content_type)
       d_data_template = Document.show_d_template(user, data_template.id)
@@ -1292,7 +1288,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "create_asset/2" do
     test "create asset on valid attributes" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       organisation = user.organisation
       params = Map.put(@valid_asset_attrs, "organisation_id", organisation.id)
       count_before = Asset |> Repo.all() |> length()
@@ -1302,7 +1298,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "create asset on invalid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       count_before = Asset |> Repo.all() |> length()
 
       {:error, changeset} = Document.create_asset(user, @invalid_attrs)
@@ -1335,7 +1331,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "asset_index/2" do
     test "asset index lists the asset data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       organisation = user.organisation
       a1 = insert(:asset, creator: user, organisation: organisation)
       a2 = insert(:asset, creator: user, organisation: organisation)
@@ -1349,7 +1345,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_asset/2" do
     test "get asset returns the asset data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       asset = insert(:asset, creator: user, organisation: user.organisation)
       a_asset = Document.get_asset(asset.id, user)
       assert a_asset.name == asset.name
@@ -1358,7 +1354,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "show_asset/2" do
     test "show asset returns the asset data and preloads" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       asset = insert(:asset, creator: user, organisation: user.organisation)
       a_asset = Document.show_asset(asset.id, user)
       assert a_asset.name == asset.name
@@ -1464,22 +1460,25 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "create_block/2" do
-    test "create block" do
-      block = :block |> insert() |> Map.from_struct()
-      user = insert(:user)
-      create_block = Document.create_block(user, block)
-      changeset = Block.changeset(%Block{}, block)
+    test "creates block with valid params" do
+      block = :block |> build() |> Map.from_struct()
+      user = insert(:user_with_organisation)
+      created_block = Document.create_block(user, block)
 
-      assert changeset.valid?
-      assert is_struct(create_block)
-      refute is_nil(create_block.dataset)
-      assert create_block.name =~ ~r/([a-z]|[A-Z])/
+      assert is_struct(created_block)
+      refute is_nil(created_block.dataset)
+      assert created_block.name == block.name
+    end
+
+    test "returns error changeset with invalid params" do
+      user = insert(:user_with_organisation)
+      assert {:error, %Ecto.Changeset{}} = Document.create_block(user, %{})
     end
   end
 
   describe "get_block/2" do
     test "get block by its ID" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       block = insert(:block, organisation: user.organisation)
       get_block = Document.get_block(block.id, user)
 
@@ -1569,8 +1568,9 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_field_type/2" do
     test "Get a field type from its UUID" do
-      f_type = insert(:field_type)
-      get_field_type = Document.get_field_type(f_type.id, f_type.creator)
+      user = insert(:user_with_organisation)
+      f_type = insert(:field_type, creator: user)
+      get_field_type = Document.get_field_type(f_type.id, user)
 
       assert get_field_type.id == f_type.id
       assert get_field_type.name == f_type.name
@@ -1617,7 +1617,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "create_comment/2" do
     test "create comment on valid attributes" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       organisation = user.organisation
       instance = insert(:instance, creator: user)
 
@@ -1638,7 +1638,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "create comment on invalid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       count_before = Comment |> Repo.all() |> length()
 
       {:error, changeset} = Document.create_comment(user, @invalid_attrs)
@@ -1656,7 +1656,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_comment/2" do
     test "get comment returns the comment data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       comment = insert(:comment, user: user, organisation: user.organisation)
       c_comment = Document.get_comment(comment.id, user)
       assert c_comment.comment == comment.comment
@@ -1668,7 +1668,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "show_comment/2" do
     test "show comment returns the comment data and preloads user and profile" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       comment = insert(:comment, user: user, organisation: user.organisation)
       c_comment = Document.show_comment(comment.id, user)
       assert c_comment.comment == comment.comment
@@ -1699,7 +1699,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "update comment on valid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       organisation = user.organisation
       instance = insert(:instance, creator: user)
 
@@ -1726,7 +1726,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "comment_index/2" do
     test "comment index lists the comment data" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       instance = insert(:instance, creator: user)
       c1 = insert(:comment, user: user, organisation: user.organisation, master_id: instance.id)
       c2 = insert(:comment, user: user, organisation: user.organisation, master_id: instance.id)
@@ -1758,7 +1758,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "create_pipeline/2" do
     test "creates pipeline with valid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       c_type = insert(:content_type, organisation: user.organisation)
       d_temp = insert(:data_template, content_type: c_type)
       state = insert(:state, organisation: user.organisation)
@@ -1789,7 +1789,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns error with invalid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       {:error, changeset} = Document.create_pipeline(user, %{})
       assert %{name: ["can't be blank"], api_route: ["can't be blank"]} == errors_on(changeset)
     end
@@ -1797,7 +1797,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "create_pipe_stage/3" do
     test "creates pipe stage with valid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       pipeline = insert(:pipeline, organisation: user.organisation)
       c_type = insert(:content_type, organisation: user.organisation)
       d_temp = insert(:data_template, content_type: c_type)
@@ -1822,7 +1822,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns unique constraint error when stage with same pipeline and content type ID exists" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
 
       pipeline = insert(:pipeline, organisation: user.organisation)
       c_type = insert(:content_type, organisation: user.organisation)
@@ -1845,7 +1845,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns nil with non-existent UUIDs of datas" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       pipeline = insert(:pipeline)
 
       attrs = %{
@@ -1891,7 +1891,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns nil when given datas does not belong to current user's organsation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       pipeline = insert(:pipeline)
       c_type = insert(:content_type)
       d_temp = insert(:data_template)
@@ -1914,7 +1914,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "pipeline_index/2" do
     test "returns list of pipelines in the users organisation only" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       pipeline1 = insert(:pipeline, organisation: user.organisation)
       pipeline2 = insert(:pipeline)
       %{entries: pipelines} = Document.pipeline_index(user, %{})
@@ -2008,7 +2008,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_pipeline/2" do
     test "returns the pipeline in the user's organisation with given id" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       pipe = insert(:pipeline, organisation: user.organisation)
       pipeline = Document.get_pipeline(user, pipe.id)
       assert pipeline.name == pipe.name
@@ -2016,14 +2016,14 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns nil when pipeline does not belong to the user's organisation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       pipeline = insert(:pipeline)
       response = Document.get_pipeline(user, pipeline.id)
       assert response == nil
     end
 
     test "returns nil for non existent pipeline" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       response = Document.get_pipeline(user, Ecto.UUID.generate())
       assert response == nil
     end
@@ -2036,7 +2036,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "show_pipeline/2" do
     test "returns the pipeline in the user's organisation with given id" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       pipe = insert(:pipeline, organisation: user.organisation)
       pipeline = Document.show_pipeline(user, pipe.id)
       assert pipeline.name == pipe.name
@@ -2044,14 +2044,14 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns nil when pipeline does not belong to the user's organisation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       pipeline = insert(:pipeline)
       response = Document.show_pipeline(user, pipeline.id)
       assert response == nil
     end
 
     test "returns nil for non existent pipeline" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       response = Document.show_pipeline(user, Ecto.UUID.generate())
       assert response == nil
     end
@@ -2064,7 +2064,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "pipeline_update/3" do
     test "updates pipeline with valid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       pipeline = insert(:pipeline)
       c_type = insert(:content_type, organisation: user.organisation)
       d_temp = insert(:data_template, content_type: c_type)
@@ -2119,7 +2119,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_pipe_stage/2" do
     test "returns the pipe stage in the user's organisation with valid IDs and user struct" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       pipeline = insert(:pipeline, organisation: user.organisation)
       stage = insert(:pipe_stage, pipeline: pipeline)
       response = Document.get_pipe_stage(user, stage.id)
@@ -2128,14 +2128,14 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns nil when stage does not belong to user's organisation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       stage = insert(:pipe_stage)
       response = Document.get_pipe_stage(user, stage.id)
       assert response == nil
     end
 
     test "returns nil with non-existent IDs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       response = Document.get_pipe_stage(user, Ecto.UUID.generate())
       assert response == nil
     end
@@ -2148,7 +2148,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "update_pipe_stage/3" do
     test "updates pipe stage with valid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       stage = insert(:pipe_stage)
       c_type = insert(:content_type, organisation: user.organisation)
       d_temp = insert(:data_template, content_type: c_type)
@@ -2169,7 +2169,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns unique constraint error when a stage is updated with same pipeline and content type ID of another existing stage" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       pipeline = insert(:pipeline)
       c_type = insert(:content_type, organisation: user.organisation)
       d_temp = insert(:data_template, content_type: c_type)
@@ -2189,7 +2189,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns nil with non-existent UUIDs of datas" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       stage = insert(:pipe_stage)
 
       attrs = %{
@@ -2224,7 +2224,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns nil when given datas does not belong to current user's organsation" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       stage = insert(:pipe_stage)
       c_type = insert(:content_type)
       d_temp = insert(:data_template)
@@ -2365,7 +2365,7 @@ defmodule WraftDoc.DocumentTest do
   @tag :cict
   describe "create_instance_content_types" do
     test "creates relations for approval systems of content type" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
 
       flow = insert(:flow, organisation: user.organisation)
       insert(:approval_system, flow: flow)
@@ -2397,7 +2397,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "create_collection_form" do
     test "created collection form with valid attrs" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       params = %{"title" => "WraftDoc", "description" => "Wraft Doc"}
       count_before = CollectionForm |> Repo.all() |> length()
       Document.create_collection_form(user, params)
@@ -2421,7 +2421,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_collection_form" do
     test "get_collection_form with valid id" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
 
       collection_form = insert(:collection_form, organisation: user.organisation)
 
@@ -2431,9 +2431,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "get_collection_form_with_invalid_id" do
-      user = insert(:user)
-      # collection_form = insert(:collection_form, organisation: user.organisation)
-
+      user = insert(:user_with_organisation)
       response = Document.get_collection_form(user, Ecto.UUID.generate())
 
       assert response == {:error, :invalid_id, "CollectionForm"}
@@ -2511,7 +2509,7 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_collection_form_field" do
     test "get_collection_form_field with valid id" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       collection_form = insert(:collection_form, organisation: user.organisation)
       collection_form_field = insert(:collection_form_field, collection_form: collection_form)
 
@@ -2521,7 +2519,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "get_collection_form_with_invalid_id" do
-      user = insert(:user)
+      user = insert(:user_with_organisation)
       response = Document.get_collection_form_field(user, Ecto.UUID.generate())
 
       assert response == {:error, :invalid_id, "CollectionFormField"}

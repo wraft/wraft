@@ -11,33 +11,9 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
     data: %{name: "John Doe"}
   }
 
-  setup %{conn: conn} do
-    user = insert(:user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
-
   describe "create" do
     test "creates trigger history and pipeline run job with valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
 
       pipeline = insert(:pipeline, organisation: user.organisation)
       job_count_before = Oban.Job |> Repo.all() |> length()
@@ -68,12 +44,6 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
 
     test "does not create trigger history with invalid attrs", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
 
       pipeline = insert(:pipeline, organisation: user.organisation)
       job_count_before = Oban.Job |> Repo.all() |> length()
@@ -94,14 +64,6 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
     test "does not create trigger history when pipeline belongs to different organisation", %{
       conn: conn
     } do
-      user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
       pipeline = insert(:pipeline)
       job_count_before = Oban.Job |> Repo.all() |> length()
       history_count_before = TriggerHistory |> Repo.all() |> length()
@@ -120,15 +82,9 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
   describe "index/2" do
     test "index lists triggers under a pipeline with pagination", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
       pipeline = insert(:pipeline, organisation: user.organisation)
       trigger1 = insert(:trigger_history, state: 1, pipeline: pipeline, creator: user)
       trigger2 = insert(:trigger_history, state: 2, pipeline: pipeline, creator: user)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
 
       conn = get(conn, Routes.v1_trigger_history_path(conn, :index, pipeline.id))
       trigger_history_index = json_response(conn, 200)["triggers"]

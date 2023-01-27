@@ -12,30 +12,12 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   @invalid_attrs %{name: "", description: ""}
   setup %{conn: conn} do
     role = insert(:role, name: "super_admin")
-    user = insert(:user)
-    insert(:user_role, role: role, user: user)
+    insert(:user_role, role: role, user: conn.assigns[:current_user])
 
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
+    :ok
   end
 
   test "create field type by valid attrrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     count_before = FieldType |> Repo.all() |> length()
 
     conn = post(conn, Routes.v1_field_type_path(conn, :create, @valid_attrs))
@@ -45,11 +27,6 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   end
 
   test "does not create field type by invalid attrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     count_before = FieldType |> Repo.all() |> length()
 
     conn = post(conn, Routes.v1_field_type_path(conn, :create, @invalid_attrs))
@@ -61,11 +38,6 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   test "update field type on valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     field_type = insert(:field_type, creator: user)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     count_before = FieldType |> Repo.all() |> length()
 
@@ -80,11 +52,6 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
 
     field_type = insert(:field_type, creator: user)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn = put(conn, Routes.v1_field_type_path(conn, :update, field_type.id), @invalid_attrs)
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
   end
@@ -92,11 +59,6 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   test "index lists field types", %{conn: conn} do
     ft1 = insert(:field_type)
     ft2 = insert(:field_type)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_field_type_path(conn, :index))
 
@@ -110,32 +72,17 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
     user = conn.assigns.current_user
     field_type = insert(:field_type, creator: user)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn = get(conn, Routes.v1_field_type_path(conn, :show, field_type.id))
 
     assert json_response(conn, 200)["name"] == field_type.name
   end
 
   test "error not found for id does not exists", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn = get(conn, Routes.v1_field_type_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 400)["errors"] == "The FieldType id does not exist..!"
   end
 
   test "delete field type by given id", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     user = conn.assigns.current_user
     field_type = insert(:field_type, creator: user)
     count_before = FieldType |> Repo.all() |> length()
@@ -148,11 +95,6 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
   test "error not found on user from another organisation", %{conn: conn} do
     user = insert(:user)
     field_type = insert(:field_type, creator: user)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_field_type_path(conn, :show, field_type.id))
 

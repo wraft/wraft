@@ -36,7 +36,8 @@ defmodule WraftDocWeb.ConnCase do
     pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WraftDoc.Repo, shared: not tags[:async])
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
 
-    user = WraftDoc.Factory.insert(:user)
+    user = WraftDoc.Factory.insert(:user_with_organisation)
+    WraftDoc.Factory.insert(:membership, organisation: user.organisation)
 
     {:ok, token, _} =
       WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})

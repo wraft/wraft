@@ -12,6 +12,7 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
 
   setup do
     Logger.configure(level: :info)
+    on_exit(fn -> Logger.configure(level: :warn) end)
   end
 
   describe "performs sending email" do

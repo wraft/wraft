@@ -20,33 +20,10 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   }
 
   @invalid_attrs %{engine_id: nil}
-  setup %{conn: conn} do
-    user = insert(:user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
 
   describe "create/2" do
     test "create layouts on valid attrrs", %{conn: conn} do
       user = conn.assigns[:current_user]
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
 
       count_before = Layout |> Repo.all() |> length()
       %{id: engine_id} = insert(:engine)
@@ -74,14 +51,6 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
     end
 
     test "does not create layouts on invalid attrs", %{conn: conn} do
-      user = conn.assigns[:current_user]
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
       count_before = Layout |> Repo.all() |> length()
       %{id: engine_id} = insert(:engine)
       params = Map.put(@invalid_attrs, :engine_id, engine_id)
@@ -99,13 +68,8 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   describe "update/2" do
     test "update layouts on valid attributes", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-      layout = insert(:layout, creator: user, organisation: user.organisation)
 
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
+      layout = insert(:layout, creator: user, organisation: user.organisation)
 
       engine = insert(:engine)
       a1 = insert(:asset, organisation: user.organisation)
@@ -134,13 +98,8 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
 
     test "does't update layouts on invalid attrs", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-      layout = insert(:layout, creator: user, organisation: user.organisation)
 
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
+      layout = insert(:layout, creator: user, organisation: user.organisation)
 
       conn =
         conn
@@ -154,14 +113,9 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   describe "index/2" do
     test "index lists assests by current user", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
+
       a1 = insert(:layout, creator: user, organisation: user.organisation)
       a2 = insert(:layout, creator: user, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
 
       conn = get(conn, Routes.v1_layout_path(conn, :index))
       layouts_index = json_response(conn, 200)["layouts"]
@@ -174,15 +128,10 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   describe "show/2" do
     test "show renders layout details by id", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
+
       layout = insert(:layout, creator: user, organisation: user.organisation)
       layout_asset1 = insert(:layout_asset, layout: layout)
       layout_asset2 = insert(:layout_asset, layout: layout)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
 
       conn = get(conn, Routes.v1_layout_path(conn, :show, layout.id))
 
@@ -199,31 +148,13 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
     end
 
     test "error not found for id does not exists", %{conn: conn} do
-      user = conn.assigns[:current_user]
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
       conn = get(conn, Routes.v1_layout_path(conn, :show, Ecto.UUID.generate()))
       assert json_response(conn, 400)["errors"] == "The Layout id does not exist..!"
     end
 
     test "error not found for user from another organisation", %{conn: conn} do
-      current_user = conn.assigns[:current_user]
-      insert(:membership, organisation: current_user.organisation)
-      user = insert(:user)
-      layout = insert(:layout, creator: user, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, current_user)
-
+      layout = insert(:layout)
       conn = get(conn, Routes.v1_layout_path(conn, :show, layout.id))
-
       assert json_response(conn, 400)["errors"] == "The Layout id does not exist..!"
     end
   end
@@ -231,14 +162,6 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   describe "delete/2" do
     test "delete layout by given id", %{conn: conn} do
       user = conn.assigns[:current_user]
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
-      user = conn.assigns.current_user
       layout = insert(:layout, creator: user, organisation: user.organisation)
       count_before = Layout |> Repo.all() |> length()
 

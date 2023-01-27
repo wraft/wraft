@@ -273,12 +273,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   Invite new member.
   """
   swagger_path :invite do
-    post("/organisations/{id}/invite")
+    post("/organisations/invite")
     summary("Invite new member to the organisation")
     description("Invite new member to the organisation")
 
     parameters do
-      id(:path, :string, "Organisation id", required: true)
       email(:body, :string, "Email of the user", required: true)
       role_id(:body, :string, "role of the user", required: true)
     end
@@ -289,10 +288,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def invite(conn, %{"id" => id} = params) do
+  def invite(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %Organisation{} = organisation <- Enterprise.check_permission(current_user, id),
+    with %Organisation{} = organisation <-
+           Enterprise.get_organisation(current_user.current_org_id),
          :ok <- Enterprise.already_member(params["email"]),
          %Role{name: role_name} <- Account.get_role(params["role_id"]),
          {:ok, _} <-
