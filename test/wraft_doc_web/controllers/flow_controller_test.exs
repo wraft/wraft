@@ -11,33 +11,8 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   }
 
   @invalid_attrs %{name: ""}
-  setup %{conn: conn} do
-    user = insert(:user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
 
   test "create flow by valid attrrs and creates default state", %{conn: conn} do
-    user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
-
     state_count_before = State |> Repo.all() |> length()
     count_before = Flow |> Repo.all() |> length()
     %{id: organisation_id} = insert(:organisation)
@@ -56,14 +31,6 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   end
 
   test "does not create flow by invalid attrs", %{conn: conn} do
-    user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
-
     count_before = Flow |> Repo.all() |> length()
 
     conn =
@@ -77,13 +44,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "update flow on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     flow = insert(:flow, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Flow |> Repo.all() |> length()
     %{id: organisation_id} = insert(:organisation)
@@ -100,13 +61,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "does't update flow on invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     flow = insert(:flow, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn =
       conn
@@ -118,14 +73,8 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "index lists flow by current user", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     f1 = insert(:flow, creator: user, organisation: user.organisation)
     f2 = insert(:flow, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_flow_path(conn, :index))
 
@@ -137,13 +86,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "show renders flow details by id", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     flow = insert(:flow, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_flow_path(conn, :show, flow.id))
 
@@ -151,26 +94,12 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   end
 
   test "error not found for id does not exists", %{conn: conn} do
-    user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
-
     conn = get(conn, Routes.v1_flow_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 400)["errors"] == "The Flow id does not exist..!"
   end
 
   test "delete flow by given id", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     flow = insert(:flow, creator: user, organisation: user.organisation)
     count_before = Flow |> Repo.all() |> length()
 
@@ -180,15 +109,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   end
 
   test "error not found for user from another organisation", %{conn: conn} do
-    current_user = conn.assigns[:current_user]
-    insert(:membership, organisation: current_user.organisation)
-    user = insert(:user)
-    flow = insert(:flow, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, current_user)
+    flow = insert(:flow)
 
     conn = get(conn, Routes.v1_flow_path(conn, :show, flow.id))
 
@@ -198,16 +119,10 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   describe "align_states/2" do
     test "align order of state under a flow ", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
       flow = insert(:flow, creator: user, organisation: user.organisation)
       s1 = insert(:state, flow: flow, organisation: user.organisation, order: 1)
       s2 = insert(:state, flow: flow, organisation: user.organisation, order: 2)
       params = %{states: [%{id: s1.id, order: 2}, %{id: s2.id, order: 1}]}
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
 
       conn = put(conn, Routes.v1_flow_path(conn, :align_states, flow.id), params)
 

@@ -13,34 +13,8 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
   }
 
   @invalid_attrs %{comment: nil}
-  setup %{conn: conn} do
-    role = insert(:role, name: "super_admin")
-    user = insert(:user)
-    insert(:user_role, role: role, user: user)
-    insert(:profile, user: user)
-    user = Repo.preload(user, [:profile])
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
 
   test "create comments by valid attrrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     count_before = Comment |> Repo.all() |> length()
 
     conn =
@@ -54,11 +28,6 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
   end
 
   test "does not create comments by invalid attrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     count_before = Comment |> Repo.all() |> length()
 
     conn =
@@ -73,11 +42,6 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
   test "update comments on valid attributes", %{conn: conn} do
     current_user = conn.assigns[:current_user]
     comment = insert(:comment, user: current_user, organisation: current_user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Comment |> Repo.all() |> length()
 
@@ -95,11 +59,6 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
     comment = insert(:comment, user: user, organisation: user.organisation)
 
     conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
-    conn =
       conn
       |> put(Routes.v1_comment_path(conn, :update, comment.id, @invalid_attrs))
       |> doc(operation_id: "update_comment")
@@ -112,11 +71,6 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
 
     a1 = insert(:comment, user: user, organisation: user.organisation)
     a2 = insert(:comment, user: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
 
     conn =
       get(
@@ -151,11 +105,6 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
       )
 
     conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
-
-    conn =
       get(
         conn,
         Routes.v1_comment_path(conn, :reply, comment.id, %{
@@ -176,32 +125,17 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
     current_user = conn.assigns[:current_user]
     comment = insert(:comment, user: current_user, organisation: current_user.organisation)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn = get(conn, Routes.v1_comment_path(conn, :show, comment.id))
 
     assert json_response(conn, 200)["comment"] == comment.comment
   end
 
   test "error not found for id does not exists", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn = get(conn, Routes.v1_comment_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 400)["errors"] == "The Comment id does not exist..!"
   end
 
   test "delete comment by given id", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     user = conn.assigns.current_user
     comment = insert(:comment, user: user, organisation: user.organisation)
     count_before = Comment |> Repo.all() |> length()
@@ -214,11 +148,6 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
   test "error not found for user from another organisation", %{conn: conn} do
     user = insert(:user)
     comment = insert(:comment, user: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_comment_path(conn, :show, comment.id))
 

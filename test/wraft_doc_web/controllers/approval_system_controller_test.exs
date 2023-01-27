@@ -7,32 +7,8 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
   @name "Review by VC"
   @updated_name "Final review"
   @invalid_attrs %{pre_state_id: nil}
-  setup %{conn: conn} do
-    role = insert(:role, name: "super_admin")
-    user = insert(:user)
-    insert(:user_role, role: role, user: user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
 
   test "create approval_systems by valid attrrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     current_user = conn.assigns.current_user
 
     flow = insert(:flow, organisation: current_user.organisation)
@@ -60,11 +36,6 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
   end
 
   test "does not create approval_systems by invalid attrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     count_before = ApprovalSystem |> Repo.all() |> length()
 
     conn = post(conn, Routes.v1_approval_system_path(conn, :create, @invalid_attrs))
@@ -74,11 +45,6 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
   end
 
   test "update approval_systems on valid attributes", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     current_user = conn.assigns.current_user
 
     organisation = current_user.organisation
@@ -126,11 +92,6 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
       )
 
     conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
-    conn =
       put(conn, Routes.v1_approval_system_path(conn, :update, approval_system.id, @invalid_attrs))
 
     assert json_response(conn, 422)["errors"]["pre_state_id"] == ["can't be blank"]
@@ -154,32 +115,17 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
         name: @name
       )
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn = get(conn, Routes.v1_approval_system_path(conn, :show, approval_system.id))
 
     assert json_response(conn, 200)["approval_system"]["name"] == @name
   end
 
   test "error not found for id does not exists", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn = get(conn, Routes.v1_approval_system_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 400)["errors"] == "The ApprovalSystem id does not exist..!"
   end
 
   test "delete approval_system by given id", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     user = conn.assigns.current_user
     organisation = user.organisation
     pre_state = insert(:state, creator: user, organisation: organisation)
@@ -257,11 +203,6 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
         approver: user,
         flow: flow
       )
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
 
       conn = get(conn, Routes.v1_approval_system_path(conn, :index), page: 1)
 

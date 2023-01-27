@@ -12,31 +12,13 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
 
   setup %{conn: conn} do
     role = insert(:role, name: "super_admin")
-    user = insert(:user)
-    insert(:user_role, role: role, user: user)
+    insert(:user_role, role: role, user: conn.assigns[:current_user])
 
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
+    :ok
   end
 
   describe "create/2" do
     test "creates a plan with valid attrs", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       conn = post(conn, Routes.v1_plan_path(conn, :create), @valid_attrs)
       assert json_response(conn, 200)["name"] == @valid_attrs.name
       assert json_response(conn, 200)["description"] == @valid_attrs.description
@@ -45,34 +27,25 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
     end
 
     test "does not create a plan with invalid attrs", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       conn = post(conn, Routes.v1_plan_path(conn, :create), %{})
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
       assert json_response(conn, 422)["errors"]["description"] == ["can't be blank"]
     end
 
     test "does not create a plan if current user is not an admin" do
-      user = insert(:user)
+      user = WraftDoc.Factory.insert(:user_with_organisation)
+      WraftDoc.Factory.insert(:membership, organisation: user.organisation)
+
+      {:ok, token, _} =
+        WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})
 
       conn =
-        build_conn()
-        |> put_req_header("accept", "application/json")
-        |> post(
-          Routes.v1_user_path(build_conn(), :signin, %{
-            email: user.email,
-            password: user.password
-          })
-        )
+        Phoenix.ConnTest.build_conn()
+        |> Plug.Conn.put_req_header("accept", "application/json")
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+        |> Plug.Conn.assign(:current_user, user)
 
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-        |> post(Routes.v1_plan_path(conn, :create), %{})
+      conn = post(conn, Routes.v1_plan_path(conn, :create), %{})
 
       assert json_response(conn, 400)["errors"] == "You are not authorized for this action.!"
     end
@@ -80,11 +53,6 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
 
   describe "index/2" do
     test "returns all the plans when admin user is logged in", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       p1 = insert(:plan)
       p2 = insert(:plan)
 
@@ -102,24 +70,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
       assert plan_descriptions =~ p2.description
     end
 
-    test "returns all the plans when normal user is logged in" do
-      user = insert(:user)
-
-      conn =
-        build_conn()
-        |> put_req_header("accept", "application/json")
-        |> post(
-          Routes.v1_user_path(build_conn(), :signin, %{
-            email: user.email,
-            password: user.password
-          })
-        )
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
+    test "returns all the plans when normal user is logged in", %{conn: conn} do
       p1 = insert(:plan)
       p2 = insert(:plan)
 
@@ -158,11 +109,6 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
 
   describe "show/2" do
     test "shows a plan on valid uuid when admin user is logged in", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       plan = insert(:plan)
       conn = get(conn, Routes.v1_plan_path(conn, :show, plan.id))
 
@@ -172,24 +118,7 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
       assert json_response(conn, 200)["monthly_amount"] == plan.monthly_amount
     end
 
-    test "shows a plan on valid uuid when normal user is logged in" do
-      user = insert(:user)
-
-      conn =
-        build_conn()
-        |> put_req_header("accept", "application/json")
-        |> post(
-          Routes.v1_user_path(build_conn(), :signin, %{
-            email: user.email,
-            password: user.password
-          })
-        )
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
+    test "shows a plan on valid uuid when normal user is logged in", %{conn: conn} do
       plan = insert(:plan)
 
       conn = get(conn, Routes.v1_plan_path(conn, :show, plan.id))
@@ -218,21 +147,11 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
     end
 
     test "returns nil when plan with given uuid does not exist", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       conn = put(conn, Routes.v1_plan_path(conn, :update, Ecto.UUID.generate()), %{name: ""})
       assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
     test "returns nil with non UUID value", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       conn = delete(conn, Routes.v1_plan_path(conn, :delete, 1))
       assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
@@ -240,11 +159,6 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
 
   describe "update/2" do
     test "updates plan on valid attributes", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       plan = insert(:plan)
       conn = put(conn, Routes.v1_plan_path(conn, :update, plan.id), @valid_attrs)
 
@@ -255,55 +169,37 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
     end
 
     test "does not update plan and returns error on invalid attributes", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       plan = insert(:plan)
       conn = put(conn, Routes.v1_plan_path(conn, :update, plan.id), %{name: ""})
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
     end
 
     test "returns nil when plan with given uuid does not exist", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       conn = put(conn, Routes.v1_plan_path(conn, :update, Ecto.UUID.generate()), %{name: ""})
       assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
     test "returns nil with non UUID value", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       conn = delete(conn, Routes.v1_plan_path(conn, :delete, 1))
       assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
     test "returns error if current user is not admin" do
-      user = insert(:user)
+      user = WraftDoc.Factory.insert(:user_with_organisation)
+      WraftDoc.Factory.insert(:membership, organisation: user.organisation)
+
+      {:ok, token, _} =
+        WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> Plug.Conn.put_req_header("accept", "application/json")
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+        |> Plug.Conn.assign(:current_user, user)
+
       plan = insert(:plan)
 
-      conn =
-        build_conn()
-        |> put_req_header("accept", "application/json")
-        |> post(
-          Routes.v1_user_path(build_conn(), :signin, %{
-            email: user.email,
-            password: user.password
-          })
-        )
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-        |> put(Routes.v1_plan_path(conn, :update, plan.id), %{})
+      conn = put(conn, Routes.v1_plan_path(conn, :update, plan.id), %{})
 
       assert json_response(conn, 400)["errors"] == "You are not authorized for this action.!"
     end
@@ -312,12 +208,6 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
   describe "delete/2" do
     test "deletes a plan with valid uuid", %{conn: conn} do
       plan = insert(:plan)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       conn = delete(conn, Routes.v1_plan_path(conn, :delete, plan.id))
       assert json_response(conn, 200)["name"] == plan.name
       assert json_response(conn, 200)["description"] == plan.description
@@ -326,44 +216,31 @@ defmodule WraftDocWeb.Api.V1.PlanControllerTest do
     end
 
     test "returns nil with non-existent UUID", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       conn = delete(conn, Routes.v1_plan_path(conn, :delete, Ecto.UUID.generate()))
       assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
     test "returns nil with non UUID value", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       conn = delete(conn, Routes.v1_plan_path(conn, :delete, 1))
       assert json_response(conn, 400)["errors"] == "The Plan id does not exist..!"
     end
 
     test "returns error if current user is not admin" do
-      user = insert(:user)
+      user = WraftDoc.Factory.insert(:user_with_organisation)
+      WraftDoc.Factory.insert(:membership, organisation: user.organisation)
+
+      {:ok, token, _} =
+        WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> Plug.Conn.put_req_header("accept", "application/json")
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+        |> Plug.Conn.assign(:current_user, user)
+
       plan = insert(:plan)
 
-      conn =
-        build_conn()
-        |> put_req_header("accept", "application/json")
-        |> post(
-          Routes.v1_user_path(build_conn(), :signin, %{
-            email: user.email,
-            password: user.password
-          })
-        )
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-        |> delete(Routes.v1_plan_path(conn, :delete, plan.id))
+      conn = delete(conn, Routes.v1_plan_path(conn, :delete, plan.id))
 
       assert json_response(conn, 400)["errors"] == "You are not authorized for this action.!"
     end

@@ -82,7 +82,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
        %{conn: conn} do
     user = conn.assigns.current_user
     u2 = insert(:user, organisation: user.organisation)
-    insert(:membership, organisation: user.organisation)
     flow = insert(:flow, organisation: user.organisation)
     insert(:state, organisation: user.organisation, flow: flow, order: 1)
     insert(:approval_system, flow: flow, approver: u2)
@@ -110,7 +109,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "update instances on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     instance = insert(:instance, creator: user, content_type: content_type)
 
@@ -133,7 +131,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "does't update instances for invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
     instance = insert(:instance, creator: user, content_type: content_type)
 
@@ -161,7 +158,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "all templates lists all instances under an organisation", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     ct1 = insert(:content_type)
     ct2 = insert(:content_type)
 
@@ -179,7 +175,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   test "show renders instance details by id", %{conn: conn} do
     user = conn.assigns.current_user
     u2 = insert(:user, organisation: user.organisation)
-    insert(:membership, organisation: user.organisation)
     flow = insert(:flow, organisation: user.organisation)
     s = insert(:state, organisation: user.organisation, flow: flow, order: 1)
     as = insert(:approval_system, flow: flow, approver: u2, pre_state: s)
@@ -194,9 +189,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   test "error not found for id does not exists", %{conn: conn} do
-    user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
-
     conn = get(conn, Routes.v1_instance_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 400)["errors"] == "The Instance id does not exist..!"
   end
@@ -215,8 +207,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   test "error invalid id for user from another organisation", %{conn: conn} do
-    current_user = conn.assigns[:current_user]
-    insert(:membership, organisation: current_user.organisation)
     user = insert(:user)
     insert(:membership, organisation: user.organisation)
     content_type = insert(:content_type, creator: user, organisation: user.organisation)
@@ -230,7 +220,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   describe "state_update" do
     test "returns success response on updating instance state successfully", %{conn: conn} do
       current_user = conn.assigns[:current_user]
-      insert(:membership, organisation: current_user.organisation)
       content_type = insert(:content_type, organisation: current_user.organisation)
       state = insert(:state, flow: content_type.flow, organisation: current_user.organisation)
       instance = insert(:instance, content_type: content_type)
@@ -246,7 +235,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     test "returns 400 when update fails", %{conn: conn} do
       current_user = conn.assigns[:current_user]
-      insert(:membership, organisation: current_user.organisation)
       content_type = insert(:content_type, organisation: current_user.organisation)
       state = insert(:state, organisation: current_user.organisation)
       instance = insert(:instance, content_type: content_type)
@@ -262,7 +250,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     test "returns 400 when instance is not found", %{conn: conn} do
       current_user = conn.assigns[:current_user]
-      insert(:membership, organisation: current_user.organisation)
       content_type = insert(:content_type)
       state = insert(:state, flow: content_type.flow, organisation: current_user.organisation)
       instance = insert(:instance, content_type: content_type)
@@ -278,7 +265,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
     test "returns 400 when state is not found", %{conn: conn} do
       current_user = conn.assigns[:current_user]
-      insert(:membership, organisation: current_user.organisation)
       content_type = insert(:content_type, organisation: current_user.organisation)
       state = insert(:state, flow: content_type.flow)
       instance = insert(:instance, content_type: content_type)
@@ -295,7 +281,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "lock unlock locks if editable true", %{conn: conn} do
     current_user = conn.assigns[:current_user]
-    insert(:membership, organisation: current_user.organisation)
 
     content_type =
       insert(:content_type, creator: current_user, organisation: current_user.organisation)
@@ -310,7 +295,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "can't update if the instance is editable false", %{conn: conn} do
     current_user = conn.assigns[:current_user]
-    insert(:membership, organisation: current_user.organisation)
 
     content_type =
       insert(:content_type, creator: current_user, organisation: current_user.organisation)
@@ -326,7 +310,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "search instances searches instances by title on serialized", %{conn: conn} do
     current_user = conn.assigns[:current_user]
-    insert(:membership, organisation: current_user.organisation)
 
     content_type =
       insert(:content_type, creator: current_user, organisation: current_user.organisation)
@@ -349,7 +332,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "change/2 lists changes in a version with its previous version", %{conn: conn} do
     current_user = conn.assigns[:current_user]
-    insert(:membership, organisation: current_user.organisation)
 
     content_type =
       insert(:content_type, creator: current_user, organisation: current_user.organisation)
@@ -415,7 +397,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       conn: conn
     } do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
       flow = insert(:flow, organisation: user.organisation)
       s1 = insert(:state, organisation: user.organisation, flow: flow, order: 1)
       s2 = insert(:state, organisation: user.organisation, flow: flow, order: 2)

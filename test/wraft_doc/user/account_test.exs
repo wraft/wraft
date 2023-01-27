@@ -99,7 +99,7 @@ defmodule WraftDoc.AccountTest do
 
       insert(:auth_token, value: token, token_type: "invite")
 
-      {:ok, ^organisation, %{"token" => ^token, "email" => @email, "role" => "user"}} =
+      {:ok, ^organisation} =
         Account.get_organisation_from_token(%{"token" => token, "email" => @email})
     end
 
@@ -236,13 +236,12 @@ defmodule WraftDoc.AccountTest do
   @tag :authenticate
   describe "authenticate/1" do
     test "successfully authenticate when correct password is given" do
-      user = insert(:user)
-      personal_org = insert(:organisation, name: "Personal", email: user.email)
+      user = insert(:user_with_personal_organisation)
       response = Account.authenticate(%{user: user, password: "encrypt"})
 
       assert tuple_size(response) == 3
       assert elem(response, 0) == :ok
-      assert elem(response, 2)["organisation_id"] == personal_org.id
+      assert elem(response, 2)["organisation_id"] == user.current_org_id
     end
 
     test "does not authenticate when nil or empty password is given" do
@@ -410,7 +409,7 @@ defmodule WraftDoc.AccountTest do
 
       {:ok, job} = Account.send_password_reset_mail(auth_token)
 
-      assert job.args == %{email: "wraftuser-0@wmail.com", name: "wrafts user", token: "token"}
+      assert job.args == %{email: auth_token.user.email, name: "wrafts user", token: "token"}
 
       assert_enqueued(
         worker: EmailWorker,
@@ -498,22 +497,28 @@ defmodule WraftDoc.AccountTest do
       assert [] == Repo.all(AuthToken)
     end
 
-    test "deletes the auth token with the given value" do
-      auth_token = insert(:auth_token)
-      deleted_auth_token = Account.delete_auth_token!(auth_token.value)
-
-      assert auth_token.id == deleted_auth_token.id
-      assert [] == Repo.all(AuthToken)
-    end
-
     test "raises with non existing auth token" do
       auth_token = insert(:auth_token)
       assert Account.delete_auth_token!(auth_token)
       assert_raise(Ecto.StaleEntryError, fn -> Account.delete_auth_token!(auth_token) end)
     end
 
-    test "raises with non existing auth token value" do
+    test "raises with invalid auth token" do
       assert_raise(BadMapError, fn -> Account.delete_auth_token!("non-exitest-token") end)
+    end
+  end
+
+  describe "delete_auth_token/1" do
+    test "deletes the auth token with the given value" do
+      auth_token = insert(:auth_token)
+      {:ok, deleted_auth_token} = Account.delete_auth_token(auth_token.value)
+
+      assert auth_token.id == deleted_auth_token.id
+      assert [] == Repo.all(AuthToken)
+    end
+
+    test "returns {:error, :invalid}  with non-existent token value" do
+      {:error, :invalid} = Account.delete_auth_token("non-exitest-token")
     end
   end
 

@@ -15,8 +15,8 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
   }
   @invalid_attrs %{"name" => "wraft user", "email" => "email"}
 
-  setup %{conn: conn} do
-    {:ok, %{conn: conn}}
+  setup do
+    {:ok, %{conn: build_conn()}}
   end
 
   describe "registration/1" do
@@ -85,12 +85,10 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
         |> post(Routes.v1_registration_path(conn, :create, params))
         |> doc(operation_id: "create_user")
 
-      {:ok, token_params} = WraftDoc.Account.check_token(token, :invite)
       count_after = User |> Repo.all() |> length()
       assert count_before + 1 == count_after
       assert json_response(conn, 201)["user"]["name"] == @valid_attrs["name"]
       assert json_response(conn, 201)["user"]["email"] == @valid_attrs["email"]
-      assert token_params.role == "super_admin"
     end
 
     test "invite auth token is deleted on successfull registration", %{conn: conn} do
