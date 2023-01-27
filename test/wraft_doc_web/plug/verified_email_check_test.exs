@@ -20,6 +20,6 @@ defmodule WraftDocWeb.Plug.VerifiedEmailCheckTest do
     assert returned_conn.status == 400
 
     assert json_response(returned_conn, 400)["errors"] ==
-             "Your email is not verified. Please verify your email.!"
+             "Your email is not verified. Please verify your email!"
   end
 end

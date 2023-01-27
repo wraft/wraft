@@ -51,6 +51,14 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
+  def render("org_by_user.json", %{organisation: organisation}) do
+    %{
+      id: organisation.id,
+      name: organisation.name,
+      logo: generate_url(organisation)
+    }
+  end
+
   def render("members.json", %{
         members: members,
         page_number: page_number,

@@ -358,6 +358,28 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     end
   end
 
+  describe "index_by_user/2" do
+    test "list all organisations the user has joined", %{conn: conn} do
+      user = conn.assigns[:current_user]
+      personal_org = insert(:organisation, name: "Personal")
+      invited_org = insert(:organisation, name: "Invited Org")
+
+      insert(:user_organisation, user: user, organisation: personal_org)
+      insert(:user_organisation, user: user, organisation: invited_org)
+
+      conn =
+        get(
+          conn,
+          Routes.v1_user_path(conn, :index_by_user, %{})
+        )
+
+      assert Enum.at(json_response(conn, 200)["organisations"], 0)["id"] == personal_org.id
+      assert Enum.at(json_response(conn, 200)["organisations"], 1)["id"] == invited_org.id
+      assert Enum.at(json_response(conn, 200)["organisations"], 0)["name"] == personal_org.name
+      assert Enum.at(json_response(conn, 200)["organisations"], 1)["name"] == invited_org.name
+    end
+  end
+
   # describe "search/2" do
   #   test "search user api filter by there name", %{conn: conn} do
   #     conn =

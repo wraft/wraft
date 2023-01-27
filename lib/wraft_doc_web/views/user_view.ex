@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
   """
   use WraftDocWeb, :view
   alias WraftDocWeb.Api.V1.InstanceApprovalSystemView
+  alias WraftDocWeb.Api.V1.OrganisationView
   alias WraftDocWeb.Api.V1.ProfileView
   alias __MODULE__
 
@@ -153,6 +154,16 @@ defmodule WraftDocWeb.Api.V1.UserView do
   def render("token_verified.json", %{info: info}) do
     %{
       info: info
+    }
+  end
+
+  @doc """
+   List organisations by the user
+  """
+  def render("index_by_user.json", %{organisations: organisations}) do
+    %{
+      organisations:
+        render_many(organisations, OrganisationView, "org_by_user.json", as: :organisation)
     }
   end
 

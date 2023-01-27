@@ -929,4 +929,20 @@ defmodule WraftDoc.EnterpriseTest do
     assert vendor_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ v1.name
     assert vendor_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ v2.name
   end
+
+  describe "list_org_by_user/1" do
+    test "return user struct with all organisations the user has joined" do
+      user = insert(:user)
+      personal_org = insert(:organisation, name: "Personal")
+      invited_org = insert(:organisation, name: "Invited Org")
+
+      insert(:user_organisation, user: user, organisation: personal_org)
+      insert(:user_organisation, user: user, organisation: invited_org)
+
+      returned_user = Enterprise.list_org_by_user(user)
+      assert Enum.member?(returned_user.organisations, personal_org) == true
+      assert Enum.member?(returned_user.organisations, invited_org) == true
+      assert length(returned_user.organisations) == 2
+    end
+  end
 end
