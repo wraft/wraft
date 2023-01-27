@@ -3,7 +3,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   use PhoenixSwagger
   # plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
-  alias WraftDoc.{Account, Account.Role, Enterprise, Enterprise.Organisation}
+  alias WraftDoc.Account
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Organisation
 
   action_fallback(WraftDocWeb.FallbackController)
 

@@ -22,7 +22,7 @@ defmodule WraftDocWeb.Plug.VerifiedEmailCheck do
       false ->
         body =
           Jason.encode!(%{
-            errors: "Your email is not verified. Please verify your email.!"
+            errors: "Your email is not verified. Please verify your email!"
           })
 
         conn
