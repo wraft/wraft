@@ -494,6 +494,14 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+  List all the organisations for the user
+  """
+  @spec list_org_by_user(User.t()) :: User.t() | nil
+  def list_org_by_user(user) do
+    Repo.preload(user, :organisations)
+  end
+
+  @doc """
   Create approval system
   """
   @spec create_approval_system(User.t(), map) ::

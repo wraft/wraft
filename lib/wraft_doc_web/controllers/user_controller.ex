@@ -12,6 +12,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   alias WraftDoc.Account.AuthToken
   alias WraftDoc.Account.User
   alias WraftDoc.Document
+  alias WraftDoc.Enterprise
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -263,6 +264,41 @@ defmodule WraftDocWeb.Api.V1.UserController do
           example(%{
             token:
               "asddff23a2ds_f3asdf3a21fds23f2as32f3as3f213a2df3s2f3a213sad12f13df13adsf-21f1d3sf"
+          })
+        end,
+      OrganisationByUser:
+        swagger_schema do
+          title("Organisation by user")
+          description("Organisation spec for a given user")
+
+          properties do
+            id(:string, "id of the organisation")
+            name(:string, "name of the organisation")
+            logo(:string, "logo of the organisation")
+          end
+        end,
+      OrganisationByUserIndex:
+        swagger_schema do
+          title("Organisation by user index")
+          description("List Organisations by a user")
+
+          properties do
+            organisations(Schema.ref(:OrganisationByUser))
+          end
+
+          example(%{
+            organisations: [
+              %{
+                id: "5c69ce59-5b38-4a63-ab34-17b29d157887",
+                name: "Invited org",
+                logo: "/logo.jpg"
+              },
+              %{
+                id: "25af23bc-47b4-4560-a1b1-e41b31020733",
+                name: "Personal",
+                logo: "/logo_personal.jpg"
+              }
+            ]
           })
         end
     }
@@ -560,6 +596,24 @@ defmodule WraftDocWeb.Api.V1.UserController do
          %User{} = user <- Account.get_user_by_email(email),
          {:ok, %User{email_verify: true} = user} <- Account.update_email_status(user) do
       render(conn, "check_email_token.json", verification_status: user.email_verify)
+    end
+  end
+
+  swagger_path :index_by_user do
+    get("/users/organisations")
+    summary("List organisations by user")
+    description("List of all the organsiations the user is part of")
+
+    response(200, "Ok", Schema.ref(:OrganisationByUserIndex))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec index_by_user(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index_by_user(conn, _params) do
+    current_user = conn.assigns.current_user
+
+    with %User{} = user <- Enterprise.list_org_by_user(current_user) do
+      render(conn, "index_by_user.json", organisations: user.organisations)
     end
   end
 end
