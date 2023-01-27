@@ -1658,10 +1658,9 @@ defmodule WraftDoc.Document do
   """
   @spec create_block(User.t(), map) :: Block.t()
   def create_block(%{current_org_id: org_id} = current_user, params) do
-    params = Map.merge(params, %{organisation_id: org_id})
+    params = Map.merge(params, %{organisation_id: org_id, creator_id: current_user.id})
 
-    current_user
-    |> build_assoc(:blocks)
+    %Block{}
     |> Block.changeset(params)
     |> Repo.insert()
     |> case do

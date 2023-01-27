@@ -4,9 +4,13 @@ defmodule WraftDoc.Enterprise.Organisation do
   """
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
-  alias WraftDoc.Account.{Role, User}
-  alias WraftDoc.Enterprise.{Organisation, Vendor}
-  alias WraftDoc.Document.{Pipeline, Theme}
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Account.User
+  alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Document.Theme
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Enterprise.Vendor
 
   @fields ~w(name legal_name email address name_of_ceo name_of_cto gstin corporate_id phone)a
 
@@ -22,6 +26,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     field(:phone, :string)
     field(:email, :string)
     field(:logo, WraftDocWeb.LogoUploader.Type)
+    has_many(:users_organisations, UserOrganisation)
     many_to_many(:users, User, join_through: "users_organisations")
     has_many(:pipelines, Pipeline)
     has_many(:vendors, Vendor)

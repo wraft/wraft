@@ -50,12 +50,38 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Enterprise.Vendor
 
   def user_factory do
+    %User{
+      name: "wrafts user",
+      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
+      email_verify: true,
+      password: "encrypt",
+      encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
+      current_org_id: nil,
+      organisation: nil
+    }
+  end
+
+  def user_with_personal_organisation_factory do
     email = sequence(:email, &"wraftuser-#{&1}@wmail.com")
     organisation = insert(:organisation, name: "Personal", email: email)
 
     %User{
       name: "wrafts user",
       email: email,
+      email_verify: true,
+      password: "encrypt",
+      encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
+      current_org_id: organisation.id,
+      organisation: organisation
+    }
+  end
+
+  def user_with_organisation_factory do
+    organisation = insert(:organisation)
+
+    %User{
+      name: "wrafts user",
+      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
       email_verify: true,
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),

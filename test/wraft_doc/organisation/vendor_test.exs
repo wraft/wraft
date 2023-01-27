@@ -16,7 +16,7 @@ defmodule WraftDoc.Enterprise.VendorTest do
   }
   @invalid_attrs %{}
   test "changeset with valid data " do
-    user = insert(:user)
+    user = insert(:user_with_organisation)
 
     params =
       Map.merge(@valid_attrs, %{

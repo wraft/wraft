@@ -11,32 +11,8 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
   @invalid_attrs %{name: nil, collection_form_id: nil}
 
-  setup %{conn: conn} do
-    user = insert(:user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
-
   test "delete collection form field", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     collection_form = insert(:collection_form, organisation: user.organisation)
     collection_form_field = insert(:collection_form_field, collection_form: collection_form)
@@ -60,7 +36,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
   test "create collection form field with valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
 
     collection_form = insert(:collection_form, organisation: user.organisation)
     collection_form_id = collection_form.id
@@ -72,11 +47,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
     }
 
     param = Map.put(params, "collection_form_id", collection_form_id)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     count_before = CollectionFormField |> Repo.all() |> length()
 
@@ -94,13 +64,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
   test "create collection form field with invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     cf = insert(:collection_form, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     count_before = CollectionFormField |> Repo.all() |> length()
 
@@ -116,7 +80,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
   test "update collection form with valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
 
     collection_form = insert(:collection_form, organisation: user.organisation)
 
@@ -125,11 +88,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
     # param = Map.put(params, "collection_form_id", collection_form_id)
 
     collection_form_field = insert(:collection_form_field, collection_form: collection_form)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     param = %{name: "collection form field", field_type: "string"}
 
@@ -154,15 +112,9 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
   test "update collection form with invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     collection_form = insert(:collection_form, organisation: user.organisation)
 
     collection_form_field = insert(:collection_form_field, collection_form: collection_form)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     count_before = CollectionFormField |> Repo.all() |> length()
 
@@ -184,14 +136,8 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
   test "show renders collection form field by id", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     collection_form = insert(:collection_form, organisation: user.organisation)
     collection_form_field = insert(:collection_form_field, collection_form: collection_form)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn =
       get(
@@ -208,14 +154,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
   end
 
   test "error not found for id does not exists", %{conn: conn} do
-    user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
     collection_form = insert(:collection_form)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn =
       get(

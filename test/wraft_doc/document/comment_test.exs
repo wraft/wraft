@@ -21,11 +21,11 @@ defmodule WraftDoc.Document.CommentTest do
 
   test "changeset with valid data for a comment" do
     %{id: master_id} = insert(:instance)
-    %{id: user_id, organisation_id: org_id} = insert(:user)
+    %{id: user_id, current_org_id: org_id} = insert(:user_with_organisation)
 
     params =
       Map.merge(@valid_attrs_for_comment, %{
-        master_id: "#{master_id}",
+        master_id: master_id,
         user_id: user_id,
         organisation_id: org_id
       })
@@ -37,7 +37,7 @@ defmodule WraftDoc.Document.CommentTest do
   test "changeset with valid data for a reply" do
     %{id: id} = insert(:comment)
     %{id: master_id} = insert(:instance)
-    %{id: user_id, organisation_id: org_id} = insert(:user)
+    %{id: user_id, organisation_id: org_id} = insert(:user_with_organisation)
 
     params =
       Map.merge(@valid_attrs_for_reply, %{

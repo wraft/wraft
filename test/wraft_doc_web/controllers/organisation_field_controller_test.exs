@@ -16,25 +16,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
   }
   @invalid_attrs %{description: nil, meta: nil, name: nil, id: nil}
 
-  setup %{conn: conn} do
-    user = insert(:user)
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
-
   describe "index" do
     test "lists all organisation_field under that organisation", %{conn: conn} do
       %{organisation: org} = conn.assigns.current_user
@@ -43,11 +24,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
 
       of2 = insert(:organisation_field, organisation: org)
       of3 = insert(:organisation_field)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
 
       conn = get(conn, Routes.v1_organisation_field_path(conn, :index, %{page: 1}))
 
@@ -71,11 +47,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
       field_type = insert(:field_type, creator: user)
       params = Map.put(@create_attrs, :field_type_id, field_type.id)
 
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       count_before = OrganisationField |> Repo.all() |> length()
       conn = post(conn, Routes.v1_organisation_field_path(conn, :create), params)
       count_after = OrganisationField |> Repo.all() |> length()
@@ -86,11 +57,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn} do
       user = conn.assigns.current_user
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
 
       field_type = insert(:field_type, creator: user)
       params = Map.put(@invalid_attrs, :field_type_id, field_type.id)
@@ -109,11 +75,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
       organisation_field = insert(:organisation_field, organisation: user.organisation)
 
       conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
-      conn =
         put(
           conn,
           Routes.v1_organisation_field_path(conn, :update, organisation_field.id),
@@ -126,11 +87,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
     test "renders errors when data is invalid", %{conn: conn} do
       user = conn.assigns.current_user
       organisation_field = insert(:organisation_field, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
 
       conn =
         put(
@@ -147,11 +103,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
     test "deletes chosen organisation_field", %{conn: conn} do
       user = conn.assigns.current_user
       organisation_field = insert(:organisation_field, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
 
       count_before = OrganisationField |> Repo.all() |> length()
 

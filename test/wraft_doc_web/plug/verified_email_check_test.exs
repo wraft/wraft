@@ -4,10 +4,7 @@ defmodule WraftDocWeb.Plug.VerifiedEmailCheckTest do
   import WraftDoc.Factory
   alias WraftDocWeb.Plug.VerifiedEmailCheck
 
-  test "user is allowed to continue if the email is already verified" do
-    user = insert(:user, email_verify: true)
-
-    conn = assign(build_conn(), :current_user, user)
+  test "user is allowed to continue if the email is already verified", %{conn: conn} do
     returned_conn = VerifiedEmailCheck.call(conn, %{})
 
     assert returned_conn == conn
@@ -15,7 +12,7 @@ defmodule WraftDocWeb.Plug.VerifiedEmailCheckTest do
   end
 
   test "returns 400 when user's email is not verified" do
-    user = insert(:user)
+    user = insert(:user, email_verify: false)
 
     conn = assign(build_conn(), :current_user, user)
     returned_conn = VerifiedEmailCheck.call(conn, %{})
@@ -23,6 +20,6 @@ defmodule WraftDocWeb.Plug.VerifiedEmailCheckTest do
     assert returned_conn.status == 400
 
     assert json_response(returned_conn, 400)["errors"] ==
-             "Your email is not verified. Please request a new email verification link.!"
+             "Your email is not verified. Please verify your email.!"
   end
 end

@@ -42,7 +42,7 @@ defmodule WraftDoc.Account do
   }
 
   @doc """
-  User Registration
+  User changeset
   """
   def change_user do
     User.changeset(%User{})
@@ -436,16 +436,17 @@ defmodule WraftDoc.Account do
   end
 
   @doc """
-  Deletes a token.
-  If an %AuthToken{} is given, it will be deleted.
-  If the parameter is a string value, the token is fetched and then deleted.
+  Deletes an authtoken.
   Raises if anything goes wrong.
   """
   @spec delete_auth_token!(AuthToken.t() | String.t()) :: AuthToken.t()
-  def delete_auth_token!(%AuthToken{} = auth_token) do
-    Repo.delete!(auth_token)
-  end
+  def delete_auth_token!(auth_token), do: Repo.delete!(auth_token)
 
+  @doc """
+  Finds the given auth token and deletes it.
+  If the auth token is non-existent, returns error tuple.
+  """
+  @spec delete_auth_token(binary()) :: {:ok, %AuthToken{}} | {:error, :invalid}
   def delete_auth_token(token_value) when is_binary(token_value) do
     AuthToken
     |> Repo.get_by(value: token_value)
@@ -771,7 +772,7 @@ defmodule WraftDoc.Account do
     user |> get_role_group(id) |> Repo.preload(:roles)
   end
 
-  def create_role_group(%{curent_org_id: org_id}, params) do
+  def create_role_group(%{current_org_id: org_id}, params) do
     params = Map.put(params, "organisation_id", org_id)
 
     %RoleGroup{}

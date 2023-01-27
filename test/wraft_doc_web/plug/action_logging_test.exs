@@ -1,17 +1,14 @@
 defmodule WraftDocWeb.Plug.AddActionLogTest do
   use WraftDocWeb.ConnCase
-  import WraftDoc.Factory
-  alias WraftDoc.{ActionLog, Repo}
+  alias WraftDoc.ActionLog
+  alias WraftDoc.Repo
   alias WraftDocWeb.Plug.AddActionLog
 
-  test "adds new log when an action is made by an authorized user" do
-    user = insert(:user)
-    insert(:membership, organisation: user.organisation)
+  test "adds new log when an action is made by an authorized user", %{conn: conn} do
+    user = conn.assigns[:current_user]
 
     conn =
-      build_conn()
-      |> assign(:current_user, user)
-      |> put_req_header("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)")
+      conn
       |> put_private(:phoenix_action, :test)
       |> Map.put(:request_path, "/test")
       |> Map.put(:method, "POST")
@@ -30,11 +27,14 @@ defmodule WraftDocWeb.Plug.AddActionLogTest do
 
     assert last_action.actor == %{
              "email" => user.email,
-             "name" => user.name,
-             "organisation" => %{"name" => user.organisation.name}
+             "name" => user.name
+             # TODO Need to figure out how to add the current organisation details as part of the actor
+             # This can be done only after we remove the `belongs_to` association in user with organisation
+             #  "organisation" => %{"name" => user.organisation.name}
            }
   end
 
+  # TODO need to add more tests
   # test "adds new log when an action is made by an unauthorized user" do
   #   conn =
   #     build_conn()

@@ -11,32 +11,8 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   }
 
   @invalid_attrs %{title: ""}
-  setup %{conn: conn} do
-    role = insert(:role, name: "super_admin")
-    user = insert(:user)
-    insert(:user_role, role: role, user: user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
 
   test "create block_templates by valid attrrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     count_before = BlockTemplate |> Repo.all() |> length()
 
     conn =
@@ -49,11 +25,6 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   end
 
   test "does not create block_templates by invalid attrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     count_before = BlockTemplate |> Repo.all() |> length()
 
     conn =
@@ -68,11 +39,6 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   test "update block_templates on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
     block_template = insert(:block_template, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     count_before = BlockTemplate |> Repo.all() |> length()
 
@@ -91,11 +57,6 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
     block_template = insert(:block_template, creator: user, organisation: user.organisation)
 
     conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
-    conn =
       conn
       |> put(Routes.v1_block_template_path(conn, :update, block_template.id, @invalid_attrs))
       |> doc(operation_id: "update_resource")
@@ -109,11 +70,6 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
     a1 = insert(:block_template, organisation: user.organisation)
     a2 = insert(:block_template, organisation: user.organisation)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
-
     conn = get(conn, Routes.v1_block_template_path(conn, :index))
     block_template_index = json_response(conn, 200)["block_templates"]
     block_templates = Enum.map(block_template_index, fn %{"title" => title} -> title end)
@@ -125,32 +81,17 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
     user = conn.assigns.current_user
     block_template = insert(:block_template, creator: user, organisation: user.organisation)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn = get(conn, Routes.v1_block_template_path(conn, :show, block_template.id))
 
     assert json_response(conn, 200)["title"] == block_template.title
   end
 
   test "error not found for id does not exists", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn = get(conn, Routes.v1_block_template_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 400)["errors"] == "The BlockTemplate id does not exist..!"
   end
 
   test "delete block_template by given id", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     user = conn.assigns.current_user
     block_template = insert(:block_template, organisation: user.organisation)
     count_before = BlockTemplate |> Repo.all() |> length()
@@ -161,11 +102,6 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   end
 
   test "test bulk import job creation for block template with valid attrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     filename = Plug.Upload.random_file!("test")
     file = %Plug.Upload{filename: filename, path: filename}
 
@@ -181,11 +117,6 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   test "error not found for user from another organisation", %{conn: conn} do
     user = insert(:user)
     block_template = insert(:block_template, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_block_template_path(conn, :show, block_template.id))
 

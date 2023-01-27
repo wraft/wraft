@@ -3,7 +3,8 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
   use PhoenixSwagger
   plug(WraftDocWeb.Plug.AddActionLog)
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.FieldType}
+  alias WraftDoc.Document
+  alias WraftDoc.Document.FieldType
 
   def swagger_definitions do
     %{

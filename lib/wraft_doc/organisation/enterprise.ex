@@ -395,35 +395,12 @@ defmodule WraftDoc.Enterprise do
     organisation
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
-      :users,
+      :users_organisations,
       message:
         "Cannot delete the organisation. Some user depend on this organisation. Update those users and then try again.!"
     )
     |> Repo.delete()
   end
-
-  @doc """
-  Check the permission of the user wrt to the given organisation ID.
-  """
-  @spec check_permission(User.t(), binary) :: Organisation.t() | {:error, :no_permission}
-
-  def check_permission(
-        %{organisation: %{id: cuo_id} = organisation, role_names: role_names},
-        o_id
-      ) do
-    cond do
-      cuo_id === o_id ->
-        organisation
-
-      "super_admin" in role_names ->
-        organisation
-
-      true ->
-        {:error, :no_permission}
-    end
-  end
-
-  def check_permission(_, _), do: {:error, :no_permission}
 
   @doc """
   Check if a user with the given Email ID exists or not.
@@ -452,7 +429,7 @@ defmodule WraftDoc.Enterprise do
       when is_binary(role) do
     token =
       WraftDoc.create_phx_token("organisation_invite", %{
-        organisation: organisation,
+        organisation_id: organisation.id,
         email: email,
         role: role
       })
@@ -717,37 +694,19 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Gets a membership from its UUID.
   """
-  def get_membership(<<_::288>> = m_id) do
-    case Repo.get(Membership, m_id) do
-      %Membership{} = membership -> membership
-      _ -> {:error, :invalid_id, "Membership"}
-    end
-  end
+  def get_membership(<<_::288>> = m_id), do: Repo.get(Membership, m_id)
 
-  def get_membership(_), do: {:error, :invalid_id, "Membership"}
+  def get_membership(_), do: nil
 
   @doc """
-  Same as get_membership/2, but also uses user's organisation ID to get the membership.
-  When the user is admin no need to check the user's organisation.
+  Same as get_membership/1, but also uses user's current organisation ID to get the membership.
   """
   @spec get_membership(Ecto.UUID.t(), User.t()) :: Membership.t() | nil
-  def get_membership(<<_::288>> = m_id, %{role_names: role_names, organisation_id: org_id}) do
-    if Enum.member?(role_names, "super_admin") do
-      get_membership(m_id)
-    else
-      Repo.get_by(Membership, id: m_id, organisation_id: org_id)
-    end
+  def get_membership(<<_::288>> = m_id, %{current_org_id: org_id}) do
+    Repo.get_by(Membership, id: m_id, organisation_id: org_id)
   end
 
-  # def get_membership(<<_::288>> = m_uuid, %User{role: %{name: "super_admin"}}) do
-  #   get_membership(m_uuid)
-  # end
-
-  # def get_membership(<<_::288>> = m_uuid, %User{current_org_id: org_id}) do
-  #   Repo.get_by(Membership, uuid: m_uuid, organisation_id: org_id)
-  # end
-
-  def get_membership(_, _), do: {:error, :invalid_id, "Membership"}
+  def get_membership(_, _), do: nil
 
   @doc """
   Get membership of an organisation with the given UUID.
@@ -827,7 +786,7 @@ defmodule WraftDoc.Enterprise do
   @spec create_payment_changeset(User.t(), map) :: Ecto.Changeset.t()
   defp create_payment_changeset(user, params) do
     user
-    |> build_assoc(:payments, organisation_id: user.organisation_id)
+    |> build_assoc(:payments, organisation_id: user.current_org_id)
     |> Payment.changeset(params)
   end
 
@@ -1023,7 +982,7 @@ defmodule WraftDoc.Enterprise do
   @spec create_vendor(User.t(), map) :: Vendor.t() | {:error, Ecto.Changeset.t()}
   def create_vendor(current_user, params) do
     current_user
-    |> build_assoc(:vendors, organisation_id: current_user.organisation.id)
+    |> build_assoc(:vendors, organisation_id: current_user.current_org_id)
     |> Vendor.changeset(params)
     |> Repo.insert()
     |> case do

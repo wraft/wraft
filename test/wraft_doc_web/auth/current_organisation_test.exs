@@ -12,10 +12,10 @@ defmodule WraftDocWeb.Auth.CurrentOrganisationTest do
   alias WraftDocWeb.Guardian.AuthErrorHandler
 
   test "assigns `current_organisation_id` in `current_user` in conn", %{conn: conn} do
-    user = insert(:user)
-    organisation = insert(:organisation)
+    user = insert(:user_with_organisation)
 
-    {:ok, token, _claims} = Guardian.encode_and_sign(user, %{organisation_id: organisation.id})
+    {:ok, token, _claims} =
+      Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})
 
     opts = [module: WraftDocWeb.Guardian, error_handler: AuthErrorHandler]
 
@@ -28,7 +28,7 @@ defmodule WraftDocWeb.Auth.CurrentOrganisationTest do
       |> CurrentUser.call([])
       |> CurrentOrganisation.call([])
 
-    assert conn.assigns[:current_user].current_org_id == organisation.id
+    assert conn.assigns[:current_user].current_org_id == user.current_org_id
     refute conn.halted
   end
 

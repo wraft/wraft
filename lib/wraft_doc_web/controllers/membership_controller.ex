@@ -105,11 +105,11 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => o_id}) do
+  def show(conn, %{"id" => organisation_id}) do
     current_user = conn.assigns[:current_user]
 
-    with true <- o_id == current_user.organisation.id,
-         %Membership{} = membership <- Enterprise.get_organisation_membership(o_id) do
+    with true <- organisation_id == current_user.current_org_id,
+         %Membership{} = membership <- Enterprise.get_organisation_membership(organisation_id) do
       render(conn, "membership.json", membership: membership)
     else
       _ ->

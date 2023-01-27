@@ -33,35 +33,14 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
     btype: "pie",
     endpoint: "quick_chart"
   }
-  setup %{conn: conn} do
-    user = insert(:user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
+  setup do
     # Open bypass connection
     bypass = Bypass.open()
 
-    {:ok, %{conn: conn, bypass: bypass}}
+    {:ok, %{bypass: bypass}}
   end
 
   test "create block renders error.json for invalid attributes", %{conn: conn} do
-    user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
-
     conn = post(conn, Routes.v1_block_path(conn, :create, @invalid_attrs))
     assert json_response(conn, 400)["status"] == false
     assert json_response(conn, 400)["message"] == "invalid endpoint"
@@ -74,14 +53,8 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
 
     params = Map.put(@update_valid_attrs, "api_route", "http://localhost:#{bypass.port}")
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
 
     block = insert(:block, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Block |> Repo.all() |> length()
     conn = put(conn, Routes.v1_block_path(conn, :update, block.id), params)
@@ -93,13 +66,8 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
 
   test "does not update blocks for invalid attributes", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-    block = insert(:block, creator: user, organisation: user.organisation)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+    block = insert(:block, creator: user, organisation: user.organisation)
 
     conn = put(conn, Routes.v1_block_path(conn, :update, block.id), @invalid_attrs)
     assert json_response(conn, 400)["message"] == "invalid endpoint"
@@ -107,41 +75,22 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
 
   test "renders show.json on existing id", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
 
     block = insert(:block, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     conn = get(conn, Routes.v1_block_path(conn, :show, block.id))
     assert json_response(conn, 200)["name"] == block.name
   end
 
   test "renders error not found id doesnot exist", %{conn: conn} do
-    user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
-
     conn = get(conn, Routes.v1_block_path(conn, :show, Ecto.UUID.autogenerate()))
     assert json_response(conn, 400)["errors"] == "The Block id does not exist..!"
   end
 
   test "deletes the block and renders the block.json", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-    block = insert(:block, creator: user, organisation: user.organisation)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+    block = insert(:block, creator: user, organisation: user.organisation)
 
     count_before = Block |> Repo.all() |> length()
     conn = delete(conn, Routes.v1_block_path(conn, :delete, block.id))
@@ -151,14 +100,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
   end
 
   test "error not found on user from another organisation", %{conn: conn} do
-    user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
     block = insert(:block)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_block_path(conn, :show, block.id))
     assert json_response(conn, 400)["errors"] == "The Block id does not exist..!"

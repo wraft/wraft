@@ -16,30 +16,12 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
   @invalid_attrs %{category: ""}
   setup %{conn: conn} do
     role = insert(:role, name: "super_admin")
-    user = insert(:user)
-    insert(:user_role, role: role, user: user)
 
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
+    insert(:user_role, role: role, user: conn.assigns[:current_user])
+    :ok
   end
 
   test "create resources by valid attrrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     count_before = Resource |> Repo.all() |> length()
 
     conn =
@@ -52,17 +34,9 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
   end
 
   test "does not create resources by invalid attrs", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     count_before = Resource |> Repo.all() |> length()
 
-    conn =
-      conn
-      |> post(Routes.v1_resource_path(conn, :create, @invalid_attrs))
-      |> doc(operation_id: "create_resource")
+    conn = post(conn, Routes.v1_resource_path(conn, :create, @invalid_attrs))
 
     assert json_response(conn, 422)["errors"]["category"] == ["can't be blank"]
     assert count_before == Resource |> Repo.all() |> length()
@@ -70,11 +44,6 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
 
   test "update resources on valid attributes", %{conn: conn} do
     resource = insert(:resource)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
 
     count_before = Resource |> Repo.all() |> length()
 
@@ -91,11 +60,6 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
     resource = insert(:resource)
 
     conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
-    conn =
       conn
       |> put(Routes.v1_resource_path(conn, :update, resource.id, @invalid_attrs))
       |> doc(operation_id: "update_resource")
@@ -105,15 +69,8 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
 
   @label "flow"
   test "index lists assests by current user", %{conn: conn} do
-    user = conn.assigns.current_user
-
     a1 = insert(:resource, label: @label)
     a2 = insert(:resource, label: @label)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
 
     conn = get(conn, Routes.v1_resource_path(conn, :index))
     resources_index = List.first(json_response(conn, 200)["resources"])
@@ -126,32 +83,17 @@ defmodule WraftDocWeb.Api.V1.ResourceControllerTest do
   test "show renders resource details by id", %{conn: conn} do
     resource = insert(:resource)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn = get(conn, Routes.v1_resource_path(conn, :show, resource.id))
 
     assert json_response(conn, 200)["action"] == to_string(resource.action)
   end
 
   test "error not found for id does not exists", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     conn = get(conn, Routes.v1_resource_path(conn, :show, Ecto.UUID.generate()))
     assert json_response(conn, 400)["errors"] == "The Resource id does not exist..!"
   end
 
   test "delete resource by given id", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     resource = insert(:resource)
     count_before = Resource |> Repo.all() |> length()
 

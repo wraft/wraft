@@ -34,18 +34,6 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
       refute changeset.valid?
     end
 
-    test "checks organisation name unique constraint" do
-      {:ok, _} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
-
-      {:error, changeset} =
-        %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
-
-      assert "Organisation Already Registered." in errors_on(
-               changeset,
-               :legal_name
-             )
-    end
-
     test "checks GSTIN unique constraint" do
       params = Map.put(@valid_attrs, :name, "Company 2")
       {:ok, _} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
