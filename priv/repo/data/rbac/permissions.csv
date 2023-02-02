@@ -1,0 +1,118 @@
+layout:index,Layout,Index
+layout:show,Layout,Show
+layout:create,Layout,Create
+layout:update,Layout,Update
+layout:delete,Layout,Delete
+layout:delete_layout_asset,Layout,Delete layout asset
+content_type:index,Content type,Index
+content_type:show,Content type,Show
+content_type:create,Content type,Create
+content_type:update,Content type,Update
+content_type:delete,Content type,Delete
+content_type:bulk_build,Content type,Bulk build
+instance:index,Instance,Index
+instance:create,Instance,Create
+data_template:index,Data template,Index
+data_template:create,Data template,Create
+data_template:bulk_import,Data template,Bulk import
+content_type_role:create,Content type role,Create
+content_type_role:delete,Content type role,Delete
+role:show,Role,Show
+content_type:show_content_type_role,Content type,Show content type role
+content_type:show_content_type_title,Content type,Show content type title
+engine:index,Engine,Index
+theme:index,Theme,Index
+theme:show,Theme,Show
+theme:create,Theme,Create
+theme:update,Theme,Update
+theme:delete,Theme,Delete
+flow:index,Flow,Index
+flow:show,Flow,Show
+flow:create,Flow,Create
+flow:update,Flow,Update
+flow:delete,Flow,Delete
+state:index,State,Index
+state:create,State,Create
+state:update,State,Update
+state:delete,State,Delete
+data_template:show,Data template,Show
+data_template:update,Data template,Update
+data_template:delete,Data template,Delete
+instance:show,Instance,Show
+instance:update,Instance,Update
+instance:delete,Instance,Delete
+instance:state_update,Instance,State update
+instance:lock_unlock,Instance,Lock unlock
+instance:search,Instance,Search
+instance:change,Instance,Change
+organisation:members,Organisation,Members
+vendor:index,Vendor,Index
+vendor:show,Vendor,Show
+vendor:create,Vendor,Create
+vendor:update,Vendor,Update
+vendor:delete,Vendor,Delete
+payment:index,Payment,Index
+payment:show,Payment,Show
+block:edit,Block,Edit
+block:new,Block,New
+block:show,Block,Show
+block:create,Block,Create
+block:update,Block,Update
+block:delete,Block,Delete
+content_type_field:delete,Content type field,Delete
+organisation:invite,Organisation,Invite
+instance:all_contents,Instance,All contents
+instance:build,Instance,Build
+data_template:all_templates,Data template,All templates
+block_template:index,Block template,Index
+block_template:edit,Block template,Edit
+block_template:new,Block template,New
+block_template:show,Block template,Show
+block_template:create,Block template,Create
+block_template:update,Block template,Update
+block_template:delete,Block template,Delete
+block_template:bulk_import,Block template,Bulk import
+asset:index,Asset,Index
+asset:edit,Asset,Edit
+asset:new,Asset,New
+asset:show,Asset,Show
+asset:create,Asset,Create
+asset:update,Asset,Update
+asset:delete,Asset,Delete
+approval_system:index,Approval system,Index
+approval_system:show,Approval system,Show
+approval_system:create,Approval system,Create
+approval_system:update,Approval system,Update
+approval_system:delete,Approval system,Delete
+organisation_field:index,Organisation field,Index
+organisation_field:show,Organisation field,Show
+organisation_field:create,Organisation field,Create
+organisation_field:update,Organisation field,Update
+organisation_field:delete,Organisation field,Delete
+approval_system:approve,Approval system,Approve
+pipeline:index,Pipeline,Index
+pipeline:show,Pipeline,Show
+pipeline:create,Pipeline,Create
+pipeline:update,Pipe line,Update
+pipeline:delete,Pipeline,Delete
+trigger_history:index,Trigger history,Index
+trigger_history:create,Trigger history,Create
+pipe_stage:create,Pipe stage,Create
+pipe_stage:update,Pipe stage,Update
+pipe_stage:delete,Pipe stage,Delete
+permission:index,Permission,Index
+permission:create,Permission,Create
+permission:delete,Permission,Delete
+field_type:index,Field type,Index
+field_type:show,Field type,Show
+field_type:create,Field type,Create
+field_type:update,Field type,Update
+field_type:delete,Field type,Delete
+comment:index,Comment,Index
+comment:edit,Comment,Edit
+comment:new,Comment,New
+comment:show,Comment,Show
+comment:create,Comment,Create
+comment:update,Comment,Update
+comment:delete,Comment,Delete
+comment:reply,Comment,Reply
