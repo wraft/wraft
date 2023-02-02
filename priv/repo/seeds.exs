@@ -9,41 +9,38 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
-
-alias WraftDoc.{
-  Authorization.Resource,
-  Authorization.Permission,
-  Account.Country,
-  Account.Profile,
-  Account.Role,
-  Account.UserRole,
-  Document.Asset,
-  Document.Block,
-  Document.BlockTemplate,
-  Document.Engine,
-  Document.Layout,
-  Document.LayoutAsset,
-  Document.ContentType,
-  Document.ContentTypeField,
-  Document.DataTemplate,
-  Document.FieldType,
-  Document.Instance,
-  Document.Instance.History,
-  Document.Theme,
-  Enterprise.ApprovalSystem,
-  Enterprise.Organisation,
-  Enterprise.Flow,
-  Enterprise.Flow.State,
-  Enterprise.Plan,
-  Enterprise.Membership,
-  Enterprise.Vendor,
-  Document.FieldType,
-  Document.ContentTypeField,
-  Document.Counter,
-  Document.DataTemplate,
-  Document.Instance.Version,
-  Repo
-}
+alias WraftDoc.Authorization.Resource
+alias WraftDoc.Authorization.Permission
+alias WraftDoc.Account.Country
+alias WraftDoc.Account.Profile
+alias WraftDoc.Account.Role
+alias WraftDoc.Account.UserRole
+alias WraftDoc.Document.Asset
+alias WraftDoc.Document.Block
+alias WraftDoc.Document.BlockTemplate
+alias WraftDoc.Document.Engine
+alias WraftDoc.Document.Layout
+alias WraftDoc.Document.LayoutAsset
+alias WraftDoc.Document.ContentType
+alias WraftDoc.Document.ContentTypeField
+alias WraftDoc.Document.DataTemplate
+alias WraftDoc.Document.FieldType
+alias WraftDoc.Document.Instance
+alias WraftDoc.Document.Instance.History
+alias WraftDoc.Document.Theme
+alias WraftDoc.Enterprise.ApprovalSystem
+alias WraftDoc.Enterprise.Organisation
+alias WraftDoc.Enterprise.Flow
+alias WraftDoc.Enterprise.Flow.State
+alias WraftDoc.Enterprise.Plan
+alias WraftDoc.Enterprise.Membership
+alias WraftDoc.Enterprise.Vendor
+alias WraftDoc.Document.FieldType
+alias WraftDoc.Document.ContentTypeField
+alias WraftDoc.Document.Counter
+alias WraftDoc.Document.DataTemplate
+alias WraftDoc.Document.Instance.Version
+alias WraftDoc.Repo
 
 import WraftDoc.SeedGate
 

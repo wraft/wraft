@@ -9,8 +9,9 @@ defmodule WraftDoc.Repo.Migrations.RefactorRoleBasedAccessControlTables do
       add(:name, :string)
       add(:resource, :string)
       add(:action, :string)
-
-      timestamps()
     end
+
+    create(unique_index(:permission, [:name]))
+    create(unique_index(:permission, [:resource, :action]))
   end
 end

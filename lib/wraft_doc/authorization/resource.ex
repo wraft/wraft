@@ -8,8 +8,8 @@ defmodule WraftDoc.Authorization.Resource do
     field(:category, AtomType)
     field(:action, AtomType)
     field(:label, :string)
-    has_many(:permissions, WraftDoc.Authorization.Permission)
-    has_many(:roles, through: [:permissions, :role])
+    # has_many(:permissions, WraftDoc.Authorization.Permission)
+    # has_many(:roles, through: [:permissions, :role])
   end
 
   def changeset(%Resource{} = resource, attrs \\ %{}) do
