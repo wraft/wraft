@@ -4,7 +4,8 @@ defmodule WraftDoc.Repo.Migrations.RefactorRoleBasedAccessControlTables do
   def change do
     drop(table(:permission))
 
-    create table(:permission) do
+    create table(:permission, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:name, :string)
       add(:resource, :string)
       add(:action, :string)
