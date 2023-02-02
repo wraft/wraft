@@ -3,16 +3,17 @@ defmodule WraftDoc.Authorization.Permission do
   use WraftDoc.Schema
 
   schema "permission" do
+    field(:name, :string)
+    field(:resource, :string)
+    field(:action, :string)
     belongs_to(:role, WraftDoc.Account.Role)
-    belongs_to(:resource, WraftDoc.Authorization.Resource)
+    # TODO to be removed in next ticket
+    belongs_to(:resources, WraftDoc.Authorization.Resource)
   end
 
   def changeset(permission, attrs \\ %{}) do
     permission
-    |> cast(attrs, [:role_id, :resource_id])
-    |> unique_constraint(:role_id,
-      name: :permission_unique_index,
-      message: "Permission already enabled."
-    )
+    |> cast(attrs, [:name, :resource, :action])
+    |> validate_required([:name, :resource, :action])
   end
 end
