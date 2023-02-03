@@ -13,6 +13,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   alias WraftDoc.Account.User
   alias WraftDoc.Document
   alias WraftDoc.Enterprise
+  alias WraftDocWeb.Guardian
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -614,6 +615,33 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
     with %User{} = user <- Enterprise.list_org_by_user(current_user) do
       render(conn, "index_by_user.json", organisations: user.organisations)
+    end
+  end
+
+  swagger_path :switch_organisation do
+    post("/switch_organisations")
+    summary("Switch organisation of the user")
+    description("Switch the current organisation of the user to another one")
+    consumes("multipart/form-data")
+
+    parameter(:organisation_id, :formData, :string, "Organisation id", required: true)
+
+    response(200, "Ok", Schema.ref(:UserToken))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def switch_organisation(conn, %{"organisation_id" => organisation_id}) do
+    current_user = conn.assigns[:current_user]
+
+    with %User{} = user <- Enterprise.list_org_by_user(current_user),
+         true <- Enum.any?(user.organisations, &(&1.id == organisation_id)) do
+      {:ok, token, %{"organisation_id" => ^organisation_id}} =
+        Guardian.encode_and_sign(user, %{organisation_id: organisation_id})
+
+      render(conn, "sign-in.json", token: token, user: user)
+    else
+      false ->
+        {:error, :no_permission}
     end
   end
 end

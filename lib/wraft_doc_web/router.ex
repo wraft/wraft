@@ -184,6 +184,8 @@ defmodule WraftDocWeb.Router do
 
       # List Organisation by User
       get("/users/organisations", UserController, :index_by_user)
+      # Switch organisation
+      post("/switch_organisations", UserController, :switch_organisation)
       # collection form api
       get("/collection_forms/:id", CollectionFormController, :show)
       post("/collection_forms", CollectionFormController, :create)
