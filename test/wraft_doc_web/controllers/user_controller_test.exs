@@ -5,6 +5,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   import WraftDoc.Factory
   alias WraftDoc.Account.AuthToken
   alias WraftDoc.Repo
+  alias WraftDocWeb.Guardian
 
   describe "signin/2" do
     test "succesfully logs in with correct email-password combination" do
@@ -373,10 +374,53 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
           Routes.v1_user_path(conn, :index_by_user, %{})
         )
 
-      assert Enum.at(json_response(conn, 200)["organisations"], 0)["id"] == personal_org.id
-      assert Enum.at(json_response(conn, 200)["organisations"], 1)["id"] == invited_org.id
-      assert Enum.at(json_response(conn, 200)["organisations"], 0)["name"] == personal_org.name
-      assert Enum.at(json_response(conn, 200)["organisations"], 1)["name"] == invited_org.name
+      assert organisations = json_response(conn, 200)["organisations"]
+
+      assert Enum.find(organisations, fn organisation ->
+               organisation["id"] == personal_org.id && organisation["name"] == personal_org.name
+             end)
+
+      assert Enum.find(organisations, fn organisation ->
+               organisation["id"] == invited_org.id && organisation["name"] == invited_org.name
+             end)
+    end
+  end
+
+  describe "switch_organisation/2" do
+    test "renders response with 200 status code with ID of an organisation the user has joined",
+         %{conn: conn} do
+      user = conn.assigns[:current_user]
+      %{id: organisation_id} = organisation = insert(:organisation)
+      insert(:user_organisation, user: user, organisation: organisation)
+
+      conn =
+        post(
+          conn,
+          Routes.v1_user_path(conn, :switch_organisation, %{organisation_id: organisation_id})
+        )
+
+      assert response = json_response(conn, 200)
+
+      assert response["user"]["id"] == user.id
+      assert response["user"]["email"] == user.email
+      assert response["user"]["name"] == user.name
+      assert response["token"]
+
+      assert {:ok, %{"organisation_id" => ^organisation_id}} =
+               Guardian.decode_and_verify(response["token"], %{organisation_id: organisation_id})
+    end
+
+    test "renders response with 401 status code with ID of an organisation the user has NOT joined",
+         %{conn: conn} do
+      %{id: organisation_id} = insert(:organisation)
+
+      conn =
+        post(
+          conn,
+          Routes.v1_user_path(conn, :switch_organisation, %{organisation_id: organisation_id})
+        )
+
+      assert %{"errors" => "You are not authorized for this action.!"} == json_response(conn, 401)
     end
   end
 

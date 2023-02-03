@@ -119,13 +119,6 @@ defmodule WraftDoc.Factory do
     }
   end
 
-  def user_organisation_factory do
-    %UserOrganisation{
-      user: build(:user),
-      organisation: build(:organisation)
-    }
-  end
-
   def profile_factory do
     %Profile{
       name: "admin@wraftdocs",

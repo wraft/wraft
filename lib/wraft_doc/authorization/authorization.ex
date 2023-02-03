@@ -63,11 +63,6 @@ defmodule WraftDoc.Authorization do
   def delete_resource(resource) do
     resource
     |> Ecto.Changeset.change()
-    |> Ecto.Changeset.no_assoc_constraint(
-      :permissions,
-      message:
-        "Cannot delete the resource. Some permissions depend on this resource. Update those resources and then try again.!"
-    )
     |> Repo.delete()
   end
 
