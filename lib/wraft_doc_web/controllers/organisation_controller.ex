@@ -157,7 +157,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     consumes("multipart/form-data")
     parameter(:name, :formData, :string, "Organisation name", required: true)
     parameter(:legal_name, :formData, :string, "Legal name of organisation", required: true)
-    parameter(:addres, :formData, :string, "address of organisation")
+    parameter(:address, :formData, :string, "address of organisation")
     parameter(:name_of_ceo, :formData, :string, "name of ceo of organisation")
     parameter(:name_of_cto, :formData, :string, "name of cto of organisation")
     parameter(:gstin, :formData, :string, "gstin of organisation")
@@ -178,8 +178,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Organisation{} = organisation <-
-           Enterprise.create_organisation(current_user, params) do
+    with %Organisation{id: id} = organisation <-
+           Enterprise.create_organisation(current_user, params),
+         {:ok, %Oban.Job{}} <-
+           Enterprise.create_default_worker_job(%{organisation_id: id}, "organisation_roles") do
       render(conn, "create.json", organisation: organisation)
     end
   end
@@ -276,13 +278,14 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   Invite new member.
   """
   swagger_path :invite do
-    post("/organisations/invite")
+    post("/organisations/users/invite")
     summary("Invite new member to the organisation")
     description("Invite new member to the organisation")
+    consumes("multipart/form-data")
 
     parameters do
-      email(:body, :string, "Email of the user", required: true)
-      role_id(:body, :string, "role of the user", required: true)
+      email(:formData, :string, "Email of the user", required: true)
+      role_id(:formData, :string, "role of the user", required: true)
     end
 
     response(200, "Ok", Schema.ref(:InvitedResponse))
@@ -297,13 +300,14 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     with %Organisation{} = organisation <-
            Enterprise.get_organisation(current_user.current_org_id),
          :ok <- Enterprise.already_member(params["email"]),
-         %Role{name: role_name} <- Account.get_role(params["role_id"]),
+         %Role{} = role <-
+           Account.get_role(current_user, params["role_id"]),
          {:ok, _} <-
            Enterprise.invite_team_member(
              current_user,
              organisation,
              params["email"],
-             role_name
+             role
            ) do
       render(conn, "invite.json")
     end

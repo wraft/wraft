@@ -7,8 +7,12 @@ defmodule WraftDoc.Workers.ScheduledWorker do
   require Logger
 
   import Ecto.Query
-  alias WraftDoc.{Document.Asset, Document.LayoutAsset, Repo}
-  alias WraftDoc.{Enterprise, Enterprise.Membership}
+
+  alias WraftDoc.Document.Asset
+  alias WraftDoc.Document.LayoutAsset
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Membership
+  alias WraftDoc.Repo
 
   @impl Oban.Worker
   def perform(%Job{}) do

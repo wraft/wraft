@@ -49,12 +49,13 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
 
     test "organisation mailer invite job" do
       organisation = insert(:organisation)
+      role = insert(:role, organisation: organisation)
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @email,
-          role: "user"
+          role: role.id
         })
 
       {result, log} =

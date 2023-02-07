@@ -19,6 +19,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Repo
   alias WraftDoc.TaskSupervisor
+  alias WraftDoc.Workers.DefaultWorker
   alias WraftDoc.Workers.EmailWorker
   alias WraftDoc.Workers.ScheduledWorker
 
@@ -424,14 +425,18 @@ defmodule WraftDoc.Enterprise do
   Sends invitation email to the email with the role.
   """
 
-  def invite_team_member(%User{name: name} = user, %{name: org_name} = organisation, email, role)
-      when is_binary(email)
-      when is_binary(role) do
+  def invite_team_member(
+        %User{name: name} = user,
+        %{name: org_name} = organisation,
+        email,
+        %Role{} = role
+      )
+      when is_binary(email) do
     token =
       WraftDoc.create_phx_token("organisation_invite", %{
         organisation_id: organisation.id,
         email: email,
-        role: role
+        role: role.id
       })
 
     Task.start_link(fn ->
@@ -1105,5 +1110,15 @@ defmodule WraftDoc.Enterprise do
 
   def get_role(role) when is_binary(role) do
     Repo.get_by(Role, name: role)
+  end
+
+  @doc """
+  Creates a default worker job
+  """
+  @spec create_default_worker_job(map(), binary()) :: {:ok, Oban.Job.t()} | {:error, term()}
+  def create_default_worker_job(args, tag) do
+    args
+    |> DefaultWorker.new(tags: [tag])
+    |> Oban.insert()
   end
 end

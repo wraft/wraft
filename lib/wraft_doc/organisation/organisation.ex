@@ -43,7 +43,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     |> cast_attachments(attrs, [:logo])
     |> unique_constraint(:legal_name,
       message: "Organisation Already Registered.",
-      name: :organisation_unique_index
+      name: :organisation_legal_name_unique_index
     )
     |> unique_constraint(:gstin,
       message: "GSTIN Already Registered",

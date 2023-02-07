@@ -24,14 +24,14 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
       conn: conn
     } do
       organisation = insert(:organisation)
-      role = insert(:role)
+      role = insert(:role, organisation: organisation)
       insert(:plan, name: "Free Trial")
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @valid_attrs["email"],
-          role: role.name
+          role: role.id
         })
 
       insert(:auth_token, value: token, token_type: "invite")
@@ -66,14 +66,14 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
 
     test "register as admin if token contains admin role", %{conn: conn} do
       organisation = insert(:organisation)
-      insert(:role, name: "super_admin")
+      role = insert(:role, name: "super_admin", organisation: organisation)
       insert(:plan, name: "Free Trial")
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @valid_attrs["email"],
-          role: "super_admin"
+          role: role.id
         })
 
       insert(:auth_token, value: token, token_type: "invite")
@@ -94,13 +94,13 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
     test "invite auth token is deleted on successfull registration", %{conn: conn} do
       organisation = insert(:organisation)
       insert(:plan, name: "Free Trial")
-      role = insert(:role)
+      role = insert(:role, organisation: organisation)
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @valid_attrs["email"],
-          role: role.name
+          role: role.id
         })
 
       insert(:auth_token, value: token, token_type: "invite")
@@ -117,13 +117,13 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
     test "render error for invalid attributes with organisation invite link", %{conn: conn} do
       organisation = insert(:organisation)
       insert(:plan, name: "Free Trial")
-      role = insert(:role)
+      role = insert(:role, organisation: organisation)
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @invalid_attrs["email"],
-          role: role.name
+          role: role.id
         })
 
       insert(:auth_token, value: token, token_type: "invite")
