@@ -14,7 +14,7 @@ content_type:bulk_build
 instance:index
 instance:create
 data_template:index
-data_template,:create
+data_template:create
 data_template:bulk_import
 content_type:show_content_type_role
 content_type:show_content_type_title

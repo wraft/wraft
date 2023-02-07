@@ -80,7 +80,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   end
 
   test "invite persons send the mail to the persons mail", %{conn: conn} do
-    role = insert(:role)
+    role = insert(:role, organisation: conn.assigns.current_user.organisation)
 
     conn =
       post(conn, Routes.v1_organisation_path(conn, :invite), %{
