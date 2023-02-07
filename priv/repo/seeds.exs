@@ -9,7 +9,6 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
-alias WraftDoc.Authorization.Permission
 alias WraftDoc.Account.Country
 alias WraftDoc.Account.Profile
 alias WraftDoc.Account.Role

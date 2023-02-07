@@ -26,16 +26,16 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "user successfully registers with valid data and an organisation invite token" do
-      role = insert(:role, name: "user")
       insert(:plan, name: "Free Trial")
 
       organisation = insert(:organisation)
+      role = insert(:role, name: "user", organisation: organisation)
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @valid_attrs["email"],
-          role: role.name
+          role: role.id
         })
 
       insert(:auth_token, value: token, token_type: "invite")
@@ -69,12 +69,13 @@ defmodule WraftDoc.AccountTest do
 
     test "returns error for invalid organisation" do
       organisation = insert(:organisation)
+      role = insert(:role, organisation: organisation)
 
       token =
         WraftDoc.create_phx_token("different salt", %{
           organisation_id: organisation.id,
           email: @email,
-          role: "user"
+          role: role.id
         })
 
       insert(:auth_token, value: token, token_type: "invite")
@@ -84,39 +85,51 @@ defmodule WraftDoc.AccountTest do
 
       assert error == {:error, :fake}
     end
+
+    # TODO - Add test to check oban job created for roles for invited organisation
+    # TODO - Add test to check oban job created for personal organisation roles create
+    # TODO - Add test to check user_organisation created for personal organisation
   end
 
-  describe "get_organisation_from_token/1" do
+  # TODO - Add tests for get_role/1 and get_role/2
+
+  describe "get_organisation_and_role_from_token/1" do
+    # TODO - Add test to check success response is given only when role belongs to organisation
     test "verify and accept valid token and email" do
       organisation = insert(:organisation)
+      %{id: role_id} = role = insert(:role, organisation: organisation)
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @email,
-          role: "user"
+          role: role.id
         })
 
       insert(:auth_token, value: token, token_type: "invite")
 
-      {:ok, ^organisation} =
-        Account.get_organisation_from_token(%{"token" => token, "email" => @email})
+      {:ok, %{organisation: ^organisation, role_id: ^role_id}} =
+        Account.get_organisation_and_role_from_token(%{"token" => token, "email" => @email})
     end
 
     test "return error for valid token and different email" do
       organisation = insert(:organisation)
+      role = insert(:role, organisation: organisation)
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @email,
-          role: "user"
+          role: role.id
         })
 
       insert(:auth_token, value: token, token_type: "invite")
 
       error =
-        Account.get_organisation_from_token(%{"token" => token, "email" => "anotheremail@xyz.com"})
+        Account.get_organisation_and_role_from_token(%{
+          "token" => token,
+          "email" => "anotheremail@xyz.com"
+        })
 
       assert error == {:error, :no_permission}
     end
@@ -129,66 +142,69 @@ defmodule WraftDoc.AccountTest do
         )
 
       insert(:auth_token, value: token, token_type: "invite")
-      error = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
+      error = Account.get_organisation_and_role_from_token(%{"token" => token, "email" => @email})
 
       assert error == {:error, :no_permission}
     end
 
     test "return error for invalid token" do
       organisation = insert(:organisation)
+      role = insert(:role, organisation: organisation)
 
       token =
         WraftDoc.create_phx_token("different salt", %{
           organisation_id: organisation.id,
           email: @email,
-          role: "user"
+          role: role.id
         })
 
       insert(:auth_token, value: token, token_type: "invite")
-      error = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
+      error = Account.get_organisation_and_role_from_token(%{"token" => token, "email" => @email})
 
       assert error == {:error, :fake}
     end
 
     test "return error when token does not exist" do
       organisation = insert(:organisation)
+      role = insert(:role, organisation: organisation)
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @email,
-          role: "user"
+          role: role.id
         })
 
-      error = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
+      error = Account.get_organisation_and_role_from_token(%{"token" => token, "email" => @email})
 
       assert error == {:error, :fake}
     end
 
     test "return error for expired token" do
-      organisation = build(:organisation)
+      organisation = insert(:organisation)
+      role = insert(:role, organisation: organisation)
 
       token =
         WraftDoc.create_phx_token(
           "organisation_invite",
           %{
-            organisation_id: organisation.id,
+            organisation_id: role.organisation.id,
             email: @email,
-            role: "user"
+            role: role.id
           },
           signed_at: -900_001
         )
 
       insert(:auth_token, value: token, token_type: "invite")
-      error = Account.get_organisation_from_token(%{"token" => token, "email" => @email})
+      error = Account.get_organisation_and_role_from_token(%{"token" => token, "email" => @email})
 
       assert error == {:error, :expired}
     end
 
     test "returns not found when params doesn't contain token or email or both" do
-      resp1 = Account.get_organisation_from_token(%{"token" => nil})
-      resp2 = Account.get_organisation_from_token(%{"email" => nil})
-      resp3 = Account.get_organisation_from_token(%{})
+      resp1 = Account.get_organisation_and_role_from_token(%{"token" => nil})
+      resp2 = Account.get_organisation_and_role_from_token(%{"email" => nil})
+      resp3 = Account.get_organisation_and_role_from_token(%{})
       assert resp1 == nil
       assert resp2 == nil
       assert resp3 == nil

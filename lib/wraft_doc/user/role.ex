@@ -6,6 +6,7 @@ defmodule WraftDoc.Account.Role do
 
   schema "role" do
     field(:name, :string)
+    field(:permissions, {:array, :string})
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     has_many(:user_roles, WraftDoc.Account.UserRole)
@@ -17,15 +18,8 @@ defmodule WraftDoc.Account.Role do
 
   def changeset(role, attrs \\ %{}) do
     role
-    |> cast(attrs, [:name])
-    |> validate_required([:name])
-  end
-
-  def organisation_changeset(role, attrs \\ %{}) do
-    role
-    |> cast(attrs, [:organisation_id, :name])
+    |> cast(attrs, [:organisation_id, :name, :permissions])
     |> validate_required([:name, :organisation_id])
-    |> validate_exclusion(:name, ~w(admin super_admin))
     |> unique_constraint(:name, message: "Role exist in this organisation")
   end
 end

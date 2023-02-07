@@ -57,19 +57,26 @@ defmodule WraftDoc.Account do
     {_token_params, user_params} = Map.split(params, ["token"])
 
     Multi.new()
-    |> Multi.run(:get_org, fn _, _ -> get_organisation_from_token(params) end)
+    |> Multi.run(:get_org, fn _, _ -> get_organisation_and_role_from_token(params) end)
     |> basic_registration_multi(user_params)
-    |> Multi.insert(:users_organisations, fn %{user: user, get_org: organisation} ->
+    |> Multi.insert(:users_organisations, fn %{user: user, get_org: %{organisation: organisation}} ->
       UserOrganisation.changeset(%UserOrganisation{}, %{
         user_id: user.id,
         organisation_id: organisation.id
       })
     end)
+    |> Multi.run(:assign_role, fn _repo, %{user: user, get_org: %{role_id: role_id}} ->
+      Enterprise.create_default_worker_job(%{user_id: user.id, role_id: role_id}, "assign_role")
+    end)
     |> Multi.run(:delete_auth_token, fn _, _ -> delete_auth_token(token) end)
     |> Repo.transaction()
     |> case do
       {:ok,
-       %{user: user, personal_organisation: %{organisation: personal_org}, get_org: invited_org}} ->
+       %{
+         user: user,
+         personal_organisation: %{organisation: personal_org},
+         get_org: %{organisation: invited_org}
+       }} ->
         {:ok, %{user: user, organisations: [personal_org, invited_org]}}
 
       {:error, :get_org, error, _} ->
@@ -100,10 +107,26 @@ defmodule WraftDoc.Account do
       user |> build_assoc(:profile) |> Profile.changeset(params)
     end)
     |> Multi.run(:personal_organisation, fn _repo, %{user: user} ->
-      WraftDoc.Enterprise.create_personal_organisation(user, %{
+      Enterprise.create_personal_organisation(user, %{
         email: params["email"],
         name: "Personal"
       })
+    end)
+    |> Multi.insert(:user_personal_organisation, fn %{
+                                                      user: user,
+                                                      personal_organisation: %{organisation: org}
+                                                    } ->
+      UserOrganisation.changeset(%UserOrganisation{}, %{user_id: user.id, organisation_id: org.id})
+    end)
+    |> Multi.run(:personal_org_roles, fn _repo,
+                                         %{
+                                           user: user,
+                                           personal_organisation: %{organisation: organisation}
+                                         } ->
+      Enterprise.create_default_worker_job(
+        %{organisation_id: organisation.id, user_id: user.id},
+        "personal_organisation_roles"
+      )
     end)
   end
 
@@ -120,6 +143,20 @@ defmodule WraftDoc.Account do
     end
   end
 
+  @doc """
+  Get a role type from its UUID.
+  """
+  @spec get_role(Ecto.UUID.t()) :: Role.t() | nil
+  def get_role(<<_::288>> = id) do
+    Repo.get(Role, id)
+  end
+
+  def get_role(_id), do: nil
+
+  @doc """
+  Gets a role from its ID and checks it belongs to the user's current organisation ID or
+  the organisation's ID.
+  """
   def get_role(%User{current_org_id: org_id}, <<_::288>> = id) do
     case Repo.get_by(Role, id: id, organisation_id: org_id) do
       %Role{} = role -> role
@@ -128,13 +165,17 @@ defmodule WraftDoc.Account do
   end
 
   def get_role(%User{current_org_id: _org_id}, _), do: {:error, :invalid_id, "Role"}
+
+  def get_role(%Organisation{id: org_id}, <<_::288>> = id),
+    do: Repo.get_by(Role, id: id, organisation_id: org_id)
+
   def get_role(_, _), do: {:error, :fake}
 
   def create_role(%User{current_org_id: org_id}, params) do
     params = Map.put(params, "organisation_id", org_id)
 
     %Role{}
-    |> Role.organisation_changeset(params)
+    |> Role.changeset(params)
     |> Repo.insert()
     |> case do
       {:error, _} = changeset -> changeset
@@ -147,16 +188,20 @@ defmodule WraftDoc.Account do
   end
 
   @doc """
-  Get the organisation from the token, if there is  token in the params.
-  If no token is present in the params, then get the default organisation
+  Get the organisation and role from the token, if there is  token in the params.
   """
-  @spec get_organisation_from_token(map) :: Organisation.t() | {:error, atom()}
-  def get_organisation_from_token(%{"token" => token, "email" => email} = _params) do
-    case check_token(token, :invite) do
-      {:ok, %{organisation_id: org_id, email: ^email, role: _role}} ->
-        {:ok, Enterprise.get_organisation(org_id)}
-
+  @spec get_organisation_and_role_from_token(map) :: Organisation.t() | {:error, atom()}
+  def get_organisation_and_role_from_token(%{"token" => token, "email" => email} = _params) do
+    with {:ok, %{organisation_id: org_id, email: ^email, role: role_id}} <-
+           check_token(token, :invite),
+         %Organisation{} = organisation <- Enterprise.get_organisation(org_id),
+         %Role{} <- get_role(organisation, role_id) do
+      {:ok, %{organisation: organisation, role_id: role_id}}
+    else
       {:ok, _} ->
+        {:error, :no_permission}
+
+      nil ->
         {:error, :no_permission}
 
       error ->
@@ -166,7 +211,7 @@ defmodule WraftDoc.Account do
 
   # This is for test purpose.
   # Should return an error once the product is deployed in production
-  def get_organisation_from_token(_) do
+  def get_organisation_and_role_from_token(_) do
     # Repo.get_by(Organisation, name: "Functionary Labs Pvt Ltd.")
     # {:error, :not_found}
     nil
@@ -288,16 +333,6 @@ defmodule WraftDoc.Account do
   # defp get_role_by_name(role) when is_nil(role) do
   #   Repo.get_by(Role, name: "user")
   # end
-
-  @doc """
-  Get a role type from its UUID.
-  """
-  @spec get_role(Ecto.UUID.t()) :: Role.t() | nil
-  def get_role(<<_::288>> = id) do
-    Repo.get(Role, id)
-  end
-
-  def get_role(_id), do: nil
 
   @doc """
   Get a user from its UUID.
