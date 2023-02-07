@@ -9,7 +9,6 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
-alias WraftDoc.Authorization.Resource
 alias WraftDoc.Authorization.Permission
 alias WraftDoc.Account.Country
 alias WraftDoc.Account.Profile
@@ -522,25 +521,6 @@ allow_once(%Membership{is_expired: false, organisation_id: organisation.id},
   organisation_id: organisation.id
 )
 
-File.stream!("priv/repo/data/super_resources.csv")
-|> CSV.decode(headers: ["category", "action"])
-|> Enum.each(fn {:ok, x} ->
-  function = String.replace_leading(x["action"], ":", "")
-
-  controller =
-    x["category"]
-    |> String.replace_leading("WraftDocWeb.Api.V1.", "")
-    |> String.replace_trailing("Controller", "")
-    |> String.downcase()
-
-  comeon_resource(%Resource{
-    name: function <> "_" <> controller,
-    category: String.to_atom("Elixir." <> x["category"]),
-    action: String.to_atom(function),
-    label: controller
-  })
-end)
-
 # Populate Block
 Enum.each(0..5, fn x ->
   allow_once(
@@ -583,56 +563,6 @@ Enum.each(0..5, fn _ ->
       country_code: Faker.Address.country_code()
     },
     country_name: "Europ"
-  )
-end)
-
-File.stream!("priv/repo/data/resources.csv")
-|> CSV.decode(headers: ["category", "action"])
-|> Enum.each(fn {:ok, x} ->
-  function = String.replace_leading(x["action"], ":", "")
-
-  controller =
-    x["category"]
-    |> String.replace_leading("WraftDocWeb.Api.V1.", "")
-    |> String.replace_trailing("Controller", "")
-    |> String.downcase()
-
-  %{id: resource_id} =
-    comeon_resource(%Resource{
-      name: function <> "_" <> controller,
-      category: String.to_atom("Elixir." <> x["category"]),
-      action: String.to_atom(function),
-      label: controller
-    })
-
-  allow_once(%Permission{role_id: role_admin.id, resource_id: resource_id},
-    role_id: role_admin.id,
-    resource_id: resource_id
-  )
-end)
-
-File.stream!("priv/repo/data/user_resources.csv")
-|> CSV.decode(headers: ["category", "action"])
-|> Enum.each(fn {:ok, x} ->
-  function = String.replace_leading(x["action"], ":", "")
-
-  controller =
-    x["category"]
-    |> String.replace_leading("WraftDocWeb.Api.V1.", "")
-    |> String.replace_trailing("Controller", "")
-    |> String.downcase()
-
-  %{id: resource_id} =
-    comeon_resource(%Resource{
-      name: function <> "_" <> controller,
-      category: String.to_atom("Elixir." <> x["category"]),
-      action: String.to_atom(function),
-      label: controller
-    })
-
-  allow_once(%Permission{role_id: role_user.id, resource_id: resource_id},
-    role_id: role_user.id,
-    resource_id: resource_id
   )
 end)
 

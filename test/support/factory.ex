@@ -14,8 +14,6 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Account.User.Audience
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
-  alias WraftDoc.Authorization.Permission
-  alias WraftDoc.Authorization.Resource
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.BlockTemplate
@@ -101,15 +99,15 @@ defmodule WraftDoc.Factory do
     }
   end
 
+  def role_factory do
+    %Role{name: "user"}
+  end
+
   def user_organisation_factory do
     %UserOrganisation{
       user: build(:user),
       organisation: build(:organisation)
     }
-  end
-
-  def role_factory do
-    %Role{name: "user"}
   end
 
   def user_role_factory do
@@ -288,22 +286,6 @@ defmodule WraftDoc.Factory do
       title_template: sequence(:title_template, &"title-[client]-#{&1}"),
       data: sequence(:data, &"data-#{&1}"),
       content_type: build(:content_type)
-    }
-  end
-
-  def resource_factory do
-    %Resource{
-      name: sequence(:name, &"Flow#{&1}"),
-      category: sequence(:category, &"WraftDocWeb.Api.V1.FlowController#{&1}"),
-      action: Enum.random([:create, :update, :delete, :index]),
-      label: "flow"
-    }
-  end
-
-  def permission_factory do
-    %Permission{
-      resource: build(:resource),
-      role: build(:role)
     }
   end
 

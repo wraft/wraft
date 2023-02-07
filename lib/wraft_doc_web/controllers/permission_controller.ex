@@ -4,38 +4,10 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.{
-    Authorization,
-    Authorization.Permission
-  }
+  alias WraftDoc.Authorization
 
   def swagger_definitions do
     %{
-      PermissionRequest:
-        swagger_schema do
-          title("Permission Request")
-          description("Create permission request.")
-
-          properties do
-            role_uuid(:string, "Role ID", required: true)
-            resource_uuid(:string, "Resource ID", required: true)
-          end
-
-          example(%{
-            resource_uuid: "kjb3476123",
-            role_uuid: "jb3123jbiu1293"
-          })
-        end,
-      Permission:
-        swagger_schema do
-          title("A permission JSON response")
-          description("JSON response for a permission")
-          type(:map)
-
-          example(%{
-            Flow_create: ["user", "admin"]
-          })
-        end,
       PermissionIndex:
         swagger_schema do
           properties do
@@ -86,30 +58,6 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
   end
 
   @doc """
-  Add a permission.
-  """
-  swagger_path :create do
-    post("/permissions")
-    summary("Create permission")
-    description("Create permission API")
-
-    parameters do
-      resource(:body, Schema.ref(:PermissionRequest), "Permission to be created", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Permission))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
-
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, params) do
-    permission = Authorization.create_permission(params)
-    render(conn, "create.json", permission: permission)
-  end
-
-  @doc """
   Resource index.
   """
   swagger_path :index do
@@ -124,34 +72,7 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, _params) do
-    current_user = conn.assigns.current_user
-    permissions = Authorization.list_permissions(current_user)
+    permissions = Authorization.list_permissions()
     render(conn, "index.json", permissions: permissions)
-  end
-
-  @doc """
-  Delete a permission.
-  """
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/permissions/{id}")
-    summary("Delete a permission")
-    description("API to remove a permission")
-
-    parameters do
-      id(:path, :string, "permission id", required: true)
-    end
-
-    response(200, "Ok", Schema.ref(:Resource))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
-  end
-
-  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
-    with %Permission{} = permission <- Authorization.get_permission(uuid),
-         {:ok, %Permission{}} <- Authorization.delete_permission(permission) do
-      render(conn, "delete.json", permission: permission)
-    end
   end
 end
