@@ -274,8 +274,6 @@ defmodule WraftDocWeb.Router do
     pipe_through([:api, :api_auth, :super_admin, :ex_audit_track, :email_verify])
 
     scope "/v1", Api.V1, as: :v1 do
-      resources("/resources", ResourceController, only: [:create, :index, :show, :update, :delete])
-
       resources("/permissions", PermissionController, only: [:create, :index, :delete])
 
       resources("/field_types", FieldTypeController,
