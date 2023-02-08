@@ -8,6 +8,18 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
 
   def swagger_definitions do
     %{
+      Permission:
+        swagger_schema do
+          title("A permission JSON response")
+          description("JSON response for a permission")
+          type(:map)
+
+          example(%{
+            name: "layout:index",
+            resource: "Layout",
+            acion: "Index"
+          })
+        end,
       PermissionIndex:
         swagger_schema do
           properties do

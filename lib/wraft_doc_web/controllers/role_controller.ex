@@ -2,7 +2,10 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  alias WraftDoc.{Account, Account.Role}
+  alias WraftDoc.Account
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Enterprise
+
   action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do
@@ -26,7 +29,21 @@ defmodule WraftDocWeb.Api.V1.RoleController do
           properties do
             id(:string, "Id of the role")
             name(:string, "Name of the role")
+            permissions(:list, "Permissions of the role")
           end
+
+          example(%{
+            id: "9322d1a5-4f44-463d-b4a5-ce797a029ac2",
+            name: "Editor",
+            permissions: ["layout:index", "layout:show", "layout:create", "layout:update"]
+          })
+        end,
+      ListOfRoles:
+        swagger_schema do
+          title("Roles array")
+          description("List of existing Roles")
+          type(:array)
+          items(Schema.ref(:Role))
         end,
       ContentType:
         swagger_schema do
@@ -116,5 +133,20 @@ defmodule WraftDocWeb.Api.V1.RoleController do
          {:ok, %Role{}} <- Account.delete_role(role) do
       render(conn, "show.json", role: role)
     end
+  end
+
+  swagger_path :index do
+    get("/roles")
+    summary("List of roles")
+    description("All roles in an organisation")
+
+    response(200, "Ok", Schema.ref(:ListOfRoles))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def index(conn, _params) do
+    current_user = conn.assigns[:current_user]
+    roles = Enterprise.roles_in_users_organisation(current_user)
+    render(conn, "index.json", roles: roles)
   end
 end

@@ -242,6 +242,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   def show(conn, %{"id" => id}) do
     case Enterprise.get_organisation(id) do
       %Organisation{} = organisation -> render(conn, "show.json", organisation: organisation)
+      # TODO - Change this to use with statement and make sure it returns only 200, 404, and 401
       _ -> {:error, :invalid_id}
     end
   end

@@ -1106,10 +1106,10 @@ defmodule WraftDoc.Enterprise do
     Repo.paginate(query, params)
   end
 
-  def get_role(role \\ "admin")
+  def roles_in_users_organisation(%User{current_org_id: organisation_id}) do
+    query = from(r in Role, where: r.organisation_id == ^organisation_id)
 
-  def get_role(role) when is_binary(role) do
-    Repo.get_by(Role, name: role)
+    Repo.all(query)
   end
 
   @doc """

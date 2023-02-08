@@ -141,7 +141,7 @@ defmodule WraftDocWeb.Router do
       post("/content_type_roles", ContentTypeRoleController, :create)
       delete("/content_type_roles/:id", ContentTypeRoleController, :delete)
 
-      resources("/roles", RoleController, only: [:create, :show, :delete])
+      resources("/roles", RoleController, only: [:create, :show, :delete, :index])
 
       get("/content_types/:id/roles", ContentTypeController, :show_content_type_role)
       get("/content_types/title/search", ContentTypeController, :search)
@@ -180,6 +180,8 @@ defmodule WraftDocWeb.Router do
       scope "/organisations" do
         resources("/", OrganisationController, only: [:create, :update, :show, :delete])
         get("/:id/members", OrganisationController, :members)
+        # Invite new user
+        post("/users/invite", OrganisationController, :invite)
       end
 
       # List Organisation by User
@@ -222,9 +224,6 @@ defmodule WraftDocWeb.Router do
 
       # Delete content type field
       resources("/content_type_fields", ContentTypeFieldController, only: [:delete])
-
-      # Invite new user
-      post("/organisations/users/invite", OrganisationController, :invite)
 
       # All instances in an organisation
       get("/contents", InstanceController, :all_contents)

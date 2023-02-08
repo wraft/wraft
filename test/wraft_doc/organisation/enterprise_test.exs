@@ -945,4 +945,9 @@ defmodule WraftDoc.EnterpriseTest do
       assert length(returned_user.organisations) == 2
     end
   end
+
+  describe "roles_in_users_organisation/1" do
+    # TODO - Test success case with valid params
+    # TODO - Test error case with invalid params that raises exception
+  end
 end
