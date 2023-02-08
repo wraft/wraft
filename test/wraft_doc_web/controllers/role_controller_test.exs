@@ -51,4 +51,8 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
     assert json_response(conn, 200)["name"] == role.name
     assert count_before - 1 == count_after
   end
+
+  describe "index/2" do
+    # TODO - Test success response
+  end
 end

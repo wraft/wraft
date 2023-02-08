@@ -1,7 +1,8 @@
 defmodule WraftDocWeb.Api.V1.OrganisationView do
   use WraftDocWeb, :view
-  alias WraftDocWeb.Api.V1.UserView
+
   alias __MODULE__
+  alias WraftDocWeb.Api.V1.UserView
 
   def render("create.json", %{organisation: organisation}) do
     %{
