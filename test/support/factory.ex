@@ -99,10 +99,6 @@ defmodule WraftDoc.Factory do
     }
   end
 
-  def role_factory do
-    %Role{name: "user"}
-  end
-
   def user_organisation_factory do
     %UserOrganisation{
       user: build(:user),

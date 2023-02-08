@@ -6,8 +6,13 @@ defmodule WraftDocWeb.Api.V1.RoleView do
   def render("role.json", %{role: role}) do
     %{
       id: role.id,
-      name: role.name
+      name: role.name,
+      permissions: role.permissions
     }
+  end
+
+  def render("index.json", %{roles: roles}) do
+    render_many(roles, __MODULE__, "role.json", as: :role)
   end
 
   def render("show.json", %{role: role}) do
