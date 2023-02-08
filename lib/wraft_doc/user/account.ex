@@ -179,7 +179,7 @@ defmodule WraftDoc.Account do
     |> Repo.insert()
     |> case do
       {:error, _} = changeset -> changeset
-      {:ok, role} -> Repo.preload(role, [:organisation, :content_types])
+      {:ok, role} -> Repo.preload(role, [:organisation])
     end
   end
 
