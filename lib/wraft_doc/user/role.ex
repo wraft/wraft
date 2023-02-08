@@ -20,6 +20,9 @@ defmodule WraftDoc.Account.Role do
     role
     |> cast(attrs, [:organisation_id, :name, :permissions])
     |> validate_required([:name, :organisation_id])
-    |> unique_constraint(:name, message: "Role exist in this organisation")
+    |> unique_constraint(:name,
+      name: :organisation_role_unique_index,
+      message: "Role exist in this organisation"
+    )
   end
 end
