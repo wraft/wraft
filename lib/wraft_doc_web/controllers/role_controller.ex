@@ -17,9 +17,13 @@ defmodule WraftDocWeb.Api.V1.RoleController do
 
           properties do
             name(:string, "Role name", required: true)
+            permissions(:list, "Permissions of the role")
           end
 
-          example(%{name: "hr"})
+          example(%{
+            name: "Editor",
+            permissions: ["layout:index", "layout:show", "layout:create", "layout:update"]
+          })
         end,
       Role:
         swagger_schema do
