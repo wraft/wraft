@@ -612,4 +612,9 @@ defmodule WraftDoc.AccountTest do
       assert response == {:error, :same_password}
     end
   end
+
+  describe "update_role/2" do
+    # TODO -> test success case
+    # TODO -> test failure case
+  end
 end

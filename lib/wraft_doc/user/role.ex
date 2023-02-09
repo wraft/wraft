@@ -25,4 +25,14 @@ defmodule WraftDoc.Account.Role do
       message: "Role exist in this organisation"
     )
   end
+
+  def update_changeset(role, attrs \\ %{}) do
+    role
+    |> cast(attrs, [:name, :permissions])
+    |> validate_required([:name])
+    |> unique_constraint(:name,
+      name: :organisation_role_unique_index,
+      message: "Role exist in this organisation"
+    )
+  end
 end
