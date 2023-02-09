@@ -216,7 +216,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
     current_user = conn.assigns[:current_user]
 
     with %State{} = state <- Enterprise.get_state(current_user, uuid),
-         %State{} = %State{} = state <- Enterprise.update_state(state, params) do
+         %State{} = state <- Enterprise.update_state(state, params) do
       render(conn, "show.json", state: state)
     end
   end

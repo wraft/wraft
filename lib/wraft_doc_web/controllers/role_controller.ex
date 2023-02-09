@@ -153,4 +153,30 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     roles = Enterprise.roles_in_users_organisation(current_user)
     render(conn, "index.json", roles: roles)
   end
+
+  swagger_path :update do
+    put("/roles/{id}")
+    summary("Update role")
+    description("Update role name and permissions")
+
+    parameters do
+      id(:path, :string, "role id", required: true)
+      role(:body, Schema.ref(:RoleRequest), "Role to be updated", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Role))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update(conn, %{"id" => uuid} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with %Role{} = role <- Account.get_role(current_user, uuid),
+         %Role{} = role <- Account.update_role(role, params) do
+      render(conn, "show.json", role: role)
+    end
+  end
 end
