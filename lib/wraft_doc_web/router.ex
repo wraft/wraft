@@ -141,7 +141,7 @@ defmodule WraftDocWeb.Router do
       post("/content_type_roles", ContentTypeRoleController, :create)
       delete("/content_type_roles/:id", ContentTypeRoleController, :delete)
 
-      resources("/roles", RoleController, only: [:create, :show, :delete, :index])
+      resources("/roles", RoleController, only: [:create, :show, :delete, :index, :update])
 
       get("/content_types/:id/roles", ContentTypeController, :show_content_type_role)
       get("/content_types/title/search", ContentTypeController, :search)

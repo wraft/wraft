@@ -59,4 +59,10 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
   describe "index/2" do
     # TODO - Test success response
   end
+
+  describe "update/2" do
+    # TODO - Test success response
+    # TODO - Test failure response
+    # TODO -> Role does not belong to the user's organisation
+  end
 end

@@ -183,6 +183,23 @@ defmodule WraftDoc.Account do
     end
   end
 
+  @doc """
+    Updates a role.
+  """
+  @spec update_role(User.t(), map) :: Role.t() | Ecto.Changeset.t()
+  def update_role(role, params) do
+    role
+    |> Role.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, role} ->
+        Repo.preload(role, [:organisation])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
   def delete_role(role) do
     Repo.delete(role)
   end
