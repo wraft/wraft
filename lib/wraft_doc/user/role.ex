@@ -6,7 +6,7 @@ defmodule WraftDoc.Account.Role do
 
   schema "role" do
     field(:name, :string)
-    field(:permissions, {:array, :string})
+    field(:permissions, {:array, :string}, default: [])
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     has_many(:user_roles, WraftDoc.Account.UserRole)

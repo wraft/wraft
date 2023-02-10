@@ -54,4 +54,6 @@ defmodule WraftDocWeb.Auth.CurrentOrganisationTest do
     assert json_response(conn, 404)["errors"] == "No organisation found"
     assert conn.halted
   end
+
+  # TODO - Add tests to ensure role_names and permissions are added to current_user
 end
