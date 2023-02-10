@@ -171,9 +171,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   end
 
   @doc """
-  Createm new organisation
+  Creates a new organisation
   """
-
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
     current_user = conn.assigns.current_user
@@ -181,7 +180,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     with %Organisation{id: id} = organisation <-
            Enterprise.create_organisation(current_user, params),
          {:ok, %Oban.Job{}} <-
-           Enterprise.create_default_worker_job(%{organisation_id: id}, "organisation_roles") do
+           Enterprise.create_default_worker_job(
+             %{organisation_id: id, user_id: current_user.id},
+             "organisation_roles"
+           ) do
       render(conn, "create.json", organisation: organisation)
     end
   end

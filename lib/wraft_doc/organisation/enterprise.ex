@@ -9,6 +9,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
+  alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
@@ -219,7 +220,6 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Create default states for a controlled fow
   """
-
   @spec create_default_states(User.t(), Flow.t(), boolean()) :: list
   def create_default_states(current_user, flow, true) do
     Enum.map(@default_controlled_states, fn x -> create_state(current_user, flow, x) end)
@@ -228,7 +228,6 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Create default states for an uncontrolled flow
   """
-
   def create_default_states(current_user, flow) do
     Enum.map(@default_states, fn x -> create_state(current_user, flow, x) end)
   end
@@ -342,17 +341,21 @@ defmodule WraftDoc.Enterprise do
   """
   @spec create_organisation(User.t(), map) :: Organisation.t()
   def create_organisation(%User{} = user, params) do
-    user
-    |> build_assoc(:organisation)
-    |> Organisation.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(
+      :organisation,
+      user |> build_assoc(:organisation) |> Organisation.changeset(params)
+    )
+    |> Multi.insert(:user_organisation, fn %{organisation: org} ->
+      UserOrganisation.changeset(%UserOrganisation{}, %{user_id: user.id, organisation_id: org.id})
+    end)
+    |> Multi.run(:membership, fn _repo, %{organisation: organisation} ->
+      create_membership(organisation)
+    end)
+    |> Repo.transaction()
     |> case do
-      {:ok, organisation} ->
-        Task.start_link(fn -> create_membership(organisation) end)
-        organisation
-
-      {:error, _} = changeset ->
-        changeset
+      {:ok, %{organisation: organisation}} -> organisation
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 
