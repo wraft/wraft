@@ -25,15 +25,8 @@ defmodule WraftDocWeb.CurrentUser do
       user ->
         instances_to_approve = from(ias in InstanceApprovalSystem, where: ias.flag == false)
 
-        user =
-          Repo.preload(user, [
-            :profile,
-            :roles,
-            instances_to_approve: instances_to_approve
-          ])
+        user = Repo.preload(user, [:profile, instances_to_approve: instances_to_approve])
 
-        role_names = Enum.map(user.roles, fn x -> x.name end)
-        user = Map.put(user, :role_names, role_names)
         assign(conn, :current_user, user)
     end
   end
