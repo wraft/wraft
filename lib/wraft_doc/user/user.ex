@@ -15,7 +15,6 @@ defmodule WraftDoc.Account.User do
     field(:current_org_id, Ecto.UUID, virtual: true)
     field(:role_names, {:array, :string}, virtual: true)
     field(:permissions, {:array, :string}, virtual: true)
-    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     many_to_many(:organisations, WraftDoc.Enterprise.Organisation,
       join_through: "users_organisations"
@@ -55,6 +54,7 @@ defmodule WraftDoc.Account.User do
     has_many(:payments, WraftDoc.Enterprise.Membership.Payment, foreign_key: :creator_id)
     has_many(:vendors, WraftDoc.Enterprise.Vendor, foreign_key: :creator_id)
     has_many(:organisation_fields, WraftDoc.Document.OrganisationField, foreign_key: :creator_id)
+    has_many(:owned_organisations, WraftDoc.Enterprise.Organisation, foreign_key: :creator_id)
 
     timestamps()
   end
