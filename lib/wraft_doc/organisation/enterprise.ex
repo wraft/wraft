@@ -1077,13 +1077,14 @@ defmodule WraftDoc.Enterprise do
 
   def vendor_index(_, _), do: nil
 
+  # TODO - Not required
   @doc """
   Lists all pending approval systems to approve
   ## Parameters
   * user- User struct
   """
   @spec get_pending_approvals(User.t(), map()) :: Scrivener.Page.t()
-  def get_pending_approvals(%User{id: id, organisation_id: org_id}, params) do
+  def get_pending_approvals(%User{id: id, current_org_id: org_id}, params) do
     query =
       from(as in ApprovalSystem,
         where: as.approver_id == ^id,

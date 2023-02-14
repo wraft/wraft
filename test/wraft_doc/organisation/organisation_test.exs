@@ -41,6 +41,8 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
 
       assert "GSTIN Already Registered" in errors_on(changeset, :gstin)
     end
+
+    # TODO - check if organisation is not Personal
   end
 
   describe "personal_organisation_changeset/2" do
