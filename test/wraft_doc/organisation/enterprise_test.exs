@@ -197,6 +197,12 @@ defmodule WraftDoc.EnterpriseTest do
     assert organisation.legal_name == params["legal_name"]
   end
 
+  # TODO - Test for create_organisation
+  #    creator_id cannot be null
+  #    Cannot create a organisation by name "Personal"
+  #    Cannot create two organisations with same name
+  #    Cannot have duplicate occurances of legal name
+
   describe "create_personal_organisation/2" do
     test "creates organisation on valid attributes" do
       user = insert(:user)

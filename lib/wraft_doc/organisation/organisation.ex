@@ -12,7 +12,7 @@ defmodule WraftDoc.Enterprise.Organisation do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Vendor
 
-  @fields ~w(name legal_name email address name_of_ceo name_of_cto gstin corporate_id phone)a
+  @fields ~w(name legal_name email address name_of_ceo name_of_cto gstin corporate_id phone creator_id)a
 
   @derive {Jason.Encoder, only: [:name]}
   schema "organisation" do
@@ -25,6 +25,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     field(:corporate_id, :string)
     field(:phone, :string)
     field(:email, :string)
+    belongs_to(:creator, User)
     field(:logo, WraftDocWeb.LogoUploader.Type)
     has_many(:users_organisations, UserOrganisation)
     many_to_many(:users, User, join_through: "users_organisations")
@@ -39,8 +40,13 @@ defmodule WraftDoc.Enterprise.Organisation do
   def changeset(%Organisation{} = organisation, attrs \\ %{}) do
     organisation
     |> cast(attrs, @fields)
-    |> validate_required([:name, :legal_name, :email])
+    |> validate_required([:name, :legal_name, :email, :creator_id])
     |> cast_attachments(attrs, [:logo])
+    |> validate_name()
+    |> unique_constraint(:name,
+      message: "organisation name already exist",
+      name: :organisation_name_creator_id_index
+    )
     |> unique_constraint(:legal_name,
       message: "Organisation Already Registered.",
       name: :organisation_legal_name_unique_index
@@ -57,5 +63,13 @@ defmodule WraftDoc.Enterprise.Organisation do
     |> validate_required([:name, :email])
     |> validate_format(:name, ~r/^Personal$/)
     |> cast_attachments(attrs, [:logo])
+  end
+
+  defp validate_name(changeset) do
+    if get_field(changeset, :name) == "Personal" do
+      add_error(changeset, :name, "The name 'Personal' is not allowed.")
+    else
+      changeset
+    end
   end
 end
