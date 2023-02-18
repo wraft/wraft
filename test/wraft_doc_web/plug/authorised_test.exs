@@ -3,7 +3,13 @@ defmodule WraftDocWeb.Plug.AuthorizedTest do
   # import WraftDoc.Factory
   # alias WraftDoc.Repo
   # alias WraftDocWeb.Plug.Authorized
-  # TODO Uncomment and fix the tests when Authorized plug is refactored
+  # TODO Fix tests
+
+  # TODO - Add test case when user is a superadmin
+  # TODO - Add test case when user is not a superadmin, but has required permission
+  # TODO - Add test case when user is not a superadmin and does not have required permission
+  # TODO - Add test case when the action doesnt require a permission
+
   # test "user is authorised to continue if the user has permission in resource" do
   #   user = insert(:user)
   #   role = insert(:role, name: "hr_manager")

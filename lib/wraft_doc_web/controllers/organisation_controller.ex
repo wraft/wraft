@@ -1,8 +1,8 @@
 defmodule WraftDocWeb.Api.V1.OrganisationController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
+  plug(WraftDocWeb.Plug.Authorized, invite: "organisation:invite")
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
   alias WraftDoc.Enterprise
