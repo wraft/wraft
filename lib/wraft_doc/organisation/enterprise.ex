@@ -344,7 +344,7 @@ defmodule WraftDoc.Enterprise do
     Multi.new()
     |> Multi.insert(
       :organisation,
-      user |> build_assoc(:organisation) |> Organisation.changeset(params)
+      user |> build_assoc(:owned_organisations) |> Organisation.changeset(params)
     )
     |> Multi.insert(:user_organisation, fn %{organisation: org} ->
       UserOrganisation.changeset(%UserOrganisation{}, %{user_id: user.id, organisation_id: org.id})
@@ -367,7 +367,9 @@ defmodule WraftDoc.Enterprise do
     Multi.new()
     |> Multi.insert(
       :organisation,
-      user |> build_assoc(:organisation) |> Organisation.personal_organisation_changeset(params)
+      user
+      |> build_assoc(:owned_organisations)
+      |> Organisation.personal_organisation_changeset(params)
     )
     |> Multi.run(:membership, fn _repo, %{organisation: organisation} ->
       create_membership(organisation)

@@ -46,3 +46,4 @@ npm-debug.log
 /lib/slugs/**/template.fdb_latexmk
 /lib/slugs/**/template.fls
 /lib/slugs/**/template.log
+.env.custom
