@@ -1,118 +1,80 @@
-layout:index,Layout,Index
-layout:show,Layout,Show
-layout:create,Layout,Create
-layout:update,Layout,Update
-layout:delete,Layout,Delete
-layout:delete_layout_asset,Layout,Delete layout asset
-content_type:index,Content type,Index
-content_type:show,Content type,Show
-content_type:create,Content type,Create
-content_type:update,Content type,Update
-content_type:delete,Content type,Delete
-content_type:bulk_build,Content type,Bulk build
-instance:index,Instance,Index
-instance:create,Instance,Create
-data_template:index,Data template,Index
-data_template:create,Data template,Create
-data_template:bulk_import,Data template,Bulk import
-content_type_role:create,Content type role,Create
-content_type_role:delete,Content type role,Delete
-role:show,Role,Show
-content_type:show_content_type_role,Content type,Show content type role
-content_type:show_content_type_title,Content type,Show content type title
-engine:index,Engine,Index
-theme:index,Theme,Index
-theme:show,Theme,Show
-theme:create,Theme,Create
-theme:update,Theme,Update
-theme:delete,Theme,Delete
-flow:index,Flow,Index
-flow:show,Flow,Show
-flow:create,Flow,Create
-flow:update,Flow,Update
-flow:delete,Flow,Delete
-state:index,State,Index
-state:create,State,Create
-state:update,State,Update
-state:delete,State,Delete
-data_template:show,Data template,Show
-data_template:update,Data template,Update
-data_template:delete,Data template,Delete
-instance:show,Instance,Show
-instance:update,Instance,Update
-instance:delete,Instance,Delete
-instance:state_update,Instance,State update
-instance:lock_unlock,Instance,Lock unlock
-instance:search,Instance,Search
-instance:change,Instance,Change
-organisation:members,Organisation,Members
-vendor:index,Vendor,Index
-vendor:show,Vendor,Show
-vendor:create,Vendor,Create
-vendor:update,Vendor,Update
-vendor:delete,Vendor,Delete
-payment:index,Payment,Index
-payment:show,Payment,Show
-block:edit,Block,Edit
-block:new,Block,New
-block:show,Block,Show
-block:create,Block,Create
-block:update,Block,Update
-block:delete,Block,Delete
-content_type_field:delete,Content type field,Delete
-organisation:invite,Organisation,Invite
-instance:all_contents,Instance,All contents
-instance:build,Instance,Build
-data_template:all_templates,Data template,All templates
-block_template:index,Block template,Index
-block_template:edit,Block template,Edit
-block_template:new,Block template,New
-block_template:show,Block template,Show
-block_template:create,Block template,Create
-block_template:update,Block template,Update
-block_template:delete,Block template,Delete
-block_template:bulk_import,Block template,Bulk import
-asset:index,Asset,Index
-asset:edit,Asset,Edit
-asset:new,Asset,New
+approval_system:show,Approval System,Show
+approval_system:manage,Approval System,Manage
+approval_system:delete,Approval System,Delete
 asset:show,Asset,Show
-asset:create,Asset,Create
-asset:update,Asset,Update
+asset:manage,Asset,Manage
 asset:delete,Asset,Delete
-approval_system:index,Approval system,Index
-approval_system:show,Approval system,Show
-approval_system:create,Approval system,Create
-approval_system:update,Approval system,Update
-approval_system:delete,Approval system,Delete
-organisation_field:index,Organisation field,Index
-organisation_field:show,Organisation field,Show
-organisation_field:create,Organisation field,Create
-organisation_field:update,Organisation field,Update
-organisation_field:delete,Organisation field,Delete
-approval_system:approve,Approval system,Approve
-pipeline:index,Pipeline,Index
-pipeline:show,Pipeline,Show
-pipeline:create,Pipeline,Create
-pipeline:update,Pipe line,Update
-pipeline:delete,Pipeline,Delete
-trigger_history:index,Trigger history,Index
-trigger_history:create,Trigger history,Create
-pipe_stage:create,Pipe stage,Create
-pipe_stage:update,Pipe stage,Update
-pipe_stage:delete,Pipe stage,Delete
-permission:index,Permission,Index
-permission:create,Permission,Create
-permission:delete,Permission,Delete
-field_type:index,Field type,Index
-field_type:show,Field type,Show
-field_type:create,Field type,Create
-field_type:update,Field type,Update
-field_type:delete,Field type,Delete
-comment:index,Comment,Index
-comment:edit,Comment,Edit
-comment:new,Comment,New
+block:show,Block,Show
+block:manage,Block,Manage
+block:delete,Block,Delete
+block_template:show,Block Template,Show
+block_template:manage,Block Template,Manage
+block_template:delete,Block Template,Delete
+collection_form:show,Collection Form,Show
+collection_form:manage,Collection Form,Manage
+collection_form:delete,Collection Form,Delete
+collection_form_field:show,Collection Form Field,Show
+collection_form_field:manage,Collection Form Field,Manage
+collection_form_field:delete,Collection Form Field,Delete
 comment:show,Comment,Show
-comment:create,Comment,Create
-comment:update,Comment,Update
+comment:manage,Comment,Manage
 comment:delete,Comment,Delete
-comment:reply,Comment,Reply
+content_type:show,Content Type,Show
+content_type:manage,Content Type,Manage
+content_type:delete,Content Type,Delete
+content_type_field:delete,Content Type Field,Delete
+content_type_role:manage,Content Type Role,Manage
+content_type_role:delete,Content Type Role,Delete
+data_template:show,Data Template,Show
+data_template:manage,Data Template,Manage
+engine:show,Engine,Show
+field_type:show,Field Type,Show
+field_type:manage,Field Type,Manage
+field_type:delete,Field Type,Delete
+flow:show,Flow,Show
+flow:manage,Flow,Manage
+flow:delete,Flow,Delete
+instance_approval_system:show,Instance Approval System,Show
+instance:show,Instance,Show
+instance:manage,Instance,Manage
+instace:lock,Instance,Lock
+instace:review,Instance,Review
+layout:show,Layout,Show
+layout:manage,Layout,Manage
+layout:delete,Layout,Delete
+membership:show,Membership,Show
+membership:manage,Membership,Manage
+organisation:show,Organisation,Show
+organisation:update,Organisation,Update
+organisation:delete,Organisation,Delete
+organisation:invite,Organisation,Invite
+organisation:members,Organisation,Members
+organisation_field:show,Organisation Field,Show
+organisation_field:manage,Organisation Field,Manage
+organisation_field:delete,Organisation Field,Delete
+payment:show,Payment,Show
+pipe_stage:manage,Pipe Stage,Manage
+pipe_stage:delete,Pipe Stage,Delete
+pipeline:show,Pipeline,Show
+pipeline:manage,Pipeline,Manage
+pipeline:delete,Pipeline,Delete
+plan:show,Plan,Show
+plan:manage,Plan,Manage
+plan:delete,Plan,Delete
+role:show,Role,Show
+role:manage,Role,Manage
+role:delete,Role,Delete
+role_group:show,Role Group,Show
+role_group:manage,Role Group,Manage
+role_group:delete,Role Group,Delete
+state:show,State,Show
+state:manage,State,Manage
+state:delete,State,Delete
+theme:show,Theme,Show
+theme:manage,Theme,Manage
+theme:delete,Theme,Delete
+trigger_history:index,Trigger History,Index
+trigger_history:create,Trigger History,Create
+vendor:show,Vendor,Show
+vendor:manage,Vendor,Manage
+vendor:delete,Vendor,Delete
