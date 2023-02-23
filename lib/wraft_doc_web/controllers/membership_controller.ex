@@ -1,17 +1,18 @@
 defmodule WraftDocWeb.Api.V1.MembershipController do
   use WraftDocWeb, :controller
+  use PhoenixSwagger
+
   plug(WraftDocWeb.Plug.AddActionLog)
+  plug WraftDocWeb.Plug.Authorized, show: "membership:show", update: "membership:manage"
+
   import Ecto.Query, warn: false
 
-  alias WraftDoc.{
-    Enterprise,
-    Enterprise.Membership,
-    Enterprise.Membership.Payment,
-    Enterprise.Plan
-  }
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Membership
+  alias WraftDoc.Enterprise.Membership.Payment
+  alias WraftDoc.Enterprise.Plan
 
   action_fallback(WraftDocWeb.FallbackController)
-  use PhoenixSwagger
 
   def swagger_definitions do
     %{

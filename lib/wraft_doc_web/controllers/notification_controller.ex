@@ -1,10 +1,10 @@
 defmodule WraftDocWeb.Api.V1.NotificationController do
   use WraftDocWeb, :controller
-
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
-  action_fallback(WraftDocWeb.FallbackController)
   use PhoenixSwagger
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Notifications
 

@@ -1,9 +1,14 @@
 defmodule WraftDocWeb.Api.V1.PaymentController do
   use WraftDocWeb, :controller
-  plug(WraftDocWeb.Plug.AddActionLog)
-  alias WraftDoc.{Enterprise, Enterprise.Membership.Payment}
-  action_fallback(WraftDocWeb.FallbackController)
   use PhoenixSwagger
+
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.Authorized, index: "payment:show", show: "payment:show"
+
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Membership.Payment
+
+  action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do
     %{

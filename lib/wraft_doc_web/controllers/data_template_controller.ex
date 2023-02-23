@@ -1,10 +1,23 @@
 defmodule WraftDocWeb.Api.V1.DataTemplateController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "data_template:manage",
+    index: "data_template:show",
+    all_templates: "data_template:show",
+    show: "data_template:show",
+    update: "data_template:manage",
+    delete: "data_template:delete",
+    bulk_import: "data_template:manage"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.ContentType, Document.DataTemplate}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.DataTemplate
 
   def swagger_definitions do
     %{

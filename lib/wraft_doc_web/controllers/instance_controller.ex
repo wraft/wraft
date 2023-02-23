@@ -1,20 +1,33 @@
 defmodule WraftDocWeb.Api.V1.InstanceController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    index: "instance:show",
+    all_contents: "instance:show",
+    show: "instance:show",
+    update: "instance:manage",
+    delete: "instance:delete",
+    build: "instance:manage",
+    state_update: "instance:manage",
+    lock_unlock: "instance:lock",
+    search: "instance:show",
+    change: "instance:show",
+    approve: "instance:review",
+    reject: "instance:review"
+
   action_fallback(WraftDocWeb.FallbackController)
 
   require Logger
 
-  alias WraftDoc.{
-    Document,
-    Document.ContentType,
-    Document.Instance,
-    Document.Layout,
-    Enterprise,
-    Enterprise.Flow.State
-  }
+  alias WraftDoc.Document
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.Instance
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Flow.State
 
   alias WraftDocWeb.Api.V1.InstanceVersionView
 

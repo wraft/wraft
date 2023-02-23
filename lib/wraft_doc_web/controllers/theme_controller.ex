@@ -1,10 +1,20 @@
 defmodule WraftDocWeb.Api.V1.ThemeController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "theme:manage",
+    index: "theme:show",
+    show: "theme:show",
+    update: "theme:manage",
+    delete: "theme:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Theme}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Theme
 
   def swagger_definitions do
     %{

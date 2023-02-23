@@ -5,10 +5,18 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   """
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "trigger_history:create",
+    index: "trigger_history:index"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Pipeline, Document.Pipeline.TriggerHistory}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Document.Pipeline.TriggerHistory
 
   def swagger_definitions do
     %{

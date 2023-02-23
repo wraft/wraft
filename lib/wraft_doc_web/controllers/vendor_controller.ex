@@ -2,8 +2,17 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
+  plug WraftDocWeb.Plug.Authorized,
+    create: "vendor:manage",
+    index: "vendor:show",
+    show: "vendor:show",
+    update: "vendor:manage",
+    delete: "vendor:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Enterprise, Enterprise.Vendor}
+
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Vendor
 
   def swagger_definitions do
     %{

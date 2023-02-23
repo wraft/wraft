@@ -1,14 +1,23 @@
 defmodule WraftDocWeb.Api.V1.OrganisationController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.AddActionLog)
-  plug(WraftDocWeb.Plug.Authorized, invite: "organisation:invite")
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    update: "organisation:update",
+    show: "organisation:show",
+    delete: "organisation:delete",
+    invite: "organisation:invite",
+    members: "organisation:members",
+    index: "organisation:show"
+
+  action_fallback(WraftDocWeb.FallbackController)
+
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
-
-  action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do
     %{
