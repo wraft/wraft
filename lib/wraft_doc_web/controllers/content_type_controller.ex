@@ -1,10 +1,24 @@
 defmodule WraftDocWeb.Api.V1.ContentTypeController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "content_type:manage",
+    index: "content_type:show",
+    show: "content_type:show",
+    update: "content_type:manage",
+    delete: "content_type:delete",
+    show_content_type_role: "content_type:show",
+    search: "content_type:show"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.ContentType, Document.Layout, Enterprise, Enterprise.Flow}
+  alias WraftDoc.Document
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Flow
 
   def swagger_definitions do
     %{

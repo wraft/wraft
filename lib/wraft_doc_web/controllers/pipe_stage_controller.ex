@@ -5,11 +5,19 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
   """
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "pipe_stage:manage",
+    update: "pipe_stage:manage",
+    delete: "pipe_stage:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.{Document, Document.Pipeline, Document.Pipeline.Stage}
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Document.Pipeline.Stage
 
   def swagger_definitions do
     %{

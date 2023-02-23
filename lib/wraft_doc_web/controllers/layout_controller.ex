@@ -2,11 +2,22 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  plug(WraftDocWeb.Plug.AddActionLog)
-  plug(WraftDocWeb.Plug.Authorized, create: "layout:create", index: "layout:index")
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "layout:create",
+    index: "layout:index",
+    show: "layout:show",
+    update: "layout:manage",
+    delete: "layout:delete",
+    delete_layout_asset: "layout:delete"
 
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Engine, Document.Layout, Document.LayoutAsset}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Engine
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Document.LayoutAsset
 
   def swagger_definitions do
     %{

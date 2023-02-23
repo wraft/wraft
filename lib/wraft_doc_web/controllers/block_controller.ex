@@ -1,12 +1,19 @@
 defmodule WraftDocWeb.Api.V1.BlockController do
   use WraftDocWeb, :controller
-
   use PhoenixSwagger
-  action_fallback(WraftDocWeb.FallbackController)
-  # plug(WraftDocWeb.Plug.Authorized)
+
   plug(WraftDocWeb.Plug.AddActionLog)
 
-  alias WraftDoc.{Document, Document.Block}
+  plug WraftDocWeb.Plug.Authorized,
+    create: "block:manage",
+    update: "block:manage",
+    show: "block:show",
+    delete: "block:delete"
+
+  action_fallback(WraftDocWeb.FallbackController)
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Block
 
   def swagger_definitions do
     %{

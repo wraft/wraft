@@ -27,6 +27,7 @@ content_type_role:manage,Content Type Role,Manage
 content_type_role:delete,Content Type Role,Delete
 data_template:show,Data Template,Show
 data_template:manage,Data Template,Manage
+data_template:delete,Data Template,Delete
 engine:show,Engine,Show
 field_type:show,Field Type,Show
 field_type:manage,Field Type,Manage
@@ -36,9 +37,10 @@ flow:manage,Flow,Manage
 flow:delete,Flow,Delete
 instance_approval_system:show,Instance Approval System,Show
 instance:show,Instance,Show
+instance:delete,Instance,Delete
 instance:manage,Instance,Manage
-instace:lock,Instance,Lock
-instace:review,Instance,Review
+instance:lock,Instance,Lock
+instance:review,Instance,Review
 layout:show,Layout,Show
 layout:manage,Layout,Manage
 layout:delete,Layout,Delete

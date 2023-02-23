@@ -1,10 +1,20 @@
 defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "block_template:manage",
+    index: "block_template:show",
+    show: "block_template:show",
+    update: "block_template:manage",
+    delete: "block_template:delete",
+    bulk_import: "block_template:manage"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.BlockTemplate}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.BlockTemplate
 
   def swagger_definitions do
     %{

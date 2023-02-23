@@ -4,6 +4,11 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemController do
   """
   use WraftDocWeb, :controller
   use PhoenixSwagger
+
+  plug WraftDocWeb.Plug.Authorized,
+    index: "instance_approval_system:show",
+    instances_to_approve: "instance_approval_system:show"
+
   alias WraftDoc.Document
 
   def swagger_definitions do

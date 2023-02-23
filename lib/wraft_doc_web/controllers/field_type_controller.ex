@@ -1,8 +1,18 @@
 defmodule WraftDocWeb.Api.V1.FieldTypeController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "field_type:manage",
+    index: "field_type:show",
+    show: "field_type:show",
+    update: "field_type:manage",
+    delete: "field_type:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
+
   alias WraftDoc.Document
   alias WraftDoc.Document.FieldType
 
