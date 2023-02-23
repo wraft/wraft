@@ -1,16 +1,20 @@
 defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
   use WraftDocWeb, :controller
+  use PhoenixSwagger
 
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+  plug WraftDocWeb.Plug.Authorized
+
+  plug WraftDocWeb.Plug.AddActionLog,
+    index: "organisation_field:show",
+    create: "organisation_field:manage",
+    show: "organisation_field:show",
+    update: "organisation_field:manage",
+    delete: "organisation_field:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.{
-    Document,
-    Document.OrganisationField
-  }
-
-  use PhoenixSwagger
+  alias WraftDoc.Document
+  alias WraftDoc.Document.OrganisationField
 
   def swagger_definitions do
     %{

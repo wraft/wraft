@@ -1,11 +1,20 @@
 defmodule WraftDocWeb.Api.V1.RoleGroupController do
   use WraftDocWeb, :controller
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+  use PhoenixSwagger
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "role_group:manage",
+    show: "role_group:show",
+    udpate: "role_group:manage",
+    delete: "role_group:delete",
+    index: "role_group:show"
+
   action_fallback(WraftDocWeb.FallbackController)
 
-  use PhoenixSwagger
-  alias WraftDoc.{Account, Account.RoleGroup}
+  alias WraftDoc.Account
+  alias WraftDoc.Account.RoleGroup
 
   def swagger_definitions do
     %{

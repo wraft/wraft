@@ -2,8 +2,17 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  alias WraftDoc.{Document, Document.CollectionForm, Document.CollectionFormField}
+  plug WraftDocWeb.Plug.Authorized,
+    show: "collection_form_field:show",
+    create: "collection_form_field:manage",
+    update: "collection_form_field:manage",
+    delete: "collection_form_field:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.CollectionForm
+  alias WraftDoc.Document.CollectionFormField
 
   def swagger_definitions do
     %{

@@ -1,10 +1,21 @@
 defmodule WraftDocWeb.Api.V1.CommentController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "comment:manage",
+    index: "comment:show",
+    reply: "comment:manage",
+    show: "comment:show",
+    update: "comment:manage",
+    delete: "comment:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Comment}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Comment
 
   def swagger_definitions do
     %{

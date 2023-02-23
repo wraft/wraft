@@ -1,10 +1,15 @@
 defmodule WraftDocWeb.Api.V1.ContentTypeFieldController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+  plug WraftDocWeb.Plug.Authorized, delete: "content_type_field:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.ContentType, Document.ContentTypeField}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.ContentTypeField
 
   @doc """
   Delete a Content Type Field.

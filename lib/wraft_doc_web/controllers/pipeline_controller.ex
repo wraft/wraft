@@ -5,10 +5,20 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
   """
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "pipeline:manage",
+    index: "pipeline:show",
+    update: "pipeline:manage",
+    show: "pipeline:show",
+    delete: "pipeline:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Pipeline}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Pipeline
 
   def swagger_definitions do
     %{

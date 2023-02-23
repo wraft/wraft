@@ -19,6 +19,7 @@ content_type:delete
 content_type_field:delete
 data_template:show
 data_template:manage
+data_template:delete
 engine:show
 field_type:show
 field_type:manage
@@ -27,9 +28,10 @@ flow:show
 flow:manage
 flow:delete
 instance:show
+instance:delete
 instance:manage
-instace:lock
-instace:review
+instance:lock
+instance:review
 layout:show
 layout:manage
 layout:delete

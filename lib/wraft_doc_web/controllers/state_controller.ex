@@ -1,10 +1,20 @@
 defmodule WraftDocWeb.Api.V1.StateController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "state:manage",
+    index: "state:show",
+    update: "state:manage",
+    delete: "state:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Enterprise, Enterprise.Flow, Enterprise.Flow.State}
+
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Enterprise.Flow.State
 
   def swagger_definitions do
     %{
