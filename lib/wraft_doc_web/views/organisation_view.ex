@@ -60,6 +60,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
+  def render("remove_user.json", %{}) do
+    %{
+      info: "User removed from the organisation.!"
+    }
+  end
+
   def render("members.json", %{
         members: members,
         page_number: page_number,

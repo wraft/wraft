@@ -182,6 +182,8 @@ defmodule WraftDocWeb.Router do
         get("/:id/members", OrganisationController, :members)
         # Invite new user
         post("/users/invite", OrganisationController, :invite)
+        # Removes existing user
+        post("/remove_user/:id", OrganisationController, :remove_user)
       end
 
       # List Organisation by User

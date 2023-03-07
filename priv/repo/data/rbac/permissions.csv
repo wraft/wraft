@@ -80,3 +80,4 @@ trigger_history:create,Trigger History,Create
 vendor:show,Vendor,Show
 vendor:manage,Vendor,Manage
 vendor:delete,Vendor,Delete
+members:manage,Members,Manage
