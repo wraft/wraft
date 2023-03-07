@@ -78,4 +78,9 @@ defmodule WraftDoc.Account.UserOrganisationTest do
       assert "can't be blank" in errors_on(changeset, :organisation_id)
     end
   end
+
+  describe "delete_changeset/2" do
+    # TODO valid changeset
+    # TODO invalid changeset
+  end
 end

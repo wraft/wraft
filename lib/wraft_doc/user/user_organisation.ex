@@ -7,6 +7,8 @@ defmodule WraftDoc.Account.UserOrganisation do
   @fields [:user_id, :organisation_id]
 
   schema "users_organisations" do
+    field(:deleted_at, :naive_datetime)
+
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     timestamps()
@@ -22,5 +24,11 @@ defmodule WraftDoc.Account.UserOrganisation do
     )
     |> foreign_key_constraint(:user_id, message: "Please enter an existing user")
     |> foreign_key_constraint(:organisation_id, message: "Please enter a valid organisation")
+  end
+
+  def delete_changeset(users_organisations, attrs \\ %{}) do
+    users_organisations
+    |> cast(attrs, [:deleted_at])
+    |> validate_required([:deleted_at])
   end
 end

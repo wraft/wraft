@@ -216,4 +216,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       #        |> to_string() =~ o2.address
     end
   end
+
+  describe "delete_user/2" do
+    # TODO Write test for user who exist in the current organisation  SUCCESS/FAILURE CASE
+    # TODO Write test to check if the current_user has permission to
+    #      delete a user from the organisation SUCCESS/FAILURE CASE
+  end
 end
