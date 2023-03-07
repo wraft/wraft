@@ -70,4 +70,10 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
       assert "has invalid format" == Enum.at(errors_on(changeset, :name), 0)
     end
   end
+
+  describe "logo_changeset/1" do
+    # Test case with valid logo file
+    # Test case with invalid file
+    # Test case with no logo
+  end
 end

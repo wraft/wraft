@@ -41,7 +41,6 @@ defmodule WraftDoc.Enterprise.Organisation do
     organisation
     |> cast(attrs, @fields)
     |> validate_required([:name, :legal_name, :email, :creator_id])
-    |> cast_attachments(attrs, [:logo])
     |> validate_name()
     |> unique_constraint(:name,
       message: "organisation name already exist",
@@ -62,7 +61,10 @@ defmodule WraftDoc.Enterprise.Organisation do
     |> cast(attrs, @fields)
     |> validate_required([:name, :email])
     |> validate_format(:name, ~r/^Personal$/)
-    |> cast_attachments(attrs, [:logo])
+  end
+
+  def logo_changeset(%Organisation{} = organisation, attrs \\ %{}) do
+    cast_attachments(organisation, attrs, [:logo])
   end
 
   defp validate_name(changeset) do
