@@ -10,12 +10,14 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     delete: "organisation:delete",
     invite: "organisation:invite",
     members: "organisation:members",
-    index: "organisation:show"
+    index: "organisation:show",
+    remove_user: "members:manage"
 
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
+  alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
 
@@ -150,6 +152,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
             total_pages(:integer, "Total number of pages")
             total_entries(:integer, "Total number of contents")
           end
+        end,
+      RemoveUser:
+        swagger_schema do
+          title("Remove User")
+          description("Removes the user from the organisation")
+
+          properties do
+            info(:string, "Info", required: true)
+          end
+
+          example(%{info: "User removed from the organisation.!"})
         end
     }
   end
@@ -393,6 +406,35 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
         total_pages: total_pages,
         total_entries: total_entries
       )
+    end
+  end
+
+  swagger_path :remove_user do
+    post("/organisations/remove_user/{id}")
+    summary("Api to remove a user from the given organisation")
+    description("Api to remove a user from an organisation")
+
+    parameters do
+      id(:path, :string, "User id")
+    end
+
+    response(200, "ok", Schema.ref(:RemoveUser))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @doc """
+    Remove a user from the organisation
+  """
+  @spec remove_user(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def remove_user(conn, %{"id" => user_id}) do
+    current_user = conn.assigns[:current_user]
+
+    with %UserOrganisation{} = user_organisation <-
+           Enterprise.get_user_organisation(current_user, user_id),
+         {:ok, %UserOrganisation{}} <- Enterprise.remove_user(user_organisation) do
+      render(conn, "remove_user.json")
     end
   end
 

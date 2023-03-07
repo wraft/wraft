@@ -957,4 +957,10 @@ defmodule WraftDoc.EnterpriseTest do
     # TODO - Test success case with valid params
     # TODO - Test error case with invalid params that raises exception
   end
+
+  describe "delete_user/2" do
+    # TODO - Success case
+    # TODO - Failure case
+    # TODO - invalid user case
+  end
 end

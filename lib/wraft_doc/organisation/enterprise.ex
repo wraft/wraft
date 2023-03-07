@@ -1128,4 +1128,23 @@ defmodule WraftDoc.Enterprise do
     |> DefaultWorker.new(tags: [tag])
     |> Oban.insert()
   end
+
+  @doc """
+    Removes the given user from the organisation
+  """
+  @spec remove_user(UserOrganisation.t()) ::
+          {:ok, UserOrganisation.t()} | {:error, Ecto.Changeset.t()}
+  def remove_user(%UserOrganisation{} = user_organisation) do
+    user_organisation
+    |> UserOrganisation.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
+    |> Repo.update()
+  end
+
+  @doc """
+   Gets the UserOrganisation for given user ID and organisation ID
+  """
+  @spec get_user_organisation(Ecto.UUID.t(), Ecto.UUID.t()) :: {:ok, UserOrganisation.t()} | nil
+  def get_user_organisation(%User{current_org_id: org_id}, user_id) do
+    Repo.get_by(UserOrganisation, organisation_id: org_id, user_id: user_id)
+  end
 end
