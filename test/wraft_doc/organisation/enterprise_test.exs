@@ -202,6 +202,7 @@ defmodule WraftDoc.EnterpriseTest do
   #    Cannot create a organisation by name "Personal"
   #    Cannot create two organisations with same name
   #    Cannot have duplicate occurances of legal name
+  #    Should upload logo
 
   describe "create_personal_organisation/2" do
     test "creates organisation on valid attributes" do
