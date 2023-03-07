@@ -346,6 +346,7 @@ defmodule WraftDoc.Enterprise do
       :organisation,
       user |> build_assoc(:owned_organisations) |> Organisation.changeset(params)
     )
+    |> Multi.update(:organisation_logo, &Organisation.logo_changeset(&1.organisation, params))
     |> Multi.insert(:user_organisation, fn %{organisation: org} ->
       UserOrganisation.changeset(%UserOrganisation{}, %{user_id: user.id, organisation_id: org.id})
     end)
@@ -354,7 +355,7 @@ defmodule WraftDoc.Enterprise do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{organisation: organisation}} -> organisation
+      {:ok, %{organisation_logo: organisation}} -> organisation
       {:error, _, changeset, _} -> {:error, changeset}
     end
   end
