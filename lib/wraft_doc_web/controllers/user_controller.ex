@@ -644,4 +644,30 @@ defmodule WraftDocWeb.Api.V1.UserController do
         {:error, :no_permission}
     end
   end
+
+  swagger_path :join_organisation do
+    post("/join_organisation")
+    summary("Join Organisation")
+    description("Join organisation using an invite link")
+    consumes("multipart/form-data")
+
+    parameter(:token, :formData, :string, "Organisation Invite Token", required: true)
+
+    response(200, "Ok", Schema.ref(:OrganisationByUser))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @doc """
+    Join an organisation from invite link
+  """
+  @spec join_organisation(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def join_organisation(conn, %{"token" => token} = _params) do
+    current_user = conn.assigns[:current_user]
+
+    with {:ok, %{organisations: organisation}} <-
+           Enterprise.join_org_by_invite(current_user, token) do
+      render(conn, "join_org.json", organisation: organisation)
+    end
+  end
 end
