@@ -129,6 +129,13 @@ defmodule WraftDocWeb.Api.V1.UserView do
     }
   end
 
+  def render("join_org.json", %{organisation: organisation}) do
+    %{
+      organisation:
+        render_one(organisation, OrganisationView, "org_by_user.json", as: :organisation)
+    }
+  end
+
   @doc """
   Guardian token generated after verifying auth_token
   """

@@ -337,6 +337,38 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+   Join organisation using an invite link
+  """
+  @spec join_org_by_invite(User.t(), binary()) :: {:ok, map()} | {:error, Ecto.Changeset.t()}
+  def join_org_by_invite(%User{} = user, token) do
+    Multi.new()
+    |> Multi.run(:get_org, fn _, _ ->
+      Account.get_organisation_and_role_from_token(%{"token" => token, "email" => user.email})
+    end)
+    |> Multi.insert(:users_organisations, fn %{get_org: %{organisation: organisation}} ->
+      UserOrganisation.changeset(%UserOrganisation{}, %{
+        user_id: user.id,
+        organisation_id: organisation.id
+      })
+    end)
+    |> Multi.run(:assign_role, fn _repo, %{get_org: %{role_id: role_id}} ->
+      create_default_worker_job(%{user_id: user.id, role_id: role_id}, "assign_role")
+    end)
+    |> Multi.run(:delete_auth_token, fn _, _ -> Account.delete_auth_token(token) end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{get_org: %{organisation: organisation}}} ->
+        {:ok, %{organisations: organisation}}
+
+      {:error, :get_org, error, _} ->
+        {:error, error}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  @doc """
   Create an Organisation
   """
   @spec create_organisation(User.t(), map) :: Organisation.t()
@@ -410,27 +442,28 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
-  Check if a user with the given Email ID exists or not.
+  Check if a user with the given Email ID is a member of the given organisation.
   """
-  @spec already_member(String.t()) :: :ok | {:error, :already_member}
-  def already_member(email) when is_nil(email), do: {:error, :no_data}
+  @spec already_member(Ecto.UUID.t(), String.t()) :: :ok | {:error, :already_member}
+  def already_member(<<_::288>> = _org_id, email) when is_nil(email), do: {:error, :no_data}
 
-  def already_member(email) do
-    email
-    |> Account.find()
-    |> case do
-      %User{} ->
-        {:error, :already_member}
+  def already_member(<<_::288>> = org_id, email) do
+    query =
+      from(user in User,
+        where: user.email == ^email,
+        join: user_org in UserOrganisation,
+        where: user.id == user_org.user_id and user_org.organisation_id == ^org_id
+      )
 
-      _ ->
-        :ok
+    case Repo.one(query) do
+      %User{} -> {:error, :already_member}
+      _ -> :ok
     end
   end
 
   @doc """
   Sends invitation email to the email with the role.
   """
-
   def invite_team_member(
         %User{name: name} = user,
         %{name: org_name} = organisation,
