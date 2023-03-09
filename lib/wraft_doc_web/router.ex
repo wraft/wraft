@@ -190,6 +190,8 @@ defmodule WraftDocWeb.Router do
       get("/users/organisations", UserController, :index_by_user)
       # Switch organisation
       post("/switch_organisations", UserController, :switch_organisation)
+      # Join organisation
+      post("/join_organisation", UserController, :join_organisation)
       # collection form api
       get("/collection_forms/:id", CollectionFormController, :show)
       post("/collection_forms", CollectionFormController, :create)

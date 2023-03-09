@@ -8,7 +8,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     update: "organisation:update",
     show: "organisation:show",
     delete: "organisation:delete",
-    invite: "organisation:invite",
+    invite: "members:manage",
     members: "organisation:members",
     index: "organisation:show",
     remove_user: "members:manage"
@@ -324,7 +324,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
     with %Organisation{} = organisation <-
            Enterprise.get_organisation(current_user.current_org_id),
-         :ok <- Enterprise.already_member(params["email"]),
+         :ok <- Enterprise.already_member(current_user.current_org_id, params["email"]),
          %Role{} = role <-
            Account.get_role(current_user, params["role_id"]),
          {:ok, _} <-
