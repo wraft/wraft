@@ -7,10 +7,13 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     show: "role:show",
     delete: "role:delete",
     index: "role:show",
-    update: "role:manage"
+    update: "role:manage",
+    assign_role: "role:assign"
 
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
+  alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.Account.UserRole
   alias WraftDoc.Enterprise
 
   action_fallback(WraftDocWeb.FallbackController)
@@ -72,6 +75,19 @@ defmodule WraftDocWeb.Api.V1.RoleController do
               required: true
             )
           end
+        end,
+      AssignRole:
+        swagger_schema do
+          title("Assign Role")
+          description("Response for assign user role")
+
+          properties do
+            info(:string, "Response Info")
+          end
+
+          example(%{
+            info: "Assigned the given role to the user successfully.!"
+          })
         end
     }
   end
@@ -184,6 +200,37 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     with %Role{} = role <- Account.get_role(current_user, uuid),
          %Role{} = role <- Account.update_role(role, params) do
       render(conn, "show.json", role: role)
+    end
+  end
+
+  swagger_path :assign_role do
+    post("/users/{user_id}/roles")
+    summary("Assign Role")
+    description("Assign role to the given user")
+    consumes("multipart/form-data")
+
+    parameter(:user_id, :path, :string, "user id", required: true)
+    parameter(:role_id, :formData, :string, "role id", required: true)
+
+    response(200, "Ok", Schema.ref(:AssignRole))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    # TODO shouldnt be returning 400
+    response(400, "Bad Request", Schema.ref(:Error))
+  end
+
+  @doc """
+    Assign role to the given user
+  """
+  @spec assign_role(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def assign_role(conn, %{"user_id" => user_id, "role_id" => role_id} = _params) do
+    current_user = conn.assigns[:current_user]
+
+    with %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
+         %Role{} <- Account.get_role(current_user, role_id),
+         {:ok, %UserRole{}} <- Account.insert_user_role(user_id, role_id) do
+      render(conn, "assign_role.json")
     end
   end
 end

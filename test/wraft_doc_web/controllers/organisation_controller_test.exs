@@ -79,6 +79,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     assert json_response(conn, 200)["address"] == organisation.address
   end
 
+  # TODO update tests
   test "invite persons send the mail to the persons mail", %{conn: conn} do
     role = insert(:role, organisation: conn.assigns.current_user.organisation)
 

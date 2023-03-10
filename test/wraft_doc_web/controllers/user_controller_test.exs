@@ -424,6 +424,11 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     end
   end
 
+  describe "join_organisation/2" do
+    # TODO valid token case SUCCESS CASE
+    # TODO invalid token case FAILURE CASE
+  end
+
   # describe "search/2" do
   #   test "search user api filter by there name", %{conn: conn} do
   #     conn =
