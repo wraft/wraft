@@ -23,4 +23,10 @@ defmodule WraftDocWeb.Api.V1.RoleView do
       organisation: render_one(role.organisation, OrganisationView, "organisation.json")
     }
   end
+
+  def render("assign_role.json", %{}) do
+    %{
+      info: "Assigned the given role to the user successfully.!"
+    }
+  end
 end

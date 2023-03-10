@@ -65,4 +65,12 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
     # TODO - Test failure response
     # TODO -> Role does not belong to the user's organisation
   end
+
+  describe "assign_role/2" do
+    # TODO - Test the success response
+    # TODO - Test the failure response
+    # 1 When the user doesn't belong to current user's current organisation
+    # 2 Role doesn't belong to current user's current organisation
+    # 3 Changeset errors when inserting a user_role
+  end
 end
