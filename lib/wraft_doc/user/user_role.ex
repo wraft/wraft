@@ -16,5 +16,9 @@ defmodule WraftDoc.Account.UserRole do
     user_role
     |> cast(attrs, [:user_id, :role_id])
     |> validate_required([:user_id, :role_id])
+    |> unique_constraint(:user_id,
+      message: "user with the role already exist.!",
+      name: :user_role_unique_index
+    )
   end
 end

@@ -377,6 +377,7 @@ defmodule WraftDoc.EnterpriseTest do
   #   assert approval_system.post_state.id == approved.instance.state_id
   # end
 
+  # TODO update tests
   test "already a member return error for existing email" do
     user = insert(:user)
     assert Enterprise.already_member(user.email) == {:error, :already_member}
@@ -962,5 +963,10 @@ defmodule WraftDoc.EnterpriseTest do
     # TODO - Success case
     # TODO - Failure case
     # TODO - invalid user case
+  end
+
+  describe "join_org_by_invite/2" do
+    # TODO - Success case
+    # TODO - Failure case
   end
 end

@@ -617,4 +617,9 @@ defmodule WraftDoc.AccountTest do
     # TODO -> test success case
     # TODO -> test failure case
   end
+
+  describe "insert_user_role/2" do
+    # TODO -> test success case
+    # TODO -> test failure case
+  end
 end

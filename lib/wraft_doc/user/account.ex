@@ -14,6 +14,7 @@ defmodule WraftDoc.Account do
   alias WraftDoc.Account.User
   alias WraftDoc.Account.User.Audience
   alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.Account.UserRole
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.BlockTemplate
@@ -144,6 +145,15 @@ defmodule WraftDoc.Account do
   end
 
   @doc """
+    Create new user_role with given user_id and role_id
+  """
+  def insert_user_role(user_id, role_id) do
+    %UserRole{}
+    |> UserRole.changeset(%{user_id: user_id, role_id: role_id})
+    |> Repo.insert()
+  end
+
+  @doc """
   Get a role type from its UUID.
   """
   @spec get_role(Ecto.UUID.t()) :: Role.t() | nil
@@ -160,6 +170,7 @@ defmodule WraftDoc.Account do
   def get_role(%User{current_org_id: org_id}, <<_::288>> = id) do
     case Repo.get_by(Role, id: id, organisation_id: org_id) do
       %Role{} = role -> role
+      # TODO supposed to be returning nil
       _ -> {:error, :invalid_id, "Role"}
     end
   end
