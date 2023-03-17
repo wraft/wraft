@@ -22,7 +22,7 @@ defmodule WraftDocWeb.LayoutScreenShotUploader do
 
   # Change Filename
   def filename(_version, {_file, layout}) do
-    "screenshot_#{layout.name}_#{layout.updated_at}"
+    "screenshot_#{layout.name}"
   end
 
   # Storage Directory

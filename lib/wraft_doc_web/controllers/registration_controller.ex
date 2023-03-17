@@ -46,11 +46,15 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
     summary("User registration")
     description("User registration API")
     operation_id("create_user")
+    consumes("multipart/form-data")
     tag("Registration")
 
     parameters do
       token(:query, :string, "Token obtained from invitation mail")
-      user(:body, Schema.ref(:UserRegisterRequest), "User to register", required: true)
+      name(:formData, :string, "User's name", required: true)
+      email(:formData, :string, "User's email", required: true)
+      password(:formData, :string, "User's password", required: true)
+      profile_pic(:formData, :file, "Profile pic")
     end
 
     response(200, "Ok", Schema.ref(:UserToken))

@@ -6,6 +6,7 @@ defmodule WraftDoc.Document do
   import Ecto.Query
   require Logger
 
+  alias Ecto.Multi
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
   alias WraftDoc.Document.Asset
@@ -1658,17 +1659,15 @@ defmodule WraftDoc.Document do
   """
   @spec create_block(User.t(), map) :: Block.t()
   def create_block(%{current_org_id: org_id} = current_user, params) do
-    params = Map.merge(params, %{organisation_id: org_id, creator_id: current_user.id})
+    params = Map.merge(params, %{"organisation_id" => org_id, "creator_id" => current_user.id})
 
-    %Block{}
-    |> Block.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(:block, Block.changeset(%Block{}, params))
+    |> Multi.update(:block_input, &Block.block_input_changeset(&1.block, params))
+    |> Repo.transaction()
     |> case do
-      {:ok, block} ->
-        block
-
-      {:error, _} = changeset ->
-        changeset
+      {:ok, %{block_input: block}} -> block
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 
