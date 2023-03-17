@@ -346,6 +346,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   def me(conn, params) do
     current_user = conn.assigns.current_user
 
+    # FIXME Why do we have to load this in this API?
     with %{
            entries: instance_approval_systems
          } <-
