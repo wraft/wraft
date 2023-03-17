@@ -377,7 +377,8 @@ defmodule WraftDoc.EnterpriseTest do
   #   assert approval_system.post_state.id == approved.instance.state_id
   # end
 
-  # TODO update tests
+  # TODO update
+  # TODO returns :ok if the user is removed from the organisation
   test "already a member return error for existing email" do
     user = insert(:user)
     assert Enterprise.already_member(user.email) == {:error, :already_member}
@@ -755,6 +756,7 @@ defmodule WraftDoc.EnterpriseTest do
     end
   end
 
+  # TODO add test to check if a removed user from organisation is returned
   describe "members_index/2" do
     test "returns the list of all members of current user's organisation" do
       organisation = insert(:organisation)
@@ -938,6 +940,7 @@ defmodule WraftDoc.EnterpriseTest do
     assert vendor_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ v2.name
   end
 
+  # TODO improve test to fit into the logic of deleted_at column in users_organisation table
   describe "list_org_by_user/1" do
     test "return user struct with all organisations the user has joined" do
       user = insert(:user)

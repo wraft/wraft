@@ -452,7 +452,8 @@ defmodule WraftDoc.Enterprise do
       from(user in User,
         where: user.email == ^email,
         join: user_org in UserOrganisation,
-        where: user.id == user_org.user_id and user_org.organisation_id == ^org_id
+        where: user.id == user_org.user_id and user_org.organisation_id == ^org_id,
+        where: is_nil(user_org.deleted_at)
       )
 
     case Repo.one(query) do
@@ -496,10 +497,12 @@ defmodule WraftDoc.Enterprise do
   def members_index(%User{current_org_id: organisation_id}, %{"name" => name} = params) do
     query =
       from(u in User,
-        where: u.organisation_id == ^organisation_id,
+        join: uo in UserOrganisation,
         where: ilike(u.name, ^"%#{name}%"),
-        where: is_nil(u.deleted_at),
-        preload: [:profile, :roles, :organisation]
+        where: uo.organisation_id == ^organisation_id,
+        where: uo.user_id == u.id,
+        where: is_nil(uo.deleted_at),
+        preload: [:profile, :roles, :organisations]
       )
 
     Repo.paginate(query, params)
@@ -508,9 +511,11 @@ defmodule WraftDoc.Enterprise do
   def members_index(%User{current_org_id: organisation_id}, params) do
     query =
       from(u in User,
-        where: u.organisation_id == ^organisation_id,
-        where: is_nil(u.deleted_at),
-        preload: [:profile, :roles, :organisation]
+        join: uo in UserOrganisation,
+        where: uo.organisation_id == ^organisation_id,
+        where: uo.user_id == u.id,
+        where: is_nil(uo.deleted_at),
+        preload: [:profile, :roles, :organisations]
       )
 
     Repo.paginate(query, params)
@@ -542,7 +547,15 @@ defmodule WraftDoc.Enterprise do
   """
   @spec list_org_by_user(User.t()) :: User.t() | nil
   def list_org_by_user(user) do
-    Repo.preload(user, :organisations)
+    query =
+      from(org in Organisation,
+        join: user_org in UserOrganisation,
+        where: user_org.user_id == ^user.id,
+        where: user_org.organisation_id == org.id,
+        where: is_nil(user_org.deleted_at)
+      )
+
+    Repo.preload(user, organisations: query)
   end
 
   @doc """
