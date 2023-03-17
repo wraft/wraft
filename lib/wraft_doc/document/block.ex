@@ -34,8 +34,7 @@ defmodule WraftDoc.Document.Block do
       :creator_id,
       :organisation_id
     ])
-    |> cast_attachments(attrs, [:input])
-    |> validate_required([:name, :file_url, :creator_id, :input, :organisation_id])
+    |> validate_required([:name, :file_url, :creator_id, :organisation_id])
     |> unique_constraint(:name,
       message: "Block with same name exists.!",
       name: :block_organisation_unique_index
@@ -60,5 +59,9 @@ defmodule WraftDoc.Document.Block do
       message: "Block with same name exists.!",
       name: :block_organisation_unique_index
     )
+  end
+
+  def block_input_changeset(%Block{} = block, attrs) do
+    cast_attachments(block, attrs, [:input])
   end
 end

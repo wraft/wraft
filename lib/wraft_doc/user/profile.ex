@@ -10,6 +10,8 @@ defmodule WraftDoc.Account.Profile do
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
 
+  alias __MODULE__
+
   schema "basic_profile" do
     field(:name, :string)
     field(:profile_pic, WraftDocWeb.PropicUploader.Type)
@@ -29,12 +31,15 @@ defmodule WraftDoc.Account.Profile do
       :gender,
       :user_id
     ])
-    |> cast_attachments(attrs, [:profile_pic])
     |> validate_required([:name, :user_id])
     |> validate_format(:name, ~r/^[A-z ]+$/)
     |> validate_length(:name, min: 2)
 
     # |> validate_dob
+  end
+
+  def propic_changeset(%Profile{} = profile, attrs \\ %{}) do
+    cast_attachments(profile, attrs, [:profile_pic])
   end
 
   # @deprecated "Not used anymore"

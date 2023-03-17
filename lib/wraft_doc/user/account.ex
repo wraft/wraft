@@ -107,6 +107,7 @@ defmodule WraftDoc.Account do
     |> Multi.insert(:profile, fn %{user: user} ->
       user |> build_assoc(:profile) |> Profile.changeset(params)
     end)
+    |> Multi.update(:propic, &Profile.propic_changeset(&1.profile, params))
     |> Multi.run(:personal_organisation, fn _repo, %{user: user} ->
       Enterprise.create_personal_organisation(user, %{
         email: params["email"],
@@ -246,17 +247,6 @@ defmodule WraftDoc.Account do
   end
 
   @doc """
-    Create profile for the user
-  """
-  @spec create_profile(User.t(), map) :: {atom, Profile.t()}
-  def create_profile(user, params) do
-    user
-    |> build_assoc(:profile)
-    |> Profile.changeset(params)
-    |> Repo.insert()
-  end
-
-  @doc """
     Find the user with the given email in wraft
   """
   @spec find(binary()) :: User.t() | {:error, atom}
@@ -316,6 +306,7 @@ defmodule WraftDoc.Account do
 
     Multi.new()
     |> Multi.update(:profile, profile)
+    |> Multi.update(:propic, &Profile.propic_changeset(&1.profile, params))
     |> Multi.update(:user, User.update_changeset(current_user, params))
     |> WraftDoc.Repo.transaction()
     |> case do
