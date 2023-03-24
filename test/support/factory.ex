@@ -55,7 +55,7 @@ defmodule WraftDoc.Factory do
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       current_org_id: nil,
-      organisation: nil
+      owned_organisations: []
     }
   end
 
@@ -70,7 +70,7 @@ defmodule WraftDoc.Factory do
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       current_org_id: organisation.id,
-      organisation: organisation
+      owned_organisations: [organisation]
     }
   end
 
@@ -84,7 +84,7 @@ defmodule WraftDoc.Factory do
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       current_org_id: organisation.id,
-      organisation: organisation
+      owned_organisations: [organisation]
     }
   end
 
