@@ -46,6 +46,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.WaitingLists.WaitingList
 
   def user_factory do
     %User{
@@ -85,6 +86,13 @@ defmodule WraftDoc.Factory do
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       current_org_id: organisation.id,
       owned_organisations: [organisation]
+    }
+  end
+
+  def user_organisation_factory do
+    %UserOrganisation{
+      user: build(:user),
+      organisation: build(:organisation)
     }
   end
 
@@ -515,6 +523,15 @@ defmodule WraftDoc.Factory do
       name: sequence(:name, &"Role group-#{&1}"),
       description: sequence(:description, &"Role group-#{&1}"),
       organisation: build(:organisation)
+    }
+  end
+
+  def waiting_list_factory do
+    %WaitingList{
+      first_name: "wraft",
+      last_name: "user",
+      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
+      status: "pending"
     }
   end
 end

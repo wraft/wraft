@@ -24,6 +24,8 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
   @invalid_attrs %{name: ""}
 
   describe "changeset/2" do
+    # TODO - include tests for name and legal_name constraint
+    # TODO - include tests for validate_name
     test "changeset with valid attributes" do
       changeset = Organisation.changeset(%Organisation{}, @valid_attrs)
       assert changeset.valid?

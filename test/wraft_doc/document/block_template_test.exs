@@ -10,6 +10,8 @@ defmodule WraftDoc.Document.BlockTemplateTest do
   }
   @invalid_attrs %{title: "", body: "", serialized: ""}
 
+  # TODO include tests for unique constraints
+
   test "changeset with valid data" do
     organisation = insert(:organisation)
     user = insert(:user)

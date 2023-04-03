@@ -12,6 +12,7 @@ defmodule WraftDoc.Enterprise.MembershipTest do
 
   @invalid_attrs %{start_date: ""}
 
+  # TODO include tests for validate_number in changeset / update_changeset
   describe "changeset/2" do
     test "valid changeset with valid attributes" do
       plan = insert(:plan)

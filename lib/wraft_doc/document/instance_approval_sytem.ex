@@ -19,6 +19,7 @@ defmodule WraftDoc.Document.InstanceApprovalSystem do
     timestamps()
   end
 
+  # TODO write tests for the changesets
   def changeset(instance_approval_system, attrs) do
     instance_approval_system
     |> cast(attrs, [:instance_id, :approval_system_id])

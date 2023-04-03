@@ -70,4 +70,7 @@ defmodule WraftDoc.Document.LayoutTest do
 
     assert "Layout with the same name exists. Use another name.!" in errors_on(changeset, :name)
   end
+
+  # TODO update changeset unique constraint
+  # TODO tests for file_changeset
 end

@@ -13,6 +13,7 @@ defmodule WraftDoc.Document.ContentTypeRole do
     timestamps()
   end
 
+  # TODO write tests for changeset
   def changeset(content_type_role, attrs \\ %{}) do
     content_type_role
     |> cast(attrs, [:content_type_id, :role_id])

@@ -18,7 +18,7 @@ defmodule WraftDoc.Document.Instance.VersionTest do
     assert changeset.valid?
   end
 
-  test "changeset with invalid attributes" do
+  test "valid changeset with invalid attributes" do
     changeset = Version.changeset(%Version{}, @invalid_attrs)
     refute changeset.valid?
   end

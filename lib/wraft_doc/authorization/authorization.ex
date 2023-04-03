@@ -5,6 +5,7 @@ defmodule WraftDoc.Authorization do
   alias WraftDoc.Authorization.Permission
   alias WraftDoc.Repo
 
+  # TODO Write tests for all functions in Authorization context
   def list_permissions, do: Repo.all(Permission)
 
   def create_permission(params \\ %{}) do

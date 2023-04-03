@@ -43,4 +43,7 @@ defmodule WraftDoc.Document.PipelineTest do
 
     assert "Pipeline with the same name already exists.!" in errors_on(changeset, :name)
   end
+
+  # TODO tests for update_changeset
+  # TODO tests for unique constraint in update_changeset
 end

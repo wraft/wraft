@@ -1189,7 +1189,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
    Gets the UserOrganisation for given user ID and organisation ID
   """
-  @spec get_user_organisation(Ecto.UUID.t(), Ecto.UUID.t()) :: {:ok, UserOrganisation.t()} | nil
+  @spec get_user_organisation(User.t(), Ecto.UUID.t()) :: {:ok, UserOrganisation.t()} | nil
   def get_user_organisation(%User{current_org_id: org_id}, user_id) do
     Repo.get_by(UserOrganisation, organisation_id: org_id, user_id: user_id)
   end
