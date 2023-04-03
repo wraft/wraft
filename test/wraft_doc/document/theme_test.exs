@@ -27,4 +27,7 @@ defmodule WraftDoc.Document.ThemeTest do
     changeset = Theme.changeset(%Theme{}, @invalid_attrs)
     refute changeset.valid?
   end
+
+  # TODO include tests for validate_format for changeset & update_changeset
+  # TODO include tests for file_changeset
 end

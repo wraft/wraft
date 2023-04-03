@@ -74,4 +74,6 @@ defmodule WraftDoc.Document.Pipeline.StageTest do
     changeset = Stage.update_changeset(stage, %{content_type_id: ""})
     refute changeset.valid?
   end
+
+  # TODO update changeset unique constraint
 end

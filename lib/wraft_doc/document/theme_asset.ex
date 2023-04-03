@@ -13,6 +13,7 @@ defmodule WraftDoc.Document.ThemeAsset do
     timestamps()
   end
 
+  # TODO include tests for the changeset
   def changeset(%ThemeAsset{} = theme_asset, attrs \\ %{}) do
     theme_asset
     |> cast(attrs, [:asset_id, :theme_id])

@@ -22,4 +22,7 @@ defmodule WraftDoc.Enterprise.Flow.StateTest do
     changeset = State.changeset(%State{}, @invalid_attrs)
     refute changeset.valid?
   end
+
+  # TODO - tests for order_update_changeset
+  # TOOD - tests for unique constraints in changeset/2
 end

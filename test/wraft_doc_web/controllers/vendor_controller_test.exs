@@ -1,4 +1,4 @@
-defmodule WraftDocWeb.VendorControllerTest do
+defmodule WraftDocWeb.Api.V1.VendorControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
   import WraftDoc.Factory

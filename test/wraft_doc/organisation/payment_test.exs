@@ -59,6 +59,7 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
     end
   end
 
+  # TODO - include tests for unique constraints
   describe "changeset/2" do
     test "valid changeset with valid attrs" do
       %{id: org_id} = insert(:organisation)
@@ -107,6 +108,7 @@ defmodule WraftDoc.Enterprise.Membership.PaymentTest do
     end
   end
 
+  # TOOD - include tests for unique constraints
   describe "invoice_changeset/2" do
     test "valid changeset with valid attrs" do
       changeset = Payment.invoice_changeset(%Payment{}, @valid_update_attrs)

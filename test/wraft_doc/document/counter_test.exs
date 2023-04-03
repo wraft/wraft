@@ -9,7 +9,7 @@ defmodule WraftDoc.Document.CounterTest do
 
   @invalid_attrs %{subject: ""}
   @update_invalid_attrs %{count: ""}
-
+  # TODO include tests for update changeset as well
   test "changeset with valid attributes" do
     changeset = Counter.changeset(%Counter{}, @valid_attrs)
     assert changeset.valid?

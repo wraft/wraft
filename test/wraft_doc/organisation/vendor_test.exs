@@ -32,4 +32,7 @@ defmodule WraftDoc.Enterprise.VendorTest do
     changeset = Vendor.changeset(%Vendor{}, @invalid_attrs)
     refute changeset.valid?
   end
+
+  # TODO test for update_changeset
+  # TOOD test for cast_attachment in update_changeset
 end

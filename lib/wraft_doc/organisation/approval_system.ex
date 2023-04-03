@@ -17,6 +17,7 @@ defmodule WraftDoc.Enterprise.ApprovalSystem do
     timestamps()
   end
 
+  # TODO include tests for both the given changesets here -> valid , invalid, constraints
   def changeset(approval_system, attrs \\ %{}) do
     approval_system
     |> cast(attrs, [

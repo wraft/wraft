@@ -11,6 +11,8 @@ defmodule WraftDoc.Document.ContentTypeTest do
     prefix: "OFFR"
   }
   @invalid_attrs %{name: "ofer letter"}
+
+  # TODO add tests for update_changeset as well
   test "changeset with valid attributes" do
     organisation = insert(:organisation)
     valid_attrs = Map.merge(@valid_attributes, %{organisation_id: organisation.id})

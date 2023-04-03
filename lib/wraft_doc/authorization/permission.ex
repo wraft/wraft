@@ -8,6 +8,7 @@ defmodule WraftDoc.Authorization.Permission do
     field(:action, :string)
   end
 
+  # TODO write test for the changeset --> valid , invalid , unique constraints
   def changeset(permission, attrs \\ %{}) do
     permission
     |> cast(attrs, [:name, :resource, :action])
