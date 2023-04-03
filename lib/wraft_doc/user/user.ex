@@ -59,6 +59,7 @@ defmodule WraftDoc.Account.User do
     timestamps()
   end
 
+  # TODO update email string format similar to waiting list format & corresponding tests
   def changeset(users, attrs \\ %{}) do
     users
     |> cast(attrs, [:name, :email, :password])

@@ -19,7 +19,7 @@ defmodule WraftDoc.Document.InstanceTest do
     assert changeset.valid?
   end
 
-  test "changeset with in valid attributes" do
+  test "changeset with invalid attributes" do
     changeset = Instance.changeset(%Instance{}, @invalid_attrs)
     refute changeset.valid?
   end
@@ -51,4 +51,8 @@ defmodule WraftDoc.Document.InstanceTest do
     types = Instance.types()
     assert types == [normal: 1, bulk_build: 2, pipeline_api: 3, pipeline_hook: 4]
   end
+
+  # TOOD tests for unique constraint in update_changeset
+  # TODO tests for update_state_changeset
+  # TODO tests for lock_modify_changeset
 end

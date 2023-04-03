@@ -88,6 +88,8 @@ defmodule WraftDocWeb.Router do
       post("/notifications", NotificationController, :create)
       # Verify Token
       get("/token", UserController, :token)
+      # Join Waiting list
+      resources("/waiting_list", WaitingListController, only: [:create])
     end
   end
 
