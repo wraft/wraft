@@ -42,9 +42,6 @@ defmodule WraftDoc.Document.Layout do
     |> validate_required([
       :name,
       :description,
-      :width,
-      :height,
-      :unit,
       :slug,
       :organisation_id,
       :engine_id
@@ -70,9 +67,6 @@ defmodule WraftDoc.Document.Layout do
     |> validate_required([
       :name,
       :description,
-      :width,
-      :height,
-      :unit,
       :slug,
       :engine_id
     ])

@@ -1,4 +1,5 @@
 defmodule WraftDoc.Document.LayoutTest do
+  @moduledoc false
   use WraftDoc.ModelCase
   alias WraftDoc.Document.Layout
   import WraftDoc.Factory
