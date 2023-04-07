@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Plug.AdminAuthenticate do
   alias WraftDoc.{Account.Role, Account.User, Account.UserRole, Repo}
   import Ecto.Query
   alias WraftDocWeb.Router.Helpers, as: Routes
-
+  # TODO --> Write corresponding test for this plug
   def init(opts), do: opts
 
   def call(conn, _opts) do
@@ -36,7 +36,7 @@ defmodule WraftDocWeb.Plug.AdminAuthenticate do
         on: ur.user_id == u.id,
         join: r in Role,
         on: ur.role_id == r.id,
-        where: r.name == "super_admin"
+        where: r.name == "superadmin"
       )
 
     Repo.one(query)
