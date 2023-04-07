@@ -26,8 +26,16 @@ defmodule WraftDoc.Kaffy.Config do
         name: "Authorisation",
         resources: [
           conroller: [
-            schema: WraftDoc.Authorization.Resource,
-            admin: WraftDocWeb.ResourceAdmin
+            schema: WraftDoc.Authorization.Resource
+          ]
+        ]
+      ],
+      waiting_list: [
+        name: "Waiting List",
+        resources: [
+          waiting_list: [
+            schema: WraftDoc.WaitingLists.WaitingList,
+            admin: WraftDocWeb.WaitingListAdmin
           ]
         ]
       ]
