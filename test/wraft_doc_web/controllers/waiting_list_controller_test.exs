@@ -44,5 +44,12 @@ defmodule WraftDocWeb.Api.V1.WaitingListControllerTest do
       assert json_response(conn, 422)["errors"]["first_name"] == ["can't be blank"]
       assert json_response(conn, 422)["errors"]["last_name"] == ["can't be blank"]
     end
+
+    test "returns error when registered email tries to join waitlist", %{conn: conn} do
+      insert(:user, email: @valid_params["email"])
+      conn = post(conn, Routes.v1_waiting_list_path(conn, :create), @valid_params)
+
+      assert json_response(conn, 400)["errors"] == "already in waitlist"
+    end
   end
 end

@@ -2,6 +2,8 @@ defmodule WraftDocWeb.Api.V1.WaitingListController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
+  alias WraftDoc.Account
+  alias WraftDoc.Account.User
   alias WraftDoc.WaitingLists
   alias WraftDoc.WaitingLists.WaitingList
 
@@ -62,12 +64,19 @@ defmodule WraftDocWeb.Api.V1.WaitingListController do
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
-    with {:ok, %WaitingList{} = waiting_list} <- WaitingLists.join_waiting_list(params) do
+    with nil <- Account.get_user_by_email(params["email"]),
+         {:ok, %WaitingList{} = waiting_list} <- WaitingLists.join_waiting_list(params) do
       WaitingLists.waitlist_confirmation_email(waiting_list)
 
       conn
       |> put_resp_header("content-type", "application/json")
       |> send_resp(200, "Success")
+    else
+      %User{} ->
+        {:error, "already in waitlist"}
+
+      error ->
+        error
     end
   end
 end
