@@ -43,6 +43,17 @@ defmodule WraftDocWeb.ConnCase do
       organisation: List.first(user.owned_organisations)
     )
 
+    user = WraftDoc.Factory.insert(:user_with_organisation)
+    organisation = List.first(user.owned_organisations)
+
+    WraftDoc.Factory.insert(:user_organisation,
+      user: user,
+      organisation: organisation
+    )
+
+    role = WraftDoc.Factory.insert(:role, organisation: organisation)
+    WraftDoc.Factory.insert(:user_role, user: user, role: role)
+
     WraftDoc.Factory.insert(:membership, organisation: List.first(user.owned_organisations))
 
     {:ok, token, _} =

@@ -44,7 +44,7 @@ import WraftDoc.SeedGate
 
 # Populate database with roles
 
-%{id: role_id} = allow_once(%Role{name: "super_admin"}, name: "super_admin")
+%{id: role_id} = allow_once(%Role{name: "superadmin"}, name: "superadmin")
 
 role_user = allow_once(%Role{name: "user"}, name: "user")
 role_admin = allow_once(%Role{name: "admin"}, name: "admin")
@@ -505,7 +505,7 @@ allow_once(
   name: "Premium"
 )
 
-plan =
+_plan =
   allow_once(
     %Plan{
       name: "Pro",
