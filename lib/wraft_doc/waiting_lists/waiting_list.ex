@@ -1,3 +1,9 @@
+defimpl FunWithFlags.Actor, for: Map do
+  def id(%{email: email}) do
+    "email:#{email}"
+  end
+end
+
 defmodule WraftDoc.WaitingLists.WaitingList do
   @moduledoc """
   The waiting_list model.

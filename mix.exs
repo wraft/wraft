@@ -121,7 +121,11 @@ defmodule WraftDoc.Mixfile do
       {:ecto_enum, "~> 1.4"},
 
       # Code analysis tool
-      {:credo, "~> 1.6.7", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.6.7", only: [:dev, :test], runtime: false},
+
+      # Feature Flags
+      {:fun_with_flags, "~> 1.10.1", runtime: false},
+      {:fun_with_flags_ui, "~> 0.8.1"}
     ]
   end
 

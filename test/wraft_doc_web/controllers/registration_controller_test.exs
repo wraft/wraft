@@ -16,6 +16,14 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
   @invalid_attrs %{"name" => "wraft user", "email" => "email"}
 
   setup do
+    FunWithFlags.enable(:waiting_list_registration_control,
+      for_actor: %{email: @valid_attrs["email"]}
+    )
+
+    FunWithFlags.enable(:waiting_list_registration_control,
+      for_actor: %{email: @invalid_attrs["email"]}
+    )
+
     {:ok, %{conn: build_conn()}}
   end
 
@@ -146,6 +154,21 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
 
       assert json_response(conn, 422)["errors"]["email"] == ["has invalid format"]
       assert json_response(conn, 422)["errors"]["password"] == ["can't be blank"]
+    end
+
+    test "render error when flag is disabled", %{conn: conn} do
+      FunWithFlags.disable(:waiting_list_registration_control,
+        for_actor: %{email: @valid_attrs["email"]}
+      )
+
+      insert(:plan, name: "Free Trial")
+
+      conn =
+        conn
+        |> post(Routes.v1_registration_path(conn, :create, @valid_attrs))
+        |> doc(operation_id: "create_user")
+
+      assert json_response(conn, 401) == "Given email is not approved!"
     end
   end
 end

@@ -199,14 +199,27 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Organisation{id: id} = organisation <-
-           Enterprise.create_organisation(current_user, params),
-         {:ok, %Oban.Job{}} <-
-           Enterprise.create_default_worker_job(
-             %{organisation_id: id, user_id: current_user.id},
-             "organisation_roles"
-           ) do
-      render(conn, "create.json", organisation: organisation)
+    case FunWithFlags.enabled?(:waiting_list_organisation_create_control,
+           for: %{email: current_user.email}
+         ) do
+      true ->
+        with %Organisation{id: id} = organisation <-
+               Enterprise.create_organisation(current_user, params),
+             {:ok, %Oban.Job{}} <-
+               Enterprise.create_default_worker_job(
+                 %{organisation_id: id, user_id: current_user.id},
+                 "organisation_roles"
+               ) do
+          render(conn, "create.json", organisation: organisation)
+        end
+
+      false ->
+        conn
+        |> put_resp_header("content-type", "application/json")
+        |> send_resp(
+          401,
+          Jason.encode!("User does not have privilege to create an organisation!")
+        )
     end
   end
 
@@ -334,6 +347,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
              params["email"],
              role
            ) do
+      FunWithFlags.enable(:waiting_list_registration_control,
+        for_actor: %{email: params["email"]}
+      )
+
       render(conn, "invite.json")
     end
   end
