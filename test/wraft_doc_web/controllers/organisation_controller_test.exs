@@ -15,32 +15,55 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
   @invalid_attrs %{name: "abc"}
 
-  test "create organisation for valid attrs", %{conn: conn} do
-    count_before = Organisation |> Repo.all() |> length
+  describe "create/2" do
+    test "create organisation for valid attrs", %{conn: conn} do
+      FunWithFlags.enable(:waiting_list_organisation_create_control,
+        for_actor: %{email: conn.assigns.current_user.email}
+      )
 
-    conn =
-      conn
-      |> post(Routes.v1_organisation_path(conn, :create, @valid_attrs))
-      |> doc(operation_id: "create_organisation")
+      insert(:plan, name: "Free Trial")
+      count_before = Organisation |> Repo.all() |> length
 
-    assert json_response(conn, 200)["name"] == @valid_attrs["name"]
-    assert json_response(conn, 200)["address"] == @valid_attrs["address"]
-    assert json_response(conn, 200)["gstin"] == @valid_attrs["gstin"]
-    assert json_response(conn, 200)["email"] == @valid_attrs["email"]
-    assert json_response(conn, 200)["phone"] == @valid_attrs["phone"]
-    assert count_before + 1 == Organisation |> Repo.all() |> length
-  end
+      conn =
+        conn
+        |> post(Routes.v1_organisation_path(conn, :create, @valid_attrs))
+        |> doc(operation_id: "create_organisation")
 
-  test "doens't create for invalid attributes", %{conn: conn} do
-    count_before = Organisation |> Repo.all() |> length
+      assert json_response(conn, 200)["name"] == @valid_attrs["name"]
+      assert json_response(conn, 200)["address"] == @valid_attrs["address"]
+      assert json_response(conn, 200)["gstin"] == @valid_attrs["gstin"]
+      assert json_response(conn, 200)["email"] == @valid_attrs["email"]
+      assert json_response(conn, 200)["phone"] == @valid_attrs["phone"]
+      assert count_before + 1 == Organisation |> Repo.all() |> length
+    end
 
-    conn = post(conn, Routes.v1_organisation_path(conn, :create, @invalid_attrs))
+    test "doesn't create for invalid attributes", %{conn: conn} do
+      FunWithFlags.enable(:waiting_list_organisation_create_control,
+        for_actor: %{email: conn.assigns.current_user.email}
+      )
 
-    assert json_response(conn, 422) == %{
-             "errors" => %{"legal_name" => ["can't be blank"], "email" => ["can't be blank"]}
-           }
+      count_before = Organisation |> Repo.all() |> length
 
-    assert count_before == Organisation |> Repo.all() |> length
+      conn = post(conn, Routes.v1_organisation_path(conn, :create, @invalid_attrs))
+
+      assert json_response(conn, 422) == %{
+               "errors" => %{"legal_name" => ["can't be blank"], "email" => ["can't be blank"]}
+             }
+
+      assert count_before == Organisation |> Repo.all() |> length
+    end
+
+    test "return error when waiting_list_organisation_create_control flag is disabled for current user",
+         %{conn: conn} do
+      insert(:plan, name: "Free Trial")
+
+      conn =
+        conn
+        |> post(Routes.v1_organisation_path(conn, :create, @valid_attrs))
+        |> doc(operation_id: "create_organisation")
+
+      assert json_response(conn, 401) == "User does not have privilege to create an organisation!"
+    end
   end
 
   test "updates organisation for valid attributes", %{conn: conn} do
@@ -79,17 +102,26 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     assert json_response(conn, 200)["address"] == organisation.address
   end
 
-  # TODO update tests
-  test "invite persons send the mail to the persons mail", %{conn: conn} do
-    role = insert(:role, organisation: conn.assigns.current_user.organisation)
+  describe "invite/2" do
+    test "invite persons send the mail to the persons mail", %{conn: conn} do
+      role =
+        insert(:role,
+          name: "editor",
+          organisation: List.first(conn.assigns.current_user.owned_organisations)
+        )
 
-    conn =
-      post(conn, Routes.v1_organisation_path(conn, :invite), %{
-        email: "msadi@gmail.com",
-        role_id: role.id
-      })
+      conn =
+        post(conn, Routes.v1_organisation_path(conn, :invite), %{
+          email: "msadi@gmail.com",
+          role_id: role.id
+        })
 
-    assert json_response(conn, 200) == %{"info" => "Invited successfully.!"}
+      assert json_response(conn, 200) == %{"info" => "Invited successfully.!"}
+
+      assert FunWithFlags.enabled?(:waiting_list_registration_control,
+               for: %{email: "msadi@gmail.com"}
+             )
+    end
   end
 
   describe "members/2" do

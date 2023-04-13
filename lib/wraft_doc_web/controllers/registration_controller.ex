@@ -59,19 +59,28 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
 
     response(200, "Ok", Schema.ref(:UserToken))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized for Access", Schema.ref(:Error))
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
-    with {:ok, %{organisations: organisations, user: %User{} = user}} <-
-           Account.registration(params),
-         {:ok, token, _claims} <-
-           Account.authenticate(%{user: user, password: params["password"]}) do
-      Account.create_token_and_send_email(params["email"])
+    case FunWithFlags.enabled?(:waiting_list_registration_control, for: %{email: params["email"]}) do
+      true ->
+        with {:ok, %{organisations: organisations, user: %User{} = user}} <-
+               Account.registration(params),
+             {:ok, token, _claims} <-
+               Account.authenticate(%{user: user, password: params["password"]}) do
+          Account.create_token_and_send_email(params["email"])
 
-      conn
-      |> put_status(:created)
-      |> render("create.json", user: user, token: token, organisations: organisations)
+          conn
+          |> put_status(:created)
+          |> render("create.json", user: user, token: token, organisations: organisations)
+        end
+
+      false ->
+        conn
+        |> put_resp_header("content-type", "application/json")
+        |> send_resp(401, Jason.encode!("Given email is not approved!"))
     end
   end
 end

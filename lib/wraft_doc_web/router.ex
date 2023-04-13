@@ -43,6 +43,13 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.AdminAuthenticate)
   end
 
+  pipeline :flags do
+    plug :accepts, ["html"]
+    plug :put_secure_browser_headers
+    plug :fetch_session
+    plug WraftDocWeb.Plug.AdminAuthenticate
+  end
+
   # pipeline :can do
   #   plug(WraftDocWeb.Plug.Authorized)
   # end
@@ -300,6 +307,11 @@ defmodule WraftDocWeb.Router do
   scope "/admin", WraftDocWeb do
     pipe_through([:kaffy_browser, :admin_authenticate])
     delete("/sign-out", SessionController, :delete)
+  end
+
+  scope path: "/flags" do
+    pipe_through(:flags)
+    forward("/", FunWithFlags.UI.Router, namespace: "flags")
   end
 
   # coveralls-ignore-start

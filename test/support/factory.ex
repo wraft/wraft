@@ -108,7 +108,7 @@ defmodule WraftDoc.Factory do
   end
 
   def role_factory do
-    %Role{name: "user", permissions: [], organisation: build(:organisation)}
+    %Role{name: "superadmin", permissions: [], organisation: build(:organisation)}
   end
 
   def user_role_factory do
