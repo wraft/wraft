@@ -51,4 +51,28 @@ defmodule WraftDocWeb.Mailer.Email do
       Click <a href=#{System.get_env("WRAFT_URL")}/user/verify_email_token/#{token}>Verify email address</a>"
     )
   end
+
+  @doc """
+    Waiting list approved
+  """
+  def waiting_list_approved(email, name) do
+    registration_url =
+      URI.encode("#{System.get_env("WRAFT_URL")}/users/signup?email=#{email}&name=#{name}")
+
+    new()
+    |> to(email)
+    |> from({"WraftDoc", "admin@wraftdocs.com"})
+    |> subject("Welcome to Wraft!")
+    |> html_body("""
+    <body>
+    <p>Hello #{name},</p>
+    <p>We are excited to inform you that your application to join Wraft has been approved! Congratulations, and welcome aboard!</p>
+    <p>You are now part of our exclusive community of users who will have access to our document automation tool. Please click the button below to continue.</p>
+    <a href=#{registration_url}><button style="background-color: blue; color: white; border: none; padding: 10px 15px; border-radius: 5px;">Click here to continue</button></a>
+    <p>If you have any questions or concerns, please don't hesitate to reach out to our support team.</p>
+    <p>Thank you for choosing Wraft. We look forward to serving you!</p>
+    <p>Best regards,</p>
+    <p>Wraft Admin</p>
+    """)
+  end
 end
