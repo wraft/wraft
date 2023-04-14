@@ -71,4 +71,20 @@ defmodule WraftDoc.Workers.EmailWorker do
 
     Logger.info("Email verification mailer job end...!")
   end
+
+  def perform(%Job{
+        args: %{
+          "name" => name,
+          "email" => email
+        },
+        tags: ["waiting_list_acceptance"]
+      }) do
+    Logger.info("Waiting list acceptance mailer job started...!")
+
+    email
+    |> Email.waiting_list_approved(name)
+    |> Mailer.deliver()
+
+    Logger.info("Waiting list acceptance mailer job end")
+  end
 end
