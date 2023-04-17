@@ -75,4 +75,22 @@ defmodule WraftDocWeb.Mailer.Email do
     <p>Wraft Admin</p>
     """)
   end
+
+  @doc """
+    Waiting list join
+  """
+  def waiting_list_join(email, name) do
+    new()
+    |> to(email)
+    |> from({"WraftDoc", "admin@wraftdocs.com"})
+    |> subject("Thanks for showing interest in Wraft!")
+    |> html_body("""
+    <p>Hello #{name},</p>
+    <p>Thank you for signing up to join Wraft's waiting list! We appreciate your interest in our document automation tool.</p>
+    <p>We are currently onboarding our existing customers, but we will keep you updated on your waiting list status. We expect to grant you access shortly.</p>
+    <p>If you have any questions or concerns, please don't hesitate to reach out to our support team.</p>
+    <p>Best regards,</p>
+    <p>Wraft Admin</p>
+    """)
+  end
 end
