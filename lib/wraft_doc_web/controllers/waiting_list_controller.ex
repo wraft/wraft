@@ -73,7 +73,7 @@ defmodule WraftDocWeb.Api.V1.WaitingListController do
       |> send_resp(200, "Success")
     else
       %User{} ->
-        {:error, "already in waitlist"}
+        {:error, "already a member of wraft"}
 
       error ->
         error

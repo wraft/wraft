@@ -9,6 +9,7 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
   alias WraftDoc.Workers.EmailWorker
 
   @email "temp@email.com"
+  @name "Sample Name"
 
   setup do
     Logger.configure(level: :info)
@@ -28,8 +29,8 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
         end)
 
       assert :ok == result
-      assert String.contains?(log, "Email verification mailer job started...!") == true
-      assert String.contains?(log, "Email verification mailer job end...!") == true
+      assert log =~ "Email verification mailer job started."
+      assert log =~ "Email verification mailer job end."
     end
 
     test "notification mailer job" do
@@ -43,8 +44,8 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
         end)
 
       assert :ok == result
-      assert String.contains?(log, "Notification mailer job started...!") == true
-      assert String.contains?(log, "Notification mailer job end...!") == true
+      assert log =~ "Notification mailer job started."
+      assert log =~ "Notification mailer job end."
     end
 
     test "organisation mailer invite job" do
@@ -69,8 +70,8 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
         end)
 
       assert :ok == result
-      assert String.contains?(log, "Organisation invite mailer job started...!") == true
-      assert String.contains?(log, "Organisation invite mailer job end...!") == true
+      assert log =~ "Organisation invite mailer job started."
+      assert log =~ "Organisation invite mailer job end."
     end
 
     test "password reset mailer invite job" do
@@ -86,8 +87,34 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
         end)
 
       assert :ok == result
-      assert String.contains?(log, "Password reset mailer job started") == true
-      assert String.contains?(log, "Password reset mailer job end") == true
+      assert log =~ "Password reset mailer job started"
+      assert log =~ "Password reset mailer job end"
+    end
+
+    test "waiting list approval mailer job" do
+      {result, log} =
+        with_log(fn ->
+          perform_job(EmailWorker, %{"name" => @name, "email" => @email},
+            tags: ["waiting_list_acceptance"]
+          )
+        end)
+
+      assert :ok == result
+      assert log =~ "Waiting list acceptance mailer job started."
+      assert log =~ "Waiting list acceptance mailer job end."
+    end
+
+    test "waiting list join mailer job" do
+      {result, log} =
+        with_log(fn ->
+          perform_job(EmailWorker, %{"name" => @name, "email" => @email},
+            tags: ["waiting_list_join"]
+          )
+        end)
+
+      assert :ok == result
+      assert log =~ "Waiting list join mailer job started."
+      assert log =~ "Waiting list join mailer job end."
     end
   end
 end
