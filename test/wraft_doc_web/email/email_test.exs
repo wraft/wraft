@@ -10,6 +10,7 @@ defmodule WraftDocWeb.Email.EmailTest do
 
   @test_email "test@email.com"
   @token "token"
+  @name "Sample Name"
 
   describe "send email on organisation invite" do
     test "return email sent if mail delivered" do
@@ -112,6 +113,52 @@ defmodule WraftDocWeb.Email.EmailTest do
 
     test "return email not send if not delivered" do
       Email.email_verification(@test_email, @token)
+
+      refute_email_sent()
+    end
+  end
+
+  describe "send email on waiting list approval" do
+    test "return email sent if mail delivered" do
+      registration_url =
+        URI.encode(
+          "#{System.get_env("WRAFT_URL")}/users/signup?email=#{@test_email}&name=#{@name}"
+        )
+
+      email = Email.waiting_list_approved(@test_email, @name)
+      Test.deliver(email, [])
+
+      assert_email_sent()
+      assert email.from == {"WraftDoc", "admin@wraftdocs.com"}
+      assert email.subject == "Welcome to Wraft!"
+      assert elem(List.last(email.to), 1) == @test_email
+      assert email.html_body =~ "#{registration_url}"
+      assert email.html_body =~ "Click here to continue"
+    end
+
+    test "return email not send if not delivered" do
+      Email.waiting_list_approved(@test_email, @name)
+
+      refute_email_sent()
+    end
+  end
+
+  describe "send email on joining waiting list" do
+    test "return email sent if mail delivered" do
+      email = Email.waiting_list_join(@test_email, @name)
+      Test.deliver(email, [])
+
+      assert_email_sent()
+      assert email.from == {"WraftDoc", "admin@wraftdocs.com"}
+      assert email.subject == "Thanks for showing interest in Wraft!"
+      assert elem(List.last(email.to), 1) == @test_email
+
+      assert email.html_body =~
+               "Thank you for signing up to join Wraft's waiting list! We appreciate your interest in our document automation tool"
+    end
+
+    test "return email not send if not delivered" do
+      Email.waiting_list_join(@test_email, @name)
 
       refute_email_sent()
     end

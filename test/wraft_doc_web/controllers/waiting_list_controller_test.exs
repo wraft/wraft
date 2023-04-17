@@ -49,7 +49,7 @@ defmodule WraftDocWeb.Api.V1.WaitingListControllerTest do
       insert(:user, email: @valid_params["email"])
       conn = post(conn, Routes.v1_waiting_list_path(conn, :create), @valid_params)
 
-      assert json_response(conn, 400)["errors"] == "already in waitlist"
+      assert json_response(conn, 400)["errors"] == "already a member of wraft"
     end
   end
 end

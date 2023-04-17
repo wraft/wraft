@@ -24,18 +24,10 @@ defmodule WraftDoc.WaitingLists do
   @spec waitlist_confirmation_email(WaitingList.t()) ::
           {:ok, Oban.Job.t()} | {:error, Oban.Job.changeset() | term()}
   def waitlist_confirmation_email(waiting_list) do
-    confirmation_message = "Successfully added to waiting list."
     user_name = "#{waiting_list.first_name} #{waiting_list.last_name}"
 
-    %{
-      user_name: user_name,
-      notification_message: confirmation_message,
-      email: waiting_list.email
-    }
-    |> EmailWorker.new(
-      queue: "mailer",
-      tags: ["notification"]
-    )
+    %{user_name: user_name, email: waiting_list.email}
+    |> EmailWorker.new(queue: "mailer", tags: ["waiting_list_join"])
     |> Oban.insert()
   end
 end
