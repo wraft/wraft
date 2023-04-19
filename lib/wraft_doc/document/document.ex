@@ -9,6 +9,7 @@ defmodule WraftDoc.Document do
   alias Ecto.Multi
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
+  alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.BlockTemplate
@@ -305,18 +306,37 @@ defmodule WraftDoc.Document do
   @doc """
   List all content types.
   """
-  # TODO - improve tests
   @spec content_type_index(User.t(), map) :: map
   def content_type_index(%{current_org_id: org_id}, params) do
-    query =
-      from(ct in ContentType,
-        where: ct.organisation_id == ^org_id,
-        order_by: [desc: ct.inserted_at],
-        preload: [:layout, :flow, {:fields, :field_type}]
-      )
-
-    Repo.paginate(query, params)
+    ContentType
+    |> where([ct], ct.organisation_id == ^org_id)
+    |> where(^content_type_filter_by_name(params))
+    |> where(^content_type_filter_by_prefix(params))
+    |> order_by([ct], ^content_type_sort(params))
+    |> preload([:layout, :flow, {:fields, :field_type}])
+    |> Repo.paginate(params)
   end
+
+  defp content_type_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([ct], ilike(ct.name, ^"%#{name}%"))
+
+  defp content_type_filter_by_name(_), do: true
+
+  defp content_type_filter_by_prefix(%{"prefix" => prefix} = _params),
+    do: dynamic([ct], ilike(ct.prefix, ^"%#{prefix}%"))
+
+  defp content_type_filter_by_prefix(_), do: true
+
+  defp content_type_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([ct], ct.name)]
+
+  defp content_type_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([ct], ct.name)]
+
+  defp content_type_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([ct], ct.inserted_at)]
+
+  defp content_type_sort(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([ct], ct.inserted_at)]
+
+  defp content_type_sort(_), do: []
 
   @doc """
   Show a content type.
@@ -1890,8 +1910,8 @@ defmodule WraftDoc.Document do
     query =
       from(ft in FieldType,
         where: ft.id == ^field_type_id,
-        join: u in User,
-        where: u.id == ft.creator_id and u.organisation_id == ^org_id
+        join: uo in UserOrganisation,
+        where: uo.user_id == ft.creator_id and uo.organisation_id == ^org_id
       )
 
     case Repo.one(query) do

@@ -540,6 +540,16 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     summary("Content Type index")
     description("API to get the list of all content types created so far")
     parameter(:page, :query, :string, "Page number")
+    parameter(:name, :query, :string, "Name")
+    parameter(:prefix, :query, :string, "Prefix")
+
+    parameter(
+      :sort,
+      :query,
+      :string,
+      "sort keys => name, name_desc, inserted_at, inserted_at_desc"
+    )
+
     response(200, "Ok", Schema.ref(:ContentTypesIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
