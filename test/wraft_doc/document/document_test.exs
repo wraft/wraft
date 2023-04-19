@@ -395,8 +395,13 @@ defmodule WraftDoc.DocumentTest do
   describe "content_type_index/2" do
     test "content_type index lists the content_type data" do
       user = insert(:user_with_organisation)
-      c1 = insert(:content_type, creator: user, organisation: user.organisation)
-      c2 = insert(:content_type, creator: user, organisation: user.organisation)
+
+      c1 =
+        insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+
+      c2 =
+        insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+
       content_type_index = Document.content_type_index(user, %{page_number: 1})
 
       assert content_type_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~
@@ -404,6 +409,207 @@ defmodule WraftDoc.DocumentTest do
 
       assert content_type_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~
                c2.name
+    end
+
+    test "filters by name" do
+      user = insert(:user_with_organisation)
+
+      c1 =
+        insert(:content_type,
+          name: "content type A",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      c2 =
+        insert(:content_type,
+          name: "content type B",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      content_type_index = Document.content_type_index(user, %{"name" => "A", page_number: 1})
+
+      assert content_type_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~
+               c1.name
+
+      refute content_type_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~
+               c2.name
+    end
+
+    test "returns an empty list when there are no matches for the name keyword" do
+      user = insert(:user_with_organisation)
+
+      c1 =
+        insert(:content_type,
+          name: "content type A",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      c2 =
+        insert(:content_type,
+          name: "content type B",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      content_type_index =
+        Document.content_type_index(user, %{"name" => "does not exist", page_number: 1})
+
+      refute content_type_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~
+               c1.name
+
+      refute content_type_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~
+               c2.name
+    end
+
+    test "filters by prefix" do
+      user = insert(:user_with_organisation)
+
+      c1 =
+        insert(:content_type,
+          prefix: "prefix A",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      c2 =
+        insert(:content_type,
+          prefix: "prefix B",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      content_type_index = Document.content_type_index(user, %{"prefix" => "A", page_number: 1})
+
+      assert content_type_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~
+               c1.name
+
+      refute content_type_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~
+               c2.name
+    end
+
+    test "returns an empty list when there are no matches for prefix keyword" do
+      user = insert(:user_with_organisation)
+
+      c1 =
+        insert(:content_type,
+          prefix: "prefix A",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      c2 =
+        insert(:content_type,
+          prefix: "prefix B",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      content_type_index =
+        Document.content_type_index(user, %{"prefix" => "does not exist", page_number: 1})
+
+      refute content_type_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~
+               c1.name
+
+      refute content_type_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~
+               c2.name
+    end
+
+    test "sorts by name in ascending order when sort key is name" do
+      user = insert(:user_with_organisation)
+
+      c1 =
+        insert(:content_type,
+          name: "content type A",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      c2 =
+        insert(:content_type,
+          name: "content type B",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      content_type_index = Document.content_type_index(user, %{"sort" => "name", page_number: 1})
+
+      assert List.first(content_type_index.entries).name == c1.name
+      assert List.last(content_type_index.entries).name == c2.name
+    end
+
+    test "sorts by name in descending order when sort key is name_desc" do
+      user = insert(:user_with_organisation)
+
+      c1 =
+        insert(:content_type,
+          name: "content type A",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      c2 =
+        insert(:content_type,
+          name: "content type B",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      content_type_index =
+        Document.content_type_index(user, %{"sort" => "name_desc", page_number: 1})
+
+      assert List.first(content_type_index.entries).name == c2.name
+      assert List.last(content_type_index.entries).name == c1.name
+    end
+
+    test "sorts by inserted_at in ascending order when sort key is inserted_at" do
+      user = insert(:user_with_organisation)
+
+      c1 =
+        insert(:content_type,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      c2 =
+        insert(:content_type,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      content_type_index =
+        Document.content_type_index(user, %{"sort" => "inserted_at", page_number: 1})
+
+      assert List.first(content_type_index.entries).name == c1.name
+      assert List.last(content_type_index.entries).name == c2.name
+    end
+
+    test "sorts by inserted_at in descending order when sort key is inserted_at_desc" do
+      user = insert(:user_with_organisation)
+
+      c1 =
+        insert(:content_type,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      c2 =
+        insert(:content_type,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      content_type_index =
+        Document.content_type_index(user, %{"sort" => "inserted_at_desc", page_number: 1})
+
+      assert List.first(content_type_index.entries).name == c2.name
+      assert List.last(content_type_index.entries).name == c1.name
     end
   end
 
