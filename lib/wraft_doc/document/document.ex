@@ -1243,13 +1243,13 @@ defmodule WraftDoc.Document do
   @doc """
   List all data templates under a content types.
   """
-  # TODO - imprvove tests
   @spec data_template_index(binary, map) :: map
   def data_template_index(<<_::288>> = c_type_id, params) do
     query =
       from(dt in DataTemplate,
         join: ct in ContentType,
         where: ct.id == ^c_type_id and dt.content_type_id == ct.id,
+        where: ^data_template_filter_by_title(params),
         order_by: [desc: dt.id],
         preload: [:content_type]
       )
@@ -1262,13 +1262,13 @@ defmodule WraftDoc.Document do
   @doc """
   List all data templates under current user's organisation.
   """
-  # TODO - imprvove tests
   @spec data_templates_index_of_an_organisation(User.t(), map) :: map
   def data_templates_index_of_an_organisation(%{current_org_id: org_id}, params) do
     query =
       from(dt in DataTemplate,
-        join: u in User,
-        where: u.organisation_id == ^org_id and dt.creator_id == u.id,
+        join: uo in UserOrganisation,
+        where: uo.organisation_id == ^org_id and dt.creator_id == uo.user_id,
+        where: ^data_template_filter_by_title(params),
         order_by: [desc: dt.id],
         preload: [:content_type]
       )
@@ -1277,6 +1277,11 @@ defmodule WraftDoc.Document do
   end
 
   def data_templates_index_of_an_organisation(_, _), do: {:error, :fake}
+
+  defp data_template_filter_by_title(%{"title" => title} = _params),
+    do: dynamic([dt], ilike(dt.title, ^"%#{title}%"))
+
+  defp data_template_filter_by_title(_), do: true
 
   @doc """
   Get a data template from its uuid and organisation ID of user.

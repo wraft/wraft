@@ -226,6 +226,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     parameters do
       c_type_id(:path, :string, "ID of the content type", required: true)
       page(:query, :string, "Page number")
+      title(:query, :string, "Title")
     end
 
     response(200, "Ok", Schema.ref(:DataTemplatesIndex))
@@ -257,6 +258,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     summary("All Data templates")
     description("API to get the list of all data templates created so far under an organisation")
     parameter(:page, :query, :string, "Page number")
+    parameter(:title, :query, :string, "Title")
     response(200, "Ok", Schema.ref(:DataTemplatesIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
