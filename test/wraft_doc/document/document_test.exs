@@ -1407,12 +1407,57 @@ defmodule WraftDoc.DocumentTest do
       assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
                d2.title
     end
+
+    test "filter by title" do
+      user = insert(:user)
+      content_type = insert(:content_type, creator: user)
+
+      d1 =
+        insert(:data_template, title: "First Template", creator: user, content_type: content_type)
+
+      d2 =
+        insert(:data_template, title: "Second Template", creator: user, content_type: content_type)
+
+      data_template_index =
+        Document.data_template_index(content_type.id, %{"title" => "First", page_number: 1})
+
+      assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
+               d1.title
+
+      refute data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
+               d2.title
+    end
+
+    test "returns an empty list when there are no matches for the title keyword" do
+      user = insert(:user)
+      content_type = insert(:content_type, creator: user)
+
+      d1 =
+        insert(:data_template, title: "First Template", creator: user, content_type: content_type)
+
+      d2 =
+        insert(:data_template, title: "Second Template", creator: user, content_type: content_type)
+
+      data_template_index =
+        Document.data_template_index(content_type.id, %{
+          "title" => "does not exist",
+          page_number: 1
+        })
+
+      refute data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
+               d1.title
+
+      refute data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
+               d2.title
+    end
   end
 
   describe "data_templates_index_of_an_organisation/2" do
     test "data_template index_under_organisation lists the data_template data under an organisation" do
       user = insert(:user_with_organisation)
+      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
       content_type = insert(:content_type, creator: user)
+
       d1 = insert(:data_template, creator: user, content_type: content_type)
       d2 = insert(:data_template, creator: user, content_type: content_type)
 
@@ -1423,6 +1468,61 @@ defmodule WraftDoc.DocumentTest do
                d1.title
 
       assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
+               d2.title
+    end
+
+    test "return error for invalid input pattern" do
+      data_template_index =
+        Document.data_templates_index_of_an_organisation("anything else", "anything else")
+
+      assert data_template_index == {:error, :fake}
+    end
+
+    test "filter by title" do
+      user = insert(:user_with_organisation)
+      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
+      content_type = insert(:content_type, creator: user)
+
+      d1 =
+        insert(:data_template, title: "First Template", creator: user, content_type: content_type)
+
+      d2 =
+        insert(:data_template, title: "Second Template", creator: user, content_type: content_type)
+
+      data_template_index =
+        Document.data_templates_index_of_an_organisation(user, %{
+          "title" => "First",
+          page_number: 1
+        })
+
+      assert data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
+               d1.title
+
+      refute data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
+               d2.title
+    end
+
+    test "returns an empty list when there are no matches for the title keyword" do
+      user = insert(:user_with_organisation)
+      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
+      content_type = insert(:content_type, creator: user)
+
+      d1 =
+        insert(:data_template, title: "First Template", creator: user, content_type: content_type)
+
+      d2 =
+        insert(:data_template, title: "Second Template", creator: user, content_type: content_type)
+
+      data_template_index =
+        Document.data_templates_index_of_an_organisation(user, %{
+          "title" => "does not exist",
+          page_number: 1
+        })
+
+      refute data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
+               d1.title
+
+      refute data_template_index.entries |> Enum.map(fn x -> x.title end) |> List.to_string() =~
                d2.title
     end
   end
