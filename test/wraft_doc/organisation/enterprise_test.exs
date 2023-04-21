@@ -70,15 +70,160 @@ defmodule WraftDoc.EnterpriseTest do
     refute state_count_before == state_count_after
   end
 
-  test "flow index returns the list of flows" do
-    user = insert(:user_with_organisation)
-    f1 = insert(:flow, creator: user, organisation: user.organisation)
-    f2 = insert(:flow, creator: user, organisation: user.organisation)
+  describe "flow_index/2" do
+    test "flow index returns the list of flows" do
+      user = insert(:user_with_organisation)
+      f1 = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
+      f2 = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
 
-    flow_index = Enterprise.flow_index(user, %{page_number: 1})
+      flow_index = Enterprise.flow_index(user, %{page_number: 1})
 
-    assert flow_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ f1.name
-    assert flow_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ f2.name
+      assert flow_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ f1.name
+      assert flow_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ f2.name
+    end
+
+    test "return error for invalid input" do
+      flow_index = Enterprise.flow_index("invalid", "invalid")
+      assert flow_index == {:error, :fake}
+    end
+
+    test "filter by name" do
+      user = insert(:user_with_organisation)
+
+      f1 =
+        insert(:flow,
+          name: "First Flow",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      f2 =
+        insert(:flow,
+          name: "Second Flow",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      flow_index = Enterprise.flow_index(user, %{"name" => "First", page_number: 1})
+
+      assert flow_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ f1.name
+      refute flow_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ f2.name
+    end
+
+    test "return an empty list when there are no matches for the name keyword" do
+      user = insert(:user_with_organisation)
+
+      f1 =
+        insert(:flow,
+          name: "First Flow",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      f2 =
+        insert(:flow,
+          name: "Second Flow",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      flow_index = Enterprise.flow_index(user, %{"name" => "does not exist", page_number: 1})
+
+      refute flow_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ f1.name
+      refute flow_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ f2.name
+    end
+
+    test "sort by name in ascending order when sort key is name" do
+      user = insert(:user_with_organisation)
+
+      f1 =
+        insert(:flow,
+          name: "First Flow",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      f2 =
+        insert(:flow,
+          name: "Second Flow",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      flow_index = Enterprise.flow_index(user, %{"sort" => "name", page_number: 1})
+
+      assert List.first(flow_index.entries).name == f1.name
+      assert List.last(flow_index.entries).name == f2.name
+    end
+
+    test "sort by name in descending order when sort key is name_desc" do
+      user = insert(:user_with_organisation)
+
+      f1 =
+        insert(:flow,
+          name: "First Flow",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      f2 =
+        insert(:flow,
+          name: "Second Flow",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      flow_index = Enterprise.flow_index(user, %{"sort" => "name_desc", page_number: 1})
+
+      assert List.first(flow_index.entries).name == f2.name
+      assert List.last(flow_index.entries).name == f1.name
+    end
+
+    test "sort by inserted_at in ascending order when sort key is inserted_at" do
+      user = insert(:user_with_organisation)
+
+      f1 =
+        insert(:flow,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      f2 =
+        insert(:flow,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      flow_index = Enterprise.flow_index(user, %{"sort" => "inserted_at", page_number: 1})
+
+      assert List.first(flow_index.entries).name == f1.name
+      assert List.last(flow_index.entries).name == f2.name
+    end
+
+    test "sort by inserted_at in descending order when sort key is inserted_at_desc" do
+      user = insert(:user_with_organisation)
+
+      f1 =
+        insert(:flow,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      f2 =
+        insert(:flow,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      flow_index = Enterprise.flow_index(user, %{"sort" => "inserted_at_desc", page_number: 1})
+
+      assert List.first(flow_index.entries).name == f2.name
+      assert List.last(flow_index.entries).name == f1.name
+    end
   end
 
   test "show flow preloads flow with creator and states" do
@@ -380,12 +525,19 @@ defmodule WraftDoc.EnterpriseTest do
   # TODO update
   # TODO returns :ok if the user is removed from the organisation
   test "already a member return error for existing email" do
-    user = insert(:user)
-    assert Enterprise.already_member(user.email) == {:error, :already_member}
+    user = insert(:user_with_organisation)
+
+    user_org =
+      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
+
+    assert Enterprise.already_member(user_org.organisation_id, user.email) ==
+             {:error, :already_member}
   end
 
   test "already a member return ok for email does not exist" do
-    assert Enterprise.already_member("kdgasd@gami.com") == :ok
+    user = insert(:user_with_organisation)
+    organisation = List.first(user.owned_organisations)
+    assert Enterprise.already_member(organisation.id, "kdgasd@gami.com") == :ok
   end
 
   test "invite member send a E-mail to invite a member and returns an oban job" do

@@ -307,6 +307,14 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     description("Index of flows in current user's organisation")
 
     parameter(:page, :query, :string, "Page number")
+    parameter(:name, :query, :string, "Flow Name")
+
+    parameter(
+      :sort,
+      :query,
+      :string,
+      "sort keys => name, name_desc, inserted_at, inserted_at_desc"
+    )
 
     response(200, "Ok", Schema.ref(:FlowIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
