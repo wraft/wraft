@@ -10,7 +10,7 @@ defmodule WraftDocWeb.Plug.SuperAdminCheck do
   def call(conn, _params) do
     current_user = conn.assigns.current_user
 
-    case Enum.member?(current_user.role_names, "super_admin") do
+    case Enum.member?(current_user.role_names, "superadmin") do
       true ->
         conn
 
