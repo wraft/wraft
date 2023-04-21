@@ -149,7 +149,8 @@ defmodule WraftDoc.Enterprise do
     query =
       from(f in Flow,
         where: f.organisation_id == ^org_id,
-        order_by: [desc: f.id],
+        where: ^flow_index_filter_by_name(params),
+        order_by: ^flow_index_sort(params),
         preload: [:creator]
       )
 
@@ -157,6 +158,22 @@ defmodule WraftDoc.Enterprise do
   end
 
   def flow_index(_, _), do: {:error, :fake}
+
+  defp flow_index_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([f], ilike(f.name, ^"%#{name}%"))
+
+  defp flow_index_filter_by_name(_), do: true
+
+  defp flow_index_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([f], f.name)]
+
+  defp flow_index_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([f], f.name)]
+
+  defp flow_index_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([f], f.inserted_at)]
+
+  defp flow_index_sort(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([f], f.inserted_at)]
+
+  defp flow_index_sort(_), do: []
 
   @doc """
   Show a flow.
