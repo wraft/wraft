@@ -795,14 +795,14 @@ defmodule WraftDoc.Document do
   @doc """
   List all instances under an organisation.
   """
-  # TODO - improve tests
   @spec instance_index_of_an_organisation(User.t(), map) :: map
   def instance_index_of_an_organisation(%{current_org_id: org_id}, params) do
     query =
       from(i in Instance,
-        join: u in User,
-        where: u.organisation_id == ^org_id and i.creator_id == u.id,
-        order_by: [desc: i.inserted_at],
+        join: ct in ContentType,
+        where: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
+        where: ^instance_index_filter_by_instance_id(params),
+        order_by: ^instance_index_sort(params),
         preload: [
           :content_type,
           :state,
@@ -815,17 +815,19 @@ defmodule WraftDoc.Document do
     Repo.paginate(query, params)
   end
 
+  def instance_index_of_an_organisation(_, _), do: {:error, :invalid_id}
+
   @doc """
   List all instances under a content types.
   """
-  # TODO - improve tests
   @spec instance_index(binary, map) :: map
   def instance_index(<<_::288>> = c_type_id, params) do
     query =
       from(i in Instance,
         join: ct in ContentType,
         where: ct.id == ^c_type_id and i.content_type_id == ct.id,
-        order_by: [desc: i.id],
+        where: ^instance_index_filter_by_instance_id(params),
+        order_by: ^instance_index_sort(params),
         preload: [
           :content_type,
           :state,
@@ -839,6 +841,24 @@ defmodule WraftDoc.Document do
   end
 
   def instance_index(_, _), do: {:error, :invalid_id}
+
+  defp instance_index_filter_by_instance_id(%{"instance_id" => instance_id} = _params),
+    do: dynamic([i], ilike(i.instance_id, ^"%#{instance_id}%"))
+
+  defp instance_index_filter_by_instance_id(_), do: true
+
+  defp instance_index_sort(%{"sort" => "instance_id_desc"} = _params),
+    do: [desc: dynamic([i], i.instance_id)]
+
+  defp instance_index_sort(%{"sort" => "instance_id"} = _params),
+    do: [asc: dynamic([i], i.instance_id)]
+
+  defp instance_index_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([i], i.inserted_at)]
+
+  defp instance_index_sort(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([i], i.inserted_at)]
+
+  defp instance_index_sort(_), do: []
 
   @doc """
   Search and list all by key
