@@ -276,6 +276,14 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     description("API to get the list of all layouts created so far")
 
     parameter(:page, :query, :string, "Page number")
+    parameter(:name, :query, :string, "Layout Name")
+
+    parameter(
+      :sort,
+      :query,
+      :string,
+      "Sort Keys => name, name_desc, inserted_at, inserted_at_desc"
+    )
 
     response(200, "Ok", Schema.ref(:LayoutIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
