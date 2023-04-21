@@ -37,13 +37,6 @@ defmodule WraftDocWeb.ConnCase do
     on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
 
     user = WraftDoc.Factory.insert(:user_with_organisation)
-
-    WraftDoc.Factory.insert(:user_organisation,
-      user: user,
-      organisation: List.first(user.owned_organisations)
-    )
-
-    user = WraftDoc.Factory.insert(:user_with_organisation)
     organisation = List.first(user.owned_organisations)
 
     WraftDoc.Factory.insert(:user_organisation,
