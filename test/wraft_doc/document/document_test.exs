@@ -1019,13 +1019,178 @@ defmodule WraftDoc.DocumentTest do
 
       assert instance_index.entries |> Enum.map(fn x -> x.raw end) |> List.to_string() =~ i2.raw
     end
+
+    test "return error for invalid input" do
+      instance_index = Document.instance_index("invalid", "invalid")
+      assert instance_index == {:error, :invalid_id}
+    end
+
+    test "filter by instance_id" do
+      user = insert(:user)
+      content_type = insert(:content_type)
+
+      i1 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          creator: user,
+          content_type: content_type
+        )
+
+      i2 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          creator: user,
+          content_type: content_type
+        )
+
+      instance_index =
+        Document.instance_index(content_type.id, %{"instance_id" => "RO64NNYM", page_number: 1})
+
+      assert instance_index.entries |> Enum.map(fn x -> x.instance_id end) |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries |> Enum.map(fn x -> x.instance_id end) |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "returns an empty list when there are no matches for instance_id keyword" do
+      user = insert(:user)
+      content_type = insert(:content_type)
+
+      i1 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          creator: user,
+          content_type: content_type
+        )
+
+      i2 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          creator: user,
+          content_type: content_type
+        )
+
+      instance_index =
+        Document.instance_index(content_type.id, %{
+          "instance_id" => "does not exist",
+          page_number: 1
+        })
+
+      refute instance_index.entries |> Enum.map(fn x -> x.instance_id end) |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries |> Enum.map(fn x -> x.instance_id end) |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "sorts by instance_id in ascending order when sort key is instance_id" do
+      user = insert(:user)
+      content_type = insert(:content_type)
+
+      i1 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          creator: user,
+          content_type: content_type
+        )
+
+      i2 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          creator: user,
+          content_type: content_type
+        )
+
+      instance_index =
+        Document.instance_index(content_type.id, %{"sort" => "instance_id", page_number: 1})
+
+      assert List.first(instance_index.entries).instance_id == i1.instance_id
+      assert List.last(instance_index.entries).instance_id == i2.instance_id
+    end
+
+    test "sorts by instance_id in descending order when sort key is instance_id_desc" do
+      user = insert(:user)
+      content_type = insert(:content_type)
+
+      i1 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          creator: user,
+          content_type: content_type
+        )
+
+      i2 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          creator: user,
+          content_type: content_type
+        )
+
+      instance_index =
+        Document.instance_index(content_type.id, %{"sort" => "instance_id_desc", page_number: 1})
+
+      assert List.first(instance_index.entries).instance_id == i2.instance_id
+      assert List.last(instance_index.entries).instance_id == i1.instance_id
+    end
+
+    test "sorts by inserted_at in ascending order when sort key is inserted_at" do
+      user = insert(:user)
+      content_type = insert(:content_type)
+
+      i1 =
+        insert(:instance,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          creator: user,
+          content_type: content_type
+        )
+
+      i2 =
+        insert(:instance,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          creator: user,
+          content_type: content_type
+        )
+
+      instance_index =
+        Document.instance_index(content_type.id, %{"sort" => "inserted_at", page_number: 1})
+
+      assert List.first(instance_index.entries).raw == i1.raw
+      assert List.last(instance_index.entries).raw == i2.raw
+    end
+
+    test "sorts by inserted_at in descending order when sort key is inserted_at_desc" do
+      user = insert(:user)
+      content_type = insert(:content_type)
+
+      i1 =
+        insert(:instance,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          creator: user,
+          content_type: content_type
+        )
+
+      i2 =
+        insert(:instance,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          creator: user,
+          content_type: content_type
+        )
+
+      instance_index =
+        Document.instance_index(content_type.id, %{"sort" => "inserted_at_desc", page_number: 1})
+
+      assert List.first(instance_index.entries).raw == i2.raw
+      assert List.last(instance_index.entries).raw == i1.raw
+    end
   end
 
   describe "instance_index_of_an_organisation/2" do
     test "instance index of an organisation lists instances under an organisation" do
       user = insert(:user_with_organisation)
-      i1 = insert(:instance, creator: user)
-      i2 = insert(:instance, creator: user)
+      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
+      i1 = insert(:instance, content_type: content_type)
+      i2 = insert(:instance, content_type: content_type)
 
       instance_index_under_organisation =
         Document.instance_index_of_an_organisation(user, %{page_number: 1})
@@ -1038,6 +1203,128 @@ defmodule WraftDoc.DocumentTest do
       assert instance_index_under_organisation.entries
              |> Enum.map(fn x -> x.raw end)
              |> List.to_string() =~ i2.raw
+    end
+
+    test "return error for invalid input" do
+      instance_index = Document.instance_index_of_an_organisation("invalid", "invalid")
+      assert instance_index == {:error, :invalid_id}
+    end
+
+    test "filter by instance_id" do
+      user = insert(:user_with_organisation)
+      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
+
+      i1 = insert(:instance, instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5", content_type: content_type)
+
+      i2 =
+        insert(:instance, instance_id: "DO745U6M67191879878164811475", content_type: content_type)
+
+      instance_index =
+        Document.instance_index_of_an_organisation(user, %{
+          "instance_id" => "RO64NNYM",
+          page_number: 1
+        })
+
+      assert instance_index.entries |> Enum.map(fn x -> x.instance_id end) |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries |> Enum.map(fn x -> x.instance_id end) |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "returns an empty list when there are no matches for instance_id keyword" do
+      user = insert(:user_with_organisation)
+      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
+
+      i1 = insert(:instance, instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5", content_type: content_type)
+
+      i2 =
+        insert(:instance, instance_id: "DO745U6M67191879878164811475", content_type: content_type)
+
+      instance_index =
+        Document.instance_index_of_an_organisation(user, %{
+          "instance_id" => "does not exist",
+          page_number: 1
+        })
+
+      refute instance_index.entries |> Enum.map(fn x -> x.instance_id end) |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries |> Enum.map(fn x -> x.instance_id end) |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "sorts by instance_id in ascending order when sort key is instance_id" do
+      user = insert(:user_with_organisation)
+      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
+
+      i1 =
+        insert(:instance, instance_id: "DO745U6M67191879878164811475", content_type: content_type)
+
+      i2 = insert(:instance, instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5", content_type: content_type)
+
+      instance_index =
+        Document.instance_index_of_an_organisation(user, %{
+          "sort" => "instance_id",
+          page_number: 1
+        })
+
+      assert List.first(instance_index.entries).instance_id == i1.instance_id
+      assert List.last(instance_index.entries).instance_id == i2.instance_id
+    end
+
+    test "sorts by instance_id in descending order when sort key is instance_id_desc" do
+      user = insert(:user_with_organisation)
+      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
+
+      i1 =
+        insert(:instance, instance_id: "DO745U6M67191879878164811475", content_type: content_type)
+
+      i2 = insert(:instance, instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5", content_type: content_type)
+
+      instance_index =
+        Document.instance_index_of_an_organisation(user, %{
+          "sort" => "instance_id_desc",
+          page_number: 1
+        })
+
+      assert List.first(instance_index.entries).instance_id == i2.instance_id
+      assert List.last(instance_index.entries).instance_id == i1.instance_id
+    end
+
+    test "sorts by inserted_at in ascending order when sort key is inserted_at" do
+      user = insert(:user_with_organisation)
+      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
+
+      i1 = insert(:instance, inserted_at: ~N[2023-04-18 11:56:34], content_type: content_type)
+
+      i2 = insert(:instance, inserted_at: ~N[2023-04-18 11:57:34], content_type: content_type)
+
+      instance_index =
+        Document.instance_index_of_an_organisation(user, %{
+          "sort" => "inserted_at",
+          page_number: 1
+        })
+
+      assert List.first(instance_index.entries).raw == i1.raw
+      assert List.last(instance_index.entries).raw == i2.raw
+    end
+
+    test "sorts by inserted_at in descending order when sort key is inserted_at_desc" do
+      user = insert(:user_with_organisation)
+      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
+
+      i1 = insert(:instance, inserted_at: ~N[2023-04-18 11:56:34], content_type: content_type)
+      i2 = insert(:instance, inserted_at: ~N[2023-04-18 11:57:34], content_type: content_type)
+
+      instance_index =
+        Document.instance_index_of_an_organisation(user, %{
+          "sort" => "inserted_at_desc",
+          page_number: 1
+        })
+
+      assert List.first(instance_index.entries).raw == i2.raw
+      assert List.last(instance_index.entries).raw == i1.raw
     end
   end
 

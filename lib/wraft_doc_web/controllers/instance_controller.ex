@@ -385,6 +385,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     parameters do
       c_type_id(:path, :string, "ID of the content type", required: true)
       page(:query, :string, "Page number")
+      instance_id(:query, :string, "Instance ID")
+
+      sort(
+        :query,
+        :string,
+        "sort keys => instance_id, instance_id_desc, inserted_at, inserted_at_desc"
+      )
     end
 
     response(200, "Ok", Schema.ref(:ContentsIndex))
@@ -418,6 +425,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     parameters do
       page(:query, :string, "Page number")
+      instance_id(:query, :string, "Instance ID")
+
+      sort(
+        :query,
+        :string,
+        "sort keys => instance_id, instance_id_desc, inserted_at, inserted_at_desc"
+      )
     end
 
     response(200, "Ok", Schema.ref(:ContentsIndex))
