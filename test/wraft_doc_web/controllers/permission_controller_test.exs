@@ -5,69 +5,108 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
 
-  # import WraftDoc.Factory
-  # alias WraftDoc.Authorization.Permission
-  # alias WraftDoc.Repo
+  @resources [
+    "Approval System",
+    "Asset",
+    "Block",
+    "Block Template",
+    "Collection Form",
+    "Collection Form Field",
+    "Comment",
+    "Content Type",
+    "Content Type Field",
+    "Content Type Role",
+    "Data Template",
+    "Engine",
+    "Field Type",
+    "Flow",
+    "Instance",
+    "Instance Approval System",
+    "Layout",
+    "Members",
+    "Membership",
+    "Organisation",
+    "Organisation Field",
+    "Payment",
+    "Pipe Stage",
+    "Pipeline",
+    "Plan",
+    "Role",
+    "Role Group",
+    "State",
+    "Theme",
+    "Trigger History",
+    "Vendor"
+  ]
 
-  # TODO Uncomment and fix the tests once RBAC is done succefully
-  # test "create permissions by valid attrrs", %{conn: conn} do
-  #   role = insert(:role)
-  #   resource = insert(:resource)
+  setup do
+    user = WraftDoc.Factory.insert(:user_with_personal_organisation)
+    organisation = List.first(user.owned_organisations)
+    WraftDoc.Factory.insert(:user_organisation, user: user, organisation: organisation)
 
-  #   conn =
-  #     build_conn()
-  #     |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-  #     |> assign(:current_user, conn.assigns.current_user)
+    role = WraftDoc.Factory.insert(:role, organisation: organisation)
+    WraftDoc.Factory.insert(:user_role, user: user, role: role)
 
-  #   count_before = Permission |> Repo.all() |> length()
-  #   params = Map.merge(%{}, %{role_id: role.id, resource_id: resource.id})
+    {:ok, token, _} =
+      WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})
 
-  #   conn =
-  #     conn
-  #     |> post(Routes.v1_permission_path(conn, :create, params))
-  #     |> doc(operation_id: "create_permission")
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Conn.put_req_header("accept", "application/json")
+      |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+      |> Plug.Conn.assign(:current_user, user)
 
-  #   assert count_before + 1 == Permission |> Repo.all() |> length()
-  #   assert json_response(conn, 200)["#{resource.category}_#{resource.action}"] == [role.name]
-  # end
+    %{conn: conn}
+  end
 
-  # @tag :skip
-  # test "index lists permissions by current user", %{conn: conn} do
-  #   a1 = insert(:permission)
-  #   a2 = insert(:permission)
+  describe "GET /permissions" do
+    test "returns all the permissions grouped by resource", %{conn: conn} do
+      conn = get(conn, Routes.v1_permission_path(conn, :index))
+      json = json_response(conn, 200)
 
-  #   conn =
-  #     build_conn()
-  #     |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-  #     |> assign(:current_user, conn.assigns.current_user)
+      %{resources: resources, permissions: permissions} =
+        Enum.reduce(
+          json,
+          %{resources: [], permissions: []},
+          fn {resource, permissions}, acc ->
+            %{
+              resources: [resource | acc.resources],
+              permissions: create_premissions_data(permissions) ++ acc.permissions
+            }
+          end
+        )
 
-  #   conn = get(conn, Routes.v1_permission_path(conn, :index))
+      assert Enum.sort(resources) == @resources
+      assert all_permissions() == Enum.sort(permissions)
+    end
+  end
 
-  #   permissions =
-  #     conn
-  #     |> json_response(200)
-  #     |> get_in(["permissions"])
-  #     |> Enum.map(fn x -> Map.keys(x) end)
-  #     |> List.flatten()
+  describe "GET /resources" do
+    test "returns all the resources", %{conn: conn} do
+      conn = get(conn, Routes.v1_permission_path(conn, :resource_index))
+      resources = json_response(conn, 200)
 
-  #   assert List.to_string(permissions) =~
-  #            to_string(a1.resource.category) <> "_" <> to_string(a1.resource.action)
+      assert Enum.sort(resources) == @resources
+    end
+  end
 
-  #   assert List.to_string(permissions) =~
-  #            to_string(a2.resource.category) <> "_" <> to_string(a2.resource.action)
-  # end
+  # Private
+  defp all_permissions do
+    "priv/repo/data/rbac/permissions.csv"
+    |> File.stream!()
+    |> CSV.decode(headers: ["name", "resource", "action"])
+    |> Enum.map(fn {:ok, permission} -> create_premissions_data(permission) end)
+    |> Enum.sort()
+  end
 
-  # test "delete permission by given id", %{conn: conn} do
-  #   conn =
-  #     build_conn()
-  #     |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-  #     |> assign(:current_user, conn.assigns.current_user)
+  defp create_premissions_data(permissions) when is_list(permissions) do
+    Enum.map(permissions, &create_premissions_data(&1))
+  end
 
-  #   permission = insert(:permission)
-  #   count_before = Permission |> Repo.all() |> length()
-
-  #   conn = delete(conn, Routes.v1_permission_path(conn, :delete, permission.id))
-  #   assert count_before - 1 == Permission |> Repo.all() |> length()
-  #   assert json_response(conn, 200)["role_id"] == permission.role.id
-  # end
+  defp create_premissions_data(permission) when is_map(permission) do
+    %{
+      name: permission["name"],
+      action: permission["action"]
+    }
+  end
 end
