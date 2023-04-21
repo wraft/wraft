@@ -200,12 +200,30 @@ defmodule WraftDoc.Document do
     query =
       from(l in Layout,
         where: l.organisation_id == ^org_id,
-        order_by: [desc: l.inserted_at],
+        where: ^layout_index_filter_by_name(params),
+        order_by: ^layout_index_sort(params),
         preload: [:engine, :assets]
       )
 
     Repo.paginate(query, params)
   end
+
+  defp layout_index_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([l], ilike(l.name, ^"%#{name}%"))
+
+  defp layout_index_filter_by_name(_), do: true
+
+  defp layout_index_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([l], l.name)]
+
+  defp layout_index_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([l], l.name)]
+
+  defp layout_index_sort(%{"sort" => "inserted_at"} = _params),
+    do: [asc: dynamic([l], l.inserted_at)]
+
+  defp layout_index_sort(%{"sort" => "inserted_at_desc"} = _params),
+    do: [desc: dynamic([l], l.inserted_at)]
+
+  defp layout_index_sort(_), do: []
 
   @doc """
   Show a layout.

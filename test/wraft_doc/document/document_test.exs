@@ -341,13 +341,189 @@ defmodule WraftDoc.DocumentTest do
   describe "layout_index/2" do
     test "layout index returns the list of layouts" do
       user = insert(:user_with_organisation)
+      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
       engine = insert(:engine)
-      l1 = insert(:layout, creator: user, organisation: user.organisation, engine: engine)
-      l2 = insert(:layout, creator: user, organisation: user.organisation, engine: engine)
+
+      l1 =
+        insert(:layout,
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      l2 =
+        insert(:layout,
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
       layout_index = Document.layout_index(user, %{page_number: 1})
 
       assert layout_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ l1.name
       assert layout_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ l2.name
+    end
+
+    test "filter by name" do
+      user = insert(:user_with_organisation)
+      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
+      engine = insert(:engine)
+
+      l1 =
+        insert(:layout,
+          name: "First Layout",
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      l2 =
+        insert(:layout,
+          name: "Second Layout",
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      layout_index = Document.layout_index(user, %{"name" => "First", page_number: 1})
+
+      assert layout_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ l1.name
+      refute layout_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ l2.name
+    end
+
+    test "returns an empty list when there are no matches for name keyword" do
+      user = insert(:user_with_organisation)
+      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
+      engine = insert(:engine)
+
+      l1 =
+        insert(:layout,
+          name: "First Layout",
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      l2 =
+        insert(:layout,
+          name: "Second Layout",
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      layout_index = Document.layout_index(user, %{"name" => "does not exist", page_number: 1})
+
+      refute layout_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ l1.name
+      refute layout_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ l2.name
+    end
+
+    test "sorts by name in ascending order when sort key is name" do
+      user = insert(:user_with_organisation)
+      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
+      engine = insert(:engine)
+
+      l1 =
+        insert(:layout,
+          name: "First Layout",
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      l2 =
+        insert(:layout,
+          name: "Second Layout",
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      layout_index = Document.layout_index(user, %{"sort" => "name", page_number: 1})
+
+      assert List.first(layout_index.entries).name == l1.name
+      assert List.last(layout_index.entries).name == l2.name
+    end
+
+    test "sorts by name in descending order when sort key is name_desc" do
+      user = insert(:user_with_organisation)
+      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
+      engine = insert(:engine)
+
+      l1 =
+        insert(:layout,
+          name: "First Layout",
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      l2 =
+        insert(:layout,
+          name: "Second Layout",
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      layout_index = Document.layout_index(user, %{"sort" => "name_desc", page_number: 1})
+
+      assert List.first(layout_index.entries).name == l2.name
+      assert List.last(layout_index.entries).name == l1.name
+    end
+
+    test "sorts by inserted_at in ascending order when sort key is inserted_at" do
+      user = insert(:user_with_organisation)
+      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
+      engine = insert(:engine)
+
+      l1 =
+        insert(:layout,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      l2 =
+        insert(:layout,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      layout_index = Document.layout_index(user, %{"sort" => "inserted_at", page_number: 1})
+
+      assert List.first(layout_index.entries).name == l1.name
+      assert List.last(layout_index.entries).name == l2.name
+    end
+
+    test "sorts by inserted_at in descending order when sort key is inserted_at_desc" do
+      user = insert(:user_with_organisation)
+      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
+      engine = insert(:engine)
+
+      l1 =
+        insert(:layout,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      l2 =
+        insert(:layout,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations),
+          engine: engine
+        )
+
+      layout_index = Document.layout_index(user, %{"sort" => "inserted_at_desc", page_number: 1})
+
+      assert List.first(layout_index.entries).name == l2.name
+      assert List.last(layout_index.entries).name == l1.name
     end
   end
 
