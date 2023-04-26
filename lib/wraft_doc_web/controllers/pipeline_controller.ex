@@ -237,6 +237,14 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
     description("API to list pipelines of current user's organisation.")
 
     parameter(:page, :query, :string, "Page number")
+    parameter(:name, :query, :string, "Name")
+
+    parameter(
+      :sort,
+      :query,
+      :string,
+      "Sort Keys => name, name_desc, inserted_at, inserted_at_desc"
+    )
 
     response(200, "Ok", Schema.ref(:PipelineIndex))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
