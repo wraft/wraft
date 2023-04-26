@@ -2684,7 +2684,7 @@ defmodule WraftDoc.DocumentTest do
   describe "pipeline_index/2" do
     test "returns list of pipelines in the users organisation only" do
       user = insert(:user_with_organisation)
-      pipeline1 = insert(:pipeline, organisation: user.organisation)
+      pipeline1 = insert(:pipeline, organisation: List.first(user.owned_organisations))
       pipeline2 = insert(:pipeline)
       %{entries: pipelines} = Document.pipeline_index(user, %{})
       pipeline_names = pipelines |> Enum.map(fn x -> x.name end) |> List.to_string()
@@ -2695,6 +2695,144 @@ defmodule WraftDoc.DocumentTest do
     test "returns nil with invalid attrs" do
       response = Document.pipeline_index(nil, %{})
       assert response == nil
+    end
+
+    test "pipeline index lists the pipeline data" do
+      user = insert(:user_with_organisation)
+      pipeline1 = insert(:pipeline, organisation: List.first(user.owned_organisations))
+      pipeline2 = insert(:pipeline, organisation: List.first(user.owned_organisations))
+      %{entries: pipelines} = Document.pipeline_index(user, %{})
+      pipeline_names = pipelines |> Enum.map(fn x -> x.name end) |> List.to_string()
+      assert pipeline_names =~ pipeline1.name
+      assert pipeline_names =~ pipeline2.name
+    end
+
+    test "filters by name" do
+      user = insert(:user_with_organisation)
+
+      pipeline1 =
+        insert(:pipeline,
+          name: "First Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      pipeline2 =
+        insert(:pipeline,
+          name: "Second Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      %{entries: pipelines} = Document.pipeline_index(user, %{"name" => "First"})
+      pipeline_names = pipelines |> Enum.map(fn x -> x.name end) |> List.to_string()
+
+      assert pipeline_names =~ pipeline1.name
+      refute pipeline_names =~ pipeline2.name
+    end
+
+    test "returns an empty list when there are no matches for the name keyword" do
+      user = insert(:user_with_organisation)
+
+      pipeline1 =
+        insert(:pipeline,
+          name: "First Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      pipeline2 =
+        insert(:pipeline,
+          name: "Second Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      %{entries: pipelines} = Document.pipeline_index(user, %{"name" => "Does Not Exist"})
+      pipeline_names = pipelines |> Enum.map(fn x -> x.name end) |> List.to_string()
+
+      refute pipeline_names =~ pipeline1.name
+      refute pipeline_names =~ pipeline2.name
+    end
+
+    test "sorts by name in ascending order when sort key is name" do
+      user = insert(:user_with_organisation)
+
+      pipeline1 =
+        insert(:pipeline,
+          name: "First Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      pipeline2 =
+        insert(:pipeline,
+          name: "Second Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      %{entries: pipelines} = Document.pipeline_index(user, %{"sort" => "name"})
+
+      assert List.first(pipelines).name == pipeline1.name
+      assert List.last(pipelines).name == pipeline2.name
+    end
+
+    test "sorts by name in descending order when sort key is name_desc" do
+      user = insert(:user_with_organisation)
+
+      pipeline1 =
+        insert(:pipeline,
+          name: "First Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      pipeline2 =
+        insert(:pipeline,
+          name: "Second Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      %{entries: pipelines} = Document.pipeline_index(user, %{"sort" => "name_desc"})
+
+      assert List.first(pipelines).name == pipeline2.name
+      assert List.last(pipelines).name == pipeline1.name
+    end
+
+    test "sorts by inserted_at in ascending order when sort key is inserted_at" do
+      user = insert(:user_with_organisation)
+
+      pipeline1 =
+        insert(:pipeline,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          organisation: List.first(user.owned_organisations)
+        )
+
+      pipeline2 =
+        insert(:pipeline,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          organisation: List.first(user.owned_organisations)
+        )
+
+      %{entries: pipelines} = Document.pipeline_index(user, %{"sort" => "inserted_at"})
+
+      assert List.first(pipelines).name == pipeline1.name
+      assert List.last(pipelines).name == pipeline2.name
+    end
+
+    test "sorts by inserted_at in descending order when sort key is inserted_at_desc" do
+      user = insert(:user_with_organisation)
+
+      pipeline1 =
+        insert(:pipeline,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          organisation: List.first(user.owned_organisations)
+        )
+
+      pipeline2 =
+        insert(:pipeline,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          organisation: List.first(user.owned_organisations)
+        )
+
+      %{entries: pipelines} = Document.pipeline_index(user, %{"sort" => "inserted_at_desc"})
+
+      assert List.first(pipelines).name == pipeline2.name
+      assert List.last(pipelines).name == pipeline1.name
     end
   end
 
