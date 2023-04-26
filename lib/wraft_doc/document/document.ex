@@ -2619,11 +2619,30 @@ defmodule WraftDoc.Document do
   """
   @spec pipeline_index(User.t(), map) :: map | nil
   def pipeline_index(%User{current_org_id: org_id}, params) do
-    query = from(p in Pipeline, where: p.organisation_id == ^org_id)
-    Repo.paginate(query, params)
+    Pipeline
+    |> where([p], p.organisation_id == ^org_id)
+    |> where(^pipeline_filter_by_name(params))
+    |> order_by(^pipeline_sort(params))
+    |> Repo.paginate(params)
   end
 
   def pipeline_index(_, _), do: nil
+
+  defp pipeline_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([p], ilike(p.name, ^"%#{name}%"))
+
+  defp pipeline_filter_by_name(_), do: true
+
+  defp pipeline_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([p], p.name)]
+
+  defp pipeline_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([p], p.name)]
+
+  defp pipeline_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([p], p.inserted_at)]
+
+  defp pipeline_sort(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([p], p.inserted_at)]
+
+  defp pipeline_sort(_), do: []
 
   @doc """
   Get a pipeline from its UUID and user's organisation.
