@@ -92,6 +92,7 @@ defmodule WraftDoc.Mixfile do
       {:bypass, "~> 2.1.0", only: :test},
       {:excoveralls, "~> 0.15.0", only: :test},
       {:faker, "~> 0.17", only: [:test, :dev]},
+      {:mox, "~> 1.0"},
       # Pagination
       {:scrivener_ecto, "~> 2.7.0"},
       {:scrivener_list, "~> 2.0.1"},
