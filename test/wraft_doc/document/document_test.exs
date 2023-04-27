@@ -1,7 +1,8 @@
 defmodule WraftDoc.DocumentTest do
   use WraftDoc.DataCase, async: true
   import WraftDoc.Factory
-  use ExUnit.Case
+  import Mox
+
   @moduletag :document
 
   alias WraftDoc.Account.Role
@@ -28,6 +29,8 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Document.Theme
   alias WraftDoc.Repo
+
+  setup :verify_on_exit!
 
   @valid_layout_attrs %{
     "name" => "layout name",
@@ -1006,6 +1009,49 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  describe "delete_uploaded_docs/1" do
+    test "returns success tuple on succesfully deleting the documents from MinIO" do
+      instance = insert(:instance)
+
+      expect(ExAwsMock, :request, fn %ExAws.Operation.S3DeleteAllObjects{} ->
+        {:ok, [%{body: "Some XML response"}]}
+      end)
+
+      expect(ExAwsMock, :stream!, fn %ExAws.Operation.S3{} = operation ->
+        assert operation.http_method == :get
+        assert operation.params == %{"prefix" => "uploads/contents/#{instance.instance_id}"}
+
+        {
+          :ok,
+          %{
+            body: %{
+              contents: [%{key: "image.jpg", last_modified: "2023-03-17T13:16:11.704Z"}]
+            }
+          }
+        }
+      end)
+
+      {:ok, [%{body: "Some XML response"}]} = Document.delete_uploaded_docs(instance)
+    end
+
+    test "returns error tuple when AWS request fails" do
+      instance = insert(:instance)
+
+      expect(ExAwsMock, :stream!, fn %ExAws.Operation.S3{} = operation ->
+        assert operation.http_method == :get
+        assert operation.params == %{"prefix" => "uploads/contents/#{instance.instance_id}"}
+
+        {:error, :reason}
+      end)
+
+      expect(ExAwsMock, :request, fn %ExAws.Operation.S3DeleteAllObjects{} ->
+        {:error, :reason}
+      end)
+
+      {:error, :reason} = Document.delete_uploaded_docs(instance)
+    end
+  end
+
   describe "instance_index/2" do
     test "instance index lists the instance data" do
       user = insert(:user)
@@ -1359,10 +1405,11 @@ defmodule WraftDoc.DocumentTest do
 
   describe "get_built_document/1" do
     test "Get the build document of the given instance." do
-      user = insert(:user)
-      content_type = insert(:content_type, creator: user, organisation: user.organisation)
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      content_type = insert(:content_type, creator: user, organisation: organisation)
       flow = content_type.flow
-      state = insert(:state, flow: flow, organisation: user.organisation)
+      state = insert(:state, flow: flow, organisation: organisation)
 
       instance =
         insert(:instance, build: "build", creator: user, content_type: content_type, state: state)

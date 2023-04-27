@@ -39,6 +39,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Minio
   alias WraftDoc.Repo
   alias WraftDoc.Workers.BulkWorker
 
@@ -966,7 +967,7 @@ defmodule WraftDoc.Document do
         instance
 
       %History{} ->
-        doc_url = "uploads/contents/#{instance_id}/final.pdf"
+        {:ok, doc_url} = Minio.generate_url("uploads/contents/#{instance_id}/final.pdf")
         Map.put(instance, :build, doc_url)
     end
   end
@@ -1125,6 +1126,14 @@ defmodule WraftDoc.Document do
   """
   @spec delete_instance(Instance.t()) :: {:ok, Instance.t()} | {:error, any()}
   def delete_instance(instance), do: Repo.delete(instance)
+
+  @doc """
+  Delete uploaded documents of an instance.
+  """
+  @spec delete_uploaded_docs(Instance.t()) :: {:ok, Instance.t()} | {:error, any()}
+  def delete_uploaded_docs(%{instance_id: instance_id}) do
+    Minio.delete_files("uploads/contents/#{instance_id}")
+  end
 
   @doc """
   Get an engine from its UUID.
@@ -1495,28 +1504,50 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
-  def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %Layout{
-        slug: slug,
-        assets: assets
-      }) do
-    mkdir = "uploads/contents/#{u_id}"
+  def build_doc(
+        %Instance{instance_id: instance_id, content_type: content_type} = instance,
+        %Layout{
+          slug: slug,
+          assets: assets
+        }
+      ) do
+    content_type = Repo.preload(content_type, [:fields])
+    mkdir = "uploads/contents/#{instance_id}"
     File.mkdir_p(mkdir)
+
     # slug files: there are only two types of templates: contract and pletter
     System.cmd("cp", ["-a", "lib/slugs/#{slug}/.", mkdir])
+
+    # Generate QR code for the file
     task = Task.async(fn -> generate_qr(instance) end)
-    Task.start(fn -> move_old_builds(u_id) end)
-    c_type = Repo.preload(c_type, [:fields])
-    get_theme = get_theme_details()
+
+    # Move old builds to the history folder
+    Task.start(fn -> move_old_builds(instance_id) end)
+    theme = get_theme_details()
+
     # copy fonts to the template
-    if get_theme.font_path != "" do
-      System.cmd("cp", ["-a", "#{get_theme.font_path}/.", "#{mkdir}/fonts/"])
+    if theme.font_path != "" do
+      System.cmd("cp", ["-a", "#{theme.font_path}/.", "#{mkdir}/fonts/"])
     end
 
     header =
-      Enum.reduce(c_type.fields, "--- \n", fn x, acc ->
+      Enum.reduce(content_type.fields, "--- \n", fn x, acc ->
         find_header_values(x, instance.serialized, acc)
       end)
 
+    content = prepare_markdown(instance, assets, header, mkdir, theme, task)
+    File.write("uploads/contents/#{instance_id}/content.md", content)
+    file_path = "uploads/contents/#{instance_id}"
+    pdf_file = concat_strings(file_path, "/final.pdf")
+
+    pandoc_commands = prepare_pandoc_cmds(instance_id, pdf_file)
+
+    "pandoc"
+    |> System.cmd(pandoc_commands)
+    |> upload_file_and_delete_local_copy(file_path, pdf_file)
+  end
+
+  defp prepare_markdown(%{id: instance_id} = instance, assets, header, mkdir, theme, task) do
     header = Enum.reduce(assets, header, fn x, acc -> find_header_values(x, acc) end)
     qr_code = Task.await(task)
     page_title = instance.serialized["title"]
@@ -1526,31 +1557,44 @@ defmodule WraftDoc.Document do
       |> concat_strings("qrcode: #{qr_code} \n")
       |> concat_strings("path: #{mkdir}\n")
       |> concat_strings("title: #{page_title}\n")
-      |> concat_strings("id: #{u_id}\n")
-      |> concat_strings("mainfont: #{get_theme.font_name}\n")
-      |> concat_strings("body_color: #{get_theme.body_color}\n")
-      |> concat_strings("primary_color: #{get_theme.primary_color}\n")
-      |> concat_strings("secondary_color: #{get_theme.secondary_color}\n")
-      |> concat_strings("typescale: #{get_theme.typescale}\n")
+      |> concat_strings("id: #{instance_id}\n")
+      |> concat_strings("mainfont: #{theme.font_name}\n")
+      |> concat_strings("body_color: #{theme.body_color}\n")
+      |> concat_strings("primary_color: #{theme.primary_color}\n")
+      |> concat_strings("secondary_color: #{theme.secondary_color}\n")
+      |> concat_strings("typescale: #{theme.typescale}\n")
       |> concat_strings("--- \n")
 
-    content = """
+    """
     #{header}
     #{instance.raw}
     """
-
-    File.write("uploads/contents/#{u_id}/content.md", content)
-
-    pandoc_commands = [
-      "uploads/contents/#{u_id}/content.md",
-      "--template=uploads/contents/#{u_id}/template.tex",
-      "--pdf-engine=xelatex",
-      "-o",
-      "uploads/contents/#{u_id}/final.pdf"
-    ]
-
-    System.cmd("pandoc", pandoc_commands)
   end
+
+  defp prepare_pandoc_cmds(instance_id, pdf_file) do
+    [
+      "uploads/contents/#{instance_id}/content.md",
+      "--template=uploads/contents/#{instance_id}/template.tex",
+      "--pdf-engine=#{System.get_env("XELATEX_PATH")}",
+      "-o",
+      pdf_file
+    ]
+  end
+
+  defp upload_file_and_delete_local_copy({_, 0} = pandoc_response, file_path, pdf_file) do
+    case Minio.upload_file(pdf_file) do
+      {:ok, _} ->
+        File.rm_rf(file_path)
+        pandoc_response
+
+      _ ->
+        File.rm(pdf_file)
+        Logger.error("File upload failed")
+        {"", 222}
+    end
+  end
+
+  defp upload_file_and_delete_local_copy(pandoc_response, _, _), do: pandoc_response
 
   # Find the header values for the content.md file from the serialized data of an instance.
   @spec find_header_values(ContentTypeField.t(), map, String.t()) :: String.t()
@@ -1649,27 +1693,29 @@ defmodule WraftDoc.Document do
 
   # Move old builds to the history folder
   @spec move_old_builds(String.t()) :: {:ok, non_neg_integer()}
-  defp move_old_builds(u_id) do
-    path = "uploads/contents/#{u_id}/"
+  defp move_old_builds(instance_id) do
+    path = "uploads/contents/#{instance_id}/"
     history_path = concat_strings(path, "history/")
     old_file = concat_strings(path, "final.pdf")
-    File.mkdir_p(history_path)
 
     history_file =
       history_path
-      |> File.ls!()
-      |> Enum.sort(:desc)
+      |> Minio.list_files()
+      |> List.first()
       |> case do
-        ["final-" <> version | _] ->
-          ["v" <> version | _] = String.split(version, ".pdf")
-          version = version |> String.to_integer() |> add(1)
-          concat_strings(history_path, "final-v#{version}.pdf")
-
-        [] ->
+        nil ->
           concat_strings(history_path, "final-v1.pdf")
+
+        object ->
+          ["final-v" <> version, ""] =
+            object |> String.split("/") |> List.last() |> String.split(".pdf")
+
+          version = version |> String.to_integer() |> add(1)
+
+          concat_strings(history_path, "final-v#{version}.pdf")
       end
 
-    File.copy(old_file, history_file)
+    Minio.copy_files(history_file, old_file)
   end
 
   @doc """
