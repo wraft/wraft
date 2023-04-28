@@ -2840,7 +2840,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get all the triggers under a pipeline.
   """
-  @spec get_trigger_histories_of_a_pipeline(Pipeline.t(), map) :: map | nil
+  @spec get_trigger_histories_of_a_pipeline(Pipeline.t(), map) :: Scrivener.Page.t()
   def get_trigger_histories_of_a_pipeline(%Pipeline{id: id}, params) do
     query =
       from(t in TriggerHistory,
@@ -2855,9 +2855,54 @@ defmodule WraftDoc.Document do
   def get_trigger_histories_of_a_pipeline(_, _), do: nil
 
   @doc """
+   Get all the triggers under a organisation.
+  """
+  @spec trigger_history_index(User.t(), map) :: Scrivener.Page.t()
+  def trigger_history_index(%User{current_org_id: org_id} = _user, params) do
+    TriggerHistory
+    |> join(:inner, [t], p in Pipeline, on: t.pipeline_id == p.id, as: :pipeline)
+    |> where([pipeline: p], p.organisation_id == ^org_id)
+    |> where(^trigger_history_filter_by_pipeline_name(params))
+    |> where(^trigger_history_filter_by_status(params))
+    |> order_by(^trigger_history_sort(params))
+    |> preload([:creator])
+    |> Repo.paginate(params)
+  end
+
+  def trigger_history_index(_, _), do: nil
+
+  defp trigger_history_filter_by_pipeline_name(%{"pipeline_name" => pipeline_name} = _params),
+    do: dynamic([pipeline: p], ilike(p.name, ^"%#{pipeline_name}%"))
+
+  defp trigger_history_filter_by_pipeline_name(_), do: true
+
+  defp trigger_history_filter_by_status(%{"status" => status} = _params),
+    do: dynamic([t], t.state == ^status)
+
+  defp trigger_history_filter_by_status(_), do: true
+
+  defp trigger_history_sort(%{"sort" => "pipeline_name"} = _params),
+    do: [asc: dynamic([pipeline: p], p.name)]
+
+  defp trigger_history_sort(%{"sort" => "pipeline_name_desc"} = _params),
+    do: [desc: dynamic([pipeline: p], p.name)]
+
+  defp trigger_history_sort(%{"sort" => "status"} = _params), do: [asc: dynamic([t], t.state)]
+
+  defp trigger_history_sort(%{"sort" => "status_desc"} = _params),
+    do: [desc: dynamic([t], t.state)]
+
+  defp trigger_history_sort(%{"sort" => "inserted_at"} = _params),
+    do: [asc: dynamic([t], t.inserted_at)]
+
+  defp trigger_history_sort(%{"sort" => "inserted_at_desc"} = _params),
+    do: [desc: dynamic([t], t.inserted_at)]
+
+  defp trigger_history_sort(_), do: []
+
+  @doc """
    Get the content type by there id with preloading the data roles
   """
-
   def get_content_type_roles(id) do
     query = from(c in ContentType, where: c.id == ^id)
     query |> Repo.one() |> Repo.preload(:roles)
@@ -2866,7 +2911,6 @@ defmodule WraftDoc.Document do
   @doc """
     Get the role name by there uuid with preloading the content types
   """
-
   def get_content_type_under_roles(id) do
     query = from(r in Role, where: r.id == ^id)
     query |> Repo.one() |> Repo.preload(:content_types)
@@ -2875,7 +2919,6 @@ defmodule WraftDoc.Document do
   @doc """
   Get the content type with the id
   """
-
   def get_content_type(id) do
     query = from(c in ContentType, where: c.id == ^id)
     Repo.one(query)
@@ -2884,7 +2927,6 @@ defmodule WraftDoc.Document do
   @doc """
   create content type role function
   """
-
   def create_content_type_role(params) do
     %ContentTypeRole{}
     |> ContentTypeRole.changeset(params)
