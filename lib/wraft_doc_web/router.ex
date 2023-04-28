@@ -272,11 +272,14 @@ defmodule WraftDocWeb.Router do
 
         scope "/:pipeline_id" do
           # Trigger history
-          resources("/triggers", TriggerHistoryController, only: [:create, :index])
+          resources("/triggers", TriggerHistoryController, only: [:create])
+          get("/triggers", TriggerHistoryController, :index_by_pipeline)
           # Pipe stages
           resources("/stages", PipeStageController, only: [:create])
         end
       end
+
+      get("/triggers", TriggerHistoryController, :index)
 
       # Update and Delete pipe stage
       resources("/stages", PipeStageController, only: [:update, :delete])
