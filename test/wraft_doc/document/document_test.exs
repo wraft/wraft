@@ -1824,12 +1824,117 @@ defmodule WraftDoc.DocumentTest do
   describe "theme_index/2" do
     test "theme index lists the theme data" do
       user = insert(:user_with_organisation)
-      t1 = insert(:theme, creator: user, organisation: user.organisation)
-      t2 = insert(:theme, creator: user, organisation: user.organisation)
+      organisation = List.first(user.owned_organisations)
+
+      t1 = insert(:theme, creator: user, organisation: organisation)
+      t2 = insert(:theme, creator: user, organisation: organisation)
       theme_index = Document.theme_index(user, %{page_number: 1})
 
-      assert theme_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ t1.name
-      assert theme_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ t2.name
+      themes = theme_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string()
+
+      assert themes =~ t1.name
+      assert themes =~ t2.name
+    end
+
+    test "filter by name" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+
+      t1 = insert(:theme, name: "First Theme", creator: user, organisation: organisation)
+      t2 = insert(:theme, name: "Second Theme", creator: user, organisation: organisation)
+
+      theme_index = Document.theme_index(user, %{"name" => "First", page_number: 1})
+
+      themes = theme_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string()
+
+      assert themes =~ t1.name
+      refute themes =~ t2.name
+    end
+
+    test "returns an empty list when there are no matches for the name keyword" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+
+      insert(:theme, name: "First Theme", creator: user, organisation: organisation)
+      insert(:theme, name: "Second Theme", creator: user, organisation: organisation)
+
+      theme_index = Document.theme_index(user, %{"name" => "Does not exist", page_number: 1})
+
+      assert theme_index.entries == []
+    end
+
+    test "sorts by name in ascending order when sort key is name" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+
+      t1 = insert(:theme, name: "First Theme", creator: user, organisation: organisation)
+      t2 = insert(:theme, name: "Second Theme", creator: user, organisation: organisation)
+
+      theme_index = Document.theme_index(user, %{"sort" => "name", page_number: 1})
+
+      assert List.first(theme_index.entries).name == t1.name
+      assert List.last(theme_index.entries).name == t2.name
+    end
+
+    test "sorts by name in descending order when sort key is name_desc" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+
+      t1 = insert(:theme, name: "First Theme", creator: user, organisation: organisation)
+      t2 = insert(:theme, name: "Second Theme", creator: user, organisation: organisation)
+
+      theme_index = Document.theme_index(user, %{"sort" => "name_desc", page_number: 1})
+
+      assert List.first(theme_index.entries).name == t2.name
+      assert List.last(theme_index.entries).name == t1.name
+    end
+
+    test "sorts by inserted_at in ascending order when sort key is inserted_at" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+
+      t1 =
+        insert(:theme,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          creator: user,
+          organisation: organisation
+        )
+
+      t2 =
+        insert(:theme,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          creator: user,
+          organisation: organisation
+        )
+
+      theme_index = Document.theme_index(user, %{"sort" => "inserted_at", page_number: 1})
+
+      assert List.first(theme_index.entries).name == t1.name
+      assert List.last(theme_index.entries).name == t2.name
+    end
+
+    test "sorts by inserted_at in descending order when sort key is inserted_at_desc" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+
+      t1 =
+        insert(:theme,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          creator: user,
+          organisation: organisation
+        )
+
+      t2 =
+        insert(:theme,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          creator: user,
+          organisation: organisation
+        )
+
+      theme_index = Document.theme_index(user, %{"sort" => "inserted_at_desc", page_number: 1})
+
+      assert List.first(theme_index.entries).name == t2.name
+      assert List.last(theme_index.entries).name == t1.name
     end
   end
 

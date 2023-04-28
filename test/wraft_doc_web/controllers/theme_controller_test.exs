@@ -72,10 +72,12 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
     assert json_response(conn, 422)["errors"]["file"] == ["can't be blank"]
   end
 
-  test "index lists assests by current user", %{conn: conn} do
+  test "index lists assets by current user", %{conn: conn} do
     user = conn.assigns.current_user
-    a1 = insert(:theme, creator: user, organisation: user.organisation)
-    a2 = insert(:theme, creator: user, organisation: user.organisation)
+    organisation = List.first(user.owned_organisations)
+
+    a1 = insert(:theme, creator: user, organisation: organisation)
+    a2 = insert(:theme, creator: user, organisation: organisation)
 
     conn = get(conn, Routes.v1_theme_path(conn, :index))
     themes_index = json_response(conn, 200)["themes"]
