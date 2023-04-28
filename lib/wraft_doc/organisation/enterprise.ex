@@ -1176,11 +1176,24 @@ defmodule WraftDoc.Enterprise do
     Repo.paginate(query, params)
   end
 
-  def roles_in_users_organisation(%User{current_org_id: organisation_id}) do
-    query = from(r in Role, where: r.organisation_id == ^organisation_id)
-
-    Repo.all(query)
+  def roles_in_users_organisation(%User{current_org_id: organisation_id}, params) do
+    Role
+    |> where([r], r.organisation_id == ^organisation_id)
+    |> where(^roles_filter_by_name(params))
+    |> order_by(^roles_sort(params))
+    |> Repo.all()
   end
+
+  defp roles_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([r], ilike(r.name, ^"%#{name}%"))
+
+  defp roles_filter_by_name(_), do: true
+
+  defp roles_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([r], r.name)]
+
+  defp roles_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([r], r.name)]
+
+  defp roles_sort(_), do: []
 
   @doc """
   Creates a default worker job

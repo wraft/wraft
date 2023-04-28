@@ -8,9 +8,6 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
   alias WraftDoc.Repo
   import WraftDoc.Factory
 
-  @valid_attrs %{name: "manager"}
-  @invalid_attrs %{name: nil}
-
   describe "create/2" do
     # TODO - Test update success case
     # test "create role with valid attrs", %{conn: conn} do
@@ -35,7 +32,7 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
 
   test "show all the role with the content type", %{conn: conn} do
     user = conn.assigns.current_user
-    role = insert(:role, organisation: user.organisation)
+    role = insert(:role, name: "Editor", organisation: List.first(user.owned_organisations))
     conn = get(conn, Routes.v1_role_path(conn, :show, role.id))
     assert json_response(conn, 200)["name"] == role.name
   end
@@ -47,7 +44,7 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
 
   test "delete an existing role by id", %{conn: conn} do
     user = conn.assigns.current_user
-    role = insert(:role, organisation: user.organisation)
+    role = insert(:role, name: "new_role", organisation: List.first(user.owned_organisations))
     count_before = Role |> Repo.all() |> length()
     conn = delete(conn, Routes.v1_role_path(conn, :delete, role.id))
     count_after = Role |> Repo.all() |> length()
@@ -57,7 +54,28 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
   end
 
   describe "index/2" do
-    # TODO - Test success response
+    test "index lists all roles in user's current organisation", %{conn: conn} do
+      user = conn.assigns.current_user
+
+      role_1 = insert(:role, name: "Role 1", organisation: List.first(user.owned_organisations))
+      role_2 = insert(:role, name: "Role 2", organisation: List.first(user.owned_organisations))
+
+      conn = get(conn, Routes.v1_role_path(conn, :index, %{}))
+
+      roles_index_by_org =
+        conn
+        |> json_response(200)
+        |> Enum.map(fn %{"name" => name} -> name end)
+        |> List.to_string()
+
+      assert roles_index_by_org =~ role_1.name
+      assert roles_index_by_org =~ role_2.name
+    end
+
+    test "returns an empty list when there are no roles in user's organisation", %{conn: conn} do
+      conn = get(conn, Routes.v1_role_path(conn, :index, %{"name" => "Does not exist"}))
+      assert [] == json_response(conn, 200)
+    end
   end
 
   describe "update/2" do
