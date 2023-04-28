@@ -166,13 +166,13 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   Trigger history index of a pipeline.
   """
   # TODO - write tests
-  swagger_path :index do
+  swagger_path :index_by_pipeline do
     get("/pipelines/{pipeline_id}/triggers")
     summary("Pipeline trigger index")
     description("API to get the list of trigger histories of a pipeline")
 
     parameters do
-      pipeline_id(:path, :string, "pipeline id", required: true)
+      pipeline_id(:path, :string, "pipeline id")
       page(:query, :string, "Page number")
     end
 
@@ -182,8 +182,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
-  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, %{"pipeline_id" => p_uuid} = params) do
+  @spec index_by_pipeline(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index_by_pipeline(conn, %{"pipeline_id" => p_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
     with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, p_uuid),
@@ -193,6 +193,56 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Document.get_trigger_histories_of_a_pipeline(pipeline, params) do
+      render(conn, "index.json",
+        triggers: triggers,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
+
+  @doc """
+  Trigger history index.
+  """
+  swagger_path :index do
+    get("/triggers")
+    summary("Pipeline trigger history index")
+    description("API to get the list of trigger histories within an organisation")
+
+    parameters do
+      page(:query, :string, "Page number")
+      pipeline_name(:query, :string, "Pipeline Name")
+
+      status(
+        :query,
+        :integer,
+        "Allowed Status Codes => [enqued: 1, executing: 2, pending: 3, partially_completed: 4, success: 5, failed: 6]"
+      )
+
+      sort(
+        :query,
+        :string,
+        "Sort Keys => pipeline_name, pipeline_name_desc, status, status_desc, inserted_at, inserted_at_desc"
+      )
+    end
+
+    response(200, "OK", Schema.ref(:TriggerHistoryIndex))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def index(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with %{
+           entries: triggers,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.trigger_history_index(current_user, params) do
       render(conn, "index.json",
         triggers: triggers,
         page_number: page_number,

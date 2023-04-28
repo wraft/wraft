@@ -3520,4 +3520,257 @@ defmodule WraftDoc.DocumentTest do
 
     assert after_collection_count == before_collection_count - 1
   end
+
+  describe "get_trigger_histories_of_a_pipeline/2" do
+    test "returns trigger history of only the given pipeline" do
+      user = insert(:user_with_organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
+      trigger_history_1 = insert(:trigger_history, pipeline: pipeline)
+      trigger_history_2 = insert(:trigger_history, pipeline: pipeline)
+
+      %{entries: trigger_history_index} =
+        Document.get_trigger_histories_of_a_pipeline(pipeline, %{page: 1})
+
+      trigger_history_ids =
+        trigger_history_index |> Enum.map(fn x -> x.id end) |> List.to_string()
+
+      assert trigger_history_ids =~ trigger_history_1.id
+      assert trigger_history_ids =~ trigger_history_2.id
+    end
+
+    test "returns nil with invalid attrs" do
+      trigger_history_index =
+        Document.get_trigger_histories_of_a_pipeline("invalid attrs", %{page: 1})
+
+      assert trigger_history_index == nil
+    end
+  end
+
+  describe "trigger_history_index/2" do
+    test "trigger history index the trigger history data" do
+      user = insert(:user_with_organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
+      trigger_history_1 = insert(:trigger_history, pipeline: pipeline)
+      trigger_history_2 = insert(:trigger_history, pipeline: pipeline)
+
+      %{entries: trigger_history_index} = Document.trigger_history_index(user, %{page: 1})
+
+      trigger_history_ids =
+        trigger_history_index |> Enum.map(fn x -> x.id end) |> List.to_string()
+
+      assert trigger_history_ids =~ trigger_history_1.id
+      assert trigger_history_ids =~ trigger_history_2.id
+    end
+
+    test "returns nil with invalid attrs" do
+      trigger_history_index = Document.trigger_history_index("invalid attrs", %{page: 1})
+      assert trigger_history_index == nil
+    end
+
+    test "returns trigger history from pipeline in user's organisation only" do
+      user = insert(:user_with_organisation)
+      pipeline_1 = insert(:pipeline, organisation: List.first(user.owned_organisations))
+      pipeline_2 = insert(:pipeline)
+      trigger_history_1 = insert(:trigger_history, pipeline: pipeline_1)
+      trigger_history_2 = insert(:trigger_history, pipeline: pipeline_2)
+
+      %{entries: trigger_history_index} = Document.trigger_history_index(user, %{page: 1})
+
+      trigger_history_ids =
+        trigger_history_index |> Enum.map(fn x -> x.id end) |> List.to_string()
+
+      assert trigger_history_ids =~ trigger_history_1.id
+      refute trigger_history_ids =~ trigger_history_2.id
+    end
+
+    test "filter by pipeline name" do
+      user = insert(:user_with_organisation)
+
+      pipeline_1 =
+        insert(:pipeline,
+          name: "First Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      pipeline_2 =
+        insert(:pipeline,
+          name: "Second Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      trigger_history_1 = insert(:trigger_history, pipeline: pipeline_1)
+      trigger_history_2 = insert(:trigger_history, pipeline: pipeline_2)
+
+      %{entries: trigger_history_index} =
+        Document.trigger_history_index(user, %{"pipeline_name" => "First", page: 1})
+
+      trigger_history_ids =
+        trigger_history_index |> Enum.map(fn x -> x.id end) |> List.to_string()
+
+      assert trigger_history_ids =~ trigger_history_1.id
+      refute trigger_history_ids =~ trigger_history_2.id
+    end
+
+    test "returns an empty list when there are no matches for the pipeline_name keyword" do
+      user = insert(:user_with_organisation)
+
+      pipeline_1 =
+        insert(:pipeline,
+          name: "First Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      pipeline_2 =
+        insert(:pipeline,
+          name: "Second Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      insert(:trigger_history, pipeline: pipeline_1)
+      insert(:trigger_history, pipeline: pipeline_2)
+
+      %{entries: trigger_history_index} =
+        Document.trigger_history_index(user, %{"pipeline_name" => "Does Not Exist", page: 1})
+
+      assert [] == trigger_history_index
+    end
+
+    test "filter by status" do
+      user = insert(:user_with_organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
+      trigger_history_1 = insert(:trigger_history, state: 1, pipeline: pipeline)
+      trigger_history_2 = insert(:trigger_history, state: 2, pipeline: pipeline)
+
+      %{entries: trigger_history_index} =
+        Document.trigger_history_index(user, %{"status" => 1, page: 1})
+
+      trigger_history_ids =
+        trigger_history_index |> Enum.map(fn x -> x.id end) |> List.to_string()
+
+      assert trigger_history_ids =~ trigger_history_1.id
+      refute trigger_history_ids =~ trigger_history_2.id
+    end
+
+    test "returns an empty list when there are no matches for the status keyword" do
+      user = insert(:user_with_organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
+      insert(:trigger_history, state: 1, pipeline: pipeline)
+      insert(:trigger_history, state: 2, pipeline: pipeline)
+
+      %{entries: trigger_history_index} =
+        Document.trigger_history_index(user, %{"status" => 3, page: 1})
+
+      assert [] == trigger_history_index
+    end
+
+    test "sorts by pipeline_name in ascending order when sort key is pipeline_name" do
+      user = insert(:user_with_organisation)
+
+      pipeline_1 =
+        insert(:pipeline,
+          name: "First Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      pipeline_2 =
+        insert(:pipeline,
+          name: "Second Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      trigger_history_1 = insert(:trigger_history, pipeline: pipeline_1)
+      trigger_history_2 = insert(:trigger_history, pipeline: pipeline_2)
+
+      %{entries: trigger_history_index} =
+        Document.trigger_history_index(user, %{"sort" => "pipeline_name", page: 1})
+
+      assert List.first(trigger_history_index).id == trigger_history_1.id
+      assert List.last(trigger_history_index).id == trigger_history_2.id
+    end
+
+    test "sorts by pipeline_name in descending order when sort key is pipeline_name_desc" do
+      user = insert(:user_with_organisation)
+
+      pipeline_1 =
+        insert(:pipeline,
+          name: "First Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      pipeline_2 =
+        insert(:pipeline,
+          name: "Second Pipeline",
+          organisation: List.first(user.owned_organisations)
+        )
+
+      trigger_history_1 = insert(:trigger_history, pipeline: pipeline_1)
+      trigger_history_2 = insert(:trigger_history, pipeline: pipeline_2)
+
+      %{entries: trigger_history_index} =
+        Document.trigger_history_index(user, %{"sort" => "pipeline_name_desc", page: 1})
+
+      assert List.first(trigger_history_index).id == trigger_history_2.id
+      assert List.last(trigger_history_index).id == trigger_history_1.id
+    end
+
+    test "sorts by status in ascending order when sort key is status" do
+      user = insert(:user_with_organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
+      trigger_history_1 = insert(:trigger_history, state: 1, pipeline: pipeline)
+      trigger_history_2 = insert(:trigger_history, state: 2, pipeline: pipeline)
+
+      %{entries: trigger_history_index} =
+        Document.trigger_history_index(user, %{"sort" => "status", page: 1})
+
+      assert List.first(trigger_history_index).id == trigger_history_1.id
+      assert List.last(trigger_history_index).id == trigger_history_2.id
+    end
+
+    test "sorts by status in descending order when sort key is status_desc" do
+      user = insert(:user_with_organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
+      trigger_history_1 = insert(:trigger_history, state: 1, pipeline: pipeline)
+      trigger_history_2 = insert(:trigger_history, state: 2, pipeline: pipeline)
+
+      %{entries: trigger_history_index} =
+        Document.trigger_history_index(user, %{"sort" => "status_desc", page: 1})
+
+      assert List.first(trigger_history_index).id == trigger_history_2.id
+      assert List.last(trigger_history_index).id == trigger_history_1.id
+    end
+
+    test "sorts by inserted_at in ascending order when sort key is inserted_at" do
+      user = insert(:user_with_organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
+
+      trigger_history_1 =
+        insert(:trigger_history, inserted_at: ~N[2023-04-18 11:56:34], pipeline: pipeline)
+
+      trigger_history_2 =
+        insert(:trigger_history, inserted_at: ~N[2023-04-18 11:57:34], pipeline: pipeline)
+
+      %{entries: trigger_history_index} =
+        Document.trigger_history_index(user, %{"sort" => "inserted_at", page: 1})
+
+      assert List.first(trigger_history_index).id == trigger_history_1.id
+      assert List.last(trigger_history_index).id == trigger_history_2.id
+    end
+
+    test "sorts by inserted_at in descending order when sort key is inserted_at_desc" do
+      user = insert(:user_with_organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
+
+      trigger_history_1 =
+        insert(:trigger_history, inserted_at: ~N[2023-04-18 11:56:34], pipeline: pipeline)
+
+      trigger_history_2 =
+        insert(:trigger_history, inserted_at: ~N[2023-04-18 11:57:34], pipeline: pipeline)
+
+      %{entries: trigger_history_index} =
+        Document.trigger_history_index(user, %{"sort" => "inserted_at_desc", page: 1})
+
+      assert List.first(trigger_history_index).id == trigger_history_2.id
+      assert List.last(trigger_history_index).id == trigger_history_1.id
+    end
+  end
 end
