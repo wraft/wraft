@@ -58,14 +58,19 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
     summary("Permission index")
     description("API to get the list of all permissions created so far")
 
+    parameters do
+      name(:query, :string, "Permission name")
+      resource(:query, :string, "Name of Resource")
+    end
+
     response(200, "Ok", Schema.ref(:PermissionByResource))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, _params) do
-    permissions_by_resource = Authorization.list_permissions()
+  def index(conn, params) do
+    permissions_by_resource = Authorization.list_permissions(params)
     render(conn, "index.json", permissions_by_resource: permissions_by_resource)
   end
 

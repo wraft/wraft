@@ -71,7 +71,7 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
           fn {resource, permissions}, acc ->
             %{
               resources: [resource | acc.resources],
-              permissions: create_premissions_data(permissions) ++ acc.permissions
+              permissions: create_permissions_data(permissions) ++ acc.permissions
             }
           end
         )
@@ -95,15 +95,15 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
     "priv/repo/data/rbac/permissions.csv"
     |> File.stream!()
     |> CSV.decode(headers: ["name", "resource", "action"])
-    |> Enum.map(fn {:ok, permission} -> create_premissions_data(permission) end)
+    |> Enum.map(fn {:ok, permission} -> create_permissions_data(permission) end)
     |> Enum.sort()
   end
 
-  defp create_premissions_data(permissions) when is_list(permissions) do
-    Enum.map(permissions, &create_premissions_data(&1))
+  defp create_permissions_data(permissions) when is_list(permissions) do
+    Enum.map(permissions, &create_permissions_data(&1))
   end
 
-  defp create_premissions_data(permission) when is_map(permission) do
+  defp create_permissions_data(permission) when is_map(permission) do
     %{
       name: permission["name"],
       action: permission["action"]

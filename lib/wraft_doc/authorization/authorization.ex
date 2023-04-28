@@ -10,11 +10,23 @@ defmodule WraftDoc.Authorization do
   @doc """
   Lists all permissions and group them by resource.
   """
-  def list_permissions do
+  def list_permissions(params \\ %{}) do
     Permission
+    |> where(^permission_filter_by_name(params))
+    |> where(^permission_filter_by_resource(params))
     |> Repo.all()
     |> Enum.group_by(& &1.resource)
   end
+
+  defp permission_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([p], ilike(p.name, ^"%#{name}%"))
+
+  defp permission_filter_by_name(_), do: true
+
+  defp permission_filter_by_resource(%{"resource" => resource} = _params),
+    do: dynamic([p], ilike(p.resource, ^"%#{resource}%"))
+
+  defp permission_filter_by_resource(_), do: true
 
   def create_permission(params \\ %{}) do
     %Permission{}
