@@ -9,11 +9,38 @@ defmodule WraftDoc.AuthorizationTest do
   describe "list_permissions/0" do
     test "lists all permissions grouped by resource" do
       resources = Authorization.list_resources()
-      permissions_by_resources = Authorization.list_permissions()
+      permissions_by_resources = Authorization.list_permissions(%{})
 
       assert resources
              |> Enum.map(&Map.has_key?(permissions_by_resources, &1))
              |> Enum.all?()
+    end
+
+    test "filter by name" do
+      permission = insert(:permission, name: "layout:custom_permission", resource: "Layout")
+      permissions_by_resources = Authorization.list_permissions(%{"name" => "custom"})
+
+      assert %{"Layout" => [^permission]} = permissions_by_resources
+    end
+
+    test "returns an empty map when there are no matches for name keyword" do
+      permissions_by_resources = Authorization.list_permissions(%{"name" => "does not exist"})
+      assert permissions_by_resources == %{}
+    end
+
+    test "filter by resource" do
+      permissions_by_resources = Authorization.list_permissions(%{"resource" => "Layout"})
+
+      # Checks that there is only one matching resource
+      assert 1 == Enum.count(permissions_by_resources)
+
+      # Checks that the only matching resource availabe in the response is Layout
+      assert %{"Layout" => permissions} = permissions_by_resources
+    end
+
+    test "returns an empty map when there are no matches for resource keyword" do
+      permissions_by_resources = Authorization.list_permissions(%{"resource" => "does not exist"})
+      assert permissions_by_resources == %{}
     end
   end
 

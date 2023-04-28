@@ -14,6 +14,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Account.User.Audience
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
+  alias WraftDoc.Authorization.Permission
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.BlockTemplate
@@ -532,6 +533,14 @@ defmodule WraftDoc.Factory do
       last_name: "user",
       email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
       status: "pending"
+    }
+  end
+
+  def permission_factory do
+    %Permission{
+      name: sequence(:name, &"permission-#{&1}"),
+      resource: sequence(:resource, &"resource-#{&1}"),
+      action: sequence(:action, &"action-#{&1}")
     }
   end
 end
