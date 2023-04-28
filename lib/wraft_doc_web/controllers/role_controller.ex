@@ -167,13 +167,16 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     summary("List of roles")
     description("All roles in an organisation")
 
+    parameter(:name, :query, :string, "Role Name")
+    parameter(:sort, :query, :string, "Sort Keys => name, name_desc")
+
     response(200, "Ok", Schema.ref(:ListOfRoles))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def index(conn, _params) do
+  def index(conn, params) do
     current_user = conn.assigns[:current_user]
-    roles = Enterprise.roles_in_users_organisation(current_user)
+    roles = Enterprise.roles_in_users_organisation(current_user, params)
     render(conn, "index.json", roles: roles)
   end
 

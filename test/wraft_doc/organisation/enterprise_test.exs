@@ -21,14 +21,14 @@ defmodule WraftDoc.EnterpriseTest do
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
   test "get flow returns flow data by id" do
     user = insert(:user_with_organisation)
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
     r_flow = Enterprise.get_flow(flow.id, user)
     assert flow.name == r_flow.name
   end
 
   test "get state returns states data " do
     user = insert(:user_with_organisation)
-    state = insert(:state, organisation: user.organisation)
+    state = insert(:state, organisation: List.first(user.owned_organisations))
     r_state = Enterprise.get_state(user, state.id)
     assert state.state == r_state.state
   end
@@ -228,7 +228,7 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "show flow preloads flow with creator and states" do
     user = insert(:user_with_organisation)
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
     state = insert(:state, creator: user, flow: flow)
     flow = Enterprise.show_flow(flow.id, user)
 
@@ -297,8 +297,9 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "delete states deletes and returns a state " do
     user = insert(:user_with_organisation)
-    flow = insert(:flow, creator: user, organisation: user.organisation)
-    state = insert(:state, creator: user, organisation: user.organisation, flow: flow)
+    [organisation] = user.owned_organisations
+    flow = insert(:flow, creator: user, organisation: organisation)
+    state = insert(:state, creator: user, organisation: organisation, flow: flow)
     count_before = State |> Repo.all() |> length()
     {:ok, d_state} = Enterprise.delete_state(state)
     count_after = State |> Repo.all() |> length()
@@ -330,6 +331,8 @@ defmodule WraftDoc.EnterpriseTest do
       "address" => "Kodappalaya dikku estate",
       "gstin" => "32SDFASDF65SD6F"
     }
+
+    insert(:plan, name: "Free Trial")
 
     count_before = Organisation |> Repo.all() |> length()
 
@@ -390,7 +393,7 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   test "update organisation updates an organisation" do
-    organisation = insert(:organisation)
+    organisation = insert(:organisation, creator: insert(:user))
     count_before = Organisation |> Repo.all() |> length()
 
     organisation =
@@ -417,11 +420,11 @@ defmodule WraftDoc.EnterpriseTest do
   describe "create_approval_system/2" do
     test "create approval system on valid attributes" do
       user = insert(:user_with_organisation)
-
-      pre_state = insert(:state, organisation: user.organisation)
-      post_state = insert(:state, organisation: user.organisation)
-      approver = insert(:user, organisation: user.organisation)
-      flow = insert(:flow, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      pre_state = insert(:state, organisation: organisation)
+      post_state = insert(:state, organisation: organisation)
+      approver = insert(:user)
+      flow = insert(:flow, organisation: organisation)
 
       count_before = ApprovalSystem |> Repo.all() |> length()
 
@@ -459,7 +462,7 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "show approval system returns apprval system data" do
     user = insert(:user_with_organisation)
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
 
     %{id: id, flow: flow, pre_state: _pre_state} =
       insert(:approval_system, creator: user, flow: flow)
@@ -470,10 +473,11 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "update approval system updates a system" do
     user = insert(:user_with_organisation)
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    [organisation] = user.owned_organisations
+    flow = insert(:flow, creator: user, organisation: organisation)
 
-    pre_state = insert(:state, creator: user, organisation: user.organisation)
-    post_state = insert(:state, creator: user, organisation: user.organisation)
+    pre_state = insert(:state, creator: user, organisation: organisation)
+    post_state = insert(:state, creator: user, organisation: organisation)
 
     approval_system = insert(:approval_system, creator: user, flow: flow)
 
@@ -544,7 +548,10 @@ defmodule WraftDoc.EnterpriseTest do
     user = insert(:user_with_organisation)
     role = insert(:role)
     to_email = "myemail@app.com"
-    {:ok, oban_job} = Enterprise.invite_team_member(user, user.organisation, to_email, role)
+
+    {:ok, oban_job} =
+      Enterprise.invite_team_member(user, List.first(user.owned_organisations), to_email, role)
+
     assert oban_job.args.email == to_email
   end
 
@@ -552,8 +559,9 @@ defmodule WraftDoc.EnterpriseTest do
     user = insert(:user_with_organisation)
     role = insert(:role)
     to_email = "myemail@app.com"
+    [organisation] = user.owned_organisations
     auth_token_count = AuthToken |> Repo.all() |> length()
-    Enterprise.invite_team_member(user, user.organisation, to_email, role)
+    Enterprise.invite_team_member(user, organisation, to_email, role)
     assert AuthToken |> Repo.all() |> length() == auth_token_count + 1
   end
 
@@ -697,7 +705,7 @@ defmodule WraftDoc.EnterpriseTest do
       user = Repo.preload(user, [:roles])
       role_names = Enum.map(user.roles, fn x -> x.name end)
       user = Map.put(user, :role_names, role_names)
-      membership = insert(:membership, organisation: user.organisation)
+      membership = insert(:membership, organisation: List.first(user.owned_organisations))
       fetched_membership = Enterprise.get_membership(membership.id, user)
 
       assert fetched_membership.id == membership.id
@@ -768,7 +776,7 @@ defmodule WraftDoc.EnterpriseTest do
 
     test "does not update membership but creates new payment with failed razorpay id but valid attrs" do
       user = insert(:user_with_organisation)
-      membership = insert(:membership, organisation: user.organisation)
+      membership = insert(:membership, organisation: List.first(user.owned_organisations))
       plan = insert(:plan, monthly_amount: 100_000)
       payment_count = Payment |> Repo.all() |> length
       {:ok, razorpay} = Razorpay.Payment.get(@failed_razorpay_id)
@@ -834,7 +842,7 @@ defmodule WraftDoc.EnterpriseTest do
       user = Repo.preload(user, [:roles])
       role_names = Enum.map(user.roles, fn x -> x.name end)
       user = Map.put(user, :role_names, role_names)
-      payment = insert(:payment, organisation: user.organisation)
+      payment = insert(:payment, organisation: List.first(user.owned_organisations))
       fetched_payement = Enterprise.get_payment(payment.id, user)
       assert fetched_payement.razorpay_id == payment.razorpay_id
       assert fetched_payement.id == payment.id
@@ -878,7 +886,7 @@ defmodule WraftDoc.EnterpriseTest do
       user = Repo.preload(user, [:roles])
       role_names = Enum.map(user.roles, fn x -> x.name end)
       user = Map.put(user, :role_names, role_names)
-      payment = insert(:payment, organisation: user.organisation)
+      payment = insert(:payment, organisation: List.first(user.owned_organisations))
       fetched_payement = Enterprise.show_payment(payment.id, user)
       assert fetched_payement.razorpay_id == payment.razorpay_id
       assert fetched_payement.id == payment.id
@@ -912,9 +920,13 @@ defmodule WraftDoc.EnterpriseTest do
   describe "members_index/2" do
     test "returns the list of all members of current user's organisation" do
       organisation = insert(:organisation)
-      user1 = insert(:user, organisation: organisation, current_org_id: organisation.id)
-      user2 = insert(:user, organisation: organisation)
-      user3 = insert(:user, organisation: organisation)
+      user1 = insert(:user, current_org_id: organisation.id)
+      user2 = insert(:user)
+      user3 = insert(:user)
+
+      insert(:user_organisation, user: user1, organisation: organisation)
+      insert(:user_organisation, user: user2, organisation: organisation)
+      insert(:user_organisation, user: user3, organisation: organisation)
 
       response = Enterprise.members_index(user1, %{"page" => 1})
       user_ids = response.entries |> Enum.map(fn x -> x.id end) |> to_string()
@@ -930,11 +942,14 @@ defmodule WraftDoc.EnterpriseTest do
     test "returns the list of all members of current user's organisation matching the given name" do
       organisation = insert(:organisation)
 
-      user1 =
-        insert(:user, name: "John", organisation: organisation, current_org_id: organisation.id)
+      user1 = insert(:user, name: "John", current_org_id: organisation.id)
 
-      user2 = insert(:user, organisation: organisation, name: "John Doe")
-      user3 = insert(:user, organisation: organisation)
+      user2 = insert(:user, name: "John Doe")
+      user3 = insert(:user)
+
+      insert(:user_organisation, user: user1, organisation: organisation)
+      insert(:user_organisation, user: user2, organisation: organisation)
+      insert(:user_organisation, user: user3, organisation: organisation)
 
       response = Enterprise.members_index(user1, %{"page" => 1, "name" => "joh"})
       user_ids = response.entries |> Enum.map(fn x -> x.id end) |> to_string()
@@ -999,7 +1014,7 @@ defmodule WraftDoc.EnterpriseTest do
   describe "update_vendor/2" do
     test "update vendor on valid attrs" do
       user = insert(:user)
-      vendor = insert(:vendor, creator: user, organisation: user.organisation)
+      vendor = insert(:vendor, creator: user, organisation: List.first(user.owned_organisations))
       count_before = Vendor |> Repo.all() |> length()
 
       vendor = Enterprise.update_vendor(vendor, @valid_vendor_attrs)
@@ -1028,7 +1043,7 @@ defmodule WraftDoc.EnterpriseTest do
   describe "get_vendor/1" do
     test "get vendor returns the vendor data" do
       user = insert(:user_with_organisation)
-      vendor = insert(:vendor, creator: user, organisation: user.organisation)
+      vendor = insert(:vendor, creator: user, organisation: List.first(user.owned_organisations))
       v_vendor = Enterprise.get_vendor(user, vendor.id)
       assert v_vendor.name == vendor.name
       assert v_vendor.email == vendor.email
@@ -1051,7 +1066,7 @@ defmodule WraftDoc.EnterpriseTest do
   describe "show vendor" do
     test "show vendor returns the vendor data and preloads" do
       user = insert(:user_with_organisation)
-      vendor = insert(:vendor, creator: user, organisation: user.organisation)
+      vendor = insert(:vendor, creator: user, organisation: List.first(user.owned_organisations))
       v_vendor = Enterprise.show_vendor(vendor.id, user)
       assert v_vendor.name == vendor.name
       assert v_vendor.email == vendor.email
@@ -1084,8 +1099,9 @@ defmodule WraftDoc.EnterpriseTest do
 
   test "vendor index lists the vendor data" do
     user = insert(:user_with_organisation)
-    v1 = insert(:vendor, creator: user, organisation: user.organisation)
-    v2 = insert(:vendor, creator: user, organisation: user.organisation)
+    [organisation] = user.owned_organisations
+    v1 = insert(:vendor, creator: user, organisation: organisation)
+    v2 = insert(:vendor, creator: user, organisation: organisation)
     vendor_index = Enterprise.vendor_index(user, %{page_number: 1})
 
     assert vendor_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ v1.name
@@ -1110,8 +1126,86 @@ defmodule WraftDoc.EnterpriseTest do
   end
 
   describe "roles_in_users_organisation/1" do
-    # TODO - Test success case with valid params
-    # TODO - Test error case with invalid params that raises exception
+    test "returns all roles in user's current organisation" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+
+      role1 = insert(:role, name: "Editor", organisation: organisation)
+      role2 = insert(:role, name: "Admin", organisation: organisation)
+
+      roles_index_by_org = Enterprise.roles_in_users_organisation(user, %{})
+
+      roles = roles_index_by_org |> Enum.map(fn x -> x.name end) |> List.to_string()
+
+      assert roles =~ role1.name
+      assert roles =~ role2.name
+    end
+
+    test "returns roles which are only part of the user's current organisation" do
+      user = insert(:user_with_organisation)
+
+      role1 = insert(:role, name: "Editor", organisation: List.first(user.owned_organisations))
+      role2 = insert(:role, name: "Admin")
+
+      roles_index_by_org = Enterprise.roles_in_users_organisation(user, %{})
+
+      roles = roles_index_by_org |> Enum.map(fn x -> x.name end) |> List.to_string()
+
+      assert roles =~ role1.name
+      refute roles =~ role2.name
+    end
+
+    test "returns empty list if there are no roles in the user's current organisation" do
+      user = insert(:user_with_organisation)
+      assert [] == Enterprise.roles_in_users_organisation(user, %{})
+    end
+
+    test "filter by name" do
+      user = insert(:user_with_organisation)
+
+      role1 = insert(:role, name: "Editor", organisation: List.first(user.owned_organisations))
+      role2 = insert(:role, name: "Admin", organisation: List.first(user.owned_organisations))
+
+      roles_index_by_org = Enterprise.roles_in_users_organisation(user, %{"name" => "Edi"})
+
+      roles = roles_index_by_org |> Enum.map(fn x -> x.name end) |> List.to_string()
+
+      assert roles =~ role1.name
+      refute roles =~ role2.name
+    end
+
+    test "returns an empty list when there are no matches for name keyword" do
+      user = insert(:user_with_organisation)
+
+      insert(:role, name: "Editor", organisation: List.first(user.owned_organisations))
+      insert(:role, name: "Admin", organisation: List.first(user.owned_organisations))
+
+      assert [] == Enterprise.roles_in_users_organisation(user, %{"name" => "does not exist"})
+    end
+
+    test "sorts by name in ascending order when sort key is name" do
+      user = insert(:user_with_organisation)
+
+      role1 = insert(:role, name: "Admin", organisation: List.first(user.owned_organisations))
+      role2 = insert(:role, name: "Editor", organisation: List.first(user.owned_organisations))
+
+      roles_index_by_org = Enterprise.roles_in_users_organisation(user, %{"sort" => "name"})
+
+      assert List.first(roles_index_by_org).name == role1.name
+      assert List.last(roles_index_by_org).name == role2.name
+    end
+
+    test "sorts by name in descending order when sort key is name_desc" do
+      user = insert(:user_with_organisation)
+
+      role1 = insert(:role, name: "Admin", organisation: List.first(user.owned_organisations))
+      role2 = insert(:role, name: "Editor", organisation: List.first(user.owned_organisations))
+
+      roles_index_by_org = Enterprise.roles_in_users_organisation(user, %{"sort" => "name_desc"})
+
+      assert List.first(roles_index_by_org).name == role2.name
+      assert List.last(roles_index_by_org).name == role1.name
+    end
   end
 
   describe "delete_user/2" do
