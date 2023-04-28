@@ -1208,12 +1208,29 @@ defmodule WraftDoc.Document do
   @doc """
   Index of themes inside current user's organisation.
   """
-  # TODO - improve tests
   @spec theme_index(User.t(), map) :: map
   def theme_index(%User{current_org_id: org_id}, params) do
-    query = from(t in Theme, where: t.organisation_id == ^org_id, order_by: [desc: t.id])
-    Repo.paginate(query, params)
+    Theme
+    |> where([t], t.organisation_id == ^org_id)
+    |> where(^theme_filter_by_name(params))
+    |> order_by(^theme_sort(params))
+    |> Repo.paginate(params)
   end
+
+  defp theme_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([t], ilike(t.name, ^"%#{name}%"))
+
+  defp theme_filter_by_name(_), do: true
+
+  defp theme_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([t], t.name)]
+
+  defp theme_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([t], t.name)]
+
+  defp theme_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([t], t.inserted_at)]
+
+  defp theme_sort(%{"sort" => "inserted_at_desc"}), do: [desc: dynamic([t], t.inserted_at)]
+
+  defp theme_sort(_), do: []
 
   @doc """
   Get a theme from its UUID.

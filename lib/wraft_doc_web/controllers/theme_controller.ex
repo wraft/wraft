@@ -181,7 +181,17 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
     get("/themes")
     summary("Theme index")
     description("Theme index API")
+
     parameter(:page, :query, :string, "Page number")
+    parameter(:name, :query, :string, "Theme Name")
+
+    parameter(
+      :sort,
+      :query,
+      :string,
+      "Sort Keys => name, name_desc, inserted_at, inserted_at_desc"
+    )
+
     response(200, "Ok", Schema.ref(:ThemeIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
