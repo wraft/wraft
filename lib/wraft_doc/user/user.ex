@@ -109,18 +109,4 @@ defmodule WraftDoc.Account.User do
     |> cast(attrs, [:deleted_at])
     |> validate_required([:deleted_at])
   end
-
-  defp generate_encrypted_password(current_changeset) do
-    case current_changeset do
-      %Ecto.Changeset{valid?: true, changes: %{password: password}} ->
-        put_change(
-          current_changeset,
-          :encrypted_password,
-          Bcrypt.hash_pwd_salt(password)
-        )
-
-      _ ->
-        current_changeset
-    end
-  end
 end

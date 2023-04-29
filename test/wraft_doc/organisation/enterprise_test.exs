@@ -424,6 +424,7 @@ defmodule WraftDoc.EnterpriseTest do
       pre_state = insert(:state, organisation: organisation)
       post_state = insert(:state, organisation: organisation)
       approver = insert(:user)
+      insert(:user_organisation, user: approver, organisation: organisation)
       flow = insert(:flow, organisation: organisation)
 
       count_before = ApprovalSystem |> Repo.all() |> length()
@@ -435,10 +436,11 @@ defmodule WraftDoc.EnterpriseTest do
         "flow_id" => flow.id
       }
 
-      _approval_system = Enterprise.create_approval_system(user, params)
+      approval_system = Enterprise.create_approval_system(user, params)
 
       count_after = ApprovalSystem |> Repo.all() |> length()
 
+      assert %ApprovalSystem{} = approval_system
       assert count_before + 1 == count_after
     end
 
