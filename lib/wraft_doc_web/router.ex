@@ -31,10 +31,12 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.ExAuditTrack)
   end
 
+  # FIXME No need of this plug
   pipeline :admin do
     plug(WraftDocWeb.Plug.AdminCheck)
   end
 
+  # FIXME No need of this plug
   pipeline :super_admin do
     plug(WraftDocWeb.Plug.SuperAdminCheck)
   end
