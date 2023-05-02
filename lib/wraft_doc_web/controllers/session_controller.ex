@@ -4,24 +4,25 @@ defmodule WraftDocWeb.SessionController do
   """
   use WraftDocWeb, :controller
 
-  alias WraftDoc.{Account, Account.User}
+  alias WraftDoc.InternalUsers
+  alias WraftDoc.InternalUsers.InternalUser
 
   def new(conn, _params) do
-    changeset = Account.change_user()
+    changeset = InternalUsers.change_internal_user()
     render(conn, changeset: changeset)
   end
 
   def create(conn, %{"session" => params}) do
-    with %User{} = user <- Account.admin_find(params["email"]),
-         %User{} = user <- Account.authenticate_admin(%{user: user, password: params["password"]}) do
+    with %InternalUser{} = user <- InternalUsers.get_by_email(params["email"]),
+         true <- Bcrypt.verify_pass(params["password"], user.encrypted_password) do
       conn
       |> put_session(:admin_id, user.id)
-      |> put_flash(:info, "Signed in succesfully")
+      |> put_flash(:info, "Signed in successfully.")
       |> redirect(to: kaffy_home_path(conn, :index))
     else
       _ ->
         conn
-        |> put_flash(:error, "Please provide the correct login credentials to login")
+        |> put_flash(:error, "Please provide the correct login credentials to login.")
         |> redirect(to: session_path(conn, :new))
     end
   end

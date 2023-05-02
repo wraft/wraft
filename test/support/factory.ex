@@ -47,6 +47,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.InternalUsers.InternalUser
   alias WraftDoc.WaitingLists.WaitingList
 
   def user_factory do
@@ -541,6 +542,14 @@ defmodule WraftDoc.Factory do
       name: sequence(:name, &"permission-#{&1}"),
       resource: sequence(:resource, &"resource-#{&1}"),
       action: sequence(:action, &"action-#{&1}")
+    }
+  end
+
+  def internal_user_factory do
+    %InternalUser{
+      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
+      password: "encrypt",
+      encrypted_password: Bcrypt.hash_pwd_salt("encrypt")
     }
   end
 end

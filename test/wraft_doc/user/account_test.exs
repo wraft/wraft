@@ -605,12 +605,7 @@ defmodule WraftDoc.AccountTest do
     # TODO -> test failure case
   end
 
-  describe "admin_find/2" do
-    # TODO -> test success case
-    # TODO -> test failure case
-  end
-
-  describe "get_user_by_email/2" do
+  describe "get_user_by_email/1" do
     # TODO -> test success case
     # TODO -> test failure case
   end
