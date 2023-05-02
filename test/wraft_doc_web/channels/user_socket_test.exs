@@ -3,15 +3,11 @@ defmodule WraftDocWeb.UserSocketTest do
   Test for user socket
   """
   use WraftDocWeb.ChannelCase
-  alias WraftDoc.Account
+
+  import WraftDoc.Factory
+
   alias WraftDocWeb.Guardian
   alias WraftDocWeb.UserSocket
-
-  @params %{
-    name: "Functionary",
-    email: "functionaryyyy@gmail.com",
-    password: "functionary"
-  }
 
   test "fail to authenticate without token" do
     assert :error = connect(UserSocket, %{})
@@ -22,7 +18,7 @@ defmodule WraftDocWeb.UserSocketTest do
   end
 
   test "authenticate and assign user ID with valid token" do
-    {:ok, user} = Account.create_user(@params)
+    {:ok, user} = insert(:user)
     {:ok, token, _claims} = Guardian.encode_and_sign(user)
 
     assert {:ok, socket} = connect(UserSocket, %{"token" => token})
