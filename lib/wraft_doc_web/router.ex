@@ -31,30 +31,16 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.ExAuditTrack)
   end
 
-  # FIXME No need of this plug
-  pipeline :admin do
-    plug(WraftDocWeb.Plug.AdminCheck)
-  end
-
-  # FIXME No need of this plug
-  pipeline :super_admin do
-    plug(WraftDocWeb.Plug.SuperAdminCheck)
-  end
-
-  pipeline :admin_authenticate do
-    plug(WraftDocWeb.Plug.AdminAuthenticate)
+  pipeline :current_admin do
+    plug(WraftDocWeb.Plug.CurrentAdmin)
   end
 
   pipeline :flags do
     plug :accepts, ["html"]
     plug :put_secure_browser_headers
     plug :fetch_session
-    plug WraftDocWeb.Plug.AdminAuthenticate
+    plug WraftDocWeb.Plug.CurrentAdmin
   end
-
-  # pipeline :can do
-  #   plug(WraftDocWeb.Plug.Authorized)
-  # end
 
   scope "/", WraftDocWeb do
     # Use the default browser stack
@@ -68,9 +54,7 @@ defmodule WraftDocWeb.Router do
     scope "/admin" do
       # Admin login
       get("/signin", SessionController, :new)
-      get("/signup/new", SignupController, :new)
       post("/signin", SessionController, :create)
-      post("/signup", SignupController, :create)
     end
   end
 
@@ -285,21 +269,24 @@ defmodule WraftDocWeb.Router do
 
       # Update and Delete pipe stage
       resources("/stages", PipeStageController, only: [:update, :delete])
+
+      resources("/permissions", PermissionController, only: [:index])
+      get("/resources", PermissionController, :resource_index)
+
+      resources(
+        "/field_types",
+        FieldTypeController,
+        only: [:create, :index, :show, :update, :delete]
+      )
     end
   end
 
   # Scope which requires authorization.
+  # TODO Decide what all checks we need for these APIs
   scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth, :super_admin, :ex_audit_track, :email_verify])
+    pipe_through([:api, :api_auth, :ex_audit_track, :email_verify])
 
     scope "/v1", Api.V1, as: :v1 do
-      resources("/permissions", PermissionController, only: [:index])
-      get("/resources", PermissionController, :resource_index)
-
-      resources("/field_types", FieldTypeController,
-        only: [:create, :index, :show, :update, :delete]
-      )
-
       # Create, Update and delete plans
       resources("/plans", PlanController, only: [:create, :update, :delete])
 
@@ -308,10 +295,10 @@ defmodule WraftDocWeb.Router do
     end
   end
 
-  use Kaffy.Routes, scope: "/admin", pipe_through: [:admin_authenticate]
+  use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin]
 
   scope "/admin", WraftDocWeb do
-    pipe_through([:kaffy_browser, :admin_authenticate])
+    pipe_through([:kaffy_browser, :current_admin])
     delete("/sign-out", SessionController, :delete)
   end
 
@@ -322,7 +309,7 @@ defmodule WraftDocWeb.Router do
 
   # coveralls-ignore-start
   scope "/" do
-    pipe_through([:browser, :api_auth, :admin])
+    pipe_through([:browser, :api_auth])
     live_dashboard("/dashboard")
   end
 

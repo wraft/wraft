@@ -43,13 +43,6 @@ defmodule WraftDoc.Account do
   }
 
   @doc """
-  User changeset
-  """
-  def change_user do
-    User.changeset(%User{})
-  end
-
-  @doc """
    Creates a user, generates a personal organisation for the user
    and adds the user to an organisation when the user has an invite token
   """
@@ -130,13 +123,6 @@ defmodule WraftDoc.Account do
         "personal_organisation_roles"
       )
     end)
-  end
-
-  @spec create_user(map()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
-  def create_user(params) do
-    %User{}
-    |> User.changeset(params)
-    |> Repo.insert()
   end
 
   def show_role(user, id) do
@@ -259,15 +245,6 @@ defmodule WraftDoc.Account do
     end
   end
 
-  def admin_find(email) do
-    email
-    |> get_user_by_email(:superadmin)
-    |> case do
-      user = %User{} -> user
-      _ -> {:error, :invalid}
-    end
-  end
-
   @doc """
     Authenticate user and generate token.
   """
@@ -285,16 +262,6 @@ defmodule WraftDoc.Account do
 
       _ ->
         {:error, :invalid}
-    end
-  end
-
-  @doc """
-  Authenticate admin
-  """
-  def authenticate_admin(%{user: user, password: password}) do
-    case Bcrypt.verify_pass(password, user.encrypted_password) do
-      true -> user
-      _ -> {:error, :invalid_credentials}
     end
   end
 
@@ -381,41 +348,6 @@ defmodule WraftDoc.Account do
   end
 
   def get_user_by_email(_email) do
-    nil
-  end
-
-  defp get_user_by_email(email, :admin) when is_binary(email) do
-    query =
-      from(u in User,
-        where: u.email == ^email,
-        join: r in Role,
-        where: r.name == "admin",
-        join: ur in UserRole,
-        where: ur.role_id == r.id and ur.user_id == u.id
-      )
-
-    Repo.one(query)
-  end
-
-  defp get_user_by_email(email, :superadmin) when is_binary(email) do
-    query =
-      from(u in User,
-        where: u.email == ^email,
-        preload: :roles
-      )
-
-    %{roles: roles} = user = Repo.one(query)
-
-    roles
-    |> Enum.map(fn x -> x.name end)
-    |> Enum.member?("superadmin")
-    |> case do
-      true -> user
-      _ -> nil
-    end
-  end
-
-  defp get_user_by_email(_email, _) do
     nil
   end
 
