@@ -11,6 +11,15 @@ defmodule WraftDoc.Kaffy.Config do
           user_role: [schema: WraftDoc.Account.UserRole, admin: WraftDocWeb.UserRoleAdmin]
         ]
       ],
+      internal_user: [
+        name: "Internal User",
+        resources: [
+          internal_user: [
+            schema: WraftDoc.InternalUsers.InternalUser,
+            admin: WraftDocWeb.InternalUserAdmin
+          ]
+        ]
+      ],
       enterprise: [
         name: "Enterprise",
         resources: [
