@@ -41,7 +41,12 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
 
   test "update comments on valid attributes", %{conn: conn} do
     current_user = conn.assigns[:current_user]
-    comment = insert(:comment, user: current_user, organisation: current_user.organisation)
+
+    comment =
+      insert(:comment,
+        user: current_user,
+        organisation: List.first(current_user.owned_organisations)
+      )
 
     count_before = Comment |> Repo.all() |> length()
 
@@ -56,7 +61,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
 
   test "does't update comments for invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    comment = insert(:comment, user: user, organisation: user.organisation)
+    comment = insert(:comment, user: user, organisation: List.first(user.owned_organisations))
 
     conn =
       conn
@@ -68,9 +73,10 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
 
   test "index lists comments under a master", %{conn: conn} do
     user = conn.assigns.current_user
+    [organisation] = user.owned_organisations
 
-    a1 = insert(:comment, user: user, organisation: user.organisation)
-    a2 = insert(:comment, user: user, organisation: user.organisation)
+    a1 = insert(:comment, user: user, organisation: organisation)
+    a2 = insert(:comment, user: user, organisation: organisation)
 
     conn =
       get(
@@ -86,12 +92,12 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
 
   test "replies lists replies under a comment", %{conn: conn} do
     user = conn.assigns.current_user
-    comment = insert(:comment, user: user, organisation: user.organisation)
+    comment = insert(:comment, user: user, organisation: List.first(user.owned_organisations))
 
     a1 =
       insert(:comment,
         user: user,
-        organisation: user.organisation,
+        organisation: List.first(user.owned_organisations),
         parent_id: comment.id,
         is_parent: false
       )
@@ -99,7 +105,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
     a2 =
       insert(:comment,
         user: user,
-        organisation: user.organisation,
+        organisation: List.first(user.owned_organisations),
         parent_id: comment.id,
         is_parent: false
       )
@@ -123,7 +129,12 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
 
   test "show renders comment details by id", %{conn: conn} do
     current_user = conn.assigns[:current_user]
-    comment = insert(:comment, user: current_user, organisation: current_user.organisation)
+
+    comment =
+      insert(:comment,
+        user: current_user,
+        organisation: List.first(current_user.owned_organisations)
+      )
 
     conn = get(conn, Routes.v1_comment_path(conn, :show, comment.id))
 
@@ -137,7 +148,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
 
   test "delete comment by given id", %{conn: conn} do
     user = conn.assigns.current_user
-    comment = insert(:comment, user: user, organisation: user.organisation)
+    comment = insert(:comment, user: user, organisation: List.first(user.owned_organisations))
     count_before = Comment |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_comment_path(conn, :delete, comment.id))
@@ -147,7 +158,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
 
   test "error not found for user from another organisation", %{conn: conn} do
     user = insert(:user)
-    comment = insert(:comment, user: user, organisation: user.organisation)
+    comment = insert(:comment, user: user, organisation: List.first(user.owned_organisations))
 
     conn = get(conn, Routes.v1_comment_path(conn, :show, comment.id))
 

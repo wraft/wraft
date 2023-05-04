@@ -1,7 +1,12 @@
 defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
-  import WraftDoc.Factory
-  alias WraftDoc.{Account.User, Enterprise.Organisation, Repo}
   use WraftDocWeb.ConnCase
+
+  import WraftDoc.Factory
+
+  alias WraftDoc.Account.User
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Repo
+
   @moduletag :controller
 
   @valid_attrs %{
@@ -67,11 +72,13 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   end
 
   test "updates organisation for valid attributes", %{conn: conn} do
+    %{id: user_id} = insert(:user)
     organisation = insert(:organisation)
+    params = Map.put(@valid_attrs, "creator_id", user_id)
 
     count_before = Organisation |> Repo.all() |> length
 
-    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), @valid_attrs)
+    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), params)
 
     assert Organisation |> Repo.all() |> length == count_before
     assert json_response(conn, 200)["name"] == @valid_attrs["name"]
@@ -127,15 +134,18 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   describe "members/2" do
     test "returns the list of all members of current user's organisation", %{conn: conn} do
       user1 = conn.assigns[:current_user]
-      user2 = insert(:user, organisation: user1.organisation)
-      insert(:profile, user: user2)
-      user3 = insert(:user, organisation: user1.organisation)
-      insert(:profile, user: user3)
+      [organisation] = user1.owned_organisations
+
+      user2 = insert(:user)
+      insert(:user_organisation, user: user2, organisation: organisation)
+
+      user3 = insert(:user)
+      insert(:user_organisation, user: user3, organisation: organisation)
 
       conn =
         get(
           conn,
-          Routes.v1_organisation_path(conn, :members, user1.organisation, %{page: 1})
+          Routes.v1_organisation_path(conn, :members, organisation, %{page: 1})
         )
 
       user_ids =
@@ -152,15 +162,18 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     test "returns the list of all members of current user's organisation matching the given name",
          %{conn: conn} do
       user1 = conn.assigns[:current_user]
-      user2 = insert(:user, organisation: user1.organisation, name: "John")
-      insert(:profile, user: user2)
-      user3 = insert(:user, organisation: user1.organisation, name: "John Doe")
-      insert(:profile, user: user3)
+      [organisation] = user1.owned_organisations
+
+      user2 = insert(:user, name: "John")
+      insert(:user_organisation, user: user2, organisation: organisation)
+
+      user3 = insert(:user, name: "John Doe")
+      insert(:user_organisation, user: user3, organisation: organisation)
 
       conn =
         get(
           conn,
-          Routes.v1_organisation_path(conn, :members, user1.organisation, %{page: 1, name: "joh"})
+          Routes.v1_organisation_path(conn, :members, organisation, %{page: 1, name: "joh"})
         )
 
       user_ids =
@@ -176,23 +189,26 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
     test "only list existing members ", %{conn: conn} do
       user = conn.assigns[:current_user]
-      user2 = insert(:user, organisation: user.organisation, name: "John")
-      insert(:profile, user: user2)
+      [organisation] = user.owned_organisations
 
-      user3 =
-        insert(:user,
-          organisation: user.organisation,
-          name: "John Doe",
-          deleted_at: NaiveDateTime.local_now()
-        )
+      user2 = insert(:user, name: "John")
+      insert(:user_organisation, user: user2, organisation: organisation)
 
-      insert(:profile, user: user3)
+      user3 = insert(:user, name: "John Doe")
+
+      insert(:user_organisation,
+        user: user3,
+        organisation: organisation,
+        deleted_at: NaiveDateTime.local_now()
+      )
 
       conn =
         get(
           conn,
-          Routes.v1_organisation_path(conn, :members, user.organisation)
+          Routes.v1_organisation_path(conn, :members, organisation)
         )
+
+      json_response(conn, 200)
 
       assert length(json_response(conn, 200)["members"]) == 2
       assert User |> Repo.all() |> length() == 3

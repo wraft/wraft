@@ -4,8 +4,10 @@ defmodule WraftDocWeb.Plug.AddActionLog do
   """
 
   import Plug.Conn
+  alias WraftDoc.Account.User
+  alias WraftDoc.ActionLog
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.{Account.User, ActionLog, Repo}
+  alias WraftDoc.Repo
 
   def init(_params) do
   end
@@ -72,7 +74,7 @@ defmodule WraftDocWeb.Plug.AddActionLog do
     params = change_structs_to_maps(params)
 
     user =
-      case User |> Repo.get_by(email: email) |> Repo.preload(:organisation) do
+      case Repo.get_by(User, email: email) do
         %User{} = user -> user
         _ -> %{email: email, name: "Unknown user"}
       end

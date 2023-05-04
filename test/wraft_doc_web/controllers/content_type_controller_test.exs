@@ -18,9 +18,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "create content types by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
+    [organisation] = user.owned_organisations
     count_before = ContentType |> Repo.all() |> length()
-    %{id: flow_id} = insert(:flow, creator: user, organisation: user.organisation)
-    %{id: layout_id} = insert(:layout, creator: user, organisation: user.organisation)
+    %{id: flow_id} = insert(:flow, creator: user, organisation: organisation)
+    %{id: layout_id} = insert(:layout, creator: user, organisation: organisation)
 
     params = Map.merge(@valid_attrs, %{flow_id: flow_id, layout_id: layout_id})
 
@@ -35,9 +36,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "does not create content types by invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
+    [organisation] = user.owned_organisations
     count_before = ContentType |> Repo.all() |> length()
-    %{id: flow_id} = insert(:flow, creator: user, organisation: user.organisation)
-    %{id: layout_id} = insert(:layout, creator: user, organisation: user.organisation)
+    %{id: flow_id} = insert(:flow, creator: user, organisation: organisation)
+    %{id: layout_id} = insert(:layout, creator: user, organisation: organisation)
 
     params = Map.merge(@invalid_attrs, %{flow_id: flow_id, layout_id: layout_id})
 
@@ -52,8 +54,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "update content type on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
-    theme = insert(:theme, creator: user, organisation: user.organisation)
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    [organisation] = user.owned_organisations
+    theme = insert(:theme, creator: user, organisation: organisation)
+    content_type = insert(:content_type, creator: user, organisation: organisation)
 
     count_before = ContentType |> Repo.all() |> length()
 
@@ -74,7 +77,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "does't update content types for invalid attrs", %{conn: conn} do
     user = conn.assigns[:current_user]
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+
+    content_type =
+      insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
 
     conn =
       conn
@@ -86,8 +91,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "index lists content type by current user", %{conn: conn} do
     user = conn.assigns.current_user
-    ct1 = insert(:content_type, creator: user, organisation: user.organisation)
-    ct2 = insert(:content_type, creator: user, organisation: user.organisation)
+    [organisation] = user.owned_organisations
+    ct1 = insert(:content_type, creator: user, organisation: organisation)
+    ct2 = insert(:content_type, creator: user, organisation: organisation)
 
     conn = get(conn, Routes.v1_content_type_path(conn, :index))
     ct_index = json_response(conn, 200)["content_types"]
@@ -98,7 +104,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "show renders content type details by id", %{conn: conn} do
     user = conn.assigns.current_user
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+
+    content_type =
+      insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
 
     conn = get(conn, Routes.v1_content_type_path(conn, :show, content_type.id))
 
@@ -112,7 +120,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
   test "delete content type by given id", %{conn: conn} do
     user = conn.assigns.current_user
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+
+    content_type =
+      insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
 
     count_before = ContentType |> Repo.all() |> length()
 

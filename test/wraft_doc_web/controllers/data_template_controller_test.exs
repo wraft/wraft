@@ -18,7 +18,9 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
 
   test "create data templates by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+
+    content_type =
+      insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
 
     count_before = DataTemplate |> Repo.all() |> length()
 
@@ -33,7 +35,9 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
 
   test "does not create data templates by invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+
+    content_type =
+      insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
 
     count_before = DataTemplate |> Repo.all() |> length()
 
@@ -48,7 +52,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
 
   test "update data templates on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
-    c_type = insert(:content_type, organisation: user.organisation)
+    c_type = insert(:content_type, organisation: List.first(user.owned_organisations))
     data_template = insert(:data_template, content_type: c_type)
 
     count_before = DataTemplate |> Repo.all() |> length()
@@ -64,7 +68,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
 
   test "does't update data templates for invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    c_type = insert(:content_type, organisation: user.organisation)
+    c_type = insert(:content_type, organisation: List.first(user.owned_organisations))
     data_template = insert(:data_template, content_type: c_type)
 
     conn =
@@ -105,7 +109,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
 
   test "show renders data template details by id", %{conn: conn} do
     user = conn.assigns[:current_user]
-    c_type = insert(:content_type, organisation: user.organisation)
+    c_type = insert(:content_type, organisation: List.first(user.owned_organisations))
     data_template = insert(:data_template, content_type: c_type)
 
     conn = get(conn, Routes.v1_data_template_path(conn, :show, data_template.id))
@@ -121,7 +125,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   test "delete data template by given id", %{conn: conn} do
     user = conn.assigns.current_user
 
-    c_type = insert(:content_type, organisation: user.organisation)
+    c_type = insert(:content_type, organisation: List.first(user.owned_organisations))
     data_template = insert(:data_template, content_type: c_type)
     count_before = DataTemplate |> Repo.all() |> length()
 
@@ -135,7 +139,9 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
     filename = Plug.Upload.random_file!("test")
     file = %Plug.Upload{filename: filename, path: filename}
 
-    c_type = insert(:content_type, creator: user, organisation: user.organisation)
+    c_type =
+      insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+
     count_before = Oban.Job |> Repo.all() |> length()
 
     params = %{mapping: %{"Title" => "title"}, file: file}
@@ -149,7 +155,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   test "test bulk import job not created for data template with invalid attrs", %{conn: conn} do
     user = conn.assigns[:current_user]
 
-    c_type = insert(:content_type, organisation: user.organisation)
+    c_type = insert(:content_type, organisation: List.first(user.owned_organisations))
     count_before = Oban.Job |> Repo.all() |> length()
 
     conn = post(conn, Routes.v1_data_template_path(conn, :bulk_import, c_type.id), %{})

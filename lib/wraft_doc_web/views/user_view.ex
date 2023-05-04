@@ -6,6 +6,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
   alias WraftDocWeb.Api.V1.InstanceApprovalSystemView
   alias WraftDocWeb.Api.V1.OrganisationView
   alias WraftDocWeb.Api.V1.ProfileView
+  alias WraftDocWeb.Api.V1.RegistrationView
   alias __MODULE__
 
   def render("sign-in.json", %{token: token, user: user}) do
@@ -95,12 +96,10 @@ defmodule WraftDocWeb.Api.V1.UserView do
       name: me.name,
       email: me.email,
       email_verify: me.email_verify,
-      organisation_id: me.organisation.id,
       inserted_at: me.inserted_at,
       updated_at: me.updated_at,
-      profile_pic: generate_url(me.profile)
-      # TODO uncomment this once RBAC is done succefully
-      # roles: render_many(me.roles, RegistrationView, "role.json", as: :role)
+      profile_pic: generate_url(me.profile),
+      roles: render_many(me.roles, RegistrationView, "role.json", as: :role)
     }
   end
 

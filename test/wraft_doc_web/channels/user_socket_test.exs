@@ -18,7 +18,7 @@ defmodule WraftDocWeb.UserSocketTest do
   end
 
   test "authenticate and assign user ID with valid token" do
-    {:ok, user} = insert(:user)
+    user = insert(:user)
     {:ok, token, _claims} = Guardian.encode_and_sign(user)
 
     assert {:ok, socket} = connect(UserSocket, %{"token" => token})

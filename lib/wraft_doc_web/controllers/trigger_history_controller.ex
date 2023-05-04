@@ -233,6 +233,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
+  # TODO Add tests for this
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, params) do
     current_user = conn.assigns[:current_user]

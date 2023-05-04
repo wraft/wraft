@@ -252,7 +252,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => id} = params) do
     with %Organisation{} = organisation <- Enterprise.get_organisation(id),
-         organisation <-
+         {:ok, organisation} <-
            Enterprise.update_organisation(organisation, params) do
       render(conn, "create.json", organisation: organisation)
     end
