@@ -45,7 +45,8 @@ defmodule WraftDocWeb.Api.V1.VendorControllerTest do
   describe "update/2" do
     test "update vendors on valid attributes", %{conn: conn} do
       user = conn.assigns.current_user
-      vendor = insert(:vendor, organisation: user.organisation, creator: user)
+      [organisation] = user.owned_organisations
+      vendor = insert(:vendor, organisation: organisation, creator: user)
 
       count_before = Vendor |> Repo.all() |> length()
 
@@ -60,7 +61,7 @@ defmodule WraftDocWeb.Api.V1.VendorControllerTest do
 
     test "does't update vendors for invalid attrs", %{conn: conn} do
       user = conn.assigns.current_user
-      vendor = insert(:vendor, organisation: user.organisation, creator: user)
+      vendor = insert(:vendor, organisation: List.first(user.owned_organisations), creator: user)
 
       conn =
         conn
@@ -74,9 +75,10 @@ defmodule WraftDocWeb.Api.V1.VendorControllerTest do
   describe "index/2" do
     test "index lists vendor by current user", %{conn: conn} do
       user = conn.assigns.current_user
+      [organisation] = user.owned_organisations
 
-      a1 = insert(:vendor, organisation: user.organisation, creator: user)
-      a2 = insert(:vendor, organisation: user.organisation, creator: user)
+      a1 = insert(:vendor, organisation: organisation, creator: user)
+      a2 = insert(:vendor, organisation: organisation, creator: user)
 
       conn = get(conn, Routes.v1_vendor_path(conn, :index))
       vendor_index = json_response(conn, 200)["vendors"]
@@ -89,7 +91,7 @@ defmodule WraftDocWeb.Api.V1.VendorControllerTest do
   describe "show/2" do
     test "show renders vendor details by id", %{conn: conn} do
       user = conn.assigns.current_user
-      vendor = insert(:vendor, organisation: user.organisation, creator: user)
+      vendor = insert(:vendor, organisation: List.first(user.owned_organisations), creator: user)
 
       conn = get(conn, Routes.v1_vendor_path(conn, :show, vendor.id))
 
@@ -105,7 +107,7 @@ defmodule WraftDocWeb.Api.V1.VendorControllerTest do
   describe "delete" do
     test "delete vendor by given id", %{conn: conn} do
       user = conn.assigns.current_user
-      vendor = insert(:vendor, organisation: user.organisation, creator: user)
+      vendor = insert(:vendor, organisation: List.first(user.owned_organisations), creator: user)
       count_before = Vendor |> Repo.all() |> length()
 
       conn = delete(conn, Routes.v1_vendor_path(conn, :delete, vendor.id))

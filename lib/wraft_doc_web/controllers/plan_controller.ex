@@ -6,8 +6,6 @@ defmodule WraftDocWeb.Api.V1.PlanController do
 
   plug WraftDocWeb.Plug.Authorized,
     create: "plan:manage",
-    index: "plan:show",
-    show: "plan:show",
     update: "plan:manage",
     delete: "plan:delete"
 

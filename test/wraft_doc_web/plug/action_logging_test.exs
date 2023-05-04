@@ -27,10 +27,8 @@ defmodule WraftDocWeb.Plug.AddActionLogTest do
 
     assert last_action.actor == %{
              "email" => user.email,
-             "name" => user.name
-             # TODO Need to figure out how to add the current organisation details as part of the actor
-             # This can be done only after we remove the `belongs_to` association in user with organisation
-             #  "organisation" => %{"name" => user.organisation.name}
+             "name" => user.name,
+             "current_org_id" => user.current_org_id
            }
   end
 

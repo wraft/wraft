@@ -7,22 +7,6 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
 
-  setup do
-    user = WraftDoc.Factory.insert(:user_with_organisation)
-    membership = WraftDoc.Factory.insert(:membership, organisation: user.organisation)
-
-    {:ok, token, _} =
-      WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})
-
-    conn =
-      build_conn()
-      |> put_req_header("accept", "application/json")
-      |> put_req_header("authorization", "Bearer " <> token)
-      |> assign(:current_user, user)
-
-    {:ok, %{conn: conn, membership: membership}}
-  end
-
   describe "show/1" do
     test "shows organisation's membership with valid attrs", %{conn: conn, membership: membership} do
       user = conn.assigns[:current_user]

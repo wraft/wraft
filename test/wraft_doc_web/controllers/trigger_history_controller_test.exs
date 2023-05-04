@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
     test "creates trigger history and pipeline run job with valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
 
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       job_count_before = Oban.Job |> Repo.all() |> length()
       history_count_before = TriggerHistory |> Repo.all() |> length()
 
@@ -45,7 +45,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
     test "does not create trigger history with invalid attrs", %{conn: conn} do
       user = conn.assigns.current_user
 
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       job_count_before = Oban.Job |> Repo.all() |> length()
       history_count_before = TriggerHistory |> Repo.all() |> length()
 
@@ -79,14 +79,14 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
     end
   end
 
-  describe "index/2" do
+  describe "index_by_pipeline/2" do
     test "index lists triggers under a pipeline with pagination", %{conn: conn} do
       user = conn.assigns.current_user
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       trigger1 = insert(:trigger_history, state: 1, pipeline: pipeline, creator: user)
       trigger2 = insert(:trigger_history, state: 2, pipeline: pipeline, creator: user)
 
-      conn = get(conn, Routes.v1_trigger_history_path(conn, :index, pipeline.id))
+      conn = get(conn, Routes.v1_trigger_history_path(conn, :index_by_pipeline, pipeline.id))
       trigger_history_index = json_response(conn, 200)["triggers"]
       trigger_uuids = trigger_history_index |> Enum.map(fn x -> x["id"] end) |> List.to_string()
 

@@ -35,7 +35,7 @@ defmodule WraftDoc.Account.ProfileTest do
     refute Map.has_key?(changeset.changes, :profile_pic)
   end
 
-  test "changeset with a file uploader struct" do
+  test "propic_changeset with a file uploader struct" do
     profile = insert(:profile)
     user = insert(:user)
 
@@ -47,7 +47,7 @@ defmodule WraftDoc.Account.ProfileTest do
 
     attrs = Map.merge(@valid_attrs, %{profile_pic: profile_pic, user_id: user.id})
 
-    changeset = Profile.changeset(profile, attrs)
+    changeset = Profile.propic_changeset(profile, attrs)
 
     assert changeset.valid?
     assert Map.has_key?(changeset.changes, :profile_pic)

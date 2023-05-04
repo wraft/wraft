@@ -47,7 +47,8 @@ defmodule WraftDocWeb.ConnCase do
     role = WraftDoc.Factory.insert(:role, organisation: organisation)
     WraftDoc.Factory.insert(:user_role, user: user, role: role)
 
-    WraftDoc.Factory.insert(:membership, organisation: List.first(user.owned_organisations))
+    membership =
+      WraftDoc.Factory.insert(:membership, organisation: List.first(user.owned_organisations))
 
     {:ok, token, _} =
       WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})
@@ -58,6 +59,6 @@ defmodule WraftDocWeb.ConnCase do
       |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
       |> Plug.Conn.assign(:current_user, user)
 
-    {:ok, conn: conn}
+    {:ok, conn: conn, membership: membership}
   end
 end

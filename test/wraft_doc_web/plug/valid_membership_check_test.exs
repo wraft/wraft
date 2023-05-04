@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheckTest do
 
   test "user is allowed to continue when current organisation is personal organisation even if membership is expired" do
     user = WraftDoc.Factory.insert(:user_with_personal_organisation)
-    insert(:membership, is_expired: true, organisation: user.organisation)
+    insert(:membership, is_expired: true, organisation: List.first(user.owned_organisations))
 
     {:ok, token, _} =
       WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})

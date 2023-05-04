@@ -38,7 +38,9 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
 
   test "update block_templates on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
-    block_template = insert(:block_template, creator: user, organisation: user.organisation)
+
+    block_template =
+      insert(:block_template, creator: user, organisation: List.first(user.owned_organisations))
 
     count_before = BlockTemplate |> Repo.all() |> length()
 
@@ -54,7 +56,8 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   test "does't update block_templates for invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
 
-    block_template = insert(:block_template, creator: user, organisation: user.organisation)
+    block_template =
+      insert(:block_template, creator: user, organisation: List.first(user.owned_organisations))
 
     conn =
       conn
@@ -65,10 +68,10 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   end
 
   test "index lists assests by current user", %{conn: conn} do
-    user = Repo.preload(conn.assigns.current_user, :organisation)
-
-    a1 = insert(:block_template, organisation: user.organisation)
-    a2 = insert(:block_template, organisation: user.organisation)
+    user = conn.assigns.current_user
+    [organisation] = user.owned_organisations
+    a1 = insert(:block_template, organisation: organisation)
+    a2 = insert(:block_template, organisation: organisation)
 
     conn = get(conn, Routes.v1_block_template_path(conn, :index))
     block_template_index = json_response(conn, 200)["block_templates"]
@@ -79,7 +82,9 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
 
   test "show renders block_template details by id", %{conn: conn} do
     user = conn.assigns.current_user
-    block_template = insert(:block_template, creator: user, organisation: user.organisation)
+
+    block_template =
+      insert(:block_template, creator: user, organisation: List.first(user.owned_organisations))
 
     conn = get(conn, Routes.v1_block_template_path(conn, :show, block_template.id))
 
@@ -93,7 +98,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
 
   test "delete block_template by given id", %{conn: conn} do
     user = conn.assigns.current_user
-    block_template = insert(:block_template, organisation: user.organisation)
+    block_template = insert(:block_template, organisation: List.first(user.owned_organisations))
     count_before = BlockTemplate |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_block_template_path(conn, :delete, block_template.id))
@@ -116,7 +121,9 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
 
   test "error not found for user from another organisation", %{conn: conn} do
     user = insert(:user)
-    block_template = insert(:block_template, creator: user, organisation: user.organisation)
+
+    block_template =
+      insert(:block_template, creator: user, organisation: List.first(user.owned_organisations))
 
     conn = get(conn, Routes.v1_block_template_path(conn, :show, block_template.id))
 

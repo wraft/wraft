@@ -54,7 +54,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
     params = Map.put(@update_valid_attrs, "api_route", "http://localhost:#{bypass.port}")
     user = conn.assigns.current_user
 
-    block = insert(:block, creator: user, organisation: user.organisation)
+    block = insert(:block, creator: user, organisation: List.first(user.owned_organisations))
 
     count_before = Block |> Repo.all() |> length()
     conn = put(conn, Routes.v1_block_path(conn, :update, block.id), params)
@@ -67,7 +67,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
   test "does not update blocks for invalid attributes", %{conn: conn} do
     user = conn.assigns.current_user
 
-    block = insert(:block, creator: user, organisation: user.organisation)
+    block = insert(:block, creator: user, organisation: List.first(user.owned_organisations))
 
     conn = put(conn, Routes.v1_block_path(conn, :update, block.id), @invalid_attrs)
     assert json_response(conn, 400)["message"] == "invalid endpoint"
@@ -76,7 +76,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
   test "renders show.json on existing id", %{conn: conn} do
     user = conn.assigns.current_user
 
-    block = insert(:block, creator: user, organisation: user.organisation)
+    block = insert(:block, creator: user, organisation: List.first(user.owned_organisations))
 
     conn = get(conn, Routes.v1_block_path(conn, :show, block.id))
     assert json_response(conn, 200)["name"] == block.name
@@ -90,7 +90,7 @@ defmodule WraftDocWeb.Api.V1.BlockControllerTest do
   test "deletes the block and renders the block.json", %{conn: conn} do
     user = conn.assigns.current_user
 
-    block = insert(:block, creator: user, organisation: user.organisation)
+    block = insert(:block, creator: user, organisation: List.first(user.owned_organisations))
 
     count_before = Block |> Repo.all() |> length()
     conn = delete(conn, Routes.v1_block_path(conn, :delete, block.id))
