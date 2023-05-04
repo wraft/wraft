@@ -24,11 +24,12 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   describe "create/2" do
     test "create layouts on valid attrrs", %{conn: conn} do
       user = conn.assigns[:current_user]
+      [organisation] = user.owned_organisations
 
       count_before = Layout |> Repo.all() |> length()
       %{id: engine_id} = insert(:engine)
-      a1 = insert(:asset, organisation: user.organisation)
-      a2 = insert(:asset, organisation: user.organisation)
+      a1 = insert(:asset, organisation: organisation)
+      a2 = insert(:asset, organisation: organisation)
 
       params = Map.merge(@valid_attrs, %{engine_id: engine_id, assets: "#{a1.id},#{a2.id}"})
 
@@ -68,12 +69,12 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   describe "update/2" do
     test "update layouts on valid attributes", %{conn: conn} do
       user = conn.assigns.current_user
-
-      layout = insert(:layout, creator: user, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      layout = insert(:layout, creator: user, organisation: List.first(user.owned_organisations))
 
       engine = insert(:engine)
-      a1 = insert(:asset, organisation: user.organisation)
-      a2 = insert(:asset, organisation: user.organisation)
+      a1 = insert(:asset, organisation: organisation)
+      a2 = insert(:asset, organisation: organisation)
       params = Map.merge(@valid_attrs, %{engine_id: engine.id, assets: "#{a1.id},#{a2.id}"})
 
       count_before = Layout |> Repo.all() |> length()
@@ -99,7 +100,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
     test "does't update layouts on invalid attrs", %{conn: conn} do
       user = conn.assigns.current_user
 
-      layout = insert(:layout, creator: user, organisation: user.organisation)
+      layout = insert(:layout, creator: user, organisation: List.first(user.owned_organisations))
 
       conn =
         conn
@@ -113,9 +114,9 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   describe "index/2" do
     test "index lists assests by current user", %{conn: conn} do
       user = conn.assigns.current_user
-
-      a1 = insert(:layout, creator: user, organisation: user.organisation)
-      a2 = insert(:layout, creator: user, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      a1 = insert(:layout, creator: user, organisation: organisation)
+      a2 = insert(:layout, creator: user, organisation: organisation)
 
       conn = get(conn, Routes.v1_layout_path(conn, :index))
       layouts_index = json_response(conn, 200)["layouts"]
@@ -129,7 +130,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
     test "show renders layout details by id", %{conn: conn} do
       user = conn.assigns.current_user
 
-      layout = insert(:layout, creator: user, organisation: user.organisation)
+      layout = insert(:layout, creator: user, organisation: List.first(user.owned_organisations))
       layout_asset1 = insert(:layout_asset, layout: layout)
       layout_asset2 = insert(:layout_asset, layout: layout)
 
@@ -162,7 +163,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   describe "delete/2" do
     test "delete layout by given id", %{conn: conn} do
       user = conn.assigns[:current_user]
-      layout = insert(:layout, creator: user, organisation: user.organisation)
+      layout = insert(:layout, creator: user, organisation: List.first(user.owned_organisations))
       count_before = Layout |> Repo.all() |> length()
 
       conn = delete(conn, Routes.v1_layout_path(conn, :delete, layout.id))

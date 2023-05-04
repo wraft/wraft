@@ -44,7 +44,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "update flow on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
 
     count_before = Flow |> Repo.all() |> length()
     %{id: organisation_id} = insert(:organisation)
@@ -61,7 +61,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "does't update flow on invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
 
     conn =
       conn
@@ -73,8 +73,9 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "index lists flow by current user", %{conn: conn} do
     user = conn.assigns.current_user
-    f1 = insert(:flow, creator: user, organisation: user.organisation)
-    f2 = insert(:flow, creator: user, organisation: user.organisation)
+    [organisation] = user.owned_organisations
+    f1 = insert(:flow, creator: user, organisation: organisation)
+    f2 = insert(:flow, creator: user, organisation: organisation)
 
     conn = get(conn, Routes.v1_flow_path(conn, :index))
 
@@ -86,7 +87,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "show renders flow details by id", %{conn: conn} do
     user = conn.assigns.current_user
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
 
     conn = get(conn, Routes.v1_flow_path(conn, :show, flow.id))
 
@@ -100,7 +101,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "delete flow by given id", %{conn: conn} do
     user = conn.assigns.current_user
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
     count_before = Flow |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_flow_path(conn, :delete, flow.id))
@@ -119,9 +120,10 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   describe "align_states/2" do
     test "align order of state under a flow ", %{conn: conn} do
       user = conn.assigns.current_user
-      flow = insert(:flow, creator: user, organisation: user.organisation)
-      s1 = insert(:state, flow: flow, organisation: user.organisation, order: 1)
-      s2 = insert(:state, flow: flow, organisation: user.organisation, order: 2)
+      [organisation] = user.owned_organisations
+      flow = insert(:flow, creator: user, organisation: organisation)
+      s1 = insert(:state, flow: flow, organisation: organisation, order: 1)
+      s2 = insert(:state, flow: flow, organisation: organisation, order: 2)
       params = %{states: [%{id: s1.id, order: 2}, %{id: s2.id, order: 1}]}
 
       conn = put(conn, Routes.v1_flow_path(conn, :align_states, flow.id), params)

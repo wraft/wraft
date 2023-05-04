@@ -437,7 +437,7 @@ defmodule WraftDoc.Enterprise do
     |> Repo.update()
     |> case do
       {:ok, organisation} ->
-        organisation
+        {:ok, organisation}
 
       {:error, _} = changeset ->
         changeset
@@ -511,6 +511,7 @@ defmodule WraftDoc.Enterprise do
   Fetches the list of all members of current users organisation.
   """
   @spec members_index(User.t(), map) :: any
+  # TODO Use dynamic query instead of pattern matching here for name filtering
   def members_index(%User{current_org_id: organisation_id}, %{"name" => name} = params) do
     query =
       from(u in User,

@@ -32,10 +32,10 @@ defmodule WraftDoc.AuthorizationTest do
       permissions_by_resources = Authorization.list_permissions(%{"resource" => "Layout"})
 
       # Checks that there is only one matching resource
-      assert 1 == Enum.count(permissions_by_resources)
+      assert map_size(permissions_by_resources) == 1
 
       # Checks that the only matching resource availabe in the response is Layout
-      assert %{"Layout" => permissions} = permissions_by_resources
+      assert %{"Layout" => _permissions} = permissions_by_resources
     end
 
     test "returns an empty map when there are no matches for resource keyword" do

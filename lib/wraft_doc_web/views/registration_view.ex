@@ -26,7 +26,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationView do
     %{id: organisation.id, name: organisation.name}
   end
 
-  # def render("role.json", %{role: role}) do
-  #   %{id: role.id, name: role.name}
-  # end
+  def render("role.json", %{role: role}) do
+    %{id: role.id, name: role.name}
+  end
 end

@@ -37,8 +37,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
 
   test "update assets on valid attrs with Plug.Upload", %{conn: conn} do
     user = conn.assigns.current_user
-    organisation = user.organisation
-    asset = insert(:asset, creator: user, organisation: organisation)
+    asset = insert(:asset, creator: user, organisation: List.first(user.owned_organisations))
     content_type = insert(:content_type)
     filename = Plug.Upload.random_file!("test")
     uploader = %Plug.Upload{content_type: content_type, filename: filename, path: filename}
@@ -57,9 +56,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
 
   test "does't update assets for invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    organisation = user.organisation
-
-    asset = insert(:asset, creator: user, organisation: organisation)
+    asset = insert(:asset, creator: user, organisation: List.first(user.owned_organisations))
 
     conn =
       conn
@@ -71,9 +68,10 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
 
   test "index lists assests by current user", %{conn: conn} do
     user = conn.assigns.current_user
+    [organisation] = user.owned_organisations
 
-    a1 = insert(:asset, creator: user, organisation: user.organisation)
-    a2 = insert(:asset, creator: user, organisation: user.organisation)
+    a1 = insert(:asset, creator: user, organisation: organisation)
+    a2 = insert(:asset, creator: user, organisation: organisation)
 
     conn = get(conn, Routes.v1_asset_path(conn, :index))
     assets_index = json_response(conn, 200)["assets"]
@@ -85,7 +83,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   test "show renders asset details by id", %{conn: conn} do
     user = conn.assigns.current_user
 
-    asset = insert(:asset, creator: user, organisation: user.organisation)
+    asset = insert(:asset, creator: user, organisation: List.first(user.owned_organisations))
 
     conn = get(conn, Routes.v1_asset_path(conn, :show, asset.id))
 
@@ -99,7 +97,7 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
 
   test "delete asset by given id", %{conn: conn} do
     user = conn.assigns.current_user
-    asset = insert(:asset, creator: user, organisation: user.organisation)
+    asset = insert(:asset, creator: user, organisation: List.first(user.owned_organisations))
     count_before = Asset |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_asset_path(conn, :delete, asset.id))

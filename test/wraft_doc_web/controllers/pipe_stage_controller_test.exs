@@ -10,10 +10,11 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
   describe "create" do
     test "create pipe stage by valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
-      pipeline = insert(:pipeline, organisation: user.organisation)
-      c_type = insert(:content_type, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      pipeline = insert(:pipeline, organisation: organisation)
+      c_type = insert(:content_type, organisation: organisation)
       data_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: user.organisation)
+      state = insert(:state, organisation: organisation)
 
       params = %{
         content_type_id: c_type.id,
@@ -60,7 +61,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
     test "does not create pipe stage and returns not found for datas from different organisation of user",
          %{conn: conn} do
       user = conn.assigns.current_user
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       c_type = insert(:content_type)
       d_temp = insert(:data_template)
       state = insert(:state)
@@ -84,7 +85,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
 
     test "does not create pipe stage and returns not found with invalid datas", %{conn: conn} do
       user = conn.assigns.current_user
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       params = %{content_type_id: 3, data_template_id: 2, state_id: 1}
 
       count_before = Stage |> Repo.all() |> length()
@@ -101,10 +102,11 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
     test "does not create pipe stage and returns error when content type and pipeline ID are same as a previously created stage",
          %{conn: conn} do
       user = conn.assigns.current_user
-      pipeline = insert(:pipeline, organisation: user.organisation)
-      c_type = insert(:content_type, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      pipeline = insert(:pipeline, organisation: organisation)
+      c_type = insert(:content_type, organisation: organisation)
       d_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: user.organisation)
+      state = insert(:state, organisation: organisation)
 
       insert(:pipe_stage,
         pipeline: pipeline,
@@ -134,11 +136,12 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
   describe "update" do
     test "updates pipe stage by valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      pipeline = insert(:pipeline, organisation: organisation)
       stage = insert(:pipe_stage, pipeline: pipeline)
-      c_type = insert(:content_type, organisation: user.organisation)
+      c_type = insert(:content_type, organisation: organisation)
       data_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: user.organisation)
+      state = insert(:state, organisation: organisation)
 
       params = %{
         content_type_id: c_type.id,
@@ -183,7 +186,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
     test "does not update pipe stage and returns not found for datas from different organisation of user",
          %{conn: conn} do
       user = conn.assigns.current_user
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       stage = insert(:pipe_stage, pipeline: pipeline)
       c_type = insert(:content_type)
       d_temp = insert(:data_template)
@@ -208,7 +211,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
 
     test "does not update pipe stage and returns not found with invalid datas", %{conn: conn} do
       user = conn.assigns.current_user
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       stage = insert(:pipe_stage, pipeline: pipeline)
       params = %{content_type_id: 3, data_template_id: 2, state_id: 1}
 
@@ -226,10 +229,11 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
     test "does not update pipe stage and returns error when content type and pipeline ID are same as a previously created stage",
          %{conn: conn} do
       user = conn.assigns.current_user
-      pipeline = insert(:pipeline, organisation: user.organisation)
-      c_type = insert(:content_type, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      pipeline = insert(:pipeline, organisation: organisation)
+      c_type = insert(:content_type, organisation: organisation)
       d_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: user.organisation)
+      state = insert(:state, organisation: organisation)
 
       insert(:pipe_stage,
         pipeline: pipeline,
@@ -261,7 +265,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
   describe "delete" do
     test "delete pipe stage by given id", %{conn: conn} do
       user = conn.assigns.current_user
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       stage = insert(:pipe_stage, pipeline: pipeline)
       count_before = Stage |> Repo.all() |> length()
 

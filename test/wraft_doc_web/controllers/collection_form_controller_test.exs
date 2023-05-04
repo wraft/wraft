@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
 
   test "delete collection form", %{conn: conn} do
     user = conn.assigns.current_user
-    collection_form = insert(:collection_form, organisation: user.organisation)
+    collection_form = insert(:collection_form, organisation: List.first(user.owned_organisations))
 
     count_before = CollectionForm |> Repo.all() |> length()
 
@@ -62,7 +62,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
 
   test "update collection form with valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    collection_form = insert(:collection_form, organisation: user.organisation)
+    collection_form = insert(:collection_form, organisation: List.first(user.owned_organisations))
 
     count_before = CollectionForm |> Repo.all() |> length()
 
@@ -78,7 +78,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
 
   test "update collection form with invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    collection_form = insert(:collection_form, organisation: user.organisation)
+    collection_form = insert(:collection_form, organisation: List.first(user.owned_organisations))
 
     count_before = CollectionForm |> Repo.all() |> length()
 
@@ -94,7 +94,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
 
   test "show renders collection form by id", %{conn: conn} do
     user = conn.assigns.current_user
-    collection_form = insert(:collection_form, organisation: user.organisation)
+    collection_form = insert(:collection_form, organisation: List.first(user.owned_organisations))
 
     conn =
       get(

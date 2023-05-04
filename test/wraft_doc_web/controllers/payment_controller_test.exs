@@ -6,8 +6,9 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
   describe "index/2" do
     test "index lists all payments in current user's organisation", %{conn: conn} do
       user = conn.assigns.current_user
-      p1 = insert(:payment, organisation: user.organisation)
-      p2 = insert(:payment, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      p1 = insert(:payment, organisation: organisation)
+      p2 = insert(:payment, organisation: organisation)
 
       conn = get(conn, Routes.v1_payment_path(conn, :index))
 
@@ -25,7 +26,7 @@ defmodule WraftDocWeb.Api.V1.PaymentControllerTest do
     test "show renders the payment in the user's organisation with given id", %{conn: conn} do
       user = conn.assigns.current_user
 
-      payment = insert(:payment, organisation: user.organisation)
+      payment = insert(:payment, organisation: List.first(user.owned_organisations))
 
       conn = get(conn, Routes.v1_payment_path(conn, :show, payment.id))
 

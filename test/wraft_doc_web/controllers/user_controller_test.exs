@@ -273,9 +273,10 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
   describe "remove" do
     test "removes a user by marking deleted at", %{conn: conn} do
-      user = conn.assigns[:current_user]
+      %{owned_organisations: [organisation]} = conn.assigns[:current_user]
 
-      user = insert(:user, organisation: user.organisation)
+      user = insert(:user)
+      insert(:user_organisation, user: user, organisation: organisation)
 
       conn = put(conn, Routes.v1_user_path(conn, :remove, user.id))
       assert json_response(conn, 200)["deleted_at"] != nil
@@ -437,7 +438,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   #       |> assign(:current_user, conn.assigns.current_user)
 
   #     user = conn.assigns.current_user
-  #     insert(:membership, organisation: user.organisation)
+  #     insert(:membership, organisation: List.first(user.owned_organisations))
 
   #     user = insert(:user)
 

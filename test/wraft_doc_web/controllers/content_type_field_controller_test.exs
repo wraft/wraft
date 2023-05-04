@@ -10,7 +10,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldControllerTest do
   test "delete content type field by given id", %{conn: conn} do
     user = conn.assigns.current_user
 
-    content_type = insert(:content_type, creator: user, organisation: user.organisation)
+    content_type =
+      insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+
     content_type_field = insert(:content_type_field, content_type: content_type)
     count_before = ContentTypeField |> Repo.all() |> length()
 

@@ -396,14 +396,13 @@ defmodule WraftDoc.EnterpriseTest do
     organisation = insert(:organisation, creator: insert(:user))
     count_before = Organisation |> Repo.all() |> length()
 
-    organisation =
-      Enterprise.update_organisation(organisation, %{
-        "name" => "Abc enterprices",
-        "legal_name" => "Abc pvt ltd"
-      })
+    assert {:ok, organisation} =
+             Enterprise.update_organisation(organisation, %{
+               "name" => "Abc enterprices",
+               "legal_name" => "Abc pvt ltd"
+             })
 
-    count_after = Organisation |> Repo.all() |> length()
-    assert count_before == count_after
+    assert count_before == Organisation |> Repo.all() |> length()
     assert organisation.name == "Abc enterprices"
   end
 
@@ -458,7 +457,7 @@ defmodule WraftDoc.EnterpriseTest do
                pre_state_id: ["can't be blank"],
                approver_id: ["can't be blank"],
                flow_id: ["can't be blank"]
-             } == errors_on(approval_system)
+             } = errors_on(approval_system)
     end
   end
 

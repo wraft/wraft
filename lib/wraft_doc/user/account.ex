@@ -335,12 +335,6 @@ defmodule WraftDoc.Account do
     Repo.get(User, id)
   end
 
-  def get_user(<<_::288>> = organisation_id, <<_::288>> = user_id) do
-    Repo.get_by(User, id: user_id, organisation_id: organisation_id)
-  end
-
-  def get_user(_, _), do: nil
-
   # Get the user struct from given email
   @spec get_user_by_email(binary) :: User.t() | nil
   def get_user_by_email(email) when is_binary(email) do
@@ -683,8 +677,11 @@ defmodule WraftDoc.Account do
 
   def update_password(_, _), do: {:error, :no_data}
 
-  def remove_user(%User{current_org_id: org_id}, user_id) do
-    with %User{} = user <- get_user(org_id, user_id) do
+  def remove_user(%User{current_org_id: organisation_id}, user_id) do
+    with %UserOrganisation{user: user} <-
+           UserOrganisation
+           |> Repo.get_by(user_id: user_id, organisation_id: organisation_id)
+           |> Repo.preload(:user) do
       user
       |> User.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
       |> Repo.update()

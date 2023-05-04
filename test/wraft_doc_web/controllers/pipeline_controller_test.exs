@@ -16,10 +16,11 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "create/2" do
     test "create pipeline by valid attrrs", %{conn: conn} do
       user = conn.assigns.current_user
-      c_type = insert(:content_type, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      c_type = insert(:content_type, organisation: organisation)
       insert(:content_type_field, content_type: c_type)
       data_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: user.organisation)
+      state = insert(:state, organisation: organisation)
 
       params =
         Map.put(@valid_attrs, :stages, [
@@ -77,8 +78,9 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "index/2" do
     test "index lists all pipelines in current user's organisation", %{conn: conn} do
       user = conn.assigns.current_user
-      p1 = insert(:pipeline, organisation: user.organisation)
-      p2 = insert(:pipeline, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      p1 = insert(:pipeline, organisation: organisation)
+      p2 = insert(:pipeline, organisation: organisation)
 
       conn = get(conn, Routes.v1_pipeline_path(conn, :index))
 
@@ -97,11 +99,12 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "update/2" do
     test "update pipeline on valid attributes", %{conn: conn} do
       user = conn.assigns[:current_user]
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      pipeline = insert(:pipeline, organisation: organisation)
       insert(:pipe_stage, pipeline: pipeline)
-      c_type = insert(:content_type, organisation: user.organisation)
+      c_type = insert(:content_type, organisation: organisation)
       data_template = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: user.organisation)
+      state = insert(:state, organisation: organisation)
 
       params =
         Map.put(@valid_attrs, :stages, [
@@ -147,7 +150,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
 
     test "does't update flow on invalid attrs", %{conn: conn} do
       user = conn.assigns[:current_user]
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
 
       conn =
         conn
@@ -161,7 +164,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "show/2" do
     test "show renders pipeline details by id", %{conn: conn} do
       user = conn.assigns.current_user
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       c_type = insert(:content_type)
       insert(:content_type_field, content_type: c_type)
       insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
@@ -180,7 +183,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "delete/2" do
     test "delete pipeline by given id", %{conn: conn} do
       user = conn.assigns.current_user
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       count_before = Pipeline |> Repo.all() |> length()
 
       conn = delete(conn, Routes.v1_pipeline_path(conn, :delete, pipeline.id))

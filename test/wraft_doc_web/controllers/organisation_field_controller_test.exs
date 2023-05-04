@@ -18,7 +18,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
 
   describe "index" do
     test "lists all organisation_field under that organisation", %{conn: conn} do
-      %{organisation: org} = conn.assigns.current_user
+      %{owned_organisations: [org]} = conn.assigns.current_user
 
       of1 = insert(:organisation_field, organisation: org)
 
@@ -72,7 +72,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
   describe "update organisation_field" do
     test "renders organisation_field when data is valid", %{conn: conn} do
       user = conn.assigns.current_user
-      organisation_field = insert(:organisation_field, organisation: user.organisation)
+
+      organisation_field =
+        insert(:organisation_field, organisation: List.first(user.owned_organisations))
 
       conn =
         put(
@@ -86,7 +88,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
 
     test "renders errors when data is invalid", %{conn: conn} do
       user = conn.assigns.current_user
-      organisation_field = insert(:organisation_field, organisation: user.organisation)
+
+      organisation_field =
+        insert(:organisation_field, organisation: List.first(user.owned_organisations))
 
       conn =
         put(
@@ -102,7 +106,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
   describe "delete organisation_field" do
     test "deletes chosen organisation_field", %{conn: conn} do
       user = conn.assigns.current_user
-      organisation_field = insert(:organisation_field, organisation: user.organisation)
+
+      organisation_field =
+        insert(:organisation_field, organisation: List.first(user.owned_organisations))
 
       count_before = OrganisationField |> Repo.all() |> length()
 

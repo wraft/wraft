@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
   test "delete collection form field", %{conn: conn} do
     user = conn.assigns.current_user
 
-    collection_form = insert(:collection_form, organisation: user.organisation)
+    collection_form = insert(:collection_form, organisation: List.first(user.owned_organisations))
     collection_form_field = insert(:collection_form_field, collection_form: collection_form)
 
     count_before = CollectionFormField |> Repo.all() |> length()
@@ -37,7 +37,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
   test "create collection form field with valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
 
-    collection_form = insert(:collection_form, organisation: user.organisation)
+    collection_form = insert(:collection_form, organisation: List.first(user.owned_organisations))
     collection_form_id = collection_form.id
 
     params = %{
@@ -64,7 +64,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
   test "create collection form field with invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    cf = insert(:collection_form, organisation: user.organisation)
+    cf = insert(:collection_form, organisation: List.first(user.owned_organisations))
 
     count_before = CollectionFormField |> Repo.all() |> length()
 
@@ -81,7 +81,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
   test "update collection form with valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
 
-    collection_form = insert(:collection_form, organisation: user.organisation)
+    collection_form = insert(:collection_form, organisation: List.first(user.owned_organisations))
 
     # collection_form_id = collection_form.id
     # params = %{"name" => "collection form"}
@@ -112,7 +112,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
   test "update collection form with invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    collection_form = insert(:collection_form, organisation: user.organisation)
+    collection_form = insert(:collection_form, organisation: List.first(user.owned_organisations))
 
     collection_form_field = insert(:collection_form_field, collection_form: collection_form)
 
@@ -136,7 +136,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldControllerTest do
 
   test "show renders collection form field by id", %{conn: conn} do
     user = conn.assigns.current_user
-    collection_form = insert(:collection_form, organisation: user.organisation)
+    collection_form = insert(:collection_form, organisation: List.first(user.owned_organisations))
     collection_form_field = insert(:collection_form_field, collection_form: collection_form)
 
     conn =

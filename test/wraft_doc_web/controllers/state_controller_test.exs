@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
   test "create states by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
 
     count_before = State |> Repo.all() |> length()
 
@@ -32,7 +32,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
   test "does not create states by invalid attrs", %{conn: conn} do
     user = conn.assigns[:current_user]
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
 
     count_before = State |> Repo.all() |> length()
 
@@ -47,7 +47,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
   test "update states on valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    state = insert(:state, organisation: user.organisation)
+    state = insert(:state, organisation: List.first(user.owned_organisations))
 
     count_before = State |> Repo.all() |> length()
 
@@ -63,7 +63,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
   test "does't update states for invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    state = insert(:state, organisation: user.organisation)
+    state = insert(:state, organisation: List.first(user.owned_organisations))
 
     conn =
       conn
@@ -76,9 +76,10 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   test "index lists states by current user", %{conn: conn} do
     user = conn.assigns.current_user
     flow = insert(:flow)
+    [organisation] = user.owned_organisations
 
-    a1 = insert(:state, creator: user, organisation: user.organisation, flow: flow)
-    a2 = insert(:state, creator: user, organisation: user.organisation, flow: flow)
+    a1 = insert(:state, creator: user, organisation: organisation, flow: flow)
+    a2 = insert(:state, creator: user, organisation: organisation, flow: flow)
 
     conn = get(conn, Routes.v1_state_path(conn, :index, flow.id))
     states_index = json_response(conn, 200)["states"]
@@ -89,7 +90,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
   test "delete state by given id", %{conn: conn} do
     user = conn.assigns[:current_user]
-    state = insert(:state, organisation: user.organisation)
+    state = insert(:state, organisation: List.first(user.owned_organisations))
     count_before = State |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_state_path(conn, :delete, state.id))

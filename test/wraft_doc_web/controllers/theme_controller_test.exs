@@ -43,11 +43,12 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   test "update themes on valid attrs ", %{conn: conn} do
     user = conn.assigns.current_user
-    theme = insert(:theme, creator: user, organisation: user.organisation)
-    content_type = insert(:content_type, organisation: user.organisation)
+    [organisation] = user.owned_organisations
+    theme = insert(:theme, creator: user, organisation: organisation)
+    content_type = insert(:content_type, organisation: organisation)
     filename = "test/helper/invoice.pdf"
     file = %Plug.Upload{content_type: content_type, filename: filename, path: filename}
-    params = Map.merge(@valid_attrs, %{file: file, organisation_id: user.organisation.id})
+    params = Map.merge(@valid_attrs, %{file: file, organisation_id: organisation.id})
 
     count_before = Theme |> Repo.all() |> length()
 
@@ -62,7 +63,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   test "does't update themes for invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    theme = insert(:theme, creator: user, organisation: user.organisation)
+    theme = insert(:theme, creator: user, organisation: List.first(user.owned_organisations))
 
     conn =
       conn
@@ -88,7 +89,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   test "show renders theme details by id", %{conn: conn} do
     user = conn.assigns.current_user
-    theme = insert(:theme, creator: user, organisation: user.organisation)
+    theme = insert(:theme, creator: user, organisation: List.first(user.owned_organisations))
 
     conn = get(conn, Routes.v1_theme_path(conn, :show, theme.id))
 
@@ -103,7 +104,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
   test "delete theme by given id", %{conn: conn} do
     user = conn.assigns[:current_user]
 
-    theme = insert(:theme, creator: user, organisation: user.organisation)
+    theme = insert(:theme, creator: user, organisation: List.first(user.owned_organisations))
     count_before = Theme |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_theme_path(conn, :delete, theme.id))
@@ -113,7 +114,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   test "error not found for user from another organisation", %{conn: conn} do
     user = insert(:user)
-    theme = insert(:theme, creator: user, organisation: user.organisation)
+    theme = insert(:theme, creator: user, organisation: List.first(user.owned_organisations))
 
     conn = get(conn, Routes.v1_theme_path(conn, :show, theme.id))
 

@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupControllerTest do
   describe "create/2" do
     test "with valid attrs ", %{conn: conn} do
       user = conn.assigns[:current_user]
-      role = insert(:role, organisation: user.organisation)
+      role = insert(:role, name: "admin", organisation: List.first(user.owned_organisations))
       valid_attrs = Map.put(@valid_attrs, :group_roles, [%{role_id: role.id}])
 
       conn = post(conn, Routes.v1_role_group_path(conn, :create), valid_attrs)
@@ -28,7 +28,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupControllerTest do
   describe "show/2" do
     test "for existing keys", %{conn: conn} do
       user = conn.assigns[:current_user]
-      role_group = insert(:role_group, organisation: user.organisation)
+      role_group = insert(:role_group, organisation: List.first(user.owned_organisations))
 
       conn = get(conn, Routes.v1_role_group_path(conn, :show, role_group.id))
       assert json_response(conn, 200)["role_group"]["name"] == role_group.name
@@ -43,7 +43,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupControllerTest do
   describe "update/2" do
     test "with valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
-      role_group = insert(:role_group, organisation: user.organisation)
+      role_group = insert(:role_group, organisation: List.first(user.owned_organisations))
 
       conn = put(conn, Routes.v1_role_group_path(conn, :update, role_group.id), @valid_attrs)
       assert json_response(conn, 200)["role_group"]["name"] == @valid_attrs.name
@@ -51,7 +51,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupControllerTest do
 
     test "with invalid attrs", %{conn: conn} do
       user = conn.assigns.current_user
-      role_group = insert(:role_group, organisation: user.organisation)
+      role_group = insert(:role_group, organisation: List.first(user.owned_organisations))
 
       conn = put(conn, Routes.v1_role_group_path(conn, :update, role_group.id), @invalid_attrs)
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -61,7 +61,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupControllerTest do
   describe "delete/2" do
     test "deletes an existing entry", %{conn: conn} do
       user = conn.assigns.current_user
-      role_group = insert(:role_group, organisation: user.organisation)
+      role_group = insert(:role_group, organisation: List.first(user.owned_organisations))
       count_before = RoleGroup |> Repo.all() |> length()
 
       conn = delete(conn, Routes.v1_role_group_path(conn, :delete, role_group.id))
@@ -74,7 +74,7 @@ defmodule WraftDocWeb.Api.V1.RoleGroupControllerTest do
   describe "index/2" do
     test "list all role groups", %{conn: conn} do
       user = conn.assigns.current_user
-      rg1 = insert(:role_group, organisation: user.organisation)
+      rg1 = insert(:role_group, organisation: List.first(user.owned_organisations))
 
       conn = get(conn, Routes.v1_role_group_path(conn, :index))
 

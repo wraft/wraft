@@ -10,11 +10,13 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
 
   test "create approval_systems by valid attrrs", %{conn: conn} do
     current_user = conn.assigns.current_user
+    [organisation] = current_user.owned_organisations
 
-    flow = insert(:flow, organisation: current_user.organisation)
-    pre_state = insert(:state, creator: current_user, organisation: current_user.organisation)
-    post_state = insert(:state, creator: current_user, organisation: current_user.organisation)
-    approver = insert(:user, organisation: current_user.organisation)
+    flow = insert(:flow, organisation: organisation)
+    pre_state = insert(:state, creator: current_user, organisation: organisation)
+    post_state = insert(:state, creator: current_user, organisation: organisation)
+    approver = insert(:user)
+    insert(:user_organisation, user: approver, organisation: organisation)
 
     params = %{
       flow_id: flow.id,
@@ -46,12 +48,13 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
 
   test "update approval_systems on valid attributes", %{conn: conn} do
     current_user = conn.assigns.current_user
+    [organisation] = current_user.owned_organisations
 
-    organisation = current_user.organisation
     pre_state = insert(:state, creator: current_user, organisation: organisation)
     post_state = insert(:state, creator: current_user, organisation: organisation)
-    flow = insert(:flow, organisation: current_user.organisation)
-    approver = insert(:user, organisation: current_user.organisation)
+    flow = insert(:flow, organisation: organisation)
+    approver = insert(:user)
+    insert(:user_organisation, user: approver, organisation: organisation)
 
     params = %{
       pre_state_id: pre_state.id,
@@ -77,11 +80,10 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
 
   test "does't update approval_systems for invalid attrs", %{conn: conn} do
     current_user = conn.assigns.current_user
-    organisation = current_user.organisation
+    [organisation] = current_user.owned_organisations
     pre_state = insert(:state, creator: current_user, organisation: organisation)
     post_state = insert(:state, creator: current_user, organisation: organisation)
-    flow = insert(:flow, organisation: current_user.organisation)
-    _approver = insert(:user, organisation: current_user.organisation)
+    flow = insert(:flow, organisation: organisation)
 
     approval_system =
       insert(:approval_system,
@@ -99,7 +101,7 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
 
   test "show renders approval_system details by id", %{conn: conn} do
     user = conn.assigns.current_user
-    organisation = user.organisation
+    [organisation] = user.owned_organisations
     flow = insert(:flow, organisation: organisation)
 
     pre_state = insert(:state, creator: user, organisation: organisation)
@@ -127,11 +129,10 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
 
   test "delete approval_system by given id", %{conn: conn} do
     user = conn.assigns.current_user
-    organisation = user.organisation
+    [organisation] = user.owned_organisations
     pre_state = insert(:state, creator: user, organisation: organisation)
     post_state = insert(:state, creator: user, organisation: organisation)
-    flow = insert(:flow, organisation: user.organisation)
-    _approver = insert(:user, organisation: user.organisation)
+    flow = insert(:flow, organisation: organisation)
 
     approval_system =
       insert(:approval_system,
@@ -155,10 +156,10 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
   #     |> assign(:current_user, conn.assigns.current_user)
 
   #   user = conn.assigns.current_user
-  #   organisation = user.organisation
-  #   content_type = insert(:content_type, creator: user, organisation: user.organisation)
+  #   [organisation] = user.owned_organisations
+  #   content_type = insert(:content_type, creator: user, organisation: organisation)
   #   current_user = conn.assigns.current_user
-  #   state = insert(:state, creator: user, organisation: user.organisation)
+  #   state = insert(:state, creator: user, organisation: organisation)
   #   instance = insert(:instance, state: state, creator: current_user, content_type: content_type)
 
   #   approval_system =
@@ -177,7 +178,7 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
 
   # test "error not found on user from another organsiation", %{conn: conn} do
   #   user = insert(:user)
-  #   organisation = user.organisation
+  #   [organisation] = user.owned_organisations
   #   approval_system = insert(:approval_system, organisation: organisation, user: user)
 
   #   conn =
@@ -193,7 +194,7 @@ defmodule WraftDocWeb.ApprovalSystemControllerTest do
   describe "index/2" do
     test "lists all approval systems in organisation", %{conn: conn} do
       user = conn.assigns.current_user
-      flow = insert(:flow, creator: user, organisation: user.organisation)
+      flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
       s1 = insert(:state, order: 1, flow: flow)
       s2 = insert(:state, order: 2, flow: flow)
 

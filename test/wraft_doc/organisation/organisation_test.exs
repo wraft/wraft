@@ -1,6 +1,9 @@
 defmodule WraftDoc.Enterprise.OrganisationTest do
   use WraftDoc.ModelCase
   @moduletag :enterprise
+
+  import WraftDoc.Factory, only: [insert: 1]
+
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Repo
 
@@ -13,7 +16,8 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
     gstin: "n1235kjqw81",
     corporate_id: "F5783NJUG",
     phone: "9090909090",
-    email: "hello@company.com"
+    email: "hello@company.com",
+    creator_id: Faker.UUID.v4()
   }
 
   @valid_attrs_personal %{
@@ -37,9 +41,19 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
     end
 
     test "checks GSTIN unique constraint" do
-      params = Map.put(@valid_attrs, :name, "Company 2")
-      {:ok, _} = %Organisation{} |> Organisation.changeset(@valid_attrs) |> Repo.insert()
-      {:error, changeset} = %Organisation{} |> Organisation.changeset(params) |> Repo.insert()
+      user = insert(:user)
+      params = Map.merge(@valid_attrs, %{name: "Company 2", creator_id: user.id})
+      params2 = Map.merge(params, %{name: "Company 2"})
+
+      {:ok, _} =
+        %Organisation{}
+        |> Organisation.changeset(params)
+        |> Repo.insert()
+
+      {:error, changeset} =
+        %Organisation{}
+        |> Organisation.changeset(params2)
+        |> Repo.insert()
 
       assert "GSTIN Already Registered" in errors_on(changeset, :gstin)
     end
