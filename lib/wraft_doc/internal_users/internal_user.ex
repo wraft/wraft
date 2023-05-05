@@ -8,6 +8,7 @@ defmodule WraftDoc.InternalUsers.InternalUser do
     field(:email, :string)
     field(:password, :string, virtual: true)
     field(:encrypted_password, :string)
+    field(:is_deactivated, :boolean, default: false)
 
     timestamps()
   end
@@ -20,5 +21,11 @@ defmodule WraftDoc.InternalUsers.InternalUser do
     |> validate_length(:password, min: 8, max: 22)
     |> unique_constraint(:email, message: "Email already taken.! Try another email.")
     |> generate_encrypted_password
+  end
+
+  def deactivate_changeset(internal_user, attrs) do
+    internal_user
+    |> cast(attrs, [:is_deactivated])
+    |> validate_required([:is_deactivated])
   end
 end

@@ -549,7 +549,8 @@ defmodule WraftDoc.Factory do
     %InternalUser{
       email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
       password: "encrypt",
-      encrypted_password: Bcrypt.hash_pwd_salt("encrypt")
+      encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
+      is_deactivated: false
     }
   end
 end
