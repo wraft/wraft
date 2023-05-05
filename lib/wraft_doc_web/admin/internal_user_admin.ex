@@ -2,9 +2,13 @@ defmodule WraftDocWeb.InternalUserAdmin do
   @moduledoc """
   Admin panel for internal user
   """
+
+  alias WraftDoc.InternalUsers.InternalUser
+
   def index(_) do
     [
-      email: %{name: "Email", value: fn x -> x.email end}
+      email: %{name: "Email", value: fn x -> x.email end},
+      is_deactivated: %{name: "Deactivated", value: fn x -> x.is_deactivated end}
     ]
   end
 
@@ -15,7 +19,12 @@ defmodule WraftDocWeb.InternalUserAdmin do
         label: "Password",
         help_text:
           "Please note down the password so that you can share the credentials with new user."
-      }
+      },
+      is_deactivated: %{label: "is_deactivated"}
     ]
+  end
+
+  def update_changeset(%InternalUser{} = internal_user, attrs) do
+    InternalUser.deactivate_changeset(internal_user, attrs)
   end
 end
