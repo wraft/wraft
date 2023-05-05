@@ -2,6 +2,7 @@ defmodule WraftDocs.InternalUsers.InternalUserTest do
   use WraftDoc.ModelCase
 
   alias WraftDoc.InternalUsers.InternalUser
+  import WraftDoc.Factory
 
   @valid_params %{
     email: "user@wraft.com",
@@ -64,6 +65,22 @@ defmodule WraftDocs.InternalUsers.InternalUserTest do
 
       assert %{encrypted_password: password} = changeset.changes
       assert not is_nil(password)
+    end
+  end
+
+  describe "update_changeset/2" do
+    test "returns a valid changeset with valid params" do
+      internal_user = insert(:internal_user)
+      changeset = InternalUser.deactivate_changeset(internal_user, %{"is_deactivated" => "true"})
+
+      assert changeset.valid?
+    end
+
+    test "returns an invalid changeset with invalid params" do
+      internal_user = insert(:internal_user)
+      changeset = InternalUser.deactivate_changeset(internal_user, %{"is_deactivated" => nil})
+
+      refute changeset.valid?
     end
   end
 end

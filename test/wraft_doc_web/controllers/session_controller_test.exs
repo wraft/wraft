@@ -18,6 +18,17 @@ defmodule WraftDocWeb.SessionControllerTest do
       assert get_session(conn, :admin_id) == user.id
     end
 
+    test "flashes an error message if the user is deactivated", %{conn: conn} do
+      user = insert(:internal_user, is_deactivated: true)
+      params = %{session: %{email: user.email, password: user.password}}
+
+      conn = post(conn, Routes.session_path(conn, :create), params)
+
+      assert redirected_to(conn) == Routes.session_path(conn, :new)
+      assert get_flash(conn, :error) == "Please provide the correct login credentials to login."
+      assert get_session(conn, :admin_id) == nil
+    end
+
     test "flashes an error message with invalid email-password combination", %{conn: conn} do
       # Create an existing user with a valid password
       user = insert(:internal_user)
@@ -27,7 +38,7 @@ defmodule WraftDocWeb.SessionControllerTest do
 
       assert redirected_to(conn) == Routes.session_path(conn, :new)
       assert get_flash(conn, :error) == "Please provide the correct login credentials to login."
-      assert get_session(conn, :user_id) == nil
+      assert get_session(conn, :admin_id) == nil
     end
 
     test "flashes an error message with non-existent email", %{conn: conn} do
