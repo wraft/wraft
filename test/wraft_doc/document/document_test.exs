@@ -1586,6 +1586,60 @@ defmodule WraftDoc.DocumentTest do
                i2.instance_id
     end
 
+    test "filter by content_type_name" do
+      user = insert(:user_with_organisation)
+
+      content_type1 =
+        insert(:content_type, name: "Letter", organisation: List.first(user.owned_organisations))
+
+      content_type2 =
+        insert(:content_type, name: "Contract", organisation: List.first(user.owned_organisations))
+
+      instance1 = insert(:instance, content_type: content_type1)
+
+      instance2 = insert(:instance, content_type: content_type2)
+
+      instance_index =
+        Document.instance_index_of_an_organisation(user, %{"content_type_name" => "Letter"})
+
+      assert instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               instance1.instance_id
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               instance2.instance_id
+    end
+
+    test "returns an empty list when there are no EXACT matches for content_type_name keyword" do
+      user = insert(:user_with_organisation)
+
+      content_type1 =
+        insert(:content_type, name: "Letter", organisation: List.first(user.owned_organisations))
+
+      content_type2 =
+        insert(:content_type, name: "Contract", organisation: List.first(user.owned_organisations))
+
+      instance1 = insert(:instance, content_type: content_type1)
+
+      instance2 = insert(:instance, content_type: content_type2)
+
+      instance_index =
+        Document.instance_index_of_an_organisation(user, %{"content_type_name" => "letter"})
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               instance1.instance_id
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               instance2.instance_id
+    end
+
     test "sorts by instance_id in ascending order when sort key is instance_id" do
       user = insert(:user_with_organisation)
       content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
