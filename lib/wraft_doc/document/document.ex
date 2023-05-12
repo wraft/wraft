@@ -803,6 +803,7 @@ defmodule WraftDoc.Document do
         join: ct in ContentType,
         where: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
         where: ^instance_index_filter_by_instance_id(params),
+        where: ^instance_index_filter_by_content_type_name(params),
         order_by: ^instance_index_sort(params),
         preload: [
           :content_type,
@@ -847,6 +848,12 @@ defmodule WraftDoc.Document do
     do: dynamic([i], ilike(i.instance_id, ^"%#{instance_id}%"))
 
   defp instance_index_filter_by_instance_id(_), do: true
+
+  defp instance_index_filter_by_content_type_name(%{"content_type_name" => name}) do
+    dynamic([i, ct], ct.name == ^name)
+  end
+
+  defp instance_index_filter_by_content_type_name(_), do: true
 
   defp instance_index_sort(%{"sort" => "instance_id_desc"} = _params),
     do: [desc: dynamic([i], i.instance_id)]
