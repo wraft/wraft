@@ -426,6 +426,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     parameters do
       page(:query, :string, "Page number")
       instance_id(:query, :string, "Instance ID")
+      content_type_name(:query, :string, "Content Type name")
 
       sort(
         :query,
