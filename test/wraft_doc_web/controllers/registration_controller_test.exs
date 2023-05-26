@@ -52,6 +52,8 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
 
       assert json_response(conn, 201)["user"]["name"] == @valid_attrs["name"]
       assert json_response(conn, 201)["user"]["email"] == @valid_attrs["email"]
+      assert json_response(conn, 201)["access_token"] != nil
+      assert json_response(conn, 201)["refresh_token"] != nil
 
       assert ["Personal", organisation.name] ==
                Enum.map(json_response(conn, 201)["organisations"], & &1["name"])
@@ -69,6 +71,8 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
 
       assert json_response(conn, 201)["user"]["name"] == @valid_attrs["name"]
       assert json_response(conn, 201)["user"]["email"] == @valid_attrs["email"]
+      assert json_response(conn, 201)["access_token"] != nil
+      assert json_response(conn, 201)["refresh_token"] != nil
       assert Enum.at(json_response(conn, 201)["organisations"], 0)["name"] == "Personal"
     end
 
@@ -97,6 +101,8 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
       assert count_before + 1 == count_after
       assert json_response(conn, 201)["user"]["name"] == @valid_attrs["name"]
       assert json_response(conn, 201)["user"]["email"] == @valid_attrs["email"]
+      assert json_response(conn, 201)["access_token"] != nil
+      assert json_response(conn, 201)["refresh_token"] != nil
     end
 
     test "invite auth token is deleted on successfull registration", %{conn: conn} do

@@ -51,7 +51,10 @@ defmodule WraftDocWeb.ConnCase do
       WraftDoc.Factory.insert(:membership, organisation: List.first(user.owned_organisations))
 
     {:ok, token, _} =
-      WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id})
+      WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id},
+        token_type: "access",
+        ttl: {2, :hour}
+      )
 
     conn =
       Phoenix.ConnTest.build_conn()

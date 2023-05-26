@@ -3,6 +3,7 @@ defmodule WraftDoc.AccountTest do
   alias WraftDoc.Account
   alias WraftDoc.Account.AuthToken
   alias WraftDoc.Workers.EmailWorker
+  alias WraftDocWeb.Guardian
 
   @moduletag :account
   @valid_attrs %{
@@ -235,11 +236,22 @@ defmodule WraftDoc.AccountTest do
   describe "authenticate/1" do
     test "successfully authenticate when correct password is given" do
       user = insert(:user_with_personal_organisation)
-      response = Account.authenticate(%{user: user, password: "encrypt"})
+      current_org_id = user.current_org_id
+      user_email = user.email
 
-      assert tuple_size(response) == 3
-      assert elem(response, 0) == :ok
-      assert elem(response, 2)["organisation_id"] == user.current_org_id
+      [access_token: access_token, refresh_token: refresh_token] =
+        Account.authenticate(%{user: user, password: "encrypt"})
+
+      {_, _, access_token_resource} = Guardian.resource_from_token(access_token)
+      {_, _, refresh_token_resource} = Guardian.resource_from_token(refresh_token)
+
+      assert refresh_token_resource["exp"] >= access_token_resource["exp"]
+
+      assert %{"organisation_id" => ^current_org_id, "sub" => ^user_email, "typ" => "access"} =
+               access_token_resource
+
+      assert %{"organisation_id" => ^current_org_id, "sub" => ^user_email, "typ" => "refresh"} =
+               refresh_token_resource
     end
 
     test "does not authenticate when nil or empty password is given" do
@@ -254,6 +266,65 @@ defmodule WraftDoc.AccountTest do
       user = insert(:user)
       response = Account.authenticate(%{user: user, password: "inorrectpassword"})
       assert response == {:error, :invalid}
+    end
+  end
+
+  describe "refresh_token_exchange/2" do
+    test "returns access token and refresh token valid tokens" do
+      user = insert(:user_with_personal_organisation)
+
+      [access_token: access_token, refresh_token: refresh_token] =
+        Account.authenticate(%{user: user, password: "encrypt"})
+
+      {_, _, access_token_resource} = Guardian.resource_from_token(access_token)
+      {_, _, refresh_token_resource} = Guardian.resource_from_token(refresh_token)
+
+      access_token_resource_org_id = access_token_resource["organisation_id"]
+      access_token_resource_sub = access_token_resource["sub"]
+      access_token_resource_typ = access_token_resource["typ"]
+
+      refresh_token_resource_org_id = refresh_token_resource["organisation_id"]
+      refresh_token_resource_sub = refresh_token_resource["sub"]
+      refresh_token_resource_typ = refresh_token_resource["typ"]
+
+      {:ok, access_token: new_access_token, refresh_token: new_refresh_token} =
+        WraftDoc.Account.refresh_token_exchange(refresh_token)
+
+      {_, _, new_access_token_resource} = Guardian.resource_from_token(new_access_token)
+      {_, _, new_refresh_token_resource} = Guardian.resource_from_token(new_refresh_token)
+
+      refute access_token_resource["jti"] == new_access_token_resource["jti"]
+      refute refresh_token_resource["jti"] == new_refresh_token_resource["jti"]
+      assert new_refresh_token_resource["exp"] >= new_access_token_resource["exp"]
+
+      assert %{
+               "organisation_id" => ^access_token_resource_org_id,
+               "sub" => ^access_token_resource_sub,
+               "typ" => ^access_token_resource_typ
+             } = new_access_token_resource
+
+      assert %{
+               "organisation_id" => ^refresh_token_resource_org_id,
+               "sub" => ^refresh_token_resource_sub,
+               "typ" => ^refresh_token_resource_typ
+             } = new_refresh_token_resource
+    end
+
+    test "returns error for valid but revoked refresh token" do
+      user = insert(:user_with_personal_organisation)
+
+      [access_token: _access_token, refresh_token: refresh_token] =
+        Account.authenticate(%{user: user, password: "encrypt"})
+
+      Guardian.revoke(refresh_token)
+
+      assert {:error, :token_not_found} ==
+               WraftDoc.Account.refresh_token_exchange(refresh_token)
+    end
+
+    test "return error for invalid tokens" do
+      assert {:error, :invalid_token} ==
+               WraftDoc.Account.refresh_token_exchange("invalid_token")
     end
   end
 

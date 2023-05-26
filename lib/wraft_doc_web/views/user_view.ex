@@ -9,10 +9,28 @@ defmodule WraftDocWeb.Api.V1.UserView do
   alias WraftDocWeb.Api.V1.RegistrationView
   alias __MODULE__
 
-  def render("sign-in.json", %{token: token, user: user}) do
+  def render("sign-in.json", %{
+        access_token: access_token,
+        refresh_token: refresh_token,
+        user: user
+      }) do
     %{
-      token: token,
+      access_token: access_token,
+      refresh_token: refresh_token,
       user: render_one(user, UserView, "user.json", as: :user)
+    }
+  end
+
+  def render("token.json", %{access_token: access_token, refresh_token: refresh_token}) do
+    %{
+      access_token: access_token,
+      refresh_token: refresh_token
+    }
+  end
+
+  def render("token.json", %{error: error}) do
+    %{
+      error: error
     }
   end
 

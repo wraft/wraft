@@ -66,6 +66,7 @@ defmodule WraftDoc.Mixfile do
       {:bcrypt_elixir, "~> 3.0.1"},
       # User authentication
       {:guardian, "~> 2.3.0"},
+      {:guardian_db, "~> 2.0"},
       {:guardian_phoenix, "~> 2.0"},
       # CORS
       {:cors_plug, "~> 3.0.1"},

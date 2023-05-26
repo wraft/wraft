@@ -4,9 +4,15 @@ defmodule WraftDocWeb.Api.V1.RegistrationView do
   """
   use WraftDocWeb, :view
 
-  def render("create.json", %{user: user, token: token, organisations: organisations}) do
+  def render("create.json", %{
+        user: user,
+        access_token: access_token,
+        refresh_token: refresh_token,
+        organisations: organisations
+      }) do
     %{
-      token: token,
+      access_token: access_token,
+      refresh_token: refresh_token,
       user: %{
         id: user.id,
         name: user.name,

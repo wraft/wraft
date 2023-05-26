@@ -18,7 +18,9 @@ defmodule WraftDoc.Application do
       # Start your own worker by calling: WraftDoc.Worker.start_link(arg1, arg2, arg3)
       # worker(WraftDoc.Worker, [arg1, arg2, arg3]),
       {Oban, oban_config()},
-      {Task.Supervisor, name: WraftDoc.TaskSupervisor}
+      {Task.Supervisor, name: WraftDoc.TaskSupervisor},
+      # To sweep expired tokens from your db.
+      {Guardian.DB.Token.SweeperServer, []}
       # worker(WraftDoc.Notifications, ["content_type_changes"], id: :content_type_changes)
       # worker(
       #   WraftDoc.Notifications.Listener,
