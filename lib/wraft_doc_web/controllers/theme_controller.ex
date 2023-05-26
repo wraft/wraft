@@ -158,6 +158,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
     parameter(:default_theme, :formData, :bool, "true or false")
 
     parameter(:file, :formData, :file, "Font file to upload, e.g. a roboto.ttf file")
+
     parameter(:preview_file, :formData, :file, "Preview file to upload, e.g. .png .jpg")
 
     response(200, "Ok", Schema.ref(:Theme))

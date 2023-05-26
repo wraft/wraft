@@ -5,9 +5,11 @@ defmodule WraftDocWeb.Api.V1.UserController do
   """
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  # plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   import Ecto.Query, warn: false
+
+  require Logger
+
   alias WraftDoc.Account
   alias WraftDoc.Account.AuthToken
   alias WraftDoc.Account.User
@@ -63,12 +65,16 @@ defmodule WraftDocWeb.Api.V1.UserController do
           description("User details with the generated JWT token for authentication")
 
           properties do
-            token(:string, "JWT token for authenticating the user", required: true)
+            access_token(:string, "JWT access token for authenticating the user", required: true)
+
+            refresh_token(:string, "JWT refresh token for refreshing access token", required: true)
+
             user(Schema.ref(:User))
           end
 
           example(%{
-            token: "Asdlkqweb.Khgqiwue132.xcli123",
+            access_token: "Asdlkqweb.Khgqiwue132.xcli123",
+            refresh_token: "Asdlkqweb.Khgqiwue132.xcli123",
             user: %{
               id: "1232148nb3478",
               name: "John Doe",
@@ -301,6 +307,37 @@ defmodule WraftDocWeb.Api.V1.UserController do
               }
             ]
           })
+        end,
+      RefreshTokenRequest:
+        swagger_schema do
+          title("Refresh Token")
+          description("Refresh Token to get new pair of tokens")
+
+          properties do
+            token(:string, "Refresh Token", required: true)
+          end
+
+          example(%{
+            token:
+              "asddff23a2ds_f3asdf3a21fds23f2as32f3as3f213a2df3s2f3a213sad12f13df13adsf-21f1d3sf"
+          })
+        end,
+      RefreshToken:
+        swagger_schema do
+          title("Refresh Token")
+          description("New pair of access token and refresh token")
+
+          properties do
+            access_token(:string, "Access Token")
+            refresh_token(:string, "Refresh Token")
+          end
+
+          example(%{
+            access_token:
+              "asddff23a2ds_f3asdf3a21fds23f2as32f3as3f213a2df3s2f3a213sad12f13df13adsf-21f1d3sf",
+            refresh_token:
+              "asddff23a2ds_f3asdf3a21fds23f2as32f3as3f213a2df3s2f3a213sad12f13df13adsf-21f1d3sf"
+          })
         end
     }
   end
@@ -324,9 +361,13 @@ defmodule WraftDocWeb.Api.V1.UserController do
   @spec signin(Plug.Conn.t(), map) :: Plug.Conn.t()
   def signin(conn, params) do
     with %User{} = user <- Account.find(params["email"]),
-         {:ok, token, _} <-
+         [access_token: access_token, refresh_token: refresh_token] <-
            Account.authenticate(%{user: user, password: params["password"]}) do
-      render(conn, "sign-in.json", token: token, user: user)
+      render(conn, "sign-in.json",
+        access_token: access_token,
+        refresh_token: refresh_token,
+        user: user
+      )
     end
   end
 
@@ -601,6 +642,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
     end
   end
 
+  @doc """
+    List Organisations by user
+  """
   swagger_path :index_by_user do
     get("/users/organisations")
     summary("List organisations by user")
@@ -619,6 +663,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
     end
   end
 
+  @doc """
+    Switch Organisation of the user.
+  """
   swagger_path :switch_organisation do
     post("/switch_organisations")
     summary("Switch organisation of the user")
@@ -636,16 +683,22 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
     with %User{} = user <- Enterprise.list_org_by_user(current_user),
          true <- Enum.any?(user.organisations, &(&1.id == organisation_id)) do
-      {:ok, token, %{"organisation_id" => ^organisation_id}} =
-        Guardian.encode_and_sign(user, %{organisation_id: organisation_id})
+      tokens = Guardian.generate_tokens(current_user, organisation_id)
 
-      render(conn, "sign-in.json", token: token, user: user)
+      render(conn, "sign-in.json",
+        access_token: Keyword.get(tokens, :access_token),
+        refresh_token: Keyword.get(tokens, :refresh_token),
+        user: user
+      )
     else
       false ->
         {:error, :no_permission}
     end
   end
 
+  @doc """
+    Join an organisation from invite link
+  """
   swagger_path :join_organisation do
     post("/join_organisation")
     summary("Join Organisation")
@@ -659,9 +712,6 @@ defmodule WraftDocWeb.Api.V1.UserController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @doc """
-    Join an organisation from invite link
-  """
   @spec join_organisation(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def join_organisation(conn, %{"token" => token} = _params) do
     current_user = conn.assigns[:current_user]
@@ -669,6 +719,37 @@ defmodule WraftDocWeb.Api.V1.UserController do
     with {:ok, %{organisations: organisation}} <-
            Enterprise.join_org_by_invite(current_user, token) do
       render(conn, "join_org.json", organisation: organisation)
+    end
+  end
+
+  @doc """
+    New pair of tokens from existing refresh token
+  """
+  swagger_path :refresh_token do
+    post("/users/token_refresh")
+    summary("Refresh Token")
+    description("Gives a new pair of access token and refresh token")
+
+    parameters do
+      token(:body, Schema.ref(:RefreshTokenRequest), "Refresh Token", requried: true)
+    end
+
+    response(200, "Ok", Schema.ref(:RefreshToken))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec refresh_token(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def refresh_token(conn, %{"token" => refresh_token}) do
+    case Account.refresh_token_exchange(refresh_token) do
+      {:ok, access_token: access_token, refresh_token: refresh_token} ->
+        render(conn, "token.json", access_token: access_token, refresh_token: refresh_token)
+
+      {:error, error} ->
+        Logger.error("Refresh token creation failed. Invalid input data provided.", error: error)
+
+        conn
+        |> put_status(401)
+        |> render("token.json", error: error)
     end
   end
 end

@@ -2,7 +2,12 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   @moduledoc false
   use WraftDocWeb.ConnCase
   @moduletag :controller
+
+  import ExUnit.CaptureLog
   import WraftDoc.Factory
+
+  require Logger
+
   alias WraftDoc.Account.AuthToken
   alias WraftDoc.Repo
   alias WraftDocWeb.Guardian
@@ -22,7 +27,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
         )
 
       assert json_response(conn, 200)["user"]["email"] == user.email
-      assert json_response(conn, 200)["token"] != nil
+      assert json_response(conn, 200)["access_token"] != nil
+      assert json_response(conn, 200)["refresh_token"] != nil
     end
 
     test "returns error with wrong email-password combination" do
@@ -400,15 +406,18 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
           Routes.v1_user_path(conn, :switch_organisation, %{organisation_id: organisation_id})
         )
 
-      assert response = json_response(conn, 200)
+      response = json_response(conn, 200)
 
       assert response["user"]["id"] == user.id
       assert response["user"]["email"] == user.email
       assert response["user"]["name"] == user.name
-      assert response["token"]
+      assert response["access_token"]
+      assert response["refresh_token"]
 
       assert {:ok, %{"organisation_id" => ^organisation_id}} =
-               Guardian.decode_and_verify(response["token"], %{organisation_id: organisation_id})
+               Guardian.decode_and_verify(response["access_token"], %{
+                 organisation_id: organisation_id
+               })
     end
 
     test "renders response with 401 status code with ID of an organisation the user has NOT joined",
@@ -422,6 +431,96 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
         )
 
       assert %{"errors" => "You are not authorized for this action.!"} == json_response(conn, 401)
+    end
+  end
+
+  describe "refresh_token/2" do
+    test "renders response with 200 status code with new pair of access token and refresh token for existing refresh token",
+         %{conn: conn} do
+      user = conn.assigns[:current_user]
+
+      {:ok, refresh_token, _} =
+        Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id},
+          token_type: "refresh",
+          ttl: {2, :day}
+        )
+
+      conn =
+        post(
+          conn,
+          Routes.v1_user_path(conn, :refresh_token, %{token: refresh_token})
+        )
+
+      response = json_response(conn, 200)
+
+      assert Guardian.decode_and_verify(refresh_token) == {:error, :token_not_found}
+      assert response["access_token"] != nil
+      assert response["refresh_token"] != nil
+    end
+
+    test "renders error with response 401 for invalid refresh token", %{conn: conn} do
+      {conn, log} =
+        with_log(fn ->
+          post(
+            conn,
+            Routes.v1_user_path(conn, :refresh_token, %{token: "invalid_refresh_token"})
+          )
+        end)
+
+      response = json_response(conn, 401)
+      assert response["error"] == "invalid_token"
+      assert log =~ "invalid_token"
+      assert log =~ "Refresh token creation failed. Invalid input data provided."
+    end
+
+    test "renders error with response 401 for valid but expired refresh token", %{conn: conn} do
+      user = conn.assigns.current_user
+
+      {:ok, refresh_token, _} =
+        Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id},
+          token_type: "refresh",
+          ttl: {1, :second}
+        )
+
+      :timer.sleep(2000)
+
+      {conn, log} =
+        with_log(fn ->
+          post(
+            conn,
+            Routes.v1_user_path(conn, :refresh_token, %{token: refresh_token})
+          )
+        end)
+
+      response = json_response(conn, 401)
+      assert response["error"] == "token_expired"
+      assert log =~ "token_expired"
+      assert log =~ "Refresh token creation failed. Invalid input data provided."
+    end
+
+    test "renders error with response 401 for valid but revoked refresh token", %{conn: conn} do
+      user = insert(:user_with_organisation)
+
+      {:ok, refresh_token, _} =
+        Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id},
+          token_type: "refresh",
+          ttl: {2, :day}
+        )
+
+      Guardian.revoke(refresh_token)
+
+      {conn, log} =
+        with_log(fn ->
+          post(
+            conn,
+            Routes.v1_user_path(conn, :refresh_token, %{token: refresh_token})
+          )
+        end)
+
+      response = json_response(conn, 401)
+      assert response["error"] == "token_not_found"
+      assert log =~ "token_not_found"
+      assert log =~ "Refresh token creation failed. Invalid input data provided."
     end
   end
 

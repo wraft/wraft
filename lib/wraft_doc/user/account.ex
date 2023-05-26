@@ -25,6 +25,7 @@ defmodule WraftDoc.Account do
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Endpoint
+  alias WraftDocWeb.Guardian
 
   @activity_models %{
     "Asset" => Asset,
@@ -249,8 +250,8 @@ defmodule WraftDoc.Account do
     Authenticate user and generate token.
   """
   @spec authenticate(%{user: User.t(), password: binary}) ::
-          {:error, atom} | {:ok, Guardian.Token.token(), Guardian.Token.claims()}
-
+          {:error, atom}
+          | {:ok, [access_token: Guardian.Token.token(), refresh_token: Guardian.Token.token()]}
   def authenticate(%{user: _, password: ""}), do: {:error, :no_data}
   def authenticate(%{user: _, password: nil}), do: {:error, :no_data}
 
@@ -258,10 +259,28 @@ defmodule WraftDoc.Account do
     case Bcrypt.verify_pass(password, user.encrypted_password) do
       true ->
         personal_org = Enterprise.get_personal_org_by_email(user.email)
-        WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: personal_org.id})
+        Guardian.generate_tokens(user, personal_org.id)
 
       _ ->
         {:error, :invalid}
+    end
+  end
+
+  @doc """
+    Exchange new pair of tokens for old ones
+  """
+  @spec refresh_token_exchange(Guardian.Token.token()) ::
+          {:error, atom}
+          | {:ok, [access_token: Guardian.Token.token(), refresh_token: Guardian.Token.token()]}
+  def refresh_token_exchange(refresh_token) do
+    with {:ok, _, {access_token, _}} <-
+           Guardian.exchange(refresh_token, "refresh", "access", ttl: {2, :hour}),
+         {:ok, _, {refresh_token, _}} <-
+           Guardian.refresh(refresh_token, ttl: {2, :day}) do
+      {:ok, access_token: access_token, refresh_token: refresh_token}
+    else
+      error ->
+        error
     end
   end
 

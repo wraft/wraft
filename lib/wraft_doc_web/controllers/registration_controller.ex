@@ -68,13 +68,18 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
       true ->
         with {:ok, %{organisations: organisations, user: %User{} = user}} <-
                Account.registration(params),
-             {:ok, token, _claims} <-
+             [access_token: access_token, refresh_token: refresh_token] <-
                Account.authenticate(%{user: user, password: params["password"]}) do
           Account.create_token_and_send_email(params["email"])
 
           conn
           |> put_status(:created)
-          |> render("create.json", user: user, token: token, organisations: organisations)
+          |> render("create.json",
+            user: user,
+            access_token: access_token,
+            refresh_token: refresh_token,
+            organisations: organisations
+          )
         end
 
       false ->
