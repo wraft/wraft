@@ -3,12 +3,11 @@ defmodule WraftDoc.Document.ThemeAsset do
     The Theme-asset association model.
   """
   use WraftDoc.Schema
-  alias WraftDoc.Document.{Asset, Theme}
   alias __MODULE__
 
   schema "theme_assets" do
-    belongs_to(:asset, Asset)
-    belongs_to(:theme, Theme)
+    belongs_to(:asset, WraftDoc.Document.Asset)
+    belongs_to(:theme, WraftDoc.Document.Theme)
 
     timestamps()
   end

@@ -4,9 +4,6 @@ defmodule WraftDocWeb.LayoutSlugUploader do
   use Waffle.Definition
   use Waffle.Ecto.Definition
 
-  # Include ecto support (requires package waffle_ecto installed):
-  # use Waffle.Ecto.Definition
-
   @versions [:original]
   # @extension_whitelist ~w(.jpg .jpeg .gif .png)
 

@@ -6,7 +6,8 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
   @moduletag :controller
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Theme, Repo}
+  alias WraftDoc.Document.Theme
+  alias WraftDoc.Repo
 
   @valid_attrs %{
     name: "Official Letter Theme",
@@ -15,18 +16,24 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
     organisation_id: 12
   }
 
-  @invalid_attrs %{}
+  @invalid_attrs %{body_color: "invalid hex format"}
 
   test "create themes by valid attrrs", %{conn: conn} do
+    asset =
+      insert(:asset, organisation: List.first(conn.assigns.current_user.owned_organisations))
+
     count_before = Theme |> Repo.all() |> length()
 
     conn =
       conn
-      |> post(Routes.v1_theme_path(conn, :create, @valid_attrs))
+      |> post(
+        Routes.v1_theme_path(conn, :create, Map.merge(@valid_attrs, %{"assets" => [asset.id]}))
+      )
       |> doc(operation_id: "create_theme")
 
     assert count_before + 1 == Theme |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == @valid_attrs.name
+    assert List.first(json_response(conn, 200)["assets"])["id"] == asset.id
   end
 
   test "does not create themes by invalid attrs", %{conn: conn} do
@@ -70,7 +77,9 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
       |> put(Routes.v1_theme_path(conn, :update, theme.id, @invalid_attrs))
       |> doc(operation_id: "update_theme")
 
-    assert json_response(conn, 422)["errors"]["file"] == ["can't be blank"]
+    assert json_response(conn, 422)["errors"]["body_color"] == [
+             "hex-code must be in the format of `#RRGGBB`"
+           ]
   end
 
   test "index lists assets by current user", %{conn: conn} do

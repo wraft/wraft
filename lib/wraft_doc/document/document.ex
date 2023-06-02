@@ -71,7 +71,7 @@ defmodule WraftDoc.Document do
   def create_layout(_, _, _), do: {:error, :fake}
 
   @doc """
-  Upload layout slug file.
+  Upload layout slug/screenshot file.
   """
   @spec layout_files_upload(Layout.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
   def layout_files_upload(layout, %{"slug_file" => _} = params) do
@@ -1159,7 +1159,6 @@ defmodule WraftDoc.Document do
   @doc """
   Create a theme.
   """
-  # TODO Improve tests
   @spec create_theme(User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
   def create_theme(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
@@ -1171,7 +1170,10 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, theme} ->
-        theme_file_upload(theme, params)
+        theme_preview_file_upload(theme, params)
+        fetch_and_associcate_assets_with_theme(theme, current_user, params)
+
+        Repo.preload(theme, [:assets])
 
       {:error, _} = changeset ->
         changeset
@@ -1199,16 +1201,35 @@ defmodule WraftDoc.Document do
 
   defp update_default_theme(_, params), do: params
 
+  # Get all the assets from their UUIDs and associate them with the given theme.
+  defp fetch_and_associcate_assets_with_theme(theme, current_user, %{"assets" => assets}) do
+    assets
+    |> Stream.map(fn asset -> get_asset(asset, current_user) end)
+    |> Stream.map(fn asset -> associate_theme_and_asset(theme, asset) end)
+    |> Enum.to_list()
+  end
+
+  defp fetch_and_associcate_assets_with_theme(_theme, _current_user, _params), do: []
+
+  # Associate the asset with the given theme, ie; insert a ThemeAsset entry.
+  defp associate_theme_and_asset(theme, %Asset{} = asset) do
+    %ThemeAsset{}
+    |> ThemeAsset.changeset(%{theme_id: theme.id, asset_id: asset.id})
+    |> Repo.insert()
+  end
+
+  defp associate_theme_and_asset(_theme, _asset), do: nil
+
   @doc """
-  Upload theme file.
+  Upload theme preview file.
   """
-  # TODO - improve tests
-  @spec theme_file_upload(Theme.t(), map) :: {:ok, %Theme{}} | {:error, Ecto.Changeset.t()}
-  def theme_file_upload(theme, %{"file" => _} = params) do
+  @spec theme_preview_file_upload(Theme.t(), map) ::
+          {:ok, %Theme{}} | {:error, Ecto.Changeset.t()}
+  def theme_preview_file_upload(theme, %{"preview_file" => _} = params) do
     theme |> Theme.file_changeset(params) |> Repo.update()
   end
 
-  def theme_file_upload(theme, _params) do
+  def theme_preview_file_upload(theme, _params) do
     {:ok, theme}
   end
 
@@ -1284,15 +1305,6 @@ defmodule WraftDoc.Document do
   # TODO - improve test
   @spec delete_theme(Theme.t()) :: {:ok, Theme.t()}
   def delete_theme(theme), do: Repo.delete(theme)
-
-  # function not used anywhere yet
-  # TODO - it has Spur implementation so waiting for Ex_audit
-  def associate_theme_and_asset(theme, asset) do
-    theme
-    |> build_assoc(:theme_assets, asset_id: asset.id)
-    |> ThemeAsset.changeset()
-    |> Repo.insert()
-  end
 
   @doc """
   Create a data template.
