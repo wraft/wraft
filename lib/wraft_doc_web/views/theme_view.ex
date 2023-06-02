@@ -1,6 +1,7 @@
 defmodule WraftDocWeb.Api.V1.ThemeView do
   use WraftDocWeb, :view
   alias __MODULE__
+  alias WraftDocWeb.Api.V1.AssetView
   alias WraftDocWeb.Api.V1.UserView
 
   def render("create.json", %{theme: theme}) do
@@ -13,10 +14,10 @@ defmodule WraftDocWeb.Api.V1.ThemeView do
       secondary_color: theme.secondary_color,
       default_theme: theme.default_theme,
       typescale: theme.typescale,
-      file: generate_url(theme),
       preview_file: theme.preview_file,
       updated_at: theme.updated_at,
-      inserted_at: theme.inserted_at
+      inserted_at: theme.inserted_at,
+      assets: render_many(theme.assets, AssetView, "asset.json", as: :asset)
     }
   end
 
@@ -39,9 +40,5 @@ defmodule WraftDocWeb.Api.V1.ThemeView do
       theme: render_one(theme, ThemeView, "create.json", as: :theme),
       creator: render_one(theme.creator, UserView, "user.json", as: :user)
     }
-  end
-
-  defp generate_url(%{file: file} = theme) do
-    WraftDocWeb.ThemeUploader.url({file, theme})
   end
 end

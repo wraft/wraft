@@ -43,6 +43,40 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
+      ThemeRequest:
+        swagger_schema do
+          title("Theme")
+          description("Theme Input Params")
+
+          properties do
+            name(:string, "Theme Name", required: true)
+            font(:string, "Font to be used in the theme, e.g. 'Malery', 'Roboto'", required: true)
+            body_color(:string, "Body color to be used in the theme, e.g. #ca1331")
+            primary_color(:string, "Primary color to be used in the theme, e.g. #ca1331")
+            secondary_color(:string, "Secondary color to be used in the theme, e.g #af0903")
+
+            typescale(:map, "Typescale of the theme, e.g. {'h1': 10, 'p': 6, 'h2': 8}",
+              required: true
+            )
+
+            default_theme(:bool, "true or false")
+            assets(:list, "IDs of assets of the theme")
+          end
+
+          example(%{
+            name: "Offer letter theme",
+            font: "Mallory-Bold.otf",
+            typescale: %{h1: 10, h2: 8, p: 6},
+            body_color: "#ffae23",
+            primary_color: "#ca1331",
+            secondary_color: "#ca1331",
+            default_theme: false,
+            assets: [
+              "89face43-c408-4002-af3a-e8b2946f800a",
+              "c70c6c80-d3ba-468c-9546-a338b0cf8d1c"
+            ]
+          })
+        end,
       Themes:
         swagger_schema do
           title("All themes and its details")
@@ -114,52 +148,16 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
   end
 
   @doc """
-  Create a layout.
+  Create a theme.
   """
   swagger_path :create do
     post("/themes")
     summary("Create theme")
     description("Create theme API")
 
-    consumes("multipart/form-data")
-
-    parameter(:name, :formData, :string, "Theme's name", required: true)
-
-    parameter(:font, :formData, :string, "Font to be used in the theme, e.g. 'Malery', 'Roboto'")
-
-    parameter(
-      :body_color,
-      :formData,
-      :string,
-      "Body color to be used in the theme, e.g. #ca1331"
-    )
-
-    parameter(
-      :primary_color,
-      :formData,
-      :string,
-      "Primary color to be used in the theme, e.g. #ca1331"
-    )
-
-    parameter(
-      :secondary_color,
-      :formData,
-      :string,
-      "Secondary color to be used in the theme, e.g #af0903"
-    )
-
-    parameter(
-      :typescale,
-      :formData,
-      :map,
-      "Typescale of the theme, e.g. {'h1': 10, 'p': 6, 'h2': 8}"
-    )
-
-    parameter(:default_theme, :formData, :bool, "true or false")
-
-    parameter(:file, :formData, :file, "Font file to upload, e.g. a roboto.ttf file")
-
-    parameter(:preview_file, :formData, :file, "Preview file to upload, e.g. .png .jpg")
+    parameters do
+      theme(:body, Schema.ref(:ThemeRequest), "Theme parameters", required: true)
+    end
 
     response(200, "Ok", Schema.ref(:Theme))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -170,7 +168,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, %Theme{} = theme} <- Document.create_theme(current_user, params) do
+    with %Theme{} = theme <- Document.create_theme(current_user, params) do
       render(conn, "create.json", theme: theme)
     end
   end
@@ -256,7 +254,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     parameter(:typescale, :formData, :string, "Typescale of the theme", required: true)
 
-    parameter(:file, :formData, :file, "Theme file to upload")
+    parameter(:preview_file, :formData, :file, "Theme preview file to upload")
 
     response(200, "Ok", Schema.ref(:Theme))
     response(404, "Not found", Schema.ref(:Error))
