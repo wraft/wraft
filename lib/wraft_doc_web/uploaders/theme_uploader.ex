@@ -21,7 +21,7 @@ defmodule WraftDocWeb.ThemeUploader do
   # end
 
   # Whitelist file extensions:
-  @extension_whitelist ~w(.pdf .ttf .otf)
+  @extension_whitelist ~w(.ttf .otf)
 
   def validate({file, _}) do
     file_extension = file.file_name |> Path.extname() |> String.downcase()

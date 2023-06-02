@@ -1,6 +1,8 @@
 defmodule WraftDocWeb.Api.V1.LayoutView do
   use WraftDocWeb, :view
-  alias WraftDocWeb.Api.V1.{AssetView, EngineView, UserView}
+  alias WraftDocWeb.Api.V1.AssetView
+  alias WraftDocWeb.Api.V1.EngineView
+  alias WraftDocWeb.Api.V1.UserView
   alias __MODULE__
 
   def render("create.json", %{doc_layout: layout}) do

@@ -66,11 +66,12 @@ defmodule WraftDoc.DocumentTest do
       "heading2" => 16,
       "paragraph" => 12
     },
-    "file" => %Plug.Upload{
+    "preview_file" => %Plug.Upload{
       filename: "invoice.pdf",
       path: "test/helper/invoice.pdf"
     }
   }
+
   @valid_data_template_attrs %{
     "title" => "data_template title",
     "title_template" => "data_template title_template",
@@ -2256,13 +2257,15 @@ defmodule WraftDoc.DocumentTest do
   describe "create_theme/2" do
     test "create theme on valid attributes" do
       user = insert(:user_with_organisation)
+      asset = insert(:asset, organisation: List.first(user.owned_organisations))
 
       count_before =
         Theme
         |> Repo.all()
         |> length()
 
-      {:ok, theme} = Document.create_theme(user, @valid_theme_attrs)
+      theme =
+        Document.create_theme(user, Map.merge(@valid_theme_attrs, %{"assets" => [asset.id]}))
 
       count_after =
         Theme
@@ -2271,6 +2274,7 @@ defmodule WraftDoc.DocumentTest do
 
       assert count_before + 1 == count_after
       assert theme.name == @valid_theme_attrs["name"]
+      assert List.first(theme.assets).id == asset.id
       assert theme.font == @valid_theme_attrs["font"]
       assert theme.typescale == @valid_theme_attrs["typescale"]
     end
@@ -2294,6 +2298,27 @@ defmodule WraftDoc.DocumentTest do
 
       assert %{name: ["can't be blank"], font: ["can't be blank"]} ==
                errors_on(changeset)
+    end
+
+    test "theme_preview_file_upload/2 Upload preview_file file" do
+      theme = insert(:theme)
+
+      assert {:ok, theme} =
+               Document.theme_preview_file_upload(
+                 theme,
+                 %{
+                   "preview_file" => %Plug.Upload{
+                     filename: "invoice.pdf",
+                     path: "test/helper/invoice.pdf"
+                   }
+                 }
+               )
+
+      dir = "uploads/theme/theme_preview/#{theme.id}"
+      assert {:ok, ls} = File.ls(dir)
+      assert File.exists?(dir)
+      assert Enum.member?(ls, "invoice.pdf")
+      assert theme.preview_file.file_name =~ "invoice.pdf"
     end
   end
 
@@ -2491,8 +2516,7 @@ defmodule WraftDoc.DocumentTest do
       assert %{
                name: ["can't be blank"],
                font: ["can't be blank"],
-               typescale: ["can't be blank"],
-               file: ["can't be blank"]
+               typescale: ["can't be blank"]
              } ==
                errors_on(changeset)
     end
