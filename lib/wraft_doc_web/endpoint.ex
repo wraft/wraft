@@ -1,4 +1,5 @@
 defmodule WraftDocWeb.Endpoint do
+  use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :wraft_doc
 
   plug(Phoenix.LiveDashboard.RequestLogger,
@@ -53,6 +54,8 @@ defmodule WraftDocWeb.Endpoint do
     pass: ["*/*"],
     json_decoder: Jason
   )
+
+  plug Sentry.PlugContext
 
   plug(Plug.Static,
     at: "/kaffy",
