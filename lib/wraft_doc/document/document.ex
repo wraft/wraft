@@ -1242,6 +1242,7 @@ defmodule WraftDoc.Document do
     |> where([t], t.organisation_id == ^org_id)
     |> where(^theme_filter_by_name(params))
     |> order_by(^theme_sort(params))
+    |> preload(:assets)
     |> Repo.paginate(params)
   end
 
@@ -1266,7 +1267,9 @@ defmodule WraftDoc.Document do
   # TODO - improve test
   @spec get_theme(binary, User.t()) :: Theme.t() | nil
   def get_theme(theme_uuid, %{current_org_id: org_id}) do
-    Repo.get_by(Theme, id: theme_uuid, organisation_id: org_id)
+    Theme
+    |> Repo.get_by(id: theme_uuid, organisation_id: org_id)
+    |> Repo.preload(:assets)
   end
 
   def get_theme(theme_id, org_id) do
