@@ -126,13 +126,12 @@ defmodule WraftDoc.Document do
   Create a content type.
   """
   # TODO - improve tests
-  @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
-          ContentType.t() | {:error, Ecto.Changeset.t()}
-  def create_content_type(%{current_org_id: org_id} = current_user, layout, flow, params) do
+  @spec create_content_type(User.t(), map) :: ContentType.t() | {:error, Ecto.Changeset.t()}
+  def create_content_type(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
-    |> build_assoc(:content_types, layout: layout, flow: flow)
+    |> build_assoc(:content_types)
     |> ContentType.changeset(params)
     |> Repo.insert()
     |> case do

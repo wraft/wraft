@@ -35,7 +35,7 @@ defmodule WraftDoc.Schema do
 
   def organisation_constraint(changeset, schema, field) do
     organisation_id =
-      get_change(changeset, :organisation_id) || changeset.params["organisation_id"]
+      get_field(changeset, :organisation_id) || changeset.params["organisation_id"]
 
     case is_nil(organisation_id) do
       false ->

@@ -17,6 +17,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.Layout
+  alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
 
@@ -33,6 +34,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             fields(Schema.ref(:ContentTypeFieldRequests))
             layout_id(:string, "ID of the layout selected", required: true)
             flow_id(:string, "ID of the flow selected", required: true)
+            theme_id(:string, "ID of the flow selected", required: true)
             color(:string, "Hex code of color")
 
             prefix(:string, "Prefix to be used for generating Unique ID for contents",
@@ -54,6 +56,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             ],
             layout_id: "1232148nb3478",
             flow_id: "234okjnskjb8234",
+            theme_id: "123ki3491n49",
             prefix: "OFFLET",
             color: "#fff"
           })
@@ -521,13 +524,18 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"layout_id" => layout_id, "flow_id" => flow_id} = params) do
+  # TODO - Add test to check cases where Flow, Layout and/or theme doesnt exist or belong to user's organisation
+  def create(
+        conn,
+        %{"layout_id" => layout_id, "flow_id" => flow_id, "theme_id" => theme_id} = params
+      ) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Document.get_layout(layout_id, current_user),
-         %Flow{} = flow <- Enterprise.get_flow(flow_id, current_user),
+    with %Layout{} <- Document.get_layout(layout_id, current_user),
+         %Flow{} <- Enterprise.get_flow(flow_id, current_user),
+         %Theme{} <- Document.get_theme(theme_id, current_user),
          %ContentType{} = content_type <-
-           Document.create_content_type(current_user, layout, flow, params) do
+           Document.create_content_type(current_user, params) do
       render(conn, :create, content_type: content_type)
     end
   end

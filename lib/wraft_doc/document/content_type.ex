@@ -5,7 +5,10 @@ defmodule WraftDoc.Document.ContentType do
   use WraftDoc.Schema
 
   alias __MODULE__
-  alias WraftDoc.{Document.ContentType, Document.Layout, Enterprise.Flow}
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Document.Theme
+  alias WraftDoc.Enterprise.Flow
 
   @derive {Jason.Encoder, only: [:id]}
 
@@ -18,7 +21,7 @@ defmodule WraftDoc.Document.ContentType do
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:flow, Flow)
-    belongs_to(:theme, WraftDoc.Document.Theme)
+    belongs_to(:theme, Theme)
 
     has_many(:instances, WraftDoc.Document.Instance)
     has_many(:fields, WraftDoc.Document.ContentTypeField)
@@ -32,12 +35,35 @@ defmodule WraftDoc.Document.ContentType do
 
   def changeset(%ContentType{} = content_type, attrs \\ %{}) do
     content_type
-    |> cast(attrs, [:name, :description, :color, :prefix, :organisation_id])
-    |> validate_required([:name, :description, :prefix, :organisation_id])
-    |> unique_constraint(:name,
+    |> cast(
+      attrs,
+      [
+        :name,
+        :description,
+        :prefix,
+        :color,
+        :layout_id,
+        :flow_id,
+        :theme_id,
+        :organisation_id,
+        :creator_id
+      ]
+    )
+    |> validate_required([
+      :name,
+      :prefix,
+      :layout_id,
+      :flow_id,
+      :theme_id,
+      :organisation_id,
+      :creator_id
+    ])
+    |> unique_constraint(
+      :name,
       message: "Content type with the same name under your organisation exists.!",
       name: :content_type_organisation_unique_index
     )
+    |> validate_length(:prefix, min: 2, max: 6)
     |> validate_format(:color, ~r/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
   end
 
@@ -45,10 +71,14 @@ defmodule WraftDoc.Document.ContentType do
     content_type
     |> cast(attrs, [:name, :description, :color, :layout_id, :flow_id, :prefix, :theme_id])
     |> validate_required([:name, :description, :layout_id, :flow_id, :prefix, :theme_id])
-    |> unique_constraint(:name,
+    |> unique_constraint(
+      :name,
       message: "Content type with the same name under your organisation exists.!",
       name: :content_type_organisation_unique_index
     )
+    |> organisation_constraint(Layout, :layout_id)
+    |> organisation_constraint(Flow, :flow_id)
+    |> organisation_constraint(Theme, :theme_id)
     |> validate_length(:prefix, min: 2, max: 6)
     |> validate_format(:color, ~r/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
   end
