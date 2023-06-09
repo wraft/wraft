@@ -19,11 +19,15 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   test "create content types by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
     [organisation] = user.owned_organisations
-    count_before = ContentType |> Repo.all() |> length()
-    %{id: flow_id} = insert(:flow, creator: user, organisation: organisation)
-    %{id: layout_id} = insert(:layout, creator: user, organisation: organisation)
 
-    params = Map.merge(@valid_attrs, %{flow_id: flow_id, layout_id: layout_id})
+    count_before = ContentType |> Repo.all() |> length()
+
+    %{id: flow_id} = insert(:flow, organisation: organisation)
+    %{id: layout_id} = insert(:layout, organisation: organisation)
+    %{id: theme_id} = insert(:theme, organisation: organisation)
+
+    params =
+      Map.merge(@valid_attrs, %{flow_id: flow_id, layout_id: layout_id, theme_id: theme_id})
 
     conn =
       conn
@@ -38,10 +42,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
     user = conn.assigns.current_user
     [organisation] = user.owned_organisations
     count_before = ContentType |> Repo.all() |> length()
-    %{id: flow_id} = insert(:flow, creator: user, organisation: organisation)
-    %{id: layout_id} = insert(:layout, creator: user, organisation: organisation)
+    %{id: flow_id} = insert(:flow, organisation: organisation)
+    %{id: layout_id} = insert(:layout, organisation: organisation)
+    %{id: theme_id} = insert(:theme, organisation: organisation)
 
-    params = Map.merge(@invalid_attrs, %{flow_id: flow_id, layout_id: layout_id})
+    params =
+      Map.merge(@invalid_attrs, %{flow_id: flow_id, layout_id: layout_id, theme_id: theme_id})
 
     conn =
       conn
@@ -55,16 +61,16 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   test "update content type on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
     [organisation] = user.owned_organisations
-    theme = insert(:theme, creator: user, organisation: organisation)
     content_type = insert(:content_type, creator: user, organisation: organisation)
 
     count_before = ContentType |> Repo.all() |> length()
 
-    %{id: flow_uuid} = insert(:flow)
-    %{id: layout_uuid} = insert(:layout)
+    %{id: flow_id} = insert(:flow, organisation: organisation)
+    %{id: layout_id} = insert(:layout, organisation: organisation)
+    %{id: theme_id} = insert(:theme, organisation: organisation)
 
     params =
-      Map.merge(@valid_attrs, %{flow_id: flow_uuid, layout_id: layout_uuid, theme_id: theme.id})
+      Map.merge(@valid_attrs, %{flow_id: flow_id, layout_id: layout_id, theme_id: theme_id})
 
     conn =
       conn
