@@ -127,7 +127,10 @@ defmodule WraftDoc.Mixfile do
 
       # Feature Flags
       {:fun_with_flags, "~> 1.10.1", runtime: false},
-      {:fun_with_flags_ui, "~> 0.8.1"}
+      {:fun_with_flags_ui, "~> 0.8.1"},
+
+      # Sentry
+      {:sentry, "~> 8.0"}
     ]
   end
 
