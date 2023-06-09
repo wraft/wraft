@@ -136,7 +136,8 @@ defmodule WraftDoc.Factory do
       prefix: "OFFR",
       organisation: build(:organisation),
       layout: build(:layout),
-      flow: build(:flow)
+      flow: build(:flow),
+      theme: build(:theme)
     }
   end
 
