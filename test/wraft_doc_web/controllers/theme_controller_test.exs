@@ -114,6 +114,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
     user = conn.assigns[:current_user]
 
     theme = insert(:theme, creator: user, organisation: List.first(user.owned_organisations))
+
     count_before = Theme |> Repo.all() |> length()
 
     conn = delete(conn, Routes.v1_theme_path(conn, :delete, theme.id))
