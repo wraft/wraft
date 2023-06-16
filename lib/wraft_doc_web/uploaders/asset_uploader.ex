@@ -31,7 +31,6 @@ defmodule WraftDocWeb.AssetUploader do
   #   {:convert, "-strip -thumbnail 250x250^ -gravity center -extent 250x250 -format png", :png}
   # end
 
-  # Override the persisted filenames:
   # def filename(version, _) do
   #   version
   # end

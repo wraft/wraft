@@ -43,6 +43,30 @@ defmodule WraftDoc.Minio do
   end
 
   @doc """
+  Delete a file with a given path
+  """
+  @spec delete_file(binary()) :: ex_aws_response()
+  def delete_file(prefix) do
+    case list_objects(prefix) do
+      {:ok, %{body: %{contents: [%{key: file_path}]}}} -> delete_object(file_path)
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, "Unknown error"}
+    end
+  end
+
+  defp list_objects(prefix) do
+    @minio_bucket
+    |> S3.list_objects(prefix: prefix)
+    |> @ex_aws_module.request()
+  end
+
+  defp delete_object(file_path) do
+    @minio_bucket
+    |> S3.delete_object(file_path)
+    |> @ex_aws_module.request()
+  end
+
+  @doc """
   Generate the presigned URL for a file.
   """
   @spec generate_url(binary()) :: binary()

@@ -28,6 +28,7 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.Document.Pipeline.Stage
   alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Document.Theme
+  alias WraftDoc.Document.ThemeAsset
   alias WraftDoc.Repo
 
   setup :verify_on_exit!
@@ -1249,8 +1250,8 @@ defmodule WraftDoc.DocumentTest do
     test "returns error tuple when AWS request fails" do
       instance = insert(:instance)
 
-      expect(
-        ExAwsMock,
+      ExAwsMock
+      |> expect(
         :stream!,
         fn %ExAws.Operation.S3{} = operation ->
           assert operation.http_method == :get
@@ -1259,9 +1260,7 @@ defmodule WraftDoc.DocumentTest do
           {:error, :reason}
         end
       )
-
-      expect(
-        ExAwsMock,
+      |> expect(
         :request,
         fn %ExAws.Operation.S3DeleteAllObjects{} ->
           {:error, :reason}
@@ -2498,21 +2497,66 @@ defmodule WraftDoc.DocumentTest do
 
   describe "delete_theme/1" do
     test "delete theme deletes and return the theme data" do
+      user = insert(:user_with_organisation)
       theme = insert(:theme)
+      asset = insert(:asset, organisation: List.first(user.owned_organisations))
+      insert(:theme_asset, theme: theme, asset: asset)
 
-      count_before =
-        Theme
-        |> Repo.all()
-        |> length()
+      count_before_asset = Asset |> Repo.all() |> length()
+      count_before_theme_asset = ThemeAsset |> Repo.all() |> length()
+      count_before_theme = Theme |> Repo.all() |> length()
+
+      ExAwsMock
+      |> expect(
+        :request,
+        fn %ExAws.Operation.S3{} = operation ->
+          assert operation.http_method == :get
+          assert operation.params == %{"prefix" => "uploads/theme/theme_preview/#{theme.id}"}
+
+          {
+            :ok,
+            %{
+              body: %{
+                contents: [%{key: "image.jpg", last_modified: "2023-03-17T13:16:11.704Z"}]
+              }
+            }
+          }
+        end
+      )
+      |> expect(
+        :request,
+        fn %ExAws.Operation.S3{} -> {:ok, %{body: "", status_code: 204}} end
+      )
+      |> expect(
+        :request,
+        fn %ExAws.Operation.S3{} = operation ->
+          assert operation.http_method == :get
+          assert operation.params == %{"prefix" => "uploads/assets/#{asset.id}"}
+
+          {
+            :ok,
+            %{
+              body: %{
+                contents: [%{key: "image.jpg", last_modified: "2023-03-17T13:16:11.704Z"}]
+              }
+            }
+          }
+        end
+      )
+      |> expect(
+        :request,
+        fn %ExAws.Operation.S3{} -> {:ok, %{body: "", status_code: 204}} end
+      )
 
       {:ok, t_theme} = Document.delete_theme(theme)
 
-      count_after =
-        Theme
-        |> Repo.all()
-        |> length()
+      count_after_asset = Asset |> Repo.all() |> length()
+      count_after_theme_asset = ThemeAsset |> Repo.all() |> length()
+      count_after_theme = Theme |> Repo.all() |> length()
 
-      assert count_before - 1 == count_after
+      assert count_before_theme_asset - 1 == count_after_theme_asset
+      assert count_before_asset - 1 == count_after_asset
+      assert count_before_theme - 1 == count_after_theme
       assert t_theme.name == theme.name
       assert t_theme.font == theme.font
       assert t_theme.typescale == theme.typescale
