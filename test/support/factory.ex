@@ -39,6 +39,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Document.Pipeline.Stage
   alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Document.Theme
+  alias WraftDoc.Document.ThemeAsset
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
@@ -209,6 +210,13 @@ defmodule WraftDoc.Factory do
       creator: build(:user),
       organisation: build(:organisation),
       file: nil
+    }
+  end
+
+  def theme_asset_factory do
+    %ThemeAsset{
+      theme: build(:theme),
+      asset: build(:asset)
     }
   end
 

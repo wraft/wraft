@@ -1304,9 +1304,29 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a theme.
   """
-  # TODO - improve test
   @spec delete_theme(Theme.t()) :: {:ok, Theme.t()}
-  def delete_theme(theme), do: Repo.delete(theme)
+  def delete_theme(theme) do
+    asset_query =
+      from(asset in Asset,
+        join: theme_asset in ThemeAsset,
+        where: theme_asset.theme_id == ^theme.id and asset.id == theme_asset.asset_id,
+        select: asset.id
+      )
+
+    theme_asset_query = from(ta in ThemeAsset, where: ta.theme_id == ^theme.id)
+
+    # Delete the theme preview file
+    Minio.delete_file("uploads/theme/theme_preview/#{theme.id}")
+
+    # Deletes the asset files
+    asset_query
+    |> Repo.all()
+    |> Enum.each(&Minio.delete_file("uploads/assets/#{&1}"))
+
+    Repo.delete_all(asset_query)
+    Repo.delete_all(theme_asset_query)
+    Repo.delete(theme)
+  end
 
   @doc """
   Create a data template.
