@@ -6,6 +6,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
   @moduletag :controller
 
   import WraftDoc.Factory
+  import Mox
   alias WraftDoc.Document.Theme
   alias WraftDoc.Repo
 
@@ -112,10 +113,52 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   test "delete theme by given id", %{conn: conn} do
     user = conn.assigns[:current_user]
-
     theme = insert(:theme, creator: user, organisation: List.first(user.owned_organisations))
-
+    asset = insert(:asset, organisation: List.first(user.owned_organisations))
+    insert(:theme_asset, theme: theme, asset: asset)
     count_before = Theme |> Repo.all() |> length()
+
+    ExAwsMock
+    |> expect(
+      :request,
+      fn %ExAws.Operation.S3{} = operation ->
+        assert operation.http_method == :get
+        assert operation.params == %{"prefix" => "uploads/theme/theme_preview/#{theme.id}"}
+
+        {
+          :ok,
+          %{
+            body: %{
+              contents: [%{key: "image.jpg", last_modified: "2023-03-17T13:16:11.704Z"}]
+            }
+          }
+        }
+      end
+    )
+    |> expect(
+      :request,
+      fn %ExAws.Operation.S3{} -> {:ok, %{body: "", status_code: 204}} end
+    )
+    |> expect(
+      :request,
+      fn %ExAws.Operation.S3{} = operation ->
+        assert operation.http_method == :get
+        assert operation.params == %{"prefix" => "uploads/assets/#{asset.id}"}
+
+        {
+          :ok,
+          %{
+            body: %{
+              contents: [%{key: "image.jpg", last_modified: "2023-03-17T13:16:11.704Z"}]
+            }
+          }
+        }
+      end
+    )
+    |> expect(
+      :request,
+      fn %ExAws.Operation.S3{} -> {:ok, %{body: "", status_code: 204}} end
+    )
 
     conn = delete(conn, Routes.v1_theme_path(conn, :delete, theme.id))
     assert count_before - 1 == Theme |> Repo.all() |> length()
