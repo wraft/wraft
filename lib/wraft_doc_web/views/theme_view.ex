@@ -28,7 +28,7 @@ defmodule WraftDocWeb.Api.V1.ThemeView do
         total_entries: total_entries
       }) do
     %{
-      themes: render_many(themes, ThemeView, "create.json", as: :theme),
+      themes: render_many(themes, ThemeView, "update.json", as: :theme),
       page_number: page_number,
       total_pages: total_pages,
       total_entries: total_entries
@@ -39,6 +39,22 @@ defmodule WraftDocWeb.Api.V1.ThemeView do
     %{
       theme: render_one(theme, ThemeView, "create.json", as: :theme),
       creator: render_one(theme.creator, UserView, "user.json", as: :user)
+    }
+  end
+
+  def render("update.json", %{theme: theme}) do
+    %{
+      id: theme.id,
+      name: theme.name,
+      font: theme.font,
+      body_color: theme.body_color,
+      primary_color: theme.primary_color,
+      secondary_color: theme.secondary_color,
+      default_theme: theme.default_theme,
+      typescale: theme.typescale,
+      preview_file: theme.preview_file,
+      updated_at: theme.updated_at,
+      inserted_at: theme.inserted_at
     }
   end
 end
