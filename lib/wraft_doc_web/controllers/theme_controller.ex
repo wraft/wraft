@@ -40,6 +40,35 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
             typescale: %{h1: "10", p: "6", h2: "8"},
             file: "/malory.css",
             updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z",
+            assets: [
+              "89face43-c408-4002-af3a-e8b2946f800a",
+              "c70c6c80-d3ba-468c-9546-a338b0cf8d1c"
+            ]
+          })
+        end,
+      UpdateTheme:
+        swagger_schema do
+          title("Theme")
+          description("A Theme")
+
+          properties do
+            id(:string, "The ID of the theme", required: true)
+            name(:string, "Theme's name", required: true)
+            font(:string, "Font name", required: true)
+            typescale(:map, "Typescale of the theme", required: true)
+            file(:string, "Theme file attachment")
+            inserted_at(:string, "When was the layout created", format: "ISO-8601")
+            updated_at(:string, "When was the layout last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            name: "Official Letter Theme",
+            font: "Malery",
+            typescale: %{h1: "10", p: "6", h2: "8"},
+            file: "/malory.css",
+            updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
@@ -86,7 +115,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
           )
 
           type(:array)
-          items(Schema.ref(:Theme))
+          items(Schema.ref(:UpdateTheme))
         end,
       ShowTheme:
         swagger_schema do
@@ -256,7 +285,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     parameter(:preview_file, :formData, :file, "Theme preview file to upload")
 
-    response(200, "Ok", Schema.ref(:Theme))
+    response(200, "Ok", Schema.ref(:UpdateTheme))
     response(404, "Not found", Schema.ref(:Error))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
@@ -268,7 +297,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     with %Theme{} = theme <- Document.get_theme(theme_uuid, current_user),
          {:ok, %Theme{} = theme} <- Document.update_theme(theme, params) do
-      render(conn, "create.json", theme: theme)
+      render(conn, "update.json", theme: theme)
     end
   end
 
@@ -284,7 +313,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
       id(:path, :string, "theme id", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:Theme))
+    response(200, "Ok", Schema.ref(:UpdateTheme))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
@@ -295,7 +324,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     with %Theme{} = theme <- Document.get_theme(uuid, current_user),
          {:ok, %Theme{}} <- Document.delete_theme(theme) do
-      render(conn, "create.json", theme: theme)
+      render(conn, "update.json", theme: theme)
     end
   end
 end
