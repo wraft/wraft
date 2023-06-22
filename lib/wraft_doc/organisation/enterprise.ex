@@ -24,6 +24,11 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Workers.EmailWorker
   alias WraftDoc.Workers.ScheduledWorker
 
+  @razorpay_client Application.compile_env(
+                     :wraft_doc,
+                     [:test_module, :razorpay],
+                     WraftDoc.Client.Razorpay
+                   )
   @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
 
   @default_controlled_states [
@@ -812,15 +817,15 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Updates a membership.
   """
-  @spec update_membership(User.t(), Membership.t(), Plan.t(), Razorpay.Payment.t()) ::
+  @spec update_membership(User.t(), Membership.t(), Plan.t(), map()) ::
           Membership.t() | {:ok, Payment.t()} | {:error, :wrong_amount} | nil
   def update_membership(
         %User{} = user,
         %Membership{} = membership,
         %Plan{} = plan,
-        %Razorpay.Payment{status: "failed"} = razorpay
+        %{"status" => "failed"} = payment_details
       ) do
-    params = create_payment_params(membership, plan, razorpay)
+    params = create_payment_params(membership, plan, payment_details)
     user |> create_payment_changeset(params) |> Repo.insert()
   end
 
@@ -828,11 +833,11 @@ defmodule WraftDoc.Enterprise do
         %User{} = user,
         %Membership{} = membership,
         %Plan{} = plan,
-        %Razorpay.Payment{amount: amount} = razorpay
+        %{"amount" => amount} = payment_details
       ) do
     case get_duration_from_plan_and_amount(plan, amount) do
       duration when is_integer(duration) ->
-        params = create_membership_and_payment_params(membership, plan, duration, razorpay)
+        params = create_membership_and_payment_params(membership, plan, duration, payment_details)
         do_update_membership(user, membership, params)
 
       error ->
@@ -878,14 +883,14 @@ defmodule WraftDoc.Enterprise do
           Membership.t(),
           Plan.t(),
           integer(),
-          Razorpay.Payment.t()
+          map()
         ) :: map
-  defp create_membership_and_payment_params(membership, plan, duration, razorpay) do
+  defp create_membership_and_payment_params(membership, plan, duration, payment_details) do
     start_date = Timex.now()
     end_date = find_end_date(start_date, duration)
 
     membership
-    |> create_payment_params(plan, razorpay)
+    |> create_payment_params(plan, payment_details)
     |> Map.merge(%{
       start_date: start_date,
       end_date: end_date,
@@ -895,11 +900,11 @@ defmodule WraftDoc.Enterprise do
   end
 
   # Create payment params
-  @spec create_payment_params(Membership.t(), Plan.t(), Razorpay.Payment.t()) :: map
+  @spec create_payment_params(Membership.t(), Plan.t(), map()) :: map
   defp create_payment_params(
          membership,
          plan,
-         %Razorpay.Payment{amount: amount, id: r_id, status: status} = razorpay
+         %{"amount" => amount, "id" => r_id, "status" => status} = payment_details
        ) do
     status = String.to_atom(status)
     status = Payment.statuses()[status]
@@ -914,7 +919,7 @@ defmodule WraftDoc.Enterprise do
       action: action,
       from_plan_id: membership.plan_id,
       to_plan_id: plan.id,
-      meta: razorpay,
+      meta: payment_details,
       membership_id: membership.id
     }
   end
@@ -1000,9 +1005,9 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Gets the razorpay payment struct from the razorpay ID using `Razorpay.Payment.get/2`
   """
-  @spec get_razorpay_data(binary) :: {:ok, Razorpay.Payment.t()} | Razorpay.error()
+  @spec get_razorpay_data(binary) :: {:ok, map()} | {:error, map()}
   def get_razorpay_data(razorpay_id) do
-    Razorpay.Payment.get(razorpay_id)
+    @razorpay_client.get_payment(razorpay_id)
   end
 
   @doc """

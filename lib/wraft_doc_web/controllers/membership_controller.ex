@@ -141,10 +141,10 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
 
     with %Membership{} = membership <- Enterprise.get_membership(m_id, current_user),
          %Plan{} = plan <- Enterprise.get_plan(params["plan_id"]),
-         {:ok, %Razorpay.Payment{} = razorpay} <-
+         {:ok, payment_details} <-
            Enterprise.get_razorpay_data(params["razorpay_id"]),
          %Membership{} = membership <-
-           Enterprise.update_membership(current_user, membership, plan, razorpay) do
+           Enterprise.update_membership(current_user, membership, plan, payment_details) do
       render(conn, "membership.json", membership: membership)
     else
       {:ok, %Payment{}} ->

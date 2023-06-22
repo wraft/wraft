@@ -1,4 +1,4 @@
-defmodule WraftDoc.Minio do
+defmodule WraftDoc.Client.Minio do
   @moduledoc """
   All the MinIO related functionalities goes here
   """

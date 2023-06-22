@@ -5,8 +5,6 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
   alias __MODULE__
-  require Protocol
-  Protocol.derive(Jason.Encoder, Razorpay.Payment)
 
   @type t :: %__MODULE__{}
 
