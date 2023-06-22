@@ -127,7 +127,7 @@
                 <!-- <h5 style="font-size: 20px; margin: -3px; display: block; overflow: hidden; padding-left: 12px;">Duru Cooperation Private Limited</h5> -->
                 <div style="float: right; display: block; overflow: hidden; line-height: 1.6; text-align: right; padding-left: 12px; padding-top: 8px; color: #333;">
                     <div ><b>Invoice #:  <%= @invoice_number %> </b></div>
-                    <div>Date: <%= @payment.meta.created_at |> Timex.from_unix |> humanize_time %></div>
+                    <div>Date: <%= @payment.meta["created_at"] |> Timex.from_unix |> humanize_time %></div>
                 </div>
             </div>
             <div style="display: block; overflow: hidden; margin-top: 25px; margin-bottom: 25px;">

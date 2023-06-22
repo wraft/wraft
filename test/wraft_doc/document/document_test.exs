@@ -69,7 +69,8 @@ defmodule WraftDoc.DocumentTest do
     },
     "preview_file" => %Plug.Upload{
       filename: "invoice.pdf",
-      path: "test/helper/invoice.pdf"
+      path: "test/helper/invoice.pdf",
+      content_type: "application/pdf"
     }
   }
 
@@ -84,7 +85,9 @@ defmodule WraftDoc.DocumentTest do
   @invalid_data_template_attrs %{title: nil, title_template: nil, data: nil}
   @valid_asset_attrs %{
     "name" => "asset name",
+    "type" => "layout",
     "file" => %Plug.Upload{
+      content_type: "application/pdf",
       filename: "invoice.pdf",
       path: "test/helper/invoice.pdf"
     }
@@ -2806,19 +2809,57 @@ defmodule WraftDoc.DocumentTest do
       [organisation] = user.owned_organisations
       params = Map.put(@valid_asset_attrs, "organisation_id", organisation.id)
 
-      count_before =
-        Asset
-        |> Repo.all()
-        |> length()
-
       {:ok, asset} = Document.create_asset(user, params)
 
-      assert count_before + 1 ==
-               Asset
-               |> Repo.all()
-               |> length()
+      assert asset.id
+      assert asset.name == params["name"]
+      assert asset.type == params["type"]
+      assert asset.organisation_id == params["organisation_id"]
+      assert asset.file.file_name == params["file"].filename
+    end
 
-      assert asset.name == @valid_asset_attrs["name"]
+    test "only pdf files allowed for asset of layout type" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+
+      params = Map.merge(@valid_asset_attrs, %{"organisation_id" => organisation.id})
+      assert {:ok, %Asset{id: <<_::288>>}} = Document.create_asset(user, params)
+
+      uploader = %Plug.Upload{
+        content_type: "image/png",
+        filename: "images.png",
+        path: "test/helper/images.png"
+      }
+
+      params = Map.merge(params, %{"file" => uploader})
+
+      {:error, %Ecto.Changeset{errors: [file: {"invalid file type", _}]}} =
+        Document.create_asset(user, params)
+    end
+
+    test "only font files allowed for asset of theme type" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+
+      uploader = %Plug.Upload{
+        content_type: "font/ttf",
+        filename: "roboto.ttf",
+        path: "test/helper/roboto.ttf"
+      }
+
+      params =
+        Map.merge(
+          @valid_asset_attrs,
+          %{"organisation_id" => organisation.id, "file" => uploader, "type" => "theme"}
+        )
+
+      assert {:ok, %Asset{id: <<_::288>>}} = Document.create_asset(user, params)
+
+      params =
+        Map.merge(@valid_asset_attrs, %{"organisation_id" => organisation.id, "type" => "theme"})
+
+      {:error, %Ecto.Changeset{errors: [file: {"invalid file type", _}]}} =
+        Document.create_asset(user, params)
     end
 
     test "create asset on invalid attrs" do
@@ -2837,7 +2878,7 @@ defmodule WraftDoc.DocumentTest do
         |> length()
 
       assert count_before == count_after
-      assert %{name: ["can't be blank"]} == errors_on(changeset)
+      assert %{name: ["can't be blank"], type: ["can't be blank"]} == errors_on(changeset)
     end
 
     test "asset_file_upload/2 Upload asset file" do
@@ -2849,7 +2890,8 @@ defmodule WraftDoc.DocumentTest do
                  %{
                    "file" => %Plug.Upload{
                      filename: "invoice.pdf",
-                     path: "test/helper/invoice.pdf"
+                     path: "test/helper/invoice.pdf",
+                     content_type: "application/pdf"
                    }
                  }
                )

@@ -6,6 +6,8 @@ defmodule WraftDocWeb.AssetUploader do
   # Include ecto support (requires package waffle_ecto installed):
   # use Waffle.Ecto.Definition
 
+  alias WraftDoc.Document.Asset
+
   @versions [:original]
 
   # To add a thumbnail version:
@@ -17,14 +19,20 @@ defmodule WraftDocWeb.AssetUploader do
   # end
 
   # Whitelist file extensions:
-  # def validate({file, _}) do
-  #   file_extension = file.file_name |> Path.extname() |> String.downcase()
-  #
-  #   case Enum.member?(~w(.jpg .jpeg .gif .png), file_extension) do
-  #     true -> :ok
-  #     false -> {:error, "invalid file type"}
-  #   end
-  # end
+  def validate({file, %Asset{type: "layout"}}) do
+    file_extension = file.file_name |> Path.extname() |> String.downcase()
+
+    if ".pdf" == file_extension, do: :ok, else: {:error, "invalid file type"}
+  end
+
+  def validate({file, %Asset{type: "theme"}}) do
+    file_extension = file.file_name |> Path.extname() |> String.downcase()
+
+    case Enum.member?(~w(.otf .ttf), file_extension) do
+      true -> :ok
+      false -> {:error, "invalid file type"}
+    end
+  end
 
   # Define a thumbnail transformation:
   # def transform(:thumb, _) do
