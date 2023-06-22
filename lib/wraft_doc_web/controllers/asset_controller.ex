@@ -26,6 +26,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
           properties do
             id(:string, "The ID of the asset", required: true)
             name(:string, "Name of the asset")
+            type(:string, "Type of the asset - layout or theme")
             file(:string, "URL of the uploaded file")
             inserted_at(:string, "When was the engine inserted", format: "ISO-8601")
             updated_at(:string, "When was the engine last updated", format: "ISO-8601")
@@ -34,6 +35,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
           example(%{
             id: "1232148nb3478",
             name: "Asset",
+            type: "layout",
             file: "/signature.pdf",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
@@ -53,6 +55,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
             asset: %{
               id: "1232148nb3478",
               name: "Asset",
+              type: "layout",
               file: "/signature.pdf",
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
@@ -88,6 +91,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
               %{
                 id: "1232148nb3478",
                 name: "Asset",
+                type: "layout",
                 file: "/signature.pdf",
                 updated_at: "2020-01-21T14:00:00Z",
                 inserted_at: "2020-02-21T14:00:00Z"
@@ -113,6 +117,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
     parameter(:name, :formData, :string, "Asset name", required: true)
     parameter(:file, :formData, :file, "Asset file to upload")
+    parameter(:type, :formData, :string, "The type of asset - theme or layout")
 
     response(200, "Ok", Schema.ref(:Asset))
     response(422, "Unprocessable Entity", Schema.ref(:Error))

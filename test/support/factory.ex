@@ -207,9 +207,10 @@ defmodule WraftDoc.Factory do
   def asset_factory do
     %Asset{
       name: sequence(:name, &"asset-#{&1}"),
+      type: "layout",
+      file: nil,
       creator: build(:user),
-      organisation: build(:organisation),
-      file: nil
+      organisation: build(:organisation)
     }
   end
 
