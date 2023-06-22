@@ -7,6 +7,7 @@ defmodule WraftDocWeb.Api.V1.AssetView do
     %{
       id: asset.id,
       name: asset.name,
+      type: asset.type,
       file: generate_url(asset),
       inserted_at: asset.inserted_at,
       updated_at: asset.updated_at

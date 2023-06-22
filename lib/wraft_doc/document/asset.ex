@@ -6,9 +6,12 @@ defmodule WraftDoc.Document.Asset do
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
 
+  @types ~w(layout theme)
+
   schema "asset" do
     field(:name, :string)
     field(:file, WraftDocWeb.AssetUploader.Type)
+    field(:type, :string)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     timestamps()
@@ -16,8 +19,9 @@ defmodule WraftDoc.Document.Asset do
 
   def changeset(%Asset{} = asset, attrs \\ %{}) do
     asset
-    |> cast(attrs, [:name, :organisation_id])
-    |> validate_required([:name, :organisation_id])
+    |> cast(attrs, [:name, :type, :organisation_id])
+    |> validate_required([:name, :type, :organisation_id])
+    |> validate_inclusion(:type, @types)
   end
 
   def update_changeset(%Asset{} = asset, attrs \\ %{}) do
