@@ -2,10 +2,22 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
   import WraftDoc.Factory
-  alias WraftDoc.{Enterprise.Membership.Payment, Repo}
+  import Mox
+
+  alias WraftDoc.Client.RazorpayMock
+  alias WraftDoc.Enterprise.Membership.Payment
+  alias WraftDoc.Repo
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
+  @invalid_razorpay_error %{
+    "code" => "BAD_REQUEST_ERROR",
+    "description" => "The id provided does not exist",
+    "metadata" => %{},
+    "reason" => "input_validation_failed",
+    "source" => "business",
+    "step" => "payment_initiation"
+  }
 
   describe "show/1" do
     test "shows organisation's membership with valid attrs", %{conn: conn, membership: membership} do
@@ -31,6 +43,15 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       plan = insert(:plan, yearly_amount: 100_000)
       attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}
 
+      expect(RazorpayMock, :get_payment, fn _ ->
+        {:ok,
+         %{
+           "status" => "captured",
+           "amount" => 100_000,
+           "id" => @valid_razorpay_id
+         }}
+      end)
+
       conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
       assert json_response(conn, 200)["plan_duration"] == 365
@@ -46,6 +67,15 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       attrs = %{plan_id: plan.id, razorpay_id: @failed_razorpay_id}
       payment_count = Payment |> Repo.all() |> length
 
+      expect(RazorpayMock, :get_payment, fn _ ->
+        {:ok,
+         %{
+           "id" => @failed_razorpay_id,
+           "status" => "failed",
+           "amount" => 100_000
+         }}
+      end)
+
       conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 
       assert json_response(conn, 400)["info"] == "Payment failed. Membership not updated.!"
@@ -60,10 +90,13 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       attrs = %{plan_id: plan.id, razorpay_id: "wrong_id"}
       payment_count = Payment |> Repo.all() |> length
 
-      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
+      expect(RazorpayMock, :get_payment, fn _ ->
+        {:error, @invalid_razorpay_error}
+      end)
 
+      conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
       assert payment_count == Payment |> Repo.all() |> length
-      assert json_response(conn, 422)["errors"] == "The id provided does not exist"
+      assert @invalid_razorpay_error = json_response(conn, 400)["errors"]
     end
 
     test "does not update membership and returns wrong amount error when razorpay amount does not match any plan amount",
@@ -71,6 +104,15 @@ defmodule WraftDocWeb.Api.V1.MembershipControllerTest do
       plan = insert(:plan, yearly_amount: 1000)
       attrs = %{plan_id: plan.id, razorpay_id: @valid_razorpay_id}
       payment_count = Payment |> Repo.all() |> length
+
+      expect(RazorpayMock, :get_payment, fn _ ->
+        {:ok,
+         %{
+           "status" => "captured",
+           "amount" => 100_000,
+           "id" => @valid_razorpay_id
+         }}
+      end)
 
       conn = put(conn, Routes.v1_membership_path(conn, :update, membership.id), attrs)
 

@@ -1,6 +1,7 @@
 defmodule WraftDoc.EnterpriseTest do
   import Ecto.Query
   import Ecto
+  import Mox
   import WraftDoc.Factory
   use WraftDoc.DataCase
   use ExUnit.Case
@@ -16,6 +17,8 @@ defmodule WraftDoc.EnterpriseTest do
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Repo
+
+  setup :verify_on_exit!
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
@@ -767,8 +770,15 @@ defmodule WraftDoc.EnterpriseTest do
       membership = insert(:membership)
       plan = insert(:plan, monthly_amount: 100_000)
       payment_count = Payment |> Repo.all() |> length
-      {:ok, razorpay} = Razorpay.Payment.get(@valid_razorpay_id)
-      new_membership = Enterprise.update_membership(user, membership, plan, razorpay)
+
+      success_payment_details = %{
+        "status" => "captured",
+        "amount" => 100_000,
+        "id" => @valid_razorpay_id
+      }
+
+      new_membership =
+        Enterprise.update_membership(user, membership, plan, success_payment_details)
 
       assert payment_count + 1 == Payment |> Repo.all() |> length
       assert new_membership.organisation_id == membership.organisation_id
@@ -780,8 +790,15 @@ defmodule WraftDoc.EnterpriseTest do
       membership = insert(:membership, organisation: List.first(user.owned_organisations))
       plan = insert(:plan, monthly_amount: 100_000)
       payment_count = Payment |> Repo.all() |> length
-      {:ok, razorpay} = Razorpay.Payment.get(@failed_razorpay_id)
-      {:ok, payment} = Enterprise.update_membership(user, membership, plan, razorpay)
+
+      failed_payment_details = %{
+        "id" => @failed_razorpay_id,
+        "status" => "failed",
+        "amount" => 100_000
+      }
+
+      {:ok, payment} =
+        Enterprise.update_membership(user, membership, plan, failed_payment_details)
 
       assert payment_count + 1 == Payment |> Repo.all() |> length
       assert payment.organisation_id == membership.organisation_id
@@ -794,9 +811,18 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user_with_organisation)
       membership = insert(:membership)
       plan = insert(:plan)
-      {:error, razorpay} = Razorpay.Payment.get("wrong_id")
+
+      invalid_payment_details = %{
+        "code" => "BAD_REQUEST_ERROR",
+        "description" => "The id provided does not exist",
+        "metadata" => %{},
+        "reason" => "input_validation_failed",
+        "source" => "business",
+        "step" => "payment_initiation"
+      }
+
       payment_count = Payment |> Repo.all() |> length
-      response = Enterprise.update_membership(user, membership, plan, razorpay)
+      response = Enterprise.update_membership(user, membership, plan, invalid_payment_details)
 
       assert payment_count == Payment |> Repo.all() |> length
       assert response == {:error, :invalid_id, "RazorPay"}
@@ -806,9 +832,15 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user_with_organisation)
       membership = insert(:membership)
       plan = insert(:plan)
-      {:ok, razorpay} = Razorpay.Payment.get(@valid_razorpay_id)
+
+      success_payment_details = %{
+        "status" => "captured",
+        "amount" => 100_000,
+        "id" => @valid_razorpay_id
+      }
+
       payment_count = Payment |> Repo.all() |> length
-      response = Enterprise.update_membership(user, membership, plan, razorpay)
+      response = Enterprise.update_membership(user, membership, plan, success_payment_details)
 
       assert payment_count == Payment |> Repo.all() |> length
       assert response == {:error, :wrong_amount}
@@ -844,9 +876,9 @@ defmodule WraftDoc.EnterpriseTest do
       role_names = Enum.map(user.roles, fn x -> x.name end)
       user = Map.put(user, :role_names, role_names)
       payment = insert(:payment, organisation: List.first(user.owned_organisations))
-      fetched_payement = Enterprise.get_payment(payment.id, user)
-      assert fetched_payement.razorpay_id == payment.razorpay_id
-      assert fetched_payement.id == payment.id
+      fetched_payment = Enterprise.get_payment(payment.id, user)
+      assert fetched_payment.razorpay_id == payment.razorpay_id
+      assert fetched_payment.id == payment.id
     end
 
     test "returns nil when payment does not belong to the user's organisation" do
