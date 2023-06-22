@@ -53,7 +53,7 @@ defmodule WraftDoc.Mixfile do
       {:phoenix_view, "~> 2.0.1"},
       {:ecto_sql, "~> 3.9.0"},
       {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 3.2.0", override: true},
+      {:phoenix_html, "~> 3.3.1", override: true},
       {:phoenix_live_reload, "~> 1.4.0", only: :dev},
       # Live dashboard
       {:phoenix_live_dashboard, "~> 0.7.2", override: true},
@@ -104,6 +104,7 @@ defmodule WraftDoc.Mixfile do
       # Email client
       {:swoosh, "~> 1.8.3"},
       {:httpoison, "~> 1.8.2"},
+      {:tesla, "~> 1.7.0"},
       {:poison, "~> 5.0.0", override: true},
 
       # Activity stream

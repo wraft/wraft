@@ -10,6 +10,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.Client.Minio
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.BlockTemplate
@@ -39,7 +40,6 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
-  alias WraftDoc.Minio
   alias WraftDoc.Repo
   alias WraftDoc.Workers.BulkWorker
 
