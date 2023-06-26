@@ -114,8 +114,6 @@ defmodule WraftDoc.Mixfile do
       {:csv, "~> 3.0.3"},
       # Business logic flow
       {:opus, "~> 0.8.3"},
-      # Razorpay
-      {:razorpay, "~> 0.5.0"},
       # PDF generation using wkhtmltopdf
       {:pdf_generator, "~> 0.6.2"},
 
