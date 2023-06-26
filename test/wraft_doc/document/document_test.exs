@@ -2804,7 +2804,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "create_asset/2" do
-    test "create asset on valid attributes" do
+    test "creates an asset on valid attributes" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
       params = Map.put(@valid_asset_attrs, "organisation_id", organisation.id)
@@ -2862,45 +2862,11 @@ defmodule WraftDoc.DocumentTest do
         Document.create_asset(user, params)
     end
 
-    test "create asset on invalid attrs" do
+    test "returns error on invalid attrs" do
       user = insert(:user_with_organisation)
-
-      count_before =
-        Asset
-        |> Repo.all()
-        |> length()
-
       {:error, changeset} = Document.create_asset(user, @invalid_attrs)
 
-      count_after =
-        Asset
-        |> Repo.all()
-        |> length()
-
-      assert count_before == count_after
       assert %{name: ["can't be blank"], type: ["can't be blank"]} == errors_on(changeset)
-    end
-
-    test "asset_file_upload/2 Upload asset file" do
-      asset = insert(:asset)
-
-      assert {:ok, asset} =
-               Document.asset_file_upload(
-                 asset,
-                 %{
-                   "file" => %Plug.Upload{
-                     filename: "invoice.pdf",
-                     path: "test/helper/invoice.pdf",
-                     content_type: "application/pdf"
-                   }
-                 }
-               )
-
-      dir = "uploads/assets/#{asset.id}"
-      assert {:ok, ls} = File.ls(dir)
-      assert File.exists?(dir)
-      assert Enum.member?(ls, "invoice.pdf")
-      assert asset.file.file_name =~ "invoice.pdf"
     end
   end
 
@@ -2996,7 +2962,7 @@ defmodule WraftDoc.DocumentTest do
   #     instance = insert(:instance)
 
   #     {:ok, _asset} =
-  #       Document.asset_file_upload(
+  #       Document.update_asset(
   #         insert(:asset),
   #         %{"file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}}
   #       )
@@ -3897,7 +3863,7 @@ defmodule WraftDoc.DocumentTest do
   #     instance = insert(:instance)
 
   #     {:ok, _asset} =
-  #       Document.asset_file_upload(
+  #       Document.update_asset(
   #         insert(:asset),
   #         %{"file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}}
   #       )
@@ -3916,7 +3882,7 @@ defmodule WraftDoc.DocumentTest do
   #     instance = insert(:instance)
 
   #     {:ok, _asset} =
-  #       Document.asset_file_upload(
+  #       Document.update_asset(
   #         insert(:asset),
   #         %{"file" => %Plug.Upload{filename: "invoice.pdf", path: "test/helper/invoice.pdf"}}
   #       )

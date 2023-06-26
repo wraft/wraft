@@ -1458,32 +1458,17 @@ defmodule WraftDoc.Document do
   def create_asset(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
-    current_user
-    |> build_assoc(:assets)
-    |> Asset.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(:asset, current_user |> build_assoc(:assets) |> Asset.changeset(params))
+    |> Multi.update(:asset_file_upload, &Asset.file_changeset(&1.asset, params))
+    |> Repo.transaction()
     |> case do
-      {:ok, asset} ->
-        asset_file_upload(asset, params)
-
-      {:error, _} = changeset ->
-        changeset
+      {:ok, %{asset_file_upload: asset}} -> {:ok, asset}
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 
   def create_asset(_, _), do: {:error, :fake}
-
-  @doc """
-  Upload asset file.
-  """
-  @spec asset_file_upload(Asset.t(), map) :: {:ok, %Asset{}} | {:error, Ecto.Changeset.t()}
-  def asset_file_upload(asset, %{"file" => _} = params) do
-    asset |> Asset.file_changeset(params) |> Repo.update()
-  end
-
-  def asset_file_upload(asset, _params) do
-    {:ok, asset}
-  end
 
   @doc """
   Index of all assets in an organisation.
@@ -1544,6 +1529,7 @@ defmodule WraftDoc.Document do
   """
   @spec delete_asset(Asset.t()) :: {:ok, Asset.t()}
   def delete_asset(asset) do
+    # Delete the uploaded file
     Repo.delete(asset)
   end
 
