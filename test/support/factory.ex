@@ -49,6 +49,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.InternalUsers.InternalUser
+  alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDoc.WaitingLists.WaitingList
 
   def user_factory do
@@ -561,6 +562,14 @@ defmodule WraftDoc.Factory do
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       is_deactivated: false
+    }
+  end
+
+  def invited_user_factory do
+    %InvitedUser{
+      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
+      status: "invited",
+      organisation: build(:organisation)
     }
   end
 end

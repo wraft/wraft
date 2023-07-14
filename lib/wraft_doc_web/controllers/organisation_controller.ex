@@ -20,6 +20,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.InvitedUsers
 
   def swagger_definitions do
     %{
@@ -341,15 +342,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
          %Role{} = role <-
            Account.get_role(current_user, params["role_id"]),
          {:ok, _} <-
-           Enterprise.invite_team_member(
-             current_user,
-             organisation,
-             params["email"],
-             role
-           ) do
+           Enterprise.invite_team_member(current_user, organisation, params["email"], role) do
       FunWithFlags.enable(:waiting_list_registration_control,
         for_actor: %{email: params["email"]}
       )
+
+      InvitedUsers.create_or_update_invited_user(params["email"], organisation.id)
 
       render(conn, "invite.json")
     end
