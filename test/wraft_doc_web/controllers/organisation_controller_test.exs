@@ -5,6 +5,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
   alias WraftDoc.Account.User
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.InvitedUsers
+  alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDoc.Repo
 
   @moduletag :controller
@@ -109,6 +111,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     assert json_response(conn, 200)["address"] == organisation.address
   end
 
+  # TODO - Add more tests for failure cases
   describe "invite/2" do
     test "invite persons send the mail to the persons mail", %{conn: conn} do
       role =
@@ -128,6 +131,27 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert FunWithFlags.enabled?(:waiting_list_registration_control,
                for: %{email: "msadi@gmail.com"}
              )
+    end
+
+    test "creates a new invited user after successfully inviting", %{conn: conn} do
+      %{id: organisation_id} = List.first(conn.assigns.current_user.owned_organisations)
+
+      role =
+        insert(:role,
+          name: "editor",
+          organisation: List.first(conn.assigns.current_user.owned_organisations)
+        )
+
+      conn =
+        post(conn, Routes.v1_organisation_path(conn, :invite), %{
+          email: "msadi@gmail.com",
+          role_id: role.id
+        })
+
+      assert json_response(conn, 200) == %{"info" => "Invited successfully.!"}
+
+      assert %InvitedUser{status: "invited"} =
+               InvitedUsers.get_invited_user("msadi@gmail.com", organisation_id)
     end
   end
 

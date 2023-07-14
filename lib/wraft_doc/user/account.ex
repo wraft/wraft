@@ -22,6 +22,7 @@ defmodule WraftDoc.Account do
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.InvitedUsers
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Endpoint
@@ -72,7 +73,12 @@ defmodule WraftDoc.Account do
          personal_organisation: %{organisation: personal_org},
          get_org: %{organisation: invited_org}
        }} ->
+        InvitedUsers.create_or_update_invited_user(user.email, invited_org.id, "joined")
         {:ok, %{user: user, organisations: [personal_org, invited_org]}}
+
+      {:error, :get_org, :expired, _} ->
+        set_invited_user_status_to_expired(token)
+        {:error, :expired}
 
       {:error, :get_org, error, _} ->
         {:error, error}
@@ -124,6 +130,14 @@ defmodule WraftDoc.Account do
         "personal_organisation_roles"
       )
     end)
+  end
+
+  defp set_invited_user_status_to_expired(token) do
+    # Update the invited user status
+    {:ok, %{email: email, organisation_id: organisation_id}} =
+      phoenix_token_verify(token, "organisation_invite", max_age: :infinity)
+
+    InvitedUsers.create_or_update_invited_user(email, organisation_id, "expired")
   end
 
   def show_role(user, id) do
@@ -569,10 +583,8 @@ defmodule WraftDoc.Account do
       nil ->
         {:error, :fake}
 
-      token_struct ->
-        {:ok, decoded_token} = Base.url_decode64(token_struct.value)
-
-        case phoenix_token_verify(decoded_token, "reset", 860) do
+      %AuthToken{value: token} = token_struct ->
+        case phoenix_token_verify(token, "reset", max_age: 860) do
           {:ok, _} ->
             Repo.preload(token_struct, :user)
 
@@ -582,15 +594,14 @@ defmodule WraftDoc.Account do
     end
   end
 
-  def check_token(token, token_type) when token_type == :invite do
-    case get_auth_token(token, token_type) do
+  def check_token(token, :invite) do
+    case get_auth_token(token, :invite) do
       nil ->
         {:error, :fake}
 
-      token_struct ->
-        {:ok, decoded_token} = Base.url_decode64(token_struct.value)
-
-        case phoenix_token_verify(decoded_token, "organisation_invite", 900_000) do
+      %AuthToken{value: token} ->
+        # Max age for `organisation_invite` is 10 days
+        case phoenix_token_verify(token, "organisation_invite", max_age: 864_000) do
           {:ok, payload} ->
             {:ok, payload}
 
@@ -608,10 +619,8 @@ defmodule WraftDoc.Account do
       nil ->
         {:error, :fake}
 
-      token_struct ->
-        {:ok, decoded_token} = Base.url_decode64(token_struct.value)
-
-        case phoenix_token_verify(decoded_token, "email_verification", 7200) do
+      %AuthToken{value: token} ->
+        case phoenix_token_verify(token, "email_verification", max_age: 7200) do
           {:ok, payload} ->
             {:ok, payload}
 
@@ -636,9 +645,11 @@ defmodule WraftDoc.Account do
     Repo.one(query)
   end
 
-  defp phoenix_token_verify(token, secret, max_age) do
+  defp phoenix_token_verify(token, secret, opts) do
+    {:ok, decoded_token} = Base.url_decode64(token)
+
     Endpoint
-    |> Phoenix.Token.verify(secret, token, max_age: max_age)
+    |> Phoenix.Token.verify(secret, decoded_token, opts)
     |> case do
       {:error, :invalid} ->
         {:error, :fake}
