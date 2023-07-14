@@ -2,6 +2,8 @@ defmodule WraftDoc.AccountTest do
   use WraftDoc.DataCase, async: true
   alias WraftDoc.Account
   alias WraftDoc.Account.AuthToken
+  alias WraftDoc.InvitedUsers
+  alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Guardian
 
@@ -85,6 +87,62 @@ defmodule WraftDoc.AccountTest do
       error = Account.registration(params)
 
       assert error == {:error, :fake}
+    end
+
+    test "updates the invited user status to \"joined\" when an invited user successfully registers" do
+      insert(:plan, name: "Free Trial")
+
+      organisation = insert(:organisation)
+      role = insert(:role, name: "user", organisation: organisation)
+
+      token =
+        WraftDoc.create_phx_token("organisation_invite", %{
+          organisation_id: organisation.id,
+          email: @valid_attrs["email"],
+          role: role.id
+        })
+
+      insert(:auth_token, value: token, token_type: "invite")
+
+      params = Map.put(@valid_attrs, "token", token)
+
+      invited_user =
+        insert(:invited_user, email: @valid_attrs["email"], organisation: organisation)
+
+      {:ok, %{user: _user, organisations: [_personal, _invited]}} = Account.registration(params)
+
+      assert %InvitedUser{status: "joined"} =
+               InvitedUsers.get_invited_user(invited_user.email, invited_user.organisation_id)
+    end
+
+    test "updates the invited user status to \"expired\" when the invitation token is expired" do
+      insert(:plan, name: "Free Trial")
+
+      organisation = insert(:organisation)
+      role = insert(:role, name: "user", organisation: organisation)
+
+      token =
+        WraftDoc.create_phx_token(
+          "organisation_invite",
+          %{
+            organisation_id: organisation.id,
+            email: @valid_attrs["email"],
+            role: role.id
+          },
+          signed_at: -900_000
+        )
+
+      insert(:auth_token, value: token, token_type: "invite")
+
+      params = Map.put(@valid_attrs, "token", token)
+
+      invited_user =
+        insert(:invited_user, email: @valid_attrs["email"], organisation: organisation)
+
+      assert {:error, :expired} == Account.registration(params)
+
+      assert %InvitedUser{status: "expired"} =
+               InvitedUsers.get_invited_user(invited_user.email, invited_user.organisation_id)
     end
 
     # TODO - Add test to check oban job created for roles for invited organisation
