@@ -1,5 +1,5 @@
 defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
-  use WraftDocWeb.ConnCase
+  use WraftDocWeb.ConnCase, async: true
 
   import WraftDoc.Factory
 
@@ -240,12 +240,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   end
 
   describe "index" do
-    setup %{conn: conn} do
-      role = insert(:role, name: "super_admin")
-      insert(:user_role, role: role, user: conn.assigns[:current_user])
-      :ok
-    end
-
     test "list all existing organisation details", %{conn: conn} do
       o1 = insert(:organisation)
       o2 = insert(:organisation)

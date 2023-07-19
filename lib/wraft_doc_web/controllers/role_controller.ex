@@ -232,7 +232,7 @@ defmodule WraftDocWeb.Api.V1.RoleController do
 
     with %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
          %Role{} <- Account.get_role(current_user, role_id),
-         {:ok, %UserRole{}} <- Account.insert_user_role(user_id, role_id) do
+         {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id) do
       render(conn, "assign_role.json")
     end
   end

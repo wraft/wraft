@@ -1,9 +1,16 @@
 defmodule WraftDoc.AccountTest do
   use WraftDoc.DataCase, async: true
+
   alias WraftDoc.Account
   alias WraftDoc.Account.AuthToken
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Account.User
+  alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.Account.UserRole
+  alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.InvitedUsers
   alias WraftDoc.InvitedUsers.InvitedUser
+  alias WraftDoc.Workers.DefaultWorker
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Guardian
 
@@ -145,17 +152,190 @@ defmodule WraftDoc.AccountTest do
                InvitedUsers.get_invited_user(invited_user.email, invited_user.organisation_id)
     end
 
-    # TODO - Add test to check oban job created for roles for invited organisation
-    # TODO - Add test to check oban job created for personal organisation roles create
-    # TODO - Add test to check user_organisation created for personal organisation
+    test "creates an oban job to create the default roles in personal organisations" do
+      insert(:role, name: "user")
+      insert(:plan, name: "Free Trial")
+
+      {:ok, %{user: user, organisations: [personal_org]}} = Account.registration(@valid_attrs)
+
+      assert user.name == @valid_attrs["name"]
+      assert user.email == @valid_attrs["email"]
+      assert personal_org.name == "Personal"
+
+      assert_enqueued(
+        worker: DefaultWorker,
+        tags: ["personal_organisation_roles"],
+        args: %{organisation_id: personal_org.id, user_id: user.id},
+        queue: :default
+      )
+    end
+
+    test "creates an oban job to assign roles for the user in the invited organisation" do
+      insert(:plan, name: "Free Trial")
+      organisation = insert(:organisation)
+      role = insert(:role, name: "user", organisation: organisation)
+
+      token =
+        WraftDoc.create_phx_token("organisation_invite", %{
+          organisation_id: organisation.id,
+          email: @valid_attrs["email"],
+          role: role.id
+        })
+
+      insert(:auth_token, value: token, token_type: "invite")
+      params = Map.put(@valid_attrs, "token", token)
+
+      {:ok, %{user: user}} = Account.registration(params)
+
+      assert_enqueued(
+        worker: DefaultWorker,
+        tags: ["assign_role"],
+        args: %{role_id: role.id, user_id: user.id},
+        queue: :default
+      )
+    end
+
+    test "creates a user_organisation entry for personal organisation" do
+      insert(:role, name: "user")
+      insert(:plan, name: "Free Trial")
+
+      {:ok, %{user: user, organisations: [personal_org]}} = Account.registration(@valid_attrs)
+
+      assert %UserOrganisation{} =
+               Repo.get_by(UserOrganisation, user_id: user.id, organisation_id: personal_org.id)
+    end
+
+    test "creates a user_organisation entry for invited organisation" do
+      insert(:plan, name: "Free Trial")
+
+      organisation = insert(:organisation)
+      role = insert(:role, name: "user", organisation: organisation)
+
+      token =
+        WraftDoc.create_phx_token("organisation_invite", %{
+          organisation_id: organisation.id,
+          email: @valid_attrs["email"],
+          role: role.id
+        })
+
+      insert(:auth_token, value: token, token_type: "invite")
+
+      params = Map.put(@valid_attrs, "token", token)
+
+      {:ok, %{user: user, organisations: [_personal_org, invited_org]}} =
+        Account.registration(params)
+
+      assert %UserOrganisation{} =
+               Repo.get_by(UserOrganisation, user_id: user.id, organisation_id: invited_org.id)
+    end
   end
 
-  # TODO - Add tests for get_role/1 and get_role/2
+  describe "create_user_role/2" do
+    test "creates a user_role with valid input" do
+      %{id: user_id} = insert(:user)
+      %{id: role_id} = insert(:role)
+
+      assert {:ok, %UserRole{user_id: ^user_id, role_id: ^role_id}} =
+               Account.create_user_role(user_id, role_id)
+    end
+
+    test "raises with invalid input" do
+      assert_raise(Ecto.ChangeError, fn -> Account.create_user_role("invalid", "role_id") end)
+    end
+  end
+
+  describe "get_role/1" do
+    test "gets a role with valid ID" do
+      %Role{id: id} = insert(:role)
+      assert %Role{id: ^id} = Account.get_role(id)
+    end
+
+    test "returns nil with non-existent ID" do
+      assert nil == Account.get_role(Faker.UUID.v4())
+    end
+
+    test "returns nil with invalid ID" do
+      assert nil == Account.get_role("invalid")
+    end
+  end
+
+  describe "get_role/2" do
+    test "returns the role with valid role ID and current organisation ID in user struct" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      %Role{id: id} = insert(:role, organisation: organisation)
+
+      assert %Role{id: ^id} = Account.get_role(user, id)
+    end
+
+    test "returns the role with valid role ID and organisation ID in organisation struct" do
+      organisation = insert(:organisation)
+      %Role{id: id} = insert(:role, organisation: organisation)
+
+      assert %Role{id: ^id} = Account.get_role(organisation, id)
+    end
+
+    test "returns nil in any other case" do
+      assert nil == Account.get_role("organisation", "id")
+    end
+  end
+
+  describe "create_role/2" do
+    test "creates a role and preloads organisation with valid params" do
+      user = insert(:user_with_organisation)
+      organisation_id = user.current_org_id
+      params = %{"name" => "new role", "permissions" => ["members:manage"]}
+
+      role = Account.create_role(user, params)
+      assert %Role{name: "new role", permissions: ["members:manage"]} = role
+      assert %Organisation{id: ^organisation_id} = role.organisation
+    end
+
+    test "returns error changeset with invalid params" do
+      user = insert(:user_with_organisation)
+      params = %{"name" => "new role", "permissions" => "members:manage"}
+
+      assert {:error, %Ecto.Changeset{} = changeset} = Account.create_role(user, params)
+      assert %{permissions: ["is invalid"]} == errors_on(changeset)
+    end
+  end
+
+  describe "update_role/2" do
+    test "updates a role and preloads organisation with valid params" do
+      role = insert(:role, permissions: ["manage:invite"])
+      params = %{name: "admin", permissions: ["members:invite", "role:manage"]}
+
+      role = Account.update_role(role, params)
+
+      assert %Role{name: "admin", permissions: ["members:invite", "role:manage"]} = role
+      assert %Organisation{id: _} = role.organisation
+    end
+
+    test "returns error changeset with invalid params" do
+      role = insert(:role, permissions: ["manage:invite"])
+      params = %{name: nil, permissions: ["members:manage"]}
+
+      assert {:error, %Ecto.Changeset{} = changeset} = Account.update_role(role, params)
+      assert %{name: ["can't be blank"]} == errors_on(changeset)
+    end
+  end
+
+  describe "delete_role/1" do
+    test "returns the role after deleting the role" do
+      role = insert(:role)
+      assert {:ok, %Role{}} = Account.delete_role(role)
+      assert nil == Repo.get(Role, role.id)
+    end
+
+    test "raises with invalid role" do
+      assert_raise(BadMapError, fn -> Account.delete_role(nil) end)
+    end
+  end
 
   describe "get_organisation_and_role_from_token/1" do
-    # TODO - Add test to check success response is given only when role belongs to organisation
     test "verify and accept valid token and email" do
       organisation = insert(:organisation)
+      %{id: organisation_id} = organisation
       %{id: role_id} = role = insert(:role, organisation: organisation)
 
       token =
@@ -167,7 +347,7 @@ defmodule WraftDoc.AccountTest do
 
       insert(:auth_token, value: token, token_type: "invite")
 
-      {:ok, %{organisation: ^organisation, role_id: ^role_id}} =
+      {:ok, %{organisation: %Organisation{id: ^organisation_id}, role_id: ^role_id}} =
         Account.get_organisation_and_role_from_token(%{"token" => token, "email" => @email})
     end
 
@@ -199,6 +379,24 @@ defmodule WraftDoc.AccountTest do
           "organisation_invite",
           "expects a map with organisation, email and role keys, giving a string"
         )
+
+      insert(:auth_token, value: token, token_type: "invite")
+      error = Account.get_organisation_and_role_from_token(%{"token" => token, "email" => @email})
+
+      assert error == {:error, :no_permission}
+    end
+
+    test "return {:error, :no_permission} for valid token but role encoded in token" <>
+           "does not belong to the organisation encoded in token" do
+      organisation = insert(:organisation)
+      role = insert(:role)
+
+      token =
+        WraftDoc.create_phx_token("organisation_invite", %{
+          organisation_id: organisation.id,
+          email: @email,
+          role: role.id
+        })
 
       insert(:auth_token, value: token, token_type: "invite")
       error = Account.get_organisation_and_role_from_token(%{"token" => token, "email" => @email})
@@ -462,6 +660,23 @@ defmodule WraftDoc.AccountTest do
     end
   end
 
+  describe "get_user_by_email/1" do
+    test "gets user with valid email" do
+      %{id: user_id, email: email} = insert(:user)
+      response = Account.get_user_by_email(email)
+
+      assert %User{id: ^user_id, email: ^email} = response
+    end
+
+    test "return nil when non-existent email is given" do
+      assert nil == Account.get_user_by_email("error404notfound@gmail.com")
+    end
+
+    test "return nil with invalid params" do
+      assert nil == Account.get_user_by_email(1)
+    end
+  end
+
   describe "create_password_token/1" do
     test "create token when the email of a valid user is given" do
       user = insert(:user)
@@ -479,6 +694,28 @@ defmodule WraftDoc.AccountTest do
     test "return error for invalid attrs" do
       response = Account.create_password_token(%{})
       assert response == {:error, :invalid_email}
+    end
+  end
+
+  describe "create_token_and_send_email/2" do
+    test "creates an email verification auth token with valid email" do
+      user = insert(:user)
+      Account.create_token_and_send_email(user.email)
+      assert %AuthToken{} = Repo.get_by(AuthToken, token_type: "email_verify", user_id: user.id)
+    end
+
+    test "creates an oban job to send an email ID verification email with valid email" do
+      %{email: email} = insert(:user)
+
+      assert {:ok,
+              %Oban.Job{
+                worker: "WraftDoc.Workers.EmailWorker",
+                args: %{email: ^email, token: _}
+              }} = Account.create_token_and_send_email(email)
+    end
+
+    test "returns {:error, :invalid_email} with invalid email" do
+      assert {:error, :invalid_email} = Account.create_token_and_send_email("invalid@email.com")
     end
   end
 
@@ -722,20 +959,5 @@ defmodule WraftDoc.AccountTest do
       response = Account.update_password(user, params)
       assert response == {:error, :same_password}
     end
-  end
-
-  describe "update_role/2" do
-    # TODO -> test success case
-    # TODO -> test failure case
-  end
-
-  describe "insert_user_role/2" do
-    # TODO -> test success case
-    # TODO -> test failure case
-  end
-
-  describe "get_user_by_email/1" do
-    # TODO -> test success case
-    # TODO -> test failure case
   end
 end

@@ -8,6 +8,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
   require Logger
 
+  alias WraftDoc.Account
   alias WraftDoc.Account.AuthToken
   alias WraftDoc.Repo
   alias WraftDocWeb.Guardian
@@ -292,7 +293,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   describe "resend_email_token/2" do
     test "generates token and renders confirmation message with valid token" do
       insert(:user, email: "temp@gmail.com")
-      {:ok, auth_token} = WraftDoc.Account.create_email_verification_token("temp@gmail.com")
+      {:ok, auth_token} = Account.create_email_verification_token("temp@gmail.com")
 
       conn = build_conn()
 
