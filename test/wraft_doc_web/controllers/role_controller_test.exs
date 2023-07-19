@@ -39,7 +39,7 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
 
   test "error not found for id does not exits", %{conn: conn} do
     conn = get(conn, Routes.v1_role_path(conn, :show, Ecto.UUID.autogenerate()))
-    assert json_response(conn, 400)["errors"] == "The Role id does not exist..!"
+    assert json_response(conn, 404) == "Not Found"
   end
 
   test "delete an existing role by id", %{conn: conn} do

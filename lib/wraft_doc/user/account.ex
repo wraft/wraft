@@ -141,15 +141,13 @@ defmodule WraftDoc.Account do
   end
 
   def show_role(user, id) do
-    with %Role{} = role <- get_role(user, id) do
-      Repo.preload(role, [:content_types, :organisation])
-    end
+    if role = get_role(user, id), do: Repo.preload(role, [:content_types, :organisation])
   end
 
   @doc """
     Create new user_role with given user_id and role_id
   """
-  def insert_user_role(user_id, role_id) do
+  def create_user_role(user_id, role_id) do
     %UserRole{}
     |> UserRole.changeset(%{user_id: user_id, role_id: role_id})
     |> Repo.insert()
@@ -166,23 +164,17 @@ defmodule WraftDoc.Account do
   def get_role(_id), do: nil
 
   @doc """
-  Gets a role from its ID and checks it belongs to the user's current organisation ID or
-  the organisation's ID.
+  Gets a role from its ID and its organisation's ID.
+  Accepts either an organisation struct or user struct with
+  `current_org_id` key.
   """
-  def get_role(%User{current_org_id: org_id}, <<_::288>> = id) do
-    case Repo.get_by(Role, id: id, organisation_id: org_id) do
-      %Role{} = role -> role
-      # TODO supposed to be returning nil
-      _ -> {:error, :invalid_id, "Role"}
-    end
-  end
-
-  def get_role(%User{current_org_id: _org_id}, _), do: {:error, :invalid_id, "Role"}
+  def get_role(%User{current_org_id: org_id}, <<_::288>> = id),
+    do: Repo.get_by(Role, id: id, organisation_id: org_id)
 
   def get_role(%Organisation{id: org_id}, <<_::288>> = id),
     do: Repo.get_by(Role, id: id, organisation_id: org_id)
 
-  def get_role(_, _), do: {:error, :fake}
+  def get_role(_, _), do: nil
 
   def create_role(%User{current_org_id: org_id}, params) do
     params = Map.put(params, "organisation_id", org_id)
@@ -382,7 +374,7 @@ defmodule WraftDoc.Account do
   Get the activity stream for current user.
   """
 
-  # => No test written
+  # TODO - Remove this code
   @spec get_activity_stream(User.t(), map) :: map
   def get_activity_stream(%User{id: id}, params) do
     query =
@@ -518,7 +510,6 @@ defmodule WraftDoc.Account do
 
       {:error, :invalid_email} ->
         {:error, :invalid_email}
-        # TODO add logger for testing
     end
   end
 

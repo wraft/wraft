@@ -7,6 +7,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
   require Logger
 
   alias Ecto.Multi
+  alias WraftDoc.Account
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.UserRole
   alias WraftDoc.Repo
@@ -52,7 +53,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
       permissions: permissions
     })
     |> Multi.run(:assign_role, fn _, %{superadmin_role: role} ->
-      insert_user_role(user_id, role.id)
+      Account.create_user_role(user_id, role.id)
     end)
     |> Repo.transaction()
     |> case do
@@ -66,15 +67,10 @@ defmodule WraftDoc.Workers.DefaultWorker do
   end
 
   def perform(%Job{args: %{"user_id" => user_id, "role_id" => role_id}, tags: ["assign_role"]}) do
-    insert_user_role(user_id, role_id)
+    Account.create_user_role(user_id, role_id)
   end
 
   # Private
-  defp insert_user_role(user_id, role_id) do
-    %UserRole{}
-    |> UserRole.changeset(%{user_id: user_id, role_id: role_id})
-    |> Repo.insert()
-  end
 
   defp get_editor_permissions do
     "priv/repo/data/rbac/editor_permissions.csv"

@@ -1147,11 +1147,11 @@ defmodule WraftDoc.EnterpriseTest do
       user = insert(:user)
       personal_org = insert(:organisation, name: "Personal")
       invited_org = insert(:organisation, name: "Invited Org")
-
       insert(:user_organisation, user: user, organisation: personal_org)
       insert(:user_organisation, user: user, organisation: invited_org)
 
       returned_user = Enterprise.list_org_by_user(user)
+
       assert Enum.member?(returned_user.organisations, personal_org) == true
       assert Enum.member?(returned_user.organisations, invited_org) == true
       assert length(returned_user.organisations) == 2
