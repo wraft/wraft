@@ -93,13 +93,6 @@ defmodule WraftDoc.Factory do
     }
   end
 
-  def user_organisation_factory do
-    %UserOrganisation{
-      user: build(:user),
-      organisation: build(:organisation)
-    }
-  end
-
   def organisation_factory do
     %Organisation{
       name: sequence(:name, &"organisation-#{&1}"),
@@ -108,6 +101,13 @@ defmodule WraftDoc.Factory do
       gstin: sequence(:gstin, &"32AASDGGDGDDGDG#{&1}"),
       phone: sequence(:phone, &"985222332#{&1}"),
       email: sequence(:email, &"acborg#{&1}@gmail.com")
+    }
+  end
+
+  def user_organisation_factory do
+    %UserOrganisation{
+      user: build(:user),
+      organisation: build(:organisation)
     }
   end
 

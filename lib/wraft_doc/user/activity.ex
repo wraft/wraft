@@ -2,6 +2,7 @@ defmodule WraftDoc.Account.Activity do
   @moduledoc """
   Schema for activity table
   """
+  # TODO NOT NEEDED, EXAUDIT Does the same
   use WraftDoc.Schema
 
   schema "activity" do
