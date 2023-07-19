@@ -80,7 +80,20 @@ defmodule WraftDoc.Account.UserOrganisationTest do
   end
 
   describe "delete_changeset/2" do
-    # TODO valid changeset
-    # TODO invalid changeset
+    test "returns valid changeset with valid attrs" do
+      changeset =
+        UserOrganisation.delete_changeset(%UserOrganisation{}, %{
+          deleted_at: NaiveDateTime.utc_now()
+        })
+
+      assert changeset.valid?
+    end
+
+    test "returns invalid changeset with invalid attrs" do
+      changeset = UserOrganisation.delete_changeset(%UserOrganisation{}, %{})
+
+      refute changeset.valid?
+      assert "can't be blank" in errors_on(changeset, :deleted_at)
+    end
   end
 end
