@@ -1,32 +1,77 @@
-defmodule WraftDoc.Document.ContentTypeFieldTest do
+defmodule WraftDocTest.Document.ContentTypeFieldTest do
+  @moduledoc false
   use WraftDoc.ModelCase
-  import WraftDoc.Factory
-  alias WraftDoc.Document.ContentTypeField
   @moduletag :document
-  import Ecto
+  alias WraftDoc.Document.ContentTypeField
+  import WraftDoc.Factory
 
-  @valid_attrs %{name: "employee"}
+  @invalid_attrs %{content_type_id: nil, field_id: nil}
 
-  @invalid_attrs %{name: ""}
+  describe "changeset/2" do
+    test "changeset with valid attributes" do
+      content_type = insert(:content_type)
+      field = insert(:field)
 
-  test "changeset with valid attrs" do
-    changeset = ContentTypeField.changeset(%ContentTypeField{}, @valid_attrs)
-    assert changeset.valid?
-  end
+      changeset =
+        ContentTypeField.changeset(%ContentTypeField{}, %{
+          content_type_id: content_type.id,
+          field_id: field.id
+        })
 
-  test "changeset with invalid attributes" do
-    changeset = ContentTypeField.changeset(%ContentTypeField{}, @invalid_attrs)
-    refute changeset.valid?
-  end
+      assert changeset.valid?
+    end
 
-  test "content type field name unique constraint" do
-    changeset =
-      insert(:content_type)
-      |> build_assoc(:fields, field_type: insert(:field_type))
-      |> ContentTypeField.changeset(@valid_attrs)
+    test "changeset with invalid attributes" do
+      changeset = ContentTypeField.changeset(%ContentTypeField{}, @invalid_attrs)
+      refute changeset.valid?
+    end
 
-    {:ok, _c_type_field} = Repo.insert(changeset)
-    {:error, changeset} = Repo.insert(changeset)
-    assert "Field type already added.!" in errors_on(changeset, :name)
+    test "foreign key constraint on content_type_id" do
+      field = insert(:field)
+
+      params = %{
+        content_type_id: Ecto.UUID.generate(),
+        field_id: field.id
+      }
+
+      {:error, changeset} =
+        %ContentTypeField{} |> ContentTypeField.changeset(params) |> Repo.insert()
+
+      assert "Please enter an existing content type" in errors_on(changeset, :content_type_id)
+    end
+
+    test "foreign key constraint on field_id" do
+      content_type = insert(:content_type)
+
+      params = %{
+        content_type_id: content_type.id,
+        field_id: Ecto.UUID.generate()
+      }
+
+      {:error, changeset} =
+        %ContentTypeField{} |> ContentTypeField.changeset(params) |> Repo.insert()
+
+      assert "Please enter a valid field" in errors_on(changeset, :field_id)
+    end
+
+    test "content type field unique constraint" do
+      content_type = insert(:content_type)
+      field = insert(:field)
+
+      params = %{
+        content_type_id: content_type.id,
+        field_id: field.id
+      }
+
+      {:ok, _} = %ContentTypeField{} |> ContentTypeField.changeset(params) |> Repo.insert()
+
+      {:error, changeset} =
+        %ContentTypeField{} |> ContentTypeField.changeset(params) |> Repo.insert()
+
+      assert "already exist" in errors_on(
+               changeset,
+               :content_type_id
+             )
+    end
   end
 end

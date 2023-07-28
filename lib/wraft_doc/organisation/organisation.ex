@@ -28,6 +28,8 @@ defmodule WraftDoc.Enterprise.Organisation do
     belongs_to(:creator, User)
     field(:logo, WraftDocWeb.LogoUploader.Type)
     has_many(:users_organisations, UserOrganisation)
+    has_many(:fields, WraftDoc.Document.Field)
+    has_many(:forms, WraftDoc.Forms.Form)
     many_to_many(:users, User, join_through: "users_organisations")
     has_many(:pipelines, Pipeline)
     has_many(:vendors, Vendor)
