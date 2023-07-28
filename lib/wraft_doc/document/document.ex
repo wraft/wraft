@@ -23,6 +23,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Document.Counter
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
+  alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType
   alias WraftDoc.Document.Instance
   alias WraftDoc.Document.Instance.History
@@ -1641,8 +1642,8 @@ defmodule WraftDoc.Document do
   defp upload_file_and_delete_local_copy(pandoc_response, _, _), do: pandoc_response
 
   # Find the header values for the content.md file from the serialized data of an instance.
-  @spec find_header_values(ContentTypeField.t(), map, String.t()) :: String.t()
-  defp find_header_values(%ContentTypeField{name: key}, serialized, acc) do
+  @spec find_header_values(Field.t(), map, String.t()) :: String.t()
+  defp find_header_values(%Field{name: key}, serialized, acc) do
     serialized
     |> Enum.find(fn {k, _} -> k == key end)
     |> case do

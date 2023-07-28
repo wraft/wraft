@@ -1,25 +1,25 @@
 defmodule WraftDoc.Document.ContentTypeField do
   @moduledoc """
-  The content type field model.
+  The ContentType Field schema
   """
+  alias __MODULE__
   use WraftDoc.Schema
 
+  @fields [:content_type_id, :field_id]
+
   schema "content_type_field" do
-    field(:name, :string)
-    field(:meta, :map)
-    field(:description, :string)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
-    belongs_to(:field_type, WraftDoc.Document.FieldType)
+    belongs_to(:field, WraftDoc.Document.Field)
+
     timestamps()
   end
 
-  def changeset(field_type, attrs \\ %{}) do
-    field_type
-    |> cast(attrs, [:name, :meta])
-    |> validate_required([:name])
-    |> unique_constraint(:name,
-      message: "Field type already added.!",
-      name: :content_type_field_unique_index
-    )
+  def changeset(%ContentTypeField{} = content_type_field, attrs \\ %{}) do
+    content_type_field
+    |> cast(attrs, @fields)
+    |> validate_required(@fields)
+    |> foreign_key_constraint(:content_type_id, message: "Please enter an existing content type")
+    |> foreign_key_constraint(:field_id, message: "Please enter a valid field")
+    |> unique_constraint(@fields, name: :field_content_type_unique_index, message: "already exist")
   end
 end

@@ -55,6 +55,8 @@ defmodule WraftDoc.Account.User do
     has_many(:vendors, WraftDoc.Enterprise.Vendor, foreign_key: :creator_id)
     has_many(:organisation_fields, WraftDoc.Document.OrganisationField, foreign_key: :creator_id)
     has_many(:owned_organisations, WraftDoc.Enterprise.Organisation, foreign_key: :creator_id)
+    has_many(:forms, WraftDoc.Forms.Form, foreign_key: :creator_id)
+    has_many(:form_entry, WraftDoc.Forms.FormEntry)
 
     timestamps()
   end
