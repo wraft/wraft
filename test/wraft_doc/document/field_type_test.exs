@@ -1,9 +1,21 @@
 defmodule WraftDoc.Document.FieldTypeTest do
+  @moduledoc false
   use WraftDoc.ModelCase
   alias WraftDoc.Document.FieldType
   @moduletag :document
 
-  @valid_attrs %{name: "Date", description: "A data field"}
+  @valid_attrs %{
+    name: "Date",
+    description: "A data field",
+    meta: %{allowed_validations: [:required, :min, :max]},
+    validation: [
+      %{
+        "validation" => %{rule: "some_rule", value: "some value"},
+        "error_message" => "Some error message"
+      }
+    ]
+  }
+
   @invalid_attrs %{name: ""}
 
   test "changeset with valid attributes" do

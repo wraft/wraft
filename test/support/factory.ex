@@ -27,6 +27,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Document.Counter
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
+  alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType
   alias WraftDoc.Document.Instance
   alias WraftDoc.Document.Instance.History
@@ -48,6 +49,10 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Forms.Form
+  alias WraftDoc.Forms.FormEntry
+  alias WraftDoc.Forms.FormField
+  alias WraftDoc.Forms.FormPipeline
   alias WraftDoc.InternalUsers.InternalUser
   alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDoc.WaitingLists.WaitingList
@@ -356,12 +361,19 @@ defmodule WraftDoc.Factory do
     }
   end
 
-  def content_type_field_factory do
-    %ContentTypeField{
+  def field_factory do
+    %Field{
       name: sequence(:name, &"Field name #{&1}"),
       description: sequence(:desription, &"Field description #{&1}"),
       content_type: build(:content_type),
       field_type: build(:field_type)
+    }
+  end
+
+  def content_type_field_factory do
+    %ContentTypeField{
+      content_type: build(:content_type),
+      field: build(:field)
     }
   end
 
@@ -570,6 +582,53 @@ defmodule WraftDoc.Factory do
       email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
       status: "invited",
       organisation: build(:organisation)
+    }
+  end
+
+  def form_factory do
+    %Form{
+      description: sequence(:description, &"description-#{&1}"),
+      name: sequence(:name, &"name-#{&1}"),
+      prefix: sequence(:prefix, &"prefix-#{&1}"),
+      status: Enum.random([:active, :inactive]),
+      organisation: build(:organisation),
+      creator: build(:user)
+    }
+  end
+
+  def form_field_factory do
+    %FormField{
+      validation: [
+        %{
+          rule: "required",
+          error_message: "This field is required."
+        },
+        %{
+          rule: "email",
+          error_message: "Please enter a valid email address."
+        }
+      ],
+      form: build(:form),
+      field: build(:field)
+    }
+  end
+
+  def form_entry_factory do
+    %FormEntry{
+      data: %{
+        1 => %{field_id: 1, value: "random@gmail.com"},
+        2 => %{field_id: 12, value: "random string"}
+      },
+      status: Enum.random([:submitted, :draft]),
+      form: build(:form),
+      user: build(:user)
+    }
+  end
+
+  def form_pipeline_factory do
+    %FormPipeline{
+      form: build(:form),
+      pipeline: build(:pipeline)
     }
   end
 end
