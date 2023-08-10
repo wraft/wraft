@@ -9,11 +9,11 @@ defmodule WraftDoc.Form.FormFieldTest do
 
   @validation [
     %{
-      "validation" => %{rule: "some_rule", value: "some value"},
+      "validation" => %{rule: :required, value: false},
       "error_message" => "Some error message"
     },
     %{
-      "validation" => %{rule: "some_rule 2", value: "some value 2"},
+      "validation" => %{rule: :min_length, value: 10},
       "error_message" => "Some error message 2"
     }
   ]
