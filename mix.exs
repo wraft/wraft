@@ -80,6 +80,8 @@ defmodule WraftDoc.Mixfile do
       {:sweet_xml, "~> 0.7.3"},
       # Time and date formating
       {:timex, "~>  3.7.9"},
+      # Phone number validation
+      {:ex_phone_number, "~> 0.4.2"},
       # JSON parser
       {:jason, "~> 1.4.0"},
       # API documentation

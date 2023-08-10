@@ -1,4 +1,4 @@
-defmodule AtomType do
+defmodule WraftDoc.EctoType.AtomType do
   @moduledoc """
   An ecto type specified to store atomes
   """
@@ -10,7 +10,7 @@ defmodule AtomType do
     {:ok, String.to_atom(module)}
   end
 
-  def cast(module) when is_atom(module) do
+  def cast(module) when is_atom(module) and not is_nil(module) do
     {:ok, module}
   end
 
@@ -22,7 +22,7 @@ defmodule AtomType do
 
   def load(_), do: :error
 
-  def dump(module) when is_atom(module) do
+  def dump(module) when is_atom(module) and not is_nil(module) do
     {:ok, to_string(module)}
   end
 

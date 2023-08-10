@@ -7,10 +7,10 @@ defmodule WraftDoc.Document.FieldTypeTest do
   @valid_attrs %{
     name: "Date",
     description: "A data field",
-    meta: %{allowed_validations: [:required, :min, :max]},
+    meta: %{allowed_validations: [:required, :min_value, :max_value]},
     validation: [
       %{
-        "validation" => %{rule: "some_rule", value: "some value"},
+        "validation" => %{rule: :required, value: false},
         "error_message" => "Some error message"
       }
     ]
