@@ -3,11 +3,11 @@ defmodule WraftDoc.Validations.Validation do
     The validation model.
   """
   alias __MODULE__
+  alias WraftDoc.EctoType.ValidationType
   use WraftDoc.Schema
 
   embedded_schema do
-    # TODO  need to change map to an ecto custom validation type
-    field(:validation, :map)
+    field(:validation, ValidationType)
     field(:error_message, :string)
   end
 
