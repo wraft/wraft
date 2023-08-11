@@ -2,7 +2,8 @@ defmodule WraftDoc.SeedGate do
   @moduledoc """
   Module for helpers of seeds
   """
-  alias WraftDoc.{Account.User, Repo}
+  alias WraftDoc.Account.User
+  alias WraftDoc.Repo
 
   @doc """
   Seed data once a particular sruct
