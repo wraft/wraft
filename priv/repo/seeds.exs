@@ -268,6 +268,7 @@ content_type =
     prefix: "OFFLET"
   )
 
+# FIXME need to be aligned based on new structure of content type field table
 # Populate content type fields
 allow_once(
   %ContentTypeField{
@@ -633,6 +634,7 @@ File.stream!("priv/repo/data/fields.csv")
   content_type = Repo.get_by(ContentType, name: x["content_type"])
   type = allow_once(%FieldType{name: x["type"]}, name: x["type"])
 
+  # FIXME need to be aligned based on new structure of content type field table
   allow_once(
     %ContentTypeField{name: x["name"], field_type_id: type.id, content_type_id: content_type.id},
     name: x["name"]
