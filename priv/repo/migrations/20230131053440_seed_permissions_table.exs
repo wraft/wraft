@@ -3,9 +3,11 @@ defmodule WraftDoc.Repo.Migrations.SeedPermissionsTable do
   alias WraftDoc.Authorization.Permission
   alias WraftDoc.Repo
 
+  @file_path :wraft_doc |> :code.priv_dir() |> Path.join("repo/data/rbac/permissions.csv")
+
   def change do
     permissions_list =
-      "priv/repo/data/rbac/permissions.csv"
+      @file_path
       |> File.stream!()
       |> CSV.decode(headers: ["name", "resource", "action"])
       |> Enum.map(fn {:ok, permission} ->

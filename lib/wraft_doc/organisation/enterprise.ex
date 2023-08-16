@@ -10,6 +10,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.Client.Razorpay
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
@@ -24,11 +25,6 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Workers.EmailWorker
   alias WraftDoc.Workers.ScheduledWorker
 
-  @razorpay_client Application.compile_env(
-                     :wraft_doc,
-                     [:test_module, :razorpay],
-                     WraftDoc.Client.Razorpay
-                   )
   @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
 
   @default_controlled_states [
@@ -1007,7 +1003,7 @@ defmodule WraftDoc.Enterprise do
   """
   @spec get_razorpay_data(binary) :: {:ok, map()} | {:error, map()}
   def get_razorpay_data(razorpay_id) do
-    @razorpay_client.get_payment(razorpay_id)
+    Razorpay.client().get_payment(razorpay_id)
   end
 
   @doc """

@@ -6,9 +6,8 @@ defmodule WraftDoc.Client.Razorpay do
 
   use Tesla, only: [:get]
 
-  @razorpay_secret_key Application.compile_env!(:wraft_doc, [__MODULE__, :secret_key])
-  @razorpay_api_key Application.compile_env!(:wraft_doc, [__MODULE__, :api_key])
   @razorpay_base_url Application.compile_env!(:wraft_doc, [__MODULE__, :base_url])
+  @razorpay_client Application.compile_env(:wraft_doc, [:test_module, :razorpay], __MODULE__)
 
   plug Tesla.Middleware.BaseUrl, @razorpay_base_url
 
@@ -35,8 +34,12 @@ defmodule WraftDoc.Client.Razorpay do
   end
 
   defp basic_auth_header do
-    "Basic " <> Base.encode64("#{@razorpay_api_key}:#{@razorpay_secret_key}")
+    "Basic " <> Base.encode64("#{api_key()}:#{secret_key()}")
   end
+
+  defp api_key, do: Application.get_env(:wraft_doc, [__MODULE__, :api_key])
+  defp secret_key, do: Application.get_env(:wraft_doc, [__MODULE__, :secret_key])
+  def client, do: @razorpay_client
 end
 
 defmodule WraftDoc.Client.Razorpay.Behaviour do

@@ -9,7 +9,7 @@ import Config
 
 # Start the phoenix server if environment is set and running in a  release
 if System.get_env("PHX_SERVER") && System.get_env("RELEASE_NAME") do
-  config :wraft, WraftWeb.Endpoint, server: true
+  config :wraft, WraftDocWeb.Endpoint, server: true
 end
 
 if config_env() == :prod do
@@ -22,8 +22,9 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6"), do: [:inet6], else: []
 
-  config :wraft, Wraft.Repo,
-    # ssl: true,
+  config :wraft_doc, WraftDoc.Repo,
+    ssl: true,
+    ssl_opts: [verify: :verify_none],
     url: database_url,
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     socket_options: maybe_ipv6
@@ -34,17 +35,18 @@ if config_env() == :prod do
   # to check this value into version control, so we use an environment
   # variable instead.
   secret_key_base =
-    System.get_env("SECRET_KEY_BASE") ||
+    Map.fetch!(System.get_env(), "SECRET_KEY_BASE") ||
       raise """
       environment variable SECRET_KEY_BASE is missing.
       You can generate one by calling: mix phx.gen.secret
       """
 
-  host = System.get_env("PHX_HOST") || "example.com"
+  host = System.get_env("PHX_HOST") || "localhost"
   port = String.to_integer(System.get_env("PORT") || "4000")
 
-  config :wraft, WraftWeb.Endpoint,
-    url: [host: host, port: 443],
+  config :wraft_doc, WraftDocWeb.Endpoint,
+    url: [host: host, port: port],
+    server: true,
     http: [
       # Enable IPv6 and bind on all interfaces.
       # Set it to  {0, 0, 0, 0, 0, 0, 0, 1} for local network only access.
@@ -55,12 +57,39 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
+  config :wraft_doc, WraftDoc.Client.Razorpay,
+    api_key: System.fetch_env!("RAZORPAY_KEY_ID"),
+    secret_key: System.fetch_env!("RAZORPAY_KEY_SECRET")
+
+  config :wraft_doc, WraftDocWeb.Guardian, secret_key: System.get_env("GUARDIAN_KEY")
+
+  config :waffle,
+    # "wraft"
+    bucket: System.get_env("MINIO_BUCKET"),
+    # "http://127.0.0.1:9000"
+    asset_host: System.get_env("MINIO_URL")
+
+  config :ex_aws,
+    access_key_id: System.get_env("MINIO_ROOT_USER"),
+    secret_access_key: System.get_env("MINIO_ROOT_PASSWORD"),
+    s3: [
+      scheme: "http://",
+      host: System.get_env("MINIO_HOST"),
+      port: 9000
+    ]
+
+  config :wraft_doc, WraftDocWeb.Mailer, api_key: System.get_env("SENDGRID_API_KEY")
+
+  config :pdf_generator,
+    wkhtml_path: System.get_env("WKHTMLTOPDF_PATH"),
+    pdftk_path: System.get_env("PDFTK_PATH")
+
   # ## Using releases
   #
   # If you are doing OTP releases, you need to instruct Phoenix
   # to start each relevant endpoint:
   #
-  #     config :wraft, WraftWeb.Endpoint, server: true
+  #     config :wraft_doc, WraftDocWeb.Endpoint, server: true
   #
   # Then you can assemble a release by calling `mix release`.
   # See `mix help release` for more information.
@@ -71,7 +100,7 @@ if config_env() == :prod do
   # Also, you may need to configure the Swoosh API client of your choice if you
   # are not using SMTP. Here is an example of the configuration:
   #
-  #     config :wraft, Wraft.Mailer,
+  #     config :wraft_doc, WraftDoc.Mailer,
   #       adapter: Swoosh.Adapters.Mailgun,
   #       api_key: System.get_env("MAILGUN_API_KEY"),
   #       domain: System.get_env("MAILGUN_DOMAIN")
