@@ -1,25 +1,16 @@
-#!/bin/bash
-# Docker entry point script.
-# Wait until postgres is ready
-while ! pg_isready -q -h $PGHOST -p $PGPORT -U $PGUSER
-do
-  echo "$(date) - waiting for database to start"
-  sleep 2
-done
+#!/bin/sh
+set -e
 
-echo "$(date) - PostgreSQL is ready"
-mix ecto.create
-mix ecto.migrate
+if [ "$1" = 'run' ]; then
+      exec /app/bin/wraft_doc start
 
-# Create migrate and seed database if it does't exist.
-if [[ -z `psql -Atqc "\\list $PGDATABASE"` ]]; then
-  echo "Database $PGDATABASE does not exist. Creating..."
-  createdb -E UTF8 $PGDATABASE -l en_US.UTF-8 -T template0
-  mix ecto.migrate
-  mix run priv/repo/seeds.exs
-  echo "Database $PGDATABASE created."
+elif [ "$1" = 'db' ]; then
+      exec /app/"$2".sh
+ else
+      exec "$@"
+
 fi
 
-mix wraft.permissions
+echo "$@"
 
-exec mix phx.server
+exec "$@"

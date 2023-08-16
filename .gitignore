@@ -2,6 +2,7 @@
 /_build
 .elixir_ls
 /db
+/pg
 
 # The directory Mix downloads your dependencies sources to.
 /deps
