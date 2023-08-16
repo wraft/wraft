@@ -18,6 +18,13 @@ defmodule WraftDoc.Mixfile do
       elixir: "~> 1.0.0",
       deps: deps(),
       test_coverage: [tool: ExCoveralls],
+      releases: [
+        wraft_doc: [
+          include_executables_for: [:unix],
+          applications: [wraft_doc: :permanent],
+          steps: [:assemble, :tar]
+        ]
+      ],
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.detail": :test,
@@ -145,6 +152,7 @@ defmodule WraftDoc.Mixfile do
     [
       setup: ["deps.get", "ecto.setup"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+      "ecto.start": ["ecto.create", "ecto.migrate"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"],
       swagger: ["phx.swagger.generate priv/static/swagger.json"],

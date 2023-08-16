@@ -1,0 +1,4 @@
+mirrors:
+"localhost:5050":
+  endpoint:
+    - http://wraft-registry:5050
