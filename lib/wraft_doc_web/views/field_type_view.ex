@@ -7,6 +7,12 @@ defmodule WraftDocWeb.Api.V1.FieldTypeView do
       id: field_type.id,
       name: field_type.name,
       description: field_type.description,
+      meta: field_type.meta,
+      validations:
+        Enum.map(
+          field_type.validations,
+          &%{validation: &1.validation, error_message: &1.error_message}
+        ),
       inserted_at: field_type.inserted_at,
       updated_at: field_type.updated_at
     }

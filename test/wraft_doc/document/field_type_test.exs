@@ -5,13 +5,13 @@ defmodule WraftDoc.Document.FieldTypeTest do
   @moduletag :document
 
   @valid_attrs %{
-    name: "Date",
+    name: "New Date",
     description: "A data field",
     meta: %{allowed_validations: [:required, :min_value, :max_value]},
-    validation: [
+    validations: [
       %{
-        "validation" => %{rule: :required, value: false},
-        "error_message" => "Some error message"
+        validation: %{"rule" => "required", "value" => false},
+        error_message: "Some error message"
       }
     ]
   }

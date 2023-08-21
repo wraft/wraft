@@ -137,7 +137,7 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
-        fetch_and_associate_fields(content_type, params, current_user)
+        fetch_and_associate_fields(content_type, params)
         Repo.preload(content_type, [:layout, :flow, :theme, {:fields, :field_type}])
 
       changeset = {:error, _} ->
@@ -145,39 +145,74 @@ defmodule WraftDoc.Document do
     end
   end
 
-  @spec fetch_and_associate_fields(ContentType.t(), map, User.t()) :: list
+  @spec fetch_and_associate_fields(ContentType.t(), map) :: list
   # Iterate throught the list of field types and associate with the content type
-  defp fetch_and_associate_fields(content_type, %{"fields" => fields}, user) do
+  defp fetch_and_associate_fields(content_type, %{"fields" => fields}) do
     fields
-    |> Stream.map(fn x -> associate_c_type_and_fields(content_type, x, user) end)
+    |> Stream.map(fn x -> create_field_for_content_type(content_type, x) end)
     |> Enum.to_list()
   end
 
-  defp fetch_and_associate_fields(_content_type, _params, _user), do: nil
+  defp fetch_and_associate_fields(_content_type, _params), do: nil
 
-  @spec associate_c_type_and_fields(ContentType.t(), map, User.t()) ::
+  @spec create_field_for_content_type(ContentType.t(), map) ::
           {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()} | nil
-  # Fetch and associate field types with the content type
-  defp associate_c_type_and_fields(
-         c_type,
-         %{"key" => key, "field_type_id" => field_type_id},
-         user
+  defp create_field_for_content_type(
+         content_type,
+         %{"field_type_id" => field_type_id} = params
        ) do
     field_type_id
-    |> get_field_type(user)
+    |> get_field_type()
     |> case do
       %FieldType{} = field_type ->
-        field_type
-        |> build_assoc(:fields, content_type: c_type)
-        |> ContentTypeField.changeset(%{name: key})
-        |> Repo.insert()
+        create_content_type_field(field_type, content_type, params)
 
       _ ->
         nil
     end
   end
 
-  defp associate_c_type_and_fields(_c_type, _field, _user), do: nil
+  defp create_field_for_content_type(_content_type, _field), do: nil
+
+  defp create_content_type_field(field_type, content_type, params) do
+    params = Map.merge(params, %{"organisation_id" => content_type.organisation_id})
+
+    Multi.new()
+    |> Multi.run(:field, fn _, _ -> create_field(field_type, params) end)
+    |> Multi.insert(:content_type_field, fn %{field: field} ->
+      ContentTypeField.changeset(%ContentTypeField{}, %{
+        content_type_id: content_type.id,
+        field_id: field.id
+      })
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} ->
+        :ok
+
+      {:error, step, error, _} ->
+        Logger.error("Content type field creation failed in step #{inspect(step)}", error: error)
+        :error
+    end
+  end
+
+  @doc """
+  Creates a field.
+
+  ## Example
+
+  iex> create_field(%FieldType{}, %{name: "name"})
+  {:ok, %Field{}}
+
+  iex> create_field(%FieldType{}, %{})
+  {:error, %Ecto.Changeset{}}
+  """
+  def create_field(field_type, params) do
+    field_type
+    |> build_assoc(:fields)
+    |> Field.changeset(params)
+    |> Repo.insert()
+  end
 
   @doc """
   List all engines.
@@ -442,7 +477,7 @@ defmodule WraftDoc.Document do
     update_content_type(content_type, user, params)
   end
 
-  def update_content_type(content_type, user, params) do
+  def update_content_type(content_type, _user, params) do
     content_type
     |> ContentType.update_changeset(params)
     |> Repo.update()
@@ -451,7 +486,7 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, content_type} ->
-        fetch_and_associate_fields(content_type, params, user)
+        fetch_and_associate_fields(content_type, params)
 
         Repo.preload(content_type, [
           :layout,
@@ -481,12 +516,14 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a content type field.
   """
-  # TODO - improve tests
   @spec delete_content_type_field(ContentTypeField.t()) ::
           {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()}
-  def delete_content_type_field(content_type_field), do: Repo.delete(content_type_field)
-
-  def delete_content_type_field(_, _), do: {:error, :fake}
+  def delete_content_type_field(content_type_field) do
+    %ContentTypeField{field: field} = Repo.preload(content_type_field, :field)
+    Repo.delete(field)
+    Repo.delete(content_type_field)
+    :ok
+  end
 
   defp create_initial_version(%{id: author_id}, instance) do
     params = %{
@@ -2039,25 +2076,15 @@ defmodule WraftDoc.Document do
   @doc """
   Get a field type from its UUID.
   """
-  @spec get_field_type(binary, User.t()) :: FieldType.t()
-  def get_field_type(<<_::288>> = field_type_id, %{current_org_id: org_id} = _user) do
-    query =
-      from(ft in FieldType,
-        where: ft.id == ^field_type_id,
-        join: uo in UserOrganisation,
-        where: uo.user_id == ft.creator_id and uo.organisation_id == ^org_id
-      )
-
-    case Repo.one(query) do
+  @spec get_field_type(binary) :: FieldType.t()
+  def get_field_type(<<_::288>> = field_type_id) do
+    case Repo.get(FieldType, field_type_id) do
       %FieldType{} = field_type -> field_type
       _ -> {:error, :invalid_id, "FieldType"}
     end
-
-    # Repo.get_by(FieldType, uuid: field_type_uuid, organisation_id: org_id)
   end
 
-  def get_field_type(_, %{current_org_id: _}), do: {:error, :invalid_id, "FieldType"}
-  def get_field_type(_, _), do: {:error, :fake}
+  def get_field_type(_), do: {:error, :fake}
 
   @doc """
   Update a field type

@@ -37,8 +37,8 @@ defmodule WraftDoc.Client.Razorpay do
     "Basic " <> Base.encode64("#{api_key()}:#{secret_key()}")
   end
 
-  defp api_key, do: Application.get_env(:wraft_doc, [__MODULE__, :api_key])
-  defp secret_key, do: Application.get_env(:wraft_doc, [__MODULE__, :secret_key])
+  defp api_key, do: Application.get_env(:wraft_doc, __MODULE__)[:api_key]
+  defp secret_key, do: Application.get_env(:wraft_doc, __MODULE__)[:secret_key]
   def client, do: @razorpay_client
 end
 

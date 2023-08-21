@@ -67,10 +67,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           description("Data to be send to add fields to content type.")
 
           properties do
-            key(:string, "Name of the field")
-            field_type_id(:string, "ID of the field type")
+            name(:string, "Name of the field")
             meta(:map, "Attributes of the field")
             description(:string, "Field description")
+            field_type_id(:string, "ID of the field type")
           end
 
           example(%{
@@ -89,6 +89,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id(:string, "ID of content type field")
             name(:string, "Name of content type field")
             meta(:map, "Attributes of the field")
+            description(:string, "Field description")
             field_type(Schema.ref(:FieldType))
           end
 
@@ -524,7 +525,6 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # TODO - Add test to check cases where Flow, Layout and/or theme doesnt exist or belong to user's organisation
   def create(
         conn,
         %{"layout_id" => layout_id, "flow_id" => flow_id, "theme_id" => theme_id} = params

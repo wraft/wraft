@@ -125,6 +125,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
     %{
       id: field.id,
       name: field.name,
+      meta: field.meta,
+      description: field.description,
       field_type: render_one(field.field_type, FieldTypeView, "field_type.json", as: :field_type)
     }
   end

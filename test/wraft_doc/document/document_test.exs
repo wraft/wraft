@@ -17,6 +17,7 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.Document.ContentTypeField
   alias WraftDoc.Document.Counter
   alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType
   alias WraftDoc.Document.Instance
   alias WraftDoc.Document.Instance.History
@@ -30,6 +31,7 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.Document.Theme
   alias WraftDoc.Document.ThemeAsset
   alias WraftDoc.Repo
+  alias WraftDoc.Validations.Validation
 
   setup :verify_on_exit!
 
@@ -2185,11 +2187,11 @@ defmodule WraftDoc.DocumentTest do
       content_type =
         insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
 
-      content_type_field = insert(:content_type_field, content_type: content_type)
-      c_content_type_field = Document.get_content_type_field(content_type_field.id, user)
+      %{id: id} = insert(:content_type_field, content_type: content_type)
 
-      assert content_type_field.name == c_content_type_field.name
-      assert content_type_field.description == c_content_type_field.description
+      assert content_type_field = Document.get_content_type_field(id, user)
+      assert content_type_field.id == id
+      assert content_type_field.content_type_id == content_type.id
     end
   end
 
@@ -2198,9 +2200,15 @@ defmodule WraftDoc.DocumentTest do
       content_type = insert(:content_type)
       content_type_field = insert(:content_type_field, content_type: content_type)
 
-      {:ok, _content_type_field} = Document.delete_content_type_field(content_type_field)
+      assert :ok = Document.delete_content_type_field(content_type_field)
 
       refute Repo.get(ContentTypeField, content_type_field.id)
+    end
+
+    test "raises with invalid input" do
+      assert_raise(FunctionClauseError, fn ->
+        Document.delete_content_type_field("invalid")
+      end)
     end
   end
 
@@ -3130,30 +3138,33 @@ defmodule WraftDoc.DocumentTest do
 
   describe "create_field_type/2" do
     test "Create a field type" do
-      # this will create FieldType struct with name "String 0"
-      f_type =
-        :field_type
-        |> insert()
-        |> Map.from_struct()
+      params = string_params_with_assocs(:field_type)
 
-      # so updating the new name to avoid unique name constraints error
-      f_type = Map.update!(f_type, :name, fn _v -> "name1" end)
+      [%{"error_message" => error_message, "validation" => %{"rule" => rule, "value" => value}}] =
+        params["validations"]
+
       user = insert(:user)
-      field_type_changeset = FieldType.changeset(%FieldType{}, f_type)
 
-      assert field_type_changeset.valid?
-      assert {:ok, _create_field_type} = Document.create_field_type(user, f_type)
+      assert {:ok, field_type} = Document.create_field_type(user, params)
+      assert field_type.id
+      assert field_type.name == params["name"]
+      assert field_type.description == params["description"]
+
+      assert [
+               %Validation{
+                 id: _,
+                 validation: %{"rule" => ^rule, "value" => ^value},
+                 error_message: ^error_message
+               }
+             ] = field_type.validations
     end
 
     test "check unique name constraint" do
       user = insert(:user)
+      params = string_params_with_assocs(:field_type)
 
-      f_type =
-        :field_type
-        |> insert()
-        |> Map.from_struct()
-
-      assert {:error, _error_msg} = Document.create_field_type(user, f_type)
+      assert {:ok, _field_type} = Document.create_field_type(user, params)
+      assert {:error, _error_msg} = Document.create_field_type(user, params)
     end
   end
 
@@ -3173,40 +3184,43 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "get_field_type/2" do
+  describe "get_field_type/1" do
     test "Get a field type from its UUID" do
-      user = insert(:user_with_organisation)
-      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
-      f_type = insert(:field_type, creator: user)
-      get_field_type = Document.get_field_type(f_type.id, user)
+      field_type = insert(:field_type)
+      get_field_type = Document.get_field_type(field_type.id)
 
-      assert get_field_type.id == f_type.id
-      assert get_field_type.name == f_type.name
+      assert get_field_type.id == field_type.id
+      assert get_field_type.name == field_type.name
     end
 
     test "test with invalid UUID" do
-      f_type = insert(:field_type)
-      get_field_type = Document.get_field_type(f_type, f_type.creator)
-
-      assert {:error, _, _} = get_field_type
-    end
-
-    test "test with invalid params" do
-      f_type = insert(:field_type)
-      get_field_type = Document.get_field_type(f_type, f_type)
-
-      assert {:error, _} = get_field_type
+      assert {:error, :fake} = Document.get_field_type("invalid")
     end
   end
 
   describe "update_field_type/2" do
     test "update_field_type" do
-      f_type = insert(:field_type)
-      new_values = %{name: "new", description: "new desc"}
+      field_type = insert(:field_type)
 
-      assert {:ok, update_field_type} = Document.update_field_type(f_type, new_values)
-      assert update_field_type.name =~ "new"
-      assert update_field_type.description =~ "new desc"
+      new_values = %{
+        name: "new",
+        description: "new desc",
+        validations: [
+          %{validation: %{"rule" => "max_length", "value" => 2}, error_message: "2 letters tops"}
+        ]
+      }
+
+      assert {:ok, updated_field_type} = Document.update_field_type(field_type, new_values)
+
+      assert updated_field_type.name == new_values.name
+      assert updated_field_type.description == new_values.description
+
+      assert [
+               %Validation{
+                 validation: %{"rule" => "max_length", "value" => 2},
+                 error_message: "2 letters tops"
+               }
+             ] = updated_field_type.validations
     end
   end
 
@@ -4874,6 +4888,31 @@ defmodule WraftDoc.DocumentTest do
 
       assert List.first(trigger_history_index).id == trigger_history_2.id
       assert List.last(trigger_history_index).id == trigger_history_1.id
+    end
+  end
+
+  describe "create_field/2" do
+    test "creates a field with valid attrs" do
+      field_type = insert(:field_type)
+      %{id: organisation_id} = insert(:organisation)
+
+      params = %{
+        name: "employee_name",
+        meta: %{validations: [%{rule: "required", value: true}]},
+        description: "Name of the employee",
+        organisation_id: organisation_id
+      }
+
+      assert {:ok, %Field{id: _, name: "employee_name"} = field} =
+               Document.create_field(field_type, params)
+
+      assert field.description == params.description
+      assert field.meta == params.meta
+    end
+
+    test "returns error changeset with invalid attrs" do
+      field_type = insert(:field_type)
+      assert {:error, %Ecto.Changeset{}} = Document.create_field(field_type, %{})
     end
   end
 end

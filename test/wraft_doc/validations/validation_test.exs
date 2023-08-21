@@ -5,7 +5,7 @@ defmodule WraftDoc.Validations.ValidationTest do
   alias WraftDoc.Validations.Validation
 
   @valid_attrs %{
-    validation: %{rule: :required, value: true},
+    validation: %{"rule" => "required", "value" => true},
     error_message: "Some error message"
   }
 

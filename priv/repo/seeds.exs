@@ -16,7 +16,12 @@ alias WraftDoc.Account.UserRole
 alias WraftDoc.Document.Asset
 alias WraftDoc.Document.Block
 alias WraftDoc.Document.BlockTemplate
+alias WraftDoc.Document.Counter
+alias WraftDoc.Document.DataTemplate
 alias WraftDoc.Document.Engine
+alias WraftDoc.Document.Field
+alias WraftDoc.Document.FieldType
+alias WraftDoc.Document.Instance.Version
 alias WraftDoc.Document.Layout
 alias WraftDoc.Document.LayoutAsset
 alias WraftDoc.Document.ContentType
@@ -33,11 +38,6 @@ alias WraftDoc.Enterprise.Flow.State
 alias WraftDoc.Enterprise.Plan
 alias WraftDoc.Enterprise.Membership
 alias WraftDoc.Enterprise.Vendor
-alias WraftDoc.Document.FieldType
-alias WraftDoc.Document.ContentTypeField
-alias WraftDoc.Document.Counter
-alias WraftDoc.Document.DataTemplate
-alias WraftDoc.Document.Instance.Version
 alias WraftDoc.Repo
 
 import WraftDoc.SeedGate
@@ -228,7 +228,7 @@ allow_once(
 )
 
 # Populate fields
-field = allow_once(%FieldType{name: "String", creator_id: user.id}, name: "String")
+field_type = Repo.get_by(FieldType, name: "String")
 
 # Populate flow
 flow =
@@ -268,16 +268,19 @@ content_type =
     prefix: "OFFLET"
   )
 
-# FIXME need to be aligned based on new structure of content type field table
+# Populate field
+allow_once(%Field{
+  name: "employee",
+  description: "Name of the employee",
+  field_type_id: field_type.id,
+  organisation_id: organisation.id
+})
+
 # Populate content type fields
-allow_once(
-  %ContentTypeField{
-    name: "employee",
-    content_type_id: content_type.id,
-    field_type_id: field.id
-  },
-  name: "employee"
-)
+allow_once(%ContentTypeField{
+  content_type_id: content_type.id,
+  field_type_id: field.id
+})
 
 draft =
   allow_once(
