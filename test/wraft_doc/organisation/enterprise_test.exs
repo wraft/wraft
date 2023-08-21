@@ -324,36 +324,129 @@ defmodule WraftDoc.EnterpriseTest do
     assert personal_org.id == organisation.id
   end
 
-  test "create organisation creates a organisation " do
-    user = insert(:user)
+  describe "create_organisation/2" do
+    test "create organisation on valid attributes" do
+      user = insert(:user)
 
-    params = %{
-      "name" => "ACC Sru",
-      "legal_name" => "Acc sru pvt ltd",
-      "email" => "dikku@kodappalaya.com",
-      "address" => "Kodappalaya dikku estate",
-      "gstin" => "32SDFASDF65SD6F"
-    }
+      params = %{
+        "name" => "ACC Sru",
+        "legal_name" => "Acc sru pvt ltd",
+        "email" => "dikku@kodappalaya.com",
+        "address" => "Kodappalaya dikku estate",
+        "gstin" => "32SDFASDF65SD6F",
+        "logo" => %Plug.Upload{
+          content_type: "image/png",
+          path: File.cwd!() <> "/test/helper/images.png",
+          filename: "images.png"
+        }
+      }
 
-    insert(:plan, name: "Free Trial")
+      insert(:plan, name: "Free Trial")
 
-    count_before = Organisation |> Repo.all() |> length()
+      organisation = Enterprise.create_organisation(user, params)
 
-    organisation = Enterprise.create_organisation(user, params)
+      assert organisation.id
+      assert organisation.name == params["name"]
+      assert organisation.legal_name == params["legal_name"]
+      assert organisation.logo.file_name == params["logo"].filename
+    end
 
-    count_ater = Organisation |> Repo.all() |> length()
+    test "returns error on creator_id is nil" do
+      user = Map.put(insert(:user), :id, nil)
 
-    assert count_before + 1 == count_ater
-    assert organisation.name == params["name"]
-    assert organisation.legal_name == params["legal_name"]
+      params = %{
+        "name" => "ACC Sru",
+        "legal_name" => "Acc sru pvt ltd",
+        "email" => "dikku@kodappalaya.com",
+        "address" => "Kodappalaya dikku estate",
+        "gstin" => "32SDFASDF65SD6F"
+      }
+
+      insert(:plan, name: "Free Trial")
+
+      {:error, changeset} = Enterprise.create_organisation(user, params)
+
+      assert %{creator_id: ["can't be blank"]} == errors_on(changeset)
+    end
+
+    test "returns error on creating an organisation with same name" do
+      user = insert(:user)
+
+      params = %{
+        "name" => "ACC Sru",
+        "legal_name" => "Acc sru pvt ltd",
+        "email" => "dikku@kodappalaya.com",
+        "address" => "Kodappalaya dikku estate",
+        "gstin" => "32SDFASDF65SD6F"
+      }
+
+      insert(:plan, name: "Free Trial")
+
+      Enterprise.create_organisation(user, params)
+
+      params_new = %{
+        "name" => "ACC Sru",
+        "legal_name" => "Acc sru pvt",
+        "email" => "dikku@kodappalaya.com",
+        "address" => "Kodappalaya dikku estate",
+        "gstin" => "32SDFASDF65SD6G"
+      }
+
+      {:error, changeset} = Enterprise.create_organisation(user, params_new)
+
+      assert %{name: ["organisation name already exist"]} == errors_on(changeset)
+    end
+
+    test "returns error on creating organisation with duplicate occurrence of legal name" do
+      user = insert(:user)
+
+      params = %{
+        "name" => "Organisation 1",
+        "legal_name" => "Organisation Legal Name",
+        "email" => "dikku@kodappalaya.com",
+        "address" => "Kodappalaya dikku estate",
+        "gstin" => "32SDFASDF65SD6F"
+      }
+
+      insert(:plan, name: "Free Trial")
+
+      Enterprise.create_organisation(user, params)
+
+      params_new = %{
+        "name" => "Organisation 2",
+        "legal_name" => "Organisation Legal Name",
+        "email" => "dikku@kodappalaya.com",
+        "address" => "Kodappalaya dikku estate",
+        "gstin" => "32SDFASDF65SD6G"
+      }
+
+      {:error, changeset} = Enterprise.create_organisation(user, params_new)
+
+      assert %{legal_name: ["Organisation Already Registered."]} == errors_on(changeset)
+    end
+
+    test "returns error on creating organisation with name Personal" do
+      user = insert(:user)
+      insert(:plan, name: "Free Trial")
+
+      params = %{
+        "name" => "Personal",
+        "legal_name" => "Acc sru pvt ltd",
+        "email" => "dikku@kodappalaya.com",
+        "address" => "Kodappalaya dikku estate",
+        "gstin" => "32SDFASDF65SD6F"
+      }
+
+      count_before = Organisation |> Repo.all() |> length()
+
+      {:error, changeset} = Enterprise.create_organisation(user, params)
+
+      count_after = Organisation |> Repo.all() |> length()
+
+      assert count_before == count_after
+      assert %{name: ["The name 'Personal' is not allowed."]} == errors_on(changeset)
+    end
   end
-
-  # TODO - Test for create_organisation
-  #    creator_id cannot be null
-  #    Cannot create a organisation by name "Personal"
-  #    Cannot create two organisations with same name
-  #    Cannot have duplicate occurances of legal name
-  #    Should upload logo
 
   describe "create_personal_organisation/2" do
     test "creates organisation on valid attributes" do
@@ -530,22 +623,33 @@ defmodule WraftDoc.EnterpriseTest do
   #   assert approval_system.post_state.id == approved.instance.state_id
   # end
 
-  # TODO update
-  # TODO returns :ok if the user is removed from the organisation
-  test "already a member return error for existing email" do
-    user = insert(:user_with_organisation)
+  describe "already_member/2" do
+    test "already a member return error for existing email" do
+      user = insert(:user_with_organisation)
 
-    user_org =
-      insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
+      user_org =
+        insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
 
-    assert Enterprise.already_member(user_org.organisation_id, user.email) ==
-             {:error, :already_member}
-  end
+      assert Enterprise.already_member(user_org.organisation_id, user.email) ==
+               {:error, :already_member}
+    end
 
-  test "already a member return ok for email does not exist" do
-    user = insert(:user_with_organisation)
-    organisation = List.first(user.owned_organisations)
-    assert Enterprise.already_member(organisation.id, "kdgasd@gami.com") == :ok
+    test "returns :ok if the user is removed from the organisation" do
+      user = insert(:user_with_organisation)
+
+      user_org =
+        insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
+
+      Enterprise.remove_user(user_org)
+      assert Enterprise.already_member(user_org.organisation.id, user.email) == :ok
+    end
+
+    test "already a member return ok for email does not exist" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+
+      assert Enterprise.already_member(organisation.id, "kdgasd@gami.com") == :ok
+    end
   end
 
   test "invite member send a E-mail to invite a member and returns an oban job" do
@@ -949,7 +1053,6 @@ defmodule WraftDoc.EnterpriseTest do
     end
   end
 
-  # TODO add test to check if a removed user from organisation is returned
   describe "members_index/2" do
     test "returns the list of all members of current user's organisation" do
       organisation = insert(:organisation)
@@ -970,6 +1073,29 @@ defmodule WraftDoc.EnterpriseTest do
       assert response.page_number == 1
       assert response.total_pages == 1
       assert response.total_entries == 3
+    end
+
+    test "returns the list of all members of current user's organisation except the ones who are removed" do
+      organisation = insert(:organisation)
+      user1 = insert(:user, current_org_id: organisation.id)
+      user2 = insert(:user)
+      user3 = insert(:user)
+
+      insert(:user_organisation, user: user1, organisation: organisation)
+      insert(:user_organisation, user: user2, organisation: organisation)
+      user_org = insert(:user_organisation, user: user3, organisation: organisation)
+
+      Enterprise.remove_user(user_org)
+
+      response = Enterprise.members_index(user1, %{"page" => 1})
+      user_ids = response.entries |> Enum.map(fn x -> x.id end) |> to_string()
+
+      assert user_ids =~ user1.id
+      assert user_ids =~ user2.id
+      refute user_ids =~ user3.id
+      assert response.page_number == 1
+      assert response.total_pages == 1
+      assert response.total_entries == 2
     end
 
     test "returns the list of all members of current user's organisation matching the given name" do
@@ -1141,7 +1267,6 @@ defmodule WraftDoc.EnterpriseTest do
     assert vendor_index.entries |> Enum.map(fn x -> x.name end) |> List.to_string() =~ v2.name
   end
 
-  # TODO improve test to fit into the logic of deleted_at column in users_organisation table
   describe "list_org_by_user/1" do
     test "return user struct with all organisations the user has joined" do
       user = insert(:user)
@@ -1155,6 +1280,25 @@ defmodule WraftDoc.EnterpriseTest do
       assert Enum.member?(returned_user.organisations, personal_org) == true
       assert Enum.member?(returned_user.organisations, invited_org) == true
       assert length(returned_user.organisations) == 2
+    end
+
+    test "returns the list of the user's organisations unless they are removed" do
+      user = insert(:user)
+      personal_org = insert(:organisation, name: "Personal")
+      invited_org = insert(:organisation, name: "Invited Org")
+      insert(:user_organisation, user: user, organisation: personal_org)
+
+      insert(:user_organisation,
+        user: user,
+        organisation: invited_org,
+        deleted_at: DateTime.utc_now()
+      )
+
+      returned_user = Enterprise.list_org_by_user(user)
+
+      assert Enum.member?(returned_user.organisations, personal_org) == true
+      assert Enum.member?(returned_user.organisations, invited_org) == false
+      assert length(returned_user.organisations) == 1
     end
   end
 
@@ -1241,14 +1385,55 @@ defmodule WraftDoc.EnterpriseTest do
     end
   end
 
-  describe "delete_user/2" do
-    # TODO - Success case
-    # TODO - Failure case
-    # TODO - invalid user case
+  describe "remove_user/2" do
+    test "add deleted_at from the organisation" do
+      user = insert(:user_with_organisation)
+
+      user_org =
+        insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
+
+      {:ok, organisation} = Enterprise.remove_user(user_org)
+      refute organisation.deleted_at == nil
+    end
   end
 
   describe "join_org_by_invite/2" do
-    # TODO - Success case
-    # TODO - Failure case
+    test "user can join organisation by invite" do
+      user = insert(:user)
+      organisation = insert(:organisation)
+      role = insert(:role, name: "user", organisation: organisation)
+
+      token =
+        WraftDoc.create_phx_token("organisation_invite", %{
+          organisation_id: organisation.id,
+          email: user.email,
+          role: role.id
+        })
+
+      insert(:auth_token, value: token, token_type: "invite")
+
+      {:ok, %{organisations: returned_organisation}} = Enterprise.join_org_by_invite(user, token)
+      assert returned_organisation == organisation
+      assert Enterprise.already_member(organisation.id, user.email) == {:error, :already_member}
+    end
+
+    test "return error for invalid token" do
+      user = insert(:user)
+      organisation_id = Ecto.UUID.generate()
+
+      token =
+        WraftDoc.create_phx_token("organisation_invite", %{
+          organisation_id: organisation_id,
+          email: "invalid@email.com",
+          role: Ecto.UUID.generate()
+        })
+
+      insert(:auth_token, value: token, token_type: "invite")
+
+      {:error, error} = Enterprise.join_org_by_invite(user, token)
+
+      assert error == :no_permission
+      assert Enterprise.already_member(organisation_id, user.email) == :ok
+    end
   end
 end
