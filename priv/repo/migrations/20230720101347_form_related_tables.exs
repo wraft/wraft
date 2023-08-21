@@ -33,7 +33,7 @@ defmodule WraftDoc.Repo.Migrations.FormRelatedTables do
     end
 
     alter table(:field_type) do
-      add(:validation, :map)
+      add(:validations, :map)
       add(:meta, :map)
     end
 
@@ -52,7 +52,7 @@ defmodule WraftDoc.Repo.Migrations.FormRelatedTables do
 
     create table(:form_field, primary_key: false) do
       add(:id, :uuid, primary_key: true)
-      add(:validation, :map)
+      add(:validations, :map)
 
       add(
         :field_id,

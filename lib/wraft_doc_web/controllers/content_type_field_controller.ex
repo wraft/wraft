@@ -33,14 +33,13 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentTypeField{content_type_id: c_type_id} = content_type_field <-
+    with %ContentTypeField{content_type_id: content_type_id} = content_type_field <-
            Document.get_content_type_field(id, current_user),
-         {:ok, %ContentTypeField{}} <-
-           Document.delete_content_type_field(content_type_field),
-         %ContentType{} = c_type <- Document.get_content_type_from_id(c_type_id) do
+         :ok <- Document.delete_content_type_field(content_type_field),
+         %ContentType{} = content_type <- Document.get_content_type_from_id(content_type_id) do
       conn
       |> put_view(WraftDocWeb.Api.V1.ContentTypeView)
-      |> render("show.json", content_type: c_type)
+      |> render("show.json", content_type: content_type)
     end
   end
 end

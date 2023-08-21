@@ -356,8 +356,14 @@ defmodule WraftDoc.Factory do
   def field_type_factory do
     %FieldType{
       name: sequence(:name, &"String #{&1}"),
-      description: "Text field",
-      creator: build(:user)
+      meta: %{},
+      validations: [
+        %{
+          validation: %{"rule" => "required", "value" => true},
+          error_message: "This field is required"
+        }
+      ],
+      description: "Text field"
     }
   end
 
@@ -365,7 +371,6 @@ defmodule WraftDoc.Factory do
     %Field{
       name: sequence(:name, &"Field name #{&1}"),
       description: sequence(:desription, &"Field description #{&1}"),
-      content_type: build(:content_type),
       field_type: build(:field_type)
     }
   end
@@ -598,7 +603,7 @@ defmodule WraftDoc.Factory do
 
   def form_field_factory do
     %FormField{
-      validation: [
+      validations: [
         %{
           rule: "required",
           error_message: "This field is required."
