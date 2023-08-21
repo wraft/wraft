@@ -8,7 +8,7 @@ defmodule WraftDoc.Forms.FormField do
   @fields [:form_id, :field_id]
 
   schema "form_field" do
-    embeds_many(:validation, WraftDoc.Validations.Validation)
+    embeds_many(:validations, WraftDoc.Validations.Validation, on_replace: :delete)
     belongs_to(:form, WraftDoc.Forms.Form)
     belongs_to(:field, WraftDoc.Document.Field)
 
@@ -18,7 +18,7 @@ defmodule WraftDoc.Forms.FormField do
   def changeset(%FormField{} = form_field, attrs \\ %{}) do
     form_field
     |> cast(attrs, @fields)
-    |> cast_embed(:validation)
+    |> cast_embed(:validations)
     |> validate_required(@fields)
     |> unique_constraint(@fields,
       name: :form_field_unique_index,

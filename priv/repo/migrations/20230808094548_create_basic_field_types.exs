@@ -4,7 +4,7 @@ defmodule WraftDoc.Repo.Migrations.CreateBasicFieldTypes do
   alias WraftDoc.Repo
   alias WraftDoc.Validations.Validation
 
-  def change do
+  def up do
     basic_field_types = [
       %{
         name: "String",
@@ -24,7 +24,7 @@ defmodule WraftDoc.Repo.Migrations.CreateBasicFieldTypes do
         name: "Email",
         meta: %{"allowed validations": ["required", "regex"]},
         description: "An email field",
-        validation: [
+        validations: [
           %Validation{
             validation: %{rule: "email"},
             error_message: "Invalid Email"
@@ -37,7 +37,7 @@ defmodule WraftDoc.Repo.Migrations.CreateBasicFieldTypes do
         name: "Date",
         meta: %{"allowed validations": ["required", "date_min", "date_max", "date_range"]},
         description: "A date field",
-        validation: [
+        validations: [
           %Validation{
             validation: %{rule: "date"},
             error_message: "Invalid Date"
@@ -85,7 +85,7 @@ defmodule WraftDoc.Repo.Migrations.CreateBasicFieldTypes do
         name: "Url",
         meta: %{"allowed validations": ["required", "regex"]},
         description: "An url field",
-        validation: [
+        validations: [
           %Validation{
             validation: %{rule: "url"},
             error_message: "Invalid Url"
@@ -98,7 +98,7 @@ defmodule WraftDoc.Repo.Migrations.CreateBasicFieldTypes do
         name: "Phone Number",
         meta: %{"allowed validations": ["required"]},
         description: "A phone number field",
-        validation: [
+        validations: [
           %Validation{
             validation: %{rule: "phone_number"},
             error_message: "Invalid Phone Number"
@@ -111,7 +111,7 @@ defmodule WraftDoc.Repo.Migrations.CreateBasicFieldTypes do
         name: "Decimal",
         meta: %{"allowed validations": ["required"]},
         description: "A decimal field",
-        validation: [
+        validations: [
           %Validation{
             validation: %{rule: "decimal"},
             error_message: "Invalid Decimal Format"
@@ -123,5 +123,9 @@ defmodule WraftDoc.Repo.Migrations.CreateBasicFieldTypes do
     ]
 
     Repo.insert_all(FieldType, basic_field_types)
+  end
+
+  def down do
+    FieldType |> Repo.all() |> Enum.each(&Repo.delete(&1))
   end
 end

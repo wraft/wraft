@@ -57,33 +57,6 @@ if config_env() == :prod do
     ],
     secret_key_base: secret_key_base
 
-  config :wraft_doc, WraftDoc.Client.Razorpay,
-    api_key: System.fetch_env!("RAZORPAY_KEY_ID"),
-    secret_key: System.fetch_env!("RAZORPAY_KEY_SECRET")
-
-  config :wraft_doc, WraftDocWeb.Guardian, secret_key: System.get_env("GUARDIAN_KEY")
-
-  config :waffle,
-    # "wraft"
-    bucket: System.get_env("MINIO_BUCKET"),
-    # "http://127.0.0.1:9000"
-    asset_host: System.get_env("MINIO_URL")
-
-  config :ex_aws,
-    access_key_id: System.get_env("MINIO_ROOT_USER"),
-    secret_access_key: System.get_env("MINIO_ROOT_PASSWORD"),
-    s3: [
-      scheme: "http://",
-      host: System.get_env("MINIO_HOST"),
-      port: 9000
-    ]
-
-  config :wraft_doc, WraftDocWeb.Mailer, api_key: System.get_env("SENDGRID_API_KEY")
-
-  config :pdf_generator,
-    wkhtml_path: System.get_env("WKHTMLTOPDF_PATH"),
-    pdftk_path: System.get_env("PDFTK_PATH")
-
   # ## Using releases
   #
   # If you are doing OTP releases, you need to instruct Phoenix
@@ -112,3 +85,30 @@ if config_env() == :prod do
   #
   # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
 end
+
+config :wraft_doc, WraftDoc.Client.Razorpay,
+  api_key: System.fetch_env!("RAZORPAY_KEY_ID"),
+  secret_key: System.fetch_env!("RAZORPAY_KEY_SECRET")
+
+config :wraft_doc, WraftDocWeb.Guardian, secret_key: System.get_env("GUARDIAN_KEY")
+
+config :waffle,
+  # "wraft"
+  bucket: System.get_env("MINIO_BUCKET"),
+  # "http://127.0.0.1:9000"
+  asset_host: System.get_env("MINIO_URL")
+
+config :ex_aws,
+  access_key_id: System.get_env("MINIO_ROOT_USER"),
+  secret_access_key: System.get_env("MINIO_ROOT_PASSWORD"),
+  s3: [
+    scheme: "http://",
+    host: System.get_env("MINIO_HOST"),
+    port: 9000
+  ]
+
+config :wraft_doc, WraftDocWeb.Mailer, api_key: System.get_env("SENDGRID_API_KEY")
+
+config :pdf_generator,
+  wkhtml_path: System.get_env("WKHTMLTOPDF_PATH"),
+  pdftk_path: System.get_env("PDFTK_PATH")
