@@ -18,10 +18,10 @@ defmodule Mix.Tasks.Wraft.Permissions do
   @requirements ["app.start"]
   @permissions_file Application.compile_env!(:wraft_doc, [:permissions_file])
 
-  def run(_) do
+  def run(permissions_file \\ @permissions_file) do
     Logger.info("Updating Permissions started.")
 
-    @permissions_file
+    permissions_file
     |> File.stream!()
     |> CSV.decode(headers: ["name", "resource", "action"])
     |> Enum.each(fn {:ok, permission} -> insert_permission(permission) end)

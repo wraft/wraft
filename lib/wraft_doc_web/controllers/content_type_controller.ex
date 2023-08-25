@@ -47,12 +47,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             description: "An offer letter",
             fields: [
               %{
-                key: "position",
+                name: "position",
                 field_type_id: "kjb14713132lkdac",
                 meta: %{"src" => "/img/img.png", "alt" => "Image"},
                 description: "a text input"
               },
-              %{key: "name", field_type_id: "kjb2347mnsad"}
+              %{name: "name", field_type_id: "kjb2347mnsad"}
             ],
             layout_id: "1232148nb3478",
             flow_id: "234okjnskjb8234",
@@ -74,10 +74,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           end
 
           example(%{
-            key: "position",
+            name: "position",
             field_type_id: "asdlkne4781234123clk",
             meta: %{"src" => "/img/img.png", "alt" => "Image"},
-            descrtiption: "text input"
+            description: "text input"
           })
         end,
       ContentTypeField:
@@ -94,7 +94,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           end
 
           example(%{
-            key: "position",
+            name: "position",
             field_type_id: "asdlkne4781234123clk",
             meta: %{"src" => "/img/img.png", "alt" => "Image"}
           })
@@ -135,12 +135,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             description: "An offer letter",
             fields: [
               %{
-                key: "position",
+                name: "position",
                 field_type_id: "kjb14713132lkdac",
                 meta: %{"src" => "/img/img.png", "alt" => "Image"}
               },
               %{
-                key: "name",
+                name: "name",
                 field_type_id: "kjb2347mnsad",
                 meta: %{"src" => "/img/img.png", "alt" => "Image"}
               }
@@ -198,8 +198,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name: "Offer letter",
             description: "An offer letter",
             fields: [
-              %{key: "position", field_type_id: "kjb14713132lkdac"},
-              %{key: "name", field_type_id: "kjb2347mnsad"}
+              %{name: "position", field_type_id: "kjb14713132lkdac"},
+              %{name: "name", field_type_id: "kjb2347mnsad"}
             ],
             prefix: "OFFLET",
             color: "#fffff",
@@ -245,8 +245,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name: "Offer letter",
             description: "An offer letter",
             fields: [
-              %{key: "position", field_type_id: "kjb14713132lkdac"},
-              %{key: "name", field_type_id: "kjb2347mnsad"}
+              %{name: "position", field_type_id: "kjb14713132lkdac"},
+              %{name: "name", field_type_id: "kjb2347mnsad"}
             ],
             prefix: "OFFLET",
             color: "#fffff",
@@ -305,8 +305,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name: "Offer letter",
             description: "An offer letter",
             fields: [
-              %{key: "position", field_type_id: "kjb14713132lkdac"},
-              %{key: "name", field_type_id: "kjb2347mnsad"}
+              %{name: "position", field_type_id: "kjb14713132lkdac"},
+              %{name: "name", field_type_id: "kjb2347mnsad"}
             ],
             prefix: "OFFLET",
             color: "#fffff",
@@ -355,8 +355,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               name: "Offer letter",
               description: "An offer letter",
               fields: [
-                %{key: "position", field_type_id: "kjb14713132lkdac"},
-                %{key: "name", field_type_id: "kjb2347mnsad"}
+                %{name: "position", field_type_id: "kjb14713132lkdac"},
+                %{name: "name", field_type_id: "kjb2347mnsad"}
               ],
               prefix: "OFFLET",
               color: "#fffff",
@@ -415,8 +415,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
                   name: "Offer letter",
                   description: "An offer letter",
                   fields: [
-                    %{key: "position", field_type_id: "kjb14713132lkdac"},
-                    %{key: "name", field_type_id: "kjb2347mnsad"}
+                    %{name: "position", field_type_id: "kjb14713132lkdac"},
+                    %{name: "name", field_type_id: "kjb2347mnsad"}
                   ],
                   prefix: "OFFLET",
                   color: "#fffff",

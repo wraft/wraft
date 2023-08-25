@@ -82,3 +82,6 @@ vendor:manage,Vendor,Manage
 vendor:delete,Vendor,Delete
 members:manage,Members,Manage
 role:assign,Role,Assign
+form:show,Form,Show
+form:manage,Form,Manage
+form:delete,Form,Delete

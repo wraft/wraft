@@ -2,7 +2,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
   use WraftDocWeb, :view
 
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{FieldTypeView, FlowView, LayoutView, UserView}
+  alias WraftDocWeb.Api.V1.FieldTypeView
+  alias WraftDocWeb.Api.V1.FlowView
+  alias WraftDocWeb.Api.V1.LayoutView
+  alias WraftDocWeb.Api.V1.UserView
 
   def render("create.json", %{content_type: c_type}) do
     %{

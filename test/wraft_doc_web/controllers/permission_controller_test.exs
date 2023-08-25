@@ -20,6 +20,7 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
     "Engine",
     "Field Type",
     "Flow",
+    "Form",
     "Instance",
     "Instance Approval System",
     "Layout",
