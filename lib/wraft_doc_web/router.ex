@@ -36,10 +36,10 @@ defmodule WraftDocWeb.Router do
   end
 
   pipeline :flags do
-    plug :accepts, ["html"]
-    plug :put_secure_browser_headers
-    plug :fetch_session
-    plug WraftDocWeb.Plug.CurrentAdmin
+    plug(:accepts, ["html"])
+    plug(:put_secure_browser_headers)
+    plug(:fetch_session)
+    plug(WraftDocWeb.Plug.CurrentAdmin)
   end
 
   scope "/", WraftDocWeb do
@@ -147,6 +147,9 @@ defmodule WraftDocWeb.Router do
 
       # Enginebody
       resources("/engines", EngineController, only: [:index])
+
+      # Forms
+      resources("/forms", FormController, except: [:new, :edit])
 
       # Theme
       resources("/themes", ThemeController, only: [:create, :index, :show, :update, :delete])

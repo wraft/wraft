@@ -34,7 +34,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
             name: "position",
             field_type_id: "asdlkne4781234123clk",
             meta: %{"src" => "/img/img.png", "alt" => "Image"},
-            descrtiption: "text input"
+            description: "text input"
           })
         end,
       OrganisationField:

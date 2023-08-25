@@ -4,7 +4,7 @@ defmodule WraftDoc.AuthorizationTest do
   alias WraftDoc.Authorization
   alias WraftDoc.Authorization.Permission
 
-  @resource_count 31
+  @resource_count 32
 
   describe "list_permissions/0" do
     test "lists all permissions grouped by resource" do
@@ -45,7 +45,7 @@ defmodule WraftDoc.AuthorizationTest do
   end
 
   describe "list_resources/0" do
-    test "lists all 31 resources we have in Wraft" do
+    test "lists all 32 resources we have in Wraft" do
       assert @resource_count = Enum.count(Authorization.list_resources())
     end
   end

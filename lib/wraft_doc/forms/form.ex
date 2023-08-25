@@ -18,9 +18,9 @@ defmodule WraftDoc.Forms.Form do
     has_many(:fields, through: [:form_fields, :field])
     has_many(:form_mappings, WraftDoc.Forms.FormMapping)
     has_many(:pipe_stages, through: [:form_mappings, :pipe_stage])
-    has_many(:form_entry, WraftDoc.Forms.FormEntry)
-    has_many(:form_pipeline, WraftDoc.Forms.FormPipeline)
-    has_many(:pipeline, through: [:form_pipeline, :pipeline])
+    has_many(:form_entries, WraftDoc.Forms.FormEntry)
+    has_many(:form_pipelines, WraftDoc.Forms.FormPipeline)
+    has_many(:pipelines, through: [:form_pipelines, :pipeline])
     timestamps()
   end
 
@@ -28,6 +28,10 @@ defmodule WraftDoc.Forms.Form do
     form
     |> cast(attrs, @fields)
     |> validate_required(@fields)
+    |> unique_constraint(:prefix,
+      message: "Form with the same prefix exists.!",
+      name: :form_prefix_unique_index
+    )
     |> foreign_key_constraint(:creator_id, message: "Please enter a valid user")
     |> foreign_key_constraint(:organisation_id, message: "Please enter a valid organisation")
   end

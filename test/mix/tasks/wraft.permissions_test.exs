@@ -20,7 +20,7 @@ defmodule Mix.Tasks.Wraft.PermissionsTest do
 
       {result, log} =
         with_log(fn ->
-          Mix.Task.run("wraft.permissions")
+          Mix.Tasks.Wraft.Permissions.run()
         end)
 
       updated_permission_count = Repo.aggregate(Permission, :count)
