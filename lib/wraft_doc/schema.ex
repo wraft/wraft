@@ -33,30 +33,31 @@ defmodule WraftDoc.Schema do
     end
   end
 
-  def organisation_constraint(changeset, schema, field) do
+  def organisation_constraint(changeset, schema, field, opts \\ []) do
     organisation_id =
       get_field(changeset, :organisation_id) || changeset.params["organisation_id"]
 
     case is_nil(organisation_id) do
       false ->
         schema_id = get_change(changeset, field)
-        check_organisation_constraint(changeset, organisation_id, schema, schema_id, field)
+        check_organisation_constraint(changeset, organisation_id, schema, schema_id, field, opts)
 
       true ->
         add_error(changeset, :organisation_id, "params must contain organisation id")
     end
   end
 
-  defp check_organisation_constraint(changeset, _org_id, _schema, schema_id, _field)
+  defp check_organisation_constraint(changeset, _org_id, _schema, schema_id, _field, _opts)
        when is_nil(schema_id) do
     changeset
   end
 
-  defp check_organisation_constraint(changeset, organisation_id, schema, schema_id, field) do
+  defp check_organisation_constraint(changeset, organisation_id, schema, schema_id, field, opts) do
+    message = Keyword.get(opts, :message, "is invalid")
     data = get_data(schema, schema_id, organisation_id)
 
     if is_nil(data) do
-      add_error(changeset, field, "is invalid")
+      add_error(changeset, field, message)
     else
       changeset
     end

@@ -628,15 +628,27 @@ defmodule WraftDoc.DocumentTest do
   describe "create_content_type/2" do
     test "create content_type on valid attributes" do
       user = insert(:user_with_organisation)
+      file_field_type = Repo.get_by(FieldType, name: "File Input")
+      string_field_type = Repo.get_by(FieldType, name: "String")
+
       [organisation] = user.owned_organisations
       %{id: layout_id} = insert(:layout, organisation: organisation)
       %{id: flow_id} = insert(:flow, organisation: organisation)
       %{id: theme_id} = insert(:theme, organisation: organisation)
-      content_type = insert(:content_type, organisation: organisation)
 
       fields = [
-        insert(:content_type_field, content_type: content_type),
-        insert(:content_type_field, content_type: content_type)
+        %{
+          "name" => "Photo",
+          "field_type_id" => file_field_type.id,
+          "meta" => %{"src" => "/img/img.png", "alt" => "Image"},
+          "description" => "Upload your photo"
+        },
+        %{
+          "name" => "Name",
+          "field_type_id" => string_field_type.id,
+          "meta" => %{},
+          "description" => "Enter your name"
+        }
       ]
 
       param =
@@ -654,6 +666,16 @@ defmodule WraftDoc.DocumentTest do
       assert content_type.color == @valid_content_type_attrs["color"]
       assert content_type.prefix == @valid_content_type_attrs["prefix"]
       assert content_type.id
+
+      assert Enum.map(
+               content_type.fields,
+               &%{
+                 "name" => &1.name,
+                 "field_type_id" => &1.field_type_id,
+                 "meta" => &1.meta,
+                 "description" => &1.description
+               }
+             ) == fields
     end
 
     test "returns error on invalid attrs" do
@@ -987,6 +1009,9 @@ defmodule WraftDoc.DocumentTest do
 
   describe "update_content_type/3" do
     test "update content_type on valid attrs" do
+      file_field_type = Repo.get_by(FieldType, name: "File Input")
+      string_field_type = Repo.get_by(FieldType, name: "String")
+
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
       layout = insert(:layout, creator: user, organisation: organisation)
@@ -1003,10 +1028,20 @@ defmodule WraftDoc.DocumentTest do
           theme: theme
         )
 
-      count_before =
-        ContentType
-        |> Repo.all()
-        |> length()
+      fields = [
+        %{
+          "name" => "Photo",
+          "field_type_id" => file_field_type.id,
+          "meta" => %{"src" => "/img/img.png", "alt" => "Image"},
+          "description" => "Upload your photo"
+        },
+        %{
+          "name" => "Name",
+          "field_type_id" => string_field_type.id,
+          "meta" => %{},
+          "description" => "Enter your name"
+        }
+      ]
 
       params =
         Map.merge(
@@ -1014,25 +1049,26 @@ defmodule WraftDoc.DocumentTest do
           %{
             "flow_uuid" => flow.id,
             "layout_uuid" => layout.id,
-            "fields" => [
-              insert(:content_type_field, content_type: content_type),
-              insert(:content_type_field, content_type: content_type)
-            ]
+            "fields" => fields
           }
         )
 
       content_type = Document.update_content_type(content_type, user, params)
 
-      count_after =
-        ContentType
-        |> Repo.all()
-        |> length()
-
-      assert count_before == count_after
       assert content_type.name == @valid_content_type_attrs["name"]
       assert content_type.description == @valid_content_type_attrs["description"]
       assert content_type.color == @valid_content_type_attrs["color"]
       assert content_type.prefix == @valid_content_type_attrs["prefix"]
+
+      assert Enum.map(
+               content_type.fields,
+               &%{
+                 "name" => &1.name,
+                 "field_type_id" => &1.field_type_id,
+                 "meta" => &1.meta,
+                 "description" => &1.description
+               }
+             ) == fields
     end
 
     test "update content_type on invalid attrs" do
@@ -2196,13 +2232,15 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "delete_content_type_field/1" do
-    test "deletes the content type field" do
+    test "deletes the content_type_field and the field" do
       content_type = insert(:content_type)
-      content_type_field = insert(:content_type_field, content_type: content_type)
+      field = insert(:field)
+      content_type_field = insert(:content_type_field, content_type: content_type, field: field)
 
       assert :ok = Document.delete_content_type_field(content_type_field)
 
       refute Repo.get(ContentTypeField, content_type_field.id)
+      refute Repo.get(Field, field.id)
     end
 
     test "raises with invalid input" do

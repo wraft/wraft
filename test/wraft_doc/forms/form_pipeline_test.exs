@@ -15,7 +15,8 @@ defmodule WraftDoc.Forms.FormPipelineTest do
       changeset =
         FormPipeline.changeset(%FormPipeline{}, %{
           form_id: form.id,
-          pipeline_id: pipeline.id
+          pipeline_id: pipeline.id,
+          organisation_id: pipeline.organisation_id
         })
 
       assert changeset.valid?
@@ -31,7 +32,8 @@ defmodule WraftDoc.Forms.FormPipelineTest do
 
       params = %{
         form_id: Ecto.UUID.generate(),
-        pipeline_id: pipeline.id
+        pipeline_id: pipeline.id,
+        organisation_id: pipeline.organisation_id
       }
 
       {:error, changeset} = %FormPipeline{} |> FormPipeline.changeset(params) |> Repo.insert()
@@ -44,7 +46,8 @@ defmodule WraftDoc.Forms.FormPipelineTest do
 
       params = %{
         form_id: form.id,
-        pipeline_id: Ecto.UUID.generate()
+        pipeline_id: Ecto.UUID.generate(),
+        organisation_id: form.organisation_id
       }
 
       {:error, changeset} = %FormPipeline{} |> FormPipeline.changeset(params) |> Repo.insert()
@@ -58,7 +61,8 @@ defmodule WraftDoc.Forms.FormPipelineTest do
 
       params = %{
         form_id: form.id,
-        pipeline_id: pipeline.id
+        pipeline_id: pipeline.id,
+        organisation_id: pipeline.organisation_id
       }
 
       {:ok, _} = %FormPipeline{} |> FormPipeline.changeset(params) |> Repo.insert()
@@ -71,4 +75,6 @@ defmodule WraftDoc.Forms.FormPipelineTest do
              )
     end
   end
+
+  # TODO Add test for pipeline organisation constraint
 end

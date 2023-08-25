@@ -3,7 +3,9 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   @moduletag :controller
 
   import WraftDoc.Factory
-  alias WraftDoc.{Enterprise.Flow, Enterprise.Flow.State, Repo}
+  alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Repo
 
   @valid_attrs %{
     name: "Authorised",
