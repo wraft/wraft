@@ -28,4 +28,8 @@ defmodule WraftDocWeb.LogoUploader do
   def storage_dir(_, {_file, organisation}) do
     "uploads/logos/#{organisation.id}"
   end
+
+  def default_url(_version, _scope) do
+    WraftDocWeb.Endpoint.url() <> "/priv/static/images/logo.png"
+  end
 end
