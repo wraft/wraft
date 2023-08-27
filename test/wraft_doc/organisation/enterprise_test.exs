@@ -1,10 +1,7 @@
 defmodule WraftDoc.EnterpriseTest do
-  import Ecto.Query
-  import Ecto
+  use WraftDoc.DataCase, async: true
+
   import Mox
-  import WraftDoc.Factory
-  use WraftDoc.DataCase
-  use ExUnit.Case
   @moduletag :enterprise
 
   alias WraftDoc.Account.AuthToken
@@ -336,12 +333,10 @@ defmodule WraftDoc.EnterpriseTest do
         "gstin" => "32SDFASDF65SD6F",
         "logo" => %Plug.Upload{
           content_type: "image/png",
-          path: File.cwd!() <> "/test/helper/images.png",
-          filename: "images.png"
+          path: File.cwd!() <> "/priv/static/images/avatar.png",
+          filename: "avatar.png"
         }
       }
-
-      insert(:plan, name: "Free Trial")
 
       organisation = Enterprise.create_organisation(user, params)
 
@@ -362,8 +357,6 @@ defmodule WraftDoc.EnterpriseTest do
         "gstin" => "32SDFASDF65SD6F"
       }
 
-      insert(:plan, name: "Free Trial")
-
       {:error, changeset} = Enterprise.create_organisation(user, params)
 
       assert %{creator_id: ["can't be blank"]} == errors_on(changeset)
@@ -379,8 +372,6 @@ defmodule WraftDoc.EnterpriseTest do
         "address" => "Kodappalaya dikku estate",
         "gstin" => "32SDFASDF65SD6F"
       }
-
-      insert(:plan, name: "Free Trial")
 
       Enterprise.create_organisation(user, params)
 
@@ -408,8 +399,6 @@ defmodule WraftDoc.EnterpriseTest do
         "gstin" => "32SDFASDF65SD6F"
       }
 
-      insert(:plan, name: "Free Trial")
-
       Enterprise.create_organisation(user, params)
 
       params_new = %{
@@ -427,7 +416,6 @@ defmodule WraftDoc.EnterpriseTest do
 
     test "returns error on creating organisation with name Personal" do
       user = insert(:user)
-      insert(:plan, name: "Free Trial")
 
       params = %{
         "name" => "Personal",
@@ -451,7 +439,6 @@ defmodule WraftDoc.EnterpriseTest do
   describe "create_personal_organisation/2" do
     test "creates organisation on valid attributes" do
       user = insert(:user)
-      insert(:plan, name: "Free Trial")
 
       params = %{
         "name" => "Personal",
@@ -470,7 +457,6 @@ defmodule WraftDoc.EnterpriseTest do
 
     test "returns error on invalid attributes" do
       user = insert(:user)
-      insert(:plan, name: "Free Trial")
 
       params = %{
         "name" => "Not Personal",
@@ -724,12 +710,14 @@ defmodule WraftDoc.EnterpriseTest do
 
       plans = Enterprise.plan_index()
       plan_names = plans |> Enum.map(fn x -> x.name end) |> List.to_string()
-      assert length(plans) == 2
+      # We have inserted Free trial plan as part of migration
+      assert length(plans) == 3
       assert plan_names =~ p1.name
       assert plan_names =~ p2.name
     end
 
     test "returns empty list when there are no plans" do
+      Repo.delete_all(Plan)
       plans = Enterprise.plan_index()
       assert plans == []
     end

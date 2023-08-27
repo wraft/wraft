@@ -41,8 +41,8 @@ defmodule WraftDoc.Account.ProfileTest do
 
     profile_pic = %Plug.Upload{
       content_type: "image/png",
-      path: File.cwd!() <> "/test/helper/images.png",
-      filename: "images.png"
+      path: File.cwd!() <> "/priv/static/images/avatar.png",
+      filename: "avatar.png"
     }
 
     attrs = Map.merge(@valid_attrs, %{profile_pic: profile_pic, user_id: user.id})

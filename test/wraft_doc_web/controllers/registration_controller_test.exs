@@ -33,7 +33,6 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
     } do
       organisation = insert(:organisation)
       role = insert(:role, organisation: organisation)
-      insert(:plan, name: "Free Trial")
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
@@ -62,8 +61,6 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
     test "succesfully registers users with valid attrs and without organisation invite token", %{
       conn: conn
     } do
-      insert(:plan, name: "Free Trial")
-
       conn =
         conn
         |> post(Routes.v1_registration_path(conn, :create, @valid_attrs))
@@ -79,7 +76,6 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
     test "register as admin if token contains admin role", %{conn: conn} do
       organisation = insert(:organisation)
       role = insert(:role, name: "super_admin", organisation: organisation)
-      insert(:plan, name: "Free Trial")
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
@@ -107,7 +103,6 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
 
     test "invite auth token is deleted on successfull registration", %{conn: conn} do
       organisation = insert(:organisation)
-      insert(:plan, name: "Free Trial")
       role = insert(:role, organisation: organisation)
 
       token =
@@ -130,7 +125,6 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
 
     test "render error for invalid attributes with organisation invite link", %{conn: conn} do
       organisation = insert(:organisation)
-      insert(:plan, name: "Free Trial")
       role = insert(:role, organisation: organisation)
 
       token =
@@ -166,8 +160,6 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
       FunWithFlags.disable(:waiting_list_registration_control,
         for_actor: %{email: @valid_attrs["email"]}
       )
-
-      insert(:plan, name: "Free Trial")
 
       conn =
         conn

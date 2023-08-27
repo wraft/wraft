@@ -28,7 +28,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
         for_actor: %{email: conn.assigns.current_user.email}
       )
 
-      insert(:plan, name: "Free Trial")
       count_before = Organisation |> Repo.all() |> length
 
       conn =
@@ -62,8 +61,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
     test "return error when waiting_list_organisation_create_control flag is disabled for current user",
          %{conn: conn} do
-      insert(:plan, name: "Free Trial")
-
       conn =
         conn
         |> post(Routes.v1_organisation_path(conn, :create, @valid_attrs))

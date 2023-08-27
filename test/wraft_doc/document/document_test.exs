@@ -2873,8 +2873,8 @@ defmodule WraftDoc.DocumentTest do
 
       uploader = %Plug.Upload{
         content_type: "image/png",
-        filename: "images.png",
-        path: "test/helper/images.png"
+        filename: "avatar.png",
+        path: "priv/static/images/avatar.png"
       }
 
       params = Map.merge(params, %{"file" => uploader})
