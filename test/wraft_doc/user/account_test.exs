@@ -26,7 +26,6 @@ defmodule WraftDoc.AccountTest do
   describe "registration/1" do
     test "user successfully registers with valid data and without organisation token" do
       insert(:role, name: "user")
-      insert(:plan, name: "Free Trial")
 
       {:ok, %{user: user, organisations: [personal_org]}} = Account.registration(@valid_attrs)
 
@@ -36,8 +35,6 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "user successfully registers with valid data and an organisation invite token" do
-      insert(:plan, name: "Free Trial")
-
       organisation = insert(:organisation)
       role = insert(:role, name: "user", organisation: organisation)
 
@@ -97,8 +94,6 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "updates the invited user status to \"joined\" when an invited user successfully registers" do
-      insert(:plan, name: "Free Trial")
-
       organisation = insert(:organisation)
       role = insert(:role, name: "user", organisation: organisation)
 
@@ -123,8 +118,6 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "updates the invited user status to \"expired\" when the invitation token is expired" do
-      insert(:plan, name: "Free Trial")
-
       organisation = insert(:organisation)
       role = insert(:role, name: "user", organisation: organisation)
 
@@ -154,7 +147,6 @@ defmodule WraftDoc.AccountTest do
 
     test "creates an oban job to create the default roles in personal organisations" do
       insert(:role, name: "user")
-      insert(:plan, name: "Free Trial")
 
       {:ok, %{user: user, organisations: [personal_org]}} = Account.registration(@valid_attrs)
 
@@ -171,7 +163,6 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "creates an oban job to assign roles for the user in the invited organisation" do
-      insert(:plan, name: "Free Trial")
       organisation = insert(:organisation)
       role = insert(:role, name: "user", organisation: organisation)
 
@@ -197,7 +188,6 @@ defmodule WraftDoc.AccountTest do
 
     test "creates a user_organisation entry for personal organisation" do
       insert(:role, name: "user")
-      insert(:plan, name: "Free Trial")
 
       {:ok, %{user: user, organisations: [personal_org]}} = Account.registration(@valid_attrs)
 
@@ -206,8 +196,6 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "creates a user_organisation entry for invited organisation" do
-      insert(:plan, name: "Free Trial")
-
       organisation = insert(:organisation)
       role = insert(:role, name: "user", organisation: organisation)
 
