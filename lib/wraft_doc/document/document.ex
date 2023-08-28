@@ -1317,6 +1317,7 @@ defmodule WraftDoc.Document do
     nil
   end
 
+  # Update the logic to use current user's organisation's default theme
   def get_default_theme do
     Repo.get_by(Theme, default_theme: true)
   end
@@ -1585,6 +1586,9 @@ defmodule WraftDoc.Document do
   Build a PDF document.
   """
   # TODO - improve tests
+  # TODO - Move slugs folder to priv/
+  # TODO - Update paths in this function so that it points to the right directory both locally and in devtron
+  # TODO - Add XELATEX env variable in devtron - make sure the path provided there is correct
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(
         %Instance{instance_id: instance_id, content_type: content_type} = instance,
@@ -1598,7 +1602,7 @@ defmodule WraftDoc.Document do
     File.mkdir_p(mkdir)
 
     # slug files: there are only two types of templates: contract and pletter
-    System.cmd("cp", ["-a", "lib/slugs/#{slug}/.", mkdir])
+    System.cmd("cp", ["-a", "priv/slugs/#{slug}/.", mkdir])
 
     # Generate QR code for the file
     task = Task.async(fn -> generate_qr(instance) end)
@@ -1713,6 +1717,7 @@ defmodule WraftDoc.Document do
         }
 
       theme ->
+        theme.assets
         url = generate_url(WraftDocWeb.ThemeUploader, theme.file, theme)
 
         font_path =
@@ -2006,7 +2011,7 @@ defmodule WraftDoc.Document do
     out_name = Path.expand("temp/gantt_chart_output/gantt_#{title}.svg")
 
     script =
-      File.read!("lib/slugs/gantt_chart/gnuplot_gantt.plt")
+      File.read!("lib/priv/gantt_chart/gnuplot_gantt.plt")
       |> String.replace("//input//", dest_path)
       |> String.replace("//out_name//", out_name)
       |> String.replace("//title//", title)
