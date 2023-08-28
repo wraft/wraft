@@ -41,6 +41,11 @@ defmodule WraftDoc.Release do
     {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
   end
 
+  def wraft_permissions do
+    ensure_started()
+    Mix.Tasks.Wraft.Permissions.run()
+  end
+
   # defp repos do
   #   Application.fetch_env!(@app, :ecto_repos)
   # end
