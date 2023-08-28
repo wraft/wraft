@@ -10,8 +10,9 @@ defmodule WraftDoc.Release do
 
     {:ok, _, _} =
       Ecto.Migrator.with_repo(WraftDoc.Repo, fn _repo ->
-        Code.eval_file("/app/priv/repo/seeds.exs")
-        # /app/priv/repo/priv/repo/seeds.ex
+        path = :wraft_doc |> :code.priv_dir() |> Path.join("repo/seeds.exs")
+        Code.eval_file(path)
+        # /app/wraft_docs-0.0.1/priv/repo/seeds.ex
       end)
   end
 
