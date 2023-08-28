@@ -1602,7 +1602,8 @@ defmodule WraftDoc.Document do
     File.mkdir_p(mkdir)
 
     # slug files: there are only two types of templates: contract and pletter
-    System.cmd("cp", ["-a", "priv/slugs/#{slug}/.", mkdir])
+    file_path = :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
+    System.cmd("cp", ["-a", file_path, mkdir])
 
     # Generate QR code for the file
     task = Task.async(fn -> generate_qr(instance) end)
