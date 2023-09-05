@@ -2,6 +2,7 @@ alias WraftDoc.Account
 alias WraftDoc.Account.Role
 alias WraftDoc.Account.User
 alias WraftDoc.Account.UserOrganisation
+alias WraftDoc.Client.Minio
 alias WraftDoc.Document
 alias WraftDoc.Document.CollectionForm
 alias WraftDoc.Document.CollectionFormField

@@ -44,8 +44,6 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Repo
   alias WraftDoc.Workers.BulkWorker
 
-  alias WraftDocWeb.AssetUploader
-
   @doc """
   Create a layout.
   """
@@ -1592,10 +1590,7 @@ defmodule WraftDoc.Document do
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(
         %Instance{instance_id: instance_id, content_type: content_type} = instance,
-        %Layout{
-          slug: slug,
-          assets: assets
-        }
+        %Layout{slug: slug} = layout
       ) do
     content_type = Repo.preload(content_type, [:fields])
     mkdir = "uploads/contents/#{instance_id}"
@@ -1622,7 +1617,7 @@ defmodule WraftDoc.Document do
         find_header_values(x, instance.serialized, acc)
       end)
 
-    content = prepare_markdown(instance, assets, header, mkdir, theme, task)
+    content = prepare_markdown(instance, layout, header, mkdir, theme, task)
     File.write("uploads/contents/#{instance_id}/content.md", content)
     file_path = "uploads/contents/#{instance_id}"
     pdf_file = concat_strings(file_path, "/final.pdf")
@@ -1634,8 +1629,12 @@ defmodule WraftDoc.Document do
     |> upload_file_and_delete_local_copy(file_path, pdf_file)
   end
 
-  defp prepare_markdown(%{id: instance_id} = instance, assets, header, mkdir, theme, task) do
-    header = Enum.reduce(assets, header, fn x, acc -> find_header_values(x, acc) end)
+  defp prepare_markdown(%{id: instance_id} = instance, layout, header, mkdir, theme, task) do
+    header =
+      Enum.reduce(layout.assets, header, fn x, acc ->
+        find_asset_header_values(x, acc, layout.slug, instance)
+      end)
+
     qr_code = Task.await(task)
     page_title = instance.serialized["title"]
 
@@ -1698,10 +1697,19 @@ defmodule WraftDoc.Document do
   end
 
   # Find the header values for the content.md file from the assets of the layout used.
-  @spec find_header_values(Asset.t(), String.t()) :: String.t()
-  defp find_header_values(%Asset{name: name, file: file} = asset, acc) do
-    <<_first::utf8, rest::binary>> = generate_url(AssetUploader, file, asset)
-    concat_strings(acc, "#{name}: #{rest} \n")
+  @spec find_asset_header_values(Asset.t(), String.t(), String.t(), Instance.t()) :: String.t()
+  defp find_asset_header_values(%Asset{name: name, file: file} = asset, acc, slug, %Instance{
+         instance_id: instance_id
+       }) do
+    binary = Minio.download("/uploads/assets/#{asset.id}/#{file.file_name}")
+    asset_file_path = "uploads/contents/#{instance_id}/#{file.file_name}"
+    File.write!(asset_file_path, binary)
+
+    if slug == "pletter" do
+      concat_strings(acc, "letterhead: #{asset_file_path} \n")
+    else
+      concat_strings(acc, "#{name}: #{asset_file_path} \n")
+    end
   end
 
   @spec get_theme_details() :: map()
