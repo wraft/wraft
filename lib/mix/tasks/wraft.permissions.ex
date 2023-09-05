@@ -19,6 +19,9 @@ defmodule Mix.Tasks.Wraft.Permissions do
   @permissions_file Application.compile_env!(:wraft_doc, [:permissions_file])
 
   def run(permissions_file \\ @permissions_file) do
+    IO.puts("+_++++++++++++++++++++")
+    IO.inspect(Application.get_env(:wraft_doc, :permissions_file))
+    IO.puts("+_++++++++++++++++++++")
     Logger.info("Updating Permissions started.")
 
     permissions_file

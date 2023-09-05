@@ -53,6 +53,25 @@ defmodule WraftDoc.Client.Minio do
     end
   end
 
+  @doc """
+  Downloads a file from the given path in MinIO.
+  Returns the binary of the file, which can be written to a file.
+  """
+  @spec download(binary()) :: binary()
+  def download(path) do
+    with {:ok, %{body: %{contents: [%{key: file_path}]}}} <- list_objects(path),
+         [binary] <-
+           bucket()
+           |> S3.download_file(file_path, :memory)
+           |> @ex_aws_module.stream!()
+           |> Enum.to_list() do
+      binary
+    else
+      _ ->
+        ""
+    end
+  end
+
   defp list_objects(prefix) do
     bucket()
     |> S3.list_objects(prefix: prefix)
