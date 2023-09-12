@@ -45,13 +45,20 @@ defmodule WraftDoc.Seed do
         deleted_at: nil
       })
 
-    Repo.insert!(%Organisation{
-      name: "Personal",
-      email: user.email,
-      creator_id: user.id
-    })
+    organisation =
+      Repo.insert!(%Organisation{name: "Personal", email: user.email, creator_id: user.id})
 
+    seed_user_roles(user, organisation)
+    Repo.insert!(%UserOrganisation{user_id: user.id, organisation_id: organisation.id})
     user
+  end
+
+  def seed_user_roles(user, %{name: "Personal"} = organisation) do
+    role =
+      Repo.insert!(%Role{name: "superadmin", permissions: [], organisation_id: organisation.id})
+
+    Repo.insert!(%UserRole{user_id: user.id, role_id: role.id})
+    role
   end
 
   def seed_user_roles(user, organisation) do
@@ -85,11 +92,7 @@ defmodule WraftDoc.Seed do
         creator_id: user.id
       })
 
-    Repo.insert!(%UserOrganisation{
-      user_id: user.id,
-      organisation_id: organisation.id
-    })
-
+    Repo.insert!(%UserOrganisation{user_id: user.id, organisation_id: organisation.id})
     organisation
   end
 
