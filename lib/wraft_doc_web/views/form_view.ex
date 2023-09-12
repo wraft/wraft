@@ -32,6 +32,32 @@ defmodule WraftDocWeb.Api.V1.FormView do
     }
   end
 
+  def render("form_for_index.json", %{form: form}) do
+    %{
+      id: form.id,
+      name: form.name,
+      description: form.description,
+      prefix: form.prefix,
+      status: form.status,
+      inserted_at: form.inserted_at,
+      updated_at: form.updated_at
+    }
+  end
+
+  def render("index.json", %{
+        forms: forms,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      forms: render_many(forms, __MODULE__, "form_for_index.json", as: :form),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
+  end
+
   # Test this case while implementing show API
   def render("field_type.json", _), do: nil
 end

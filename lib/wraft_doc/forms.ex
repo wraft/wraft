@@ -2,6 +2,7 @@ defmodule WraftDoc.Forms do
   @moduledoc """
   Context module for Wraft Forms.
   """
+  import Ecto.Query
 
   alias Ecto.Multi
   alias WraftDoc.Document
@@ -92,4 +93,32 @@ defmodule WraftDoc.Forms do
     })
     |> Repo.insert()
   end
+
+  @doc """
+  List of all forms in the user's organisation
+  """
+  @spec form_index(User.t(), map) :: map
+  def form_index(%{current_org_id: org_id}, params) do
+    Form
+    |> where([f], f.organisation_id == ^org_id)
+    |> where(^form_filter_by_name(params))
+    |> order_by([f], ^form_sort(params))
+    |> Repo.paginate(params)
+  end
+
+  defp form_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([f], ilike(f.name, ^"%#{name}%"))
+
+  defp form_filter_by_name(_), do: true
+
+  defp form_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([f], f.name)]
+
+  defp form_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([f], f.name)]
+
+  defp form_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([f], f.inserted_at)]
+
+  defp form_sort(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([f], f.inserted_at)]
+
+  defp form_sort(_), do: []
 end

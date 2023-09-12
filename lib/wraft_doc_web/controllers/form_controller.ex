@@ -125,26 +125,24 @@ defmodule WraftDocWeb.Api.V1.FormController do
           example(%{
             forms: [
               %{
-                id: "5a324612-0f90-4649-951c-1f67d8882c75",
-                name: "Insurance Form",
                 description:
                   "Fill in the details to activate the corporate insurance offered to employees",
-                fields: [
-                  %{key: "position", field_type_id: "kjb14713132lkdac"},
-                  %{key: "name", field_type_id: "kjb2347mnsad"}
-                ],
-                prefix: "INSFORM",
+                id: "eac20c0e-a13b-40c9-a89e-d3fa149f22ff",
+                inserted_at: "2023-09-05T09:11:52",
+                name: "Insurance Form",
+                prefix: "INSFORM2",
                 status: "active",
-                updated_at: "2023-08-21T14:00:00Z",
-                inserted_at: "2023-08-21T14:00:00Z",
-                creator: %{
-                  id: "2b1521db-9882-4db0-b525-ecddc7bacccd",
-                  name: "John Doe",
-                  email: "email@xyz.com",
-                  email_verify: true,
-                  updated_at: "2020-01-21T14:00:00Z",
-                  inserted_at: "2020-02-21T14:00:00Z"
-                }
+                updated_at: "2023-09-05T09:11:52"
+              },
+              %{
+                description:
+                  "Fill in the details to activate the corporate insurance offered to employees",
+                id: "1125413e-a2a4-43ab-9077-c209f48bdb86",
+                inserted_at: "2023-09-05T08:19:55",
+                name: "Insurance Form",
+                prefix: "INSFORM1",
+                status: "active",
+                updated_at: "2023-09-05T08:19:55"
               }
             ],
             page_number: 1,
@@ -312,6 +310,44 @@ defmodule WraftDocWeb.Api.V1.FormController do
 
     with %Form{} = form <- Forms.create(current_user, params) do
       render(conn, "form.json", form: form)
+    end
+  end
+
+  swagger_path :index do
+    get("/forms")
+    summary("Form Index")
+    description("API to get the list of forms within the user's organisation.")
+
+    parameter(:page, :query, :string, "Page number")
+    parameter(:name, :query, :string, "Name")
+
+    parameter(
+      :sort,
+      :query,
+      :string,
+      "sort keys => name, name_desc, inserted_at, inserted_at_desc"
+    )
+
+    response(200, "Ok", Schema.ref(:FormsIndex))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def index(conn, params) do
+    current_user = conn.assigns.current_user
+
+    with %{
+           entries: forms,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Forms.form_index(current_user, params) do
+      render(conn, "index.json",
+        forms: forms,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
     end
   end
 end
