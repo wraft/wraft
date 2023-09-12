@@ -36,13 +36,22 @@ defmodule WraftDoc.Seed do
   require Logger
 
   def generate_user do
-    Repo.insert!(%User{
-      name: Faker.Person.first_name() <> " " <> Faker.Person.last_name(),
-      email: Faker.Internet.email(),
-      encrypted_password: Bcrypt.hash_pwd_salt("password"),
-      email_verify: true,
-      deleted_at: nil
+    user =
+      Repo.insert!(%User{
+        name: Faker.Person.first_name() <> " " <> Faker.Person.last_name(),
+        email: Faker.Internet.email(),
+        encrypted_password: Bcrypt.hash_pwd_salt("password"),
+        email_verify: true,
+        deleted_at: nil
+      })
+
+    Repo.insert!(%Organisation{
+      name: "Personal",
+      email: user.email,
+      creator_id: user.id
     })
+
+    user
   end
 
   def seed_user_roles(user, organisation) do
