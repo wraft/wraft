@@ -114,7 +114,7 @@ defmodule WraftDoc.Document do
   # Associate the asset with the given layout, ie; insert a LayoutAsset entry.
   defp associate_layout_and_asset(_layout, _current_user, nil), do: nil
 
-  defp associate_layout_and_asset(layout, current_user, asset) do
+  defp associate_layout_and_asset(%Layout{} = layout, current_user, asset) do
     layout
     |> build_assoc(:layout_assets, asset_id: asset.id, creator: current_user)
     |> LayoutAsset.changeset()
@@ -1197,7 +1197,7 @@ defmodule WraftDoc.Document do
   @spec create_theme(User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
   def create_theme(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
-    update_default_theme(Theme, params)
+    update_default_theme(Theme, current_user, params)
 
     current_user
     |> build_assoc(:themes)
@@ -1216,7 +1216,7 @@ defmodule WraftDoc.Document do
   end
 
   # there must be single %{default_theme: true} per organisation
-  defp update_default_theme(theme, %{"default_theme" => value})
+  defp update_default_theme(theme, current_user, %{"default_theme" => value})
        when value == true
        when value == "true" do
     case Repo.exists?(theme) do
@@ -1226,7 +1226,7 @@ defmodule WraftDoc.Document do
             theme
 
           record ->
-            update_theme(record, %{"default_theme" => "false"})
+            update_theme(record, current_user, %{"default_theme" => "false"})
         end
 
       false ->
@@ -1234,11 +1234,12 @@ defmodule WraftDoc.Document do
     end
   end
 
-  defp update_default_theme(_, params), do: params
+  defp update_default_theme(_, _, params), do: params
 
   # Get all the assets from their UUIDs and associate them with the given theme.
   defp fetch_and_associcate_assets_with_theme(theme, current_user, %{"assets" => assets}) do
-    assets
+    (assets || "")
+    |> String.split(",")
     |> Stream.map(fn asset -> get_asset(asset, current_user) end)
     |> Stream.map(fn asset -> associate_theme_and_asset(theme, asset) end)
     |> Enum.to_list()
@@ -1333,9 +1334,22 @@ defmodule WraftDoc.Document do
   Update a theme.
   """
   # TODO - improve test
-  @spec update_theme(Theme.t(), map()) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
-  def update_theme(theme, params) do
-    theme |> Theme.update_changeset(params) |> Repo.update()
+  @spec update_theme(Theme.t(), User.t(), map()) ::
+          {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
+  def update_theme(theme, current_user, params) do
+    theme
+    |> Theme.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, theme} ->
+        theme_preview_file_upload(theme, params)
+        fetch_and_associcate_assets_with_theme(theme, current_user, params)
+
+        Repo.preload(theme, [:assets])
+
+      {:error, _} = changeset ->
+        changeset
+    end
   end
 
   @doc """
