@@ -2279,7 +2279,8 @@ defmodule WraftDoc.DocumentTest do
   describe "create_theme/2" do
     test "create theme on valid attributes" do
       user = insert(:user_with_organisation)
-      asset = insert(:asset, organisation: List.first(user.owned_organisations))
+      asset1 = insert(:asset, organisation: List.first(user.owned_organisations))
+      asset2 = insert(:asset, organisation: List.first(user.owned_organisations))
 
       count_before =
         Theme
@@ -2287,7 +2288,10 @@ defmodule WraftDoc.DocumentTest do
         |> length()
 
       theme =
-        Document.create_theme(user, Map.merge(@valid_theme_attrs, %{"assets" => [asset.id]}))
+        Document.create_theme(
+          user,
+          Map.merge(@valid_theme_attrs, %{"assets" => "#{asset1.id},#{asset2.id}"})
+        )
 
       count_after =
         Theme
@@ -2296,7 +2300,7 @@ defmodule WraftDoc.DocumentTest do
 
       assert count_before + 1 == count_after
       assert theme.name == @valid_theme_attrs["name"]
-      assert List.first(theme.assets).id == asset.id
+      assert [asset1.id, asset2.id] == Enum.map(theme.assets, & &1.id)
       assert theme.font == @valid_theme_attrs["font"]
       assert theme.typescale == @valid_theme_attrs["typescale"]
     end
@@ -2495,15 +2499,23 @@ defmodule WraftDoc.DocumentTest do
 
   describe "update_theme/2" do
     test "update theme on valid attrs" do
-      user = insert(:user)
-      theme = insert(:theme, creator: user)
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      theme = insert(:theme, creator: user, organisation: organisation)
+      asset1 = insert(:asset, organisation: organisation)
+      asset2 = insert(:asset, organisation: organisation)
 
       count_before =
         Theme
         |> Repo.all()
         |> length()
 
-      {:ok, theme} = Document.update_theme(theme, @valid_theme_attrs)
+      theme =
+        Document.update_theme(
+          theme,
+          user,
+          Map.merge(@valid_theme_attrs, %{"assets" => "#{asset1.id},#{asset2.id}"})
+        )
 
       count_after =
         Theme
@@ -2511,6 +2523,7 @@ defmodule WraftDoc.DocumentTest do
         |> length()
 
       assert count_before == count_after
+      assert [asset1.id, asset2.id] == Enum.map(theme.assets, & &1.id)
       assert theme.name == @valid_theme_attrs["name"]
       assert theme.font == @valid_theme_attrs["font"]
       assert theme.typescale == @valid_theme_attrs["typescale"]
@@ -2526,7 +2539,7 @@ defmodule WraftDoc.DocumentTest do
         |> length()
 
       {:error, changeset} =
-        Document.update_theme(theme, %{name: nil, font: nil, typescale: nil, file: nil})
+        Document.update_theme(theme, user, %{name: nil, font: nil, typescale: nil, file: nil})
 
       count_after =
         Theme
