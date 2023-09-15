@@ -5,6 +5,7 @@ defmodule WraftDoc.EnterpriseTest do
   @moduletag :enterprise
 
   alias WraftDoc.Account.AuthToken
+  alias WraftDoc.Account.Role
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
@@ -314,11 +315,37 @@ defmodule WraftDoc.EnterpriseTest do
     assert organisation.name == g_organisation.name
   end
 
-  test "get personal organisation by email returns personal organisation" do
-    organisation = insert(:organisation, name: "Personal")
-    personal_org = Enterprise.get_personal_org_by_email(organisation.email)
-    assert personal_org.name == "Personal"
+  test "get_personal_organisation_and_role returns personal organisation and the user's role in the organisation" do
+    user = insert(:user_with_personal_organisation)
+    [organisation] = user.owned_organisations
+    role = insert(:role, organisation: organisation)
+    insert(:user_role, user: user, role: role)
+
+    %{organisation: personal_org, user: user_with_role} =
+      Enterprise.get_personal_organisation_and_role(user)
+
+    assert "Personal" == organisation.name
     assert personal_org.id == organisation.id
+    assert user.email == personal_org.email
+    assert user.current_org_id == personal_org.id
+    assert [%Role{name: "superadmin"}] = user_with_role.roles
+  end
+
+  describe "get_roles_by_organisation/2" do
+    test "returns all roles of the user for an organisation" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+
+      for name <- ["admin", "editor"] do
+        role = insert(:role, name: name, organisation: organisation)
+        insert(:user_role, user: user, role: role)
+        role
+      end
+
+      user = Enterprise.get_roles_by_organisation(user, organisation.id)
+      assert 2 = Enum.count(user.roles)
+      assert Enum.map(user.roles, & &1.name) == ["admin", "editor"]
+    end
   end
 
   describe "create_organisation/2" do

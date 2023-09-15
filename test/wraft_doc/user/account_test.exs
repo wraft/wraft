@@ -483,7 +483,7 @@ defmodule WraftDoc.AccountTest do
       current_org_id = user.current_org_id
       user_email = user.email
 
-      [access_token: access_token, refresh_token: refresh_token] =
+      %{tokens: [access_token: access_token, refresh_token: refresh_token], user: updated_user} =
         Account.authenticate(%{user: user, password: "encrypt"})
 
       {_, _, access_token_resource} = Guardian.resource_from_token(access_token)
@@ -496,6 +496,9 @@ defmodule WraftDoc.AccountTest do
 
       assert %{"organisation_id" => ^current_org_id, "sub" => ^user_email, "typ" => "refresh"} =
                refresh_token_resource
+
+      assert user.roles
+      assert user.current_org_id == current_org_id
     end
 
     test "does not authenticate when nil or empty password is given" do

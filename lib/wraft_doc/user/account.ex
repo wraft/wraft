@@ -258,14 +258,16 @@ defmodule WraftDoc.Account do
   @spec authenticate(%{user: User.t(), password: binary}) ::
           {:error, atom}
           | {:ok, [access_token: Guardian.Token.token(), refresh_token: Guardian.Token.token()]}
-  def authenticate(%{user: _, password: ""}), do: {:error, :no_data}
-  def authenticate(%{user: _, password: nil}), do: {:error, :no_data}
+  def authenticate(%{user: _, password: password}) when password in ["", nil],
+    do: {:error, :no_data}
 
   def authenticate(%{user: user, password: password}) do
     case Bcrypt.verify_pass(password, user.encrypted_password) do
       true ->
-        personal_org = Enterprise.get_personal_org_by_email(user.email)
-        Guardian.generate_tokens(user, personal_org.id)
+        %{organisation: personal_org, user: user} =
+          Enterprise.get_personal_organisation_and_role(user)
+
+        %{user: user, tokens: Guardian.generate_tokens(user, personal_org.id)}
 
       _ ->
         {:error, :invalid}
