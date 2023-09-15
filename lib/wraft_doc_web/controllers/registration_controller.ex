@@ -68,7 +68,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
       true ->
         with {:ok, %{organisations: organisations, user: %User{} = user}} <-
                Account.registration(params),
-             [access_token: access_token, refresh_token: refresh_token] <-
+             %{user: user, tokens: [access_token: access_token, refresh_token: refresh_token]} <-
                Account.authenticate(%{user: user, password: params["password"]}) do
           Account.create_token_and_send_email(params["email"])
 

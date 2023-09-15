@@ -349,9 +349,26 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Get personal organisation from user email
   """
-  @spec get_personal_org_by_email(binary) :: Organisation.t() | nil
-  def get_personal_org_by_email(email) do
-    Repo.get_by(Organisation, email: email, name: "Personal")
+  @spec get_personal_organisation_and_role(User.t()) ::
+          %{organisation: Organisation.t(), user: User.t()}
+  def get_personal_organisation_and_role(user) do
+    organisation = Repo.get_by(Organisation, email: user.email, name: "Personal")
+
+    user =
+      user
+      |> get_roles_by_organisation(organisation.id)
+      |> Map.put(:current_org_id, organisation.id)
+
+    %{organisation: organisation, user: user}
+  end
+
+  @doc """
+  Gets all the roles of the user in the given organisation.
+  """
+  @spec get_roles_by_organisation(User.t(), Ecto.UUID.t()) :: User.t()
+  def get_roles_by_organisation(user, organisation_id) do
+    roles_preload_query = from(r in Role, where: r.organisation_id == ^organisation_id)
+    Repo.preload(user, [roles: roles_preload_query], force: true)
   end
 
   @doc """

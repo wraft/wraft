@@ -3,7 +3,6 @@ defmodule WraftDocWeb.Api.V1.UserView do
   View module for user controller.
   """
   use WraftDocWeb, :view
-  alias WraftDocWeb.Api.V1.InstanceApprovalSystemView
   alias WraftDocWeb.Api.V1.OrganisationView
   alias WraftDocWeb.Api.V1.ProfileView
   alias WraftDocWeb.Api.V1.RegistrationView
@@ -17,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
     %{
       access_token: access_token,
       refresh_token: refresh_token,
-      user: render_one(user, UserView, "user.json", as: :user)
+      user: render_one(user, UserView, "login_user.json", as: :user)
     }
   end
 
@@ -31,6 +30,20 @@ defmodule WraftDocWeb.Api.V1.UserView do
   def render("token.json", %{error: error}) do
     %{
       error: error
+    }
+  end
+
+  def render("login_user.json", %{user: user}) do
+    %{
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      email_verify: user.email_verify,
+      profile_pic: generate_url(user.profile),
+      organisation_id: user.current_org_id,
+      roles: render_many(user.roles, RegistrationView, "role.json", as: :role),
+      inserted_at: user.inserted_at,
+      updated_at: user.updated_at
     }
   end
 
@@ -86,7 +99,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
     }
   end
 
-  def render("me.json", %{user: me, instance_approval_systems: instance_approval_systems}) do
+  def render("me.json", %{user: me}) do
     %{
       id: me.id,
       name: me.name,
@@ -96,15 +109,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
       inserted_at: me.inserted_at,
       updated_at: me.updated_at,
       profile_pic: generate_url(me.profile),
-      # TODO uncomment this once RBAC is done succefully
-      # roles: render_many(me.roles, RegistrationView, "role.json", as: :role),
-      instances_to_approve:
-        render_many(
-          instance_approval_systems,
-          InstanceApprovalSystemView,
-          "show_instance_state.json",
-          as: :instance_approval_system
-        )
+      roles: render_many(me.roles, RegistrationView, "role.json", as: :role)
     }
   end
 

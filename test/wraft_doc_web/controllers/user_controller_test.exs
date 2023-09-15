@@ -16,6 +16,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   describe "signin/2" do
     test "succesfully logs in with correct email-password combination" do
       user = insert(:user_with_personal_organisation)
+      [organisation] = user.owned_organisations
+      insert(:user_role, user: user, role: insert(:role, organisation: organisation))
       conn = build_conn()
 
       conn =
@@ -28,6 +30,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
         )
 
       assert json_response(conn, 200)["user"]["email"] == user.email
+      assert json_response(conn, 200)["user"]["organisation_id"] == organisation.id
+      assert json_response(conn, 200)["user"]["roles"] != []
       assert json_response(conn, 200)["access_token"] != nil
       assert json_response(conn, 200)["refresh_token"] != nil
     end
@@ -401,6 +405,13 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       %{id: organisation_id} = organisation = insert(:organisation)
       insert(:user_organisation, user: user, organisation: organisation)
 
+      for name <- ["admin", "editor"] do
+        insert(:user_role,
+          user: user,
+          role: insert(:role, name: name, organisation: organisation)
+        )
+      end
+
       conn =
         post(
           conn,
@@ -412,6 +423,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       assert response["user"]["id"] == user.id
       assert response["user"]["email"] == user.email
       assert response["user"]["name"] == user.name
+      assert response["user"]["organisation_id"] == organisation_id
+      assert Enum.map(response["user"]["roles"], & &1["name"]) == ["admin", "editor"]
       assert response["access_token"]
       assert response["refresh_token"]
 
