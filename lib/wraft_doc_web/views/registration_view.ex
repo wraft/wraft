@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationView do
   View module for registration controller.
   """
   use WraftDocWeb, :view
+  alias WraftDocWeb.Api.V1.UserView
 
   def render("create.json", %{
         user: user,
@@ -13,16 +14,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationView do
     %{
       access_token: access_token,
       refresh_token: refresh_token,
-      user: %{
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        email_verify: user.email_verify,
-        inserted_at: user.inserted_at,
-        updated_at: user.updated_at
-        # TODO
-        #  roles: render_many(user.roles, __MODULE__, "role.json", as: :role)
-      },
+      user: render_one(user, UserView, "login_user.json", as: :user),
       organisations:
         render_many(organisations, __MODULE__, "organisation.json", as: :organisation)
     }

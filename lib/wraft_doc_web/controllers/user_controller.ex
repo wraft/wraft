@@ -13,7 +13,6 @@ defmodule WraftDocWeb.Api.V1.UserController do
   alias WraftDoc.Account
   alias WraftDoc.Account.AuthToken
   alias WraftDoc.Account.User
-  alias WraftDoc.Document
   alias WraftDoc.Enterprise
   alias WraftDocWeb.Guardian
 
@@ -59,6 +58,35 @@ defmodule WraftDocWeb.Api.V1.UserController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
+      LoggedInUser:
+        swagger_schema do
+          title("Logged in user")
+          description("A user of the application who just logged in or registered")
+
+          properties do
+            id(:string, "The ID of the user", required: true)
+            name(:string, "Users name", required: true)
+            email(:string, "Users email", required: true)
+            email_verify(:boolean, "Email verification status")
+            profile_pic(:string, "URL of the user's profile picture")
+            organisation_id(:string, "User's current organisation ID", required: true)
+            roles(:array, "Roles of the user", required: true)
+            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
+            updated_at(:string, "When was the user last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            name: "John Doe",
+            email: "email@xyz.com",
+            email_verify: true,
+            profile_pic: "www.minio.com/users/johndoe.jpg",
+            organisation_id: "466f1fa1-9657-4166-b372-21e8135aeaf1",
+            roles: [%{id: "756f1fa1-9657-4166-b372-21e8135aeaf1", name: "superadmin"}],
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
       UserToken:
         swagger_schema do
           title("User and token")
@@ -69,7 +97,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
             refresh_token(:string, "JWT refresh token for refreshing access token", required: true)
 
-            user(Schema.ref(:User))
+            user(Schema.ref(:LoggedInUser))
           end
 
           example(%{
@@ -80,6 +108,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
               name: "John Doe",
               email: "email@xyz.com",
               email_verify: true,
+              profile_pic: "www.minio.com/users/johndoe.jpg",
+              organisation_id: "466f1fa1-9657-4166-b372-21e8135aeaf1",
+              roles: [%{id: "756f1fa1-9657-4166-b372-21e8135aeaf1", name: "superadmin"}],
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             }
@@ -361,7 +392,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   @spec signin(Plug.Conn.t(), map) :: Plug.Conn.t()
   def signin(conn, params) do
     with %User{} = user <- Account.find(params["email"]),
-         [access_token: access_token, refresh_token: refresh_token] <-
+         %{user: user, tokens: [access_token: access_token, refresh_token: refresh_token]} <-
            Account.authenticate(%{user: user, password: params["password"]}) do
       render(conn, "sign-in.json",
         access_token: access_token,
@@ -384,19 +415,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
   end
 
   @spec me(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def me(conn, params) do
+  def me(conn, _params) do
     current_user = conn.assigns.current_user
-
-    # FIXME Why do we have to load this in this API?
-    with %{
-           entries: instance_approval_systems
-         } <-
-           Document.instance_approval_system_index(current_user, params) do
-      render(conn, "me.json", %{
-        user: current_user,
-        instance_approval_systems: instance_approval_systems
-      })
-    end
+    render(conn, "me.json", %{user: current_user})
   end
 
   @doc """
@@ -682,13 +703,14 @@ defmodule WraftDocWeb.Api.V1.UserController do
     current_user = conn.assigns[:current_user]
 
     with %User{} = user <- Enterprise.list_org_by_user(current_user),
-         true <- Enum.any?(user.organisations, &(&1.id == organisation_id)) do
+         true <- Enum.any?(user.organisations, &(&1.id == organisation_id)),
+         user <- Enterprise.get_roles_by_organisation(user, organisation_id) do
       tokens = Guardian.generate_tokens(current_user, organisation_id)
 
       render(conn, "sign-in.json",
         access_token: Keyword.get(tokens, :access_token),
         refresh_token: Keyword.get(tokens, :refresh_token),
-        user: user
+        user: Map.put(user, :current_org_id, organisation_id)
       )
     else
       false ->
