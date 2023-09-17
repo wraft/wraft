@@ -33,7 +33,8 @@ WORKDIR /app
 
 # install hex + rebar
 RUN mix local.hex --force && \
-    mix local.rebar --force
+    mix local.rebar --force && \
+    HEX_HTTP_CONCURRENCY=1 HEX_HTTP_TIMEOUT=120 mix deps.get
 
 # set build ENV
 ARG SECRET_KEY_BASE
