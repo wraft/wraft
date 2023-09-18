@@ -12,9 +12,9 @@
 #   - https://pkgs.org/ - resource for finding needed packages
 #   - Ex: hexpm/elixir:1.13.0-erlang-24.0.5-debian-bullseye-20210902-slim
 #
-ARG ELIXIR_VERSION=1.13.0
-ARG OTP_VERSION=24.0.5
-ARG DEBIAN_VERSION=bullseye-20210902-slim
+ARG ELIXIR_VERSION=1.15.5
+ARG OTP_VERSION=26.0.2
+ARG DEBIAN_VERSION=bullseye-20230612-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -24,9 +24,17 @@ ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 FROM ${BUILDER_IMAGE} as builder
 
 # install build dependencies
-RUN apt-get update -y && apt-get install -y build-essential git \
-   postgresql-client libstdc++6 openssl libncurses5 locales \
-    && apt-get clean && rm -f /var/lib/apt/lists/*_*
+
+# install build dependencies
+RUN apt-get update -y \
+  && apt-get install curl -y \
+  && apt-get install -y build-essential git \
+  && apt-get clean \
+  && rm -f /var/lib/apt/lists/*_* 
+
+# RUN apt-get update -y && apt-get install -y build-essential git \
+#    postgresql-client libstdc++6 openssl libncurses5 locales \
+#     && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # prepare build dir
 WORKDIR /app
