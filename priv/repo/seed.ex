@@ -35,6 +35,30 @@ defmodule WraftDoc.Seed do
 
   require Logger
 
+  def generate_user(username, email) do
+    case Repo.get_by(User, email: email) do
+      %User{} = user ->
+        user
+
+      nil ->
+        user =
+          Repo.insert!(%User{
+            name: username,
+            email: email,
+            encrypted_password: Bcrypt.hash_pwd_salt("password"),
+            email_verify: true,
+            deleted_at: nil
+          })
+
+        organisation =
+          Repo.insert!(%Organisation{name: "Personal", email: user.email, creator_id: user.id})
+
+        seed_user_roles(user, organisation)
+        Repo.insert!(%UserOrganisation{user_id: user.id, organisation_id: organisation.id})
+        user
+    end
+  end
+
   def generate_user do
     user =
       Repo.insert!(%User{
@@ -97,14 +121,15 @@ defmodule WraftDoc.Seed do
   end
 
   def seed_profile(user, country) do
-    Repo.insert!(%Profile{
-      name: user.name,
-      profile_pic: %{file_name: "avatar.png", updated_at: nil},
-      dob: Faker.Date.date_of_birth(18..60),
-      gender: Enum.random(["Male", "Female"]),
-      user_id: user.id,
-      country_id: country.id
-    })
+    Repo.get_by(Profile, user_id: user.id) ||
+      Repo.insert!(%Profile{
+        name: user.name,
+        profile_pic: %{file_name: "avatar.png", updated_at: nil},
+        dob: Faker.Date.date_of_birth(18..60),
+        gender: Enum.random(["Male", "Female"]),
+        user_id: user.id,
+        country_id: country.id
+      })
   end
 
   def seed_engine do
@@ -164,7 +189,7 @@ defmodule WraftDoc.Seed do
         body_color: Faker.Color.rgb_hex(),
         primary_color: Faker.Color.rgb_hex(),
         secondary_color: Faker.Color.rgb_hex(),
-        default_theme: Enum.random([true, false]),
+        default_theme: false,
         creator_id: user.id,
         organisation_id: organisation.id
       })

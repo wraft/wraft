@@ -19,7 +19,9 @@ alias WraftDoc.Seed
 
 if !FunWithFlags.enabled?(:seeds_ran?) do
   # Seed users
-  user_list = for _ <- 1..3, do: Seed.generate_user()
+  user = Seed.generate_user("wraftuser", "wraftuser@gmail.com")
+  user_list = for _ <- 1..2, do: Seed.generate_user()
+  user_list = [user | user_list]
 
   # Seed organisation and user organisation
   organisation_list = for user <- user_list, do: Seed.seed_user_organisation(user)
