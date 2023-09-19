@@ -4,8 +4,7 @@ defmodule WraftDocWeb.LogoUploader do
   use Waffle.Definition
   use Waffle.Ecto.Definition
 
-  # Include ecto support (requires package waffle_ecto installed):
-  # use Waffle.Ecto.Definition
+  alias WraftDoc.Client.Minio
 
   @versions [:original]
   @extension_whitelist ~w(.jpg .jpeg .gif .png)
@@ -29,7 +28,5 @@ defmodule WraftDocWeb.LogoUploader do
     "uploads/logos/#{organisation.id}"
   end
 
-  def default_url(_version, _scope) do
-    WraftDocWeb.Endpoint.url() <> "/priv/static/images/logo.png"
-  end
+  def default_url(_version, _scope), do: Minio.generate_url("uploads/images/logo.png")
 end
