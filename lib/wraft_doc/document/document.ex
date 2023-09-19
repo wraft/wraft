@@ -1009,7 +1009,7 @@ defmodule WraftDoc.Document do
         instance
 
       %History{} ->
-        {:ok, doc_url} = Minio.generate_url("uploads/contents/#{instance_id}/final.pdf")
+        doc_url = Minio.generate_url("uploads/contents/#{instance_id}/final.pdf")
         Map.put(instance, :build, doc_url)
     end
   end
