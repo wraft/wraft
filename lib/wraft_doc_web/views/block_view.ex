@@ -67,6 +67,6 @@ defmodule WraftDocWeb.Api.V1.BlockView do
   end
 
   defp generate_url(block) do
-    WraftDocWeb.BlockInputUploader.url({block.input, block})
+    WraftDocWeb.BlockInputUploader.url({block.input, block}, signed: true)
   end
 end

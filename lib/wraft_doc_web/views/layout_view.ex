@@ -61,10 +61,10 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
   end
 
   defp generate_url(%{slug_file: file} = layout) do
-    WraftDocWeb.LayoutSlugUploader.url({file, layout})
+    WraftDocWeb.LayoutSlugUploader.url({file, layout}, signed: true)
   end
 
   defp generate_ss_url(%{screenshot: file} = layout) do
-    WraftDocWeb.LayoutScreenShotUploader.url({file, layout})
+    WraftDocWeb.LayoutScreenShotUploader.url({file, layout}, signed: true)
   end
 end
