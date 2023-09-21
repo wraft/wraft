@@ -38,6 +38,6 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
   end
 
   def generate_url(%{profile_pic: pic} = profile) do
-    WraftDocWeb.PropicUploader.url({pic, profile})
+    WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
   end
 end

@@ -104,7 +104,7 @@ config :ex_aws,
   s3: [
     scheme: "http://",
     host: System.get_env("MINIO_HOST"),
-    port: 9000
+    port: System.get_env("MINIO_PORT")
   ]
 
 config :wraft_doc, WraftDocWeb.Mailer, api_key: System.get_env("SENDGRID_API_KEY")
