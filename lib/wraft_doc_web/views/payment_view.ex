@@ -92,6 +92,6 @@ defmodule WraftDocWeb.Api.V1.PaymentView do
   end
 
   defp generate_url(%{invoice: invoice} = payment) do
-    WraftDocWeb.InvoiceUploader.url({invoice, payment})
+    WraftDocWeb.InvoiceUploader.url({invoice, payment}, signed: true)
   end
 end

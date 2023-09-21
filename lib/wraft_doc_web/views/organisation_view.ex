@@ -102,6 +102,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
   end
 
   defp generate_url(%{logo: logo} = organisation) do
-    WraftDocWeb.LogoUploader.url({logo, organisation})
+    WraftDocWeb.LogoUploader.url({logo, organisation}, signed: true)
   end
 end

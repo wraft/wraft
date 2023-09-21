@@ -247,7 +247,7 @@ defmodule WraftDoc.Account do
     email
     |> get_user_by_email()
     |> case do
-      user = %User{} -> user
+      user = %User{} -> Repo.preload(user, :profile)
       _ -> {:error, :invalid}
     end
   end

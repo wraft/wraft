@@ -25,8 +25,8 @@ defmodule WraftDocWeb.PropicUploader do
   end
 
   # Storage Directory
-  def storage_dir(_, {_file, user}) do
-    "uploads/avatars/#{user.id}"
+  def storage_dir(_, {_file, profile}) do
+    "uploads/avatars/#{profile.id}"
   end
 
   # Provide a default URL if there hasn't been a file uploaded

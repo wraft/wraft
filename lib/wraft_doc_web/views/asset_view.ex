@@ -36,6 +36,6 @@ defmodule WraftDocWeb.Api.V1.AssetView do
   end
 
   defp generate_url(%{file: file} = asset) do
-    WraftDocWeb.AssetUploader.url({file, asset})
+    WraftDocWeb.AssetUploader.url({file, asset}, signed: true)
   end
 end
