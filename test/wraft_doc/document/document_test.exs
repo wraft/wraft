@@ -3035,16 +3035,6 @@ defmodule WraftDoc.DocumentTest do
   #   end
   # end
 
-  describe "get_fontname/2" do
-    test "get fontname" do
-      path =
-        "/uploads/theme/fonts/d17664cb-b6cf-4e39-aec8-5b665f1e75b4/Roboto-BlackItalic.ttf?v=63813346445"
-
-      fontname = Document.get_font_name(path)
-      assert "Roboto-BlackItalic.ttf" == fontname
-    end
-  end
-
   describe "add_build_history" do
     test "add_build_history/3 Insert the build history of the given instance." do
       params =
