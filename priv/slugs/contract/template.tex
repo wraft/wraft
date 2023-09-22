@@ -50,10 +50,11 @@
 \definecolor{foo}{HTML}{2c41ac}
 \sectionfont{\color{foo}}
 
-$if(path)$
-\setmainfont[
-Path = $path$/fonts/,
-BoldFont = Mallory-Bold.otf]{Mallory-Book.otf}
+$if(mainfont)$
+  \setmainfont[
+    Path=$path$/fonts/,
+    $for(mainfontoptions)$$mainfontoptions$$sep$,$endfor$
+  ]{$mainfont$}
 $endif$
 
 % Longtabe and friends

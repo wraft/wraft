@@ -1597,42 +1597,39 @@ defmodule WraftDoc.Document do
   @doc """
   Build a PDF document.
   """
-  # TODO - improve tests
-  # TODO - Move slugs folder to priv/
-  # TODO - Update paths in this function so that it points to the right directory both locally and in devtron
-  # TODO - Add XELATEX env variable in devtron - make sure the path provided there is correct
+  # TODO  - Write Test
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(
         %Instance{instance_id: instance_id, content_type: content_type} = instance,
         %Layout{slug: slug} = layout
       ) do
-    content_type = Repo.preload(content_type, [:fields])
-    mkdir = "uploads/contents/#{instance_id}"
-    File.mkdir_p(mkdir)
+    content_type = Repo.preload(content_type, [:fields, :theme])
+    directory = "uploads/contents/#{instance_id}"
+    File.mkdir_p(directory)
+
+    # Load all the assets corresponding with the given theme
+    theme = Repo.preload(content_type.theme, [:assets])
 
     # slug files: there are only two types of templates: contract and pletter
     file_path = :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
-    System.cmd("cp", ["-a", file_path, mkdir])
+    System.cmd("cp", ["-a", file_path, directory])
 
     # Generate QR code for the file
     task = Task.async(fn -> generate_qr(instance) end)
 
     # Move old builds to the history folder
     Task.start(fn -> move_old_builds(instance_id) end)
-    theme = get_theme_details()
 
-    # copy fonts to the template
-    if theme.font_path != "" do
-      System.cmd("cp", ["-a", "#{theme.font_path}/.", "#{mkdir}/fonts/"])
-    end
+    theme = get_theme_details(theme, directory)
 
     header =
       Enum.reduce(content_type.fields, "--- \n", fn x, acc ->
         find_header_values(x, instance.serialized, acc)
       end)
 
-    content = prepare_markdown(instance, layout, header, mkdir, theme, task)
+    content = prepare_markdown(instance, layout, header, directory, theme, task)
     File.write("uploads/contents/#{instance_id}/content.md", content)
+
     file_path = "uploads/contents/#{instance_id}"
     pdf_file = concat_strings(file_path, "/final.pdf")
 
@@ -1659,6 +1656,8 @@ defmodule WraftDoc.Document do
       |> concat_strings("title: #{page_title}\n")
       |> concat_strings("id: #{instance_id}\n")
       |> concat_strings("mainfont: #{theme.font_name}\n")
+      |> concat_strings("mainfontoptions:\n")
+      |> font_option_header(theme.font_options)
       |> concat_strings("body_color: #{theme.body_color}\n")
       |> concat_strings("primary_color: #{theme.primary_color}\n")
       |> concat_strings("secondary_color: #{theme.secondary_color}\n")
@@ -1669,6 +1668,46 @@ defmodule WraftDoc.Document do
     #{header}
     #{instance.raw}
     """
+  end
+
+  @spec get_theme_details(Theme.t(), String.t()) :: map()
+  def get_theme_details(theme, mkdir) do
+    [%{file: filename} | _] = theme.assets
+    [font_name, _, file_type] = String.split(filename, ~r/[-.]/)
+
+    %{
+      body_color: theme.body_color,
+      primary_color: theme.primary_color,
+      secondary_color: theme.secondary_color,
+      typescale: Jason.encode!(theme.typescale),
+      font_name: "#{font_name}-Regular.#{file_type}",
+      font_options: font_options(theme, mkdir)
+    }
+  end
+
+  defp font_options(theme, mkdir) do
+    theme.assets
+    |> Stream.map(fn asset ->
+      file_name = asset.file.file_name
+
+      binary = Minio.download("/uploads/assets/#{asset.id}/#{file_name}")
+      asset_file_path = "#{mkdir}/fonts/#{file_name}"
+      File.write!(asset_file_path, binary)
+
+      [_, font_type, _] = String.split(file_name, ~r/[-.]/)
+
+      case Enum.member?(["Bold", "Italic", "BoldItalic"], font_type) do
+        true -> "#{font_type}Font=#{file_name}"
+        false -> ""
+      end
+    end)
+    |> Enum.reject(&(&1 == ""))
+  end
+
+  defp font_option_header(header, font_options) do
+    Enum.reduce(font_options, header, fn font_option, acc ->
+      concat_strings(acc, "- #{font_option}\n")
+    end)
   end
 
   defp prepare_pandoc_cmds(instance_id, pdf_file) do
@@ -1724,62 +1763,6 @@ defmodule WraftDoc.Document do
     else
       concat_strings(acc, "#{name}: #{asset_file_path} \n")
     end
-  end
-
-  @spec get_theme_details() :: map()
-  def get_theme_details do
-    case get_default_theme() do
-      nil ->
-        %{
-          body_color: "",
-          primary_color: "",
-          secondary_color: "",
-          typescale: "",
-          font_path: "",
-          font_name: ""
-        }
-
-      theme ->
-        theme.assets
-        url = generate_url(WraftDocWeb.ThemeUploader, theme.file, theme)
-
-        font_path =
-          url
-          |> Path.dirname()
-          |> Path.relative_to("/")
-
-        %{
-          body_color: theme.body_color,
-          primary_color: theme.primary_color,
-          secondary_color: theme.secondary_color,
-          typescale: Jason.encode!(theme.typescale),
-          font_path: font_path,
-          font_name: get_font_name(url)
-        }
-    end
-  end
-
-  @doc """
-  Get the font full name out of the path.
-
-  ## Example
-
-  iex()> get_font_name("/uploads/theme/fonts/d17664cb-b6cf-4e39-aec8-5b665f1e75b4/Roboto-BlackItalic.ttf?v=63813346445")\n
-  "Roboto-BlackItalic.ttf"
-  """
-  @spec get_font_name(String.t()) :: String.t()
-  def get_font_name(font_file_path) do
-    font_file_path
-    |> String.split("/")
-    |> List.last()
-    |> String.split("?")
-    |> List.first()
-  end
-
-  # Generate url.
-  @spec generate_url(any, String.t(), map) :: String.t()
-  defp generate_url(uploader, file, scope) do
-    uploader.url({file, scope}, signed: true)
   end
 
   # Generate QR code with the UUID of the given Instance.
