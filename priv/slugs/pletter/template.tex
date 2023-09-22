@@ -39,7 +39,7 @@ $endfor$
 $if(mainfont)$
   \setmainfont[
     Path=$path$/fonts/,
-    BoldFont = $mainfont$
+    $for(mainfontoptions)$$mainfontoptions$$sep$,$endfor$
   ]{$mainfont$}
 $endif$
 $if(sansfont)$
