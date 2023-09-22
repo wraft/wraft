@@ -1672,8 +1672,8 @@ defmodule WraftDoc.Document do
 
   @spec get_theme_details(Theme.t(), String.t()) :: map()
   def get_theme_details(theme, mkdir) do
-    [%{file: filename} | _] = theme.assets
-    [font_name, _, file_type] = String.split(filename, ~r/[-.]/)
+    [%{file: %{file_name: file_name}} | _] = theme.assets
+    [font_name, _, file_type] = String.split(file_name, ~r/[-.]/)
 
     %{
       body_color: theme.body_color,
