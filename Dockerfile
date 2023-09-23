@@ -30,7 +30,7 @@ RUN apt-get update -y \
   && apt-get install curl -y \
   && apt-get install -y build-essential git \
   && apt-get clean \
-  && rm -f /var/lib/apt/lists/*_*
+  && rm -f /var/lib/apt/lists/*_* 
 
 # RUN apt-get update -y && apt-get install -y build-essential git \
 #    postgresql-client libstdc++6 openssl libncurses5 locales \
@@ -90,10 +90,10 @@ FROM ${RUNNER_IMAGE}
 
 RUN apt-get update && \
     apt-get install -y \
-    postgresql-client inotify-tools
+    postgresql-client inotify-tools 
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    build-essential xorg libssl-dev libxrender-dev git vim wget gdebi xvfb \
+    build-essential xorg libssl-dev libxrender-dev git wget gdebi xvfb \
     locales \
     # Install wkhtml to pdf
     wkhtmltopdf \
