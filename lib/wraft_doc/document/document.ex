@@ -1604,40 +1604,40 @@ defmodule WraftDoc.Document do
         %Layout{slug: slug} = layout
       ) do
     content_type = Repo.preload(content_type, [:fields, :theme])
-    directory = "uploads/contents/#{instance_id}"
-    File.mkdir_p(directory)
+    base_content_dir = Path.join(File.cwd!(), "uploads/contents/#{instance_id}")
+    File.mkdir_p(base_content_dir)
 
     # Load all the assets corresponding with the given theme
     theme = Repo.preload(content_type.theme, [:assets])
 
     # slug files: there are only two types of templates: contract and pletter
     file_path = :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
-    System.cmd("cp", ["-a", file_path, directory])
+    System.cmd("cp", ["-a", file_path, base_content_dir])
 
     # Generate QR code for the file
-    task = Task.async(fn -> generate_qr(instance) end)
+    task = Task.async(fn -> generate_qr(instance, base_content_dir) end)
 
     # Move old builds to the history folder
     Task.start(fn -> move_old_builds(instance_id) end)
 
-    theme = get_theme_details(theme, directory)
+    theme = get_theme_details(theme, base_content_dir)
 
     header =
       Enum.reduce(content_type.fields, "--- \n", fn x, acc ->
         find_header_values(x, instance.serialized, acc)
       end)
 
-    content = prepare_markdown(instance, layout, header, directory, theme, task)
-    File.write("uploads/contents/#{instance_id}/content.md", content)
+    content = prepare_markdown(instance, layout, header, base_content_dir, theme, task)
+    File.write("#{base_content_dir}/content.md", content)
 
     file_path = "uploads/contents/#{instance_id}"
     pdf_file = concat_strings(file_path, "/final.pdf")
 
-    pandoc_commands = prepare_pandoc_cmds(instance_id, pdf_file)
+    pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir)
 
     "pandoc"
     |> System.cmd(pandoc_commands)
-    |> upload_file_and_delete_local_copy(file_path, pdf_file)
+    |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
   end
 
   defp prepare_markdown(%{id: instance_id} = instance, layout, header, mkdir, theme, task) do
@@ -1710,10 +1710,10 @@ defmodule WraftDoc.Document do
     end)
   end
 
-  defp prepare_pandoc_cmds(instance_id, pdf_file) do
+  defp prepare_pandoc_cmds(pdf_file, base_content_dir) do
     [
-      "uploads/contents/#{instance_id}/content.md",
-      "--template=uploads/contents/#{instance_id}/template.tex",
+      "#{base_content_dir}/content.md",
+      "--template=#{base_content_dir}/template.tex",
       "--pdf-engine=#{System.get_env("XELATEX_PATH")}",
       "-o",
       pdf_file
@@ -1755,7 +1755,9 @@ defmodule WraftDoc.Document do
          instance_id: instance_id
        }) do
     binary = Minio.download("/uploads/assets/#{asset.id}/#{file.file_name}")
-    asset_file_path = "uploads/contents/#{instance_id}/#{file.file_name}"
+
+    asset_file_path = Path.join(File.cwd!(), "uploads/contents/#{instance_id}/#{file.file_name}")
+
     File.write!(asset_file_path, binary)
 
     if slug == "pletter" do
@@ -1766,14 +1768,14 @@ defmodule WraftDoc.Document do
   end
 
   # Generate QR code with the UUID of the given Instance.
-  @spec generate_qr(Instance.t()) :: String.t()
-  defp generate_qr(%Instance{id: id, instance_id: i_id}) do
+  @spec generate_qr(Instance.t(), String.t()) :: String.t()
+  defp generate_qr(%Instance{id: id}, base_content_dir) do
     qr_code_png =
       id
       |> EQRCode.encode()
       |> EQRCode.png()
 
-    destination = "uploads/contents/#{i_id}/qr.png"
+    destination = Path.join(base_content_dir, "/qr.png")
     File.write(destination, qr_code_png, [:binary])
     destination
   end
