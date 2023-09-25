@@ -72,7 +72,7 @@ defmodule WraftDoc.Client.Minio do
     end
   end
 
-  defp list_objects(prefix) do
+  def list_objects(prefix) do
     bucket()
     |> S3.list_objects(prefix: prefix)
     |> @ex_aws_module.request()

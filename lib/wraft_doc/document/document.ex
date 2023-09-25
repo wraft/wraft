@@ -1690,7 +1690,7 @@ defmodule WraftDoc.Document do
     |> Stream.map(fn asset ->
       file_name = asset.file.file_name
 
-      binary = Minio.download("/uploads/assets/#{asset.id}/#{file_name}")
+      binary = Minio.download("uploads/assets/#{asset.id}/#{file_name}")
       asset_file_path = "#{mkdir}/fonts/#{file_name}"
       File.write!(asset_file_path, binary)
 
@@ -1754,7 +1754,7 @@ defmodule WraftDoc.Document do
   defp find_asset_header_values(%Asset{name: name, file: file} = asset, acc, slug, %Instance{
          instance_id: instance_id
        }) do
-    binary = Minio.download("/uploads/assets/#{asset.id}/#{file.file_name}")
+    binary = Minio.download("uploads/assets/#{asset.id}/#{file.file_name}")
 
     asset_file_path = Path.join(File.cwd!(), "uploads/contents/#{instance_id}/#{file.file_name}")
 
