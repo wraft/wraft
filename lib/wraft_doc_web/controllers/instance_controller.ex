@@ -22,6 +22,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   require Logger
 
+  alias WraftDoc.Client.Minio.DownloadError
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.Instance
@@ -586,6 +587,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       _ ->
         {:error, :not_sufficient}
     end
+  rescue
+    DownloadError ->
+      conn
+      |> put_status(404)
+      |> json(%{error: "File not found"})
   end
 
   defp handle_response(conn, exit_code, instance, params) do

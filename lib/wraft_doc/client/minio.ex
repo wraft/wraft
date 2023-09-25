@@ -3,8 +3,15 @@ defmodule WraftDoc.Client.Minio do
   All the MinIO related functionalities goes here
   """
 
+  require Logger
+
+  defmodule DownloadError do
+    defexception message: "MinIO download error. File not found."
+  end
+
   alias ExAws.Config
   alias ExAws.S3
+  alias WraftDoc.Client.Minio.DownloadError
 
   @default_expiry_time 60 * 5
   @ex_aws_module Application.compile_env(:wraft_doc, [:test_module, :minio], ExAws)
@@ -68,7 +75,8 @@ defmodule WraftDoc.Client.Minio do
       binary
     else
       _ ->
-        ""
+        Logger.error("MinIO download failed", path: path)
+        raise DownloadError
     end
   end
 
