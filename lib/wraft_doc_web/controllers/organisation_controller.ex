@@ -188,6 +188,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     parameter(:email, :formData, :string, "Official email")
     parameter(:logo, :formData, :file, "Logo of organisation")
     parameter(:phone, :formData, :string, "Official ph number")
+    parameter(:url, :formData, :string, "URL of organisation")
     response(201, "Created", Schema.ref(:Organisation))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
@@ -243,6 +244,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     parameter(:email, :formData, :string, "Official email")
     parameter(:logo, :formData, :file, "Logo of organisation")
     parameter(:phone, :formData, :string, "Official ph number")
+    parameter(:url, :formData, :string, "URL of organisation")
 
     response(201, "Accepted", Schema.ref(:Organisation))
     response(422, "Unprocessable Entity", Schema.ref(:Error))

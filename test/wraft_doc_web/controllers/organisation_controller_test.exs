@@ -17,6 +17,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     "address" => "#24, XV Building, TS DEB Layout ",
     "gstin" => "32AA65FF56545353",
     "email" => "abcent@gmail.com",
+    "url" => "wraftdoc@customprofile.com",
     "phone" => "865623232"
   }
 
@@ -40,6 +41,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 200)["gstin"] == @valid_attrs["gstin"]
       assert json_response(conn, 200)["email"] == @valid_attrs["email"]
       assert json_response(conn, 200)["phone"] == @valid_attrs["phone"]
+      assert json_response(conn, 200)["url"] == @valid_attrs["url"]
       assert count_before + 1 == Organisation |> Repo.all() |> length
     end
 
@@ -82,6 +84,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     assert Organisation |> Repo.all() |> length == count_before
     assert json_response(conn, 200)["name"] == @valid_attrs["name"]
     assert json_response(conn, 200)["address"] == @valid_attrs["address"]
+    assert json_response(conn, 200)["url"] == @valid_attrs["url"]
   end
 
   test "renders organisation details on show", %{conn: conn} do
