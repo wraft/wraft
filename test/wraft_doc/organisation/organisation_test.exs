@@ -17,6 +17,7 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
     corporate_id: "F5783NJUG",
     phone: "9090909090",
     email: "hello@company.com",
+    url: "wraftdoc@customprofile.com",
     creator_id: Faker.UUID.v4()
   }
 

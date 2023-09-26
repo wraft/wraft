@@ -12,7 +12,7 @@ defmodule WraftDoc.Enterprise.Organisation do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Vendor
 
-  @fields ~w(name legal_name email address name_of_ceo name_of_cto gstin corporate_id phone creator_id)a
+  @fields ~w(name legal_name email url address name_of_ceo name_of_cto gstin corporate_id phone creator_id)a
 
   @derive {Jason.Encoder, only: [:name]}
   schema "organisation" do
@@ -25,6 +25,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     field(:corporate_id, :string)
     field(:phone, :string)
     field(:email, :string)
+    field(:url, :string)
     belongs_to(:creator, User)
     field(:logo, WraftDocWeb.LogoUploader.Type)
     has_many(:users_organisations, UserOrganisation)

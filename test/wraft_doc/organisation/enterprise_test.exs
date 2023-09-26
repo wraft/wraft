@@ -357,6 +357,7 @@ defmodule WraftDoc.EnterpriseTest do
         "legal_name" => "Acc sru pvt ltd",
         "email" => "dikku@kodappalaya.com",
         "address" => "Kodappalaya dikku estate",
+        "url" => "wraftdoc@customprofile.com",
         "gstin" => "32SDFASDF65SD6F",
         "logo" => %Plug.Upload{
           content_type: "image/png",
@@ -370,6 +371,7 @@ defmodule WraftDoc.EnterpriseTest do
       assert organisation.id
       assert organisation.name == params["name"]
       assert organisation.legal_name == params["legal_name"]
+      assert organisation.url == params["url"]
       assert organisation.logo.file_name == params["logo"].filename
     end
 
@@ -508,11 +510,13 @@ defmodule WraftDoc.EnterpriseTest do
     assert {:ok, organisation} =
              Enterprise.update_organisation(organisation, %{
                "name" => "Abc enterprices",
-               "legal_name" => "Abc pvt ltd"
+               "legal_name" => "Abc pvt ltd",
+               "url" => "wraftdoc@customprofile.com"
              })
 
     assert count_before == Organisation |> Repo.all() |> length()
     assert organisation.name == "Abc enterprices"
+    assert organisation.url == "wraftdoc@customprofile.com"
   end
 
   test "delete organisation deletes a row and returns organisation data" do

@@ -105,7 +105,8 @@ defmodule WraftDoc.Factory do
       address: sequence(:address, &"#{&1} th cross #{&1} th building"),
       gstin: sequence(:gstin, &"32AASDGGDGDDGDG#{&1}"),
       phone: sequence(:phone, &"985222332#{&1}"),
-      email: sequence(:email, &"acborg#{&1}@gmail.com")
+      email: sequence(:email, &"acborg#{&1}@gmail.com"),
+      url: sequence(:url, &"acborg#{&1}@profile.com")
     }
   end
 
