@@ -211,6 +211,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
                Enterprise.create_default_worker_job(
                  %{organisation_id: id, user_id: current_user.id},
                  "organisation_roles"
+               ),
+             {:ok, %Oban.Job{}} <-
+               Enterprise.create_default_worker_job(
+                 %{organisation_id: id},
+                 "wraft_theme_and_layout"
                ) do
           render(conn, "create.json", organisation: organisation)
         end
