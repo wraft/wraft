@@ -149,8 +149,9 @@ defmodule WraftDoc.Workers.DefaultWorker do
   defp create_wraft_branded_asset(organisation_id, params) do
     %Asset{}
     |> Asset.changeset(Map.put(params, :organisation_id, organisation_id))
-    |> Asset.file_changeset(params)
     |> Repo.insert!()
+    |> Asset.file_changeset(params)
+    |> Repo.update!()
     |> Map.get(:id)
   end
 
