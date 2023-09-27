@@ -43,7 +43,7 @@ defmodule WraftDoc.Enterprise.Organisation do
   def changeset(%Organisation{} = organisation, attrs \\ %{}) do
     organisation
     |> cast(attrs, @fields)
-    |> validate_required([:name, :legal_name, :email, :creator_id])
+    |> validate_required([:name, :email, :creator_id])
     |> validate_name()
     |> unique_constraint(:name,
       message: "organisation name already exist",

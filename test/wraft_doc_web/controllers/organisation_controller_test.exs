@@ -54,9 +54,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
       conn = post(conn, Routes.v1_organisation_path(conn, :create, @invalid_attrs))
 
-      assert json_response(conn, 422) == %{
-               "errors" => %{"legal_name" => ["can't be blank"], "email" => ["can't be blank"]}
-             }
+      assert json_response(conn, 422) == %{"errors" => %{"email" => ["can't be blank"]}}
 
       assert count_before == Organisation |> Repo.all() |> length
     end
