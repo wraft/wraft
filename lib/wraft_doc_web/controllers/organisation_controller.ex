@@ -260,6 +260,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, %{"id" => id} = params) do
     with %Organisation{} = organisation <- Enterprise.get_organisation(id),
+         params <- remove_name_from_params(organisation, params),
          {:ok, organisation} <-
            Enterprise.update_organisation(organisation, params) do
       render(conn, "create.json", organisation: organisation)
@@ -460,36 +461,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     end
   end
 
-  # swagger_path :search do
-  #   get("/organisations")
-  #   summary("Search organisation")
-  #   description("Search and list organisation by name")
+  # This stops the user from changing the name of Personal organisation
+  defp remove_name_from_params(%Organisation{name: "Personal"}, params),
+    do: Map.delete(params, "name")
 
-  #   parameters do
-  #     name(:query, :string, "Organisations name")
-  #     page(:query, :string, "Page number")
-  #   end
-
-  #   response(200, "Ok", Schema.ref(:Index))
-  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
-  #   response(401, "Unauthorized", Schema.ref(:Error))
-  #   response(404, "Not Found", Schema.ref(:Error))
-  # end
-
-  # def search(conn, params) do
-  #   with %{
-  #          entries: organisations,
-  #          page_number: page_number,
-  #          total_pages: total_pages,
-  #          total_entries: total_entries
-  #        } <- Enterprise.search_organisations(params) do
-  #     conn
-  #     |> render("index.json",
-  #       organisations: organisations,
-  #       page_number: page_number,
-  #       total_pages: total_pages,
-  #       total_entries: total_entries
-  #     )
-  #   end
-  # end
+  defp remove_name_from_params(_, params), do: params
 end

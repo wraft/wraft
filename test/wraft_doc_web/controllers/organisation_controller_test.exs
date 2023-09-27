@@ -75,12 +75,20 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     organisation = insert(:organisation)
     params = Map.put(@valid_attrs, "creator_id", user_id)
 
-    count_before = Organisation |> Repo.all() |> length
-
     conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), params)
 
-    assert Organisation |> Repo.all() |> length == count_before
     assert json_response(conn, 200)["name"] == @valid_attrs["name"]
+    assert json_response(conn, 200)["address"] == @valid_attrs["address"]
+    assert json_response(conn, 200)["url"] == @valid_attrs["url"]
+  end
+
+  test "does not update name of personal organisation", %{conn: conn} do
+    %{owned_organisations: [organisation]} = insert(:user_with_personal_organisation)
+
+    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), @valid_attrs)
+
+    refute json_response(conn, 200)["name"] == @valid_attrs["name"]
+    assert json_response(conn, 200)["name"] == "Personal"
     assert json_response(conn, 200)["address"] == @valid_attrs["address"]
     assert json_response(conn, 200)["url"] == @valid_attrs["url"]
   end
