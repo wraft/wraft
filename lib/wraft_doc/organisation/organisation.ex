@@ -71,7 +71,7 @@ defmodule WraftDoc.Enterprise.Organisation do
   end
 
   defp validate_name(changeset) do
-    if get_field(changeset, :name) == "Personal" do
+    if get_change(changeset, :name) == "Personal" do
       add_error(changeset, :name, "The name 'Personal' is not allowed.")
     else
       changeset
