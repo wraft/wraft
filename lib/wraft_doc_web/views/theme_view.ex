@@ -12,7 +12,6 @@ defmodule WraftDocWeb.Api.V1.ThemeView do
       body_color: theme.body_color,
       primary_color: theme.primary_color,
       secondary_color: theme.secondary_color,
-      default_theme: theme.default_theme,
       typescale: theme.typescale,
       preview_file: theme.preview_file,
       updated_at: theme.updated_at,

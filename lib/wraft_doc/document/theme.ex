@@ -26,8 +26,7 @@ defmodule WraftDoc.Document.Theme do
     :organisation_id,
     :body_color,
     :primary_color,
-    :secondary_color,
-    :default_theme
+    :secondary_color
   ]
 
   schema "theme" do
@@ -37,7 +36,6 @@ defmodule WraftDoc.Document.Theme do
     field(:body_color, :string)
     field(:primary_color, :string)
     field(:secondary_color, :string)
-    field(:default_theme, :boolean, default: false)
     field(:preview_file, WraftDocWeb.ThemePreviewUploader.Type)
 
     belongs_to(:creator, WraftDoc.Account.User)

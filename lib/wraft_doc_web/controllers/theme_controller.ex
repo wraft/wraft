@@ -184,8 +184,6 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
       "Typescale of the theme, e.g. {'h1': 10, 'p': 6, 'h2': 8}"
     )
 
-    parameter(:default_theme, :formData, :bool, "true or false")
-
     parameter(
       :assets,
       :formData,

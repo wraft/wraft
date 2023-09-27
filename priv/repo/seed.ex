@@ -189,7 +189,6 @@ defmodule WraftDoc.Seed do
         body_color: Faker.Color.rgb_hex(),
         primary_color: Faker.Color.rgb_hex(),
         secondary_color: Faker.Color.rgb_hex(),
-        default_theme: false,
         creator_id: user.id,
         organisation_id: organisation.id
       })

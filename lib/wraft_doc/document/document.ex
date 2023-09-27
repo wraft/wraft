@@ -1197,7 +1197,6 @@ defmodule WraftDoc.Document do
   @spec create_theme(User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
   def create_theme(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
-    update_default_theme(Theme, current_user, params)
 
     current_user
     |> build_assoc(:themes)
@@ -1214,27 +1213,6 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
-
-  # there must be single %{default_theme: true} per organisation
-  defp update_default_theme(theme, current_user, %{"default_theme" => value})
-       when value == true
-       when value == "true" do
-    case Repo.exists?(theme) do
-      true ->
-        case Repo.get_by(theme, default_theme: true) do
-          nil ->
-            theme
-
-          record ->
-            update_theme(record, current_user, %{"default_theme" => "false"})
-        end
-
-      false ->
-        theme
-    end
-  end
-
-  defp update_default_theme(_, _, params), do: params
 
   # Get all the assets from their UUIDs and associate them with the given theme.
   defp fetch_and_associcate_assets_with_theme(theme, current_user, %{"assets" => assets}) do
@@ -1314,11 +1292,6 @@ defmodule WraftDoc.Document do
     )
 
     nil
-  end
-
-  # Update the logic to use current user's organisation's default theme
-  def get_default_theme do
-    Repo.get_by(Theme, default_theme: true)
   end
 
   @doc """
@@ -1598,6 +1571,7 @@ defmodule WraftDoc.Document do
   Build a PDF document.
   """
   # TODO  - Write Test
+  # TODO - Dont need to pass layout as an argument, we can just preload it
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(
         %Instance{instance_id: instance_id, content_type: content_type} = instance,

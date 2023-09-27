@@ -317,7 +317,6 @@ defmodule WraftDoc.Factory do
       body_color: sequence(:body_color, &"#eeff0#{&1}"),
       primary_color: sequence(:primary_color, &"#eeff0#{&1}"),
       secondary_color: sequence(:secondary_color, &"#eeff0#{&1}"),
-      default_theme: true,
       organisation: build(:organisation),
       creator: build(:user)
     }
