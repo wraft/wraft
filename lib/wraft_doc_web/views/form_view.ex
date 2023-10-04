@@ -32,7 +32,7 @@ defmodule WraftDocWeb.Api.V1.FormView do
     }
   end
 
-  def render("form_for_index.json", %{form: form}) do
+  def render("simple_form.json", %{form: form}) do
     %{
       id: form.id,
       name: form.name,
@@ -51,7 +51,7 @@ defmodule WraftDocWeb.Api.V1.FormView do
         total_entries: total_entries
       }) do
     %{
-      forms: render_many(forms, __MODULE__, "form_for_index.json", as: :form),
+      forms: render_many(forms, __MODULE__, "simple_form.json", as: :form),
       page_number: page_number,
       total_pages: total_pages,
       total_entries: total_entries

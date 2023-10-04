@@ -31,6 +31,24 @@ defmodule WraftDoc.Forms do
     end
   end
 
+  @doc """
+  Get a form
+  """
+  @spec get_form(User.t(), Ecto.UUID.t()) :: Form.t() | nil
+  def get_form(%{current_org_id: organisation_id}, <<_::288>> = form_id) do
+    Repo.get_by(Form, id: form_id, organisation_id: organisation_id)
+  end
+
+  @doc """
+    Update form status
+  """
+  @spec update_status(Form.t(), map()) :: Form.t() | {:error, Ecto.Changeset.t()}
+  def update_status(form, params) do
+    form
+    |> Form.update_changeset(params)
+    |> Repo.update()
+  end
+
   defp create_form_fields(form, %{"fields" => fields} = _params) do
     # TODO May be add a feedback loop to inform if some fields are not created
     {:ok, fields |> Stream.map(&create_form_field(form, &1)) |> Enum.to_list()}

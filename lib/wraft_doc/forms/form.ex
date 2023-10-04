@@ -6,12 +6,13 @@ defmodule WraftDoc.Forms.Form do
   use WraftDoc.Schema
 
   @fields [:description, :name, :prefix, :status, :organisation_id, :creator_id]
+  @statuses [:active, :inactive]
 
   schema "form" do
     field(:description, :string)
     field(:name, :string)
     field(:prefix, :string)
-    field(:status, Ecto.Enum, values: [:active, :inactive])
+    field(:status, Ecto.Enum, values: @statuses)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     has_many(:form_fields, WraftDoc.Forms.FormField)
@@ -34,5 +35,12 @@ defmodule WraftDoc.Forms.Form do
     )
     |> foreign_key_constraint(:creator_id, message: "Please enter a valid user")
     |> foreign_key_constraint(:organisation_id, message: "Please enter a valid organisation")
+  end
+
+  def update_changeset(%Form{} = form, attrs) do
+    form
+    |> cast(attrs, [:status])
+    |> validate_required([:status])
+    |> validate_inclusion(:status, @statuses)
   end
 end
