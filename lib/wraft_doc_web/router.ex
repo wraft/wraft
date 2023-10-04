@@ -150,6 +150,7 @@ defmodule WraftDocWeb.Router do
 
       # Forms
       resources("/forms", FormController, except: [:new, :edit])
+      patch("/forms/:id/status", FormController, :status_update)
 
       # Theme
       resources("/themes", ThemeController, only: [:create, :index, :show, :update, :delete])

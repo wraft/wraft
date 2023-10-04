@@ -31,8 +31,8 @@ defmodule WraftDocWeb.Api.V1.UserController do
           end
 
           example(%{
-            email: "email@xyz.com",
-            password: "Password"
+            email: "wraftuser@gmail.com",
+            password: "password"
           })
         end,
       User:

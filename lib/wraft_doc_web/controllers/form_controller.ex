@@ -150,12 +150,51 @@ defmodule WraftDocWeb.Api.V1.FormController do
             total_entries: 15
           })
         end,
+      FormStatusUpdateRequest:
+        swagger_schema do
+          title("Form Status Update")
+          description("Form status update request.")
+
+          properties do
+            status(:string, "status, eg: active or inactive", required: true)
+          end
+
+          example(%{
+            status: "inactive"
+          })
+        end,
+      SimpleForm:
+        swagger_schema do
+          title("Form object")
+          description("Form in response.")
+
+          properties do
+            id(:string, "ID of the form")
+            name(:string, "Name of the form")
+            description(:string, "Description of the form")
+            prefix(:string, "Prefix of the form")
+            status(:string, "Status of the form")
+            inserted_at(:string, "Datetime when the form was created", format: "ISO-8601")
+            updated_at(:string, "Datetime when the form was last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "00b2086f-2177-4262-96f1-c2609e020a8a",
+            name: "Insurance Form",
+            description:
+              "Fill in the details to activate the corporate insurance offered to employees",
+            prefix: "INSFORM",
+            status: "inactive",
+            inserted_at: "2023-08-21T14:00:00Z",
+            updated_at: "2023-08-21T14:00:00Z"
+          })
+        end,
       Forms:
         swagger_schema do
           title("Form response array")
           description("List of forms response.")
           type(:array)
-          items(Schema.ref(:Form))
+          items(Schema.ref(:SimpleForm))
         end,
       Form:
         swagger_schema do
@@ -348,6 +387,32 @@ defmodule WraftDocWeb.Api.V1.FormController do
         total_pages: total_pages,
         total_entries: total_entries
       )
+    end
+  end
+
+  swagger_path :status_update do
+    patch("/forms/{id}/status")
+    summary("Update form status")
+    description("API to update the status of the form")
+
+    parameters do
+      id(:path, :string, "form id", required: true)
+
+      content(:body, Schema.ref(:FormStatusUpdateRequest), "New form status", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:SimpleForm))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def status_update(conn, %{"id" => form_id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Form{} = form <- Forms.get_form(current_user, form_id),
+         {:ok, %Form{} = form} <- Forms.update_status(form, params) do
+      render(conn, "simple_form.json", form: form)
     end
   end
 end
