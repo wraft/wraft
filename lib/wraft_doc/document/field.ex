@@ -13,7 +13,6 @@ defmodule WraftDoc.Document.Field do
     has_many(:forms, through: [:form_fields, :form])
     has_many(:content_type_fields, WraftDoc.Document.ContentTypeField)
     has_many(:content_types, through: [:content_type_fields, :content_type])
-    # TODO move the content type id from this table to new contentype many to many field table
     belongs_to(:field_type, WraftDoc.Document.FieldType)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     timestamps()
@@ -24,5 +23,11 @@ defmodule WraftDoc.Document.Field do
     |> cast(attrs, [:name, :meta, :description, :organisation_id])
     |> validate_required([:name, :organisation_id])
     |> foreign_key_constraint(:organisation_id, message: "Please enter a valid organisation")
+  end
+
+  def update_changeset(%Field{} = field, attrs \\ %{}) do
+    field
+    |> cast(attrs, [:name, :meta, :description, :field_type_id])
+    |> validate_required([:name, :meta, :description, :field_type_id])
   end
 end

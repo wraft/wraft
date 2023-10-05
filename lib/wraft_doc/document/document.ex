@@ -212,6 +212,28 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
   end
 
+  # TODO write test
+  @doc """
+    Update a field
+  """
+  @spec update_field(Field.t(), map) :: Field.t() | nil
+  def update_field(%Field{} = field, params) do
+    field
+    |> Field.update_changeset(params)
+    |> Repo.update()
+  end
+
+  # TODO write test
+  @doc """
+    Get field
+  """
+  @spec get_field(Ecto.UUID.t()) :: Field.t() | nil
+  def get_field(<<_::288>> = field_id) do
+    Repo.get(Field, field_id)
+  end
+
+  def get_field(_), do: nil
+
   @doc """
   List all engines.
 

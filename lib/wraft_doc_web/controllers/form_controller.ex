@@ -22,7 +22,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
       FormRequest:
         swagger_schema do
           title("Wraft Form request")
-          description("Request body to cerate a wraft form")
+          description("Request body to create a wraft form")
 
           properties do
             name(:string, "Form's name", required: true)
@@ -63,6 +63,71 @@ defmodule WraftDocWeb.Api.V1.FormController do
                   }
                 ],
                 description: "Upload your photo"
+              },
+              %{
+                name: "Name",
+                field_type_id: "06c28fc6-6a15-4966-9b68-5eeac942fd4f",
+                validations: [
+                  %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
+                ],
+                meta: %{},
+                description: "Enter your name"
+              }
+            ],
+            pipeline_ids: [
+              "7af1ede3-a401-4f15-840a-cbeac07d68e4",
+              "77fe7bb9-0cf4-4ebe-8ed3-72b16b653677"
+            ]
+          })
+        end,
+      UpdateFormRequest:
+        swagger_schema do
+          title("Wraft Form update request")
+          description("Request body to update a wraft form")
+
+          properties do
+            name(:string, "Form's name", required: true)
+            description(:string, "Form's description", required: true)
+
+            prefix(:string, "Prefix to be used for generating Unique ID for the form",
+              required: true
+            )
+
+            status(:string, "Form's status. Only allowed values are active and inactive",
+              required: true
+            )
+
+            pipeline_ids(:array, "ID of the pipelines selected", required: false)
+
+            fields(Schema.ref(:FormFieldRequests))
+          end
+
+          example(%{
+            name: "Insurance Form",
+            description:
+              "Fill in the details to activate the corporate insurance offered to employees",
+            prefix: "INSFORM",
+            status: "active",
+            fields: [
+              %{
+                name: "Photo",
+                field_id: "5e9bda8b-4c7e-44fe-8801-48ec6d8ff43a",
+                field_type_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
+                meta: %{"src" => "/img/img.png", "alt" => "Image"},
+                validations: [
+                  %{
+                    validation: %{rule: "required", value: true},
+                    error_message: "can't be blank"
+                  },
+                  %{
+                    validation: %{rule: "file_size", value: 2000},
+                    error_message: "can't be more than 2000 KB"
+                  }
+                ],
+                description: "Upload your photo"
+              },
+              %{
+                "field_id" => "63e19b8c-e3dc-4f0c-9ee2-ce4ec3a2159b"
               },
               %{
                 name: "Name",
@@ -413,6 +478,53 @@ defmodule WraftDocWeb.Api.V1.FormController do
     with %Form{} = form <- Forms.get_form(current_user, form_id),
          {:ok, %Form{} = form} <- Forms.update_status(form, params) do
       render(conn, "simple_form.json", form: form)
+    end
+  end
+
+  swagger_path :update do
+    put("/forms/{id}")
+    summary("Update a wraft form")
+    description("Update wraft form API")
+
+    parameters do
+      id(:path, :string, "form id", required: true)
+      form(:body, Schema.ref(:UpdateFormRequest), "Form to be updated", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Form))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def update(conn, %{"id" => form_id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Form{} = form <- Forms.get_form(current_user, form_id),
+         %Form{} = form <- Forms.update_form(form, params) do
+      render(conn, "form.json", form: form)
+    end
+  end
+
+  swagger_path :show do
+    get("/forms/{id}")
+    summary("Show a wraft form")
+    description("Show a wraft form API")
+
+    parameters do
+      id(:path, :string, "form id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Form))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def show(conn, %{"id" => form_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Form{} = form <- Forms.show_form(current_user, form_id) do
+      render(conn, "form.json", form: form)
     end
   end
 end
