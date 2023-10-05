@@ -3,12 +3,13 @@ defmodule WraftDoc.Forms.FormField do
     form field  model.
   """
   alias __MODULE__
+  alias WraftDoc.Validations.Validation
   use WraftDoc.Schema
 
   @fields [:form_id, :field_id]
 
   schema "form_field" do
-    embeds_many(:validations, WraftDoc.Validations.Validation, on_replace: :delete)
+    embeds_many(:validations, Validation, on_replace: :delete)
     belongs_to(:form, WraftDoc.Forms.Form)
     belongs_to(:field, WraftDoc.Document.Field)
 
@@ -18,7 +19,7 @@ defmodule WraftDoc.Forms.FormField do
   def changeset(%FormField{} = form_field, attrs \\ %{}) do
     form_field
     |> cast(attrs, @fields)
-    |> cast_embed(:validations)
+    |> cast_embed(:validations, required: true, with: &Validation.changeset/2)
     |> validate_required(@fields)
     |> unique_constraint(@fields,
       name: :form_field_unique_index,
@@ -26,5 +27,11 @@ defmodule WraftDoc.Forms.FormField do
     )
     |> foreign_key_constraint(:form_id, message: "Please enter an existing form")
     |> foreign_key_constraint(:field_id, message: "Please enter a valid field")
+  end
+
+  def update_changeset(%FormField{} = form_field, attrs \\ %{}) do
+    form_field
+    |> cast(attrs, [])
+    |> cast_embed(:validations, required: true, with: &Validation.changeset/2)
   end
 end
