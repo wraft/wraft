@@ -1607,7 +1607,8 @@ defmodule WraftDoc.Document do
     theme = Repo.preload(content_type.theme, [:assets])
 
     # slug files: there are only two types of templates: contract and pletter
-    file_path = Path.join(File.cwd!(), "priv/slugs/#{slug}/.")
+    file_path = :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
+
     System.cmd("cp", ["-a", file_path, base_content_dir])
 
     # Generate QR code for the file
