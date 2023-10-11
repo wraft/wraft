@@ -23,6 +23,20 @@ defmodule WraftDocWeb.Mailer.Email do
   end
 
   @doc """
+  Password set link.
+  """
+  def password_set(name, token, email) do
+    new()
+    |> to(email)
+    |> from({"WraftDoc", "admin@wraftdocs.com"})
+    |> subject("Welcome to Wraft - Set Your Password")
+    |> html_body(
+      "Hi #{name}.\n
+    Click <a href=#{System.get_env("WRAFT_URL")}/users/signup/set-password?token=#{token}>here</a> to set your password."
+    )
+  end
+
+  @doc """
   Password reset link.
   """
   def password_reset(name, token, email) do

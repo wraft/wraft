@@ -549,6 +549,16 @@ defmodule WraftDoc.Account do
   end
 
   @doc """
+    Enqueue password set email to be sent
+  """
+  # TODO- Write tests
+  def send_password_set_mail(%AuthToken{} = token) do
+    %{email: token.user.email, token: token.value, name: token.user.name}
+    |> EmailWorker.new(tags: ["set_password"])
+    |> Oban.insert()
+  end
+
+  @doc """
     Enqueue password reset email to be sent
   """
   @spec send_password_reset_mail(AuthToken.t()) :: {:ok, Oban.Job.t()}
