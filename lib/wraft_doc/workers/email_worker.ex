@@ -46,6 +46,23 @@ defmodule WraftDoc.Workers.EmailWorker do
           "name" => name,
           "email" => email,
           "token" => token
+        },
+        tags: ["set_password"]
+      }) do
+    Logger.info("First time password set mailer job started.")
+
+    name
+    |> Email.password_set(email, token)
+    |> Mailer.deliver()
+
+    Logger.info("First time password set mailer job end.")
+  end
+
+  def perform(%Job{
+        args: %{
+          "name" => name,
+          "email" => email,
+          "token" => token
         }
       }) do
     Logger.info("Password reset mailer job started.")
