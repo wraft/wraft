@@ -232,6 +232,21 @@ defmodule WraftDocWeb.Api.V1.UserController do
             error(:string, "The message of the error raised", required: true)
           end
         end,
+      GeneratePasswordSetTokenRequest:
+        swagger_schema do
+          title("Generate password set token request")
+          description("Request to generate password set token")
+
+          properties do
+            email(:string, "Email", required: true)
+            first_time_setup(:boolean, "First time setting password")
+          end
+
+          example(%{
+            email: "user@wraft.com",
+            first_time_setup: true
+          })
+        end,
       ResetPasswordRequest:
         swagger_schema do
           title("Reset password request")
@@ -464,7 +479,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
     description("Api to generate token to update password")
 
     parameters do
-      email(:body, :string, "Email", required: true)
+      payload(:body, Schema.ref(:GeneratePasswordSetTokenRequest), "Details to generate token",
+        required: true
+      )
     end
 
     response(200, "Ok", Schema.ref(:AuthToken))
@@ -472,9 +489,14 @@ defmodule WraftDocWeb.Api.V1.UserController do
   end
 
   @spec generate_token(Plug.Conn.t(), map) :: Plug.Conn.t()
+  # TODO - Update tests to check correct mail is send
   def generate_token(conn, params) do
     with %AuthToken{} = auth_token <- Account.create_password_token(params) do
-      Account.send_password_reset_mail(auth_token)
+      if params["first_time_setup"] do
+        Account.send_password_set_mail(auth_token)
+      else
+        Account.send_password_reset_mail(auth_token)
+      end
 
       conn
       |> put_resp_header("content-type", "application/json")
