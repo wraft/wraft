@@ -8,6 +8,7 @@ defmodule WraftDoc.Account.Role do
     field(:name, :string)
     field(:permissions, {:array, :string}, default: [])
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+    field(:user_count, :integer, default: 0, virtual: true)
 
     has_many(:user_roles, WraftDoc.Account.UserRole)
     has_many(:users, through: [:user_roles, :user])
