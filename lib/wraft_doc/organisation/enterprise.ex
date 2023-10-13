@@ -1195,11 +1195,25 @@ defmodule WraftDoc.Enterprise do
     Repo.paginate(query, params)
   end
 
+  @doc """
+  Retrieves the roles associated with a user's organisation
+
+  ## Parameters
+  * `user` - User struct
+  * `params` - Map containing parameters for filtering and sorting
+
+  ## Returns
+  A list of Role structs
+  """
+  @spec roles_in_users_organisation(User.t(), map()) :: [Role.t()]
   def roles_in_users_organisation(%User{current_org_id: organisation_id}, params) do
     Role
     |> where([r], r.organisation_id == ^organisation_id)
     |> where(^roles_filter_by_name(params))
     |> order_by(^roles_sort(params))
+    |> join(:left, [r], u in assoc(r, :users))
+    |> select_merge([_r, u], %{user_count: count(u.id)})
+    |> group_by([r], r.id)
     |> Repo.all()
   end
 
