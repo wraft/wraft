@@ -7,7 +7,8 @@ defmodule WraftDocWeb.Api.V1.RoleView do
     %{
       id: role.id,
       name: role.name,
-      permissions: role.permissions
+      permissions: role.permissions,
+      user_count: role.user_count
     }
   end
 
