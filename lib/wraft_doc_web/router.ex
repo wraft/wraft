@@ -79,8 +79,13 @@ defmodule WraftDocWeb.Router do
       # Show and index plans
       resources("/plans", PlanController, only: [:show, :index])
       post("/notifications", NotificationController, :create)
-      # Verify Token
-      get("/token", UserController, :token)
+      # Verify invite token
+      get(
+        "/organisations/verify_invite_token/:token",
+        OrganisationController,
+        :verify_invite_token
+      )
+
       # Refresh Token
       post("/users/token_refresh", UserController, :refresh_token)
       # Join Waiting list
