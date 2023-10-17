@@ -119,7 +119,6 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 RUN  adduser -h /app -u 1000 -s /bin/s  h -D wraftuser
-RUN chown -R wraftuser:wraftuser /app
 
 WORKDIR "/app"
 
@@ -128,6 +127,7 @@ ENV MIX_ENV="prod"
 
 # Only copy the final release from the build stage
 COPY --from=builder /app/_build/${MIX_ENV}/rel/wraft_doc ./
+RUN chown -R wraftuser:wraftuser ./
 
 COPY priv ./app/priv
 
