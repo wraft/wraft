@@ -103,6 +103,16 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
+  def render("verify_invite_token.json", %{organisation: organisation, email: email}) do
+    %{
+      organisation: %{
+        id: organisation.id,
+        name: organisation.name
+      },
+      email: email
+    }
+  end
+
   defp generate_url(%{logo: logo} = organisation) do
     WraftDocWeb.LogoUploader.url({logo, organisation}, signed: true)
   end

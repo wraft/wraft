@@ -295,4 +295,66 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     # TODO Write test to check if the current_user has permission to
     #      delete a user from the organisation SUCCESS/FAILURE CASE
   end
+
+  describe "verify_invite_token/2" do
+    test "verify_invite_token returns 200 and renders the verify_invite_token.json template with the correct data" do
+      conn = build_conn()
+      organisation = insert(:organisation)
+      role = insert(:role, organisation: organisation)
+
+      token =
+        WraftDoc.create_phx_token("organisation_invite", %{
+          organisation_id: organisation.id,
+          email: "test@test.com",
+          role: role.id
+        })
+
+      insert(:auth_token, value: token, token_type: "invite")
+
+      conn = get(conn, Routes.v1_organisation_path(conn, :verify_invite_token, token))
+
+      assert json_response(conn, 200) == %{
+               "organisation" => %{
+                 "id" => organisation.id,
+                 "name" => organisation.name
+               },
+               "email" => "test@test.com"
+             }
+    end
+
+    test "verify_invite_token returns 401 and renders the error.json template when the token is invalid" do
+      conn = build_conn()
+
+      conn =
+        get(
+          conn,
+          Routes.v1_organisation_path(conn, :verify_invite_token, "invalid_token")
+        )
+
+      assert conn.status == 401
+      assert json_response(conn, 401) == %{"errors" => "You are not authorized for this action.!"}
+    end
+
+    test "verify_invite_token returns 404 and renders the error.json template when the organisation is not found" do
+      conn = build_conn()
+
+      token =
+        WraftDoc.create_phx_token("organisation_invite", %{
+          organisation_id: Faker.UUID.v4(),
+          email: "test@test.com",
+          role: Faker.UUID.v4()
+        })
+
+      insert(:auth_token, value: token, token_type: "invite")
+
+      conn =
+        get(
+          conn,
+          Routes.v1_organisation_path(conn, :verify_invite_token, token)
+        )
+
+      assert conn.status == 404
+      assert json_response(conn, 404) == "Not Found"
+    end
+  end
 end

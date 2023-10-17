@@ -164,6 +164,18 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
           end
 
           example(%{info: "User removed from the organisation.!"})
+        end,
+      VerifyOrganisationInviteTokenResponse:
+        swagger_schema do
+          title("Verify Organisation invite token")
+
+          description(
+            "Verifies Organisation invite token and returns organisation details and user's details"
+          )
+
+          properties do
+            organisation(Schema.ref(:Organisation))
+          end
         end
     }
   end
@@ -458,6 +470,35 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
            Enterprise.get_user_organisation(current_user, user_id),
          {:ok, %UserOrganisation{}} <- Enterprise.remove_user(user_organisation) do
       render(conn, "remove_user.json")
+    end
+  end
+
+  swagger_path :verify_invite_token do
+    get("/organisations/verify_invite_token/{token}")
+    summary("Verify invite token")
+    description("Api to verify organisation invite token")
+
+    parameters do
+      token(:path, :string, "Invite token")
+    end
+
+    response(200, "Ok", Schema.ref(:VerifyOrganisationInviteTokenResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  @doc """
+    Verify organisation invite token
+  """
+  @spec verify_invite_token(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def verify_invite_token(conn, %{"token" => token}) do
+    with {:ok, %{organisation_id: organisation_id, email: email}} <-
+           Account.check_token(token, :invite),
+         %Organisation{} = organisation <- Enterprise.get_organisation(organisation_id) do
+      render(conn, "verify_invite_token.json",
+        organisation: organisation,
+        email: email
+      )
     end
   end
 
