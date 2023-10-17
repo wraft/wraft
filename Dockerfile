@@ -138,8 +138,8 @@ COPY rel/overlays/seeds.sh /app/
 RUN chmod a+x /entrypoint.sh
 RUN chmod a+x /app/migrate.sh
 RUN chmod a+x /app/seeds.sh
-USER wraftuser
 RUN chown -R wraftuser:wraftuser /app
+USER wraftuser
 
 WORKDIR /app
 ENV LISTEN_IP=0.0.0.0
