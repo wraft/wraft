@@ -127,7 +127,7 @@ RUN  adduser -h /app -u 1000 -s /bin/sh -D wraftuser
 
 # Only copy the final release from the build stage
 COPY --from=builder /app/_build/${MIX_ENV}/rel/wraft_doc ./
-RUN chown -R wraftuser:wraftuser /app
+RUN chown -R wraftuser:wraftuser ./
 
 
 COPY priv ./app/priv
