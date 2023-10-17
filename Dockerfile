@@ -126,7 +126,7 @@ ENV MIX_ENV="prod"
 RUN adduser -h /app -u 1000 -s /bin/sh -D wraftuser
 
 # Only copy the final release from the build stage
-COPY --from=builder --chown=wraftuser:wraftuser /app/_build/${MIX_ENV}/rel/wraft_doc ./
+COPY --from=builder /app/_build/${MIX_ENV}/rel/wraft_doc ./
 RUN chown -R wraftuser:wraftuser /app
 
 COPY priv ./app/priv
