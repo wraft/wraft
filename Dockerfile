@@ -119,13 +119,16 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 WORKDIR "/app"
-RUN chown nobody /app
 
 # set runner ENV
 ENV MIX_ENV="prod"
 
+RUN  adduser -h /app -u 1000 -s /bin/sh -D wraftuser
+
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/wraft_doc ./
+RUN chown -R wraftuser:wraftuser /app
+
 
 COPY priv ./app/priv
 
@@ -138,7 +141,7 @@ COPY rel/overlays/seeds.sh /app/
 RUN chmod a+x /entrypoint.sh
 RUN chmod a+x /app/migrate.sh
 RUN chmod a+x /app/seeds.sh
-USER nobody
+USER wraftuser
 
 WORKDIR /app
 ENV LISTEN_IP=0.0.0.0
