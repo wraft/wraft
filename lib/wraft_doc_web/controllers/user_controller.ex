@@ -156,6 +156,39 @@ defmodule WraftDocWeb.Api.V1.UserController do
             email_verify(:boolean, "Email verification status")
             organisation_id(:integer, "ID of the user's oranisation")
             profile_pic(:string, "User's profile pic URL")
+            role(:array, "User's role objects", required: true)
+            role_names(:array, "User's role names")
+            permissions(:array, "User's permissions")
+            inserted_at(:string, "When was the user inserted", format: "ISO-8601")
+            updated_at(:string, "When was the user last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            name: "John Doe",
+            email: "email@xyz.com",
+            email_verify: true,
+            roles: [%{id: "1232148nb3478", name: "editor"}],
+            role_name: ["editor"],
+            permissions: ["asset:show"],
+            profile_pic: "www.aws.com/users/johndoe.jpg",
+            organisation_id: "jn14786914qklnqw",
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
+      ShowCurrentUser:
+        swagger_schema do
+          title("Current User")
+          description("Currently loged in user")
+
+          properties do
+            id(:string, "The ID of the user", required: true)
+            name(:string, "Users name", required: true)
+            email(:string, "Users email", required: true)
+            email_verify(:boolean, "Email verification status")
+            organisation_id(:integer, "ID of the user's oranisation")
+            profile_pic(:string, "User's profile pic URL")
             role(:string, "User's role")
             inserted_at(:string, "When was the user inserted", format: "ISO-8601")
             updated_at(:string, "When was the user last updated", format: "ISO-8601")

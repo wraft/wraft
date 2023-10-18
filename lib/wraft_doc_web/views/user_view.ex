@@ -109,7 +109,9 @@ defmodule WraftDocWeb.Api.V1.UserView do
       inserted_at: me.inserted_at,
       updated_at: me.updated_at,
       profile_pic: generate_url(me.profile),
-      roles: render_many(me.roles, RegistrationView, "role.json", as: :role)
+      roles: render_many(me.roles, RegistrationView, "role.json", as: :role),
+      role_names: me.role_names,
+      permissions: me.permissions
     }
   end
 
