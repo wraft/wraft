@@ -21,7 +21,7 @@ defmodule WraftDocWeb.FallbackController do
   end
 
   def call(conn, {:error, :no_data}) do
-    body = Jason.encode!(%{errors: "Please provide all necessary datas to login.!"})
+    body = Jason.encode!(%{errors: "Please provide all necessary datas for this action.!"})
     conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 

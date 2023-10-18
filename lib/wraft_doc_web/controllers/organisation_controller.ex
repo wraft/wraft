@@ -356,7 +356,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   def invite(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %Organisation{} = organisation <-
+    with %Organisation{name: name} = organisation when name != "Personal" <-
            Enterprise.get_organisation(current_user.current_org_id),
          :ok <- Enterprise.already_member(current_user.current_org_id, params["email"]),
          %Role{} = role <-
@@ -370,6 +370,13 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
       InvitedUsers.create_or_update_invited_user(params["email"], organisation.id)
 
       render(conn, "invite.json")
+    else
+      %Organisation{name: "Personal"} ->
+        body = Jason.encode!(%{errors: "Can't invite to personal organisation"})
+        conn |> put_resp_content_type("application/json") |> send_resp(422, body)
+
+      error ->
+        error
     end
   end
 

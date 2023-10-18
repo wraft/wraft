@@ -117,9 +117,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     assert json_response(conn, 200)["address"] == organisation.address
   end
 
-  # TODO - Add more tests for failure cases
   describe "invite/2" do
-    test "invite persons send the mail to the persons mail", %{conn: conn} do
+    test "sends the invitation mail to the persons mail", %{conn: conn} do
       role =
         insert(:role,
           name: "editor",
@@ -158,6 +157,41 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
       assert %InvitedUser{status: "invited"} =
                InvitedUsers.get_invited_user("msadi@gmail.com", organisation_id)
+    end
+
+    test "returns an error when email is not provided", %{conn: conn} do
+      conn =
+        post(conn, Routes.v1_organisation_path(conn, :invite), %{
+          role_id: 1
+        })
+
+      assert json_response(conn, 400) == %{
+               "errors" => "Please provide all necessary datas for this action.!"
+             }
+    end
+
+    test "returns a 404 error when role_id is not provided", %{conn: conn} do
+      conn =
+        post(conn, Routes.v1_organisation_path(conn, :invite), %{
+          email: "msadi@gmail.com"
+        })
+
+      assert json_response(conn, 404) == "Not Found"
+    end
+
+    test "returns 422 error when user is already a member", %{conn: conn} do
+      organisation = List.first(conn.assigns.current_user.owned_organisations)
+      %{id: role_id} = insert(:role, name: "editor", organisation: organisation)
+      user = insert(:user, email: "msadi@gmail.com")
+      insert(:user_organisation, user: user, organisation: organisation)
+
+      conn =
+        post(conn, Routes.v1_organisation_path(conn, :invite), %{
+          email: "msadi@gmail.com",
+          role_id: role_id
+        })
+
+      assert json_response(conn, 422) == %{"errors" => "User with this email exists.!"}
     end
   end
 
