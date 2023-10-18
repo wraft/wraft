@@ -72,7 +72,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
 
       conn = post(conn, Routes.v1_user_path(conn, :signin, %{email: user.email}))
 
-      assert json_response(conn, 400)["errors"] == "Please provide all necessary datas to login.!"
+      assert json_response(conn, 400)["errors"] ==
+               "Please provide all necessary datas for this action.!"
     end
   end
 
@@ -261,7 +262,8 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     test "returns  error when attrs does not contain all required values", %{conn: conn} do
       conn = put(conn, Routes.v1_user_path(conn, :update_password, %{}))
 
-      assert json_response(conn, 400)["errors"] == "Please provide all necessary datas to login.!"
+      assert json_response(conn, 400)["errors"] ==
+               "Please provide all necessary datas for this action.!"
     end
   end
 
