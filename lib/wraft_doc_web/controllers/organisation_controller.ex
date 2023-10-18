@@ -141,7 +141,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
           title("Members array")
           description("List of Users/members of an organisation.")
           type(:array)
-          items(Schema.ref(:CurrentUser))
+          items(Schema.ref(:ShowCurrentUser))
         end,
       MembersIndex:
         swagger_schema do
