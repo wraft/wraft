@@ -91,4 +91,33 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
     # 2 Role doesn't belong to current user's current organisation
     # 3 Changeset errors when inserting a user_role
   end
+
+  describe "unassign_role/2" do
+    test "successfully unassigns a role from a user", %{conn: conn} do
+      organisation = List.first(conn.assigns.current_user.owned_organisations)
+      role = insert(:role, name: "editor", organisation: organisation)
+      user = insert(:user)
+      insert(:user_organisation, user: user, organisation: organisation)
+      insert(:user_role, user: user, role: role)
+
+      conn =
+        delete(
+          conn,
+          Routes.v1_role_path(conn, :unassign_role, user.id, role.id)
+        )
+
+      assert json_response(conn, 200) == %{
+               "info" => "Unassigned the given role from the user successfully.!"
+             }
+    end
+
+    test "returns an error when the user_role does not belong to the current user's current organisation",
+         %{conn: conn} do
+      %{role_id: role_id, user_id: user_id} = insert(:user_role)
+
+      conn = delete(conn, Routes.v1_role_path(conn, :unassign_role, user_id, role_id))
+
+      assert json_response(conn, 404) == "Not Found"
+    end
+  end
 end
