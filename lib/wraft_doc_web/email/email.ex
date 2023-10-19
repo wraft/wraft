@@ -69,7 +69,7 @@ defmodule WraftDocWeb.Mailer.Email do
   @doc """
     Waiting list approved
   """
-  def waiting_list_approved(name, email, token) do
+  def waiting_list_approved(email, name, token) do
     registration_url =
       URI.encode("#{System.get_env("WRAFT_URL")}/users/set_password?token=#{token}")
 
