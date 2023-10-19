@@ -92,14 +92,15 @@ defmodule WraftDoc.Workers.EmailWorker do
   def perform(%Job{
         args: %{
           "name" => name,
-          "email" => email
+          "email" => email,
+          "token" => token
         },
         tags: ["waiting_list_acceptance"]
       }) do
     Logger.info("Waiting list acceptance mailer job started.")
 
     email
-    |> Email.waiting_list_approved(name)
+    |> Email.waiting_list_approved(name, token)
     |> Mailer.deliver()
 
     Logger.info("Waiting list acceptance mailer job end.")

@@ -328,6 +328,24 @@ defmodule WraftDocWeb.Api.V1.UserController do
             password(:string, "Password to update", required: true)
           end
         end,
+      SetPasswordRequest:
+        swagger_schema do
+          title("Set Password")
+          description("Set password for first time.")
+
+          properties do
+            password(:string, "User's password", required: true)
+            confirm_password(:string, "Confirm password", required: true)
+            token(:string, "set password token", required: true)
+          end
+
+          example(%{
+            password: "password",
+            confirm_password: "password",
+            token:
+              "asddff23a2ds_f3asdf3a21fds23f2as32f3as3f213a2df3s2f3a213sad12f13df13adsf-21f1d3sf"
+          })
+        end,
       EmailTokenVerifiedInfo:
         swagger_schema do
           title("Email Token verified info")
@@ -416,6 +434,19 @@ defmodule WraftDocWeb.Api.V1.UserController do
               "asddff23a2ds_f3asdf3a21fds23f2as32f3as3f213a2df3s2f3a213sad12f13df13adsf-21f1d3sf",
             refresh_token:
               "asddff23a2ds_f3asdf3a21fds23f2as32f3as3f213a2df3s2f3a213sad12f13df13adsf-21f1d3sf"
+          })
+        end,
+      SetPasswordResponse:
+        swagger_schema do
+          title("Set Password Info")
+          description("Response for set password")
+
+          properties do
+            info(:string, "Info")
+          end
+
+          example(%{
+            info: "Success"
           })
         end
     }
@@ -827,6 +858,33 @@ defmodule WraftDocWeb.Api.V1.UserController do
         conn
         |> put_status(401)
         |> render("token.json", error: error)
+    end
+  end
+
+  @doc """
+    Set Password of the user.
+  """
+  swagger_path :set_password do
+    post("/users/set_password")
+    summary("Set password of the user")
+    description("Set password of the user")
+
+    parameters do
+      password(:body, Schema.ref(:SetPasswordRequest), "Password details to set", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:SetPasswordResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec set_password(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def set_password(conn, %{"token" => token} = params) do
+    with {:ok, email} <- Account.check_token(token, :set_password),
+         %User{} = user <- Account.set_password(email, params),
+         {:ok, %User{email_verify: true} = _user} <- Account.update_email_status(user) do
+      conn
+      |> put_resp_header("content-type", "application/json")
+      |> send_resp(200, Jason.encode!(%{info: "Success"}))
     end
   end
 end
