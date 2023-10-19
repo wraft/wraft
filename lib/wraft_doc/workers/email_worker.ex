@@ -63,6 +63,23 @@ defmodule WraftDoc.Workers.EmailWorker do
           "name" => name,
           "email" => email,
           "token" => token
+        },
+        tags: ["waiting_list_acceptance"]
+      }) do
+    Logger.info("Waiting list acceptance mailer job started.")
+
+    email
+    |> Email.waiting_list_approved(name, token)
+    |> Mailer.deliver()
+
+    Logger.info("Waiting list acceptance mailer job end.")
+  end
+
+  def perform(%Job{
+        args: %{
+          "name" => name,
+          "email" => email,
+          "token" => token
         }
       }) do
     Logger.info("Password reset mailer job started.")
@@ -87,23 +104,6 @@ defmodule WraftDoc.Workers.EmailWorker do
     |> Mailer.deliver()
 
     Logger.info("Email verification mailer job end.")
-  end
-
-  def perform(%Job{
-        args: %{
-          "name" => name,
-          "email" => email,
-          "token" => token
-        },
-        tags: ["waiting_list_acceptance"]
-      }) do
-    Logger.info("Waiting list acceptance mailer job started.")
-
-    email
-    |> Email.waiting_list_approved(name, token)
-    |> Mailer.deliver()
-
-    Logger.info("Waiting list acceptance mailer job end.")
   end
 
   def perform(%Job{
