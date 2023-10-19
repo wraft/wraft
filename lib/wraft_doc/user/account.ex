@@ -653,6 +653,25 @@ defmodule WraftDoc.Account do
     end
   end
 
+  def check_token(token, token_type) when token_type == :set_password do
+    case get_auth_token(token, token_type) do
+      nil ->
+        {:error, :fake}
+
+      %AuthToken{value: token} ->
+        case phoenix_token_verify(token, "set_password", max_age: :infinity) do
+          {:ok, payload} ->
+            {:ok, payload}
+
+          {:error, :expired} ->
+            {:error, :expired}
+
+          _ ->
+            {:error, :fake}
+        end
+    end
+  end
+
   def get_auth_token(token, token_type) do
     query =
       from(
@@ -709,6 +728,30 @@ defmodule WraftDoc.Account do
   end
 
   def reset_password(_), do: nil
+
+  @doc """
+  Set password for the first time and delete the set password token.
+  """
+  @spec set_password(String.t(), map) ::
+          User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
+  def set_password(
+        email,
+        %{"password" => password, "confirm_password" => password, "token" => token} = params
+      ) do
+    User
+    |> Repo.get_by(email: email)
+    |> do_update_password(params)
+    |> case do
+      changeset = {:error, _} ->
+        changeset
+
+      %User{} = user_struct ->
+        delete_auth_token(token)
+        user_struct
+    end
+  end
+
+  def set_password(_, _), do: {:error, :invalid_password}
 
   @doc """
   Update the password of the current user after verifying the

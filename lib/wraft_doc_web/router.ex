@@ -90,6 +90,8 @@ defmodule WraftDocWeb.Router do
       post("/users/token_refresh", UserController, :refresh_token)
       # Join Waiting list
       resources("/waiting_list", WaitingListController, only: [:create])
+      # Set Password for first time
+      post("/users/set_password", UserController, :set_password)
     end
   end
 
