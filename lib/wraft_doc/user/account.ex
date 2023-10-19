@@ -153,6 +153,23 @@ defmodule WraftDoc.Account do
     |> Repo.insert()
   end
 
+  def get_user_role(%{current_org_id: organisation_id}, user_id, role_id) do
+    query =
+      from(ur in UserRole,
+        join: r in Role,
+        on: r.id == ur.role_id and r.organisation_id == ^organisation_id,
+        where: ur.user_id == ^user_id and ur.role_id == ^role_id
+      )
+
+    Repo.one(query)
+  end
+
+  @doc """
+    Deletes the give user_role.
+  """
+  @spec delete_user_role(UserRole.t()) :: {:ok, UserRole.t()} | nil
+  def delete_user_role(user_role), do: Repo.delete(user_role)
+
   @doc """
   Get a role type from its UUID.
   """

@@ -88,6 +88,19 @@ defmodule WraftDocWeb.Api.V1.RoleController do
           example(%{
             info: "Assigned the given role to the user successfully.!"
           })
+        end,
+      UnassignRole:
+        swagger_schema do
+          title("Unassign Role")
+          description("Response for unassigning user role")
+
+          properties do
+            info(:string, "Response Info")
+          end
+
+          example(%{
+            info: "Unassigned the given role for the user successfully.!"
+          })
         end
     }
   end
@@ -207,13 +220,12 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   end
 
   swagger_path :assign_role do
-    post("/users/{user_id}/roles")
+    post("/users/{user_id}/roles/{role_id}")
     summary("Assign Role")
     description("Assign role to the given user")
-    consumes("multipart/form-data")
 
     parameter(:user_id, :path, :string, "user id", required: true)
-    parameter(:role_id, :formData, :string, "role id", required: true)
+    parameter(:role_id, :path, :string, "role id", required: true)
 
     response(200, "Ok", Schema.ref(:AssignRole))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -234,6 +246,33 @@ defmodule WraftDocWeb.Api.V1.RoleController do
          %Role{} <- Account.get_role(current_user, role_id),
          {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id) do
       render(conn, "assign_role.json")
+    end
+  end
+
+  swagger_path :unassign_role do
+    PhoenixSwagger.Path.delete("/users/{user_id}/roles/{role_id}")
+    summary("Unassign Role")
+    description("Unassign role to the given user")
+
+    parameter(:user_id, :path, :string, "user id", required: true)
+    parameter(:role_id, :path, :string, "role id", required: true)
+
+    response(200, "Ok", Schema.ref(:UnassignRole))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @doc """
+    Unassign role from the given user
+  """
+  @spec unassign_role(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def unassign_role(conn, %{"user_id" => user_id, "role_id" => role_id} = _params) do
+    current_user = conn.assigns[:current_user]
+
+    with %UserRole{} = user_role <- Account.get_user_role(current_user, user_id, role_id),
+         {:ok, _} <- Account.delete_user_role(user_role) do
+      render(conn, "unassign_role.json")
     end
   end
 end
