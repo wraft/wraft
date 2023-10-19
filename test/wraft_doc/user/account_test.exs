@@ -232,6 +232,38 @@ defmodule WraftDoc.AccountTest do
     end
   end
 
+  describe "get_user_role/3" do
+    test "returns the user_role with valid input" do
+      %{owned_organisations: [organisation]} = current_user = insert(:user_with_organisation)
+      role = insert(:role, organisation: organisation)
+      %{role_id: role_id, user_id: user_id} = insert(:user_role, role: role)
+
+      assert %UserRole{} = Account.get_user_role(current_user, user_id, role_id)
+    end
+
+    test "returns nil with user_role that does not belong to current user's organisation" do
+      current_user = insert(:user_with_organisation)
+      %{role_id: role_id, user_id: user_id} = insert(:user_role)
+
+      assert nil == Account.get_user_role(current_user, user_id, role_id)
+    end
+  end
+
+  describe "delete_user_role/2" do
+    test "deletes a user_role with valid input" do
+      user_role = insert(:user_role)
+      user_id = user_role.user_id
+      role_id = user_role.role_id
+
+      assert {:ok, %UserRole{user_id: ^user_id, role_id: ^role_id}} =
+               Account.delete_user_role(user_role)
+    end
+
+    test "raises with invalid input" do
+      assert_raise(BadMapError, fn -> Account.delete_user_role("invalid") end)
+    end
+  end
+
   describe "get_role/1" do
     test "gets a role with valid ID" do
       %Role{id: id} = insert(:role)
@@ -483,7 +515,7 @@ defmodule WraftDoc.AccountTest do
       current_org_id = user.current_org_id
       user_email = user.email
 
-      %{tokens: [access_token: access_token, refresh_token: refresh_token], user: updated_user} =
+      %{tokens: [access_token: access_token, refresh_token: refresh_token], user: _updated_user} =
         Account.authenticate(%{user: user, password: "encrypt"})
 
       {_, _, access_token_resource} = Guardian.resource_from_token(access_token)
