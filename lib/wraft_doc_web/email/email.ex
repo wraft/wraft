@@ -10,7 +10,7 @@ defmodule WraftDocWeb.Mailer.Email do
     |> subject("Invitation to join #{org_name} in WraftDocs")
     |> html_body(
       "Hi, #{user_name} has invited you to join #{org_name} in WraftDocs. \n
-      Click <a href=#{System.get_env("WRAFT_URL")}/users/signup?token=#{token}>here</a> below to join."
+      Click <a href=#{System.get_env("WRAFT_URL")}/users/join_invite?token=#{token}>here</a> below to join."
     )
   end
 
@@ -71,7 +71,7 @@ defmodule WraftDocWeb.Mailer.Email do
   """
   def waiting_list_approved(email, name, token) do
     registration_url =
-      URI.encode("#{System.get_env("WRAFT_URL")}/users/set_password?token=#{token}")
+      URI.encode("#{System.get_env("WRAFT_URL")}/users/login/set_password?token=#{token}")
 
     new()
     |> to(email)
