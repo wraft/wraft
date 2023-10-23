@@ -98,11 +98,18 @@ config :waffle,
   # "http://127.0.0.1:9000"
   asset_host: System.get_env("MINIO_URL")
 
+minio_schema =
+  if schema = System.get_env("MINIO_SCHEMA") do
+    schema <> "://"
+  else
+    "http://"
+  end
+
 config :ex_aws,
   access_key_id: System.get_env("MINIO_ROOT_USER"),
   secret_access_key: System.get_env("MINIO_ROOT_PASSWORD"),
   s3: [
-    scheme: "http://",
+    scheme: minio_schema,
     host: System.get_env("MINIO_HOST"),
     port: System.get_env("MINIO_PORT")
   ]
