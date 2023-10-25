@@ -16,7 +16,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Account
-  alias WraftDoc.Account.Role
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
@@ -176,6 +175,21 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
           properties do
             organisation(Schema.ref(:Organisation))
           end
+        end,
+      InviteRequest:
+        swagger_schema do
+          title("Invite user")
+          description("Request body to invite a user to an organisation")
+
+          properties do
+            email(:string, "Email of the user", required: true)
+            role_ids(:array, "IDs of roles for the user", required: true)
+          end
+
+          example(%{
+            email: "abcent@gmail.com",
+            role_ids: ["756f1fa1-9657-4166-b372-21e8135aeaf1"]
+          })
         end
     }
   end
@@ -340,11 +354,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     post("/organisations/users/invite")
     summary("Invite new member to the organisation")
     description("Invite new member to the organisation")
-    consumes("multipart/form-data")
 
     parameters do
-      email(:formData, :string, "Email of the user", required: true)
-      role_id(:formData, :string, "role of the user", required: true)
+      invite(:body, Schema.ref(:InviteRequest), "Invite request", required: true)
     end
 
     response(200, "Ok", Schema.ref(:InvitedResponse))
@@ -359,10 +371,13 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     with %Organisation{name: name} = organisation when name != "Personal" <-
            Enterprise.get_organisation(current_user.current_org_id),
          :ok <- Enterprise.already_member(current_user.current_org_id, params["email"]),
-         %Role{} = role <-
-           Account.get_role(current_user, params["role_id"]),
+         [_ | _] = roles <-
+           (params["role_ids"] || [])
+           |> Stream.map(&Account.get_role(current_user, &1))
+           |> Stream.reject(&is_nil/1)
+           |> Enum.map(& &1.id),
          {:ok, _} <-
-           Enterprise.invite_team_member(current_user, organisation, params["email"], role) do
+           Enterprise.invite_team_member(current_user, organisation, params["email"], roles) do
       FunWithFlags.enable(:waiting_list_registration_control,
         for_actor: %{email: params["email"]}
       )
@@ -374,6 +389,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
       %Organisation{name: "Personal"} ->
         body = Jason.encode!(%{errors: "Can't invite to personal organisation"})
         conn |> put_resp_content_type("application/json") |> send_resp(422, body)
+
+      [] ->
+        body = Jason.encode!(%{errors: "No roles found"})
+        conn |> put_resp_content_type("application/json") |> send_resp(404, body)
 
       error ->
         error

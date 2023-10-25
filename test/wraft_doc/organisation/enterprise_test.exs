@@ -669,25 +669,27 @@ defmodule WraftDoc.EnterpriseTest do
     end
   end
 
-  test "invite member send a E-mail to invite a member and returns an oban job" do
-    user = insert(:user_with_organisation)
-    role = insert(:role)
-    to_email = "myemail@app.com"
+  describe "invite_team_member/2" do
+    test "invite member sends a email to invite a member and returns an oban job" do
+      user = insert(:user_with_organisation)
+      role = insert(:role)
+      to_email = "myemail@app.com"
 
-    {:ok, oban_job} =
-      Enterprise.invite_team_member(user, List.first(user.owned_organisations), to_email, role)
+      {:ok, oban_job} =
+        Enterprise.invite_team_member(user, List.first(user.owned_organisations), to_email, role)
 
-    assert oban_job.args.email == to_email
-  end
+      assert oban_job.args.email == to_email
+    end
 
-  test "invite member creates an auth token of type invite" do
-    user = insert(:user_with_organisation)
-    role = insert(:role)
-    to_email = "myemail@app.com"
-    [organisation] = user.owned_organisations
-    auth_token_count = AuthToken |> Repo.all() |> length()
-    Enterprise.invite_team_member(user, organisation, to_email, role)
-    assert AuthToken |> Repo.all() |> length() == auth_token_count + 1
+    test "invite member creates an auth token of type invite" do
+      user = insert(:user_with_organisation)
+      role = insert(:role)
+      to_email = "myemail@app.com"
+      [organisation] = user.owned_organisations
+      auth_token_count = AuthToken |> Repo.all() |> length()
+      Enterprise.invite_team_member(user, organisation, to_email, role)
+      assert AuthToken |> Repo.all() |> length() == auth_token_count + 1
+    end
   end
 
   describe "create_plan/1" do

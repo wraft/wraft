@@ -386,8 +386,8 @@ defmodule WraftDoc.Enterprise do
         organisation_id: organisation.id
       })
     end)
-    |> Multi.run(:assign_role, fn _repo, %{get_org: %{role_id: role_id}} ->
-      create_default_worker_job(%{user_id: user.id, role_id: role_id}, "assign_role")
+    |> Multi.run(:assign_role, fn _repo, %{get_org: %{role_ids: role_ids}} ->
+      create_default_worker_job(%{user_id: user.id, roles: role_ids}, "assign_role")
     end)
     |> Multi.run(:delete_auth_token, fn _, _ -> Account.delete_auth_token(token) end)
     |> Repo.transaction()
@@ -504,14 +504,14 @@ defmodule WraftDoc.Enterprise do
         %User{name: name} = user,
         %{name: org_name} = organisation,
         email,
-        %Role{} = role
+        role_ids
       )
       when is_binary(email) do
     token =
       WraftDoc.create_phx_token("organisation_invite", %{
         organisation_id: organisation.id,
         email: email,
-        role: role.id
+        roles: role_ids
       })
 
     Task.start_link(fn ->

@@ -61,8 +61,8 @@ defmodule WraftDoc.Account do
         organisation_id: organisation.id
       })
     end)
-    |> Multi.run(:assign_role, fn _repo, %{user: user, get_org: %{role_id: role_id}} ->
-      Enterprise.create_default_worker_job(%{user_id: user.id, role_id: role_id}, "assign_role")
+    |> Multi.run(:assign_role, fn _repo, %{user: user, get_org: %{role_ids: role_ids}} ->
+      Enterprise.create_default_worker_job(%{user_id: user.id, roles: role_ids}, "assign_role")
     end)
     |> Multi.run(:delete_auth_token, fn _, _ -> delete_auth_token(token) end)
     |> Repo.transaction()
@@ -231,16 +231,19 @@ defmodule WraftDoc.Account do
   """
   @spec get_organisation_and_role_from_token(map) :: Organisation.t() | {:error, atom()}
   def get_organisation_and_role_from_token(%{"token" => token, "email" => email} = _params) do
-    with {:ok, %{organisation_id: org_id, email: ^email, role: role_id}} <-
+    with {:ok, %{organisation_id: org_id, email: ^email, roles: role_ids}} <-
            check_token(token, :invite),
          %Organisation{} = organisation <- Enterprise.get_organisation(org_id),
-         %Role{} <- get_role(organisation, role_id) do
-      {:ok, %{organisation: organisation, role_id: role_id}}
+         [_ | _] = _roles <- Enum.map(role_ids, &get_role(organisation, &1)) do
+      {:ok, %{organisation: organisation, role_ids: role_ids}}
     else
       {:ok, _} ->
         {:error, :no_permission}
 
       nil ->
+        {:error, :no_permission}
+
+      [] ->
         {:error, :no_permission}
 
       error ->

@@ -36,13 +36,18 @@ defmodule WraftDoc.AccountTest do
 
     test "user successfully registers with valid data and an organisation invite token" do
       organisation = insert(:organisation)
-      role = insert(:role, name: "user", organisation: organisation)
+
+      role_ids =
+        ["user", "admin"]
+        |> Enum.map(&insert(:role, name: &1, organisation: organisation))
+        |> Enum.map(& &1.id)
+        |> Enum.sort()
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @valid_attrs["email"],
-          role: role.id
+          roles: role_ids
         })
 
       insert(:auth_token, value: token, token_type: "invite")
@@ -59,7 +64,6 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "returns error changeset with invalid data" do
-      insert(:role, name: "user")
       {:error, changeset} = Account.registration(%{"email" => ""})
 
       assert %{email: ["can't be blank"], name: ["can't be blank"], password: ["can't be blank"]} ==
@@ -67,7 +71,6 @@ defmodule WraftDoc.AccountTest do
     end
 
     test "returns error with invalid email" do
-      insert(:role, name: "user")
       params = Map.put(@valid_attrs, "email", "not an email")
       {:error, changeset} = Account.registration(params)
 
@@ -82,7 +85,7 @@ defmodule WraftDoc.AccountTest do
         WraftDoc.create_phx_token("different salt", %{
           organisation_id: organisation.id,
           email: @email,
-          role: role.id
+          roles: [role.id]
         })
 
       insert(:auth_token, value: token, token_type: "invite")
@@ -101,7 +104,7 @@ defmodule WraftDoc.AccountTest do
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @valid_attrs["email"],
-          role: role.id
+          roles: [role.id]
         })
 
       insert(:auth_token, value: token, token_type: "invite")
@@ -127,7 +130,7 @@ defmodule WraftDoc.AccountTest do
           %{
             organisation_id: organisation.id,
             email: @valid_attrs["email"],
-            role: role.id
+            roles: [role.id]
           },
           signed_at: -900_000
         )
@@ -164,13 +167,18 @@ defmodule WraftDoc.AccountTest do
 
     test "creates an oban job to assign roles for the user in the invited organisation" do
       organisation = insert(:organisation)
-      role = insert(:role, name: "user", organisation: organisation)
+
+      role_ids =
+        ["user", "admin"]
+        |> Enum.map(&insert(:role, name: &1, organisation: organisation))
+        |> Enum.map(& &1.id)
+        |> Enum.sort()
 
       token =
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @valid_attrs["email"],
-          role: role.id
+          roles: role_ids
         })
 
       insert(:auth_token, value: token, token_type: "invite")
@@ -181,9 +189,21 @@ defmodule WraftDoc.AccountTest do
       assert_enqueued(
         worker: DefaultWorker,
         tags: ["assign_role"],
-        args: %{role_id: role.id, user_id: user.id},
+        args: %{roles: role_ids, user_id: user.id},
         queue: :default
       )
+
+      assert :ok =
+               perform_job(DefaultWorker, %{roles: role_ids, user_id: user.id},
+                 tags: ["assign_role"]
+               )
+
+      assert role_ids ==
+               user
+               |> Repo.preload(:roles, force: true)
+               |> Map.get(:roles)
+               |> Enum.map(& &1.id)
+               |> Enum.sort()
     end
 
     test "creates a user_organisation entry for personal organisation" do
@@ -203,7 +223,7 @@ defmodule WraftDoc.AccountTest do
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @valid_attrs["email"],
-          role: role.id
+          roles: [role.id]
         })
 
       insert(:auth_token, value: token, token_type: "invite")
@@ -362,13 +382,16 @@ defmodule WraftDoc.AccountTest do
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @email,
-          role: role.id
+          roles: [role.id]
         })
 
       insert(:auth_token, value: token, token_type: "invite")
 
-      {:ok, %{organisation: %Organisation{id: ^organisation_id}, role_id: ^role_id}} =
-        Account.get_organisation_and_role_from_token(%{"token" => token, "email" => @email})
+      {:ok, %{organisation: %Organisation{id: ^organisation_id}, role_ids: [^role_id]}} =
+        Account.get_organisation_and_role_from_token(%{
+          "token" => token,
+          "email" => @email
+        })
     end
 
     test "return error for valid token and different email" do
@@ -552,7 +575,7 @@ defmodule WraftDoc.AccountTest do
     test "returns access token and refresh token valid tokens" do
       user = insert(:user_with_personal_organisation)
 
-      [access_token: access_token, refresh_token: refresh_token] =
+      %{tokens: [access_token: access_token, refresh_token: refresh_token]} =
         Account.authenticate(%{user: user, password: "encrypt"})
 
       {_, _, access_token_resource} = Guardian.resource_from_token(access_token)
@@ -592,7 +615,7 @@ defmodule WraftDoc.AccountTest do
     test "returns error for valid but revoked refresh token" do
       user = insert(:user_with_personal_organisation)
 
-      [access_token: _access_token, refresh_token: refresh_token] =
+      %{tokens: [access_token: _access_token, refresh_token: refresh_token]} =
         Account.authenticate(%{user: user, password: "encrypt"})
 
       Guardian.revoke(refresh_token)
