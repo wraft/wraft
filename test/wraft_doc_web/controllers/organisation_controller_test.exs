@@ -3,11 +3,13 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
   import WraftDoc.Factory
 
+  alias WraftDoc.Account.AuthToken
   alias WraftDoc.Account.User
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.InvitedUsers
   alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDoc.Repo
+  alias WraftDocWeb.Endpoint
 
   @moduletag :controller
 
@@ -128,7 +130,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       conn =
         post(conn, Routes.v1_organisation_path(conn, :invite), %{
           email: "msadi@gmail.com",
-          role_id: role.id
+          role_ids: [role.id]
         })
 
       assert json_response(conn, 200) == %{"info" => "Invited successfully.!"}
@@ -150,7 +152,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       conn =
         post(conn, Routes.v1_organisation_path(conn, :invite), %{
           email: "msadi@gmail.com",
-          role_id: role.id
+          role_ids: [role.id]
         })
 
       assert json_response(conn, 200) == %{"info" => "Invited successfully.!"}
@@ -159,10 +161,30 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
                InvitedUsers.get_invited_user("msadi@gmail.com", organisation_id)
     end
 
+    test "accepts multiple roles for the user", %{conn: conn} do
+      organisation = List.first(conn.assigns.current_user.owned_organisations)
+
+      role_ids =
+        ["editor", "admin", "viewer"]
+        |> Enum.map(&insert(:role, name: &1, organisation: organisation))
+        |> Enum.map(& &1.id)
+
+      conn =
+        post(conn, Routes.v1_organisation_path(conn, :invite), %{
+          email: "msadi@gmail.com",
+          role_ids: role_ids
+        })
+
+      assert json_response(conn, 200) == %{"info" => "Invited successfully.!"}
+
+      assert %InvitedUser{status: "invited"} =
+               InvitedUsers.get_invited_user("msadi@gmail.com", organisation.id)
+    end
+
     test "returns an error when email is not provided", %{conn: conn} do
       conn =
         post(conn, Routes.v1_organisation_path(conn, :invite), %{
-          role_id: 1
+          role_ids: [1]
         })
 
       assert json_response(conn, 400) == %{
@@ -170,13 +192,63 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
              }
     end
 
-    test "returns a 404 error when role_id is not provided", %{conn: conn} do
+    test "returns error when role_ids are not provided", %{conn: conn} do
       conn =
         post(conn, Routes.v1_organisation_path(conn, :invite), %{
           email: "msadi@gmail.com"
         })
 
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 404) == %{"errors" => "No roles found"}
+    end
+
+    test "only accepts role_ids from the user's organisation", %{conn: conn} do
+      organisation = List.first(conn.assigns.current_user.owned_organisations)
+
+      same_organisation_role_ids =
+        ["editor", "admin"]
+        |> Enum.map(&insert(:role, name: &1, organisation: organisation))
+        |> Enum.map(& &1.id)
+        |> Enum.sort()
+
+      %{id: viewer_role_id} = insert(:role, name: "viewer")
+      role_ids = same_organisation_role_ids ++ [viewer_role_id]
+
+      conn =
+        post(conn, Routes.v1_organisation_path(conn, :invite), %{
+          email: "msadi@gmail.com",
+          role_ids: role_ids
+        })
+
+      %{value: token} =
+        Repo.get_by(AuthToken, user_id: conn.assigns.current_user.id, token_type: :invite)
+
+      assert json_response(conn, 200) == %{"info" => "Invited successfully.!"}
+
+      assert %InvitedUser{status: "invited"} =
+               InvitedUsers.get_invited_user("msadi@gmail.com", organisation.id)
+
+      assert {:ok, %{roles: ^same_organisation_role_ids}} =
+               Phoenix.Token.verify(
+                 Endpoint,
+                 "organisation_invite",
+                 Base.url_decode64!(token),
+                 []
+               )
+    end
+
+    test "returns error when all the role_ids does not belong to user's organisation", %{
+      conn: conn
+    } do
+      role_ids =
+        ["editor", "admin", "viewer"] |> Enum.map(&insert(:role, name: &1)) |> Enum.map(& &1.id)
+
+      conn =
+        post(conn, Routes.v1_organisation_path(conn, :invite), %{
+          email: "msadi@gmail.com",
+          role_ids: role_ids
+        })
+
+      assert json_response(conn, 404) == %{"errors" => "No roles found"}
     end
 
     test "returns 422 error when user is already a member", %{conn: conn} do
@@ -198,12 +270,15 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   describe "members/2" do
     test "returns the list of all members of current user's organisation", %{conn: conn} do
       user1 = conn.assigns[:current_user]
+      insert(:profile, user: user1)
       [organisation] = user1.owned_organisations
 
       user2 = insert(:user)
+      insert(:profile, user: user2)
       insert(:user_organisation, user: user2, organisation: organisation)
 
       user3 = insert(:user)
+      insert(:profile, user: user3)
       insert(:user_organisation, user: user3, organisation: organisation)
 
       conn =
@@ -226,12 +301,15 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     test "returns the list of all members of current user's organisation matching the given name",
          %{conn: conn} do
       user1 = conn.assigns[:current_user]
+      insert(:profile, user: user1)
       [organisation] = user1.owned_organisations
 
       user2 = insert(:user, name: "John")
+      insert(:profile, user: user2)
       insert(:user_organisation, user: user2, organisation: organisation)
 
       user3 = insert(:user, name: "John Doe")
+      insert(:profile, user: user3)
       insert(:user_organisation, user: user3, organisation: organisation)
 
       conn =
@@ -253,12 +331,15 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
     test "only list existing members ", %{conn: conn} do
       user = conn.assigns[:current_user]
+      insert(:profile, user: user)
       [organisation] = user.owned_organisations
 
       user2 = insert(:user, name: "John")
+      insert(:profile, user: user2)
       insert(:user_organisation, user: user2, organisation: organisation)
 
       user3 = insert(:user, name: "John Doe")
+      insert(:profile, user: user3)
 
       insert(:user_organisation,
         user: user3,
