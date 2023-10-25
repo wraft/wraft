@@ -222,9 +222,11 @@ defmodule WraftDoc.Account do
     end
   end
 
-  def delete_role(role) do
+  def delete_role(role) when role.name != "superadmin" do
     Repo.delete(role)
   end
+
+  def delete_role(_), do: {:error, :no_permission}
 
   @doc """
   Get the organisation and role from the token, if there is  token in the params.

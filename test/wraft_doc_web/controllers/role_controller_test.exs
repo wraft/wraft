@@ -42,15 +42,26 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
     assert json_response(conn, 404) == "Not Found"
   end
 
-  test "delete an existing role by id", %{conn: conn} do
-    user = conn.assigns.current_user
-    role = insert(:role, name: "new_role", organisation: List.first(user.owned_organisations))
-    count_before = Role |> Repo.all() |> length()
-    conn = delete(conn, Routes.v1_role_path(conn, :delete, role.id))
-    count_after = Role |> Repo.all() |> length()
+  describe "delete/2" do
+    test "delete an existing role by id", %{conn: conn} do
+      user = conn.assigns.current_user
+      role = insert(:role, name: "new_role", organisation: List.first(user.owned_organisations))
+      count_before = Role |> Repo.all() |> length()
+      conn = delete(conn, Routes.v1_role_path(conn, :delete, role.id))
+      count_after = Role |> Repo.all() |> length()
 
-    assert json_response(conn, 200)["name"] == role.name
-    assert count_before - 1 == count_after
+      assert json_response(conn, 200)["name"] == role.name
+      assert count_before - 1 == count_after
+    end
+
+    test "error on attempting to delete superadmin role", %{conn: conn} do
+      role = Repo.get_by(Role, name: "superadmin")
+      count_before = Role |> Repo.all() |> length()
+      conn = delete(conn, Routes.v1_role_path(conn, :delete, role.id))
+      count_after = Role |> Repo.all() |> length()
+      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+      assert count_before == count_after
+    end
   end
 
   describe "index/2" do
