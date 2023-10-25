@@ -132,8 +132,9 @@ defmodule WraftDoc.Workers.DefaultWorker do
     end
   end
 
-  def perform(%Job{args: %{"user_id" => user_id, "role_id" => role_id}, tags: ["assign_role"]}) do
-    Account.create_user_role(user_id, role_id)
+  def perform(%Job{args: %{"user_id" => user_id, "roles" => role_ids}, tags: ["assign_role"]}) do
+    Enum.each(role_ids, &Account.create_user_role(user_id, &1))
+    :ok
   end
 
   # Private
