@@ -370,6 +370,11 @@ defmodule WraftDoc.AccountTest do
     test "raises with invalid role" do
       assert_raise(BadMapError, fn -> Account.delete_role(nil) end)
     end
+
+    test "returns error on attempting to delete superadmin role" do
+      role = insert(:role, name: "superadmin")
+      assert {:error, :no_permission} = Account.delete_role(role)
+    end
   end
 
   describe "get_organisation_and_role_from_token/1" do
