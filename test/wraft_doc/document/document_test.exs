@@ -2703,7 +2703,9 @@ defmodule WraftDoc.DocumentTest do
     test "data_template index_under_organisation lists the data_template data under an organisation" do
       user = insert(:user_with_organisation)
       insert(:user_organisation, user: user, organisation: List.first(user.owned_organisations))
-      content_type = insert(:content_type, creator: user)
+
+      content_type =
+        insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
 
       d1 = insert(:data_template, creator: user, content_type: content_type)
       d2 = insert(:data_template, creator: user, content_type: content_type)
