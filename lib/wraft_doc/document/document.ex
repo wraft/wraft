@@ -9,7 +9,6 @@ defmodule WraftDoc.Document do
   alias Ecto.Multi
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
-  alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Client.Minio
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
@@ -1417,8 +1416,8 @@ defmodule WraftDoc.Document do
   def data_templates_index_of_an_organisation(%{current_org_id: org_id}, params) do
     query =
       from(dt in DataTemplate,
-        join: uo in UserOrganisation,
-        where: uo.organisation_id == ^org_id and dt.creator_id == uo.user_id,
+        join: ct in ContentType,
+        where: ct.organisation_id == ^org_id and dt.content_type_id == ct.id,
         where: ^data_template_filter_by_title(params),
         order_by: [desc: dt.id],
         preload: [:content_type]
