@@ -149,7 +149,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
   # Private
 
   defp get_editor_permissions do
-    @permissions_file_path
+    @permissions_file_path |> IO.inspect
     |> File.stream!()
     |> CSV.decode()
     |> Enum.map(fn {:ok, [permission]} -> permission end)
@@ -167,7 +167,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
 
   defp create_wraft_theme_assets(theme, organisation_id) do
     font_files =
-      @theme_folder_path
+      @theme_folder_path |> IO.inspect
       |> File.ls!()
       |> Enum.filter(fn file -> String.ends_with?(file, ".ttf") end)
 
