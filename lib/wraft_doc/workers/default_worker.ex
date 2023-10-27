@@ -76,7 +76,9 @@ defmodule WraftDoc.Workers.DefaultWorker do
         args: %{"organisation_id" => organisation_id, "user_id" => user_id},
         tags: ["organisation_roles"]
       }) do
+    IO.inspect("permissions adding for organisation role started")
     permissions = get_editor_permissions()
+    IO.inspect("permissions adding for organisation role ended")
 
     Multi.new()
     |> Multi.insert(:superadmin_role, %Role{
@@ -100,9 +102,12 @@ defmodule WraftDoc.Workers.DefaultWorker do
         Logger.error("Organisation role insert failed", changeset: changeset)
         {:error, changeset}
     end
+
+    IO.inspect("organisation roles adding is done")
   end
 
   def perform(%Job{tags: ["wraft_theme_and_layout"]} = job) do
+    IO.inspect("started wraft theme and layout addition")
     organisation_id = job.args["organisation_id"]
     %{id: engine_id} = Repo.get_by(Engine, name: "Pandoc")
 
