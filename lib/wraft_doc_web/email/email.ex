@@ -62,7 +62,7 @@ defmodule WraftDocWeb.Mailer.Email do
       "
       <h1>Verify your email address<h1>
       <h3>To continue setting up your Wraft account, please verify that this is your email address.<h3>
-      Click <a href=#{System.get_env("WRAFT_URL")}/user/verify_email_token/#{token}>Verify email address</a>"
+      Click <a href=#{System.get_env("WRAFT_URL")}/users/join_invite/verify_email/#{token}>Verify email address</a>"
     )
   end
 
