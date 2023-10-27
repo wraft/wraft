@@ -29,7 +29,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
 
   @permissions_file_path :wraft_doc
                          |> :code.priv_dir()
-                         |> Path.join("priv/repo/data/rbac/editor_permissions.csv")
+                         |> Path.join("repo/data/rbac/editor_permissions.csv")
 
   @wraft_theme_args %{
     name: "Wraft Frame",
