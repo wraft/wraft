@@ -21,16 +21,6 @@ defmodule WraftDoc.Workers.DefaultWorker do
   @superadmin_role "superadmin"
   @editor_role "editor"
 
-  @layout_file_path :wraft_doc
-                    |> :code.priv_dir()
-                    |> Path.join("static/wraft_files/letterhead.pdf")
-
-  @theme_folder_path :wraft_doc |> :code.priv_dir() |> Path.join("static/wraft_files/Roboto")
-
-  @permissions_file_path :wraft_doc
-                         |> :code.priv_dir()
-                         |> Path.join("repo/data/rbac/editor_permissions.csv")
-
   @wraft_theme_args %{
     name: "Wraft Frame",
     font: "Roboto ",
@@ -46,7 +36,6 @@ defmodule WraftDoc.Workers.DefaultWorker do
     type: "layout",
     file: %Plug.Upload{
       filename: "letterhead.pdf",
-      path: @layout_file_path,
       content_type: "application/pdf"
     }
   }
@@ -76,9 +65,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
         args: %{"organisation_id" => organisation_id, "user_id" => user_id},
         tags: ["organisation_roles"]
       }) do
-    IO.inspect("permissions adding for organisation role started")
     permissions = get_editor_permissions()
-    IO.inspect("permissions adding for organisation role ended")
 
     Multi.new()
     |> Multi.insert(:superadmin_role, %Role{
@@ -102,12 +89,9 @@ defmodule WraftDoc.Workers.DefaultWorker do
         Logger.error("Organisation role insert failed", changeset: changeset)
         {:error, changeset}
     end
-
-    IO.inspect("organisation roles adding is done")
   end
 
   def perform(%Job{tags: ["wraft_theme_and_layout"]} = job) do
-    IO.inspect("started wraft theme and layout addition")
     organisation_id = job.args["organisation_id"]
     %{id: engine_id} = Repo.get_by(Engine, name: "Pandoc")
 
@@ -124,8 +108,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
       )
     )
     |> Multi.run(:upload_layout_asset, fn _, %{layout: layout} ->
-      asset_id = create_wraft_branded_asset(organisation_id, @wraft_layout_asset_args)
-      Repo.insert(%LayoutAsset{layout_id: layout.id, asset_id: asset_id})
+      create_wraft_layout_assets(layout, organisation_id)
     end)
     |> Multi.run(:upload_theme_asset, fn _, %{theme: theme} ->
       create_wraft_theme_assets(theme, organisation_id)
@@ -147,9 +130,11 @@ defmodule WraftDoc.Workers.DefaultWorker do
   end
 
   # Private
-
   defp get_editor_permissions do
-    @permissions_file_path |> IO.inspect
+    permissions_file_path =
+      :wraft_doc |> :code.priv_dir() |> Path.join("repo/data/rbac/editor_permissions.csv")
+
+    permissions_file_path
     |> File.stream!()
     |> CSV.decode()
     |> Enum.map(fn {:ok, [permission]} -> permission end)
@@ -166,8 +151,10 @@ defmodule WraftDoc.Workers.DefaultWorker do
   end
 
   defp create_wraft_theme_assets(theme, organisation_id) do
+    theme_folder_path = :wraft_doc |> :code.priv_dir() |> Path.join("static/wraft_files/Roboto")
+
     font_files =
-      @theme_folder_path |> IO.inspect
+      theme_folder_path
       |> File.ls!()
       |> Enum.filter(fn file -> String.ends_with?(file, ".ttf") end)
 
@@ -177,7 +164,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
         type: "theme",
         file: %Plug.Upload{
           filename: Path.basename(font_file),
-          path: Path.join(@theme_folder_path, font_file),
+          path: Path.join(theme_folder_path, font_file),
           content_type: "application/octet-stream"
         }
       }
@@ -185,6 +172,21 @@ defmodule WraftDoc.Workers.DefaultWorker do
       asset_id = create_wraft_branded_asset(organisation_id, asset_params)
       Repo.insert(%ThemeAsset{theme_id: theme.id, asset_id: asset_id})
     end)
+
+    {:ok, "ok"}
+  end
+
+  defp create_wraft_layout_assets(layout, organisation_id) do
+    layout_file_path =
+      :wraft_doc |> :code.priv_dir() |> Path.join("static/wraft_files/letterhead.pdf")
+
+    asset_params =
+      Map.update!(@wraft_layout_asset_args, :file, fn upload ->
+        %Plug.Upload{upload | path: layout_file_path}
+      end)
+
+    asset_id = create_wraft_branded_asset(organisation_id, asset_params)
+    Repo.insert(%LayoutAsset{layout_id: layout.id, asset_id: asset_id})
 
     {:ok, "ok"}
   end
