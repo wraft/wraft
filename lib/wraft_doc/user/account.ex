@@ -74,7 +74,7 @@ defmodule WraftDoc.Account do
          get_org: %{organisation: invited_org}
        }} ->
         InvitedUsers.create_or_update_invited_user(user.email, invited_org.id, "joined")
-        {:ok, %{user: user, organisations: [personal_org, invited_org]}}
+        {:ok, %{user: Repo.preload(user, :profile), organisations: [personal_org, invited_org]}}
 
       {:error, :get_org, :expired, _} ->
         set_invited_user_status_to_expired(token)
@@ -94,7 +94,7 @@ defmodule WraftDoc.Account do
     |> Repo.transaction()
     |> case do
       {:ok, %{user: user, personal_organisation: %{organisation: personal_org}}} ->
-        {:ok, %{user: user, organisations: [personal_org]}}
+        {:ok, %{user: Repo.preload(user, :profile), organisations: [personal_org]}}
 
       {:error, :user, changeset, _} ->
         {:error, changeset}
