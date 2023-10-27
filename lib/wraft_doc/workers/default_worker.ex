@@ -27,6 +27,10 @@ defmodule WraftDoc.Workers.DefaultWorker do
 
   @theme_folder_path :wraft_doc |> :code.priv_dir() |> Path.join("static/wraft_files/Roboto")
 
+  @permissions_file_path :wraft_doc
+                         |> :code.priv_dir()
+                         |> Path.join("priv/repo/data/rbac/editor_permissions.csv")
+
   @wraft_theme_args %{
     name: "Wraft Frame",
     font: "Roboto ",
@@ -72,7 +76,6 @@ defmodule WraftDoc.Workers.DefaultWorker do
         args: %{"organisation_id" => organisation_id, "user_id" => user_id},
         tags: ["organisation_roles"]
       }) do
-    IO.inspect("Organisation roles oban job started")
     permissions = get_editor_permissions()
 
     Multi.new()
@@ -97,8 +100,6 @@ defmodule WraftDoc.Workers.DefaultWorker do
         Logger.error("Organisation role insert failed", changeset: changeset)
         {:error, changeset}
     end
-
-    IO.inspect("organisation roles oban job finished")
   end
 
   def perform(%Job{tags: ["wraft_theme_and_layout"]} = job) do
@@ -143,7 +144,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
   # Private
 
   defp get_editor_permissions do
-    "priv/repo/data/rbac/editor_permissions.csv"
+    @permissions_file_path
     |> File.stream!()
     |> CSV.decode()
     |> Enum.map(fn {:ok, [permission]} -> permission end)

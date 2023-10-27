@@ -243,7 +243,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
                  %{organisation_id: id},
                  "wraft_theme_and_layout"
                ) do
-          IO.inspect("Organisation creation completed")
           render(conn, "create.json", organisation: organisation)
         end
 
