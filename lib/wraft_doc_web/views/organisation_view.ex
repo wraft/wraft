@@ -30,6 +30,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       name_of_ceo: organisation.name_of_ceo,
       name_of_cto: organisation.name_of_cto,
       corporate_id: organisation.corporate_id,
+      members_count: organisation.members_count,
       gstin: organisation.gstin,
       email: organisation.email,
       phone: organisation.phone,

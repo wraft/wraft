@@ -26,6 +26,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     field(:phone, :string)
     field(:email, :string)
     field(:url, :string)
+    field(:members_count, :integer, virtual: true)
     belongs_to(:creator, User)
     field(:logo, WraftDocWeb.LogoUploader.Type)
     has_many(:users_organisations, UserOrganisation)

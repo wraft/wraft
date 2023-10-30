@@ -342,8 +342,22 @@ defmodule WraftDoc.Enterprise do
   Get an organisation from its UUID.
   """
   @spec get_organisation(binary) :: Organisation.t() | nil
-  def get_organisation(id) do
-    Repo.get(Organisation, id)
+  def get_organisation(id), do: Repo.get(Organisation, id)
+
+  @doc """
+  Get an organisation with member count.
+  """
+  @spec get_organisation_with_member_count(binary) :: Organisation.t() | nil
+  def get_organisation_with_member_count(organisation_id) do
+    query =
+      from(o in Organisation,
+        left_join: uo in assoc(o, :users_organisations),
+        where: o.id == ^organisation_id,
+        group_by: o.id,
+        select_merge: %{members_count: count(uo.id)}
+      )
+
+    Repo.one(query)
   end
 
   @doc """
