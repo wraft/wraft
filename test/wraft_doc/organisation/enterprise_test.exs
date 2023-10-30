@@ -309,10 +309,38 @@ defmodule WraftDoc.EnterpriseTest do
     assert state.state == d_state.state
   end
 
-  test "get organisation returns the organisation by id" do
-    organisation = insert(:organisation)
-    g_organisation = Enterprise.get_organisation(organisation.id)
-    assert organisation.name == g_organisation.name
+  describe "get_organisation/1" do
+    test "returns the organisation by id" do
+      organisation = insert(:organisation)
+      g_organisation = Enterprise.get_organisation(organisation.id)
+      assert organisation.name == g_organisation.name
+    end
+
+    test "returns nil if the organisation does not exist" do
+      assert is_nil(Enterprise.get_organisation(Ecto.UUID.generate()))
+    end
+  end
+
+  describe "get_organisation_with_member_count/1" do
+    test "returns the organisation by id if members count is 0" do
+      organisation = insert(:organisation)
+      g_organisation = Enterprise.get_organisation_with_member_count(organisation.id)
+      assert organisation.name == g_organisation.name
+      assert g_organisation.members_count == 0
+    end
+
+    test "get organisation returns the organisation by id" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+      insert(:user_organisation, user: user, organisation: organisation)
+      g_organisation = Enterprise.get_organisation_with_member_count(organisation.id)
+      assert organisation.name == g_organisation.name
+      assert g_organisation.members_count == 1
+    end
+
+    test "returns nil if the organisation does not exist" do
+      assert is_nil(Enterprise.get_organisation_with_member_count(Ecto.UUID.generate()))
+    end
   end
 
   test "get_personal_organisation_and_role returns personal organisation and the user's role in the organisation" do

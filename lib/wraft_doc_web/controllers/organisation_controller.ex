@@ -60,6 +60,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
             name_of_cto(:string, "Organisation CTO's Name")
             gstin(:string, "GSTIN of organisation")
             corporate_id(:string, "Corporate id of organisation")
+            members_count(:integer, "Number of members")
             phone(:strign, "Phone number of organisation")
             email(:string, "Email of organisation")
             logo(:string, "Logo of organisation")
@@ -76,6 +77,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
             name_of_cto: "Foo Doo",
             gstin: "32AA65FF56545353",
             corporate_id: "BNIJSN1234NGT",
+            members_count: 6,
             email: "abcent@gmail.com",
             logo: "/logo.jpg",
             phone: "865623232",
@@ -312,7 +314,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    case Enterprise.get_organisation(id) do
+    case Enterprise.get_organisation_with_member_count(id) do
       %Organisation{} = organisation -> render(conn, "show.json", organisation: organisation)
       # TODO - Change this to use with statement and make sure it returns only 200, 404, and 401
       _ -> {:error, :invalid_id}
