@@ -65,6 +65,7 @@ defmodule WraftDoc.Client.Minio do
   Returns the binary of the file, which can be written to a file.
   """
   @spec download(binary()) :: binary()
+  # TODO - Write tests
   def download(path) do
     with {:ok, %{body: %{contents: [%{key: file_path}]}}} <- list_objects(path),
          [binary] <-

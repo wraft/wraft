@@ -20,6 +20,8 @@ defmodule WraftDoc.Account.User do
       join_through: "users_organisations"
     )
 
+    has_many(:user_organisations, WraftDoc.Account.UserOrganisation)
+
     has_one(:profile, WraftDoc.Account.Profile)
 
     has_many(:layouts, WraftDoc.Document.Layout, foreign_key: :creator_id)

@@ -115,16 +115,17 @@ defmodule WraftDocWeb.Api.V1.UserView do
     }
   end
 
-  def render("show.json", %{user: me}) do
+  def render("member.json", %{user: user}) do
     %{
-      id: me.id,
-      name: me.name,
-      email: me.email,
-      email_verify: me.email_verify,
-      inserted_at: me.inserted_at,
-      updated_at: me.updated_at,
-      profile_pic: generate_url(me.profile),
-      roles: render_many(me.roles, RegistrationView, "role.json", as: :role)
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      email_verify: user.email_verify,
+      inserted_at: user.inserted_at,
+      joined_at: List.first(user.user_organisations).inserted_at,
+      updated_at: user.updated_at,
+      profile_pic: generate_url(user.profile),
+      roles: render_many(user.roles, RegistrationView, "role.json", as: :role)
     }
   end
 
