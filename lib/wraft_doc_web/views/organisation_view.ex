@@ -76,7 +76,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
         total_entries: total_entries
       }) do
     %{
-      members: render_many(members, UserView, "show.json", as: :user),
+      members: render_many(members, UserView, "member.json", as: :user),
       page_number: page_number,
       total_pages: total_pages,
       total_entries: total_entries

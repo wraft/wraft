@@ -39,6 +39,7 @@ defmodule WraftDocWeb.Router do
     plug(:accepts, ["html"])
     plug(:put_secure_browser_headers)
     plug(:fetch_session)
+    plug(:fetch_flash)
     plug(WraftDocWeb.Plug.CurrentAdmin)
   end
 
