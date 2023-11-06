@@ -414,6 +414,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
       id(:path, :string, "ID of the organisation")
       page(:query, :string, "Page number")
       name(:query, :string, "Name of the user")
+      role(:query, :string, "Name of the role")
+      sort(:query, :string, "Sort Keys => name, name_desc, joined_at, joined_at_desc")
     end
 
     response(200, "Ok", Schema.ref(:MembersIndex))

@@ -10,6 +10,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.Account.UserRole
   alias WraftDoc.Client.Razorpay
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
@@ -543,33 +544,61 @@ defmodule WraftDoc.Enterprise do
   Fetches the list of all members of current users organisation.
   """
   @spec members_index(User.t(), map) :: any
-  # TODO Use dynamic query instead of pattern matching here for name filtering
-  def members_index(%User{current_org_id: organisation_id}, %{"name" => name} = params) do
-    query =
-      from(u in User,
-        join: uo in UserOrganisation,
-        where: ilike(u.name, ^"%#{name}%"),
-        where: uo.organisation_id == ^organisation_id,
-        where: uo.user_id == u.id,
-        where: is_nil(uo.deleted_at),
-        preload: [:profile, :roles, :organisations]
-      )
-
-    Repo.paginate(query, params)
-  end
-
   def members_index(%User{current_org_id: organisation_id}, params) do
-    query =
-      from(u in User,
-        join: uo in UserOrganisation,
-        where: uo.organisation_id == ^organisation_id,
-        where: uo.user_id == u.id,
-        where: is_nil(uo.deleted_at),
-        preload: [:profile, :roles, :organisations]
-      )
+    roles_preload_query = from(r in Role, where: r.organisation_id == ^organisation_id)
 
-    Repo.paginate(query, params)
+    user_organisation_query =
+      from(uo in UserOrganisation, where: uo.organisation_id == ^organisation_id)
+
+    User
+    |> join(:inner, [u], uo in UserOrganisation, on: uo.user_id == u.id, as: :user_organisation)
+    |> where([user_organisation: uo], uo.organisation_id == ^organisation_id)
+    |> where(^members_filter_by_name(params))
+    |> join(:inner, [u], ur in UserRole, on: ur.user_id == u.id, as: :user_role)
+    |> join(:inner, [user_role: ur], r in Role,
+      on: r.organisation_id == ^organisation_id and ur.role_id == r.id,
+      as: :role
+    )
+    |> where(^members_filter_by_role(params))
+    |> where([user_organisation: uo], is_nil(uo.deleted_at))
+    |> group_by([u, user_organisation: uo], [u.id, uo.inserted_at])
+    |> order_by(^members_index_sort(params))
+    |> preload([
+      :profile,
+      [roles: ^roles_preload_query],
+      [user_organisations: ^user_organisation_query]
+    ])
+    |> Repo.paginate(params)
   end
+
+  defp members_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([u], ilike(u.name, ^"%#{name}%"))
+
+  defp members_filter_by_name(_), do: true
+
+  defp members_filter_by_role(%{"role" => role}) do
+    dynamic([role: r], r.name == ^role)
+  end
+
+  defp members_filter_by_role(_), do: true
+
+  defp members_index_sort(%{"sort" => "joined_at"}) do
+    [asc: dynamic([user_organisation: uo], uo.inserted_at)]
+  end
+
+  defp members_index_sort(%{"sort" => "joined_at_desc"}) do
+    [desc: dynamic([user_organisation: uo], uo.inserted_at)]
+  end
+
+  defp members_index_sort(%{"sort" => "name"}) do
+    [asc: dynamic([u], u.name)]
+  end
+
+  defp members_index_sort(%{"sort" => "name_desc"}) do
+    [desc: dynamic([u], u.name)]
+  end
+
+  defp members_index_sort(_), do: []
 
   @doc """
   Search organisation by name
