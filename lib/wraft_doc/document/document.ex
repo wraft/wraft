@@ -560,9 +560,10 @@ defmodule WraftDoc.Document do
     |> Repo.insert!()
 
     Logger.info("Initial version generated")
+    {:ok, "ok"}
   end
 
-  defp create_initial_version(_, _), do: nil
+  defp create_initial_version(_, _), do: {:error, :invalid}
 
   @doc """
   Same as create_instance/4, to create instance and its approval system
@@ -616,26 +617,28 @@ defmodule WraftDoc.Document do
   @spec create_instance(User.t(), ContentType.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
-  def create_instance(
-        %User{} = current_user,
-        %{id: c_id, prefix: prefix, flow: flow} = c_type,
-        params
-      ) do
-    instance_id = create_instance_id(c_id, prefix)
-    initial_state = Enterprise.initial_state(flow)
+  def create_instance(%User{} = current_user, content_type, params) do
+    instance_id = create_instance_id(content_type.id, content_type.prefix)
+    initial_state = Enterprise.initial_state(content_type.flow)
     params = Map.merge(params, %{"instance_id" => instance_id, "state_id" => initial_state.id})
 
-    c_type
-    |> build_assoc(:instances, creator: current_user)
-    |> Instance.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(
+      :instance,
+      content_type
+      |> build_assoc(:instances, creator: current_user)
+      |> Instance.changeset(params)
+    )
+    |> Multi.run(:counter_increment, fn _, _ -> create_or_update_counter(content_type) end)
+    |> Multi.run(:instance_approval_system, fn _, %{instance: content} ->
+      create_instance_approval_systems(content_type, content)
+    end)
+    |> Multi.run(:version, fn _, %{instance: content} ->
+      create_initial_version(current_user, content)
+    end)
+    |> Repo.transaction()
     |> case do
-      {:ok, content} ->
-        Task.start_link(fn -> create_or_update_counter(c_type) end)
-        Task.start_link(fn -> create_initial_version(current_user, content) end)
-
-        create_instance_approval_systems(c_type, content)
-
+      {:ok, %{instance: content}} ->
         Repo.preload(content, [
           :content_type,
           :state,
@@ -643,8 +646,9 @@ defmodule WraftDoc.Document do
           {:instance_approval_systems, :approver}
         ])
 
-      changeset = {:error, _} ->
-        changeset
+      {:error, _, changeset, _} ->
+        Logger.error("Creation of instance failed", changeset: changeset)
+        {:error, changeset}
     end
   end
 
@@ -654,26 +658,27 @@ defmodule WraftDoc.Document do
   * content_type - A content type struct
   * content - a Instance struct
   """
-  @spec create_instance_approval_systems(ContentType.t(), Instance.t()) :: :ok
+  @spec create_instance_approval_systems(ContentType.t(), Instance.t()) :: {:ok, :ok}
   def create_instance_approval_systems(content_type, content) do
     with %ContentType{flow: %Flow{approval_systems: approval_systems}} <-
            Repo.preload(content_type, [{:flow, :approval_systems}]) do
-      Enum.each(approval_systems, fn x ->
-        # Task.start_link(fn ->
-        #   Notifications.create_notification(
-        #    %{"recipient_id" x.approver_id,
-        #    "actor_id"=> content.creator_id,
-        #     "assigned_as_approver",
-        #     x.id,
-        #     ApprovalSystem
-        #   )
-        # end)
+      {:ok,
+       Enum.each(approval_systems, fn x ->
+         # Task.start_link(fn ->
+         #   Notifications.create_notification(
+         #    %{"recipient_id" x.approver_id,
+         #    "actor_id"=> content.creator_id,
+         #     "assigned_as_approver",
+         #     x.id,
+         #     ApprovalSystem
+         #   )
+         # end)
 
-        create_instance_approval_system(%{
-          instance_id: content.id,
-          approval_system_id: x.id
-        })
-      end)
+         create_instance_approval_system(%{
+           instance_id: content.id,
+           approval_system_id: x.id
+         })
+       end)}
     end
   end
 
