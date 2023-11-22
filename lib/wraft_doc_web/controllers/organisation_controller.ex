@@ -325,15 +325,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   Delete an organisation
   """
   swagger_path :delete do
-    PhoenixSwagger.Path.delete("/organisations/{id}")
+    PhoenixSwagger.Path.delete("/organisations")
     summary("Delete an organisation")
     description("Delete Organisation API")
     operation_id("delete_organisation")
     tag("Organisation")
-
-    parameters do
-      id(:path, :string, "Organisation id", required: true)
-    end
 
     response(200, "Ok", Schema.ref(:Organisation))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -342,10 +338,22 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => id}) do
-    with %Organisation{} = organisation <- Enterprise.get_organisation(id),
+  def delete(conn, _params) do
+    %{current_org_id: organisation_id, email: email} = conn.assigns.current_user
+
+    with {:error, :already_member} <-
+           Enterprise.already_member(organisation_id, email),
+         %Organisation{} = organisation <- Enterprise.get_organisation(organisation_id),
          {:ok, %Organisation{}} <- Enterprise.delete_organisation(organisation) do
       render(conn, "organisation.json", organisation: organisation)
+    else
+      :ok ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(401, Jason.encode!(%{errors: "User is not a member of this organisation!"}))
+
+      error ->
+        error
     end
   end
 
