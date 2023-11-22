@@ -108,15 +108,55 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     assert json_response(conn, 400)["errors"] == "The id does not exist..!"
   end
 
-  test "deletes organisation and render the details", %{conn: conn} do
-    organisation = insert(:organisation)
+  describe "delete/2" do
+    test "deletes organisation and render the details", %{conn: conn} do
+      [organisation] = conn.assigns.current_user.owned_organisations
+      count_before = Organisation |> Repo.all() |> length
+      conn = delete(conn, Routes.v1_organisation_path(conn, :delete, %{}))
 
-    count_before = Organisation |> Repo.all() |> length
-    conn = delete(conn, Routes.v1_organisation_path(conn, :delete, organisation))
+      assert Organisation |> Repo.all() |> length == count_before - 1
+      assert json_response(conn, 200)["name"] == organisation.name
+      assert json_response(conn, 200)["address"] == organisation.address
+    end
 
-    assert Organisation |> Repo.all() |> length == count_before - 1
-    assert json_response(conn, 200)["name"] == organisation.name
-    assert json_response(conn, 200)["address"] == organisation.address
+    test "return error if user is not member of the organisation" do
+      user = insert(:user_with_personal_organisation)
+      [organisation] = user.owned_organisations
+      role = WraftDoc.Factory.insert(:role, organisation: organisation)
+      WraftDoc.Factory.insert(:user_role, user: user, role: role)
+
+      {:ok, token, _} =
+        WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: organisation.id})
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> Plug.Conn.put_req_header("accept", "application/json")
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+        |> Plug.Conn.assign(:current_user, user)
+
+      conn = delete(conn, Routes.v1_organisation_path(conn, :delete, %{}))
+      assert json_response(conn, 401)["errors"] == "User is not a member of this organisation!"
+    end
+
+    test "returns error when trying to delete personal organisation" do
+      user = insert(:user_with_personal_organisation)
+      [organisation] = user.owned_organisations
+      insert(:user_organisation, user: user, organisation: organisation)
+      role = WraftDoc.Factory.insert(:role, organisation: organisation)
+      WraftDoc.Factory.insert(:user_role, user: user, role: role)
+
+      {:ok, token, _} =
+        WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: organisation.id})
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> Plug.Conn.put_req_header("accept", "application/json")
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+        |> Plug.Conn.assign(:current_user, user)
+
+      conn = delete(conn, Routes.v1_organisation_path(conn, :delete, %{}))
+      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+    end
   end
 
   describe "invite/2" do

@@ -480,6 +480,9 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Deletes the organisation
   """
+  def delete_organisation(%Organisation{name: "Personal"} = _organisation),
+    do: {:error, :no_permission}
+
   def delete_organisation(%Organisation{} = organisation) do
     organisation
     |> Ecto.Changeset.change()

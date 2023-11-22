@@ -547,14 +547,22 @@ defmodule WraftDoc.EnterpriseTest do
     assert organisation.url == "wraftdoc@customprofile.com"
   end
 
-  test "delete organisation deletes a row and returns organisation data" do
-    organisation = insert(:organisation)
-    count_before = Organisation |> Repo.all() |> length()
-    {:ok, d_organisation} = Enterprise.delete_organisation(organisation)
-    count_after = Organisation |> Repo.all() |> length()
+  describe "delete_organisation/1" do
+    test "returns error tuple when attempting to delete 'Personal' org" do
+      organisation = insert(:organisation, name: "Personal")
 
-    assert count_before - 1 == count_after
-    assert organisation.name == d_organisation.name
+      assert {:error, :no_permission} = Enterprise.delete_organisation(organisation)
+    end
+
+    test "deletes the given organisation" do
+      organisation = insert(:organisation)
+      count_before = Organisation |> Repo.all() |> length()
+      {:ok, d_organisation} = Enterprise.delete_organisation(organisation)
+      count_after = Organisation |> Repo.all() |> length()
+
+      assert count_before - 1 == count_after
+      assert organisation.name == d_organisation.name
+    end
   end
 
   describe "create_approval_system/2" do
