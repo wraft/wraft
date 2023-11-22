@@ -191,7 +191,8 @@ defmodule WraftDocWeb.Router do
       put("/contents/:id/reject", InstanceController, :reject)
       # Organisations
       scope "/organisations" do
-        resources("/", OrganisationController, only: [:create, :update, :show, :delete])
+        resources("/", OrganisationController, only: [:create, :update, :show])
+        delete("/", OrganisationController, :delete)
         get("/:id/members", OrganisationController, :members)
         # Invite new user
         post("/users/invite", OrganisationController, :invite)
