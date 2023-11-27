@@ -6,14 +6,15 @@ documents.
 The aim of Wraft Docs is to maintain a single source of truth for document generation.
 
 # Table of contents
-* [Development](#development)
-  * [Pre-requisite](#pre-requisite)
-  * [Initial Setup](#initial-setup)
-  * [Commit Hooks](#commit-hooks)
-  * [Running Wraft Docs](#running-wraft-docs)
-  * [Testing Wraft Docs](#testing-wraft-docs)
-  * [Others](#others)
-    * [Additional Mix tasks](#few-additional-mix-tasks)
+- [Wraft Docs](#wraft-docs)
+- [Table of contents](#table-of-contents)
+  - [Development](#development)
+      - [Pre-requisite](#pre-requisite)
+      - [Initial setup](#initial-setup)
+  - [Running Wraft Docs](#running-wraft-docs)
+  - [Testing Wraft Docs](#testing-wraft-docs)
+  - [Others](#others)
+      - [Few additional `mix tasks`](#few-additional-mix-tasks)
 
 ## Development
 #### Pre-requisite
@@ -116,7 +117,7 @@ To check your installation:
 $ wkhtmltopdf -V
 ```
 
-#### Commit Hooks
+**Commit Hooks**
 Wraft Docs uses `pre-commit` to standardise the code quality and style.
 
 To install pre-commit:
@@ -141,6 +142,39 @@ Now to setup pre commit for Wraft Docs:
 $ pre-commit install
 ```
 
+**direnv**
+
+`direnv` is an environment switcher for the shell. It knows how to hook into bash, zsh, tcsh, fish shell and elvish to load or unload environment variables depending on the current directory. This allows project-specific environment variables without cluttering the "~/.profile" file.
+
+Before using it, you need to install it. Here is how you can do it:
+
+In macOS:
+
+```shell
+$ brew install direnv
+```
+
+In Linux:
+
+```shell
+$ sudo apt-get install direnv
+```
+
+Once installed, you need to hook direnv into your shell.
+
+```shell
+$ echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
+```
+
+Finally, you can use it in your project:
+
+```shell
+$ direnv allow
+```
+
+Now, whenever you enter the directory, the environment variables from `.envrc` will be loaded automatically. When you leave the directory, those variables get unloaded.
+
+
 ## Running Wraft Docs
 To start your Wraft docs app:
 
@@ -159,11 +193,6 @@ $ ecto.setup
 - Without seed data
 ```shell
 $ mix ecto.create && mix ecto.migrate
-```
-
-**Source ENV variables**
-```shell
-$ source .env
 ```
 
 **Start Phoenix endpoint**
