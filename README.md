@@ -25,9 +25,10 @@ The aim of Wraft Docs is to maintain a single source of truth for document gener
 * Latex
 * Gnuplot
 * wkhtmltopdf
+* direnv
+* Commit hooks
 
 `.tools_version` will have the exact versions defined in it.
-
 
 
 #### Initial setup
@@ -117,31 +118,6 @@ To check your installation:
 $ wkhtmltopdf -V
 ```
 
-**Commit Hooks**
-Wraft Docs uses `pre-commit` to standardise the code quality and style.
-
-To install pre-commit:
-Using pip:
-```shell
-$ pip install pre-commit
-```
-Using homebrew:
-```shell
-$ brew install pre-commit
-```
-
-To verify installation:
-
-```shell
-$ pre-commit --version
-```
-
-Now to setup pre commit for Wraft Docs:
-
-```shell
-$ pre-commit install
-```
-
 **direnv**
 
 `direnv` is an environment switcher for the shell. It knows how to hook into bash, zsh, tcsh, fish shell and elvish to load or unload environment variables depending on the current directory. This allows project-specific environment variables without cluttering the "~/.profile" file.
@@ -173,6 +149,31 @@ $ direnv allow
 ```
 
 Now, whenever you enter the directory, the environment variables from `.envrc` will be loaded automatically. When you leave the directory, those variables get unloaded.
+
+**Commit Hooks**
+Wraft Docs uses `pre-commit` to standardise the code quality and style.
+
+To install pre-commit:
+Using pip:
+```shell
+$ pip install pre-commit
+```
+Using homebrew:
+```shell
+$ brew install pre-commit
+```
+
+To verify installation:
+
+```shell
+$ pre-commit --version
+```
+
+Now to setup pre commit for Wraft Docs:
+
+```shell
+$ pre-commit install
+```
 
 
 ## Running Wraft Docs
