@@ -1,5 +1,7 @@
-defmodule WraftDoc.Account.AuthToken do
-  @moduledoc false
+defmodule WraftDoc.AuthTokens.AuthToken do
+  @moduledoc """
+    The AuthToken schema.
+  """
 
   use WraftDoc.Schema
 

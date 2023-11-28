@@ -17,6 +17,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
   alias WraftDoc.Account
   alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.AuthTokens
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.InvitedUsers
@@ -531,7 +532,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   @spec verify_invite_token(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def verify_invite_token(conn, %{"token" => token}) do
     with {:ok, %{organisation_id: organisation_id, email: email}} <-
-           Account.check_token(token, :invite),
+           AuthTokens.check_token(token, :invite),
          %Organisation{} = organisation <- Enterprise.get_organisation(organisation_id) do
       render(conn, "verify_invite_token.json",
         organisation: organisation,

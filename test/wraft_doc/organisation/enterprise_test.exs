@@ -4,8 +4,8 @@ defmodule WraftDoc.EnterpriseTest do
   import Mox
   @moduletag :enterprise
 
-  alias WraftDoc.Account.AuthToken
   alias WraftDoc.Account.Role
+  alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
