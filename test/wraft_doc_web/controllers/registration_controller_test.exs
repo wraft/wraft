@@ -4,8 +4,8 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
 
   @moduletag :controller
 
-  alias WraftDoc.Account.AuthToken
   alias WraftDoc.Account.User
+  alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Repo
 
   @valid_attrs %{

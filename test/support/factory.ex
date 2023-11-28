@@ -5,7 +5,6 @@ defmodule WraftDoc.Factory do
   use ExMachina.Ecto, repo: WraftDoc.Repo
 
   alias WraftDoc.Account.Activity
-  alias WraftDoc.Account.AuthToken
   alias WraftDoc.Account.Country
   alias WraftDoc.Account.Profile
   alias WraftDoc.Account.Role
@@ -15,6 +14,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
   alias WraftDoc.Authorization.Permission
+  alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.BlockTemplate

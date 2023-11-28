@@ -1,9 +1,12 @@
 defmodule WraftDocWeb.Api.V1.RegistrationController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
+
   import Ecto.Query, warn: false
+
   alias WraftDoc.Account
   alias WraftDoc.Account.User
+  alias WraftDoc.AuthTokens
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -70,7 +73,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
                Account.registration(params),
              %{user: user, tokens: [access_token: access_token, refresh_token: refresh_token]} <-
                Account.authenticate(%{user: user, password: params["password"]}) do
-          Account.create_token_and_send_email(params["email"])
+          AuthTokens.create_token_and_send_email(params["email"])
 
           conn
           |> put_status(:created)

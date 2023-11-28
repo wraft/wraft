@@ -3,8 +3,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
   import WraftDoc.Factory
 
-  alias WraftDoc.Account.AuthToken
   alias WraftDoc.Account.User
+  alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.InvitedUsers
   alias WraftDoc.InvitedUsers.InvitedUser

@@ -11,6 +11,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
+  alias WraftDoc.AuthTokens
   alias WraftDoc.Client.Razorpay
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
@@ -404,7 +405,7 @@ defmodule WraftDoc.Enterprise do
     |> Multi.run(:assign_role, fn _repo, %{get_org: %{role_ids: role_ids}} ->
       create_default_worker_job(%{user_id: user.id, roles: role_ids}, "assign_role")
     end)
-    |> Multi.run(:delete_auth_token, fn _, _ -> Account.delete_auth_token(token) end)
+    |> Multi.run(:delete_auth_token, fn _, _ -> AuthTokens.delete_auth_token(token) end)
     |> Repo.transaction()
     |> case do
       {:ok, %{get_org: %{organisation: organisation}}} ->
@@ -533,7 +534,7 @@ defmodule WraftDoc.Enterprise do
       })
 
     Task.start_link(fn ->
-      Account.insert_auth_token!(user, %{value: token, token_type: "invite"})
+      AuthTokens.insert_auth_token!(user, %{value: token, token_type: "invite"})
     end)
 
     %{org_name: org_name, user_name: name, email: email, token: token}

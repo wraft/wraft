@@ -11,8 +11,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
   require Logger
 
   alias WraftDoc.Account
-  alias WraftDoc.Account.AuthToken
   alias WraftDoc.Account.User
+  alias WraftDoc.AuthTokens
+  alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise
   alias WraftDocWeb.Guardian
 
@@ -555,7 +556,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   @spec generate_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   # TODO - Update tests to check correct mail is send
   def generate_token(conn, params) do
-    with %AuthToken{} = auth_token <- Account.create_password_token(params) do
+    with %AuthToken{} = auth_token <- AuthTokens.create_password_token(params) do
       if params["first_time_setup"] do
         Account.send_password_set_mail(auth_token)
       else
@@ -586,7 +587,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
   @spec verify_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def verify_token(conn, %{"token" => token}) do
-    with %AuthToken{} = auth_token <- Account.check_token(token, :password_verify) do
+    with %AuthToken{} = auth_token <- AuthTokens.check_token(token, :password_verify) do
       render(conn, "check_token.json", token: auth_token.value)
     end
   end
@@ -715,9 +716,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
   @spec resend_email_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def resend_email_token(conn, %{"token" => token}) do
-    with %AuthToken{} = auth_token <- Account.get_auth_token(token, :email_verify),
+    with %AuthToken{} = auth_token <- AuthTokens.get_auth_token(token, :email_verify),
          %User{} = user <- Account.get_user(auth_token.user_id),
-         {:ok, %Oban.Job{}} <- Account.create_token_and_send_email(user.email) do
+         {:ok, %Oban.Job{}} <- AuthTokens.create_token_and_send_email(user.email) do
       conn
       |> put_resp_header("content-type", "application/json")
       |> send_resp(200, Jason.encode!(%{info: "Success"}))
@@ -742,7 +743,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
   @spec verify_email_token(Plug.Conn.t(), map) :: Plug.Conn.t()
   def verify_email_token(conn, %{"token" => token}) do
-    with {:ok, %{email: email}} <- Account.check_token(token, :email_verify),
+    with {:ok, %{email: email}} <- AuthTokens.check_token(token, :email_verify),
          %User{} = user <- Account.get_user_by_email(email),
          {:ok, %User{email_verify: true} = user} <- Account.update_email_status(user) do
       render(conn, "check_email_token.json", verification_status: user.email_verify)
@@ -879,7 +880,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
   @spec set_password(Plug.Conn.t(), map) :: Plug.Conn.t()
   def set_password(conn, %{"token" => token} = params) do
-    with {:ok, email} <- Account.check_token(token, :set_password),
+    with {:ok, email} <- AuthTokens.check_token(token, :set_password),
          %User{} = user <- Account.set_password(email, params),
          {:ok, %User{email_verify: true} = _user} <- Account.update_email_status(user) do
       conn
