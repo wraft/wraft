@@ -4,6 +4,7 @@ defmodule WraftDocWeb.WaitingListAdmin do
   """
 
   alias WraftDoc.Account
+  alias WraftDoc.AuthTokens
   alias WraftDoc.WaitingLists.WaitingList
   alias WraftDoc.Workers.EmailWorker
 
@@ -64,6 +65,6 @@ defmodule WraftDocWeb.WaitingListAdmin do
   def create_set_password_token(user) do
     token = WraftDoc.create_phx_token("set_password", user.email, max_age: :infinity)
     params = %{value: token, token_type: "set_password"}
-    Account.insert_auth_token!(user, params)
+    AuthTokens.insert_auth_token!(user, params)
   end
 end

@@ -125,7 +125,7 @@ defmodule WraftDocWeb.Email.EmailTest do
           "#{System.get_env("WRAFT_URL")}/users/signup?email=#{@test_email}&name=#{@name}"
         )
 
-      email = Email.waiting_list_approved(@test_email, @name)
+      email = Email.waiting_list_approved(@test_email, @name, "token")
       Test.deliver(email, [])
 
       assert_email_sent()
