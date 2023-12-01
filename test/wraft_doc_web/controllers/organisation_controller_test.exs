@@ -111,12 +111,27 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   describe "delete/2" do
     test "deletes organisation and render the details", %{conn: conn} do
       [organisation] = conn.assigns.current_user.owned_organisations
-      count_before = Organisation |> Repo.all() |> length
-      conn = delete(conn, Routes.v1_organisation_path(conn, :delete, %{}))
 
+      delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
+
+      insert(:auth_token,
+        value: delete_code,
+        token_type: "delete_organisation",
+        user: conn.assigns.current_user
+      )
+
+      count_before = Organisation |> Repo.all() |> length
+      conn = delete(conn, Routes.v1_organisation_path(conn, :delete, %{"code" => delete_code}))
+
+      assert count_before - 1 == Organisation |> Repo.all() |> length
       assert Organisation |> Repo.all() |> length == count_before - 1
       assert json_response(conn, 200)["name"] == organisation.name
       assert json_response(conn, 200)["address"] == organisation.address
+    end
+
+    test "return error if the token is invalid", %{conn: conn} do
+      conn = delete(conn, Routes.v1_organisation_path(conn, :delete, %{"token" => "invalid"}))
+      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
     end
 
     test "return error if user is not member of the organisation" do
@@ -156,6 +171,52 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
       conn = delete(conn, Routes.v1_organisation_path(conn, :delete, %{}))
       assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+    end
+  end
+
+  describe "request_deletion/2" do
+    test "sends the delete request mail to the user's email", %{conn: conn} do
+      conn = post(conn, Routes.v1_organisation_path(conn, :request_deletion, %{}))
+      assert json_response(conn, 200)["info"] == "Delete token email sent!"
+    end
+
+    test "return error on attempting to request deletion of personal organisation" do
+      user = insert(:user_with_personal_organisation)
+      [organisation] = user.owned_organisations
+      insert(:user_organisation, user: user, organisation: organisation)
+      role = WraftDoc.Factory.insert(:role, organisation: organisation)
+      WraftDoc.Factory.insert(:user_role, user: user, role: role)
+
+      {:ok, token, _} =
+        WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: organisation.id})
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> Plug.Conn.put_req_header("accept", "application/json")
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+        |> Plug.Conn.assign(:current_user, user)
+
+      conn = post(conn, Routes.v1_organisation_path(conn, :request_deletion, %{}))
+      assert json_response(conn, 422)["errors"] == "Can't delete personal organisation"
+    end
+
+    test "return error if user is not member of the organisation" do
+      user = insert(:user_with_personal_organisation)
+      [organisation] = user.owned_organisations
+      role = WraftDoc.Factory.insert(:role, organisation: organisation)
+      WraftDoc.Factory.insert(:user_role, user: user, role: role)
+
+      {:ok, token, _} =
+        WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: organisation.id})
+
+      conn =
+        Phoenix.ConnTest.build_conn()
+        |> Plug.Conn.put_req_header("accept", "application/json")
+        |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+        |> Plug.Conn.assign(:current_user, user)
+
+      conn = post(conn, Routes.v1_organisation_path(conn, :request_deletion, %{}))
+      assert json_response(conn, 401)["errors"] == "User is not a member of this organisation!"
     end
   end
 

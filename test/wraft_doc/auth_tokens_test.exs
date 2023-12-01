@@ -4,6 +4,7 @@ defmodule WraftDoc.AuthTokensTest do
 
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.Workers.EmailWorker
 
   describe "insert_auth_token!/2" do
     test "inserts new auth token with valid params" do
@@ -194,6 +195,101 @@ defmodule WraftDoc.AuthTokensTest do
     test "test when token does not exist" do
       response = AuthTokens.check_token("invalid_token", :password_verify)
       assert response == {:error, :fake}
+    end
+  end
+
+  describe "generate_delete_token_and_send_email/2" do
+    test "generate delete token and send email" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+      {:ok, job} = AuthTokens.generate_delete_token_and_send_email(user, organisation)
+
+      [auth_token] = Repo.all(AuthToken)
+
+      assert job.args == %{
+               email: user.email,
+               organisation_name: organisation.name,
+               user_name: user.name,
+               delete_code: auth_token.value
+             }
+
+      assert_enqueued(
+        worker: EmailWorker,
+        tags: ["organisation_delete_code"],
+        args: %{
+          email: job.args.email,
+          delete_code: job.args.delete_code,
+          organisation_name: job.args.organisation_name,
+          user_name: job.args.user_name
+        },
+        queue: :mailer
+      )
+    end
+
+    test "two delete codes are not allowed to persist at the same time hence avoiding the possiblity for collision" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+
+      # Adding an additional delete code.
+      delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
+      insert(:auth_token, value: delete_code, token_type: "delete_organisation", user: user)
+
+      {:ok, job} = AuthTokens.generate_delete_token_and_send_email(user, organisation)
+
+      # Only one delete code exist at any given point of time.
+      [auth_token] = Repo.all(AuthToken)
+
+      assert job.args == %{
+               email: user.email,
+               organisation_name: organisation.name,
+               user_name: user.name,
+               delete_code: auth_token.value
+             }
+
+      assert_enqueued(
+        worker: EmailWorker,
+        tags: ["organisation_delete_code"],
+        args: %{
+          email: job.args.email,
+          delete_code: job.args.delete_code,
+          organisation_name: job.args.organisation_name,
+          user_name: job.args.user_name
+        },
+        queue: :mailer
+      )
+    end
+
+    test "return error for invalid input" do
+      assert {:error, :fake} = AuthTokens.generate_delete_token_and_send_email(nil, nil)
+    end
+  end
+
+  describe "verify_delete_token/2" do
+    test "returns token on successful verification" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+      insert(:user_organisation, user: user, organisation: organisation)
+
+      delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
+
+      insert(:auth_token, value: delete_code, token_type: "delete_organisation", user: user)
+
+      auth_token = AuthTokens.verify_delete_token(user, %{"code" => delete_code})
+
+      assert auth_token.value == delete_code
+      assert auth_token.token_type == :delete_organisation
+      assert auth_token.user_id == user.id
+    end
+
+    test "return error for invalid token" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+      insert(:user_organisation, user: user, organisation: organisation)
+      assert {:error, :fake} = AuthTokens.verify_delete_token(%{"token" => "invalid"}, user)
+    end
+
+    test "return error for invalid input" do
+      assert {:error, :fake} = AuthTokens.verify_delete_token(nil, nil)
     end
   end
 end
