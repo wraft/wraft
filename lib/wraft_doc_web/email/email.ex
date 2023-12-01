@@ -107,4 +107,24 @@ defmodule WraftDocWeb.Mailer.Email do
     <p>Wraft Admin</p>
     """)
   end
+
+  @doc """
+    Organisation Delete Code
+  """
+  def organisation_delete_code(email, delete_code, user_name, organisation_name) do
+    new()
+    |> to(email)
+    |> from({"WraftDoc", "admin@wraftdocs.com"})
+    |> subject("Wraft - Delete Organisation")
+    |> html_body("""
+    <p>Hello #{user_name},</p>
+    <p>You have requested to delete the organization #{organisation_name} on Wraft.</p>
+    <p>Please use the following delete code:</p>
+    <p>Delete Code: #{delete_code}</p>
+    <p>If you want to proceed with the deletion, enter this delete code in the appropriate field.</p>
+    <p>If you did not request this deletion, you can ignore this email and your organization will not be deleted.</p>
+    <p>Best regards,</p>
+    <p>Wraft Admin</p>
+    """)
+  end
 end

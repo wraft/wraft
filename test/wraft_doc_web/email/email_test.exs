@@ -28,7 +28,7 @@ defmodule WraftDocWeb.Email.EmailTest do
 
       assert email.html_body ==
                "Hi, #{user_name} has invited you to join #{org_name} in WraftDocs. \n
-      Click <a href=#{System.get_env("WRAFT_URL")}/users/signup?token=#{@token}>here</a> below to join."
+      Click <a href=#{System.get_env("WRAFT_URL")}/users/join_invite?token=#{@token}&organisation=#{org_name}>here</a> below to join."
     end
 
     test "return email not send if not delivered" do
@@ -108,7 +108,7 @@ defmodule WraftDocWeb.Email.EmailTest do
                "
       <h1>Verify your email address<h1>
       <h3>To continue setting up your Wraft account, please verify that this is your email address.<h3>
-      Click <a href=#{System.get_env("WRAFT_URL")}/user/verify_email_token/#{@token}>Verify email address</a>"
+      Click <a href=#{System.get_env("WRAFT_URL")}/users/join_invite/verify_email/#{@token}>Verify email address</a>"
     end
 
     test "return email not send if not delivered" do
@@ -121,11 +121,9 @@ defmodule WraftDocWeb.Email.EmailTest do
   describe "send email on waiting list approval" do
     test "return email sent if mail delivered" do
       registration_url =
-        URI.encode(
-          "#{System.get_env("WRAFT_URL")}/users/signup?email=#{@test_email}&name=#{@name}"
-        )
+        URI.encode("#{System.get_env("WRAFT_URL")}/users/login/set_password?token=#{@token}")
 
-      email = Email.waiting_list_approved(@test_email, @name, "token")
+      email = Email.waiting_list_approved(@test_email, @name, @token)
       Test.deliver(email, [])
 
       assert_email_sent()
@@ -137,7 +135,7 @@ defmodule WraftDocWeb.Email.EmailTest do
     end
 
     test "return email not send if not delivered" do
-      Email.waiting_list_approved(@test_email, @name)
+      Email.waiting_list_approved(@test_email, @name, "token")
 
       refute_email_sent()
     end
@@ -159,6 +157,27 @@ defmodule WraftDocWeb.Email.EmailTest do
 
     test "return email not send if not delivered" do
       Email.waiting_list_join(@test_email, @name)
+
+      refute_email_sent()
+    end
+  end
+
+  describe "send email on organisation delete code" do
+    test "return email sent if mail delivered" do
+      email = Email.organisation_delete_code(@test_email, "code", @name, "org_name")
+      Test.deliver(email, [])
+
+      assert_email_sent()
+      assert email.from == {"WraftDoc", "admin@wraftdocs.com"}
+      assert email.subject == "Wraft - Delete Organisation"
+      assert elem(List.last(email.to), 1) == @test_email
+
+      assert email.html_body =~
+               "If you did not request this deletion, you can ignore this email and your organization will not be deleted."
+    end
+
+    test "return email not send if not delivered" do
+      Email.organisation_delete_code(@test_email, "code", @name, "org_name")
 
       refute_email_sent()
     end

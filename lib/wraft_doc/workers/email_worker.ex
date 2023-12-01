@@ -93,6 +93,24 @@ defmodule WraftDoc.Workers.EmailWorker do
 
   def perform(%Job{
         args: %{
+          "email" => email,
+          "delete_code" => delete_code,
+          "user_name" => user_name,
+          "organisation_name" => organisation_name
+        },
+        tags: ["organisation_delete_code"]
+      }) do
+    Logger.info("Organisation delete code mailer job started.")
+
+    email
+    |> Email.organisation_delete_code(delete_code, user_name, organisation_name)
+    |> Mailer.deliver()
+
+    Logger.info("Organisation delete code mailer job end.")
+  end
+
+  def perform(%Job{
+        args: %{
           "token" => token,
           "email" => email
         }
