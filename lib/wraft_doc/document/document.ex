@@ -386,7 +386,7 @@ defmodule WraftDoc.Document do
     |> where(^content_type_filter_by_name(params))
     |> where(^content_type_filter_by_prefix(params))
     |> order_by([ct], ^content_type_sort(params))
-    |> preload([:layout, :flow, {:fields, :field_type}])
+    |> preload([:layout, :flow, {:theme, :assets}, {:fields, :field_type}])
     |> Repo.paginate(params)
   end
 
