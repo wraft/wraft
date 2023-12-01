@@ -193,6 +193,7 @@ defmodule WraftDocWeb.Router do
       scope "/organisations" do
         resources("/", OrganisationController, only: [:create, :update, :show])
         delete("/", OrganisationController, :delete)
+        post("/request_deletion", OrganisationController, :request_deletion)
         get("/:id/members", OrganisationController, :members)
         # Invite new user
         post("/users/invite", OrganisationController, :invite)

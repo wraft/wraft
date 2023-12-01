@@ -94,7 +94,7 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
     test "waiting list approval mailer job" do
       {result, log} =
         with_log(fn ->
-          perform_job(EmailWorker, %{"name" => @name, "email" => @email},
+          perform_job(EmailWorker, %{"name" => @name, "email" => @email, "token" => "token"},
             tags: ["waiting_list_acceptance"]
           )
         end)
@@ -115,6 +115,31 @@ defmodule WraftDoc.Workers.EmailWorkerTest do
       assert :ok == result
       assert log =~ "Waiting list join mailer job started."
       assert log =~ "Waiting list join mailer job end."
+    end
+
+    test "organisation delete token mailer job" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+
+      delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
+
+      {result, log} =
+        with_log(fn ->
+          perform_job(
+            EmailWorker,
+            %{
+              "email" => @email,
+              "delete_code" => delete_code,
+              "user_name" => user.name,
+              "organisation_name" => organisation.name
+            },
+            tags: ["organisation_delete_code"]
+          )
+        end)
+
+      assert :ok == result
+      assert log =~ "Organisation delete code mailer job started."
+      assert log =~ "Organisation delete code mailer job end."
     end
   end
 end

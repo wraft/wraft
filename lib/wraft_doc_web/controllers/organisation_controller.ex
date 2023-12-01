@@ -18,6 +18,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   alias WraftDoc.Account
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.AuthTokens
+  alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.InvitedUsers
@@ -166,6 +167,32 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
           end
 
           example(%{info: "User removed from the organisation.!"})
+        end,
+      DeleteOrganisationRequest:
+        swagger_schema do
+          title("Delete Confirmation Token")
+          description("Request body to delete an organisation")
+
+          properties do
+            token(:string, "Token", required: true)
+          end
+
+          example(%{
+            code: "123456"
+          })
+        end,
+      DeletionRequestResponse:
+        swagger_schema do
+          title("Delete Confirmation Code")
+          description("Delete Confirmation Code Response")
+
+          properties do
+            info(:string, "Response Info")
+          end
+
+          example(%{
+            info: "Delete token email sent!"
+          })
         end,
       VerifyOrganisationInviteTokenResponse:
         swagger_schema do
@@ -332,6 +359,15 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     operation_id("delete_organisation")
     tag("Organisation")
 
+    parameters do
+      delete_token(
+        :body,
+        Schema.ref(:DeleteOrganisationRequest),
+        "Deletion Confirmation code",
+        required: true
+      )
+    end
+
     response(200, "Ok", Schema.ref(:Organisation))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
@@ -339,15 +375,59 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, _params) do
-    %{current_org_id: organisation_id, email: email} = conn.assigns.current_user
+  def delete(conn, params) do
+    %{current_org_id: organisation_id, email: email} = current_user = conn.assigns.current_user
 
     with {:error, :already_member} <-
            Enterprise.already_member(organisation_id, email),
+         %AuthToken{} = _token <- AuthTokens.verify_delete_token(current_user, params),
          %Organisation{} = organisation <- Enterprise.get_organisation(organisation_id),
          {:ok, %Organisation{}} <- Enterprise.delete_organisation(organisation) do
       render(conn, "organisation.json", organisation: organisation)
     else
+      :ok ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(401, Jason.encode!(%{errors: "User is not a member of this organisation!"}))
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
+    Confirmation code to delete an organisation
+  """
+  swagger_path :request_deletion do
+    post("/organisations/request_deletion")
+    summary("Organisation Deletion Code")
+    description("Request Organisation Deletion Code")
+    operation_id("request_organisation_deletion")
+    tag("Organisation")
+
+    response(200, "Ok", Schema.ref(:DeletionRequestResponse))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  @spec request_deletion(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def request_deletion(conn, _params) do
+    %{current_org_id: organisation_id, email: email} = current_user = conn.assigns.current_user
+
+    with {:error, :already_member} <- Enterprise.already_member(organisation_id, email),
+         %Organisation{name: name} = organisation when name != "Personal" <-
+           Enterprise.get_organisation(organisation_id),
+         {:ok, %Oban.Job{}} <-
+           AuthTokens.generate_delete_token_and_send_email(current_user, organisation) do
+      conn
+      |> put_resp_content_type("application/json")
+      |> send_resp(200, Jason.encode!(%{info: "Delete token email sent!"}))
+    else
+      %Organisation{name: "Personal"} ->
+        body = Jason.encode!(%{errors: "Can't delete personal organisation"})
+        conn |> put_resp_content_type("application/json") |> send_resp(422, body)
+
       :ok ->
         conn
         |> put_resp_content_type("application/json")

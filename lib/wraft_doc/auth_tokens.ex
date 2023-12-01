@@ -9,7 +9,9 @@ defmodule WraftDoc.AuthTokens do
   alias WraftDoc.Account
   alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Repo
+  alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Endpoint
 
   @doc """
@@ -130,6 +132,49 @@ defmodule WraftDoc.AuthTokens do
   end
 
   @doc """
+  Verify Delete Organisation Token
+  """
+  @spec verify_delete_token(map(), User.t()) :: AuthToken.t() | {:error, :fake}
+  def verify_delete_token(%User{} = user, %{"code" => delete_code} = _params) do
+    case get_auth_token(user.id, delete_code, :delete_organisation) do
+      %AuthToken{} = token ->
+        delete_auth_token!(token)
+
+      _ ->
+        {:error, :fake}
+    end
+  end
+
+  def verify_delete_token(_, _), do: {:error, :fake}
+
+  @doc """
+  Generate Delete Organisation Token
+  """
+  @spec generate_delete_token_and_send_email(User.t(), Organisation.t()) :: {:ok, Oban.Job.t()}
+  def generate_delete_token_and_send_email(
+        %User{name: user_name, email: email} = user,
+        %Organisation{name: organisation_name} = _organisation
+      ) do
+    delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
+
+    params = %{value: delete_code, token_type: "delete_organisation"}
+
+    delete_auth_token(user.id, "delete_organisation")
+    insert_auth_token!(user, params)
+
+    %{
+      email: email,
+      delete_code: delete_code,
+      user_name: user_name,
+      organisation_name: organisation_name
+    }
+    |> EmailWorker.new(queue: "mailer", tags: ["organisation_delete_code"])
+    |> Oban.insert()
+  end
+
+  def generate_delete_token_and_send_email(_, _), do: {:error, :fake}
+
+  @doc """
   Validate the phoenix token.
   """
   @spec check_token(String.t(), atom()) :: AuthToken.t() | {:ok, any()} | {:error, atom()}
@@ -213,6 +258,23 @@ defmodule WraftDoc.AuthTokens do
         tok in AuthToken,
         where: tok.value == ^token,
         where: tok.token_type == ^token_type,
+        select: tok
+      )
+
+    Repo.one(query)
+  end
+
+  @doc """
+  Get auth token by user id, value and token type
+  """
+  @spec get_auth_token(Ecto.UUID.t(), String.t(), String.t() | atom()) :: AuthToken.t()
+  def get_auth_token(user_id, value, token_type) do
+    query =
+      from(
+        tok in AuthToken,
+        where: tok.user_id == ^user_id,
+        where: tok.token_type == ^token_type,
+        where: tok.value == ^value,
         select: tok
       )
 

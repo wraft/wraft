@@ -11,7 +11,7 @@ defmodule WraftDoc.AuthTokens.AuthToken do
     field(:value, :string)
 
     field(:token_type, Ecto.Enum,
-      values: [:password_verify, :invite, :email_verify, :set_password]
+      values: [:password_verify, :invite, :email_verify, :set_password, :delete_organisation]
     )
 
     field(:expiry_datetime, :naive_datetime)

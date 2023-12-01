@@ -496,6 +496,48 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+  Verify Delete Organisation Token
+  """
+  @spec verify_delete_token(map(), User.t()) :: :ok | {:error, :fake}
+  def verify_delete_token(
+        %{"token" => token} = _params,
+        %User{current_org_id: org_id, email: email} = _user
+      ) do
+    case AuthTokens.check_token(token, :delete_code) do
+      {:ok, %{email: ^email, organisation_id: ^org_id}} ->
+        AuthTokens.delete_auth_token(token)
+
+      _ ->
+        {:error, :fake}
+    end
+  end
+
+  def verify_delete_token(_, _), do: {:error, :fake}
+
+  @doc """
+  Generate Delete Organisation Token
+  """
+  @spec generate_delete_token_and_send_email(User.t(), Organisation.t()) :: {:ok, Oban.Job.t()}
+  def generate_delete_token_and_send_email(
+        %User{current_org_id: organisation_id, name: user_name, email: email} = user,
+        %Organisation{name: organisation_name} = _organisation
+      ) do
+    token =
+      WraftDoc.create_phx_token("delete_code", %{
+        email: email,
+        organisation_id: organisation_id
+      })
+
+    params = %{value: token, token_type: "delete_code"}
+
+    AuthTokens.insert_auth_token!(user, params)
+
+    %{email: email, token: token, user_name: user_name, organisation_name: organisation_name}
+    |> EmailWorker.new(queue: "mailer", tags: ["organisation_delete_code"])
+    |> Oban.insert()
+  end
+
+  @doc """
   Check if a user with the given Email ID is a member of the given organisation.
   """
   @spec already_member(Ecto.UUID.t(), String.t()) :: :ok | {:error, :already_member}
