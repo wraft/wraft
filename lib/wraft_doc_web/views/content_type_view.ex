@@ -5,6 +5,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
   alias WraftDocWeb.Api.V1.FieldTypeView
   alias WraftDocWeb.Api.V1.FlowView
   alias WraftDocWeb.Api.V1.LayoutView
+  alias WraftDocWeb.Api.V1.ThemeView
   alias WraftDocWeb.Api.V1.UserView
 
   def render("create.json", %{content_type: c_type}) do
@@ -17,7 +18,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
       prefix: c_type.prefix,
       inserted_at: c_type.inserted_at,
       updated_at: c_type.updated_at,
-      theme_id: c_type.theme_id,
+      theme: render_one(c_type.theme, ThemeView, "create.json", as: :theme),
       layout: render_one(c_type.layout, LayoutView, "layout.json", as: :doc_layout),
       flow: render_one(c_type.flow, FlowView, "flow.json", as: :flow)
     }

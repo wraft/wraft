@@ -38,7 +38,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
       %{id: flow_id} = insert(:flow, organisation: organisation)
       %{id: layout_id} = insert(:layout, organisation: organisation)
-      %{id: theme_id} = insert(:theme, organisation: organisation)
+      %{id: theme_id} = theme = insert(:theme, organisation: organisation)
+
+      asset = insert(:asset, type: "theme", organisation: organisation)
+      insert(:theme_asset, theme: theme, asset: asset)
 
       params =
         Map.merge(setup_params(), %{flow_id: flow_id, layout_id: layout_id, theme_id: theme_id})
@@ -51,6 +54,16 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
 
       assert response["name"] == @valid_attrs.name
       assert response["description"] == @valid_attrs.description
+      assert response["theme"]["id"] == theme.id
+
+      assert Enum.map(
+               response["theme"]["assets"],
+               &%{
+                 id: &1["id"],
+                 name: &1["name"],
+                 type: &1["type"]
+               }
+             ) == [%{id: asset.id, name: asset.name, type: "theme"}]
 
       assert Enum.map(
                response["fields"],
