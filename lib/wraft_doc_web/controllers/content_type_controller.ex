@@ -219,7 +219,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
-      ContentTypeAndLayoutAndFlow:
+      ContentTypeAndLayoutAndFlowAndTheme:
         swagger_schema do
           title("Content Type, Layout and its flow")
 
@@ -236,6 +236,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             color(:string, "Hex code of color")
             layout(Schema.ref(:Layout))
             flow(Schema.ref(:Flow))
+            theme(Schema.ref(:Theme))
             inserted_at(:string, "When was the user inserted", format: "ISO-8601")
             updated_at(:string, "When was the user last updated", format: "ISO-8601")
           end
@@ -250,6 +251,19 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             ],
             prefix: "OFFLET",
             color: "#fffff",
+            theme: %{
+              id: "1232148nb3478",
+              name: "Official Letter Theme",
+              font: "Malery",
+              typescale: %{h1: "10", p: "6", h2: "8"},
+              file: "/malory.css",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z",
+              assets: [
+                "89face43-c408-4002-af3a-e8b2946f800a",
+                "c70c6c80-d3ba-468c-9546-a338b0cf8d1c"
+              ]
+            },
             layout: %{
               id: "1232148nb3478",
               name: "Official Letter",
@@ -277,7 +291,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           title("Content Types and their Layouts and flow")
           description("All content types that have been created and their layouts and flow")
           type(:array)
-          items(Schema.ref(:ContentTypeAndLayoutAndFlow))
+          items(Schema.ref(:ContentTypeAndLayoutAndFlowAndTheme))
         end,
       ContentTypeAndLayoutAndFlowAndStates:
         swagger_schema do
@@ -519,7 +533,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
       )
     end
 
-    response(200, "Ok", Schema.ref(:ContentTypeAndLayoutAndFlow))
+    response(200, "Ok", Schema.ref(:ContentTypeAndLayoutAndFlowAndTheme))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
