@@ -634,7 +634,10 @@ defmodule WraftDoc.DocumentTest do
       [organisation] = user.owned_organisations
       %{id: layout_id} = insert(:layout, organisation: organisation)
       %{id: flow_id} = insert(:flow, organisation: organisation)
-      %{id: theme_id} = insert(:theme, organisation: organisation)
+      %{id: theme_id} = theme = insert(:theme, organisation: organisation)
+
+      asset = insert(:asset, type: "theme", organisation: organisation)
+      insert(:theme_asset, theme: theme, asset: asset)
 
       fields = [
         %{
@@ -659,13 +662,17 @@ defmodule WraftDoc.DocumentTest do
           "layout_id" => layout_id
         })
 
-      content_type = Document.create_content_type(user, param)
+      %{theme: %{assets: [theme_asset]}} =
+        content_type = Document.create_content_type(user, param)
 
       assert content_type.name == @valid_content_type_attrs["name"]
       assert content_type.description == @valid_content_type_attrs["description"]
       assert content_type.color == @valid_content_type_attrs["color"]
       assert content_type.prefix == @valid_content_type_attrs["prefix"]
       assert content_type.id
+
+      assert content_type.theme.id == theme_id
+      assert theme_asset.id == asset.id
 
       assert Enum.map(
                content_type.fields,
