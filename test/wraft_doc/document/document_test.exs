@@ -961,8 +961,13 @@ defmodule WraftDoc.DocumentTest do
     test "show content_type shows the content_type data" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
+
       layout = insert(:layout, creator: user, organisation: organisation)
       flow = insert(:flow, creator: user, organisation: organisation)
+
+      theme = insert(:theme, organisation: organisation)
+      asset = insert(:asset, type: "theme", organisation: organisation)
+      insert(:theme_asset, theme: theme, asset: asset)
 
       content_type =
         insert(
@@ -970,6 +975,7 @@ defmodule WraftDoc.DocumentTest do
           creator: user,
           layout: layout,
           flow: flow,
+          theme: theme,
           organisation: organisation
         )
 
@@ -979,6 +985,7 @@ defmodule WraftDoc.DocumentTest do
       assert s_content_type.color == content_type.color
       assert s_content_type.prefix == content_type.prefix
       assert s_content_type.layout.name == layout.name
+      assert s_content_type.theme.name == theme.name
     end
   end
 

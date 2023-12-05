@@ -419,7 +419,12 @@ defmodule WraftDoc.Document do
           %ContentType{layout: Layout.t(), creator: User.t()} | nil
   def show_content_type(user, id) do
     with %ContentType{} = content_type <- get_content_type(user, id) do
-      Repo.preload(content_type, [:layout, :creator, [{:fields, :field_type}, {:flow, :states}]])
+      Repo.preload(content_type, [
+        :layout,
+        :creator,
+        {:theme, :assets},
+        [{:fields, :field_type}, {:flow, :states}]
+      ])
     end
   end
 
@@ -510,7 +515,7 @@ defmodule WraftDoc.Document do
         Repo.preload(content_type, [
           :layout,
           :creator,
-          :theme,
+          {:theme, :assets},
           [{:flow, :states}, {:fields, :field_type}]
         ])
     end
