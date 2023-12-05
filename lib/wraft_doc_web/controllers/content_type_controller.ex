@@ -260,8 +260,22 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z",
               assets: [
-                "89face43-c408-4002-af3a-e8b2946f800a",
-                "c70c6c80-d3ba-468c-9546-a338b0cf8d1c"
+                %{
+                  id: "c70c6c80-d3ba-468c-9546-a338b0cf8d1c",
+                  name: "Asset",
+                  type: "theme",
+                  file: "Roboto-Bold.ttf",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                %{
+                  id: "89face43-c408-4002-af3a-e8b2946f800a",
+                  name: "Asset",
+                  type: "theme",
+                  file: "Roboto-Regular.ttf",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                }
               ]
             },
             layout: %{
@@ -359,7 +373,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           description("API to show a content type and all its details")
 
           properties do
-            content_type(Schema.ref(:ContentTypeAndLayoutAndFlowAndStates))
+            content_type(Schema.ref(:ContentTypeAndLayoutAndFlowAndTheme))
             creator(Schema.ref(:User))
           end
 
@@ -384,6 +398,33 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
                     id: "1232148nb3478",
                     state: "published",
                     order: 1
+                  }
+                ]
+              },
+              theme: %{
+                id: "1232148nb3478",
+                name: "Official Letter Theme",
+                font: "Malery",
+                typescale: %{h1: "10", p: "6", h2: "8"},
+                file: "/malory.css",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z",
+                assets: [
+                  %{
+                    id: "c70c6c80-d3ba-468c-9546-a338b0cf8d1c",
+                    name: "Asset",
+                    type: "theme",
+                    file: "Roboto-Bold.ttf",
+                    updated_at: "2020-01-21T14:00:00Z",
+                    inserted_at: "2020-02-21T14:00:00Z"
+                  },
+                  %{
+                    id: "89face43-c408-4002-af3a-e8b2946f800a",
+                    name: "Asset",
+                    type: "theme",
+                    file: "Roboto-Regular.ttf",
+                    updated_at: "2020-01-21T14:00:00Z",
+                    inserted_at: "2020-02-21T14:00:00Z"
                   }
                 ]
               },
