@@ -22,7 +22,7 @@ defmodule WraftDoc.AuthTokens.AuthToken do
 
   def changeset(token, attrs \\ %{}) do
     token
-    |> cast(attrs, [:value, :token_type, :user_id])
+    |> cast(attrs, [:value, :token_type, :user_id, :expiry_datetime])
     |> validate_required([:value, :token_type])
   end
 end
