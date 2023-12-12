@@ -115,7 +115,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
 
       insert(:auth_token,
-        value: delete_code,
+        value: "#{organisation.id}:#{delete_code}",
         token_type: "delete_organisation",
         user: conn.assigns.current_user
       )

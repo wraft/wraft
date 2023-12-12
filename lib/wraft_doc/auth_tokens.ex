@@ -134,9 +134,12 @@ defmodule WraftDoc.AuthTokens do
   @doc """
   Verify Delete Organisation Token
   """
-  @spec verify_delete_token(map(), User.t()) :: AuthToken.t() | {:error, :fake}
-  def verify_delete_token(%User{} = user, %{"code" => delete_code} = _params) do
-    case get_auth_token(user.id, delete_code, :delete_organisation) do
+  @spec verify_delete_token(User.t(), map()) ::
+          AuthToken.t() | {:error, :fake} | {:error, :expired}
+  def verify_delete_token(user, %{"code" => code}) do
+    case get_auth_token("#{user.current_org_id}:#{code}", :delete_organisation, %{
+           "user_id" => user.id
+         }) do
       %AuthToken{} = token ->
         delete_auth_token!(token)
 
@@ -151,28 +154,35 @@ defmodule WraftDoc.AuthTokens do
   Generate Delete Organisation Token
   """
   @spec generate_delete_token_and_send_email(User.t(), Organisation.t()) :: {:ok, Oban.Job.t()}
-  def generate_delete_token_and_send_email(
-        %User{name: user_name, email: email} = user,
-        %Organisation{name: organisation_name} = _organisation
-      ) do
-    delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
-
-    params = %{value: delete_code, token_type: "delete_organisation"}
+  def generate_delete_token_and_send_email(%User{} = user, %Organisation{} = organisation) do
+    params = build_params(organisation.id)
 
     delete_auth_token(user.id, "delete_organisation")
     insert_auth_token!(user, params)
 
+    delete_code = params.value |> String.split(":") |> List.last()
+
     %{
-      email: email,
+      email: user.email,
       delete_code: delete_code,
-      user_name: user_name,
-      organisation_name: organisation_name
+      user_name: user.name,
+      organisation_name: organisation.name
     }
     |> EmailWorker.new(queue: "mailer", tags: ["organisation_delete_code"])
     |> Oban.insert()
   end
 
   def generate_delete_token_and_send_email(_, _), do: {:error, :fake}
+
+  defp build_params(organisation_id) do
+    delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
+
+    %{
+      value: "#{organisation_id}:#{delete_code}",
+      token_type: "delete_organisation",
+      expiry_datetime: NaiveDateTime.add(NaiveDateTime.utc_now(), 10 * 60, :second)
+    }
+  end
 
   @doc """
   Validate the phoenix token.
@@ -252,34 +262,25 @@ defmodule WraftDoc.AuthTokens do
     end
   end
 
-  def get_auth_token(token, token_type) do
-    query =
-      from(
-        tok in AuthToken,
-        where: tok.value == ^token,
-        where: tok.token_type == ^token_type,
-        select: tok
-      )
-
-    Repo.one(query)
+  @spec get_auth_token(String.t(), atom(), map()) :: AuthToken.t()
+  def get_auth_token(value, token_type, params \\ %{}) do
+    AuthToken
+    |> where([t], t.value == ^value)
+    |> where([t], t.token_type == ^token_type)
+    |> where(^auth_token_filter(params))
+    |> where([t], ^maybe_check_expiry(token_type))
+    |> Repo.one()
   end
 
-  @doc """
-  Get auth token by user id, value and token type
-  """
-  @spec get_auth_token(Ecto.UUID.t(), String.t(), String.t() | atom()) :: AuthToken.t()
-  def get_auth_token(user_id, value, token_type) do
-    query =
-      from(
-        tok in AuthToken,
-        where: tok.user_id == ^user_id,
-        where: tok.token_type == ^token_type,
-        where: tok.value == ^value,
-        select: tok
-      )
+  defp auth_token_filter(%{"user_id" => user_id} = _params),
+    do: dynamic([t], t.user_id == ^user_id)
 
-    Repo.one(query)
-  end
+  defp auth_token_filter(_), do: true
+
+  defp maybe_check_expiry(token_type) when token_type == :delete_organisation,
+    do: dynamic([t], ^NaiveDateTime.utc_now() < t.expiry_datetime)
+
+  defp maybe_check_expiry(_), do: true
 
   def phoenix_token_verify(token, secret, opts) do
     {:ok, decoded_token} = Base.url_decode64(token)
