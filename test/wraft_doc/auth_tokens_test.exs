@@ -206,11 +206,13 @@ defmodule WraftDoc.AuthTokensTest do
 
       [auth_token] = Repo.all(AuthToken)
 
+      [_, delete_code] = String.split(auth_token.value, ":")
+
       assert job.args == %{
                email: user.email,
                organisation_name: organisation.name,
                user_name: user.name,
-               delete_code: auth_token.value
+               delete_code: delete_code
              }
 
       assert_enqueued(
@@ -232,7 +234,13 @@ defmodule WraftDoc.AuthTokensTest do
 
       # Adding an additional delete code.
       delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
-      insert(:auth_token, value: delete_code, token_type: "delete_organisation", user: user)
+
+      insert(:auth_token,
+        value: "#{organisation.id}:#{delete_code}",
+        token_type: "delete_organisation",
+        user: user,
+        expiry_datetime: NaiveDateTime.add(NaiveDateTime.utc_now(), 10 * 60, :second)
+      )
 
       {:ok, job} = AuthTokens.generate_delete_token_and_send_email(user, organisation)
 
@@ -243,7 +251,7 @@ defmodule WraftDoc.AuthTokensTest do
                email: user.email,
                organisation_name: organisation.name,
                user_name: user.name,
-               delete_code: auth_token.value
+               delete_code: auth_token.value |> String.split(":") |> List.last()
              }
 
       assert_enqueued(
@@ -272,13 +280,52 @@ defmodule WraftDoc.AuthTokensTest do
 
       delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
 
-      insert(:auth_token, value: delete_code, token_type: "delete_organisation", user: user)
+      insert(:auth_token,
+        value: "#{organisation.id}:#{delete_code}",
+        token_type: "delete_organisation",
+        user: user,
+        expiry_datetime: NaiveDateTime.add(NaiveDateTime.utc_now(), 10 * 60, :second)
+      )
 
       auth_token = AuthTokens.verify_delete_token(user, %{"code" => delete_code})
 
-      assert auth_token.value == delete_code
+      assert auth_token.value == "#{organisation.id}:#{delete_code}"
       assert auth_token.token_type == :delete_organisation
       assert auth_token.user_id == user.id
+    end
+
+    test "return error if the organisation is invalid" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+      insert(:user_organisation, user: user, organisation: organisation)
+
+      delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
+
+      insert(:auth_token,
+        value: "#{Ecto.UUID.generate()}:#{delete_code}",
+        token_type: "delete_organisation",
+        user: user,
+        expiry_datetime: NaiveDateTime.add(NaiveDateTime.utc_now(), 10 * 60, :second)
+      )
+
+      assert {:error, :fake} == AuthTokens.verify_delete_token(user, %{"code" => delete_code})
+    end
+
+    test "returns error on expired token" do
+      user = insert(:user_with_organisation)
+      organisation = List.first(user.owned_organisations)
+      insert(:user_organisation, user: user, organisation: organisation)
+
+      delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
+
+      insert(:auth_token,
+        value: "#{organisation.id}:#{delete_code}",
+        token_type: "delete_organisation",
+        user: user,
+        expiry_datetime: NaiveDateTime.add(NaiveDateTime.utc_now(), -1 * 60, :second)
+      )
+
+      assert {:error, :fake} == AuthTokens.verify_delete_token(user, %{"code" => delete_code})
     end
 
     test "return error for invalid token" do
@@ -290,6 +337,107 @@ defmodule WraftDoc.AuthTokensTest do
 
     test "return error for invalid input" do
       assert {:error, :fake} = AuthTokens.verify_delete_token(nil, nil)
+    end
+  end
+
+  describe "get_auth_token/3" do
+    test "returns the auth token when valid value and token type are given" do
+      user = insert(:user_with_organisation)
+
+      auth_token =
+        insert(:auth_token,
+          value: "value",
+          token_type: "delete_organisation",
+          user: user,
+          expiry_datetime: NaiveDateTime.add(NaiveDateTime.utc_now(), 10 * 60, :second)
+        )
+
+      output_auth_token = AuthTokens.get_auth_token("value", :delete_organisation)
+
+      assert output_auth_token.id == auth_token.id
+      assert output_auth_token.value == auth_token.value
+      assert output_auth_token.token_type == auth_token.token_type
+      assert output_auth_token.user_id == auth_token.user_id
+      assert output_auth_token.expiry_datetime == auth_token.expiry_datetime
+    end
+
+    test "returns the auth token when valid value and token type are given but expiry date time is not set" do
+      user = insert(:user_with_organisation)
+
+      auth_token =
+        insert(:auth_token,
+          value: "value",
+          token_type: "password_verify",
+          user: user
+        )
+
+      output_auth_token = AuthTokens.get_auth_token("value", :password_verify)
+
+      assert output_auth_token.id == auth_token.id
+      assert output_auth_token.value == auth_token.value
+      assert output_auth_token.token_type == auth_token.token_type
+      assert output_auth_token.user_id == auth_token.user_id
+      assert output_auth_token.expiry_datetime == auth_token.expiry_datetime
+    end
+
+    test "returns the auth token when valid value, token type and user_id are given" do
+      user = insert(:user_with_organisation)
+
+      auth_token =
+        insert(:auth_token,
+          value: "value",
+          token_type: "delete_organisation",
+          user: user,
+          expiry_datetime: NaiveDateTime.add(NaiveDateTime.utc_now(), 10 * 60, :second)
+        )
+
+      output_auth_token =
+        AuthTokens.get_auth_token("value", :delete_organisation, %{"user_id" => user.id})
+
+      assert output_auth_token.id == auth_token.id
+      assert output_auth_token.value == auth_token.value
+      assert output_auth_token.token_type == auth_token.token_type
+      assert output_auth_token.user_id == auth_token.user_id
+      assert output_auth_token.expiry_datetime == auth_token.expiry_datetime
+    end
+
+    test "returns the auth token when valid value, token type and invalid params are given" do
+      user = insert(:user_with_organisation)
+
+      auth_token =
+        insert(:auth_token,
+          value: "value",
+          token_type: "delete_organisation",
+          user: user,
+          expiry_datetime: NaiveDateTime.add(NaiveDateTime.utc_now(), 10 * 60, :second)
+        )
+
+      output_auth_token =
+        AuthTokens.get_auth_token("value", :delete_organisation, %{"invalid" => "invalid"})
+
+      assert output_auth_token.id == auth_token.id
+      assert output_auth_token.value == auth_token.value
+      assert output_auth_token.token_type == auth_token.token_type
+      assert output_auth_token.user_id == auth_token.user_id
+      assert output_auth_token.expiry_datetime == auth_token.expiry_datetime
+    end
+
+    test "returns nil when expired token is given" do
+      user = insert(:user_with_organisation)
+
+      insert(:auth_token,
+        value: "value",
+        token_type: "delete_organisation",
+        user: user,
+        expiry_datetime: NaiveDateTime.add(NaiveDateTime.utc_now(), -10 * 60, :second)
+      )
+
+      assert nil ==
+               AuthTokens.get_auth_token("value", :delete_organisation, %{"user_id" => user.id})
+    end
+
+    test "returns nil when token does not exist" do
+      assert nil == AuthTokens.get_auth_token("invalid", :delete_organisation)
     end
   end
 end
