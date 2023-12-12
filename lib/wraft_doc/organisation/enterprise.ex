@@ -176,6 +176,11 @@ defmodule WraftDoc.Enterprise do
   defp flow_index_sort(%{"sort" => "inserted_at_desc"}),
     do: [desc: dynamic([f], f.inserted_at)]
 
+  defp flow_index_sort(%{"sort" => "updated_at"}), do: [asc: dynamic([f], f.updated_at)]
+
+  defp flow_index_sort(%{"sort" => "updated_at_desc"}),
+    do: [desc: dynamic([f], f.updated_at)]
+
   defp flow_index_sort(_), do: []
 
   @doc """

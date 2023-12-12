@@ -225,6 +225,52 @@ defmodule WraftDoc.EnterpriseTest do
       assert List.first(flow_index.entries).name == f2.name
       assert List.last(flow_index.entries).name == f1.name
     end
+
+    test "sort by updated_at in ascending order when sort key is updated_at" do
+      user = insert(:user_with_organisation)
+
+      f1 =
+        insert(:flow,
+          updated_at: ~N[2023-04-18 11:56:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      f2 =
+        insert(:flow,
+          updated_at: ~N[2023-04-18 11:57:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      flow_index = Enterprise.flow_index(user, %{"sort" => "updated_at", page_number: 1})
+
+      assert List.first(flow_index.entries).name == f1.name
+      assert List.last(flow_index.entries).name == f2.name
+    end
+
+    test "sort by updated_at in descending order when sort key is updated_at_desc" do
+      user = insert(:user_with_organisation)
+
+      f1 =
+        insert(:flow,
+          updated_at: ~N[2023-04-18 11:56:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      f2 =
+        insert(:flow,
+          updated_at: ~N[2023-04-18 11:57:34],
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      flow_index = Enterprise.flow_index(user, %{"sort" => "updated_at_desc", page_number: 1})
+
+      assert List.first(flow_index.entries).name == f2.name
+      assert List.last(flow_index.entries).name == f1.name
+    end
   end
 
   test "show flow preloads flow with creator and states" do
