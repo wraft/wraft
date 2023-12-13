@@ -313,7 +313,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
       :sort,
       :query,
       :string,
-      "sort keys => name, name_desc, inserted_at, inserted_at_desc"
+      "sort keys => name, name_desc, inserted_at, inserted_at_desc, updated_at, updated_at_desc"
     )
 
     response(200, "Ok", Schema.ref(:FlowIndex))
