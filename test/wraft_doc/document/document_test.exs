@@ -1001,6 +1001,22 @@ defmodule WraftDoc.DocumentTest do
       assert s_content_type.color == content_type.color
       assert s_content_type.prefix == content_type.prefix
     end
+
+    test "returns an error if the content_type does not exist" do
+      user = insert(:user_with_organisation)
+
+      assert {:error, :invalid_id, "ContentType"} =
+               Document.get_content_type(user, Ecto.UUID.generate())
+    end
+
+    test "return an error for non-existent organisation and content type" do
+      user = insert(:user)
+      assert {:error, :invalid_id, "ContentType"} == Document.get_content_type(user, nil)
+    end
+
+    test "return an error for invalid input" do
+      assert {:error, :fake} == Document.get_content_type(nil, nil)
+    end
   end
 
   describe "get_content_type_from_id/1" do
@@ -2242,6 +2258,50 @@ defmodule WraftDoc.DocumentTest do
       assert content_type_field = Document.get_content_type_field(id, user)
       assert content_type_field.id == id
       assert content_type_field.content_type_id == content_type.id
+    end
+
+    test "returns error for invalid content type id" do
+      user = insert(:user_with_organisation)
+
+      assert {:error, :invalid_id, "ContentTypeField"} ==
+               Document.get_content_type_field(Ecto.UUID.generate(), user)
+    end
+
+    test "returns error for invalid user" do
+      assert {:error, :invalid_id, "ContentTypeField"} ==
+               Document.get_content_type_field(Ecto.UUID.generate(), nil)
+    end
+
+    test "returns error for non-existent content type field and non-existent organisation" do
+      assert {:error, :fake} == Document.get_content_type_field(nil, %{current_org_id: nil})
+    end
+  end
+
+  describe "get_content_type_field/1" do
+    test "returns content type field data" do
+      content_type = insert(:content_type)
+      field = insert(:field)
+
+      %{id: content_type_field_id} =
+        insert(:content_type_field, content_type: content_type, field: field)
+
+      content_type_field =
+        Document.get_content_type_field(%{
+          "content_type_id" => content_type.id,
+          "field_id" => field.id
+        })
+
+      assert content_type_field.id == content_type_field_id
+      assert content_type_field.content_type_id == content_type.id
+      assert content_type_field.field_id == field.id
+    end
+
+    test "returns nil with invalid content type id and field id" do
+      assert nil ==
+               Document.get_content_type_field(%{
+                 "content_type_id" => Ecto.UUID.generate(),
+                 "field_id" => Ecto.UUID.generate()
+               })
     end
   end
 

@@ -431,14 +431,22 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type from its UUID and user's organisation ID.
   """
-  # TODO - improve tests
-  @spec get_content_type(User.t(), Ecto.UUID.t()) :: ContentType.t() | nil
+  @spec get_content_type(User.t(), Ecto.UUID.t()) ::
+          ContentType.t() | {:error, :invalid_id, String.t()}
   def get_content_type(%User{current_org_id: org_id}, <<_::288>> = id) do
-    query = Repo.get_by(ContentType, id: id, organisation_id: org_id)
+    ContentType
+    |> Repo.get_by(id: id, organisation_id: org_id)
+    |> case do
+      %ContentType{} = content_type ->
+        Repo.preload(content_type, [
+          :layout,
+          :creator,
+          {:theme, :assets},
+          [{:flow, :states}, {:fields, :field_type}]
+        ])
 
-    case query do
-      %ContentType{} = content_type -> content_type
-      _ -> {:error, :invalid_id, "ContentType"}
+      _ ->
+        {:error, :invalid_id, "ContentType"}
     end
   end
 
@@ -478,6 +486,13 @@ defmodule WraftDoc.Document do
 
   def get_content_type_field(<<_::288>>, _), do: {:error, :invalid_id, "ContentTypeField"}
   def get_content_type_field(_, %{current_org_id: _}), do: {:error, :fake}
+
+  @doc """
+    Get Content Type field from content type id and field id
+  """
+  @spec get_content_type_field(map) :: ContentTypeField.t() | nil
+  def get_content_type_field(%{"content_type_id" => content_type_id, "field_id" => field_id}),
+    do: Repo.get_by(ContentTypeField, content_type_id: content_type_id, field_id: field_id)
 
   @doc """
   Update a content type.
