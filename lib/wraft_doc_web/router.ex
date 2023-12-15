@@ -242,7 +242,11 @@ defmodule WraftDocWeb.Router do
       resources("/blocks", BlockController, except: [:index])
 
       # Delete content type field
-      resources("/content_type_fields", ContentTypeFieldController, only: [:delete])
+      delete(
+        "/content_type/:content_type_id/field/:field_id",
+        ContentTypeFieldController,
+        :delete
+      )
 
       # All instances in an organisation
       get("/contents", InstanceController, :all_contents)
