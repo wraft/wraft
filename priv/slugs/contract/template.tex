@@ -144,7 +144,8 @@ $endif$
 \tableofcontents
 \newpage
 $body$
-
+% Add some vertical space before the QR code
+\vspace{10mm}
 $if(qrcode)$
   \includegraphics[scale=20.25]{$qrcode$}
 $endif$
