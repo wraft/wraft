@@ -29,7 +29,14 @@ defmodule WraftDoc.Workers.DefaultWorker do
     secondary_color: "#333"
   }
 
-  @wraft_layout_args %{name: "Wraft Layout", description: "Wraft Layout", slug: "pletter"}
+  @wraft_layout_args %{
+    name: "Wraft Layout",
+    description: "Wraft Layout",
+    slug: "pletter",
+    height: "40",
+    width: "40",
+    unit: "cm"
+  }
 
   @wraft_layout_asset_args %{
     name: @wraft_layout_args.name,
