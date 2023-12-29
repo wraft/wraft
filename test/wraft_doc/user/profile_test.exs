@@ -52,4 +52,22 @@ defmodule WraftDoc.Account.ProfileTest do
     assert changeset.valid?
     assert Map.has_key?(changeset.changes, :profile_pic)
   end
+
+  test "return error when file size is more than 1 MB" do
+    profile = insert(:profile)
+    user = insert(:user)
+
+    profile_pic = %Plug.Upload{
+      content_type: "image/jpg",
+      path: File.cwd!() <> "/priv/static/images/over_limit_sized_image.jpg",
+      filename: "over_limit_sized_image.jpg"
+    }
+
+    attrs = Map.merge(@valid_attrs, %{profile_pic: profile_pic, user_id: user.id})
+
+    changeset = Profile.propic_changeset(profile, attrs)
+
+    refute changeset.valid?
+    assert "is invalid" in errors_on(changeset, :profile_pic)
+  end
 end
