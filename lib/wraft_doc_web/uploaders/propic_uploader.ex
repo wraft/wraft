@@ -6,17 +6,20 @@ defmodule WraftDocWeb.PropicUploader do
 
   alias WraftDoc.Client.Minio
 
+  # Limit upload size to 1MB
+  @max_file_size 1 * 1024 * 1024
+
   @versions [:original]
   @extension_whitelist ~w(.jpg .jpeg .gif .png)
 
-  # Validate Filetype
+  # Validate File type and size
   def validate({file, _}) do
     file_extension =
       file.file_name
       |> Path.extname()
       |> String.downcase()
 
-    Enum.member?(@extension_whitelist, file_extension)
+    Enum.member?(@extension_whitelist, file_extension) && file_size(file) <= @max_file_size
   end
 
   # Change Filename
@@ -31,4 +34,6 @@ defmodule WraftDocWeb.PropicUploader do
 
   # Provide a default URL if there hasn't been a file uploaded
   def default_url(_version, _scope), do: Minio.generate_url("uploads/images/avatar.png")
+
+  defp file_size(%Waffle.File{} = file), do: file.path |> File.stat!() |> Map.get(:size)
 end

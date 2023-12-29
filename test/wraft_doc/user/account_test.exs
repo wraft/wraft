@@ -647,6 +647,22 @@ defmodule WraftDoc.AccountTest do
       assert profile.gender == "Male"
     end
 
+    test "return error on updating profile pic with a file greater than 1 MB" do
+      profile = insert(:profile, gender: "Female", dob: "1998-04-01")
+
+      profile_pic = %Plug.Upload{
+        content_type: "image/jpg",
+        path: File.cwd!() <> "/priv/static/images/over_limit_sized_image.jpg",
+        filename: "over_limit_sized_image.jpg"
+      }
+
+      params = %{name: "new name", dob: "1990-01-22", gender: "Male", profile_pic: profile_pic}
+
+      {:error, changeset} = Account.update_profile(profile.user, params)
+
+      assert %{profile_pic: ["is invalid"]} == errors_on(changeset)
+    end
+
     test "update profile with invalid attrs" do
       profile = insert(:profile)
       params = %{name: "", dob: "1990", gender: 1}

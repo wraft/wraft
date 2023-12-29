@@ -70,6 +70,27 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
       assert json_response(conn, 401) == "User does not have privilege to create an organisation!"
     end
+
+    test "return error when logo file size limit exceeded", %{conn: conn} do
+      FunWithFlags.enable(:waiting_list_organisation_create_control,
+        for_actor: %{email: conn.assigns.current_user.email}
+      )
+
+      logo = %Plug.Upload{
+        content_type: "image/jpg",
+        path: File.cwd!() <> "/priv/static/wraft_files/over_limit_sized_image.jpg",
+        filename: "over_limit_sized_image.jpg"
+      }
+
+      conn =
+        post(
+          conn,
+          Routes.v1_organisation_path(conn, :create),
+          Map.merge(@valid_attrs, %{"logo" => logo})
+        )
+
+      assert json_response(conn, 422) == %{"errors" => %{"logo" => ["is invalid"]}}
+    end
   end
 
   test "updates organisation for valid attributes", %{conn: conn} do

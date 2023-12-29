@@ -469,6 +469,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Update an Organisation
   """
+  # TODO Add logo upload
   @spec update_organisation(Organisation.t(), map) :: {:ok, Organisation.t()}
   def update_organisation(organisation, params) do
     organisation

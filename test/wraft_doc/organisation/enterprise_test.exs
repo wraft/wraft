@@ -449,6 +449,29 @@ defmodule WraftDoc.EnterpriseTest do
       assert organisation.logo.file_name == params["logo"].filename
     end
 
+    test "returns error on logo file size limit exceeded over 1 MB" do
+      user = insert(:user)
+
+      params = %{
+        "name" => "ACC Sru",
+        "legal_name" => "Acc sru pvt ltd",
+        "email" => "dikku@kodappalaya.com",
+        "address" => "Kodappalaya dikku estate",
+        "url" => "wraftdoc@customprofile.com",
+        "gstin" => "32SDFASDF65SD6F",
+        "logo" => %Plug.Upload{
+          content_type: "image/jpg",
+          path: File.cwd!() <> "/priv/static/images/over_limit_sized_image.jpg",
+          filename: "over_limit_sized_image.jpg"
+        }
+      }
+
+      {:error, changeset} = Enterprise.create_organisation(user, params)
+
+      refute changeset.valid?
+      assert %{logo: ["is invalid"]} == errors_on(changeset)
+    end
+
     test "returns error on creator_id is nil" do
       user = Map.put(insert(:user), :id, nil)
 
@@ -577,20 +600,24 @@ defmodule WraftDoc.EnterpriseTest do
     end
   end
 
-  test "update organisation updates an organisation" do
-    organisation = insert(:organisation, creator: insert(:user))
-    count_before = Organisation |> Repo.all() |> length()
+  describe "update_organisation/2" do
+    test "successfully updates organisation" do
+      organisation = insert(:organisation, creator: insert(:user))
+      count_before = Organisation |> Repo.all() |> length()
 
-    assert {:ok, organisation} =
-             Enterprise.update_organisation(organisation, %{
-               "name" => "Abc enterprices",
-               "legal_name" => "Abc pvt ltd",
-               "url" => "wraftdoc@customprofile.com"
-             })
+      {:ok, organisation} =
+        Enterprise.update_organisation(organisation, %{
+          "name" => "Abc enterprices",
+          "legal_name" => "Abc pvt ltd",
+          "url" => "wraftdoc@customprofile.com"
+        })
 
-    assert count_before == Organisation |> Repo.all() |> length()
-    assert organisation.name == "Abc enterprices"
-    assert organisation.url == "wraftdoc@customprofile.com"
+      assert count_before == Organisation |> Repo.all() |> length()
+      assert organisation.name == "Abc enterprices"
+      assert organisation.url == "wraftdoc@customprofile.com"
+    end
+
+    # TODO Add test for updating logo of the organistion
   end
 
   describe "delete_organisation/1" do

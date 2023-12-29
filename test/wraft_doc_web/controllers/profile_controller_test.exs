@@ -25,6 +25,22 @@ defmodule WraftDocWeb.Api.V1.ProfileControllerTest do
       conn = put(conn, Routes.v1_profile_path(conn, :update), %{name: ""})
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
     end
+
+    test "does not update profile and returns error on image size greater than 1 MB", %{
+      conn: conn
+    } do
+      profile_pic = %Plug.Upload{
+        content_type: "image/jpg",
+        path: File.cwd!() <> "/priv/static/images/over_limit_sized_image.jpg",
+        filename: "over_limit_sized_image.jpg"
+      }
+
+      attrs =
+        Map.merge(@valid_attrs, %{profile_pic: profile_pic, user_id: conn.assigns.current_user.id})
+
+      conn = put(conn, Routes.v1_profile_path(conn, :update), attrs)
+      assert json_response(conn, 422)["errors"]["profile_pic"] == ["is invalid"]
+    end
   end
 
   describe "show_current_profile/2" do
