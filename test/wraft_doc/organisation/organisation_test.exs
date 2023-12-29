@@ -89,8 +89,55 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
   end
 
   describe "logo_changeset/1" do
-    # Test case with valid logo file
-    # Test case with invalid file
-    # Test case with no logo
+    test "changeset with valid attributes" do
+      organisation = insert(:organisation)
+
+      logo = %Plug.Upload{
+        content_type: "image/png",
+        path: File.cwd!() <> "/priv/static/images/logo.png",
+        filename: "logo.png"
+      }
+
+      changeset = Organisation.logo_changeset(organisation, %{logo: logo})
+
+      assert changeset.valid?
+      assert Map.has_key?(changeset.changes, :logo)
+    end
+
+    test "changeset with invalid file" do
+      organisation = insert(:organisation)
+
+      logo = %Plug.Upload{
+        content_type: "application/pdf",
+        path: File.cwd!() <> "priv/static/wraft_files/letterhead.pdf",
+        filename: "letterhead.pdf"
+      }
+
+      changeset = Organisation.logo_changeset(organisation, %{logo: logo})
+
+      refute changeset.valid?
+      assert "is invalid" in errors_on(changeset, :logo)
+    end
+
+    test "changeset with no logo" do
+      organisation = insert(:organisation)
+      changeset = Organisation.logo_changeset(organisation, %{})
+      assert changeset.valid?
+    end
+
+    test "changeset with logo file size limit exceeded over 1 MB" do
+      organisation = insert(:organisation)
+
+      logo = %Plug.Upload{
+        content_type: "image/jpg",
+        path: File.cwd!() <> "priv/static/wraft_files/over_limit_sized_image.jpg",
+        filename: "over_limit_sized_image.jpg"
+      }
+
+      changeset = Organisation.logo_changeset(organisation, %{logo: logo})
+
+      refute changeset.valid?
+      assert "is invalid" in errors_on(changeset, :logo)
+    end
   end
 end
