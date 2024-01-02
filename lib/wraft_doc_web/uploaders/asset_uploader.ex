@@ -7,6 +7,7 @@ defmodule WraftDocWeb.AssetUploader do
   alias WraftDoc.Document.Asset
 
   @versions [:original]
+  @font_style_name ~w(Regular Italic Bold BoldItalic)
 
   # To add a thumbnail version:
   # @versions [:original, :thumb]
@@ -26,9 +27,20 @@ defmodule WraftDocWeb.AssetUploader do
   def validate({file, %Asset{type: "theme"}}) do
     file_extension = file.file_name |> Path.extname() |> String.downcase()
 
-    case Enum.member?(~w(.otf .ttf), file_extension) do
+    case Enum.member?(~w(.otf .ttf), file_extension) && check_file_naming(file.file_name) do
       true -> :ok
       false -> {:error, "invalid file type"}
+    end
+  end
+
+  # Based on what is acceptable in latex engine
+  def check_file_naming(filename) do
+    filename
+    |> Path.rootname()
+    |> String.split("-")
+    |> case do
+      [_font_family, font_style] when font_style in @font_style_name -> true
+      _ -> false
     end
   end
 
