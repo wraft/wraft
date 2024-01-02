@@ -15,6 +15,8 @@ defmodule WraftDoc.Document.AssetTest do
     }
   }
 
+  @font_style_name ~w(Regular Italic Bold BoldItalic)
+
   @valid_update_attrs Map.merge(%{name: "asset one"}, @file_attrs)
 
   @invalid_attrs %{name: nil, type: nil, organisation_id: nil, file: nil}
@@ -78,6 +80,46 @@ defmodule WraftDoc.Document.AssetTest do
       refute changeset.valid?
 
       assert "can't be blank" in errors_on(changeset, :file)
+    end
+
+    test "returns valid changeset for valid theme file" do
+      for font_style <- @font_style_name do
+        theme_file = %Plug.Upload{
+          filename: "Roboto-#{font_style}.ttf",
+          content_type: "font/ttf",
+          path: File.cwd!() <> "/priv/static/wraft_files/Roboto/Roboto-#{font_style}.ttf"
+        }
+
+        asset = insert(:asset, name: "Bold", type: "theme")
+        changeset = Asset.file_changeset(asset, %{file: theme_file})
+        assert changeset.valid?
+      end
+    end
+
+    test "returns error for invalid theme file type" do
+      theme_file = %Plug.Upload{
+        filename: "letterhead.pdf",
+        content_type: "application/pdf",
+        path: File.cwd!() <> "/priv/static/wraft_files/letterhead.pdf"
+      }
+
+      asset = insert(:asset, name: "Bold", type: "theme")
+      changeset = Asset.file_changeset(asset, %{file: theme_file})
+      refute changeset.valid?
+      assert "invalid file type" in errors_on(changeset, :file)
+    end
+
+    test "returns error for invalid format for theme file name" do
+      theme_file = %Plug.Upload{
+        filename: "roboto.ttf",
+        content_type: "font/ttf",
+        path: File.cwd!() <> "/test/helper/roboto.ttf"
+      }
+
+      asset = insert(:asset, name: "Bold", type: "theme")
+      changeset = Asset.file_changeset(asset, %{file: theme_file})
+      refute changeset.valid?
+      assert "invalid file type" in errors_on(changeset, :file)
     end
   end
 end
