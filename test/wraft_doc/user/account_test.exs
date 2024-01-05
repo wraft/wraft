@@ -527,12 +527,12 @@ defmodule WraftDoc.AccountTest do
 
     test "returns error when incorrect email is provided" do
       found_user = Account.find("nouser@xyz.com")
-      assert found_user == {:error, :invalid}
+      assert found_user == {:error, :invalid_email}
     end
 
     test "return error when invalid data is provided" do
       found_user = Account.find(123)
-      assert found_user == {:error, :invalid}
+      assert found_user == {:error, :invalid_email}
     end
   end
 

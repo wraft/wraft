@@ -270,7 +270,7 @@ defmodule WraftDoc.Account do
     |> get_user_by_email()
     |> case do
       user = %User{} -> Repo.preload(user, :profile)
-      _ -> {:error, :invalid}
+      _ -> {:error, :invalid_email}
     end
   end
 
