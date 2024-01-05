@@ -67,6 +67,10 @@ defmodule WraftDocWeb.Router do
     scope "/v1", Api.V1, as: :v1 do
       resources("/users/signup/", RegistrationController, only: [:create])
       post("/users/signin", UserController, :signin)
+      # Google Signin
+      post("/users/signin/google", UserController, :signin_with_google)
+      # Check email
+      get("/users/check_email", UserController, :check_email)
       # to generate the auth token
       post("/user/password/forgot", UserController, :generate_token)
       # to verify the auth token and generate the jwt token

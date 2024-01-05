@@ -36,6 +36,19 @@ defmodule WraftDocWeb.Api.V1.UserController do
             password: "password"
           })
         end,
+      UserGoogleLoginRequest:
+        swagger_schema do
+          title("User Google Login")
+          description("A user log in to the application using Google authentication")
+
+          properties do
+            token(:string, "Google Auth Token", required: true)
+          end
+
+          example(%{
+            token: "Asdlkqweb.Khgqiwue132.xcli123"
+          })
+        end,
       User:
         swagger_schema do
           title("User")
@@ -437,6 +450,19 @@ defmodule WraftDocWeb.Api.V1.UserController do
               "asddff23a2ds_f3asdf3a21fds23f2as32f3as3f213a2df3s2f3a213sad12f13df13adsf-21f1d3sf"
           })
         end,
+      CheckEmailRequest:
+        swagger_schema do
+          title("Check Email")
+          description("Check Email")
+
+          properties do
+            email(:string, "Email", required: true)
+          end
+
+          example(%{
+            email: "user@wraft.com"
+          })
+        end,
       SetPasswordResponse:
         swagger_schema do
           title("Set Password Info")
@@ -479,6 +505,72 @@ defmodule WraftDocWeb.Api.V1.UserController do
         refresh_token: refresh_token,
         user: user
       )
+    end
+  end
+
+  @doc """
+  User Login with Google.
+  """
+  swagger_path :signin_with_google do
+    post("/users/signin/google")
+    summary("User sign in with google")
+    description("User sign in with google API")
+
+    parameters do
+      user(:body, Schema.ref(:UserGoogleLoginRequest), "User to trying to login", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:UserToken))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  # TODO Add controller tests
+  @spec signin(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def signin_with_google(conn, %{"token" => token} = _params) do
+    with {:ok, %{email: email}} <- AuthTokens.google_auth_validation(token),
+         %User{} = user <- Account.find(email),
+         %{organisation: personal_org, user: user} <-
+           Enterprise.get_personal_organisation_and_role(user),
+         [access_token: access_token, refresh_token: refresh_token] <-
+           Guardian.generate_tokens(user, personal_org.id) do
+      render(conn, "sign-in.json",
+        access_token: access_token,
+        refresh_token: refresh_token,
+        user: user
+      )
+    end
+  end
+
+  @doc """
+  Check Email.
+  """
+  swagger_path :check_email do
+    get("/users/check_email")
+    summary("Check Email")
+    description("Check Email")
+
+    parameters do
+      email(:query, :string, "Email", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:CheckEmailRequest))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  # TODO write test
+  @spec check_email(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def check_email(conn, %{"email" => email}) do
+    case Account.find(email) do
+      %User{} = _user ->
+        conn
+        |> put_resp_header("content-type", "application/json")
+        |> send_resp(200, Jason.encode!(%{info: "Email Exist!"}))
+
+      _ ->
+        conn
+        |> put_resp_header("content-type", "application/json")
+        |> send_resp(404, Jason.encode!(%{error: "Email does not exist!"}))
     end
   end
 

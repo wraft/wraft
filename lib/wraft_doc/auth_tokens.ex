@@ -14,6 +14,8 @@ defmodule WraftDoc.AuthTokens do
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Endpoint
 
+  @base_googe_auth_url "https://www.googleapis.com/oauth2/v3/tokeninfo?id_token="
+
   @doc """
   Insert auth token without expiry date.
   """
@@ -296,6 +298,25 @@ defmodule WraftDoc.AuthTokens do
 
       {:ok, payload} ->
         {:ok, payload}
+    end
+  end
+
+  # TODO add tests.
+  @spec google_auth_validation(String.t()) :: {:ok, %{email: String.t()}} | {:error, String.t()}
+  def google_auth_validation(token) do
+    (@base_googe_auth_url <> token)
+    |> HTTPoison.get!()
+    |> case do
+      %HTTPoison.Response{status_code: 200, body: body} ->
+        body = Jason.decode!(body)
+        email = String.downcase(body["email"])
+        {:ok, %{email: email}}
+
+      %HTTPoison.Response{status_code: 400} ->
+        {:error, :expired}
+
+      _ ->
+        {:error, :fake}
     end
   end
 end
