@@ -48,7 +48,7 @@ defmodule WraftDoc.Document.Layout do
     ])
     |> unique_constraint(:name,
       message: "Layout with the same name exists. Use another name.!",
-      name: :layout_name_unique_index
+      name: :layout_organisation_unique_index
     )
   end
 
@@ -72,7 +72,7 @@ defmodule WraftDoc.Document.Layout do
     ])
     |> unique_constraint(:name,
       message: "Layout with the same name exists. Use another name.!",
-      name: :layout_name_unique_index
+      name: :layout_organisation_unique_index
     )
   end
 

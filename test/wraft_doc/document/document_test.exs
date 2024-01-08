@@ -200,6 +200,35 @@ defmodule WraftDoc.DocumentTest do
                engine_id: ["can't be blank"]
              } == errors_on(changeset)
     end
+
+    test "return error if layout with same name exists" do
+      user = insert(:user_with_organisation)
+      engine = insert(:engine)
+      engine_id = engine.id
+
+      insert(:layout,
+        name: "Layout Name",
+        creator: user,
+        organisation: List.first(user.owned_organisations)
+      )
+
+      params = %{
+        "name" => "Layout Name",
+        "description" => "layout description",
+        "width" => 25.0,
+        "height" => 44.0,
+        "unit" => "cm",
+        "slug" => "layout slug"
+      }
+
+      params = Map.merge(params, %{"engine_id" => engine_id})
+
+      {:error, changeset} = Document.create_layout(user, engine, params)
+
+      assert %{
+               name: ["Layout with the same name exists. Use another name.!"]
+             } == errors_on(changeset)
+    end
   end
 
   describe "engine_list/1" do
@@ -385,6 +414,30 @@ defmodule WraftDoc.DocumentTest do
 
       assert %{
                slug: ["can't be blank"]
+             } == errors_on(changeset)
+    end
+
+    test "return error if layout with same name exists" do
+      user = insert(:user_with_organisation)
+
+      layout =
+        insert(:layout,
+          name: "Layout",
+          creator: user,
+          organisation: List.first(user.owned_organisations)
+        )
+
+      insert(:layout,
+        name: "Layout Name",
+        creator: user,
+        organisation: List.first(user.owned_organisations)
+      )
+
+      {:error, changeset} =
+        Document.update_layout(layout, user, %{"name" => "Layout Name", "slug" => "pletter"})
+
+      assert %{
+               name: ["Layout with the same name exists. Use another name.!"]
              } == errors_on(changeset)
     end
   end
