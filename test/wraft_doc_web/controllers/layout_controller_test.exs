@@ -64,6 +64,28 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
       assert count_before == Layout |> Repo.all() |> length()
     end
+
+    test "return error if layout with same name exists", %{conn: conn} do
+      user = conn.assigns[:current_user]
+      [organisation] = user.owned_organisations
+
+      insert(:layout, name: "Official Letter", creator: user, organisation: organisation)
+
+      %{id: engine_id} = insert(:engine)
+      a1 = insert(:asset, organisation: organisation)
+      a2 = insert(:asset, organisation: organisation)
+
+      params = Map.merge(@valid_attrs, %{engine_id: engine_id, assets: "#{a1.id},#{a2.id}"})
+
+      conn =
+        conn
+        |> post(Routes.v1_layout_path(conn, :create), params)
+        |> doc(operation_id: "create_layout")
+
+      assert json_response(conn, 422)["errors"]["name"] == [
+               "Layout with the same name exists. Use another name.!"
+             ]
+    end
   end
 
   describe "update/2" do
@@ -108,6 +130,25 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
         |> doc(operation_id: "update_layout")
 
       assert json_response(conn, 422)["errors"]["engine_id"] == ["can't be blank"]
+    end
+
+    test "return error if the layout with the same name exist", %{conn: conn} do
+      user = conn.assigns.current_user
+      [organisation] = user.owned_organisations
+      layout = insert(:layout, creator: user, organisation: organisation)
+      insert(:layout, name: "Official Letter", creator: user, organisation: organisation)
+
+      conn =
+        conn
+        |> put(Routes.v1_layout_path(conn, :update, layout.id), %{
+          "name" => "Official Letter",
+          "slug" => "pletter"
+        })
+        |> doc(operation_id: "update_layout")
+
+      assert json_response(conn, 422)["errors"]["name"] == [
+               "Layout with the same name exists. Use another name.!"
+             ]
     end
   end
 
