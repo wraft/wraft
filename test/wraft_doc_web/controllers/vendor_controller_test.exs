@@ -1,6 +1,6 @@
-defmodule WraftDocWeb.VendorControllerTest do
+defmodule WraftDocWeb.Api.V1.VendorControllerTest do
   use WraftDocWeb.ConnCase
-
+  @moduletag :controller
   import WraftDoc.Factory
   alias WraftDoc.{Enterprise.Vendor, Repo}
 
@@ -15,32 +15,9 @@ defmodule WraftDocWeb.VendorControllerTest do
   }
 
   @invalid_attrs %{email: nil}
-  setup %{conn: conn} do
-    role = insert(:role, name: "admin")
-    user = insert(:user, role: role)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
 
   describe "create/2" do
     test "create vendors by valid attrrs", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       count_before = Vendor |> Repo.all() |> length()
 
       conn =
@@ -53,11 +30,6 @@ defmodule WraftDocWeb.VendorControllerTest do
     end
 
     test "does not create vendors by invalid attrs", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       count_before = Vendor |> Repo.all() |> length()
 
       conn =
@@ -73,18 +45,14 @@ defmodule WraftDocWeb.VendorControllerTest do
   describe "update/2" do
     test "update vendors on valid attributes", %{conn: conn} do
       user = conn.assigns.current_user
-      vendor = insert(:vendor, organisation: user.organisation, creator: user)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
+      [organisation] = user.owned_organisations
+      vendor = insert(:vendor, organisation: organisation, creator: user)
 
       count_before = Vendor |> Repo.all() |> length()
 
       conn =
         conn
-        |> put(Routes.v1_vendor_path(conn, :update, vendor.uuid, @valid_attrs))
+        |> put(Routes.v1_vendor_path(conn, :update, vendor.id, @valid_attrs))
         |> doc(operation_id: "update_resource")
 
       assert json_response(conn, 200)["email"] == @valid_attrs.email
@@ -93,16 +61,11 @@ defmodule WraftDocWeb.VendorControllerTest do
 
     test "does't update vendors for invalid attrs", %{conn: conn} do
       user = conn.assigns.current_user
-      vendor = insert(:vendor, organisation: user.organisation, creator: user)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
+      vendor = insert(:vendor, organisation: List.first(user.owned_organisations), creator: user)
 
       conn =
         conn
-        |> put(Routes.v1_vendor_path(conn, :update, vendor.uuid, @invalid_attrs))
+        |> put(Routes.v1_vendor_path(conn, :update, vendor.id, @invalid_attrs))
         |> doc(operation_id: "update_resource")
 
       assert json_response(conn, 422)["errors"]["email"] == ["can't be blank"]
@@ -112,14 +75,10 @@ defmodule WraftDocWeb.VendorControllerTest do
   describe "index/2" do
     test "index lists vendor by current user", %{conn: conn} do
       user = conn.assigns.current_user
+      [organisation] = user.owned_organisations
 
-      a1 = insert(:vendor, organisation: user.organisation, creator: user)
-      a2 = insert(:vendor, organisation: user.organisation, creator: user)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
+      a1 = insert(:vendor, organisation: organisation, creator: user)
+      a2 = insert(:vendor, organisation: organisation, creator: user)
 
       conn = get(conn, Routes.v1_vendor_path(conn, :index))
       vendor_index = json_response(conn, 200)["vendors"]
@@ -132,41 +91,26 @@ defmodule WraftDocWeb.VendorControllerTest do
   describe "show/2" do
     test "show renders vendor details by id", %{conn: conn} do
       user = conn.assigns.current_user
-      vendor = insert(:vendor, organisation: user.organisation, creator: user)
+      vendor = insert(:vendor, organisation: List.first(user.owned_organisations), creator: user)
 
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
+      conn = get(conn, Routes.v1_vendor_path(conn, :show, vendor.id))
 
-      conn = get(conn, Routes.v1_vendor_path(conn, :show, vendor.uuid))
-
-      assert json_response(conn, 200)["email"] == vendor.email
+      assert json_response(conn, 200)["name"] == vendor.name
     end
 
     test "error not found for id does not exists", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       conn = get(conn, Routes.v1_vendor_path(conn, :show, Ecto.UUID.generate()))
-      assert json_response(conn, 404) == "Not Found"
+      assert json_response(conn, 400)["errors"] == "The Vendor id does not exist..!"
     end
   end
 
   describe "delete" do
     test "delete vendor by given id", %{conn: conn} do
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
-
       user = conn.assigns.current_user
-      vendor = insert(:vendor, organisation: user.organisation, creator: user)
+      vendor = insert(:vendor, organisation: List.first(user.owned_organisations), creator: user)
       count_before = Vendor |> Repo.all() |> length()
 
-      conn = delete(conn, Routes.v1_vendor_path(conn, :delete, vendor.uuid))
+      conn = delete(conn, Routes.v1_vendor_path(conn, :delete, vendor.id))
       assert count_before - 1 == Vendor |> Repo.all() |> length()
       assert json_response(conn, 200)["email"] == vendor.email
     end

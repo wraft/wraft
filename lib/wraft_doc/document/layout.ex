@@ -2,26 +2,12 @@ defmodule WraftDoc.Document.Layout do
   @moduledoc """
   The layout model.
   """
-  use Ecto.Schema
-  use Arc.Ecto.Schema
-  import Ecto.Changeset
-  import Ecto.Query
+  use WraftDoc.Schema
+  use Waffle.Ecto.Schema
   alias __MODULE__
-  alias WraftDoc.Account.User
-  @derive {Jason.Encoder, only: [:name]}
-  defimpl Spur.Trackable, for: Layout do
-    def actor(layout), do: "#{layout.creator_id}"
-    def object(layout), do: "Layout:#{layout.id}"
-    def target(_chore), do: nil
-
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
 
   schema "layout" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:description, :string)
     field(:width, :float)
     field(:height, :float)
@@ -50,20 +36,19 @@ defmodule WraftDoc.Document.Layout do
       :height,
       :unit,
       :slug,
-      :organisation_id
+      :organisation_id,
+      :engine_id
     ])
     |> validate_required([
       :name,
       :description,
-      :width,
-      :height,
-      :unit,
       :slug,
-      :organisation_id
+      :organisation_id,
+      :engine_id
     ])
     |> unique_constraint(:name,
       message: "Layout with the same name exists. Use another name.!",
-      name: :layout_name_unique_index
+      name: :layout_organisation_unique_index
     )
   end
 
@@ -82,15 +67,12 @@ defmodule WraftDoc.Document.Layout do
     |> validate_required([
       :name,
       :description,
-      :width,
-      :height,
-      :unit,
       :slug,
       :engine_id
     ])
     |> unique_constraint(:name,
       message: "Layout with the same name exists. Use another name.!",
-      name: :layout_name_unique_index
+      name: :layout_organisation_unique_index
     )
   end
 

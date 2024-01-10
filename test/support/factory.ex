@@ -4,50 +4,97 @@ defmodule WraftDoc.Factory do
   """
   use ExMachina.Ecto, repo: WraftDoc.Repo
 
-  alias WraftDoc.{
-    Account.AuthToken,
-    Account.Country,
-    Account.Profile,
-    Account.Role,
-    Account.User,
-    Authorization.Permission,
-    Authorization.Resource,
-    Document.Asset,
-    Document.Block,
-    Document.BlockTemplate,
-    Document.Comment,
-    Document.ContentType,
-    Document.ContentTypeField,
-    Document.Counter,
-    Document.DataTemplate,
-    Document.Engine,
-    Document.FieldType,
-    Document.Instance,
-    Document.Instance.History,
-    Document.Layout,
-    Document.LayoutAsset,
-    Document.Pipeline,
-    Document.Pipeline.Stage,
-    Document.Pipeline.TriggerHistory,
-    Document.Theme,
-    Enterprise.ApprovalSystem,
-    Enterprise.Flow,
-    Enterprise.Flow.State,
-    Enterprise.Membership,
-    Enterprise.Membership.Payment,
-    Enterprise.Organisation,
-    Enterprise.Plan,
-    Enterprise.Vendor
-  }
+  alias WraftDoc.Account.Activity
+  alias WraftDoc.Account.Country
+  alias WraftDoc.Account.Profile
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Account.RoleGroup
+  alias WraftDoc.Account.User
+  alias WraftDoc.Account.User.Audience
+  alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.Account.UserRole
+  alias WraftDoc.Authorization.Permission
+  alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.Document.Asset
+  alias WraftDoc.Document.Block
+  alias WraftDoc.Document.BlockTemplate
+  alias WraftDoc.Document.CollectionForm
+  alias WraftDoc.Document.CollectionFormField
+  alias WraftDoc.Document.Comment
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.ContentTypeField
+  alias WraftDoc.Document.ContentTypeRole
+  alias WraftDoc.Document.Counter
+  alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.Document.Engine
+  alias WraftDoc.Document.Field
+  alias WraftDoc.Document.FieldType
+  alias WraftDoc.Document.Instance
+  alias WraftDoc.Document.Instance.History
+  alias WraftDoc.Document.Instance.Version
+  alias WraftDoc.Document.InstanceApprovalSystem
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Document.LayoutAsset
+  alias WraftDoc.Document.OrganisationField
+  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Document.Pipeline.Stage
+  alias WraftDoc.Document.Pipeline.TriggerHistory
+  alias WraftDoc.Document.Theme
+  alias WraftDoc.Document.ThemeAsset
+  alias WraftDoc.Enterprise.ApprovalSystem
+  alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Enterprise.Membership
+  alias WraftDoc.Enterprise.Membership.Payment
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Enterprise.Plan
+  alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Forms.Form
+  alias WraftDoc.Forms.FormEntry
+  alias WraftDoc.Forms.FormField
+  alias WraftDoc.Forms.FormPipeline
+  alias WraftDoc.InternalUsers.InternalUser
+  alias WraftDoc.InvitedUsers.InvitedUser
+  alias WraftDoc.WaitingLists.WaitingList
 
   def user_factory do
     %User{
       name: "wrafts user",
       email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
+      email_verify: true,
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
-      organisation: build(:organisation),
-      role: build(:role)
+      current_org_id: nil,
+      owned_organisations: []
+    }
+  end
+
+  def user_with_personal_organisation_factory do
+    email = sequence(:email, &"wraftuser-#{&1}@wmail.com")
+    organisation = insert(:organisation, name: "Personal", email: email)
+
+    %User{
+      name: "wrafts user",
+      email: email,
+      email_verify: true,
+      password: "encrypt",
+      encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
+      current_org_id: organisation.id,
+      owned_organisations: [organisation]
+    }
+  end
+
+  def user_with_organisation_factory do
+    organisation = insert(:organisation)
+
+    %User{
+      name: "wrafts user",
+      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
+      email_verify: true,
+      password: "encrypt",
+      encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
+      current_org_id: organisation.id,
+      owned_organisations: [organisation]
     }
   end
 
@@ -58,12 +105,27 @@ defmodule WraftDoc.Factory do
       address: sequence(:address, &"#{&1} th cross #{&1} th building"),
       gstin: sequence(:gstin, &"32AASDGGDGDDGDG#{&1}"),
       phone: sequence(:phone, &"985222332#{&1}"),
-      email: sequence(:email, &"acborg#{&1}@gmail.com")
+      email: sequence(:email, &"acborg#{&1}@gmail.com"),
+      url: sequence(:url, &"acborg#{&1}@profile.com")
+    }
+  end
+
+  def user_organisation_factory do
+    %UserOrganisation{
+      user: build(:user),
+      organisation: build(:organisation)
     }
   end
 
   def role_factory do
-    %Role{name: "user"}
+    %Role{name: "superadmin", permissions: [], organisation: build(:organisation)}
+  end
+
+  def user_role_factory do
+    %UserRole{
+      user: build(:user),
+      role: build(:role)
+    }
   end
 
   def profile_factory do
@@ -82,7 +144,8 @@ defmodule WraftDoc.Factory do
       prefix: "OFFR",
       organisation: build(:organisation),
       layout: build(:layout),
-      flow: build(:flow)
+      flow: build(:flow),
+      theme: build(:theme)
     }
   end
 
@@ -90,6 +153,7 @@ defmodule WraftDoc.Factory do
     %Block{
       name: sequence(:name, &"name-#{&1}"),
       btype: sequence(:btype, &"btype-#{&1}"),
+      file_url: "file/location/example.pdf",
       api_route: "http://localhost:8080/chart",
       endpoint: "blocks_api",
       dataset: %{
@@ -129,6 +193,7 @@ defmodule WraftDoc.Factory do
         format: "svg",
         type: "pie"
       },
+      creator: build(:user),
       organisation: build(:organisation)
     }
   end
@@ -149,8 +214,17 @@ defmodule WraftDoc.Factory do
   def asset_factory do
     %Asset{
       name: sequence(:name, &"asset-#{&1}"),
+      type: "layout",
+      file: nil,
       creator: build(:user),
       organisation: build(:organisation)
+    }
+  end
+
+  def theme_asset_factory do
+    %ThemeAsset{
+      theme: build(:theme),
+      asset: build(:asset)
     }
   end
 
@@ -161,7 +235,8 @@ defmodule WraftDoc.Factory do
       width: :rand.uniform(16),
       height: :rand.uniform(16),
       unit: sequence(:name, &"layout-#{&1}"),
-      organisation: build(:organisation)
+      organisation: build(:organisation),
+      engine: build(:engine)
     }
   end
 
@@ -185,7 +260,17 @@ defmodule WraftDoc.Factory do
       instance_id: sequence(:instance_id, &"Prefix#{&1}"),
       raw: "Content",
       serialized: %{title: "Title of the content", body: "Body of the content"},
+      editable: true,
       content_type: build(:content_type)
+    }
+  end
+
+  def instance_version_factory do
+    %Version{
+      version_number: 1,
+      raw: "Content",
+      serialized: %{title: "Title of the content", body: "Body of the content"},
+      content: build(:instance)
     }
   end
 
@@ -224,25 +309,14 @@ defmodule WraftDoc.Factory do
     }
   end
 
-  def resource_factory do
-    %Resource{
-      category: sequence(:resource, &"Flow-#{&1}"),
-      action: sequence(:action, &"Action-#{&1}")
-    }
-  end
-
-  def permission_factory do
-    %Permission{
-      resource: build(:resource),
-      role: build(:role)
-    }
-  end
-
   def theme_factory do
     %Theme{
       name: sequence(:name, &"Official Letter Theme-#{&1}"),
       font: sequence(:font, &"Malery-#{&1}"),
       typescale: %{h1: "10", p: "6", h2: "8"},
+      body_color: sequence(:body_color, &"#eeff0#{&1}"),
+      primary_color: sequence(:primary_color, &"#eeff0#{&1}"),
+      secondary_color: sequence(:secondary_color, &"#eeff0#{&1}"),
       organisation: build(:organisation),
       creator: build(:user)
     }
@@ -271,29 +345,40 @@ defmodule WraftDoc.Factory do
 
   def approval_system_factory do
     %ApprovalSystem{
-      instance: build(:instance),
+      name: "Review",
+      flow: build(:flow),
       pre_state: build(:state),
       post_state: build(:state),
-      approver: build(:user),
-      user: build(:user),
-      organisation: build(:organisation)
+      approver: build(:user)
     }
   end
 
   def field_type_factory do
     %FieldType{
       name: sequence(:name, &"String #{&1}"),
-      description: "Text field",
-      creator: build(:user)
+      meta: %{},
+      validations: [
+        %{
+          validation: %{"rule" => "required", "value" => true},
+          error_message: "This field is required"
+        }
+      ],
+      description: "Text field"
+    }
+  end
+
+  def field_factory do
+    %Field{
+      name: sequence(:name, &"Field name #{&1}"),
+      description: sequence(:desription, &"Field description #{&1}"),
+      field_type: build(:field_type)
     }
   end
 
   def content_type_field_factory do
     %ContentTypeField{
-      name: sequence(:name, &"Field name #{&1}"),
-      description: sequence(:desription, &"Field description #{&1}"),
       content_type: build(:content_type),
-      field_type: build(:field_type)
+      field: build(:field)
     }
   end
 
@@ -307,7 +392,7 @@ defmodule WraftDoc.Factory do
   def auth_token_factory do
     %AuthToken{
       value: "token",
-      token_type: "token",
+      token_type: "password_verify",
       expiry_datetime: Timex.shift(Timex.now(), days: 1),
       user: build(:user)
     }
@@ -404,6 +489,151 @@ defmodule WraftDoc.Factory do
       gstin: sequence(:gstin, &"Vendor gstin #{&1} "),
       reg_no: sequence(:reg_no, &"Vendor reg_no #{&1} "),
       contact_person: sequence(:contact_person, &"Vendor contact_person #{&1} ")
+    }
+  end
+
+  def content_type_role_factory do
+    %ContentTypeRole{
+      content_type: build(:content_type),
+      role: build(:role)
+    }
+  end
+
+  def organisation_field_factory do
+    %OrganisationField{
+      name: sequence(:name, &"Field name #{&1}"),
+      description: sequence(:desription, &"Field description #{&1}"),
+      organisation: build(:organisation),
+      field_type: build(:field_type)
+    }
+  end
+
+  def instance_approval_system_factory do
+    %InstanceApprovalSystem{
+      flag: false,
+      instance: build(:instance),
+      approval_system: build(:approval_system)
+    }
+  end
+
+  def activity_factory do
+    %Activity{
+      action: sequence(:activity, &"Activity#{&1}"),
+      actor: "6122-d5sf-15sdf1-2s56df",
+      object: sequence(:object, &"Object#{&1}"),
+      target: sequence(:target, &"Target#{&1}"),
+      inserted_at: Timex.now()
+    }
+  end
+
+  def audience_factory do
+    %Audience{
+      activity: build(:activity),
+      user: build(:user)
+    }
+  end
+
+  def collection_form_factory do
+    %CollectionForm{
+      title: "WraftDoc",
+      description: "WraftDoc Des"
+    }
+  end
+
+  def collection_form_field_factory do
+    %CollectionFormField{
+      name: "WraftDoc",
+      description: "WraftDoc des",
+      collection_form: build(:collection_form)
+    }
+  end
+
+  def role_group_factory do
+    %RoleGroup{
+      name: sequence(:name, &"Role group-#{&1}"),
+      description: sequence(:description, &"Role group-#{&1}"),
+      organisation: build(:organisation)
+    }
+  end
+
+  def waiting_list_factory do
+    %WaitingList{
+      first_name: "wraft",
+      last_name: "user",
+      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
+      status: "pending"
+    }
+  end
+
+  def permission_factory do
+    %Permission{
+      name: sequence(:name, &"permission-#{&1}"),
+      resource: sequence(:resource, &"resource-#{&1}"),
+      action: sequence(:action, &"action-#{&1}")
+    }
+  end
+
+  def internal_user_factory do
+    %InternalUser{
+      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
+      password: "encrypt",
+      encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
+      is_deactivated: false
+    }
+  end
+
+  def invited_user_factory do
+    %InvitedUser{
+      email: sequence(:email, &"wraftuser-#{&1}@wmail.com"),
+      status: "invited",
+      organisation: build(:organisation)
+    }
+  end
+
+  def form_factory do
+    %Form{
+      description: sequence(:description, &"description-#{&1}"),
+      name: sequence(:name, &"name-#{&1}"),
+      prefix: sequence(:prefix, &"prefix-#{&1}"),
+      status: Enum.random([:active, :inactive]),
+      organisation: build(:organisation),
+      creator: build(:user)
+    }
+  end
+
+  def form_field_factory do
+    %FormField{
+      validations: [
+        %{
+          rule: "required",
+          error_message: "This field is required."
+        },
+        %{
+          rule: "email",
+          error_message: "Please enter a valid email address."
+        }
+      ],
+      form: build(:form),
+      field: build(:field)
+    }
+  end
+
+  def form_entry_factory do
+    %FormEntry{
+      data: %{
+        1 => %{field_id: 1, value: "random@gmail.com"},
+        2 => %{field_id: 12, value: "random string"}
+      },
+      status: Enum.random([:submitted, :draft]),
+      form: build(:form),
+      user: build(:user)
+    }
+  end
+
+  def form_pipeline_factory do
+    %FormPipeline{
+      form: build(:form),
+      pipeline: build(:pipeline)
     }
   end
 end

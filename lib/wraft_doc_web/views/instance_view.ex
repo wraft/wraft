@@ -1,12 +1,21 @@
 defmodule WraftDocWeb.Api.V1.InstanceView do
   use WraftDocWeb, :view
-  alias WraftDocWeb.Api.V1.{ContentTypeView, StateView, UserView, VendorView}
+
+  alias WraftDocWeb.Api.V1.{
+    ContentTypeView,
+    InstanceApprovalSystemView,
+    InstanceVersionView,
+    StateView,
+    UserView,
+    VendorView
+  }
+
   alias __MODULE__
 
   def render("create.json", %{content: content}) do
     %{
       content: %{
-        id: content.uuid,
+        id: content.id,
         instance_id: content.instance_id,
         raw: content.raw,
         serialized: content.serialized,
@@ -16,17 +25,23 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       content_type:
         render_one(content.content_type, ContentTypeView, "content_type.json", as: :content_type),
       state: render_one(content.state, StateView, "create.json", as: :state),
-      vendor: render_one(content.vendor, VendorView, "vendor.json", as: :vendor)
+      vendor: render_one(content.vendor, VendorView, "vendor.json", as: :vendor),
+      instance_approval_systems:
+        render_many(content.instance_approval_systems, InstanceApprovalSystemView, "create.json",
+          as: :instance_approval_system
+        ),
+      creator: render_one(content.creator, UserView, "user_id_and_name.json", as: :user)
     }
   end
 
   def render("instance.json", %{instance: instance}) do
     %{
-      id: instance.uuid,
+      id: instance.id,
       instance_id: instance.instance_id,
       raw: instance.raw,
       serialized: instance.serialized,
       build: instance.build,
+      editable: instance.editable,
       inserted_at: instance.inserted_at,
       updated_at: instance.updated_at
     }
@@ -53,8 +68,13 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         render_one(instance.content_type, ContentTypeView, "c_type_with_layout.json",
           as: :content_type
         ),
-      state: render_one(instance.state, StateView, "create.json", as: :state),
-      creator: render_one(instance.creator, UserView, "user.json", as: :user)
+      state: render_one(instance.state, StateView, "instance_state.json", as: :state),
+      creator: render_one(instance.creator, UserView, "user.json", as: :user),
+      versions: render_many(instance.versions, InstanceVersionView, "version.json", as: :version),
+      instance_approval_systems:
+        render_many(instance.instance_approval_systems, InstanceApprovalSystemView, "create.json",
+          as: :instance_approval_system
+        )
     }
   end
 

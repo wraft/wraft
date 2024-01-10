@@ -1,0 +1,64 @@
+version: "3.8"
+services:
+  web:
+    stdin_open: true
+    env_file:
+      - .dev.env
+    build:
+      context: .
+      args:
+        SECRET_KEY_BASE: 4aSNNwRrij5JRgDp6EXfxWXOnOuDrA2r2HZkW4EgaLnFvj3C2XqvShSiDZcAH
+        DATABASE_URL: postgres://postgres:postgres@db:5432/wraft_doc_dev
+      dockerfile: Dockerfile.dev
+    environment:
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: minioadmin
+      MINIO_HOST: minio
+    ports:
+      - 4000:4000
+    depends_on:
+      - db
+  db:
+    image: postgres:14-alpine
+    env_file:
+      - .dev.env
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - ./db:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio
+    ports:
+      - 9000:9000
+    environment:
+      MINIO_URL: http://127.0.0.1:9000
+      MINIO_BUCKET: wraft
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: minioadmin
+    volumes:
+      - minio-storage:/myminio
+    command: server /myminio
+  createbucket:
+    image: minio/mc
+    depends_on:
+      - minio
+    volumes:
+      - minio-storage:/myminio
+      # mc: <ERROR> Invalid URL. URL `minio:9000` for MinIO Client should be of the form scheme://host[:port]/ without resource component.
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc config host add myminio $MINIO_URL $ $MINIO_ROOT_PASSWORD;
+      /usr/bin/mc mb -p myminio/${MINIO_BUCKET};
+      /usr/bin/mc policy set public myminio/${MINIO_BUCKET};
+      exit 0;
+      "
+  # pandoc-latex:
+  #   image: pandoc/latex:2.18
+  #   volumes:
+  #     - .:/data
+
+volumes:
+  db:
+  minio-storage:

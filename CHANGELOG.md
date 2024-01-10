@@ -1,8 +1,31 @@
 # CHANGELOG
+## v0.0.31 - today
+
+## Added
+
+- User with multiple roles
+- Organisation admin panel on kaffy
+- Specific role on invitation token
+- Send invitation to primary email of organisation with admin role
+- Sign up with admin role
+- Super admin role
+- Organisation can create role
+- Control of content type on specific roles
+## Changed
+- token signup with specific role
+- Resource schema resource type to atom
+- Check permission for specific resource
+- Authorized plug to verify the user have permission on specific task
+
+## Fixed
+- Multiple email acceptance on token signup
+
+
+
 
 ## v0.0.30 - 2021-04-12
 
-## Added 
+## Added
 - Members index
 - Search organisation api
 - Vendors
@@ -11,10 +34,11 @@
 - Kaffy admin panel
 ## Changed
 - Approval system
-- Credo modifications 
+- Credo modifications
 - Warnings resolved
 
 ## v0.0.29 - 2020-06-08
+
 
 ## Added
 

@@ -3,7 +3,10 @@ defmodule WraftDoc.Repo.Migrations.AddOrganisationIdToBlockTemplate do
 
   def up do
     alter table(:block_template) do
-      add(:organisation_id, references(:organisation, on_delete: :delete_all))
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :delete_all)
+      )
     end
 
     create(

@@ -2,17 +2,18 @@ defmodule WraftDoc.Account.ProfileTest do
   use WraftDoc.ModelCase
   alias WraftDoc.Account.Profile
   import WraftDoc.Factory
-
+  @moduletag :account
   @valid_attrs %{
     name: "under world",
-    gender: "male",
-    user_id: 1
+    gender: "male"
   }
 
   @invalid_attrs %{}
 
   test "changeset with valid attributes" do
-    changeset = Profile.changeset(%Profile{}, @valid_attrs)
+    user = insert(:user)
+    valid_attrs = Map.put(@valid_attrs, :user_id, user.id)
+    changeset = Profile.changeset(%Profile{}, valid_attrs)
     assert changeset.valid?
   end
 
@@ -23,10 +24,10 @@ defmodule WraftDoc.Account.ProfileTest do
 
   test "changeset with a local file path image url attribute with upload files" do
     profile = insert(:profile)
-
+    user = insert(:user)
     local_file_path = File.cwd!() <> "/test/fixtures/avatar600x600.png"
 
-    attrs = Map.put(@valid_attrs, :profile_pic, local_file_path)
+    attrs = Map.merge(@valid_attrs, %{profile_pic: local_file_path, user_id: user.id})
 
     changeset = Profile.changeset(profile, attrs)
 
@@ -34,20 +35,39 @@ defmodule WraftDoc.Account.ProfileTest do
     refute Map.has_key?(changeset.changes, :profile_pic)
   end
 
-  test "changeset with a file uploader struct" do
+  test "propic_changeset with a file uploader struct" do
     profile = insert(:profile)
+    user = insert(:user)
 
     profile_pic = %Plug.Upload{
       content_type: "image/png",
-      path: File.cwd!() <> "/test/helper/images.png",
-      filename: "images.png"
+      path: File.cwd!() <> "/priv/static/images/avatar.png",
+      filename: "avatar.png"
     }
 
-    attrs = Map.put(@valid_attrs, :profile_pic, profile_pic)
+    attrs = Map.merge(@valid_attrs, %{profile_pic: profile_pic, user_id: user.id})
 
-    changeset = Profile.changeset(profile, attrs)
+    changeset = Profile.propic_changeset(profile, attrs)
 
     assert changeset.valid?
     assert Map.has_key?(changeset.changes, :profile_pic)
+  end
+
+  test "return error when file size is more than 1 MB" do
+    profile = insert(:profile)
+    user = insert(:user)
+
+    profile_pic = %Plug.Upload{
+      content_type: "image/jpg",
+      path: File.cwd!() <> "/priv/static/images/over_limit_sized_image.jpg",
+      filename: "over_limit_sized_image.jpg"
+    }
+
+    attrs = Map.merge(@valid_attrs, %{profile_pic: profile_pic, user_id: user.id})
+
+    changeset = Profile.propic_changeset(profile, attrs)
+
+    refute changeset.valid?
+    assert "is invalid" in errors_on(changeset, :profile_pic)
   end
 end

@@ -2,7 +2,7 @@ defmodule WraftDoc.Document.PipelineTest do
   use WraftDoc.ModelCase
   alias WraftDoc.Document.Pipeline
   import WraftDoc.Factory
-
+  @moduletag :document
   @valid_attrs %{
     name: "Official Letter",
     api_route: "newclient.example.crm.com"
@@ -43,4 +43,7 @@ defmodule WraftDoc.Document.PipelineTest do
 
     assert "Pipeline with the same name already exists.!" in errors_on(changeset, :name)
   end
+
+  # TODO tests for update_changeset
+  # TODO tests for unique constraint in update_changeset
 end

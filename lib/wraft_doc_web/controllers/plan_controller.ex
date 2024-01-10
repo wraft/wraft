@@ -1,11 +1,20 @@
 defmodule WraftDocWeb.Api.V1.PlanController do
   use WraftDocWeb, :controller
-  plug(WraftDocWeb.Plug.AddActionLog)
-  import Ecto.Query, warn: false
-  alias WraftDoc.{Enterprise, Enterprise.Plan}
+  use PhoenixSwagger
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "plan:manage",
+    update: "plan:manage",
+    delete: "plan:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
 
-  use PhoenixSwagger
+  import Ecto.Query, warn: false
+
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Plan
 
   def swagger_definitions do
     %{

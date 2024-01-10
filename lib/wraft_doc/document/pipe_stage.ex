@@ -3,29 +3,16 @@ defmodule WraftDoc.Document.Pipeline.Stage do
   The pipeline stages model.
   """
   alias __MODULE__
-  alias WraftDoc.Account.User
-  use Ecto.Schema
-  import Ecto.Changeset
-  import Ecto.Query
-
-  defimpl Spur.Trackable, for: Stage do
-    def actor(stage), do: "#{stage.creator_id}"
-    def object(stage), do: "Stage:#{stage.id}"
-    def target(_chore), do: nil
-
-    def audience(%{creator_id: id}) do
-      from(u in User, where: u.id == ^id)
-    end
-  end
+  use WraftDoc.Schema
 
   schema "pipe_stage" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:pipeline, WraftDoc.Document.Pipeline)
     belongs_to(:data_template, WraftDoc.Document.DataTemplate)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:creator, WraftDoc.Account.User)
-
+    has_many(:form_mapping, WraftDoc.Forms.FormMapping, foreign_key: :pipe_stage_id)
+    has_many(:forms, through: [:form_mapping, :form])
     timestamps()
   end
 

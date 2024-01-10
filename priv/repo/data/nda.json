@@ -1,0 +1,966 @@
+{
+    "type": "doc",
+    "content": [
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "EMPLOYEE NON-DISCLOSURE AGREEMENT"
+                },
+                {
+                    "type": "hardBreak"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "This EMPLOYEE NON-DISCLOSURE AGREEMENT, hereinafter known as the “Agreement”, is entered into between "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "staff_name",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": " (“Employee”) and Functionary Labs Pvt Ltd (“Company”), collectively known as the “Parties” as of "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "date",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": " (the “Effective Date”). "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "hardBreak"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Article I: Scope of Agreement"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "This Agreement acknowledges that certain confidential information, trade secrets, and proprietary data (hereinafter defined and referred to as “Confidential Information”) of or regarding the Company may be discussed between Employee and the Company (hereinafter known collectively as the “Parties”). The provisions set forth in this Agreement define the circumstances in which the Employee can and cannot disclose Confidential Information, and include the remedies, penalties and lawful action the Company may take should such information be used or disclosed by Employee. Both Parties agree that it is in their best interests to protect the Company’s Confidential Information, and that the terms of this Agreement create a bond of trust and confidentiality between them. In consideration of Employee’s commencement of employment, or continued employment with the Company, the Parties agree as follows:"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Article II: Confidential Information"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "A. Definitions."
+                },
+                {
+                    "type": "text",
+                    "text": " Confidential Information is any material, knowledge, information and data (verbal, electronic, written or any other form) concerning the Company or its businesses not generally known to the public consisting of, but not limited to, inventions, discoveries, plans, concepts, designs, blueprints, drawings, models, devices, equipment, apparatus, products, prototypes, formulae, algorithms, techniques, research projects, computer programs, software, firmware, hardware, business, development and marketing plans, merchandising systems, financial and pricing data, information concerning investors, customers, suppliers, consultants and employees, and any other concepts, ideas or information involving or related to the business which, if misused or disclosed, could adversely affect the Company’s business. "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "B. Exclusions. "
+                },
+                {
+                    "type": "text",
+                    "text": "For the purposes of this Agreement, information shall not be deemed Confidential Information and the Employee shall have no obligation to keep it confidential if:"
+                }
+            ]
+        },
+        {
+            "type": "bulletList",
+            "content": [
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "the information was publicly known;"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "the information was received from a third party not subject to the restrictions of this Agreement and becomes available to Employee through no wrongful act or breach of Agreement on their part; or"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "the information was approved for release by Employer through written authorization."
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "C. Period of Confidentiality. (Check One)"
+                }
+            ]
+        },
+        {
+            "type": "orderedList",
+            "attrs": {
+                "order": 1
+            },
+            "content": [
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Employee agrees not to use or disclose Confidential Information for their own personal benefit or the benefit of any other person, corporation or entity other than the Company for a period of 2 years."
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Employee agrees not to use or disclose Confidential Information for their own personal benefit or the benefit of any other person, corporation or entity other than the Company during the Employee’s employment with the company or any time thereafter."
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "D. Limitations. "
+                },
+                {
+                    "type": "text",
+                    "text": "Employee shall limit access to Confidential Information to individuals on a strictly need-to-know basis, involving only those who are carrying out duties related to the Company and its business. Individuals under the Employee’s command (affiliates, agents, consultants, representatives and other employees) are bound by and shall comply with the terms of this Agreement."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "E. Ownership."
+                },
+                {
+                    "type": "text",
+                    "text": " All repositories of information containing or in any way relating to Confidential Information is considered property of the Employer. The removal of Confidential Information from the Company’s premises is prohibited unless prior written consent is provided by the Company. All such items made, compiled or used by the Employee shall be delivered to the Employer by Employee upon termination of employment or at any other time as per the Employer’s request. "
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Article III: Inventions"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "A. Prior inventions. "
+                },
+                {
+                    "type": "text",
+                    "text": "Any inventions created or conceptualized by the Employee prior to signing the Agreement are excluded from the provisions herein.  "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "B. Ownership of Inventions. "
+                },
+                {
+                    "type": "text",
+                    "text": "Inventions constructed while under the Company’s employment are the sole property of the Company except those described under subsection (C.) of this section."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "C. Personal Inventions."
+                },
+                {
+                    "type": "text",
+                    "text": " Inventions developed by Employee on their own personal time not constructed on Company property, and that were not created using any Company materials, equipment, technology or information, are exempt from the provisions of the Agreement."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Article IV: Entire Agreement"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "A. Previous Agreements."
+                },
+                {
+                    "type": "text",
+                    "text": " This Agreement constitutes the entire agreement and the signing thereof by both Parties nullifies any and all previous agreements made between Employer and Employee. "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "B. Modifications and Amendments."
+                },
+                {
+                    "type": "text",
+                    "text": " No modifications, amendments, changes or alterations can be made to the Agreement unless in writing and signed by authorized representatives of both Parties. "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "C. Successors and Assigns."
+                },
+                {
+                    "type": "text",
+                    "text": " This Agreement shall be binding upon the successors, subsidiaries, assigns and corporations controlling or controlled by the Parties. The Company may assign this Agreement to any party at any time, whereas Employee is prohibited from assigning any of their rights or obligations in the Agreement without prior written consent from Company. "
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Article V: Nature of Relationship"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "A. Non-contract."
+                },
+                {
+                    "type": "text",
+                    "text": " The Agreement does not constitute a contract of employment, nor does it guarantee continuing employment for the Employee. "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "B. Non-partner."
+                },
+                {
+                    "type": "text",
+                    "text": " The Agreement does not create a partnership or joint venture between Company and Employee. Any financial arrangements made between both Parties shall not be included in this Agreement but must be disclosed in a separate document. "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Article VI: Severability"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Any provision within the Agreement (or any portion thereof) deemed invalid, unlawful or otherwise unusable by a court of law shall be dissolved from the Agreement and the remainder of the Agreement shall continue to be enforceable. A severed provision shall not alter the integrity of the Agreement, and the terms set forth in any severed provision shall be construed in such a way as to interpret the purpose for which it was drafted. "
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Article VII: Governing Law"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "This Agreement shall be governed in accordance with the laws of the State of "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "place",
+                        "named": null
+                    }
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Article VIII: Immunity"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Disclosing Confidential Information to an attorney, government representative or court official in confidence while assisting or taking part in a case involving a suspected violation of law is not considered a breach of this Agreement. Should the Employee be required to disclose Confidential Information by law, the Employee shall provide Employer with prompt notice of such request. "
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Article IX: Breach of agreement"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "A. Cause for Action."
+                },
+                {
+                    "type": "text",
+                    "text": " "
+                },
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "text",
+                    "text": "Employee understands that the use or disclosure of any Confidential Information may be cause for an action at law in an appropriate court of the State of "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "place",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": " or any State of the United States, or in any federal court, and that the Employer shall be entitled to an injunction prohibiting the use or disclosure of the Confidential Information. "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "B. Indemnification."
+                },
+                {
+                    "type": "text",
+                    "text": " Employee understands and agrees that if the use or disclosure of Confidential Information by them or any affiliate, employee or representative of the Employee causes damage, loss, cost or expense to the Company, the Employee shall be held responsible and shall indemnify the Company.  "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "C. Injunctive Relief."
+                },
+                {
+                    "type": "text",
+                    "text": " The Employee understands and agrees that the use or disclosure of Confidential Information could cause the Company irreparable harm and the Company has the right to pursue legal action beyond remedies of a monetary nature in the form of injunctive or equitable relief. This may be in addition to any other remedy, penalty or claim the law can provide. "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "D. Notice of Unauthorized Use or Disclosure."
+                },
+                {
+                    "type": "text",
+                    "text": " Employee is bound by this Agreement to notify the Company in the event of a breach of agreement involving the dissemination of Confidential Information, either by the Employee or a third party, and will do everything possible to help the Company regain possession of the Confidential Information. "
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Article X: Prevailing party"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "In a dispute arising out of or in relation to this Agreement, the prevailing party shall have the right to collect from the other party its reasonable attorney fees, costs and necessary expenditures."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "hardBreak"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "IN WITNESS WHEREOF, the Parties hereto agree to the terms of this Agreement and signed on the dates written below.  "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "hardBreak"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Employee Signature"
+                },
+                {
+                    "type": "text",
+                    "text": " _____________________________________ Date: ________________"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Employee Printed Name: "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "staff_name",
+                        "named": null
+                    }
+                }
+            ]
+        }
+    ]
+}

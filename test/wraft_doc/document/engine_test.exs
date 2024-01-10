@@ -1,6 +1,7 @@
 defmodule WraftDoc.Document.EngineTest do
   use WraftDoc.ModelCase
   alias WraftDoc.Document.Engine
+  @moduletag :document
 
   @valid_attrs %{
     name: "engine-1",
@@ -8,6 +9,7 @@ defmodule WraftDoc.Document.EngineTest do
   }
   @invalid_attrs %{}
 
+  # TODO include tests for unique constraint
   test "changeset with valid attrs" do
     changeset = Engine.changeset(%Engine{}, @valid_attrs)
     assert changeset.valid?

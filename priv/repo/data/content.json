@@ -1,0 +1,53 @@
+{
+  "state": {
+    "updated_at": "2021-02-25T13:55:06",
+    "state": "Draft",
+    "order": 1,
+    "inserted_at": "2021-02-25T13:55:06",
+    "id": "7b8eb5dc-71b0-4749-9d4a-358192200b7a"
+  },
+  "creator": {
+    "updated_at": "2021-07-02T14:17:40",
+    "name": "Monica Hall",
+    "inserted_at": "2020-07-11T19:33:28",
+    "id": "92780363-3984-4de2-bfbc-151dfecc3776",
+    "email_verify": false,
+    "email": "admin@wraftdocs.com"
+  },
+  "content_type": {
+    "updated_at": "2021-04-16T05:01:52",
+    "prefix": "rl",
+    "name": "Relieving Letter 02",
+    "layout": {
+      "width": 30.0,
+      "update_at": "2021-03-16T20:11:49",
+      "unit": "cm",
+      "slug_file": null,
+      "slug": "pletter",
+      "screenshot": "/uploads/layout-screenshots/1/sc_Official%20Letter.png?v=63770754388",
+      "name": "Official Letter",
+      "inserted_at": "2020-07-11T19:33:28",
+      "id": "f5837766-573f-427f-a916-cf39a3518c7b",
+      "height": 40.0,
+      "description": "An official letter for PiedPiper"
+    },
+    "inserted_at": "2021-04-16T05:01:52",
+    "id": "d12c553f-566e-473b-8146-69ca503f3512",
+    "decription": "Leaving Letter",
+    "color": "#000"
+  },
+  "content": {
+    "updated_at": "2022-02-02T04:10:30",
+    "serialized": {
+      "title": "Relieving Letter for Abdul Ali",
+      "serialized": "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null}},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null},\"content\":[{\"type\":\"text\",\"text\":\"To,\"}]},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null},\"content\":[{\"type\":\"holder\",\"attrs\":{\"name\":\"Name\",\"named\":\"Abdul Ali\"}}]},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null},\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"Address Line 1,\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"Address Line 2,\"},{\"type\":\"hardBreak\"},{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"City, State, PIN\"}]},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null},\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"Subject: Relieving Letter\"}]},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null}},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null},\"content\":[{\"type\":\"text\",\"text\":\"Dear \"},{\"type\":\"holder\",\"attrs\":{\"name\":\"Name\",\"named\":\"Abdul Ali\"}},{\"type\":\"text\",\"text\":\",\"}]},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null},\"content\":[{\"type\":\"text\",\"text\":\"This is in furtherance to your resignation letter dated \"},{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"15th March, 2018\"},{\"type\":\"text\",\"text\":\" wherein you had requested to be relieved from your services on \"},{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"15th April, 2018\"},{\"type\":\"text\",\"text\":\". \"}]},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null}},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null},\"content\":[{\"type\":\"text\",\"text\":\"We wish you inform you that your resignation has been accepted and you are being relieved from your position of \"},{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"Senior Associate\"},{\"type\":\"text\",\"text\":\" with \"},{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"Functionary Labs Pvt \"},{\"type\":\"text\",\"text\":\"with effect from \"},{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"15th April 2018\"},{\"type\":\"text\",\"text\":\".\"}]},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null}},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null},\"content\":[{\"type\":\"text\",\"text\":\"Your full and final settlement would be processed and credited in the next \"},{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"45 day\"},{\"type\":\"text\",\"text\":\"s to the account provided during your employment. \"}]},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null}},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null},\"content\":[{\"type\":\"text\",\"text\":\"We appreciate your contributions to \"},{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"Functionary Labs Pvt\"},{\"type\":\"text\",\"text\":\" and wish you all the best for your future endeavours.\"}]},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null},\"content\":[{\"type\":\"text\",\"text\":\" \"}]},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null},\"content\":[{\"type\":\"text\",\"text\":\"Regards,\"}]},{\"type\":\"paragraph\",\"attrs\":{\"align\":null,\"id\":null,\"indent\":0,\"lineSpacing\":null},\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"bold\"}],\"text\":\"HR Manager\"}]}]}",
+      "body": "\nTo,\n\n**Abdul Ali**\n\n**Address Line 1,**\\\n**Address Line 2,**\\\n**City, State, PIN**\n\n**Subject: Relieving Letter**\n\nDear **Abdul Ali**,\n\nThis is in furtherance to your resignation letter dated **15th March, 2018** wherein you had requested to be relieved from your services on **15th April, 2018**. \n\nWe wish you inform you that your resignation has been accepted and you are being relieved from your position of **Senior Associate** with **Functionary Labs Pvt** with effect from **15th April 2018**.\n\nYour full and final settlement would be processed and credited in the next **45 day**s to the account provided during your employment. \n\nWe appreciate your contributions to **Functionary Labs Pvt** and wish you all the best for your future endeavours.\n\n \n\nRegards,\n\n**HR Manager**",
+      "Name": "Abdul Ali"
+    },
+    "raw": "\nTo,\n\n**Abdul Ali**\n\n**Address Line 1,**\\\n**Address Line 2,**\\\n**City, State, PIN**\n\n**Subject: Relieving Letter**\n\nDear **Abdul Ali**,\n\nThis is in furtherance to your resignation letter dated **15th March, 2018** wherein you had requested to be relieved from your services on **15th April, 2018**. \n\nWe wish you inform you that your resignation has been accepted and you are being relieved from your position of **Senior Associate** with **Functionary Labs Pvt** with effect from **15th April 2018**.\n\nYour full and final settlement would be processed and credited in the next **45 day**s to the account provided during your employment. \n\nWe appreciate your contributions to **Functionary Labs Pvt** and wish you all the best for your future endeavours.\n\n \n\nRegards,\n\n**HR Manager**",
+    "instance_id": "rl0019",
+    "inserted_at": "2022-02-02T04:10:30",
+    "id": "cdd587d1-4784-4c3c-ab84-1fac7f47b6b6",
+    "build": "uploads/contents/rl0019/final.pdf"
+  }
+}

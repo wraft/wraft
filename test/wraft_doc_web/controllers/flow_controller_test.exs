@@ -1,8 +1,11 @@
 defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   use WraftDocWeb.ConnCase
+  @moduletag :controller
 
   import WraftDoc.Factory
-  alias WraftDoc.{Enterprise.Flow, Enterprise.Flow.State, Repo}
+  alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Repo
 
   @valid_attrs %{
     name: "Authorised",
@@ -10,36 +13,11 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   }
 
   @invalid_attrs %{name: ""}
-  setup %{conn: conn} do
-    user = insert(:user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
 
   test "create flow by valid attrrs and creates default state", %{conn: conn} do
-    user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
-
     state_count_before = State |> Repo.all() |> length()
     count_before = Flow |> Repo.all() |> length()
-    %{uuid: organisation_id} = insert(:organisation)
+    %{id: organisation_id} = insert(:organisation)
     params = Map.put(@valid_attrs, :organisation_id, organisation_id)
 
     conn =
@@ -55,14 +33,6 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   end
 
   test "does not create flow by invalid attrs", %{conn: conn} do
-    user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
-
     count_before = Flow |> Repo.all() |> length()
 
     conn =
@@ -76,13 +46,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "update flow on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-    flow = insert(:flow, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
 
     count_before = Flow |> Repo.all() |> length()
     %{id: organisation_id} = insert(:organisation)
@@ -90,7 +54,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
     conn =
       conn
-      |> put(Routes.v1_flow_path(conn, :update, flow.uuid, params))
+      |> put(Routes.v1_flow_path(conn, :update, flow.id, params))
       |> doc(operation_id: "update_flow")
 
     assert json_response(conn, 200)["flow"]["name"] == @valid_attrs.name
@@ -99,17 +63,11 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "does't update flow on invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-    flow = insert(:flow, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
 
     conn =
       conn
-      |> put(Routes.v1_flow_path(conn, :update, flow.uuid, @invalid_attrs))
+      |> put(Routes.v1_flow_path(conn, :update, flow.id, @invalid_attrs))
       |> doc(operation_id: "update_flow")
 
     assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -117,14 +75,9 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "index lists flow by current user", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-    f1 = insert(:flow, creator: user, organisation: user.organisation)
-    f2 = insert(:flow, creator: user, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
+    [organisation] = user.owned_organisations
+    f1 = insert(:flow, creator: user, organisation: organisation)
+    f2 = insert(:flow, creator: user, organisation: organisation)
 
     conn = get(conn, Routes.v1_flow_path(conn, :index))
 
@@ -136,61 +89,59 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
   test "show renders flow details by id", %{conn: conn} do
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
-    conn = get(conn, Routes.v1_flow_path(conn, :show, flow.uuid))
+    conn = get(conn, Routes.v1_flow_path(conn, :show, flow.id))
 
     assert json_response(conn, 200)["flow"]["name"] == flow.name
   end
 
   test "error not found for id does not exists", %{conn: conn} do
-    user = conn.assigns[:current_user]
-    insert(:membership, organisation: user.organisation)
-
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, user)
-
     conn = get(conn, Routes.v1_flow_path(conn, :show, Ecto.UUID.generate()))
-    assert json_response(conn, 404) == "Not Found"
+    assert json_response(conn, 400)["errors"] == "The Flow id does not exist..!"
   end
 
   test "delete flow by given id", %{conn: conn} do
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, conn.assigns.current_user)
-
     user = conn.assigns.current_user
-    insert(:membership, organisation: user.organisation)
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
     count_before = Flow |> Repo.all() |> length()
 
-    conn = delete(conn, Routes.v1_flow_path(conn, :delete, flow.uuid))
+    conn = delete(conn, Routes.v1_flow_path(conn, :delete, flow.id))
     assert count_before - 1 == Flow |> Repo.all() |> length()
     assert json_response(conn, 200)["name"] == flow.name
   end
 
   test "error not found for user from another organisation", %{conn: conn} do
-    current_user = conn.assigns[:current_user]
-    insert(:membership, organisation: current_user.organisation)
-    user = insert(:user)
-    flow = insert(:flow, creator: user, organisation: user.organisation)
+    flow = insert(:flow)
 
-    conn =
-      build_conn()
-      |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-      |> assign(:current_user, current_user)
+    conn = get(conn, Routes.v1_flow_path(conn, :show, flow.id))
 
-    conn = get(conn, Routes.v1_flow_path(conn, :show, flow.uuid))
+    assert json_response(conn, 400)["errors"] == "The Flow id does not exist..!"
+  end
 
-    assert json_response(conn, 404) == "Not Found"
+  describe "align_states/2" do
+    test "align order of state under a flow ", %{conn: conn} do
+      user = conn.assigns.current_user
+      [organisation] = user.owned_organisations
+      flow = insert(:flow, creator: user, organisation: organisation)
+      s1 = insert(:state, flow: flow, organisation: organisation, order: 1)
+      s2 = insert(:state, flow: flow, organisation: organisation, order: 2)
+      params = %{states: [%{id: s1.id, order: 2}, %{id: s2.id, order: 1}]}
+
+      conn = put(conn, Routes.v1_flow_path(conn, :align_states, flow.id), params)
+
+      state1_in_response =
+        json_response(conn, 200)["states"]
+        |> Enum.filter(fn x -> x["id"] == s1.id end)
+        |> List.first()
+
+      state2_in_response =
+        json_response(conn, 200)["states"]
+        |> Enum.filter(fn x -> x["id"] == s2.id end)
+        |> List.first()
+
+      assert state1_in_response["order"] == 2
+      assert state2_in_response["order"] == 1
+    end
   end
 end

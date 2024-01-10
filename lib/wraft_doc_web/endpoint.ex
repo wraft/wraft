@@ -1,4 +1,5 @@
 defmodule WraftDocWeb.Endpoint do
+  use Sentry.PlugCapture
   use Phoenix.Endpoint, otp_app: :wraft_doc
 
   plug(Phoenix.LiveDashboard.RequestLogger,
@@ -7,11 +8,17 @@ defmodule WraftDocWeb.Endpoint do
   )
 
   socket("/socket", WraftDocWeb.UserSocket,
-    websocket: [timeout: :infinity],
+    websocket: true,
     longpoll: false
   )
 
-  socket("/live", Phoenix.LiveView.Socket)
+  @session_options [
+    store: :cookie,
+    key: "_wraftdoc_key",
+    signing_salt: "hUnYtn2s"
+  ]
+
+  socket("/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]])
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -22,7 +29,7 @@ defmodule WraftDocWeb.Endpoint do
     at: "/",
     from: :wraft_doc,
     gzip: false,
-    only: ~w(css doc fonts images js favicon.ico robots.txt)
+    only: ~w(assets fonts images favicon.ico robots.txt)
   )
 
   plug(
@@ -47,6 +54,8 @@ defmodule WraftDocWeb.Endpoint do
     pass: ["*/*"],
     json_decoder: Jason
   )
+
+  plug Sentry.PlugContext
 
   plug(Plug.Static,
     at: "/kaffy",

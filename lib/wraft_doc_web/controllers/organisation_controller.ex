@@ -1,9 +1,27 @@
 defmodule WraftDocWeb.Api.V1.OrganisationController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  alias WraftDoc.{Enterprise, Enterprise.Organisation}
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    update: "organisation:update",
+    show: "organisation:show",
+    delete: "organisation:delete",
+    invite: "members:manage",
+    members: "organisation:members",
+    index: "organisation:show",
+    remove_user: "members:manage"
 
   action_fallback(WraftDocWeb.FallbackController)
+
+  alias WraftDoc.Account
+  alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.AuthTokens
+  alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.InvitedUsers
 
   def swagger_definitions do
     %{
@@ -44,6 +62,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
             name_of_cto(:string, "Organisation CTO's Name")
             gstin(:string, "GSTIN of organisation")
             corporate_id(:string, "Corporate id of organisation")
+            members_count(:integer, "Number of members")
             phone(:strign, "Phone number of organisation")
             email(:string, "Email of organisation")
             logo(:string, "Logo of organisation")
@@ -60,6 +79,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
             name_of_cto: "Foo Doo",
             gstin: "32AA65FF56545353",
             corporate_id: "BNIJSN1234NGT",
+            members_count: 6,
             email: "abcent@gmail.com",
             logo: "/logo.jpg",
             phone: "865623232",
@@ -124,7 +144,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
           title("Members array")
           description("List of Users/members of an organisation.")
           type(:array)
-          items(Schema.ref(:CurrentUser))
+          items(Schema.ref(:ShowCurrentUser))
         end,
       MembersIndex:
         swagger_schema do
@@ -136,6 +156,70 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
             total_pages(:integer, "Total number of pages")
             total_entries(:integer, "Total number of contents")
           end
+        end,
+      RemoveUser:
+        swagger_schema do
+          title("Remove User")
+          description("Removes the user from the organisation")
+
+          properties do
+            info(:string, "Info", required: true)
+          end
+
+          example(%{info: "User removed from the organisation.!"})
+        end,
+      DeleteOrganisationRequest:
+        swagger_schema do
+          title("Delete Confirmation Token")
+          description("Request body to delete an organisation")
+
+          properties do
+            token(:string, "Token", required: true)
+          end
+
+          example(%{
+            code: "123456"
+          })
+        end,
+      DeletionRequestResponse:
+        swagger_schema do
+          title("Delete Confirmation Code")
+          description("Delete Confirmation Code Response")
+
+          properties do
+            info(:string, "Response Info")
+          end
+
+          example(%{
+            info: "Delete token email sent!"
+          })
+        end,
+      VerifyOrganisationInviteTokenResponse:
+        swagger_schema do
+          title("Verify Organisation invite token")
+
+          description(
+            "Verifies Organisation invite token and returns organisation details and user's details"
+          )
+
+          properties do
+            organisation(Schema.ref(:Organisation))
+          end
+        end,
+      InviteRequest:
+        swagger_schema do
+          title("Invite user")
+          description("Request body to invite a user to an organisation")
+
+          properties do
+            email(:string, "Email of the user", required: true)
+            role_ids(:array, "IDs of roles for the user", required: true)
+          end
+
+          example(%{
+            email: "abcent@gmail.com",
+            role_ids: ["756f1fa1-9657-4166-b372-21e8135aeaf1"]
+          })
         end
     }
   end
@@ -151,8 +235,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     tag("Organisation")
     consumes("multipart/form-data")
     parameter(:name, :formData, :string, "Organisation name", required: true)
-    parameter(:legal_name, :formData, :string, "Legal name of organisation", required: true)
-    parameter(:addres, :formData, :string, "address of organisation")
+    parameter(:legal_name, :formData, :string, "Legal name of organisation")
+    parameter(:address, :formData, :string, "address of organisation")
     parameter(:name_of_ceo, :formData, :string, "name of ceo of organisation")
     parameter(:name_of_cto, :formData, :string, "name of cto of organisation")
     parameter(:gstin, :formData, :string, "gstin of organisation")
@@ -160,25 +244,45 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     parameter(:email, :formData, :string, "Official email")
     parameter(:logo, :formData, :file, "Logo of organisation")
     parameter(:phone, :formData, :string, "Official ph number")
+    parameter(:url, :formData, :string, "URL of organisation")
     response(201, "Created", Schema.ref(:Organisation))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @doc """
-  Createm new organisation
+  Creates a new organisation
   """
-
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with {:ok, %Organisation{} = organisation} <-
-           Enterprise.create_organisation(current_user, params) do
-      conn
-      |> put_status(:created)
-      |> render("create.json", organisation: organisation)
+    case FunWithFlags.enabled?(:waiting_list_organisation_create_control,
+           for: %{email: current_user.email}
+         ) do
+      true ->
+        with %Organisation{id: id} = organisation <-
+               Enterprise.create_organisation(current_user, params),
+             {:ok, %Oban.Job{}} <-
+               Enterprise.create_default_worker_job(
+                 %{organisation_id: id, user_id: current_user.id},
+                 "organisation_roles"
+               ),
+             {:ok, %Oban.Job{}} <-
+               Enterprise.create_default_worker_job(
+                 %{organisation_id: id},
+                 "wraft_theme_and_layout"
+               ) do
+          render(conn, "create.json", organisation: organisation)
+        end
+
+      false ->
+        conn
+        |> put_resp_header("content-type", "application/json")
+        |> send_resp(
+          401,
+          Jason.encode!("User does not have privilege to create an organisation!")
+        )
     end
   end
 
@@ -192,7 +296,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     description("API to update an organisation")
     parameter(:id, :path, :string, "organisation id", required: true)
     parameter(:name, :formData, :string, "Organisation name", required: true)
-    parameter(:legal_name, :formData, :string, "Legal name of organisation", required: true)
+    parameter(:legal_name, :formData, :string, "Legal name of organisation")
     parameter(:addres, :formData, :string, "address of organisation")
     parameter(:name_of_ceo, :formData, :string, "name of ceo of organisation")
     parameter(:name_of_cto, :formData, :string, "name of cto of organisation")
@@ -201,6 +305,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     parameter(:email, :formData, :string, "Official email")
     parameter(:logo, :formData, :file, "Logo of organisation")
     parameter(:phone, :formData, :string, "Official ph number")
+    parameter(:url, :formData, :string, "URL of organisation")
 
     response(201, "Accepted", Schema.ref(:Organisation))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -209,13 +314,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
-    with %Organisation{} = organisation <- Enterprise.get_organisation(uuid),
-         {:ok, %Organisation{} = organisation} <-
+  def update(conn, %{"id" => id} = params) do
+    with %Organisation{} = organisation <- Enterprise.get_organisation(id),
+         params <- remove_name_from_params(organisation, params),
+         {:ok, organisation} <-
            Enterprise.update_organisation(organisation, params) do
-      conn
-      |> put_status(:created)
-      |> render("create.json", organisation: organisation)
+      render(conn, "create.json", organisation: organisation)
     end
   end
 
@@ -237,9 +341,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => uuid}) do
-    with %Organisation{} = organisation <- Enterprise.get_organisation(uuid) do
-      render(conn, "show.json", organisation: organisation)
+  def show(conn, %{"id" => id}) do
+    case Enterprise.get_organisation_with_member_count(id) do
+      %Organisation{} = organisation -> render(conn, "show.json", organisation: organisation)
+      # TODO - Change this to use with statement and make sure it returns only 200, 404, and 401
+      _ -> {:error, :invalid_id}
     end
   end
 
@@ -247,14 +353,19 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   Delete an organisation
   """
   swagger_path :delete do
-    PhoenixSwagger.Path.delete("/organisations/{id}")
+    PhoenixSwagger.Path.delete("/organisations")
     summary("Delete an organisation")
     description("Delete Organisation API")
     operation_id("delete_organisation")
     tag("Organisation")
 
     parameters do
-      id(:path, :string, "Organisation id", required: true)
+      delete_token(
+        :body,
+        Schema.ref(:DeleteOrganisationRequest),
+        "Deletion Confirmation code",
+        required: true
+      )
     end
 
     response(200, "Ok", Schema.ref(:Organisation))
@@ -264,10 +375,66 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
-    with %Organisation{} = organisation <- Enterprise.get_organisation(uuid),
+  def delete(conn, params) do
+    %{current_org_id: organisation_id, email: email} = current_user = conn.assigns.current_user
+
+    with {:error, :already_member} <-
+           Enterprise.already_member(organisation_id, email),
+         %AuthToken{} = _token <- AuthTokens.verify_delete_token(current_user, params),
+         %Organisation{} = organisation <- Enterprise.get_organisation(organisation_id),
          {:ok, %Organisation{}} <- Enterprise.delete_organisation(organisation) do
       render(conn, "organisation.json", organisation: organisation)
+    else
+      :ok ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(401, Jason.encode!(%{errors: "User is not a member of this organisation!"}))
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
+    Confirmation code to delete an organisation
+  """
+  swagger_path :request_deletion do
+    post("/organisations/request_deletion")
+    summary("Organisation Deletion Code")
+    description("Request Organisation Deletion Code")
+    operation_id("request_organisation_deletion")
+    tag("Organisation")
+
+    response(200, "Ok", Schema.ref(:DeletionRequestResponse))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  @spec request_deletion(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def request_deletion(conn, _params) do
+    %{current_org_id: organisation_id, email: email} = current_user = conn.assigns.current_user
+
+    with {:error, :already_member} <- Enterprise.already_member(organisation_id, email),
+         %Organisation{name: name} = organisation when name != "Personal" <-
+           Enterprise.get_organisation(organisation_id),
+         {:ok, %Oban.Job{}} <-
+           AuthTokens.generate_delete_token_and_send_email(current_user, organisation) do
+      conn
+      |> put_resp_content_type("application/json")
+      |> send_resp(200, Jason.encode!(%{info: "Delete token email sent!"}))
+    else
+      %Organisation{name: "Personal"} ->
+        body = Jason.encode!(%{errors: "Can't delete personal organisation"})
+        conn |> put_resp_content_type("application/json") |> send_resp(422, body)
+
+      :ok ->
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(401, Jason.encode!(%{errors: "User is not a member of this organisation!"}))
+
+      error ->
+        error
     end
   end
 
@@ -275,13 +442,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   Invite new member.
   """
   swagger_path :invite do
-    post("/organisations/{id}/invite")
+    post("/organisations/users/invite")
     summary("Invite new member to the organisation")
     description("Invite new member to the organisation")
 
     parameters do
-      id(:path, :string, "Organisation id", required: true)
-      email(:body, :string, "Email of the user", required: true)
+      invite(:body, Schema.ref(:InviteRequest), "Invite request", required: true)
     end
 
     response(200, "Ok", Schema.ref(:InvitedResponse))
@@ -290,13 +456,37 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def invite(conn, %{"id" => id, "email" => email}) do
+  def invite(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %Organisation{} = organisation <- Enterprise.check_permission(current_user, id),
-         :ok <- Enterprise.already_member?(email),
-         {:ok, _} <- Enterprise.invite_team_member(current_user, organisation, email) do
+    with %Organisation{name: name} = organisation when name != "Personal" <-
+           Enterprise.get_organisation(current_user.current_org_id),
+         :ok <- Enterprise.already_member(current_user.current_org_id, params["email"]),
+         [_ | _] = roles <-
+           (params["role_ids"] || [])
+           |> Stream.map(&Account.get_role(current_user, &1))
+           |> Stream.reject(&is_nil/1)
+           |> Enum.map(& &1.id),
+         {:ok, _} <-
+           Enterprise.invite_team_member(current_user, organisation, params["email"], roles) do
+      FunWithFlags.enable(:waiting_list_registration_control,
+        for_actor: %{email: params["email"]}
+      )
+
+      InvitedUsers.create_or_update_invited_user(params["email"], organisation.id)
+
       render(conn, "invite.json")
+    else
+      %Organisation{name: "Personal"} ->
+        body = Jason.encode!(%{errors: "Can't invite to personal organisation"})
+        conn |> put_resp_content_type("application/json") |> send_resp(422, body)
+
+      [] ->
+        body = Jason.encode!(%{errors: "No roles found"})
+        conn |> put_resp_content_type("application/json") |> send_resp(404, body)
+
+      error ->
+        error
     end
   end
 
@@ -313,6 +503,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
       id(:path, :string, "ID of the organisation")
       page(:query, :string, "Page number")
       name(:query, :string, "Name of the user")
+      role(:query, :string, "Name of the role")
+      sort(:query, :string, "Sort Keys => name, name_desc, joined_at, joined_at_desc")
     end
 
     response(200, "Ok", Schema.ref(:MembersIndex))
@@ -371,36 +563,67 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     end
   end
 
-  # swagger_path :search do
-  #   get("/organisations")
-  #   summary("Search organisation")
-  #   description("Search and list organisation by name")
+  swagger_path :remove_user do
+    post("/organisations/remove_user/{id}")
+    summary("Api to remove a user from the given organisation")
+    description("Api to remove a user from an organisation")
 
-  #   parameters do
-  #     name(:query, :string, "Organisations name")
-  #     page(:query, :string, "Page number")
-  #   end
+    parameters do
+      id(:path, :string, "User id")
+    end
 
-  #   response(200, "Ok", Schema.ref(:Index))
-  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
-  #   response(401, "Unauthorized", Schema.ref(:Error))
-  #   response(404, "Not Found", Schema.ref(:Error))
-  # end
+    response(200, "ok", Schema.ref(:RemoveUser))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
 
-  # def search(conn, params) do
-  #   with %{
-  #          entries: organisations,
-  #          page_number: page_number,
-  #          total_pages: total_pages,
-  #          total_entries: total_entries
-  #        } <- Enterprise.search_organisations(params) do
-  #     conn
-  #     |> render("index.json",
-  #       organisations: organisations,
-  #       page_number: page_number,
-  #       total_pages: total_pages,
-  #       total_entries: total_entries
-  #     )
-  #   end
-  # end
+  @doc """
+    Remove a user from the organisation
+  """
+  @spec remove_user(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def remove_user(conn, %{"id" => user_id}) do
+    current_user = conn.assigns[:current_user]
+
+    with %UserOrganisation{} = user_organisation <-
+           Enterprise.get_user_organisation(current_user, user_id),
+         {:ok, %UserOrganisation{}} <- Enterprise.remove_user(user_organisation) do
+      render(conn, "remove_user.json")
+    end
+  end
+
+  swagger_path :verify_invite_token do
+    get("/organisations/verify_invite_token/{token}")
+    summary("Verify invite token")
+    description("Api to verify organisation invite token")
+
+    parameters do
+      token(:path, :string, "Invite token")
+    end
+
+    response(200, "Ok", Schema.ref(:VerifyOrganisationInviteTokenResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  @doc """
+    Verify organisation invite token
+  """
+  @spec verify_invite_token(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def verify_invite_token(conn, %{"token" => token}) do
+    with {:ok, %{organisation_id: organisation_id, email: email}} <-
+           AuthTokens.check_token(token, :invite),
+         %Organisation{} = organisation <- Enterprise.get_organisation(organisation_id) do
+      render(conn, "verify_invite_token.json",
+        organisation: organisation,
+        email: email
+      )
+    end
+  end
+
+  # This stops the user from changing the name of Personal organisation
+  defp remove_name_from_params(%Organisation{name: "Personal"}, params),
+    do: Map.delete(params, "name")
+
+  defp remove_name_from_params(_, params), do: params
 end

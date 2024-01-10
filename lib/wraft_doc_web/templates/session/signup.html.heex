@@ -1,0 +1,26 @@
+<div class="bg-gy-lighter height-full flex item-center -mt-8">
+  <div class="login container">
+    <div class="login-container">
+      <h4 class="text-center mb-1">Login to your account</h4>
+      <%= form_for @changeset, Routes.session_path(@conn, :create), [ class: "bg-white mb-8"], fn f -> %>
+      <div class="mb-4">
+        <label class="block label mb-2" for="username">
+          Email
+        </label>
+        <%= text_input f, :email, placeholder: "Enter Email", class: "input-text w-full", required: "true"%>
+      </div>
+      <div class="mb-6">
+        <div class="flex justify-between item-center ">
+          <label class="block label mb-2" for="password">
+            Password
+          </label>
+        </div>
+        <%= password_input f, :password, placeholder: "Enter Password", class: "input-text w-full", required: "true"%>
+      </div>
+      <div class="flex items-center justify-between">
+        <%= submit "Signup", class: "btn-pry w-full"%>
+      </div>
+    <% end %>
+  </div>
+</div>
+</div>

@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.ProfileController do
   use WraftDocWeb, :controller
-  plug(WraftDocWeb.Plug.Authorized)
+  # plug(WraftDocWeb.Plug.Authorized)
   plug(WraftDocWeb.Plug.AddActionLog)
   import Ecto.Query, warn: false
   alias WraftDoc.{Account, Account.Profile}
@@ -117,8 +117,8 @@ defmodule WraftDocWeb.Api.V1.ProfileController do
   #   response(401, "Unauthorized", Schema.ref(:Error))
   # end
 
-  # def show(conn, %{"id" => uuid}) do
-  #   with %Profile{} = profile <- Account.get_profile(uuid) do
+  # def show(conn, %{"id" => id}) do
+  #   with %Profile{} = profile <- Account.get_profile(id) do
   #     conn
   #     |> render("profile.json", profile: profile)
   #   end

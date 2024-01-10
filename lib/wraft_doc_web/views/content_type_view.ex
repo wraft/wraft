@@ -2,20 +2,50 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
   use WraftDocWeb, :view
 
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{FieldTypeView, FlowView, LayoutView, UserView}
+  alias WraftDocWeb.Api.V1.FieldTypeView
+  alias WraftDocWeb.Api.V1.FlowView
+  alias WraftDocWeb.Api.V1.LayoutView
+  alias WraftDocWeb.Api.V1.ThemeView
+  alias WraftDocWeb.Api.V1.UserView
 
   def render("create.json", %{content_type: c_type}) do
     %{
-      id: c_type.uuid,
+      id: c_type.id,
       name: c_type.name,
-      decription: c_type.description,
+      description: c_type.description,
       fields: render_many(c_type.fields, ContentTypeView, "field.json", as: :field),
       color: c_type.color,
       prefix: c_type.prefix,
       inserted_at: c_type.inserted_at,
       updated_at: c_type.updated_at,
+      theme: render_one(c_type.theme, ThemeView, "create.json", as: :theme),
       layout: render_one(c_type.layout, LayoutView, "layout.json", as: :doc_layout),
       flow: render_one(c_type.flow, FlowView, "flow.json", as: :flow)
+    }
+  end
+
+  def render("role_content_type.json", %{content_type: c_type}) do
+    %{
+      id: c_type.id,
+      name: c_type.name,
+      description: c_type.description,
+      color: c_type.color,
+      prefix: c_type.prefix,
+      inserted_at: c_type.inserted_at,
+      updated_at: c_type.updated_at
+    }
+  end
+
+  def render("role_content_types.json", %{content_type: content_type}) do
+    %{
+      id: content_type.id,
+      name: content_type.name,
+      description: content_type.description,
+      color: content_type.color,
+      prefix: content_type.prefix,
+      inserted_at: content_type.inserted_at,
+      updated_at: content_type.updated_at,
+      role: render_many(content_type.roles, RoleView, "role.json", as: :role)
     }
   end
 
@@ -44,9 +74,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("content_type.json", %{content_type: c_type}) do
     %{
-      id: c_type.uuid,
+      id: c_type.id,
       name: c_type.name,
-      decription: c_type.description,
+      description: c_type.description,
       color: c_type.color,
       prefix: c_type.prefix,
       inserted_at: c_type.inserted_at,
@@ -56,9 +86,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("c_type_with_layout.json", %{content_type: c_type}) do
     %{
-      id: c_type.uuid,
+      id: c_type.id,
       name: c_type.name,
-      decription: c_type.description,
+      description: c_type.description,
       color: c_type.color,
       prefix: c_type.prefix,
       inserted_at: c_type.inserted_at,
@@ -69,9 +99,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("c_type_and_fields.json", %{c_type: c_type}) do
     %{
-      id: c_type.uuid,
+      id: c_type.id,
       name: c_type.name,
-      decription: c_type.description,
+      description: c_type.description,
       fields: render_many(c_type.fields, ContentTypeView, "field.json", as: :field),
       color: c_type.color,
       prefix: c_type.prefix,
@@ -82,14 +112,15 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("show_c_type.json", %{content_type: c_type}) do
     %{
-      id: c_type.uuid,
+      id: c_type.id,
       name: c_type.name,
-      decription: c_type.description,
+      description: c_type.description,
       fields: render_many(c_type.fields, ContentTypeView, "field.json", as: :field),
       color: c_type.color,
       prefix: c_type.prefix,
       inserted_at: c_type.inserted_at,
       updated_at: c_type.updated_at,
+      theme: render_one(c_type.theme, ThemeView, "create.json", as: :theme),
       layout: render_one(c_type.layout, LayoutView, "layout.json", as: :doc_layout),
       flow: render_one(c_type.flow, FlowView, "flow_and_states.json", as: :flow)
     }
@@ -97,8 +128,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
 
   def render("field.json", %{field: field}) do
     %{
-      id: field.uuid,
+      id: field.id,
       name: field.name,
+      meta: field.meta,
+      description: field.description,
       field_type: render_one(field.field_type, FieldTypeView, "field_type.json", as: :field_type)
     }
   end

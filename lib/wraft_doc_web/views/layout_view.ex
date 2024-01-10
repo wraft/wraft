@@ -1,11 +1,13 @@
 defmodule WraftDocWeb.Api.V1.LayoutView do
   use WraftDocWeb, :view
-  alias WraftDocWeb.Api.V1.{AssetView, EngineView, UserView}
+  alias WraftDocWeb.Api.V1.AssetView
+  alias WraftDocWeb.Api.V1.EngineView
+  alias WraftDocWeb.Api.V1.UserView
   alias __MODULE__
 
   def render("create.json", %{doc_layout: layout}) do
     %{
-      id: layout.uuid,
+      id: layout.id,
       name: layout.name,
       description: layout.description,
       width: layout.width,
@@ -23,7 +25,7 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
 
   def render("layout.json", %{doc_layout: layout}) do
     %{
-      id: layout.uuid,
+      id: layout.id,
       name: layout.name,
       description: layout.description,
       width: layout.width,
@@ -59,10 +61,10 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
   end
 
   defp generate_url(%{slug_file: file} = layout) do
-    WraftDocWeb.LayoutSlugUploader.url({file, layout})
+    WraftDocWeb.LayoutSlugUploader.url({file, layout}, signed: true)
   end
 
   defp generate_ss_url(%{screenshot: file} = layout) do
-    WraftDocWeb.LayoutScreenShotUploader.url({file, layout})
+    WraftDocWeb.LayoutScreenShotUploader.url({file, layout}, signed: true)
   end
 end

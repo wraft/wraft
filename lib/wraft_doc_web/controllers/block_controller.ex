@@ -1,12 +1,19 @@
 defmodule WraftDocWeb.Api.V1.BlockController do
   use WraftDocWeb, :controller
-
   use PhoenixSwagger
-  action_fallback(WraftDocWeb.FallbackController)
-  plug(WraftDocWeb.Plug.Authorized)
+
   plug(WraftDocWeb.Plug.AddActionLog)
 
-  alias WraftDoc.{Document, Document.Block}
+  plug WraftDocWeb.Plug.Authorized,
+    create: "block:manage",
+    update: "block:manage",
+    show: "block:show",
+    delete: "block:delete"
+
+  action_fallback(WraftDocWeb.FallbackController)
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Block
 
   def swagger_definitions do
     %{
@@ -86,6 +93,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
           example(%{
             name: "Farming",
+            description: "Description about block",
             btype: "pie",
             api_route: "http://localhost:8080/chart",
             endpoint: "blocks_api",
@@ -149,6 +157,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
     parameter(:name, :formData, :string, "Block name", required: true)
     parameter(:btype, :formData, :string, "Block type", required: true)
+    parameter(:description, :formData, :string, "Description about Block")
     parameter(:dataset, :formData, :map, "Dataset for creating charts")
     parameter(:api_route, :formData, :string, "Api route to generate chart")
     parameter(:endpoint, :formData, :string, "name of the endpoint going to choose")
@@ -203,7 +212,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
     case Document.generate_chart(params) do
@@ -213,7 +222,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
           "tex_chart" => Document.generate_tex_chart(params)
         })
 
-        with %Block{} = block <- Document.get_block(uuid, current_user),
+        with %Block{} = block <- Document.get_block(id, current_user),
              %Block{} = block <- Document.update_block(block, params) do
           render(conn, "update.json", block: block)
         end
@@ -240,10 +249,10 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def show(conn, %{"id" => uuid}) do
+  def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Block{} = block <- Document.get_block(uuid, current_user) do
+    with %Block{} = block <- Document.get_block(id, current_user) do
       render(conn, "show.json", block: block)
     end
   end
@@ -263,10 +272,10 @@ defmodule WraftDocWeb.Api.V1.BlockController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Block{} = block <- Document.get_block(uuid, current_user),
+    with %Block{} = block <- Document.get_block(id, current_user),
          {:ok, %Block{}} <- Document.delete_block(block) do
       render(conn, "block.json", block: block)
     end

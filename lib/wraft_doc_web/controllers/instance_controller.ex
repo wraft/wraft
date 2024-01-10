@@ -1,19 +1,36 @@
 defmodule WraftDocWeb.Api.V1.InstanceController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    index: "instance:show",
+    all_contents: "instance:show",
+    show: "instance:show",
+    update: "instance:manage",
+    delete: "instance:delete",
+    build: "instance:manage",
+    state_update: "instance:manage",
+    lock_unlock: "instance:lock",
+    search: "instance:show",
+    change: "instance:show",
+    approve: "instance:review",
+    reject: "instance:review"
+
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.{
-    Document,
-    Document.ContentType,
-    Document.Instance,
-    Document.Layout,
-    Enterprise,
-    Enterprise.Flow.State,
-    Enterprise.Vendor
-  }
+  require Logger
+
+  alias WraftDoc.Client.Minio.DownloadError
+  alias WraftDoc.Document
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.Instance
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Flow.State
+
+  alias WraftDocWeb.Api.V1.InstanceVersionView
 
   def swagger_definitions do
     %{
@@ -50,15 +67,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           properties do
             raw(:string, "Content raw data", required: true)
             serialized(:string, "Content serialized data")
-            state_uuid(:string, "state id", required: true)
-            vendor_uuid(:string, "Vendor id", required: true)
           end
 
           example(%{
             raw: "Content data",
-            serialized: %{title: "Title of the content", body: "Body of the content"},
-            state_uuid: "kjb12389k23eyg",
-            vendor_uuid: "15dsdf-s5d1f-1d51f-1sfd15-1s5df"
+            serialized: %{title: "Title of the content", body: "Body of the content"}
           })
         end,
       ContentUpdateRequest:
@@ -69,11 +82,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           properties do
             raw(:string, "Content raw data", required: true)
             serialized(:string, "Content serialized data")
+            naration(:string, "Naration for updation")
           end
 
           example(%{
             raw: "Content data",
-            serialized: %{title: "Title of the content", body: "Body of the content"}
+            serialized: %{title: "Title of the content", body: "Body of the content"},
+            naration: "Revision by manager"
           })
         end,
       ContentStateUpdateRequest:
@@ -82,11 +97,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           description("Content state update request")
 
           properties do
-            state_uuid(:string, "state id", required: true)
+            state_id(:string, "state id", required: true)
           end
 
           example(%{
-            state_uuid: "kjb12389k23eyg"
+            state_id: "kjb12389k23eyg"
           })
         end,
       ContentAndContentTypeAndState:
@@ -276,6 +291,47 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             reg_no: "ASD21122",
             contact_person: "vikas abu"
           })
+        end,
+      LockUnlockRequest:
+        swagger_schema do
+          title("Lock unlock request")
+          description("request to lock or unlock")
+
+          properties do
+            editable(:boolean, "Editable", required: true)
+          end
+
+          example(%{
+            editable: true
+          })
+        end,
+      Change:
+        swagger_schema do
+          title("List of changes")
+          description("Lists the chenges on a version")
+
+          properties do
+            ins(:array)
+            del(:array)
+          end
+
+          example(%{
+            ins: ["testing version succesufll"],
+            del: ["testing version"]
+          })
+        end,
+      BuildRequest:
+        swagger_schema do
+          title("Build request")
+          description("Request to build a document")
+
+          properties do
+            naration(:string, "Naration for this version")
+          end
+
+          example(%{
+            naration: "New year edition"
+          })
         end
     }
   end
@@ -301,19 +357,21 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(
         conn,
-        %{"c_type_id" => c_type_uuid, "state_uuid" => state_uuid, "vendor_uuid" => vendor_uuid} =
-          params
+        %{"c_type_id" => c_type_id} = params
       ) do
     current_user = conn.assigns[:current_user]
     type = Instance.types()[:normal]
     params = Map.put(params, "type", type)
 
-    with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_uuid),
-         %State{} = state <- Enterprise.get_state(current_user, state_uuid),
-         %Vendor{} = vendor <- Enterprise.get_vendor(current_user, vendor_uuid),
+    with %ContentType{} = c_type <- Document.show_content_type(current_user, c_type_id),
          %Instance{} = content <-
-           Document.create_instance(current_user, c_type, state, vendor, params) do
+           Document.create_instance(current_user, c_type, params) do
+      Logger.info("Create content success")
       render(conn, :create, content: content)
+    else
+      error ->
+        Logger.error("Create content failed", error: error)
+        error
     end
   end
 
@@ -328,6 +386,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     parameters do
       c_type_id(:path, :string, "ID of the content type", required: true)
       page(:query, :string, "Page number")
+      instance_id(:query, :string, "Instance ID")
+
+      sort(
+        :query,
+        :string,
+        "sort keys => instance_id, instance_id_desc, inserted_at, inserted_at_desc"
+      )
     end
 
     response(200, "Ok", Schema.ref(:ContentsIndex))
@@ -335,13 +400,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, %{"c_type_id" => c_type_uuid} = params) do
+  def index(conn, %{"c_type_id" => c_type_id} = params) do
     with %{
            entries: contents,
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.instance_index(c_type_uuid, params) do
+         } <- Document.instance_index(c_type_id, params) do
       render(conn, "index.json",
         contents: contents,
         page_number: page_number,
@@ -361,6 +426,14 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     parameters do
       page(:query, :string, "Page number")
+      instance_id(:query, :string, "Instance ID")
+      content_type_name(:query, :string, "Content Type name")
+
+      sort(
+        :query,
+        :string,
+        "sort keys => instance_id, instance_id_desc, inserted_at, inserted_at_desc"
+      )
     end
 
     response(200, "Ok", Schema.ref(:ContentsIndex))
@@ -403,10 +476,10 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => instance_uuid}) do
+  def show(conn, %{"id" => instance_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Document.show_instance(instance_uuid, current_user) do
+    with %Instance{} = instance <- Document.show_instance(instance_id, current_user) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -432,11 +505,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Instance{} = instance <- Document.get_instance(uuid, current_user),
-         %Instance{} = instance <- Document.update_instance(instance, current_user, params) do
+    with %Instance{} = instance <- Document.get_instance(id, current_user),
+         %Instance{} = instance <- Document.update_instance(instance, params) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -460,11 +533,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Instance{} = instance <- Document.get_instance(uuid, current_user),
-         {:ok, %Instance{}} <- Document.delete_instance(instance, current_user) do
+    with %Instance{} = instance <- Document.get_instance(id, current_user),
+         {:ok, _} <- Document.delete_uploaded_docs(instance),
+         {:ok, %Instance{}} <- Document.delete_instance(instance) do
       render(conn, "instance.json", instance: instance)
     end
   end
@@ -479,6 +553,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     parameters do
       id(:path, :string, "instance id", required: true)
+      version(:body, Schema.ref(:BuildRequest), "Params for version")
     end
 
     response(200, "Ok", Schema.ref(:Content))
@@ -488,31 +563,44 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec build(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def build(conn, %{"id" => instance_uuid}) do
+  def build(conn, %{"id" => instance_id} = params) do
     current_user = conn.assigns[:current_user]
     start_time = Timex.now()
 
-    with %Instance{content_type: %{layout: layout}} = instance <-
-           Document.show_instance(instance_uuid, current_user),
-         %Layout{} = layout <- Document.preload_asset(layout),
-         {_, exit_code} <- Document.build_doc(instance, layout) do
-      end_time = Timex.now()
+    case Document.show_instance(instance_id, current_user) do
+      %Instance{content_type: %{layout: layout}} = instance ->
+        with %Layout{} = layout <- Document.preload_asset(layout),
+             {_, exit_code} <- Document.build_doc(instance, layout) do
+          end_time = Timex.now()
 
-      Task.start_link(fn ->
-        Document.add_build_history(current_user, instance, %{
-          start_time: start_time,
-          end_time: end_time,
-          exit_code: exit_code
-        })
-      end)
+          Task.start_link(fn ->
+            Document.add_build_history(current_user, instance, %{
+              start_time: start_time,
+              end_time: end_time,
+              exit_code: exit_code
+            })
+          end)
 
-      handle_response(conn, exit_code, instance)
+          handle_response(conn, exit_code, instance, params)
+        end
+
+      _ ->
+        {:error, :not_sufficient}
     end
+  rescue
+    DownloadError ->
+      conn
+      |> put_status(404)
+      |> json(%{error: "File not found"})
   end
 
-  defp handle_response(conn, exit_code, instance) do
+  defp handle_response(conn, exit_code, instance, params) do
     case exit_code do
       0 ->
+        Task.start_link(fn ->
+          Document.create_version(conn.assigns.current_user, instance, params)
+        end)
+
         render(conn, "instance.json", instance: instance)
 
       _ ->
@@ -542,13 +630,150 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec state_update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def state_update(conn, %{"id" => instance_uuid, "state_uuid" => state_uuid}) do
+  def state_update(conn, %{"id" => instance_id, "state_id" => state_id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Instance{} = instance <- Document.get_instance(instance_uuid, current_user),
-         %State{} = state <- Enterprise.get_state(current_user, state_uuid),
-         %Instance{} = instance <- Document.update_instance_state(current_user, instance, state) do
+    with %Instance{} = instance <- Document.get_instance(instance_id, current_user),
+         %State{} = state <- Enterprise.get_state(current_user, state_id),
+         %Instance{} = instance <- Document.update_instance_state(instance, state) do
       render(conn, "show.json", instance: instance)
+    end
+  end
+
+  swagger_path :lock_unlock do
+    patch("/contents/{id}/lock-unlock")
+    summary("Lock or unlock and instance")
+    description("API to update an instanc")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+
+      content(:body, Schema.ref(:LockUnlockRequest), "Lock or unlock instance", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContent))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  def lock_unlock(conn, %{"id" => instance_id} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with %Instance{} = instance <- Document.get_instance(instance_id, current_user),
+         %Instance{} = instance <-
+           Document.lock_unlock_instance(instance, params) do
+      render(conn, "show.json", instance: instance)
+    end
+  end
+
+  swagger_path :search do
+    get("/contents/title/search")
+    summary("Search instances")
+
+    description(
+      "API to search instances by it title on serialized on instnaces under that organisation"
+    )
+
+    parameters do
+      key(:query, :string, "Search key")
+      page(:query, :string, "Page number")
+    end
+
+    response(200, "Ok", Schema.ref(:ContentsIndex))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def search(conn, %{"key" => key} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with %{
+           entries: contents,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.instance_index(current_user, key, params) do
+      render(conn, "index.json",
+        contents: contents,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
+
+  swagger_path :change do
+    get("/contents/{id}/change/{v_id}")
+    summary("List changes")
+
+    description("API to List changes in a particular version")
+
+    parameters do
+      id(:path, :string, "Instance id")
+      v_id(:path, :string, "version id")
+    end
+
+    response(200, "Ok", Schema.ref(:Change))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def change(conn, %{"id" => instance_id, "v_id" => version_id}) do
+    current_user = conn.assigns[:current_user]
+
+    with %Instance{} = instance <- Document.get_instance(instance_id, current_user) do
+      change = Document.version_changes(instance, version_id)
+
+      conn
+      |> put_view(InstanceVersionView)
+      |> render("change.json", change: change)
+    end
+  end
+
+  swagger_path :approve do
+    put("/contents/{id}/approve")
+    summary("Approve an instance")
+    description("Api to approve an instance")
+
+    parameters do
+      id(:path, :string, "Instance id")
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContent))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  def approve(conn, %{"id" => id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Document.show_instance(id, current_user),
+         %Instance{} = instance <- Document.approve_instance(current_user, instance) do
+      render(conn, "show.json", %{instance: instance})
+    end
+  end
+
+  swagger_path :reject do
+    put("/contents/{id}/reject")
+    summary("Reject approval of an instance")
+    description("Api to reject an instance")
+
+    parameters do
+      id(:path, :string, "Instance id")
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContent))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  def reject(conn, %{"id" => id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Document.show_instance(id, current_user),
+         %Instance{} = instance <- Document.reject_instance(current_user, instance) do
+      render(conn, "show.json", %{instance: instance})
     end
   end
 end

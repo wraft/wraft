@@ -3,13 +3,13 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
   The pipeline trigger history model.
   """
   alias __MODULE__
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
+
+  @type t :: %__MODULE__{}
 
   @derive {Jason.Encoder,
            only: [
              :id,
-             :uuid,
              :data,
              :error,
              :state,
@@ -23,7 +23,6 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
     do: [enqued: 1, executing: 2, pending: 3, partially_completed: 4, success: 5, failed: 6]
 
   schema "trigger_history" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
     field(:data, :map)
     field(:error, :map, default: %{})
     field(:state, :integer)
@@ -39,7 +38,7 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
   @doc """
   Get the state value of a trigger history from its integer.
   """
-  @spec get_state(%TriggerHistory{}) :: nil | binary
+  @spec get_state(TriggerHistory.t()) :: nil | binary
   def get_state(%TriggerHistory{state: state_int}) do
     states()
     |> Enum.find(fn {_state, int} -> int == state_int end)

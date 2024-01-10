@@ -2,26 +2,34 @@ defmodule WraftDoc.Repo.Migrations.CreatePipelineTable do
   use Ecto.Migration
 
   def up do
-    create table(:pipeline) do
-      add(:uuid, :uuid, null: false)
+    create table(:pipeline, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:name, :string)
       add(:api_route, :string)
-      add(:creator_id, references(:user, on_delete: :nilify_all))
-      add(:organisation_id, references(:organisation, on_delete: :delete_all))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
+
+      add(
+        :organisation_id,
+        references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
 
       timestamps()
     end
 
-    create table(:pipe_stage) do
-      add(:uuid, :uuid, null: false)
-      add(:pipeline_id, references(:pipeline, on_delete: :delete_all))
-      add(:content_type_id, references(:content_type, on_delete: :delete_all))
+    create table(:pipe_stage, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
+      add(:pipeline_id, references(:pipeline, type: :uuid, column: :id, on_delete: :nilify_all))
+
+      add(
+        :content_type_id,
+        references(:content_type, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
     end
 
-    create table(:hook_trigger_history) do
-      add(:uuid, :uuid, null: false)
+    create table(:hook_trigger_history, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:meta, :jsonb)
-      add(:pipeline_id, references(:pipeline))
+      add(:pipeline_id, references(:pipeline, type: :uuid, column: :id, on_delete: :nilify_all))
 
       timestamps()
     end

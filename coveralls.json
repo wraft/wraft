@@ -1,0 +1,9 @@
+{
+  "custom_stop_words": [],
+
+  "coverage_options": {
+    "output_dir": "cover/",
+    "minimum_coverage": 60
+  },
+  "skip_files": []
+}

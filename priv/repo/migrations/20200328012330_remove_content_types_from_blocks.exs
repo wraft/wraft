@@ -9,7 +9,10 @@ defmodule WraftDoc.Repo.Migrations.RemoveContentTypesFromBlocks do
 
   def down do
     alter table(:block) do
-      add(:content_type_id, references(:content_type, on_delete: :nilify_all))
+      add(
+        :content_type_id,
+        references(:content_type, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
     end
   end
 end

@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
 
   def render("profile.json", %{profile: profile}) do
     %{
-      uuid: profile.uuid,
+      id: profile.id,
       name: profile.name,
       dob: profile.dob,
       gender: profile.gender,
@@ -18,7 +18,7 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
 
   def render("current_profile.json", %{user: user}) do
     %{
-      uuid: user.profile.uuid,
+      id: user.profile.id,
       name: user.profile.name,
       dob: user.profile.dob,
       gender: user.profile.gender,
@@ -29,7 +29,7 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
 
   def render("base_profile.json", %{profile: profile}) do
     %{
-      uuid: profile.uuid,
+      id: profile.id,
       name: profile.name,
       dob: profile.dob,
       gender: profile.gender,
@@ -38,6 +38,6 @@ defmodule WraftDocWeb.Api.V1.ProfileView do
   end
 
   def generate_url(%{profile_pic: pic} = profile) do
-    WraftDocWeb.PropicUploader.url({pic, profile})
+    WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
   end
 end

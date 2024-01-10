@@ -1,0 +1,121 @@
+{
+    "type": "doc",
+    "content": [
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "About Functionary Labs"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": "inherit"
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Founded in 2018, Functionary Labs is a dynamic Product Development studio that specialises in design and product development solutions."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": "inherit"
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Our team has extensive experience in building products and solutions for early-stage startups with likes of Furlenco, Jiffstore, and FrontierWallet."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Issuing visitng card for "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "name",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": ", for the position of "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "position",
+                        "named": null
+                    }
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            }
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Regards"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            }
+        }
+    ]
+}

@@ -1,10 +1,21 @@
 defmodule WraftDocWeb.Api.V1.CommentController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "comment:manage",
+    index: "comment:show",
+    reply: "comment:manage",
+    show: "comment:show",
+    update: "comment:manage",
+    delete: "comment:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Comment}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Comment
 
   def swagger_definitions do
     %{
@@ -210,10 +221,10 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => uuid}) do
+  def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Comment{} = comment <- Document.show_comment(uuid, current_user) do
+    with %Comment{} = comment <- Document.show_comment(id, current_user) do
       render(conn, "comment.json", comment: comment)
     end
   end
@@ -235,10 +246,10 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Comment{} = comment <- Document.get_comment(uuid, current_user),
+    with %Comment{} = comment <- Document.get_comment(id, current_user),
          %Comment{} = comment <- Document.update_comment(comment, params) do
       render(conn, "comment.json", comment: comment)
     end
@@ -260,10 +271,10 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Comment{} = comment <- Document.get_comment(uuid, current_user),
+    with %Comment{} = comment <- Document.get_comment(id, current_user),
          {:ok, %Comment{}} <- Document.delete_comment(comment) do
       render(conn, "delete.json", comment: comment)
     end

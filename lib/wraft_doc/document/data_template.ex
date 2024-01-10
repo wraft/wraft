@@ -1,27 +1,10 @@
 defmodule WraftDoc.Document.DataTemplate do
   @moduledoc false
-  use Ecto.Schema
-  import Ecto.Changeset
-  alias __MODULE__
-  alias WraftDoc.{Account.User, Document.ContentType}
-  import Ecto.Query
-  @derive {Jason.Encoder, only: [:title]}
-  defimpl Spur.Trackable, for: DataTemplate do
-    def actor(data_template), do: "#{data_template.creator_id}"
-    def object(data_template), do: "DataTemplate:#{data_template.id}"
-    def target(_chore), do: nil
+  use WraftDoc.Schema
 
-    def audience(%{content_type_id: id}) do
-      from(u in User,
-        join: ct in ContentType,
-        where: ct.id == ^id,
-        where: u.organisation_id == ct.organisation_id
-      )
-    end
-  end
+  alias __MODULE__
 
   schema "data_template" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:title, :string)
     field(:title_template, :string)
     field(:data, :string)
@@ -34,7 +17,7 @@ defmodule WraftDoc.Document.DataTemplate do
 
   def changeset(%DataTemplate{} = d_template, attrs \\ %{}) do
     d_template
-    |> cast(attrs, [:title, :title_template, :data, :serialized])
-    |> validate_required([:title, :title_template, :data])
+    |> cast(attrs, [:title, :title_template, :data, :serialized, :content_type_id, :creator_id])
+    |> validate_required([:title, :title_template, :data, :content_type_id])
   end
 end
