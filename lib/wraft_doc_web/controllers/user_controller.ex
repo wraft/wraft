@@ -530,6 +530,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   def signin_with_google(conn, %{"token" => token} = _params) do
     with {:ok, %{email: email}} <- AuthTokens.google_auth_validation(token),
          %User{} = user <- Account.find(email),
+         {:ok, %User{email_verify: true} = user} <- Account.update_email_status(user),
          %{organisation: personal_org, user: user} <-
            Enterprise.get_personal_organisation_and_role(user),
          [access_token: access_token, refresh_token: refresh_token] <-

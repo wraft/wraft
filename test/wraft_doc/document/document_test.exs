@@ -1452,6 +1452,114 @@ defmodule WraftDoc.DocumentTest do
                i2.instance_id
     end
 
+    test "filter by creator_id" do
+      creator_1 = insert(:user, name: "User 1")
+      creator_2 = insert(:user, name: "User 2")
+      content_type = insert(:content_type)
+
+      i1 =
+        insert(
+          :instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          creator: creator_1,
+          content_type: content_type
+        )
+
+      i2 =
+        insert(
+          :instance,
+          instance_id: "DO745U6M67191879878164811475",
+          creator: creator_2,
+          content_type: content_type
+        )
+
+      instance_index =
+        Document.instance_index(content_type.id, %{"creator_id" => creator_1.id, page_number: 1})
+
+      assert instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "return the default index if the creator id is invalid" do
+      creator_1 = insert(:user, name: "User 1")
+      creator_2 = insert(:user, name: "User 2")
+      content_type = insert(:content_type)
+
+      i1 =
+        insert(
+          :instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          creator: creator_1,
+          content_type: content_type
+        )
+
+      i2 =
+        insert(
+          :instance,
+          instance_id: "DO745U6M67191879878164811475",
+          creator: creator_2,
+          content_type: content_type
+        )
+
+      instance_index =
+        Document.instance_index(content_type.id, %{"creator_id" => "invalid", page_number: 1})
+
+      assert instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      assert instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "return an empty list if there are no matches for creator_id" do
+      creator_1 = insert(:user, name: "User 1")
+      creator_2 = insert(:user, name: "User 2")
+      content_type = insert(:content_type)
+
+      i1 =
+        insert(
+          :instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          creator: creator_1,
+          content_type: content_type
+        )
+
+      i2 =
+        insert(
+          :instance,
+          instance_id: "DO745U6M67191879878164811475",
+          creator: creator_2,
+          content_type: content_type
+        )
+
+      instance_index =
+        Document.instance_index(content_type.id, %{
+          "creator_id" => Ecto.UUID.generate(),
+          page_number: 1
+        })
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i2.instance_id
+    end
+
     test "returns an empty list when there are no matches for instance_id keyword" do
       user = insert(:user)
       content_type = insert(:content_type)
@@ -1604,9 +1712,11 @@ defmodule WraftDoc.DocumentTest do
   describe "instance_index_of_an_organisation/2" do
     test "instance index of an organisation lists instances under an organisation" do
       user = insert(:user_with_organisation)
-      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
-      i1 = insert(:instance, content_type: content_type)
-      i2 = insert(:instance, content_type: content_type)
+      [organisation] = user.owned_organisations
+      content_type = insert(:content_type, organisation: organisation)
+      state = insert(:state, organisation: organisation)
+      i1 = insert(:instance, content_type: content_type, creator: user, state: state)
+      i2 = insert(:instance, content_type: content_type, creator: user, state: state)
 
       instance_index_under_organisation =
         Document.instance_index_of_an_organisation(user, %{page_number: 1})
@@ -1628,12 +1738,23 @@ defmodule WraftDoc.DocumentTest do
 
     test "filter by instance_id" do
       user = insert(:user_with_organisation)
-      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
+      [organisation] = user.owned_organisations
+      content_type = insert(:content_type, organisation: organisation)
+      state = insert(:state, organisation: organisation)
 
-      i1 = insert(:instance, instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5", content_type: content_type)
+      i1 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          content_type: content_type,
+          state: state
+        )
 
       i2 =
-        insert(:instance, instance_id: "DO745U6M67191879878164811475", content_type: content_type)
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          content_type: content_type,
+          state: state
+        )
 
       instance_index =
         Document.instance_index_of_an_organisation(
@@ -1686,16 +1807,16 @@ defmodule WraftDoc.DocumentTest do
 
     test "filter by content_type_name" do
       user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      state = insert(:state, organisation: organisation)
 
-      content_type1 =
-        insert(:content_type, name: "Letter", organisation: List.first(user.owned_organisations))
+      content_type1 = insert(:content_type, name: "Letter", organisation: organisation)
 
-      content_type2 =
-        insert(:content_type, name: "Contract", organisation: List.first(user.owned_organisations))
+      content_type2 = insert(:content_type, name: "Contract", organisation: organisation)
 
-      instance1 = insert(:instance, content_type: content_type1)
+      instance1 = insert(:instance, content_type: content_type1, state: state)
 
-      instance2 = insert(:instance, content_type: content_type2)
+      instance2 = insert(:instance, content_type: content_type2, state: state)
 
       instance_index =
         Document.instance_index_of_an_organisation(user, %{"content_type_name" => "Letter"})
@@ -1738,14 +1859,383 @@ defmodule WraftDoc.DocumentTest do
                instance2.instance_id
     end
 
-    test "sorts by instance_id in ascending order when sort key is instance_id" do
+    test "filter by creator_id" do
       user = insert(:user_with_organisation)
-      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
+      [organisation] = user.owned_organisations
+      state = insert(:state, organisation: organisation)
+      content_type = insert(:content_type, organisation: organisation)
+
+      creator = insert(:user, name: "creator", owned_organisations: [organisation])
 
       i1 =
-        insert(:instance, instance_id: "DO745U6M67191879878164811475", content_type: content_type)
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          content_type: content_type,
+          creator: creator,
+          state: state
+        )
 
-      i2 = insert(:instance, instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5", content_type: content_type)
+      i2 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          content_type: content_type,
+          creator: user,
+          state: state
+        )
+
+      instance_index =
+        Document.instance_index_of_an_organisation(
+          user,
+          %{
+            "creator_id" => creator.id,
+            page_number: 1
+          }
+        )
+
+      assert instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "return an empty list if there are no matches for creator_id" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      content_type = insert(:content_type, organisation: organisation)
+
+      creator = insert(:user, name: "creator", owned_organisations: [organisation])
+
+      i1 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          content_type: content_type,
+          creator: creator
+        )
+
+      i2 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          content_type: content_type,
+          creator: user
+        )
+
+      instance_index =
+        Document.instance_index_of_an_organisation(
+          user,
+          %{
+            "creator_id" => Ecto.UUID.generate(),
+            page_number: 1
+          }
+        )
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "return the default index if the creator id is invalid" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      state = insert(:state, organisation: organisation)
+      content_type = insert(:content_type, organisation: organisation)
+
+      creator = insert(:user, name: "creator", owned_organisations: [organisation])
+
+      i1 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          content_type: content_type,
+          creator: creator,
+          state: state
+        )
+
+      i2 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          content_type: content_type,
+          creator: user,
+          state: state
+        )
+
+      instance_index =
+        Document.instance_index_of_an_organisation(
+          user,
+          %{
+            "creator_id" => "invalid",
+            page_number: 1
+          }
+        )
+
+      assert instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      assert instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "filter by state" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      content_type = insert(:content_type, organisation: organisation)
+      state_1 = insert(:state, state: "draft", organisation: organisation)
+      state_2 = insert(:state, state: "published", organisation: organisation)
+
+      creator = insert(:user, name: "creator", owned_organisations: [organisation])
+
+      i1 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          content_type: content_type,
+          creator: creator,
+          state: state_1
+        )
+
+      i2 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          content_type: content_type,
+          creator: user,
+          state: state_2
+        )
+
+      instance_index =
+        Document.instance_index_of_an_organisation(
+          user,
+          %{
+            "state" => state_1.state,
+            page_number: 1
+          }
+        )
+
+      assert instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "returns an empty list when the state does not belong to the user's organisation" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      content_type = insert(:content_type, organisation: organisation)
+      state_1 = insert(:state, state: "draft")
+      state_2 = insert(:state, state: "published")
+
+      creator = insert(:user, name: "creator", owned_organisations: [organisation])
+
+      i1 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          content_type: content_type,
+          creator: creator,
+          state: state_1
+        )
+
+      i2 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          content_type: content_type,
+          creator: user,
+          state: state_2
+        )
+
+      instance_index =
+        Document.instance_index_of_an_organisation(
+          user,
+          %{
+            "state" => state_1.state,
+            page_number: 1
+          }
+        )
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "return an empty list for invalid state" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      content_type = insert(:content_type, organisation: organisation)
+      state_1 = insert(:state, state: "draft")
+      state_2 = insert(:state, state: "published")
+
+      creator = insert(:user, name: "creator", owned_organisations: [organisation])
+
+      i1 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          content_type: content_type,
+          creator: creator,
+          state: state_1
+        )
+
+      i2 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          content_type: content_type,
+          creator: user,
+          state: state_2
+        )
+
+      instance_index =
+        Document.instance_index_of_an_organisation(
+          user,
+          %{
+            "state" => "invalid",
+            page_number: 1
+          }
+        )
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "filter by document instance title name" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      content_type = insert(:content_type, organisation: organisation)
+      state_1 = insert(:state, state: "draft", organisation: organisation)
+      state_2 = insert(:state, state: "published", organisation: organisation)
+
+      creator = insert(:user, name: "creator", owned_organisations: [organisation])
+
+      i1 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          content_type: content_type,
+          creator: creator,
+          state: state_1,
+          serialized: %{title: "Title A", body: "Body of the content"}
+        )
+
+      i2 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          content_type: content_type,
+          creator: user,
+          state: state_2,
+          serialized: %{title: "Title B", body: "Body of the content"}
+        )
+
+      instance_index =
+        Document.instance_index_of_an_organisation(
+          user,
+          %{
+            "document_instance_title" => "Title A",
+            page_number: 1
+          }
+        )
+
+      assert instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "return an empty list for invalid document instance title name" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      content_type = insert(:content_type, organisation: organisation)
+      state_1 = insert(:state, state: "draft", organisation: organisation)
+      state_2 = insert(:state, state: "published", organisation: organisation)
+
+      creator = insert(:user, name: "creator", owned_organisations: [organisation])
+
+      i1 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          content_type: content_type,
+          creator: creator,
+          state: state_1,
+          serialized: %{title: "Title A", body: "Body of the content"}
+        )
+
+      i2 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          content_type: content_type,
+          creator: user,
+          state: state_2,
+          serialized: %{title: "Title B", body: "Body of the content"}
+        )
+
+      instance_index =
+        Document.instance_index_of_an_organisation(
+          user,
+          %{
+            "document_instance_title" => "Invalid Title",
+            page_number: 1
+          }
+        )
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i2.instance_id
+    end
+
+    test "sorts by instance_id in ascending order when sort key is instance_id" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      state = insert(:state, organisation: organisation)
+      content_type = insert(:content_type, organisation: organisation)
+
+      i1 =
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          content_type: content_type,
+          state: state
+        )
+
+      i2 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          content_type: content_type,
+          state: state
+        )
 
       instance_index =
         Document.instance_index_of_an_organisation(
@@ -1762,12 +2252,23 @@ defmodule WraftDoc.DocumentTest do
 
     test "sorts by instance_id in descending order when sort key is instance_id_desc" do
       user = insert(:user_with_organisation)
-      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
+      [organisation] = user.owned_organisations
+      state = insert(:state, organisation: organisation)
+      content_type = insert(:content_type, organisation: organisation)
 
       i1 =
-        insert(:instance, instance_id: "DO745U6M67191879878164811475", content_type: content_type)
+        insert(:instance,
+          instance_id: "DO745U6M67191879878164811475",
+          content_type: content_type,
+          state: state
+        )
 
-      i2 = insert(:instance, instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5", content_type: content_type)
+      i2 =
+        insert(:instance,
+          instance_id: "RO64NNYMH9DSIDMLZ8JQWQQ5",
+          content_type: content_type,
+          state: state
+        )
 
       instance_index =
         Document.instance_index_of_an_organisation(
@@ -1784,11 +2285,23 @@ defmodule WraftDoc.DocumentTest do
 
     test "sorts by inserted_at in ascending order when sort key is inserted_at" do
       user = insert(:user_with_organisation)
-      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
+      [organisation] = user.owned_organisations
+      state = insert(:state, organisation: organisation)
+      content_type = insert(:content_type, organisation: organisation)
 
-      i1 = insert(:instance, inserted_at: ~N[2023-04-18 11:56:34], content_type: content_type)
+      i1 =
+        insert(:instance,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          content_type: content_type,
+          state: state
+        )
 
-      i2 = insert(:instance, inserted_at: ~N[2023-04-18 11:57:34], content_type: content_type)
+      i2 =
+        insert(:instance,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          content_type: content_type,
+          state: state
+        )
 
       instance_index =
         Document.instance_index_of_an_organisation(
@@ -1805,10 +2318,23 @@ defmodule WraftDoc.DocumentTest do
 
     test "sorts by inserted_at in descending order when sort key is inserted_at_desc" do
       user = insert(:user_with_organisation)
-      content_type = insert(:content_type, organisation: List.first(user.owned_organisations))
+      [organisation] = user.owned_organisations
+      state = insert(:state, organisation: organisation)
+      content_type = insert(:content_type, organisation: organisation)
 
-      i1 = insert(:instance, inserted_at: ~N[2023-04-18 11:56:34], content_type: content_type)
-      i2 = insert(:instance, inserted_at: ~N[2023-04-18 11:57:34], content_type: content_type)
+      i1 =
+        insert(:instance,
+          inserted_at: ~N[2023-04-18 11:56:34],
+          content_type: content_type,
+          state: state
+        )
+
+      i2 =
+        insert(:instance,
+          inserted_at: ~N[2023-04-18 11:57:34],
+          content_type: content_type,
+          state: state
+        )
 
       instance_index =
         Document.instance_index_of_an_organisation(
