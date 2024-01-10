@@ -1,11 +1,14 @@
 defmodule WraftDocWeb.ThemeUploader do
-  @moduledoc false
+  @moduledoc """
+  This module provides a simple interface for uploading
+  font files to `WraftDoc.Document.Theme`
+  """
 
-  use Arc.Definition
-  use Arc.Ecto.Definition
+  use Waffle.Definition
+  use Waffle.Ecto.Definition
 
-  # Include ecto support (requires package arc_ecto installed):
-  # use Arc.Ecto.Definition
+  # Include ecto support (requires package waffle_ecto installed):
+  # use Waffle.Ecto.Definition
 
   @versions [:original]
 
@@ -18,9 +21,19 @@ defmodule WraftDocWeb.ThemeUploader do
   # end
 
   # Whitelist file extensions:
-  # def validate({file, _}) do
-  #   ~w(.jpg .jpeg .gif .png) |> Enum.member?(Path.extname(file.file_name))
-  # end
+  @extension_whitelist ~w(.ttf .otf)
+
+  def validate({file, _}) do
+    file_extension = file.file_name |> Path.extname() |> String.downcase()
+
+    case Enum.member?(@extension_whitelist, file_extension) do
+      true ->
+        :ok
+
+      false ->
+        {:error, "file type is invalid, currently supporting files are: [.pdf, .ttf, .otf]"}
+    end
+  end
 
   # Define a thumbnail transformation:
   # def transform(:thumb, _) do
@@ -34,7 +47,7 @@ defmodule WraftDocWeb.ThemeUploader do
 
   # Override the storage directory:
   def storage_dir(_version, {_file, scope}) do
-    "uploads/theme/#{scope.id}"
+    "uploads/theme/fonts/#{scope.id}"
   end
 
   # Provide a default URL if there hasn't been a file uploaded

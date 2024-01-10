@@ -1,17 +1,18 @@
 defmodule WraftDocWeb.Api.V1.MembershipController do
   use WraftDocWeb, :controller
+  use PhoenixSwagger
+
   plug(WraftDocWeb.Plug.AddActionLog)
+  plug WraftDocWeb.Plug.Authorized, show: "membership:show", update: "membership:manage"
+
   import Ecto.Query, warn: false
 
-  alias WraftDoc.{
-    Enterprise,
-    Enterprise.Membership,
-    Enterprise.Membership.Payment,
-    Enterprise.Plan
-  }
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Membership
+  alias WraftDoc.Enterprise.Membership.Payment
+  alias WraftDoc.Enterprise.Plan
 
   action_fallback(WraftDocWeb.FallbackController)
-  use PhoenixSwagger
 
   def swagger_definitions do
     %{
@@ -105,15 +106,15 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => o_uuid}) do
+  def show(conn, %{"id" => organisation_id}) do
     current_user = conn.assigns[:current_user]
 
-    with true <- o_uuid == current_user.organisation.uuid,
-         %Membership{} = membership <- Enterprise.get_organisation_membership(o_uuid) do
+    with true <- organisation_id == current_user.current_org_id,
+         %Membership{} = membership <- Enterprise.get_organisation_membership(organisation_id) do
       render(conn, "membership.json", membership: membership)
     else
       _ ->
-        nil
+        {:error, :invalid_id, "Organisation"}
     end
   end
 
@@ -135,14 +136,15 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => m_uuid, "plan_id" => p_uuid, "razorpay_id" => r_id}) do
+  def update(conn, %{"id" => m_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Membership{} = membership <- Enterprise.get_membership(m_uuid, current_user),
-         %Plan{} = plan <- Enterprise.get_plan(p_uuid),
-         {:ok, %Razorpay.Payment{} = razorpay} <- Enterprise.get_razorpay_data(r_id),
+    with %Membership{} = membership <- Enterprise.get_membership(m_id, current_user),
+         %Plan{} = plan <- Enterprise.get_plan(params["plan_id"]),
+         {:ok, payment_details} <-
+           Enterprise.get_razorpay_data(params["razorpay_id"]),
          %Membership{} = membership <-
-           Enterprise.update_membership(current_user, membership, plan, razorpay) do
+           Enterprise.update_membership(current_user, membership, plan, payment_details) do
       render(conn, "membership.json", membership: membership)
     else
       {:ok, %Payment{}} ->
@@ -154,6 +156,4 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
         error
     end
   end
-
-  def update(_conn, _), do: nil
 end

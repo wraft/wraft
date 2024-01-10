@@ -2,12 +2,10 @@ defmodule WraftDoc.Enterprise.Membership do
   @moduledoc """
   The membership model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
   alias __MODULE__
 
   schema "membership" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
     field(:start_date, :naive_datetime)
     field(:end_date, :naive_datetime)
     field(:plan_duration, :integer)

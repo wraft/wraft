@@ -1,15 +1,35 @@
 defmodule WraftDocWeb.Api.V1.StateView do
   use WraftDocWeb, :view
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{FlowView, UserView}
+  alias WraftDocWeb.Api.V1.{ApprovalSystemView, FlowView, UserView}
 
   def render("create.json", %{state: state}) do
     %{
-      id: state.uuid,
+      id: state.id,
       state: state.state,
       order: state.order,
       updated_at: state.updated_at,
       inserted_at: state.inserted_at
+    }
+  end
+
+  def render("instance_state.json", %{state: state}) do
+    %{
+      id: state.id,
+      state: state.state,
+      order: state.order,
+      approval_system:
+        render_one(state.approval_system, ApprovalSystemView, "state_approval_system.json",
+          as: :approval_system
+        )
+    }
+  end
+
+  def render("state.json", %{state: state}) do
+    %{
+      id: state.id,
+      state: state.state,
+      order: state.order
     }
   end
 

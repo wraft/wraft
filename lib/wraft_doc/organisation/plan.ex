@@ -2,13 +2,11 @@ defmodule WraftDoc.Enterprise.Plan do
   @moduledoc """
   The plan model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
   alias __MODULE__
 
   schema "plan" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:description, :string)
     field(:yearly_amount, :integer, default: 0)
     field(:monthly_amount, :integer, default: 0)

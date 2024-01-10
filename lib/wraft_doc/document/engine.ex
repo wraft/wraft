@@ -2,13 +2,12 @@ defmodule WraftDoc.Document.Engine do
   @moduledoc """
     The engine model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
+
   alias WraftDoc.Document.Engine
 
   schema "engine" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:api_route, :string)
     timestamps()
   end

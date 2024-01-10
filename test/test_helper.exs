@@ -4,9 +4,10 @@ Bureaucrat.start(
   env_var: "DOC",
   writer: Bureaucrat.SwaggerSlateMarkdownWriter,
   default_path: "doc/source/index.html.md",
-  swagger: "priv/static/swagger.json" |> File.read!() |> Poison.decode!()
+  swagger: "priv/static/swagger.json" |> File.read!() |> Jason.decode!()
 )
 
+Faker.start()
 {:ok, _} = Application.ensure_all_started(:ex_machina)
 Application.ensure_all_started(:bypass)
 

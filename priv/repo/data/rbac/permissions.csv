@@ -1,0 +1,87 @@
+approval_system:show,Approval System,Show
+approval_system:manage,Approval System,Manage
+approval_system:delete,Approval System,Delete
+asset:show,Asset,Show
+asset:manage,Asset,Manage
+asset:delete,Asset,Delete
+block:show,Block,Show
+block:manage,Block,Manage
+block:delete,Block,Delete
+block_template:show,Block Template,Show
+block_template:manage,Block Template,Manage
+block_template:delete,Block Template,Delete
+collection_form:show,Collection Form,Show
+collection_form:manage,Collection Form,Manage
+collection_form:delete,Collection Form,Delete
+collection_form_field:show,Collection Form Field,Show
+collection_form_field:manage,Collection Form Field,Manage
+collection_form_field:delete,Collection Form Field,Delete
+comment:show,Comment,Show
+comment:manage,Comment,Manage
+comment:delete,Comment,Delete
+content_type:show,Content Type,Show
+content_type:manage,Content Type,Manage
+content_type:delete,Content Type,Delete
+content_type_field:delete,Content Type Field,Delete
+content_type_role:manage,Content Type Role,Manage
+content_type_role:delete,Content Type Role,Delete
+data_template:show,Data Template,Show
+data_template:manage,Data Template,Manage
+data_template:delete,Data Template,Delete
+engine:show,Engine,Show
+field_type:show,Field Type,Show
+field_type:manage,Field Type,Manage
+field_type:delete,Field Type,Delete
+flow:show,Flow,Show
+flow:manage,Flow,Manage
+flow:delete,Flow,Delete
+instance_approval_system:show,Instance Approval System,Show
+instance:show,Instance,Show
+instance:delete,Instance,Delete
+instance:manage,Instance,Manage
+instance:lock,Instance,Lock
+instance:review,Instance,Review
+layout:show,Layout,Show
+layout:manage,Layout,Manage
+layout:delete,Layout,Delete
+membership:show,Membership,Show
+membership:manage,Membership,Manage
+organisation:show,Organisation,Show
+organisation:update,Organisation,Update
+organisation:delete,Organisation,Delete
+organisation:invite,Organisation,Invite
+organisation:members,Organisation,Members
+organisation_field:show,Organisation Field,Show
+organisation_field:manage,Organisation Field,Manage
+organisation_field:delete,Organisation Field,Delete
+payment:show,Payment,Show
+pipe_stage:manage,Pipe Stage,Manage
+pipe_stage:delete,Pipe Stage,Delete
+pipeline:show,Pipeline,Show
+pipeline:manage,Pipeline,Manage
+pipeline:delete,Pipeline,Delete
+plan:show,Plan,Show
+plan:manage,Plan,Manage
+plan:delete,Plan,Delete
+role:show,Role,Show
+role:manage,Role,Manage
+role:delete,Role,Delete
+role_group:show,Role Group,Show
+role_group:manage,Role Group,Manage
+role_group:delete,Role Group,Delete
+state:show,State,Show
+state:manage,State,Manage
+state:delete,State,Delete
+theme:show,Theme,Show
+theme:manage,Theme,Manage
+theme:delete,Theme,Delete
+trigger_history:index,Trigger History,Index
+trigger_history:create,Trigger History,Create
+vendor:show,Vendor,Show
+vendor:manage,Vendor,Manage
+vendor:delete,Vendor,Delete
+members:manage,Members,Manage
+role:assign,Role,Assign
+form:show,Form,Show
+form:manage,Form,Manage
+form:delete,Form,Delete

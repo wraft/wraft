@@ -5,12 +5,14 @@ defmodule WraftDocWeb.ConnCase do
 
   Such tests rely on `Phoenix.ConnTest` and also
   import other functionality to make it easier
-  to build common datastructures and query the data layer.
+  to build common data structures and query the data layer.
 
   Finally, if the test case interacts with the database,
-  it cannot be async. For this reason, every test runs
-  inside a transaction which is reset at the beginning
-  of the test unless the test case is marked as async.
+  we enable the SQL sandbox, so changes done to the database
+  are reverted at the end of every test. If you are using
+  PostgreSQL, you can even run database tests asynchronously
+  by setting `use WraftDocWeb.ConnCase, async: true`, although
+  this option is not recommended for other databases.
   """
 
   use ExUnit.CaseTemplate
@@ -18,23 +20,47 @@ defmodule WraftDocWeb.ConnCase do
   using do
     quote do
       # Import conveniences for testing with connections
-      use Phoenix.ConnTest
+      import Plug.Conn
+      import Phoenix.ConnTest
+      import WraftDocWeb.ConnCase
       alias WraftDocWeb.Router.Helpers, as: Routes
       import Bureaucrat.Helpers
+      import WraftDoc.Factory
+
       # The default endpoint for testing
       @endpoint WraftDocWeb.Endpoint
     end
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(WraftDoc.Repo)
+    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(WraftDoc.Repo, shared: not tags[:async])
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
 
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(WraftDoc.Repo, {:shared, self()})
-    end
+    user = WraftDoc.Factory.insert(:user_with_organisation)
+    organisation = List.first(user.owned_organisations)
 
-    conn = Phoenix.ConnTest.build_conn()
+    WraftDoc.Factory.insert(:user_organisation,
+      user: user,
+      organisation: organisation
+    )
 
-    {:ok, conn: conn}
+    role = WraftDoc.Factory.insert(:role, organisation: organisation)
+    WraftDoc.Factory.insert(:user_role, user: user, role: role)
+
+    membership = WraftDoc.Factory.insert(:membership, organisation: organisation)
+
+    {:ok, token, _} =
+      WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id},
+        token_type: "access",
+        ttl: {2, :hour}
+      )
+
+    conn =
+      Phoenix.ConnTest.build_conn()
+      |> Plug.Conn.put_req_header("accept", "application/json")
+      |> Plug.Conn.put_req_header("authorization", "Bearer " <> token)
+      |> Plug.Conn.assign(:current_user, user)
+
+    {:ok, conn: conn, membership: membership}
   end
 end

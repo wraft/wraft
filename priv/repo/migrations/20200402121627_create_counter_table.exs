@@ -2,9 +2,11 @@ defmodule WraftDoc.Repo.Migrations.CreateCounterTable do
   use Ecto.Migration
 
   def up do
-    create table(:counter) do
+    create table(:counter, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:subject, :string)
       add(:count, :integer)
+      timestamps()
     end
   end
 

@@ -6,6 +6,7 @@ defmodule WraftDocWeb.Router do
     plug(:accepts, ["html"])
     plug(:fetch_session)
     plug(:fetch_flash)
+    plug(:fetch_live_flash)
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
   end
@@ -22,21 +23,29 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.ValidMembershipCheck)
   end
 
-  pipeline :admin do
-    plug(WraftDocWeb.Plug.AdminCheck)
+  pipeline :email_verify do
+    plug(WraftDocWeb.Plug.VerifiedEmailCheck)
   end
 
-  pipeline :admin_authenticate do
-    plug(WraftDocWeb.Plug.AdminAuthenticate)
+  pipeline :ex_audit_track do
+    plug(WraftDocWeb.Plug.ExAuditTrack)
   end
 
-  # pipeline :can do
-  # plug(WraftDocWeb.Plug.Authorized)
-  # end
+  pipeline :current_admin do
+    plug(WraftDocWeb.Plug.CurrentAdmin)
+  end
+
+  pipeline :flags do
+    plug(:accepts, ["html"])
+    plug(:put_secure_browser_headers)
+    plug(:fetch_session)
+    plug(:fetch_flash)
+    plug(WraftDocWeb.Plug.CurrentAdmin)
+  end
 
   scope "/", WraftDocWeb do
     # Use the default browser stack
-    pipe_through(:api)
+    pipe_through(:browser)
     get("/", PageController, :index)
   end
 
@@ -46,9 +55,7 @@ defmodule WraftDocWeb.Router do
     scope "/admin" do
       # Admin login
       get("/signin", SessionController, :new)
-      get("/signup/new", SignupController, :new)
       post("/signin", SessionController, :create)
-      post("/signup", SignupController, :create)
     end
   end
 
@@ -60,28 +67,57 @@ defmodule WraftDocWeb.Router do
     scope "/v1", Api.V1, as: :v1 do
       resources("/users/signup/", RegistrationController, only: [:create])
       post("/users/signin", UserController, :signin)
+      # Google Signin
+      post("/users/signin/google", UserController, :signin_with_google)
+      # Check email
+      get("/users/check_email", UserController, :check_email)
       # to generate the auth token
       post("/user/password/forgot", UserController, :generate_token)
       # to verify the auth token and generate the jwt token
       get("/user/password/reset/:token", UserController, :verify_token)
       # Reset the password
       post("/user/password/reset", UserController, :reset)
-
+      # Generate Email Verification Token
+      post("/user/resend_email_token", UserController, :resend_email_token)
+      # Verify Email Verification Token
+      get("/user/verify_email_token/:token", UserController, :verify_email_token)
       # Show and index plans
       resources("/plans", PlanController, only: [:show, :index])
+      post("/notifications", NotificationController, :create)
+      # Verify invite token
+      get(
+        "/organisations/verify_invite_token/:token",
+        OrganisationController,
+        :verify_invite_token
+      )
 
-      # Verify Token
-      get("/token", UserController, :token)
+      # Refresh Token
+      post("/users/token_refresh", UserController, :refresh_token)
+      # Join Waiting list
+      resources("/waiting_list", WaitingListController, only: [:create])
+      # Set Password for first time
+      post("/users/set_password", UserController, :set_password)
     end
   end
 
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth, :valid_membership])
+    pipe_through([:api, :api_auth, :valid_membership, :ex_audit_track, :email_verify])
 
     scope "/v1", Api.V1, as: :v1 do
       # Current user details
       get("/users/me", UserController, :me)
+      # get user by there name
+      get("/users/search", UserController, :search)
+      get("/users/:id/instance-approval-systems", InstanceApprovalSystemController, :index)
+      put("/users/:id/remove", UserController, :remove)
+
+      get(
+        "/users/instance-approval-systems",
+        InstanceApprovalSystemController,
+        :instances_to_approve
+      )
+
       # Get activity stream for current user user
       get("/activities", UserController, :activity)
       # Update profile
@@ -111,8 +147,24 @@ defmodule WraftDocWeb.Router do
         end
       end
 
+      post("/content_type_roles", ContentTypeRoleController, :create)
+      delete("/content_type_roles/:id", ContentTypeRoleController, :delete)
+
+      resources("/roles", RoleController, only: [:create, :show, :delete, :index, :update])
+      # Assign role
+      post("/users/:user_id/roles/:role_id", RoleController, :assign_role)
+      # Unassign role
+      delete("/users/:user_id/roles/:role_id", RoleController, :unassign_role)
+
+      get("/content_types/:id/roles", ContentTypeController, :show_content_type_role)
+      get("/content_types/title/search", ContentTypeController, :search)
+
       # Enginebody
       resources("/engines", EngineController, only: [:index])
+
+      # Forms
+      resources("/forms", FormController, except: [:new, :edit])
+      patch("/forms/:id/status", FormController, :status_update)
 
       # Theme
       resources("/themes", ThemeController, only: [:create, :index, :show, :update, :delete])
@@ -122,6 +174,7 @@ defmodule WraftDocWeb.Router do
         resources("/", FlowController, only: [:create, :index, :show, :update, :delete])
         # States
         resources("/:flow_id/states", StateController, only: [:create, :index])
+        put("/:id/align-states", FlowController, :align_states)
       end
 
       # State delete and update
@@ -134,12 +187,51 @@ defmodule WraftDocWeb.Router do
       resources("/contents", InstanceController, only: [:show, :update, :delete])
       # Instance state update
       patch("/contents/:id/states", InstanceController, :state_update)
-
+      patch("/contents/:id/lock-unlock", InstanceController, :lock_unlock)
+      get("/contents/title/search", InstanceController, :search)
+      get("/contents/:id/change/:v_id", InstanceController, :change)
+      # Approve a document
+      put("/contents/:id/approve", InstanceController, :approve)
+      put("/contents/:id/reject", InstanceController, :reject)
       # Organisations
       scope "/organisations" do
-        resources("/", OrganisationController, only: [:create, :update, :show, :delete])
+        resources("/", OrganisationController, only: [:create, :update, :show])
+        delete("/", OrganisationController, :delete)
+        post("/request_deletion", OrganisationController, :request_deletion)
         get("/:id/members", OrganisationController, :members)
+        # Invite new user
+        post("/users/invite", OrganisationController, :invite)
+        # Removes existing user
+        post("/remove_user/:id", OrganisationController, :remove_user)
       end
+
+      # List Organisation by User
+      get("/users/organisations", UserController, :index_by_user)
+      # Switch organisation
+      post("/switch_organisations", UserController, :switch_organisation)
+      # Join organisation
+      post("/join_organisation", UserController, :join_organisation)
+      # collection form api
+      get("/collection_forms/:id", CollectionFormController, :show)
+      post("/collection_forms", CollectionFormController, :create)
+      put("/collection_forms/:id", CollectionFormController, :update)
+      delete("/collection_forms/:id", CollectionFormController, :delete)
+      get("/collection_forms", CollectionFormController, :index)
+
+      # collection form field api
+      resources("/collection_forms/:c_form_id/collection_fields", CollectionFormFieldController,
+        only: [:create, :update, :show, :delete, :index]
+      )
+
+      # Role group apis
+      resources("/role_groups", RoleGroupController,
+        only: [:create, :update, :show, :delete, :index]
+      )
+
+      # get("/collection_forms/:c_form_id/collection_fields/:id", CollectionFormFieldController, :show)
+      # post("/collection_fields", CollectionFormFieldController, :create)
+      # put("/collection_fields/:id", CollectionFormFieldController, :update)
+      # delete("/collection_fields/:id", CollectionFormFieldController, :delete)
 
       resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
       # Update membership plan
@@ -154,10 +246,11 @@ defmodule WraftDocWeb.Router do
       resources("/blocks", BlockController, except: [:index])
 
       # Delete content type field
-      resources("/content_type_fields", ContentTypeFieldController, only: [:delete])
-
-      # Invite new user
-      post("/organisations/:id/invite", OrganisationController, :invite)
+      delete(
+        "/content_type/:content_type_id/field/:field_id",
+        ContentTypeFieldController,
+        :delete
+      )
 
       # All instances in an organisation
       get("/contents", InstanceController, :all_contents)
@@ -181,7 +274,9 @@ defmodule WraftDocWeb.Router do
         only: [:create, :index, :show, :update, :delete]
       )
 
-      post("/approval_systems/:id/approve", ApprovalSystemController, :approve)
+      resources("/organisation-fields", OrganisationFieldController, except: [:new, :edit])
+
+      # post("/approval_systems/:id/approve", ApprovalSystemController, :approve)
 
       scope "/pipelines" do
         # Pipeline
@@ -189,30 +284,35 @@ defmodule WraftDocWeb.Router do
 
         scope "/:pipeline_id" do
           # Trigger history
-          resources("/triggers", TriggerHistoryController, only: [:create, :index])
+          resources("/triggers", TriggerHistoryController, only: [:create])
+          get("/triggers", TriggerHistoryController, :index_by_pipeline)
           # Pipe stages
           resources("/stages", PipeStageController, only: [:create])
         end
       end
 
+      get("/triggers", TriggerHistoryController, :index)
+
       # Update and Delete pipe stage
       resources("/stages", PipeStageController, only: [:update, :delete])
+
+      resources("/permissions", PermissionController, only: [:index])
+      get("/resources", PermissionController, :resource_index)
+
+      resources(
+        "/field_types",
+        FieldTypeController,
+        only: [:create, :index, :show, :update, :delete]
+      )
     end
   end
 
   # Scope which requires authorization.
+  # TODO Decide what all checks we need for these APIs
   scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth, :admin])
+    pipe_through([:api, :api_auth, :ex_audit_track, :email_verify])
 
     scope "/v1", Api.V1, as: :v1 do
-      resources("/resources", ResourceController, only: [:create, :index, :show, :update, :delete])
-
-      resources("/permissions", PermissionController, only: [:create, :index, :delete])
-
-      resources("/field_types", FieldTypeController,
-        only: [:create, :index, :show, :update, :delete]
-      )
-
       # Create, Update and delete plans
       resources("/plans", PlanController, only: [:create, :update, :delete])
 
@@ -221,17 +321,25 @@ defmodule WraftDocWeb.Router do
     end
   end
 
-  use Kaffy.Routes, scope: "/admin", pipe_through: [:admin_authenticate]
+  use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin]
 
   scope "/admin", WraftDocWeb do
-    pipe_through([:kaffy_browser, :admin_authenticate])
+    pipe_through([:kaffy_browser, :current_admin])
     delete("/sign-out", SessionController, :delete)
   end
 
+  scope path: "/flags" do
+    pipe_through(:flags)
+    forward("/", FunWithFlags.UI.Router, namespace: "flags")
+  end
+
+  # coveralls-ignore-start
   scope "/" do
-    pipe_through([:browser, :api_auth, :admin])
+    pipe_through([:browser, :api_auth])
     live_dashboard("/dashboard")
   end
+
+  # coveralls-ignore-stop
 
   scope "/api/swagger" do
     forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :wraft_doc, swagger_file: "swagger.json")

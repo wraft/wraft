@@ -1,7 +1,7 @@
 defmodule WraftDoc.Account.CountryTest do
   use WraftDoc.ModelCase
   alias WraftDoc.Account.Country
-
+  @moduletag :account
   @valid_attrs %{country_name: "india", country_code: "65656665", calling_code: "26263"}
   @invalid_attrs %{country_name: "india"}
 

@@ -2,6 +2,7 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistoryTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
   alias WraftDoc.Document.Pipeline.TriggerHistory
+  @moduletag :document
 
   # import WraftDoc.Factory
 
@@ -36,7 +37,8 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistoryTest do
 
   describe "changeset/2" do
     test "changeset with valid attrs" do
-      params = Map.put(@valid_attrs, :creator_id, 1)
+      user = insert(:user)
+      params = Map.put(@valid_attrs, :creator_id, user.id)
       changeset = TriggerHistory.changeset(%TriggerHistory{}, params)
       assert changeset.valid?
     end

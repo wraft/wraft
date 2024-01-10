@@ -1,14 +1,53 @@
 defmodule WraftDocWeb.Api.V1.ThemeController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "theme:manage",
+    index: "theme:show",
+    show: "theme:show",
+    update: "theme:manage",
+    delete: "theme:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Theme}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Theme
 
   def swagger_definitions do
     %{
       Theme:
+        swagger_schema do
+          title("Theme")
+          description("A Theme")
+
+          properties do
+            id(:string, "The ID of the theme", required: true)
+            name(:string, "Theme's name", required: true)
+            font(:string, "Font name", required: true)
+            typescale(:map, "Typescale of the theme", required: true)
+            file(:string, "Theme file attachment")
+            inserted_at(:string, "When was the layout created", format: "ISO-8601")
+            updated_at(:string, "When was the layout last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "1232148nb3478",
+            name: "Official Letter Theme",
+            font: "Malery",
+            typescale: %{h1: "10", p: "6", h2: "8"},
+            file: "/malory.css",
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z",
+            assets: [
+              "89face43-c408-4002-af3a-e8b2946f800a",
+              "c70c6c80-d3ba-468c-9546-a338b0cf8d1c"
+            ]
+          })
+        end,
+      UpdateTheme:
         swagger_schema do
           title("Theme")
           description("A Theme")
@@ -42,7 +81,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
           )
 
           type(:array)
-          items(Schema.ref(:Theme))
+          items(Schema.ref(:UpdateTheme))
         end,
       ShowTheme:
         swagger_schema do
@@ -104,7 +143,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
   end
 
   @doc """
-  Create a layout.
+  Create a theme.
   """
   swagger_path :create do
     post("/themes")
@@ -115,11 +154,44 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     parameter(:name, :formData, :string, "Theme's name", required: true)
 
-    parameter(:font, :formData, :string, "Font to be used in the theme", required: true)
+    parameter(:font, :formData, :string, "Font to be used in the theme, e.g. 'Malery', 'Roboto'")
 
-    parameter(:typescale, :formData, :string, "Typescale of the theme", required: true)
+    parameter(
+      :body_color,
+      :formData,
+      :string,
+      "Body color to be used in the theme, e.g. #ca1331"
+    )
 
-    parameter(:file, :formData, :file, "Theme file to upload")
+    parameter(
+      :primary_color,
+      :formData,
+      :string,
+      "Primary color to be used in the theme, e.g. #ca1331"
+    )
+
+    parameter(
+      :secondary_color,
+      :formData,
+      :string,
+      "Secondary color to be used in the theme, e.g #af0903"
+    )
+
+    parameter(
+      :typescale,
+      :formData,
+      :map,
+      "Typescale of the theme, e.g. {'h1': 10, 'p': 6, 'h2': 8}"
+    )
+
+    parameter(
+      :assets,
+      :formData,
+      :list,
+      "IDs of assets of the layout, eg: 8851a14a-dfe2-4579-8bdc-e3499fc150fd,8d341b6f-b15d-4773-a99b-da9493ffd763"
+    )
+
+    parameter(:preview_file, :formData, :file, "Preview file to upload, e.g. .png .jpg")
 
     response(200, "Ok", Schema.ref(:Theme))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -130,7 +202,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, %Theme{} = theme} <- Document.create_theme(current_user, params) do
+    with %Theme{} = theme <- Document.create_theme(current_user, params) do
       render(conn, "create.json", theme: theme)
     end
   end
@@ -142,7 +214,17 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
     get("/themes")
     summary("Theme index")
     description("Theme index API")
+
     parameter(:page, :query, :string, "Page number")
+    parameter(:name, :query, :string, "Theme Name")
+
+    parameter(
+      :sort,
+      :query,
+      :string,
+      "Sort Keys => name, name_desc, inserted_at, inserted_at_desc"
+    )
+
     response(200, "Ok", Schema.ref(:ThemeIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
@@ -204,11 +286,13 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     parameter(:font, :formData, :string, "Font to be used in the theme", required: true)
 
-    parameter(:typescale, :formData, :string, "Typescale of the theme", required: true)
+    parameter(:typescale, :formData, :string, "Typescale of the theme")
 
-    parameter(:file, :formData, :file, "Theme file to upload")
+    parameter(:preview_file, :formData, :file, "Theme preview file to upload")
 
-    response(200, "Ok", Schema.ref(:Theme))
+    parameter(:assets, :formData, :list, "IDs of assets of the layout")
+
+    response(200, "Ok", Schema.ref(:UpdateTheme))
     response(404, "Not found", Schema.ref(:Error))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
@@ -219,7 +303,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
     current_user = conn.assigns[:current_user]
 
     with %Theme{} = theme <- Document.get_theme(theme_uuid, current_user),
-         {:ok, %Theme{} = theme} <- Document.update_theme(theme, current_user, params) do
+         %Theme{} = theme <- Document.update_theme(theme, current_user, params) do
       render(conn, "create.json", theme: theme)
     end
   end
@@ -236,7 +320,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
       id(:path, :string, "theme id", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:Theme))
+    response(200, "Ok", Schema.ref(:UpdateTheme))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
@@ -246,7 +330,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
     current_user = conn.assigns[:current_user]
 
     with %Theme{} = theme <- Document.get_theme(uuid, current_user),
-         {:ok, %Theme{}} <- Document.delete_theme(theme, current_user) do
+         {:ok, %Theme{}} <- Document.delete_theme(theme) do
       render(conn, "create.json", theme: theme)
     end
   end

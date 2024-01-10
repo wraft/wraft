@@ -1,11 +1,9 @@
 defmodule WraftDoc.Document.ESignature do
   @moduledoc false
 
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
 
   schema "e_signature" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:api_url, :string)
     field(:body, :string)
     field(:header, :string)

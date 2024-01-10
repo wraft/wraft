@@ -1,9 +1,12 @@
 defmodule WraftDoc.Document.BlockTest do
   use WraftDoc.ModelCase
+  @moduletag :document
   import WraftDoc.Factory
   alias WraftDoc.{Document.Block, Repo}
 
   @invalid_attrs %{name: "Block name"}
+
+  # TODO include tests for cast attachments
   test "changest with valid attributes" do
     organisation = insert(:organisation)
     user = insert(:user)

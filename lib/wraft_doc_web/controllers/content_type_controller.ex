@@ -1,10 +1,25 @@
 defmodule WraftDocWeb.Api.V1.ContentTypeController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "content_type:manage",
+    index: "content_type:show",
+    show: "content_type:show",
+    update: "content_type:manage",
+    delete: "content_type:delete",
+    show_content_type_role: "content_type:show",
+    search: "content_type:show"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.ContentType, Document.Layout, Enterprise, Enterprise.Flow}
+  alias WraftDoc.Document
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Document.Theme
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Flow
 
   def swagger_definitions do
     %{
@@ -17,8 +32,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description", required: true)
             fields(Schema.ref(:ContentTypeFieldRequests))
-            layout_uuid(:string, "ID of the layout selected", required: true)
-            flow_uuid(:string, "ID of the flow selected", required: true)
+            layout_id(:string, "ID of the layout selected", required: true)
+            flow_id(:string, "ID of the flow selected", required: true)
+            theme_id(:string, "ID of the flow selected", required: true)
             color(:string, "Hex code of color")
 
             prefix(:string, "Prefix to be used for generating Unique ID for contents",
@@ -31,15 +47,16 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             description: "An offer letter",
             fields: [
               %{
-                key: "position",
+                name: "position",
                 field_type_id: "kjb14713132lkdac",
                 meta: %{"src" => "/img/img.png", "alt" => "Image"},
                 description: "a text input"
               },
-              %{key: "name", field_type_id: "kjb2347mnsad"}
+              %{name: "name", field_type_id: "kjb2347mnsad"}
             ],
-            layout_uuid: "1232148nb3478",
-            flow_uuid: "234okjnskjb8234",
+            layout_id: "1232148nb3478",
+            flow_id: "234okjnskjb8234",
+            theme_id: "123ki3491n49",
             prefix: "OFFLET",
             color: "#fff"
           })
@@ -50,17 +67,17 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           description("Data to be send to add fields to content type.")
 
           properties do
-            key(:string, "Name of the field")
-            field_type_id(:string, "ID of the field type")
+            name(:string, "Name of the field")
             meta(:map, "Attributes of the field")
             description(:string, "Field description")
+            field_type_id(:string, "ID of the field type")
           end
 
           example(%{
-            key: "position",
+            name: "position",
             field_type_id: "asdlkne4781234123clk",
             meta: %{"src" => "/img/img.png", "alt" => "Image"},
-            descrtiption: "text input"
+            description: "text input"
           })
         end,
       ContentTypeField:
@@ -72,11 +89,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id(:string, "ID of content type field")
             name(:string, "Name of content type field")
             meta(:map, "Attributes of the field")
+            description(:string, "Field description")
             field_type(Schema.ref(:FieldType))
           end
 
           example(%{
-            key: "position",
+            name: "position",
             field_type_id: "asdlkne4781234123clk",
             meta: %{"src" => "/img/img.png", "alt" => "Image"}
           })
@@ -117,12 +135,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             description: "An offer letter",
             fields: [
               %{
-                key: "position",
+                name: "position",
                 field_type_id: "kjb14713132lkdac",
                 meta: %{"src" => "/img/img.png", "alt" => "Image"}
               },
               %{
-                key: "name",
+                name: "name",
                 field_type_id: "kjb2347mnsad",
                 meta: %{"src" => "/img/img.png", "alt" => "Image"}
               }
@@ -180,8 +198,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name: "Offer letter",
             description: "An offer letter",
             fields: [
-              %{key: "position", field_type_id: "kjb14713132lkdac"},
-              %{key: "name", field_type_id: "kjb2347mnsad"}
+              %{name: "position", field_type_id: "kjb14713132lkdac"},
+              %{name: "name", field_type_id: "kjb2347mnsad"}
             ],
             prefix: "OFFLET",
             color: "#fffff",
@@ -201,7 +219,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
-      ContentTypeAndLayoutAndFlow:
+      ContentTypeAndLayoutAndFlowAndTheme:
         swagger_schema do
           title("Content Type, Layout and its flow")
 
@@ -218,6 +236,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             color(:string, "Hex code of color")
             layout(Schema.ref(:Layout))
             flow(Schema.ref(:Flow))
+            theme(Schema.ref(:Theme))
             inserted_at(:string, "When was the user inserted", format: "ISO-8601")
             updated_at(:string, "When was the user last updated", format: "ISO-8601")
           end
@@ -227,11 +246,38 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name: "Offer letter",
             description: "An offer letter",
             fields: [
-              %{key: "position", field_type_id: "kjb14713132lkdac"},
-              %{key: "name", field_type_id: "kjb2347mnsad"}
+              %{name: "position", field_type_id: "kjb14713132lkdac"},
+              %{name: "name", field_type_id: "kjb2347mnsad"}
             ],
             prefix: "OFFLET",
             color: "#fffff",
+            theme: %{
+              id: "1232148nb3478",
+              name: "Official Letter Theme",
+              font: "Malery",
+              typescale: %{h1: "10", p: "6", h2: "8"},
+              file: "/malory.css",
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z",
+              assets: [
+                %{
+                  id: "c70c6c80-d3ba-468c-9546-a338b0cf8d1c",
+                  name: "Asset",
+                  type: "theme",
+                  file: "Roboto-Bold.ttf",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                },
+                %{
+                  id: "89face43-c408-4002-af3a-e8b2946f800a",
+                  name: "Asset",
+                  type: "theme",
+                  file: "Roboto-Regular.ttf",
+                  updated_at: "2020-01-21T14:00:00Z",
+                  inserted_at: "2020-02-21T14:00:00Z"
+                }
+              ]
+            },
             layout: %{
               id: "1232148nb3478",
               name: "Official Letter",
@@ -259,7 +305,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           title("Content Types and their Layouts and flow")
           description("All content types that have been created and their layouts and flow")
           type(:array)
-          items(Schema.ref(:ContentTypeAndLayoutAndFlow))
+          items(Schema.ref(:ContentTypeAndLayoutAndFlowAndTheme))
         end,
       ContentTypeAndLayoutAndFlowAndStates:
         swagger_schema do
@@ -287,8 +333,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             name: "Offer letter",
             description: "An offer letter",
             fields: [
-              %{key: "position", field_type_id: "kjb14713132lkdac"},
-              %{key: "name", field_type_id: "kjb2347mnsad"}
+              %{name: "position", field_type_id: "kjb14713132lkdac"},
+              %{name: "name", field_type_id: "kjb2347mnsad"}
             ],
             prefix: "OFFLET",
             color: "#fffff",
@@ -327,7 +373,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           description("API to show a content type and all its details")
 
           properties do
-            content_type(Schema.ref(:ContentTypeAndLayoutAndFlowAndStates))
+            content_type(Schema.ref(:ContentTypeAndLayoutAndFlowAndTheme))
             creator(Schema.ref(:User))
           end
 
@@ -337,8 +383,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               name: "Offer letter",
               description: "An offer letter",
               fields: [
-                %{key: "position", field_type_id: "kjb14713132lkdac"},
-                %{key: "name", field_type_id: "kjb2347mnsad"}
+                %{name: "position", field_type_id: "kjb14713132lkdac"},
+                %{name: "name", field_type_id: "kjb2347mnsad"}
               ],
               prefix: "OFFLET",
               color: "#fffff",
@@ -352,6 +398,33 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
                     id: "1232148nb3478",
                     state: "published",
                     order: 1
+                  }
+                ]
+              },
+              theme: %{
+                id: "1232148nb3478",
+                name: "Official Letter Theme",
+                font: "Malery",
+                typescale: %{h1: "10", p: "6", h2: "8"},
+                file: "/malory.css",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z",
+                assets: [
+                  %{
+                    id: "c70c6c80-d3ba-468c-9546-a338b0cf8d1c",
+                    name: "Asset",
+                    type: "theme",
+                    file: "Roboto-Bold.ttf",
+                    updated_at: "2020-01-21T14:00:00Z",
+                    inserted_at: "2020-02-21T14:00:00Z"
+                  },
+                  %{
+                    id: "89face43-c408-4002-af3a-e8b2946f800a",
+                    name: "Asset",
+                    type: "theme",
+                    file: "Roboto-Regular.ttf",
+                    updated_at: "2020-01-21T14:00:00Z",
+                    inserted_at: "2020-02-21T14:00:00Z"
                   }
                 ]
               },
@@ -397,8 +470,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
                   name: "Offer letter",
                   description: "An offer letter",
                   fields: [
-                    %{key: "position", field_type_id: "kjb14713132lkdac"},
-                    %{key: "name", field_type_id: "kjb2347mnsad"}
+                    %{name: "position", field_type_id: "kjb14713132lkdac"},
+                    %{name: "name", field_type_id: "kjb2347mnsad"}
                   ],
                   prefix: "OFFLET",
                   color: "#fffff",
@@ -437,6 +510,52 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             total_pages: 2,
             total_entries: 15
           })
+        end,
+      ContentTypeRole:
+        swagger_schema do
+          title("Content type role")
+          description("List of roles under content type")
+
+          properties do
+            id(:string, "ID of the content_type")
+            description(:string, "Content Type's description", required: true)
+            layout_id(:string, "ID of the layout selected", required: true)
+            flow_id(:string, "ID of the flow selected", required: true)
+            color(:string, "Hex code of color")
+
+            prefix(:string, "Prefix to be used for generating Unique ID for contents",
+              required: true
+            )
+          end
+        end,
+      ContentTypeSearch:
+        swagger_schema do
+          title("Content type role")
+          description("Search the content search")
+
+          properties do
+            id(:string, "ID of the content_type")
+            description(:string, "Content Type's description", required: true)
+            color(:string, "Hex code of color")
+
+            prefix(:string, "Prefix to be used for generating Unique ID for contents",
+              required: true
+            )
+          end
+
+          example(%{
+            page_number: 1,
+            total_entries: 2,
+            total_pages: 1,
+            content_types: [
+              %{
+                description: "content type",
+                id: "466f1fa1-9657-4166-b372-21e8135aeaf1",
+                color: "red",
+                prefix: "ex"
+              }
+            ]
+          })
         end
     }
   end
@@ -455,19 +574,23 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
       )
     end
 
-    response(200, "Ok", Schema.ref(:ContentTypeAndLayoutAndFlow))
+    response(200, "Ok", Schema.ref(:ContentTypeAndLayoutAndFlowAndTheme))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"layout_uuid" => layout_uuid, "flow_uuid" => flow_uuid} = params) do
+  def create(
+        conn,
+        %{"layout_id" => layout_id, "flow_id" => flow_id, "theme_id" => theme_id} = params
+      ) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Document.get_layout(layout_uuid, current_user),
-         %Flow{} = flow <- Enterprise.get_flow(flow_uuid, current_user),
+    with %Layout{} <- Document.get_layout(layout_id, current_user),
+         %Flow{} <- Enterprise.get_flow(flow_id, current_user),
+         %Theme{} <- Document.get_theme(theme_id, current_user),
          %ContentType{} = content_type <-
-           Document.create_content_type(current_user, layout, flow, params) do
+           Document.create_content_type(current_user, params) do
       render(conn, :create, content_type: content_type)
     end
   end
@@ -480,6 +603,16 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     summary("Content Type index")
     description("API to get the list of all content types created so far")
     parameter(:page, :query, :string, "Page number")
+    parameter(:name, :query, :string, "Name")
+    parameter(:prefix, :query, :string, "Prefix")
+
+    parameter(
+      :sort,
+      :query,
+      :string,
+      "sort keys => name, name_desc, inserted_at, inserted_at_desc"
+    )
+
     response(200, "Ok", Schema.ref(:ContentTypesIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
@@ -521,10 +654,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => uuid}) do
+  def show(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <- Document.show_content_type(current_user, uuid) do
+    with %ContentType{} = content_type <- Document.show_content_type(current_user, id) do
       render(conn, "show.json", content_type: content_type)
     end
   end
@@ -578,11 +711,11 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <- Document.get_content_type(current_user, uuid),
-         {:ok, %ContentType{}} <- Document.delete_content_type(content_type, current_user) do
+    with %ContentType{} = content_type <- Document.get_content_type(current_user, id),
+         {:ok, %ContentType{}} <- Document.delete_content_type(content_type) do
       render(conn, "content_type.json", content_type: content_type)
     end
   end
@@ -599,7 +732,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
     parameter(:c_type_id, :path, :string, "Content type id", required: true)
     parameter(:state_id, :formData, :string, "State id", required: true)
-    parameter(:d_temp_uuid, :formData, :string, "Data template id", required: true)
+    parameter(:d_temp_id, :formData, :string, "Data template id", required: true)
     parameter(:file, :formData, :file, "Bulk build source file")
     parameter(:mapping, :formData, :map, "Mappings for the CSV")
 
@@ -611,9 +744,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   def bulk_build(
         conn,
         %{
-          "c_type_id" => c_type_uuid,
-          "state_id" => state_uuid,
-          "d_temp_uuid" => d_temp_uuid,
+          "c_type_id" => c_type_id,
+          "state_id" => state_id,
+          "d_temp_id" => d_temp_id,
           "mapping" => mapping,
           "file" => file
         }
@@ -623,13 +756,69 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     with {:ok, %Oban.Job{}} <-
            Document.insert_bulk_build_work(
              current_user,
-             c_type_uuid,
-             state_uuid,
-             d_temp_uuid,
+             c_type_id,
+             state_id,
+             d_temp_id,
              mapping,
              file
            ) do
       render(conn, "bulk.json")
+    end
+  end
+
+  swagger_path :show_content_type_role do
+    get("/content_types/{id}/roles")
+    summary("show all the content type role")
+    description("API to list all the roles under the content_type")
+
+    parameters do
+      id(:path, :string, "id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ContentTypeRole))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def show_content_type_role(conn, %{"id" => id}) do
+    content_type = Document.get_content_type_roles(id)
+
+    render(conn, "role_content_types.json", content_type: content_type)
+  end
+
+  @doc """
+  search a content type
+  """
+
+  swagger_path :search do
+    get("/content_types/title/search")
+    summary("show all the content type title")
+    description("API to show content_type by there title")
+
+    parameters do
+      key(:query, :string, "Search key")
+      page(:query, :string, "Page number")
+    end
+
+    response(200, "Ok", Schema.ref(:ContentTypesIndex))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  def search(conn, %{"key" => key} = params) do
+    with %{
+           entries: content_types,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.filter_content_type_title(key, params) do
+      render(conn, "index.json",
+        content_types: content_types,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
     end
   end
 end

@@ -5,11 +5,19 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
   """
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "pipe_stage:manage",
+    update: "pipe_stage:manage",
+    delete: "pipe_stage:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.{Document, Document.Pipeline, Document.Pipeline.Stage}
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Document.Pipeline.Stage
 
   def swagger_definitions do
     %{
@@ -194,7 +202,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
     current_user = conn.assigns[:current_user]
 
     with %Stage{} = stage <- Document.get_pipe_stage(current_user, s_uuid),
-         {:ok, %Stage{} = stage} <- Document.delete_pipe_stage(current_user, stage) do
+         {:ok, %Stage{} = stage} <- Document.delete_pipe_stage(stage) do
       render(conn, "delete.json", stage: stage)
     end
   end

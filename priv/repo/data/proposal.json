@@ -1,0 +1,845 @@
+{
+    "type": "doc",
+    "content": [
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            }
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Dear "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "client",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": ","
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The term “brand” has become one of those words that has almost propelled itself into the hallowed halls of business jargon due to its ubiquity and, frankly, overuse. If we had a bitcoin for every time we heard the phrase ‘brand’, we’d be internet millionaires. But more a lucrative situation would be if we had a bitcoin for every time we heard a misperception about what branding is, then we could buy the entire internet. It might be easier to start with what a brand ISN’T."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "A brand is not:"
+                }
+            ]
+        },
+        {
+            "type": "bulletList",
+            "content": [
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "your logo"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "your tagline"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "your product"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "your service"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "All of these things can be expressions of your brand but they are not your brand. Here’s the simplest way we here at Aurut define brand: Branding is about the promise of a distinct, memorable experience. It’s about creating an expectation and delivering it consistently every time anyone comes into contact with your brand whether it’s the way you answer the phone, how your website"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "functions, your customer service process, how your office looks or how your product/service performs. It’s how you make your customers feel about them- selves and their decisions when they are interacting with your brand. It’s why you shop at store A vs. store B even if the price or product might not be that much different."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Developing a strong, authentic brand and delivering it consistently is the foundation upon which every successful business is built. And we can help you lay that first stone. We’ll help uncover what makes you special, differentiates you from the competition and defines who you are and what you want to be, and what your target audience wants you to be. The development of this brand will be essential to consistently delivering the right message to the right people to create the just the right reaction."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Sincerely, \\"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Muneef Hameed"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "\\newpage"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Introduction"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Functionary Labs is pleased to submit a proposal for Branding a restaurant chain."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "This proposal outlines the technology, services, costing, and schedule for the proposed web site development project."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "About Functionary Labs"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Founded in 2018, Functionary Labs is a dynamic Product Development studio that specializes in Design and Product Development solutions."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Our team has extensive experience in building products and solutions for fast moving companies."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "\\newpage"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Scope of Services"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Brand Discovery"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The first step involves my team really getting to know your business, your industry, your competition and your customers. This involves meeting with your team, conducting some research, and really drilling down to the core of how people see you now and how you want them to see you moving forward"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Brand Strategy"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Once the discovery is complete, my team will develop a brand strategy unique to you. We’ll present what we feel the promise is that you need to communicate and suggest tactics for how it can be expressed throughout your business operations."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Identity Package"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Once we’ve developed your brand strategy and you’ve approved this direction, our designers will move into interpreting your brand characteristics in a more visual way. A standard package includes:"
+                }
+            ]
+        },
+        {
+            "type": "bulletList",
+            "content": [
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Logo design"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Tagline development"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Colours/fonts"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Business Card template"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Brand Guidelines"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Once these steps are complete and you have signed off your approval, we’ll develop brand guidelines for you. This is your handbook for how to properly express your brand: where and how to use the logo,colours, fonts and just as importantly, how NOT to use them, in order to consistently communicate your message."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Timelines"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Prior to a contractual agreement, elements of this branding proposal may be amended upon collaboration with the Investopad at the discretion of Functionary Labs."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            }
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Total "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "cost",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": " , to be delivered on "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "delivery",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            }
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Terms"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Prior to a contractual agreement, elements of this branding proposal may be amended upon collaboration with the Investopad at the discretion of Functionary Labs Pvt Ltd."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Next Steps"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "1. If you have any questions at all, please let us know. We’re happy to clarify any points. We’re committed to finding the best way to work together."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "2. Once you feel confident about everything and are ready to move forward, please revert back to us, by email."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "3. Once we receive your acceptance, we’ll contact you shortly to proceed with next steps and get the project rolling, including contracts and detailed project delivery schedule."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "4. We would initiate the project when contracts are signed, and initial payments are made."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Thanks a lot for taking time to go through this document!"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "We are Looking forward to your response"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Regards,"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": " \\"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Muneef Hameed"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "CEO, Functionary Labs Pvt Ltd "
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Write here"
+                }
+            ]
+        }
+    ]
+}

@@ -1,10 +1,20 @@
 defmodule WraftDocWeb.Api.V1.AssetController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "asset:manage",
+    index: "asset:show",
+    show: "asset:show",
+    update: "asset:manage",
+    delete: "asset:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Asset}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Asset
 
   def swagger_definitions do
     %{
@@ -16,6 +26,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
           properties do
             id(:string, "The ID of the asset", required: true)
             name(:string, "Name of the asset")
+            type(:string, "Type of the asset - layout or theme")
             file(:string, "URL of the uploaded file")
             inserted_at(:string, "When was the engine inserted", format: "ISO-8601")
             updated_at(:string, "When was the engine last updated", format: "ISO-8601")
@@ -24,6 +35,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
           example(%{
             id: "1232148nb3478",
             name: "Asset",
+            type: "layout",
             file: "/signature.pdf",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
@@ -43,6 +55,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
             asset: %{
               id: "1232148nb3478",
               name: "Asset",
+              type: "layout",
               file: "/signature.pdf",
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
@@ -78,6 +91,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
               %{
                 id: "1232148nb3478",
                 name: "Asset",
+                type: "layout",
                 file: "/signature.pdf",
                 updated_at: "2020-01-21T14:00:00Z",
                 inserted_at: "2020-02-21T14:00:00Z"
@@ -103,6 +117,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
     parameter(:name, :formData, :string, "Asset name", required: true)
     parameter(:file, :formData, :file, "Asset file to upload")
+    parameter(:type, :formData, :string, "The type of asset - theme or layout")
 
     response(200, "Ok", Schema.ref(:Asset))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -134,14 +149,14 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, params) do
-    %{organisation_id: org_id} = conn.assigns[:current_user]
+    current_user = conn.assigns[:current_user]
 
     with %{
            entries: assets,
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.asset_index(org_id, params) do
+         } <- Document.asset_index(current_user, params) do
       render(conn, "index.json",
         assets: assets,
         page_number: page_number,
@@ -168,10 +183,10 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => asset_uuid}) do
+  def show(conn, %{"id" => asset_id}) do
     current_user = conn.assigns.current_user
 
-    with %Asset{} = asset <- Document.show_asset(asset_uuid, current_user) do
+    with %Asset{} = asset <- Document.show_asset(asset_id, current_user) do
       render(conn, "show.json", asset: asset)
     end
   end
@@ -197,11 +212,11 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset{} = asset <- Document.get_asset(uuid, current_user),
-         {:ok, asset} <- Document.update_asset(asset, current_user, params) do
+    with %Asset{} = asset <- Document.get_asset(id, current_user),
+         {:ok, asset} <- Document.update_asset(asset, params) do
       render(conn, "asset.json", asset: asset)
     end
   end
@@ -225,11 +240,11 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset{} = asset <- Document.get_asset(uuid, current_user),
-         {:ok, %Asset{}} <- Document.delete_asset(asset, current_user) do
+    with %Asset{} = asset <- Document.get_asset(id, current_user),
+         {:ok, %Asset{}} <- Document.delete_asset(asset) do
       render(conn, "asset.json", asset: asset)
     end
   end

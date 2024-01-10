@@ -9,171 +9,113 @@
 #
 # We recommend using the bang functions (`insert!`, `update!`
 # and so on) as they will fail if something goes wrong.
-alias WraftDoc.{
-  Repo,
-  Account.Role,
-  Account.User,
-  Account.Profile,
-  Document.Engine,
-  Document.Layout,
-  Document.ContentType,
-  Document.Instance,
-  Document.Theme,
-  Enterprise.Organisation,
-  Enterprise.Flow,
-  Enterprise.Flow.State,
-  Enterprise.Plan,
-  Document.FieldType,
-  Document.ContentTypeField,
-  Document.Counter,
-  Document.DataTemplate
-}
 
-# Populate database with roles
-Repo.insert!(%Role{name: "admin"})
-Repo.insert!(%Role{name: "user"})
+alias FunWithFlags
+alias WraftDoc.Account.Country
+alias WraftDoc.Document.Engine
+alias WraftDoc.Enterprise.Plan
+alias WraftDoc.Repo
+alias WraftDoc.Seed
 
-# Populate DB with admin user and profile
-%{id: id} = Repo.get_by(Role, name: "admin")
+if !FunWithFlags.enabled?(:seeds_ran?) do
+  # Seed users
+  user = Seed.generate_user("wraftuser", "wraftuser@gmail.com")
+  user_list = for _ <- 1..2, do: Seed.generate_user()
+  user_list = [user | user_list]
 
-# Populate DB with one organisation
-organisation =
-  Repo.insert!(%Organisation{
-    name: "Functionary Labs Pvt Ltd.",
-    legal_name: "Functionary Labs Pvt Ltd",
-    address: "#24, Caravel Building",
-    name_of_ceo: "Muneef Hameed",
-    name_of_cto: "Salsabeel K",
-    email: "hello@aurut.com"
-  })
+  # Seed organisation and user organisation
+  organisation_list = for user <- user_list, do: Seed.seed_user_organisation(user)
 
-user_params = %{
-  name: "Admin",
-  email: "admin@wraftdocs.com",
-  role_id: id,
-  email_verify: true,
-  password: "Admin@WraftDocs",
-  organisation_id: organisation.id
-}
+  country = Repo.get_by(Country, country_name: "India")
 
-user = %User{} |> User.changeset(user_params) |> Repo.insert!()
-Repo.insert!(%Profile{name: "Admin", user_id: user.id})
+  # Delete all engines and seed engines again to avoid unique constraint error
+  Repo.delete_all(Engine)
+  [_pdf, _latex, pandoc] = Seed.seed_engine()
 
-# Populate engine
-engine = Repo.insert!(%Engine{name: "PDF"})
-Repo.insert!(%Engine{name: "LaTex"})
-Repo.insert!(%Engine{name: "Pandoc"})
+  plan = Repo.get_by(Plan, name: "Free Trial")
 
-# Populate layout
-layout =
-  Repo.insert!(%Layout{
-    name: "Official Letter",
-    description: "An official letter",
-    width: 30.0,
-    height: 40.0,
-    unit: "cm",
-    slug: "pletter",
-    engine_id: engine.id,
-    creator_id: user.id,
-    organisation_id: organisation.id
-  })
+  for {user, organisation} <- List.zip([user_list, organisation_list]) do
+    # Seed profiles with country
+    Seed.seed_profile(user, country)
 
-# Populate fields
-field = Repo.insert!(%FieldType{name: "String", creator_id: user.id})
+    # Seed Membership
+    Seed.seed_membership(organisation, plan)
 
-# Populate flow
-flow =
-  Repo.insert!(%Flow{
-    name: "Flow 1",
-    organisation_id: organisation.id,
-    creator_id: user.id
-  })
+    # Seed Block and Block Template
+    Seed.seed_block_and_block_template(user, organisation)
+  end
 
-# Populate Content Type
-content_type =
-  Repo.insert!(%ContentType{
-    name: "Offer Letter",
-    description: "An offer letter",
-    prefix: "OFFLET",
-    layout_id: layout.id,
-    creator_id: user.id,
-    organisation_id: organisation.id,
-    flow_id: flow.id,
-    color: "#fff"
-  })
+  # Seed roles and user roles
+  role_list =
+    for {user, organisation} <- List.zip([user_list, organisation_list]),
+        do: Seed.seed_user_roles(user, organisation)
 
-# Populate content type fields
-Repo.insert!(%ContentTypeField{
-  name: "employee",
-  content_type_id: content_type.id,
-  field_type_id: field.id
-})
+  # Seed layout with layout asset
+  layout_list =
+    for {user, organisation} <- List.zip([user_list, organisation_list]),
+        do: Seed.seed_layout_and_layout_asset(user, organisation, pandoc)
 
-# Populate State
-state =
-  Repo.insert!(%State{
-    state: "Published",
-    order: 1,
-    creator_id: user.id,
-    organisation_id: organisation.id,
-    flow_id: flow.id
-  })
+  # Seed theme with theme asset
+  theme_list =
+    for {user, organisation} <- List.zip([user_list, organisation_list]),
+        do: Seed.seed_theme_and_theme_asset(user, organisation)
 
-# Populate Instance
-Repo.insert!(%Instance{
-  instance_id: "OFFLET0001",
-  raw: "Hi John Doe, We offer you the position of Elixir developer",
-  serialized: %{
-    title: "Offer Letter for Elixir",
-    body: "Hi John Doe, We offer you the position of Elixir developer"
-  },
-  creator_id: user.id,
-  content_type_id: content_type.id,
-  state_id: state.id
-})
+  # Seed Work Flow
+  flow_list =
+    for {user, organisation} <- List.zip([user_list, organisation_list]),
+        do: Seed.seed_flow(user, organisation)
 
-# Populate Counter
-Repo.insert!(%Counter{
-  subject: "ContentType:#{content_type.id}",
-  count: 1
-})
+  # Seed Vendor
+  vendor_list =
+    for {user, organisation} <- List.zip([user_list, organisation_list]),
+        do: Seed.seed_vendor(user, organisation)
 
-# Populate theme
-Repo.insert!(%Theme{
-  name: "Offer letter theme",
-  font: "Malery",
-  typescale: %{h1: 10, h2: 8, p: 6},
-  creator_id: user.id,
-  organisation_id: organisation.id
-})
+  # Seed Content Type and Content Type Role
+  content_type_list =
+    for {user, organisation, layout, theme, flow, role} <-
+          List.zip([user_list, organisation_list, layout_list, theme_list, flow_list, role_list]),
+        do:
+          Seed.seed_content_type_and_content_type_role(
+            user,
+            organisation,
+            layout,
+            theme,
+            flow,
+            role
+          )
 
-# Populate data template
-Repo.insert!(%DataTemplate{
-  title: "Offer letter tempalate",
-  title_template: "Offer Letter for [employee]",
-  data: "Hi [employee], we welcome you to our [company]",
-  content_type_id: content_type.id,
-  creator_id: user.id
-})
+  # Seed Flow State
+  state_list =
+    for {user, organisation, flow} <-
+          List.zip([user_list, organisation_list, flow_list]),
+        do: Seed.seed_state(user, organisation, flow)
 
-# Populate plans
-Repo.insert!(%Plan{
-  name: "Free Trial",
-  description: "Free trial where users can try out all the features",
-  yearly_amount: 0,
-  monthly_amount: 0
-})
+  # Seed Document Instance
+  instance_list =
+    for {user, content_type, states, vendor} <-
+          List.zip([user_list, content_type_list, state_list, vendor_list]),
+        do: Seed.seed_document_instance(user, content_type, Enum.random(states), vendor)
 
-Repo.insert!(%Plan{
-  name: "Premium",
-  description: "Premium plan with premium features only",
-  yearly_amount: 0,
-  monthly_amount: 0
-})
+  # Seed Build History
+  for {user, instance} <- List.zip([user_list, instance_list]),
+      do: Seed.seed_build_history(user, instance)
 
-Repo.insert!(%Plan{
-  name: "Pro",
-  description: "Pro plan suitable for enterprises",
-  yearly_amount: 0,
-  monthly_amount: 0
-})
+  # Seed Approval System
+  for {user, flow} <- List.zip([user_list, flow_list]),
+      do: Seed.seed_approval_system(user, flow)
+
+  # Seed Document Instance Version
+  for {user, instance} <- List.zip([user_list, instance_list]),
+      do: Seed.seed_document_instance_version(user, instance)
+
+  # Seed Data Template
+  for {user, content_type} <- List.zip([user_list, content_type_list]),
+      do: Seed.seed_data_template(user, content_type)
+
+  # Seed fields and content type field
+  for {content_type, organisation} <- List.zip([content_type_list, organisation_list]),
+      do: Seed.seed_field_and_content_type_field(content_type, organisation)
+
+  # Enable fun with flags for ensuring that the seeds are not run more than once
+  FunWithFlags.enable(:seeds_ran?)
+end

@@ -1,9 +1,20 @@
 defmodule WraftDocWeb.Api.V1.FieldTypeController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "field_type:manage",
+    index: "field_type:show",
+    show: "field_type:show",
+    update: "field_type:manage",
+    delete: "field_type:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.FieldType}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.FieldType
 
   def swagger_definitions do
     %{
@@ -15,11 +26,17 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
           properties do
             name(:string, "Name of the field type")
             description(:string, "Description of the field type")
+            meta(:map, "Meta data of the field type")
+            validations(Schema.ref(:Validations))
           end
 
           example(%{
             name: "Date",
-            description: "A date field"
+            description: "A date field",
+            meta: %{},
+            validations: [
+              %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
+            ]
           })
         end,
       FieldType:
@@ -30,15 +47,21 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
           properties do
             id(:string, "The ID of the field type", required: true)
             name(:string, "Name of the field type")
+            meta(:map, "Meta data of the field type")
             description(:string, "Description of the field type")
+            validations(Schema.ref(:Validations))
             inserted_at(:string, "When was the engine inserted", format: "ISO-8601")
             updated_at(:string, "When was the engine last updated", format: "ISO-8601")
           end
 
           example(%{
-            id: "1232148nb3478",
+            id: "bdf2a17d-c40a-4cd9-affc-d649709a0ed3",
             name: "Date",
             description: "A date field",
+            meta: %{},
+            validations: [
+              %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
+            ],
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -73,6 +96,39 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
             total_pages: 2,
             total_entries: 15
           })
+        end,
+      Validations:
+        swagger_schema do
+          title("Validation array")
+          description("List of validations")
+          type(:array)
+          items(Schema.ref(:Validation))
+        end,
+      Validation:
+        swagger_schema do
+          title("Validation")
+          description("A validation object")
+
+          properties do
+            validation(Schema.ref(:ValidationRule))
+            error_message(:string, "Error message when validation fails")
+          end
+
+          example(%{
+            validation: %{rule: "required", value: true},
+            error_message: "can't be blank"
+          })
+        end,
+      ValidationRule:
+        swagger_schema do
+          title("Validation rule")
+          description("A validation rule")
+          type(:object)
+
+          properties do
+            rule(:string, "Validation rule")
+            value([:string, :number, :boolean, :array], "Validation value")
+          end
         end
     }
   end
@@ -153,10 +209,8 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => field_type_uuid}) do
-    current_user = conn.assigns.current_user
-
-    with %FieldType{} = field_type <- Document.get_field_type(field_type_uuid, current_user) do
+  def show(conn, %{"id" => field_type_id}) do
+    with %FieldType{} = field_type <- Document.get_field_type(field_type_id) do
       render(conn, "field_type.json", field_type: field_type)
     end
   end
@@ -181,10 +235,8 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
-    current_user = conn.assigns.current_user
-
-    with %FieldType{} = field_type <- Document.get_field_type(uuid, current_user),
+  def update(conn, %{"id" => id} = params) do
+    with %FieldType{} = field_type <- Document.get_field_type(id),
          {:ok, field_type} <- Document.update_field_type(field_type, params) do
       render(conn, "field_type.json", field_type: field_type)
     end
@@ -208,10 +260,8 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
-    current_user = conn.assigns.current_user
-
-    with %FieldType{} = field_type <- Document.get_field_type(uuid, current_user),
+  def delete(conn, %{"id" => id}) do
+    with %FieldType{} = field_type <- Document.get_field_type(id),
          {:ok, %FieldType{}} <- Document.delete_field_type(field_type) do
       render(conn, "field_type.json", field_type: field_type)
     end

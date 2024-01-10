@@ -5,33 +5,28 @@ defmodule WraftDoc.Account do
   import Ecto.Query
   import Ecto
 
-  alias WraftDoc.{
-    Account.AuthToken,
-    Account.Profile,
-    Account.Role,
-    Account.User,
-    Enterprise.Organisation,
-    Repo
-  }
-
-  alias WraftDoc.Document.{
-    Asset,
-    Block,
-    BlockTemplate,
-    ContentType,
-    ContentTypeField,
-    DataTemplate,
-    Instance,
-    Layout,
-    LayoutAsset,
-    Theme
-  }
-
-  alias WraftDoc.Enterprise.{Flow, Flow.State}
-
-  alias WraftDocWeb.Endpoint
-
   alias Ecto.Multi
+  alias WraftDoc.Account.Activity
+  alias WraftDoc.Account.Profile
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Account.RoleGroup
+  alias WraftDoc.Account.User
+  alias WraftDoc.Account.User.Audience
+  alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.Account.UserRole
+  alias WraftDoc.AuthTokens
+  alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.Document.Asset
+  alias WraftDoc.Document.Block
+  alias WraftDoc.Document.BlockTemplate
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.InvitedUsers
+  alias WraftDoc.Repo
+  alias WraftDoc.Workers.EmailWorker
+  alias WraftDocWeb.Guardian
 
   @activity_models %{
     "Asset" => Asset,
@@ -50,105 +45,232 @@ defmodule WraftDoc.Account do
   }
 
   @doc """
-  User Registration
+   Creates a user, generates a personal organisation for the user
+   and adds the user to an organisation when the user has an invite token
   """
-  def change_user() do
-    User.changeset(%User{})
-  end
+  @spec registration(map) :: {:ok, map()} | {:error, Ecto.Changeset.t()}
+  def registration(%{"token" => token} = params) do
+    {_token_params, user_params} = Map.split(params, ["token"])
 
-  @spec registration(map, Organisation.t()) :: User.t() | Ecto.Changeset.t()
-  def registration(params, %Organisation{id: id}) do
-    params = Map.merge(params, %{"organisation_id" => id})
-
-    get_role()
-    |> build_assoc(:users)
-    |> User.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.run(:get_org, fn _, _ -> get_organisation_and_role_from_token(params) end)
+    |> basic_registration_multi(user_params)
+    |> Multi.insert(:users_organisations, fn %{user: user, get_org: %{organisation: organisation}} ->
+      UserOrganisation.changeset(%UserOrganisation{}, %{
+        user_id: user.id,
+        organisation_id: organisation.id
+      })
+    end)
+    |> Multi.run(:assign_role, fn _repo, %{user: user, get_org: %{role_ids: role_ids}} ->
+      Enterprise.create_default_worker_job(%{user_id: user.id, roles: role_ids}, "assign_role")
+    end)
+    |> Multi.run(:delete_auth_token, fn _, _ -> AuthTokens.delete_auth_token(token) end)
+    |> Repo.transaction()
     |> case do
-      changeset = {:error, _} ->
-        changeset
+      {:ok,
+       %{
+         user: user,
+         personal_organisation: %{organisation: personal_org},
+         get_org: %{organisation: invited_org}
+       }} ->
+        InvitedUsers.create_or_update_invited_user(user.email, invited_org.id, "joined")
+        {:ok, %{user: Repo.preload(user, :profile), organisations: [personal_org, invited_org]}}
 
-      {:ok, %User{} = user} ->
-        create_profile(user, params)
-        Repo.preload(user, :profile)
+      {:error, :get_org, :expired, _} ->
+        set_invited_user_status_to_expired(token)
+        {:error, :expired}
+
+      {:error, :get_org, error, _} ->
+        {:error, error}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
     end
   end
 
-  def create_user(params) do
-    %User{}
-    |> User.changeset(params)
-    |> Repo.insert()
+  def registration(params) do
+    Multi.new()
+    |> basic_registration_multi(params)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{user: user, personal_organisation: %{organisation: personal_org}}} ->
+        {:ok, %{user: Repo.preload(user, :profile), organisations: [personal_org]}}
+
+      {:error, :user, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  defp basic_registration_multi(multi, params) do
+    multi
+    |> Multi.insert(:user, User.changeset(%User{}, params))
+    |> Multi.insert(:profile, fn %{user: user} ->
+      user |> build_assoc(:profile) |> Profile.changeset(params)
+    end)
+    |> Multi.update(:propic, &Profile.propic_changeset(&1.profile, params))
+    |> Multi.run(:personal_organisation, fn _repo, %{user: user} ->
+      Enterprise.create_personal_organisation(user, %{
+        email: params["email"],
+        name: "Personal"
+      })
+    end)
+    |> Multi.insert(:user_personal_organisation, fn %{
+                                                      user: user,
+                                                      personal_organisation: %{organisation: org}
+                                                    } ->
+      UserOrganisation.changeset(%UserOrganisation{}, %{user_id: user.id, organisation_id: org.id})
+    end)
+    |> Multi.run(:personal_org_roles, fn _repo,
+                                         %{
+                                           user: user,
+                                           personal_organisation: %{organisation: organisation}
+                                         } ->
+      Enterprise.create_default_worker_job(
+        %{organisation_id: organisation.id, user_id: user.id},
+        "personal_organisation_roles"
+      )
+    end)
+  end
+
+  defp set_invited_user_status_to_expired(token) do
+    # Update the invited user status
+    {:ok, %{email: email, organisation_id: organisation_id}} =
+      AuthTokens.phoenix_token_verify(token, "organisation_invite", max_age: :infinity)
+
+    InvitedUsers.create_or_update_invited_user(email, organisation_id, "expired")
+  end
+
+  def show_role(user, id) do
+    if role = get_role(user, id), do: Repo.preload(role, [:content_types, :organisation])
   end
 
   @doc """
-  Get the organisation from the token, if there is  token in the params.
-  If no token is present in the params, then get the default organisation
+    Create new user_role with given user_id and role_id
   """
+  def create_user_role(user_id, role_id) do
+    %UserRole{}
+    |> UserRole.changeset(%{user_id: user_id, role_id: role_id})
+    |> Repo.insert()
+  end
 
-  @spec get_organisation_from_token(map) :: Organisation.t()
-  def get_organisation_from_token(%{"token" => token, "email" => email}) do
-    Endpoint
-    |> Phoenix.Token.verify("organisation_invite", token, max_age: 900_000)
+  def get_user_role(%{current_org_id: organisation_id}, user_id, role_id) do
+    query =
+      from(ur in UserRole,
+        join: r in Role,
+        on: r.id == ur.role_id and r.organisation_id == ^organisation_id,
+        where: ur.user_id == ^user_id and ur.role_id == ^role_id
+      )
+
+    Repo.one(query)
+  end
+
+  @doc """
+    Deletes the give user_role.
+  """
+  @spec delete_user_role(UserRole.t()) :: {:ok, UserRole.t()} | nil
+  def delete_user_role(user_role), do: Repo.delete(user_role)
+
+  @doc """
+  Get a role type from its UUID.
+  """
+  @spec get_role(Ecto.UUID.t()) :: Role.t() | nil
+  def get_role(<<_::288>> = id) do
+    Repo.get(Role, id)
+  end
+
+  def get_role(_id), do: nil
+
+  @doc """
+  Gets a role from its ID and its organisation's ID.
+  Accepts either an organisation struct or user struct with
+  `current_org_id` key.
+  """
+  def get_role(%User{current_org_id: org_id}, <<_::288>> = id),
+    do: Repo.get_by(Role, id: id, organisation_id: org_id)
+
+  def get_role(%Organisation{id: org_id}, <<_::288>> = id),
+    do: Repo.get_by(Role, id: id, organisation_id: org_id)
+
+  def get_role(_, _), do: nil
+
+  def create_role(%User{current_org_id: org_id}, params) do
+    params = Map.put(params, "organisation_id", org_id)
+
+    %Role{}
+    |> Role.changeset(params)
+    |> Repo.insert()
     |> case do
-      {:ok, %{organisation: org, email: token_email}} ->
-        if token_email == email do
-          org
-        else
-          {:error, :no_permission}
-        end
+      {:error, _} = changeset -> changeset
+      {:ok, role} -> Repo.preload(role, [:organisation])
+    end
+  end
 
-      # When token is valid, but encoded data is not what we expected
+  @doc """
+    Updates a role.
+  """
+  @spec update_role(User.t(), map) :: Role.t() | Ecto.Changeset.t()
+  def update_role(role, params) do
+    role
+    |> Role.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, role} ->
+        Repo.preload(role, [:organisation])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def delete_role(role) when role.name != "superadmin" do
+    Repo.delete(role)
+  end
+
+  def delete_role(_), do: {:error, :no_permission}
+
+  @doc """
+  Get the organisation and role from the token, if there is  token in the params.
+  """
+  @spec get_organisation_and_role_from_token(map) :: Organisation.t() | {:error, atom()}
+  def get_organisation_and_role_from_token(%{"token" => token, "email" => email} = _params) do
+    with {:ok, %{organisation_id: org_id, email: ^email, roles: role_ids}} <-
+           AuthTokens.check_token(token, :invite),
+         %Organisation{} = organisation <- Enterprise.get_organisation(org_id),
+         [_ | _] = _roles <- Enum.map(role_ids, &get_role(organisation, &1)) do
+      {:ok, %{organisation: organisation, role_ids: role_ids}}
+    else
       {:ok, _} ->
         {:error, :no_permission}
 
-      {:error, :invalid} ->
+      nil ->
         {:error, :no_permission}
 
-      {:error, _} = error ->
+      [] ->
+        {:error, :no_permission}
+
+      error ->
         error
     end
   end
 
   # This is for test purpose.
   # Should return an error once the product is deployed in production
-  def get_organisation_from_token(_) do
+  def get_organisation_and_role_from_token(_) do
     # Repo.get_by(Organisation, name: "Functionary Labs Pvt Ltd.")
     # {:error, :not_found}
     nil
   end
 
   @doc """
-    Create profile for the user
-  """
-  @spec create_profile(User.t(), map) :: {atom, Profile.t()}
-  def create_profile(user, params) do
-    user
-    |> build_assoc(:profile)
-    |> Profile.changeset(params)
-    |> Repo.insert()
-  end
-
-  @doc """
-    Find the user with the given email
+    Find the user with the given email in wraft
   """
   @spec find(binary()) :: User.t() | {:error, atom}
   def find(email) do
     email
     |> get_user_by_email()
     |> case do
-      user = %User{} ->
-        user
-
-      _ ->
-        {:error, :invalid}
-    end
-  end
-
-  def admin_find(email) do
-    get_user_by_email(email, :admin)
-    |> case do
-      user = %User{} -> user
-      _ -> {:error, :invalid}
+      user = %User{} -> Repo.preload(user, :profile)
+      _ -> {:error, :invalid_email}
     end
   end
 
@@ -156,14 +278,18 @@ defmodule WraftDoc.Account do
     Authenticate user and generate token.
   """
   @spec authenticate(%{user: User.t(), password: binary}) ::
-          {:error, atom} | {:ok, Guardian.Token.token(), Guardian.Token.claims()}
-  def authenticate(%{user: _, password: ""}), do: {:error, :no_data}
-  def authenticate(%{user: _, password: nil}), do: {:error, :no_data}
+          {:error, atom}
+          | {:ok, [access_token: Guardian.Token.token(), refresh_token: Guardian.Token.token()]}
+  def authenticate(%{user: _, password: password}) when password in ["", nil],
+    do: {:error, :no_data}
 
   def authenticate(%{user: user, password: password}) do
     case Bcrypt.verify_pass(password, user.encrypted_password) do
       true ->
-        WraftDocWeb.Guardian.encode_and_sign(user)
+        %{organisation: personal_org, user: user} =
+          Enterprise.get_personal_organisation_and_role(user)
+
+        %{user: user, tokens: Guardian.generate_tokens(user, personal_org.id)}
 
       _ ->
         {:error, :invalid}
@@ -171,12 +297,20 @@ defmodule WraftDoc.Account do
   end
 
   @doc """
-  Authenticate admin
+    Exchange new pair of tokens for old ones
   """
-  def authenticate_admin(%{user: user, password: password}) do
-    case Bcrypt.verify_pass(password, user.encrypted_password) do
-      true -> user
-      _ -> {:error, :invalid_credentials}
+  @spec refresh_token_exchange(Guardian.Token.token()) ::
+          {:error, atom}
+          | {:ok, [access_token: Guardian.Token.token(), refresh_token: Guardian.Token.token()]}
+  def refresh_token_exchange(refresh_token) do
+    with {:ok, _, {access_token, _}} <-
+           Guardian.exchange(refresh_token, "refresh", "access", ttl: {2, :hour}),
+         {:ok, _, {refresh_token, _}} <-
+           Guardian.refresh(refresh_token, ttl: {2, :day}) do
+      {:ok, access_token: access_token, refresh_token: refresh_token}
+    else
+      error ->
+        error
     end
   end
 
@@ -188,6 +322,7 @@ defmodule WraftDoc.Account do
 
     Multi.new()
     |> Multi.update(:profile, profile)
+    |> Multi.update(:propic, &Profile.propic_changeset(&1.profile, params))
     |> Multi.update(:user, User.update_changeset(current_user, params))
     |> WraftDoc.Repo.transaction()
     |> case do
@@ -206,7 +341,7 @@ defmodule WraftDoc.Account do
   """
   @spec get_profile(Ecto.UUID.t()) :: Profile.t() | nil
   def get_profile(<<_::288>> = id) do
-    Profile |> Repo.get_by(uuid: id) |> Repo.preload(:user) |> Repo.preload(:country)
+    Profile |> Repo.get_by(id: id) |> Repo.preload(:user) |> Repo.preload(:country)
   end
 
   def get_profile(_id), do: nil
@@ -221,30 +356,22 @@ defmodule WraftDoc.Account do
 
   def delete_profile(_), do: nil
 
-  # Get the role struct from given role name
-  @spec get_role(binary) :: Role.t()
-  defp get_role(role \\ "user")
+  # defp get_role(role \\ "user")
 
-  defp get_role(role) when is_binary(role) do
-    Repo.get_by(Role, name: role)
-  end
+  # defp get_role_by_name(role) when is_binary(role) do
+  #   Repo.get_by(Role, name: role)
+  # end
 
-  @doc """
-  Get a role type from its UUID.
-  """
-  @spec get_role_from_uuid(Ecto.UUID.t()) :: Role.t() | nil
-  def get_role_from_uuid(<<_::288>> = uuid) when is_binary(uuid) do
-    Repo.get_by(Role, uuid: uuid)
-  end
-
-  def get_role_from_uuid(_id), do: nil
+  # defp get_role_by_name(role) when is_nil(role) do
+  #   Repo.get_by(Role, name: "user")
+  # end
 
   @doc """
   Get a user from its UUID.
   """
   @spec get_user_by_uuid(Ecto.UUID.t()) :: User.t() | nil
-  def get_user_by_uuid(<<_::288>> = uuid) when is_binary(uuid) do
-    Repo.get_by(User, uuid: uuid)
+  def get_user_by_uuid(<<_::288>> = id) when is_binary(id) do
+    Repo.get(User, id)
   end
 
   def get_user_by_uuid(_), do: nil
@@ -252,27 +379,18 @@ defmodule WraftDoc.Account do
   @doc """
   Get a user from its ID.
   """
-  @spec get_user(integer() | String.t()) :: User.t() | nil
+  @spec get_user(String.t()) :: User.t() | nil
   def get_user(id) do
     Repo.get(User, id)
   end
 
   # Get the user struct from given email
   @spec get_user_by_email(binary) :: User.t() | nil
-  defp get_user_by_email(email) when is_binary(email) do
+  def get_user_by_email(email) when is_binary(email) do
     Repo.get_by(User, email: email)
   end
 
-  defp get_user_by_email(email, :admin) when is_binary(email) do
-    from(u in User,
-      where: u.email == ^email,
-      join: r in Role,
-      where: r.name == "admin" and r.id == u.role_id
-    )
-    |> Repo.one()
-  end
-
-  defp get_user_by_email(_email) do
+  def get_user_by_email(_email) do
     nil
   end
 
@@ -280,12 +398,12 @@ defmodule WraftDoc.Account do
   Get the activity stream for current user.
   """
 
-  # => No test written
+  # TODO - Remove this code
   @spec get_activity_stream(User.t(), map) :: map
   def get_activity_stream(%User{id: id}, params) do
     query =
-      from(a in Spur.Activity,
-        join: au in "audience",
+      from(a in Activity,
+        join: au in Audience,
         where: au.user_id == ^id and au.activity_id == a.id,
         order_by: [desc: a.inserted_at],
         select: %{
@@ -297,7 +415,17 @@ defmodule WraftDoc.Account do
         }
       )
 
-    Repo.paginate(query, params)
+    query
+    |> Repo.all()
+    |> Enum.map(fn x ->
+      actor = get_user(x.actor)
+      profile = Repo.get_by!(Profile, user_id: x.actor)
+
+      x
+      |> Map.put(:actor, actor)
+      |> Map.put(:profile, profile)
+    end)
+    |> Scrivener.paginate(params)
   end
 
   @doc """
@@ -335,76 +463,43 @@ defmodule WraftDoc.Account do
     Repo.get(@activity_models[model], id)
   end
 
-  defp delete_token(user_id, type) do
-    query =
-      from(
-        a in AuthToken,
-        where: a.user_id == ^user_id,
-        where: a.token_type == ^type
-      )
-
-    query
-    |> Repo.all()
-    |> Enum.each(fn x -> Repo.delete!(x) end)
+  @doc """
+   Enqueue verification email to be sent
+  """
+  @spec send_email(binary(), AuthToken.t()) :: {:ok, Oban.Job.t()}
+  def send_email(email, %AuthToken{} = token) do
+    %{email: email, token: token.value}
+    |> EmailWorker.new()
+    |> Oban.insert()
   end
 
   @doc """
-  Generate auth token for password reset for the user with the given email ID
-  and insert it to auth_tokens table.
+    Enqueue password set email to be sent
   """
-  def create_token(%{"email" => email}) do
-    email = String.downcase(email)
-
-    case get_user_by_email(email) do
-      %User{} = current_user ->
-        delete_token(current_user.id, "password_verify")
-        token = Endpoint |> Phoenix.Token.sign("reset", current_user.email) |> Base.url_encode64()
-        new_params = %{value: token, token_type: "password_verify"}
-
-        {:ok, auth_struct} = insert_auth_token(current_user, new_params)
-
-        Repo.preload(auth_struct, :user)
-
-      nil ->
-        {:error, :invalid_email}
-    end
+  # TODO- Write tests
+  def send_password_set_mail(%AuthToken{} = token) do
+    %{email: token.user.email, token: token.value, name: token.user.name}
+    |> EmailWorker.new(tags: ["set_password"])
+    |> Oban.insert()
   end
 
-  def create_token(_), do: {:error, :invalid_email}
+  @doc """
+    Enqueue password reset email to be sent
+  """
+  @spec send_password_reset_mail(AuthToken.t()) :: {:ok, Oban.Job.t()}
+  def send_password_reset_mail(%AuthToken{} = token) do
+    %{email: token.user.email, token: token.value, name: token.user.name}
+    |> EmailWorker.new()
+    |> Oban.insert()
+  end
 
   @doc """
-  Validate the password reset link, ie; token in the link to verify and
-  authenticate the password reset request.
+     Update email verification status to true for the user
   """
-  def check_token(token) do
-    query =
-      from(
-        tok in AuthToken,
-        where: tok.value == ^token,
-        where: tok.token_type == "password_verify",
-        select: tok
-      )
-
-    case Repo.one(query) do
-      nil ->
-        {:error, :fake}
-
-      token_struct ->
-        {:ok, decoded_token} = Base.url_decode64(token_struct.value)
-
-        Endpoint
-        |> Phoenix.Token.verify("reset", decoded_token, max_age: 860)
-        |> case do
-          {:error, :invalid} ->
-            {:error, :fake}
-
-          {:error, :expired} ->
-            {:error, :expired}
-
-          {:ok, _} ->
-            Repo.preload(token_struct, :user)
-        end
-    end
+  @spec update_email_status(User.t()) :: {:ok, User.t()} | {:error, Ecto.Changeset.t()}
+  def update_email_status(user) do
+    changeset = User.email_status_update_changeset(user, %{email_verify: true})
+    Repo.update(changeset)
   end
 
   @doc """
@@ -414,7 +509,7 @@ defmodule WraftDoc.Account do
 
   @spec reset_password(map) :: User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
   def reset_password(%{"token" => token, "password" => _} = params) do
-    case check_token(token) do
+    case AuthTokens.check_token(token, :password_verify) do
       %AuthToken{} = auth_token ->
         User
         |> Repo.get_by(email: auth_token.user.email)
@@ -424,7 +519,7 @@ defmodule WraftDoc.Account do
             changeset
 
           %User{} = user_struct ->
-            Repo.delete!(auth_token)
+            AuthTokens.delete_auth_token!(auth_token)
             user_struct
         end
 
@@ -434,6 +529,30 @@ defmodule WraftDoc.Account do
   end
 
   def reset_password(_), do: nil
+
+  @doc """
+  Set password for the first time and delete the set password token.
+  """
+  @spec set_password(String.t(), map) ::
+          User.t() | {:error, Ecto.Changeset.t()} | {:error, atom}
+  def set_password(
+        email,
+        %{"password" => password, "confirm_password" => password, "token" => token} = params
+      ) do
+    User
+    |> Repo.get_by(email: email)
+    |> do_update_password(params)
+    |> case do
+      changeset = {:error, _} ->
+        changeset
+
+      %User{} = user_struct ->
+        AuthTokens.delete_auth_token(token)
+        user_struct
+    end
+  end
+
+  def set_password(_, _), do: {:error, :invalid_password}
 
   @doc """
   Update the password of the current user after verifying the
@@ -450,7 +569,22 @@ defmodule WraftDoc.Account do
     end
   end
 
-  def update_password(_, _), do: nil
+  def update_password(_, _), do: {:error, :no_data}
+
+  def remove_user(%User{current_org_id: organisation_id}, user_id) do
+    with %UserOrganisation{user: user} <-
+           UserOrganisation
+           |> Repo.get_by(user_id: user_id, organisation_id: organisation_id)
+           |> Repo.preload(:user) do
+      user
+      |> User.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
+      |> Repo.update()
+      |> case do
+        {:ok, user} -> user
+        {:error, _} = changeset -> changeset
+      end
+    end
+  end
 
   # Update the password if the new one is not same as the previous one.
   @spec check_and_update_password(User.t(), map) ::
@@ -479,15 +613,56 @@ defmodule WraftDoc.Account do
     end
   end
 
-  # Insert auth token without expiry date.
-  @spec insert_auth_token(User.t() | any(), map) ::
-          {:ok, AuthToken.t()} | {:error, Ecto.Changeset.t()} | nil
-  defp insert_auth_token(%User{} = current_user, params) do
-    current_user
-    |> build_assoc(:auth_tokens)
-    |> AuthToken.changeset(params)
-    |> Repo.insert()
+  def get_user_by_name(name, params) do
+    query = from(u in User, where: ilike(u.name, ^"%#{name}%"))
+    Repo.paginate(query, params)
   end
 
-  defp insert_auth_token(_, _), do: nil
+  def get_role_group(%{current_org_id: org_id}, <<_::288>> = id) do
+    Repo.get_by(RoleGroup, id: id, organisation_id: org_id)
+  end
+
+  def get_role_group(_, _), do: nil
+
+  def show_role_group(user, id) do
+    user |> get_role_group(id) |> Repo.preload(:roles)
+  end
+
+  def create_role_group(%{current_org_id: org_id}, params) do
+    params = Map.put(params, "organisation_id", org_id)
+
+    %RoleGroup{}
+    |> RoleGroup.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, role_group} ->
+        Repo.preload(role_group, :roles)
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def create_role_group(_, _), do: nil
+
+  def update_role_group(role_group, params) do
+    role_group
+    |> RoleGroup.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, role_group} -> Repo.preload(role_group, :roles)
+      {:error, _} = changeset -> changeset
+    end
+  end
+
+  def delete_role_group(role_group) do
+    Repo.delete(role_group)
+  end
+
+  def list_role_groups(%{current_org_id: org_id}) do
+    query = from(rg in RoleGroup, where: rg.organisation_id == ^org_id)
+    Repo.all(query)
+  end
+
+  def list_role_groups(_), do: nil
 end

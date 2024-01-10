@@ -1,0 +1,155 @@
+{
+    "type": "doc",
+    "content": [
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Dear "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "name",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": ","
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": " We are pleased to inform you that you have been appointed as "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "role",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": " at Fuctionary Labs effective [13 June 2015]."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": " Your work timings will be from [9 AM] to [5 PM], Monday to Friday. Your salary will be "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "salary",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": " USD. For the full list of benefits and terms of your employment, please refer to the job offer letter that you signed previously. Please consult with the HR department to learn more about the company policies and to get a comprehensive job description for your role."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": " If you have any questions or queries at any time, do not hesitate to contact the HR department or your direct manager accordingly."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": " Congratulations on your appointment. We wish you the best of luck in your job. Looking forward to years of success and fruitful cooperation."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Sincerely,"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Hridya Bal"
+                },
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "text",
+                    "text": "HR Manager"
+                }
+            ]
+        }
+    ]
+}

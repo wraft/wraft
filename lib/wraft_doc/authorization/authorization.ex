@@ -3,99 +3,57 @@ defmodule WraftDoc.Authorization do
   Module that handles the repo connections of the authorization context.
   """
   import Ecto.Query
-  import Ecto
-  alias WraftDoc.{Account.Role, Authorization.Permission, Authorization.Resource, Repo}
+
+  alias WraftDoc.Authorization.Permission
+  alias WraftDoc.Repo
 
   @doc """
-  Create a resource.
+  Lists all permissions and group them by resource.
   """
-  @spec create_resource(map) :: {:ok, Resource.t()} | {:error, Ecto.Changeset.t()}
-  def create_resource(params) do
-    %Resource{} |> Resource.changeset(params) |> Repo.insert()
+  def list_permissions(params \\ %{}) do
+    Permission
+    |> where(^permission_filter_by_name(params))
+    |> where(^permission_filter_by_resource(params))
+    |> Repo.all()
+    |> Enum.group_by(& &1.resource)
   end
 
-  @doc """
-  List all resources.
-  """
-  @spec resource_index(map) :: map
-  def resource_index(params) do
-    query = from(r in Resource, order_by: [asc: r.category])
+  defp permission_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([p], ilike(p.name, ^"%#{name}%"))
 
-    Repo.paginate(query, params)
-  end
+  defp permission_filter_by_name(_), do: true
 
-  @doc """
-  Get a resource from its UUID.
-  """
-  @spec get_resource(binary) :: Resource.t()
-  def get_resource(uuid) do
-    Repo.get_by(Resource, uuid: uuid)
-  end
+  defp permission_filter_by_resource(%{"resource" => resource} = _params),
+    do: dynamic([p], ilike(p.resource, ^"%#{resource}%"))
 
-  @doc """
-  Update given resource.
-  """
-  @spec update_resource(Resource.t(), map) :: {:ok, Resource.t()} | {:error, Ecto.Changeset.t()}
-  def update_resource(resource, params) do
-    resource |> Resource.changeset(params) |> Repo.update()
-  end
+  defp permission_filter_by_resource(_), do: true
 
-  @doc """
-  Delete a resource.
-  """
-  @spec delete_resource(Resource.t()) :: {:ok, Resource.t()} | {:error, Ecto.Changeset.t()}
-  def delete_resource(resource) do
-    resource
-    |> Ecto.Changeset.change()
-    |> Ecto.Changeset.no_assoc_constraint(
-      :permissions,
-      message:
-        "Cannot delete the resource. Some permissions depend on this resource. Update those resources and then try again.!"
-    )
-    |> Repo.delete()
-  end
-
-  @doc """
-  Create a permission.
-  """
-  @spec create_permission(Resource.t(), Role.t()) :: Permission.t() | {:error, Ecto.Changeset.t()}
-  def create_permission(resource, role) do
-    resource
-    |> build_assoc(:permissions, role: role)
-    |> Permission.changeset()
+  def create_permission(params \\ %{}) do
+    %Permission{}
+    |> Permission.changeset(params)
     |> Repo.insert()
-    |> case do
-      {:ok, permission} ->
-        Repo.preload(permission, [:role, :resource])
-
-      {:error, _} = changeset ->
-        changeset
-    end
-  end
-
-  @doc """
-  Permission index.
-  """
-  @spec permission_index(map) :: map
-  def permission_index(params) do
-    query = from(r in Resource, order_by: [asc: r.category], preload: [{:permissions, :role}])
-
-    Repo.paginate(query, params)
   end
 
   @doc """
   Get a permission from its UUID.
   """
-  @spec get_permission(binary) :: Permission.t()
-  def get_permission(uuid) do
-    Repo.get_by(Permission, uuid: uuid)
-  end
+  @spec get_permission(Ecto.UUID.t()) :: Permission.t() | nil
+  def get_permission(id), do: Repo.get_by(Permission, id: id)
 
   @doc """
-  Delete a resource.
+  Deletes a resource.
   """
-  @spec delete_permission(Permission.t()) :: {:ok, Permission.t()}
-  def delete_permission(permission) do
-    Repo.delete(permission)
+  @spec delete_permission(Permission.t()) :: {:ok, Permission.t()} | {:error, Ecto.Changeset.t()}
+  def delete_permission(permission), do: Repo.delete(permission)
+
+  @doc """
+  Lists all resources we have in Wraft.
+  """
+  @spec list_resources() :: list()
+  def list_resources do
+    Permission
+    |> distinct(true)
+    |> select([p], p.resource)
+    |> Repo.all()
   end
 end
