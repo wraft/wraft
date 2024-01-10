@@ -261,6 +261,7 @@ defmodule WraftDoc.Factory do
       raw: "Content",
       serialized: %{title: "Title of the content", body: "Body of the content"},
       editable: true,
+      state: build(:state),
       content_type: build(:content_type)
     }
   end

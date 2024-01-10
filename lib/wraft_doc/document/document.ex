@@ -879,23 +879,25 @@ defmodule WraftDoc.Document do
   """
   @spec instance_index_of_an_organisation(User.t(), map) :: map
   def instance_index_of_an_organisation(%{current_org_id: org_id}, params) do
-    query =
-      from(i in Instance,
-        join: ct in ContentType,
-        where: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
-        where: ^instance_index_filter_by_instance_id(params),
-        where: ^instance_index_filter_by_content_type_name(params),
-        order_by: ^instance_index_sort(params),
-        preload: [
-          :content_type,
-          :state,
-          :vendor,
-          {:instance_approval_systems, :approver},
-          creator: [:profile]
-        ]
-      )
-
-    Repo.paginate(query, params)
+    Instance
+    |> join(:inner, [i], ct in ContentType,
+      on: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
+      as: :content_type
+    )
+    |> where(^instance_index_filter_by_instance_id(params))
+    |> where(^instance_index_filter_by_content_type_name(params))
+    |> where(^instance_index_filter_by_instance_title(params))
+    |> instance_index_filter_by_state(params, org_id)
+    |> where(^instance_index_filter_by_creator(params))
+    |> order_by(^instance_index_sort(params))
+    |> preload([
+      :content_type,
+      :state,
+      :vendor,
+      {:instance_approval_systems, :approver},
+      creator: [:profile]
+    ])
+    |> Repo.paginate(params)
   end
 
   def instance_index_of_an_organisation(_, _), do: {:error, :invalid_id}
@@ -905,22 +907,20 @@ defmodule WraftDoc.Document do
   """
   @spec instance_index(binary, map) :: map
   def instance_index(<<_::288>> = c_type_id, params) do
-    query =
-      from(i in Instance,
-        join: ct in ContentType,
-        where: ct.id == ^c_type_id and i.content_type_id == ct.id,
-        where: ^instance_index_filter_by_instance_id(params),
-        order_by: ^instance_index_sort(params),
-        preload: [
-          :content_type,
-          :state,
-          :vendor,
-          {:instance_approval_systems, :approver},
-          creator: [:profile]
-        ]
-      )
-
-    Repo.paginate(query, params)
+    Instance
+    |> join(:inner, [i], ct in ContentType, on: ct.id == ^c_type_id, as: :content_type)
+    |> where([i, content_type: ct], i.content_type_id == ct.id)
+    |> where(^instance_index_filter_by_instance_id(params))
+    |> where(^instance_index_filter_by_creator(params))
+    |> order_by(^instance_index_sort(params))
+    |> preload([
+      :content_type,
+      :state,
+      :vendor,
+      {:instance_approval_systems, :approver},
+      creator: [:profile]
+    ])
+    |> Repo.paginate(params)
   end
 
   def instance_index(_, _), do: {:error, :invalid_id}
@@ -930,8 +930,29 @@ defmodule WraftDoc.Document do
 
   defp instance_index_filter_by_instance_id(_), do: true
 
+  defp instance_index_filter_by_creator(%{"creator_id" => <<_::288>> = creator_id} = _params),
+    do: dynamic([i], i.creator_id == ^creator_id)
+
+  defp instance_index_filter_by_creator(_), do: true
+
+  defp instance_index_filter_by_state(query, %{"state" => state} = _params, org_id) do
+    query
+    |> join(:inner, [i], s in State,
+      on: i.state_id == s.id and s.organisation_id == ^org_id,
+      as: :state
+    )
+    |> where([state: s], ilike(s.state, ^"%#{state}%"))
+  end
+
+  defp instance_index_filter_by_state(query, _, _), do: query
+
+  defp instance_index_filter_by_instance_title(%{"document_instance_title" => title} = _params),
+    do: dynamic([i], fragment("serialized ->> 'title' ilike ?", ^"%#{title}%"))
+
+  defp instance_index_filter_by_instance_title(_), do: true
+
   defp instance_index_filter_by_content_type_name(%{"content_type_name" => name}) do
-    dynamic([i, ct], ct.name == ^name)
+    dynamic([content_type: ct], ct.name == ^name)
   end
 
   defp instance_index_filter_by_content_type_name(_), do: true
