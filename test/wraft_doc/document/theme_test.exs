@@ -1,8 +1,8 @@
 defmodule WraftDoc.Document.ThemeTest do
   use WraftDoc.ModelCase
-
+  import WraftDoc.Factory
   alias WraftDoc.Document.Theme
-
+  @moduletag :document
   @valid_attrs %{
     name: "Official Letter Theme",
     font: "Malery",
@@ -17,7 +17,9 @@ defmodule WraftDoc.Document.ThemeTest do
   }
 
   test "changeset with valid attributes" do
-    changeset = Theme.changeset(%Theme{}, @valid_attrs)
+    organisation = insert(:organisation)
+    valid_attrs = Map.put(@valid_attrs, :organisation_id, organisation.id)
+    changeset = Theme.changeset(%Theme{}, valid_attrs)
     assert changeset.valid?
   end
 
@@ -25,4 +27,7 @@ defmodule WraftDoc.Document.ThemeTest do
     changeset = Theme.changeset(%Theme{}, @invalid_attrs)
     refute changeset.valid?
   end
+
+  # TODO include tests for validate_format for changeset & update_changeset
+  # TODO include tests for file_changeset
 end

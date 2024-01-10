@@ -1,6 +1,8 @@
 defmodule WraftDoc.Document.DataTemplateTest do
   use WraftDoc.ModelCase
   alias WraftDoc.Document.DataTemplate
+  import WraftDoc.Factory
+  @moduletag :document
 
   @valid_attrs %{
     title: "industry",
@@ -10,7 +12,9 @@ defmodule WraftDoc.Document.DataTemplateTest do
   }
   @invalid_attrs %{}
   test "changeset with valid attributes" do
-    changeset = DataTemplate.changeset(%DataTemplate{}, @valid_attrs)
+    ct = insert(:content_type)
+    valid_attrs = Map.put(@valid_attrs, :content_type_id, ct.id)
+    changeset = DataTemplate.changeset(%DataTemplate{}, valid_attrs)
     assert changeset.valid?
   end
 

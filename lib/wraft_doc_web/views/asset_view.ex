@@ -5,8 +5,9 @@ defmodule WraftDocWeb.Api.V1.AssetView do
 
   def render("asset.json", %{asset: asset}) do
     %{
-      id: asset.uuid,
+      id: asset.id,
       name: asset.name,
+      type: asset.type,
       file: generate_url(asset),
       inserted_at: asset.inserted_at,
       updated_at: asset.updated_at
@@ -35,6 +36,6 @@ defmodule WraftDocWeb.Api.V1.AssetView do
   end
 
   defp generate_url(%{file: file} = asset) do
-    WraftDocWeb.AssetUploader.url({file, asset})
+    WraftDocWeb.AssetUploader.url({file, asset}, signed: true)
   end
 end

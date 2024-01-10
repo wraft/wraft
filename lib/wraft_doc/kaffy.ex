@@ -7,13 +7,45 @@ defmodule WraftDoc.Kaffy.Config do
       account: [
         name: "Account",
         resources: [
-          user: [schema: WraftDoc.Account.User, admin: WraftDoc.Account.UserAdmin]
+          user: [schema: WraftDoc.Account.User, admin: WraftDocWeb.UserAdmin],
+          user_role: [schema: WraftDoc.Account.UserRole, admin: WraftDocWeb.UserRoleAdmin]
+        ]
+      ],
+      internal_user: [
+        name: "Internal User",
+        resources: [
+          internal_user: [
+            schema: WraftDoc.InternalUsers.InternalUser,
+            admin: WraftDocWeb.InternalUserAdmin
+          ]
         ]
       ],
       enterprise: [
         name: "Enterprise",
         resources: [
-          organisation: [schema: WraftDoc.Enterprise.Organisation]
+          organisation: [
+            schema: WraftDoc.Enterprise.Organisation,
+            admin: WraftDocWeb.OrganisationAdmin
+          ],
+          membership: [schema: WraftDoc.Enterprise.Membership, admin: WraftDocWeb.MembershipAdmin],
+          plan: [schema: WraftDoc.Enterprise.Plan, admin: WraftDocWeb.PlanAdmin]
+        ]
+      ],
+      authorization: [
+        name: "Authorisation",
+        resources: [
+          conroller: [
+            schema: WraftDoc.Authorization.Resource
+          ]
+        ]
+      ],
+      waiting_list: [
+        name: "Waiting List",
+        resources: [
+          waiting_list: [
+            schema: WraftDoc.WaitingLists.WaitingList,
+            admin: WraftDocWeb.WaitingListAdmin
+          ]
         ]
       ]
     ]

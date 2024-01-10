@@ -3,26 +3,15 @@ defmodule WraftDoc.Document.Asset do
     The asset model.
   """
   alias __MODULE__
-  alias WraftDoc.Account.User
-  use Ecto.Schema
-  use Arc.Ecto.Schema
-  import Ecto.Changeset
-  import Ecto.Query
-  @derive {Jason.Encoder, only: [:name]}
-  defimpl Spur.Trackable, for: Asset do
-    def actor(asset), do: "#{asset.creator_id}"
-    def object(asset), do: "Asset:#{asset.id}"
-    def target(_chore), do: nil
+  use WraftDoc.Schema
+  use Waffle.Ecto.Schema
 
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
+  @types ~w(layout theme)
 
   schema "asset" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
-    field(:name, :string, null: false)
+    field(:name, :string)
     field(:file, WraftDocWeb.AssetUploader.Type)
+    field(:type, :string)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     timestamps()
@@ -30,8 +19,9 @@ defmodule WraftDoc.Document.Asset do
 
   def changeset(%Asset{} = asset, attrs \\ %{}) do
     asset
-    |> cast(attrs, [:name, :organisation_id])
-    |> validate_required([:name, :organisation_id])
+    |> cast(attrs, [:name, :type, :organisation_id])
+    |> validate_required([:name, :type, :organisation_id])
+    |> validate_inclusion(:type, @types)
   end
 
   def update_changeset(%Asset{} = asset, attrs \\ %{}) do
@@ -41,7 +31,7 @@ defmodule WraftDoc.Document.Asset do
     |> validate_required([:name, :file])
   end
 
-  def file_changeset(%Asset{} = asset, attrs \\ %{}) do
+  def file_changeset(asset, attrs \\ %{}) do
     asset
     |> cast_attachments(attrs, [:file])
     |> validate_required([:file])

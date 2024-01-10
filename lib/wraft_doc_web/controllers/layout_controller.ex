@@ -1,10 +1,23 @@
 defmodule WraftDocWeb.Api.V1.LayoutController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "layout:create",
+    index: "layout:index",
+    show: "layout:show",
+    update: "layout:manage",
+    delete: "layout:delete",
+    delete_layout_asset: "layout:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Engine, Document.Layout, Document.LayoutAsset}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Engine
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Document.LayoutAsset
 
   def swagger_definitions do
     %{
@@ -20,7 +33,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
       #       height(:float, "Height of the layout")
       #       unit(:string, "Unit of dimensions")
       #       slug(:string, "Name of the slug to be used for the layout")
-      #       engine_uuid(:string, "ID of the engine selected")
+      #       engine_id(:string, "ID of the engine selected")
       #     end
 
       #     example(%{
@@ -30,7 +43,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
       #       height: 20.0,
       #       unit: "cm",
       #       slug: "Pandoc",
-      #       engine_uuid: "1232148nb3478"
+      #       engine_id: "1232148nb3478"
       #     })
       #   end,
       Layout:
@@ -237,7 +250,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:assets, :formData, :list, "IDs of assets of the layout")
 
-    parameter(:engine_uuid, :formData, :string, "ID of layout's engine", required: true)
+    parameter(:engine_id, :formData, :string, "ID of layout's engine", required: true)
 
     response(200, "Ok", Schema.ref(:LayoutAndEngine))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -245,10 +258,10 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"engine_uuid" => engine_uuid} = params) do
+  def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %Engine{} = engine <- Document.get_engine(engine_uuid),
+    with %Engine{} = engine <- Document.get_engine(params["engine_id"]),
          %Layout{} = layout <- Document.create_layout(current_user, engine, params) do
       render(conn, "create.json", doc_layout: layout)
     end
@@ -263,6 +276,14 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     description("API to get the list of all layouts created so far")
 
     parameter(:page, :query, :string, "Page number")
+    parameter(:name, :query, :string, "Layout Name")
+
+    parameter(
+      :sort,
+      :query,
+      :string,
+      "Sort Keys => name, name_desc, inserted_at, inserted_at_desc"
+    )
 
     response(200, "Ok", Schema.ref(:LayoutIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
@@ -304,10 +325,10 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => uuid}) do
+  def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Layout{} = layout <- Document.show_layout(uuid, current_user) do
+    with %Layout{} = layout <- Document.show_layout(id, current_user) do
       render(conn, "show.json", doc_layout: layout)
     end
   end
@@ -347,7 +368,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:assets, :formData, :list, "IDs of assets of the layout")
 
-    parameter(:engine_uuid, :formData, :string, "ID of layout's engine", required: true)
+    parameter(:engine_id, :formData, :string, "ID of layout's engine", required: true)
 
     response(200, "Ok", Schema.ref(:ShowLayout))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -355,10 +376,10 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Document.get_layout(uuid, current_user),
+    with %Layout{} = layout <- Document.get_layout(id, current_user),
          %Layout{} = layout <- Document.update_layout(layout, current_user, params) do
       render(conn, "show.json", doc_layout: layout)
     end
@@ -382,11 +403,11 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Document.get_layout(uuid, current_user),
-         {:ok, %Layout{}} <- Document.delete_layout(layout, current_user) do
+    with %Layout{} = layout <- Document.get_layout(id, current_user),
+         {:ok, %Layout{}} <- Document.delete_layout(layout) do
       render(conn, "layout.json", doc_layout: layout)
     end
   end
@@ -410,12 +431,12 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   end
 
   @spec delete_layout_asset(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete_layout_asset(conn, %{"id" => l_uuid, "a_id" => a_uuid}) do
+  def delete_layout_asset(conn, %{"id" => l_id, "a_id" => a_id}) do
     current_user = conn.assigns[:current_user]
 
-    with %LayoutAsset{} = layout_asset <- Document.get_layout_asset(l_uuid, a_uuid),
-         {:ok, %LayoutAsset{}} <- Document.delete_layout_asset(layout_asset, current_user),
-         %Layout{} = layout <- Document.show_layout(l_uuid, current_user) do
+    with %LayoutAsset{} = layout_asset <- Document.get_layout_asset(l_id, a_id),
+         {:ok, %LayoutAsset{}} <- Document.delete_layout_asset(layout_asset),
+         %Layout{} = layout <- Document.show_layout(l_id, current_user) do
       render(conn, "show.json", doc_layout: layout)
     end
   end

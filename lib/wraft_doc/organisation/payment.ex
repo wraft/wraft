@@ -2,18 +2,16 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   @moduledoc """
   The payment model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
-  use Arc.Ecto.Schema
+  use WraftDoc.Schema
+  use Waffle.Ecto.Schema
   alias __MODULE__
-  require Protocol
-  Protocol.derive(Jason.Encoder, Razorpay.Payment)
+
+  @type t :: %__MODULE__{}
 
   def statuses, do: [failed: 1, captured: 2]
   def actions, do: [downgrade: 1, renew: 2, upgrade: 3]
 
   schema "payment" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
     field(:razorpay_id, :string)
     field(:start_date, :naive_datetime)
     field(:end_date, :naive_datetime)
@@ -35,7 +33,7 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   @doc """
   Get the status value from its integer
   """
-  @spec get_status(%Payment{}) :: String.t() | nil
+  @spec get_status(t()) :: String.t() | nil
   def get_status(%Payment{status: status_int}) do
     find_value(statuses(), status_int)
   end
@@ -45,7 +43,7 @@ defmodule WraftDoc.Enterprise.Membership.Payment do
   @doc """
   Get the action value from its integer
   """
-  @spec get_action(%Payment{}) :: String.t() | nil
+  @spec get_action(t()) :: String.t() | nil
   def get_action(%Payment{action: action_int}) do
     find_value(actions(), action_int)
   end

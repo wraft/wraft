@@ -1,13 +1,13 @@
 defmodule WraftDocWeb.AssetUploader do
   @moduledoc false
+  use Waffle.Definition
+  use Waffle.Ecto.Definition
 
-  use Arc.Definition
-  use Arc.Ecto.Definition
-
-  # Include ecto support (requires package arc_ecto installed):
-  # use Arc.Ecto.Definition
+  alias WraftDoc.Client.Minio
+  alias WraftDoc.Document.Asset
 
   @versions [:original]
+  @font_style_name ~w(Regular Italic Bold BoldItalic)
 
   # To add a thumbnail version:
   # @versions [:original, :thumb]
@@ -18,16 +18,37 @@ defmodule WraftDocWeb.AssetUploader do
   # end
 
   # Whitelist file extensions:
-  # def validate({file, _}) do
-  #   ~w(.jpg .jpeg .gif .png) |> Enum.member?(Path.extname(file.file_name))
-  # end
+  def validate({file, %Asset{type: "layout"}}) do
+    file_extension = file.file_name |> Path.extname() |> String.downcase()
+
+    if ".pdf" == file_extension, do: :ok, else: {:error, "invalid file type"}
+  end
+
+  def validate({file, %Asset{type: "theme"}}) do
+    file_extension = file.file_name |> Path.extname() |> String.downcase()
+
+    case Enum.member?(~w(.otf .ttf), file_extension) && check_file_naming(file.file_name) do
+      true -> :ok
+      false -> {:error, "invalid file type"}
+    end
+  end
+
+  # Based on what is acceptable in latex engine
+  def check_file_naming(filename) do
+    filename
+    |> Path.rootname()
+    |> String.split("-")
+    |> case do
+      [_font_family, font_style] when font_style in @font_style_name -> true
+      _ -> false
+    end
+  end
 
   # Define a thumbnail transformation:
   # def transform(:thumb, _) do
   #   {:convert, "-strip -thumbnail 250x250^ -gravity center -extent 250x250 -format png", :png}
   # end
 
-  # Override the persisted filenames:
   # def filename(version, _) do
   #   version
   # end
@@ -38,9 +59,7 @@ defmodule WraftDocWeb.AssetUploader do
   end
 
   # Provide a default URL if there hasn't been a file uploaded
-  # def default_url(version, scope) do
-  #   "/images/avatars/default_#{version}.png"
-  # end
+  def default_url(_version, _scope), do: Minio.generate_url("uploads/images/avatar.png")
 
   # Specify custom headers for s3 objects
   # Available options are [:cache_control, :content_disposition,

@@ -5,10 +5,20 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
   """
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "pipeline:manage",
+    index: "pipeline:show",
+    update: "pipeline:manage",
+    show: "pipeline:show",
+    delete: "pipeline:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.Pipeline}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Pipeline
 
   def swagger_definitions do
     %{
@@ -227,6 +237,14 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
     description("API to list pipelines of current user's organisation.")
 
     parameter(:page, :query, :string, "Page number")
+    parameter(:name, :query, :string, "Name")
+
+    parameter(
+      :sort,
+      :query,
+      :string,
+      "Sort Keys => name, name_desc, inserted_at, inserted_at_desc"
+    )
 
     response(200, "Ok", Schema.ref(:PipelineIndex))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -329,7 +347,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
     current_user = conn.assigns[:current_user]
 
     with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, uuid),
-         {:ok, %Pipeline{}} <- Document.delete_pipeline(pipeline, current_user) do
+         {:ok, %Pipeline{}} <- Document.delete_pipeline(pipeline) do
       render(conn, "pipeline.json", pipeline: pipeline)
     end
   end

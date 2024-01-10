@@ -2,19 +2,26 @@ defmodule WraftDoc.Repo.Migrations.CreateFieldTypeTable do
   use Ecto.Migration
 
   def up do
-    create table(:field_type) do
-      add(:uuid, :uuid, null: false)
+    create table(:field_type, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:name, :string, null: false)
-      add(:creator_id, references(:user, on_delete: :nilify_all))
-
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
       timestamps()
     end
 
-    create table(:content_type_field) do
-      add(:uuid, :uuid, null: false)
+    create table(:content_type_field, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:name, :string, null: false)
-      add(:content_type_id, references(:content_type, on_delete: :delete_all))
-      add(:field_type_id, references(:field_type, on_delete: :delete_all))
+
+      add(
+        :content_type_id,
+        references(:content_type, type: :uuid, column: :id, on_delete: :delete_all)
+      )
+
+      add(
+        :field_type_id,
+        references(:field_type, type: :uuid, column: :id, on_delete: :delete_all)
+      )
 
       timestamps()
     end

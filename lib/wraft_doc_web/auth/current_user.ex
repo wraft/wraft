@@ -5,7 +5,12 @@ defmodule WraftDocWeb.CurrentUser do
   """
   import Plug.Conn
   import Guardian.Plug
-  alias WraftDoc.{Account.User, Repo}
+  import Ecto.Query
+
+  alias WraftDoc.Account.User
+  alias WraftDoc.Document.InstanceApprovalSystem
+  alias WraftDoc.Repo
+
   alias WraftDocWeb.Guardian.AuthErrorHandler
 
   def init(opts), do: opts
@@ -18,7 +23,10 @@ defmodule WraftDocWeb.CurrentUser do
         AuthErrorHandler.auth_error(conn, {:error, :no_user})
 
       user ->
-        user = Repo.preload(user, [:profile, :role, :organisation])
+        instances_to_approve = from(ias in InstanceApprovalSystem, where: ias.flag == false)
+
+        user = Repo.preload(user, [:profile, instances_to_approve: instances_to_approve])
+
         assign(conn, :current_user, user)
     end
   end

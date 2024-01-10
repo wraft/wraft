@@ -1,21 +1,25 @@
 defmodule WraftDoc.Authorization.Permission do
   @moduledoc false
-  use Ecto.Schema
-  import Ecto.Changeset
-  alias __MODULE__
+  use WraftDoc.Schema
 
   schema "permission" do
-    field(:uuid, Ecto.UUID, autogenerate: true)
-    belongs_to(:role, WraftDoc.Account.Role)
-    belongs_to(:resource, WraftDoc.Authorization.Resource)
+    field(:name, :string)
+    field(:resource, :string)
+    field(:action, :string)
   end
 
-  def changeset(%Permission{} = permission, attrs \\ %{}) do
+  # TODO write test for the changeset --> valid , invalid , unique constraints
+  def changeset(permission, attrs \\ %{}) do
     permission
-    |> cast(attrs, [])
-    |> unique_constraint(:role_id,
-      name: :permission_unique_index,
-      message: "Permission already enabled."
+    |> cast(attrs, [:name, :resource, :action])
+    |> validate_required([:name, :resource, :action])
+    |> unique_constraint(:name,
+      message: "permission already exist",
+      name: :permission_name_index
+    )
+    |> unique_constraint(:resource,
+      message: "combination of resource and action has to be unique",
+      name: :permission_resource_action_index
     )
   end
 end

@@ -1,10 +1,21 @@
 defmodule WraftDocWeb.Api.V1.FlowController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "flow:manage",
+    index: "flow:show",
+    show: "flow:show",
+    update: "flow:manage",
+    align_states: "flow:manage",
+    delete: "flow:delete"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Enterprise, Enterprise.Flow}
+
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Flow
 
   def swagger_definitions do
     %{
@@ -39,7 +50,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
             control_data: %{
               pre_state: "review",
               post_state: "publish",
-              approver: "user_uuid"
+              approver: "user_id"
             }
           })
         end,
@@ -86,7 +97,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
             control_data: %{
               pre_state: "review",
               post_state: "publish",
-              approver: "user_uuid"
+              approver: "user_id"
             },
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
@@ -95,7 +106,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
       User:
         swagger_schema do
           title("User")
-          description("user deltails")
+          description("user details")
 
           properties do
             name(:string, "Users name")
@@ -202,6 +213,28 @@ defmodule WraftDocWeb.Api.V1.FlowController do
             ]
           })
         end,
+      AlignStateRequest:
+        swagger_schema do
+          title("Show flow details and its states")
+          description("Show all details of a flow including all the states undet the flow")
+
+          properties do
+            states(Schema.ref(:State))
+          end
+
+          example(%{
+            states: [
+              %{
+                id: "1232148nb3478",
+                order: 1
+              },
+              %{
+                id: "1232148nb3478",
+                order: 2
+              }
+            ]
+          })
+        end,
       FlowIndex:
         swagger_schema do
           properties do
@@ -274,6 +307,14 @@ defmodule WraftDocWeb.Api.V1.FlowController do
     description("Index of flows in current user's organisation")
 
     parameter(:page, :query, :string, "Page number")
+    parameter(:name, :query, :string, "Flow Name")
+
+    parameter(
+      :sort,
+      :query,
+      :string,
+      "sort keys => name, name_desc, inserted_at, inserted_at_desc, updated_at, updated_at_desc"
+    )
 
     response(200, "Ok", Schema.ref(:FlowIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
@@ -315,10 +356,10 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => flow_uuid}) do
+  def show(conn, %{"id" => flow_id}) do
     current_user = conn.assigns.current_user
 
-    with %Flow{} = flow <- Enterprise.show_flow(flow_uuid, current_user) do
+    with %Flow{} = flow <- Enterprise.show_flow(flow_id, current_user) do
       render(conn, "show.json", flow: flow)
     end
   end
@@ -343,17 +384,38 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Flow{} = flow <- Enterprise.get_flow(uuid, current_user),
-         %Flow{} = flow <-
-           Enterprise.update_flow(
-             flow,
-             current_user,
-             params
-           ) do
+    with %Flow{} = flow <- Enterprise.get_flow(id, current_user),
+         %Flow{} = flow <- Enterprise.update_flow(flow, params) do
       render(conn, "update.json", flow: flow)
+    end
+  end
+
+  swagger_path :align_states do
+    put("/flows/{id}/align-states")
+    summary("Update states")
+    description("Api to update order of states of a flow")
+
+    parameters do
+      id(:path, :string, "Flow id", required: true)
+
+      flow(:body, Schema.ref(:AlignStateRequest), "Flow and states to be updated", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:FlowAndStates))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  def align_states(conn, %{"id" => id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Flow{} = flow <- Enterprise.show_flow(id, current_user),
+         %Flow{} = flow <- Enterprise.align_states(flow, params) do
+      render(conn, "show.json", %{flow: flow})
     end
   end
 
@@ -376,11 +438,11 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Flow{} = flow <- Enterprise.get_flow(uuid, current_user),
-         {:ok, %Flow{}} <- Enterprise.delete_flow(flow, current_user) do
+    with %Flow{} = flow <- Enterprise.get_flow(id, current_user),
+         {:ok, %Flow{}} <- Enterprise.delete_flow(flow) do
       render(conn, "flow.json", flow: flow)
     end
   end

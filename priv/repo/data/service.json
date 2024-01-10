@@ -1,0 +1,1614 @@
+{
+    "type": "doc",
+    "content": [
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            }
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "This Agreement is dated and in effect as of the Jan 25, 2020, between:"
+                },
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "owner",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "owneraddress",
+                        "named": null
+                    }
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "text",
+                    "text": "(hereinafter the “Client”), and"
+                },
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "client",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "clientaddress",
+                        "named": null
+                    }
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "text",
+                    "text": "(hereinafter the “Consultant”)."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "This Agreement is with respect to the development of software for the Client, hereinafter referred to as the “Work.” Whereas, Consultant is a professional software developer of good standing; Whereas, Client wishes Consultant to create certain Work described more fully herein; and Whereas, Consultant wishes to create such Work; Now, therefore, in consideration of the foregoing premises and the mutual covenants hereinafter set forth and other valuable considerations, the parties hereto agree as follows:"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Services"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Consultant will provide software development and design services for their website "
+                },
+                {
+                    "type": "holder",
+                    "attrs": {
+                        "name": "project",
+                        "named": null
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": ". Components and features of this site will be determined collaboratively by Client and Consultant."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Consultant’s responsibilities will include collaborating with Client to establish software requirements and priorities based on Client’s business goals; development of software in accordance with these requirements and priorities; deployment of such software onto internet-accessible systems; and administration of such systems. In support of these goals, Client is expected to work with Consultant to set priorities, review software as it is developed, and produce product research and specifications as required. Client and Consultant will arrange periodic meetings and phone discussions to support this collaboration."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Contract Length and Availability"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "This agreement is valid from [start] for a period of [period]"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "During this period, Consultant will guarantee availability of at least 40 hours per week for work on tasks selected by the Client. Client and Consultant will review this time guarantee every two weeks and may adjust it as agreed upon with two weeks notice."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Consultant and Client may specify, by advance written agreement, that no work shall be performed and no charges assessed during certain periods when either party is unavailable. At present, Consultant will provide full guaranteed time for services for a period of 4 months."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Location"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Services shall be performed at the offices of the Client and at such locations as are incidental thereto, including the offices of the Consultant."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Authority of Member-in-charge"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "In case the Consultant consists of a consortium of more than one entity, the Parties agree that the Lead Member shall act on behalf of the Members in exercising all the Consultant’s rights and obligations towards the Client under this Agreement, including receiving of instructions."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Authorised Representative"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "LIST-AUTH-REP"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Force Majeure"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Definition"
+                }
+            ]
+        },
+        {
+            "type": "orderedList",
+            "attrs": {
+                "order": 1
+            },
+            "content": [
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "For the purposes of this Agreement, “Force Majeure” means an event which is beyond the reasonable control of a Party, and which makes a Party’s performance of its obligations hereunder impossible or so impractical as reasonably to be considered impossible in the circumstances, and includes, but is not limited to, war, riots, civil disorder, earthquake, fire, explosion, storm, flood or other adverse weather conditions, strikes, lockouts or other industrial action (except where such strikes, lockouts or other industrial action are within the power of the Party invoking Force Majeure to prevent), confiscation or any other action by government agencies."
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Force Majeure shall not include (i) any event which is caused by the negligence or intentional action of a Party or such Party’s agents or employees, nor (ii) any event which a diligent Party could reasonably have been expected to both (A) take into account at the time of the conclusion of this Agreement, and (B) avoid or overcome in the carrying out of its obligations hereunder."
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Force Majeure shall not include insufficiency of funds or failure to make any payment required hereunder."
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "No breach of Agreement"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The failure of a Party to fulfill any of its obligations hereunder shall not be considered to be a breach of, or default under, this Agreement insofar as such inability arises from an event of Force Majeure, provided that the Party affected by such an event has taken all reasonable precautions, due care and reasonable alternative measures, all with the objective of carrying out the terms and conditions of this Agreement."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Measures to be taken"
+                }
+            ]
+        },
+        {
+            "type": "orderedList",
+            "attrs": {
+                "order": 1
+            },
+            "content": [
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "A Party affected by an event of Force Majeure shall take all reasonable measures to remove such Party’s inability to fulfil its obligations hereunder with a minimum of delay."
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "A Party affected by an event of Force Majeure shall notify the other Party of such event as soon as possible, and in any event not later than 14 (fourteen) days following the occurrence of such event, providing evidence of the nature and cause of such event, and shall similarly give notice of the restoration of normal conditions as soon as possible."
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "The Parties shall take all reasonable measures to minimize the consequences of any event of Force Majeure."
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Confidentiality"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Client and Consultant may disclose confidential information one to the other to facilitate work under this Agreement. Such information shall be so identified in writing at the time of its transmittal, and shall be safeguarded and not disclosed to third parties by the receiving party. Confidential information shall not include information that:"
+                }
+            ]
+        },
+        {
+            "type": "orderedList",
+            "attrs": {
+                "order": 1
+            },
+            "content": [
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "is already known to the party to which it is disclosed;"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "is or becomes part of the public domain without breach of this Agreement;"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "is obtained from third parties, which have no obligations to keep confidential to the parties to this Agreement."
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Permissions and Releases"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Client agrees to indemnify and hold harmless Consultant against any and all claims, costs, and expenses, including attorney’s fees, due to materials included in the Work at the request of the Client for which no copyright permission or previous release was requested or uses which exceed the uses allowed pursuant to a permission or release."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Communication"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Consultant will communicate with the Client by Email. Any approval through email by the Point of Contact will be considered official written approval."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Independent Contractor"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Client and Consultant are independent parties and nothing in this Agreement shall constitute either party as the employer, principal or partner of or joint venture with the other party. Neither the Client nor Consultant has any authority to assume or create any obligation or liability, either express or implied, on behalf of the other."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Credit"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Consultant retains the right to use the Client within its roster of clients. A link to the The Client website/application website may be placed on the the Designer’s web site as part of Consultant’s business portfolio."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Operation of the Agreement"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Parties recognize that it is impractical in this Agreement to provide for every contingency which may arise during the life of the Agreement, and the Parties hereby agree that it is their intention that this Agreement shall operate fairly as between them, and without detriment to the interest of either of them, and that, if during the term of this Agreement either Party believes that this Agreement is operating unfairly, the Parties will use their best efforts to agree on such action as may be necessary to remove the cause or causes of such unfairness, but failure to agree on any action pursuant to this Clause [8.2] shall not give rise to a dispute subject to arbitration in accordance with Clause [9] hereof."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Approval of Personnel"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Key Personnel listed in Annex-2 of the Agreement are hereby approved by the Client. No other Key Personnel shall be engaged without prior approval of the Client."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "If the Consultant hereafter proposes to engage any person as Professional Personnel, it shall submit to the Client its proposal along with a CV of such person The Client may approve or reject such proposal within 14 (fourteen) days of receipt thereof. In case the proposal is rejected, the Consultant may propose an alternative person for the Client’s consideration. In the event the Client does not reject a proposal within 14 (fourteen) days of the date of receipt thereof under this , it shall be deemed to have been approved by the Client."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Substitution of Key Personnel"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Client expects all the Key Personnel specified in the Proposal to be available during implementation of the Agreement. Client will not consider any substitution of Key Personnel except under compelling circumstances beyond the control of the Consultant and the concerned Key Personnel. Such substitution shall be limited to 1 (one) Key Personnel subject to equally or better qualified and experienced personnel being provided to the satisfaction of the Client."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Consultant should specifically note that substitution of the Team Leader will not normally be considered during the implementation of the Agreement and may lead to disqualification of the Applicant or termination of the Agreement."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Document Ownership"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "All reports and other documents (collectively referred to as \""
+                },
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "italic"
+                        }
+                    ],
+                    "text": "Consultancy Documents"
+                },
+                {
+                    "type": "text",
+                    "text": "\") prepared by the Consultant (or any Third Party)in performing the Services shall become and remain the property of the Client, and all intellectual property rights in such Consultancy Documents shall vest with the Client. Any Consultancy Document, of which the ownership or the intellectual property rights do not vest with the Client under law, shall automatically stand assigned to the Client as and when such Consultancy Document is created and the Consultant agrees to execute all papers and to perform such other acts as the Client may deem necessary to secure its rights herein assigned by the Consultant."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Team Leader"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The person designated as the Team Leader of the Consultant’s Personnel shall be responsible for the coordinated, timely and efficient functioning of the Personnel."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Obligations of the Client"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Assistance in Planning"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Unless otherwise specified in the Agreement, the Client shall make best efforts to ensure that the Client shall:"
+                }
+            ]
+        },
+        {
+            "type": "orderedList",
+            "attrs": {
+                "order": 1
+            },
+            "content": [
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Facilitate prompt clearance of job requirements for all required for the Services;"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Issue to officials, agents and representatives of the Company all such instructions as may be necessary or appropriate for the prompt and effective implementation of the Services."
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Payment"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "In consideration of the Services performed by the Consultant under this Agreement, the Client shall make to the Consultant such payments and in such manner as is provided in Clause 6 of this Agreement."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Obligations of the Consultant"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "General"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 3
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Standards of Performance"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Consultant shall perform the Services and carry out its obligations hereunder with all due diligence, efficiency and economy, in accordance with generally accepted professional techniques and practices, and shall observe sound management practices, and employ appropriate advanced technology and safe and effective equipment, machinery, materials and methods. The Consultant shall always act, in respect of any matter relating to this Agreement or to the Services, as a faithful adviser to the Client, and shall at all times support and safeguard the Client’s legitimate interests in any dealings with Third Parties."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 3
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Reporting obligations"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The Consultant shall submit to the Client the reports and documents specified in the Agreement, in the form, in the numbers and within the time periods set forth therein."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Conflict of Interest"
+                }
+            ]
+        },
+        {
+            "type": "orderedList",
+            "attrs": {
+                "order": 1
+            },
+            "content": [
+                {
+                    "type": "listItem",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "attrs": {
+                                "align": null,
+                                "id": null,
+                                "indent": 0,
+                                "lineSpacing": null
+                            },
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "The Consultant shall not have a Conflict of Interest and any breach hereof shall constitute a breach of the Agreement."
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Payment to the Consultant"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Agreement Value"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "In consideration of the Consultant’s services, Client will pay Consultant at the rate of 40 per week, exclusive of taxes, for each personnel assigned and agreed by the Client."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Consultant will provide an invoice to the Client at the end of each calendar month, with the amount due. Incase of any dispute the Client is expected to revert back to the Consultant within 8 days of recieving invoice."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Payment will be made to Consultant in Indian Rupees, by check or wire transfer, within thirty (30) days of receipt of the invoice. Travel, living and any related out-of-pocket expenses, if authorized in writing by Client, will be indicated on the invoice and reimbursed at cost."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Currency of payment"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "All payments shall be made in Indian Rupees."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 2
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Mode of Payment"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Payments are to be made in the form of Bank Transfer or in Cheque, made in favour of:"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Name: FUNCTIONARY LABS PRIVATE LIMITED"
+                },
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "text",
+                    "text": "Account Number: 10027130220"
+                },
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "text",
+                    "text": "Bank & Branch: IDFC Bank, BANGALORE RESIDENCY ROAD"
+                },
+                {
+                    "type": "hardBreak"
+                },
+                {
+                    "type": "text",
+                    "text": "IFSC Code: IDFB0080151\\"
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Non-Solicitation"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Client covenants that during the term of this Agreement and for a period of one (1) year from the termination of this Agreement, Client will not, directly or indirectly, as an owner, officer, shareholder, employee, independent contractor, and/or consultant to any person or organisation, whether for profit or nonprofit, solicit Company employees, consultants, independent contractors, agents, or other representatives for placement or employment."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Warranty"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Final product designs are submitted to the Client “as-is”, without any granted or implied warranty."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "Termination"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Either party may terminate this Agreement by giving 30 days written notice to the other of such termination. In the event that Work is postponed or terminated at the request of the Client, Consultant shall have the right to bill for work completed through the date of that request, while reserving all rights under this Agreement. If additional payment is due, this shall be payable within thirty days of the Client’s written notification to stop work. In the event of termination, the Client shall also pay any expenses incurred by Consultant. The Client shall assume responsibility for all collection of legal fees necessitated by default in payment."
+                }
+            ]
+        },
+        {
+            "type": "heading",
+            "attrs": {
+                "level": 1
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "marks": [
+                        {
+                            "type": "bold"
+                        }
+                    ],
+                    "text": "General"
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "If any provision of this Agreement is held by a court of competent jurisdiction to be invalid, void, or unenforceable, the remaining provisions will nevertheless continue in full force and effect, and the parties shall, in good faith, attempt to modify the invalid provision so it becomes a valid provision."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "This Agreement constitutes the entire understanding and agreement of the parties and supersedes all prior written or oral agreements with respect to the subject matter of this Agreement. This Agreement may not be modified or amended without the express written agreement of both parties. Waiver of any provision of this Agreement by a party shall not constitute a waiver of any other provision or waiver of the same provision at any other time."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "This Agreement shall be governed by and construed in accordance with the laws of the Government of India, and both parties hereby consent to the exclusive jurisdiction and venue of the state and courts of Goverment of Karnataka."
+                }
+            ]
+        },
+        {
+            "type": "paragraph",
+            "attrs": {
+                "align": null,
+                "id": null,
+                "indent": 0,
+                "lineSpacing": null
+            },
+            "content": [
+                {
+                    "type": "text",
+                    "text": "The undersigned agrees to the terms of this agreement on behalf of his or her organization or business."
+                }
+            ]
+        }
+    ]
+}

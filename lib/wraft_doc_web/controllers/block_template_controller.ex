@@ -1,10 +1,20 @@
 defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
-  plug(WraftDocWeb.Plug.Authorized)
-  plug(WraftDocWeb.Plug.AddActionLog)
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "block_template:manage",
+    index: "block_template:show",
+    show: "block_template:show",
+    update: "block_template:manage",
+    delete: "block_template:delete",
+    bulk_import: "block_template:manage"
+
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.{Document, Document.BlockTemplate}
+
+  alias WraftDoc.Document
+  alias WraftDoc.Document.BlockTemplate
 
   def swagger_definitions do
     %{
@@ -155,10 +165,10 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def show(conn, %{"id" => uuid}) do
+  def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %BlockTemplate{} = block_template <- Document.get_block_template(uuid, current_user) do
+    with %BlockTemplate{} = block_template <- Document.get_block_template(id, current_user) do
       render(conn, "block_template.json", block_template: block_template)
     end
   end
@@ -183,12 +193,12 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => uuid} = params) do
+  def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %BlockTemplate{} = block_template <- Document.get_block_template(uuid, current_user),
+    with %BlockTemplate{} = block_template <- Document.get_block_template(id, current_user),
          %BlockTemplate{} = block_template <-
-           Document.update_block_template(current_user, block_template, params) do
+           Document.update_block_template(block_template, params) do
       render(conn, "block_template.json", block_template: block_template)
     end
   end
@@ -209,11 +219,11 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   end
 
   @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => uuid}) do
+  def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %BlockTemplate{} = block_template <- Document.get_block_template(uuid, current_user),
-         {:ok, %BlockTemplate{}} <- Document.delete_block_template(current_user, block_template) do
+    with %BlockTemplate{} = block_template <- Document.get_block_template(id, current_user),
+         {:ok, %BlockTemplate{}} <- Document.delete_block_template(block_template) do
       render(conn, "block_template.json", block_template: block_template)
     end
   end
@@ -235,11 +245,15 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   end
 
   @spec bulk_import(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def bulk_import(conn, %{"mapping" => mapping, "file" => file}) do
-    %{uuid: uuid} = conn.assigns[:current_user]
+  def bulk_import(conn, params) do
+    current_user = conn.assigns[:current_user]
 
     with {:ok, %Oban.Job{}} <-
-           Document.insert_block_template_bulk_import_work(uuid, mapping, file) do
+           Document.insert_block_template_bulk_import_work(
+             current_user,
+             params["mapping"],
+             params["file"]
+           ) do
       conn
       |> put_view(WraftDocWeb.Api.V1.DataTemplateView)
       |> render("bulk.json", resource: "Block Template")

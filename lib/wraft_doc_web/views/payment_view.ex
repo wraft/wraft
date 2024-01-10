@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Api.V1.PaymentView do
 
   def render("payment.json", %{payment: payment}) do
     %{
-      id: payment.uuid,
+      id: payment.id,
       razorpay_id: payment.razorpay_id,
       start_date: payment.start_date,
       end_date: payment.end_date,
@@ -39,7 +39,7 @@ defmodule WraftDocWeb.Api.V1.PaymentView do
 
   def render("show.json", %{payment: payment}) do
     %{
-      id: payment.uuid,
+      id: payment.id,
       razorpay_id: payment.razorpay_id,
       start_date: payment.start_date,
       end_date: payment.end_date,
@@ -92,6 +92,6 @@ defmodule WraftDocWeb.Api.V1.PaymentView do
   end
 
   defp generate_url(%{invoice: invoice} = payment) do
-    WraftDocWeb.InvoiceUploader.url({invoice, payment})
+    WraftDocWeb.InvoiceUploader.url({invoice, payment}, signed: true)
   end
 end

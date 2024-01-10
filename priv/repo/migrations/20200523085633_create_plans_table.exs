@@ -2,8 +2,8 @@ defmodule WraftDoc.Repo.Migrations.CreatePlansTable do
   use Ecto.Migration
 
   def up do
-    create table(:plan) do
-      add(:uuid, :uuid, null: false)
+    create table(:plan, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:name, :string, null: false)
       add(:description, :text)
       add(:yearly_amount, :integer, default: 0)

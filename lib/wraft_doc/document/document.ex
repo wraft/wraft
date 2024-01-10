@@ -4,49 +4,57 @@ defmodule WraftDoc.Document do
   """
   import Ecto
   import Ecto.Query
+  require Logger
 
-  alias WraftDoc.{
-    Account.User,
-    Document.Asset,
-    Document.Block,
-    Document.BlockTemplate,
-    Document.Comment,
-    Document.ContentType,
-    Document.ContentTypeField,
-    Document.Counter,
-    Document.DataTemplate,
-    Document.Engine,
-    Document.FieldType,
-    Document.Instance,
-    Document.Instance.History,
-    Document.Instance.Version,
-    Document.Layout,
-    Document.LayoutAsset,
-    Document.Pipeline,
-    Document.Pipeline.Stage,
-    Document.Pipeline.TriggerHistory,
-    Document.Theme,
-    Enterprise,
-    Enterprise.Flow,
-    Enterprise.Flow.State,
-    Repo
-  }
-
-  alias WraftDocWeb.AssetUploader
-  alias WraftDocWeb.Worker.BulkWorker
+  alias Ecto.Multi
+  alias WraftDoc.Account.Role
+  alias WraftDoc.Account.User
+  alias WraftDoc.Client.Minio
+  alias WraftDoc.Document.Asset
+  alias WraftDoc.Document.Block
+  alias WraftDoc.Document.BlockTemplate
+  alias WraftDoc.Document.CollectionForm
+  alias WraftDoc.Document.CollectionFormField
+  alias WraftDoc.Document.Comment
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.ContentTypeField
+  alias WraftDoc.Document.ContentTypeRole
+  alias WraftDoc.Document.Counter
+  alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.Document.Engine
+  alias WraftDoc.Document.Field
+  alias WraftDoc.Document.FieldType
+  alias WraftDoc.Document.Instance
+  alias WraftDoc.Document.Instance.History
+  alias WraftDoc.Document.Instance.Version
+  alias WraftDoc.Document.InstanceApprovalSystem
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Document.LayoutAsset
+  alias WraftDoc.Document.OrganisationField
+  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Document.Pipeline.Stage
+  alias WraftDoc.Document.Pipeline.TriggerHistory
+  alias WraftDoc.Document.Theme
+  alias WraftDoc.Document.ThemeAsset
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.ApprovalSystem
+  alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Repo
+  alias WraftDoc.Workers.BulkWorker
 
   @doc """
   Create a layout.
   """
   # TODO - improve tests
   @spec create_layout(User.t(), Engine.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
-  def create_layout(%{organisation_id: org_id} = current_user, engine, params) do
+  def create_layout(%{current_org_id: org_id} = current_user, engine, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
     |> build_assoc(:layouts, engine: engine)
     |> Layout.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, layout} ->
         layout = layout_files_upload(layout, params)
@@ -58,10 +66,11 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def create_layout(_, _, _), do: {:error, :fake}
+
   @doc """
-  Upload layout slug file.
+  Upload layout slug/screenshot file.
   """
-  # TODO - write test
   @spec layout_files_upload(Layout.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
   def layout_files_upload(layout, %{"slug_file" => _} = params) do
     layout_update_files(layout, params)
@@ -104,7 +113,7 @@ defmodule WraftDoc.Document do
   # Associate the asset with the given layout, ie; insert a LayoutAsset entry.
   defp associate_layout_and_asset(_layout, _current_user, nil), do: nil
 
-  defp associate_layout_and_asset(layout, current_user, asset) do
+  defp associate_layout_and_asset(%Layout{} = layout, current_user, asset) do
     layout
     |> build_assoc(:layout_assets, asset_id: asset.id, creator: current_user)
     |> LayoutAsset.changeset()
@@ -115,63 +124,123 @@ defmodule WraftDoc.Document do
   Create a content type.
   """
   # TODO - improve tests
-  @spec create_content_type(User.t(), Layout.t(), Flow.t(), map) ::
-          ContentType.t() | {:error, Ecto.Changeset.t()}
-  def create_content_type(%{organisation_id: org_id} = current_user, layout, flow, params) do
+  @spec create_content_type(User.t(), map) :: ContentType.t() | {:error, Ecto.Changeset.t()}
+  def create_content_type(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
-    |> build_assoc(:content_types, layout: layout, flow: flow)
+    |> build_assoc(:content_types)
     |> ContentType.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, %ContentType{} = content_type} ->
-        fetch_and_associate_fields(content_type, params, current_user)
-        Repo.preload(content_type, [:layout, :flow, {:fields, :field_type}])
+        fetch_and_associate_fields(content_type, params)
+        Repo.preload(content_type, [:layout, :flow, {:theme, :assets}, {:fields, :field_type}])
 
       changeset = {:error, _} ->
         changeset
     end
   end
 
-  @spec fetch_and_associate_fields(ContentType.t(), map, User.t()) :: list
+  @spec fetch_and_associate_fields(ContentType.t(), map) :: list
   # Iterate throught the list of field types and associate with the content type
-  defp fetch_and_associate_fields(content_type, %{"fields" => fields}, user) do
+  defp fetch_and_associate_fields(content_type, %{"fields" => fields}) do
     fields
-    |> Stream.map(fn x -> associate_c_type_and_fields(content_type, x, user) end)
+    |> Stream.map(fn x -> create_field_for_content_type(content_type, x) end)
     |> Enum.to_list()
   end
 
-  defp fetch_and_associate_fields(_content_type, _params, _user), do: nil
+  defp fetch_and_associate_fields(_content_type, _params), do: nil
 
-  @spec associate_c_type_and_fields(ContentType.t(), map, User.t()) ::
+  @spec create_field_for_content_type(ContentType.t(), map) ::
           {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()} | nil
-  # Fetch and associate field types with the content type
-  defp associate_c_type_and_fields(
-         c_type,
-         %{"key" => key, "field_type_id" => field_type_id},
-         user
+  defp create_field_for_content_type(
+         content_type,
+         %{"field_type_id" => field_type_id} = params
        ) do
     field_type_id
-    |> get_field_type(user)
+    |> get_field_type()
     |> case do
       %FieldType{} = field_type ->
-        field_type
-        |> build_assoc(:fields, content_type: c_type)
-        |> ContentTypeField.changeset(%{name: key})
-        |> Repo.insert()
+        create_content_type_field(field_type, content_type, params)
 
-      nil ->
+      _ ->
         nil
     end
   end
 
-  defp associate_c_type_and_fields(_c_type, _field, _user), do: nil
+  defp create_field_for_content_type(_content_type, _field), do: nil
+
+  defp create_content_type_field(field_type, content_type, params) do
+    params = Map.merge(params, %{"organisation_id" => content_type.organisation_id})
+
+    Multi.new()
+    |> Multi.run(:field, fn _, _ -> create_field(field_type, params) end)
+    |> Multi.insert(:content_type_field, fn %{field: field} ->
+      ContentTypeField.changeset(%ContentTypeField{}, %{
+        content_type_id: content_type.id,
+        field_id: field.id
+      })
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} ->
+        :ok
+
+      {:error, step, error, _} ->
+        Logger.error("Content type field creation failed in step #{inspect(step)}", error: error)
+        :error
+    end
+  end
+
+  @doc """
+  Creates a field.
+
+  ## Example
+
+  iex> create_field(%FieldType{}, %{name: "name"})
+  {:ok, %Field{}}
+
+  iex> create_field(%FieldType{}, %{})
+  {:error, %Ecto.Changeset{}}
+  """
+  def create_field(field_type, params) do
+    field_type
+    |> build_assoc(:fields)
+    |> Field.changeset(params)
+    |> Repo.insert()
+  end
+
+  # TODO write test
+  @doc """
+    Update a field
+  """
+  @spec update_field(Field.t(), map) :: Field.t() | nil
+  def update_field(%Field{} = field, params) do
+    field
+    |> Field.update_changeset(params)
+    |> Repo.update()
+  end
+
+  # TODO write test
+  @doc """
+    Get field
+  """
+  @spec get_field(Ecto.UUID.t()) :: Field.t() | nil
+  def get_field(<<_::288>> = field_id) do
+    Repo.get(Field, field_id)
+  end
+
+  def get_field(_), do: nil
 
   @doc """
   List all engines.
+
+  ## Example
+
+    iex> engines_list(%{})
+    list of available engines
   """
-  # TODO - write tests
   @spec engines_list(map) :: map
   def engines_list(params) do
     Repo.paginate(Engine, params)
@@ -182,71 +251,97 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec layout_index(User.t(), map) :: map
-  def layout_index(%{organisation_id: org_id}, params) do
+  def layout_index(%{current_org_id: org_id}, params) do
     query =
       from(l in Layout,
         where: l.organisation_id == ^org_id,
-        order_by: [desc: l.id],
+        where: ^layout_index_filter_by_name(params),
+        order_by: ^layout_index_sort(params),
         preload: [:engine, :assets]
       )
 
     Repo.paginate(query, params)
   end
 
+  defp layout_index_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([l], ilike(l.name, ^"%#{name}%"))
+
+  defp layout_index_filter_by_name(_), do: true
+
+  defp layout_index_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([l], l.name)]
+
+  defp layout_index_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([l], l.name)]
+
+  defp layout_index_sort(%{"sort" => "inserted_at"} = _params),
+    do: [asc: dynamic([l], l.inserted_at)]
+
+  defp layout_index_sort(%{"sort" => "inserted_at_desc"} = _params),
+    do: [desc: dynamic([l], l.inserted_at)]
+
+  defp layout_index_sort(_), do: []
+
   @doc """
   Show a layout.
   """
   @spec show_layout(binary, User.t()) :: %Layout{engine: Engine.t(), creator: User.t()}
-  def show_layout(uuid, user) do
-    uuid
-    |> get_layout(user)
-    |> Repo.preload([:engine, :creator, :assets])
+  def show_layout(id, user) do
+    with %Layout{} = layout <-
+           get_layout(id, user) do
+      Repo.preload(layout, [:engine, :creator, :assets])
+    end
   end
 
   @doc """
   Get a layout from its UUID.
   """
   @spec get_layout(binary, User.t()) :: Layout.t()
-  def get_layout(<<_::288>> = uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Layout, uuid: uuid, organisation_id: org_id)
+  def get_layout(<<_::288>> = id, %{current_org_id: org_id}) do
+    case Repo.get_by(Layout, id: id, organisation_id: org_id) do
+      %Layout{} = layout ->
+        layout
+
+      _ ->
+        {:error, :invalid_id, "Layout"}
+    end
   end
 
-  def get_layout(_, _), do: nil
+  def get_layout(_, %{current_org_id: _}), do: {:error, :invalid_id, "Layout"}
+  def get_layout(_, _), do: {:error, :fake}
 
   @doc """
   Get a layout asset from its layout's and asset's UUIDs.
   """
   # TODO - improve tests
   @spec get_layout_asset(binary, binary) :: LayoutAsset.t()
-  def get_layout_asset(l_uuid, a_uuid) do
+  def get_layout_asset(<<_::288>> = l_id, <<_::288>> = a_id) do
     query =
       from(la in LayoutAsset,
         join: l in Layout,
-        where: l.uuid == ^l_uuid,
+        where: l.id == ^l_id,
         join: a in Asset,
-        where: a.uuid == ^a_uuid,
+        where: a.id == ^a_id,
         where: la.layout_id == l.id and la.asset_id == a.id
       )
 
-    Repo.one(query)
+    case Repo.one(query) do
+      %LayoutAsset{} = layout_asset -> layout_asset
+      _ -> {:error, :invalid_id}
+    end
   end
+
+  def get_layout_asset(<<_::288>>, _), do: {:error, :invalid_id, Layout}
+  def get_layout_asset(_, <<_::288>>), do: {:error, :invalid_id, Asset}
 
   @doc """
   Update a layout.
   """
   # TODO - improve tests
   @spec update_layout(Layout.t(), User.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
-  def update_layout(layout, current_user, %{"engine_uuid" => engine_uuid} = params) do
-    %Engine{id: id} = get_engine(engine_uuid)
-    {_, params} = Map.pop(params, "engine_uuid")
-    params = Map.merge(params, %{"engine_id" => id})
-    update_layout(layout, current_user, params)
-  end
 
-  def update_layout(layout, %{id: user_id} = current_user, params) do
+  def update_layout(layout, current_user, params) do
     layout
     |> Layout.update_changeset(params)
-    |> Spur.update(%{actor: "#{user_id}"})
+    |> Repo.update()
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -261,8 +356,8 @@ defmodule WraftDoc.Document do
   Delete a layout.
   """
   # TODO - improve tests
-  @spec delete_layout(Layout.t(), User.t()) :: {:ok, Layout.t()} | {:error, Ecto.Changeset.t()}
-  def delete_layout(layout, %User{id: id}) do
+  @spec delete_layout(Layout.t()) :: {:ok, Layout.t()} | {:error, Ecto.Changeset.t()}
+  def delete_layout(layout) do
     layout
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -270,35 +365,51 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!"
     )
-    |> Spur.delete(%{actor: "#{id}", meta: layout})
+    |> Repo.delete()
   end
 
   @doc """
   Delete a layout asset.
   """
   # TODO - improve tests
-  @spec delete_layout_asset(LayoutAsset.t(), User.t()) ::
+  @spec delete_layout_asset(LayoutAsset.t()) ::
           {:ok, LayoutAsset.t()} | {:error, Ecto.Changeset.t()}
-  def delete_layout_asset(layout_asset, %User{id: id}) do
-    %{asset: asset} = Repo.preload(layout_asset, [:asset])
-    Spur.delete(layout_asset, %{actor: "#{id}", meta: asset})
-  end
+  def delete_layout_asset(layout_asset), do: Repo.delete(layout_asset)
 
   @doc """
   List all content types.
   """
-  # TODO - improve tests
   @spec content_type_index(User.t(), map) :: map
-  def content_type_index(%{organisation_id: org_id}, params) do
-    query =
-      from(ct in ContentType,
-        where: ct.organisation_id == ^org_id,
-        order_by: [desc: ct.id],
-        preload: [:layout, :flow, {:fields, :field_type}]
-      )
-
-    Repo.paginate(query, params)
+  def content_type_index(%{current_org_id: org_id}, params) do
+    ContentType
+    |> where([ct], ct.organisation_id == ^org_id)
+    |> where(^content_type_filter_by_name(params))
+    |> where(^content_type_filter_by_prefix(params))
+    |> order_by([ct], ^content_type_sort(params))
+    |> preload([:layout, :flow, {:theme, :assets}, {:fields, :field_type}])
+    |> Repo.paginate(params)
   end
+
+  defp content_type_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([ct], ilike(ct.name, ^"%#{name}%"))
+
+  defp content_type_filter_by_name(_), do: true
+
+  defp content_type_filter_by_prefix(%{"prefix" => prefix} = _params),
+    do: dynamic([ct], ilike(ct.prefix, ^"%#{prefix}%"))
+
+  defp content_type_filter_by_prefix(_), do: true
+
+  defp content_type_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([ct], ct.name)]
+
+  defp content_type_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([ct], ct.name)]
+
+  defp content_type_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([ct], ct.inserted_at)]
+
+  defp content_type_sort(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([ct], ct.inserted_at)]
+
+  defp content_type_sort(_), do: []
 
   @doc """
   Show a content type.
@@ -306,27 +417,48 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec show_content_type(User.t(), Ecto.UUID.t()) ::
           %ContentType{layout: Layout.t(), creator: User.t()} | nil
-  def show_content_type(user, uuid) do
-    user
-    |> get_content_type(uuid)
-    |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
+  def show_content_type(user, id) do
+    with %ContentType{} = content_type <- get_content_type(user, id) do
+      Repo.preload(content_type, [
+        :layout,
+        :creator,
+        {:theme, :assets},
+        [{:fields, :field_type}, {:flow, :states}]
+      ])
+    end
   end
 
   @doc """
   Get a content type from its UUID and user's organisation ID.
   """
-  # TODO - improve tests
-  @spec get_content_type(User.t(), Ecto.UUID.t()) :: ContentType.t() | nil
-  def get_content_type(%User{organisation_id: org_id}, <<_::288>> = uuid) do
-    Repo.get_by(ContentType, uuid: uuid, organisation_id: org_id)
+  @spec get_content_type(User.t(), Ecto.UUID.t()) ::
+          ContentType.t() | {:error, :invalid_id, String.t()}
+  def get_content_type(%User{current_org_id: org_id}, <<_::288>> = id) do
+    ContentType
+    |> Repo.get_by(id: id, organisation_id: org_id)
+    |> case do
+      %ContentType{} = content_type ->
+        Repo.preload(content_type, [
+          :layout,
+          :creator,
+          {:theme, :assets},
+          [{:flow, :states}, {:fields, :field_type}]
+        ])
+
+      _ ->
+        {:error, :invalid_id, "ContentType"}
+    end
   end
 
-  def get_content_type(_, _), do: nil
+  def get_content_type(%User{current_org_id: _org_id}, _),
+    do: {:error, :invalid_id, "ContentType"}
+
+  def get_content_type(_, _), do: {:error, :fake}
 
   @doc """
   Get a content type from its ID. Also fetches all its related datas.
   """
-  # TODO - write tests
+  # TODO - improve tests
   @spec get_content_type_from_id(integer()) :: %ContentType{layout: %Layout{}, creator: %User{}}
   def get_content_type_from_id(id) do
     ContentType
@@ -337,23 +469,34 @@ defmodule WraftDoc.Document do
   @doc """
   Get a content type field from its UUID.
   """
-  # TODO - write tests
   @spec get_content_type_field(binary, User.t()) :: ContentTypeField.t()
-  def get_content_type_field(uuid, %{organisation_id: org_id}) do
+  def get_content_type_field(<<_::288>> = id, %{current_org_id: org_id}) do
     query =
       from(cf in ContentTypeField,
-        where: cf.uuid == ^uuid,
+        where: cf.id == ^id,
         join: c in ContentType,
         where: c.id == cf.content_type_id and c.organisation_id == ^org_id
       )
 
-    Repo.one(query)
+    case Repo.one(query) do
+      %ContentTypeField{} = content_type_field -> content_type_field
+      _ -> {:error, :invalid_id, "ContentTypeField"}
+    end
   end
+
+  def get_content_type_field(<<_::288>>, _), do: {:error, :invalid_id, "ContentTypeField"}
+  def get_content_type_field(_, %{current_org_id: _}), do: {:error, :fake}
+
+  @doc """
+    Get Content Type field from content type id and field id
+  """
+  @spec get_content_type_field(map) :: ContentTypeField.t() | nil
+  def get_content_type_field(%{"content_type_id" => content_type_id, "field_id" => field_id}),
+    do: Repo.get_by(ContentTypeField, content_type_id: content_type_id, field_id: field_id)
 
   @doc """
   Update a content type.
   """
-  # TODO - write tests
   @spec update_content_type(ContentType.t(), User.t(), map) ::
           %ContentType{
             layout: Layout.t(),
@@ -373,28 +516,32 @@ defmodule WraftDoc.Document do
     update_content_type(content_type, user, params)
   end
 
-  def update_content_type(content_type, %User{id: id} = user, params) do
+  def update_content_type(content_type, _user, params) do
     content_type
     |> ContentType.update_changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:error, _} = changeset ->
         changeset
 
       {:ok, content_type} ->
-        fetch_and_associate_fields(content_type, params, user)
+        fetch_and_associate_fields(content_type, params)
 
-        Repo.preload(content_type, [:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
+        Repo.preload(content_type, [
+          :layout,
+          :creator,
+          {:theme, :assets},
+          [{:flow, :states}, {:fields, :field_type}]
+        ])
     end
   end
 
   @doc """
   Delete a content type.
   """
-  # TODO - write tests
-  @spec delete_content_type(ContentType.t(), User.t()) ::
+  @spec delete_content_type(ContentType.t()) ::
           {:ok, ContentType.t()} | {:error, Ecto.Changeset.t()}
-  def delete_content_type(content_type, %User{id: id}) do
+  def delete_content_type(content_type) do
     content_type
     |> Ecto.Changeset.change()
     |> Ecto.Changeset.no_assoc_constraint(
@@ -402,56 +549,82 @@ defmodule WraftDoc.Document do
       message:
         "Cannot delete the content type. There are many contents under this content type. Delete those contents and try again.!"
     )
-    |> Spur.delete(%{actor: "#{id}", meta: content_type})
+    |> Repo.delete()
   end
 
   @doc """
   Delete a content type field.
   """
-  # TODO - improve tests
-  @spec delete_content_type_field(ContentTypeField.t(), User.t()) ::
+  @spec delete_content_type_field(ContentTypeField.t()) ::
           {:ok, ContentTypeField.t()} | {:error, Ecto.Changeset.t()}
-  def delete_content_type_field(content_type_field, %User{id: id}) do
-    Spur.delete(content_type_field, %{actor: "#{id}", meta: content_type_field})
+  def delete_content_type_field(content_type_field) do
+    %ContentTypeField{field: field} = Repo.preload(content_type_field, :field)
+    Repo.delete(field)
+    Repo.delete(content_type_field)
+    :ok
   end
+
+  defp create_initial_version(%{id: author_id}, instance) do
+    params = %{
+      "version_number" => 1,
+      "naration" => "Initial version",
+      "raw" => instance.raw,
+      "serialized" => instance.serialized,
+      "author_id" => author_id
+    }
+
+    Logger.info("Creating initial version...")
+
+    %Version{}
+    |> Version.changeset(params)
+    |> Repo.insert!()
+
+    Logger.info("Initial version generated")
+    {:ok, "ok"}
+  end
+
+  defp create_initial_version(_, _), do: {:error, :invalid}
 
   @doc """
-  Create a new instance.
+  Same as create_instance/4, to create instance and its approval system
   """
-  # TODO - improve tests
-  @spec create_instance(User.t(), ContentType.t(), State.t(), map) ::
-          %Instance{content_type: ContentType.t(), state: State.t()}
-          | {:error, Ecto.Changeset.t()}
-  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, vendor, params) do
-    instance_id = create_instance_id(c_id, prefix)
-    params = Map.merge(params, %{"instance_id" => instance_id})
-
-    c_type
-    |> build_assoc(:instances, state: state, creator: current_user, vendor: vendor)
-    |> Instance.changeset(params)
-    |> Spur.insert()
-    |> case do
-      {:ok, content} ->
-        Task.start_link(fn -> create_or_update_counter(c_type) end)
-        Repo.preload(content, [:content_type, :state, :vendor])
-
-      changeset = {:error, _} ->
-        changeset
-    end
-  end
-
   def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
     params = Map.merge(params, %{"instance_id" => instance_id})
 
     c_type
-    |> build_assoc(:instances, state: state, creator: current_user)
+    |> build_assoc(:instances, creator: current_user, state_id: state.id)
     |> Instance.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, content} ->
         Task.start_link(fn -> create_or_update_counter(c_type) end)
-        Repo.preload(content, [:content_type, :state, :vendor])
+
+        create_instance_approval_systems(c_type, content)
+
+        Repo.preload(content, [:content_type, :state, :vendor, :instance_approval_systems])
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
+  # @spec create_instance(ContentType.t(), State.t(), map) ::
+  #         %Instance{content_type: ContentType.t(), state: State.t()}
+  #         | {:error, Ecto.Changeset.t()}
+  def create_instance(%{id: c_id, prefix: prefix} = c_type, state, params) do
+    instance_id = create_instance_id(c_id, prefix)
+    params = Map.merge(params, %{"instance_id" => instance_id})
+
+    c_type
+    |> build_assoc(:instances, state_id: state.id)
+    |> Instance.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, content} ->
+        Task.start_link(fn -> create_or_update_counter(c_type) end)
+        Task.start_link(fn -> create_instance_approval_systems(c_type, content) end)
+        Repo.preload(content, [:content_type, :state])
 
       changeset = {:error, _} ->
         changeset
@@ -459,27 +632,188 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
-  Same as create_instance/4, but does not add the insert activity to activity stream.
+  Create a new instance.
   """
-  # TODO write tests
-  @spec create_instance(ContentType.t(), State.t(), map) ::
+  @spec create_instance(User.t(), ContentType.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
-  def create_instance(%{id: c_id, prefix: prefix} = c_type, state, params) do
-    instance_id = create_instance_id(c_id, prefix)
-    params = Map.merge(params, %{"instance_id" => instance_id})
+  def create_instance(%User{} = current_user, content_type, params) do
+    instance_id = create_instance_id(content_type.id, content_type.prefix)
+    initial_state = Enterprise.initial_state(content_type.flow)
+    params = Map.merge(params, %{"instance_id" => instance_id, "state_id" => initial_state.id})
 
-    c_type
-    |> build_assoc(:instances, state: state)
-    |> Instance.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(
+      :instance,
+      content_type
+      |> build_assoc(:instances, creator: current_user)
+      |> Instance.changeset(params)
+    )
+    |> Multi.run(:counter_increment, fn _, _ -> create_or_update_counter(content_type) end)
+    |> Multi.run(:instance_approval_system, fn _, %{instance: content} ->
+      create_instance_approval_systems(content_type, content)
+    end)
+    |> Multi.run(:version, fn _, %{instance: content} ->
+      create_initial_version(current_user, content)
+    end)
+    |> Repo.transaction()
     |> case do
-      {:ok, content} ->
-        Task.start_link(fn -> create_or_update_counter(c_type) end)
-        Repo.preload(content, [:content_type, :state])
+      {:ok, %{instance: content}} ->
+        Repo.preload(content, [
+          :content_type,
+          :state,
+          :vendor,
+          {:instance_approval_systems, :approver}
+        ])
 
-      changeset = {:error, _} ->
+      {:error, _, changeset, _} ->
+        Logger.error("Creation of instance failed", changeset: changeset)
+        {:error, changeset}
+    end
+  end
+
+  @doc """
+  Relate instace with approval system on creation
+  ## Params
+  * content_type - A content type struct
+  * content - a Instance struct
+  """
+  @spec create_instance_approval_systems(ContentType.t(), Instance.t()) :: {:ok, :ok}
+  def create_instance_approval_systems(content_type, content) do
+    with %ContentType{flow: %Flow{approval_systems: approval_systems}} <-
+           Repo.preload(content_type, [{:flow, :approval_systems}]) do
+      {:ok,
+       Enum.each(approval_systems, fn x ->
+         # Task.start_link(fn ->
+         #   Notifications.create_notification(
+         #    %{"recipient_id" x.approver_id,
+         #    "actor_id"=> content.creator_id,
+         #     "assigned_as_approver",
+         #     x.id,
+         #     ApprovalSystem
+         #   )
+         # end)
+
+         create_instance_approval_system(%{
+           instance_id: content.id,
+           approval_system_id: x.id
+         })
+       end)}
+    end
+  end
+
+  @doc """
+  Create an approval system from params
+
+  """
+  @spec create_instance_approval_system(map) ::
+          {:ok, InstanceApprovalSystem.t()} | {:error, Ecto.Changeset.t()}
+  def create_instance_approval_system(params) do
+    %InstanceApprovalSystem{}
+    |> InstanceApprovalSystem.changeset(params)
+    |> Repo.insert()
+  end
+
+  @doc """
+  To approve an instance with associated approval systems
+  ## Parameters
+  * User - User struct
+  * Instance - instance struct
+  """
+  @spec approve_instance(User.t(), Instance.t()) :: Instance.t() | {:error, :no_permission}
+  def approve_instance(
+        %User{id: user_id},
+        %Instance{
+          state: %State{
+            approval_system:
+              %ApprovalSystem{approver: %User{id: user_id}, post_state: post_state} =
+                approval_system
+          }
+        } = instance
+      ) do
+    instance
+    |> Instance.update_state_changeset(%{state_id: post_state.id})
+    |> Repo.update()
+    |> case do
+      {:ok, instance} ->
+        update_instance_approval_system(instance, approval_system, %{
+          flag: true,
+          approved_at: Timex.now()
+        })
+
+        instance =
+          instance |> Repo.unpreload(:state) |> Repo.unpreload(:instance_approval_systems)
+
+        Repo.preload(instance, [
+          :creator,
+          {:content_type, :layout},
+          {:versions, :author},
+          {:instance_approval_systems, :approver},
+          state: [approval_system: [:post_state, :approver]]
+        ])
+
+      {:error, _} = changeset ->
         changeset
+    end
+  end
+
+  def approve_instance(_, _), do: {:error, :no_permission}
+
+  @doc """
+  To reject an instance with associated approval systems
+  ## Parameters
+  * User - User struct
+  * Instance - instance struct
+  """
+  # TODO-  Approval System log
+  @spec reject_instance(User.t(), Instance.t()) :: Instance.t() | {:error, :no_permission}
+  def reject_instance(
+        %User{id: user_id},
+        %Instance{
+          state: %State{
+            rejection_system:
+              %ApprovalSystem{approver: %User{id: user_id}, pre_state: pre_state} =
+                approval_system
+          }
+        } = instance
+      ) do
+    instance
+    |> Instance.update_state_changeset(%{state_id: pre_state.id})
+    |> Repo.update()
+    |> case do
+      {:ok, instance} ->
+        update_instance_approval_system(instance, approval_system, %{
+          flag: false,
+          rejected_at: Timex.now()
+        })
+
+        instance =
+          instance |> Repo.unpreload(:state) |> Repo.unpreload(:instance_approval_systems)
+
+        Repo.preload(instance, [
+          :creator,
+          {:content_type, :layout},
+          {:versions, :author},
+          {:instance_approval_systems, :approver},
+          state: [approval_system: [:post_state, :approver]]
+        ])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def reject_instance(_, _), do: {:error, :no_permission}
+
+  def update_instance_approval_system(instance, approval_system, params) do
+    with %InstanceApprovalSystem{} = ias <-
+           Repo.get_by(InstanceApprovalSystem,
+             instance_id: instance.id,
+             approval_system_id: approval_system.id
+           ) do
+      ias
+      |> InstanceApprovalSystem.update_changeset(params)
+      |> Repo.update()
     end
   end
 
@@ -543,56 +877,139 @@ defmodule WraftDoc.Document do
   @doc """
   List all instances under an organisation.
   """
-  # TODO - improve tests
   @spec instance_index_of_an_organisation(User.t(), map) :: map
-  def instance_index_of_an_organisation(%{organisation_id: org_id}, params) do
+  def instance_index_of_an_organisation(%{current_org_id: org_id}, params) do
     query =
       from(i in Instance,
-        join: u in User,
-        where: u.organisation_id == ^org_id and i.creator_id == u.id,
-        order_by: [desc: i.id],
-        preload: [:content_type, :state, :vendor]
+        join: ct in ContentType,
+        where: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
+        where: ^instance_index_filter_by_instance_id(params),
+        where: ^instance_index_filter_by_content_type_name(params),
+        order_by: ^instance_index_sort(params),
+        preload: [
+          :content_type,
+          :state,
+          :vendor,
+          {:instance_approval_systems, :approver},
+          creator: [:profile]
+        ]
       )
 
     Repo.paginate(query, params)
   end
+
+  def instance_index_of_an_organisation(_, _), do: {:error, :invalid_id}
 
   @doc """
   List all instances under a content types.
   """
-  # TODO - improve tests
   @spec instance_index(binary, map) :: map
-  def instance_index(c_type_uuid, params) do
+  def instance_index(<<_::288>> = c_type_id, params) do
     query =
       from(i in Instance,
         join: ct in ContentType,
-        where: ct.uuid == ^c_type_uuid and i.content_type_id == ct.id,
-        order_by: [desc: i.id],
-        preload: [:content_type, :state, :vendor]
+        where: ct.id == ^c_type_id and i.content_type_id == ct.id,
+        where: ^instance_index_filter_by_instance_id(params),
+        order_by: ^instance_index_sort(params),
+        preload: [
+          :content_type,
+          :state,
+          :vendor,
+          {:instance_approval_systems, :approver},
+          creator: [:profile]
+        ]
       )
 
     Repo.paginate(query, params)
   end
+
+  def instance_index(_, _), do: {:error, :invalid_id}
+
+  defp instance_index_filter_by_instance_id(%{"instance_id" => instance_id} = _params),
+    do: dynamic([i], ilike(i.instance_id, ^"%#{instance_id}%"))
+
+  defp instance_index_filter_by_instance_id(_), do: true
+
+  defp instance_index_filter_by_content_type_name(%{"content_type_name" => name}) do
+    dynamic([i, ct], ct.name == ^name)
+  end
+
+  defp instance_index_filter_by_content_type_name(_), do: true
+
+  defp instance_index_sort(%{"sort" => "instance_id_desc"} = _params),
+    do: [desc: dynamic([i], i.instance_id)]
+
+  defp instance_index_sort(%{"sort" => "instance_id"} = _params),
+    do: [asc: dynamic([i], i.instance_id)]
+
+  defp instance_index_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([i], i.inserted_at)]
+
+  defp instance_index_sort(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([i], i.inserted_at)]
+
+  defp instance_index_sort(_), do: []
+
+  @doc """
+  Search and list all by key
+  """
+
+  @spec instance_index(map(), map()) :: map
+  def instance_index(%{current_org_id: org_id}, key, params) do
+    query =
+      from(i in Instance,
+        join: ct in ContentType,
+        on: i.content_type_id == ct.id,
+        where: ct.organisation_id == ^org_id,
+        order_by: [desc: i.id],
+        preload: [
+          :content_type,
+          :state,
+          :vendor,
+          {:instance_approval_systems, :approver},
+          creator: [:profile]
+        ]
+      )
+
+    key = String.downcase(key)
+
+    query
+    |> Repo.all()
+    |> Stream.filter(fn
+      %{serialized: %{"title" => title}} ->
+        title
+        |> String.downcase()
+        |> String.contains?(key)
+
+      _x ->
+        nil
+    end)
+    |> Enum.filter(fn x -> !is_nil(x) end)
+    |> Scrivener.paginate(params)
+  end
+
+  def instance_index(_, _, _), do: nil
 
   @doc """
   Get an instance from its UUID.
   """
   # TODO - improve tests
   @spec get_instance(binary, User.t()) :: Instance.t()
-  def get_instance(uuid, %{organisation_id: org_id}) do
+  def get_instance(<<_::288>> = id, %{current_org_id: org_id}) do
     query =
       from(i in Instance,
-        where: i.uuid == ^uuid,
+        where: i.id == ^id,
         join: c in ContentType,
         where: c.id == i.content_type_id and c.organisation_id == ^org_id
       )
 
-    query
-    |> Repo.one()
-    |> Repo.preload([:state])
-
-    # Repo.get_by(Instance, uuid: uuid) |> Repo.preload([:state])
+    case Repo.one(query) do
+      %Instance{} = instance -> instance
+      _ -> {:error, :invalid_id, "Instance"}
+    end
   end
+
+  def get_instance(_, %{current_org_id: _}), do: {:error, :invalid_id}
+  def get_instance(_, _), do: {:error, :fake}
 
   @doc """
   Show an instance.
@@ -600,17 +1017,27 @@ defmodule WraftDoc.Document do
   # TODO - improve tests
   @spec show_instance(binary, User.t()) ::
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
-  def show_instance(instance_uuid, user) do
-    instance_uuid
-    |> get_instance(user)
-    |> Repo.preload([:creator, [{:content_type, :layout}], :state])
-    |> get_built_document()
+  def show_instance(instance_id, user) do
+    with %Instance{} = instance <- get_instance(instance_id, user) do
+      instance
+      |> Repo.preload([
+        :creator,
+        {:content_type, :layout},
+        {:versions, :author},
+        {:instance_approval_systems, :approver},
+        state: [
+          approval_system: [:post_state, :approver],
+          rejection_system: [:pre_state, :approver]
+        ]
+      ])
+      |> get_built_document()
+    end
   end
 
   @doc """
   Get the build document of the given instance.
   """
-  # TODO - write tests
+  # TODO - improve tests
   @spec get_built_document(Instance.t()) :: Instance.t() | nil
   def get_built_document(%{id: id, instance_id: instance_id} = instance) do
     query =
@@ -628,7 +1055,7 @@ defmodule WraftDoc.Document do
         instance
 
       %History{} ->
-        doc_url = "uploads/contents/#{instance_id}/final.pdf"
+        doc_url = Minio.generate_url("uploads/contents/#{instance_id}/final.pdf")
         Map.put(instance, :build, doc_url)
     end
   end
@@ -636,22 +1063,31 @@ defmodule WraftDoc.Document do
   def get_built_document(nil), do: nil
 
   @doc """
-  Update an instance.
+  Update an instance and creates updated version
+  the instance is only available to edit if its editable field is true
+  ## Parameters
+  * `old_instance` - Instance struct before updation
+  * `current_user` - User struct
+  * `params` - Map contains attributes
   """
   # TODO - improve tests
-  @spec update_instance(Instance.t(), User.t(), map) ::
+  @spec update_instance(Instance.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
           | {:error, Ecto.Changeset.t()}
-  def update_instance(old_instance, %User{id: id} = current_user, params) do
+  def update_instance(%Instance{editable: true} = old_instance, params) do
     old_instance
     |> Instance.update_changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:ok, instance} ->
-        Task.start_link(fn -> create_version(current_user, old_instance, instance) end)
-
         instance
-        |> Repo.preload([:creator, [{:content_type, :layout}], :state])
+        |> Repo.preload([
+          :creator,
+          {:content_type, :layout},
+          {:versions, :author},
+          {:instance_approval_systems, :approver},
+          state: [approval_system: [:post_state, :approver]]
+        ])
         |> get_built_document()
 
       {:error, _} = changeset ->
@@ -659,20 +1095,26 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def update_instance(%Instance{editable: false}, _params), do: {:error, :cant_update}
+
+  def update_instance(_, _), do: {:error, :cant_update}
+
   # Create a new version with old data, when an instance is updated.
   # The previous data will be stored in the versions. Latest one will
   # be in the content.
   # A new version is added only if there is any difference in either the
   # raw or serialized fields of the instances.
-  @spec create_version(User.t(), Instance.t(), Instance.t()) ::
+  @spec create_version(User.t(), Instance.t(), map()) ::
           {:ok, Version.t()} | {:error, Ecto.Changeset.t()}
-  defp create_version(current_user, old_instance, new_instance) do
+  def create_version(current_user, new_instance, params) do
+    old_instance = get_last_version(new_instance)
+
     case instance_updated?(old_instance, new_instance) do
       true ->
-        params = create_version_params(old_instance)
+        params = create_version_params(new_instance, params)
 
         current_user
-        |> build_assoc(:instance_versions, content: old_instance)
+        |> build_assoc(:instance_versions, content: new_instance)
         |> Version.changeset(params)
         |> Repo.insert()
 
@@ -681,9 +1123,18 @@ defmodule WraftDoc.Document do
     end
   end
 
+  defp get_last_version(%{id: id}) do
+    query = from(v in Version, where: v.content_id == ^id)
+
+    query
+    |> last(:inserted_at)
+    |> Repo.one()
+  end
+
+  defp get_last_version(_), do: nil
   # Create the params to create a new version.
-  @spec create_version_params(Instance.t()) :: map
-  defp create_version_params(%Instance{id: id} = instance) do
+  # @spec create_version_params(Instance.t(), map()) :: map
+  defp create_version_params(%Instance{id: id} = instance, params) do
     query =
       from(v in Version,
         where: v.content_id == ^id,
@@ -703,13 +1154,18 @@ defmodule WraftDoc.Document do
           version + 1
       end
 
-    instance |> Map.from_struct() |> Map.put(:version_number, version)
+    naration = params["naration"] || "Version-#{version / 10}"
+    instance |> Map.from_struct() |> Map.merge(%{version_number: version, naration: naration})
   end
+
+  defp create_version_params(_, params), do: params
 
   # Checks whether the raw and serialzed of old and new instances are same or not.
   # If they are both the same, returns false, else returns true
-  @spec instance_updated?(Instance.t(), Instance.t()) :: boolean
-  defp instance_updated?(%{raw: raw, serialized: map}, %{raw: raw, serialized: map}), do: false
+  # @spec instance_updated?(Instance.t(), Instance.t()) :: boolean
+  defp instance_updated?(%{raw: o_raw, serialized: o_map}, %{raw: n_raw, serialized: n_map}) do
+    !(o_raw === n_raw && o_map === n_map)
+  end
 
   defp instance_updated?(_old_instance, _new_instance), do: true
 
@@ -718,41 +1174,34 @@ defmodule WraftDoc.Document do
   the new state and the instance's content type are same.
   """
   # TODO - impove tests
-  @spec update_instance_state(User.t(), Instance.t(), State.t()) ::
+  @spec update_instance_state(Instance.t(), State.t()) ::
           Instance.t() | {:error, Ecto.Changeset.t()} | {:error, :wrong_flow}
-  def update_instance_state(%{id: user_id}, instance, %{
-        id: state_id,
-        state: new_state,
-        flow_id: flow_id
-      }) do
-    %{content_type: %{flow_id: f_id}, state: %{state: state}} =
-      Repo.preload(instance, [:content_type, :state])
+  def update_instance_state(instance, %{id: state_id, flow_id: flow_id}) do
+    case Repo.preload(instance, [:content_type]) do
+      %{content_type: %{flow_id: ^flow_id}} ->
+        instance_state_update(instance, state_id)
 
-    if flow_id == f_id do
-      instance_state_upadate(instance, user_id, state_id, state, new_state)
-    else
-      {:error, :wrong_flow}
+      _ ->
+        :error
     end
   end
 
-  @doc """
-  Update instance's state. Also add the from and to state of in the activity meta.
-  """
-  # TODO - write tests
-  @spec instance_state_upadate(Instance.t(), integer, integer, String.t(), String.t()) ::
+  @spec instance_state_update(Instance.t(), integer) ::
           Instance.t() | {:error, Ecto.Changeset.t()}
-  def instance_state_upadate(instance, user_id, state_id, old_state, new_state) do
+  defp instance_state_update(instance, state_id) do
     instance
     |> Instance.update_state_changeset(%{state_id: state_id})
-    |> Spur.update(%{
-      actor: "#{user_id}",
-      object: "Instance-State:#{instance.id}",
-      meta: %{from: old_state, to: new_state}
-    })
+    |> Repo.update()
     |> case do
       {:ok, instance} ->
         instance
-        |> Repo.preload([:creator, [{:content_type, :layout}], :state])
+        |> Repo.preload([
+          :creator,
+          [content_type: [:flow, :layout]],
+          {:state, :approval_system},
+          :versions,
+          :instance_approval_systems
+        ])
         |> get_built_document()
 
       {:error, _} = changeset ->
@@ -763,11 +1212,15 @@ defmodule WraftDoc.Document do
   @doc """
   Delete an instance.
   """
-  # TODO - write tests
-  @spec delete_instance(Instance.t(), User.t()) ::
-          {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def delete_instance(instance, %User{id: id}) do
-    Spur.delete(instance, %{actor: "#{id}", meta: instance})
+  @spec delete_instance(Instance.t()) :: {:ok, Instance.t()} | {:error, any()}
+  def delete_instance(instance), do: Repo.delete(instance)
+
+  @doc """
+  Delete uploaded documents of an instance.
+  """
+  @spec delete_uploaded_docs(Instance.t()) :: {:ok, Instance.t()} | {:error, any()}
+  def delete_uploaded_docs(%{instance_id: instance_id}) do
+    Minio.delete_files("uploads/contents/#{instance_id}")
   end
 
   @doc """
@@ -775,61 +1228,116 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec get_engine(binary) :: Engine.t() | nil
-  def get_engine(engine_uuid) do
-    Repo.get_by(Engine, uuid: engine_uuid)
+  def get_engine(<<_::288>> = engine_id) do
+    case Repo.get(Engine, engine_id) do
+      %Engine{} = engine -> engine
+      _ -> {:error, :invalid_id, Engine}
+    end
   end
+
+  def get_engine(_), do: {:error, :invalid_id, Engine}
 
   @doc """
   Create a theme.
   """
-  # TODO Improve tests
   @spec create_theme(User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
-  def create_theme(%{organisation_id: org_id} = current_user, params) do
+  def create_theme(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
     current_user
     |> build_assoc(:themes)
     |> Theme.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, theme} ->
-        theme_file_upload(theme, params)
+        theme_preview_file_upload(theme, params)
+        fetch_and_associcate_assets_with_theme(theme, current_user, params)
+
+        Repo.preload(theme, [:assets])
 
       {:error, _} = changeset ->
         changeset
     end
   end
 
+  # Get all the assets from their UUIDs and associate them with the given theme.
+  defp fetch_and_associcate_assets_with_theme(theme, current_user, %{"assets" => assets}) do
+    (assets || "")
+    |> String.split(",")
+    |> Stream.map(fn asset -> get_asset(asset, current_user) end)
+    |> Stream.map(fn asset -> associate_theme_and_asset(theme, asset) end)
+    |> Enum.to_list()
+  end
+
+  defp fetch_and_associcate_assets_with_theme(_theme, _current_user, _params), do: []
+
+  # Associate the asset with the given theme, ie; insert a ThemeAsset entry.
+  defp associate_theme_and_asset(theme, %Asset{} = asset) do
+    %ThemeAsset{}
+    |> ThemeAsset.changeset(%{theme_id: theme.id, asset_id: asset.id})
+    |> Repo.insert()
+  end
+
+  defp associate_theme_and_asset(_theme, _asset), do: nil
+
   @doc """
-  Upload theme file.
+  Upload theme preview file.
   """
-  # TODO - write tests
-  @spec theme_file_upload(Theme.t(), map) :: {:ok, %Theme{}} | {:error, Ecto.Changeset.t()}
-  def theme_file_upload(theme, %{"file" => _} = params) do
+  @spec theme_preview_file_upload(Theme.t(), map) ::
+          {:ok, %Theme{}} | {:error, Ecto.Changeset.t()}
+  def theme_preview_file_upload(theme, %{"preview_file" => _} = params) do
     theme |> Theme.file_changeset(params) |> Repo.update()
   end
 
-  def theme_file_upload(theme, _params) do
+  def theme_preview_file_upload(theme, _params) do
     {:ok, theme}
   end
 
   @doc """
   Index of themes inside current user's organisation.
   """
-  # TODO - improve tests
   @spec theme_index(User.t(), map) :: map
-  def theme_index(%User{organisation_id: org_id}, params) do
-    query = from(t in Theme, where: t.organisation_id == ^org_id, order_by: [desc: t.id])
-    Repo.paginate(query, params)
+  def theme_index(%User{current_org_id: org_id}, params) do
+    Theme
+    |> where([t], t.organisation_id == ^org_id)
+    |> where(^theme_filter_by_name(params))
+    |> order_by(^theme_sort(params))
+    |> preload(:assets)
+    |> Repo.paginate(params)
   end
+
+  defp theme_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([t], ilike(t.name, ^"%#{name}%"))
+
+  defp theme_filter_by_name(_), do: true
+
+  defp theme_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([t], t.name)]
+
+  defp theme_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([t], t.name)]
+
+  defp theme_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([t], t.inserted_at)]
+
+  defp theme_sort(%{"sort" => "inserted_at_desc"}), do: [desc: dynamic([t], t.inserted_at)]
+
+  defp theme_sort(_), do: []
 
   @doc """
   Get a theme from its UUID.
   """
   # TODO - improve test
   @spec get_theme(binary, User.t()) :: Theme.t() | nil
-  def get_theme(theme_uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Theme, uuid: theme_uuid, organisation_id: org_id)
+  def get_theme(theme_uuid, %{current_org_id: org_id}) do
+    Theme
+    |> Repo.get_by(id: theme_uuid, organisation_id: org_id)
+    |> Repo.preload(:assets)
+  end
+
+  def get_theme(theme_id, org_id) do
+    Logger.info(
+      "Theme not found for theme_id #{inspect(theme_id)} - organisation_id #{inspect(org_id)}"
+    )
+
+    nil
   end
 
   @doc """
@@ -845,18 +1353,49 @@ defmodule WraftDoc.Document do
   Update a theme.
   """
   # TODO - improve test
-  @spec update_theme(Theme.t(), User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
-  def update_theme(theme, %User{id: id}, params) do
-    theme |> Theme.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
+  @spec update_theme(Theme.t(), User.t(), map()) ::
+          {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
+  def update_theme(theme, current_user, params) do
+    theme
+    |> Theme.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, theme} ->
+        theme_preview_file_upload(theme, params)
+        fetch_and_associcate_assets_with_theme(theme, current_user, params)
+
+        Repo.preload(theme, [:assets])
+
+      {:error, _} = changeset ->
+        changeset
+    end
   end
 
   @doc """
   Delete a theme.
   """
-  # TODO - improve test
-  @spec delete_theme(Theme.t(), User.t()) :: {:ok, Theme.t()}
-  def delete_theme(theme, %User{id: id}) do
-    Spur.delete(theme, %{actor: "#{id}", meta: theme})
+  @spec delete_theme(Theme.t()) :: {:ok, Theme.t()}
+  def delete_theme(theme) do
+    asset_query =
+      from(asset in Asset,
+        join: theme_asset in ThemeAsset,
+        where: theme_asset.theme_id == ^theme.id and asset.id == theme_asset.asset_id,
+        select: asset.id
+      )
+
+    theme_asset_query = from(ta in ThemeAsset, where: ta.theme_id == ^theme.id)
+
+    # Delete the theme preview file
+    Minio.delete_file("uploads/theme/theme_preview/#{theme.id}")
+
+    # Deletes the asset files
+    asset_query
+    |> Repo.all()
+    |> Enum.each(&Minio.delete_file("uploads/assets/#{&1}"))
+
+    Repo.delete_all(asset_query)
+    Repo.delete_all(theme_asset_query)
+    Repo.delete(theme)
   end
 
   @doc """
@@ -865,64 +1404,82 @@ defmodule WraftDoc.Document do
   @spec create_data_template(User.t(), ContentType.t(), map) ::
           {:ok, DataTemplate.t()} | {:error, Ecto.Changeset.t()}
   # TODO - imprvove tests
-  def create_data_template(current_user, c_type, params) do
-    current_user
-    |> build_assoc(:data_templates, content_type: c_type)
+  def create_data_template(%User{id: user_id}, %ContentType{id: c_type_id}, params) do
+    params = Map.merge(params, %{"creator_id" => user_id, "content_type_id" => c_type_id})
+
+    %DataTemplate{}
     |> DataTemplate.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
   end
+
+  def create_data_template(%User{}, _, _), do: {:error, :invalid_id, "ContentType"}
+  def create_data_template(_, _, _), do: {:error, :fake}
 
   @doc """
   List all data templates under a content types.
   """
-  # TODO - imprvove tests
   @spec data_template_index(binary, map) :: map
-  def data_template_index(c_type_uuid, params) do
+  def data_template_index(<<_::288>> = c_type_id, params) do
     query =
       from(dt in DataTemplate,
         join: ct in ContentType,
-        where: ct.uuid == ^c_type_uuid and dt.content_type_id == ct.id,
+        where: ct.id == ^c_type_id and dt.content_type_id == ct.id,
+        where: ^data_template_filter_by_title(params),
         order_by: [desc: dt.id],
         preload: [:content_type]
       )
 
     Repo.paginate(query, params)
   end
+
+  def data_template_index(_, _), do: {:error, :invalid_id, "ContentType"}
 
   @doc """
   List all data templates under current user's organisation.
   """
-  # TODO - imprvove tests
   @spec data_templates_index_of_an_organisation(User.t(), map) :: map
-  def data_templates_index_of_an_organisation(%{organisation_id: org_id}, params) do
+  def data_templates_index_of_an_organisation(%{current_org_id: org_id}, params) do
     query =
       from(dt in DataTemplate,
-        join: u in User,
-        where: u.organisation_id == ^org_id and dt.creator_id == u.id,
+        join: ct in ContentType,
+        where: ct.organisation_id == ^org_id and dt.content_type_id == ct.id,
+        where: ^data_template_filter_by_title(params),
         order_by: [desc: dt.id],
         preload: [:content_type]
       )
 
     Repo.paginate(query, params)
   end
+
+  def data_templates_index_of_an_organisation(_, _), do: {:error, :fake}
+
+  defp data_template_filter_by_title(%{"title" => title} = _params),
+    do: dynamic([dt], ilike(dt.title, ^"%#{title}%"))
+
+  defp data_template_filter_by_title(_), do: true
 
   @doc """
   Get a data template from its uuid and organisation ID of user.
   """
   # TODO - imprvove tests
   @spec get_d_template(User.t(), Ecto.UUID.t()) :: DataTemplat.t() | nil
-  def get_d_template(%User{organisation_id: org_id}, <<_::288>> = d_temp_uuid) do
+  def get_d_template(%User{current_org_id: org_id}, <<_::288>> = d_temp_id) do
     query =
       from(d in DataTemplate,
-        where: d.uuid == ^d_temp_uuid,
+        where: d.id == ^d_temp_id,
         join: c in ContentType,
         where: c.id == d.content_type_id and c.organisation_id == ^org_id
       )
 
-    Repo.one(query)
+    case Repo.one(query) do
+      %DataTemplate{} = data_template -> data_template
+      _ -> {:error, :invalid_id, "DataTemplate"}
+    end
   end
 
-  def get_d_template(_, _), do: nil
+  def get_d_template(%{current_org_id: _}, _), do: {:error, :invalid_id, "DataTemplate"}
+  def get_d_template(_, <<_::288>>), do: {:error, :fake}
+  def get_d_template(_, _), do: {:error, :fake}
 
   @doc """
   Show a data template.
@@ -930,21 +1487,23 @@ defmodule WraftDoc.Document do
   # TODO - imprvove tests
   @spec show_d_template(User.t(), Ecto.UUID.t()) ::
           %DataTemplate{creator: User.t(), content_type: ContentType.t()} | nil
-  def show_d_template(user, d_temp_uuid) do
-    user |> get_d_template(d_temp_uuid) |> Repo.preload([:creator, :content_type])
+  def show_d_template(user, d_temp_id) do
+    with %DataTemplate{} = data_template <- get_d_template(user, d_temp_id) do
+      Repo.preload(data_template, [:creator, :content_type])
+    end
   end
 
   @doc """
   Update a data template
   """
   # TODO - imprvove tests
-  @spec update_data_template(DataTemplate.t(), User.t(), map) ::
+  @spec update_data_template(DataTemplate.t(), map) ::
           %DataTemplate{creator: User.t(), content_type: ContentType.t()}
           | {:error, Ecto.Changeset.t()}
-  def update_data_template(d_temp, %User{id: id}, params) do
+  def update_data_template(d_temp, params) do
     d_temp
     |> DataTemplate.changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:ok, d_temp} ->
         Repo.preload(d_temp, [:creator, :content_type])
@@ -958,64 +1517,56 @@ defmodule WraftDoc.Document do
   Delete a data template
   """
   # TODO - imprvove tests
-  @spec delete_data_template(DataTemplate.t(), User.t()) :: {:ok, DataTemplate.t()}
-  def delete_data_template(d_temp, %User{id: id}) do
-    Spur.delete(d_temp, %{actor: "#{id}", meta: d_temp})
-  end
+  @spec delete_data_template(DataTemplate.t()) :: {:ok, DataTemplate.t()}
+  def delete_data_template(d_temp), do: Repo.delete(d_temp)
 
   @doc """
   Create an asset.
   """
   # TODO - imprvove tests
   @spec create_asset(User.t(), map) :: {:ok, Asset.t()}
-  def create_asset(%{organisation_id: org_id} = current_user, params) do
+  def create_asset(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
-    current_user
-    |> build_assoc(:assets)
-    |> Asset.changeset(params)
-    |> Spur.insert()
+    Multi.new()
+    |> Multi.insert(:asset, current_user |> build_assoc(:assets) |> Asset.changeset(params))
+    |> Multi.update(:asset_file_upload, &Asset.file_changeset(&1.asset, params))
+    |> Repo.transaction()
     |> case do
-      {:ok, asset} ->
-        asset_file_upload(asset, params)
-
-      {:error, _} = changeset ->
-        changeset
+      {:ok, %{asset_file_upload: asset}} -> {:ok, asset}
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 
-  @doc """
-  Upload asset file.
-  """
-  # TODO - write tests
-  @spec asset_file_upload(Asset.t(), map) :: {:ok, %Asset{}} | {:error, Ecto.Changeset.t()}
-  def asset_file_upload(asset, %{"file" => _} = params) do
-    asset |> Asset.file_changeset(params) |> Repo.update()
-  end
-
-  def asset_file_upload(asset, _params) do
-    {:ok, asset}
-  end
+  def create_asset(_, _), do: {:error, :fake}
 
   @doc """
   Index of all assets in an organisation.
   """
   # TODO - improve tests
   @spec asset_index(integer, map) :: map
-  def asset_index(organisation_id, params) do
-    query = from(a in Asset, where: a.organisation_id == ^organisation_id, order_by: [desc: a.id])
+  def asset_index(%{current_org_id: organisation_id}, params) do
+    query =
+      from(a in Asset,
+        where: a.organisation_id == ^organisation_id,
+        order_by: [desc: a.inserted_at]
+      )
+
     Repo.paginate(query, params)
   end
+
+  def asset_index(_, _), do: {:error, :fake}
 
   @doc """
   Show an asset.
   """
   # TODO - improve tests
   @spec show_asset(binary, User.t()) :: %Asset{creator: User.t()}
-  def show_asset(asset_uuid, user) do
-    asset_uuid
-    |> get_asset(user)
-    |> Repo.preload([:creator])
+  def show_asset(asset_id, user) do
+    with %Asset{} = asset <-
+           get_asset(asset_id, user) do
+      Repo.preload(asset, [:creator])
+    end
   end
 
   @doc """
@@ -1023,89 +1574,191 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec get_asset(binary, User.t()) :: Asset.t()
-  def get_asset(uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Asset, uuid: uuid, organisation_id: org_id)
+  def get_asset(<<_::288>> = id, %{current_org_id: org_id}) do
+    case Repo.get_by(Asset, id: id, organisation_id: org_id) do
+      %Asset{} = asset -> asset
+      _ -> {:error, :invalid_id}
+    end
   end
+
+  def get_asset(<<_::288>>, _), do: {:error, :fake}
+  def get_asset(_, %{current_org_id: _}), do: {:error, :invalid_id}
 
   @doc """
   Update an asset.
   """
   # TODO - improve tests
-  @spec update_asset(Asset.t(), User.t(), map) :: {:ok, Asset.t()}
-  def update_asset(asset, %User{id: id}, params) do
-    asset |> Asset.update_changeset(params) |> Spur.update(%{actor: "#{id}"})
+  # file uploading is throwing errors, in tests
+  @spec update_asset(Asset.t(), map) :: {:ok, Asset.t()} | {:error, Ecto.Changset.t()}
+  def update_asset(asset, params) do
+    asset |> Asset.update_changeset(params) |> Repo.update()
   end
 
   @doc """
   Delete an asset.
   """
-  @spec delete_asset(Asset.t(), User.t()) :: {:ok, Asset.t()}
-  def delete_asset(asset, %User{id: id}) do
-    Spur.delete(asset, %{actor: "#{id}", meta: asset})
+  @spec delete_asset(Asset.t()) :: {:ok, Asset.t()}
+  def delete_asset(asset) do
+    # Delete the uploaded file
+    Repo.delete(asset)
   end
 
   @doc """
   Preload assets of a layout.
   """
-  # TODO - write tests
   @spec preload_asset(Layout.t()) :: Layout.t()
-  def preload_asset(layout) do
+  def preload_asset(%Layout{} = layout) do
     Repo.preload(layout, [:assets])
   end
+
+  def preload_asset(_), do: {:error, :not_sufficient}
 
   @doc """
   Build a PDF document.
   """
-  # TODO - write tests
+  # TODO  - Write Test
+  # TODO - Dont need to pass layout as an argument, we can just preload it
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
-  def build_doc(%Instance{instance_id: u_id, content_type: c_type} = instance, %Layout{
-        slug: slug,
-        assets: assets
-      }) do
-    File.mkdir_p("uploads/contents/#{u_id}")
-    System.cmd("cp", ["-a", "lib/slugs/#{slug}/.", "uploads/contents/#{u_id}"])
-    task = Task.async(fn -> generate_qr(instance) end)
-    Task.start(fn -> move_old_builds(u_id) end)
-    c_type = Repo.preload(c_type, [:fields])
+  def build_doc(
+        %Instance{instance_id: instance_id, content_type: content_type} = instance,
+        %Layout{slug: slug} = layout
+      ) do
+    content_type = Repo.preload(content_type, [:fields, :theme])
+    base_content_dir = Path.join(File.cwd!(), "uploads/contents/#{instance_id}")
+    File.mkdir_p(base_content_dir)
+
+    # Load all the assets corresponding with the given theme
+    theme = Repo.preload(content_type.theme, [:assets])
+
+    # slug files: there are only two types of templates: contract and pletter
+    file_path = :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
+
+    System.cmd("cp", ["-a", file_path, base_content_dir])
+
+    # Generate QR code for the file
+    task = Task.async(fn -> generate_qr(instance, base_content_dir) end)
+
+    # Move old builds to the history folder
+    Task.start(fn -> move_old_builds(instance_id) end)
+
+    theme = get_theme_details(theme, base_content_dir)
 
     header =
-      Enum.reduce(c_type.fields, "--- \n", fn x, acc ->
+      Enum.reduce(content_type.fields, "--- \n", fn x, acc ->
         find_header_values(x, instance.serialized, acc)
       end)
 
-    header = Enum.reduce(assets, header, fn x, acc -> find_header_values(x, acc) end)
+    content = prepare_markdown(instance, layout, header, base_content_dir, theme, task)
+    File.write("#{base_content_dir}/content.md", content)
+
+    file_path = "uploads/contents/#{instance_id}"
+    pdf_file = concat_strings(file_path, "/final.pdf")
+
+    pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir)
+
+    "pandoc"
+    |> System.cmd(pandoc_commands)
+    |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
+  end
+
+  defp prepare_markdown(%{id: instance_id} = instance, layout, header, mkdir, theme, task) do
+    header =
+      Enum.reduce(layout.assets, header, fn x, acc ->
+        find_asset_header_values(x, acc, layout.slug, instance)
+      end)
+
     qr_code = Task.await(task)
     page_title = instance.serialized["title"]
 
     header =
       header
       |> concat_strings("qrcode: #{qr_code} \n")
-      |> concat_strings("path: uploads/contents/#{u_id}\n")
+      |> concat_strings("path: #{mkdir}\n")
       |> concat_strings("title: #{page_title}\n")
-      |> concat_strings("id: #{u_id}\n")
+      |> concat_strings("id: #{instance_id}\n")
+      |> concat_strings("mainfont: #{theme.font_name}\n")
+      |> concat_strings("mainfontoptions:\n")
+      |> font_option_header(theme.font_options)
+      |> concat_strings("body_color: #{theme.body_color}\n")
+      |> concat_strings("primary_color: #{theme.primary_color}\n")
+      |> concat_strings("secondary_color: #{theme.secondary_color}\n")
+      |> concat_strings("typescale: #{theme.typescale}\n")
       |> concat_strings("--- \n")
 
-    content = """
+    """
     #{header}
     #{instance.raw}
     """
-
-    File.write("uploads/contents/#{u_id}/content.md", content)
-
-    pandoc_commands = [
-      "uploads/contents/#{u_id}/content.md",
-      "--template=uploads/contents/#{u_id}/template.tex",
-      "--pdf-engine=xelatex",
-      "-o",
-      "uploads/contents/#{u_id}/final.pdf"
-    ]
-
-    System.cmd("pandoc", pandoc_commands)
   end
 
+  @spec get_theme_details(Theme.t(), String.t()) :: map()
+  def get_theme_details(theme, mkdir) do
+    [%{file: %{file_name: file_name}} | _] = theme.assets
+    [font_name, _, file_type] = String.split(file_name, ~r/[-.]/)
+
+    %{
+      body_color: theme.body_color,
+      primary_color: theme.primary_color,
+      secondary_color: theme.secondary_color,
+      typescale: Jason.encode!(theme.typescale),
+      font_name: "#{font_name}-Regular.#{file_type}",
+      font_options: font_options(theme, mkdir)
+    }
+  end
+
+  defp font_options(theme, mkdir) do
+    theme.assets
+    |> Stream.map(fn asset ->
+      file_name = asset.file.file_name
+
+      binary = Minio.download("uploads/assets/#{asset.id}/#{file_name}")
+      asset_file_path = "#{mkdir}/fonts/#{file_name}"
+      File.write!(asset_file_path, binary)
+
+      [_, font_type, _] = String.split(file_name, ~r/[-.]/)
+
+      case Enum.member?(["Bold", "Italic", "BoldItalic"], font_type) do
+        true -> "#{font_type}Font=#{file_name}"
+        false -> ""
+      end
+    end)
+    |> Enum.reject(&(&1 == ""))
+  end
+
+  defp font_option_header(header, font_options) do
+    Enum.reduce(font_options, header, fn font_option, acc ->
+      concat_strings(acc, "- #{font_option}\n")
+    end)
+  end
+
+  defp prepare_pandoc_cmds(pdf_file, base_content_dir) do
+    [
+      "#{base_content_dir}/content.md",
+      "--template=#{base_content_dir}/template.tex",
+      "--pdf-engine=#{System.get_env("XELATEX_PATH")}",
+      "-o",
+      pdf_file
+    ]
+  end
+
+  defp upload_file_and_delete_local_copy({_, 0} = pandoc_response, file_path, pdf_file) do
+    case Minio.upload_file(pdf_file) do
+      {:ok, _} ->
+        File.rm_rf(file_path)
+        pandoc_response
+
+      _ ->
+        File.rm(pdf_file)
+        Logger.error("File upload failed")
+        {"", 222}
+    end
+  end
+
+  defp upload_file_and_delete_local_copy(pandoc_response, _, _), do: pandoc_response
+
   # Find the header values for the content.md file from the serialized data of an instance.
-  @spec find_header_values(ContentTypeField.t(), map, String.t()) :: String.t()
-  defp find_header_values(%ContentTypeField{name: key}, serialized, acc) do
+  @spec find_header_values(Field.t(), map, String.t()) :: String.t()
+  defp find_header_values(%Field{name: key}, serialized, acc) do
     serialized
     |> Enum.find(fn {k, _} -> k == key end)
     |> case do
@@ -1118,27 +1771,32 @@ defmodule WraftDoc.Document do
   end
 
   # Find the header values for the content.md file from the assets of the layout used.
-  @spec find_header_values(Asset.t(), String.t()) :: String.t()
-  defp find_header_values(%Asset{name: name, file: file} = asset, acc) do
-    <<_first::utf8, rest::binary>> = generate_url(AssetUploader, file, asset)
-    concat_strings(acc, "#{name}: #{rest} \n")
-  end
+  @spec find_asset_header_values(Asset.t(), String.t(), String.t(), Instance.t()) :: String.t()
+  defp find_asset_header_values(%Asset{name: name, file: file} = asset, acc, slug, %Instance{
+         instance_id: instance_id
+       }) do
+    binary = Minio.download("uploads/assets/#{asset.id}/#{file.file_name}")
 
-  # Generate url.
-  @spec generate_url(any, String.t(), map) :: String.t()
-  defp generate_url(uploader, file, scope) do
-    uploader.url({file, scope}, signed: true)
+    asset_file_path = Path.join(File.cwd!(), "uploads/contents/#{instance_id}/#{file.file_name}")
+
+    File.write!(asset_file_path, binary)
+
+    if slug == "pletter" do
+      concat_strings(acc, "letterhead: #{asset_file_path} \n")
+    else
+      concat_strings(acc, "#{name}: #{asset_file_path} \n")
+    end
   end
 
   # Generate QR code with the UUID of the given Instance.
-  @spec generate_qr(Instance.t()) :: String.t()
-  defp generate_qr(%Instance{uuid: uuid, instance_id: i_id}) do
+  @spec generate_qr(Instance.t(), String.t()) :: String.t()
+  defp generate_qr(%Instance{id: id}, base_content_dir) do
     qr_code_png =
-      uuid
+      id
       |> EQRCode.encode()
       |> EQRCode.png()
 
-    destination = "uploads/contents/#{i_id}/qr.png"
+    destination = Path.join(base_content_dir, "/qr.png")
     File.write(destination, qr_code_png, [:binary])
     destination
   end
@@ -1151,33 +1809,34 @@ defmodule WraftDoc.Document do
 
   # Move old builds to the history folder
   @spec move_old_builds(String.t()) :: {:ok, non_neg_integer()}
-  defp move_old_builds(u_id) do
-    path = "uploads/contents/#{u_id}/"
+  defp move_old_builds(instance_id) do
+    path = "uploads/contents/#{instance_id}/"
     history_path = concat_strings(path, "history/")
     old_file = concat_strings(path, "final.pdf")
-    File.mkdir_p(history_path)
 
     history_file =
       history_path
-      |> File.ls!()
-      |> Enum.sort(:desc)
+      |> Minio.list_files()
+      |> List.first()
       |> case do
-        ["final-" <> version | _] ->
-          ["v" <> version | _] = String.split(version, ".pdf")
-          version = version |> String.to_integer() |> add(1)
-          concat_strings(history_path, "final-v#{version}.pdf")
-
-        [] ->
+        nil ->
           concat_strings(history_path, "final-v1.pdf")
+
+        object ->
+          ["final-v" <> version, ""] =
+            object |> String.split("/") |> List.last() |> String.split(".pdf")
+
+          version = version |> String.to_integer() |> add(1)
+
+          concat_strings(history_path, "final-v#{version}.pdf")
       end
 
-    File.copy(old_file, history_file)
+    Minio.copy_files(history_file, old_file)
   end
 
   @doc """
   Insert the build history of the given instance.
   """
-  # TODO - write tests
   @spec add_build_history(User.t(), Instance.t(), map) :: History.t()
   def add_build_history(current_user, instance, params) do
     params = create_build_history_params(params)
@@ -1191,7 +1850,6 @@ defmodule WraftDoc.Document do
   @doc """
   Same as add_build_history/3, but creator will not be stored.
   """
-  # TODO - write tests
   @spec add_build_history(Instance.t(), map) :: History.t()
   def add_build_history(instance, params) do
     params = create_build_history_params(params)
@@ -1224,37 +1882,39 @@ defmodule WraftDoc.Document do
   @doc """
   Create a Block
   """
-  # TODO - write tests
   @spec create_block(User.t(), map) :: Block.t()
-  def create_block(%{organisation_id: org_id} = current_user, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id})
+  def create_block(%{current_org_id: org_id} = current_user, params) do
+    params = Map.merge(params, %{"organisation_id" => org_id, "creator_id" => current_user.id})
 
-    current_user
-    |> build_assoc(:blocks)
-    |> Block.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(:block, Block.changeset(%Block{}, params))
+    |> Multi.update(:block_input, &Block.block_input_changeset(&1.block, params))
+    |> Repo.transaction()
     |> case do
-      {:ok, block} ->
-        block
-
-      {:error, _} = changeset ->
-        changeset
+      {:ok, %{block_input: block}} -> block
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
+
+  def create_block(_, _), do: {:error, :fake}
 
   @doc """
   Get a block by id
   """
-  # TODO - write tests
   @spec get_block(Ecto.UUID.t(), User.t()) :: Block.t()
-  def get_block(uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Block, uuid: uuid, organisation_id: org_id)
+  def get_block(<<_::288>> = id, %{current_org_id: org_id}) do
+    case Repo.get_by(Block, id: id, organisation_id: org_id) do
+      %Block{} = block -> block
+      _ -> {:error, :invalid_id, "Block"}
+    end
   end
+
+  def get_block(<<_::288>>, _), do: {:error, :fake}
+  def get_block(_, %{current_org_id: _}), do: {:error, :invalid_id, "Block"}
 
   @doc """
   Update a block
   """
-  # TODO - write tests
   def update_block(%Block{} = block, params) do
     block
     |> Block.changeset(params)
@@ -1268,10 +1928,11 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def update_block(_, _), do: {:error, :fake}
+
   @doc """
   Delete a block
   """
-  # TODO - write tests
   def delete_block(%Block{} = block) do
     Repo.delete(block)
   end
@@ -1279,7 +1940,7 @@ defmodule WraftDoc.Document do
   @doc """
   Function to generate charts from diffrent endpoints as per input example api: https://quickchart.io/chart/create
   """
-  # TODO - write tests
+  # TODO - tests being failed with fake data test with real data,
   @spec generate_chart(map) :: map
   def generate_chart(%{"btype" => "gantt"}) do
     %{"url" => "gant_chart_url"}
@@ -1292,24 +1953,25 @@ defmodule WraftDoc.Document do
       }) do
     %HTTPoison.Response{body: response_body} =
       HTTPoison.post!(api_route,
-        body: Poison.encode!(dataset),
+        body: Jason.encode!(dataset),
         headers: [{"Accept", "application/json"}, {"Content-Type", "application/json"}]
       )
 
-    Poison.decode!(response_body)
+    Jason.decode!(response_body)
   end
 
   def generate_chart(%{"dataset" => dataset, "api_route" => api_route, "endpoint" => "blocks_api"}) do
     %HTTPoison.Response{body: response_body} =
       HTTPoison.post!(
         api_route,
-        Poison.encode!(dataset),
+        Jason.encode!(dataset),
         [{"Accept", "application./json"}, {"Content-Type", "application/json"}]
       )
 
-    Poison.decode!(response_body)
+    Jason.decode!(response_body)
   end
 
+  # test results returning this function values
   def generate_chart(_params) do
     %{"status" => false, "error" => "invalid endpoint"}
   end
@@ -1317,7 +1979,7 @@ defmodule WraftDoc.Document do
   @doc """
   Generate tex code for the chart
   """
-  # TODO - write tests
+  # TODO - improve tests, test with more data points
   @spec generate_tex_chart(map) :: <<_::64, _::_*8>>
   def generate_tex_chart(%{"dataset" => dataset, "btype" => "gantt"}) do
     generate_tex_gantt_chart(dataset)
@@ -1327,6 +1989,7 @@ defmodule WraftDoc.Document do
     generate_gnu_gantt_chart(input, name)
   end
 
+  # current test giving this function output
   def generate_tex_chart(%{"dataset" => %{"data" => data}}) do
     "\\pie [rotate = 180 ]{#{tex_chart(data, "")}}"
   end
@@ -1343,6 +2006,7 @@ defmodule WraftDoc.Document do
   @doc """
   Generate latex of ganttchart
   """
+  # TODO write test
   def generate_tex_gantt_chart(%{
         "caption" => caption,
         "title_list" => %{"start" => tl_start, "end" => tl_end},
@@ -1376,7 +2040,7 @@ defmodule WraftDoc.Document do
     out_name = Path.expand("temp/gantt_chart_output/gantt_#{title}.svg")
 
     script =
-      File.read!("lib/slugs/gantt_chart/gnuplot_gantt.plt")
+      File.read!("lib/priv/gantt_chart/gnuplot_gantt.plt")
       |> String.replace("//input//", dest_path)
       |> String.replace("//out_name//", out_name)
       |> String.replace("//title//", title)
@@ -1423,19 +2087,20 @@ defmodule WraftDoc.Document do
   @doc """
   Create a field type
   """
-  # TODO - write tests
   @spec create_field_type(User.t(), map) :: {:ok, FieldType.t()}
-  def create_field_type(current_user, params) do
+  def create_field_type(%User{} = current_user, params) do
     current_user
     |> build_assoc(:field_types)
     |> FieldType.changeset(params)
     |> Repo.insert()
   end
 
+  def create_field_type(_, _), do: {:error, :fake}
+
   @doc """
   Index of all field types.
+  Creates Scrivener pagination
   """
-  # TODO - write tests
   @spec field_type_index(map) :: map
   def field_type_index(params) do
     query = from(ft in FieldType, order_by: [desc: ft.id])
@@ -1445,25 +2110,19 @@ defmodule WraftDoc.Document do
   @doc """
   Get a field type from its UUID.
   """
-  # TODO - write tests
-  @spec get_field_type(binary, User.t()) :: FieldType.t()
-  def get_field_type(field_type_uuid, %{organisation_id: org_id}) do
-    query =
-      from(ft in FieldType,
-        where: ft.uuid == ^field_type_uuid,
-        join: u in User,
-        where: u.id == ft.creator_id and u.organisation_id == ^org_id
-      )
-
-    Repo.one(query)
-
-    # Repo.get_by(FieldType, uuid: field_type_uuid, organisation_id: org_id)
+  @spec get_field_type(binary) :: FieldType.t()
+  def get_field_type(<<_::288>> = field_type_id) do
+    case Repo.get(FieldType, field_type_id) do
+      %FieldType{} = field_type -> field_type
+      _ -> {:error, :invalid_id, "FieldType"}
+    end
   end
+
+  def get_field_type(_), do: {:error, :fake}
 
   @doc """
   Update a field type
   """
-  # TODO - write tests
   @spec update_field_type(FieldType.t(), map) :: FieldType.t() | {:error, Ecto.Changeset.t()}
   def update_field_type(field_type, params) do
     field_type
@@ -1474,7 +2133,6 @@ defmodule WraftDoc.Document do
   @doc """
   Deleta a field type
   """
-  # TODO - write tests
   @spec delete_field_type(FieldType.t()) :: {:ok, FieldType.t()} | {:error, Ecto.Changeset.t()}
   def delete_field_type(field_type) do
     field_type
@@ -1508,7 +2166,7 @@ defmodule WraftDoc.Document do
     System.cmd("cp", [path, dest_path])
 
     create_bulk_job(%{
-      user_uuid: current_user.uuid,
+      user_uuid: current_user.id,
       c_type_uuid: c_type_uuid,
       state_uuid: state_uuid,
       d_temp_uuid: d_temp_uuid,
@@ -1524,9 +2182,11 @@ defmodule WraftDoc.Document do
   """
   @spec insert_data_template_bulk_import_work(binary, binary, map, Plug.Uploap.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
+  def insert_data_template_bulk_import_work(user_id, c_type_id, mapping \\ %{}, file)
+
   def insert_data_template_bulk_import_work(
-        <<_::288>> = user_uuid,
-        <<_::288>> = c_type_uuid,
+        <<_::288>> = user_id,
+        <<_::288>> = c_type_id,
         mapping,
         %Plug.Upload{
           filename: filename,
@@ -1538,8 +2198,8 @@ defmodule WraftDoc.Document do
     System.cmd("cp", [path, dest_path])
 
     data = %{
-      user_uuid: user_uuid,
-      c_type_uuid: c_type_uuid,
+      user_id: user_id,
+      c_type_uuid: c_type_id,
       mapping: mapping,
       file: dest_path
     }
@@ -1547,14 +2207,28 @@ defmodule WraftDoc.Document do
     create_bulk_job(data, ["data template"])
   end
 
-  def insert_data_template_bulk_import_work(_, _, _, _), do: nil
+  def insert_data_template_bulk_import_work(_, <<_::288>>, _mapping, %Plug.Upload{
+        filename: _filename,
+        path: _path
+      }),
+      do: {:error, :fake}
+
+  def insert_data_template_bulk_import_work(<<_::288>>, _, _mapping, %Plug.Upload{
+        filename: _filename,
+        path: _path
+      }),
+      do: {:error, :invalid_id, "ContentType"}
+
+  def insert_data_template_bulk_import_work(_, _, _, _), do: {:error, :invalid_data}
 
   @doc """
   Creates a background job for block template bulk import.
   """
-  @spec insert_block_template_bulk_import_work(binary, map, Plug.Uploap.t()) ::
+  @spec insert_block_template_bulk_import_work(User.t(), map, Plug.Uploap.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  def insert_block_template_bulk_import_work(<<_::288>> = user_uuid, mapping, %Plug.Upload{
+  def insert_block_template_bulk_import_work(user, mapping \\ %{}, file)
+
+  def insert_block_template_bulk_import_work(%User{id: user_id}, mapping, %Plug.Upload{
         filename: filename,
         path: path
       }) do
@@ -1563,7 +2237,7 @@ defmodule WraftDoc.Document do
     System.cmd("cp", [path, dest_path])
 
     data = %{
-      user_uuid: user_uuid,
+      user_id: user_id,
       mapping: mapping,
       file: dest_path
     }
@@ -1571,12 +2245,15 @@ defmodule WraftDoc.Document do
     create_bulk_job(data, ["block template"])
   end
 
-  def insert_block_template_bulk_import_work(_, _, _), do: nil
+  # def insert_block_template_bulk_import_work(_, _, %Plug.Upload{filename: _, path: _}),
+  #   do: {:error, :fake}
+
+  def insert_block_template_bulk_import_work(_, _, _), do: {:error, :invalid_data}
 
   @doc """
   Creates a background job to run a pipeline.
   """
-  # TODO - write tests
+  # TODO - improve tests
   @spec create_pipeline_job(TriggerHistory.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
   def create_pipeline_job(%TriggerHistory{} = trigger_history) do
@@ -1594,7 +2271,7 @@ defmodule WraftDoc.Document do
   @doc """
   Bulk build function.
   """
-  # TODO - write tests
+  # TODO - improve tests
   @spec bulk_doc_build(User.t(), ContentType.t(), State.t(), DataTemplate.t(), map, String.t()) ::
           list | {:error, :not_found}
   def bulk_doc_build(
@@ -1647,14 +2324,13 @@ defmodule WraftDoc.Document do
     serialized = update_keys(serialized, mapping)
     params = do_create_instance_params(serialized, d_temp)
     type = Instance.types()[:bulk_build]
-    params = Map.put(params, "type", type)
-    create_instance_for_bulk_build(current_user, c_type, state, params)
+    params = Map.merge(params, %{"type" => type, "state_id" => state.id})
+    create_instance_for_bulk_build(current_user, c_type, params)
   end
 
   @doc """
   Generate params to create instance.
   """
-  # TODO - write tests
   @spec do_create_instance_params(map, DataTemplate.t()) :: map
   def do_create_instance_params(serialized, %{title_template: title_temp, data: template}) do
     title =
@@ -1677,16 +2353,16 @@ defmodule WraftDoc.Document do
   # Since we are iterating over list of params to create instances, there is a high chance of
   # unique ID of instances to repeat and hence for instance creation failures. This is why
   # we loop the fucntion until instance is successfully created.
-  @spec create_instance_for_bulk_build(User.t(), ContentType.t(), State.t(), map) :: Instance.t()
-  defp create_instance_for_bulk_build(current_user, c_type, state, params) do
-    instance = create_instance(current_user, c_type, state, params)
+  @spec create_instance_for_bulk_build(User.t(), ContentType.t(), map) :: Instance.t()
+  defp create_instance_for_bulk_build(current_user, c_type, params) do
+    instance = create_instance(current_user, c_type, params)
 
     case instance do
       %Instance{} = instance ->
         instance
 
       _ ->
-        create_instance_for_bulk_build(current_user, c_type, state, params)
+        create_instance_for_bulk_build(current_user, c_type, params)
     end
   end
 
@@ -1694,7 +2370,7 @@ defmodule WraftDoc.Document do
   Builds the doc using `build_doc/2`.
   Here we also records the build history using `add_build_history/3`.
   """
-  # TODO - write tests
+  # TODO - improve tests
   @spec bulk_build(User.t(), Instance.t(), Layout.t()) :: tuple
   def bulk_build(current_user, instance, layout) do
     start_time = Timex.now()
@@ -1713,7 +2389,6 @@ defmodule WraftDoc.Document do
   @doc """
   Same as bulk_buil/3, but does not store the creator in build history.
   """
-  # TODO - write tests
   @spec bulk_build(Instance.t(), Layout.t()) :: {Collectable.t(), non_neg_integer()}
   def bulk_build(instance, layout) do
     start_time = Timex.now()
@@ -1808,11 +2483,11 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec create_block_template(User.t(), map) :: BlockTemplate.t()
-  def create_block_template(%{organisation_id: org_id} = current_user, params) do
+  def create_block_template(%{current_org_id: org_id} = current_user, params) do
     current_user
     |> build_assoc(:block_templates, organisation_id: org_id)
     |> BlockTemplate.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, block_template} ->
         block_template
@@ -1821,25 +2496,32 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
+
+  def create_block_template(_, _), do: {:error, :fake}
 
   @doc """
   Get a block template by its uuid
   """
-  # TODO - write tests
-  @spec get_block_template(Ecto.UUID.t(), User.t()) :: BlockTemplate.t()
-  def get_block_template(uuid, %{organisation_id: org_id}) do
-    Repo.get_by(BlockTemplate, uuid: uuid, organisation_id: org_id)
+  @spec get_block_template(Ecto.UUID.t(), BlockTemplate.t()) :: BlockTemplate.t()
+  def get_block_template(<<_::288>> = id, %{current_org_id: org_id}) do
+    case Repo.get_by(BlockTemplate, id: id, organisation_id: org_id) do
+      %BlockTemplate{} = block_template -> block_template
+      _ -> {:error, :invalid_id, "BlockTemplate"}
+    end
   end
+
+  def get_block_template(<<_::288>>, _), do: {:error, :invalid_id, "BlockTemplate"}
+  def get_block_template(_, %{current_org_id: _org_id}), do: {:error, :fake}
+  def get_block_template(_, _), do: {:error, :invalid_id, "BlockTemplate"}
 
   @doc """
   Updates a block template
   """
-  # TODO - write tests
-  @spec update_block_template(User.t(), BlockTemplate.t(), map) :: BlockTemplate.t()
-  def update_block_template(%User{id: id}, block_template, params) do
+  @spec update_block_template(BlockTemplate.t(), map) :: BlockTemplate.t()
+  def update_block_template(block_template, params) do
     block_template
     |> BlockTemplate.update_changeset(params)
-    |> Spur.update(%{actor: "#{id}"})
+    |> Repo.update()
     |> case do
       {:error, _} = changeset ->
         changeset
@@ -1850,20 +2532,18 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
-  Delete a block template by uuid
+  Delete a block template
   """
-  # TODO - write tests
-  @spec delete_block_template(User.t(), BlockTemplate.t()) :: BlockTemplate.t()
-  def delete_block_template(%User{id: id}, %BlockTemplate{} = block_template) do
-    Spur.delete(block_template, %{actor: "#{id}", meta: block_template})
-  end
+  @spec delete_block_template(BlockTemplate.t()) :: {:ok, BlockTemplate.t()}
+  def delete_block_template(%BlockTemplate{} = block_template), do: Repo.delete(block_template)
+
+  def delete_block_template(_), do: {:error, :fake}
 
   @doc """
   Index of a block template by organisation
   """
-  # TODO - write tests
   @spec block_template_index(User.t(), map) :: List.t()
-  def block_template_index(%{organisation_id: org_id}, params) do
+  def block_template_index(%{current_org_id: org_id}, params) do
     query =
       from(bt in BlockTemplate, where: bt.organisation_id == ^org_id, order_by: [desc: bt.id])
 
@@ -1874,7 +2554,7 @@ defmodule WraftDoc.Document do
   Create a comment
   """
   # TODO - improve tests
-  def create_comment(%{organisation_id: org_id} = current_user, params \\ %{}) do
+  def create_comment(%{current_org_id: org_id} = current_user, params) do
     params = Map.put(params, "organisation_id", org_id)
 
     current_user
@@ -1890,26 +2570,34 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def create_comment(_, _), do: {:error, :fake}
+
   @doc """
   Get a comment by uuid.
   """
   # TODO - improve tests
   @spec get_comment(Ecto.UUID.t(), User.t()) :: Comment.t() | nil
-  def get_comment(<<_::288>> = uuid, %{organisation_id: org_id}) do
-    Repo.get_by(Comment, uuid: uuid, organisation_id: org_id)
+  def get_comment(<<_::288>> = id, %{current_org_id: org_id}) do
+    case Repo.get_by(Comment, id: id, organisation_id: org_id) do
+      %Comment{} = comment -> comment
+      _ -> {:error, :invalid_id, "Comment"}
+    end
   end
+
+  def get_comment(<<_::288>>, _), do: {:error, :fake}
+  def get_comment(_, %{current_org_id: _}), do: {:error, :invalid_id, "Comment"}
+  def get_comment(_, _), do: {:error, :invalid_id, "Comment"}
 
   @doc """
   Fetch a comment and all its details.
   """
   # TODO - improve tests
   @spec show_comment(Ecto.UUID.t(), User.t()) :: Comment.t() | nil
-  def show_comment(<<_::288>> = uuid, user) do
-    uuid |> get_comment(user) |> Repo.preload([{:user, :profile}])
+  def show_comment(id, user) do
+    with %Comment{} = comment <- get_comment(id, user) do
+      Repo.preload(comment, [{:user, :profile}])
+    end
   end
-
-  @spec show_comment(any) :: nil
-  def show_comment(_), do: nil
 
   @doc """
   Updates a comment
@@ -1939,7 +2627,7 @@ defmodule WraftDoc.Document do
   Comments under a master
   """
   # TODO - improve tests
-  def comment_index(%{organisation_id: org_id}, %{"master_id" => master_id} = params) do
+  def comment_index(%{current_org_id: org_id}, %{"master_id" => master_id} = params) do
     query =
       from(c in Comment,
         where: c.organisation_id == ^org_id,
@@ -1952,13 +2640,17 @@ defmodule WraftDoc.Document do
     Repo.paginate(query, params)
   end
 
+  def comment_index(%{current_org_id: _}, _), do: {:error, :invalid_data}
+  def comment_index(_, %{"master_id" => _}), do: {:error, :fake}
+  def comment_index(_, _), do: {:error, :invalid_data}
+
   @doc """
    Replies under a comment
   """
   # TODO - improve tests
-  @spec comment_replies(%{organisation_id: any}, map) :: Scrivener.Page.t()
+  @spec comment_replies(%{current_org_id: any}, map) :: Scrivener.Page.t()
   def comment_replies(
-        %{organisation_id: org_id} = user,
+        %{current_org_id: org_id} = user,
         %{"master_id" => master_id, "comment_id" => comment_id} = params
       ) do
     with %Comment{id: parent_id} <- get_comment(comment_id, user) do
@@ -1976,17 +2668,21 @@ defmodule WraftDoc.Document do
     end
   end
 
+  def comment_replies(_, %{"master_id" => _, "comment_id" => _}), do: {:error, :fake}
+  def comment_replies(%{current_org_id: _}, _), do: {:error, :invalid_data}
+  def comment_replies(_, _), do: {:error, :invalid_data}
+
   @doc """
   Create a pipeline.
   """
   @spec create_pipeline(User.t(), map) :: Pipeline.t() | {:error, Ecto.Changeset.t()}
-  def create_pipeline(%{organisation_id: org_id} = current_user, params) do
+  def create_pipeline(%{current_org_id: org_id} = current_user, params) do
     params = Map.put(params, "organisation_id", org_id)
 
     current_user
     |> build_assoc(:pipelines)
     |> Pipeline.changeset(params)
-    |> Spur.insert()
+    |> Repo.insert()
     |> case do
       {:ok, pipeline} ->
         create_pipe_stages(current_user, pipeline, params)
@@ -2074,19 +2770,38 @@ defmodule WraftDoc.Document do
   List of all pipelines in the user's organisation.
   """
   @spec pipeline_index(User.t(), map) :: map | nil
-  def pipeline_index(%User{organisation_id: org_id}, params) do
-    query = from(p in Pipeline, where: p.organisation_id == ^org_id)
-    Repo.paginate(query, params)
+  def pipeline_index(%User{current_org_id: org_id}, params) do
+    Pipeline
+    |> where([p], p.organisation_id == ^org_id)
+    |> where(^pipeline_filter_by_name(params))
+    |> order_by(^pipeline_sort(params))
+    |> Repo.paginate(params)
   end
 
   def pipeline_index(_, _), do: nil
+
+  defp pipeline_filter_by_name(%{"name" => name} = _params),
+    do: dynamic([p], ilike(p.name, ^"%#{name}%"))
+
+  defp pipeline_filter_by_name(_), do: true
+
+  defp pipeline_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([p], p.name)]
+
+  defp pipeline_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([p], p.name)]
+
+  defp pipeline_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([p], p.inserted_at)]
+
+  defp pipeline_sort(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([p], p.inserted_at)]
+
+  defp pipeline_sort(_), do: []
 
   @doc """
   Get a pipeline from its UUID and user's organisation.
   """
   @spec get_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
-  def get_pipeline(%User{organisation_id: org_id}, <<_::288>> = p_uuid) do
-    query = from(p in Pipeline, where: p.uuid == ^p_uuid, where: p.organisation_id == ^org_id)
+  def get_pipeline(%User{current_org_id: org_id}, <<_::288>> = p_uuid) do
+    query = from(p in Pipeline, where: p.id == ^p_uuid, where: p.organisation_id == ^org_id)
     Repo.one(query)
   end
 
@@ -2109,10 +2824,10 @@ defmodule WraftDoc.Document do
   Updates a pipeline.
   """
   @spec pipeline_update(Pipeline.t(), User.t(), map) :: Pipeline.t()
-  def pipeline_update(%Pipeline{} = pipeline, %User{id: user_id} = user, params) do
+  def pipeline_update(%Pipeline{} = pipeline, %User{} = user, params) do
     pipeline
     |> Pipeline.update_changeset(params)
-    |> Spur.update(%{actor: "#{user_id}"})
+    |> Repo.update()
     |> case do
       {:ok, pipeline} ->
         create_pipe_stages(user, pipeline, params)
@@ -2132,24 +2847,21 @@ defmodule WraftDoc.Document do
   @doc """
   Delete a pipeline.
   """
-  @spec delete_pipeline(Pipeline.t(), User.t()) ::
-          {:ok, Pipeline.t()} | {:error, Ecto.Changeset.t()}
-  def delete_pipeline(%Pipeline{} = pipeline, %User{id: id}) do
-    Spur.delete(pipeline, %{actor: "#{id}", meta: pipeline})
-  end
+  @spec delete_pipeline(Pipeline.t()) :: {:ok, Pipeline.t()} | {:error, Ecto.Changeset.t()} | nil
+  def delete_pipeline(%Pipeline{} = pipeline), do: Repo.delete(pipeline)
 
-  def delete_pipeline(_, _), do: nil
+  def delete_pipeline(_), do: nil
 
   @doc """
   Get a pipeline stage from its UUID and user's organisation.
   """
   @spec get_pipe_stage(User.t(), Ecto.UUID.t()) :: Stage.t() | nil
-  def get_pipe_stage(%User{organisation_id: org_id}, <<_::288>> = s_uuid) do
+  def get_pipe_stage(%User{current_org_id: org_id}, <<_::288>> = s_uuid) do
     query =
       from(s in Stage,
         join: p in Pipeline,
         where: p.organisation_id == ^org_id and s.pipeline_id == p.id,
-        where: s.uuid == ^s_uuid
+        where: s.id == ^s_uuid
       )
 
     Repo.one(query)
@@ -2171,38 +2883,31 @@ defmodule WraftDoc.Document do
     d_temp = get_d_template(current_user, d_uuid)
     state = Enterprise.get_state(current_user, s_uuid)
 
-    do_update_pipe_stage(current_user, stage, c_type, d_temp, state)
+    do_update_pipe_stage(stage, c_type, d_temp, state)
   end
 
   def update_pipe_stage(_, _, _), do: nil
 
   # Update a stage.
-  @spec do_update_pipe_stage(User.t(), Stage.t(), ContentType.t(), DataTemplate.t(), State.t()) ::
+  @spec do_update_pipe_stage(Stage.t(), ContentType.t(), DataTemplate.t(), State.t()) ::
           {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
-  defp do_update_pipe_stage(user, stage, %ContentType{id: c_id}, %DataTemplate{id: d_id}, %State{
+  defp do_update_pipe_stage(stage, %ContentType{id: c_id}, %DataTemplate{id: d_id}, %State{
          id: s_id
        }) do
     stage
     |> Stage.update_changeset(%{content_type_id: c_id, data_template_id: d_id, state_id: s_id})
-    |> Spur.update(%{actor: "#{user.id}"})
+    |> Repo.update()
   end
 
-  defp do_update_pipe_stage(_, _, _, _, _), do: nil
+  defp do_update_pipe_stage(_, _, _, _), do: nil
 
   @doc """
-  Delete a pipe stage.
+  Deletes a pipe stage.
   """
-  @spec delete_pipe_stage(User.t(), Stage.t()) :: {:ok, Stage.t()}
-  def delete_pipe_stage(%User{id: id}, %Stage{} = pipe_stage) do
-    %{pipeline: pipeline, content_type: c_type, data_template: d_temp, state: state} =
-      Repo.preload(pipe_stage, [:pipeline, :content_type, :data_template, :state])
+  @spec delete_pipe_stage(Stage.t()) :: {:ok, Stage.t()} | nil
+  def delete_pipe_stage(%Stage{} = pipe_stage), do: Repo.delete(pipe_stage)
 
-    meta = %{pipeline: pipeline, content_type: c_type, data_template: d_temp, state: state}
-
-    Spur.delete(pipe_stage, %{actor: "#{id}", meta: meta})
-  end
-
-  def delete_pipe_stage(_, _), do: nil
+  def delete_pipe_stage(_), do: nil
 
   @doc """
   Preload all datas of a pipe stage excluding pipeline.
@@ -2241,7 +2946,7 @@ defmodule WraftDoc.Document do
   @doc """
   Get all the triggers under a pipeline.
   """
-  @spec get_trigger_histories_of_a_pipeline(Pipeline.t(), map) :: map | nil
+  @spec get_trigger_histories_of_a_pipeline(Pipeline.t(), map) :: Scrivener.Page.t()
   def get_trigger_histories_of_a_pipeline(%Pipeline{id: id}, params) do
     query =
       from(t in TriggerHistory,
@@ -2254,4 +2959,595 @@ defmodule WraftDoc.Document do
   end
 
   def get_trigger_histories_of_a_pipeline(_, _), do: nil
+
+  @doc """
+   Get all the triggers under a organisation.
+  """
+  @spec trigger_history_index(User.t(), map) :: Scrivener.Page.t()
+  def trigger_history_index(%User{current_org_id: org_id} = _user, params) do
+    TriggerHistory
+    |> join(:inner, [t], p in Pipeline, on: t.pipeline_id == p.id, as: :pipeline)
+    |> where([pipeline: p], p.organisation_id == ^org_id)
+    |> where(^trigger_history_filter_by_pipeline_name(params))
+    |> where(^trigger_history_filter_by_status(params))
+    |> order_by(^trigger_history_sort(params))
+    |> preload([:creator])
+    |> Repo.paginate(params)
+  end
+
+  def trigger_history_index(_, _), do: nil
+
+  defp trigger_history_filter_by_pipeline_name(%{"pipeline_name" => pipeline_name} = _params),
+    do: dynamic([pipeline: p], ilike(p.name, ^"%#{pipeline_name}%"))
+
+  defp trigger_history_filter_by_pipeline_name(_), do: true
+
+  defp trigger_history_filter_by_status(%{"status" => status} = _params),
+    do: dynamic([t], t.state == ^status)
+
+  defp trigger_history_filter_by_status(_), do: true
+
+  defp trigger_history_sort(%{"sort" => "pipeline_name"} = _params),
+    do: [asc: dynamic([pipeline: p], p.name)]
+
+  defp trigger_history_sort(%{"sort" => "pipeline_name_desc"} = _params),
+    do: [desc: dynamic([pipeline: p], p.name)]
+
+  defp trigger_history_sort(%{"sort" => "status"} = _params), do: [asc: dynamic([t], t.state)]
+
+  defp trigger_history_sort(%{"sort" => "status_desc"} = _params),
+    do: [desc: dynamic([t], t.state)]
+
+  defp trigger_history_sort(%{"sort" => "inserted_at"} = _params),
+    do: [asc: dynamic([t], t.inserted_at)]
+
+  defp trigger_history_sort(%{"sort" => "inserted_at_desc"} = _params),
+    do: [desc: dynamic([t], t.inserted_at)]
+
+  defp trigger_history_sort(_), do: []
+
+  @doc """
+   Get the content type by there id with preloading the data roles
+  """
+  def get_content_type_roles(id) do
+    query = from(c in ContentType, where: c.id == ^id)
+    query |> Repo.one() |> Repo.preload(:roles)
+  end
+
+  @doc """
+    Get the role name by there uuid with preloading the content types
+  """
+  def get_content_type_under_roles(id) do
+    query = from(r in Role, where: r.id == ^id)
+    query |> Repo.one() |> Repo.preload(:content_types)
+  end
+
+  @doc """
+  Get the content type with the id
+  """
+  def get_content_type(id) do
+    query = from(c in ContentType, where: c.id == ^id)
+    Repo.one(query)
+  end
+
+  @doc """
+  create content type role function
+  """
+  def create_content_type_role(params) do
+    %ContentTypeRole{}
+    |> ContentTypeRole.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, content_type_role} ->
+        Repo.preload(content_type_role, [:role, :content_type])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  def filter_content_type_title(name, params) do
+    query =
+      from(ct in ContentType,
+        where: ilike(ct.name, ^"%#{name}%"),
+        preload: [:fields, :layout, :flow]
+      )
+
+    Repo.paginate(query, params)
+  end
+
+  # def create_content_type_role(content_id, params) do
+  #   content_type = get_content_type(content_id)
+
+  #   Multi.new()
+  #   |> Multi.insert(:role, Role.changeset(%Role{}, params))
+  #   |> Multi.insert(:content_type_role, fn %{role: role} ->
+  #     ContentTypeRole.changeset(%ContentTypeRole{}, %{
+  #       content_type_id: content_type.id,
+  #       role_id: role.id
+  #     })
+  #   end)
+  #   |> Repo.transaction()
+  #   |> case do
+  #     {:error, _, changeset, _} ->
+  #       {:error, changeset}
+
+  #     {:ok, %{role: _role, content_type_role: content_type_role}} ->
+  #       content_type_role
+  #   end
+  # end
+
+  @doc """
+  get role from the respective content type
+  """
+
+  def get_role_of_content_type(id, c_id) do
+    query = from(r in Role, where: r.id == ^id, join: ct in ContentType, where: ct.id == ^c_id)
+
+    Repo.one(query)
+  end
+
+  @doc """
+  get the content type from the respective role
+  """
+
+  def get_content_type_role(id, role_id) do
+    query = from(ct in ContentType, where: ct.id == ^id, join: r in Role, where: r.id == ^role_id)
+
+    Repo.one(query)
+  end
+
+  def get_content_type_and_role(id) do
+    query = from(ctr in ContentTypeRole, where: ctr.id == ^id)
+    Repo.one(query)
+  end
+
+  def delete_content_type_role(content_type_role) do
+    content_type_role
+    |> Repo.delete()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, content_type_role} ->
+        content_type_role
+    end
+  end
+
+  @doc """
+  delete the role of the content type
+  """
+  # TODO improve tests
+  def delete_role_of_the_content_type(role) do
+    role
+    |> Repo.delete()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, role} ->
+        role
+    end
+  end
+
+  @doc """
+  Returns the list of organisation_field.
+
+  ## Examples
+
+      iex> list_organisation_field()
+      [%OrganisationField{}, ...]
+
+  """
+  def list_organisation_fields(%{current_org_id: org_id}, params) do
+    query =
+      from(of in OrganisationField,
+        where: of.organisation_id == ^org_id,
+        order_by: [desc: of.id],
+        preload: :field_type
+      )
+
+    Repo.paginate(query, params)
+  end
+
+  def list_organisation_fields(_, _), do: nil
+
+  @doc """
+  Gets a single organisation_field.
+
+  Raises `Ecto.NoResultsError` if the Organisation field does not exist.
+
+  ## Examples
+
+      iex> get_organisation_field!(123)
+      %OrganisationField{}
+
+      iex> get_organisation_field!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_organisation_field(<<_::288>> = id, %{current_org_id: org_id}) do
+    case Repo.get_by(OrganisationField, id: id, organisation_id: org_id) do
+      %OrganisationField{} = organisation_field -> organisation_field
+      _ -> {:error, :invalid_id, "OrganisationField"}
+    end
+  end
+
+  def organisation_field(_, %{organisation_field: _}),
+    do: {:error, :invalid_id, "OrganisationField"}
+
+  def organisation_field(_, _), do: {:error, :fake}
+  @spec show_organisation_field(Ecto.UUID.t(), User.t()) :: OrganisationField.t()
+  def show_organisation_field(id, user) do
+    with %OrganisationField{} = organisation_field <- get_organisation_field(id, user) do
+      Repo.preload(organisation_field, :field_type)
+    end
+  end
+
+  @doc """
+  Creates a organisation_field.
+
+  ## Examples
+
+      iex> create_organisation_field(%{field: value})
+      {:ok, %OrganisationField{}}
+
+      iex> create_organisation_field(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_organisation_field(%{current_org_id: org_id} = current_user, attrs) do
+    attrs = Map.put(attrs, "organisation_id", org_id)
+
+    current_user
+    |> build_assoc(:organisation_fields)
+    |> OrganisationField.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:error, _} = changeset -> changeset
+      {:ok, organisation_field} -> Repo.preload(organisation_field, :field_type)
+    end
+  end
+
+  def create_organisation_field(_, _, _), do: {:error, :fake}
+
+  @doc """
+  Updates a organisation_field.
+
+  ## Examples
+
+      iex> update_organisation_field(organisation_field, %{field: new_value})
+      {:ok, %OrganisationField{}}
+
+      iex> update_organisation_field(organisation_field, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_organisation_field(
+        %{current_org_id: org_id},
+        %OrganisationField{} = organisation_field,
+        attrs
+      ) do
+    attrs = Map.put(attrs, "organisation_id", org_id)
+
+    organisation_field
+    |> OrganisationField.update_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset -> changeset
+      {:ok, organisation_field} -> Repo.preload(organisation_field, :field_type)
+    end
+  end
+
+  def update_organisation_field(_, _, _), do: {:error, :fake}
+
+  @doc """
+  Deletes a organisation_field.
+
+  ## Examples
+
+      iex> delete_organisation_field(organisation_field)
+      {:ok, %OrganisationField{}}
+
+      iex> delete_organisation_field(organisation_field)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_organisation_field(%OrganisationField{} = organisation_field) do
+    Repo.delete(organisation_field)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking organisation_field changes.
+
+  ## Examples
+
+      iex> change_organisation_field(organisation_field)
+      %Ecto.Changeset{source: %OrganisationField{}}
+
+  """
+  def change_organisation_field(%OrganisationField{} = organisation_field) do
+    OrganisationField.changeset(organisation_field, %{})
+  end
+
+  @doc """
+  To disable instance on edit
+  ## Params
+  * `instance` - Instance struct
+  * `params` - map contains the value of editable
+  """
+  # TODO - Missing tests
+  def lock_unlock_instance(%Instance{} = instance, params) do
+    instance
+    |> Instance.lock_modify_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, instance} ->
+        Repo.preload(instance, [
+          :creator,
+          {:content_type, :layout},
+          {:versions, :author},
+          {:instance_approval_systems, :approver},
+          state: [approval_system: [:post_state, :approver]]
+        ])
+    end
+  end
+
+  def lock_unloack_instance(_, _, _), do: {:error, :not_sufficient}
+
+  # @doc """
+  # Search and list all by key
+  # """
+
+  # @spec instance_index(map(), map()) :: map
+  # def instance_index(%{current_org_id: org_id}, key, params) do
+  #   query =
+  #     from(i in Instance,
+  #       join: ct in ContentType,
+  #       on: i.content_type_id == ct.id,
+  #       where: ct.organisation_id == ^org_id,
+  #       order_by: [desc: i.id],
+  #       preload: [
+  #         :content_type,
+  #         :state,
+  #         :vendor,
+  #         {:instance_approval_systems, :approver},
+  #         creator: [:profile]
+  #       ]
+  #     )
+
+  #   key = String.downcase(key)
+
+  #   query
+  #   |> Repo.all()
+  #   |> Stream.filter(fn
+  #     %{serialized: %{"title" => title}} ->
+  #       title
+  #       |> String.downcase()
+  #       |> String.contains?(key)
+
+  #     _x ->
+  #       nil
+  #   end)
+  #   |> Enum.filter(fn x -> !is_nil(x) end)
+  #   |> Scrivener.paginate(params)
+  # end
+
+  # def instance_index(_, _, _), do: nil
+
+  @doc """
+  Function to list and paginate instance approval system under  an user
+  """
+  def instance_approval_system_index(<<_::288>> = user_id, params) do
+    query =
+      from(ias in InstanceApprovalSystem,
+        join: as in ApprovalSystem,
+        on: as.id == ias.approval_system_id,
+        where: ias.flag == false,
+        where: as.approver_id == ^user_id,
+        preload: [:approval_system, instance: [:state, creator: [:profile]]]
+      )
+
+    Repo.paginate(query, params)
+  end
+
+  def instance_approval_system_index(%User{} = current_user, params) do
+    query =
+      from(ias in InstanceApprovalSystem,
+        join: as in ApprovalSystem,
+        on: as.id == ias.approval_system_id,
+        where: ias.flag == false,
+        where: as.approver_id == ^current_user.id,
+        preload: [:approval_system, instance: [:state, creator: [:profile]]]
+      )
+
+    Repo.paginate(query, params)
+  end
+
+  @doc """
+  Returns list of changes on a single version
+  ## Parameters
+  * `instnace` - An instance struct
+  * `version_uuid` - uuid of version
+  """
+  @spec version_changes(Instance.t(), <<_::288>>) :: map()
+  def version_changes(instance, <<_::288>> = version_id) do
+    case get_version(instance, version_id) do
+      %Version{raw: current_raw} = version ->
+        case get_previous_version(instance, version) do
+          %Version{raw: previous_raw} ->
+            list_changes(current_raw, previous_raw)
+
+          _ ->
+            %{ins: [], del: []}
+        end
+
+      _ ->
+        {:error, :version_not_found}
+    end
+  end
+
+  def version_changes(_, _), do: {:error, :invalid_id}
+
+  defp list_changes(current_raw, previous_raw) do
+    current_raw = String.split(current_raw, "\n")
+    previous_raw = String.split(previous_raw, "\n")
+
+    previous_raw
+    |> List.myers_difference(current_raw)
+    |> Enum.reduce(%{}, fn x, acc ->
+      case x do
+        {:ins, v} -> add_ins(v, acc)
+        {:del, v} -> add_del(v, acc)
+        {_, _} -> acc
+      end
+    end)
+  end
+
+  defp add_ins(v, %{ins: ins} = acc) do
+    ins = ins |> List.insert_at(0, v) |> Enum.reverse()
+    Map.put(acc, :ins, ins)
+  end
+
+  defp add_ins(v, acc) do
+    ins = [v]
+    Map.put(acc, :ins, ins)
+  end
+
+  defp add_del(v, %{del: del} = acc) do
+    del = del |> List.insert_at(0, v) |> Enum.reverse()
+    Map.put(acc, :del, del)
+  end
+
+  defp add_del(v, acc) do
+    del = [v]
+    Map.put(acc, :del, del)
+  end
+
+  defp get_version(%{id: instance_id}, <<_::288>> = version_id) do
+    Repo.get_by(Version, content_id: instance_id, id: version_id)
+  end
+
+  defp get_version(_, _), do: nil
+
+  defp get_previous_version(%{id: instance_id}, %{version_number: version_number}) do
+    version_number = version_number - 1
+    Repo.get_by(Version, version_number: version_number, content_id: instance_id)
+  end
+
+  defp get_previous_version(_, _), do: nil
+
+  def get_collection_form_field(%{current_org_id: org_id}, id) do
+    query =
+      from(cff in CollectionFormField,
+        join: cf in CollectionForm,
+        on: cff.collection_form_id == cf.id,
+        where: cff.id == ^id and cf.organisation_id == ^org_id
+      )
+
+    case Repo.one(query) do
+      %CollectionFormField{} = collection_form_field ->
+        collection_form_field
+
+      _ ->
+        {:error, :invalid_id, "CollectionFormField"}
+    end
+  end
+
+  def get_collection_form_field(_, _), do: {:error, :fake}
+
+  def create_collection_form_field(c_form_id, params) do
+    params = Map.put(params, "collection_form_id", c_form_id)
+
+    %CollectionFormField{}
+    |> CollectionFormField.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, %CollectionFormField{} = collection_form} ->
+        collection_form
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
+  def update_collection_form_field(collection_form_field, params) do
+    collection_form_field
+    |> CollectionFormField.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, collection_form} ->
+        collection_form
+    end
+  end
+
+  def delete_collection_form_field(%CollectionFormField{} = collection_form_field) do
+    Repo.delete(collection_form_field)
+  end
+
+  @doc """
+  Return collection form by user and collection form id
+  ## Parameters
+  * User - user struct
+  * id - Collection form field
+  """
+  def get_collection_form(%{current_org_id: org_id}, <<_::288>> = id) do
+    case Repo.get_by(CollectionForm, id: id, organisation_id: org_id) do
+      %CollectionForm{} = collection_form ->
+        collection_form
+
+      _ ->
+        {:error, :invalid_id, "CollectionForm"}
+    end
+  end
+
+  def get_collection_form(_, _), do: {:error, :invalid_id, "CollectionForm"}
+
+  def create_collection_form(%{id: usr_id, current_org_id: org_id}, params) do
+    params = Map.merge(params, %{"creator_id" => usr_id, "organisation_id" => org_id})
+
+    %CollectionForm{}
+    |> CollectionForm.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, %CollectionForm{} = collection_form} ->
+        Repo.preload(collection_form, [:fields, :creator])
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
+  # defp create_form_fields(collection_form, fields) do
+  #   Enum.each(fields, fn x -> create_collection_form_field(collection_form.id, x) end)
+  # end
+
+  def update_collection_form(collection_form, params) do
+    collection_form
+    |> Repo.preload(:fields)
+    |> CollectionForm.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:error, _} = changeset ->
+        changeset
+
+      {:ok, collection_form} ->
+        Repo.preload(collection_form, [:creator, :fields])
+    end
+  end
+
+  def delete_collection_form(%CollectionForm{} = collection_form) do
+    Repo.delete(collection_form)
+  end
+
+  def list_collection_form(%{current_org_id: org_id}, params) do
+    query = from(c in CollectionForm, preload: [:fields], where: c.organisation_id == ^org_id)
+    Repo.paginate(query, params)
+  end
 end

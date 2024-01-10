@@ -1,7 +1,8 @@
 defmodule WraftDocWeb.LayoutSlugUploader do
   @moduledoc false
-  use Arc.Definition
-  use Arc.Ecto.Definition
+
+  use Waffle.Definition
+  use Waffle.Ecto.Definition
 
   @versions [:original]
   # @extension_whitelist ~w(.jpg .jpeg .gif .png)
@@ -18,7 +19,7 @@ defmodule WraftDocWeb.LayoutSlugUploader do
 
   # Change Filename
   def filename(_version, {_file, layout}) do
-    "slug_#{layout.name}_#{layout.updated_at}"
+    "slug_#{layout.name}"
   end
 
   # Storage Directory

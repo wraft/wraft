@@ -1,0 +1,16 @@
+cost,String,Proposal Branding
+client,String,Proposal Branding
+delivery,String,Proposal Branding
+project,String,Service Contract
+client,String,Service Contract
+clientaddress,String,Service Contract
+owner,String,Service Contract
+owneraddress,String,Service Contract
+role,String,Offer Letter - Sales
+name,String,Offer Letter - Sales
+salary,String,Offer Letter - Sales
+staff_id,String,Staff NDA
+staff_name,String,Staff NDA
+place,String,Staff NDA
+name,String,Visiting Card
+position,String,Visiting Card

@@ -1,11 +1,13 @@
 defmodule WraftDocWeb.Api.V1.FlowView do
   use WraftDocWeb, :view
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{StateView, UserView}
+  alias WraftDocWeb.Api.V1.ApprovalSystemView
+  alias WraftDocWeb.Api.V1.StateView
+  alias WraftDocWeb.Api.V1.UserView
 
   def render("flow.json", %{flow: flow}) do
     %{
-      id: flow.uuid,
+      id: flow.id,
       name: flow.name,
       controlled: flow.controlled,
       control_data: flow.control_data,
@@ -25,7 +27,11 @@ defmodule WraftDocWeb.Api.V1.FlowView do
     %{
       flow: render_one(flow, FlowView, "flow.json", as: :flow),
       creator: render_one(flow.creator, UserView, "user.json", as: :user),
-      states: render_many(flow.states, StateView, "create.json", as: :state)
+      states: render_many(flow.states, StateView, "create.json", as: :state),
+      approval_systems:
+        render_many(flow.approval_systems, ApprovalSystemView, "flow_approval_system.json",
+          as: :approval_system
+        )
     }
   end
 

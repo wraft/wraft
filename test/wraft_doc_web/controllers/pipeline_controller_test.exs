@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   Test module for pipeline controller
   """
   use WraftDocWeb.ConnCase
+  @moduletag :controller
 
   import WraftDoc.Factory
   alias WraftDoc.{Document.Pipeline, Repo}
@@ -12,42 +13,18 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
     api_route: "newclient.example.crm.com"
   }
 
-  setup %{conn: conn} do
-    user = insert(:user)
-
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> post(
-        Routes.v1_user_path(conn, :signin, %{
-          email: user.email,
-          password: user.password
-        })
-      )
-
-    conn = assign(conn, :current_user, user)
-
-    {:ok, %{conn: conn}}
-  end
-
   describe "create/2" do
     test "create pipeline by valid attrrs", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
-      c_type = insert(:content_type, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      c_type = insert(:content_type, organisation: organisation)
       insert(:content_type_field, content_type: c_type)
       data_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: user.organisation)
+      state = insert(:state, organisation: organisation)
 
       params =
         Map.put(@valid_attrs, :stages, [
-          %{content_type_id: c_type.uuid, data_template_id: data_temp.uuid, state_id: state.uuid}
+          %{content_type_id: c_type.id, data_template_id: data_temp.id, state_id: state.id}
         ])
 
       count_before = Pipeline |> Repo.all() |> length()
@@ -86,14 +63,6 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
     end
 
     test "does not create pipeline by invalid attrs", %{conn: conn} do
-      user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
       count_before = Pipeline |> Repo.all() |> length()
 
       conn =
@@ -109,14 +78,9 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "index/2" do
     test "index lists all pipelines in current user's organisation", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-      p1 = insert(:pipeline, organisation: user.organisation)
-      p2 = insert(:pipeline, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, conn.assigns.current_user)
+      [organisation] = user.owned_organisations
+      p1 = insert(:pipeline, organisation: organisation)
+      p2 = insert(:pipeline, organisation: organisation)
 
       conn = get(conn, Routes.v1_pipeline_path(conn, :index))
 
@@ -135,31 +99,25 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "update/2" do
     test "update pipeline on valid attributes", %{conn: conn} do
       user = conn.assigns[:current_user]
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      [organisation] = user.owned_organisations
+      pipeline = insert(:pipeline, organisation: organisation)
       insert(:pipe_stage, pipeline: pipeline)
-      c_type = insert(:content_type, organisation: user.organisation)
+      c_type = insert(:content_type, organisation: organisation)
       data_template = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: user.organisation)
+      state = insert(:state, organisation: organisation)
 
       params =
         Map.put(@valid_attrs, :stages, [
           %{
-            content_type_id: c_type.uuid,
-            data_template_id: data_template.uuid,
-            state_id: state.uuid
+            content_type_id: c_type.id,
+            data_template_id: data_template.id,
+            state_id: state.id
           }
         ])
 
       conn =
         conn
-        |> put(Routes.v1_pipeline_path(conn, :update, pipeline.uuid), params)
+        |> put(Routes.v1_pipeline_path(conn, :update, pipeline.id), params)
         |> doc(operation_id: "update_pipeline")
 
       c_types =
@@ -192,17 +150,11 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
 
     test "does't update flow on invalid attrs", %{conn: conn} do
       user = conn.assigns[:current_user]
-      insert(:membership, organisation: user.organisation)
-      pipeline = insert(:pipeline, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
 
       conn =
         conn
-        |> put(Routes.v1_pipeline_path(conn, :update, pipeline.uuid, %{name: ""}))
+        |> put(Routes.v1_pipeline_path(conn, :update, pipeline.id, %{name: ""}))
         |> doc(operation_id: "update_pipeline")
 
       assert json_response(conn, 422)["errors"]["name"] == ["can't be blank"]
@@ -212,32 +164,17 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "show/2" do
     test "show renders pipeline details by id", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       c_type = insert(:content_type)
       insert(:content_type_field, content_type: c_type)
       insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
-      conn = get(conn, Routes.v1_pipeline_path(conn, :show, pipeline.uuid))
+      conn = get(conn, Routes.v1_pipeline_path(conn, :show, pipeline.id))
 
       assert json_response(conn, 200)["name"] == pipeline.name
-      assert json_response(conn, 200)["id"] == pipeline.uuid
+      assert json_response(conn, 200)["id"] == pipeline.id
     end
 
     test "show returns not found for non-existent ID", %{conn: conn} do
-      user = conn.assigns[:current_user]
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
       conn = get(conn, Routes.v1_pipeline_path(conn, :show, Ecto.UUID.generate()))
       assert json_response(conn, 404) == "Not Found"
     end
@@ -246,17 +183,10 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   describe "delete/2" do
     test "delete pipeline by given id", %{conn: conn} do
       user = conn.assigns.current_user
-      insert(:membership, organisation: user.organisation)
-
-      conn =
-        build_conn()
-        |> put_req_header("authorization", "Bearer #{conn.assigns.token}")
-        |> assign(:current_user, user)
-
-      pipeline = insert(:pipeline, organisation: user.organisation)
+      pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       count_before = Pipeline |> Repo.all() |> length()
 
-      conn = delete(conn, Routes.v1_pipeline_path(conn, :delete, pipeline.uuid))
+      conn = delete(conn, Routes.v1_pipeline_path(conn, :delete, pipeline.id))
       assert count_before - 1 == Pipeline |> Repo.all() |> length()
       assert json_response(conn, 200)["name"] == pipeline.name
     end

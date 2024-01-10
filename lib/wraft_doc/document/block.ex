@@ -2,26 +2,14 @@ defmodule WraftDoc.Document.Block do
   @moduledoc """
     The block model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
-  use Arc.Ecto.Schema
-  alias __MODULE__
-  alias WraftDoc.Account.User
-  import Ecto.Query
-  @derive {Jason.Encoder, only: [:name]}
-  defimpl Spur.Trackable, for: Block do
-    def actor(block), do: "#{block.creator_id}"
-    def object(block), do: "Block:#{block.id}"
-    def target(_chore), do: nil
+  use WraftDoc.Schema
 
-    def audience(%{organisation_id: id}) do
-      from(u in User, where: u.organisation_id == ^id)
-    end
-  end
+  use Waffle.Ecto.Schema
+  alias __MODULE__
 
   schema "block" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
-    field(:name, :string, null: false)
+    field(:name, :string)
+    field(:description, :string)
     field(:btype, :string)
     field(:dataset, :map)
     field(:input, WraftDocWeb.BlockInputUploader.Type)
@@ -46,8 +34,7 @@ defmodule WraftDoc.Document.Block do
       :creator_id,
       :organisation_id
     ])
-    |> cast_attachments(attrs, [:input])
-    |> validate_required([:name, :file_url, :creator_id, :input, :organisation_id])
+    |> validate_required([:name, :file_url, :creator_id, :organisation_id])
     |> unique_constraint(:name,
       message: "Block with same name exists.!",
       name: :block_organisation_unique_index
@@ -72,5 +59,9 @@ defmodule WraftDoc.Document.Block do
       message: "Block with same name exists.!",
       name: :block_organisation_unique_index
     )
+  end
+
+  def block_input_changeset(%Block{} = block, attrs) do
+    cast_attachments(block, attrs, [:input])
   end
 end

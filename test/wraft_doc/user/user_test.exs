@@ -1,6 +1,6 @@
 defmodule WraftDoc.Account.UserTest do
   use WraftDoc.ModelCase
-
+  @moduletag :account
   @moduledoc """
     # Cases Covered
     # 1. Valid Data entry
@@ -11,8 +11,8 @@ defmodule WraftDoc.Account.UserTest do
     # 6. Invalid email address
     # 7. Special characters in name
     # 8. Special characters in lastname
-    # 9. Uniquness of email address
-    # 10. Uniquness of mobile number
+    # 9. Uniqueness of email address
+    # 10. Uniqueness of mobile number
   """
   alias WraftDoc.Account.User
 
@@ -50,9 +50,9 @@ defmodule WraftDoc.Account.UserTest do
   end
 
   test "changeset does not accept long password" do
-    attrs = Map.put(@valid_attrs, :password, String.duplicate("q", 20))
+    attrs = Map.put(@valid_attrs, :password, String.duplicate("q", 23))
     changeset = User.changeset(%User{}, attrs)
-    assert "should be at most 16 character(s)" in errors_on(changeset, :password)
+    assert "should be at most 22 character(s)" in errors_on(changeset, :password)
   end
 
   test "changeset does not accept invalid email address" do

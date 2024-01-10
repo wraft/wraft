@@ -2,13 +2,14 @@ defmodule WraftDoc.Document.CounterTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
   alias WraftDoc.Document.Counter
+  @moduletag :document
 
   @valid_attrs %{subject: "Subject:1", count: 1}
   @update_valid_attrs %{count: 1}
 
   @invalid_attrs %{subject: ""}
   @update_invalid_attrs %{count: ""}
-
+  # TODO include tests for update changeset as well
   test "changeset with valid attributes" do
     changeset = Counter.changeset(%Counter{}, @valid_attrs)
     assert changeset.valid?

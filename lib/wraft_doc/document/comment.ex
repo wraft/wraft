@@ -1,11 +1,9 @@
 defmodule WraftDoc.Document.Comment do
   @moduledoc false
 
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
 
   schema "comment" do
-    field(:uuid, Ecto.UUID, autogenerate: true, null: false)
     field(:comment, :string)
     field(:is_parent, :boolean)
     field(:master, :string)

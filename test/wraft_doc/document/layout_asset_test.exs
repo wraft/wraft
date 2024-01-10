@@ -1,8 +1,9 @@
 defmodule WraftDoc.Document.LayoutAssetTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.{Document.LayoutAsset, Repo}
-
+  alias WraftDoc.Document.LayoutAsset
+  alias WraftDoc.Repo
+  @moduletag :document
   @invalid_attrs %{layout_id: nil, asset_id: nil}
   test "changeset with valid attributes" do
     %{id: l_id} = insert(:layout)
