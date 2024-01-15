@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
   plug WraftDocWeb.Plug.Authorized,
     create: "template_asset:manage",
-    index: "tempplate_asset:show",
+    index: "template_asset:show",
     show: "template_asset:show",
     update: "template_asset:manage",
     delete: "template_asset:delete"
