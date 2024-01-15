@@ -360,8 +360,8 @@ defmodule WraftDoc.Enterprise do
       from(o in Organisation,
         left_join: uo in assoc(o, :users_organisations),
         where: o.id == ^organisation_id,
-        group_by: o.id,
-        select_merge: %{members_count: count(uo.id)}
+        select_merge: %{members_count: count(uo.user_id, :distinct)},
+        group_by: [o.id, uo.user_id]
       )
 
     Repo.one(query)
