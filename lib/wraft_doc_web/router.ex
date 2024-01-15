@@ -266,6 +266,8 @@ defmodule WraftDocWeb.Router do
 
       # Assets
       resources("/assets", AssetController)
+      # Template Assets
+      resources("/template_assets", TemplateAssetController)
       # Comments
       resources("/comments", CommentController)
       get("/comments/:id/replies", CommentController, :reply)

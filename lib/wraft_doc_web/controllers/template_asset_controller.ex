@@ -125,7 +125,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
     with {:ok, %TemplateAsset{} = template_asset} <-
            Document.create_template_asset(current_user, params) do
-      render(conn, :asset, template_asset: template_asset)
+      render(conn, "template_asset.json", template_asset: template_asset)
     end
   end
 

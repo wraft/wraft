@@ -36,7 +36,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
     }
   end
 
-  defp generate_url(%{file: file} = template_asset) do
-    WraftDocWeb.TemplateAssetUploader.url({file, template_asset}, signed: true)
+  defp generate_url(%{zip_file: zip_file} = template_asset) do
+    WraftDocWeb.TemplateAssetUploader.url({zip_file, template_asset}, signed: true)
   end
 end
