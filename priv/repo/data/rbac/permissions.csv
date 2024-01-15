@@ -85,3 +85,6 @@ role:assign,Role,Assign
 form:show,Form,Show
 form:manage,Form,Manage
 form:delete,Form,Delete
+template_asset:show,TemplateAsset,Show
+template_asset:manage,TemplateAsset,Manage
+template_asset:delete,TemplateAsset,Delete
