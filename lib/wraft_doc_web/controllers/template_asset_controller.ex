@@ -222,7 +222,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   Delete a template asset.
   """
   swagger_path :delete do
-    PhoenixSwagger.Path.delete("/tempalte_assets/{id}")
+    PhoenixSwagger.Path.delete("/template_assets/{id}")
     summary("Delete a template asset")
     description("API to delete a template asset")
 
