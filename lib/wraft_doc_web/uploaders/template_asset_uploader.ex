@@ -4,10 +4,11 @@ defmodule WraftDocWeb.TemplateAssetUploader do
   use Waffle.Definition
   use Waffle.Ecto.Definition
 
-  # Include ecto support (requires package waffle_ecto installed):
-  # use Waffle.Ecto.Definition
+  # Limit upload size to 1MB
+  @max_file_size 1 * 1024 * 1024
 
   @versions [:original]
+  @extension_whitelist ~w(.zip)
 
   # To add a thumbnail version:
   # @versions [:original, :thumb]
@@ -22,14 +23,14 @@ defmodule WraftDocWeb.TemplateAssetUploader do
   # end
 
   # Whitelist file extensions:
-  # def validate({file, _}) do
-  #   file_extension = file.file_name |> Path.extname() |> String.downcase()
-  #
-  #   case Enum.member?(~w(.jpg .jpeg .gif .png), file_extension) do
-  #     true -> :ok
-  #     false -> {:error, "invalid file type"}
-  #   end
-  # end
+  def validate({file, _}) do
+    file_extension =
+      file.file_name
+      |> Path.extname()
+      |> String.downcase()
+
+    Enum.member?(@extension_whitelist, file_extension) && file_size(file) <= @max_file_size
+  end
 
   # Define a thumbnail transformation:
   # def transform(:thumb, _) do
@@ -59,4 +60,6 @@ defmodule WraftDocWeb.TemplateAssetUploader do
   # def s3_object_headers(version, {file, scope}) do
   #   [content_type: MIME.from_path(file.file_name)]
   # end
+
+  defp file_size(%Waffle.File{} = file), do: file.path |> File.stat!() |> Map.get(:size)
 end
