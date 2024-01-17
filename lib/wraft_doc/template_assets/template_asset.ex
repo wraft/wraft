@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.TemplateAsset do
+defmodule WraftDoc.TemplateAssets.TemplateAsset do
   @moduledoc """
     The template asset model.
   """

@@ -13,8 +13,8 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.TemplateAsset
+  alias WraftDoc.TemplateAssets
+  alias WraftDoc.TemplateAssets.TemplateAsset
 
   def swagger_definitions do
     %{
@@ -124,7 +124,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, %TemplateAsset{} = template_asset} <-
-           Document.create_template_asset(current_user, params) do
+           TemplateAssets.create_template_asset(current_user, params) do
       render(conn, "template_asset.json", template_asset: template_asset)
     end
   end
@@ -152,7 +152,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.template_asset_index(current_user, params) do
+         } <- TemplateAssets.template_asset_index(current_user, params) do
       render(conn, "index.json",
         template_assets: template_assets,
         page_number: page_number,
@@ -183,7 +183,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     current_user = conn.assigns.current_user
 
     with %TemplateAsset{} = template_asset <-
-           Document.show_template_asset(template_asset_id, current_user) do
+           TemplateAssets.show_template_asset(template_asset_id, current_user) do
       render(conn, "show.json", template_asset: template_asset)
     end
   end
@@ -212,8 +212,8 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %TemplateAsset{} = template_asset <- Document.get_template_asset(id, current_user),
-         {:ok, template_asset} <- Document.update_template_asset(template_asset, params) do
+    with %TemplateAsset{} = template_asset <- TemplateAssets.get_template_asset(id, current_user),
+         {:ok, template_asset} <- TemplateAssets.update_template_asset(template_asset, params) do
       render(conn, "template_asset.json", template_asset: template_asset)
     end
   end
@@ -240,8 +240,8 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %TemplateAsset{} = template_asset <- Document.get_template_asset(id, current_user),
-         {:ok, %TemplateAsset{}} <- Document.delete_template_asset(template_asset) do
+    with %TemplateAsset{} = template_asset <- TemplateAssets.get_template_asset(id, current_user),
+         {:ok, %TemplateAsset{}} <- TemplateAssets.delete_template_asset(template_asset) do
       render(conn, "template_asset.json", template_asset: template_asset)
     end
   end
