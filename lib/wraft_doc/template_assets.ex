@@ -14,7 +14,8 @@ defmodule WraftDoc.TemplateAssets do
   Create a template asset.
   """
   # TODO - write test
-  @spec create_template_asset(User.t(), map) :: {:ok, TemplateAsset.t()}
+  @spec create_template_asset(User.t(), map) ::
+          {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
   def create_template_asset(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
@@ -40,7 +41,7 @@ defmodule WraftDoc.TemplateAssets do
   Index of all template assets in an organisation.
   """
   # TODO - Write tests
-  @spec template_asset_index(integer, map) :: map
+  @spec template_asset_index(User.t(), map) :: map
   def template_asset_index(%{current_org_id: organisation_id}, params) do
     query =
       from(a in TemplateAsset,
@@ -57,7 +58,7 @@ defmodule WraftDoc.TemplateAssets do
   Show a template asset.
   """
   # TODO - write tests
-  @spec show_template_asset(binary, User.t()) :: %TemplateAsset{creator: User.t()}
+  @spec show_template_asset(binary, User.t()) :: TemplateAsset.t() | {:error, atom}
   def show_template_asset(<<_::288>> = template_asset_id, user) do
     template_asset_id
     |> get_template_asset(user)
@@ -79,9 +80,6 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  def get_template_asset(<<_::288>>, _), do: {:error, :fake}
-  def get_template_asset(_, %{current_org_id: _}), do: {:error, :invalid_id}
-
   @doc """
   Update a template asset.
   """
@@ -96,7 +94,8 @@ defmodule WraftDoc.TemplateAssets do
   Delete a template asset.
   """
   # TODO - Write tests
-  @spec delete_template_asset(TemplateAsset.t()) :: {:ok, TemplateAsset.t()}
+  @spec delete_template_asset(TemplateAsset.t()) ::
+          {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
   def delete_template_asset(%TemplateAsset{} = template_asset) do
     # Delete the template asset file
     Minio.delete_file("uploads/template_assets/#{template_asset.id}")
