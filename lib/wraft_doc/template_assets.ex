@@ -6,6 +6,7 @@ defmodule WraftDoc.TemplateAssets do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias WraftDoc.Client.Minio
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
 
@@ -57,17 +58,20 @@ defmodule WraftDoc.TemplateAssets do
   """
   # TODO - write tests
   @spec show_template_asset(binary, User.t()) :: %TemplateAsset{creator: User.t()}
-  def show_template_asset(template_asset_id, user) do
+  def show_template_asset(<<_::288>> = template_asset_id, user) do
     template_asset_id
     |> get_template_asset(user)
-    |> Repo.preload([:creator])
+    |> case do
+      %TemplateAsset{} = template_asset -> Repo.preload(template_asset, [:creator])
+      _ -> {:error, :invalid_id}
+    end
   end
 
   @doc """
   Get a template asset from its UUID.
   """
   # TODO - Write tests
-  @spec get_template_asset(binary, User.t()) :: TemplateAsset.t()
+  @spec get_template_asset(binary, User.t()) :: TemplateAsset.t() | {:error, atom}
   def get_template_asset(<<_::288>> = id, %{current_org_id: org_id}) do
     case Repo.get_by(TemplateAsset, id: id, organisation_id: org_id) do
       %TemplateAsset{} = template_asset -> template_asset
@@ -82,7 +86,6 @@ defmodule WraftDoc.TemplateAssets do
   Update a template asset.
   """
   # TODO - Write tests
-  # TODO - Add file update
   @spec update_template_asset(TemplateAsset.t(), map) ::
           {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
   def update_template_asset(template_asset, params) do
@@ -92,9 +95,12 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Delete a template asset.
   """
-  @spec delete_template_asset(Asset.t()) :: {:ok, TemplateAsset.t()}
+  # TODO - Write tests
+  @spec delete_template_asset(TemplateAsset.t()) :: {:ok, TemplateAsset.t()}
   def delete_template_asset(%TemplateAsset{} = template_asset) do
-    # Delete the uploaded file
+    # Delete the template asset file
+    Minio.delete_file("uploads/template_assets/#{template_asset.id}")
+
     Repo.delete(template_asset)
   end
 end
