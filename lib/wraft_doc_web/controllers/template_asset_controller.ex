@@ -175,6 +175,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     end
 
     response(200, "Ok", Schema.ref(:ShowTemplateAsset))
+    response(400, "Bad Request", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
@@ -203,6 +204,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     parameter(:zip_file, :formData, :file, "Template Asset file to upload")
 
     response(200, "Ok", Schema.ref(:TemplateAsset))
+    response(400, "Bad Request", Schema.ref(:Error))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not found", Schema.ref(:Error))
@@ -231,6 +233,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     end
 
     response(200, "Ok", Schema.ref(:TemplateAsset))
+    response(400, "Bad Request", Schema.ref(:Error))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not found", Schema.ref(:Error))
