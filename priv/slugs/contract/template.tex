@@ -130,6 +130,11 @@ $highlighting-macros$
 \setlength{\tabcolsep}{0.8em} % for the horizontal padding
 {\renewcommand{\arraystretch}{1.7}% for the vertical padding
 
+$if(background)$
+\usepackage{wallpaper}
+\ULCornerWallPaper{1}{$background$}
+$endif$
+
 % -----------------
 %  END OF PREAMBLE
 % -----------------
