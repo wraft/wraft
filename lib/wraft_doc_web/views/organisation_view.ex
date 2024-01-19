@@ -114,6 +114,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
+  def render("permissions.json", %{permissions: permissions}) do
+    %{
+      permissions: permissions
+    }
+  end
+
   defp generate_url(%{logo: logo} = organisation) do
     WraftDocWeb.LogoUploader.url({logo, organisation}, signed: true)
   end
