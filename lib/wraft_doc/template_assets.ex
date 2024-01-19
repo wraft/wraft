@@ -58,7 +58,7 @@ defmodule WraftDoc.TemplateAssets do
   Show a template asset.
   """
   # TODO - write tests
-  @spec show_template_asset(binary, User.t()) :: TemplateAsset.t() | {:error, atom()}
+  @spec show_template_asset(binary(), User.t()) :: TemplateAsset.t() | {:error, atom()}
   def show_template_asset(<<_::288>> = template_asset_id, user) do
     template_asset_id
     |> get_template_asset(user)
@@ -69,7 +69,7 @@ defmodule WraftDoc.TemplateAssets do
   Get a template asset from its UUID.
   """
   # TODO - Write tests
-  @spec get_template_asset(binary, User.t()) :: TemplateAsset.t() | {:error, atom()}
+  @spec get_template_asset(binary(), User.t()) :: TemplateAsset.t() | {:error, atom()}
   def get_template_asset(<<_::288>> = id, %{current_org_id: org_id}),
     do: Repo.get_by(TemplateAsset, id: id, organisation_id: org_id)
 
