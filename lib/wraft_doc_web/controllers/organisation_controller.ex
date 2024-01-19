@@ -181,6 +181,27 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
             code: "123456"
           })
         end,
+      PermissionsResponse:
+        swagger_schema do
+          title("Current User Permissions")
+          description("Current user permissions of current organisation")
+          type(:map)
+
+          example(%{
+            permissions: %{
+              asset: [
+                "show",
+                "manage",
+                "delete"
+              ],
+              block: [
+                "show",
+                "manage",
+                "delete"
+              ]
+            }
+          })
+        end,
       DeletionRequestResponse:
         swagger_schema do
           title("Delete Confirmation Code")
@@ -619,6 +640,23 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
         email: email
       )
     end
+  end
+
+  swagger_path :permissions do
+    get("/organisations/users/permissions")
+    summary("user's permissions list")
+    description("Api to get the permissions list of the user in current organisation")
+
+    response(200, "Ok", Schema.ref(:PermissionsResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  # TODO Write tests
+  @spec permissions(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def permissions(conn, _params) do
+    current_user = conn.assigns[:current_user]
+    permissions = Enterprise.get_permissions(current_user)
+    render(conn, "permissions.json", permissions: permissions)
   end
 
   # This stops the user from changing the name of Personal organisation
