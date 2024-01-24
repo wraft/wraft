@@ -114,6 +114,13 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
+  def render("invite_token_status.json", %{email: email, isNewUser: isNewUser}) do
+    %{
+      email: email,
+      isNewUser: isNewUser
+    }
+  end
+
   def render("permissions.json", %{permissions: permissions}) do
     %{
       permissions: permissions
