@@ -895,7 +895,7 @@ defmodule WraftDoc.Document do
       :state,
       :vendor,
       {:instance_approval_systems, :approver},
-      creator: [:profile]
+      {:creator, :profile}
     ])
     |> Repo.paginate(params)
   end
@@ -918,7 +918,7 @@ defmodule WraftDoc.Document do
       :state,
       :vendor,
       {:instance_approval_systems, :approver},
-      creator: [:profile]
+      {:creator, :profile}
     ])
     |> Repo.paginate(params)
   end
@@ -1042,7 +1042,7 @@ defmodule WraftDoc.Document do
     with %Instance{} = instance <- get_instance(instance_id, user) do
       instance
       |> Repo.preload([
-        :creator,
+        {:creator, :profile},
         {:content_type, :layout},
         {:versions, :author},
         {:instance_approval_systems, :approver},
@@ -1103,7 +1103,7 @@ defmodule WraftDoc.Document do
       {:ok, instance} ->
         instance
         |> Repo.preload([
-          :creator,
+          {:creator, :profile},
           {:content_type, :layout},
           {:versions, :author},
           {:instance_approval_systems, :approver},
@@ -1217,7 +1217,7 @@ defmodule WraftDoc.Document do
       {:ok, instance} ->
         instance
         |> Repo.preload([
-          :creator,
+          {:creator, :profile},
           [content_type: [:flow, :layout]],
           {:state, :approval_system},
           :versions,
@@ -3308,7 +3308,7 @@ defmodule WraftDoc.Document do
 
       {:ok, instance} ->
         Repo.preload(instance, [
-          :creator,
+          {:creator, :profile},
           {:content_type, :layout},
           {:versions, :author},
           {:instance_approval_systems, :approver},

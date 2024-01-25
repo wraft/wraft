@@ -24,6 +24,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "create instances by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:profile, user: user)
     [organisation] = user.owned_organisations
     flow = insert(:flow, organisation: organisation)
     insert(:state, organisation: organisation, flow: flow, order: 1)
@@ -43,6 +44,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   test "adds log on succesfully creating an instance", %{conn: conn} do
     Logger.configure(level: :info)
     user = conn.assigns.current_user
+    insert(:profile, user: user)
     [organisation] = user.owned_organisations
     flow = insert(:flow, organisation: organisation)
     insert(:state, organisation: organisation, flow: flow, order: 1)
@@ -88,6 +90,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   test "create instance from content type with approval system also create instance approval systems",
        %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:profile, user: user)
     [organisation] = user.owned_organisations
     u2 = insert(:user)
     insert(:user_organisation, user: u2, organisation: organisation)
@@ -118,6 +121,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "update instances on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:profile, user: user)
 
     content_type =
       insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
@@ -159,6 +163,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "index lists all instances under a content type", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:profile, user: user)
     content_type = insert(:content_type)
 
     dt1 = insert(:instance, creator: user, content_type: content_type)
@@ -173,12 +178,13 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "all templates lists all instances under an organisation", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:profile, user: user)
     [organisation] = user.owned_organisations
     ct1 = insert(:content_type, organisation: organisation)
     ct2 = insert(:content_type, organisation: organisation)
 
-    dt1 = insert(:instance, content_type: ct1)
-    dt2 = insert(:instance, content_type: ct2)
+    dt1 = insert(:instance, content_type: ct1, creator: user)
+    dt2 = insert(:instance, content_type: ct2, creator: user)
 
     conn = get(conn, Routes.v1_instance_path(conn, :all_contents))
 
@@ -193,6 +199,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "show renders instance details by id", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:profile, user: user)
     [organisation] = user.owned_organisations
     u2 = insert(:user)
     insert(:user_organisation, user: u2, organisation: organisation)
@@ -261,10 +268,11 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   describe "state_update" do
     test "returns success response on updating instance state successfully", %{conn: conn} do
       current_user = conn.assigns[:current_user]
+      insert(:profile, user: current_user)
       [organisation] = current_user.owned_organisations
       content_type = insert(:content_type, organisation: organisation)
       state = insert(:state, flow: content_type.flow, organisation: organisation)
-      instance = insert(:instance, content_type: content_type)
+      instance = insert(:instance, content_type: content_type, creator: current_user)
 
       conn =
         patch(conn, Routes.v1_instance_path(conn, :state_update, instance.id), %{
@@ -333,6 +341,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "lock unlock locks if editable true", %{conn: conn} do
     current_user = conn.assigns[:current_user]
+    insert(:profile, user: current_user)
 
     content_type =
       insert(:content_type,
@@ -368,6 +377,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
   test "search instances searches instances by title on serialized", %{conn: conn} do
     current_user = conn.assigns[:current_user]
+    insert(:profile, user: current_user)
 
     content_type =
       insert(:content_type,
@@ -427,6 +437,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       conn: conn
     } do
       user = conn.assigns.current_user
+      insert(:profile, user: user)
       [organisation] = user.owned_organisations
       flow = insert(:flow, organisation: organisation)
       s1 = insert(:state, organisation: organisation, flow: flow, order: 1)
@@ -464,6 +475,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       conn: conn
     } do
       user = conn.assigns.current_user
+      insert(:profile, user: user)
       [organisation] = user.owned_organisations
       flow = insert(:flow, organisation: organisation)
       s1 = insert(:state, organisation: organisation, flow: flow, order: 1)
