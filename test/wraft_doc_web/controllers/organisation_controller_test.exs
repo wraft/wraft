@@ -131,7 +131,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
   describe "delete/2" do
     test "deletes organisation and render the details", %{conn: conn} do
-      [organisation] = conn.assigns.current_user.owned_organisations
+      user = conn.assigns.current_user
+      [organisation] = user.owned_organisations
+      personal_org = insert(:organisation, name: "Personal", creator: user, email: user.email)
+      role = insert(:role, organisation: personal_org)
+      insert(:user_role, user: user, role: role)
 
       delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
 
@@ -146,8 +150,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
       assert count_before - 1 == Organisation |> Repo.all() |> length
       assert Organisation |> Repo.all() |> length == count_before - 1
-      assert json_response(conn, 200)["name"] == organisation.name
-      assert json_response(conn, 200)["address"] == organisation.address
+      assert json_response(conn, 200)["organisation"]["name"] == organisation.name
+      assert json_response(conn, 200)["organisation"]["address"] == organisation.address
+      assert json_response(conn, 200)["user"]["name"] == user.name
+      assert json_response(conn, 200)["user"]["email"] == user.email
+      assert json_response(conn, 200)["access_token"] != nil
+      assert json_response(conn, 200)["refresh_token"] != nil
     end
 
     test "return error if the token is invalid", %{conn: conn} do

@@ -23,6 +23,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.InvitedUsers
+  alias WraftDocWeb.Guardian
 
   def swagger_definitions do
     %{
@@ -419,8 +420,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
            Enterprise.already_member(organisation_id, email),
          %AuthToken{} = _token <- AuthTokens.verify_delete_token(current_user, params),
          %Organisation{} = organisation <- Enterprise.get_organisation(organisation_id),
-         {:ok, %Organisation{}} <- Enterprise.delete_organisation(organisation) do
-      render(conn, "organisation.json", organisation: organisation)
+         {:ok, %Organisation{}} <- Enterprise.delete_organisation(organisation),
+         %{organisation: personal_org, user: user} <-
+           Enterprise.get_personal_organisation_and_role(current_user),
+         [access_token: access_token, refresh_token: refresh_token] <-
+           Guardian.generate_tokens(user, personal_org.id) do
+      render(conn, "delete.json",
+        organisation: organisation,
+        access_token: access_token,
+        refresh_token: refresh_token,
+        user: user
+      )
     else
       :ok ->
         conn
