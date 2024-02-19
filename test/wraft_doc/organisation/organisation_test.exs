@@ -62,6 +62,40 @@ defmodule WraftDoc.Enterprise.OrganisationTest do
     # TODO - check if organisation is not Personal
   end
 
+  describe "update_changeset/2" do
+    # TODO - include tests for name and legal_name constraint
+    # TODO - include tests for validate_name
+    test "changeset with valid attributes" do
+      changeset = Organisation.update_changeset(%Organisation{}, @valid_attrs)
+      assert changeset.valid?
+    end
+
+    test "changeset with invalid attributes" do
+      changeset = Organisation.update_changeset(%Organisation{}, @invalid_attrs)
+      refute changeset.valid?
+    end
+
+    test "checks GSTIN unique constraint" do
+      user = insert(:user)
+      params = Map.merge(@valid_attrs, %{name: "Company 2", creator_id: user.id})
+      params2 = Map.merge(params, %{name: "Company 2"})
+
+      {:ok, _} =
+        %Organisation{}
+        |> Organisation.update_changeset(params)
+        |> Repo.insert()
+
+      {:error, changeset} =
+        %Organisation{}
+        |> Organisation.update_changeset(params2)
+        |> Repo.insert()
+
+      assert "GSTIN Already Registered" in errors_on(changeset, :gstin)
+    end
+
+    # TODO - check if organisation is not Personal
+  end
+
   describe "personal_organisation_changeset/2" do
     test "changeset with valid attributes" do
       changeset =

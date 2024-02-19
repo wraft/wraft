@@ -60,6 +60,25 @@ defmodule WraftDoc.Enterprise.Organisation do
     )
   end
 
+  def update_changeset(%Organisation{} = organisation, attrs \\ %{}) do
+    organisation
+    |> cast(attrs, @fields -- [:creator_id])
+    |> validate_required([:name, :email])
+    |> validate_name()
+    |> unique_constraint(:name,
+      message: "organisation name already exist",
+      name: :organisation_name_creator_id_index
+    )
+    |> unique_constraint(:legal_name,
+      message: "Organisation Already Registered.",
+      name: :organisation_legal_name_unique_index
+    )
+    |> unique_constraint(:gstin,
+      message: "GSTIN Already Registered",
+      name: :organisation_gstin_unique_index
+    )
+  end
+
   def personal_organisation_changeset(%Organisation{} = organisation, attrs \\ %{}) do
     organisation
     |> cast(attrs, @fields)
