@@ -94,15 +94,28 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   end
 
   test "updates organisation for valid attributes", %{conn: conn} do
-    %{id: user_id} = insert(:user)
     organisation = insert(:organisation)
-    params = Map.put(@valid_attrs, "creator_id", user_id)
 
-    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), params)
+    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), @valid_attrs)
 
     assert json_response(conn, 200)["name"] == @valid_attrs["name"]
     assert json_response(conn, 200)["address"] == @valid_attrs["address"]
     assert json_response(conn, 200)["url"] == @valid_attrs["url"]
+  end
+
+  test "uploads new logo for organisation", %{conn: conn} do
+    organisation = insert(:organisation)
+
+    params =
+      Map.put(@valid_attrs, "logo", %Plug.Upload{
+        content_type: "image/png",
+        path: File.cwd!() <> "/priv/static/images/logo.png",
+        filename: "logo.png"
+      })
+
+    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), params)
+
+    assert json_response(conn, 200)["logo"] =~ "logo_ABC%20enterprices.png"
   end
 
   test "does not update name of personal organisation", %{conn: conn} do
