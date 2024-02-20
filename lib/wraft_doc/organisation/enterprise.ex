@@ -473,15 +473,13 @@ defmodule WraftDoc.Enterprise do
   # TODO Add logo upload
   @spec update_organisation(Organisation.t(), map) :: {:ok, Organisation.t()}
   def update_organisation(organisation, params) do
-    organisation
-    |> Organisation.changeset(params)
-    |> Repo.update()
+    Multi.new()
+    |> Multi.update(:organisation, Organisation.update_changeset(organisation, params))
+    |> Multi.update(:organisation_logo, &Organisation.logo_changeset(&1.organisation, params))
+    |> Repo.transaction()
     |> case do
-      {:ok, organisation} ->
-        {:ok, organisation}
-
-      {:error, _} = changeset ->
-        changeset
+      {:ok, %{organisation_logo: organisation}} -> {:ok, organisation}
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 
@@ -596,6 +594,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Fetches the list of all members of current users organisation.
   """
+  # TODO Add tests for filters
   @spec members_index(User.t(), map) :: any
   def members_index(%User{current_org_id: organisation_id}, params) do
     roles_preload_query = from(r in Role, where: r.organisation_id == ^organisation_id)
@@ -607,8 +606,8 @@ defmodule WraftDoc.Enterprise do
     |> join(:inner, [u], uo in UserOrganisation, on: uo.user_id == u.id, as: :user_organisation)
     |> where([user_organisation: uo], uo.organisation_id == ^organisation_id)
     |> where(^members_filter_by_name(params))
-    |> join(:inner, [u], ur in UserRole, on: ur.user_id == u.id, as: :user_role)
-    |> join(:inner, [user_role: ur], r in Role,
+    |> join(:left, [u], ur in UserRole, on: ur.user_id == u.id, as: :user_role)
+    |> join(:left, [user_role: ur], r in Role,
       on: r.organisation_id == ^organisation_id and ur.role_id == r.id,
       as: :role
     )
