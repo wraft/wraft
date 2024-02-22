@@ -353,7 +353,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
   def update(conn, params) do
-    %User{:current_org_id => organisation_id} = conn.assigns.current_user
+    %User{current_org_id: organisation_id} = conn.assigns.current_user
 
     with %Organisation{} = organisation <- Enterprise.get_organisation(organisation_id),
          params <- remove_name_from_params(organisation, params),
