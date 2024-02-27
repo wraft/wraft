@@ -396,18 +396,27 @@ defmodule WraftDoc.Enterprise do
   @doc """
    Join organisation using an invite link
   """
+  # TODO add test for existing user or deleted user joining again
   @spec join_org_by_invite(User.t(), binary()) :: {:ok, map()} | {:error, Ecto.Changeset.t()}
   def join_org_by_invite(%User{} = user, token) do
     Multi.new()
     |> Multi.run(:get_org, fn _, _ ->
       Account.get_organisation_and_role_from_token(%{"token" => token, "email" => user.email})
     end)
-    |> Multi.insert(:users_organisations, fn %{get_org: %{organisation: organisation}} ->
-      UserOrganisation.changeset(%UserOrganisation{}, %{
-        user_id: user.id,
-        organisation_id: organisation.id
-      })
-    end)
+    |> Multi.insert(
+      :users_organisations,
+      fn %{get_org: %{organisation: organisation}} ->
+        UserOrganisation.changeset(
+          %UserOrganisation{},
+          %{
+            user_id: user.id,
+            organisation_id: organisation.id
+          }
+        )
+      end,
+      on_conflict: [set: [deleted_at: nil]],
+      conflict_target: [:organisation_id, :user_id]
+    )
     |> Multi.run(:assign_role, fn _repo, %{get_org: %{role_ids: role_ids}} ->
       create_default_worker_job(%{user_id: user.id, roles: role_ids}, "assign_role")
     end)

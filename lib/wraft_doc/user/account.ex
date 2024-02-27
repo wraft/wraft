@@ -150,7 +150,7 @@ defmodule WraftDoc.Account do
   def create_user_role(user_id, role_id) do
     %UserRole{}
     |> UserRole.changeset(%{user_id: user_id, role_id: role_id})
-    |> Repo.insert()
+    |> Repo.insert(on_conflict: :nothing)
   end
 
   def get_user_role(%{current_org_id: organisation_id}, user_id, role_id) do

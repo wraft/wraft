@@ -13,6 +13,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   alias WraftDoc.Account
   alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens
+  alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise
   alias WraftDocWeb.Guardian

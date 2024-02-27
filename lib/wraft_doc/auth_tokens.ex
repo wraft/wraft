@@ -264,7 +264,7 @@ defmodule WraftDoc.AuthTokens do
     end
   end
 
-  @spec get_auth_token(String.t(), atom(), map()) :: AuthToken.t()
+  @spec get_auth_token(String.t(), atom(), map()) :: AuthToken.t() | nil
   def get_auth_token(value, token_type, params \\ %{}) do
     AuthToken
     |> where([t], t.value == ^value)
