@@ -30,6 +30,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         render_many(content.instance_approval_systems, InstanceApprovalSystemView, "create.json",
           as: :instance_approval_system
         ),
+      profile_pic: generate_url(content.creator.profile),
       creator: render_one(content.creator, UserView, "user_id_and_name.json", as: :user)
     }
   end
@@ -70,6 +71,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         ),
       state: render_one(instance.state, StateView, "instance_state.json", as: :state),
       creator: render_one(instance.creator, UserView, "user.json", as: :user),
+      profile_pic: generate_url(instance.creator.profile),
       versions: render_many(instance.versions, InstanceVersionView, "version.json", as: :version),
       instance_approval_systems:
         render_many(instance.instance_approval_systems, InstanceApprovalSystemView, "create.json",
@@ -83,5 +85,9 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       info: "Build failed",
       exit_code: exit_code
     }
+  end
+
+  def generate_url(%{profile_pic: pic} = profile) do
+    WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
   end
 end

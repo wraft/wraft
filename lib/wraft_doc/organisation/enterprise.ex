@@ -11,6 +11,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
+  alias WraftDoc.Authorization.Permission
   alias WraftDoc.AuthTokens
   alias WraftDoc.Client.Razorpay
   alias WraftDoc.Enterprise.ApprovalSystem
@@ -472,15 +473,13 @@ defmodule WraftDoc.Enterprise do
   # TODO Add logo upload
   @spec update_organisation(Organisation.t(), map) :: {:ok, Organisation.t()}
   def update_organisation(organisation, params) do
-    organisation
-    |> Organisation.changeset(params)
-    |> Repo.update()
+    Multi.new()
+    |> Multi.update(:organisation, Organisation.update_changeset(organisation, params))
+    |> Multi.update(:organisation_logo, &Organisation.logo_changeset(&1.organisation, params))
+    |> Repo.transaction()
     |> case do
-      {:ok, organisation} ->
-        {:ok, organisation}
-
-      {:error, _} = changeset ->
-        changeset
+      {:ok, %{organisation_logo: organisation}} -> {:ok, organisation}
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 
@@ -595,6 +594,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Fetches the list of all members of current users organisation.
   """
+  # TODO Add tests for filters
   @spec members_index(User.t(), map) :: any
   def members_index(%User{current_org_id: organisation_id}, params) do
     roles_preload_query = from(r in Role, where: r.organisation_id == ^organisation_id)
@@ -606,8 +606,8 @@ defmodule WraftDoc.Enterprise do
     |> join(:inner, [u], uo in UserOrganisation, on: uo.user_id == u.id, as: :user_organisation)
     |> where([user_organisation: uo], uo.organisation_id == ^organisation_id)
     |> where(^members_filter_by_name(params))
-    |> join(:inner, [u], ur in UserRole, on: ur.user_id == u.id, as: :user_role)
-    |> join(:inner, [user_role: ur], r in Role,
+    |> join(:left, [u], ur in UserRole, on: ur.user_id == u.id, as: :user_role)
+    |> join(:left, [user_role: ur], r in Role,
       on: r.organisation_id == ^organisation_id and ur.role_id == r.id,
       as: :role
     )
@@ -1350,5 +1350,43 @@ defmodule WraftDoc.Enterprise do
   @spec get_user_organisation(User.t(), Ecto.UUID.t()) :: {:ok, UserOrganisation.t()} | nil
   def get_user_organisation(%User{current_org_id: org_id}, user_id) do
     Repo.get_by(UserOrganisation, organisation_id: org_id, user_id: user_id)
+  end
+
+  @doc """
+   Gets the permissions list for given user ID and organisation ID
+  """
+  # TODO Write tests
+  @spec get_permissions(User.t()) :: map()
+  def get_permissions(%User{current_org_id: org_id} = user) do
+    roles_preload_query = from(r in Role, where: r.organisation_id == ^org_id)
+    user = Repo.preload(user, roles: roles_preload_query)
+
+    if Enum.member?(Enum.map(user.roles, & &1.name), "superadmin") do
+      permission_names = Permission |> Repo.all() |> Enum.map(& &1.name)
+
+      super_admin_role =
+        user.roles
+        |> Enum.filter(fn role -> role.name == "superadmin" end)
+        |> List.first()
+        |> Map.put(:permissions, permission_names)
+
+      parse_permissions([super_admin_role])
+    else
+      parse_permissions(user.roles)
+    end
+  end
+
+  # Private
+  defp parse_permissions(roles) do
+    roles
+    |> Enum.map(fn role -> role.permissions end)
+    |> List.flatten()
+    |> Enum.uniq()
+    |> Enum.map(fn permission_name ->
+      permission_name
+      |> String.split(":")
+      |> List.to_tuple()
+    end)
+    |> Enum.group_by(fn {resource, _} -> resource end, fn {_, action} -> action end)
   end
 end
