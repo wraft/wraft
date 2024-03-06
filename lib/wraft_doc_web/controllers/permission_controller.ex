@@ -22,7 +22,7 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
           example(%{
             id: "1232148nb3478",
             name: "layout:index",
-            acion: "Index",
+            action: "Index",
             resource: "Layout"
           })
         end,
@@ -34,8 +34,8 @@ defmodule WraftDocWeb.Api.V1.PermissionController do
 
           example(%{
             "Layout" => [
-              %{id: "1232148nb3478", name: "layout:index", acion: "Index"},
-              %{id: "2374679278373", name: "layout:manage", acion: "Manage"}
+              %{id: "1232148nb3478", name: "layout:index", action: "Index"},
+              %{id: "2374679278373", name: "layout:manage", action: "Manage"}
             ]
           })
         end,

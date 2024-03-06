@@ -94,15 +94,28 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   end
 
   test "updates organisation for valid attributes", %{conn: conn} do
-    %{id: user_id} = insert(:user)
     organisation = insert(:organisation)
-    params = Map.put(@valid_attrs, "creator_id", user_id)
 
-    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), params)
+    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), @valid_attrs)
 
     assert json_response(conn, 200)["name"] == @valid_attrs["name"]
     assert json_response(conn, 200)["address"] == @valid_attrs["address"]
     assert json_response(conn, 200)["url"] == @valid_attrs["url"]
+  end
+
+  test "uploads new logo for organisation", %{conn: conn} do
+    organisation = insert(:organisation)
+
+    params =
+      Map.put(@valid_attrs, "logo", %Plug.Upload{
+        content_type: "image/png",
+        path: File.cwd!() <> "/priv/static/images/logo.png",
+        filename: "logo.png"
+      })
+
+    conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), params)
+
+    assert json_response(conn, 200)["logo"] =~ "logo_ABC%20enterprices.png"
   end
 
   test "does not update name of personal organisation", %{conn: conn} do
@@ -131,7 +144,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
   describe "delete/2" do
     test "deletes organisation and render the details", %{conn: conn} do
-      [organisation] = conn.assigns.current_user.owned_organisations
+      user = conn.assigns.current_user
+      [organisation] = user.owned_organisations
+      personal_org = insert(:organisation, name: "Personal", creator: user, email: user.email)
+      role = insert(:role, organisation: personal_org)
+      insert(:user_role, user: user, role: role)
 
       delete_code = 100_000..999_999 |> Enum.random() |> Integer.to_string()
 
@@ -146,8 +163,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
       assert count_before - 1 == Organisation |> Repo.all() |> length
       assert Organisation |> Repo.all() |> length == count_before - 1
-      assert json_response(conn, 200)["name"] == organisation.name
-      assert json_response(conn, 200)["address"] == organisation.address
+      assert json_response(conn, 200)["organisation"]["name"] == organisation.name
+      assert json_response(conn, 200)["organisation"]["address"] == organisation.address
+      assert json_response(conn, 200)["user"]["name"] == user.name
+      assert json_response(conn, 200)["user"]["email"] == user.email
+      assert json_response(conn, 200)["access_token"] != nil
+      assert json_response(conn, 200)["refresh_token"] != nil
     end
 
     test "return error if the token is invalid", %{conn: conn} do
