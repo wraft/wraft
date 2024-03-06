@@ -387,6 +387,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       c_type_id(:path, :string, "ID of the content type", required: true)
       page(:query, :string, "Page number")
       instance_id(:query, :string, "Instance ID")
+      creator_id(:query, :string, "Creator ID")
 
       sort(
         :query,
@@ -428,6 +429,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       page(:query, :string, "Page number")
       instance_id(:query, :string, "Instance ID")
       content_type_name(:query, :string, "Content Type name")
+      creator_id(:query, :string, "Creator ID")
+      state(:query, :string, "State, eg: published, draft, review")
+      document_instance_title(:query, :string, "Document instance title")
 
       sort(
         :query,
@@ -537,7 +541,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Document.get_instance(id, current_user),
-         {:ok, _} <- Document.delete_uploaded_docs(instance),
+         _ <- Document.delete_uploaded_docs(instance),
          {:ok, %Instance{}} <- Document.delete_instance(instance) do
       render(conn, "instance.json", instance: instance)
     end

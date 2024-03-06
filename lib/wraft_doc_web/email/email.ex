@@ -10,7 +10,7 @@ defmodule WraftDocWeb.Mailer.Email do
     |> subject("Invitation to join #{org_name} in WraftDocs")
     |> html_body(
       "Hi, #{user_name} has invited you to join #{org_name} in WraftDocs. \n
-      Click <a href=#{System.get_env("WRAFT_URL")}/users/join_invite?token=#{token}&organisation=#{org_name}>here</a> below to join."
+      Click <a href=#{System.get_env("WRAFT_URL")}/users/join_invite?token=#{token}&organisation=#{org_name}&email=#{email}>here</a> below to join."
     )
   end
 

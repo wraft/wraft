@@ -91,6 +91,13 @@ defmodule WraftDocWeb.Router do
         :verify_invite_token
       )
 
+      # Invite token user status
+      get(
+        "/organisations/invite_token_status/:token",
+        OrganisationController,
+        :invite_token_status
+      )
+
       # Refresh Token
       post("/users/token_refresh", UserController, :refresh_token)
       # Join Waiting list
@@ -203,6 +210,8 @@ defmodule WraftDocWeb.Router do
         post("/users/invite", OrganisationController, :invite)
         # Removes existing user
         post("/remove_user/:id", OrganisationController, :remove_user)
+        # permissions of user in organisation
+        get("/users/permissions", OrganisationController, :permissions)
       end
 
       # List Organisation by User
