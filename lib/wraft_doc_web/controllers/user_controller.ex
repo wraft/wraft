@@ -755,13 +755,16 @@ defmodule WraftDocWeb.Api.V1.UserController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def search(conn, %{"key" => key} = params) do
+  # TODO add tests
+  def search(conn, %{"key" => _key} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %{
            entries: users,
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Account.get_user_by_name(key, params) do
+         } <- Account.get_user_by_name(current_user, params) do
       render(conn, "index.json",
         users: users,
         page_number: page_number,
