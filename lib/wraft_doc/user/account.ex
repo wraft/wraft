@@ -613,9 +613,13 @@ defmodule WraftDoc.Account do
     end
   end
 
-  def get_user_by_name(name, params) do
-    query = from(u in User, where: ilike(u.name, ^"%#{name}%"))
-    Repo.paginate(query, params)
+  # TODO add tests
+  def get_user_by_name(current_user, %{"key" => name} = params) do
+    User
+    |> join(:inner, [u], uo in UserOrganisation, on: uo.user_id == u.id, as: :user_organisation)
+    |> where([user_organisation: uo], uo.organisation_id == ^current_user.current_org_id)
+    |> where(^dynamic([u], ilike(u.name, ^"%#{name}%")))
+    |> Repo.paginate(params)
   end
 
   def get_role_group(%{current_org_id: org_id}, <<_::288>> = id) do
