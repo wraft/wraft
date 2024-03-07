@@ -1102,7 +1102,14 @@ defmodule WraftDoc.Document do
         {:creator, :profile},
         {:content_type, :layout},
         {:versions, :author},
-        {:state, :approvers}
+        {:state, :approvers},
+        # TODO remove old implementation
+        {:instance_approval_systems, :approver},
+        # TODO remove old implmentation
+        state: [
+          approval_system: [:post_state, :approver],
+          rejection_system: [:pre_state, :approver]
+        ]
       ])
       |> get_built_document()
     end
