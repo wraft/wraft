@@ -59,6 +59,47 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             inserted_at: "2020-02-21T14:00:00Z"
           })
         end,
+      InstanceApprovals:
+        swagger_schema do
+          title("InstanceApprovals")
+          description("Get list of pending approvals for current user")
+
+          example(%{
+            page_number: 1,
+            pending_approvals: [
+              %{
+                content: %{
+                  id: "12b7654e-87bd-4857-9ae1-183584db1a6c",
+                  inserted_at: "2024-03-05T10:31:39",
+                  instance_id: "ABCD0004",
+                  next_state: "Publish",
+                  previous_state: "null",
+                  raw: "body here\n\nsome document here",
+                  serialized: %{
+                    body: "body here\n\nsome document here",
+                    serialized: "",
+                    title: "Raj"
+                  },
+                  updated_at: "2024-03-05T10:31:39"
+                },
+                creator: %{
+                  id: "b6fb1848-1bd3-4461-a6e6-0d0aeec9c5ef",
+                  name: "name",
+                  profile_pic: "http://localhost:9000/wraft/uploads/images/avatar.png"
+                },
+                state: %{
+                  id: "31c7d9d5-bbc2-45db-b21a-9a64ad501548",
+                  inserted_at: "2024-03-05T10:17:31",
+                  order: 1,
+                  state: "Draft",
+                  updated_at: "2024-03-05T10:17:31"
+                }
+              }
+            ],
+            total_entries: 1,
+            total_pages: 1
+          })
+        end,
       ContentRequest:
         swagger_schema do
           title("Content Request")
@@ -417,6 +458,33 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
+  swagger_path :all_contents do
+    get("/users/list_pending_approvals")
+    summary("List pending approvals")
+    description("API to get the list of pending approvals for current user")
+
+    response(200, "Ok", Schema.ref(:InstanceApprovals))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def list_pending_approvals(conn, params) do
+    current_user = conn.assigns.current_user
+
+    with %{
+           entries: contents,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Document.list_pending_approvals(current_user, params) do
+      render(conn, "approvals_index.json",
+        contents: contents,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
+
   @doc """
   All instances.
   """
@@ -753,7 +821,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Document.show_instance(id, current_user),
          %Instance{} = instance <- Document.approve_instance(current_user, instance) do
-      render(conn, "show.json", %{instance: instance})
+      render(conn, "approve_or_reject.json", %{instance: instance})
     end
   end
 
@@ -777,7 +845,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Document.show_instance(id, current_user),
          %Instance{} = instance <- Document.reject_instance(current_user, instance) do
-      render(conn, "show.json", %{instance: instance})
+      render(conn, "approve_or_reject.json", %{instance: instance})
     end
   end
 end

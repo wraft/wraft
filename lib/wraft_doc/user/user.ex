@@ -20,6 +20,8 @@ defmodule WraftDoc.Account.User do
       join_through: "users_organisations"
     )
 
+    many_to_many(:state, WraftDoc.Enterprise.Flow.State, join_through: "state_users")
+
     has_many(:user_organisations, WraftDoc.Account.UserOrganisation)
 
     has_one(:profile, WraftDoc.Account.Profile)
@@ -32,6 +34,7 @@ defmodule WraftDoc.Account.User do
     has_many(:data_templates, WraftDoc.Document.DataTemplate, foreign_key: :creator_id)
     has_many(:assets, WraftDoc.Document.Asset, foreign_key: :creator_id)
     has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :creator_id)
+    has_many(:content_collab, WraftDoc.Document.ContentCollab)
 
     has_many(:blocks, WraftDoc.Document.Block, foreign_key: :creator_id)
 
