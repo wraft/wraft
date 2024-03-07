@@ -30,7 +30,11 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
           example(%{
             state: "Published",
-            order: 1
+            order: 1,
+            approvers: [
+              "b840c04c-25a2-4426-895a-acd2685153e4",
+              "b190bece-160c-44cc-91e9-79367ed2ccf6"
+            ]
           })
         end,
       State:
@@ -73,6 +77,10 @@ defmodule WraftDocWeb.Api.V1.StateController do
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             },
+            approvers: [
+              "b840c04c-25a2-4426-895a-acd2685153e4",
+              "b190bece-160c-44cc-91e9-79367ed2ccf6"
+            ],
             creator: %{
               id: "1232148nb3478",
               name: "John Doe",

@@ -4,6 +4,7 @@ defmodule WraftDoc.Enterprise do
   """
   import Ecto.Query
   import Ecto
+  require Logger
   alias Ecto.Multi
 
   alias WraftDoc.Account
@@ -21,6 +22,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.Membership.Payment
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
+  alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Repo
   alias WraftDoc.TaskSupervisor
@@ -28,12 +30,15 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Workers.EmailWorker
   alias WraftDoc.Workers.ScheduledWorker
 
-  @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
+  @default_states [
+    %{"state" => "Draft", "order" => 1, "approvers" => []},
+    %{"state" => "Publish", "order" => 2, "approvers" => []}
+  ]
 
   @default_controlled_states [
-    %{"state" => "Draft", "order" => 1},
-    %{"state" => "Review", "order" => 2},
-    %{"state" => "Publish", "order" => 3}
+    %{"state" => "Draft", "order" => 1, "approvers" => []},
+    %{"state" => "Review", "order" => 2, "approvers" => []},
+    %{"state" => "Publish", "order" => 3, "approvers" => []}
   ]
 
   @trial_plan_name "Free Trial"
@@ -248,30 +253,51 @@ defmodule WraftDoc.Enterprise do
   """
   @spec create_default_states(User.t(), Flow.t(), boolean()) :: list
   def create_default_states(current_user, flow, true) do
-    Enum.map(@default_controlled_states, fn x -> create_state(current_user, flow, x) end)
+    Enum.map(@default_controlled_states, fn x ->
+      create_state(current_user, flow, put_in(x["approvers"], ["#{current_user.id}"]))
+    end)
   end
 
   @doc """
   Create default states for an uncontrolled flow
   """
   def create_default_states(current_user, flow) do
-    Enum.map(@default_states, fn x -> create_state(current_user, flow, x) end)
+    Enum.map(@default_states, fn x ->
+      create_state(current_user, flow, put_in(x["approvers"], ["#{current_user.id}"]))
+    end)
   end
 
   @doc """
   Create a state under a flow.
   """
   @spec create_state(User.t(), Flow.t(), map) :: State.t() | {:error, Ecto.Changeset.t()}
-  def create_state(%User{current_org_id: org_id} = current_user, flow, params) do
+  def create_state(
+        %User{current_org_id: org_id} = current_user,
+        flow,
+        %{"approvers" => approvers} = params
+      ) do
     params = Map.merge(params, %{"organisation_id" => org_id, "flow_id" => flow.id})
 
-    current_user
-    |> build_assoc(:states)
-    |> State.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(
+      :state,
+      current_user
+      |> build_assoc(:states)
+      |> State.changeset(params)
+    )
+    |> Multi.run(:approvers, fn _repo, %{state: state} ->
+      Enum.each(approvers, fn approver_id ->
+        Repo.insert(
+          StateUser.changeset(%StateUser{}, %{state_id: state.id, user_id: approver_id})
+        )
+      end)
+
+      {:ok, :ok}
+    end)
+    |> Repo.transaction()
     |> case do
-      {:ok, state} -> state
-      {:error, _} = changeset -> changeset
+      {:ok, %{state: state}} -> Repo.preload(state, [:approvers])
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 
@@ -297,17 +323,56 @@ defmodule WraftDoc.Enterprise do
   # TODO - Missing tests
   @spec update_state(State.t(), map()) ::
           %State{creator: User.t(), flow: Flow.t()} | {:error, Ecto.Changeset.t()}
-  def update_state(state, params) do
-    state
-    |> State.changeset(params)
-    |> Repo.update()
-    |> case do
-      {:ok, state} ->
-        Repo.preload(state, [:creator, :flow])
+  def update_state(
+        state,
+        %{
+          "approvers" => %{
+            "remove" => remove,
+            "add" => add
+          }
+        } = params
+      ) do
+    Multi.new()
+    |> Multi.update(
+      :state,
+      State.changeset(state, params)
+    )
+    |> Multi.run(:approvers, fn _repo, %{state: state} ->
+      Enum.each(add, fn approver_id ->
+        Repo.insert(
+          StateUser.changeset(%StateUser{}, %{state_id: state.id, user_id: approver_id})
+        )
+      end)
 
-      {:error, _} = changeset ->
-        changeset
+      # TODO optimise if it possible
+      state_users = Repo.all(from(st in StateUser, where: st.state_id == ^state.id))
+
+      Enum.each(remove, fn approver_id ->
+        case state_users do
+          list when length(list) >= 2 ->
+            query = from(st in StateUser, where: st.user_id == ^approver_id)
+            approver = Repo.one(query)
+
+            if approver do
+              Repo.delete(approver)
+            end
+
+          _any ->
+            Logger.info("Approver can't be removed")
+        end
+      end)
+
+      {:ok, :ok}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{state: state}} -> Repo.preload(state, [:approvers, :creator, :flow])
+      {:error, _, changeset, _} -> {:error, changeset}
     end
+  end
+
+  def update_state(_state, _params) do
+    {:error, :invalid_data}
   end
 
   @doc """
