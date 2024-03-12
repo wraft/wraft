@@ -13,7 +13,6 @@ defmodule WraftDocWeb.Api.V1.UserController do
   alias WraftDoc.Account
   alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens
-  alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise
   alias WraftDocWeb.Guardian
@@ -149,12 +148,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
             total_pages: 1,
             users: [
               %{
-                email: "admin@wraftdocs.com",
-                email_verify: false,
-                id: "466f1fa1-9657-4166-b372-21e8135aeaf1",
-                inserted_at: "2021-05-06T15:26:52",
-                name: "Admin",
-                updated_at: "2021-05-06T15:26:52"
+                id: "af2cf1c6-f342-4042-8425-6346e9fd6c44",
+                name: "Richard Hendricks",
+                profile_pic: "www.minio.com/users/johndoe.jpg"
               }
             ]
           })

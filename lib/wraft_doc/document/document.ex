@@ -738,8 +738,7 @@ defmodule WraftDoc.Document do
       Multi.new()
       |> Multi.update(
         :update_instance,
-        instance
-        |> Instance.update_state_changeset(%{
+        Instance.update_state_changeset(instance, %{
           state_id: next_state_id,
           allowed_users: allowed_users,
           approval_status: approval_status
@@ -750,8 +749,7 @@ defmodule WraftDoc.Document do
                                                      state: %{id: next_state_id}
                                                    }
                                                  } ->
-        %InstanceTransitionLog{}
-        |> InstanceTransitionLog.changeset(%{
+        InstanceTransitionLog.changeset(%InstanceTransitionLog{}, %{
           review_status: :approved,
           reviewed_at: DateTime.utc_now(),
           from_state_id: current_state_id,
@@ -763,7 +761,8 @@ defmodule WraftDoc.Document do
       |> Repo.transaction()
       |> case do
         {:ok, %{update_instance: instance}} ->
-          Repo.reload(instance)
+          instance
+          |> Repo.reload()
           |> Repo.preload([
             {:creator, :profile},
             {:content_type, :layout},
@@ -804,16 +803,14 @@ defmodule WraftDoc.Document do
       Multi.new()
       |> Multi.update(
         :update_instance,
-        instance
-        |> Instance.update_state_changeset(%{state_id: previous_state_id(state)})
+        Instance.update_state_changeset(instance, %{state_id: previous_state_id(state)})
       )
       |> Multi.insert(:insert_transition_log, fn %{
                                                    update_instance: %Instance{
                                                      state: %{id: previous_state_id}
                                                    }
                                                  } ->
-        %InstanceTransitionLog{}
-        |> InstanceTransitionLog.changeset(%{
+        InstanceTransitionLog.changeset(%InstanceTransitionLog{}, %{
           review_status: :rejected,
           reviewed_at: DateTime.utc_now(),
           from_state_id: current_state_id,
@@ -825,7 +822,8 @@ defmodule WraftDoc.Document do
       |> Repo.transaction()
       |> case do
         {:ok, %{update_instance: instance}} ->
-          Repo.reload(instance)
+          instance
+          |> Repo.reload()
           |> Repo.preload([
             {:creator, :profile},
             {:content_type, :layout},
@@ -1102,14 +1100,7 @@ defmodule WraftDoc.Document do
         {:creator, :profile},
         {:content_type, :layout},
         {:versions, :author},
-        {:state, :approvers},
-        # TODO remove old implementation
-        {:instance_approval_systems, :approver},
-        # TODO remove old implmentation
-        state: [
-          approval_system: [:post_state, :approver],
-          rejection_system: [:pre_state, :approver]
-        ]
+        {:state, :approvers}
       ])
       |> get_built_document()
     end

@@ -77,7 +77,7 @@ defmodule WraftDoc.Enterprise do
     query = from(s in State, where: s.id == ^state_id and s.organisation_id == ^org_id)
 
     case Repo.one(query) do
-      %State{} = state -> state
+      %State{} = state -> Repo.preload(state, approvers: [:profile])
       _ -> {:error, :invalid_id}
     end
   end
@@ -197,7 +197,7 @@ defmodule WraftDoc.Enterprise do
     with %Flow{} = flow <- get_flow(flow_id, user) do
       Repo.preload(flow, [
         :creator,
-        :states,
+        {:states, [approvers: [:profile]]},
         approval_systems: [:pre_state, :post_state, :approver]
       ])
     end
@@ -285,18 +285,10 @@ defmodule WraftDoc.Enterprise do
       |> build_assoc(:states)
       |> State.changeset(params)
     )
-    |> Multi.run(:approvers, fn _repo, %{state: state} ->
-      Enum.each(approvers, fn approver_id ->
-        Repo.insert(
-          StateUser.changeset(%StateUser{}, %{state_id: state.id, user_id: approver_id})
-        )
-      end)
-
-      {:ok, :ok}
-    end)
+    |> Multi.run(:approvers, fn _repo, %{state: state} -> add_approvers(approvers, state) end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{state: state}} -> Repo.preload(state, [:approvers])
+      {:ok, %{state: state}} -> Repo.preload(state, approvers: [:profile])
       {:error, _, changeset, _} -> {:error, changeset}
     end
   end
@@ -327,8 +319,8 @@ defmodule WraftDoc.Enterprise do
         state,
         %{
           "approvers" => %{
-            "remove" => remove,
-            "add" => add
+            "remove" => approvers_to_remove,
+            "add" => approvers_to_add
           }
         } = params
       ) do
@@ -337,42 +329,54 @@ defmodule WraftDoc.Enterprise do
       :state,
       State.changeset(state, params)
     )
-    |> Multi.run(:approvers, fn _repo, %{state: state} ->
-      Enum.each(add, fn approver_id ->
-        Repo.insert(
-          StateUser.changeset(%StateUser{}, %{state_id: state.id, user_id: approver_id})
-        )
-      end)
-
-      # TODO optimise if it possible
-      state_users = Repo.all(from(st in StateUser, where: st.state_id == ^state.id))
-
-      Enum.each(remove, fn approver_id ->
-        case state_users do
-          list when length(list) >= 2 ->
-            query = from(st in StateUser, where: st.user_id == ^approver_id)
-            approver = Repo.one(query)
-
-            if approver do
-              Repo.delete(approver)
-            end
-
-          _any ->
-            Logger.info("Approver can't be removed")
-        end
-      end)
-
-      {:ok, :ok}
+    |> Multi.run(:add_approvers, fn _repo, %{state: state} ->
+      add_approvers(approvers_to_add, state)
+    end)
+    |> Multi.run(:remove_approvers, fn _repo, %{state: state} ->
+      remove_approvers(approvers_to_remove, state.id)
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{state: state}} -> Repo.preload(state, [:approvers, :creator, :flow])
+      {:ok, %{state: state}} -> Repo.preload(state, [:creator, :flow, approvers: [:profile]])
       {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 
-  def update_state(_state, _params) do
-    {:error, :invalid_data}
+  def update_state(_state, _params), do: {:error, :invalid_data}
+
+  defp add_approvers(approvers, state) do
+    Enum.each(approvers, fn approver_id ->
+      Repo.insert(StateUser.changeset(%StateUser{}, %{state_id: state.id, user_id: approver_id}))
+    end)
+
+    {:ok, :ok}
+  end
+
+  def remove_approvers(approvers_to_remove, state_id) do
+    state_users = Repo.all(from(st in StateUser, where: st.state_id == ^state_id))
+
+    Enum.each(approvers_to_remove, fn approver_id ->
+      case state_users do
+        # check if there are more than 2 approvers before deleting
+        # we should have at least 1 approver
+        list when length(list) >= 2 ->
+          delete_approver(approver_id, state_id)
+
+        _any ->
+          Logger.info("Approver can't be removed")
+      end
+    end)
+
+    {:ok, :ok}
+  end
+
+  def delete_approver(approver_id, state_id) do
+    query = from(st in StateUser, where: st.user_id == ^approver_id and st.state_id == ^state_id)
+    approver = Repo.one(query)
+
+    if approver do
+      Repo.delete(approver)
+    end
   end
 
   @doc """

@@ -37,6 +37,32 @@ defmodule WraftDocWeb.Api.V1.StateController do
             ]
           })
         end,
+      UpdateStateRequest:
+        swagger_schema do
+          title("Update State Request")
+          description("Update state request.")
+
+          properties do
+            state(:string, "State name")
+            order(:integer, "State's order")
+            approvers(:map, "State's approvers")
+          end
+
+          example(%{
+            state: "Published",
+            order: 3,
+            approvers: %{
+              add: [
+                "b840c04c-25a2-4426-895a-acd2685153e4",
+                "b190bece-160c-44cc-91e9-79367ed2ccf6"
+              ],
+              remove: [
+                "b840c04c-25a2-4426-895a-acd2685153e4",
+                "b190bece-160c-44cc-91e9-79367ed2ccf6"
+              ]
+            }
+          })
+        end,
       State:
         swagger_schema do
           title("State")
@@ -210,7 +236,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
   end
 
   @doc """
-  Flow update.
+  State update.
   """
   swagger_path :update do
     put("/states/{id}")
@@ -219,7 +245,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
     parameters do
       id(:path, :string, "state id", required: true)
-      flow(:body, Schema.ref(:StateRequest), "Flow to be created", required: true)
+      state(:body, Schema.ref(:UpdateStateRequest), "State to be updated", required: true)
     end
 
     response(200, "Ok", Schema.ref(:ShowState))
