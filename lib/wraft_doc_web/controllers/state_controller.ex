@@ -197,7 +197,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
     with %Flow{} = flow <- Enterprise.get_flow(flow_id, current_user),
          %State{} = state <- Enterprise.create_state(current_user, flow, params) do
-      render(conn, "create.json", state: state)
+      render(conn, "create_with_approvers.json", state: state)
     end
   end
 
