@@ -182,7 +182,14 @@ defmodule WraftDocWeb.Api.V1.FlowController do
               %{
                 id: "1232148nb3478",
                 state: "published",
-                order: 1
+                order: 1,
+                approvers: [
+                  %{
+                    id: "af2cf1c6-f342-4042-8425-6346e9fd6c44",
+                    name: "Richard Hendricks",
+                    profile_pic: "www.minio.com/users/johndoe.jpg"
+                  }
+                ]
               }
             ]
           })

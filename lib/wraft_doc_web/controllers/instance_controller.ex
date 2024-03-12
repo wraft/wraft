@@ -458,7 +458,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
-  swagger_path :all_contents do
+  swagger_path :list_pending_approvals do
     get("/users/list_pending_approvals")
     summary("List pending approvals")
     description("API to get the list of pending approvals for current user")
