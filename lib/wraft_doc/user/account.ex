@@ -619,6 +619,7 @@ defmodule WraftDoc.Account do
     |> join(:inner, [u], uo in UserOrganisation, on: uo.user_id == u.id, as: :user_organisation)
     |> where([user_organisation: uo], uo.organisation_id == ^current_user.current_org_id)
     |> where(^dynamic([u], ilike(u.name, ^"%#{name}%")))
+    |> preload([:profile])
     |> Repo.paginate(params)
   end
 

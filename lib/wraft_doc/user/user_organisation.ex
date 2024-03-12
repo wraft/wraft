@@ -33,7 +33,6 @@ defmodule WraftDoc.Account.UserOrganisation do
   end
 
   def update_changeset(users_organisations, attrs \\ %{}) do
-    users_organisations
-    |> cast(attrs, [:deleted_at])
+    cast(users_organisations, attrs, [:deleted_at])
   end
 end
