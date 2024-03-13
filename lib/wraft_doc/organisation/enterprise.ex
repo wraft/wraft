@@ -303,7 +303,7 @@ defmodule WraftDoc.Enterprise do
         join: f in Flow,
         where: f.id == ^flow_uuid and s.flow_id == f.id,
         order_by: [desc: s.id],
-        preload: [:flow, :creator]
+        preload: [:flow, :creator, approvers: [:profile]]
       )
 
     Repo.paginate(query, params)
