@@ -1100,7 +1100,8 @@ defmodule WraftDoc.Document do
         {:creator, :profile},
         {:content_type, :layout},
         {:versions, :author},
-        {:state, :approvers}
+        {:state, :approvers},
+        {:instance_approval_systems, :approver}
       ])
       |> get_built_document()
     end
