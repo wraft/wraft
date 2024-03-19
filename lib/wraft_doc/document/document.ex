@@ -1101,7 +1101,11 @@ defmodule WraftDoc.Document do
         {:content_type, :layout},
         {:versions, :author},
         {:state, :approvers},
-        {:instance_approval_systems, :approver}
+        {:instance_approval_systems, :approver},
+        state: [
+          approval_system: [:post_state, :approver],
+          rejection_system: [:pre_state, :approver]
+        ]
       ])
       |> get_built_document()
     end
