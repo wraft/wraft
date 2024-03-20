@@ -142,13 +142,27 @@ defmodule WraftDoc.Enterprise do
   """
   def align_states(flow, params) do
     flow
-    |> Flow.align_order_changeset(params)
+    |> Flow.align_order_changeset(modify_state_order(params))
     |> Repo.update()
     |> case do
       {:ok, flow} -> flow
       {:error, _} = changeset -> changeset
     end
   end
+
+  # Take params(map) sort them by order
+  # add length of the list to order and return params
+  @spec modify_state_order(map) :: map
+  defp modify_state_order(%{"states" => states} = params) do
+    states =
+      states
+      |> Enum.sort_by(& &1["order"], :asc)
+      |> Enum.map(fn x -> Map.update!(x, "order", &(&1 + length(states))) end)
+
+    Map.put(params, "states", states)
+  end
+
+  defp modify_state_order(params), do: params
 
   @doc """
   List of all flows.

@@ -37,6 +37,11 @@ defmodule WraftDoc.Enterprise.Flow.State do
   end
 
   def order_update_changeset(%State{} = flow, attrs \\ %{}) do
-    cast(flow, attrs, [:order])
+    flow
+    |> cast(attrs, [:order])
+    |> unique_constraint(:order,
+      message: "Order already exists.!",
+      name: :state_order_flow_id_index
+    )
   end
 end
