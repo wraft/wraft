@@ -2176,13 +2176,9 @@ defmodule WraftDoc.Document do
 
   @doc """
   Index of all field types.
-  Creates Scrivener pagination
   """
-  @spec field_type_index(map) :: map
-  def field_type_index(params) do
-    query = from(ft in FieldType, order_by: [desc: ft.id])
-    Repo.paginate(query, params)
-  end
+  @spec field_type_index() :: [FieldType.t()]
+  def field_type_index, do: Repo.all(FieldType, order_by: [desc: :id])
 
   @doc """
   Get a field type from its UUID.
