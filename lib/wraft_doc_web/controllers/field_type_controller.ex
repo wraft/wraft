@@ -77,9 +77,6 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
         swagger_schema do
           properties do
             field_types(Schema.ref(:FieldTypes))
-            page_number(:integer, "Page number")
-            total_pages(:integer, "Total number of pages")
-            total_entries(:integer, "Total number of contents")
           end
 
           example(%{
@@ -91,10 +88,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
                 updated_at: "2020-01-21T14:00:00Z",
                 inserted_at: "2020-02-21T14:00:00Z"
               }
-            ],
-            page_number: 1,
-            total_pages: 2,
-            total_entries: 15
+            ]
           })
         end,
       Validations:
@@ -168,26 +162,14 @@ defmodule WraftDocWeb.Api.V1.FieldTypeController do
     summary("Field type index")
     description("API to get the list of all field typs created so far")
 
-    parameter(:page, :query, :string, "Page number")
-
     response(200, "Ok", Schema.ref(:FieldTypeIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, params) do
-    with %{
-           entries: field_types,
-           page_number: page_number,
-           total_pages: total_pages,
-           total_entries: total_entries
-         } <- Document.field_type_index(params) do
-      render(conn, "index.json",
-        field_types: field_types,
-        page_number: page_number,
-        total_pages: total_pages,
-        total_entries: total_entries
-      )
+  def index(conn, _params) do
+    with field_types <- Document.field_type_index() do
+      render(conn, "index.json", field_types: field_types)
     end
   end
 
