@@ -18,17 +18,9 @@ defmodule WraftDocWeb.Api.V1.FieldTypeView do
     }
   end
 
-  def render("index.json", %{
-        field_types: field_types,
-        page_number: page_number,
-        total_pages: total_pages,
-        total_entries: total_entries
-      }) do
+  def render("index.json", %{field_types: field_types}) do
     %{
-      field_types: render_many(field_types, FieldTypeView, "field_type.json", as: :field_type),
-      page_number: page_number,
-      total_pages: total_pages,
-      total_entries: total_entries
+      field_types: render_many(field_types, FieldTypeView, "field_type.json", as: :field_type)
     }
   end
 end
