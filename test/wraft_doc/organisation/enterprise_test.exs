@@ -20,6 +20,7 @@ defmodule WraftDoc.EnterpriseTest do
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
+
   test "get flow returns flow data by id" do
     user = insert(:user_with_organisation)
     flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
@@ -313,13 +314,24 @@ defmodule WraftDoc.EnterpriseTest do
   #   assert Enum.map(states, fn x -> x.state end) |> List.to_string() =~ "Publish"
   # end
 
-  test "create state creates a state " do
+  test "create state creates a state and add approvers" do
     user = insert(:user_with_organisation)
+    approver1 = insert(:user)
+    approver2 = insert(:user)
     flow = insert(:flow, creator: user)
     count_before = State |> Repo.all() |> length()
-    state = Enterprise.create_state(user, flow, %{"state" => "Review", "order" => 2})
+
+    state =
+      Enterprise.create_state(user, flow, %{
+        "state" => "Review",
+        "order" => 2,
+        "approvers" => [approver1.id, approver2.id]
+      })
+
     assert count_before + 1 == State |> Repo.all() |> length()
     assert state.state == "Review"
+    assert state.approvers |> Enum.map(fn x -> x.name end) |> List.to_string() =~ approver1.name
+    assert state.approvers |> Enum.map(fn x -> x.name end) |> List.to_string() =~ approver2.name
     assert state.order == 2
   end
 
@@ -617,7 +629,61 @@ defmodule WraftDoc.EnterpriseTest do
       assert organisation.url == "wraftdoc@customprofile.com"
     end
 
-    # TODO Add test for updating logo of the organistion
+    test "successfully updates organisation with new logo" do
+      organisation = insert(:organisation, creator: insert(:user))
+
+      {:ok, organisation} =
+        Enterprise.update_organisation(organisation, %{
+          "name" => "Abc enterprices",
+          "legal_name" => "Abc pvt ltd",
+          "logo" => %Plug.Upload{
+            content_type: "image/png",
+            path: File.cwd!() <> "/priv/static/images/logo.png",
+            filename: "logo.png"
+          }
+        })
+
+      assert organisation.name == "Abc enterprices"
+      assert %{file_name: "logo.png"} = organisation.logo
+    end
+
+    test "returns error on invalid attributes" do
+      organisation = insert(:organisation, name: "Personal")
+
+      {:error, changeset} =
+        Enterprise.update_organisation(organisation, %{
+          "name" => "Personal",
+          "legal_name" => "Abc pvt ltd",
+          "email" => "",
+          "url" => "wraftdoc@customprofile.com"
+        })
+
+      assert ["can't be blank"] == errors_on(changeset)[:email]
+    end
+
+    test "returns error when attempting to update organisation name to 'Personal'" do
+      organisation = insert(:organisation)
+
+      {:error, changeset} = Enterprise.update_organisation(organisation, %{"name" => "Personal"})
+
+      assert ["The name 'Personal' is not allowed."] == errors_on(changeset)[:name]
+    end
+
+    test "return error on updating logo with a file greater than 1 MB" do
+      organisation = insert(:organisation, creator: insert(:user))
+
+      logo = %Plug.Upload{
+        content_type: "image/jpg",
+        path: File.cwd!() <> "/priv/static/images/over_limit_sized_image.jpg",
+        filename: "over_limit_sized_image.jpg"
+      }
+
+      params = %{"name" => "new name", "logo" => logo}
+
+      {:error, changeset} = Enterprise.update_organisation(organisation, params)
+
+      assert %{logo: ["is invalid"]} = errors_on(changeset)
+    end
   end
 
   describe "delete_organisation/1" do
@@ -1232,7 +1298,6 @@ defmodule WraftDoc.EnterpriseTest do
       organisation = insert(:organisation)
 
       user1 = insert(:user, name: "John", current_org_id: organisation.id)
-
       user2 = insert(:user, name: "John Doe")
       user3 = insert(:user)
 
@@ -1537,7 +1602,7 @@ defmodule WraftDoc.EnterpriseTest do
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: user.email,
-          role: role.id
+          roles: [role.id]
         })
 
       insert(:auth_token, value: token, token_type: "invite")

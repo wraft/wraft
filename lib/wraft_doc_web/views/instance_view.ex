@@ -30,6 +30,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         render_many(content.instance_approval_systems, InstanceApprovalSystemView, "create.json",
           as: :instance_approval_system
         ),
+      profile_pic: generate_url(content.creator.profile),
       creator: render_one(content.creator, UserView, "user_id_and_name.json", as: :user)
     }
   end
@@ -61,6 +62,38 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
+  def render("approvals_index.json", %{
+        contents: contents,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      pending_approvals:
+        render_many(contents, InstanceView, "pending_approvals.json", as: :content),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
+  end
+
+  def render("pending_approvals.json", %{content: content}) do
+    %{
+      content: %{
+        id: content.id,
+        instance_id: content.instance_id,
+        raw: content.raw,
+        serialized: content.serialized,
+        previous_state: content.previous_state,
+        next_state: content.next_state,
+        inserted_at: content.inserted_at,
+        updated_at: content.updated_at
+      },
+      state: render_one(content.state, StateView, "create.json", as: :state),
+      creator: render_one(content.creator, UserView, "user_id_and_name.json", as: :user)
+    }
+  end
+
   def render("show.json", %{instance: instance}) do
     %{
       content: render_one(instance, InstanceView, "instance.json", as: :instance),
@@ -70,6 +103,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         ),
       state: render_one(instance.state, StateView, "instance_state.json", as: :state),
       creator: render_one(instance.creator, UserView, "user.json", as: :user),
+      profile_pic: generate_url(instance.creator.profile),
       versions: render_many(instance.versions, InstanceVersionView, "version.json", as: :version),
       instance_approval_systems:
         render_many(instance.instance_approval_systems, InstanceApprovalSystemView, "create.json",
@@ -78,10 +112,28 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
+  def render("approve_or_reject.json", %{instance: instance}) do
+    %{
+      content: render_one(instance, InstanceView, "instance.json", as: :instance),
+      content_type:
+        render_one(instance.content_type, ContentTypeView, "c_type_with_layout.json",
+          as: :content_type
+        ),
+      state: render_one(instance.state, StateView, "state.json", as: :state),
+      creator: render_one(instance.creator, UserView, "user.json", as: :user),
+      profile_pic: generate_url(instance.creator.profile),
+      versions: render_many(instance.versions, InstanceVersionView, "version.json", as: :version)
+    }
+  end
+
   def render("build_fail.json", %{exit_code: exit_code}) do
     %{
       info: "Build failed",
       exit_code: exit_code
     }
+  end
+
+  def generate_url(%{profile_pic: pic} = profile) do
+    WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
   end
 end

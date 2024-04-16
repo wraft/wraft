@@ -55,6 +55,20 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
+  def render("delete.json", %{
+        organisation: organisation,
+        refresh_token: refresh_token,
+        access_token: access_token,
+        user: user
+      }) do
+    %{
+      refresh_token: refresh_token,
+      access_token: access_token,
+      organisation: render_one(organisation, __MODULE__, "organisation.json", as: :organisation),
+      user: render_one(user, UserView, "user.json", as: :user)
+    }
+  end
+
   def render("org_by_user.json", %{organisation: organisation}) do
     %{
       id: organisation.id,
@@ -111,6 +125,19 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
         name: organisation.name
       },
       email: email
+    }
+  end
+
+  def render("invite_token_status.json", %{email: email, isNewUser: isNewUser}) do
+    %{
+      email: email,
+      isNewUser: isNewUser
+    }
+  end
+
+  def render("permissions.json", %{permissions: permissions}) do
+    %{
+      permissions: permissions
     }
   end
 
