@@ -302,6 +302,7 @@ defmodule WraftDoc.AuthTokens do
   end
 
   # TODO add tests.
+  # TODO improvise using Tesla.
   @spec google_auth_validation(String.t()) :: {:ok, %{email: String.t()}} | {:error, String.t()}
   def google_auth_validation(token) do
     (@base_googe_auth_url <> token)
