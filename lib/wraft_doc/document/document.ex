@@ -28,6 +28,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Document.Instance.History
   alias WraftDoc.Document.Instance.Version
   alias WraftDoc.Document.InstanceApprovalSystem
+  alias WraftDoc.Document.InstanceTransitionLog
   alias WraftDoc.Document.Layout
   alias WraftDoc.Document.LayoutAsset
   alias WraftDoc.Document.OrganisationField
@@ -40,6 +41,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Repo
   alias WraftDoc.Workers.BulkWorker
 
@@ -640,7 +642,14 @@ defmodule WraftDoc.Document do
   def create_instance(%User{} = current_user, content_type, params) do
     instance_id = create_instance_id(content_type.id, content_type.prefix)
     initial_state = Enterprise.initial_state(content_type.flow)
-    params = Map.merge(params, %{"instance_id" => instance_id, "state_id" => initial_state.id})
+    allowed_users = [current_user.id] ++ allowed_users(initial_state.id)
+
+    params =
+      Map.merge(params, %{
+        "instance_id" => instance_id,
+        "state_id" => initial_state.id,
+        "allowed_users" => allowed_users
+      })
 
     Multi.new()
     |> Multi.insert(
@@ -714,96 +723,141 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
   end
 
-  @doc """
-  To approve an instance with associated approval systems
-  ## Parameters
-  * User - User struct
-  * Instance - instance struct
-  """
-  @spec approve_instance(User.t(), Instance.t()) :: Instance.t() | {:error, :no_permission}
   def approve_instance(
-        %User{id: user_id},
+        %User{id: current_approver_id},
         %Instance{
-          state: %State{
-            approval_system:
-              %ApprovalSystem{approver: %User{id: user_id}, post_state: post_state} =
-                approval_system
-          }
+          state: %State{id: current_state_id, approvers: approvers} = state,
+          approval_status: false
         } = instance
       ) do
-    instance
-    |> Instance.update_state_changeset(%{state_id: post_state.id})
-    |> Repo.update()
-    |> case do
-      {:ok, instance} ->
-        update_instance_approval_system(instance, approval_system, %{
-          flag: true,
-          approved_at: Timex.now()
+    if current_approver_id in Enum.map(approvers, & &1.id) do
+      next_state_id = next_state_id(state)
+      allowed_users = allowed_users(next_state_id)
+      approval_status = next_state_id == current_state_id
+
+      Multi.new()
+      |> Multi.update(
+        :update_instance,
+        Instance.update_state_changeset(instance, %{
+          state_id: next_state_id,
+          allowed_users: allowed_users,
+          approval_status: approval_status
         })
+      )
+      |> Multi.insert(:insert_transition_log, fn %{
+                                                   update_instance: %Instance{
+                                                     state: %{id: next_state_id}
+                                                   }
+                                                 } ->
+        InstanceTransitionLog.changeset(%InstanceTransitionLog{}, %{
+          review_status: :approved,
+          reviewed_at: DateTime.utc_now(),
+          from_state_id: current_state_id,
+          to_state_id: next_state_id,
+          reviewer_id: current_approver_id,
+          instance_id: instance.id
+        })
+      end)
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{update_instance: instance}} ->
+          instance
+          |> Repo.reload()
+          |> Repo.preload([
+            {:creator, :profile},
+            {:content_type, :layout},
+            {:versions, :author},
+            {:instance_approval_systems, :approver},
+            {:state, :approvers}
+          ])
 
-        instance =
-          instance |> Repo.unpreload(:state) |> Repo.unpreload(:instance_approval_systems)
-
-        Repo.preload(instance, [
-          :creator,
-          {:content_type, :layout},
-          {:versions, :author},
-          {:instance_approval_systems, :approver},
-          state: [approval_system: [:post_state, :approver]]
-        ])
-
-      {:error, _} = changeset ->
-        changeset
+        {:error, _, changeset, _} ->
+          {:error, changeset}
+      end
+    else
+      {:error, :no_permission}
     end
   end
 
-  def approve_instance(_, _), do: {:error, :no_permission}
+  def approve_instance(_, _), do: {:error, :cant_update}
 
-  @doc """
-  To reject an instance with associated approval systems
-  ## Parameters
-  * User - User struct
-  * Instance - instance struct
-  """
-  # TODO-  Approval System log
-  @spec reject_instance(User.t(), Instance.t()) :: Instance.t() | {:error, :no_permission}
+  defp next_state_id(current_state) do
+    query =
+      from(s in State,
+        where: s.flow_id == ^current_state.flow_id,
+        where: s.order == ^(current_state.order + 1),
+        select: s.id
+      )
+
+    Repo.one(query) || current_state.id
+  end
+
   def reject_instance(
-        %User{id: user_id},
+        %User{id: current_approver_id},
         %Instance{
-          state: %State{
-            rejection_system:
-              %ApprovalSystem{approver: %User{id: user_id}, pre_state: pre_state} =
-                approval_system
-          }
+          state: %State{id: current_state_id, approvers: approvers} = state,
+          approval_status: false
         } = instance
       ) do
-    instance
-    |> Instance.update_state_changeset(%{state_id: pre_state.id})
-    |> Repo.update()
-    |> case do
-      {:ok, instance} ->
-        update_instance_approval_system(instance, approval_system, %{
-          flag: false,
-          rejected_at: Timex.now()
+    if current_approver_id in Enum.map(approvers, & &1.id) do
+      Multi.new()
+      |> Multi.update(
+        :update_instance,
+        Instance.update_state_changeset(instance, %{state_id: previous_state_id(state)})
+      )
+      |> Multi.insert(:insert_transition_log, fn %{
+                                                   update_instance: %Instance{
+                                                     state: %{id: previous_state_id}
+                                                   }
+                                                 } ->
+        InstanceTransitionLog.changeset(%InstanceTransitionLog{}, %{
+          review_status: :rejected,
+          reviewed_at: DateTime.utc_now(),
+          from_state_id: current_state_id,
+          to_state_id: previous_state_id,
+          reviewer_id: current_approver_id,
+          instance_id: instance.id
         })
+      end)
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{update_instance: instance}} ->
+          instance
+          |> Repo.reload()
+          |> Repo.preload([
+            {:creator, :profile},
+            {:content_type, :layout},
+            {:versions, :author},
+            {:state, :approvers}
+          ])
 
-        instance =
-          instance |> Repo.unpreload(:state) |> Repo.unpreload(:instance_approval_systems)
-
-        Repo.preload(instance, [
-          :creator,
-          {:content_type, :layout},
-          {:versions, :author},
-          {:instance_approval_systems, :approver},
-          state: [approval_system: [:post_state, :approver]]
-        ])
-
-      {:error, _} = changeset ->
-        changeset
+        {:error, _, changeset, _} ->
+          {:error, changeset}
+      end
+    else
+      {:error, :no_permission}
     end
   end
 
-  def reject_instance(_, _), do: {:error, :no_permission}
+  def reject_instance(_, _), do: {:error, :cant_update}
+
+  defp previous_state_id(current_state) do
+    query =
+      from(s in State,
+        where: s.flow_id == ^current_state.flow_id,
+        where: s.order == ^(current_state.order - 1),
+        select: s.id
+      )
+
+    Repo.one(query) || current_state.id
+  end
+
+  defp allowed_users(state_id) do
+    StateUser
+    |> where([su], su.state_id == ^state_id)
+    |> select([su], su.user_id)
+    |> Repo.all()
+  end
 
   def update_instance_approval_system(instance, approval_system, params) do
     with %InstanceApprovalSystem{} = ias <-
@@ -878,12 +932,13 @@ defmodule WraftDoc.Document do
   List all instances under an organisation.
   """
   @spec instance_index_of_an_organisation(User.t(), map) :: map
-  def instance_index_of_an_organisation(%{current_org_id: org_id}, params) do
+  def instance_index_of_an_organisation(%{current_org_id: org_id} = current_user, params) do
     Instance
     |> join(:inner, [i], ct in ContentType,
       on: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
       as: :content_type
     )
+    |> where([i], ^current_user.id in i.allowed_users)
     |> where(^instance_index_filter_by_instance_id(params))
     |> where(^instance_index_filter_by_content_type_name(params))
     |> where(^instance_index_filter_by_instance_title(params))
@@ -895,7 +950,7 @@ defmodule WraftDoc.Document do
       :state,
       :vendor,
       {:instance_approval_systems, :approver},
-      creator: [:profile]
+      {:creator, :profile}
     ])
     |> Repo.paginate(params)
   end
@@ -918,7 +973,7 @@ defmodule WraftDoc.Document do
       :state,
       :vendor,
       {:instance_approval_systems, :approver},
-      creator: [:profile]
+      {:creator, :profile}
     ])
     |> Repo.paginate(params)
   end
@@ -1042,9 +1097,10 @@ defmodule WraftDoc.Document do
     with %Instance{} = instance <- get_instance(instance_id, user) do
       instance
       |> Repo.preload([
-        :creator,
+        {:creator, :profile},
         {:content_type, :layout},
         {:versions, :author},
+        {:state, :approvers},
         {:instance_approval_systems, :approver},
         state: [
           approval_system: [:post_state, :approver],
@@ -1103,7 +1159,7 @@ defmodule WraftDoc.Document do
       {:ok, instance} ->
         instance
         |> Repo.preload([
-          :creator,
+          {:creator, :profile},
           {:content_type, :layout},
           {:versions, :author},
           {:instance_approval_systems, :approver},
@@ -1217,7 +1273,7 @@ defmodule WraftDoc.Document do
       {:ok, instance} ->
         instance
         |> Repo.preload([
-          :creator,
+          {:creator, :profile},
           [content_type: [:flow, :layout]],
           {:state, :approval_system},
           :versions,
@@ -2120,13 +2176,9 @@ defmodule WraftDoc.Document do
 
   @doc """
   Index of all field types.
-  Creates Scrivener pagination
   """
-  @spec field_type_index(map) :: map
-  def field_type_index(params) do
-    query = from(ft in FieldType, order_by: [desc: ft.id])
-    Repo.paginate(query, params)
-  end
+  @spec field_type_index() :: [FieldType.t()]
+  def field_type_index, do: Repo.all(FieldType, order_by: [desc: :id])
 
   @doc """
   Get a field type from its UUID.
@@ -3308,7 +3360,7 @@ defmodule WraftDoc.Document do
 
       {:ok, instance} ->
         Repo.preload(instance, [
-          :creator,
+          {:creator, :profile},
           {:content_type, :layout},
           {:versions, :author},
           {:instance_approval_systems, :approver},
@@ -3386,6 +3438,41 @@ defmodule WraftDoc.Document do
       )
 
     Repo.paginate(query, params)
+  end
+
+  def list_pending_approvals(%User{id: user_id, current_org_id: org_id} = _current_user, params) do
+    next_state_query =
+      from(s in State,
+        where:
+          s.flow_id == parent_as(^:state).flow_id and s.order == parent_as(^:state).order + 1,
+        select: s.state
+      )
+
+    previous_state_query =
+      from(s in State,
+        where:
+          s.flow_id == parent_as(^:state).flow_id and s.order == parent_as(^:state).order - 1,
+        select: s.state
+      )
+
+    Instance
+    |> join(:inner, [i], s in State,
+      on: s.id == i.state_id and s.organisation_id == ^org_id,
+      as: :state
+    )
+    |> join(:inner, [i], su in StateUser,
+      on: su.state_id == i.state_id and su.user_id == ^user_id,
+      as: :state_users
+    )
+    |> select_merge([i], %{
+      next_state: subquery(next_state_query),
+      previous_state: subquery(previous_state_query)
+    })
+    |> preload([
+      :state,
+      {:creator, :profile}
+    ])
+    |> Repo.paginate(params)
   end
 
   @doc """

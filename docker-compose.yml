@@ -7,8 +7,8 @@ services:
     build:
       context: .
       args:
-        SECRET_KEY_BASE: 4aSNNwRrij5JRgDp6EXfxWXOnOuDrA2r2HZkW4EgaLnFvj3C2XqvShSiDZcAH
-        DATABASE_URL: postgres://postgres:postgres@db:5432/wraft_doc_dev
+        SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+        DATABASE_URL: ${DATABASE_URL}
       dockerfile: Dockerfile.dev
     environment:
       MINIO_ROOT_PASSWORD: minioadmin
@@ -48,12 +48,7 @@ services:
       - minio-storage:/myminio
       # mc: <ERROR> Invalid URL. URL `minio:9000` for MinIO Client should be of the form scheme://host[:port]/ without resource component.
     entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc config host add myminio $MINIO_URL $ $MINIO_ROOT_PASSWORD;
-      /usr/bin/mc mb -p myminio/${MINIO_BUCKET};
-      /usr/bin/mc policy set public myminio/${MINIO_BUCKET};
-      exit 0;
-      "
+      /bin/sh -c " /usr/bin/mc config host add myminio $$MINIO_URL $$MINIO_ROOT_PASSWORD; /usr/bin/mc mb -p myminio/${MINIO_BUCKET}; /usr/bin/mc policy set public myminio/${MINIO_BUCKET}; exit 0; "
   # pandoc-latex:
   #   image: pandoc/latex:2.18
   #   volumes:

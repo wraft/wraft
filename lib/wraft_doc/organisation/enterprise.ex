@@ -4,6 +4,7 @@ defmodule WraftDoc.Enterprise do
   """
   import Ecto.Query
   import Ecto
+  require Logger
   alias Ecto.Multi
 
   alias WraftDoc.Account
@@ -11,6 +12,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
+  alias WraftDoc.Authorization.Permission
   alias WraftDoc.AuthTokens
   alias WraftDoc.Client.Razorpay
   alias WraftDoc.Enterprise.ApprovalSystem
@@ -20,6 +22,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.Membership.Payment
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
+  alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Repo
   alias WraftDoc.TaskSupervisor
@@ -27,12 +30,15 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Workers.EmailWorker
   alias WraftDoc.Workers.ScheduledWorker
 
-  @default_states [%{"state" => "Draft", "order" => 1}, %{"state" => "Publish", "order" => 2}]
+  @default_states [
+    %{"state" => "Draft", "order" => 1, "approvers" => []},
+    %{"state" => "Publish", "order" => 2, "approvers" => []}
+  ]
 
   @default_controlled_states [
-    %{"state" => "Draft", "order" => 1},
-    %{"state" => "Review", "order" => 2},
-    %{"state" => "Publish", "order" => 3}
+    %{"state" => "Draft", "order" => 1, "approvers" => []},
+    %{"state" => "Review", "order" => 2, "approvers" => []},
+    %{"state" => "Publish", "order" => 3, "approvers" => []}
   ]
 
   @trial_plan_name "Free Trial"
@@ -71,7 +77,7 @@ defmodule WraftDoc.Enterprise do
     query = from(s in State, where: s.id == ^state_id and s.organisation_id == ^org_id)
 
     case Repo.one(query) do
-      %State{} = state -> state
+      %State{} = state -> Repo.preload(state, approvers: [:profile])
       _ -> {:error, :invalid_id}
     end
   end
@@ -136,13 +142,27 @@ defmodule WraftDoc.Enterprise do
   """
   def align_states(flow, params) do
     flow
-    |> Flow.align_order_changeset(params)
+    |> Flow.align_order_changeset(modify_state_order(params))
     |> Repo.update()
     |> case do
       {:ok, flow} -> flow
       {:error, _} = changeset -> changeset
     end
   end
+
+  # Take params(map) sort them by order
+  # add length of the list to order and return params
+  @spec modify_state_order(map) :: map
+  defp modify_state_order(%{"states" => states} = params) do
+    states =
+      states
+      |> Enum.sort_by(& &1["order"], :asc)
+      |> Enum.map(fn x -> Map.update!(x, "order", &(&1 + length(states))) end)
+
+    Map.put(params, "states", states)
+  end
+
+  defp modify_state_order(params), do: params
 
   @doc """
   List of all flows.
@@ -191,7 +211,7 @@ defmodule WraftDoc.Enterprise do
     with %Flow{} = flow <- get_flow(flow_id, user) do
       Repo.preload(flow, [
         :creator,
-        :states,
+        {:states, [approvers: [:profile]]},
         approval_systems: [:pre_state, :post_state, :approver]
       ])
     end
@@ -247,30 +267,43 @@ defmodule WraftDoc.Enterprise do
   """
   @spec create_default_states(User.t(), Flow.t(), boolean()) :: list
   def create_default_states(current_user, flow, true) do
-    Enum.map(@default_controlled_states, fn x -> create_state(current_user, flow, x) end)
+    Enum.map(@default_controlled_states, fn x ->
+      create_state(current_user, flow, put_in(x["approvers"], ["#{current_user.id}"]))
+    end)
   end
 
   @doc """
   Create default states for an uncontrolled flow
   """
   def create_default_states(current_user, flow) do
-    Enum.map(@default_states, fn x -> create_state(current_user, flow, x) end)
+    Enum.map(@default_states, fn x ->
+      create_state(current_user, flow, put_in(x["approvers"], ["#{current_user.id}"]))
+    end)
   end
 
   @doc """
   Create a state under a flow.
   """
   @spec create_state(User.t(), Flow.t(), map) :: State.t() | {:error, Ecto.Changeset.t()}
-  def create_state(%User{current_org_id: org_id} = current_user, flow, params) do
+  def create_state(
+        %User{current_org_id: org_id} = current_user,
+        flow,
+        %{"approvers" => approvers} = params
+      ) do
     params = Map.merge(params, %{"organisation_id" => org_id, "flow_id" => flow.id})
 
-    current_user
-    |> build_assoc(:states)
-    |> State.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(
+      :state,
+      current_user
+      |> build_assoc(:states)
+      |> State.changeset(params)
+    )
+    |> Multi.run(:approvers, fn _repo, %{state: state} -> add_approvers(approvers, state) end)
+    |> Repo.transaction()
     |> case do
-      {:ok, state} -> state
-      {:error, _} = changeset -> changeset
+      {:ok, %{state: state}} -> Repo.preload(state, approvers: [:profile])
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 
@@ -284,7 +317,7 @@ defmodule WraftDoc.Enterprise do
         join: f in Flow,
         where: f.id == ^flow_uuid and s.flow_id == f.id,
         order_by: [desc: s.id],
-        preload: [:flow, :creator]
+        preload: [:flow, :creator, approvers: [:profile]]
       )
 
     Repo.paginate(query, params)
@@ -296,16 +329,67 @@ defmodule WraftDoc.Enterprise do
   # TODO - Missing tests
   @spec update_state(State.t(), map()) ::
           %State{creator: User.t(), flow: Flow.t()} | {:error, Ecto.Changeset.t()}
-  def update_state(state, params) do
-    state
-    |> State.changeset(params)
-    |> Repo.update()
+  def update_state(
+        state,
+        %{
+          "approvers" => %{
+            "remove" => approvers_to_remove,
+            "add" => approvers_to_add
+          }
+        } = params
+      ) do
+    Multi.new()
+    |> Multi.update(
+      :state,
+      State.changeset(state, params)
+    )
+    |> Multi.run(:add_approvers, fn _repo, %{state: state} ->
+      add_approvers(approvers_to_add, state)
+    end)
+    |> Multi.run(:remove_approvers, fn _repo, %{state: state} ->
+      remove_approvers(approvers_to_remove, state.id)
+    end)
+    |> Repo.transaction()
     |> case do
-      {:ok, state} ->
-        Repo.preload(state, [:creator, :flow])
+      {:ok, %{state: state}} -> Repo.preload(state, [:creator, :flow, approvers: [:profile]])
+      {:error, _, changeset, _} -> {:error, changeset}
+    end
+  end
 
-      {:error, _} = changeset ->
-        changeset
+  def update_state(_state, _params), do: {:error, :invalid_data}
+
+  defp add_approvers(approvers, state) do
+    Enum.each(approvers, fn approver_id ->
+      Repo.insert(StateUser.changeset(%StateUser{}, %{state_id: state.id, user_id: approver_id}))
+    end)
+
+    {:ok, :ok}
+  end
+
+  def remove_approvers(approvers_to_remove, state_id) do
+    state_users = Repo.all(from(st in StateUser, where: st.state_id == ^state_id))
+
+    Enum.each(approvers_to_remove, fn approver_id ->
+      case state_users do
+        # check if there are more than 2 approvers before deleting
+        # we should have at least 1 approver
+        list when length(list) >= 2 ->
+          delete_approver(approver_id, state_id)
+
+        _any ->
+          Logger.info("Approver can't be removed")
+      end
+    end)
+
+    {:ok, :ok}
+  end
+
+  def delete_approver(approver_id, state_id) do
+    query = from(st in StateUser, where: st.user_id == ^approver_id and st.state_id == ^state_id)
+    approver = Repo.one(query)
+
+    if approver do
+      Repo.delete(approver)
     end
   end
 
@@ -395,18 +479,27 @@ defmodule WraftDoc.Enterprise do
   @doc """
    Join organisation using an invite link
   """
+  # TODO add test for existing user or deleted user joining again
   @spec join_org_by_invite(User.t(), binary()) :: {:ok, map()} | {:error, Ecto.Changeset.t()}
   def join_org_by_invite(%User{} = user, token) do
     Multi.new()
     |> Multi.run(:get_org, fn _, _ ->
       Account.get_organisation_and_role_from_token(%{"token" => token, "email" => user.email})
     end)
-    |> Multi.insert(:users_organisations, fn %{get_org: %{organisation: organisation}} ->
-      UserOrganisation.changeset(%UserOrganisation{}, %{
-        user_id: user.id,
-        organisation_id: organisation.id
-      })
-    end)
+    |> Multi.insert(
+      :users_organisations,
+      fn %{get_org: %{organisation: organisation}} ->
+        UserOrganisation.changeset(
+          %UserOrganisation{},
+          %{
+            user_id: user.id,
+            organisation_id: organisation.id
+          }
+        )
+      end,
+      on_conflict: [set: [deleted_at: nil]],
+      conflict_target: [:organisation_id, :user_id]
+    )
     |> Multi.run(:assign_role, fn _repo, %{get_org: %{role_ids: role_ids}} ->
       create_default_worker_job(%{user_id: user.id, roles: role_ids}, "assign_role")
     end)
@@ -472,15 +565,13 @@ defmodule WraftDoc.Enterprise do
   # TODO Add logo upload
   @spec update_organisation(Organisation.t(), map) :: {:ok, Organisation.t()}
   def update_organisation(organisation, params) do
-    organisation
-    |> Organisation.changeset(params)
-    |> Repo.update()
+    Multi.new()
+    |> Multi.update(:organisation, Organisation.update_changeset(organisation, params))
+    |> Multi.update(:organisation_logo, &Organisation.logo_changeset(&1.organisation, params))
+    |> Repo.transaction()
     |> case do
-      {:ok, organisation} ->
-        {:ok, organisation}
-
-      {:error, _} = changeset ->
-        changeset
+      {:ok, %{organisation_logo: organisation}} -> {:ok, organisation}
+      {:error, _, changeset, _} -> {:error, changeset}
     end
   end
 
@@ -595,6 +686,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Fetches the list of all members of current users organisation.
   """
+  # TODO Add tests for filters
   @spec members_index(User.t(), map) :: any
   def members_index(%User{current_org_id: organisation_id}, params) do
     roles_preload_query = from(r in Role, where: r.organisation_id == ^organisation_id)
@@ -606,8 +698,8 @@ defmodule WraftDoc.Enterprise do
     |> join(:inner, [u], uo in UserOrganisation, on: uo.user_id == u.id, as: :user_organisation)
     |> where([user_organisation: uo], uo.organisation_id == ^organisation_id)
     |> where(^members_filter_by_name(params))
-    |> join(:inner, [u], ur in UserRole, on: ur.user_id == u.id, as: :user_role)
-    |> join(:inner, [user_role: ur], r in Role,
+    |> join(:left, [u], ur in UserRole, on: ur.user_id == u.id, as: :user_role)
+    |> join(:left, [user_role: ur], r in Role,
       on: r.organisation_id == ^organisation_id and ur.role_id == r.id,
       as: :role
     )
@@ -1350,5 +1442,43 @@ defmodule WraftDoc.Enterprise do
   @spec get_user_organisation(User.t(), Ecto.UUID.t()) :: {:ok, UserOrganisation.t()} | nil
   def get_user_organisation(%User{current_org_id: org_id}, user_id) do
     Repo.get_by(UserOrganisation, organisation_id: org_id, user_id: user_id)
+  end
+
+  @doc """
+   Gets the permissions list for given user ID and organisation ID
+  """
+  # TODO Write tests
+  @spec get_permissions(User.t()) :: map()
+  def get_permissions(%User{current_org_id: org_id} = user) do
+    roles_preload_query = from(r in Role, where: r.organisation_id == ^org_id)
+    user = Repo.preload(user, roles: roles_preload_query)
+
+    if Enum.member?(Enum.map(user.roles, & &1.name), "superadmin") do
+      permission_names = Permission |> Repo.all() |> Enum.map(& &1.name)
+
+      super_admin_role =
+        user.roles
+        |> Enum.filter(fn role -> role.name == "superadmin" end)
+        |> List.first()
+        |> Map.put(:permissions, permission_names)
+
+      parse_permissions([super_admin_role])
+    else
+      parse_permissions(user.roles)
+    end
+  end
+
+  # Private
+  defp parse_permissions(roles) do
+    roles
+    |> Enum.map(fn role -> role.permissions end)
+    |> List.flatten()
+    |> Enum.uniq()
+    |> Enum.map(fn permission_name ->
+      permission_name
+      |> String.split(":")
+      |> List.to_tuple()
+    end)
+    |> Enum.group_by(fn {resource, _} -> resource end, fn {_, action} -> action end)
   end
 end

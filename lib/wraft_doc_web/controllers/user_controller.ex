@@ -148,12 +148,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
             total_pages: 1,
             users: [
               %{
-                email: "admin@wraftdocs.com",
-                email_verify: false,
-                id: "466f1fa1-9657-4166-b372-21e8135aeaf1",
-                inserted_at: "2021-05-06T15:26:52",
-                name: "Admin",
-                updated_at: "2021-05-06T15:26:52"
+                id: "af2cf1c6-f342-4042-8425-6346e9fd6c44",
+                name: "Richard Hendricks",
+                profile_pic: "www.minio.com/users/johndoe.jpg"
               }
             ]
           })
@@ -754,13 +751,16 @@ defmodule WraftDocWeb.Api.V1.UserController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def search(conn, %{"key" => key} = params) do
+  # TODO add tests
+  def search(conn, %{"key" => _key} = params) do
+    current_user = conn.assigns[:current_user]
+
     with %{
            entries: users,
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Account.get_user_by_name(key, params) do
+         } <- Account.get_user_by_name(current_user, params) do
       render(conn, "index.json",
         users: users,
         page_number: page_number,
