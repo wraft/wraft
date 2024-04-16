@@ -1709,6 +1709,7 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
+  # TODO update the tests as per the new implementation
   describe "instance_index_of_an_organisation/2" do
     test "instance index of an organisation lists instances under an organisation" do
       user = insert(:user_with_organisation)
@@ -1727,8 +1728,91 @@ defmodule WraftDoc.DocumentTest do
                i1.instance_id
 
       assert instance_index_under_organisation.entries
-             |> Enum.map(fn x -> x.raw end)
-             |> List.to_string() =~ i2.raw
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~ i2.instance_id
+    end
+
+    test "instance index returns nil if user is not part of the organisation" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+
+      external_user =
+        insert(:user_with_organisation, owned_organisations: [insert(:organisation)])
+
+      content_type = insert(:content_type, organisation: organisation)
+      state = insert(:state, organisation: organisation)
+      i1 = insert(:instance, content_type: content_type, creator: user, state: state)
+      i2 = insert(:instance, content_type: content_type, creator: user, state: state)
+
+      instance_index_under_organisation =
+        Document.instance_index_of_an_organisation(external_user, %{page_number: 1})
+
+      refute instance_index_under_organisation.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index_under_organisation.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~ i2.instance_id
+    end
+
+    test "instance index returns if the user is a collaborator" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      content_type = insert(:content_type, organisation: organisation)
+      flow = insert(:flow, organisation: organisation)
+      state = insert(:state, organisation: organisation, flow: flow)
+      i1 = insert(:instance, content_type: content_type, creator: user, state: state)
+      i2 = insert(:instance, content_type: content_type, creator: user, state: state)
+
+      user_collab = insert(:user_with_organisation, owned_organisations: [organisation])
+      insert(:content_collab, user: user_collab, content: i1, state: state)
+
+      instance_index_under_organisation =
+        Document.instance_index_of_an_organisation(user_collab, %{page_number: 1})
+
+      assert instance_index_under_organisation.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      refute instance_index_under_organisation.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~ i2.instance_id
+    end
+
+    test "instance index returns nil if the user is collaborator but not part of the organisation" do
+      # TODO
+    end
+
+    test "instance index returns if the user is an approver" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+      content_type = insert(:content_type, organisation: organisation)
+      flow = insert(:flow, organisation: organisation)
+      state = insert(:state, organisation: organisation, flow: flow)
+      i1 = insert(:instance, content_type: content_type, creator: user, state: state)
+      i2 = insert(:instance, content_type: content_type, creator: user, state: state)
+
+      approver = insert(:user_with_organisation, owned_organisations: [organisation])
+      insert(:state_users, user: approver, state: state)
+
+      instance_index_under_organisation =
+        Document.instance_index_of_an_organisation(approver, %{page_number: 1})
+
+      assert instance_index_under_organisation.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~
+               i1.instance_id
+
+      assert instance_index_under_organisation.entries
+             |> Enum.map(fn x -> x.instance_id end)
+             |> List.to_string() =~ i2.instance_id
+    end
+
+    test "instance index returns nil if the user is an approver but not part of the organisation" do
+      # TODO
     end
 
     test "return error for invalid input" do

@@ -31,4 +31,8 @@ defmodule WraftDoc.Account.UserOrganisation do
     |> cast(attrs, [:deleted_at])
     |> validate_required([:deleted_at])
   end
+
+  def update_changeset(users_organisations, attrs \\ %{}) do
+    cast(users_organisations, attrs, [:deleted_at])
+  end
 end

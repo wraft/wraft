@@ -30,7 +30,37 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
           example(%{
             state: "Published",
-            order: 1
+            order: 1,
+            approvers: [
+              "b840c04c-25a2-4426-895a-acd2685153e4",
+              "b190bece-160c-44cc-91e9-79367ed2ccf6"
+            ]
+          })
+        end,
+      UpdateStateRequest:
+        swagger_schema do
+          title("Update State Request")
+          description("Update state request.")
+
+          properties do
+            state(:string, "State name")
+            order(:integer, "State's order")
+            approvers(:map, "State's approvers")
+          end
+
+          example(%{
+            state: "Published",
+            order: 3,
+            approvers: %{
+              add: [
+                "b840c04c-25a2-4426-895a-acd2685153e4",
+                "b190bece-160c-44cc-91e9-79367ed2ccf6"
+              ],
+              remove: [
+                "b840c04c-25a2-4426-895a-acd2685153e4",
+                "b190bece-160c-44cc-91e9-79367ed2ccf6"
+              ]
+            }
           })
         end,
       State:
@@ -73,6 +103,10 @@ defmodule WraftDocWeb.Api.V1.StateController do
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             },
+            approvers: [
+              "b840c04c-25a2-4426-895a-acd2685153e4",
+              "b190bece-160c-44cc-91e9-79367ed2ccf6"
+            ],
             creator: %{
               id: "1232148nb3478",
               name: "John Doe",
@@ -163,7 +197,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
     with %Flow{} = flow <- Enterprise.get_flow(flow_id, current_user),
          %State{} = state <- Enterprise.create_state(current_user, flow, params) do
-      render(conn, "create.json", state: state)
+      render(conn, "create_with_approvers.json", state: state)
     end
   end
 
@@ -202,7 +236,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
   end
 
   @doc """
-  Flow update.
+  State update.
   """
   swagger_path :update do
     put("/states/{id}")
@@ -211,7 +245,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
     parameters do
       id(:path, :string, "state id", required: true)
-      flow(:body, Schema.ref(:StateRequest), "Flow to be created", required: true)
+      state(:body, Schema.ref(:UpdateStateRequest), "State to be updated", required: true)
     end
 
     response(200, "Ok", Schema.ref(:ShowState))

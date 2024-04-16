@@ -16,12 +16,14 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Account
+  alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.InvitedUsers
+  alias WraftDocWeb.Guardian
 
   def swagger_definitions do
     %{
@@ -97,6 +99,21 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
           end
 
           example(%{info: "Invited successfully.!"})
+        end,
+      InviteTokenStatusResponse:
+        swagger_schema do
+          title("Invite Token Status")
+          description("Invite Token Status")
+
+          properties do
+            isNewUser(:boolean, "Invite token status", required: true)
+            email(:string, "Email of the user", required: true)
+          end
+
+          example(%{
+            isNewUser: true,
+            email: "abcent@gmail.com"
+          })
         end,
       ListOfOrganisations:
         swagger_schema do
@@ -179,6 +196,27 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
           example(%{
             code: "123456"
+          })
+        end,
+      PermissionsResponse:
+        swagger_schema do
+          title("Current User Permissions")
+          description("Current user permissions of current organisation")
+          type(:map)
+
+          example(%{
+            permissions: %{
+              asset: [
+                "show",
+                "manage",
+                "delete"
+              ],
+              block: [
+                "show",
+                "manage",
+                "delete"
+              ]
+            }
           })
         end,
       DeletionRequestResponse:
@@ -314,8 +352,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => id} = params) do
-    with %Organisation{} = organisation <- Enterprise.get_organisation(id),
+  def update(conn, params) do
+    %User{current_org_id: organisation_id} = conn.assigns.current_user
+
+    with %Organisation{} = organisation <- Enterprise.get_organisation(organisation_id),
          params <- remove_name_from_params(organisation, params),
          {:ok, organisation} <-
            Enterprise.update_organisation(organisation, params) do
@@ -382,8 +422,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
            Enterprise.already_member(organisation_id, email),
          %AuthToken{} = _token <- AuthTokens.verify_delete_token(current_user, params),
          %Organisation{} = organisation <- Enterprise.get_organisation(organisation_id),
-         {:ok, %Organisation{}} <- Enterprise.delete_organisation(organisation) do
-      render(conn, "organisation.json", organisation: organisation)
+         {:ok, %Organisation{}} <- Enterprise.delete_organisation(organisation),
+         %{organisation: personal_org, user: user} <-
+           Enterprise.get_personal_organisation_and_role(current_user),
+         [access_token: access_token, refresh_token: refresh_token] <-
+           Guardian.generate_tokens(user, personal_org.id) do
+      render(conn, "delete.json",
+        organisation: organisation,
+        access_token: access_token,
+        refresh_token: refresh_token,
+        user: user
+      )
     else
       :ok ->
         conn
@@ -619,6 +668,62 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
         email: email
       )
     end
+  end
+
+  swagger_path :invite_token_status do
+    get("/organisations/invite_token_status/{token}")
+    summary("Invite token status")
+    description("API to get invite token status")
+
+    parameters do
+      token(:path, :string, "Invite token")
+    end
+
+    response(200, "Ok", Schema.ref(:InviteTokenStatusResponse))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  @doc """
+    organisation invite token user status.
+  """
+  # TODO - Write Tests
+  @spec invite_token_status(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def invite_token_status(conn, %{"token" => token}) do
+    case AuthTokens.check_token(token, :invite) do
+      {:ok, %{organisation_id: _organisation_id, email: email}} ->
+        case Account.find(email) do
+          %User{} = _user ->
+            render(conn, "invite_token_status.json", isNewUser: true, email: email)
+
+          _ ->
+            render(conn, "invite_token_status.json", isNewUser: false, email: email)
+        end
+
+      _ ->
+        conn
+        |> put_resp_header("content-type", "application/json")
+        |> send_resp(404, Jason.encode!(%{errors: "Invalid token!"}))
+    end
+  end
+
+  @doc """
+    Get the permissions list of the user in current organisation
+  """
+  swagger_path :permissions do
+    get("/organisations/users/permissions")
+    summary("user's permissions list")
+    description("Api to get the permissions list of the user in current organisation")
+
+    response(200, "Ok", Schema.ref(:PermissionsResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  # TODO Write tests
+  @spec permissions(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def permissions(conn, _params) do
+    current_user = conn.assigns[:current_user]
+    permissions = Enterprise.get_permissions(current_user)
+    render(conn, "permissions.json", permissions: permissions)
   end
 
   # This stops the user from changing the name of Personal organisation
