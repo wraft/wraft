@@ -625,11 +625,11 @@ defmodule WraftDoc.Factory do
     %FormField{
       validations: [
         %{
-          rule: "required",
+          validation: %{"rule" => "required", "value" => Enum.random([true, false])},
           error_message: "This field is required."
         },
         %{
-          rule: "email",
+          validation: %{"rule" => "email"},
           error_message: "Please enter a valid email address."
         }
       ],

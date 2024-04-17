@@ -9,9 +9,11 @@ defmodule WraftDoc.Forms do
   alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType
   alias WraftDoc.Forms.Form
+  alias WraftDoc.Forms.FormEntry
   alias WraftDoc.Forms.FormField
   alias WraftDoc.Forms.FormPipeline
   alias WraftDoc.Repo
+  alias WraftDoc.Validations.Validator
 
   require Logger
 
@@ -251,4 +253,71 @@ defmodule WraftDoc.Forms do
     do: [desc: dynamic([f], f.inserted_at)]
 
   defp form_sort(_), do: []
+
+  @doc """
+    Create form entry
+  """
+  @spec create_form_entry(User.t(), Form.t(), map) ::
+          {:ok, FormEntry.t()} | {:error, list(map)} | {:error, Ecto.Changeset.t()}
+  def create_form_entry(
+        current_user,
+        %Form{form_fields: fields} = form,
+        %{"data" => data} = _params
+      ) do
+    data_map =
+      Enum.reduce(data, %{}, fn %{"field_id" => field_id, "value" => value}, acc ->
+        Map.put(acc, field_id, value)
+      end)
+
+    if check_data_mapping(fields, data) do
+      case validate_form_entry(fields, data_map) do
+        [] -> insert_form_entry(current_user, form, data_map)
+        error_list -> {:error, error_list}
+      end
+    else
+      {:error, :invalid_data}
+    end
+  end
+
+  defp insert_form_entry(user, form, data_map) do
+    %FormEntry{}
+    |> FormEntry.changeset(%{
+      form_id: form.id,
+      status: "draft",
+      user_id: user.id,
+      data: data_map
+    })
+    |> Repo.insert()
+  end
+
+  # Validate form entry data
+  defp validate_form_entry(fields, data_map) do
+    fields
+    |> Enum.flat_map(fn field -> validate(field, data_map) end)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp validate(field, data_map) do
+    Enum.map(
+      field.validations,
+      &(Validator
+        |> Module.concat(Macro.camelize(&1.validation["rule"]))
+        |> apply(:validate, [&1, Map.get(data_map, field.field_id)])
+        |> case do
+          {:error, error} ->
+            Logger.error("Validation failed for field #{field.id}", error: error)
+            %{field_id: field.field_id, error: error}
+
+          _ ->
+            nil
+        end)
+    )
+  end
+
+  defp check_data_mapping(fields, data) do
+    form_field_ids = fields |> Enum.map(& &1.field_id) |> Enum.sort()
+    data_field_ids = data |> Enum.map(& &1["field_id"]) |> Enum.sort()
+
+    form_field_ids == data_field_ids
+  end
 end
