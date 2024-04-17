@@ -21,6 +21,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
   alias WraftDoc.Document.Comment
+  alias WraftDoc.Document.ContentCollab
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.ContentTypeField
   alias WraftDoc.Document.ContentTypeRole
@@ -48,6 +49,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Enterprise.Membership.Payment
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
+  alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Forms.Form
   alias WraftDoc.Forms.FormEntry
@@ -262,7 +264,8 @@ defmodule WraftDoc.Factory do
       serialized: %{title: "Title of the content", body: "Body of the content"},
       editable: true,
       state: build(:state),
-      content_type: build(:content_type)
+      content_type: build(:content_type),
+      allowed_users: []
     }
   end
 
@@ -281,6 +284,22 @@ defmodule WraftDoc.Factory do
       order: 1,
       organisation: build(:organisation),
       flow: build(:flow)
+    }
+  end
+
+  def state_users_factory do
+    %StateUser{
+      state: build(:state),
+      user: build(:user)
+    }
+  end
+
+  def content_collab_factory do
+    %ContentCollab{
+      content: build(:instance),
+      user: build(:user),
+      state: build(:state),
+      roles: Enum.random([:editor, :viewer, :commenter])
     }
   end
 

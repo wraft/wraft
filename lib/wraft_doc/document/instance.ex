@@ -21,11 +21,16 @@ defmodule WraftDoc.Document.Instance do
     field(:serialized, :map, default: %{})
     field(:type, :integer)
     field(:build, :string, virtual: true)
+    field(:next_state, :string, virtual: true)
+    field(:previous_state, :string, virtual: true)
     field(:editable, :boolean, default: true)
+    field(:allowed_users, {:array, :string}, default: [])
+    field(:approval_status, :boolean, default: false)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:vendor, WraftDoc.Enterprise.Vendor)
+    has_many(:content_collab, WraftDoc.Document.ContentCollab, foreign_key: :content_id)
     has_many(:instance_approval_systems, WraftDoc.Document.InstanceApprovalSystem)
     has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :content_id)
     has_many(:versions, WraftDoc.Document.Instance.Version, foreign_key: :content_id)
@@ -43,7 +48,8 @@ defmodule WraftDoc.Document.Instance do
       :type,
       :creator_id,
       :vendor_id,
-      :state_id
+      :state_id,
+      :allowed_users
     ])
     |> validate_required([:instance_id, :raw, :serialized, :type, :content_type_id, :state_id])
     |> unique_constraint(:instance_id,
@@ -64,7 +70,7 @@ defmodule WraftDoc.Document.Instance do
 
   def update_state_changeset(%Instance{} = instance, attrs \\ %{}) do
     instance
-    |> cast(attrs, [:state_id])
+    |> cast(attrs, [:state_id, :allowed_users, :approval_status])
     |> validate_required([:state_id])
   end
 

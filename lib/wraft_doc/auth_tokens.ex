@@ -264,7 +264,7 @@ defmodule WraftDoc.AuthTokens do
     end
   end
 
-  @spec get_auth_token(String.t(), atom(), map()) :: AuthToken.t()
+  @spec get_auth_token(String.t(), atom(), map()) :: AuthToken.t() | nil
   def get_auth_token(value, token_type, params \\ %{}) do
     AuthToken
     |> where([t], t.value == ^value)
@@ -302,6 +302,7 @@ defmodule WraftDoc.AuthTokens do
   end
 
   # TODO add tests.
+  # TODO improvise using Tesla.
   @spec google_auth_validation(String.t()) :: {:ok, %{email: String.t()}} | {:error, String.t()}
   def google_auth_validation(token) do
     (@base_googe_auth_url <> token)
