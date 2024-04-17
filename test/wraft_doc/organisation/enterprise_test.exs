@@ -314,13 +314,24 @@ defmodule WraftDoc.EnterpriseTest do
   #   assert Enum.map(states, fn x -> x.state end) |> List.to_string() =~ "Publish"
   # end
 
-  test "create state creates a state " do
+  test "create state creates a state and add approvers" do
     user = insert(:user_with_organisation)
+    approver1 = insert(:user)
+    approver2 = insert(:user)
     flow = insert(:flow, creator: user)
     count_before = State |> Repo.all() |> length()
-    state = Enterprise.create_state(user, flow, %{"state" => "Review", "order" => 2})
+
+    state =
+      Enterprise.create_state(user, flow, %{
+        "state" => "Review",
+        "order" => 2,
+        "approvers" => [approver1.id, approver2.id]
+      })
+
     assert count_before + 1 == State |> Repo.all() |> length()
     assert state.state == "Review"
+    assert state.approvers |> Enum.map(fn x -> x.name end) |> List.to_string() =~ approver1.name
+    assert state.approvers |> Enum.map(fn x -> x.name end) |> List.to_string() =~ approver2.name
     assert state.order == 2
   end
 

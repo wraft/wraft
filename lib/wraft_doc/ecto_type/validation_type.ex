@@ -49,7 +49,8 @@ defmodule WraftDoc.EctoType.ValidationType do
     {:ok, validation}
   end
 
-  def cast(%{"rule" => "options", "value" => value} = validation) when is_list(value) do
+  def cast(%{"rule" => "options", "value" => value, "multiple" => truth_value} = validation)
+      when is_list(value) and is_boolean(truth_value) do
     {:ok, validation}
   end
 
