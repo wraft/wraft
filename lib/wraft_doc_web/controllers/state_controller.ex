@@ -26,6 +26,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
           properties do
             state(:string, "State name", required: true)
             order(:integer, "State's order", required: true)
+            approvers(:array, "State's approvers", required: true)
           end
 
           example(%{
