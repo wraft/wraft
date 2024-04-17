@@ -200,6 +200,8 @@ defmodule WraftDocWeb.Router do
       # Approve a document
       put("/contents/:id/approve", InstanceController, :approve)
       put("/contents/:id/reject", InstanceController, :reject)
+      get("/users/list_pending_approvals", InstanceController, :list_pending_approvals)
+
       # Organisations
       scope "/organisations" do
         resources("/", OrganisationController, only: [:create, :update, :show])
@@ -275,6 +277,8 @@ defmodule WraftDocWeb.Router do
 
       # Assets
       resources("/assets", AssetController)
+      # Template Assets
+      resources("/template_assets", TemplateAssetController)
       # Comments
       resources("/comments", CommentController)
       get("/comments/:id/replies", CommentController, :reply)
