@@ -77,6 +77,34 @@ defmodule WraftDocWeb.Api.V1.FormEntryController do
   end
 
   @doc """
+    Show form entry
+  """
+  swagger_path :show do
+    get("/forms/{form_id}/entries/{id}")
+    summary("Show a form entry")
+    description("Show a form entry")
+
+    parameters do
+      form_id(:path, :string, "Form ID", required: true)
+      id(:path, :string, "Form Entry ID", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:FormEntryResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  # TODO Add tests for this
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def show(conn, params) do
+    current_user = conn.assigns.current_user
+
+    with %FormEntry{} = form_entry <- Forms.show_form_entry(current_user, params) do
+      render(conn, "form_entry.json", form_entry: form_entry)
+    end
+  end
+
+  @doc """
     Create form entry
   """
   swagger_path :create do
@@ -99,7 +127,7 @@ defmodule WraftDocWeb.Api.V1.FormEntryController do
     current_user = conn.assigns.current_user
 
     with %Form{} = form <- Forms.show_form(current_user, params["form_id"]),
-         {:ok, %FormEntry{} = form_entry} <- Forms.create_form_entry(current_user, form, params) do
+         %FormEntry{} = form_entry <- Forms.create_form_entry(current_user, form, params) do
       render(conn, "form_entry.json", form_entry: form_entry)
     end
   end
