@@ -255,6 +255,24 @@ defmodule WraftDoc.Forms do
   defp form_sort(_), do: []
 
   @doc """
+    Show form entry
+  """
+  @spec show_form_entry(User.t(), map) :: FormEntry.t() | nil
+  def show_form_entry(
+        %{current_org_id: organisation_id},
+        %{"form_id" => form_id, "id" => form_entry_id} = _params
+      ) do
+    Form_Entry
+    |> join(:inner, [fe], f in Form,
+      on: fe.form_id == f.id and f.organisation_id == ^organisation_id
+    )
+    |> where([fe], fe.form_id == ^form_id and fe.id == ^form_entry_id)
+    |> Repo.one()
+  end
+
+  def show_form_entry(_, _), do: nil
+
+  @doc """
     Create form entry
   """
   @spec create_form_entry(User.t(), Form.t(), map) ::
