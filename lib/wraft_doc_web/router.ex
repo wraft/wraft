@@ -177,6 +177,12 @@ defmodule WraftDocWeb.Router do
         resources("/:form_id/entries", FormEntryController, only: [:create, :show, :index])
       end
 
+      scope "/forms/:form_id" do
+        post("/mapping", FormMappingController, :create)
+        get("/mapping/:mapping_id", FormMappingController, :show)
+        put("/mapping/:mapping_id", FormMappingController, :update)
+      end
+
       # Theme
       resources("/themes", ThemeController, only: [:create, :index, :show, :update, :delete])
 
