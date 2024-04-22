@@ -113,7 +113,6 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
     data_template = insert(:data_template, content_type: c_type)
 
     conn = get(conn, Routes.v1_data_template_path(conn, :show, data_template.id))
-
     assert json_response(conn, 200)["data_template"]["title"] == data_template.title
   end
 
