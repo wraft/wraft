@@ -84,6 +84,21 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
     }
   end
 
+  # TODO reduce the boilerplate code by finding a way to club the "content_type.json"
+  # with this one below
+  def render("content_type_with_fields.json", %{content_type: c_type}) do
+    %{
+      id: c_type.id,
+      name: c_type.name,
+      description: c_type.description,
+      color: c_type.color,
+      prefix: c_type.prefix,
+      fields: render_many(c_type.fields, ContentTypeView, "field.json", as: :field),
+      inserted_at: c_type.inserted_at,
+      updated_at: c_type.updated_at
+    }
+  end
+
   def render("c_type_with_layout.json", %{content_type: c_type}) do
     %{
       id: c_type.id,
