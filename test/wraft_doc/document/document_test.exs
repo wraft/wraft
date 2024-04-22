@@ -3548,6 +3548,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "show_d_template/2" do
+    # TODO update test for preloading field and field type in content type
     test "show data_template returns the data_template data and preloads creator and content type" do
       user = insert(:user_with_organisation)
 
