@@ -2792,7 +2792,9 @@ defmodule WraftDoc.Document do
           "state_id" => <<_::288>>
         } = params
       ) do
-    params |> get_pipe_stage_params(user) |> do_create_pipe_stages(pipeline)
+    params
+    |> get_pipe_stage_params(user)
+    |> do_create_pipe_stages(pipeline)
   end
 
   def create_pipe_stage(_, _, _), do: nil
@@ -2987,7 +2989,7 @@ defmodule WraftDoc.Document do
   """
   @spec preload_stage_details(Stage.t()) :: Stage.t()
   def preload_stage_details(stage) do
-    Repo.preload(stage, [{:content_type, :fields}, :data_template, :state])
+    Repo.preload(stage, [{:content_type, fields: [:field_type]}, :data_template, :state])
   end
 
   @doc """
