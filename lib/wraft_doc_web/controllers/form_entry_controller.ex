@@ -6,7 +6,9 @@ defmodule WraftDocWeb.Api.V1.FormEntryController do
 
   plug WraftDocWeb.Plug.Authorized,
     delete: "form_entry:delete",
-    create: "form_entry:create"
+    create: "form_entry:manage",
+    index: "form_entry:show",
+    show: "form_entry:show"
 
   action_fallback(WraftDocWeb.FallbackController)
 
