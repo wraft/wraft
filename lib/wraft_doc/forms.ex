@@ -262,7 +262,7 @@ defmodule WraftDoc.Forms do
         %{current_org_id: organisation_id},
         %{"form_id" => form_id, "id" => form_entry_id} = _params
       ) do
-    Form_Entry
+    FormEntry
     |> join(:inner, [fe], f in Form,
       on: fe.form_id == f.id and f.organisation_id == ^organisation_id
     )
@@ -338,4 +338,28 @@ defmodule WraftDoc.Forms do
 
     form_field_ids == data_field_ids
   end
+
+  @doc """
+    List of all form entries for the given form.
+  """
+  @spec form_entry_index(User.t(), map) :: map
+  def form_entry_index(
+        %{current_org_id: org_id},
+        %{"form_id" => form_id} = params
+      ) do
+    FormEntry
+    |> join(:inner, [fe], f in Form, on: fe.form_id == f.id and f.organisation_id == ^org_id)
+    |> where([fe], fe.form_id == ^form_id)
+    |> order_by(^form_entry_index_sort(params))
+    |> Repo.paginate(params)
+  end
+
+  def form_entry_index(_, _), do: {:error, :invalid_id}
+
+  defp form_entry_index_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([i], i.inserted_at)]
+
+  defp form_entry_index_sort(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([i], i.inserted_at)]
+
+  defp form_entry_index_sort(_), do: []
 end
