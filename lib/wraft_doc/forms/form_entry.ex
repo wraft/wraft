@@ -22,9 +22,5 @@ defmodule WraftDoc.Forms.FormEntry do
     |> validate_required(@fields)
     |> foreign_key_constraint(:form_id, message: "Please enter an existing form")
     |> foreign_key_constraint(:user_id, message: "Please enter an existing user")
-    |> unique_constraint([:form_id, :user_id],
-      name: :user_form_unique_index,
-      message: "Already added."
-    )
   end
 end
