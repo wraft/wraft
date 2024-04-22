@@ -5,12 +5,14 @@ defmodule WraftDoc.Forms do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias WraftDoc.Account.User
   alias WraftDoc.Document
   alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType
   alias WraftDoc.Forms.Form
   alias WraftDoc.Forms.FormEntry
   alias WraftDoc.Forms.FormField
+  alias WraftDoc.Forms.FormMapping
   alias WraftDoc.Forms.FormPipeline
   alias WraftDoc.Repo
   alias WraftDoc.Validations.Validator
@@ -362,4 +364,41 @@ defmodule WraftDoc.Forms do
     do: [desc: dynamic([i], i.inserted_at)]
 
   defp form_entry_index_sort(_), do: []
+
+  @doc """
+    Create form mapping
+  """
+  @spec create_form_mapping(map) :: {:ok, Form.t()} | {:error, Ecto.Changeset.t()}
+  def create_form_mapping(params) do
+    %FormMapping{}
+    |> FormMapping.changeset(params)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Get form mapping
+  """
+  @spec get_form_mapping(User.t(), map()) :: FormMapping.t() | nil
+  def get_form_mapping(
+        %User{current_org_id: org_id},
+        %{"mapping_id" => mapping_id, "form_id" => form_id} = _params
+      ) do
+    FormMapping
+    |> join(:inner, [fp], f in Form, on: f.id == fp.form_id and f.organisation_id == ^org_id)
+    |> where([fp], fp.id == ^mapping_id and fp.form_id == ^form_id)
+    |> Repo.one()
+  end
+
+  def get_form_mapping(_, _), do: nil
+
+  @doc """
+    Update form mapping
+  """
+  @spec update_form_mapping(FormMapping.t(), map) ::
+          {:ok, FormMapping.t()} | {:error, Ecto.Changeset.t()}
+  def update_form_mapping(form_mapping, params) do
+    form_mapping
+    |> FormMapping.update_changeset(params)
+    |> Repo.update()
+  end
 end
