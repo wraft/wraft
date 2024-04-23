@@ -23,7 +23,6 @@ defmodule WraftDoc.Document.Pipeline.Stage do
       :content_type_id,
       :pipeline_id,
       :data_template_id,
-      :state_id,
       :creator_id
     ])
     |> unique_constraint(:content_type_id,
@@ -37,8 +36,7 @@ defmodule WraftDoc.Document.Pipeline.Stage do
     |> cast(attrs, [:content_type_id, :data_template_id, :state_id])
     |> validate_required([
       :content_type_id,
-      :data_template_id,
-      :state_id
+      :data_template_id
     ])
     |> unique_constraint(:content_type_id,
       name: :pipe_stages_unique_index,
