@@ -34,8 +34,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
 
           example(%{
             content_type_id: "1232148nb3478",
-            data_template_id: "1232148nb3478",
-            state_id: "1232148nb3478"
+            data_template_id: "1232148nb3478"
           })
         end,
       PipeStage:
@@ -82,13 +81,6 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
               title: "Template 1",
               title_template: "Letter for [user]",
               data: "Hi [user]",
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            },
-            state: %{
-              id: "1232148nb3478",
-              state: "published",
-              order: 1,
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             }
