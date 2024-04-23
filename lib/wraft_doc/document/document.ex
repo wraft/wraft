@@ -2781,6 +2781,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a pipe stage.
   """
+  # TOOD update the tests as state id is removed from the params.
   @spec create_pipe_stage(User.t(), Pipeline.t(), map) ::
           nil | {:error, Ecto.Changeset.t()} | {:ok, any}
   def create_pipe_stage(
@@ -2788,8 +2789,7 @@ defmodule WraftDoc.Document do
         pipeline,
         %{
           "content_type_id" => <<_::288>>,
-          "data_template_id" => <<_::288>>,
-          "state_id" => <<_::288>>
+          "data_template_id" => <<_::288>>
         } = params
       ) do
     params
@@ -2800,39 +2800,38 @@ defmodule WraftDoc.Document do
   def create_pipe_stage(_, _, _), do: nil
 
   # Get the values for pipe stage creation to create a pipe stage.
+  # TODO update tests as state id is removed from the params.
   @spec get_pipe_stage_params(map, User.t()) ::
           {ContentType.t(), DataTemplate.t(), State.t(), User.t()}
   defp get_pipe_stage_params(
          %{
            "content_type_id" => c_type_uuid,
-           "data_template_id" => d_temp_uuid,
-           "state_id" => state_uuid
+           "data_template_id" => d_temp_uuid
          },
          user
        ) do
     c_type = get_content_type(user, c_type_uuid)
     d_temp = get_d_template(user, d_temp_uuid)
-    state = Enterprise.get_state(user, state_uuid)
-    {c_type, d_temp, state, user}
+    {c_type, d_temp, user}
   end
 
   defp get_pipe_stage_params(_, _), do: nil
 
   # Create pipe stages
+  # TODO update tests as state id is removed from the params.
   @spec do_create_pipe_stages(
-          {ContentType.t(), DataTemplate.t(), State.t(), User.t()} | nil,
+          {ContentType.t(), DataTemplate.t(), User.t()} | nil,
           Pipeline.t()
         ) ::
           {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
   defp do_create_pipe_stages(
-         {%ContentType{id: c_id}, %DataTemplate{id: d_id}, %State{id: s_id}, %User{id: u_id}},
+         {%ContentType{id: c_id}, %DataTemplate{id: d_id}, %User{id: u_id}},
          pipeline
        ) do
     pipeline
     |> build_assoc(:stages,
       content_type_id: c_id,
       data_template_id: d_id,
-      state_id: s_id,
       creator_id: u_id
     )
     |> Stage.changeset()
