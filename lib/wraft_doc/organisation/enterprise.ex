@@ -86,6 +86,20 @@ defmodule WraftDoc.Enterprise do
   def get_state(_, <<_::288>>), do: {:error, :fake}
 
   @doc """
+    Get the final state for the given flow.
+  """
+  @spec get_final_state(Ecto.UUID.t()) :: State.t() | nil
+  def get_final_state(<<_::288>> = flow_id) do
+    State
+    |> where(flow_id: ^flow_id)
+    |> order_by(desc: :order)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  def get_final_state(_), do: nil
+
+  @doc """
   Create a controlled flow flow.
   """
   @spec create_flow(User.t(), map) ::

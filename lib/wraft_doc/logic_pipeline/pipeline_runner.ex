@@ -5,14 +5,13 @@ defmodule WraftDoc.PipelineRunner do
 
   use Opus.Pipeline
 
-  alias WraftDoc.{
-    Account,
-    Document,
-    Document.Instance,
-    Document.Pipeline,
-    Document.Pipeline.TriggerHistory,
-    Repo
-  }
+  alias WraftDoc.Account
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Instance
+  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Document.Pipeline.TriggerHistory
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Repo
 
   step(:preload_pipeline_and_stages)
   check(:pipeline_exists?, error_message: :pipeline_not_found)
@@ -65,9 +64,9 @@ defmodule WraftDoc.PipelineRunner do
     type = Instance.types()[:pipeline_api]
 
     instances =
-      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp, state: state} ->
+      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp} ->
         params = data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
-        Document.create_instance(user, c_type, state, params)
+        Document.create_instance(user, c_type, Enterprise.get_final_state(c_type.flow_id), params)
       end)
 
     %{trigger: trigger, instances: instances, user: user}
@@ -77,9 +76,9 @@ defmodule WraftDoc.PipelineRunner do
     type = Instance.types()[:pipeline_hook]
 
     instances =
-      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp, state: state} ->
+      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp} ->
         params = data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
-        Document.create_instance(c_type, state, params)
+        Document.create_instance(c_type, Enterprise.get_final_state(c_type.flow_id), params)
       end)
 
     %{trigger: trigger, instances: instances}
