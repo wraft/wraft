@@ -79,8 +79,11 @@ defmodule WraftDoc.PipelineRunnerTest do
   describe "create_instances/1" do
     test "creates instance and returns a map with created instance when trigger has a creator_id" do
       pipeline = insert(:pipeline)
-      c_type1 = insert(:content_type)
-      c_type2 = insert(:content_type)
+      flow = insert(:flow)
+      insert(:state, flow: flow, order: 1)
+      insert(:state, flow: flow, order: 2)
+      c_type1 = insert(:content_type, flow: flow)
+      c_type2 = insert(:content_type, flow: flow)
       insert(:pipe_stage, pipeline: pipeline, content_type: c_type1)
       insert(:pipe_stage, pipeline: pipeline, content_type: c_type2)
       content_type_field_1 = insert(:content_type_field, content_type: c_type1)
@@ -113,8 +116,11 @@ defmodule WraftDoc.PipelineRunnerTest do
 
     test "creates instance and returns a map with created instance when trigger does not have creator ID" do
       pipeline = insert(:pipeline)
-      content_type1 = insert(:content_type)
-      content_type2 = insert(:content_type)
+      flow = insert(:flow)
+      insert(:state, flow: flow, order: 1)
+      insert(:state, flow: flow, order: 2)
+      content_type1 = insert(:content_type, flow: flow)
+      content_type2 = insert(:content_type, flow: flow)
       insert(:pipe_stage, pipeline: pipeline, content_type: content_type1)
       insert(:pipe_stage, pipeline: pipeline, content_type: content_type2)
       content_type_field_1 = insert(:content_type_field, content_type: content_type1)
