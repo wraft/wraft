@@ -29,6 +29,8 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
 
           properties do
             name(:string, "Pipeline's name", required: true)
+            source(:string, "Source, eg: WraftForms", required: true)
+            source_id(:string, "Source ID, eg: Form ID", required: true)
             api_route(:string, "Pipeline's API route", required: true)
             stages(Schema.ref(:PipeStageRequest))
           end
@@ -36,6 +38,8 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
           example(%{
             name: "Pipeline 1",
             api_route: "client.crm.com",
+            source: "WraftForms",
+            source_id: "1232148nb3478",
             stages: [
               %{
                 content_type_id: "12lkjn3490u12",
@@ -74,6 +78,8 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
           properties do
             id(:string, "ID of the pipeline")
             name(:string, "Name of the pipeline")
+            source(:string, "Source for the pipeline, eg: WraftForms")
+            source_id(:string, "Source ID for the pipeline, eg: Form ID")
             api_route(:string, "API route of the CRM")
             inserted_at(:string, "When was the flow inserted", format: "ISO-8601")
             updated_at(:string, "When was the flow last updated", format: "ISO-8601")
@@ -82,6 +88,8 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
           example(%{
             id: "1232148nb3478",
             name: "Pipeline 1",
+            source: "WraftForms",
+            source_id: "1232148nb3478",
             api_route: "client.crm.com",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
@@ -95,6 +103,8 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
           properties do
             id(:string, "ID of the pipeline")
             name(:string, "Name of the pipeline")
+            source(:string, "Source for the pipeline, eg: WraftForms")
+            source_id(:string, "Source ID for the pipeline, eg: Form ID")
             api_route(:string, "API route of the CRM")
             inserted_at(:string, "When was the flow inserted", format: "ISO-8601")
             updated_at(:string, "When was the flow last updated", format: "ISO-8601")
@@ -104,6 +114,8 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
           example(%{
             id: "1232148nb3478",
             name: "Pipeline 1",
+            source: "WraftForms",
+            source_id: "1232148nb3478",
             api_route: "client.crm.com",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z",
@@ -150,6 +162,8 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
           properties do
             id(:string, "ID of the pipeline")
             name(:string, "Name of the pipeline")
+            source(:string, "Source for the pipeline, eg: WraftForms")
+            source_id(:string, "Source ID for the pipeline, eg: Form ID")
             api_route(:string, "API route of the CRM")
             inserted_at(:string, "When was the flow inserted", format: "ISO-8601")
             updated_at(:string, "When was the flow last updated", format: "ISO-8601")
@@ -178,6 +192,8 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
               %{
                 id: "1232148nb3478",
                 name: "Pipeline 1",
+                source: "WraftForms",
+                source_id: "1232148nb3478",
                 api_route: "client.crm.com",
                 updated_at: "2020-01-21T14:00:00Z",
                 inserted_at: "2020-02-21T14:00:00Z"

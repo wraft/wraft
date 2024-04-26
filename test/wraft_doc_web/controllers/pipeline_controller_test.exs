@@ -10,6 +10,8 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
 
   @valid_attrs %{
     name: "Official Letter",
+    source: "WraftForms",
+    source_id: "33a7e44c-0999-4d79-8ef9-698796101585",
     api_route: "newclient.example.crm.com"
   }
 
@@ -20,11 +22,10 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       c_type = insert(:content_type, organisation: organisation)
       insert(:content_type_field, content_type: c_type)
       data_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: organisation)
 
       params =
         Map.put(@valid_attrs, :stages, [
-          %{content_type_id: c_type.id, data_template_id: data_temp.id, state_id: state.id}
+          %{content_type_id: c_type.id, data_template_id: data_temp.id}
         ])
 
       count_before = Pipeline |> Repo.all() |> length()
@@ -48,18 +49,13 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
         |> Enum.map(fn x -> x["data_template"]["title"] end)
         |> List.to_string()
 
-      resp_states =
-        conn
-        |> json_response(200)
-        |> get_in(["stages"])
-        |> Enum.map(fn x -> x["state"]["state"] end)
-        |> List.to_string()
-
       assert count_before + 1 == Pipeline |> Repo.all() |> length()
       assert json_response(conn, 200)["name"] == @valid_attrs.name
+      assert json_response(conn, 200)["api_route"] == @valid_attrs.api_route
+      assert json_response(conn, 200)["source"] == @valid_attrs.source
+      assert json_response(conn, 200)["source_id"] == @valid_attrs.source_id
       assert content_types =~ c_type.name
       assert d_temps =~ data_temp.title
-      assert resp_states =~ state.state
     end
 
     test "does not create pipeline by invalid attrs", %{conn: conn} do
@@ -104,14 +100,12 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       insert(:pipe_stage, pipeline: pipeline)
       c_type = insert(:content_type, organisation: organisation)
       data_template = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: organisation)
 
       params =
         Map.put(@valid_attrs, :stages, [
           %{
             content_type_id: c_type.id,
-            data_template_id: data_template.id,
-            state_id: state.id
+            data_template_id: data_template.id
           }
         ])
 
@@ -134,18 +128,12 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
         |> Enum.map(fn x -> x["data_template"]["title"] end)
         |> List.to_string()
 
-      states =
-        conn
-        |> json_response(200)
-        |> get_in(["stages"])
-        |> Enum.map(fn x -> x["state"]["state"] end)
-        |> List.to_string()
-
       assert json_response(conn, 200)["name"] == @valid_attrs.name
       assert json_response(conn, 200)["api_route"] == @valid_attrs.api_route
+      assert json_response(conn, 200)["source"] == @valid_attrs.source
+      assert json_response(conn, 200)["source_id"] == @valid_attrs.source_id
       assert c_types =~ c_type.name
       assert data_temps =~ data_template.title
-      assert states =~ state.state
     end
 
     test "does't update flow on invalid attrs", %{conn: conn} do
@@ -171,6 +159,9 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       conn = get(conn, Routes.v1_pipeline_path(conn, :show, pipeline.id))
 
       assert json_response(conn, 200)["name"] == pipeline.name
+      assert json_response(conn, 200)["api_route"] == pipeline.api_route
+      assert json_response(conn, 200)["source"] == pipeline.source
+      assert json_response(conn, 200)["source_id"] == pipeline.source_id
       assert json_response(conn, 200)["id"] == pipeline.id
     end
 
