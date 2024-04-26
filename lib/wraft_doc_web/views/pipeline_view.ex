@@ -7,6 +7,8 @@ defmodule WraftDocWeb.Api.V1.PipelineView do
     %{
       id: pipeline.id,
       name: pipeline.name,
+      source: pipeline.source,
+      source_id: pipeline.source_id,
       api_route: pipeline.api_route,
       inserted_at: pipeline.inserted_at,
       updated_at: pipeline.updated_at,
@@ -32,6 +34,8 @@ defmodule WraftDocWeb.Api.V1.PipelineView do
     %{
       id: pipeline.id,
       name: pipeline.name,
+      source: pipeline.source,
+      source_id: pipeline.source_id,
       api_route: pipeline.api_route,
       inserted_at: pipeline.inserted_at,
       updated_at: pipeline.updated_at
@@ -42,6 +46,8 @@ defmodule WraftDocWeb.Api.V1.PipelineView do
     %{
       id: pipeline.id,
       name: pipeline.name,
+      source: pipeline.source,
+      source_id: pipeline.source_id,
       api_route: pipeline.api_route,
       inserted_at: pipeline.inserted_at,
       updated_at: pipeline.updated_at,
