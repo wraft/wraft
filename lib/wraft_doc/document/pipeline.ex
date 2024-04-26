@@ -9,6 +9,8 @@ defmodule WraftDoc.Document.Pipeline do
   schema "pipeline" do
     field(:name, :string)
     field(:api_route, :string)
+    field(:source, :string)
+    field(:source_id, :string)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     has_many(:stages, WraftDoc.Document.Pipeline.Stage)
@@ -20,7 +22,7 @@ defmodule WraftDoc.Document.Pipeline do
 
   def changeset(%Pipeline{} = pipeline, attrs \\ %{}) do
     pipeline
-    |> cast(attrs, [:name, :api_route, :organisation_id])
+    |> cast(attrs, [:name, :api_route, :organisation_id, :source, :source_id])
     |> validate_required([:name, :api_route, :organisation_id])
     |> unique_constraint(:name,
       message: "Pipeline with the same name already exists.!",
@@ -30,7 +32,7 @@ defmodule WraftDoc.Document.Pipeline do
 
   def update_changeset(%Pipeline{} = pipeline, attrs \\ %{}) do
     pipeline
-    |> cast(attrs, [:name, :api_route])
+    |> cast(attrs, [:name, :api_route, :source, :source_id])
     |> validate_required([:name, :api_route])
     |> unique_constraint(:name,
       message: "Pipeline with the same name already exists.!",
