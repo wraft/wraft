@@ -1115,8 +1115,8 @@ defmodule WraftDoc.Document do
   Get the build document of the given instance.
   """
   # TODO - improve tests
-  @spec get_built_document(Instance.t()) :: Instance.t() | nil
-  def get_built_document(%{id: id, instance_id: instance_id} = instance) do
+  @spec get_built_document(Instance.t(), list()) :: Instance.t() | nil
+  def get_built_document(%{id: id, instance_id: instance_id} = instance, opts \\ []) do
     query =
       from(h in History,
         where: h.exit_code == 0,
@@ -1132,12 +1132,16 @@ defmodule WraftDoc.Document do
         instance
 
       %History{} ->
-        doc_url = Minio.generate_url("uploads/contents/#{instance_id}/final.pdf")
+        doc_url =
+          if opts[:local] == true do
+            "uploads/contents/#{instance_id}/final.pdf"
+          else
+            Minio.generate_url("uploads/contents/#{instance_id}/final.pdf")
+          end
+
         Map.put(instance, :build, doc_url)
     end
   end
-
-  def get_built_document(nil), do: nil
 
   @doc """
   Update an instance and creates updated version
@@ -1818,10 +1822,10 @@ defmodule WraftDoc.Document do
     ]
   end
 
-  defp upload_file_and_delete_local_copy({_, 0} = pandoc_response, file_path, pdf_file) do
+  defp upload_file_and_delete_local_copy({_, 0} = pandoc_response, _file_path, pdf_file) do
     case Minio.upload_file(pdf_file) do
       {:ok, _} ->
-        File.rm_rf(file_path)
+        # File.rm_rf(file_path)
         pandoc_response
 
       _ ->
