@@ -1699,10 +1699,11 @@ defmodule WraftDoc.Document do
   """
   # TODO  - Write Test
   # TODO - Dont need to pass layout as an argument, we can just preload it
-  @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
+  @spec build_doc(Instance.t(), Layout.t(), list()) :: {any, integer}
   def build_doc(
         %Instance{instance_id: instance_id, content_type: content_type} = instance,
-        %Layout{slug: slug} = layout
+        %Layout{slug: slug} = layout,
+        opts \\ []
       ) do
     content_type = Repo.preload(content_type, [:fields, :theme])
     base_content_dir = Path.join(File.cwd!(), "uploads/contents/#{instance_id}")
@@ -1739,7 +1740,7 @@ defmodule WraftDoc.Document do
 
     "pandoc"
     |> System.cmd(pandoc_commands)
-    |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
+    |> upload_file_and_delete_local_copy(base_content_dir, pdf_file, opts)
   end
 
   defp prepare_markdown(%{id: instance_id} = instance, layout, header, mkdir, theme, task) do
@@ -1822,10 +1823,18 @@ defmodule WraftDoc.Document do
     ]
   end
 
-  defp upload_file_and_delete_local_copy({_, 0} = pandoc_response, _file_path, pdf_file) do
+  defp upload_file_and_delete_local_copy({_, 0} = pandoc_response, _, _, pipeline: true),
+    do: pandoc_response
+
+  defp upload_file_and_delete_local_copy(
+         {_, 0} = pandoc_response,
+         file_path,
+         pdf_file,
+         _opts
+       ) do
     case Minio.upload_file(pdf_file) do
       {:ok, _} ->
-        # File.rm_rf(file_path)
+        File.rm_rf(file_path)
         pandoc_response
 
       _ ->
@@ -1835,7 +1844,7 @@ defmodule WraftDoc.Document do
     end
   end
 
-  defp upload_file_and_delete_local_copy(pandoc_response, _, _), do: pandoc_response
+  defp upload_file_and_delete_local_copy(pandoc_response, _, _, _opts), do: pandoc_response
 
   # Find the header values for the content.md file from the serialized data of an instance.
   @spec find_header_values(Field.t(), map, String.t()) :: String.t()
@@ -2451,7 +2460,7 @@ defmodule WraftDoc.Document do
   @spec bulk_build(User.t(), Instance.t(), Layout.t()) :: tuple
   def bulk_build(current_user, instance, layout) do
     start_time = Timex.now()
-    {result, exit_code} = build_doc(instance, layout)
+    {result, exit_code} = build_doc(instance, layout, pipeline: true)
     end_time = Timex.now()
 
     add_build_history(current_user, instance, %{
@@ -2469,7 +2478,7 @@ defmodule WraftDoc.Document do
   @spec bulk_build(Instance.t(), Layout.t()) :: {Collectable.t(), non_neg_integer()}
   def bulk_build(instance, layout) do
     start_time = Timex.now()
-    {result, exit_code} = build_doc(instance, layout)
+    {result, exit_code} = build_doc(instance, layout, pipeline: true)
 
     add_build_history(instance, %{
       start_time: start_time,

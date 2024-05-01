@@ -6,6 +6,7 @@ defmodule WraftDoc.PipelineRunner do
   use Opus.Pipeline
 
   alias WraftDoc.Account
+  alias WraftDoc.Client.Minio
   alias WraftDoc.Document
   alias WraftDoc.Document.Instance
   alias WraftDoc.Document.Pipeline
@@ -169,7 +170,12 @@ defmodule WraftDoc.PipelineRunner do
     :zip.create(zip_name, builds)
     File.mkdir_p!("temp/pipe_builds/")
     System.cmd("cp", [zip_name, dest_path])
+    Minio.upload_file(dest_path)
     File.rm(zip_name)
+    # Delete all the generated content folder
+    Enum.each(instances, &(&1.instance_id |> content_dir() |> File.rm_rf()))
     Map.put(input, :zip_file, zip_name)
   end
+
+  defp content_dir(instance_id), do: Path.join(File.cwd!(), "uploads/contents/#{instance_id}")
 end
