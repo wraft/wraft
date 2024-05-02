@@ -141,12 +141,11 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       stage = insert(:pipe_stage, pipeline: pipeline)
       c_type = insert(:content_type, organisation: organisation)
       data_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: organisation)
+      form_mapping = insert(:form_mapping, pipe_stage: stage)
 
       params = %{
         content_type_id: c_type.id,
-        data_template_id: data_temp.id,
-        state_id: state.id
+        data_template_id: data_temp.id
       }
 
       conn =
@@ -159,8 +158,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       assert json_response(conn, 200)["content_type"]["id"] == c_type.id
       assert json_response(conn, 200)["data_template"]["title"] == data_temp.title
       assert json_response(conn, 200)["data_template"]["id"] == data_temp.id
-      assert json_response(conn, 200)["state"]["state"] == state.state
-      assert json_response(conn, 200)["state"]["id"] == state.id
+      assert json_response(conn, 200)["form_mapping"]["id"] == form_mapping.id
     end
 
     test "does not update pipe stage and returns not found with non existent datas in attrs", %{
