@@ -155,14 +155,17 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       c_type = insert(:content_type)
       insert(:content_type_field, content_type: c_type)
-      insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
+      pipe_stage = insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
+      form_mapping = insert(:form_mapping, pipe_stage: pipe_stage)
       conn = get(conn, Routes.v1_pipeline_path(conn, :show, pipeline.id))
-
       assert json_response(conn, 200)["name"] == pipeline.name
       assert json_response(conn, 200)["api_route"] == pipeline.api_route
       assert json_response(conn, 200)["source"] == pipeline.source
       assert json_response(conn, 200)["source_id"] == pipeline.source_id
       assert json_response(conn, 200)["id"] == pipeline.id
+
+      assert List.first(List.first(json_response(conn, 200)["stages"])["form_mapping"])["id"] ==
+               form_mapping.id
     end
 
     test "show returns not found for non-existent ID", %{conn: conn} do

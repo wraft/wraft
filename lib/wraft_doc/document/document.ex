@@ -2903,7 +2903,7 @@ defmodule WraftDoc.Document do
     |> get_pipeline(p_uuid)
     |> Repo.preload([
       :creator,
-      stages: [[content_type: [{:fields, :field_type}]], :data_template, :state]
+      stages: [[content_type: [{:fields, :field_type}]], :data_template, :state, :form_mapping]
     ])
   end
 
@@ -2997,7 +2997,12 @@ defmodule WraftDoc.Document do
   """
   @spec preload_stage_details(Stage.t()) :: Stage.t()
   def preload_stage_details(stage) do
-    Repo.preload(stage, [{:content_type, fields: [:field_type]}, :data_template, :state])
+    Repo.preload(stage, [
+      {:content_type, fields: [:field_type]},
+      :data_template,
+      :state,
+      :form_mapping
+    ])
   end
 
   @doc """
