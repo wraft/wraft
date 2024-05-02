@@ -2963,30 +2963,26 @@ defmodule WraftDoc.Document do
           {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
   def update_pipe_stage(%User{} = current_user, %Stage{} = stage, %{
         "content_type_id" => c_uuid,
-        "data_template_id" => d_uuid,
-        "state_id" => s_uuid
+        "data_template_id" => d_uuid
       }) do
     c_type = get_content_type(current_user, c_uuid)
     d_temp = get_d_template(current_user, d_uuid)
-    state = Enterprise.get_state(current_user, s_uuid)
 
-    do_update_pipe_stage(stage, c_type, d_temp, state)
+    do_update_pipe_stage(stage, c_type, d_temp)
   end
 
   def update_pipe_stage(_, _, _), do: nil
 
   # Update a stage.
-  @spec do_update_pipe_stage(Stage.t(), ContentType.t(), DataTemplate.t(), State.t()) ::
+  @spec do_update_pipe_stage(Stage.t(), ContentType.t(), DataTemplate.t()) ::
           {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
-  defp do_update_pipe_stage(stage, %ContentType{id: c_id}, %DataTemplate{id: d_id}, %State{
-         id: s_id
-       }) do
+  defp do_update_pipe_stage(stage, %ContentType{id: c_id}, %DataTemplate{id: d_id}) do
     stage
-    |> Stage.update_changeset(%{content_type_id: c_id, data_template_id: d_id, state_id: s_id})
+    |> Stage.update_changeset(%{content_type_id: c_id, data_template_id: d_id})
     |> Repo.update()
   end
 
-  defp do_update_pipe_stage(_, _, _, _), do: nil
+  defp do_update_pipe_stage(_, _, _), do: nil
 
   @doc """
   Deletes a pipe stage.
