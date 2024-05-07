@@ -2774,7 +2774,12 @@ defmodule WraftDoc.Document do
         create_pipe_stages(current_user, pipeline, params)
 
         Repo.preload(pipeline,
-          stages: [[content_type: [{:fields, :field_type}]], :data_template, :state]
+          stages: [
+            [content_type: [{:fields, :field_type}]],
+            :data_template,
+            :state,
+            :form_mapping
+          ]
         )
 
       {:error, _} = changeset ->
