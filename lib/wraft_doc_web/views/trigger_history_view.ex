@@ -1,6 +1,7 @@
 defmodule WraftDocWeb.Api.V1.TriggerHistoryView do
   use WraftDocWeb, :view
   alias __MODULE__
+  alias WraftDoc.Client.Minio
   alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDocWeb.Api.V1.UserView
 
@@ -42,7 +43,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryView do
   end
 
   defp generate_url(%{zip_file: zip_file}) when is_nil(zip_file) == false do
-    "temp/pipe_builds/#{zip_file}"
+    Minio.generate_url("temp/pipe_builds/#{zip_file}")
   end
 
   defp generate_url(%{zip_file: zip_file}) when is_nil(zip_file) do
