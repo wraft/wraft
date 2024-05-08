@@ -592,7 +592,8 @@ defmodule WraftDoc.Document do
   """
   def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
-    params = Map.merge(params, %{"instance_id" => instance_id})
+    allowed_users = [params["creator_id"]] ++ allowed_users(state.id)
+    params = Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => allowed_users})
 
     c_type
     |> build_assoc(:instances, creator: current_user, state_id: state.id)
@@ -616,7 +617,8 @@ defmodule WraftDoc.Document do
   #         | {:error, Ecto.Changeset.t()}
   def create_instance(%{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
-    params = Map.merge(params, %{"instance_id" => instance_id})
+    allowed_users = [params["creator_id"]] ++ allowed_users(state.id)
+    params = Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => allowed_users})
 
     c_type
     |> build_assoc(:instances, state_id: state.id)
