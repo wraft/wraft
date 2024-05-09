@@ -592,7 +592,7 @@ defmodule WraftDoc.Document do
   """
   def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
-    allowed_users = [params["creator_id"]] ++ allowed_users(state.id)
+    allowed_users = [params["creator_id"]] ++ all_allowed_users(state.flow_id)
     params = Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => allowed_users})
 
     c_type
@@ -617,7 +617,7 @@ defmodule WraftDoc.Document do
   #         | {:error, Ecto.Changeset.t()}
   def create_instance(%{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
-    allowed_users = [params["creator_id"]] ++ allowed_users(state.id)
+    allowed_users = [params["creator_id"]] ++ all_allowed_users(state.flow_id)
     params = Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => allowed_users})
 
     c_type
@@ -858,6 +858,13 @@ defmodule WraftDoc.Document do
     StateUser
     |> where([su], su.state_id == ^state_id)
     |> select([su], su.user_id)
+    |> Repo.all()
+  end
+
+  def all_allowed_users(flow_id) do
+    StateUser
+    |> join(:inner, [su], s in State, on: su.state_id == s.id and s.flow_id == ^flow_id)
+    |> select([su, s], su.user_id)
     |> Repo.all()
   end
 
