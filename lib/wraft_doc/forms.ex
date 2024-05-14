@@ -60,6 +60,28 @@ defmodule WraftDoc.Forms do
     Repo.get_by(Form, id: form_id, organisation_id: organisation_id)
   end
 
+  def get_form(_, _), do: nil
+
+  @doc """
+  Delete a form
+  """
+  @spec delete_form(Form.t()) :: {:ok, Form.t()} | {:error, Ecto.Changeset.t()}
+  def delete_form(form) do
+    Multi.new()
+    |> Multi.delete_all(:form_fields, from(ff in FormField, where: ff.form_id == ^form.id))
+    |> Multi.delete_all(:form_pipelines, from(fp in FormPipeline, where: fp.form_id == ^form.id))
+    |> Multi.delete_all(:form_mappings, from(fm in FormMapping, where: fm.form_id == ^form.id))
+    |> Multi.delete(:form, form)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{form: form}} ->
+        form
+
+      {:error, _, error, _} ->
+        {:error, error}
+    end
+  end
+
   @doc """
     Update form status
   """
