@@ -527,4 +527,28 @@ defmodule WraftDocWeb.Api.V1.FormController do
       render(conn, "form.json", form: form)
     end
   end
+
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/forms/{id}")
+    summary("Delete a wraft form")
+    description("API to delete a wraft form")
+
+    parameters do
+      id(:path, :string, "form id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Form))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  def delete(conn, %{"id" => form_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Form{} = form <- Forms.get_form(current_user, form_id),
+         %Form{} <- Forms.delete_form(form) do
+      render(conn, "simple_form.json", form: form)
+    end
+  end
 end
