@@ -423,4 +423,71 @@ defmodule WraftDoc.Forms do
     |> FormMapping.update_changeset(params)
     |> Repo.update()
   end
+
+  @doc """
+    Trigger form pipelines
+  """
+  @spec trigger_pipelines(User.t(), Form.t(), FormEntry.t()) :: :ok
+  def trigger_pipelines(
+        %User{} = current_user,
+        %Form{pipelines: pipelines} = _form,
+        %FormEntry{data: data} = _form_entry
+      ) do
+    transformed_data =
+      pipelines
+      |> get_pipe_stage_ids
+      |> get_mappings
+      |> transform_mappings
+      |> transform_data(data)
+      |> Enum.into(%{})
+
+    Enum.each(pipelines, fn pipeline ->
+      trigger_pipeline(current_user, pipeline.id, transformed_data)
+    end)
+  end
+
+  defp trigger_pipeline(current_user, pipeline_id, data) do
+    Multi.new()
+    |> Multi.run(:pipeline, fn _, _ -> {:ok, Document.get_pipeline(current_user, pipeline_id)} end)
+    |> Multi.run(:trigger_history, fn _, %{pipeline: pipeline} ->
+      Document.create_trigger_history(current_user, pipeline, data)
+    end)
+    |> Multi.run(:pipeline_job, fn _, %{trigger_history: trigger_history} ->
+      Document.create_pipeline_job(trigger_history)
+    end)
+    |> Repo.transaction()
+  end
+
+  defp transform_data(mappings, data) do
+    Enum.map(data, fn {key, value} ->
+      %{name: field_name} = Repo.get(Field, key)
+      {Map.get(mappings, field_name), value}
+    end)
+  end
+
+  defp transform_mappings(mappings) do
+    Enum.reduce(mappings, %{}, fn mapping, acc ->
+      destination_name = mapping.destination["name"]
+      source_name = mapping.source["name"]
+      Map.put(acc, source_name, destination_name)
+    end)
+  end
+
+  defp get_mappings(pipe_stage_ids) do
+    Enum.reduce(pipe_stage_ids, [], fn pipe_stage_id, acc ->
+      %{mapping: mapping} = get_form_mapping(pipe_stage_id)
+      acc ++ mapping
+    end)
+  end
+
+  defp get_pipe_stage_ids(pipelines) do
+    Enum.reduce(pipelines, [], fn pipeline, acc ->
+      %{stages: stages} = Repo.preload(pipeline, [:stages])
+      acc ++ Enum.map(stages, & &1.id)
+    end)
+  end
+
+  defp get_form_mapping(pipe_stage_id) do
+    Repo.get_by(FormMapping, pipe_stage_id: pipe_stage_id)
+  end
 end
