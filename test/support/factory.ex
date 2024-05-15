@@ -664,16 +664,16 @@ defmodule WraftDoc.Factory do
       pipe_stage: build(:pipe_stage),
       mapping: [
         %{
-          source: %{"source_id" => Ecto.UUID.generate(), "name" => sequence(:name, &"name-#{&1}")},
+          source: %{"id" => Ecto.UUID.generate(), "name" => sequence(:name, &"name-#{&1}")},
           destination: %{
-            "destination_id" => Ecto.UUID.generate(),
+            "id" => Ecto.UUID.generate(),
             "name" => sequence(:name, &"name-#{&1}")
           }
         },
         %{
-          source: %{"source_id" => Ecto.UUID.generate(), "name" => sequence(:name, &"name-#{&1}")},
+          source: %{"id" => Ecto.UUID.generate(), "name" => sequence(:name, &"name-#{&1}")},
           destination: %{
-            "destination_id" => Ecto.UUID.generate(),
+            "id" => Ecto.UUID.generate(),
             "name" => sequence(:name, &"name-#{&1}")
           }
         }
