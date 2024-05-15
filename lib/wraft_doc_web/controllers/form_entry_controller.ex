@@ -188,7 +188,8 @@ defmodule WraftDocWeb.Api.V1.FormEntryController do
     current_user = conn.assigns.current_user
 
     with %Form{} = form <- Forms.show_form(current_user, params["form_id"]),
-         {:ok, %FormEntry{} = form_entry} <- Forms.create_form_entry(current_user, form, params) do
+         {:ok, %FormEntry{} = form_entry} <- Forms.create_form_entry(current_user, form, params),
+         :ok <- Forms.trigger_pipelines(current_user, form, form_entry) do
       render(conn, "form_entry.json", form_entry: form_entry)
     end
   end
