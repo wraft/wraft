@@ -41,11 +41,11 @@ defmodule WraftDocWeb.Api.V1.FormMappingController do
               %{
                 id: "e63d02aa-6ea6-4e10-87aa-61061e7557eb",
                 destination: %{
-                  E_name: "E_name",
-                  destination_id: "992c50b2-c586-449f-b298-78d59d8ab81c"
+                  name: "E_name",
+                  id: "992c50b2-c586-449f-b298-78d59d8ab81c"
                 },
                 source: %{
-                  source_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
+                  id: "992c50b2-c586-449f-b298-78d59d8ab81c",
                   name: "Name"
                 }
               }
@@ -82,11 +82,11 @@ defmodule WraftDocWeb.Api.V1.FormMappingController do
             mapping: [
               %{
                 destination: %{
-                  E_name: "E_name",
+                  name: "E_name",
                   destination_id: "992c50b2-c586-449f-b298-78d59d8ab81c"
                 },
                 source: %{
-                  source_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
+                  id: "992c50b2-c586-449f-b298-78d59d8ab81c",
                   name: "Name"
                 }
               }
