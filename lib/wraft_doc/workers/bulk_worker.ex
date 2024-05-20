@@ -7,6 +7,7 @@ defmodule WraftDoc.Workers.BulkWorker do
 
   alias Opus.PipelineError
   alias WraftDoc.Account
+  alias WraftDoc.Client.Minio.DownloadError
   alias WraftDoc.Document
   alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Enterprise
@@ -131,6 +132,22 @@ defmodule WraftDoc.Workers.BulkWorker do
     trigger =
       update_trigger_history_state_and_error(trigger, state, %{
         info: :instance_failed,
+        stage: stage
+      })
+
+    Logger.error("Instance creation failed. Pipeline execution failed.")
+    trigger
+  end
+
+  defp handle_exceptions(
+         {:error,
+          %PipelineError{error: %DownloadError{message: message}, input: trigger, stage: stage}}
+       ) do
+    state = TriggerHistory.states()[:failed]
+
+    trigger =
+      update_trigger_history_state_and_error(trigger, state, %{
+        info: message,
         stage: stage
       })
 
