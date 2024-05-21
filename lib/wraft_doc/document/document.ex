@@ -592,7 +592,7 @@ defmodule WraftDoc.Document do
   """
   def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
-    allowed_users = [params["creator_id"]] ++ all_allowed_users(state.flow_id)
+    allowed_users = [current_user.id] ++ all_allowed_users(state.flow_id)
     params = Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => allowed_users})
 
     c_type
