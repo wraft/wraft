@@ -590,25 +590,38 @@ defmodule WraftDoc.Document do
   @doc """
   Same as create_instance/4, to create instance and its approval system
   """
-  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
+  def create_instance(current_user, %{id: c_id, prefix: prefix} = content_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
     allowed_users = [current_user.id] ++ all_allowed_users(state.flow_id)
     params = Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => allowed_users})
 
-    c_type
-    |> build_assoc(:instances, creator: current_user, state_id: state.id)
-    |> Instance.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(
+      :instance,
+      content_type
+      |> build_assoc(:instances, creator: current_user, state_id: state.id)
+      |> Instance.changeset(params)
+    )
+    |> Multi.run(:counter_increment, fn _, _ -> create_or_update_counter(content_type) end)
+    |> Multi.run(:instance_approval_system, fn _, %{instance: content} ->
+      create_instance_approval_systems(content_type, content)
+    end)
+    |> Multi.run(:version, fn _, %{instance: content} ->
+      create_initial_version(current_user, content)
+    end)
+    |> Repo.transaction()
     |> case do
-      {:ok, content} ->
-        Task.start_link(fn -> create_or_update_counter(c_type) end)
+      {:ok, %{instance: content}} ->
+        Repo.preload(content, [
+          :content_type,
+          :state,
+          :vendor,
+          :instance_approval_systems
+        ])
 
-        create_instance_approval_systems(c_type, content)
-
-        Repo.preload(content, [:content_type, :state, :vendor, :instance_approval_systems])
-
-      changeset = {:error, _} ->
-        changeset
+      {:error, _, changeset, _} ->
+        Logger.error("Creation of instance failed", changeset: changeset)
+        {:error, changeset}
     end
   end
 
@@ -861,7 +874,7 @@ defmodule WraftDoc.Document do
     |> Repo.all()
   end
 
-  def all_allowed_users(flow_id) do
+  defp all_allowed_users(flow_id) do
     StateUser
     |> join(:inner, [su], s in State, on: su.state_id == s.id and s.flow_id == ^flow_id)
     |> select([su, s], su.user_id)
