@@ -2435,13 +2435,18 @@ defmodule WraftDoc.Document do
   Generate params to create instance.
   """
   @spec do_create_instance_params(map, DataTemplate.t()) :: map
-  def do_create_instance_params(serialized, %{title_template: title_temp, data: template}) do
+  def do_create_instance_params(serialized, %{
+        title_template: title_temp,
+        data: template,
+        serialized: %{"data" => serialized_data}
+      }) do
     title =
       Enum.reduce(serialized, title_temp, fn {k, v}, acc ->
         WraftDoc.DocConversion.replace_content(k, v, acc)
       end)
 
     serialized = Map.put(serialized, "title", title)
+    serialized = Map.put(serialized, "serialized", serialized_data)
 
     raw =
       Enum.reduce(serialized, template, fn {k, v}, acc ->
