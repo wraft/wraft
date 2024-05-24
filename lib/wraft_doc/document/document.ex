@@ -42,6 +42,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.StateUser
+  alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.Workers.BulkWorker
 
@@ -2435,25 +2436,43 @@ defmodule WraftDoc.Document do
   Generate params to create instance.
   """
   @spec do_create_instance_params(map, DataTemplate.t()) :: map
-  def do_create_instance_params(serialized, %{
+  def do_create_instance_params(field_with_values, %{
         title_template: title_temp,
-        data: template,
         serialized: %{"data" => serialized_data}
       }) do
-    title =
-      Enum.reduce(serialized, title_temp, fn {k, v}, acc ->
-        WraftDoc.DocConversion.replace_content(k, v, acc)
-      end)
+    updated_content = replace_content_holder(Jason.decode!(serialized_data), field_with_values)
 
-    serialized = Map.put(serialized, "title", title)
-    serialized = Map.put(serialized, "serialized", serialized_data)
+    serialized =
+      field_with_values
+      |> Map.put("title", replace_content_title(field_with_values, title_temp))
+      |> Map.put("serialized", updated_content)
 
-    raw =
-      Enum.reduce(serialized, template, fn {k, v}, acc ->
-        WraftDoc.DocConversion.replace_content(k, v, acc)
-      end)
+    raw = ProsemirrorToMarkdown.convert(updated_content)
 
     %{"raw" => raw, "serialized" => serialized}
+  end
+
+  # Private
+  defp replace_content_holder(%{"type" => "holder", "attrs" => %{"name" => name}} = content, data) do
+    if Map.has_key?(data, name) do
+      Map.put(content, "attrs", %{"named" => data[name]})
+    else
+      content
+    end
+  end
+
+  defp replace_content_holder(%{"type" => _type, "content" => content} = node, data)
+       when is_list(content) do
+    updated_content = Enum.map(content, fn item -> replace_content_holder(item, data) end)
+    Map.put(node, "content", updated_content)
+  end
+
+  defp replace_content_holder(other, _data), do: other
+
+  defp replace_content_title(fields, title) do
+    Enum.reduce(fields, title, fn {k, v}, acc ->
+      WraftDoc.DocConversion.replace_content(k, v, acc)
+    end)
   end
 
   # Create instance for bulk build. Uses the `create_instance/4` function
