@@ -2445,7 +2445,7 @@ defmodule WraftDoc.Document do
     serialized =
       field_with_values
       |> Map.put("title", replace_content_title(field_with_values, title_temp))
-      |> Map.put("serialized", updated_content)
+      |> Map.put("serialized", Jason.encode!(updated_content))
 
     raw = ProsemirrorToMarkdown.convert(updated_content)
 
