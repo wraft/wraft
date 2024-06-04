@@ -173,6 +173,7 @@ defmodule WraftDocWeb.Router do
         # Forms
         resources("/", FormController, except: [:new, :edit])
         patch("/:id/status", FormController, :status_update)
+        put("/:id/align-fields", FormController, :align_fields)
         # Entries
         resources("/:form_id/entries", FormEntryController, only: [:create, :show, :index])
       end
