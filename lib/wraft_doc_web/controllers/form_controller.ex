@@ -9,7 +9,8 @@ defmodule WraftDocWeb.Api.V1.FormController do
     index: "form:show",
     show: "form:show",
     update: "form:manage",
-    delete: "form:delete"
+    delete: "form:delete",
+    align_fields: "form:manage"
   )
 
   action_fallback(WraftDocWeb.FallbackController)
@@ -50,6 +51,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
             fields: [
               %{
                 name: "Photo",
+                order: 1,
                 field_type_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
                 meta: %{"src" => "/img/img.png", "alt" => "Image"},
                 validations: [
@@ -66,6 +68,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
               },
               %{
                 name: "Name",
+                order: 2,
                 field_type_id: "06c28fc6-6a15-4966-9b68-5eeac942fd4f",
                 validations: [
                   %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
@@ -111,6 +114,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
             fields: [
               %{
                 name: "Photo",
+                order: 2,
                 field_id: "5e9bda8b-4c7e-44fe-8801-48ec6d8ff43a",
                 field_type_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
                 meta: %{"src" => "/img/img.png", "alt" => "Image"},
@@ -160,6 +164,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
           properties do
             name(:string, "Name of the field")
             meta(:map, "Attributes of the field")
+            order(:integer, "Order number of the field")
             description(:string, "Field description")
             validations(Schema.ref(:Validations))
             field_type_id(:string, "ID of the field type")
@@ -168,6 +173,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
           example(%{
             name: "Photo",
             meta: %{"src" => "/img/img.png", "alt" => "Image"},
+            order: 1,
             description: "Upload your photo",
             validations: [
               %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
@@ -291,6 +297,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
             fields: [
               %{
                 name: "Photo",
+                order: 1,
                 meta: %{"src" => "/img/img.png", "alt" => "Image"},
                 description: "Upload your photo",
                 validations: [
@@ -316,6 +323,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
               },
               %{
                 name: "Name",
+                order: 2,
                 meta: %{},
                 description: "Enter your name",
                 validations: [
@@ -389,6 +397,37 @@ defmodule WraftDocWeb.Api.V1.FormController do
               validations: [],
               updated_at: "2023-01-21T14:00:00Z",
               inserted_at: "2023-02-21T14:00:00Z"
+            }
+          })
+        end,
+      FormFieldIDwithOrder:
+        swagger_schema do
+          title("Form Field IDs with order")
+          description("Show the form field IDs with order numbers to be updated")
+
+          properties do
+            id(:string, "ID of the field")
+            order(:integer, "Order number of the field")
+          end
+
+          example(%{
+            id: "da04ad43-03ca-486e-ad1e-88b811241944",
+            order: 1
+          })
+        end,
+      AlignFormFieldsRequest:
+        swagger_schema do
+          title("Form Field IDs with order")
+          description("Show the form field IDs with order numbers to be updated")
+
+          properties do
+            fields(Schema.ref(:FormFieldIDwithOrder))
+          end
+
+          example(%{
+            fields: %{
+              "da04ad43-03ca-486e-ad1e-88b811241944": 1,
+              "90935c7a-02b1-48d9-84d8-1bf00cf8ea90": 2
             }
           })
         end
@@ -549,6 +588,37 @@ defmodule WraftDocWeb.Api.V1.FormController do
     with %Form{} = form <- Forms.get_form(current_user, form_id),
          %Form{} <- Forms.delete_form(form) do
       render(conn, "simple_form.json", form: form)
+    end
+  end
+
+  swagger_path :align_fields do
+    put("/forms/{id}/align-fields")
+    summary("Update form fields order")
+    description("Api to update order of form fields")
+
+    parameters do
+      id(:path, :string, "Form id", required: true)
+
+      form(
+        :body,
+        Schema.ref(:AlignFormFieldsRequest),
+        "Form and field IDs with order to be updated",
+        required: true
+      )
+    end
+
+    response(200, "Ok", Schema.ref(:Form))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  def align_fields(conn, %{"id" => id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Form{} = form <- Forms.show_form(current_user, id),
+         %Form{} = form <- Forms.align_fields(form, params) do
+      render(conn, "form.json", form: form)
     end
   end
 end

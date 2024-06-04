@@ -164,9 +164,7 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  # Take params(map) sort them by order
-  # add length of the list to order and return params
-  @spec modify_state_order(map) :: map
+  # Private
   defp modify_state_order(%{"states" => states} = params) do
     states =
       states
