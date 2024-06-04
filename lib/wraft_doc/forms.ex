@@ -175,6 +175,7 @@ defmodule WraftDoc.Forms do
     |> Multi.run(:field, fn _, _ -> Document.create_field(field_type, params) end)
     |> Multi.insert(:form_field, fn %{field: field} ->
       FormField.changeset(%FormField{}, %{
+        order: params["order"],
         form_id: form.id,
         field_id: field.id,
         validations: params["validations"]
@@ -489,5 +490,29 @@ defmodule WraftDoc.Forms do
 
   defp get_form_mapping(pipe_stage_id) do
     Repo.get_by(FormMapping, pipe_stage_id: pipe_stage_id)
+  end
+
+  @doc """
+    Align form fields
+  """
+  @spec align_fields(Form.t(), map) :: Form.t() | Ecto.Changeset.t()
+  def align_fields(%Form{form_fields: form_fields} = form, %{"fields" => fields} = _params) do
+    form
+    |> Ecto.Changeset.change(form_fields: update_form_fields_order(form_fields, fields))
+    |> Repo.update()
+    |> case do
+      {:ok, form} -> form
+      {:error, _} = changeset -> changeset
+    end
+  end
+
+  # Private
+  defp update_form_fields_order(form_fields, fields) do
+    Enum.map(form_fields, fn %FormField{field_id: field_id} = form_field ->
+      FormField.order_update_changeset(
+        form_field,
+        %{order: Map.get(fields, field_id)}
+      )
+    end)
   end
 end
