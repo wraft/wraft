@@ -24,7 +24,10 @@ defmodule WraftDoc.Forms do
   """
   @spec create(User.t(), map) :: Form.t() | {:error, Ecto.Changeset.t()}
   def create(%{id: user_id, current_org_id: organisation_id}, params) do
-    params = Map.merge(params, %{"organisation_id" => organisation_id, "creator_id" => user_id})
+    params =
+      params
+      |> Map.put("fields", form_field_ordering(params))
+      |> Map.merge(%{"organisation_id" => organisation_id, "creator_id" => user_id})
 
     Multi.new()
     |> Multi.insert(:form, Form.changeset(%Form{}, params))
@@ -100,7 +103,9 @@ defmodule WraftDoc.Forms do
     |> Multi.update(:form, Form.changeset(form, params))
     |> Multi.run(:removed_fields, fn _, %{form: form} -> remove_form_fields(form, params) end)
     |> Multi.run(:form_fields, fn _, %{form: form, removed_fields: fields} ->
-      create_or_update_form_fields(form, %{"fields" => fields})
+      create_or_update_form_fields(form, %{
+        "fields" => form_field_ordering(%{"fields" => fields})
+      })
     end)
     |> Multi.run(:form_pipelines, fn _, %{form: form} -> update_form_pipelines(form, params) end)
     |> Repo.transaction()
@@ -111,6 +116,13 @@ defmodule WraftDoc.Forms do
       {:error, _, error, _} ->
         {:error, error}
     end
+  end
+
+  # Private
+  defp form_field_ordering(%{"fields" => form_fields} = _params) do
+    form_fields
+    |> Enum.with_index(1)
+    |> Enum.map(fn {form_field, index} -> Map.put(form_field, "order", index) end)
   end
 
   @doc """
@@ -133,8 +145,12 @@ defmodule WraftDoc.Forms do
         FormField
         |> Repo.get_by(field_id: field["field_id"], form_id: form.id)
         |> case do
-          %FormField{} = form_field -> Repo.delete(form_field)
-          nil -> nil
+          %FormField{} = form_field ->
+            Repo.delete(form_field)
+            on_delete_form_field_order(form, form_field.order)
+
+          nil ->
+            nil
         end
       else
         nil
@@ -142,6 +158,12 @@ defmodule WraftDoc.Forms do
     end)
 
     {:ok, Enum.filter(params["fields"], fn field -> map_size(field) != 1 end)}
+  end
+
+  # Private
+  defp on_delete_form_field_order(form, order) do
+    query = from(ff in FormField, where: ff.form_id == ^form.id and ff.order > ^order)
+    Repo.update_all(query, inc: [order: -1])
   end
 
   defp create_or_update_form_fields(form, %{"fields" => fields} = _params) do
@@ -198,7 +220,10 @@ defmodule WraftDoc.Forms do
         Multi.new()
         |> Multi.run(:field, fn _, _ -> Document.update_field(field, params) end)
         |> Multi.update(:form_field, fn _ ->
-          FormField.update_changeset(form_field, %{validations: params["validations"]})
+          FormField.update_changeset(form_field, %{
+            validations: params["validations"],
+            order: params["order"]
+          })
         end)
         |> Repo.transaction()
         |> case do
