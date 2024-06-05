@@ -25,8 +25,10 @@ The aim of Wraft Docs is to maintain a single source of truth for document gener
 * Latex
 * Gnuplot
 * wkhtmltopdf
+* inotify-tools
 * direnv
 * Commit hooks
+
 
 `.tools_version` will have the exact versions defined in it.
 
@@ -175,6 +177,21 @@ Now to setup pre commit for Wraft Docs:
 $ pre-commit install
 ```
 
+**inotify-tools**
+- command-line utilities to monitor file system activity
+
+In macOS:
+
+```shell
+$ brew install inotify-tools
+```
+
+In Linux:
+
+```shell
+$ sudo apt install inotify-tools
+```
+
 
 ## Running Wraft Docs
 To start your Wraft docs app:
@@ -196,15 +213,21 @@ $ ecto.setup
 $ mix ecto.create && mix ecto.migrate
 ```
 
+**Load env variables**
+- load environment variables from the file
+```shell
+$ source .dev.env
+```
+
 **Start Phoenix endpoint**
 - With interactive shell
 ```shell
-$ ies -S mix phoenix.server
+$ iex -S mix phx.server
 ```
 
 - Without interactive shell
 ```shell
-$ mix phx.server
+$ source .dev.env && mix phx.server
 ```
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
