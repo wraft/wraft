@@ -2,11 +2,16 @@ defmodule WraftDoc.Workers.BulkWorker do
   @moduledoc """
   Oban worker for bulk building of docs.
   """
-  use Oban.Worker, queue: :events, tags: ["block template", "pipeline"]
+  use Oban.Worker, queue: :events
   require Logger
 
   alias Opus.PipelineError
-  alias WraftDoc.{Account, Document, Document.Pipeline.TriggerHistory, Enterprise, Repo}
+  alias WraftDoc.Account
+  alias WraftDoc.Client.Minio.DownloadError
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Pipeline.TriggerHistory
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Repo
 
   @impl Oban.Worker
   def perform(%Job{
@@ -19,7 +24,7 @@ defmodule WraftDoc.Workers.BulkWorker do
           "file" => path
         }
       }) do
-    Logger.info("Job starting..")
+    Logger.info("Job starting for bulk doc build..")
 
     mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
@@ -27,7 +32,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     state = Enterprise.get_state(current_user, state_uuid)
     data_template = Document.get_d_template(current_user, d_temp_uuid)
     Document.bulk_doc_build(current_user, c_type, state, data_template, mapping, path)
-    Logger.info("Job end.!")
+    Logger.info("Job end for bulk doc build.!")
     :ok
   end
 
@@ -39,26 +44,29 @@ defmodule WraftDoc.Workers.BulkWorker do
           "file" => path
         }
       }) do
-    Logger.info("Job starting..")
+    Logger.info("Job starting for bulk data template insertion..")
     mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
     c_type = Document.get_content_type(current_user, c_type_uuid)
     Document.data_template_bulk_insert(current_user, c_type, mapping, path)
-    Logger.info("Job end.!")
+    Logger.info("Job end for bulk data template insertion.!")
     :ok
   end
 
-  def perform(%Job{args: %{"user_uuid" => user_uuid, "mapping" => mapping, "file" => path}}) do
-    Logger.info("Job starting..")
+  def perform(%Job{
+        args: %{"user_uuid" => user_uuid, "mapping" => mapping, "file" => path},
+        tags: ["block template"]
+      }) do
+    Logger.info("Job starting for bulk block template insertion..")
     mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
     Document.block_template_bulk_insert(current_user, mapping, path)
-    Logger.info("Job end.!")
+    Logger.info("Job end for bulk block template insertion.!")
     :ok
   end
 
-  def perform(%Job{} = trigger) do
-    Logger.info("Job starting..")
+  def perform(%Job{args: trigger, tags: ["pipeline_job"]}) do
+    Logger.info("Job starting for running the pipeline...")
     start_time = Timex.now()
     state = TriggerHistory.states()[:executing]
 
@@ -69,7 +77,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     |> handle_exceptions()
     |> trigger_end_update()
 
-    Logger.info("Job end.!")
+    Logger.info("Job end for running the pipeline.!")
     :ok
   end
 
@@ -124,6 +132,22 @@ defmodule WraftDoc.Workers.BulkWorker do
     trigger =
       update_trigger_history_state_and_error(trigger, state, %{
         info: :instance_failed,
+        stage: stage
+      })
+
+    Logger.error("Instance creation failed. Pipeline execution failed.")
+    trigger
+  end
+
+  defp handle_exceptions(
+         {:error,
+          %PipelineError{error: %DownloadError{message: message}, input: trigger, stage: stage}}
+       ) do
+    state = TriggerHistory.states()[:failed]
+
+    trigger =
+      update_trigger_history_state_and_error(trigger, state, %{
+        info: message,
         stage: stage
       })
 

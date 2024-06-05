@@ -16,9 +16,18 @@ defmodule Mix.Tasks.Wraft.Permissions do
   alias WraftDoc.Repo
 
   @requirements ["app.start"]
+  @mix_env Mix.env()
   @permissions_file Application.compile_env!(:wraft_doc, [:permissions_file])
 
-  def run(permissions_file \\ @permissions_file) do
+  def run([]) do
+    if @mix_env == :prod do
+      :wraft_doc |> :code.priv_dir() |> Path.join(@permissions_file) |> run()
+    else
+      run(@permissions_file)
+    end
+  end
+
+  def run(permissions_file) do
     Logger.info("Updating Permissions started.")
 
     permissions_file

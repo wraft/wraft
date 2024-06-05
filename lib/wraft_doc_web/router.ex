@@ -169,9 +169,20 @@ defmodule WraftDocWeb.Router do
       # Enginebody
       resources("/engines", EngineController, only: [:index])
 
-      # Forms
-      resources("/forms", FormController, except: [:new, :edit])
-      patch("/forms/:id/status", FormController, :status_update)
+      scope "/forms" do
+        # Forms
+        resources("/", FormController, except: [:new, :edit])
+        patch("/:id/status", FormController, :status_update)
+        put("/:id/align-fields", FormController, :align_fields)
+        # Entries
+        resources("/:form_id/entries", FormEntryController, only: [:create, :show, :index])
+      end
+
+      scope "/forms/:form_id" do
+        post("/mapping", FormMappingController, :create)
+        get("/mapping/:mapping_id", FormMappingController, :show)
+        put("/mapping/:mapping_id", FormMappingController, :update)
+      end
 
       # Theme
       resources("/themes", ThemeController, only: [:create, :index, :show, :update, :delete])

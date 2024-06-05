@@ -28,6 +28,6 @@ defmodule WraftDoc.Document.Field do
   def update_changeset(%Field{} = field, attrs \\ %{}) do
     field
     |> cast(attrs, [:name, :meta, :description, :field_type_id])
-    |> validate_required([:name, :meta, :description, :field_type_id])
+    |> validate_required([:name, :meta, :field_type_id])
   end
 end
