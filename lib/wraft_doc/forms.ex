@@ -5,13 +5,17 @@ defmodule WraftDoc.Forms do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias WraftDoc.Account.User
   alias WraftDoc.Document
   alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType
   alias WraftDoc.Forms.Form
+  alias WraftDoc.Forms.FormEntry
   alias WraftDoc.Forms.FormField
+  alias WraftDoc.Forms.FormMapping
   alias WraftDoc.Forms.FormPipeline
   alias WraftDoc.Repo
+  alias WraftDoc.Validations.Validator
 
   require Logger
 
@@ -20,7 +24,10 @@ defmodule WraftDoc.Forms do
   """
   @spec create(User.t(), map) :: Form.t() | {:error, Ecto.Changeset.t()}
   def create(%{id: user_id, current_org_id: organisation_id}, params) do
-    params = Map.merge(params, %{"organisation_id" => organisation_id, "creator_id" => user_id})
+    params =
+      params
+      |> Map.put("fields", form_field_ordering(params))
+      |> Map.merge(%{"organisation_id" => organisation_id, "creator_id" => user_id})
 
     Multi.new()
     |> Multi.insert(:form, Form.changeset(%Form{}, params))
@@ -56,6 +63,28 @@ defmodule WraftDoc.Forms do
     Repo.get_by(Form, id: form_id, organisation_id: organisation_id)
   end
 
+  def get_form(_, _), do: nil
+
+  @doc """
+  Delete a form
+  """
+  @spec delete_form(Form.t()) :: {:ok, Form.t()} | {:error, Ecto.Changeset.t()}
+  def delete_form(form) do
+    Multi.new()
+    |> Multi.delete_all(:form_fields, from(ff in FormField, where: ff.form_id == ^form.id))
+    |> Multi.delete_all(:form_pipelines, from(fp in FormPipeline, where: fp.form_id == ^form.id))
+    |> Multi.delete_all(:form_mappings, from(fm in FormMapping, where: fm.form_id == ^form.id))
+    |> Multi.delete(:form, form)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{form: form}} ->
+        form
+
+      {:error, _, error, _} ->
+        {:error, error}
+    end
+  end
+
   @doc """
     Update form status
   """
@@ -74,7 +103,9 @@ defmodule WraftDoc.Forms do
     |> Multi.update(:form, Form.changeset(form, params))
     |> Multi.run(:removed_fields, fn _, %{form: form} -> remove_form_fields(form, params) end)
     |> Multi.run(:form_fields, fn _, %{form: form, removed_fields: fields} ->
-      create_or_update_form_fields(form, %{"fields" => fields})
+      create_or_update_form_fields(form, %{
+        "fields" => form_field_ordering(%{"fields" => fields})
+      })
     end)
     |> Multi.run(:form_pipelines, fn _, %{form: form} -> update_form_pipelines(form, params) end)
     |> Repo.transaction()
@@ -85,6 +116,13 @@ defmodule WraftDoc.Forms do
       {:error, _, error, _} ->
         {:error, error}
     end
+  end
+
+  # Private
+  defp form_field_ordering(%{"fields" => form_fields} = _params) do
+    form_fields
+    |> Enum.with_index(1)
+    |> Enum.map(fn {form_field, index} -> Map.put(form_field, "order", index) end)
   end
 
   @doc """
@@ -107,8 +145,12 @@ defmodule WraftDoc.Forms do
         FormField
         |> Repo.get_by(field_id: field["field_id"], form_id: form.id)
         |> case do
-          %FormField{} = form_field -> Repo.delete(form_field)
-          nil -> nil
+          %FormField{} = form_field ->
+            Repo.delete(form_field)
+            on_delete_form_field_order(form, form_field.order)
+
+          nil ->
+            nil
         end
       else
         nil
@@ -116,6 +158,12 @@ defmodule WraftDoc.Forms do
     end)
 
     {:ok, Enum.filter(params["fields"], fn field -> map_size(field) != 1 end)}
+  end
+
+  # Private
+  defp on_delete_form_field_order(form, order) do
+    query = from(ff in FormField, where: ff.form_id == ^form.id and ff.order > ^order)
+    Repo.update_all(query, inc: [order: -1])
   end
 
   defp create_or_update_form_fields(form, %{"fields" => fields} = _params) do
@@ -149,6 +197,7 @@ defmodule WraftDoc.Forms do
     |> Multi.run(:field, fn _, _ -> Document.create_field(field_type, params) end)
     |> Multi.insert(:form_field, fn %{field: field} ->
       FormField.changeset(%FormField{}, %{
+        order: params["order"],
         form_id: form.id,
         field_id: field.id,
         validations: params["validations"]
@@ -171,7 +220,10 @@ defmodule WraftDoc.Forms do
         Multi.new()
         |> Multi.run(:field, fn _, _ -> Document.update_field(field, params) end)
         |> Multi.update(:form_field, fn _ ->
-          FormField.update_changeset(form_field, %{validations: params["validations"]})
+          FormField.update_changeset(form_field, %{
+            validations: params["validations"],
+            order: params["order"]
+          })
         end)
         |> Repo.transaction()
         |> case do
@@ -251,4 +303,241 @@ defmodule WraftDoc.Forms do
     do: [desc: dynamic([f], f.inserted_at)]
 
   defp form_sort(_), do: []
+
+  @doc """
+    Show form entry
+  """
+  @spec show_form_entry(User.t(), map) :: FormEntry.t() | nil
+  def show_form_entry(
+        %{current_org_id: organisation_id},
+        %{"form_id" => form_id, "id" => form_entry_id} = _params
+      ) do
+    FormEntry
+    |> join(:inner, [fe], f in Form,
+      on: fe.form_id == f.id and f.organisation_id == ^organisation_id
+    )
+    |> where([fe], fe.form_id == ^form_id and fe.id == ^form_entry_id)
+    |> Repo.one()
+  end
+
+  def show_form_entry(_, _), do: nil
+
+  @doc """
+    Create form entry
+  """
+  @spec create_form_entry(User.t(), Form.t(), map) ::
+          {:ok, FormEntry.t()} | {:error, list(map)} | {:error, Ecto.Changeset.t()}
+  def create_form_entry(
+        current_user,
+        %Form{form_fields: fields} = form,
+        %{"data" => data} = _params
+      ) do
+    data_map =
+      Enum.reduce(data, %{}, fn %{"field_id" => field_id, "value" => value}, acc ->
+        Map.put(acc, field_id, value)
+      end)
+
+    if check_data_mapping(fields, data) do
+      case validate_form_entry(fields, data_map) do
+        [] -> insert_form_entry(current_user, form, data_map)
+        error_list -> {:error, error_list}
+      end
+    else
+      {:error, :invalid_data}
+    end
+  end
+
+  defp insert_form_entry(user, form, data_map) do
+    %FormEntry{}
+    |> FormEntry.changeset(%{
+      form_id: form.id,
+      status: "draft",
+      user_id: user.id,
+      data: data_map
+    })
+    |> Repo.insert()
+  end
+
+  # Validate form entry data
+  defp validate_form_entry(fields, data_map) do
+    fields
+    |> Enum.flat_map(fn field -> validate(field, data_map) end)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  defp validate(field, data_map) do
+    Enum.map(
+      field.validations,
+      &(Validator
+        |> Module.concat(Macro.camelize(&1.validation["rule"]))
+        |> apply(:validate, [&1, Map.get(data_map, field.field_id)])
+        |> case do
+          {:error, error} ->
+            Logger.error("Validation failed for field #{field.id}", error: error)
+            %{field_id: field.field_id, error: error}
+
+          _ ->
+            nil
+        end)
+    )
+  end
+
+  defp check_data_mapping(fields, data) do
+    form_field_ids = fields |> Enum.map(& &1.field_id) |> Enum.sort()
+    data_field_ids = data |> Enum.map(& &1["field_id"]) |> Enum.sort()
+
+    form_field_ids == data_field_ids
+  end
+
+  @doc """
+    List of all form entries for the given form.
+  """
+  @spec form_entry_index(User.t(), map) :: map
+  def form_entry_index(
+        %{current_org_id: org_id},
+        %{"form_id" => form_id} = params
+      ) do
+    FormEntry
+    |> join(:inner, [fe], f in Form, on: fe.form_id == f.id and f.organisation_id == ^org_id)
+    |> where([fe], fe.form_id == ^form_id)
+    |> order_by(^form_entry_index_sort(params))
+    |> Repo.paginate(params)
+  end
+
+  def form_entry_index(_, _), do: {:error, :invalid_id}
+
+  defp form_entry_index_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([i], i.inserted_at)]
+
+  defp form_entry_index_sort(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([i], i.inserted_at)]
+
+  defp form_entry_index_sort(_), do: []
+
+  @doc """
+    Create form mapping
+  """
+  @spec create_form_mapping(map) :: {:ok, Form.t()} | {:error, Ecto.Changeset.t()}
+  def create_form_mapping(params) do
+    %FormMapping{}
+    |> FormMapping.changeset(params)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Get form mapping
+  """
+  @spec get_form_mapping(User.t(), map()) :: FormMapping.t() | nil
+  def get_form_mapping(
+        %User{current_org_id: org_id},
+        %{"mapping_id" => mapping_id, "form_id" => form_id} = _params
+      ) do
+    FormMapping
+    |> join(:inner, [fp], f in Form, on: f.id == fp.form_id and f.organisation_id == ^org_id)
+    |> where([fp], fp.id == ^mapping_id and fp.form_id == ^form_id)
+    |> Repo.one()
+  end
+
+  def get_form_mapping(_, _), do: nil
+
+  @doc """
+    Update form mapping
+  """
+  @spec update_form_mapping(FormMapping.t(), map) ::
+          {:ok, FormMapping.t()} | {:error, Ecto.Changeset.t()}
+  def update_form_mapping(form_mapping, params) do
+    form_mapping
+    |> FormMapping.update_changeset(params)
+    |> Repo.update()
+  end
+
+  @doc """
+    Trigger form pipelines
+  """
+  @spec trigger_pipelines(User.t(), Form.t(), FormEntry.t()) :: :ok
+  def trigger_pipelines(
+        %User{} = current_user,
+        %Form{pipelines: pipelines} = _form,
+        %FormEntry{data: data} = _form_entry
+      ) do
+    transformed_data =
+      pipelines
+      |> get_pipe_stage_ids
+      |> get_mappings
+      |> transform_mappings
+      |> transform_data(data)
+      |> Enum.into(%{})
+
+    Enum.each(pipelines, fn pipeline ->
+      trigger_pipeline(current_user, pipeline.id, transformed_data)
+    end)
+  end
+
+  defp trigger_pipeline(current_user, pipeline_id, data) do
+    Multi.new()
+    |> Multi.run(:pipeline, fn _, _ -> {:ok, Document.get_pipeline(current_user, pipeline_id)} end)
+    |> Multi.run(:trigger_history, fn _, %{pipeline: pipeline} ->
+      Document.create_trigger_history(current_user, pipeline, data)
+    end)
+    |> Multi.run(:pipeline_job, fn _, %{trigger_history: trigger_history} ->
+      Document.create_pipeline_job(trigger_history)
+    end)
+    |> Repo.transaction()
+  end
+
+  defp transform_data(mappings, data) do
+    Enum.map(data, fn {key, value} ->
+      %{name: field_name} = Repo.get(Field, key)
+      {Map.get(mappings, field_name), value}
+    end)
+  end
+
+  defp transform_mappings(mappings) do
+    Enum.reduce(mappings, %{}, fn mapping, acc ->
+      destination_name = mapping.destination["name"]
+      source_name = mapping.source["name"]
+      Map.put(acc, source_name, destination_name)
+    end)
+  end
+
+  defp get_mappings(pipe_stage_ids) do
+    Enum.reduce(pipe_stage_ids, [], fn pipe_stage_id, acc ->
+      %{mapping: mapping} = get_form_mapping(pipe_stage_id)
+      acc ++ mapping
+    end)
+  end
+
+  defp get_pipe_stage_ids(pipelines) do
+    Enum.reduce(pipelines, [], fn pipeline, acc ->
+      %{stages: stages} = Repo.preload(pipeline, [:stages])
+      acc ++ Enum.map(stages, & &1.id)
+    end)
+  end
+
+  defp get_form_mapping(pipe_stage_id) do
+    Repo.get_by(FormMapping, pipe_stage_id: pipe_stage_id)
+  end
+
+  @doc """
+    Align form fields
+  """
+  @spec align_fields(Form.t(), map) :: Form.t() | Ecto.Changeset.t()
+  def align_fields(%Form{form_fields: form_fields} = form, %{"fields" => fields} = _params) do
+    form
+    |> Ecto.Changeset.change(form_fields: update_form_fields_order(form_fields, fields))
+    |> Repo.update()
+    |> case do
+      {:ok, form} -> form
+      {:error, _} = changeset -> changeset
+    end
+  end
+
+  # Private
+  defp update_form_fields_order(form_fields, fields) do
+    Enum.map(form_fields, fn %FormField{field_id: field_id} = form_field ->
+      FormField.order_update_changeset(
+        form_field,
+        %{order: Map.get(fields, field_id)}
+      )
+    end)
+  end
 end

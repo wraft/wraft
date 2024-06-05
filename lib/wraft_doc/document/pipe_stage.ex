@@ -18,12 +18,11 @@ defmodule WraftDoc.Document.Pipeline.Stage do
 
   def changeset(%Stage{} = stage, attrs \\ %{}) do
     stage
-    |> cast(attrs, [])
+    |> cast(attrs, [:content_type_id, :data_template_id, :pipeline_id, :creator_id])
     |> validate_required([
       :content_type_id,
       :pipeline_id,
       :data_template_id,
-      :state_id,
       :creator_id
     ])
     |> unique_constraint(:content_type_id,
@@ -34,11 +33,10 @@ defmodule WraftDoc.Document.Pipeline.Stage do
 
   def update_changeset(%Stage{} = stage, attrs \\ %{}) do
     stage
-    |> cast(attrs, [:content_type_id, :data_template_id, :state_id])
+    |> cast(attrs, [:content_type_id, :data_template_id])
     |> validate_required([
       :content_type_id,
-      :data_template_id,
-      :state_id
+      :data_template_id
     ])
     |> unique_constraint(:content_type_id,
       name: :pipe_stages_unique_index,

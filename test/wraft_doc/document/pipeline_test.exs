@@ -5,6 +5,8 @@ defmodule WraftDoc.Document.PipelineTest do
   @moduletag :document
   @valid_attrs %{
     name: "Official Letter",
+    source: "WraftForms",
+    source_id: "1232148nb3478",
     api_route: "newclient.example.crm.com"
   }
 

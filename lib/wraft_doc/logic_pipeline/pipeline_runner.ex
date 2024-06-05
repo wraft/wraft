@@ -5,14 +5,14 @@ defmodule WraftDoc.PipelineRunner do
 
   use Opus.Pipeline
 
-  alias WraftDoc.{
-    Account,
-    Document,
-    Document.Instance,
-    Document.Pipeline,
-    Document.Pipeline.TriggerHistory,
-    Repo
-  }
+  alias WraftDoc.Account
+  alias WraftDoc.Client.Minio
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Instance
+  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Document.Pipeline.TriggerHistory
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Repo
 
   step(:preload_pipeline_and_stages)
   check(:pipeline_exists?, error_message: :pipeline_not_found)
@@ -65,9 +65,9 @@ defmodule WraftDoc.PipelineRunner do
     type = Instance.types()[:pipeline_api]
 
     instances =
-      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp, state: state} ->
+      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp} ->
         params = data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
-        Document.create_instance(user, c_type, state, params)
+        Document.create_instance(user, c_type, Enterprise.get_final_state(c_type.flow_id), params)
       end)
 
     %{trigger: trigger, instances: instances, user: user}
@@ -77,9 +77,9 @@ defmodule WraftDoc.PipelineRunner do
     type = Instance.types()[:pipeline_hook]
 
     instances =
-      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp, state: state} ->
+      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp} ->
         params = data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
-        Document.create_instance(c_type, state, params)
+        Document.create_instance(c_type, Enterprise.get_final_state(c_type.flow_id), params)
       end)
 
     %{trigger: trigger, instances: instances}
@@ -160,7 +160,7 @@ defmodule WraftDoc.PipelineRunner do
   def zip_builds(%{instances: instances} = input) do
     builds =
       instances
-      |> Stream.map(fn x -> x |> Document.get_built_document() |> Map.get(:build) end)
+      |> Stream.map(fn x -> x |> Document.get_built_document(local: true) |> Map.get(:build) end)
       |> Stream.filter(fn x -> x != nil end)
       |> Enum.map(&String.to_charlist/1)
 
@@ -170,7 +170,12 @@ defmodule WraftDoc.PipelineRunner do
     :zip.create(zip_name, builds)
     File.mkdir_p!("temp/pipe_builds/")
     System.cmd("cp", [zip_name, dest_path])
+    Minio.upload_file(dest_path)
     File.rm(zip_name)
+    # Delete all the generated content folder
+    Enum.each(instances, &(&1.instance_id |> content_dir() |> File.rm_rf()))
     Map.put(input, :zip_file, zip_name)
   end
+
+  defp content_dir(instance_id), do: Path.join(File.cwd!(), "uploads/contents/#{instance_id}")
 end

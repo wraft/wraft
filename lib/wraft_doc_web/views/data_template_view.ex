@@ -48,7 +48,9 @@ defmodule WraftDocWeb.Api.V1.DataTemplateView do
     %{
       data_template: render_one(d_temp, DataTemplateView, "create.json", as: :d_template),
       content_type:
-        render_one(d_temp.content_type, ContentTypeView, "content_type.json", as: :content_type),
+        render_one(d_temp.content_type, ContentTypeView, "content_type_with_fields.json",
+          as: :content_type
+        ),
       creator: render_one(d_temp.creator, UserView, "user.json", as: :user)
     }
   end

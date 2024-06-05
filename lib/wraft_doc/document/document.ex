@@ -42,6 +42,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.StateUser
+  alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.Workers.BulkWorker
 
@@ -590,24 +591,38 @@ defmodule WraftDoc.Document do
   @doc """
   Same as create_instance/4, to create instance and its approval system
   """
-  def create_instance(current_user, %{id: c_id, prefix: prefix} = c_type, state, params) do
+  def create_instance(current_user, %{id: c_id, prefix: prefix} = content_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
-    params = Map.merge(params, %{"instance_id" => instance_id})
+    allowed_users = [current_user.id] ++ all_allowed_users(state.flow_id)
+    params = Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => allowed_users})
 
-    c_type
-    |> build_assoc(:instances, creator: current_user, state_id: state.id)
-    |> Instance.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(
+      :instance,
+      content_type
+      |> build_assoc(:instances, creator: current_user, state_id: state.id)
+      |> Instance.changeset(params)
+    )
+    |> Multi.run(:counter_increment, fn _, _ -> create_or_update_counter(content_type) end)
+    |> Multi.run(:instance_approval_system, fn _, %{instance: content} ->
+      create_instance_approval_systems(content_type, content)
+    end)
+    |> Multi.run(:version, fn _, %{instance: content} ->
+      create_initial_version(current_user, content)
+    end)
+    |> Repo.transaction()
     |> case do
-      {:ok, content} ->
-        Task.start_link(fn -> create_or_update_counter(c_type) end)
+      {:ok, %{instance: content}} ->
+        Repo.preload(content, [
+          :content_type,
+          :state,
+          :vendor,
+          :instance_approval_systems
+        ])
 
-        create_instance_approval_systems(c_type, content)
-
-        Repo.preload(content, [:content_type, :state, :vendor, :instance_approval_systems])
-
-      changeset = {:error, _} ->
-        changeset
+      {:error, _, changeset, _} ->
+        Logger.error("Creation of instance failed", changeset: changeset)
+        {:error, changeset}
     end
   end
 
@@ -616,7 +631,8 @@ defmodule WraftDoc.Document do
   #         | {:error, Ecto.Changeset.t()}
   def create_instance(%{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
-    params = Map.merge(params, %{"instance_id" => instance_id})
+    allowed_users = [params["creator_id"]] ++ all_allowed_users(state.flow_id)
+    params = Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => allowed_users})
 
     c_type
     |> build_assoc(:instances, state_id: state.id)
@@ -856,6 +872,13 @@ defmodule WraftDoc.Document do
     StateUser
     |> where([su], su.state_id == ^state_id)
     |> select([su], su.user_id)
+    |> Repo.all()
+  end
+
+  defp all_allowed_users(flow_id) do
+    StateUser
+    |> join(:inner, [su], s in State, on: su.state_id == s.id and s.flow_id == ^flow_id)
+    |> select([su, s], su.user_id)
     |> Repo.all()
   end
 
@@ -1115,8 +1138,8 @@ defmodule WraftDoc.Document do
   Get the build document of the given instance.
   """
   # TODO - improve tests
-  @spec get_built_document(Instance.t()) :: Instance.t() | nil
-  def get_built_document(%{id: id, instance_id: instance_id} = instance) do
+  @spec get_built_document(Instance.t(), list()) :: Instance.t() | nil
+  def get_built_document(%{id: id, instance_id: instance_id} = instance, opts \\ []) do
     query =
       from(h in History,
         where: h.exit_code == 0,
@@ -1132,12 +1155,16 @@ defmodule WraftDoc.Document do
         instance
 
       %History{} ->
-        doc_url = Minio.generate_url("uploads/contents/#{instance_id}/final.pdf")
+        doc_url =
+          if opts[:local] == true do
+            "uploads/contents/#{instance_id}/final.pdf"
+          else
+            Minio.generate_url("uploads/contents/#{instance_id}/final.pdf")
+          end
+
         Map.put(instance, :build, doc_url)
     end
   end
-
-  def get_built_document(nil), do: nil
 
   @doc """
   Update an instance and creates updated version
@@ -1566,7 +1593,7 @@ defmodule WraftDoc.Document do
           %DataTemplate{creator: User.t(), content_type: ContentType.t()} | nil
   def show_d_template(user, d_temp_id) do
     with %DataTemplate{} = data_template <- get_d_template(user, d_temp_id) do
-      Repo.preload(data_template, [:creator, :content_type])
+      Repo.preload(data_template, [:creator, [content_type: [{:fields, :field_type}]]])
     end
   end
 
@@ -1818,7 +1845,11 @@ defmodule WraftDoc.Document do
     ]
   end
 
-  defp upload_file_and_delete_local_copy({_, 0} = pandoc_response, file_path, pdf_file) do
+  defp upload_file_and_delete_local_copy(
+         {_, 0} = pandoc_response,
+         file_path,
+         pdf_file
+       ) do
     case Minio.upload_file(pdf_file) do
       {:ok, _} ->
         File.rm_rf(file_path)
@@ -2405,20 +2436,45 @@ defmodule WraftDoc.Document do
   Generate params to create instance.
   """
   @spec do_create_instance_params(map, DataTemplate.t()) :: map
-  def do_create_instance_params(serialized, %{title_template: title_temp, data: template}) do
-    title =
-      Enum.reduce(serialized, title_temp, fn {k, v}, acc ->
-        WraftDoc.DocConversion.replace_content(k, v, acc)
-      end)
+  def do_create_instance_params(field_with_values, %{
+        title_template: title_temp,
+        serialized: %{"data" => serialized_data}
+      }) do
+    updated_content = replace_content_holder(Jason.decode!(serialized_data), field_with_values)
 
-    serialized = Map.put(serialized, "title", title)
+    serialized =
+      field_with_values
+      |> Map.put("title", replace_content_title(field_with_values, title_temp))
+      |> Map.put("serialized", Jason.encode!(updated_content))
 
-    raw =
-      Enum.reduce(serialized, template, fn {k, v}, acc ->
-        WraftDoc.DocConversion.replace_content(k, v, acc)
-      end)
+    raw = ProsemirrorToMarkdown.convert(updated_content)
 
     %{"raw" => raw, "serialized" => serialized}
+  end
+
+  # Private
+  def replace_content_holder(
+        %{"type" => "holder", "attrs" => %{"name" => name} = attrs} = content,
+        data
+      ) do
+    case Map.get(data, name) do
+      nil -> content
+      named_value -> %{content | "attrs" => %{attrs | "named" => named_value}}
+    end
+  end
+
+  def replace_content_holder(%{"type" => _type, "content" => content} = node, data)
+      when is_list(content) do
+    updated_content = Enum.map(content, fn item -> replace_content_holder(item, data) end)
+    %{node | "content" => updated_content}
+  end
+
+  def replace_content_holder(other, _data), do: other
+
+  def replace_content_title(fields, title) do
+    Enum.reduce(fields, title, fn {k, v}, acc ->
+      WraftDoc.DocConversion.replace_content(k, v, acc)
+    end)
   end
 
   # Create instance for bulk build. Uses the `create_instance/4` function
@@ -2761,7 +2817,12 @@ defmodule WraftDoc.Document do
         create_pipe_stages(current_user, pipeline, params)
 
         Repo.preload(pipeline,
-          stages: [[content_type: [{:fields, :field_type}]], :data_template, :state]
+          stages: [
+            [content_type: [{:fields, :field_type}]],
+            :data_template,
+            :state,
+            :form_mapping
+          ]
         )
 
       {:error, _} = changeset ->
@@ -2781,6 +2842,7 @@ defmodule WraftDoc.Document do
   @doc """
   Create a pipe stage.
   """
+  # TOOD update the tests as state id is removed from the params.
   @spec create_pipe_stage(User.t(), Pipeline.t(), map) ::
           nil | {:error, Ecto.Changeset.t()} | {:ok, any}
   def create_pipe_stage(
@@ -2788,49 +2850,49 @@ defmodule WraftDoc.Document do
         pipeline,
         %{
           "content_type_id" => <<_::288>>,
-          "data_template_id" => <<_::288>>,
-          "state_id" => <<_::288>>
+          "data_template_id" => <<_::288>>
         } = params
       ) do
-    params |> get_pipe_stage_params(user) |> do_create_pipe_stages(pipeline)
+    params
+    |> get_pipe_stage_params(user)
+    |> do_create_pipe_stages(pipeline)
   end
 
   def create_pipe_stage(_, _, _), do: nil
 
   # Get the values for pipe stage creation to create a pipe stage.
+  # TODO update tests as state id is removed from the params.
   @spec get_pipe_stage_params(map, User.t()) ::
           {ContentType.t(), DataTemplate.t(), State.t(), User.t()}
   defp get_pipe_stage_params(
          %{
            "content_type_id" => c_type_uuid,
-           "data_template_id" => d_temp_uuid,
-           "state_id" => state_uuid
+           "data_template_id" => d_temp_uuid
          },
          user
        ) do
     c_type = get_content_type(user, c_type_uuid)
     d_temp = get_d_template(user, d_temp_uuid)
-    state = Enterprise.get_state(user, state_uuid)
-    {c_type, d_temp, state, user}
+    {c_type, d_temp, user}
   end
 
   defp get_pipe_stage_params(_, _), do: nil
 
   # Create pipe stages
+  # TODO update tests as state id is removed from the params.
   @spec do_create_pipe_stages(
-          {ContentType.t(), DataTemplate.t(), State.t(), User.t()} | nil,
+          {ContentType.t(), DataTemplate.t(), User.t()} | nil,
           Pipeline.t()
         ) ::
           {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
   defp do_create_pipe_stages(
-         {%ContentType{id: c_id}, %DataTemplate{id: d_id}, %State{id: s_id}, %User{id: u_id}},
+         {%ContentType{id: c_id}, %DataTemplate{id: d_id}, %User{id: u_id}},
          pipeline
        ) do
     pipeline
     |> build_assoc(:stages,
       content_type_id: c_id,
       data_template_id: d_id,
-      state_id: s_id,
       creator_id: u_id
     )
     |> Stage.changeset()
@@ -2889,7 +2951,7 @@ defmodule WraftDoc.Document do
     |> get_pipeline(p_uuid)
     |> Repo.preload([
       :creator,
-      stages: [[content_type: [{:fields, :field_type}]], :data_template, :state]
+      stages: [[content_type: [{:fields, :field_type}]], :data_template, :state, :form_mapping]
     ])
   end
 
@@ -2949,30 +3011,26 @@ defmodule WraftDoc.Document do
           {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
   def update_pipe_stage(%User{} = current_user, %Stage{} = stage, %{
         "content_type_id" => c_uuid,
-        "data_template_id" => d_uuid,
-        "state_id" => s_uuid
+        "data_template_id" => d_uuid
       }) do
     c_type = get_content_type(current_user, c_uuid)
     d_temp = get_d_template(current_user, d_uuid)
-    state = Enterprise.get_state(current_user, s_uuid)
 
-    do_update_pipe_stage(stage, c_type, d_temp, state)
+    do_update_pipe_stage(stage, c_type, d_temp)
   end
 
   def update_pipe_stage(_, _, _), do: nil
 
   # Update a stage.
-  @spec do_update_pipe_stage(Stage.t(), ContentType.t(), DataTemplate.t(), State.t()) ::
+  @spec do_update_pipe_stage(Stage.t(), ContentType.t(), DataTemplate.t()) ::
           {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
-  defp do_update_pipe_stage(stage, %ContentType{id: c_id}, %DataTemplate{id: d_id}, %State{
-         id: s_id
-       }) do
+  defp do_update_pipe_stage(stage, %ContentType{id: c_id}, %DataTemplate{id: d_id}) do
     stage
-    |> Stage.update_changeset(%{content_type_id: c_id, data_template_id: d_id, state_id: s_id})
+    |> Stage.update_changeset(%{content_type_id: c_id, data_template_id: d_id})
     |> Repo.update()
   end
 
-  defp do_update_pipe_stage(_, _, _, _), do: nil
+  defp do_update_pipe_stage(_, _, _), do: nil
 
   @doc """
   Deletes a pipe stage.
@@ -2987,7 +3045,12 @@ defmodule WraftDoc.Document do
   """
   @spec preload_stage_details(Stage.t()) :: Stage.t()
   def preload_stage_details(stage) do
-    Repo.preload(stage, [{:content_type, :fields}, :data_template, :state])
+    Repo.preload(stage, [
+      {:content_type, fields: [:field_type]},
+      :data_template,
+      :state,
+      :form_mapping
+    ])
   end
 
   @doc """
