@@ -285,6 +285,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   @doc """
   Show data template.
   """
+  # TODO update the swagger docs for data template show to add fields as well
   swagger_path :show do
     get("/data_templates/{id}")
     summary("Show Data template")

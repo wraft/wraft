@@ -3548,6 +3548,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "show_d_template/2" do
+    # TODO update test for preloading field and field type in content type
     test "show data_template returns the data_template data and preloads creator and content type" do
       user = insert(:user_with_organisation)
 
@@ -4229,15 +4230,15 @@ defmodule WraftDoc.DocumentTest do
       [organisation] = user.owned_organisations
       c_type = insert(:content_type, organisation: organisation)
       d_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: organisation)
 
       attrs = %{
         "name" => "pipeline",
         "api_route" => "www.crm.com",
+        "source" => "WraftForms",
+        "source_id" => "82850951-ab5d-40d3-89ce-40b321d63b81",
         "organisation_id" => organisation.id,
         "stages" => [
           %{
-            "state_id" => state.id,
             "content_type_id" => c_type.id,
             "data_template_id" => d_temp.id
           }
@@ -4246,14 +4247,14 @@ defmodule WraftDoc.DocumentTest do
 
       pipeline = Document.create_pipeline(user, attrs)
 
-      [%{content_type: content_type, data_template: data_template, state: resp_state}] =
-        pipeline.stages
+      [%{content_type: content_type, data_template: data_template}] = pipeline.stages
 
       assert pipeline.name == "pipeline"
       assert pipeline.api_route == "www.crm.com"
+      assert pipeline.source == "WraftForms"
+      assert pipeline.source_id == "82850951-ab5d-40d3-89ce-40b321d63b81"
       assert content_type.name == c_type.name
       assert data_template.title == d_temp.title
-      assert resp_state.state == state.state
     end
 
     test "returns error with invalid attrs" do

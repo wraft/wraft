@@ -43,7 +43,7 @@ defmodule WraftDoc.Release do
 
   def wraft_permissions do
     ensure_started()
-    Mix.Tasks.Wraft.Permissions.run()
+    Mix.Tasks.Wraft.Permissions.run([])
   end
 
   # defp repos do

@@ -54,6 +54,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Forms.Form
   alias WraftDoc.Forms.FormEntry
   alias WraftDoc.Forms.FormField
+  alias WraftDoc.Forms.FormMapping
   alias WraftDoc.Forms.FormPipeline
   alias WraftDoc.InternalUsers.InternalUser
   alias WraftDoc.InvitedUsers.InvitedUser
@@ -625,11 +626,11 @@ defmodule WraftDoc.Factory do
     %FormField{
       validations: [
         %{
-          rule: "required",
+          validation: %{"rule" => "required", "value" => Enum.random([true, false])},
           error_message: "This field is required."
         },
         %{
-          rule: "email",
+          validation: %{"rule" => "email"},
           error_message: "Please enter a valid email address."
         }
       ],
@@ -654,6 +655,29 @@ defmodule WraftDoc.Factory do
     %FormPipeline{
       form: build(:form),
       pipeline: build(:pipeline)
+    }
+  end
+
+  def form_mapping_factory do
+    %FormMapping{
+      form: build(:form),
+      pipe_stage: build(:pipe_stage),
+      mapping: [
+        %{
+          source: %{"id" => Ecto.UUID.generate(), "name" => sequence(:name, &"name-#{&1}")},
+          destination: %{
+            "id" => Ecto.UUID.generate(),
+            "name" => sequence(:name, &"name-#{&1}")
+          }
+        },
+        %{
+          source: %{"id" => Ecto.UUID.generate(), "name" => sequence(:name, &"name-#{&1}")},
+          destination: %{
+            "id" => Ecto.UUID.generate(),
+            "name" => sequence(:name, &"name-#{&1}")
+          }
+        }
+      ]
     }
   end
 end
