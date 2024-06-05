@@ -25,6 +25,7 @@ defmodule WraftDoc.Repo.Migrations.AddDefaultOrderingForFormFields do
     |> Enum.map(fn {form_field, order} ->
       # Update the form field with the default ordering
       Logger.info("Updating order for form field with id: #{form_field.id}")
+
       Repo.update!(FormField.order_update_changeset(form_field, %{order: order}))
     end)
   end)

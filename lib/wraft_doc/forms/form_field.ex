@@ -36,7 +36,7 @@ defmodule WraftDoc.Forms.FormField do
 
   def update_changeset(%FormField{} = form_field, attrs \\ %{}) do
     form_field
-    |> cast(attrs, [])
+    |> cast(attrs, @fields)
     |> cast_embed(:validations, required: true, with: &Validation.changeset/2)
   end
 

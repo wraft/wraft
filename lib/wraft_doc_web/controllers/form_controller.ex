@@ -51,7 +51,6 @@ defmodule WraftDocWeb.Api.V1.FormController do
             fields: [
               %{
                 name: "Photo",
-                order: 1,
                 field_type_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
                 meta: %{"src" => "/img/img.png", "alt" => "Image"},
                 validations: [
@@ -68,7 +67,6 @@ defmodule WraftDocWeb.Api.V1.FormController do
               },
               %{
                 name: "Name",
-                order: 2,
                 field_type_id: "06c28fc6-6a15-4966-9b68-5eeac942fd4f",
                 validations: [
                   %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
@@ -114,7 +112,6 @@ defmodule WraftDocWeb.Api.V1.FormController do
             fields: [
               %{
                 name: "Photo",
-                order: 2,
                 field_id: "5e9bda8b-4c7e-44fe-8801-48ec6d8ff43a",
                 field_type_id: "992c50b2-c586-449f-b298-78d59d8ab81c",
                 meta: %{"src" => "/img/img.png", "alt" => "Image"},
@@ -173,7 +170,6 @@ defmodule WraftDocWeb.Api.V1.FormController do
           example(%{
             name: "Photo",
             meta: %{"src" => "/img/img.png", "alt" => "Image"},
-            order: 1,
             description: "Upload your photo",
             validations: [
               %{validation: %{rule: "required", value: true}, error_message: "can't be blank"}
@@ -297,7 +293,6 @@ defmodule WraftDocWeb.Api.V1.FormController do
             fields: [
               %{
                 name: "Photo",
-                order: 1,
                 meta: %{"src" => "/img/img.png", "alt" => "Image"},
                 description: "Upload your photo",
                 validations: [
@@ -323,7 +318,6 @@ defmodule WraftDocWeb.Api.V1.FormController do
               },
               %{
                 name: "Name",
-                order: 2,
                 meta: %{},
                 description: "Enter your name",
                 validations: [
