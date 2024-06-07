@@ -26,7 +26,7 @@ defmodule WraftDoc.WaitingLists do
   def waitlist_confirmation_email(waiting_list) do
     user_name = "#{waiting_list.first_name} #{waiting_list.last_name}"
 
-    %{user_name: user_name, email: waiting_list.email}
+    %{name: user_name, email: waiting_list.email}
     |> EmailWorker.new(queue: "mailer", tags: ["waiting_list_join"])
     |> Oban.insert()
   end
