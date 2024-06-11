@@ -65,10 +65,16 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
     |> validate_required([:data, :state])
   end
 
+  def trigger_start_changeset(%TriggerHistory{} = trigger, attrs \\ %{}) do
+    trigger
+    |> cast(attrs, [:state, :start_time])
+    |> validate_required([:state, :start_time])
+  end
+
   def update_changeset(%TriggerHistory{} = trigger, attrs \\ %{}) do
     trigger
     |> cast(attrs, [:error, :state, :start_time, :zip_file])
-    |> validate_required([:state, :start_time])
+    |> validate_required([:state, :error])
   end
 
   def trigger_end_changeset(%TriggerHistory{} = trigger, attrs \\ %{}) do
