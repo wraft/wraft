@@ -20,7 +20,7 @@ defmodule WraftDoc.PipelineRunner do
   step(:create_instances)
   check(:instances_created?, error_message: :instance_failed)
   step(:build)
-  tee(:build_failed?)
+  step(:build_failed?)
   step(:zip_builds)
 
   @doc """
@@ -144,8 +144,12 @@ defmodule WraftDoc.PipelineRunner do
         %{response: {_, 0}} ->
           nil
 
-        %{instance: instance, response: {_, error_code}} ->
-          %{instance: instance, error_code: error_code}
+        %{instance: instance, response: {error_message, error_code}} ->
+          %{
+            doc_failed_instance_id: instance.id,
+            error_code: error_code,
+            error_message: error_message
+          }
       end)
       |> Stream.filter(fn x -> x != nil end)
       |> Enum.to_list()

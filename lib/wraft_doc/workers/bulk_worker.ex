@@ -72,7 +72,7 @@ defmodule WraftDoc.Workers.BulkWorker do
 
     trigger
     |> convert_map_to_trigger_struct()
-    |> update_trigger_history(%{state: state, start_time: start_time})
+    |> trigger_start_update(%{state: state, start_time: start_time})
     |> WraftDoc.PipelineRunner.call()
     |> handle_exceptions()
     |> trigger_end_update()
@@ -155,6 +155,13 @@ defmodule WraftDoc.Workers.BulkWorker do
     trigger
   end
 
+  defp handle_exceptions({:ok, %{trigger: trigger, failed_builds: [], zip_file: zip_file}}) do
+    state = TriggerHistory.states()[:success]
+    trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
+    Logger.info("Pipeline completed succesfully.!")
+    trigger
+  end
+
   defp handle_exceptions(
          {:ok, %{trigger: trigger, failed_builds: failed_builds, zip_file: zip_file}}
        ) do
@@ -171,13 +178,6 @@ defmodule WraftDoc.Workers.BulkWorker do
     trigger
   end
 
-  defp handle_exceptions({:ok, %{trigger: trigger, zip_file: zip_file}}) do
-    state = TriggerHistory.states()[:success]
-    trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
-    Logger.info("Pipeline completed succesfully.!")
-    trigger
-  end
-
   # Update state and error of a trigger history
   @spec update_trigger_history_state_and_error(TriggerHistory.t(), integer, map) ::
           TriggerHistory.t()
@@ -187,8 +187,12 @@ defmodule WraftDoc.Workers.BulkWorker do
     update_trigger_history(trigger, %{state: state, error: error})
   end
 
+  # Update trigger history on start
+  defp trigger_start_update(trigger, params) do
+    trigger |> TriggerHistory.trigger_start_changeset(params) |> Repo.update!()
+  end
+
   # Update a trigger history
-  @spec update_trigger_history(TriggerHistory.t(), map) :: TriggerHistory.t()
   defp update_trigger_history(trigger, params) do
     trigger |> TriggerHistory.update_changeset(params) |> Repo.update!()
   end
