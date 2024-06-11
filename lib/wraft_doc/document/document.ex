@@ -1761,7 +1761,7 @@ defmodule WraftDoc.Document do
     pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir)
 
     "pandoc"
-    |> System.cmd(pandoc_commands)
+    |> System.cmd(pandoc_commands, stderr_to_stdout: true)
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
   end
 
