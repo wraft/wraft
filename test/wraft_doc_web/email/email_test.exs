@@ -9,6 +9,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   alias WraftDocWeb.Mailer.Email
 
   @test_email "test@email.com"
+  @sender_email "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"
   @token "token"
   @name "Sample Name"
 
@@ -22,13 +23,13 @@ defmodule WraftDocWeb.Email.EmailTest do
       Test.deliver(email, [])
 
       assert_email_sent()
-      assert email.from == {"WraftDoc", "admin@wraftdocs.com"}
+      assert email.from == {"WraftDoc", @sender_email}
       assert email.subject == "Invitation to join #{org_name} in WraftDocs"
       assert elem(List.last(email.to), 1) == @test_email
 
       assert email.html_body ==
                "Hi, #{user_name} has invited you to join #{org_name} in WraftDocs. \n
-      Click <a href=#{System.get_env("WRAFT_URL")}/users/join_invite?token=#{@token}&organisation=#{org_name}>here</a> below to join."
+      Click <a href=#{System.get_env("WRAFT_URL")}/users/join_invite?token=#{@token}&organisation=#{org_name}&email=#{@test_email}>here</a> below to join."
     end
 
     test "return email not send if not delivered" do
@@ -50,7 +51,7 @@ defmodule WraftDocWeb.Email.EmailTest do
       Test.deliver(email, [])
 
       assert_email_sent()
-      assert email.from == {"WraftDoc", "admin@wraftdocs.com"}
+      assert email.from == {"WraftDoc", @sender_email}
       assert email.subject == " #{user_name} "
       assert elem(List.last(email.to), 1) == @test_email
       assert email.html_body == "Hi, #{user_name} #{notification_message}"
@@ -75,7 +76,7 @@ defmodule WraftDocWeb.Email.EmailTest do
       Test.deliver(email, [])
 
       assert_email_sent()
-      assert email.from == {"WraftDoc", "admin@wraftdocs.com"}
+      assert email.from == {"WraftDoc", @sender_email}
       assert email.subject == "Forgot your WraftDoc Password?"
       assert elem(List.last(email.to), 1) == auth_token.user.email
 
@@ -100,7 +101,7 @@ defmodule WraftDocWeb.Email.EmailTest do
       Test.deliver(email, [])
 
       assert_email_sent()
-      assert email.from == {"WraftDoc", "admin@wraftdocs.com"}
+      assert email.from == {"WraftDoc", @sender_email}
       assert email.subject == "Wraft - Verify your email"
       assert elem(List.last(email.to), 1) == @test_email
 
@@ -127,7 +128,7 @@ defmodule WraftDocWeb.Email.EmailTest do
       Test.deliver(email, [])
 
       assert_email_sent()
-      assert email.from == {"WraftDoc", "admin@wraftdocs.com"}
+      assert email.from == {"WraftDoc", @sender_email}
       assert email.subject == "Welcome to Wraft!"
       assert elem(List.last(email.to), 1) == @test_email
       assert email.html_body =~ "#{registration_url}"
@@ -147,7 +148,7 @@ defmodule WraftDocWeb.Email.EmailTest do
       Test.deliver(email, [])
 
       assert_email_sent()
-      assert email.from == {"WraftDoc", "admin@wraftdocs.com"}
+      assert email.from == {"WraftDoc", @sender_email}
       assert email.subject == "Thanks for showing interest in Wraft!"
       assert elem(List.last(email.to), 1) == @test_email
 
@@ -168,7 +169,7 @@ defmodule WraftDocWeb.Email.EmailTest do
       Test.deliver(email, [])
 
       assert_email_sent()
-      assert email.from == {"WraftDoc", "admin@wraftdocs.com"}
+      assert email.from == {"WraftDoc", @sender_email}
       assert email.subject == "Wraft - Delete Organisation"
       assert elem(List.last(email.to), 1) == @test_email
 
