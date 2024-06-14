@@ -116,6 +116,8 @@ config :ex_aws,
 
 config :wraft_doc, WraftDocWeb.Mailer, api_key: System.get_env("SENDGRID_API_KEY")
 
+config :wraft_doc, sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"
+
 config :pdf_generator,
   wkhtml_path: System.get_env("WKHTMLTOPDF_PATH"),
   pdftk_path: System.get_env("PDFTK_PATH")
