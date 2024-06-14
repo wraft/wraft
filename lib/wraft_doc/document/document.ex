@@ -1610,7 +1610,7 @@ defmodule WraftDoc.Document do
     |> Repo.update()
     |> case do
       {:ok, d_temp} ->
-        Repo.preload(d_temp, [:creator, :content_type])
+        Repo.preload(d_temp, [:creator, [content_type: [{:fields, :field_type}]]])
 
       {:error, _} = changeset ->
         changeset
