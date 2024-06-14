@@ -3,12 +3,12 @@ defmodule WraftDocWeb.Mailer.Email do
 
   import Swoosh.Email
 
-  @sender_email "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"
-
   def invite_email(org_name, user_name, email, token) do
+    sender_email = Application.get_env(:wraft_doc, :sender_email)
+
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"WraftDoc", sender_email})
     |> subject("Invitation to join #{org_name} in WraftDocs")
     |> html_body(
       "Hi, #{user_name} has invited you to join #{org_name} in WraftDocs. \n
@@ -17,9 +17,11 @@ defmodule WraftDocWeb.Mailer.Email do
   end
 
   def notification_email(user_name, notification_message, email) do
+    sender_email = Application.get_env(:wraft_doc, :sender_email)
+
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"WraftDoc", sender_email})
     |> subject(" #{user_name} ")
     |> html_body("Hi, #{user_name} #{notification_message}")
   end
@@ -28,9 +30,11 @@ defmodule WraftDocWeb.Mailer.Email do
   Password set link.
   """
   def password_set(name, token, email) do
+    sender_email = Application.get_env(:wraft_doc, :sender_email)
+
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"WraftDoc", sender_email})
     |> subject("Welcome to Wraft - Set Your Password")
     |> html_body(
       "Hi #{name}.\n
@@ -42,9 +46,11 @@ defmodule WraftDocWeb.Mailer.Email do
   Password reset link.
   """
   def password_reset(name, token, email) do
+    sender_email = Application.get_env(:wraft_doc, :sender_email)
+
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"WraftDoc", sender_email})
     |> subject("Forgot your WraftDoc Password?")
     |> html_body(
       "Hi #{name}.\n You recently requested to reset your password for WraftDocs
@@ -56,9 +62,11 @@ defmodule WraftDocWeb.Mailer.Email do
     User account verification
   """
   def email_verification(email, token) do
+    sender_email = Application.get_env(:wraft_doc, :sender_email)
+
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"WraftDoc", sender_email})
     |> subject("Wraft - Verify your email")
     |> html_body(
       "
@@ -72,12 +80,14 @@ defmodule WraftDocWeb.Mailer.Email do
     Waiting list approved
   """
   def waiting_list_approved(email, name, token) do
+    sender_email = Application.get_env(:wraft_doc, :sender_email)
+
     registration_url =
       URI.encode("#{System.get_env("WRAFT_URL")}/users/login/set_password?token=#{token}")
 
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"WraftDoc", sender_email})
     |> subject("Welcome to Wraft!")
     |> html_body("""
     <body>
@@ -96,9 +106,11 @@ defmodule WraftDocWeb.Mailer.Email do
     Waiting list join
   """
   def waiting_list_join(email, name) do
+    sender_email = Application.get_env(:wraft_doc, :sender_email)
+
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"WraftDoc", sender_email})
     |> subject("Thanks for showing interest in Wraft!")
     |> html_body("""
     <p>Hello #{name},</p>
@@ -114,9 +126,11 @@ defmodule WraftDocWeb.Mailer.Email do
     Organisation Delete Code
   """
   def organisation_delete_code(email, delete_code, user_name, organisation_name) do
+    sender_email = Application.get_env(:wraft_doc, :sender_email)
+
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"WraftDoc", sender_email})
     |> subject("Wraft - Delete Organisation")
     |> html_body("""
     <p>Hello #{user_name},</p>
