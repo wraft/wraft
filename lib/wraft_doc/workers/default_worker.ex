@@ -21,6 +21,8 @@ defmodule WraftDoc.Workers.DefaultWorker do
   @superadmin_role "superadmin"
   @editor_role "editor"
 
+  @theme_folder_path Application.compile_env!(:wraft_doc, [:theme_folder])
+
   @wraft_theme_args %{
     name: "Wraft Frame",
     font: "Roboto ",
@@ -28,6 +30,8 @@ defmodule WraftDoc.Workers.DefaultWorker do
     primary_color: "#000",
     secondary_color: "#333"
   }
+
+  @layout_file_path Application.compile_env!(:wraft_doc, [:layout_file])
 
   @wraft_layout_args %{
     name: "Wraft Layout",
@@ -158,10 +162,8 @@ defmodule WraftDoc.Workers.DefaultWorker do
   end
 
   defp create_wraft_theme_assets(theme, organisation_id) do
-    theme_folder_path = :wraft_doc |> :code.priv_dir() |> Path.join("static/wraft_files/Roboto")
-
     font_files =
-      theme_folder_path
+      @theme_folder_path
       |> File.ls!()
       |> Enum.filter(fn file -> String.ends_with?(file, ".ttf") end)
 
@@ -171,7 +173,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
         type: "theme",
         file: %Plug.Upload{
           filename: Path.basename(font_file),
-          path: Path.join(theme_folder_path, font_file),
+          path: Path.join(@theme_folder_path, font_file),
           content_type: "application/octet-stream"
         }
       }
@@ -184,12 +186,9 @@ defmodule WraftDoc.Workers.DefaultWorker do
   end
 
   defp create_wraft_layout_assets(layout, organisation_id) do
-    layout_file_path =
-      :wraft_doc |> :code.priv_dir() |> Path.join("static/wraft_files/letterhead.pdf")
-
     asset_params =
       Map.update!(@wraft_layout_asset_args, :file, fn upload ->
-        %Plug.Upload{upload | path: layout_file_path}
+        %Plug.Upload{upload | path: @layout_file_path}
       end)
 
     asset_id = create_wraft_branded_asset(organisation_id, asset_params)
