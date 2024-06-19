@@ -25,7 +25,7 @@ defmodule WraftDoc.Document.Pipeline.Stage do
       :data_template_id,
       :creator_id
     ])
-    |> unique_constraint(:content_type_id,
+    |> unique_constraint(:data_template_id,
       name: :pipe_stages_unique_index,
       message: "Already added.!"
     )
@@ -38,7 +38,7 @@ defmodule WraftDoc.Document.Pipeline.Stage do
       :content_type_id,
       :data_template_id
     ])
-    |> unique_constraint(:content_type_id,
+    |> unique_constraint(:data_template_id,
       name: :pipe_stages_unique_index,
       message: "Already added.!"
     )
