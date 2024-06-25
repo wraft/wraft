@@ -101,7 +101,9 @@ defmodule WraftDoc.Workers.BulkWorker do
 
     trigger =
       update_trigger_history_state_and_error(trigger, state, %{
-        info: :values_unavailable,
+        info: "Values Provided Incorrectly",
+        message:
+          "The provided data values are incomplete or missing for the required fields in the document template. Please check your data mapping and ensure all necessary values are provided.",
         stage: stage
       })
 
@@ -116,7 +118,9 @@ defmodule WraftDoc.Workers.BulkWorker do
 
     trigger =
       update_trigger_history_state_and_error(trigger, state, %{
-        info: :pipeline_not_found,
+        info: "Pipeline Not Found",
+        message:
+          "The pipeline you're trying to run does not exist. Please double-check the pipeline name and try again.",
         stage: stage
       })
 
@@ -131,7 +135,9 @@ defmodule WraftDoc.Workers.BulkWorker do
 
     trigger =
       update_trigger_history_state_and_error(trigger, state, %{
-        info: :instance_failed,
+        info: "Document Generation Failed",
+        message:
+          "There was an error creating the document instance. Please check the input data and try again.",
         stage: stage
       })
 
@@ -147,7 +153,8 @@ defmodule WraftDoc.Workers.BulkWorker do
 
     trigger =
       update_trigger_history_state_and_error(trigger, state, %{
-        info: message,
+        info: "Download Error",
+        message: message,
         stage: stage
       })
 
@@ -169,7 +176,8 @@ defmodule WraftDoc.Workers.BulkWorker do
 
     trigger =
       update_trigger_history_state_and_error(trigger, state, %{
-        info: "some_builds_failed",
+        info: "Builds Failed",
+        message: "Some builds failed. Please check the logs for more information.",
         failed_builds: failed_builds,
         zip_file: zip_file
       })
@@ -182,8 +190,9 @@ defmodule WraftDoc.Workers.BulkWorker do
   @spec update_trigger_history_state_and_error(TriggerHistory.t(), integer, map) ::
           TriggerHistory.t()
   defp update_trigger_history_state_and_error(trigger, state, error) do
-    key = DateTime.to_iso8601(Timex.now())
-    error = Map.put(trigger.error, key, error)
+    failure_time = DateTime.to_iso8601(Timex.now())
+    error = Map.put(error, :failure_time, failure_time)
+    error = Map.put(trigger.error, error, error)
     update_trigger_history(trigger, %{state: state, error: error})
   end
 
