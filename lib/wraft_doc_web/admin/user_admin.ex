@@ -56,7 +56,7 @@ defmodule WraftDocWeb.UserAdmin do
   end
 
   defp resend_email_verification(user) do
-    AuthTokens.create_email_verification_token(user)
+    AuthTokens.create_token_and_send_email(user.email)
     {:ok, user}
   end
 end
