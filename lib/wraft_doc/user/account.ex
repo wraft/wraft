@@ -289,11 +289,19 @@ defmodule WraftDoc.Account do
         %{organisation: personal_org, user: user} =
           Enterprise.get_personal_organisation_and_role(user)
 
+        updated_sign_in_at(user)
         %{user: user, tokens: Guardian.generate_tokens(user, personal_org.id)}
 
       _ ->
         {:error, :invalid}
     end
+  end
+
+  # Update the recent login time of the user.
+  defp updated_sign_in_at(%User{} = user) do
+    user
+    |> User.update_sign_in_changeset(%{signed_in_at: NaiveDateTime.utc_now()})
+    |> Repo.update()
   end
 
   @doc """
