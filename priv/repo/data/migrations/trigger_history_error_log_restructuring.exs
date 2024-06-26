@@ -46,7 +46,7 @@ defmodule WraftDoc.Repo.Migrations.TriggerHistoryErrorLogRestructuring do
               "failure_time" => failure_time,
               info: "Builds Failed",
               message: "Some builds failed. Please check the logs for more information.",
-              zipfile: trigger_history.error[failure_time]["zipfile"],
+              zip_file: trigger_history.error[failure_time]["zip_file"],
               failed_builds: trigger_history.error[failure_time]["failed_builds"]
             }
           })

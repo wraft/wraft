@@ -13,7 +13,9 @@ defmodule WraftDocWeb.WaitingListAdmin do
       first_name: %{name: "First Name", value: fn x -> x.first_name end},
       last_name: %{name: "Last Name", value: fn x -> x.last_name end},
       email: %{name: "Email", value: fn x -> x.email end},
-      status: %{name: "Status", value: fn x -> x.status end}
+      status: %{name: "Status", value: fn x -> x.status end},
+      inserted_at: %{name: "Created At", value: fn x -> x.inserted_at end},
+      updated_at: %{name: "Approved At", value: fn x -> x.updated_at end}
     ]
   end
 
@@ -24,6 +26,11 @@ defmodule WraftDocWeb.WaitingListAdmin do
       email: %{label: "Email"},
       status: %{label: "Status"}
     ]
+  end
+
+  def ordering(_schema) do
+    # order by created_at
+    [desc: :inserted_at]
   end
 
   def after_update(
