@@ -24,7 +24,6 @@ defmodule WraftDoc.Document.Pipeline do
     pipeline
     |> cast(attrs, [:name, :api_route, :organisation_id, :source, :source_id])
     |> validate_required([:name, :api_route, :organisation_id])
-    |> enforce_name_upper_case()
     |> unique_constraint(:name,
       message: "Pipeline with the same name already exists.!",
       name: "organisation_pipeline_unique_index"
@@ -35,20 +34,9 @@ defmodule WraftDoc.Document.Pipeline do
     pipeline
     |> cast(attrs, [:name, :api_route, :source, :source_id])
     |> validate_required([:name, :api_route])
-    |> enforce_name_upper_case()
     |> unique_constraint(:name,
       message: "Pipeline with the same name already exists.!",
       name: "organisation_pipeline_unique_index"
     )
-  end
-
-  defp enforce_name_upper_case(changeset) do
-    case get_change(changeset, :name) do
-      nil ->
-        changeset
-
-      name ->
-        put_change(changeset, :name, String.upcase(name))
-    end
   end
 end

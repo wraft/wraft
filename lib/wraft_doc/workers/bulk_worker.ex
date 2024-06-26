@@ -192,7 +192,6 @@ defmodule WraftDoc.Workers.BulkWorker do
   defp update_trigger_history_state_and_error(trigger, state, error) do
     failure_time = DateTime.to_iso8601(Timex.now())
     error = Map.put(error, :failure_time, failure_time)
-    error = Map.put(trigger.error, error, error)
     update_trigger_history(trigger, %{state: state, error: error})
   end
 
