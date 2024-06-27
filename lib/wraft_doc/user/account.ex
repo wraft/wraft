@@ -678,4 +678,18 @@ defmodule WraftDoc.Account do
   end
 
   def list_role_groups(_), do: nil
+
+  # TODO add tests
+  @doc """
+  Convert UTC time to the given timezone.
+  """
+  @spec convert_utc_time(NaiveDateTime.t(), String.t()) :: NaiveDateTime.t()
+  def convert_utc_time(datetime, timezone) do
+    datetime
+    |> DateTime.from_naive("Etc/UTC")
+    |> case do
+      {:ok, datetime} -> Timex.Timezone.convert(datetime, timezone)
+      {:error, _} -> {:error, :invalid_datetime}
+    end
+  end
 end
