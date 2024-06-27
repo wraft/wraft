@@ -3,6 +3,7 @@ defmodule WraftDocWeb.UserAdmin do
   Admin panel for user
   """
   import Ecto.Query
+  alias WraftDoc.Account
   alias WraftDoc.AuthTokens
   alias WraftDocWeb.Router.Helpers, as: Routes
 
@@ -24,7 +25,7 @@ defmodule WraftDocWeb.UserAdmin do
       name: %{name: "Name", value: fn x -> x.name end},
       email: %{name: "Email", value: fn x -> x.email end},
       email_verify: %{name: "Email Verified", value: fn x -> x.email_verify end},
-      signed_in_at: %{name: "Signed In At", value: fn x -> x.signed_in_at end},
+      signed_in_at: %{name: "Signed In At", value: fn x -> convert_utc_time(x.signed_in_at) end},
       inserted_at: %{name: "Created At", value: fn x -> x.inserted_at end},
       updated_at: %{name: "Updated At", value: fn x -> x.updated_at end}
     ]
@@ -58,5 +59,11 @@ defmodule WraftDocWeb.UserAdmin do
   defp resend_email_verification(user) do
     AuthTokens.create_token_and_send_email(user.email)
     {:ok, user}
+  end
+
+  defp convert_utc_time(nil), do: nil
+
+  defp convert_utc_time(datetime) do
+    Account.convert_utc_time(datetime, "Asia/Calcutta")
   end
 end
