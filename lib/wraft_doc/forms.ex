@@ -266,7 +266,9 @@ defmodule WraftDoc.Forms do
 
   defp update_form_pipelines(_, _), do: {:ok, "ok"}
 
-  defp create_form_pipeline(form, pipeline_id) do
+  @spec create_form_pipeline(Form.t(), Ecto.UUID.t()) ::
+          {:ok, FormPipeline.t()} | {:error, Ecto.Changeset.t()}
+  def create_form_pipeline(form, pipeline_id) do
     %FormPipeline{}
     |> FormPipeline.changeset(%{
       form_id: form.id,
@@ -274,6 +276,17 @@ defmodule WraftDoc.Forms do
       organisation_id: form.organisation_id
     })
     |> Repo.insert()
+  end
+
+  @doc """
+  Delete a form pipeline
+  """
+  @spec delete_form_pipeline(Pipeline.t()) ::
+          {:ok, FormPipeline.t()} | {:error, Ecto.Changeset.t()}
+  def delete_form_pipeline(pipeline) do
+    FormPipeline
+    |> Repo.get_by(pipeline_id: pipeline.id)
+    |> Repo.delete()
   end
 
   @doc """
@@ -459,24 +472,9 @@ defmodule WraftDoc.Forms do
         %Form{pipelines: pipelines} = _form,
         %FormEntry{data: data} = _form_entry
       ) do
-    pipelines
-    |> get_pipe_stage_ids
-    |> get_mappings
-    |> case do
-      [] ->
-        {:error, "No mappings found"}
-
-      mappings ->
-        transformed_data =
-          mappings
-          |> transform_mappings
-          |> transform_data(data)
-          |> Enum.into(%{})
-
-        Enum.each(pipelines, fn pipeline ->
-          trigger_pipeline(current_user, pipeline.id, transformed_data)
-        end)
-    end
+    Enum.each(pipelines, fn pipeline ->
+      trigger_pipeline(current_user, pipeline.id, data)
+    end)
   end
 
   defp trigger_pipeline(current_user, pipeline_id, data) do
@@ -491,11 +489,30 @@ defmodule WraftDoc.Forms do
     |> Repo.transaction()
   end
 
+  @doc """
+    Transform form entry data fields by form mapping
+  """
+  @spec transform_data_by_mapping(FormMapping.t(), map()) :: map() | {:error, String.t()}
+  def transform_data_by_mapping(%FormMapping{mapping: mappings} = _form_mapping, data) do
+    mappings
+    |> transform_mappings
+    |> transform_data(data)
+    |> Enum.into(%{})
+  end
+
+  def transform_data_by_mapping(nil, _data), do: {:error, "No mappings found"}
+
   defp transform_data(mappings, data) do
-    Enum.map(data, fn {key, value} ->
-      %{name: field_name} = Repo.get(Field, key)
-      {Map.get(mappings, field_name), value}
+    data
+    |> Enum.map(fn {field_id, value} ->
+      %{name: field_name} = Repo.get(Field, field_id)
+
+      case Map.get(mappings, field_name) do
+        nil -> nil
+        content_type_field_name -> {content_type_field_name, value}
+      end
     end)
+    |> Enum.reject(&is_nil/1)
   end
 
   defp transform_mappings(mappings) do
@@ -504,26 +521,6 @@ defmodule WraftDoc.Forms do
       source_name = mapping.source["name"]
       Map.put(acc, source_name, destination_name)
     end)
-  end
-
-  defp get_mappings(pipe_stage_ids) do
-    Enum.flat_map(pipe_stage_ids, &(&1 |> get_form_mapping() |> Map.get(:mapping, [])))
-  end
-
-  defp get_pipe_stage_ids(pipelines) do
-    Enum.reduce(pipelines, [], fn pipeline, acc ->
-      %{stages: stages} = Repo.preload(pipeline, [:stages])
-      acc ++ Enum.map(stages, & &1.id)
-    end)
-  end
-
-  defp get_form_mapping(pipe_stage_id) do
-    FormMapping
-    |> Repo.get_by(pipe_stage_id: pipe_stage_id)
-    |> case do
-      nil -> %{"mapping" => []}
-      mapping -> mapping
-    end
   end
 
   @doc """

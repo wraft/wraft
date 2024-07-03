@@ -27,7 +27,6 @@ defmodule WraftDocWeb.Api.V1.FormMappingView do
 
   def render("mapping.json", %{mapping: mapping}) do
     %{
-      id: mapping.id,
       source: mapping.source,
       destination: mapping.destination
     }

@@ -19,6 +19,9 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
 
   alias WraftDoc.Document
   alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Forms
+  alias WraftDoc.Forms.Form
+  alias WraftDoc.Forms.FormPipeline
 
   def swagger_definitions do
     %{
@@ -228,7 +231,9 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %Pipeline{} = pipeline <- Document.create_pipeline(current_user, params) do
+    with %Pipeline{} = pipeline <- Document.create_pipeline(current_user, params),
+         %Form{} = form <- Forms.get_form(current_user, pipeline.source_id),
+         {:ok, %FormPipeline{}} <- Forms.create_form_pipeline(form, pipeline.id) do
       render(conn, "create.json", pipeline: pipeline)
     end
   end
@@ -352,7 +357,8 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
     current_user = conn.assigns[:current_user]
 
     with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, uuid),
-         {:ok, %Pipeline{}} <- Document.delete_pipeline(pipeline) do
+         {:ok, %Pipeline{}} <- Document.delete_pipeline(pipeline),
+         {:ok, %FormPipeline{}} <- Forms.delete_form_pipeline(pipeline) do
       render(conn, "pipeline.json", pipeline: pipeline)
     end
   end

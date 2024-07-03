@@ -95,19 +95,18 @@ defmodule WraftDoc.Workers.BulkWorker do
   # Handle exceptions/responses returned from the PipelineRunner
   @spec handle_exceptions(tuple) :: any
   defp handle_exceptions(
-         {:error, %PipelineError{error: :values_unavailable, input: trigger, stage: stage}}
+         {:error, %PipelineError{error: :form_mapping_not_complete, input: trigger, stage: stage}}
        ) do
-    state = TriggerHistory.states()[:pending]
+    state = TriggerHistory.states()[:failed]
 
     trigger =
       update_trigger_history_state_and_error(trigger, state, %{
-        info: "Values Provided Incorrectly",
-        message:
-          "The provided data values are incomplete or missing for the required fields in the document template. Please check your data mapping and ensure all necessary values are provided.",
+        info: "Form Mapping Not Complete",
+        message: "Please complete the form mapping and try again.",
         stage: stage
       })
 
-    Logger.error("Required values not provided. Pipeline execution is now pending.")
+    Logger.error("Form mapping not complete. Pipeline execution failed.")
     trigger
   end
 
