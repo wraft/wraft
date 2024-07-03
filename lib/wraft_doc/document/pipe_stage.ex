@@ -11,7 +11,7 @@ defmodule WraftDoc.Document.Pipeline.Stage do
     belongs_to(:data_template, WraftDoc.Document.DataTemplate)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:creator, WraftDoc.Account.User)
-    has_many(:form_mapping, WraftDoc.Forms.FormMapping, foreign_key: :pipe_stage_id)
+    has_one(:form_mapping, WraftDoc.Forms.FormMapping, foreign_key: :pipe_stage_id)
     has_many(:forms, through: [:form_mapping, :form])
     timestamps()
   end

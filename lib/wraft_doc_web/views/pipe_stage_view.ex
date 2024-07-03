@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageView do
         render_one(stage.data_template, DataTemplateView, "create.json", as: :d_template),
       state: render_one(stage.state, StateView, "create.json", as: :state),
       form_mapping:
-        render_many(stage.form_mapping, FormMappingView, "show.json", as: :form_mapping),
+        render_one(stage.form_mapping, FormMappingView, "show.json", as: :form_mapping),
       inserted_at: stage.inserted_at,
       updated_at: stage.updated_at
     }

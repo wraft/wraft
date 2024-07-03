@@ -12,11 +12,12 @@ defmodule WraftDoc.PipelineRunner do
   alias WraftDoc.Document.Pipeline
   alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Enterprise
+  alias WraftDoc.Forms
   alias WraftDoc.Repo
 
   step(:preload_pipeline_and_stages)
   check(:pipeline_exists?, error_message: :pipeline_not_found)
-  check(:values_provided?, error_message: :values_unavailable)
+  check(:form_mapping_exists?, error_message: :form_mapping_not_complete)
   step(:create_instances)
   check(:instances_created?, error_message: :instance_failed)
   step(:build)
@@ -28,7 +29,9 @@ defmodule WraftDoc.PipelineRunner do
   """
   @spec preload_pipeline_and_stages(TriggerHistory.t()) :: TriggerHistory.t() | nil
   def preload_pipeline_and_stages(%TriggerHistory{} = trigger) do
-    Repo.preload(trigger, pipeline: [stages: [{:content_type, :fields}, :data_template, :state]])
+    Repo.preload(trigger,
+      pipeline: [stages: [{:content_type, :fields}, :data_template, :state, :form_mapping]]
+    )
   end
 
   def preload_pipeline_and_stages(_), do: nil
@@ -41,19 +44,14 @@ defmodule WraftDoc.PipelineRunner do
   def pipeline_exists?(_), do: false
 
   @doc """
-  Check if the data provided includes all the requied fields of all stages of the pipeline.
+    Check if form mappings exist or not
   """
-  @spec values_provided?(map) :: boolean()
-  def values_provided?(%{data: data, pipeline: %Pipeline{stages: stages}}) do
-    value =
-      stages
-      |> Enum.map(fn stage -> stage.content_type.fields end)
-      |> List.flatten()
-      |> Enum.map(fn c_type_field -> Map.has_key?(data, c_type_field.name) end)
-      |> Enum.member?(false)
-
-    !value
+  @spec form_mapping_exists?(TriggerHistory.t()) :: boolean()
+  def form_mapping_exists?(%{pipeline: %{stages: stages}}) do
+    Enum.all?(stages, &(&1.form_mapping != nil))
   end
+
+  def form_mapping_exists?(_), do: false
 
   @doc """
   Creates instances for all the stages of the pipeline.
@@ -65,8 +63,16 @@ defmodule WraftDoc.PipelineRunner do
     type = Instance.types()[:pipeline_api]
 
     instances =
-      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp} ->
-        params = data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
+      Enum.map(stages, fn %{
+                            content_type: c_type,
+                            data_template: d_temp,
+                            form_mapping: form_mapping
+                          } ->
+        transformed_data = Forms.transform_data_by_mapping(form_mapping, data)
+
+        params =
+          transformed_data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
+
         Document.create_instance(user, c_type, Enterprise.get_final_state(c_type.flow_id), params)
       end)
 
@@ -77,8 +83,16 @@ defmodule WraftDoc.PipelineRunner do
     type = Instance.types()[:pipeline_hook]
 
     instances =
-      Enum.map(stages, fn %{content_type: c_type, data_template: d_temp} ->
-        params = data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
+      Enum.map(stages, fn %{
+                            content_type: c_type,
+                            data_template: d_temp,
+                            form_mapping: form_mapping
+                          } ->
+        transformed_data = Forms.transform_data_by_mapping(form_mapping, data)
+
+        params =
+          transformed_data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
+
         Document.create_instance(c_type, Enterprise.get_final_state(c_type.flow_id), params)
       end)
 
