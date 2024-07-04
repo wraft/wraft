@@ -357,8 +357,8 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
     current_user = conn.assigns[:current_user]
 
     with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, uuid),
-         {:ok, %Pipeline{}} <- Document.delete_pipeline(pipeline),
-         {:ok, %FormPipeline{}} <- Forms.delete_form_pipeline(pipeline) do
+         {:ok, %FormPipeline{}} <- Forms.delete_form_pipeline(pipeline),
+         {:ok, %Pipeline{}} <- Document.delete_pipeline(pipeline) do
       render(conn, "pipeline.json", pipeline: pipeline)
     end
   end
