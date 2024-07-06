@@ -472,19 +472,24 @@ defmodule WraftDoc.Forms do
         %Form{pipelines: pipelines} = _form,
         %FormEntry{data: data} = _form_entry
       ) do
-    Enum.each(pipelines, fn pipeline ->
-      trigger_pipeline(current_user, pipeline.id, data)
+    pipelines
+    |> Enum.with_index()
+    |> Enum.each(fn {pipeline, index} ->
+      trigger_pipeline(current_user, pipeline.id, data, index)
     end)
   end
 
-  defp trigger_pipeline(current_user, pipeline_id, data) do
+  defp trigger_pipeline(current_user, pipeline_id, data, scheduled_at_offset) do
     Multi.new()
     |> Multi.run(:pipeline, fn _, _ -> {:ok, Document.get_pipeline(current_user, pipeline_id)} end)
     |> Multi.run(:trigger_history, fn _, %{pipeline: pipeline} ->
       Document.create_trigger_history(current_user, pipeline, data)
     end)
     |> Multi.run(:pipeline_job, fn _, %{trigger_history: trigger_history} ->
-      Document.create_pipeline_job(trigger_history)
+      Document.create_pipeline_job(
+        trigger_history,
+        DateTime.add(DateTime.utc_now(), scheduled_at_offset, :second)
+      )
     end)
     |> Repo.transaction()
   end

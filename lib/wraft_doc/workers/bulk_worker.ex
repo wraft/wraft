@@ -2,7 +2,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   @moduledoc """
   Oban worker for bulk building of docs.
   """
-  use Oban.Worker, queue: :events
+  use Oban.Worker, queue: :events, max_attempts: 1
   require Logger
 
   alias Opus.PipelineError
@@ -65,7 +65,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     :ok
   end
 
-  def perform(%Job{args: trigger, attempt: 1, tags: ["pipeline_job"]}) do
+  def perform(%Job{args: trigger, tags: ["pipeline_job"]}) do
     Logger.info("Job starting for running the pipeline...")
     start_time = Timex.now()
     state = TriggerHistory.states()[:executing]
@@ -78,7 +78,6 @@ defmodule WraftDoc.Workers.BulkWorker do
     |> trigger_end_update()
 
     Logger.info("Job end for running the pipeline.!")
-    {:cancel, :ok}
   end
 
   defp convert_to_map(mapping) when is_map(mapping), do: mapping
