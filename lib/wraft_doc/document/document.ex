@@ -2358,17 +2358,21 @@ defmodule WraftDoc.Document do
   Creates a background job to run a pipeline.
   """
   # TODO - improve tests
-  @spec create_pipeline_job(TriggerHistory.t()) ::
+  @spec create_pipeline_job(TriggerHistory.t(), Ecto.UUID.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  def create_pipeline_job(%TriggerHistory{} = trigger_history) do
-    create_bulk_job(trigger_history, ["pipeline_job"])
+  def create_pipeline_job(%TriggerHistory{} = trigger_history, scheduled_at) do
+    create_bulk_job(trigger_history, scheduled_at, ["pipeline_job"])
   end
 
-  def create_pipeline_job(_, _), do: nil
+  def create_pipeline_job(%TriggerHistory{} = trigger_history) do
+    create_bulk_job(trigger_history, nil, ["pipeline_job"])
+  end
 
-  defp create_bulk_job(args, tags \\ []) do
+  def create_pipeline_job(_), do: nil
+
+  defp create_bulk_job(args, scheduled_at \\ nil, tags \\ []) do
     args
-    |> BulkWorker.new(tags: tags)
+    |> BulkWorker.new(tags: tags, scheduled_at: scheduled_at)
     |> Oban.insert()
   end
 
