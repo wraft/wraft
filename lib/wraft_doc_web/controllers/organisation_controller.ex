@@ -301,11 +301,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
       true ->
         with %Organisation{id: id} = organisation <-
                Enterprise.create_organisation(current_user, params),
-             {:ok, %Oban.Job{}} <-
-               Enterprise.create_default_worker_job(
-                 %{organisation_id: id, user_id: current_user.id},
-                 "organisation_roles"
-               ),
+             :ok <- Enterprise.insert_organisation_roles(id, current_user.id),
              {:ok, %Oban.Job{}} <-
                Enterprise.create_default_worker_job(
                  %{organisation_id: id},
