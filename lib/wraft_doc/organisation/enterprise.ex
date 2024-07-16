@@ -43,6 +43,10 @@ defmodule WraftDoc.Enterprise do
 
   @trial_plan_name "Free Trial"
   @trial_duration 14
+
+  @superadmin_role "superadmin"
+  @editor_role "editor"
+
   @doc """
   Get a flow from its UUID.
   """
@@ -1395,6 +1399,64 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+  Inserts roles for an organisation and assigns the superadmin role to a user.
+
+  ## Parameters
+  - `organisation_id` - The ID of the organisation.
+  - `user_id` - The ID of the user to be assigned the superadmin role.
+
+  ## Returns
+  - `:ok` if the roles were successfully inserted and the role was assigned.
+  - `{:error, changeset}` if there was an error during the insertion or assignment.
+
+  This function creates two roles (`superadmin` and `editor`) for the given organisation.
+  It assigns the `superadmin` role to the specified user. If any step fails, it logs an error
+  and returns the changeset causing the failure.
+
+  ## Examples
+
+      iex> insert_organisation_roles("org_123", "user_456")
+      :ok
+
+      iex> insert_organisation_roles("invalid_org", "user_456")
+      {:error, %Ecto.Changeset{}}
+  """
+  @spec insert_organisation_roles(Ecto.UUID.t(), Ecto.UUID.t()) ::
+          :ok | {:error, Ecto.Changeset.t()}
+  def insert_organisation_roles(organisation_id, user_id) do
+    permissions = get_editor_permissions()
+
+    Multi.new()
+    |> Multi.insert(
+      :superadmin_role,
+      Role.changeset(%Role{}, %{
+        name: @superadmin_role,
+        organisation_id: organisation_id
+      })
+    )
+    |> Multi.insert(
+      :editor_role,
+      Role.changeset(%Role{}, %{
+        name: @editor_role,
+        organisation_id: organisation_id,
+        permissions: permissions
+      })
+    )
+    |> Multi.run(:assign_role, fn _, %{superadmin_role: role} ->
+      Account.create_user_role(user_id, role.id)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} ->
+        :ok
+
+      {:error, _, changeset, _} ->
+        Logger.error("Organisation role insert failed", changeset: changeset)
+        {:error, changeset}
+    end
+  end
+
+  @doc """
   Retrieves the roles associated with a user's organisation
 
   ## Parameters
@@ -1492,5 +1554,15 @@ defmodule WraftDoc.Enterprise do
       |> List.to_tuple()
     end)
     |> Enum.group_by(fn {resource, _} -> resource end, fn {_, action} -> action end)
+  end
+
+  defp get_editor_permissions do
+    permissions_file_path =
+      :wraft_doc |> :code.priv_dir() |> Path.join("repo/data/rbac/editor_permissions.csv")
+
+    permissions_file_path
+    |> File.stream!()
+    |> CSV.decode()
+    |> Enum.map(fn {:ok, [permission]} -> permission end)
   end
 end

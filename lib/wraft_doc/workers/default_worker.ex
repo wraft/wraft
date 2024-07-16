@@ -19,7 +19,6 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias WraftDoc.Repo
 
   @superadmin_role "superadmin"
-  @editor_role "editor"
 
   @theme_folder_path Application.compile_env!(:wraft_doc, [:theme_folder])
 
@@ -72,36 +71,6 @@ defmodule WraftDoc.Workers.DefaultWorker do
     end
   end
 
-  def perform(%Job{
-        args: %{"organisation_id" => organisation_id, "user_id" => user_id},
-        tags: ["organisation_roles"]
-      }) do
-    permissions = get_editor_permissions()
-
-    Multi.new()
-    |> Multi.insert(:superadmin_role, %Role{
-      name: @superadmin_role,
-      organisation_id: organisation_id
-    })
-    |> Multi.insert(:editor_role, %Role{
-      name: @editor_role,
-      organisation_id: organisation_id,
-      permissions: permissions
-    })
-    |> Multi.run(:assign_role, fn _, %{superadmin_role: role} ->
-      Account.create_user_role(user_id, role.id)
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, _} ->
-        :ok
-
-      {:error, _, changeset, _} ->
-        Logger.error("Organisation role insert failed", changeset: changeset)
-        {:error, changeset}
-    end
-  end
-
   def perform(%Job{tags: ["wraft_theme_and_layout"]} = job) do
     organisation_id = job.args["organisation_id"]
     %{id: engine_id} = Repo.get_by(Engine, name: "Pandoc")
@@ -138,17 +107,6 @@ defmodule WraftDoc.Workers.DefaultWorker do
   def perform(%Job{args: %{"user_id" => user_id, "roles" => role_ids}, tags: ["assign_role"]}) do
     Enum.each(role_ids, &Account.create_user_role(user_id, &1))
     :ok
-  end
-
-  # Private
-  defp get_editor_permissions do
-    permissions_file_path =
-      :wraft_doc |> :code.priv_dir() |> Path.join("repo/data/rbac/editor_permissions.csv")
-
-    permissions_file_path
-    |> File.stream!()
-    |> CSV.decode()
-    |> Enum.map(fn {:ok, [permission]} -> permission end)
   end
 
   # Creates a wraft branded asset, uploads the file and returns the id.

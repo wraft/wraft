@@ -5,6 +5,7 @@ defmodule WraftDoc.EnterpriseTest do
   @moduletag :enterprise
 
   alias WraftDoc.Account.Role
+  alias WraftDoc.Account.UserRole
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.ApprovalSystem
@@ -20,6 +21,9 @@ defmodule WraftDoc.EnterpriseTest do
 
   @valid_razorpay_id "pay_EvM3nS0jjqQMyK"
   @failed_razorpay_id "pay_EvMEpdcZ5HafEl"
+
+  @superadmin_role "superadmin"
+  @editor_role "editor"
 
   test "get flow returns flow data by id" do
     user = insert(:user_with_organisation)
@@ -1629,6 +1633,44 @@ defmodule WraftDoc.EnterpriseTest do
 
       assert error == :no_permission
       assert Enterprise.already_member(organisation_id, user.email) == :ok
+    end
+  end
+
+  describe "insert_organisation_roles/2" do
+    setup do
+      organisation = insert(:organisation)
+      user = insert(:user)
+      {:ok, organisation: organisation, user: user}
+    end
+
+    test "successfully inserts roles and assigns superadmin role", %{
+      organisation: organisation,
+      user: user
+    } do
+      assert :ok = Enterprise.insert_organisation_roles(organisation.id, user.id)
+
+      superadmin_role =
+        Repo.get_by(Role, name: @superadmin_role, organisation_id: organisation.id)
+
+      editor_role = Repo.get_by(Role, name: @editor_role, organisation_id: organisation.id)
+
+      assert superadmin_role && editor_role
+      assert [_ | _] = editor_role.permissions
+
+      user_role = Repo.get_by(UserRole, user_id: user.id, role_id: superadmin_role.id)
+      assert user_role
+    end
+
+    test "returns error if role insertion fails", %{user: user} do
+      assert {:error, changeset} = Enterprise.insert_organisation_roles(Faker.UUID.v4(), user.id)
+      assert %{organisation_id: ["does not exist"]} == errors_on(changeset)
+    end
+
+    test "returns error if role assignment fails", %{organisation: organisation} do
+      assert {:error, changeset} =
+               Enterprise.insert_organisation_roles(organisation.id, Faker.UUID.v4())
+
+      assert %{user_id: ["does not exist"]} == errors_on(changeset)
     end
   end
 end
