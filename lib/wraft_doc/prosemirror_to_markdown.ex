@@ -61,6 +61,14 @@ defmodule WraftDoc.ProsemirrorToMarkdown do
   defp convert_node(%{"type" => "holder"}, _opts),
     do: raise(InvalidJsonError, "Invalid holder format.")
 
+  defp convert_node(%{"type" => "table", "content" => rows}, opts) do
+    header = convert_table_row(hd(rows), opts, true)
+    separator = create_table_separator(hd(rows))
+    body = Enum.map_join(tl(rows), "\n", &convert_table_row(&1, opts, false))
+
+    Enum.join([header, separator, body], "\n")
+  end
+
   defp convert_node(%{"type" => "orderedList", "content" => content}, opts) do
     content
     |> Enum.with_index(1)
@@ -102,6 +110,33 @@ defmodule WraftDoc.ProsemirrorToMarkdown do
 
   defp wrap_lines(text, prefix) do
     Enum.map_join(String.split(text, "\n"), "\n", &(prefix <> &1))
+  end
+
+  # Table utility functions
+  defp convert_table_row(%{"content" => cells}, opts, is_header) do
+    cells
+    |> Enum.map_join(" | ", &convert_table_cell(&1, opts, is_header))
+    |> wrap_table_row
+  end
+
+  defp convert_table_cell(%{"type" => "tableCell", "content" => content}, opts, is_header) do
+    cell_content = Enum.map_join(content, " ", &convert_node(&1, opts))
+    if is_header, do: cell_content, else: String.trim(cell_content)
+  end
+
+  defp convert_table_cell(%{"type" => "tableControllerCell"}, _opts, _is_header), do: ""
+
+  defp create_table_separator(%{"content" => cells}) do
+    cells
+    |> Enum.map_join(" | ", fn
+      %{"type" => "tableCell"} -> "---"
+      %{"type" => "tableControllerCell"} -> ""
+    end)
+    |> wrap_table_row
+  end
+
+  defp wrap_table_row(row) do
+    "| " <> row <> " |"
   end
 end
 

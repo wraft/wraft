@@ -2457,25 +2457,25 @@ defmodule WraftDoc.Document do
   end
 
   # Private
-  def replace_content_holder(
-        %{"type" => "holder", "attrs" => %{"name" => name} = attrs} = content,
-        data
-      ) do
+  defp replace_content_holder(
+         %{"type" => "holder", "attrs" => %{"name" => name} = attrs} = content,
+         data
+       ) do
     case Map.get(data, name) do
       nil -> content
       named_value -> %{content | "attrs" => %{attrs | "named" => named_value}}
     end
   end
 
-  def replace_content_holder(%{"type" => _type, "content" => content} = node, data)
-      when is_list(content) do
+  defp replace_content_holder(%{"type" => _type, "content" => content} = node, data)
+       when is_list(content) do
     updated_content = Enum.map(content, fn item -> replace_content_holder(item, data) end)
     %{node | "content" => updated_content}
   end
 
-  def replace_content_holder(other, _data), do: other
+  defp replace_content_holder(other, _data), do: other
 
-  def replace_content_title(fields, title) do
+  defp replace_content_title(fields, title) do
     Enum.reduce(fields, title, fn {k, v}, acc ->
       WraftDoc.DocConversion.replace_content(k, v, acc)
     end)
