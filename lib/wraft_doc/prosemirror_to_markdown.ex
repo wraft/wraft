@@ -62,9 +62,9 @@ defmodule WraftDoc.ProsemirrorToMarkdown do
     do: raise(InvalidJsonError, "Invalid holder format.")
 
   defp convert_node(%{"type" => "table", "content" => rows}, opts) do
-    header = convert_table_row(hd(rows), opts, true)
+    header = convert_table_row(hd(rows), opts)
     separator = create_table_separator(hd(rows))
-    body = Enum.map_join(tl(rows), "\n", &convert_table_row(&1, opts, false))
+    body = Enum.map_join(tl(rows), "\n", &convert_table_row(&1, opts))
 
     Enum.join([header, separator, body], "\n")
   end
@@ -113,30 +113,35 @@ defmodule WraftDoc.ProsemirrorToMarkdown do
   end
 
   # Table utility functions
-  defp convert_table_row(%{"content" => cells}, opts, is_header) do
+  defp convert_table_row(%{"content" => cells}, opts) do
     cells
-    |> Enum.map_join(" | ", &convert_table_cell(&1, opts, is_header))
+    |> Enum.map_join(" | ", &convert_table_cell(&1, opts))
     |> wrap_table_row
   end
 
-  defp convert_table_cell(%{"type" => "tableCell", "content" => content}, opts, is_header) do
-    cell_content = Enum.map_join(content, " ", &convert_node(&1, opts))
-    if is_header, do: cell_content, else: String.trim(cell_content)
+  defp convert_table_cell(%{"type" => "tableHeaderCell", "content" => content}, opts) do
+    Enum.map_join(content, " ", &convert_node(&1, opts))
   end
 
-  defp convert_table_cell(%{"type" => "tableControllerCell"}, _opts, _is_header), do: ""
+  defp convert_table_cell(%{"type" => "tableCell", "content" => content}, opts) do
+    content
+    |> Enum.map_join(" ", &convert_node(&1, opts))
+    |> String.trim()
+  end
+
+  defp convert_table_cell(%{"type" => "tableControllerCell"}, _opts), do: ""
 
   defp create_table_separator(%{"content" => cells}) do
     cells
     |> Enum.map_join(" | ", fn
-      %{"type" => "tableCell"} -> "---"
+      %{"type" => "tableHeaderCell"} -> "---"
       %{"type" => "tableControllerCell"} -> ""
     end)
     |> wrap_table_row
   end
 
   defp wrap_table_row(row) do
-    "| " <> row <> " |"
+    "| " <> String.trim(row) <> " |"
   end
 end
 
