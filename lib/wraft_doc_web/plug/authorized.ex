@@ -38,7 +38,7 @@ defmodule WraftDocWeb.Plug.Authorized do
 
         conn
         |> put_resp_content_type("application/json")
-        |> send_resp(401, body)
+        |> send_resp(403, body)
         |> halt()
     end
   end
