@@ -61,7 +61,7 @@ defmodule WraftDoc.ProsemirrorToMarkdown do
   defp convert_node(%{"type" => "holder"}, _opts),
     do: raise(InvalidJsonError, "Invalid holder format.")
 
-  defp convert_node(%{"type" => "table", "content" => rows}, opts) do
+  defp convert_node(%{"type" => "table", "content" => [_ | rows]}, opts) do
     header = convert_table_row(hd(rows), opts)
     separator = create_table_separator(hd(rows))
     body = Enum.map_join(tl(rows), "\n", &convert_table_row(&1, opts))
@@ -115,8 +115,8 @@ defmodule WraftDoc.ProsemirrorToMarkdown do
   # Table utility functions
   defp convert_table_row(%{"content" => cells}, opts) do
     cells
+    |> filter_table_controller_cells()
     |> Enum.map_join(" | ", &convert_table_cell(&1, opts))
-    |> wrap_table_row
   end
 
   defp convert_table_cell(%{"type" => "tableHeaderCell", "content" => content}, opts) do
@@ -132,16 +132,12 @@ defmodule WraftDoc.ProsemirrorToMarkdown do
   defp convert_table_cell(%{"type" => "tableControllerCell"}, _opts), do: ""
 
   defp create_table_separator(%{"content" => cells}) do
-    cells
-    |> Enum.map_join(" | ", fn
-      %{"type" => "tableHeaderCell"} -> "---"
-      %{"type" => "tableControllerCell"} -> ""
-    end)
-    |> wrap_table_row
+    num_cells = length(cells)
+    Enum.map_join(1..num_cells, " | ", fn _ -> "-" end)
   end
 
-  defp wrap_table_row(row) do
-    "| " <> String.trim(row) <> " |"
+  defp filter_table_controller_cells(cells) do
+    Enum.reject(cells, &match?(%{"type" => "tableControllerCell"}, &1))
   end
 end
 
