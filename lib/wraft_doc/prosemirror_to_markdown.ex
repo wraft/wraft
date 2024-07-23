@@ -117,6 +117,7 @@ defmodule WraftDoc.ProsemirrorToMarkdown do
     cells
     |> filter_table_controller_cells()
     |> Enum.map_join(" | ", &convert_table_cell(&1, opts))
+    |> wrap_table_row()
   end
 
   defp convert_table_cell(%{"type" => "tableHeaderCell", "content" => content}, opts) do
@@ -142,6 +143,10 @@ defmodule WraftDoc.ProsemirrorToMarkdown do
 
   defp filter_table_controller_cells(cells) do
     Enum.reject(cells, &match?(%{"type" => "tableControllerCell"}, &1))
+  end
+
+  defp wrap_table_row(row) do
+    "| " <> row <> " |"
   end
 end
 
