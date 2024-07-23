@@ -120,7 +120,11 @@ defmodule WraftDoc.ProsemirrorToMarkdown do
   end
 
   defp convert_table_cell(%{"type" => "tableHeaderCell", "content" => content}, opts) do
-    Enum.map_join(content, " ", &convert_node(&1, opts))
+    case content do
+      [%{"type" => _, "content" => _}] -> Enum.map_join(content, " ", &convert_node(&1, opts))
+      # Handle empty header cell
+      _ -> ""
+    end
   end
 
   defp convert_table_cell(%{"type" => "tableCell", "content" => content}, opts) do
