@@ -21,6 +21,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.InvitedUsers
   alias WraftDocWeb.Guardian
@@ -299,12 +300,17 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
            for: %{email: current_user.email}
          ) do
       true ->
-        with %Organisation{id: id} = organisation <-
+        with %Organisation{id: organisation_id} = organisation <-
                Enterprise.create_organisation(current_user, params),
-             :ok <- Enterprise.insert_organisation_roles(id, current_user.id),
+             :ok <- Enterprise.insert_organisation_roles(organisation_id, current_user.id),
+             %Flow{} <-
+               Enterprise.create_flow(Map.put(current_user, :current_org_id, organisation_id), %{
+                 "name" => "Wraft Flow",
+                 "organisation_id" => organisation_id
+               }),
              {:ok, %Oban.Job{}} <-
                Enterprise.create_default_worker_job(
-                 %{organisation_id: id},
+                 %{organisation_id: organisation_id},
                  "wraft_theme_and_layout"
                ) do
           render(conn, "create.json", organisation: organisation)
