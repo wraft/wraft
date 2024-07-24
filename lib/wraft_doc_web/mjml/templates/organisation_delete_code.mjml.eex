@@ -1,0 +1,66 @@
+<mjml>
+  <mj-head>
+    <mj-title>Organization Deletion Request - Wraft</mj-title>
+    <mj-font name="Arial" href="https://fonts.googleapis.com/css?family=Arial" />
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" color="#555555" line-height="1.5" />
+    </mj-attributes>
+    <mj-style inline="inline">
+      .code-box {
+        background-color: #f4f4f4;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+        font-family: monospace;
+      }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#f9f9f9">
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column width="100%">
+        <mj-image src="https://dev.wraft.co/Logo.svg" alt="Wraft Logo" align="center" width="120px" />
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-text font-size="24px" color="#333333" font-weight="bold">
+          Organization Deletion Request
+        </mj-text>
+        <mj-text>
+          Hello <%= String.capitalize(@user_name) %>,
+        </mj-text>
+        <mj-text>
+          You have requested to delete the organization <strong><%= @organisation_name %></strong> on Wraft.
+        </mj-text>
+        <mj-text>
+          Please use the following delete code:
+        </mj-text>
+        <mj-text css-class="code-box" align="center" font-size="20px" font-weight="bold">
+          <%= @delete_code %>
+        </mj-text>
+        <mj-text>
+          If you want to proceed with the deletion, enter this delete code in the appropriate field on the Wraft platform.
+        </mj-text>
+        <mj-text color="#D32F2F" font-weight="bold">
+          Important: If you did not request this deletion, you can ignore this email and your organization will not be deleted.
+        </mj-text>
+        <mj-text>
+          Best regards,
+          <br />
+          Wraft Admin
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f4f4f4" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-text font-size="14px" color="#888888" align="center">
+          © 2024 Wraft. All rights reserved.
+        </mj-text>
+        <mj-text font-size="14px" color="#888888" align="center">
+          For support, contact us at: support@wraft.co
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
