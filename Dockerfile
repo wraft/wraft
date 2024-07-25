@@ -94,7 +94,7 @@ RUN apt-get update && \
     postgresql-client inotify-tools
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    build-essential xorg libssl-dev libxrender-dev ca-certificates git wget vim gdebi xvfb gcc libc-dev \
+    build-essential xorg libssl-dev libxrender-dev git wget vim gdebi xvfb gcc libstdc++ libgcc ca-certificates \
     locales \
     # Install wkhtml to pdf
     wkhtmltopdf \
