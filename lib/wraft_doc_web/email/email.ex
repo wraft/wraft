@@ -4,8 +4,8 @@ defmodule WraftDocWeb.Mailer.Email do
   import Swoosh.Email
   alias WraftDocWeb.MJML
 
-  @frontend_url Application.compile_env(:wraft_doc, :frontend_url)
-  @sender_email Application.compile_env(:wraft_doc, :sender_email)
+  @frontend_url "#{System.get_env("WRAFT_URL")}"
+  @sender_email "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"
 
   def invite_email(org_name, user_name, email, token) do
     join_url = build_join_url(org_name, email, token)
@@ -18,7 +18,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"Wraft", @sender_email})
     |> subject("Invitation to join #{org_name} in WraftDocs")
     |> html_body(MJML.Invite.render(body))
   end
@@ -26,7 +26,7 @@ defmodule WraftDocWeb.Mailer.Email do
   def notification_email(user_name, notification_message, email) do
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"Wraft", @sender_email})
     |> subject(" #{user_name} ")
     |> html_body("Hi, #{user_name} #{notification_message}")
   end
@@ -44,7 +44,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"Wraft", @sender_email})
     |> subject("Welcome to Wraft - Set Your Password")
     |> html_body(MJML.PasswordSet.render(body))
   end
@@ -61,7 +61,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"Wraft", @sender_email})
     |> subject("Forgot your WraftDoc Password?")
     |> html_body(MJML.PasswordReset.render(body))
   end
@@ -75,7 +75,7 @@ defmodule WraftDocWeb.Mailer.Email do
     
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"Wraft", @sender_email})
     |> subject("Wraft - Verify your email")
     |> html_body(MJML.EmailVerification.render(body))
   end
@@ -89,7 +89,7 @@ defmodule WraftDocWeb.Mailer.Email do
     
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"Wraft", @sender_email})
     |> subject("Welcome to Wraft!")
     |> html_body(MJML.Join.render(body))
   end
@@ -102,7 +102,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"Wraft", @sender_email})
     |> subject("Thanks for showing interest in Wraft!")
     |> html_body(MJML.WaitingListJoin.render(body))
   end
@@ -119,7 +119,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
     new()
     |> to(email)
-    |> from({"WraftDoc", @sender_email})
+    |> from({"Wraft", @sender_email})
     |> subject("Wraft - Delete Organisation")
     |> html_body(MJML.OrganisationDeleteCode.render(body))
   end
