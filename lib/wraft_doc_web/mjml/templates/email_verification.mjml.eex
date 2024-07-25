@@ -1,0 +1,48 @@
+<mjml>
+  <mj-head>
+    <mj-title>Verify Your Email Address for Wraft</mj-title>
+    <mj-font name="Arial" href="https://fonts.googleapis.com/css?family=Arial" />
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" color="#555555" line-height="1.5" />
+      <mj-button background-color="#4CAF50" color="white" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column width="100%">
+        <mj-image src="https://dev.wraft.co/Logo.svg" alt="Wraft Logo" align="center" width="120px" />
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-text font-size="28px" color="#333333" font-weight="bold" align="center">
+          Verify Your Email Address
+        </mj-text>
+        <mj-text font-size="18px" color="#555555" align="center">
+          To continue setting up your Wraft account, please verify that this is your email address.
+        </mj-text>
+        <mj-button background-color="#004A0F" href="<%= @redirect_url %>" padding="20px 0">
+          Verify Email Address
+        </mj-button>
+        <mj-text>
+          If you're having trouble with the button above, copy and paste the URL below into your web browser:
+        </mj-text>
+        <mj-text font-size="14px" color="#888888" word-break="break-all">
+          <%= @redirect_url %>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-divider border-color="#cccccc" border-width="1px" />
+        <mj-text font-size="14px" color="#888888" align="center">
+          If you didn't request this email, you can safely ignore it. Someone may have entered your email address by mistake.
+        </mj-text>
+        <mj-text font-size="14px" color="#888888" align="center">
+          For any questions, please contact our support team at support@wraft.co
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

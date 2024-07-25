@@ -130,6 +130,17 @@ defmodule WraftDoc.Account do
         "personal_organisation_roles"
       )
     end)
+    |> Multi.run(:default_flow, fn _repo,
+                                   %{
+                                     user: user,
+                                     personal_organisation: %{organisation: organisation}
+                                   } ->
+      {:ok,
+       Enterprise.create_flow(Map.put(user, :current_org_id, organisation.id), %{
+         "name" => "Wraft Flow",
+         "organisation_id" => organisation.id
+       })}
+    end)
   end
 
   defp set_invited_user_status_to_expired(token) do
@@ -165,7 +176,7 @@ defmodule WraftDoc.Account do
   end
 
   @doc """
-    Deletes the give user_role.
+    Deletes the given user_role.
   """
   @spec delete_user_role(UserRole.t()) :: {:ok, UserRole.t()} | nil
   def delete_user_role(user_role), do: Repo.delete(user_role)

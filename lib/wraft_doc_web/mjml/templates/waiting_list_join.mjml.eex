@@ -1,0 +1,51 @@
+<mjml>
+  <mj-head>
+    <mj-title>Welcome to Wraft's Waiting List</mj-title>
+    <mj-font name="Arial" href="https://fonts.googleapis.com/css?family=Arial" />
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" color="#555555" line-height="1.5" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column width="100%">
+        <mj-image src="https://dev.wraft.co/Logo.svg" alt="Wraft Logo" align="center" width="120px" />
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-text font-size="24px" color="#333333" font-weight="bold">
+          Welcome to Wraft's Waiting List
+        </mj-text>
+        <mj-text font-weight="bold">
+          Hello <%= String.capitalize(@name) %>,
+        </mj-text>
+        <mj-text>
+          Thank you for signing up to join Wraft's waiting list! We appreciate your interest in our document automation tool.
+        </mj-text>
+        <mj-text>
+          We are currently in the process of onboarding our existing customers. Rest assured, we will keep you updated on your waiting list status. We expect to grant you access shortly.
+        </mj-text>
+        <mj-text>
+          If you have any questions or concerns, please don't hesitate to reach out to our support team.
+        </mj-text>
+        <mj-text font-weight="bold">
+          Best regards,
+          <br />
+          Wraft Team
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f4f4f4" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-text font-size="14px" color="#888888" align="center">
+          © 2024 Wraft. All rights reserved.
+        </mj-text>
+        <mj-text font-size="14px" color="#888888" align="center">
+          For support, contact us at: support@wraft.co
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
