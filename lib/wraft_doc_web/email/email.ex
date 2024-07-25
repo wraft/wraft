@@ -4,9 +4,6 @@ defmodule WraftDocWeb.Mailer.Email do
   import Swoosh.Email
   alias WraftDocWeb.MJML
 
-  @frontend_url "#{System.get_env("WRAFT_URL")}"
-  @sender_email "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"
-
   def invite_email(org_name, user_name, email, token) do
     join_url = build_join_url(org_name, email, token)
     body = %{
@@ -18,7 +15,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
     new()
     |> to(email)
-    |> from({"Wraft", @sender_email})
+    |> from({"Wraft", sender_email()})
     |> subject("Invitation to join #{org_name} in WraftDocs")
     |> html_body(MJML.Invite.render(body))
   end
@@ -26,7 +23,7 @@ defmodule WraftDocWeb.Mailer.Email do
   def notification_email(user_name, notification_message, email) do
     new()
     |> to(email)
-    |> from({"Wraft", @sender_email})
+    |> from({"Wraft", sender_email()})
     |> subject(" #{user_name} ")
     |> html_body("Hi, #{user_name} #{notification_message}")
   end
@@ -44,7 +41,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
     new()
     |> to(email)
-    |> from({"Wraft", @sender_email})
+    |> from({"Wraft", sender_email()})
     |> subject("Welcome to Wraft - Set Your Password")
     |> html_body(MJML.PasswordSet.render(body))
   end
@@ -61,7 +58,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
     new()
     |> to(email)
-    |> from({"Wraft", @sender_email})
+    |> from({"Wraft", sender_email()})
     |> subject("Forgot your WraftDoc Password?")
     |> html_body(MJML.PasswordReset.render(body))
   end
@@ -75,7 +72,7 @@ defmodule WraftDocWeb.Mailer.Email do
     
     new()
     |> to(email)
-    |> from({"Wraft", @sender_email})
+    |> from({"Wraft", sender_email()})
     |> subject("Wraft - Verify your email")
     |> html_body(MJML.EmailVerification.render(body))
   end
@@ -89,7 +86,7 @@ defmodule WraftDocWeb.Mailer.Email do
     
     new()
     |> to(email)
-    |> from({"Wraft", @sender_email})
+    |> from({"Wraft", sender_email()})
     |> subject("Welcome to Wraft!")
     |> html_body(MJML.Join.render(body))
   end
@@ -102,7 +99,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
     new()
     |> to(email)
-    |> from({"Wraft", @sender_email})
+    |> from({"Wraft", sender_email()})
     |> subject("Thanks for showing interest in Wraft!")
     |> html_body(MJML.WaitingListJoin.render(body))
   end
@@ -119,26 +116,34 @@ defmodule WraftDocWeb.Mailer.Email do
 
     new()
     |> to(email)
-    |> from({"Wraft", @sender_email})
+    |> from({"Wraft", sender_email()})
     |> subject("Wraft - Delete Organisation")
     |> html_body(MJML.OrganisationDeleteCode.render(body))
   end
 
-  defp build_join_url(org_name, email, token) do
-    URI.encode("#{@frontend_url}/users/join_invite?token=#{token}&organisation=#{org_name}&email=#{email}")
+  defp sender_email() do
+    Application.get_env(:wraft_doc, :sender_email)
+  end
+
+  defp frontend_url() do
+    System.get_env("WRAFT_URL")
   end
 
   defp build_registration_url(token) do
-    URI.encode("#{@frontend_url}/users/login/set_password?token=#{token}")
+    URI.encode("#{frontend_url()}/users/login/set_password?token=#{token}")
   end
   
   defp build_signup_pass_url(token) do
-    URI.encode("#{@frontend_url}/users/signup/set-password?token=#{token}")
+    URI.encode("#{frontend_url()}/users/signup/set-password?token=#{token}")
   end
   defp build_reset_password_url(token) do
-    URI.encode("#{@frontend_url}/users/password/reset?token=#{token}")
+    URI.encode("#{frontend_url()}/users/password/reset?token=#{token}")
   end
   defp build_email_verification_url(token) do
-    URI.encode("#{@frontend_url}/users/join_invite/verify_email/#{token}}")
+    URI.encode("#{frontend_url()}/users/join_invite/verify_email/#{token}}")
+  end
+
+  defp build_join_url(org_name, email, token) do
+    URI.encode("#{frontend_url()}/users/join_invite?token=#{token}&organisation=#{org_name}&email=#{email}")
   end
 end
