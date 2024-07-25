@@ -2,26 +2,31 @@ defmodule WraftDocWeb.Mailer.Email do
   @moduledoc false
 
   import Swoosh.Email
+  alias WraftDocWeb.MJML
+
+  @frontend_url Application.compile_env(:wraft_doc, :frontend_url)
+  @sender_email Application.compile_env(:wraft_doc, :sender_email)
 
   def invite_email(org_name, user_name, email, token) do
-    sender_email = Application.get_env(:wraft_doc, :sender_email)
+    join_url = build_join_url(org_name, email, token)
+    body = %{
+      email: email,
+      user_name: user_name,
+      org_name: org_name,
+      join_url: join_url
+    }
 
     new()
     |> to(email)
-    |> from({"WraftDoc", sender_email})
+    |> from({"WraftDoc", @sender_email})
     |> subject("Invitation to join #{org_name} in WraftDocs")
-    |> html_body(
-      "Hi, #{user_name} has invited you to join #{org_name} in WraftDocs. \n
-      Click <a href=#{System.get_env("WRAFT_URL")}/users/join_invite?token=#{token}&organisation=#{org_name}&email=#{email}>here</a> below to join."
-    )
+    |> html_body(MJML.Invite.render(body))
   end
 
   def notification_email(user_name, notification_message, email) do
-    sender_email = Application.get_env(:wraft_doc, :sender_email)
-
     new()
     |> to(email)
-    |> from({"WraftDoc", sender_email})
+    |> from({"WraftDoc", @sender_email})
     |> subject(" #{user_name} ")
     |> html_body("Hi, #{user_name} #{notification_message}")
   end
@@ -30,117 +35,110 @@ defmodule WraftDocWeb.Mailer.Email do
   Password set link.
   """
   def password_set(name, token, email) do
-    sender_email = Application.get_env(:wraft_doc, :sender_email)
+    redirect_url = build_signup_pass_url(token)
+    body = %{
+      email: email,
+      name: name,
+      redirect_url: redirect_url
+    }
 
     new()
     |> to(email)
-    |> from({"WraftDoc", sender_email})
+    |> from({"WraftDoc", @sender_email})
     |> subject("Welcome to Wraft - Set Your Password")
-    |> html_body(
-      "Hi #{name}.\n
-    Click <a href=#{System.get_env("WRAFT_URL")}/users/signup/set-password?token=#{token}>here</a> to set your password."
-    )
+    |> html_body(MJML.PasswordSet.render(body))
   end
 
   @doc """
   Password reset link.
   """
   def password_reset(name, token, email) do
-    sender_email = Application.get_env(:wraft_doc, :sender_email)
+    redirect_url = build_reset_password_url(token)
+    body = %{
+      name: name,
+      redirect_url: redirect_url
+    }
 
     new()
     |> to(email)
-    |> from({"WraftDoc", sender_email})
+    |> from({"WraftDoc", @sender_email})
     |> subject("Forgot your WraftDoc Password?")
-    |> html_body(
-      "Hi #{name}.\n You recently requested to reset your password for WraftDocs
-    Click <a href=#{System.get_env("WRAFT_URL")}/users/password/reset?token=#{token}>here</a> to reset"
-    )
+    |> html_body(MJML.PasswordReset.render(body))
   end
 
   @doc """
     User account verification
   """
   def email_verification(email, token) do
-    sender_email = Application.get_env(:wraft_doc, :sender_email)
-
+    redirect_url = build_email_verification_url(token)
+    body = %{ redirect_url: redirect_url}
+    
     new()
     |> to(email)
-    |> from({"WraftDoc", sender_email})
+    |> from({"WraftDoc", @sender_email})
     |> subject("Wraft - Verify your email")
-    |> html_body(
-      "
-      <h1>Verify your email address<h1>
-      <h3>To continue setting up your Wraft account, please verify that this is your email address.<h3>
-      Click <a href=#{System.get_env("WRAFT_URL")}/users/join_invite/verify_email/#{token}>Verify email address</a>"
-    )
+    |> html_body(MJML.EmailVerification.render(body))
   end
 
   @doc """
     Waiting list approved
   """
   def waiting_list_approved(email, name, token) do
-    sender_email = Application.get_env(:wraft_doc, :sender_email)
-
-    registration_url =
-      URI.encode("#{System.get_env("WRAFT_URL")}/users/login/set_password?token=#{token}")
-
+    registration_url = build_registration_url(token)
+    body = %{name: name, registration_url: registration_url}
+    
     new()
     |> to(email)
-    |> from({"WraftDoc", sender_email})
+    |> from({"WraftDoc", @sender_email})
     |> subject("Welcome to Wraft!")
-    |> html_body("""
-    <body>
-    <p>Hello #{name},</p>
-    <p>We are excited to inform you that your application to join Wraft has been approved! Congratulations, and welcome aboard!</p>
-    <p>You are now part of our exclusive community of users who will have access to our document automation tool. Please click the button below to continue.</p>
-    <a href=#{registration_url}><button style="background-color: blue; color: white; border: none; padding: 10px 15px; border-radius: 5px;">Click here to continue</button></a>
-    <p>If you have any questions or concerns, please don't hesitate to reach out to our support team.</p>
-    <p>Thank you for choosing Wraft. We look forward to serving you!</p>
-    <p>Best regards,</p>
-    <p>Wraft Admin</p>
-    """)
+    |> html_body(MJML.Join.render(body))
   end
 
   @doc """
     Waiting list join
   """
   def waiting_list_join(email, name) do
-    sender_email = Application.get_env(:wraft_doc, :sender_email)
+    body = %{name: name}
 
     new()
     |> to(email)
-    |> from({"WraftDoc", sender_email})
+    |> from({"WraftDoc", @sender_email})
     |> subject("Thanks for showing interest in Wraft!")
-    |> html_body("""
-    <p>Hello #{name},</p>
-    <p>Thank you for signing up to join Wraft's waiting list! We appreciate your interest in our document automation tool.</p>
-    <p>We are currently onboarding our existing customers, but we will keep you updated on your waiting list status. We expect to grant you access shortly.</p>
-    <p>If you have any questions or concerns, please don't hesitate to reach out to our support team.</p>
-    <p>Best regards,</p>
-    <p>Wraft Admin</p>
-    """)
+    |> html_body(MJML.WaitingListJoin.render(body))
   end
 
   @doc """
     Organisation Delete Code
   """
   def organisation_delete_code(email, delete_code, user_name, organisation_name) do
-    sender_email = Application.get_env(:wraft_doc, :sender_email)
+    body = %{
+      delete_code: delete_code,
+      user_name: user_name,
+      organisation_name: organisation_name
+    }
 
     new()
     |> to(email)
-    |> from({"WraftDoc", sender_email})
+    |> from({"WraftDoc", @sender_email})
     |> subject("Wraft - Delete Organisation")
-    |> html_body("""
-    <p>Hello #{user_name},</p>
-    <p>You have requested to delete the organization #{organisation_name} on Wraft.</p>
-    <p>Please use the following delete code:</p>
-    <p>Delete Code: #{delete_code}</p>
-    <p>If you want to proceed with the deletion, enter this delete code in the appropriate field.</p>
-    <p>If you did not request this deletion, you can ignore this email and your organization will not be deleted.</p>
-    <p>Best regards,</p>
-    <p>Wraft Admin</p>
-    """)
+    |> html_body(MJML.OrganisationDeleteCode.render(body))
+  end
+
+  defp build_join_url(org_name, email, token) do
+    URI.encode("#{@frontend_url}/users/join_invite?token=#{token}&organisation=#{org_name}&email=#{email}")
+  end
+
+  defp build_registration_url(token) do
+    URI.encode("#{@frontend_url}/users/login/set_password?token=#{token}")
+  end
+  
+  defp build_signup_pass_url(token) do
+    URI.encode("#{@frontend_url}/users/signup/set-password?token=#{token}")
+  end
+  defp build_reset_password_url(token) do
+    URI.encode("#{@frontend_url}/users/password/reset?token=#{token}")
+  end
+  defp build_email_verification_url(token) do
+    URI.encode("#{@frontend_url}/users/join_invite/verify_email/#{token}}")
   end
 end
