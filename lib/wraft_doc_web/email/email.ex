@@ -16,7 +16,7 @@ defmodule WraftDocWeb.Mailer.Email do
     new()
     |> to(email)
     |> from({"Wraft", sender_email()})
-    |> subject("Invitation to join #{org_name} in WraftDocs")
+    |> subject("Invitation to join #{org_name} in Wraft")
     |> html_body(MJML.Invite.render(body))
   end
 
