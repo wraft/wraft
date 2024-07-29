@@ -3523,6 +3523,7 @@ defmodule WraftDoc.Document do
       )
 
     Instance
+    |> where([i], i.approval_status == false)
     |> join(:inner, [i], s in State,
       on: s.id == i.state_id and s.organisation_id == ^org_id,
       as: :state

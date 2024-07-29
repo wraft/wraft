@@ -6,6 +6,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
   def invite_email(org_name, user_name, email, token) do
     join_url = build_join_url(org_name, email, token)
+
     body = %{
       email: email,
       user_name: user_name,
@@ -33,6 +34,7 @@ defmodule WraftDocWeb.Mailer.Email do
   """
   def password_set(name, token, email) do
     redirect_url = build_signup_pass_url(token)
+
     body = %{
       email: email,
       name: name,
@@ -51,6 +53,7 @@ defmodule WraftDocWeb.Mailer.Email do
   """
   def password_reset(name, token, email) do
     redirect_url = build_reset_password_url(token)
+
     body = %{
       name: name,
       redirect_url: redirect_url
@@ -68,8 +71,8 @@ defmodule WraftDocWeb.Mailer.Email do
   """
   def email_verification(email, token) do
     redirect_url = build_email_verification_url(token)
-    body = %{ redirect_url: redirect_url}
-    
+    body = %{redirect_url: redirect_url}
+
     new()
     |> to(email)
     |> from({"Wraft", sender_email()})
@@ -83,7 +86,7 @@ defmodule WraftDocWeb.Mailer.Email do
   def waiting_list_approved(email, name, token) do
     registration_url = build_registration_url(token)
     body = %{name: name, registration_url: registration_url}
-    
+
     new()
     |> to(email)
     |> from({"Wraft", sender_email()})
@@ -121,29 +124,33 @@ defmodule WraftDocWeb.Mailer.Email do
     |> html_body(MJML.OrganisationDeleteCode.render(body))
   end
 
-  defp sender_email() do
+  defp sender_email do
     Application.get_env(:wraft_doc, :sender_email)
   end
 
-  defp frontend_url() do
+  defp frontend_url do
     System.get_env("WRAFT_URL")
   end
 
   defp build_registration_url(token) do
     URI.encode("#{frontend_url()}/users/login/set_password?token=#{token}")
   end
-  
+
   defp build_signup_pass_url(token) do
     URI.encode("#{frontend_url()}/users/signup/set-password?token=#{token}")
   end
+
   defp build_reset_password_url(token) do
     URI.encode("#{frontend_url()}/users/password/reset?token=#{token}")
   end
+
   defp build_email_verification_url(token) do
     URI.encode("#{frontend_url()}/users/join_invite/verify_email/#{token}}")
   end
 
   defp build_join_url(org_name, email, token) do
-    URI.encode("#{frontend_url()}/users/join_invite?token=#{token}&organisation=#{org_name}&email=#{email}")
+    URI.encode(
+      "#{frontend_url()}/users/join_invite?token=#{token}&organisation=#{org_name}&email=#{email}"
+    )
   end
 end
