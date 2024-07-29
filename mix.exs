@@ -140,7 +140,6 @@ defmodule WraftDoc.Mixfile do
 
       # Sentry
       {:sentry, "~> 8.0"},
-
       {:mjml, "~> 3.0"},
       {:mjml_eex, "~> 0.10.0"}
     ]
