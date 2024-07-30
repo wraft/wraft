@@ -20,13 +20,14 @@ defmodule WraftDoc.Application do
       {Oban, oban_config()},
       {Task.Supervisor, name: WraftDoc.TaskSupervisor},
       # To sweep expired tokens from your db.
-      {Guardian.DB.Token.SweeperServer, []}
+      {Guardian.DB.Token.SweeperServer, []},
       # worker(WraftDoc.Notifications, ["content_type_changes"], id: :content_type_changes)
       # worker(
       #   WraftDoc.Notifications.Listener,
       #   ["content_type_changes", [name: WraftDoc.Notifications.Listener]],
       #   restart: :permanent
       # )
+      WraftDoc.Tasks.RefreshDashboardStats
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
