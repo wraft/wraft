@@ -4,15 +4,14 @@ defmodule WraftDoc.Document.Approval do
   """
 
   import Ecto.Query
-  alias WraftDoc.Repo
   alias WraftDoc.Document.InstanceTransitionLog
-  alias WraftDoc.Account.User
+  alias WraftDoc.Repo
 
   @doc """
   Fetches the approval history for a document.
   """
 
-  @spec get_document_approval_history(Ecto.UUID.t(), User.t()) ::
+  @spec get_document_approval_history(Ecto.UUID.t()) ::
           {:ok, list(InstanceApprovalSystem.t())} | {:error, :not_found}
   def get_document_approval_history(<<_::288>> = document_id) do
     query =
