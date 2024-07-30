@@ -136,6 +136,8 @@ defmodule WraftDocWeb.Router do
       get("/profiles", ProfileController, :show_current_profile)
       # Update user password
       put("/user/password", UserController, :update_password)
+      # Dashboard Stats
+      get("/dashboard_stats", DashboardController, :dashboard_stats)
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
       # Delete layout asset
