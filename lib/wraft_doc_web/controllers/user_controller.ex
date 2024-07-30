@@ -709,7 +709,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   Update the password.
   """
   swagger_path :update_password do
-    post("/users/password")
+    put("/user/password")
     summary("Update password")
     description("Authenticated updation of password")
 
