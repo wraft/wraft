@@ -3726,4 +3726,41 @@ defmodule WraftDoc.Document do
     query = from(c in CollectionForm, preload: [:fields], where: c.organisation_id == ^org_id)
     Repo.paginate(query, params)
   end
+
+  @doc """
+  Retrieves dashboard statistics for the current organization.
+
+  Returns a map containing the following keys:
+  - `total_documents`: The total number of documents in the organization.
+  - `daily_documents`: The number of documents created today.
+  - `pending_approvals`: The number of documents awaiting approval.
+  """
+  @spec get_dashboard_stats(User.t()) :: map()
+  def get_dashboard_stats(%{current_org_id: org_id}) do
+    query = """
+    SELECT
+      total_documents,
+      daily_documents,
+      pending_approvals
+    FROM
+      dashboard_stats
+    WHERE
+      organisation_id = $1
+    """
+
+    # Convert string UUID to binary UUID
+    org_id_binary = Ecto.UUID.dump!(org_id)
+
+    case Ecto.Adapters.SQL.query(Repo, query, [org_id_binary]) do
+      {:ok, %{rows: [[total, daily, pending]]}} ->
+        %{
+          total_documents: total,
+          daily_documents: daily,
+          pending_approvals: pending
+        }
+
+      _ ->
+        %{total_documents: 0, daily_documents: 0, pending_approvals: 0}
+    end
+  end
 end
