@@ -1,11 +1,13 @@
 defmodule WraftDocWeb.Api.V1.InstanceApprovalController do
+  @moduledoc """
+  Controller module for Instance approval
+  """
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  action_fallback(WraftDocWeb.FallbackController)
-
   alias WraftDoc.Document.Approval
-  
+
+  action_fallback(WraftDocWeb.FallbackController)
 
   def swagger_definitions do
     %{
@@ -27,9 +29,8 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalController do
     }
   end
 
-
   @doc """
-    Show form entry
+    Show approval history
   """
   swagger_path :approval_history do
     get("/contents/{id}/approval_history")
@@ -37,7 +38,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalController do
     description("Show approval history")
 
     parameters do
-      id(:path, :string, "Document ID", required: true)
+      id(:path, :string, "Instance ID", required: true)
     end
 
     response(200, "Ok", Schema.ref(:ApprovalHistoryIndex))
@@ -48,12 +49,6 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalController do
   def approval_history(conn, %{"id" => id}) do
     with {:ok, history} <- Approval.get_document_approval_history(id) do
       render(conn, "approval_history.json", history: history)
-    else
-      {:error, reason} ->
-        conn
-        |> put_status(:not_found)
-        |> render(WraftDocWeb.ErrorView, "404.json", reason: reason)
     end
   end
-
 end

@@ -104,7 +104,6 @@ defmodule WraftDocWeb.Router do
       resources("/waiting_list", WaitingListController, only: [:create])
       # Set Password for first time
       post("/users/set_password", UserController, :set_password)
-     
     end
   end
 
@@ -116,7 +115,6 @@ defmodule WraftDocWeb.Router do
       # Current user details
       get("/users/me", UserController, :me)
 
-  
       # get user by there name
       get("/users/search", UserController, :search)
       get("/users/:id/instance-approval-systems", InstanceApprovalSystemController, :index)
@@ -218,9 +216,8 @@ defmodule WraftDocWeb.Router do
       put("/contents/:id/reject", InstanceController, :reject)
       # get Approval history
       get("/contents/:id/approval_history", InstanceApprovalController, :approval_history)
-      
+
       get("/users/list_pending_approvals", InstanceController, :list_pending_approvals)
-      
 
       # Organisations
       scope "/organisations" do
@@ -288,7 +285,6 @@ defmodule WraftDocWeb.Router do
 
       # build PDF from a content
       post("/contents/:id/build", InstanceController, :build)
-
 
       # All data in an organisation
       get("/data_templates", DataTemplateController, :all_templates)
