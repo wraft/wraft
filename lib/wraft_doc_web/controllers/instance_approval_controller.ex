@@ -46,6 +46,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
+  @spec approval_history(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def approval_history(conn, %{"id" => id}) do
     with {:ok, history} <- Approval.get_document_approval_history(id) do
       render(conn, "approval_history.json", history: history)

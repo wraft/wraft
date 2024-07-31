@@ -1,6 +1,6 @@
 defmodule WraftDoc.Document.Approval do
   @moduledoc """
-  Module that handles the repo connections of the document context.
+  Module that handles the repo connections of the document Approval context.
   """
 
   import Ecto.Query
@@ -14,14 +14,13 @@ defmodule WraftDoc.Document.Approval do
   @spec get_document_approval_history(Ecto.UUID.t()) ::
           {:ok, list(InstanceApprovalSystem.t())} | {:error, :not_found}
   def get_document_approval_history(<<_::288>> = document_id) do
-    query =
-      from ias in InstanceTransitionLog,
-        where: ias.instance_id == ^document_id,
-        preload: [:to_state, reviewer: [:profile]],
-        order_by: [desc: ias.inserted_at]
-
-    case Repo.all(query) do
-      [] -> {:error, :not_found}
+    InstanceTransitionLog
+    |> where([ias], ias.instance_id == ^document_id)
+    |> preload([ias], [:to_state, reviewer: [:profile]])
+    |> order_by([ias], desc: ias.inserted_at)
+    |> Repo.all()
+    |> case do
+      [] -> nil
       history -> {:ok, history}
     end
   end
