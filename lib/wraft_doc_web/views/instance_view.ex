@@ -40,6 +40,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     %{
       id: instance.id,
       instance_id: instance.instance_id,
+      approval_status: instance.approval_status,
       raw: instance.raw,
       serialized: instance.serialized,
       build: instance.build,
