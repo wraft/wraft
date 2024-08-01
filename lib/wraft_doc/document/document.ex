@@ -593,7 +593,17 @@ defmodule WraftDoc.Document do
   """
   def create_instance(current_user, %{id: c_id, prefix: prefix} = content_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
-    allowed_users = [current_user.id] ++ all_allowed_users(state.flow_id)
+
+    allowed_users =
+      [current_user.id]
+      |> MapSet.new()
+      |> MapSet.union(
+        state.flow_id
+        |> all_allowed_users()
+        |> MapSet.new()
+      )
+      |> MapSet.to_list()
+
     params = Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => allowed_users})
 
     Multi.new()
@@ -631,7 +641,17 @@ defmodule WraftDoc.Document do
   #         | {:error, Ecto.Changeset.t()}
   def create_instance(%{id: c_id, prefix: prefix} = c_type, state, params) do
     instance_id = create_instance_id(c_id, prefix)
-    allowed_users = [params["creator_id"]] ++ all_allowed_users(state.flow_id)
+
+    allowed_users =
+      [params["creator_id"]]
+      |> MapSet.new()
+      |> MapSet.union(
+        state.flow_id
+        |> all_allowed_users()
+        |> MapSet.new()
+      )
+      |> MapSet.to_list()
+
     params = Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => allowed_users})
 
     c_type
@@ -658,7 +678,16 @@ defmodule WraftDoc.Document do
   def create_instance(%User{} = current_user, content_type, params) do
     instance_id = create_instance_id(content_type.id, content_type.prefix)
     initial_state = Enterprise.initial_state(content_type.flow)
-    allowed_users = [current_user.id] ++ allowed_users(initial_state.id)
+
+    allowed_users =
+      [current_user.id]
+      |> MapSet.new()
+      |> MapSet.union(
+        initial_state.flow_id
+        |> all_allowed_users()
+        |> MapSet.new()
+      )
+      |> MapSet.to_list()
 
     params =
       Map.merge(params, %{
@@ -875,7 +904,7 @@ defmodule WraftDoc.Document do
     |> Repo.all()
   end
 
-  defp all_allowed_users(flow_id) do
+  def all_allowed_users(flow_id) do
     StateUser
     |> join(:inner, [su], s in State, on: su.state_id == s.id and s.flow_id == ^flow_id)
     |> select([su, s], su.user_id)
