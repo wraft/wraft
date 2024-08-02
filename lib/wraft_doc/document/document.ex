@@ -777,7 +777,6 @@ defmodule WraftDoc.Document do
       ) do
     if current_approver_id in Enum.map(approvers, & &1.id) do
       next_state_id = next_state_id(state)
-      allowed_users = allowed_users(next_state_id)
       approval_status = next_state_id == current_state_id
 
       Multi.new()
@@ -785,7 +784,6 @@ defmodule WraftDoc.Document do
         :update_instance,
         Instance.update_state_changeset(instance, %{
           state_id: next_state_id,
-          allowed_users: allowed_users,
           approval_status: approval_status
         })
       )
@@ -897,14 +895,15 @@ defmodule WraftDoc.Document do
     Repo.one(query) || current_state.id
   end
 
-  defp allowed_users(state_id) do
-    StateUser
-    |> where([su], su.state_id == ^state_id)
-    |> select([su], su.user_id)
-    |> Repo.all()
-  end
+  # defp allowed_users(state_id) do
+  #   StateUser
+  #   |> where([su], su.state_id == ^state_id)
+  #   |> select([su], su.user_id)
+  #   |> Repo.all()
+  # end
 
-  def all_allowed_users(flow_id) do
+  # Get all allowed users for a given flow.
+  defp all_allowed_users(flow_id) do
     StateUser
     |> join(:inner, [su], s in State, on: su.state_id == s.id and s.flow_id == ^flow_id)
     |> select([su, s], su.user_id)
