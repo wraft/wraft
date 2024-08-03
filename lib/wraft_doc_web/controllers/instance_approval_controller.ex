@@ -16,13 +16,18 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalController do
           example([
             %{
               approver: %{
-                id: "ed94fb1b-ec43-4dfc-8a88-257d5547aa41",
+                id: "",
                 name: "John",
                 profile_pic: "logo.png"
               },
               id: "016a9ade-6ffb-4ef2-b32e-af1c71bf7803",
               reviewed_at: "2024-03-22T13:11:48",
-              status: "approved"
+              review_status: "approved",
+              to_state: %{
+                id: "c10ae004-69b9-47ee-ba9e-40217e42334f",
+                order: 8,
+                state: "Review"
+              },
             }
           ])
         end
