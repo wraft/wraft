@@ -1,6 +1,7 @@
 defmodule WraftDocWeb.Api.V1.BlockTemplateView do
   use WraftDocWeb, :view
   alias __MODULE__
+  alias WraftDocWeb.Api.V1.UserView
 
   def render("block_template.json", %{block_template: block_template}) do
     %{
@@ -8,6 +9,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateView do
       title: block_template.title,
       body: block_template.body,
       serialized: block_template.serialized,
+      creator: render_one(block_template.creator, UserView, "user_id_and_name.json", as: :user),
       inserted_at: block_template.inserted_at,
       updated_at: block_template.updated_at
     }
