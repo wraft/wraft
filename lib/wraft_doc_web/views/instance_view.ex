@@ -18,6 +18,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         id: content.id,
         instance_id: content.instance_id,
         raw: content.raw,
+        approval_status: content.approval_status,
         serialized: content.serialized,
         inserted_at: content.inserted_at,
         updated_at: content.updated_at
@@ -39,6 +40,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     %{
       id: instance.id,
       instance_id: instance.instance_id,
+      approval_status: instance.approval_status,
       raw: instance.raw,
       serialized: instance.serialized,
       build: instance.build,
