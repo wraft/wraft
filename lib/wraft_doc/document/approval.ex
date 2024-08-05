@@ -11,6 +11,7 @@ defmodule WraftDoc.Document.Approval do
   Fetches the approval history for a document.
   """
 
+  # TODO write test cases
   @spec get_document_approval_history(Ecto.UUID.t()) ::
           {:ok, list(InstanceApprovalSystem.t())} | {:error, :not_found}
   def get_document_approval_history(<<_::288>> = document_id) do
