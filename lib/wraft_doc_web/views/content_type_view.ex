@@ -20,7 +20,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
       updated_at: c_type.updated_at,
       theme: render_one(c_type.theme, ThemeView, "create.json", as: :theme),
       layout: render_one(c_type.layout, LayoutView, "layout.json", as: :doc_layout),
-      flow: render_one(c_type.flow, FlowView, "flow.json", as: :flow)
+      flow: render_one(c_type.flow, FlowView, "flow.json", as: :flow),
+      creator: render_one(c_type.creator, UserView, "user_id_and_name.json", as: :user)
     }
   end
 

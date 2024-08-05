@@ -389,7 +389,7 @@ defmodule WraftDoc.Document do
     |> where(^content_type_filter_by_name(params))
     |> where(^content_type_filter_by_prefix(params))
     |> order_by([ct], ^content_type_sort(params))
-    |> preload([:layout, :flow, {:theme, :assets}, {:fields, :field_type}])
+    |> preload([:layout, :flow, {:theme, :assets}, {:fields, :field_type}, creator: [:profile]])
     |> Repo.paginate(params)
   end
 
@@ -2705,10 +2705,11 @@ defmodule WraftDoc.Document do
   """
   @spec block_template_index(User.t(), map) :: List.t()
   def block_template_index(%{current_org_id: org_id}, params) do
-    query =
-      from(bt in BlockTemplate, where: bt.organisation_id == ^org_id, order_by: [desc: bt.id])
-
-    Repo.paginate(query, params)
+    BlockTemplate
+    |> where([bt], bt.organisation_id == ^org_id)
+    |> preload([bt], [creator: [:profile]])
+    |> order_by([bt], desc: bt.id)
+    |> Repo.paginate(params)
   end
 
   @doc """
