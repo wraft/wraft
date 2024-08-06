@@ -297,11 +297,11 @@ defmodule WraftDoc.Account do
   def authenticate(%{user: user, password: password}) do
     case Bcrypt.verify_pass(password, user.encrypted_password) do
       true ->
-        %{organisation: personal_org, user: user} =
+        %{organisation: _personal_org, user: user} =
           Enterprise.get_personal_organisation_and_role(user)
 
         updated_sign_in_at(user)
-        %{user: user, tokens: Guardian.generate_tokens(user, personal_org.id)}
+        %{user: user, tokens: Guardian.generate_tokens(user, user.last_signed_in_org)}
 
       _ ->
         {:error, :invalid}
@@ -312,6 +312,16 @@ defmodule WraftDoc.Account do
   defp updated_sign_in_at(%User{} = user) do
     user
     |> User.update_sign_in_changeset(%{signed_in_at: NaiveDateTime.utc_now()})
+    |> Repo.update()
+  end
+
+  @doc """
+    Update last sign in organisation id of the user
+  """
+  @spec update_last_signed_in_org(User.t(), Ecto.UUID.t()) :: User.t()
+  def update_last_signed_in_org(%User{} = user, <<_::288>> = org_id) do
+    user
+    |> User.update_last_signed_in_org_changeset(%{last_signed_in_org: org_id})
     |> Repo.update()
   end
 
@@ -595,6 +605,11 @@ defmodule WraftDoc.Account do
            UserOrganisation
            |> Repo.get_by(user_id: user_id, organisation_id: organisation_id)
            |> Repo.preload(:user) do
+      if user.last_signed_in_org == organisation_id do
+        personal_org = Repo.get_by(Organisation, creator_id: user_id, name: "Personal")
+        update_last_signed_in_org(user, personal_org.id)
+      end
+
       user
       |> User.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
       |> Repo.update()
