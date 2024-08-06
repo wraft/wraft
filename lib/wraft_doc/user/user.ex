@@ -13,6 +13,7 @@ defmodule WraftDoc.Account.User do
     field(:email_verify, :boolean, default: false)
     field(:deleted_at, :naive_datetime)
     field(:signed_in_at, :naive_datetime)
+    field(:last_signed_in_org, Ecto.UUID)
     field(:current_org_id, Ecto.UUID, virtual: true)
     field(:role_names, {:array, :string}, virtual: true)
     field(:permissions, {:array, :string}, virtual: true)
@@ -102,6 +103,12 @@ defmodule WraftDoc.Account.User do
     user
     |> cast(attrs, [:signed_in_at])
     |> validate_required([:signed_in_at])
+  end
+
+  def update_last_signed_in_org_changeset(user, attrs \\ %{}) do
+    user
+    |> cast(attrs, [:last_signed_in_org])
+    |> validate_required([:last_signed_in_org])
   end
 
   def email_status_update_changeset(user, attrs \\ %{}) do
