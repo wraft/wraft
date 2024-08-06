@@ -528,10 +528,10 @@ defmodule WraftDocWeb.Api.V1.UserController do
     with {:ok, %{email: email}} <- AuthTokens.google_auth_validation(token),
          %User{} = user <- Account.find(email),
          {:ok, %User{email_verify: true} = user} <- Account.update_email_status(user),
-         %{organisation: personal_org, user: user} <-
+         %{organisation: _personal_org, user: user} <-
            Enterprise.get_personal_organisation_and_role(user),
          [access_token: access_token, refresh_token: refresh_token] <-
-           Guardian.generate_tokens(user, personal_org.id) do
+           Guardian.generate_tokens(user, user.last_signed_in_org_id) do
       render(conn, "sign-in.json",
         access_token: access_token,
         refresh_token: refresh_token,
@@ -886,6 +886,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
          true <- Enum.any?(user.organisations, &(&1.id == organisation_id)),
          user <- Enterprise.get_roles_by_organisation(user, organisation_id) do
       tokens = Guardian.generate_tokens(current_user, organisation_id)
+      Account.update_last_signed_in_org(user, organisation_id)
 
       render(conn, "sign-in.json",
         access_token: Keyword.get(tokens, :access_token),
