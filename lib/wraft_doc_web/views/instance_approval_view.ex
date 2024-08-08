@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalView do
 
   alias WraftDocWeb.Api.V1.{
     StateView,
-    UserView,
+    UserView
   }
 
   def render("approval_history.json", %{history: history}) do
@@ -16,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalView do
       review_status: document.review_status,
       approver: render_one(document.reviewer, UserView, "user_id_and_name.json", as: :user),
       to_state: render_one(document.to_state, StateView, "state.json", as: :state),
-      reviewed_at: document.reviewed_at,
+      reviewed_at: document.reviewed_at
     }
   end
 end
