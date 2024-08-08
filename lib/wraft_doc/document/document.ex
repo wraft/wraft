@@ -2651,7 +2651,7 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
     |> case do
       {:ok, block_template} ->
-        Repo.preload(block_template, [:creator])
+        Repo.preload(block_template, [{:creator, :profile}])
 
       {:error, _} = changeset ->
         changeset
@@ -2666,7 +2666,7 @@ defmodule WraftDoc.Document do
   @spec get_block_template(Ecto.UUID.t(), BlockTemplate.t()) :: BlockTemplate.t()
   def get_block_template(<<_::288>> = id, %{current_org_id: org_id}) do
     case Repo.get_by(BlockTemplate, id: id, organisation_id: org_id) do
-      %BlockTemplate{} = block_template -> Repo.preload(block_template, [:creator])
+      %BlockTemplate{} = block_template -> Repo.preload(block_template, [{:creator, :profile}])
       _ -> {:error, :invalid_id, "BlockTemplate"}
     end
   end
@@ -2688,7 +2688,7 @@ defmodule WraftDoc.Document do
         changeset
 
       {:ok, block_template} ->
-        Repo.preload(block_template, [:creator])
+        Repo.preload(block_template, [{:creator, :profile}])
     end
   end
 
