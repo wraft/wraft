@@ -27,7 +27,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalController do
                 id: "c10ae004-69b9-47ee-ba9e-40217e42334f",
                 order: 8,
                 state: "Review"
-              },
+              }
             }
           ])
         end
