@@ -1559,19 +1559,15 @@ defmodule WraftDoc.Document do
   """
   @spec data_template_index(binary, map) :: map
   def data_template_index(<<_::288>> = c_type_id, params) do
-    query =
-      from(dt in DataTemplate,
-        join: ct in ContentType,
-        where: ct.id == ^c_type_id and dt.content_type_id == ct.id,
-        where: ^data_template_filter_by_title(params),
-        order_by: [desc: dt.id],
-        preload: [:content_type]
-      )
-
-    Repo.paginate(query, params)
+    DataTemplate
+    |> join(:inner, [dt], ct in ContentType,
+      on: ct.id == dt.content_type_id and ct.id == ^c_type_id
+    )
+    |> where(^data_template_filter_by_title(params))
+    |> order_by(^data_template_sort(params))
+    |> preload([:content_type])
+    |> Repo.paginate(params)
   end
-
-  def data_template_index(_, _), do: {:error, :invalid_id, "ContentType"}
 
   @doc """
   List all data templates under current user's organisation.
@@ -1596,6 +1592,19 @@ defmodule WraftDoc.Document do
     do: dynamic([dt], ilike(dt.title, ^"%#{title}%"))
 
   defp data_template_filter_by_title(_), do: true
+
+  defp data_template_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([dt], dt.inserted_at)]
+
+  defp data_template_sort(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([dt], dt.inserted_at)]
+
+  defp data_template_sort(%{"sort" => "updated_at"} = _params),
+    do: [asc: dynamic([dt], dt.updated_at)]
+
+  defp data_template_sort(%{"sort" => "updated_at_desc"}),
+    do: [desc: dynamic([dt], dt.updated_at)]
+
+  defp data_template_sort(_), do: []
 
   @doc """
   Get a data template from its uuid and organisation ID of user.

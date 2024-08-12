@@ -227,6 +227,12 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
       c_type_id(:path, :string, "ID of the content type", required: true)
       page(:query, :string, "Page number")
       title(:query, :string, "Title")
+
+      sort(
+        :query,
+        :string,
+        "sort keys => updated_at, updated_at_desc, inserted_at, inserted_at_desc"
+      )
     end
 
     response(200, "Ok", Schema.ref(:DataTemplatesIndex))
