@@ -138,7 +138,14 @@ defmodule WraftDoc.Document do
     |> case do
       {:ok, %ContentType{} = content_type} ->
         fetch_and_associate_fields(content_type, params)
-        Repo.preload(content_type, [:layout, :flow, {:theme, :assets}, {:fields, :field_type}])
+
+        Repo.preload(content_type, [
+          :creator,
+          :layout,
+          :flow,
+          {:theme, :assets},
+          {:fields, :field_type}
+        ])
 
       changeset = {:error, _} ->
         changeset
