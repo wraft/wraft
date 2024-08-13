@@ -144,7 +144,8 @@ defmodule WraftDoc.Document do
           :layout,
           :flow,
           {:theme, :assets},
-          {:fields, :field_type}
+          {:fields, :field_type},
+          creator: [:profile]
         ])
 
       changeset = {:error, _} ->
