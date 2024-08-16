@@ -32,14 +32,20 @@ defmodule WraftDocWeb.FieldTypeAdmin do
 
   defp parse_validations(attrs) do
     case Map.get(attrs, "validations") do
-      nil -> attrs
+      nil ->
+        attrs
+
       validations_str when is_binary(validations_str) ->
         case Jason.decode(validations_str) do
-          {:ok, parsed_validations} -> Map.put(attrs, "validations", parsed_validations)
+          {:ok, parsed_validations} ->
+            Map.put(attrs, "validations", parsed_validations)
+
           {:error, _} ->
             attrs
         end
-      _ -> attrs
+
+      _ ->
+        attrs
     end
   end
 

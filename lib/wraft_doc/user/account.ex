@@ -73,6 +73,7 @@ defmodule WraftDoc.Account do
          personal_organisation: %{organisation: personal_org},
          get_org: %{organisation: invited_org}
        }} ->
+        update_last_signed_in_org(user, personal_org.id)
         InvitedUsers.create_or_update_invited_user(user.email, invited_org.id, "joined")
         {:ok, %{user: Repo.preload(user, :profile), organisations: [personal_org, invited_org]}}
 
@@ -94,6 +95,7 @@ defmodule WraftDoc.Account do
     |> Repo.transaction()
     |> case do
       {:ok, %{user: user, personal_organisation: %{organisation: personal_org}}} ->
+        update_last_signed_in_org(user, personal_org.id)
         {:ok, %{user: Repo.preload(user, :profile), organisations: [personal_org]}}
 
       {:error, :user, changeset, _} ->

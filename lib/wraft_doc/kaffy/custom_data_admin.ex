@@ -7,7 +7,7 @@ defmodule WraftDoc.Kaffy.CustomDataAdmin do
   alias WraftDoc.WaitingLists.WaitingList
 
   def get_pending_user_count do
-    query = from u in WaitingList, where: u.status == :pending, select: count(u.id)
+    query = from(u in WaitingList, where: u.status == :pending, select: count(u.id))
     Repo.one(query)
   end
 
@@ -19,10 +19,12 @@ defmodule WraftDoc.Kaffy.CustomDataAdmin do
     # Convert to NaiveDateTime using a function call for readability
     {:ok, thirty_days_ago_naive} = NaiveDateTime.new(thirty_days_ago, ~T[00:00:00])
 
-    user_counts_per_day_query = from u in WaitingList,
-                                where: u.inserted_at >= ^thirty_days_ago_naive,
-                                group_by: fragment("date(?)", u.inserted_at),
-                                select: {fragment("date(?)", u.inserted_at), count(u.id)}
+    user_counts_per_day_query =
+      from(u in WaitingList,
+        where: u.inserted_at >= ^thirty_days_ago_naive,
+        group_by: fragment("date(?)", u.inserted_at),
+        select: {fragment("date(?)", u.inserted_at), count(u.id)}
+      )
 
     user_counts_per_day = Repo.all(user_counts_per_day_query)
 
