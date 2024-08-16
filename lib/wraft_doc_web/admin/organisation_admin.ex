@@ -4,7 +4,24 @@ defmodule WraftDocWeb.OrganisationAdmin do
   """
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Repo
   import Ecto.Query
+
+  def widgets(_schema, _conn) do
+    query = from u in Organisation, select: count(u.id)
+    user_count = Repo.one(query)
+
+    [
+      %{
+        icon: "city",
+        type: "tidbit",
+        title: "Total Organisation",
+        content: user_count,
+        order: 3,
+        width: 3
+      }
+    ]
+  end
 
   def index(_) do
     [

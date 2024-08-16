@@ -5,8 +5,32 @@ defmodule WraftDocWeb.WaitingListAdmin do
 
   alias WraftDoc.Account
   alias WraftDoc.AuthTokens
+  alias WraftDoc.Kaffy.CustomDataAdmin
   alias WraftDoc.WaitingLists.WaitingList
   alias WraftDoc.Workers.EmailWorker
+
+  def widgets(_schema, _conn) do
+    pending_user_count = CustomDataAdmin.get_pending_user_count()
+    chart_data = CustomDataAdmin.get_user_registration_chart_data()
+
+    [
+      %{
+        icon: "hourglass-start",
+        type: "tidbit",
+        title: "Waiting User",
+        content: pending_user_count,
+        order: 1,
+        width: 3
+      },
+      %{
+        type: "chart",
+        title: "User Registrations Over Last 30 Days",
+        order: 8,
+        width: 12,
+        content: chart_data,
+      }
+    ]
+  end
 
   def index(_) do
     [
