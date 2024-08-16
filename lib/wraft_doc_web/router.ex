@@ -83,7 +83,6 @@ defmodule WraftDocWeb.Router do
       get("/user/verify_email_token/:token", UserController, :verify_email_token)
       # Show and index plans
       resources("/plans", PlanController, only: [:show, :index])
-      post("/notifications", NotificationController, :create)
       # Verify invite token
       get(
         "/organisations/verify_invite_token/:token",
@@ -186,6 +185,13 @@ defmodule WraftDocWeb.Router do
         get("/mapping/:mapping_id", FormMappingController, :show)
         put("/mapping/:mapping_id", FormMappingController, :update)
       end
+
+      # Notification
+      post("/notifications", NotificationController, :create)
+      get("/notifications", NotificationController, :index)
+      get("/notifications/count", NotificationController, :count)
+      put("/notifications/read/:id", NotificationController, :read)
+      put("/notifications/read_all", NotificationController, :read_all)
 
       # Theme
       resources("/themes", ThemeController, only: [:create, :index, :show, :update, :delete])

@@ -4,13 +4,13 @@ defmodule WraftDoc.Notifications.Notification do
   """
   use WraftDoc.Schema
 
+  @fields [:type, :message, :is_global, :action, :actor_id]
+
   schema "notification" do
-    field(:read_at, :naive_datetime)
-    field(:read, :boolean, default: false)
-    field(:action, :string)
-    field(:notifiable_id, Ecto.UUID)
-    field(:notifiable_type, WraftDoc.EctoType.AtomType)
-    belongs_to(:recipient, WraftDoc.Account.User)
+    field(:type, WraftDoc.EctoType.AtomType)
+    field(:message, :string)
+    field(:is_global, :boolean, default: false)
+    field(:action, :map, default: %{})
     belongs_to(:actor, WraftDoc.Account.User)
 
     timestamps()
@@ -19,24 +19,7 @@ defmodule WraftDoc.Notifications.Notification do
   # TODO write test for these changesets
   def changeset(notification, attrs \\ %{}) do
     notification
-    |> cast(attrs, [
-      :action,
-      :notifiable_id,
-      :notifiable_type,
-      :read_at,
-      :read,
-      :actor_id,
-      :recipient_id
-    ])
-    |> validate_required([:actor_id, :recipient_id, :action])
-  end
-
-  def read_changeset(notification, attrs \\ %{}) do
-    notification
-    |> cast(attrs, [
-      :read_at,
-      :read
-    ])
-    |> validate_required([:read_at, :read])
+    |> cast(attrs, @fields)
+    |> validate_required([:message, :type])
   end
 end
