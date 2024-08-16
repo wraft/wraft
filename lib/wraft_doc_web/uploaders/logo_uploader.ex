@@ -24,7 +24,7 @@ defmodule WraftDocWeb.LogoUploader do
 
   # Change Filename
   def filename(_version, {_file, organisation}) do
-    "logo_#{organisation.name}"
+    "logo_#{organisation.id}"
   end
 
   # Storage Directory
