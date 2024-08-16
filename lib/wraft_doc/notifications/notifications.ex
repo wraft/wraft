@@ -4,28 +4,18 @@ defmodule WraftDoc.Notifications do
   """
   import Ecto.Query
 
-  alias WraftDoc.{Account.User, Notifications.Notification, Repo, Workers.EmailWorker}
+  alias WraftDoc.Account.User
+  alias WraftDoc.Notifications.Notification
+  alias WraftDoc.Notifications.UserNotifications
+  alias WraftDoc.Repo
+  alias WraftDoc.Workers.EmailWorker
 
   @doc """
   Create notification entry
   """
-  def create_notification(
-        recipient,
-        actor_id \\ nil,
-        action,
-        notifiable_id \\ nil,
-        notifiable_type
-      ) do
-    attrs = %{
-      recipient_id: recipient.id,
-      actor_id: actor_id,
-      action: action,
-      notifiable_id: notifiable_id,
-      notifiable_type: notifiable_type
-    }
-
+  def create_notification(user, params) do
     %Notification{}
-    |> Notification.changeset(attrs)
+    |> Notification.changeset(Map.merge(params, %{"actor_id" => user.id}))
     |> Repo.insert!()
 
     # |> broad_cast_notifiation(recipient)
@@ -120,11 +110,90 @@ defmodule WraftDoc.Notifications do
     end
   end
 
-  def read_notification(notification) do
-    params = %{read_at: Timex.now(), read: true}
+  @doc """
+  List unread notifications for an user
+  ## Parameters
+  * `current_user`- user struct
+  """
+  @spec list_unread_notifications(User.t(), map) :: map
+  def list_unread_notifications(%User{current_org_id: org_id} = user, params) do
+    UserNotifications
+    |> where(
+      [un],
+      un.recipient_id == ^user.id and un.organisation_id == ^org_id and un.status == :unread
+    )
+    |> order_by([un], desc: un.inserted_at)
+    |> preload([{:notification, :actor}, :organisation, :recipient])
+    |> Repo.paginate(params)
+  end
 
-    notification
-    |> Notification.read_changeset(params)
+  @doc """
+  Mark notification as read
+  ## Parameters
+  * `user_notification`- user notification struct
+  """
+  @spec read_notification(UserNotifications.t()) :: UserNotifications.t()
+  def read_notification(user_notification) do
+    user_notification
+    |> UserNotifications.status_update_changeset(%{seen_at: Timex.now(), status: "read"})
     |> Repo.update!()
+  end
+
+  @doc """
+  Count unread notifications for an user
+  ## Parameters
+  * `current_user`- user struct
+  """
+  @spec unread_notification_count(User.t()) :: integer
+  def unread_notification_count(%User{current_org_id: org_id} = user) do
+    UserNotifications
+    |> where(
+      [un],
+      un.recipient_id == ^user.id and un.organisation_id == ^org_id and un.status == :unread
+    )
+    |> select([un], count(un.id))
+    |> Repo.one()
+  end
+
+  @doc """
+  Mark all notifications as read
+  ## Parameters
+  * `current_user`- user struct
+  """
+  @spec read_all_notifications(User.t()) :: {integer(), nil}
+  def read_all_notifications(%User{current_org_id: org_id} = current_user) do
+    UserNotifications
+    |> where(
+      [un],
+      un.recipient_id == ^current_user.id and un.organisation_id == ^org_id and
+        un.status == :unread
+    )
+    |> Repo.update_all(set: [seen_at: Timex.now(), status: "read"])
+  end
+
+  @doc """
+  Get user notification
+  ## Parameters
+  * `current_user`- user struct
+  * `notification` - notification struct
+  """
+  @spec get_user_notification(User.t(), Ecto.UUID.t()) :: UserNotifications.t() | nil
+  def get_user_notification(%User{current_org_id: org_id} = current_user, notification_id) do
+    UserNotifications
+    |> where(
+      [un],
+      un.recipient_id == ^current_user.id and un.notification_id == ^notification_id and
+        un.organisation_id == ^org_id and un.status == :unread
+    )
+    |> Repo.one()
+  end
+
+  def insert_user_notification do
+    %UserNotifications{}
+    |> UserNotifications.changeset(%{
+      recipient_id: "397b8443-4abe-42cc-89ba-6fcd6923c70d",
+      notification_id: "5d1aefa0-a754-415e-afb8-c03499bee706"
+    })
+    |> Repo.insert()
   end
 end
