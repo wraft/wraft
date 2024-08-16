@@ -10,7 +10,7 @@ defmodule WraftDocWeb.UserAdmin do
   alias WraftDocWeb.Router.Helpers, as: Routes
 
   def widgets(_schema, _conn) do
-    query = from u in User, select: count(u.id)
+    query = from(u in User, select: count(u.id))
     user_count = Repo.one(query)
 
     [
@@ -70,8 +70,8 @@ defmodule WraftDocWeb.UserAdmin do
         order: 3,
         location: :bottom,
         icon: "user-circle",
-        full_icon: "flag-full",
-      },
+        full_icon: "flag-full"
+      }
     ]
   end
 

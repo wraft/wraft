@@ -8,7 +8,7 @@ defmodule WraftDocWeb.OrganisationAdmin do
   import Ecto.Query
 
   def widgets(_schema, _conn) do
-    query = from u in Organisation, select: count(u.id)
+    query = from(u in Organisation, select: count(u.id))
     user_count = Repo.one(query)
 
     [
