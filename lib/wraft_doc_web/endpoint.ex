@@ -29,7 +29,7 @@ defmodule WraftDocWeb.Endpoint do
     at: "/",
     from: :wraft_doc,
     gzip: false,
-    only: ~w(assets fonts images favicon.ico robots.txt)
+    only: ~w(kaffy assets fonts images favicon.ico robots.txt)
   )
 
   plug(

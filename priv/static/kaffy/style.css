@@ -1,0 +1,108 @@
+:root {
+  --primary-color: #127D5D;
+  --secondary-color: #2ecc71;
+  --text-color: #000;
+
+  --green-100: #e0f4ec;
+  --green-200: #b3e3d0;
+  --green-300: #80d0b1;
+  --green-400: #4dbd91;
+  --green-500: #127D5D;
+  --green-600: #0e6c4d;
+  --green-700: #095b3e;
+  --green-800: #064a2f;
+  --green-900: #033823;
+}
+
+.text-success {
+  color: var(--text-color) !important;
+}
+
+.navbar-toggler {
+  color: #111111 !important;
+}
+
+.badge-secondary {
+  background: var(--green-300);
+  border: 1px solid var(--green-300);
+}
+
+a {
+  color: var(--primary-color);
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--green-400);
+  border-color: var(--green-400);
+  color: #fff;
+}
+
+.btn-outline-primary {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  background: var(--green-400);
+  border-color: var(--green-400);
+  color: #fff;
+}
+
+.btn-secondary{
+  background: var(--green-400);
+  border-color: var(--green-400);
+  color: #fff;
+}
+
+.btn-secondary:not(:disabled):not(.disabled):active,
+.btn-secondary:not(:disabled):not(.disabled).active,
+.show > .btn-secondary.dropdown-toggle {
+  background: var(--green-400);
+  border-color: var(--green-400);
+  color: #fff;
+}
+
+.border-left-success {
+  border-color: #000 !important;
+}
+
+#sidebar {
+  background: #111111;
+}
+
+.sidebar .nav .nav-item:hover {
+  background: var(--green-800);
+}
+
+.sidebar .nav .nav-item.active {
+  background: var(--green-800);
+}
+
+.sidebar .nav .nav-item.active > .nav-link .menu-title, 
+.sidebar .nav .nav-item .nav-link i.menu-icon, 
+.sidebar .nav .nav-item.active .nav-link.collapsed .menu-arrow:before {
+  color: #fff;
+}
+
+.sidebar .nav .nav-item.active > .nav-link i, .sidebar .nav .nav-item .nav-link i.menu-arrow::before {
+  color: #fff;
+}
+
+.footer {
+  display: none;
+}
+
+.page-item.active .page-link {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
+}

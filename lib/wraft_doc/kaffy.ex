@@ -2,6 +2,7 @@ defmodule WraftDoc.Kaffy.Config do
   @moduledoc """
   Config admin panel
   """
+
   def create_resources(_conn) do
     [
       account: [
@@ -31,20 +32,21 @@ defmodule WraftDoc.Kaffy.Config do
           plan: [schema: WraftDoc.Enterprise.Plan, admin: WraftDocWeb.PlanAdmin]
         ]
       ],
-      authorization: [
-        name: "Authorisation",
-        resources: [
-          conroller: [
-            schema: WraftDoc.Authorization.Resource
-          ]
-        ]
-      ],
       waiting_list: [
         name: "Waiting List",
         resources: [
           waiting_list: [
             schema: WraftDoc.WaitingLists.WaitingList,
             admin: WraftDocWeb.WaitingListAdmin
+          ]
+        ]
+      ],
+      custom: [
+        name: "Custom",
+        resources: [
+          field_type: [
+            schema: WraftDoc.Document.FieldType,
+            admin: WraftDocWeb.FieldTypeAdmin
           ]
         ]
       ]
