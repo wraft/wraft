@@ -27,7 +27,7 @@ defmodule WraftDocWeb.WaitingListAdmin do
         title: "User Registrations Over Last 30 Days",
         order: 8,
         width: 12,
-        content: chart_data,
+        content: chart_data
       }
     ]
   end
