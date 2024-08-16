@@ -57,7 +57,7 @@ defmodule WraftDoc.Mixfile do
       {:phoenix, "~> 1.6.15"},
       {:phoenix_pubsub, "~> 2.1.1"},
       {:phoenix_ecto, "~> 4.4.0"},
-      {:phoenix_view, "~> 2.0.1"},
+      {:phoenix_view, "~> 2.0.2"},
       {:ecto_sql, "~> 3.9.0"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 3.3.1", override: true},
@@ -66,7 +66,7 @@ defmodule WraftDoc.Mixfile do
       {:phoenix_live_dashboard, "~> 0.7.2", override: true},
       {:esbuild, "~> 0.5", runtime: Mix.env() == :dev},
       {:gettext, "~> 0.20.0"},
-      {:plug_cowboy, "~> 2.6.0"},
+      {:plug_cowboy, "~> 2.7.0"},
       {:distillery, "~> 2.1.1"},
       # Password encryption
       {:comeonin, "~> 5.3.2"},
@@ -128,7 +128,7 @@ defmodule WraftDoc.Mixfile do
       {:pdf_generator, "~> 0.6.2"},
 
       # For admin pannel
-      {:kaffy, "~> 0.9.4"},
+      {:kaffy, "~> 0.10.0"},
       {:ecto_enum, "~> 1.4"},
 
       # Code analysis tool

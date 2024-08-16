@@ -4,18 +4,23 @@ defmodule WraftDocWeb.UserAdmin do
   """
   import Ecto.Query
   alias WraftDoc.Account
+  alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens
+  alias WraftDoc.Repo
   alias WraftDocWeb.Router.Helpers, as: Routes
 
-  def custom_links(_schema) do
+  def widgets(_schema, _conn) do
+    query = from u in User, select: count(u.id)
+    user_count = Repo.one(query)
+
     [
       %{
-        name: "Logout",
-        url: Routes.session_path(WraftDocWeb.Endpoint, :delete),
-        method: :delete,
+        icon: "users",
+        type: "tidbit",
+        title: "Registered Users",
+        content: user_count,
         order: 2,
-        location: :top,
-        icon: "user-circle"
+        width: 3
       }
     ]
   end
@@ -53,6 +58,20 @@ defmodule WraftDocWeb.UserAdmin do
         name: "Resend Email Verification",
         action: fn _, user -> resend_email_verification(user) end
       }
+    ]
+  end
+
+  def custom_links(_schema) do
+    [
+      %{
+        name: "Logout",
+        url: Routes.session_path(WraftDocWeb.Endpoint, :delete),
+        method: :delete,
+        order: 3,
+        location: :bottom,
+        icon: "user-circle",
+        full_icon: "flag-full",
+      },
     ]
   end
 

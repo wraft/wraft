@@ -9,6 +9,7 @@ defmodule WraftDoc.Document.FieldType do
     field(:name, :string)
     field(:meta, :map)
     field(:description, :string)
+    field(:is_disabled, :boolean, default: true)
     embeds_many(:validations, WraftDoc.Validations.Validation, on_replace: :delete)
     belongs_to(:creator, WraftDoc.Account.User)
 
@@ -19,7 +20,7 @@ defmodule WraftDoc.Document.FieldType do
 
   def changeset(%FieldType{} = field_type, attrs \\ %{}) do
     field_type
-    |> cast(attrs, [:name, :description, :meta])
+    |> cast(attrs, [:name, :description, :meta, :is_disabled])
     |> cast_embed(:validations, required: true, with: &WraftDoc.Validations.Validation.changeset/2)
     |> validate_required([:name, :description, :meta])
     |> unique_constraint(:name,
