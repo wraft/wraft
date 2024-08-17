@@ -139,7 +139,9 @@ defmodule WraftDoc.Mixfile do
       {:fun_with_flags_ui, "~> 0.8.1"},
 
       # Sentry
-      {:sentry, "~> 8.0"},
+      {:sentry, "~> 10.2.0"},
+
+      # mjml
       {:mjml, "~> 3.0"},
       {:mjml_eex, "~> 0.10.0"}
     ]
