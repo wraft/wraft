@@ -187,13 +187,4 @@ defmodule WraftDoc.Notifications do
     )
     |> Repo.one()
   end
-
-  def insert_user_notification do
-    %UserNotifications{}
-    |> UserNotifications.changeset(%{
-      recipient_id: "397b8443-4abe-42cc-89ba-6fcd6923c70d",
-      notification_id: "5d1aefa0-a754-415e-afb8-c03499bee706"
-    })
-    |> Repo.insert()
-  end
 end
