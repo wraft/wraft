@@ -96,6 +96,8 @@ defmodule WraftDoc.ProsemirrorToMarkdown do
   defp convert_node(%{"type" => type}, _opts),
     do: raise(InvalidJsonError, "Invalid node type: #{type}")
 
+  defp convert_mark(text, %{"type" => "textHighlight"}, _opts), do: text
+
   defp convert_mark(text, %{"type" => "bold"}, _opts), do: "**#{text}**"
   defp convert_mark(text, %{"type" => "italic"}, _opts), do: "*#{text}*"
   defp convert_mark(text, %{"type" => "code"}, _opts), do: "`#{text}`"

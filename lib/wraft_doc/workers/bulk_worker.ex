@@ -160,6 +160,23 @@ defmodule WraftDoc.Workers.BulkWorker do
     trigger
   end
 
+  defp handle_exceptions(
+         {:error,
+          %PipelineError{error: %InvalidJsonError{message: message}, input: trigger, stage: stage}}
+       ) do
+    state = TriggerHistory.states()[:failed]
+
+    trigger =
+      update_trigger_history_state_and_error(trigger, state, %{
+        info: "Invalid JSON Error",
+        message: message,
+        stage: stage
+      })
+
+    Logger.error("Invalid JSON error. Pipeline execution failed.")
+    trigger
+  end
+
   defp handle_exceptions({:ok, %{trigger: trigger, failed_builds: [], zip_file: zip_file}}) do
     state = TriggerHistory.states()[:success]
     trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
