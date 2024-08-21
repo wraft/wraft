@@ -329,10 +329,10 @@ defmodule WraftDoc.Document do
     query =
       from(la in LayoutAsset,
         join: l in Layout,
-        where: l.id == ^l_id,
+        on: la.layout_id == l.id,
         join: a in Asset,
-        where: a.id == ^a_id,
-        where: la.layout_id == l.id and la.asset_id == a.id
+        on: la.asset_id == a.id,
+        where: l.id == ^l_id and a.id == ^a_id
       )
 
     case Repo.one(query) do
@@ -487,7 +487,7 @@ defmodule WraftDoc.Document do
       from(cf in ContentTypeField,
         where: cf.id == ^id,
         join: c in ContentType,
-        where: c.id == cf.content_type_id and c.organisation_id == ^org_id
+        on: c.id == cf.content_type_id and c.organisation_id == ^org_id
       )
 
     case Repo.one(query) do
@@ -1135,7 +1135,7 @@ defmodule WraftDoc.Document do
       from(i in Instance,
         where: i.id == ^id,
         join: c in ContentType,
-        where: c.id == i.content_type_id and c.organisation_id == ^org_id
+        on: c.id == i.content_type_id and c.organisation_id == ^org_id
       )
 
     case Repo.one(query) do
