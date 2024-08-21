@@ -8,7 +8,7 @@ defmodule WraftDoc.Mixfile do
       version: "0.0.1",
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:phoenix] ++ Mix.compilers() ++ [:phoenix_swagger],
+      compilers: Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
@@ -54,11 +54,11 @@ defmodule WraftDoc.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.6.15"},
+      {:phoenix, "~> 1.7"},
       {:phoenix_pubsub, "~> 2.1.1"},
       {:phoenix_ecto, "~> 4.4.0"},
       {:phoenix_view, "~> 2.0.2"},
-      {:ecto_sql, "~> 3.9.0"},
+      {:ecto_sql, "~> 3.10"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 3.3.1", override: true},
       {:phoenix_live_reload, "~> 1.4.0", only: :dev},
@@ -72,8 +72,8 @@ defmodule WraftDoc.Mixfile do
       {:comeonin, "~> 5.3.2"},
       {:bcrypt_elixir, "~> 3.0.1"},
       # User authentication
-      {:guardian, "~> 2.3.0"},
-      {:guardian_db, "~> 2.0"},
+      {:guardian, "~> 2.3.2"},
+      {:guardian_db, "~> 3.0.0"},
       {:guardian_phoenix, "~> 2.0"},
       # CORS
       {:cors_plug, "~> 3.0.1"},
@@ -86,7 +86,7 @@ defmodule WraftDoc.Mixfile do
       {:hackney, "~> 1.18.0"},
       {:sweet_xml, "~> 0.7.3"},
       # Time and date formating
-      {:timex, "~>  3.7.9"},
+      {:timex, "~>  3.7.11"},
       # Phone number validation
       {:ex_phone_number, "~> 0.4.2"},
       # JSON parser
@@ -110,7 +110,7 @@ defmodule WraftDoc.Mixfile do
       # QR code generation
       {:eqrcode, "~> 0.1.10"},
       # Background jobs
-      {:oban, "~> 2.13.4"},
+      {:oban, "~> 2.18.2"},
       # Email client
       {:swoosh, "~> 1.8.3"},
       {:httpoison, "~> 1.8.2"},
