@@ -42,6 +42,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.StateUser
+  alias WraftDoc.Forms
   alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.Workers.BulkWorker
@@ -3030,7 +3031,10 @@ defmodule WraftDoc.Document do
   Delete a pipeline.
   """
   @spec delete_pipeline(Pipeline.t()) :: {:ok, Pipeline.t()} | {:error, Ecto.Changeset.t()} | nil
-  def delete_pipeline(%Pipeline{} = pipeline), do: Repo.delete(pipeline)
+  def delete_pipeline(%Pipeline{} = pipeline) do
+    Forms.delete_form_pipeline(pipeline)
+    Repo.delete(pipeline)
+  end
 
   def delete_pipeline(_), do: nil
 

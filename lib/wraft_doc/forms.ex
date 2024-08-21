@@ -282,11 +282,10 @@ defmodule WraftDoc.Forms do
   Delete a form pipeline
   """
   @spec delete_form_pipeline(Pipeline.t()) ::
-          {:ok, FormPipeline.t()} | {:error, Ecto.Changeset.t()}
+          {:ok, FormPipeline.t()} | {non_neg_integer(), nil}
   def delete_form_pipeline(pipeline) do
-    FormPipeline
-    |> Repo.get_by(pipeline_id: pipeline.id)
-    |> Repo.delete()
+    query = from(fp in FormPipeline, where: fp.pipeline_id == ^pipeline.id)
+    Repo.delete_all(query)
   end
 
   @doc """
