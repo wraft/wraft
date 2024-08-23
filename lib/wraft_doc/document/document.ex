@@ -600,26 +600,17 @@ defmodule WraftDoc.Document do
   @doc """
   Same as create_instance/4, to create instance and its approval system
   """
-  def create_instance(current_user, %{id: c_id, prefix: prefix} = content_type, state, params) do
+  def create_instance(current_user, %{id: c_id, prefix: prefix} = content_type, _state, params) do
     instance_id = create_instance_id(c_id, prefix)
 
-    allowed_users =
-      [current_user.id]
-      |> MapSet.new()
-      |> MapSet.union(
-        state.flow_id
-        |> all_allowed_users()
-        |> MapSet.new()
-      )
-      |> MapSet.to_list()
-
-    params = Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => allowed_users})
+    params =
+      Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => [current_user.id]})
 
     Multi.new()
     |> Multi.insert(
       :instance,
       content_type
-      |> build_assoc(:instances, creator: current_user, state_id: state.id)
+      |> build_assoc(:instances, creator: current_user)
       |> Instance.changeset(params)
     )
     |> Multi.run(:counter_increment, fn _, _ -> create_or_update_counter(content_type) end)
@@ -648,23 +639,14 @@ defmodule WraftDoc.Document do
   # @spec create_instance(ContentType.t(), State.t(), map) ::
   #         %Instance{content_type: ContentType.t(), state: State.t()}
   #         | {:error, Ecto.Changeset.t()}
-  def create_instance(%{id: c_id, prefix: prefix} = c_type, state, params) do
+  def create_instance(%{id: c_id, prefix: prefix} = c_type, _state, params) do
     instance_id = create_instance_id(c_id, prefix)
 
-    allowed_users =
-      [params["creator_id"]]
-      |> MapSet.new()
-      |> MapSet.union(
-        state.flow_id
-        |> all_allowed_users()
-        |> MapSet.new()
-      )
-      |> MapSet.to_list()
-
-    params = Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => allowed_users})
+    params =
+      Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => [params["creator_id"]]})
 
     c_type
-    |> build_assoc(:instances, state_id: state.id)
+    |> build_assoc(:instances)
     |> Instance.changeset(params)
     |> Repo.insert()
     |> case do
@@ -686,23 +668,11 @@ defmodule WraftDoc.Document do
           | {:error, Ecto.Changeset.t()}
   def create_instance(%User{} = current_user, content_type, params) do
     instance_id = create_instance_id(content_type.id, content_type.prefix)
-    initial_state = Enterprise.initial_state(content_type.flow)
-
-    allowed_users =
-      [current_user.id]
-      |> MapSet.new()
-      |> MapSet.union(
-        initial_state.flow_id
-        |> all_allowed_users()
-        |> MapSet.new()
-      )
-      |> MapSet.to_list()
 
     params =
       Map.merge(params, %{
         "instance_id" => instance_id,
-        "state_id" => initial_state.id,
-        "allowed_users" => allowed_users
+        "allowed_users" => [current_user.id]
       })
 
     Multi.new()
@@ -777,6 +747,7 @@ defmodule WraftDoc.Document do
     |> Repo.insert()
   end
 
+  # Initially moving state nil to intial state
   def approve_instance(
         %User{id: current_approver_id},
         %Instance{
@@ -785,51 +756,60 @@ defmodule WraftDoc.Document do
         } = instance
       ) do
     if current_approver_id in Enum.map(approvers, & &1.id) do
-      next_state_id = next_state_id(state)
-      approval_status = next_state_id == current_state_id
-
-      Multi.new()
-      |> Multi.update(
-        :update_instance,
-        Instance.update_state_changeset(instance, %{
-          state_id: next_state_id,
-          approval_status: approval_status
-        })
-      )
-      |> Multi.insert(:insert_transition_log, fn %{
-                                                   update_instance: %Instance{
-                                                     state: %{id: next_state_id}
-                                                   }
-                                                 } ->
-        InstanceTransitionLog.changeset(%InstanceTransitionLog{}, %{
+      instance_state_transition_transaction(
+        instance,
+        %{
+          state_id: next_state_id(state),
+          approval_status: next_state_id(state) == current_state_id
+        },
+        %{
           review_status: :approved,
           reviewed_at: DateTime.utc_now(),
           from_state_id: current_state_id,
-          to_state_id: next_state_id,
           reviewer_id: current_approver_id,
           instance_id: instance.id
-        })
-      end)
-      |> Repo.transaction()
-      |> case do
-        {:ok, %{update_instance: instance}} ->
-          instance
-          |> Repo.reload()
-          |> Repo.preload([
-            {:creator, :profile},
-            {:content_type, :layout},
-            {:versions, :author},
-            {:instance_approval_systems, :approver},
-            {:state, :approvers}
-          ])
-
-        {:error, _, changeset, _} ->
-          {:error, changeset}
-      end
+        }
+      )
     else
       {:error, :no_permission}
     end
   end
+
+  def approve_instance(
+        %User{id: current_approver_id},
+        %Instance{
+          allowed_users: [current_approver_id],
+          state: nil,
+          content_type: content_type,
+          approval_status: false
+        } = instance
+      ) do
+    flow = Repo.get(Flow, content_type.flow_id)
+    initial_state = Enterprise.initial_state(flow)
+
+    allowed_users =
+      [current_approver_id]
+      |> MapSet.new()
+      |> MapSet.union(
+        flow.id
+        |> all_allowed_users()
+        |> MapSet.new()
+      )
+      |> MapSet.to_list()
+
+    instance_state_transition_transaction(
+      instance,
+      %{state_id: initial_state.id, allowed_users: allowed_users},
+      %{
+        review_status: :approved,
+        reviewed_at: DateTime.utc_now(),
+        reviewer_id: current_approver_id,
+        instance_id: instance.id
+      }
+    )
+  end
+
+  def approve_instance(_, %Instance{state: nil}), do: {:error, :no_permission}
 
   def approve_instance(_, _), do: {:error, :cant_update}
 
@@ -851,47 +831,61 @@ defmodule WraftDoc.Document do
           approval_status: false
         } = instance
       ) do
-    if current_approver_id in Enum.map(approvers, & &1.id) do
-      Multi.new()
-      |> Multi.update(
-        :update_instance,
-        Instance.update_state_changeset(instance, %{state_id: previous_state_id(state)})
-      )
-      |> Multi.insert(:insert_transition_log, fn %{
-                                                   update_instance: %Instance{
-                                                     state: %{id: previous_state_id}
-                                                   }
-                                                 } ->
-        InstanceTransitionLog.changeset(%InstanceTransitionLog{}, %{
+    if current_approver_id in Enum.map(approvers, & &1.id) &&
+         previous_state_id(state) != current_state_id do
+      instance_state_transition_transaction(
+        instance,
+        %{state_id: previous_state_id(state)},
+        %{
           review_status: :rejected,
           reviewed_at: DateTime.utc_now(),
           from_state_id: current_state_id,
-          to_state_id: previous_state_id,
           reviewer_id: current_approver_id,
           instance_id: instance.id
-        })
-      end)
-      |> Repo.transaction()
-      |> case do
-        {:ok, %{update_instance: instance}} ->
-          instance
-          |> Repo.reload()
-          |> Repo.preload([
-            {:creator, :profile},
-            {:content_type, :layout},
-            {:versions, :author},
-            {:state, :approvers}
-          ])
-
-        {:error, _, changeset, _} ->
-          {:error, changeset}
-      end
+        }
+      )
     else
       {:error, :no_permission}
     end
   end
 
   def reject_instance(_, _), do: {:error, :cant_update}
+
+  defp instance_state_transition_transaction(
+         instance,
+         update_instance_params,
+         instance_transition_log_params
+       ) do
+    Multi.new()
+    |> Multi.update(
+      :update_instance,
+      Instance.update_state_changeset(instance, update_instance_params)
+    )
+    |> Multi.insert(:insert_transition_log, fn %{update_instance: %Instance{state_id: state_id}} ->
+      InstanceTransitionLog.changeset(
+        %InstanceTransitionLog{},
+        Map.merge(
+          instance_transition_log_params,
+          %{to_state_id: state_id}
+        )
+      )
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_instance: instance}} ->
+        instance
+        |> Repo.reload()
+        |> Repo.preload([
+          {:creator, :profile},
+          {:content_type, :layout},
+          {:versions, :author},
+          {:state, :approvers}
+        ])
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
+  end
 
   defp previous_state_id(current_state) do
     query =
@@ -1520,7 +1514,7 @@ defmodule WraftDoc.Document do
     asset_query =
       from(asset in Asset,
         join: theme_asset in ThemeAsset,
-        where: theme_asset.theme_id == ^theme.id and asset.id == theme_asset.asset_id,
+        on: asset.id == theme_asset.asset_id and theme_asset.theme_id == ^theme.id,
         select: asset.id
       )
 
@@ -1615,7 +1609,7 @@ defmodule WraftDoc.Document do
       from(d in DataTemplate,
         where: d.id == ^d_temp_id,
         join: c in ContentType,
-        where: c.id == d.content_type_id and c.organisation_id == ^org_id
+        on: c.id == d.content_type_id and c.organisation_id == ^org_id
       )
 
     case Repo.one(query) do
@@ -3046,7 +3040,7 @@ defmodule WraftDoc.Document do
     query =
       from(s in Stage,
         join: p in Pipeline,
-        where: p.organisation_id == ^org_id and s.pipeline_id == p.id,
+        on: p.organisation_id == ^org_id and s.pipeline_id == p.id,
         where: s.id == ^s_uuid
       )
 
@@ -3269,7 +3263,7 @@ defmodule WraftDoc.Document do
   """
 
   def get_role_of_content_type(id, c_id) do
-    query = from(r in Role, where: r.id == ^id, join: ct in ContentType, where: ct.id == ^c_id)
+    query = from(r in Role, where: r.id == ^id, join: ct in ContentType, on: ct.id == ^c_id)
 
     Repo.one(query)
   end
@@ -3279,7 +3273,7 @@ defmodule WraftDoc.Document do
   """
 
   def get_content_type_role(id, role_id) do
-    query = from(ct in ContentType, where: ct.id == ^id, join: r in Role, where: r.id == ^role_id)
+    query = from(ct in ContentType, where: ct.id == ^id, join: r in Role, on: r.id == ^role_id)
 
     Repo.one(query)
   end
