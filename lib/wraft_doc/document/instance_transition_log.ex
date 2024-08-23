@@ -23,6 +23,6 @@ defmodule WraftDoc.Document.InstanceTransitionLog do
   def changeset(%InstanceTransitionLog{} = instance_transition_log, attrs \\ %{}) do
     instance_transition_log
     |> cast(attrs, @fields)
-    |> validate_required(@fields)
+    |> validate_required(@fields -- [:from_state_id])
   end
 end

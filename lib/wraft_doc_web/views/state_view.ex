@@ -52,17 +52,7 @@ defmodule WraftDocWeb.Api.V1.StateView do
     }
   end
 
-  def render("index.json", %{
-        states: states,
-        page_number: page_number,
-        total_pages: total_pages,
-        total_entries: total_entries
-      }) do
-    %{
-      states: render_many(states, __MODULE__, "show.json", as: :state),
-      page_number: page_number,
-      total_pages: total_pages,
-      total_entries: total_entries
-    }
+  def render("index.json", %{states: states}) do
+    render_many(states, __MODULE__, "show.json", as: :state)
   end
 end

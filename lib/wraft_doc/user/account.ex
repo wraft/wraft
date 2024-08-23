@@ -435,7 +435,7 @@ defmodule WraftDoc.Account do
     query =
       from(a in Activity,
         join: au in Audience,
-        where: au.user_id == ^id and au.activity_id == a.id,
+        on: au.user_id == ^id and au.activity_id == a.id,
         order_by: [desc: a.inserted_at],
         select: %{
           action: a.action,
