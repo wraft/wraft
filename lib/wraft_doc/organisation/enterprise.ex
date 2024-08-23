@@ -65,6 +65,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Returns initial state of a flow
   """
+  @spec initial_state(Flow.t()) :: State.t() | nil
   def initial_state(%Flow{} = flow) do
     with %Flow{states: states} <- Repo.preload(flow, :states) do
       Enum.min_by(states, fn x -> x.order end)
@@ -326,17 +327,17 @@ defmodule WraftDoc.Enterprise do
   @doc """
   State index under a flow.
   """
-  @spec state_index(binary, map) :: map
-  def state_index(flow_uuid, params) do
+  @spec state_index(binary()) :: map
+  def state_index(<<_::288>> = flow_uuid) do
     query =
       from(s in State,
         join: f in Flow,
-        where: f.id == ^flow_uuid and s.flow_id == f.id,
+        on: f.id == ^flow_uuid and s.flow_id == f.id,
         order_by: [desc: s.id],
         preload: [:flow, :creator, approvers: [:profile]]
       )
 
-    Repo.paginate(query, params)
+    Repo.all(query)
   end
 
   @doc """
@@ -658,7 +659,7 @@ defmodule WraftDoc.Enterprise do
       from(user in User,
         where: user.email == ^email,
         join: user_org in UserOrganisation,
-        where: user.id == user_org.user_id and user_org.organisation_id == ^org_id,
+        on: user.id == user_org.user_id and user_org.organisation_id == ^org_id,
         where: is_nil(user_org.deleted_at)
       )
 
@@ -786,8 +787,7 @@ defmodule WraftDoc.Enterprise do
     query =
       from(org in Organisation,
         join: user_org in UserOrganisation,
-        where: user_org.user_id == ^user.id,
-        where: user_org.organisation_id == org.id,
+        on: user_org.user_id == ^user.id and user_org.organisation_id == org.id,
         where: is_nil(user_org.deleted_at)
       )
 

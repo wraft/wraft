@@ -58,7 +58,7 @@ defmodule WraftDoc.Mixfile do
       {:phoenix_pubsub, "~> 2.1.1"},
       {:phoenix_ecto, "~> 4.4.0"},
       {:phoenix_view, "~> 2.0.2"},
-      {:ecto_sql, "~> 3.10"},
+      {:ecto_sql, "~> 3.11.1"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 3.3.1", override: true},
       {:phoenix_live_reload, "~> 1.4.0", only: :dev},

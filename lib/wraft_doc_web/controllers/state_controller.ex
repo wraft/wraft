@@ -135,9 +135,6 @@ defmodule WraftDocWeb.Api.V1.StateController do
         swagger_schema do
           properties do
             states(Schema.ref(:ShowStates))
-            page_number(:integer, "Page number")
-            total_pages(:integer, "Total number of pages")
-            total_entries(:integer, "Total number of contents")
           end
 
           example(%{
@@ -165,10 +162,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
                   inserted_at: "2020-02-21T14:00:00Z"
                 }
               }
-            ],
-            page_number: 1,
-            total_pages: 2,
-            total_entries: 15
+            ]
           })
         end
     }
@@ -212,7 +206,6 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
     parameters do
       flow_id(:path, :string, "flow id", required: true)
-      page(:query, :string, "Page number")
     end
 
     response(200, "Ok", Schema.ref(:FlowIndex))
@@ -220,19 +213,9 @@ defmodule WraftDocWeb.Api.V1.StateController do
   end
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, %{"flow_id" => flow_uuid} = params) do
-    with %{
-           entries: states,
-           page_number: page_number,
-           total_pages: total_pages,
-           total_entries: total_entries
-         } <- Enterprise.state_index(flow_uuid, params) do
-      render(conn, "index.json",
-        states: states,
-        page_number: page_number,
-        total_pages: total_pages,
-        total_entries: total_entries
-      )
+  def index(conn, %{"flow_id" => flow_uuid} = _params) do
+    with states <- Enterprise.state_index(flow_uuid) do
+      render(conn, "index.json", states: states)
     end
   end
 
