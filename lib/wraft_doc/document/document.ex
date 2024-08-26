@@ -41,6 +41,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Forms
   alias WraftDoc.ProsemirrorToMarkdown
@@ -1789,7 +1790,16 @@ defmodule WraftDoc.Document do
         find_header_values(x, instance.serialized, acc)
       end)
 
-    content = prepare_markdown(instance, layout, header, base_content_dir, theme, task)
+    content =
+      prepare_markdown(
+        instance,
+        Repo.preload(layout, [:organisation]),
+        header,
+        base_content_dir,
+        theme,
+        task
+      )
+
     File.write("#{base_content_dir}/content.md", content)
 
     file_path = "uploads/contents/#{instance_id}"
@@ -1802,7 +1812,14 @@ defmodule WraftDoc.Document do
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
   end
 
-  defp prepare_markdown(%{id: instance_id} = instance, layout, header, mkdir, theme, task) do
+  defp prepare_markdown(
+         %{id: instance_id, creator: %User{name: name, email: email}} = instance,
+         %Layout{organisation: %Organisation{name: organisation_name}} = layout,
+         header,
+         mkdir,
+         theme,
+         task
+       ) do
     header =
       Enum.reduce(layout.assets, header, fn x, acc ->
         find_asset_header_values(x, acc, layout.slug, instance)
@@ -1816,6 +1833,9 @@ defmodule WraftDoc.Document do
       |> concat_strings("qrcode: #{qr_code} \n")
       |> concat_strings("path: #{mkdir}\n")
       |> concat_strings("title: #{page_title}\n")
+      |> concat_strings("organisation_name: #{organisation_name}\n")
+      |> concat_strings("author_name: #{name}\n")
+      |> concat_strings("author_email: #{email}\n")
       |> concat_strings("id: #{instance_id}\n")
       |> concat_strings("mainfont: #{theme.font_name}\n")
       |> concat_strings("mainfontoptions:\n")
