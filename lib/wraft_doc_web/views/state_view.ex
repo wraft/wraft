@@ -18,6 +18,7 @@ defmodule WraftDocWeb.Api.V1.StateView do
       id: state.id,
       state: state.state,
       order: state.order,
+      type: state.type,
       approvers: render_many(state.approvers, UserView, "user_id_and_name.json", as: :user),
       updated_at: state.updated_at,
       inserted_at: state.inserted_at
