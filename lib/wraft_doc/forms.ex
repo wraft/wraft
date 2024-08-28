@@ -48,7 +48,7 @@ defmodule WraftDoc.Forms do
   @doc """
     Show a form
   """
-  @spec show_form(User.t(), Ecto.UUID.t()) :: FormField.t() | {:error, String.t()}
+  @spec show_form(User.t(), Ecto.UUID.t()) :: Form.t() | nil
   def show_form(%{current_org_id: organisation_id}, <<_::288>> = form_id) do
     %{current_org_id: organisation_id}
     |> get_form(form_id)
@@ -279,6 +279,14 @@ defmodule WraftDoc.Forms do
   end
 
   @doc """
+  Get a form pipeline
+  """
+  @spec get_form_pipeline(Form.t(), Ecto.UUID.t()) :: FormPipeline.t() | nil
+  def get_form_pipeline(form, <<_::288>> = pipeline_id) do
+    Repo.get_by(FormPipeline, form_id: form.id, pipeline_id: pipeline_id)
+  end
+
+  @doc """
   Delete a form pipeline
   """
   @spec delete_form_pipeline(Pipeline.t()) ::
@@ -478,7 +486,11 @@ defmodule WraftDoc.Forms do
     end)
   end
 
-  defp trigger_pipeline(current_user, pipeline_id, data, scheduled_at_offset) do
+  @doc """
+    Trigger pipeline
+  """
+  @spec trigger_pipeline(User.t(), Ecto.UUID.t(), map(), integer()) :: :ok | {:error, String.t()}
+  def trigger_pipeline(current_user, pipeline_id, data, scheduled_at_offset) do
     Multi.new()
     |> Multi.run(:pipeline, fn _, _ -> {:ok, Document.get_pipeline(current_user, pipeline_id)} end)
     |> Multi.run(:trigger_history, fn _, %{pipeline: pipeline} ->
@@ -491,6 +503,14 @@ defmodule WraftDoc.Forms do
       )
     end)
     |> Repo.transaction()
+    |> case do
+      {:ok, _} ->
+        :ok
+
+      {:error, step, error, _} ->
+        Logger.error("Pipeline failed in step #{inspect(step)}", error: error)
+        {:error, "Pipeline failed"}
+    end
   end
 
   @doc """
