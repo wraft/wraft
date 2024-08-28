@@ -373,6 +373,38 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           example(%{
             naration: "New year edition"
           })
+        end,
+      ContentEmailResponse:
+        swagger_schema do
+          title("Email sent response")
+          description("Response for document instance email sent")
+
+          properties do
+            info(:string, "Info")
+          end
+
+          example(%{
+            info: "Email sent successfully"
+          })
+        end,
+      DocumentInstanceMailer:
+        swagger_schema do
+          title("Document Instance Email")
+          description("Api to send email for a given document instance")
+
+          properties do
+            email(:string, "Email", required: true)
+            subject(:string, "Subject", required: true)
+            message(:string, "Message", required: true)
+            cc(Schema.array(:string), "Emails")
+          end
+
+          example(%{
+            "email" => "example@example.com",
+            "subject" => "Subject of the email",
+            "message" => "Body of the email",
+            "cc" => ["cc1@example.com", "cc2@example.com"]
+          })
         end
     }
   end
@@ -682,6 +714,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
+  @doc """
+  Update an instance's state.
+  """
   swagger_path :state_update do
     patch("/contents/{id}/states")
     summary("Update an instance's state")
@@ -712,6 +747,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
+  @doc """
+  Lock or unlock an instance.
+  """
   swagger_path :lock_unlock do
     patch("/contents/{id}/lock-unlock")
     summary("Lock or unlock and instance")
@@ -729,6 +767,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
+  @spec lock_unlock(Plug.Conn.t(), map) :: Plug.Conn.t()
   def lock_unlock(conn, %{"id" => instance_id} = params) do
     current_user = conn.assigns[:current_user]
 
@@ -739,6 +778,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
+  @doc """
+  Search instances.
+  """
   swagger_path :search do
     get("/contents/title/search")
     summary("Search instances")
@@ -756,6 +798,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @spec search(Plug.Conn.t(), map) :: Plug.Conn.t()
   def search(conn, %{"key" => key} = params) do
     current_user = conn.assigns[:current_user]
 
@@ -774,6 +817,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
+  @doc """
+  List changes.
+  """
   swagger_path :change do
     get("/contents/{id}/change/{v_id}")
     summary("List changes")
@@ -789,6 +835,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @spec change(Plug.Conn.t(), map) :: Plug.Conn.t()
   def change(conn, %{"id" => instance_id, "v_id" => version_id}) do
     current_user = conn.assigns[:current_user]
 
@@ -801,6 +848,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
+  @doc """
+  Approve an instance.
+  """
   swagger_path :approve do
     put("/contents/{id}/approve")
     summary("Approve an instance")
@@ -816,6 +866,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
+  @spec approve(Plug.Conn.t(), map) :: Plug.Conn.t()
   def approve(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
@@ -825,6 +876,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
+  @doc """
+  Reject approval of an instance.
+  """
   swagger_path :reject do
     put("/contents/{id}/reject")
     summary("Reject approval of an instance")
@@ -840,12 +894,41 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
+  @spec reject(Plug.Conn.t(), map) :: Plug.Conn.t()
   def reject(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Document.show_instance(id, current_user),
          %Instance{} = instance <- Document.reject_instance(current_user, instance) do
       render(conn, "approve_or_reject.json", %{instance: instance})
+    end
+  end
+
+  @doc """
+  Send email for an instance.
+  """
+  swagger_path :send_email do
+    post("/contents/{id}/email")
+    summary("Document Instance Email")
+    description("Api to send email for a given document instance")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+      content(:body, Schema.ref(:DocumentInstanceMailer), "Mailer Body", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ContentEmailResponse))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec send_email(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def send_email(conn, %{"id" => id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Document.show_instance(id, current_user),
+         {:ok, _} <- Document.send_document_email(instance, params) do
+      render(conn, "email.json", %{info: "Email sent successfully"})
     end
   end
 end

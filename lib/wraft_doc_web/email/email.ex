@@ -2,6 +2,7 @@ defmodule WraftDocWeb.Mailer.Email do
   @moduledoc false
 
   import Swoosh.Email
+  alias Swoosh.Attachment
   alias WraftDocWeb.MJML
 
   def invite_email(org_name, user_name, email, token) do
@@ -122,6 +123,35 @@ defmodule WraftDocWeb.Mailer.Email do
     |> from({"Wraft", sender_email()})
     |> subject("Wraft - Delete Organisation")
     |> html_body(MJML.OrganisationDeleteCode.render(body))
+  end
+
+  @doc """
+    Document Instance Mail
+  """
+  def document_instance_mail(email, subject, message, cc_list, document_pdf_binary) do
+    new()
+    |> to(email)
+    |> maybe_add_cc(cc_list)
+    |> from({"Wraft", sender_email()})
+    |> subject(subject)
+    |> html_body(message)
+    |> add_attachment(document_pdf_binary)
+  end
+
+  defp maybe_add_cc(email, nil), do: email
+
+  defp maybe_add_cc(email, cc_list), do: cc(email, cc_list)
+
+  defp add_attachment(email, document_pdf_binary) do
+    attachment(
+      email,
+      Attachment.new(
+        {:data, document_pdf_binary},
+        filename: "final.pdf",
+        content_type: "application/pdf",
+        type: :inline
+      )
+    )
   end
 
   defp sender_email do

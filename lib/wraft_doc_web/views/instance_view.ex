@@ -136,6 +136,12 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
+  def render("email.json", %{info: info}) do
+    %{
+      info: info
+    }
+  end
+
   def generate_url(%{profile_pic: pic} = profile) do
     WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
   end

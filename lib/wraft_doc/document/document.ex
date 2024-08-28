@@ -47,6 +47,8 @@ defmodule WraftDoc.Document do
   alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.Workers.BulkWorker
+  alias WraftDocWeb.Mailer
+  alias WraftDocWeb.Mailer.Email
 
   @doc """
   Create a layout.
@@ -712,27 +714,21 @@ defmodule WraftDoc.Document do
   * content_type - A content type struct
   * content - a Instance struct
   """
-  @spec create_instance_approval_systems(ContentType.t(), Instance.t()) :: {:ok, :ok}
+  @spec create_instance_approval_systems(ContentType.t(), Instance.t()) ::
+          {:ok, :ok} | {:error, String.t()}
   def create_instance_approval_systems(content_type, content) do
-    with %ContentType{flow: %Flow{approval_systems: approval_systems}} <-
-           Repo.preload(content_type, [{:flow, :approval_systems}]) do
-      {:ok,
-       Enum.each(approval_systems, fn x ->
-         # Task.start_link(fn ->
-         #   Notifications.create_notification(
-         #    %{"recipient_id" x.approver_id,
-         #    "actor_id"=> content.creator_id,
-         #     "assigned_as_approver",
-         #     x.id,
-         #     ApprovalSystem
-         #   )
-         # end)
+    case Repo.preload(content_type, [{:flow, :approval_systems}]) do
+      %ContentType{flow: %Flow{approval_systems: approval_systems}} ->
+        {:ok,
+         Enum.each(approval_systems, fn x ->
+           create_instance_approval_system(%{
+             instance_id: content.id,
+             approval_system_id: x.id
+           })
+         end)}
 
-         create_instance_approval_system(%{
-           instance_id: content.id,
-           approval_system_id: x.id
-         })
-       end)}
+      _ ->
+        {:error, "flow not found"}
     end
   end
 
@@ -2415,7 +2411,7 @@ defmodule WraftDoc.Document do
   Creates a background job to run a pipeline.
   """
   # TODO - improve tests
-  @spec create_pipeline_job(TriggerHistory.t(), Ecto.UUID.t()) ::
+  @spec create_pipeline_job(TriggerHistory.t(), DateTime.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
   def create_pipeline_job(%TriggerHistory{} = trigger_history, scheduled_at) do
     create_bulk_job(trigger_history, scheduled_at, ["pipeline_job"])
@@ -3823,5 +3819,26 @@ defmodule WraftDoc.Document do
       _ ->
         %{total_documents: 0, daily_documents: 0, pending_approvals: 0}
     end
+  end
+
+  @doc """
+  Send document as mail
+  ## Parameters
+  * instance - Instance struct
+  * email - Email address
+  * subject - Email subject
+  * message - Email message
+  * cc - Email cc
+  """
+  @spec send_document_email(Instance.t(), map()) :: {:ok, any()} | {:error, any()}
+  def send_document_email(
+        %{instance_id: instance_id} = _instance,
+        %{"email" => email, "subject" => subject, "message" => message} = params
+      ) do
+    document_pdf_binary = Minio.download("uploads/contents/#{instance_id}/final.pdf")
+
+    email
+    |> Email.document_instance_mail(subject, message, params["cc"], document_pdf_binary)
+    |> Mailer.deliver()
   end
 end

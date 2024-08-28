@@ -6,9 +6,12 @@ defmodule WraftDoc.Enterprise.Flow.State do
 
   alias __MODULE__
 
+  @types [:reviewer, :editor, :sign]
+
   schema "state" do
     field(:state, :string)
     field(:order, :integer)
+    field(:type, Ecto.Enum, values: @types, default: :editor)
 
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
@@ -24,7 +27,7 @@ defmodule WraftDoc.Enterprise.Flow.State do
 
   def changeset(%State{} = flow, attrs \\ %{}) do
     flow
-    |> cast(attrs, [:state, :order, :organisation_id, :flow_id])
+    |> cast(attrs, [:state, :order, :organisation_id, :flow_id, :type])
     |> validate_required([:state, :order, :organisation_id, :flow_id])
     |> unique_constraint(:state,
       message: "State already created.!",
