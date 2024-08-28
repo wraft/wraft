@@ -26,12 +26,14 @@ defmodule WraftDocWeb.Api.V1.StateController do
           properties do
             state(:string, "State name", required: true)
             order(:integer, "State's order", required: true)
+            type(:string, "State's type")
             approvers(:array, "State's approvers", required: true)
           end
 
           example(%{
             state: "Published",
             order: 1,
+            type: "reviewer",
             approvers: [
               "b840c04c-25a2-4426-895a-acd2685153e4",
               "b190bece-160c-44cc-91e9-79367ed2ccf6"
@@ -46,12 +48,14 @@ defmodule WraftDocWeb.Api.V1.StateController do
           properties do
             state(:string, "State name")
             order(:integer, "State's order")
+            type(:string, "State's type")
             approvers(:map, "State's approvers")
           end
 
           example(%{
             state: "Published",
             order: 3,
+            type: "reviewer",
             approvers: %{
               add: [
                 "b840c04c-25a2-4426-895a-acd2685153e4",
@@ -73,6 +77,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
             id(:string, "ID of the state")
             state(:string, "A state of content")
             order(:integer, "Order of the state")
+            type(:string, "Type of the state")
             inserted_at(:string, "When was the state inserted", format: "ISO-8601")
             updated_at(:string, "When was the state last updated", format: "ISO-8601")
           end
@@ -81,6 +86,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
             id: "1232148nb3478",
             state: "published",
             order: 1,
+            type: "reviewer",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -101,6 +107,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
               id: "1232148nb3478",
               state: "published",
               order: 1,
+              type: "reviewer",
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             },
@@ -144,6 +151,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
                   id: "1232148nb3478",
                   state: "published",
                   order: 1,
+                  type: "reviewer",
                   updated_at: "2020-01-21T14:00:00Z",
                   inserted_at: "2020-02-21T14:00:00Z"
                 },
