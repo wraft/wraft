@@ -15,6 +15,7 @@ defmodule WraftDocWeb.Api.V1.FormEntryController do
   alias WraftDoc.Forms
   alias WraftDoc.Forms.Form
   alias WraftDoc.Forms.FormEntry
+  alias WraftDoc.Forms.FormPipeline
 
   def swagger_definitions do
     %{
@@ -25,9 +26,11 @@ defmodule WraftDocWeb.Api.V1.FormEntryController do
 
           properties do
             data(Schema.ref(:FormFieldEntries))
+            pipeline_id(:string, "Pipeline ID", required: false)
           end
 
           example(%{
+            pipeline_id: "aa18afe1-3383-4653-bc0e-505ec3bbfc19",
             data: [
               %{
                 field_id: "0b214501-05be-4d58-a407-51fc763428cd",
@@ -184,6 +187,18 @@ defmodule WraftDocWeb.Api.V1.FormEntryController do
   end
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def create(conn, %{"pipeline_id" => pipeline_id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Form{} = form <- Forms.show_form(current_user, params["form_id"]),
+         %FormPipeline{} <- Forms.get_form_pipeline(form, pipeline_id),
+         {:ok, %FormEntry{data: data} = form_entry} <-
+           Forms.create_form_entry(current_user, form, params),
+         :ok <- Forms.trigger_pipeline(current_user, pipeline_id, data, 0) do
+      render(conn, "form_entry.json", %{form_entry: form_entry})
+    end
+  end
+
   def create(conn, params) do
     current_user = conn.assigns.current_user
 

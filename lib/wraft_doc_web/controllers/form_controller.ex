@@ -428,6 +428,9 @@ defmodule WraftDocWeb.Api.V1.FormController do
     }
   end
 
+  @doc """
+    Create form
+  """
   swagger_path :create do
     post("/forms")
     summary("Create wraft form")
@@ -442,6 +445,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
@@ -450,6 +454,9 @@ defmodule WraftDocWeb.Api.V1.FormController do
     end
   end
 
+  @doc """
+    List forms
+  """
   swagger_path :index do
     get("/forms")
     summary("Form Index")
@@ -470,6 +477,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     current_user = conn.assigns.current_user
 
@@ -488,6 +496,9 @@ defmodule WraftDocWeb.Api.V1.FormController do
     end
   end
 
+  @doc """
+    Update form status
+  """
   swagger_path :status_update do
     patch("/forms/{id}/status")
     summary("Update form status")
@@ -505,6 +516,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
+  @spec status_update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def status_update(conn, %{"id" => form_id} = params) do
     current_user = conn.assigns.current_user
 
@@ -514,6 +526,9 @@ defmodule WraftDocWeb.Api.V1.FormController do
     end
   end
 
+  @doc """
+    Update form
+  """
   swagger_path :update do
     put("/forms/{id}")
     summary("Update a wraft form")
@@ -530,6 +545,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => form_id} = params) do
     current_user = conn.assigns.current_user
 
@@ -539,6 +555,9 @@ defmodule WraftDocWeb.Api.V1.FormController do
     end
   end
 
+  @doc """
+    Show form
+  """
   swagger_path :show do
     get("/forms/{id}")
     summary("Show a wraft form")
@@ -553,6 +572,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => form_id}) do
     current_user = conn.assigns.current_user
 
@@ -561,6 +581,9 @@ defmodule WraftDocWeb.Api.V1.FormController do
     end
   end
 
+  @doc """
+    Delete form
+  """
   swagger_path :delete do
     PhoenixSwagger.Path.delete("/forms/{id}")
     summary("Delete a wraft form")
@@ -576,6 +599,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => form_id}) do
     current_user = conn.assigns.current_user
 
@@ -585,6 +609,9 @@ defmodule WraftDocWeb.Api.V1.FormController do
     end
   end
 
+  @doc """
+    Align form fields
+  """
   swagger_path :align_fields do
     put("/forms/{id}/align-fields")
     summary("Update form fields order")
@@ -607,6 +634,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
+  @spec align_fields(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def align_fields(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
