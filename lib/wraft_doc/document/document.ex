@@ -2968,6 +2968,9 @@ defmodule WraftDoc.Document do
     |> where([p], p.organisation_id == ^org_id)
     |> where(^pipeline_filter_by_name(params))
     |> order_by(^pipeline_sort(params))
+    |> join(:left, [p], ps in assoc(p, :stages))
+    |> select_merge([p, ps], %{stages_count: count(ps.id)})
+    |> group_by([p], p.id)
     |> Repo.paginate(params)
   end
 
