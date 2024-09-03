@@ -429,6 +429,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
            Enterprise.get_personal_organisation_and_role(current_user),
          [access_token: access_token, refresh_token: refresh_token] <-
            Guardian.generate_tokens(user, personal_org.id) do
+      Account.update_last_signed_in_org(user, personal_org.id)
+
       render(conn, "delete.json",
         organisation: organisation,
         access_token: access_token,
