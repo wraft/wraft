@@ -17,9 +17,11 @@ defmodule WraftDoc.Repo.Migrations.LinkFormAndPipelineIfItDoesntExist do
   |> Enum.each(fn pipeline ->
     try do
       Repo.insert!(%FormPipeline{form_id: pipeline.source_id, pipeline_id: pipeline.id})
+
+      Logger.info("FormPipeline created for pipeline #{pipeline.id}")
     rescue
       e in Ecto.ConstraintError ->
-        Logger.info("FormPipeline already exists for pipeline #{pipeline.id}")
+        Logger.error("FormPipeline already exists for pipeline #{pipeline.id}")
     end
   end)
 
