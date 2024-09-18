@@ -89,9 +89,9 @@ defmodule WraftDoc.TemplateAssets do
   # TODO - Write tests
   @spec delete_template_asset(TemplateAsset.t()) ::
           {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
-  def delete_template_asset(%TemplateAsset{} = template_asset) do
+  def delete_template_asset(%TemplateAsset{organisation_id: org_id} = template_asset) do
     # Delete the template asset file
-    Minio.delete_file("uploads/template_assets/#{template_asset.id}")
+    Minio.delete_file("organisations/#{org_id}/template_assets/#{template_asset.id}")
 
     Repo.delete(template_asset)
   end
