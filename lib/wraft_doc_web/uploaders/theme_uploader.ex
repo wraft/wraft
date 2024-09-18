@@ -24,8 +24,13 @@ defmodule WraftDocWeb.ThemeUploader do
     end
   end
 
+  # Change Filename
+  def filename(_version, {_file, theme}) do
+    "font_" <> String.replace(theme.name, ~r/\s+/, "-")
+  end
+
   # Override the storage directory:
   def storage_dir(_version, {_file, scope}) do
-    "uploads/theme/fonts/#{scope.id}"
+    "organisations/#{scope.organisation_id}/theme/fonts/#{scope.id}"
   end
 end

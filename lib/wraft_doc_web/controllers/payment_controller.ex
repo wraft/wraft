@@ -40,7 +40,8 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
             start_date: "2020-01-21T14:00:00Z",
             end_date: "2020-01-21T14:00:00Z",
             invoice_number: "WRAFTDOC-Invoice-001",
-            invoice: "uploads/invoice/WRAFTDOC-Invoice-001.pdf",
+            invoice:
+              "organisations/f5837766-573f-427f-a916-cf39a3518c7b/invoice/WRAFTDOC-Invoice-001.pdf",
             amount: 1000,
             action: "upgrade",
             status: "success",
@@ -98,7 +99,8 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
                 start_date: "2020-01-21T14:00:00Z",
                 end_date: "2020-01-21T14:00:00Z",
                 invoice_number: "WRAFTDOC-Invoice-001",
-                invoice: "uploads/invoice/WRAFTDOC-Invoice-001.pdf",
+                invoice:
+                  "organisations/f5837766-573f-427f-a916-cf39a3518c7b/invoice/WRAFTDOC-Invoice-001.pdf",
                 amount: 1000,
                 action: "upgrade",
                 status: "success",
@@ -165,7 +167,8 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
             start_date: "2020-01-21T14:00:00Z",
             end_date: "2020-01-21T14:00:00Z",
             invoice_number: "WRAFTDOC-Invoice-001",
-            invoice: "uploads/invoice/WRAFTDOC-Invoice-001.pdf",
+            invoice:
+              "organisations/f5837766-573f-427f-a916-cf39a3518c7b/invoice/WRAFTDOC-Invoice-001.pdf",
             amount: 1000,
             action: "upgrade",
             status: "success",
