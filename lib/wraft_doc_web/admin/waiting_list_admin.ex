@@ -70,7 +70,7 @@ defmodule WraftDocWeb.WaitingListAdmin do
     FunWithFlags.enable(:waiting_list_registration_control, for_actor: %{email: email})
     FunWithFlags.enable(:waiting_list_organisation_create_control, for_actor: %{email: email})
     {:ok, %{user: user}} = create_account(waiting_list)
-    token = create_set_password_token(user)
+    token = AuthTokens.create_set_password_token(user)
     # Send email notification
     %{name: "#{first_name} #{last_name}", email: email, token: token.value}
     |> EmailWorker.new(queue: "mailer", tags: ["waiting_list_acceptance"])
@@ -91,11 +91,5 @@ defmodule WraftDocWeb.WaitingListAdmin do
     }
 
     Account.registration(params)
-  end
-
-  def create_set_password_token(user) do
-    token = WraftDoc.create_phx_token("set_password", user.email, max_age: :infinity)
-    params = %{value: token, token_type: "set_password"}
-    AuthTokens.insert_auth_token!(user, params)
   end
 end
