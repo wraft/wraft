@@ -19,11 +19,11 @@ defmodule WraftDocWeb.LayoutSlugUploader do
 
   # Change Filename
   def filename(_version, {_file, layout}) do
-    "slug_#{layout.name}"
+    "slug_" <> String.replace(layout.name, ~r/\s+/, "-")
   end
 
   # Storage Directory
   def storage_dir(_, {_file, layout}) do
-    "uploads/slug/#{layout.id}"
+    "organisations/#{layout.organisation_id}/slug/#{layout.id}"
   end
 end

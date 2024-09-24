@@ -33,7 +33,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemController do
             instance_id: "OFFL01",
             raw: "Content",
             serialized: %{title: "Title of the content", body: "Body of the content"},
-            build: "/uploads/OFFL01/final.pdf",
+            build: "/organisations/f5837766-573f-427f-a916-cf39a3518c7b/OFFL01/final.pdf",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -116,7 +116,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemController do
               instance_id: "OFFL01",
               raw: "Content",
               serialized: %{title: "Title of the content", body: "Body of the content"},
-              build: "/uploads/OFFL01/final.pdf",
+              build: "/organisations/f5837766-573f-427f-a916-cf39a3518c7b/OFFL01/final.pdf",
               updated_at: "2020-01-21T14:00:00Z",
               inserted_at: "2020-02-21T14:00:00Z"
             },
@@ -160,7 +160,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemController do
                   instance_id: "OFFL01",
                   raw: "Content",
                   serialized: %{title: "Title of the content", body: "Body of the content"},
-                  build: "/uploads/OFFL01/final.pdf",
+                  build: "/organisations/f5837766-573f-427f-a916-cf39a3518c7b/OFFL01/final.pdf",
                   updated_at: "2020-01-21T14:00:00Z",
                   inserted_at: "2020-02-21T14:00:00Z"
                 },

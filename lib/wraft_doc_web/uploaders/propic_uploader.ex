@@ -24,16 +24,16 @@ defmodule WraftDocWeb.PropicUploader do
 
   # Change Filename
   def filename(_version, {_file, user}) do
-    "profilepic_#{user.name}"
+    "profilepic_" <> String.replace(user.name, ~r/\s+/, "-")
   end
 
   # Storage Directory
   def storage_dir(_, {_file, profile}) do
-    "uploads/avatars/#{profile.id}"
+    "users/#{profile.user_id}/profile"
   end
 
   # Provide a default URL if there hasn't been a file uploaded
-  def default_url(_version, _scope), do: Minio.generate_url("uploads/images/avatar.png")
+  def default_url(_version, _scope), do: Minio.generate_url("public/images/avatar.png")
 
   defp file_size(%Waffle.File{} = file), do: file.path |> File.stat!() |> Map.get(:size)
 end

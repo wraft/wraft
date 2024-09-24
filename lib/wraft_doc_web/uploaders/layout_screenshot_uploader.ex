@@ -22,12 +22,12 @@ defmodule WraftDocWeb.LayoutScreenShotUploader do
 
   # Change Filename
   def filename(_version, {_file, layout}) do
-    "screenshot_#{layout.name}"
+    "screenshot_" <> String.replace(layout.name, ~r/\s+/, "-")
   end
 
   # Storage Directory
   def storage_dir(_, {_file, layout}) do
-    "uploads/layout-screenshots/#{layout.id}"
+    "organisations/#{layout.organisation_id}/layout-screenshots/#{layout.id}"
   end
 
   defp file_size(%Waffle.File{} = file), do: file.path |> File.stat!() |> Map.get(:size)

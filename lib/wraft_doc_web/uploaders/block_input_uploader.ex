@@ -5,8 +5,14 @@ defmodule WraftDocWeb.BlockInputUploader do
 
   @versions [:original]
 
+  def filename(_version, {file, _block}) do
+    file.file_name
+    |> Path.rootname()
+    |> String.replace(~r/\s+/, "-")
+  end
+
   # Override the storage directory:
   def storage_dir(_version, {_file, scope}) do
-    "uploads/block_input/#{scope.id}"
+    "organisations/#{scope.organisation_id}/block_input/#{scope.id}"
   end
 end
