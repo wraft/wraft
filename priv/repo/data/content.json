@@ -24,7 +24,7 @@
       "unit": "cm",
       "slug_file": null,
       "slug": "pletter",
-      "screenshot": "/uploads/layout-screenshots/1/sc_Official%20Letter.png?v=63770754388",
+      "screenshot": "/organisations/f5837766-573f-427f-a916-cf39a3518c7b/layout-screenshots/1/sc_Official%20Letter.png?v=63770754388",
       "name": "Official Letter",
       "inserted_at": "2020-07-11T19:33:28",
       "id": "f5837766-573f-427f-a916-cf39a3518c7b",
@@ -48,6 +48,6 @@
     "instance_id": "rl0019",
     "inserted_at": "2022-02-02T04:10:30",
     "id": "cdd587d1-4784-4c3c-ab84-1fac7f47b6b6",
-    "build": "uploads/contents/rl0019/final.pdf"
+    "build": "organisations/f5837766-573f-427f-a916-cf39a3518c7b/contents/rl0019/final.pdf"
   }
 }

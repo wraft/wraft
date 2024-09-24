@@ -11,6 +11,7 @@ defmodule WraftDoc.Document.Pipeline do
     field(:api_route, :string)
     field(:source, :string)
     field(:source_id, :string)
+    field(:stages_count, :integer, virtual: true)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     has_many(:stages, WraftDoc.Document.Pipeline.Stage)

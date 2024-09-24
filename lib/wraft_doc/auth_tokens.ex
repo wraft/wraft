@@ -320,4 +320,14 @@ defmodule WraftDoc.AuthTokens do
         {:error, :fake}
     end
   end
+
+  @doc """
+    Create set password token
+  """
+  @spec create_set_password_token(User.t()) :: AuthToken.t()
+  def create_set_password_token(user) do
+    token = WraftDoc.create_phx_token("set_password", user.email, max_age: :infinity)
+    params = %{value: token, token_type: "set_password"}
+    insert_auth_token!(user, params)
+  end
 end

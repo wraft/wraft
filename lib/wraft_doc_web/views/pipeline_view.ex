@@ -36,6 +36,7 @@ defmodule WraftDocWeb.Api.V1.PipelineView do
       name: pipeline.name,
       source: pipeline.source,
       source_id: pipeline.source_id,
+      stages_count: pipeline.stages_count,
       api_route: pipeline.api_route,
       inserted_at: pipeline.inserted_at,
       updated_at: pipeline.updated_at
