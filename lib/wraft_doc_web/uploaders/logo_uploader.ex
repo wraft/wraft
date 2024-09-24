@@ -29,10 +29,10 @@ defmodule WraftDocWeb.LogoUploader do
 
   # Storage Directory
   def storage_dir(_, {_file, organisation}) do
-    "uploads/logos/#{organisation.id}"
+    "organisations/#{organisation.id}/logo"
   end
 
-  def default_url(_version, _scope), do: Minio.generate_url("uploads/images/logo.png")
+  def default_url(_version, _scope), do: Minio.generate_url("public/images/logo.png")
 
   defp file_size(%Waffle.File{} = file), do: file.path |> File.stat!() |> Map.get(:size)
 end
