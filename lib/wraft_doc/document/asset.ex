@@ -35,5 +35,14 @@ defmodule WraftDoc.Document.Asset do
     asset
     |> cast_attachments(attrs, [:file])
     |> validate_required([:file])
+    |> format_naming()
+  end
+
+  # Rename spaces to hyphens in the file name
+  defp format_naming(changeset) do
+    changeset
+    |> get_change(:file)
+    |> Map.update!(:file_name, &String.replace(&1, ~r/\s+/, "-"))
+    |> (&put_change(changeset, :file, &1)).()
   end
 end

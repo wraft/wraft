@@ -603,7 +603,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
   def delete(conn, %{"id" => form_id}) do
     current_user = conn.assigns.current_user
 
-    with %Form{} = form <- Forms.get_form(current_user, form_id),
+    with %Form{} = form <- Forms.show_form(current_user, form_id),
          %Form{} <- Forms.delete_form(form) do
       render(conn, "simple_form.json", form: form)
     end
