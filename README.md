@@ -1,67 +1,132 @@
-# Wraft Docs
+<div align="center">
+  <img src="priv/static/images/wraft-logo.png" alt="Wraft" style="width: 100%;" />
+</div>
 
-Wraft Docs is a simple, yet powerful document generation app. Using Wraft Doc it is very easy to generate and manage
+<p align="center">
+  The open-source Contract Lifecycle Management platform.
+</p>
+
+<div align="center">
+  <img src="priv/static/images/screenshot01.png" alt="Wraft Cover" style="width: 70%;" />
+</div>
+
+# Wraft - Contract Lifecycle Management
+
+Wraft is a simple, yet powerful document generation app. Using Wraft Doc it is very easy to generate and manage
 documents.
 
-The aim of Wraft Docs is to maintain a single source of truth for document generation.
+The aim of Wraft is to maintain a single source of truth for document generation.
 
-# Table of contents
-- [Wraft Docs](#wraft-docs)
+## Table of contents
+
+- [Wraft](#wraft-docs)
 - [Table of contents](#table-of-contents)
   - [Development](#development)
-      - [Pre-requisite](#pre-requisite)
-      - [Initial setup](#initial-setup)
-  - [Running Wraft Docs](#running-wraft-docs)
-  - [Testing Wraft Docs](#testing-wraft-docs)
+    - [Pre-requisite](#pre-requisite)
+    - [Initial setup](#initial-setup)
+  - [Running Wraft](#running-wraft-docs)
+  - [Testing Wraft](#testing-wraft-docs)
   - [Others](#others)
-      - [Few additional `mix tasks`](#few-additional-mix-tasks)
+    - [Few additional `mix tasks`](#few-additional-mix-tasks)
 
 ## Development
-#### Pre-requisite
-* Elixir 1.13
-* Erlang/OTP 24.0
-* Postgres
-* Pandoc
-* Latex
-* Gnuplot
-* wkhtmltopdf
-* inotify-tools
-* direnv
-* Commit hooks
 
+#### Pre-requisite
+
+- Elixir 1.14
+- Erlang/OTP 25.0
+- Postgres
+- Minio - S3 compatible object storage
+- Pandoc
+- Latex
 
 `.tools_version` will have the exact versions defined in it.
 
-
 #### Initial setup
 
-**Elixir & Erlang**
+### 1 - **Clone the repository**
 
-As these 2 are defined in the `.tools_version`, `asdf` will install the right versions with the following command:
+```shell
+$ git clone https://github.com/wraft/wraft.git
+$ cd wraft
+```
+
+### 2 - **Elixir & Erlang**
+
+As these 2 are defined in the `.tool_versions`, `asdf` will install the right versions with the following set of commands:
+
+Please refer the given link for the installation of [asdf-version-manager](https://asdf-vm.com/#/core-manage-asdf-vm?id=install).
+
+Add the following plugins to your asdf for elixir and erlang:
+
+```shell
+$ asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git
+
+$ asdf plugin add elixir https://github.com/asdf-vm/asdf-elixir.git
+```
+
 ```shell
 $ asdf install
 ```
 
-**Postgres**
+⚠️ For Ubuntu users, you also need to install the inotify-tools package.
+
+**inotify-tools**
+
+- command-line utilities to monitor file system activity
+
+In macOS:
+
+```shell
+$ brew install inotify-tools
+```
+
+In Linux:
+
+```shell
+$ sudo apt install inotify-tools
+```
+
+### 3 - **Postgres**
 
 Select your OS from the options [here](https://www.postgresql.org/download/) and follow the instruction to
 install the latest version of postgres.
 Check your installation using:
+
 ```shell
 $  postgres -V
 ```
+
 Test your connectivity:
+
 ```shell
 $ psql -h 127.0.0.1 -p 5432 -U postgres postgres
 ```
 
-**Pandoc**
+### 4 - **Minio**
+
+Download the latest version of minio from [here](https://min.io/docs/minio/linux/index.html) and follow the instructions to install based on your OS.
+
+Run the following command from the system terminal or shell to start a local MinIO instance using the ~/minio folder. You can replace this path with another folder path on the local machine:
+
+```shell
+$ minio server ~/minio
+$ minio server ~/minio --console-address :9001
+```
+
+Open http://127.0.0.1:9000 in a web browser to access the MinIO Console.
+
+### 5 - **Pandoc**
+
+##### **macOS**
 
 The easiest way to install it on OSX is via brew:
 
 ```shell
 $ brew install pandoc
 ```
+
+##### **Linux**
 
 For Linux machines, follow the instructions below.
 
@@ -77,7 +142,7 @@ where `$DEB` is the path to the downloaded deb.
 These instructions are taken from [Official Pandoc Documentations](https://pandoc.org/installing.html).
 You may refer if the official documentation if you have any doubts.
 
-**Latex**
+### 6 - **Latex**
 
 To use Latex in OSX, install the MacTex Distribution. You can download MacTex [here](https://www.tug.org/mactex/).
 Choose the correct version that supports your device, download and install. Latex editor comes with the distribution.
@@ -95,137 +160,52 @@ In case you need latex editor, type in:
 $ sudo apt-get install texmaker
 ```
 
-**Gnuplot**
+### 7 - Running Wraft
 
-In macOS:
+To start your Wraft app:
 
-```shell
-$ brew install gnuplot
-```
+**Load env variables**
 
-In Linux:
+Make a .dev.env file in the root directory and add the environment variables.
+Refer `.env.example` for the list of variables.
 
-```shell
-$ sudo apt-get install gnuplot
-```
-
-**wkhtmltopdf**
-
-Download the latest package installer that matches your OS [here](https://wkhtmltopdf.org/downloads.html).
-Open it and follow the instructions to install `wkhtmltopdf`.
-
-To check your installation:
+Source the environment variables from the file and start the server.
 
 ```shell
-$ wkhtmltopdf -V
+$ mv .env.example .dev.env
+$ source .dev.env
 ```
-
-**direnv**
-
-`direnv` is an environment switcher for the shell. It knows how to hook into bash, zsh, tcsh, fish shell and elvish to load or unload environment variables depending on the current directory. This allows project-specific environment variables without cluttering the "~/.profile" file.
-
-Before using it, you need to install it. Here is how you can do it:
-
-In macOS:
-
-```shell
-$ brew install direnv
-```
-
-In Linux:
-
-```shell
-$ sudo apt-get install direnv
-```
-
-Once installed, you need to hook direnv into your shell.
-
-```shell
-$ echo 'eval "$(direnv hook zsh)"' >> ~/.zshrc
-```
-
-Finally, you can use it in your project:
-
-```shell
-$ direnv allow
-```
-
-Now, whenever you enter the directory, the environment variables from `.envrc` will be loaded automatically. When you leave the directory, those variables get unloaded.
-
-**Commit Hooks**
-Wraft Docs uses `pre-commit` to standardise the code quality and style.
-
-To install pre-commit:
-Using pip:
-```shell
-$ pip install pre-commit
-```
-Using homebrew:
-```shell
-$ brew install pre-commit
-```
-
-To verify installation:
-
-```shell
-$ pre-commit --version
-```
-
-Now to setup pre commit for Wraft Docs:
-
-```shell
-$ pre-commit install
-```
-
-**inotify-tools**
-- command-line utilities to monitor file system activity
-
-In macOS:
-
-```shell
-$ brew install inotify-tools
-```
-
-In Linux:
-
-```shell
-$ sudo apt install inotify-tools
-```
-
-
-## Running Wraft Docs
-To start your Wraft docs app:
 
 **Install dependencies with**
+
 ```shell
 $ mix deps.get
 ```
 
 **Setup Database**
+
 - With seed data
 
 ```shell
-$ ecto.setup
+$ mix ecto.setup
 ```
 
 - Without seed data
+
 ```shell
 $ mix ecto.create && mix ecto.migrate
 ```
 
-**Load env variables**
-- load environment variables from the file
-```shell
-$ source .dev.env
-```
-
 **Start Phoenix endpoint**
+
 - With interactive shell
+
 ```shell
 $ iex -S mix phx.server
 ```
 
 - Without interactive shell
+
 ```shell
 $ source .dev.env && mix phx.server
 ```
@@ -234,18 +214,50 @@ Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 To get the API documentation, go [here](http://localhost:4000/api/swagger/index.html#/).
 
-## Testing Wraft Docs
+### 8 - Frontend
+
+Clone the frontend repository separately.
+
 ```shell
-$ source .env && mix test
+$ cd ..
+$ git clone https://github.com/wraft/wraft-frontend.git
+$ cd wraft-frontend
 ```
 
-## Others
-#### Few additional `mix tasks`
-- Set up the project in one go
-```shell
-$ mix setup
+### 9 - Default User
+
+The default username and password
+
+```bash
+username: wraftuser@gmail.com
+password: password
 ```
-- Generate API documentation
+
+Refer the README.md in the frontend repository for the setup.
+
+---
+
+## Setup using Docker
+
+The easiest way to get started with wraft-backend is using Docker by running the following command.
+
 ```shell
-$ mix swagger
+$ git clone https://github.com/wraft/wraft.git
+$ cd wraft
+
+# Copy the example env to your own file and edit it
+$ cp .env.example .dev.env
+
+#Load the development environment variables
+$ source .dev.env
+
+# Start the Docker containers
+$ docker-compose up -d
+
+# Visit localhost:4000
+$ http://localhost:4000
 ```
+
+## License
+
+Wraft is open-source software licensed under the [AGPLv3](LICENSE).
