@@ -33,7 +33,7 @@ defmodule WraftDocWeb.FallbackController do
   def call(conn, {:error, :fake}) do
     body = Jason.encode!(%{errors: "You are not authorized for this action.!"})
 
-    conn |> put_resp_content_type("application/json") |> send_resp(401, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(403, body)
   end
 
   def call(conn, {:error, :invalid_password}) do
@@ -52,7 +52,7 @@ defmodule WraftDocWeb.FallbackController do
 
   def call(conn, {:error, :no_permission}) do
     body = Jason.encode!(%{errors: "You are not authorized for this action.!"})
-    conn |> put_resp_content_type("application/json") |> send_resp(401, body)
+    conn |> put_resp_content_type("application/json") |> send_resp(403, body)
   end
 
   def call(conn, {:error, :expired}) do

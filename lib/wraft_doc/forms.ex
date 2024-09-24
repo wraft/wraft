@@ -68,11 +68,11 @@ defmodule WraftDoc.Forms do
   @doc """
   Delete a form
   """
-  @spec delete_form(Form.t()) :: {:ok, Form.t()} | {:error, Ecto.Changeset.t()}
-  def delete_form(form) do
+  @spec delete_form(Form.t()) ::
+          {:ok, Form.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def delete_form(%Form{pipelines: [], form_pipelines: []} = form) do
     Multi.new()
     |> Multi.delete_all(:form_fields, from(ff in FormField, where: ff.form_id == ^form.id))
-    |> Multi.delete_all(:form_pipelines, from(fp in FormPipeline, where: fp.form_id == ^form.id))
     |> Multi.delete_all(:form_mappings, from(fm in FormMapping, where: fm.form_id == ^form.id))
     |> Multi.delete(:form, form)
     |> Repo.transaction()
@@ -84,6 +84,9 @@ defmodule WraftDoc.Forms do
         {:error, error}
     end
   end
+
+  def delete_form(%Form{pipelines: _pipelines, form_pipelines: _form_pipelines}),
+    do: {:error, "Form has pipelines"}
 
   @doc """
     Update form status
@@ -527,23 +530,28 @@ defmodule WraftDoc.Forms do
   def transform_data_by_mapping(nil, _data), do: {:error, "No mappings found"}
 
   defp transform_data(mappings, data) do
-    data
-    |> Enum.map(fn {field_id, value} ->
-      %{name: field_name} = Repo.get(Field, field_id)
+    # Convert form data with field_id => value to field_name => value
+    form_data =
+      data
+      |> Enum.map(fn {field_id, value} ->
+        %{name: field_name} = Repo.get(Field, field_id)
+        {field_name, value}
+      end)
+      |> Map.new()
 
-      case Map.get(mappings, field_name) do
-        nil -> nil
-        content_type_field_name -> {content_type_field_name, value}
+    Enum.flat_map(mappings, fn {content_type_field_name, form_field_name} ->
+      case Map.get(form_data, form_field_name) do
+        nil -> []
+        value -> [{content_type_field_name, value}]
       end
     end)
-    |> Enum.reject(&is_nil/1)
   end
 
   defp transform_mappings(mappings) do
     Enum.reduce(mappings, %{}, fn mapping, acc ->
       destination_name = mapping.destination["name"]
       source_name = mapping.source["name"]
-      Map.put(acc, source_name, destination_name)
+      Map.put(acc, destination_name, source_name)
     end)
   end
 

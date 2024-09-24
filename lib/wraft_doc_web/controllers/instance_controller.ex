@@ -641,7 +641,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Document.get_instance(id, current_user),
-         _ <- Document.delete_uploaded_docs(instance),
+         _ <- Document.delete_uploaded_docs(current_user, instance),
          {:ok, %Instance{}} <- Document.delete_instance(instance) do
       render(conn, "instance.json", instance: instance)
     end

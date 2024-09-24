@@ -1,5 +1,54 @@
-# CHANGELOG
-## v0.0.31 - today
+# Changelog
+
+## v0.3.1 - 2024-06-05
+
+### Added
+- Created a recursive algorithm to automatically replace form fields with values in document instances.
+- Added Form Fields Realignment API with field ordering.
+
+### Changed
+- Moved ProseMirror JSON to Markdown conversion to the backend for bulk document generation.
+
+---
+
+## v0.3.0 - 2024-04-17
+
+### Added
+- Approval system.
+- Template file upload.
+
+### Fixed
+- Various bug fixes.
+
+---
+
+## v0.2.0 - 2024-03-15
+
+### Changed
+- Improvements to the approval system.
+
+---
+
+## v0.1.0 - 2024-01-10
+
+### Added
+- Role-Based Access Control (RBAC) and organization management.
+- User registration flow.
+- MinIO integration with Wraft.
+- Waiting list flow.
+- Improved filtering and sorting.
+- Internal user flow.
+- Access token and refresh token authorization.
+- Multiple theme file uploads.
+- Sentry integration for error tracking.
+- Updated payment API.
+- Theme and layout module.
+- Updated seed data.
+- Document module.
+
+---
+
+## v0.0.31 - 2021-04-19
 
 ## Added
 
@@ -19,9 +68,6 @@
 
 ## Fixed
 - Multiple email acceptance on token signup
-
-
-
 
 ## v0.0.30 - 2021-04-12
 

@@ -176,6 +176,8 @@ defmodule WraftDoc.PipelineRunner do
   """
   @spec zip_builds(map) :: map
   def zip_builds(%{instances: instances} = input) do
+    org_id = List.first(instances).content_type.organisation_id
+
     builds =
       instances
       |> Stream.map(fn x -> x |> Document.get_built_document(local: true) |> Map.get(:build) end)
@@ -184,16 +186,17 @@ defmodule WraftDoc.PipelineRunner do
 
     time = DateTime.to_iso8601(Timex.now())
     zip_name = "builds-#{time}.zip"
-    dest_path = "temp/pipe_builds/#{zip_name}"
+    dest_path = "organisations/#{org_id}/pipe_builds/#{zip_name}"
     :zip.create(zip_name, builds)
-    File.mkdir_p!("temp/pipe_builds/")
+    File.mkdir_p!("organisations/#{org_id}/pipe_builds/")
     System.cmd("cp", [zip_name, dest_path])
     Minio.upload_file(dest_path)
     File.rm(zip_name)
     # Delete all the generated content folder
-    Enum.each(instances, &(&1.instance_id |> content_dir() |> File.rm_rf()))
+    Enum.each(instances, &(&1.instance_id |> content_dir(org_id) |> File.rm_rf()))
     Map.put(input, :zip_file, zip_name)
   end
 
-  defp content_dir(instance_id), do: Path.join(File.cwd!(), "uploads/contents/#{instance_id}")
+  defp content_dir(instance_id, org_id),
+    do: Path.join(File.cwd!(), "organisations/#{org_id}/contents/#{instance_id}")
 end

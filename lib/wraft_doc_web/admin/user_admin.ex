@@ -7,6 +7,7 @@ defmodule WraftDocWeb.UserAdmin do
   alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens
   alias WraftDoc.Repo
+  alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Router.Helpers, as: Routes
 
   def widgets(_schema, _conn) do
@@ -57,6 +58,10 @@ defmodule WraftDocWeb.UserAdmin do
       resend_verification: %{
         name: "Resend Email Verification",
         action: fn _, user -> resend_email_verification(user) end
+      },
+      resend_set_password: %{
+        name: "Resend Set Password",
+        action: fn _, user -> resend_set_password(user) end
       }
     ]
   end
@@ -77,6 +82,17 @@ defmodule WraftDocWeb.UserAdmin do
 
   defp resend_email_verification(user) do
     AuthTokens.create_token_and_send_email(user.email)
+    {:ok, user}
+  end
+
+  defp resend_set_password(user) do
+    token = AuthTokens.create_set_password_token(user)
+
+    # Send email notification
+    %{name: user.name, email: user.email, token: token.value}
+    |> EmailWorker.new(queue: "mailer", tags: ["waiting_list_acceptance"])
+    |> Oban.insert()
+
     {:ok, user}
   end
 
