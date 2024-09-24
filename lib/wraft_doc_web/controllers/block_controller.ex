@@ -100,7 +100,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
             file_url:
               "/home/sadique/Documents/org.functionary/go/src/blocks_api/002dc916-4444-4072-a8aa-85a32c5a65ea.svg",
             tex_chart: "\pie [rotate=180]{80/january}",
-            input: "uploads/block_input/name.csv",
+            input: "organisations/7df19bba-9196-4e9e-b1b6-8651f4566ff0/block_input/name.csv",
             dataset: %{
               data: [
                 %{

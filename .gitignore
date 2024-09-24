@@ -4,6 +4,9 @@
 /db
 /pg
 
+# Ignore the environment variables file.
+/.dev.env
+
 # The directory Mix downloads your dependencies sources to.
 /deps
 
@@ -25,6 +28,9 @@
 
 # Ignore .fetch files in case you like to edit your project deps locally.
 /.fetch
+
+# Ignore .DS_Store files on macOS.
+**/.DS_Store
 
 # If you run "mix test --cover", coverage assets end up here.
 /cover
