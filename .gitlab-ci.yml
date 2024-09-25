@@ -1,0 +1,59 @@
+# This file is a template, and might need editing before it works on your project.
+image: elixir:1.13
+
+# Pick zero or more services to be used on all builds.
+# Only needed when using a docker container to run your tests in.
+# Check out: http://docs.gitlab.com/ce/ci/docker/using_docker_images.html#what-is-a-service
+services:
+  - postgres:latest
+
+variables:
+  POSTGRES_DB: wraft_doc_test
+  POSTGRES_HOST: postgres
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: "postgres"
+  MIX_ENV: "test"
+  GUARDIAN_KEY: #<GUARDIAN_KEY>
+  SECRET_KEY_BASE: #<SECRET_KEY_BASE>
+  WKHTMLTOPDF_PATH: /usr/local/bin/wkhtmltopdf-wrapper
+  PDFTK_PATH: /usr/local/bin/wkhtmltopdf-wrapper
+
+test:
+  stage: test
+  before_script:
+    - apt-get update
+    - DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential xorg libssl-dev libxrender-dev wget gdebi xvfb
+    - wget https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.buster_amd64.deb
+    - gdebi --n wkhtmltox_0.12.5-1.buster_amd64.deb
+    - echo "xvfb-run -a -s \"-screen 0 640x480x16\" wkhtmltopdf \"\$@\"" >/usr/local/bin/wkhtmltopdf-wrapper && chmod +x /usr/local/bin/wkhtmltopdf-wrapper
+    - mix local.rebar --force
+    - mix local.hex --force
+    - mix deps.get --only test
+    - mix ecto.create
+    - mix ecto.migrate
+    - mix wraft.permissions
+  rules:
+    - if: '$DEPLOY_ONLY == "true"'
+      when: never
+    - when: always
+  allow_failure: true # Temporary
+  script:
+    - mix test
+# Temporary as deployment is not connected.
+# deploy:
+#   stage: deploy
+#   image: alpine:latest
+#   environment:
+#     name: production
+#     url: api.wraft.app
+#   before_script:
+#     # Setup SSH deploy keys
+#     - "which ssh-agent || ( apk add openssh-client )"
+#     - eval $(ssh-agent -s)
+#     - ssh-add <(echo "$SSH_PRIVATE_KEY")
+#     - mkdir -p ~/.ssh
+#     - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+#   script:
+#     - ssh root@api.wraft.app "cd wraft-docs-api/ && git reset --hard origin/develop && git pull origin develop && docker compose up -d && exit"
+#   only:
+#     - develop
