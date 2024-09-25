@@ -3,19 +3,21 @@
 </div>
 
 <p align="center">
-  The open-source Contract Lifecycle Management platform.
+  The open-source Document Lifecycle Management platform.
 </p>
 
 <div align="center">
   <img src="priv/static/images/screenshot01.png" alt="Wraft Cover" style="width: 70%;" />
 </div>
 
-# Wraft - Contract Lifecycle Management
+# Wraft - Document Lifecycle Management
 
-Wraft is a simple, yet powerful document generation app. Using Wraft Doc it is very easy to generate and manage
-documents.
+Wraft is an open-source content authoring platform that's helps businesses produce their most important set of documents. 
+Wraft helps author structured business content. From official letters to contracts, and beyond. 
 
-The aim of Wraft is to maintain a single source of truth for document generation.
+Our goal is to give people complete control over their most important documents, from drafting to collaborating and distributing.
+
+Wraft is built on top of open formats, using markdown and JSON. This means your content is always accessible and future-proof.  
 
 ## Table of contents
 
