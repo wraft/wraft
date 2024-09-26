@@ -12,6 +12,7 @@
 
 # Wraft - Document Lifecycle Management
 
+
 Wraft is an open-source content authoring platform that's helps businesses produce their most important set of documents.
 Wraft helps author structured business content. From official letters to contracts, and beyond.
 
