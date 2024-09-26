@@ -12,12 +12,12 @@
 
 # Wraft - Document Lifecycle Management
 
-Wraft is an open-source content authoring platform that's helps businesses produce their most important set of documents. 
-Wraft helps author structured business content. From official letters to contracts, and beyond. 
+Wraft is an open-source content authoring platform that's helps businesses produce their most important set of documents.
+Wraft helps author structured business content. From official letters to contracts, and beyond.
 
 Our goal is to give people complete control over their most important documents, from drafting to collaborating and distributing.
 
-Wraft is built on top of open formats, using markdown and JSON. This means your content is always accessible and future-proof.  
+Wraft is built on top of open formats, using markdown and JSON. This means your content is always accessible and future-proof.
 
 ## Table of contents
 
@@ -226,6 +226,8 @@ $ git clone https://github.com/wraft/wraft-frontend.git
 $ cd wraft-frontend
 ```
 
+Refer the README.md in the frontend repository for the setup.
+
 ### 9 - Default User
 
 The default username and password
@@ -234,8 +236,6 @@ The default username and password
 username: wraftuser@gmail.com
 password: password
 ```
-
-Refer the README.md in the frontend repository for the setup.
 
 ---
 
