@@ -1,5 +1,5 @@
 # This file is a template, and might need editing before it works on your project.
-image: elixir:1.13
+image: elixir:1.14
 
 # Pick zero or more services to be used on all builds.
 # Only needed when using a docker container to run your tests in.
