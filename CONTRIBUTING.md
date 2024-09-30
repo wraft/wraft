@@ -1,6 +1,6 @@
 # Contributing to Wraft
 
-Thank you for your interest in contributing to this project! By participating, you agree to abide by the following guidelines.
+Thank you for your interest in contributing to wraft! By participating, you agree to abide by the following guidelines.
 
 ## Table of Contents
 
@@ -36,15 +36,21 @@ Using pip:
 ```shell
 $ pip install pre-commit
 ```
+
 Using homebrew:
+
 ```
 $ brew install pre-commit
 ```
+
 To verify installation:
+
 ```
 $ pre-commit --version
 ```
+
 Now to setup pre commit for Wraft:
+
 ```
 $ pre-commit install
 ```
@@ -92,7 +98,7 @@ Commit your changes and push to your fork. Follow the commit message guidelines 
 Follow [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) guidelines for writing commit messages.
 
 Example for commit message format:
-  `"feat: add my new feature"`
+`"feat: add my new feature"`
 
 - feat(feature): Add my new feature
 - fix(bug): Fix the bug in the code
