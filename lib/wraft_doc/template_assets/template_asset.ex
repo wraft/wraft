@@ -9,8 +9,11 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
   schema "template_asset" do
     field(:name, :string)
     field(:zip_file, WraftDocWeb.TemplateAssetUploader.Type)
+    field(:wraft_json, :map)
+
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+
     timestamps()
   end
 
@@ -31,5 +34,11 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
     template_asset
     |> cast_attachments(attrs, [:zip_file])
     |> validate_required([:zip_file])
+  end
+
+  def update_wraft_json_changeset(%TemplateAsset{} = template_asset, attrs) do
+    template_asset
+    |> cast(attrs, [:wraft_json])
+    |> validate_required([:wraft_json])
   end
 end

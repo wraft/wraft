@@ -304,6 +304,9 @@ defmodule WraftDocWeb.Router do
       resources("/assets", AssetController)
       # Template Assets
       resources("/template_assets", TemplateAssetController)
+      get("/template_assets/:id/import", TemplateAssetController, :template_import)
+      post("/template_assets/:id/export", TemplateAssetController, :template_export)
+
       # Comments
       resources("/comments", CommentController)
       get("/comments/:id/replies", CommentController, :reply)

@@ -2,13 +2,28 @@ defmodule WraftDoc.TemplateAssets do
   @moduledoc """
   Context module for Template Assets.
   """
+
   import Ecto
   import Ecto.Query
 
+  require Logger
+
   alias Ecto.Multi
   alias WraftDoc.Client.Minio
+  alias WraftDoc.Document
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.Document.Engine
+  alias WraftDoc.Document.FieldType
+  alias WraftDoc.Document.Layout
+  alias WraftDoc.Document.Theme
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
+  alias WraftDoc.TemplateAssets.WraftJson
+
+  @internal_file "wraft.json"
 
   @doc """
   Create a template asset.
@@ -95,4 +110,541 @@ defmodule WraftDoc.TemplateAssets do
 
     Repo.delete(template_asset)
   end
+
+  @doc """
+  Add or update wraft_json into template asset table.
+  """
+  def add_or_update_template_asset_json(%TemplateAsset{} = template_asset, attrs) do
+    template_asset
+    |> TemplateAsset.update_wraft_json_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Imports template asset.
+  """
+  @spec import_template(User.t(), Ecto.UUID.t()) ::
+          DataTemplate.t() | {:error, any()}
+  def import_template(current_user, template_asset_id) do
+    with downloaded_file <- download_zip_from_minio(current_user, template_asset_id),
+         template_map <- get_wraft_json_map(current_user, template_asset_id) do
+      prepare_template(template_map, current_user, downloaded_file)
+    else
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  # @doc """
+  # Generate asset url.
+  # """
+  defp download_zip_from_minio(current_user, template_asset_id) do
+    Minio.download(
+      "organisations/#{current_user.current_org_id}/template_assets/#{template_asset_id}"
+    )
+  end
+
+  @doc """
+  Gets wraft json map.
+  """
+
+  @spec get_wraft_json_map(User.t(), Ecto.UUID.t()) :: map()
+  def get_wraft_json_map(current_user, template_asset_id) do
+    {:ok, wraft_json} =
+      current_user
+      |> download_zip_from_minio(template_asset_id)
+      |> load_json_file()
+
+    Jason.decode!(wraft_json)
+  end
+
+  @doc """
+  Gets the list of items in template asset
+  """
+  @spec template_asset_file_list(User.t(), Ecto.UUID.t()) :: [String.t()] | any()
+  def template_asset_file_list(current_user, template_asset_id) do
+    entries =
+      current_user
+      |> download_zip_from_minio(template_asset_id)
+      |> get_zip_entries()
+
+    case entries do
+      {:ok, entries} ->
+        entries
+        |> Enum.map(& &1.file_name)
+        |> Enum.reject(fn file_name -> String.starts_with?(file_name, "__MACOSX/") end)
+
+      {:error, error} ->
+        error
+    end
+  end
+
+  @doc """
+  prepares template by taking Wraft_json map, current user, zip downloaded path
+  """
+  @spec prepare_template(map(), User.t(), binary()) :: {:ok, any()} | {:error, any()}
+  def prepare_template(template_map, current_user, downloaded_file) do
+    case prepare_template_transaction(template_map, current_user, downloaded_file) do
+      {:ok, %{data_template: data_template}} ->
+        Logger.info("Theme, Layout, Flow, variant created successfully.")
+        data_template
+
+      {:error, _failed_operation, error, _changes_so_far} ->
+        Logger.error("Failed to process. Error: #{inspect(error)}")
+        {:error, error}
+    end
+  end
+
+  defp prepare_template_transaction(template_map, current_user, downloaded_file) do
+    Multi.new()
+    |> Multi.run(:theme, fn _repo, _changes ->
+      prepare_theme(template_map["theme"], current_user, downloaded_file)
+    end)
+    |> Multi.run(:flow, fn _repo, _changes ->
+      prepare_flow(template_map["flow"], current_user)
+    end)
+    |> Multi.run(:layout, fn _repo, _changes ->
+      prepare_layout(template_map["layout"], downloaded_file, current_user)
+    end)
+    |> Multi.run(:content_type, fn _repo, %{theme: theme, flow: flow, layout: layout} ->
+      prepare_content_type(template_map["variant"], current_user, theme.id, layout.id, flow.id)
+    end)
+    |> Multi.run(:data_template, fn _repo, %{content_type: content_type} ->
+      prepare_data_template(
+        current_user,
+        template_map["data_template"],
+        downloaded_file,
+        content_type
+      )
+    end)
+    |> Repo.transaction()
+  end
+
+  defp get_engine(engine) do
+    # TODO multiple engines selection
+    [engine1, _engine2] = String.split(engine, "/")
+
+    case Repo.get_by(Engine, name: String.capitalize(engine1)) do
+      nil -> Logger.warning("No engine found with the name #{engine1}")
+      engine -> engine.id
+    end
+  end
+
+  defp prepare_theme(theme, current_user, downloaded_file) do
+    with {:ok, entries} <- get_zip_entries(downloaded_file),
+         asset_ids <- prepare_theme_assets(entries, downloaded_file, current_user),
+         params <- prepare_theme_attrs(theme, asset_ids),
+         %Theme{} = theme <- Document.create_theme(current_user, params) do
+      {:ok, theme}
+    else
+      {:error, error} -> {:error, error}
+    end
+  end
+
+  defp prepare_theme_assets(entries, downloaded_file, current_user) do
+    entries
+    |> get_theme_font_entries()
+    |> extract_and_save_fonts(downloaded_file, current_user)
+  end
+
+  defp prepare_theme_attrs(%{"name" => name, "colors" => colors}, asset_ids) do
+    Map.merge(colors, %{
+      "name" => name,
+      "font" => name,
+      "primary_color" => colors["primaryColor"],
+      "secondary_color" => colors["secondaryColor"],
+      "body_color" => colors["bodyColor"],
+      "assets" => asset_ids
+    })
+  end
+
+  defp get_theme_font_entries(entries) do
+    Enum.filter(entries, fn entry ->
+      entry.file_name =~ ~r/^theme\/.*\.otf$/i
+    end)
+  end
+
+  defp extract_and_save_fonts(entries, downloaded_zip_file, current_user) do
+    entries
+    |> Task.async_stream(&process_entry(&1, downloaded_zip_file, current_user), timeout: :infinity)
+    |> Enum.map(fn
+      {:ok, {:ok, asset_id}} -> asset_id
+      {:ok, {:error, _reason}} -> nil
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(",")
+  end
+
+  defp process_entry(entry, downloaded_zip_file, current_user) do
+    with {:ok, content} <- extract_file_content(downloaded_zip_file, entry.file_name),
+         {:ok, temp_file_path} <- write_temp_file(content),
+         asset_params = prepare_theme_asset_params(entry, temp_file_path, current_user),
+         {:ok, asset} <- WraftDoc.Document.create_asset(current_user, asset_params) do
+      {:ok, asset.id}
+    else
+      error ->
+        log_error(entry, error)
+        {:error, error}
+    end
+  end
+
+  defp write_temp_file(content) do
+    temp_file_path = Briefly.create!()
+
+    case File.write(temp_file_path, content) do
+      :ok -> {:ok, temp_file_path}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp log_error(entry, error) do
+    Logger.error("""
+    Failed to process entry: #{inspect(entry.file_name)}.
+    Error: #{inspect(error)}.
+    """)
+  end
+
+  defp prepare_theme_asset_params(entry, temp_file_path, current_user) do
+    %{
+      "name" => Path.basename(entry.file_name),
+      "type" => "theme",
+      "file" => %Plug.Upload{
+        filename: Path.basename(entry.file_name),
+        content_type: get_content_type(entry.file_name),
+        path: temp_file_path
+      },
+      "creator_id" => current_user.id
+    }
+  end
+
+  defp get_content_type(filename) do
+    case Path.extname(filename) do
+      ".otf" -> "font/otf"
+      ".ttf" -> "font/ttf"
+      _ -> "application/octet-stream"
+    end
+  end
+
+  defp prepare_layout(layouts, downloaded_file, current_user) do
+    # filter engine name
+    engine_id = get_engine(layouts["engine"])
+
+    with {:ok, entries} <- get_zip_entries(downloaded_file),
+         asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
+         params <- prepare_layout_attrs(layouts, engine_id, asset_id),
+         %Engine{} = engine <- Document.get_engine(params["engine_id"]),
+         %Layout{} = layout <- Document.create_layout(current_user, engine, params) do
+      {:ok, layout}
+    else
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  defp prepare_layout_assets(entries, downloaded_file, current_user) do
+    entries
+    |> get_layout_file_entries()
+    |> extract_and_prepare_layout_asset(downloaded_file, current_user)
+  end
+
+  defp prepare_layout_attrs(
+         %{"name" => name, "meta" => meta, "description" => description, "slug" => slug} =
+           _layout,
+         engine_id,
+         asset_id
+       ) do
+    %{
+      "name" => name,
+      "meta" => meta,
+      "description" => description,
+      "engine_id" => engine_id,
+      "assets" => asset_id,
+      "slug" => slug,
+      "width" => 40,
+      "height" => 40,
+      "unit" => "cm"
+    }
+  end
+
+  defp get_layout_file_entries(entries) do
+    Enum.filter(entries, fn entry ->
+      entry.file_name =~ ~r/^layout\/.*\.pdf$/i
+    end)
+  end
+
+  defp extract_and_prepare_layout_asset(entries, downloaded_zip_file, current_user) do
+    entries
+    |> Enum.map(fn entry ->
+      with {:ok, content} <- extract_file_content(downloaded_zip_file, entry.file_name),
+           temp_file_path <- Briefly.create!(),
+           :ok <- File.write(temp_file_path, content),
+           asset_params <- prepare_layout_asset_params(entry, temp_file_path, current_user),
+           {:ok, asset} <- WraftDoc.Document.create_asset(current_user, asset_params) do
+        asset.id
+      else
+        error ->
+          Logger.error(
+            "Failed to process entry: #{inspect(entry.file_name)}. Error: #{inspect(error)}"
+          )
+
+          nil
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join(",")
+  end
+
+  defp prepare_layout_asset_params(entry, temp_file_path, current_user) do
+    %{
+      "name" => Path.basename(entry.file_name),
+      "type" => "layout",
+      "file" => %Plug.Upload{
+        filename: Path.basename(entry.file_name),
+        content_type: get_content_type(entry.file_name),
+        path: temp_file_path
+      },
+      "creator_id" => current_user.id
+    }
+  end
+
+  defp prepare_flow(flow, current_user) do
+    case Enterprise.create_flow(current_user, flow) do
+      %Flow{} = flow -> {:ok, flow}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  defp prepare_content_type(variant, current_user, theme_id, layout_id, flow_id) do
+    with params <-
+           prepare_content_type_attrs(variant, current_user, theme_id, layout_id, flow_id),
+         %ContentType{} = content_type <- Document.create_content_type(current_user, params) do
+      {:ok, content_type}
+    else
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  defp prepare_content_type_attrs(
+         %{
+           "name" => name,
+           "description" => description,
+           "color" => color,
+           "prefix" => prefix
+         } = content_type,
+         current_user,
+         theme_id,
+         layout_id,
+         flow_id
+       ) do
+    field_types = Repo.all(from(ft in FieldType, select: {ft.name, ft.id}))
+    field_type_map = Map.new(field_types)
+
+    fields =
+      Enum.map(content_type["fields"], fn field ->
+        field_type = String.capitalize(field["type"])
+
+        %{
+          "field_type_id" => Map.get(field_type_map, field_type),
+          "key" => field["name"],
+          "name" => field["name"]
+        }
+      end)
+
+    %{
+      "name" => name,
+      "description" => description,
+      "color" => color,
+      "prefix" => prefix,
+      "layout_id" => layout_id,
+      "flow_id" => flow_id,
+      "theme_id" => theme_id,
+      "fields" => fields,
+      "organisation_id" => current_user.current_org_id,
+      "creator_id" => current_user.id
+    }
+  end
+
+  # Not using now for future use
+  # defp get_content_type_fields(content_type) do
+  #   field_types = Repo.all(from(ft in FieldType, select: {ft.name, ft.id}))
+  #   field_type_map = Map.new(field_types)
+
+  #   # Transform the fields to include field_type_id
+
+  #   _fields =
+  #     Enum.map(content_type["fields"], fn field ->
+  #       field_type = String.capitalize(field["type"])
+
+  #       %{
+  #         "field_type_id" => Map.get(field_type_map, field_type),
+  #         "key" => field["name"],
+  #         "name" => field["name"]
+  #       }
+  #     end)
+  # end
+
+  defp prepare_data_template(current_user, template_map, downloaded_file, content_type) do
+    with params <- prepare_data_template_attrs(template_map, downloaded_file, content_type.id),
+         {:ok, %DataTemplate{} = data_template} <-
+           Document.create_data_template(current_user, content_type, params) do
+      {:ok, data_template}
+    else
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
+
+  defp prepare_data_template_attrs(template_map, downloaded_file, content_type_id) do
+    with procemirror_json <- get_data_template_procemirror(downloaded_file),
+         {:ok, json_data} <- extract_file_content(downloaded_file, procemirror_json),
+         decoded_data <- Jason.decode!(json_data),
+         serialized_prosemirror_data <- decoded_data["data"] do
+      markdown_data =
+        serialized_prosemirror_data
+        |> Jason.decode!()
+        |> WraftDoc.ProsemirrorToMarkdown.convert()
+
+      %{
+        "c_type_id" => content_type_id,
+        "title" => template_map["title"],
+        "title_template" => template_map["title_template"],
+        "data" => markdown_data,
+        "serialized" => %{"data" => serialized_prosemirror_data}
+      }
+    end
+  end
+
+  # defp get_data_template_md(downloaded_file) do
+  #   case get_zip_entries(downloaded_file) do
+  #     {:ok, entries} ->
+  #       template_md = Enum.find(entries, fn entry -> entry.file_name =~ ~r/^.*\.md$/i end)
+  #       template_md.file_name
+  #     _ ->
+  #       Logger.error(" template data not found")
+  #   end
+  # end
+
+  defp get_data_template_procemirror(downloaded_file) do
+    case get_zip_entries(downloaded_file) do
+      {:ok, entries} ->
+        procemirror_json =
+          Enum.find(entries, fn entry -> entry.file_name =~ ~r/template\.json$/i end)
+
+        procemirror_json.file_name
+
+      _ ->
+        Logger.error("template_json not found")
+    end
+  end
+
+  defp extract_file_content(zip_file_binary, file_name) do
+    {:ok, unzip} = Unzip.new(zip_file_binary)
+    unzip_stream = Unzip.file_stream!(unzip, file_name)
+
+    file_content =
+      unzip_stream
+      |> Enum.into([], fn chunk -> chunk end)
+      |> IO.iodata_to_binary()
+      |> String.trim()
+
+    case file_content do
+      "" -> {:error, "File content is empty"}
+      _ -> {:ok, file_content}
+    end
+  end
+
+  @spec get_zip_entries(binary()) :: {:error, any()} | {:ok, [Unzip.Entry.t()]}
+  def get_zip_entries(zip_binary) do
+    with {:ok, unzip} <- Unzip.new(zip_binary),
+         entries <- Unzip.list_entries(unzip) do
+      {:ok, entries}
+    else
+      _ ->
+        {:error, "Invalid ZIP entries."}
+    end
+  end
+
+  defp load_json_file(file_binary) do
+    {:ok, unzip} = Unzip.new(file_binary)
+    internal_file = @internal_file
+    unzip_stream = Unzip.file_stream!(unzip, internal_file)
+
+    file_content =
+      unzip_stream
+      |> Enum.into([], fn chunk -> chunk end)
+      |> IO.iodata_to_binary()
+      |> String.trim()
+
+    {:ok, file_content}
+  end
+
+  @doc """
+  Validates the contents of a ZIP file uploaded via Waffle.
+  """
+  @spec template_zip_validator(Waffle.File.t()) :: :ok | {:error, String.t()}
+  def template_zip_validator(file) do
+    with {:ok, zip_binary} <- read_zip_contents(file.path),
+         true <- contains_wraft_json?(zip_binary),
+         {:ok, wraft_json} <- extract_file_content(zip_binary, "wraft.json"),
+         wraft_json_map <- Jason.decode!(wraft_json),
+         true <- validate_wraft_json(wraft_json_map) do
+      :ok
+    else
+      false ->
+        {:error, "No wraft.json found."}
+
+      {:error, :invalid_zip} ->
+        {:error, "Invalid ZIP file."}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  defp read_zip_contents(file_path) do
+    case File.read(file_path) do
+      {:ok, binary} ->
+        {:ok, binary}
+
+      _ ->
+        :error
+    end
+  end
+
+  defp contains_wraft_json?(zip_binary) do
+    with {:ok, unzip} <- Unzip.new(zip_binary),
+         file_entries <- Unzip.list_entries(unzip) do
+      Enum.any?(file_entries, fn entry -> entry.file_name == "wraft.json" end)
+    else
+      _ -> false
+    end
+  end
+
+  defp validate_wraft_json(wraft_json) do
+    %WraftJson{}
+    |> WraftJson.changeset(wraft_json)
+    |> case do
+      %{valid?: true} -> true
+      %{valid?: false} = changeset -> {:error, extract_errors(changeset)}
+    end
+  end
+
+  defp extract_errors(changeset) do
+    changeset
+    |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
+      Enum.reduce(opts, msg, fn {key, value}, acc ->
+        String.replace(acc, "%{#{key}}", to_string(value))
+      end)
+    end)
+    |> Enum.map_join("; ", fn {field, messages} ->
+      "#{field}: #{Enum.join(messages, ", ")}"
+    end)
+  end
+
+  # TODO: Implement validating all required files in zip
+  # def contains_required_files?(entries) do
+  #   Enum.all?(@required_files, fn required_file ->
+  #     Enum.any?(entries, fn
+  #       %Unzip.Entry{file_name: _required_file} -> true
+  #       _ -> false
+  #     end)
+  #   end)
+  # end
 end
