@@ -26,6 +26,56 @@ git clone https://github.com/wraft/wraft.git
 cd wraft
 ```
 
+### 3 - Running Wraft
+
+To start your Wraft app:
+
+**Load env variables**
+
+Make a .dev.env file in the root directory and add the environment variables.
+Refer `.env.example` for the list of variables.
+
+Source the environment variables from the file and start the server.
+
+```shell
+$ mv .env.example .dev.env
+$ source .dev.env
+```
+
+**Install dependencies with**
+
+```shell
+$ mix deps.get
+```
+
+**Setup Database**
+
+- With seed data
+
+```shell
+$ mix ecto.setup
+```
+
+- Without seed data
+
+```shell
+$ mix ecto.create && mix ecto.migrate
+```
+
+**Start Phoenix endpoint**
+
+- With interactive shell
+
+```shell
+$ iex -S mix phx.server
+```
+
+- Without interactive shell
+
+```shell
+$ source .dev.env && mix phx.server
+```
+
 ### 3. Commit Hooks
 
 Wraft uses `pre-commit` to standardise the code quality and style.

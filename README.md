@@ -179,24 +179,10 @@ $ mv .env.example .dev.env
 $ source .dev.env
 ```
 
-**Install dependencies with**
+Setup the project
 
 ```shell
-$ mix deps.get
-```
-
-**Setup Database**
-
-- With seed data
-
-```shell
-$ mix ecto.setup
-```
-
-- Without seed data
-
-```shell
-$ mix ecto.create && mix ecto.migrate
+$ mix setup
 ```
 
 **Start Phoenix endpoint**
