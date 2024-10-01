@@ -2,9 +2,6 @@ version: "3.8"
 services:
   frontend:
     image: quay.io/wraft/wraft-frontend:latest
-    environment:
-      API_HOST: http://backend:5200
-      NEXT_PUBLIC_API_HOST: http://backend:5200
     ports:
       - "3200:3000"
 

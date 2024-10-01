@@ -33,7 +33,42 @@ git clone https://github.com/your-username/wraft.git
 cd wraft
 ```
 
-### 3. Create a Branch
+### 3. Development Setup
+
+1. Copy the example environment file:
+
+   ```bash
+   cp .env.example .env.dev
+   ```
+
+2. Edit `.env.dev` with your specific configuration.
+
+3. Source the environment variables:
+
+   ```bash
+   source .env.dev
+   ```
+
+4. Install dependencies:
+
+   ```bash
+   mix deps.get
+   ```
+
+5. Set up the database:
+
+   ```bash
+   mix ecto.setup
+   ```
+
+6. Start the Phoenix server:
+   ```bash
+   mix phx.server
+   ```
+
+For more detailed instructions, please refer to our [README.md](README.md).
+
+### 4. Create a Branch
 
 We follow the Git Flow branching model:
 
@@ -45,37 +80,6 @@ We follow the Git Flow branching model:
 ```bash
 git checkout -b feature/your-feature-name
 ```
-
-## Development Setup
-
-1. Copy the example environment file:
-   ```bash
-   cp .env.example .dev.env
-   ```
-
-2. Edit `.dev.env` with your specific configuration.
-
-3. Source the environment variables:
-   ```bash
-   source .dev.env
-   ```
-
-4. Install dependencies:
-   ```bash
-   mix deps.get
-   ```
-
-5. Set up the database:
-   ```bash
-   mix ecto.setup
-   ```
-
-6. Start the Phoenix server:
-   ```bash
-   mix phx.server
-   ```
-
-For more detailed instructions, please refer to our [README.md](README.md).
 
 ## Submitting Changes
 
@@ -103,6 +107,7 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 Types include: feat, fix, docs, style, refactor, perf, test, chore
 
 Example:
+
 ```
 feat(auth): implement JWT authentication
 
@@ -144,6 +149,7 @@ Enhancement suggestions are welcome! Please submit them as GitHub issues:
 We follow the [Elixir Style Guide](https://github.com/christopheradams/elixir_style_guide). Please ensure your code adheres to these guidelines.
 
 Use the following tools to maintain code quality:
+
 - `mix format` to format your code
 - `mix credo` for static code analysis
 
