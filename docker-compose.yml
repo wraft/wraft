@@ -1,59 +1,87 @@
 version: "3.8"
 services:
-  web:
+  frontend:
+    image: quay.io/wraft/wraft-frontend:latest
+    environment:
+      API_HOST: http://backend:5200
+      NEXT_PUBLIC_API_HOST: http://backend:5200
+    ports:
+      - "3200:3000"
+
+  backend:
     stdin_open: true
-    env_file:
-      - .dev.env
     build:
       context: .
+      dockerfile: Dockerfile.dev
       args:
         SECRET_KEY_BASE: ${SECRET_KEY_BASE}
         DATABASE_URL: ${DATABASE_URL}
-      dockerfile: Dockerfile.dev
     environment:
-      MINIO_ROOT_PASSWORD: minioadmin
-      MINIO_ROOT_USER: minioadmin
+      MIX_ENV: dev
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      GUARDIAN_KEY: ${GUARDIAN_KEY}
+      DEV_DB_USERNAME: ${DEV_DB_USERNAME}
+      DEV_DB_PASSWORD: ${DEV_DB_PASSWORD}
+      DEV_DB_NAME: ${DEV_DB_NAME}
+      DEV_DB_HOST: db
+      DEV_DB_PORT: 5433
+      MINIO_URL: http://127.0.0.1:9000
       MINIO_HOST: minio
+      MINIO_PORT: 9000
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      SENTRY_DSN: ${SENTRY_DSN}
     ports:
       - 4000:4000
     depends_on:
       - db
+      - minio
+    restart: always
+
   db:
     image: postgres:14-alpine
-    env_file:
-      - .dev.env
+    environment:
+      POSTGRES_USER: ${DEV_DB_USERNAME}
+      POSTGRES_PASSWORD: ${DEV_DB_PASSWORD}
+      POSTGRES_DB: ${DEV_DB_NAME}
+      PGPORT: 5433
     restart: always
     ports:
-      - 5432:5432
+      - 5433:5433
     volumes:
-      - ./db:/var/lib/postgresql/data
+      - db:/var/lib/postgresql/data
 
   minio:
-    image: minio/minio
+    image: quay.io/minio/minio
     ports:
       - 9000:9000
+      - 9001:9001
     environment:
-      MINIO_URL: http://127.0.0.1:9000
-      MINIO_BUCKET: wraft
-      MINIO_ROOT_PASSWORD: minioadmin
-      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_SERVER_URL: http://127.0.0.1:9000
     volumes:
-      - minio-storage:/myminio
-    command: server /myminio
+      - miniodata:/data:rw
+    command: minio server /data --console-address ":9001" --address :9000
+
   createbucket:
     image: minio/mc
+    restart: on-failure:5
+    environment:
+      MINIO_URL: http://minio:9000
+      MINIO_BUCKET: ${MINIO_BUCKET}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     depends_on:
       - minio
-    volumes:
-      - minio-storage:/myminio
-      # mc: <ERROR> Invalid URL. URL `minio:9000` for MinIO Client should be of the form scheme://host[:port]/ without resource component.
     entrypoint: >
-      /bin/sh -c " /usr/bin/mc config host add myminio $$MINIO_URL $$MINIO_ROOT_PASSWORD; /usr/bin/mc mb -p myminio/${MINIO_BUCKET}; /usr/bin/mc policy set public myminio/${MINIO_BUCKET}; exit 0; "
-  # pandoc-latex:
-  #   image: pandoc/latex:2.18
-  #   volumes:
-  #     - .:/data
+      /bin/sh -c " 
+      /usr/bin/mc config host add myminio $$MINIO_URL $${MINIO_ROOT_USER} $$MINIO_ROOT_PASSWORD; 
+      /usr/bin/mc mb -p myminio/$${MINIO_BUCKET}; 
+      /usr/bin/mc policy set public myminio/$${MINIO_BUCKET}; 
+      exit 0;"
 
 volumes:
   db:
-  minio-storage:
+  miniodata:

@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.13.0-erlang-24.0.5-ubuntu-focal-20210325
+FROM hexpm/elixir:1.15.8-erlang-25.2.3-debian-bookworm-20240722
 
 RUN apt-get update && \
     apt-get install -y \
@@ -6,15 +6,8 @@ RUN apt-get update && \
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     build-essential xorg libssl-dev libxrender-dev git wget gdebi xvfb \
-    # Install wkhtml to pdf
     wkhtmltopdf \
-    # Install pandoc
     pandoc \
-    # Install latex
-    # texlive-latex-base \
-    # texlive-latex-recommended \
-    # texlive-pictures \
-    # texlive \
     texlive-fonts-recommended \
     texlive-plain-generic \
     texlive-latex-extra \
@@ -43,4 +36,5 @@ RUN mix local.hex --force && \
 
 RUN mix do compile
 
+EXPOSE 4000
 CMD ["bash", "/app/entrypoint_dev.sh"]

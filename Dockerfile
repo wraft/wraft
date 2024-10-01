@@ -1,30 +1,12 @@
-# Find eligible builder and runner images on Docker Hub. We use Ubuntu/Debian instead of
-# Alpine to avoid DNS resolution issues in production.
-#
-# https://hub.docker.com/r/hexpm/elixir/tags?page=1&name=ubuntu
-# https://hub.docker.com/_/ubuntu?tab=tags
-#
-#
-# This file is based on these images:
-#
-#   - https://hub.docker.com/r/hexpm/elixir/tags - for the build image
-#   - https://hub.docker.com/_/debian?tab=tags&page=1&name=bullseye-20210902-slim - for the release image
-#   - https://pkgs.org/ - resource for finding needed packages
-#   - Ex: hexpm/elixir:1.13.0-erlang-24.0.5-debian-bullseye-20210902-slim
-#
 ARG ELIXIR_VERSION=1.15.8
 ARG OTP_VERSION=25.2.3
 ARG DEBIAN_VERSION=bookworm-20240722
-
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 
-
 FROM ${BUILDER_IMAGE} as builder
-
-# install build dependencies
 
 # install build dependencies
 RUN apt-get update -y \
@@ -32,10 +14,6 @@ RUN apt-get update -y \
   && apt-get install -y build-essential git \
   && apt-get clean \
   && rm -f /var/lib/apt/lists/*_*
-
-# RUN apt-get update -y && apt-get install -y build-essential git \
-#    postgresql-client libstdc++6 openssl libncurses5 locales \
-#     && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # prepare build dir
 WORKDIR /app
@@ -96,15 +74,8 @@ RUN apt-get update && \
 RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     build-essential xorg libssl-dev libxrender-dev git wget vim gdebi xvfb gcc libstdc++6 \
     locales \
-    # Install wkhtml to pdf
     wkhtmltopdf \
-    # Install pandoc
     pandoc \
-    # Install latex
-    # texlive-latex-base \
-    # texlive-latex-recommended \
-    # texlive-pictures \
-    # texlive \
     texlive-fonts-recommended \
     texlive-plain-generic \
     texlive-latex-extra \
