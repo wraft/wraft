@@ -109,7 +109,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
           properties do
             access_token(:string, "JWT access token for authenticating the user", required: true)
 
-            refresh_token(:string, "JWT refresh token for refreshing access token", required: true)
+            refresh_token(:string, "JWT refresh token for refreshing access token",
+              required: true
+            )
 
             user(Schema.ref(:LoggedInUser))
           end
