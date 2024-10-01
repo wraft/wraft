@@ -4,7 +4,6 @@ defmodule WraftDocWeb.TemplateAssetUploader do
   use Waffle.Definition
   use Waffle.Ecto.Definition
 
-  alias WraftDoc.Client.Minio
   alias WraftDoc.TemplateAssets
 
   # TODO need to limit zip size
@@ -35,18 +34,12 @@ defmodule WraftDocWeb.TemplateAssetUploader do
   end
 
   def filename(_version, {file, _template}) do
-    ("template_" <> file.file_name)
-    |> String.replace(~r/\s+/, "-")
-    |> String.replace(~r/\.zip$/, "")
+    String.replace("template_" <> Path.rootname(file.file_name, ".zip"), ~r/\s+/, "-")
   end
 
   def storage_dir(_version, {_file, scope}) do
     "organisations/#{scope.organisation_id}/template_assets/#{scope.id}"
   end
-
-  # TODO - implement default_url if needed
-  def default_url(_version, scope),
-    do: Minio.generate_url("organisations/#{scope.organisation_id}/template_assets/#{scope.id}")
 
   defp file_size(%Waffle.File{} = file), do: file.path |> File.stat!() |> Map.get(:size)
 end

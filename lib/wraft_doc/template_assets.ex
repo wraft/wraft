@@ -134,9 +134,6 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  # @doc """
-  # Generate asset url.
-  # """
   defp download_zip_from_minio(current_user, template_asset_id) do
     Minio.download(
       "organisations/#{current_user.current_org_id}/template_assets/#{template_asset_id}"
@@ -146,7 +143,6 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Gets wraft json map.
   """
-
   @spec get_wraft_json_map(User.t(), Ecto.UUID.t()) :: map()
   def get_wraft_json_map(current_user, template_asset_id) do
     {:ok, wraft_json} =
