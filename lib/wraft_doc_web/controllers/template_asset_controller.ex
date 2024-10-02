@@ -15,6 +15,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.Document
   alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.TemplateAsset
 
@@ -317,6 +318,79 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
          {:ok, %DataTemplate{} = data_template} <-
            TemplateAssets.import_template(current_user, downloaded_zip_binary) do
       render(conn, "show_template.json", %{template: data_template})
+    end
+  end
+
+  @doc """
+  Template asset export.
+  """
+  swagger_path :template_export do
+    post("/template_assets/:id/export/")
+    summary("Export template into a zip format")
+
+    description("
+  This creates a zip format from a data template id ,which can be used to export the templates")
+
+    operation_id("template_export")
+    consumes("application/json")
+
+    parameters do
+      id(:path, :string, "ID of the template asset to build", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowDataTemplate))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec template_export(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def template_export(conn, %{"id" => id}) do
+    current_user = conn.assigns.current_user
+
+    case export_template(current_user, id) do
+      {:ok, zip_path, filename} ->
+        send_download(conn, {:file, zip_path}, filename: filename)
+
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> json(%{
+          status: "error",
+          message: "Data template, content type, layout, or theme not found"
+        })
+
+      {:error, reason} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> json(%{
+          status: "error",
+          message: "Failed to retrieve or export template",
+          details: reason
+        })
+    end
+  end
+
+  defp export_template(current_user, id) do
+    with %WraftDoc.Document.DataTemplate{} = data_template <-
+           Document.get_d_template(current_user, id),
+         %WraftDoc.Document.ContentType{} = variant <-
+           Document.get_content_type(current_user, data_template.content_type_id),
+         %WraftDoc.Document.Layout{} = layout <-
+           Document.get_layout(variant.layout_id, current_user),
+         %WraftDoc.Document.Theme{} = theme <- Document.get_theme(variant.theme_id, current_user),
+         {:ok, zip_path} <-
+           TemplateAssets.prepare_template(%{
+             data_template: data_template,
+             variant: variant,
+             layout: layout,
+             theme: theme,
+             current_user: current_user
+           }) do
+      {:ok, zip_path, "#{data_template.title}.zip"}
+    else
+      nil -> {:error, :not_found}
+      {:error, _} = error -> error
     end
   end
 end
