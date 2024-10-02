@@ -24,6 +24,8 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.TemplateAssets.WraftJson
 
   @internal_file "wraft.json"
+  @allowed_folders ["theme", "layout", "contract"]
+  @allowed_files ["template.json", "template.md", "wraft.json"]
 
   @doc """
   Create a template asset.
@@ -153,25 +155,49 @@ defmodule WraftDoc.TemplateAssets do
     Jason.decode!(wraft_json)
   end
 
+  # @spec template_asset_file_list(User.t(), Ecto.UUID.t()) :: [String.t()] | any()
+  # def template_asset_file_list(current_user, template_asset_id) do
+  #   entries =
+  #     current_user
+  #     |> download_zip_from_minio(template_asset_id)
+  #     |> get_zip_entries()
+
+  #   case entries do
+  #     {:ok, entries} ->
+  #       entries
+  #       |> Enum.map(& &1.file_name)
+  #       |> Enum.reject(fn file_name -> String.starts_with?(file_name, "__MACOSX/") end)
+
+  #     {:error, error} ->
+  #       error
+  #   end
+  # end
+
   @doc """
-  Gets the list of items in template asset
+  Gets the list of specific items in template asset
   """
-  @spec template_asset_file_list(User.t(), Ecto.UUID.t()) :: [String.t()] | any()
+  @spec template_asset_file_list(User.t(), Ecto.UUID.t()) :: {:ok, [String.t()]} | {:error, any()}
   def template_asset_file_list(current_user, template_asset_id) do
-    entries =
-      current_user
-      |> download_zip_from_minio(template_asset_id)
-      |> get_zip_entries()
-
-    case entries do
-      {:ok, entries} ->
-        entries
-        |> Enum.map(& &1.file_name)
-        |> Enum.reject(fn file_name -> String.starts_with?(file_name, "__MACOSX/") end)
-
-      {:error, error} ->
-        error
+    with zip_binary <- download_zip_from_minio(current_user, template_asset_id),
+         {:ok, entries} <- get_zip_entries(zip_binary) do
+      filter_entries(entries)
+    else
+      {:error, error} -> {:error, error}
     end
+  end
+
+  defp filter_entries(entries) do
+    entries
+    |> Enum.map(& &1.file_name)
+    |> Enum.filter(&allowed_file?/1)
+  end
+
+  defp allowed_file?(file_name) do
+    allowed_folder?(file_name) || file_name in @allowed_files
+  end
+
+  defp allowed_folder?(file_name) do
+    Enum.any?(@allowed_folders, &String.starts_with?(file_name, "#{&1}/"))
   end
 
   @doc """
