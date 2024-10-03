@@ -53,11 +53,11 @@ config :phoenix, :stacktrace_depth, 20
 
 config :wraft_doc, WraftDoc.Repo,
   adapter: Ecto.Adapters.Postgres,
-  username: System.get_env("PGUSER") || "postgres",
-  password: System.get_env("PGPASSWORD") || "postgres",
-  database: System.get_env("PGDATABASE") || "wraft_doc_dev",
-  hostname: System.get_env("PGHOSTNET") || "localhost",
-  port: (System.get_env("PGPORT") || "5432") |> String.to_integer(),
+  username: System.get_env("DEV_DB_USERNAME") || "postgres",
+  password: System.get_env("DEV_DB_PASSWORD") || "postgres",
+  database: System.get_env("DEV_DB_NAME") || "wraft_doc_dev",
+  hostname: System.get_env("DEV_DB_HOST") || "localhost",
+  port: (System.get_env("DEV_DB_PORT") || "5432") |> String.to_integer(),
   pool_size: 10,
   timeout: 300_000,
   show_sensitive_data_on_connetion_error: true

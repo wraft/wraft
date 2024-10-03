@@ -1923,7 +1923,10 @@ defmodule WraftDoc.DocumentTest do
         insert(:content_type, name: "Letter", organisation: List.first(user.owned_organisations))
 
       content_type2 =
-        insert(:content_type, name: "Contract", organisation: List.first(user.owned_organisations))
+        insert(:content_type,
+          name: "Contract",
+          organisation: List.first(user.owned_organisations)
+        )
 
       instance1 = insert(:instance, content_type: content_type1)
 
@@ -3389,7 +3392,11 @@ defmodule WraftDoc.DocumentTest do
         insert(:data_template, title: "First Template", creator: user, content_type: content_type)
 
       d2 =
-        insert(:data_template, title: "Second Template", creator: user, content_type: content_type)
+        insert(:data_template,
+          title: "Second Template",
+          creator: user,
+          content_type: content_type
+        )
 
       data_template_index =
         Document.data_template_index(content_type.id, %{"title" => "First", page_number: 1})
@@ -3413,7 +3420,11 @@ defmodule WraftDoc.DocumentTest do
         insert(:data_template, title: "First Template", creator: user, content_type: content_type)
 
       d2 =
-        insert(:data_template, title: "Second Template", creator: user, content_type: content_type)
+        insert(:data_template,
+          title: "Second Template",
+          creator: user,
+          content_type: content_type
+        )
 
       data_template_index =
         Document.data_template_index(
@@ -3477,7 +3488,11 @@ defmodule WraftDoc.DocumentTest do
         insert(:data_template, title: "First Template", creator: user, content_type: content_type)
 
       d2 =
-        insert(:data_template, title: "Second Template", creator: user, content_type: content_type)
+        insert(:data_template,
+          title: "Second Template",
+          creator: user,
+          content_type: content_type
+        )
 
       data_template_index =
         Document.data_templates_index_of_an_organisation(
@@ -3508,7 +3523,11 @@ defmodule WraftDoc.DocumentTest do
         insert(:data_template, title: "First Template", creator: user, content_type: content_type)
 
       d2 =
-        insert(:data_template, title: "Second Template", creator: user, content_type: content_type)
+        insert(:data_template,
+          title: "Second Template",
+          creator: user,
+          content_type: content_type
+        )
 
       data_template_index =
         Document.data_templates_index_of_an_organisation(

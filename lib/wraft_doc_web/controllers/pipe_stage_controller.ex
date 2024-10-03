@@ -124,7 +124,9 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
     parameters do
       pipeline_id(:path, :string, "ID of the pipeline", required: true)
 
-      pipeline(:body, Schema.ref(:PipeStageRequestMap), "Pipe stage to be created", required: true)
+      pipeline(:body, Schema.ref(:PipeStageRequestMap), "Pipe stage to be created",
+        required: true
+      )
     end
 
     response(200, "Ok", Schema.ref(:PipeStage))

@@ -18,7 +18,12 @@ defmodule WraftDoc.Repo.Migrations.CreateExAuditVersionTable do
       # custom
       add(
         :user_id,
-        references(:user, type: :uuid, column: :id, on_update: :update_all, on_delete: :nilify_all)
+        references(:user,
+          type: :uuid,
+          column: :id,
+          on_update: :update_all,
+          on_delete: :nilify_all
+        )
       )
     end
   end
