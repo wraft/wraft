@@ -87,8 +87,8 @@ if config_env() == :prod do
 end
 
 config :wraft_doc, WraftDoc.Client.Razorpay,
-  api_key: System.fetch_env!("RAZORPAY_KEY_ID"),
-  secret_key: System.fetch_env!("RAZORPAY_KEY_SECRET")
+  api_key: System.get_env("RAZORPAY_KEY_ID"),
+  secret_key: System.get_env("RAZORPAY_KEY_SECRET")
 
 config :wraft_doc, WraftDocWeb.Guardian, secret_key: System.get_env("GUARDIAN_KEY")
 

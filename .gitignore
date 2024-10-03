@@ -6,6 +6,12 @@
 
 # Ignore the environment variables file.
 /.dev.env
+.env
+.env.dev
+.env.prod
+.env.stage
+.env.test
+.env.local
 
 # The directory Mix downloads your dependencies sources to.
 /deps

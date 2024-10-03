@@ -2,7 +2,7 @@
 
 # Variables
 SHELL := /bin/bash
-ENV_FILE := .dev.env
+ENV_FILE := .env.dev
 
 # Phony targets
 .PHONY: setup deps db run test docker-up docker-down

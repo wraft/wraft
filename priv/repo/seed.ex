@@ -53,6 +53,12 @@ defmodule WraftDoc.Seed do
         organisation =
           Repo.insert!(%Organisation{name: "Personal", email: user.email, creator_id: user.id})
 
+        # Update the user with the last signed in organisation
+        user =
+          user
+          |> Ecto.Changeset.change(%{last_signed_in_org: organisation.id})
+          |> Repo.update!()
+
         seed_user_roles(user, organisation)
         Repo.insert!(%UserOrganisation{user_id: user.id, organisation_id: organisation.id})
         user
@@ -72,6 +78,12 @@ defmodule WraftDoc.Seed do
     organisation =
       Repo.insert!(%Organisation{name: "Personal", email: user.email, creator_id: user.id})
 
+    # Update the user with the last signed in organisation
+    user =
+      user
+      |> Ecto.Changeset.change(%{last_signed_in_org: organisation.id})
+      |> Repo.update!()
+
     seed_user_roles(user, organisation)
     Repo.insert!(%UserOrganisation{user_id: user.id, organisation_id: organisation.id})
     user
@@ -88,8 +100,8 @@ defmodule WraftDoc.Seed do
   def seed_user_roles(user, organisation) do
     role =
       Repo.insert!(%Role{
-        name: Enum.random(["editor", "admin", "viewer"]),
-        permissions: ["instance:manage", "instance:delete", "asset:show"],
+        name: "superadmin",
+        permissions: [],
         organisation_id: organisation.id
       })
 

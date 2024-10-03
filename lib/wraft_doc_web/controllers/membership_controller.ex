@@ -127,7 +127,9 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
     parameters do
       id(:path, :string, "Membership ID", required: true)
 
-      membership(:body, Schema.ref(:MembershipRequest), "Membership to be updated", required: true)
+      membership(:body, Schema.ref(:MembershipRequest), "Membership to be updated",
+        required: true
+      )
     end
 
     response(200, "OK", Schema.ref(:Membership))

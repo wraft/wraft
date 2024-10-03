@@ -35,7 +35,9 @@ defmodule WraftDoc.Repo.Migrations.CreatePipelineTable do
     end
 
     create(
-      unique_index(:pipeline, [:name, :organisation_id], name: :organisation_pipeline_unique_index)
+      unique_index(:pipeline, [:name, :organisation_id],
+        name: :organisation_pipeline_unique_index
+      )
     )
 
     create(

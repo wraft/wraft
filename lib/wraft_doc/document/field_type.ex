@@ -21,7 +21,10 @@ defmodule WraftDoc.Document.FieldType do
   def changeset(%FieldType{} = field_type, attrs \\ %{}) do
     field_type
     |> cast(attrs, [:name, :description, :meta, :is_disabled])
-    |> cast_embed(:validations, required: true, with: &WraftDoc.Validations.Validation.changeset/2)
+    |> cast_embed(:validations,
+      required: true,
+      with: &WraftDoc.Validations.Validation.changeset/2
+    )
     |> validate_required([:name, :description, :meta])
     |> unique_constraint(:name,
       message: "Field type with the same name exists. Use another name.!",

@@ -20,6 +20,9 @@ defmodule WraftDoc.Document.ContentTypeField do
     |> validate_required(@fields)
     |> foreign_key_constraint(:content_type_id, message: "Please enter an existing content type")
     |> foreign_key_constraint(:field_id, message: "Please enter a valid field")
-    |> unique_constraint(@fields, name: :field_content_type_unique_index, message: "already exist")
+    |> unique_constraint(@fields,
+      name: :field_content_type_unique_index,
+      message: "already exist"
+    )
   end
 end
