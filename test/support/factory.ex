@@ -283,7 +283,7 @@ defmodule WraftDoc.Factory do
   def state_factory do
     %State{
       state: sequence(:state, &"state-#{&1}"),
-      order: 1,
+      order: sequence(:order, & &1),
       organisation: build(:organisation),
       flow: build(:flow)
     }
