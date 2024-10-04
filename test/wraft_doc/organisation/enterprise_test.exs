@@ -344,10 +344,9 @@ defmodule WraftDoc.EnterpriseTest do
     s1 = insert(:state, flow: flow, creator: flow.creator)
     s2 = insert(:state, flow: flow, creator: flow.creator)
 
-    states = Enterprise.state_index(flow.id, %{page_number: 1})
-
-    assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s1.state
-    assert states.entries |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s2.state
+    states = Enterprise.state_index(flow.id)
+    assert states |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s1.state
+    assert states |> Enum.map(fn x -> x.state end) |> List.to_string() =~ s2.state
   end
 
   # TODO - No asserts added (M Sadique)
@@ -434,7 +433,7 @@ defmodule WraftDoc.EnterpriseTest do
 
       user = Enterprise.get_roles_by_organisation(user, organisation.id)
       assert 2 = Enum.count(user.roles)
-      assert Enum.map(user.roles, & &1.name) == ["admin", "editor"]
+      assert Enum.sort(Enum.map(user.roles, & &1.name)) == ["admin", "editor"]
     end
   end
 
