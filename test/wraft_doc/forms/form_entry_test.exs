@@ -75,7 +75,7 @@ defmodule WraftDoc.Forms.FormEntryTest do
       }
 
       {:ok, _} = %FormEntry{} |> FormEntry.changeset(params) |> Repo.insert()
-
+      # TODO add unique contraint for form_id in form_entry
       {:error, changeset} = %FormEntry{} |> FormEntry.changeset(params) |> Repo.insert()
 
       assert "Already added." in errors_on(

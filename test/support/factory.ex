@@ -625,6 +625,7 @@ defmodule WraftDoc.Factory do
 
   def form_field_factory do
     %FormField{
+      order: sequence(:order, & &1),
       validations: [
         %{
           validation: %{"rule" => "required", "value" => Enum.random([true, false])},
