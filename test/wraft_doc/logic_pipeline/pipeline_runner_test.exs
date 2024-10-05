@@ -46,6 +46,7 @@ defmodule WraftDoc.PipelineRunnerTest do
     end
   end
 
+  # FIXME fix this
   describe "values_provided?/1" do
     test "returns true when values for all content type field values are provided in the data of trigger" do
       pipeline = insert(:pipeline)
@@ -77,6 +78,7 @@ defmodule WraftDoc.PipelineRunnerTest do
   end
 
   describe "create_instances/1" do
+    # FIXME fix, may need to add serialized in factory
     test "creates instance and returns a map with created instance when trigger has a creator_id" do
       pipeline = insert(:pipeline)
       flow = insert(:flow)
@@ -90,7 +92,9 @@ defmodule WraftDoc.PipelineRunnerTest do
       content_type_field_2 = insert(:content_type_field, content_type: c_type2)
 
       pipeline =
-        Repo.preload(pipeline, stages: [{:content_type, :fields}, :data_template, :state])
+        Repo.preload(pipeline,
+          stages: [{:content_type, :fields}, :data_template, :state, :form_mapping]
+        )
 
       trigger =
         insert(:trigger_history,
@@ -114,6 +118,7 @@ defmodule WraftDoc.PipelineRunnerTest do
       assert response.user.id == trigger.creator.id
     end
 
+    # FIXME fix
     test "creates instance and returns a map with created instance when trigger does not have creator ID" do
       pipeline = insert(:pipeline)
       flow = insert(:flow)
@@ -127,7 +132,9 @@ defmodule WraftDoc.PipelineRunnerTest do
       content_type_field_2 = insert(:content_type_field, content_type: content_type2)
 
       pipeline =
-        Repo.preload(pipeline, stages: [{:content_type, :fields}, :data_template, :state])
+        Repo.preload(pipeline,
+          stages: [{:content_type, :fields}, :data_template, :state, :form_mapping]
+        )
 
       trigger =
         insert(:trigger_history,
@@ -219,12 +226,12 @@ defmodule WraftDoc.PipelineRunnerTest do
       failed_build_instance_ids =
         builds
         |> Stream.filter(fn %{response: {_, x}} -> x != 0 end)
-        |> Stream.map(fn x -> x.instance.instance_id end)
+        |> Stream.map(fn x -> x.instance.id end)
         |> Enum.to_list()
 
       response = PipelineRunner.build_failed?(%{builds: builds})
       error_codes = Enum.map(response.failed_builds, fn x -> x.error_code end)
-      failed_instance_ids = Enum.map(response.failed_builds, fn x -> x.instance.instance_id end)
+      failed_instance_ids = Enum.map(response.failed_builds, fn x -> x.doc_failed_instance_id end)
 
       refute 0 in error_codes
       refute nil in response.failed_builds
@@ -253,11 +260,17 @@ defmodule WraftDoc.PipelineRunnerTest do
       File.write!(file_path1 <> "/final.pdf", "content")
       File.write!(file_path2 <> "/final.pdf", "content")
 
+      org_id = instance1.content_type.organisation_id
+
       insert(:build_history, content: instance1)
       insert(:build_history, content: instance2)
+      # TODO check this part refactor if needed
+      Mox.expect(ExAwsMock, :request, fn %ExAws.S3.Upload{} ->
+        {:ok, %ExAws.Operation.S3{}}
+      end)
 
-      response = PipelineRunner.zip_builds(%{instances: [instance1, instance1]})
-      zip_file_path = "temp/pipe_builds/#{response.zip_file}"
+      response = PipelineRunner.zip_builds(%{instances: [instance1, instance2]})
+      zip_file_path = "organisations/#{org_id}/pipe_builds/#{response.zip_file}"
       assert File.exists?(zip_file_path) == true
 
       File.rm_rf(file_path1)
