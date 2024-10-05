@@ -10,12 +10,18 @@ defmodule WraftDoc.Forms.FormMappingTest do
 
   @mapping [
     %{
-      content_type_field_id: Ecto.UUID.generate(),
-      form_field_id: Ecto.UUID.generate()
+      source: %{"id" => Ecto.UUID.generate(), "name" => "source 1"},
+      destination: %{
+        "id" => Ecto.UUID.generate(),
+        "name" => "destination 1"
+      }
     },
     %{
-      content_type_field_id: Ecto.UUID.generate(),
-      form_field_id: Ecto.UUID.generate()
+      source: %{"id" => Ecto.UUID.generate(), "name" => "source 2"},
+      destination: %{
+        "id" => Ecto.UUID.generate(),
+        "name" => "destination 2"
+      }
     }
   ]
 
@@ -90,13 +96,13 @@ defmodule WraftDoc.Forms.FormMappingTest do
 
   describe "map_changeset/2" do
     test "changeset with valid attributes" do
-      content_type_field = insert(:content_type_field)
-      form_field = insert(:form_field)
-
       changeset =
         FormMapping.map_changeset(%Mapping{}, %{
-          content_type_field_id: content_type_field.id,
-          form_field_id: form_field.id
+          source: %{"id" => Ecto.UUID.generate(), "name" => "source"},
+          destination: %{
+            "id" => Ecto.UUID.generate(),
+            "name" => "destination"
+          }
         })
 
       assert changeset.valid?
