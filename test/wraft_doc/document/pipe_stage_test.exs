@@ -1,9 +1,13 @@
 defmodule WraftDoc.Document.Pipeline.StageTest do
   use WraftDoc.ModelCase
-  alias WraftDoc.Document.Pipeline.Stage
+
   import WraftDoc.Factory
   import Ecto
+
+  alias WraftDoc.Document.Pipeline.Stage
+
   @moduletag :document
+
   test "changeset with valid attrs" do
     %{id: u_id} = insert(:user)
     %{id: c_id} = insert(:content_type)
@@ -50,7 +54,7 @@ defmodule WraftDoc.Document.Pipeline.StageTest do
     {:ok, _stage} = stage_struct |> Stage.changeset(%{}) |> Repo.insert()
     {:error, changeset} = stage_struct |> Stage.changeset(%{}) |> Repo.insert()
 
-    assert "Already added.!" in errors_on(changeset, :content_type_id)
+    assert "Already added.!" in errors_on(changeset, :data_template_id)
   end
 
   test "update changeset with valid attrs" do
