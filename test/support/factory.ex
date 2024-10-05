@@ -235,7 +235,7 @@ defmodule WraftDoc.Factory do
   def layout_factory do
     %Layout{
       name: sequence(:name, &"layout-#{&1}"),
-      description: sequence(:description, &"laout for document-#{&1}"),
+      description: sequence(:description, &"layout for document-#{&1}"),
       width: :rand.uniform(16),
       height: :rand.uniform(16),
       unit: sequence(:name, &"layout-#{&1}"),
