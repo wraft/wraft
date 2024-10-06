@@ -120,6 +120,7 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   end
 
   describe "align_states/2" do
+    # FIXME need to fix this
     test "align order of state under a flow ", %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations

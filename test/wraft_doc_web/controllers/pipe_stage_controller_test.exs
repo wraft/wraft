@@ -8,6 +8,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
   alias WraftDoc.{Document.Pipeline.Stage, Repo}
 
   describe "create" do
+    # FIXME need to fix this
     test "create pipe stage by valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations
@@ -99,6 +100,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       assert json_response(conn, 404) == "Not Found"
     end
 
+    # FIXME need to fix this
     test "does not create pipe stage and returns error when content type and pipeline ID are same as a previously created stage",
          %{conn: conn} do
       user = conn.assigns.current_user
@@ -224,6 +226,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       assert json_response(conn, 404) == "Not Found"
     end
 
+    # FIXME need to fix this
     test "does not update pipe stage and returns error when content type and pipeline ID are same as a previously created stage",
          %{conn: conn} do
       user = conn.assigns.current_user

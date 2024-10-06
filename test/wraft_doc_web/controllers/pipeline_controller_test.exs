@@ -16,6 +16,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   }
 
   describe "create/2" do
+    # FIXME need to fix this
     test "create pipeline by valid attrrs", %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations
@@ -93,6 +94,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   end
 
   describe "update/2" do
+    # FIXME need to fix this
     test "update pipeline on valid attributes", %{conn: conn} do
       user = conn.assigns[:current_user]
       [organisation] = user.owned_organisations
@@ -150,6 +152,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   end
 
   describe "show/2" do
+    # FIXME need to fix this
     test "show renders pipeline details by id", %{conn: conn} do
       user = conn.assigns.current_user
       pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))

@@ -28,6 +28,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
   end
 
   describe "registration/1" do
+    # FIXME need to fix this
     test "succesfully registers users with valid attrs and organisation invite token", %{
       conn: conn
     } do
@@ -75,6 +76,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
       assert Enum.at(json_response(conn, 201)["organisations"], 0)["name"] == "Personal"
     end
 
+    # FIXME need to fix this
     test "register as admin if token contains admin role", %{conn: conn} do
       organisation = insert(:organisation)
       role = insert(:role, name: "super_admin", organisation: organisation)

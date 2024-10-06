@@ -61,6 +61,7 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
   end
 
   describe "GET /permissions" do
+    # FIXME need to fix this
     test "returns all the permissions grouped by resource", %{conn: conn} do
       conn = get(conn, Routes.v1_permission_path(conn, :index))
       json = json_response(conn, 200)
@@ -83,6 +84,7 @@ defmodule WraftDocWeb.Api.V1.PermissionControllerTest do
   end
 
   describe "GET /resources" do
+    # FIXME need to fix this
     test "returns all the resources", %{conn: conn} do
       conn = get(conn, Routes.v1_permission_path(conn, :resource_index))
       resources = json_response(conn, 200)

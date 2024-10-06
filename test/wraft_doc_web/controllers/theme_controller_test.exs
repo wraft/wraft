@@ -123,6 +123,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
     assert json_response(conn, 404) == "Not Found"
   end
 
+  # FIXME need to fix this
   test "delete theme by given id", %{conn: conn} do
     user = conn.assigns[:current_user]
     theme = insert(:theme, creator: user, organisation: List.first(user.owned_organisations))

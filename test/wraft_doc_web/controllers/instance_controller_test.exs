@@ -176,6 +176,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert List.to_string(instances) =~ dt2.raw
   end
 
+  # FIXME need to fix this
   test "all templates lists all instances under an organisation", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:profile, user: user)
@@ -222,6 +223,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   describe "DELETE /contents/:id" do
+    # FIXME need to fix this
     test "delete instance by given id", %{conn: conn} do
       user = conn.assigns.current_user
 
@@ -433,6 +435,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   describe "approve/2" do
+    # FIXME need to fix this
     test "approve instance changes the state of instance to post state of approval system", %{
       conn: conn
     } do
@@ -452,6 +455,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       assert json_response(conn, 200)["state"]["state"] == s2.state
     end
 
+    # FIXME need to fix this
     test "return error no permission for a wrong approver", %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations
@@ -471,6 +475,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   describe "reject/2" do
+    # FIXME need to fix this
     test "reject instance changes the state of instance to pre state of rejection system", %{
       conn: conn
     } do
