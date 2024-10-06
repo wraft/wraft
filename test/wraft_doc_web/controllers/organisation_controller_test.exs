@@ -103,6 +103,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     assert json_response(conn, 200)["url"] == @valid_attrs["url"]
   end
 
+  # FIXME need to fix this
   test "uploads new logo for organisation", %{conn: conn} do
     organisation = insert(:organisation)
 
@@ -118,6 +119,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
     assert json_response(conn, 200)["logo"] =~ "logo_ABC%20enterprices.png"
   end
 
+  # FIXME need to fix this
   test "does not update name of personal organisation", %{conn: conn} do
     %{owned_organisations: [organisation]} = insert(:user_with_personal_organisation)
 
@@ -171,6 +173,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 200)["refresh_token"] != nil
     end
 
+    # FIXME need to fix this
     test "return error if the token is invalid", %{conn: conn} do
       conn = delete(conn, Routes.v1_organisation_path(conn, :delete, %{"token" => "invalid"}))
       assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
@@ -195,6 +198,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 401)["errors"] == "User is not a member of this organisation!"
     end
 
+    # FIXME need to fix this
     test "returns error when trying to delete personal organisation" do
       user = insert(:user_with_personal_organisation)
       [organisation] = user.owned_organisations
@@ -472,6 +476,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
       assert json_response(conn, 200)["total_entries"] == 2
     end
 
+    # FIXME need to fix this
     test "only list existing members ", %{conn: conn} do
       user = conn.assigns[:current_user]
       insert(:profile, user: user)
@@ -504,6 +509,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   end
 
   describe "index" do
+    # FIXME need to fix this
     test "list all existing organisation details", %{conn: conn} do
       o1 = insert(:organisation)
       o2 = insert(:organisation)
@@ -580,6 +586,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
              }
     end
 
+    # FIXME need to fix this
     test "verify_invite_token returns 401 and renders the error.json template when the token is invalid" do
       conn = build_conn()
 

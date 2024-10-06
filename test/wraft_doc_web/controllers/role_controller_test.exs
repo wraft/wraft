@@ -54,6 +54,7 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
       assert count_before - 1 == count_after
     end
 
+    # FIXME need to fix this
     test "error on attempting to delete superadmin role", %{conn: conn} do
       role = Repo.get_by(Role, name: "superadmin")
       count_before = Role |> Repo.all() |> length()

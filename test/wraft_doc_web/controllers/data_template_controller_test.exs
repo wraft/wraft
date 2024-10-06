@@ -93,6 +93,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
     assert List.to_string(data_templates) =~ dt2.title
   end
 
+  # FIXME need to fix this
   test "all templates lists all data templates under an organisation", %{conn: conn} do
     user = conn.assigns.current_user
     content_type = insert(:content_type)
@@ -133,6 +134,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
     assert json_response(conn, 200)["title"] == data_template.title
   end
 
+  # FIXME need to fix this
   test "test bulk import job creation for data template with valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     filename = Plug.Upload.random_file!("test")

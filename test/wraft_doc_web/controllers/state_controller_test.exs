@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   }
 
   @invalid_attrs %{state: ""}
-
+  # FIXME need to fix this
   test "create states by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
     flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
@@ -30,6 +30,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     assert json_response(conn, 200)["state"] == @valid_attrs.state
   end
 
+  # FIXME need to fix this
   test "does not create states by invalid attrs", %{conn: conn} do
     user = conn.assigns[:current_user]
     flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
@@ -45,6 +46,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     assert count_before == State |> Repo.all() |> length()
   end
 
+  # FIXME need to fix this
   test "update states on valid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     state = insert(:state, organisation: List.first(user.owned_organisations))
@@ -61,6 +63,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     assert count_before == State |> Repo.all() |> length()
   end
 
+  # FIXME need to fix this
   test "does't update states for invalid attrs", %{conn: conn} do
     user = conn.assigns.current_user
     state = insert(:state, organisation: List.first(user.owned_organisations))
@@ -73,6 +76,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     assert json_response(conn, 422)["errors"]["state"] == ["can't be blank"]
   end
 
+  # FIXME need to fix this
   test "index lists states by current user", %{conn: conn} do
     user = conn.assigns.current_user
     flow = insert(:flow)

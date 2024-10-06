@@ -14,6 +14,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   @name "Sample Name"
 
   describe "send email on organisation invite" do
+    # FIXME need to fix this
     test "return email sent if mail delivered" do
       org_name = "org_name"
       user_name = "user_name"
@@ -42,6 +43,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on notification message" do
+    # FIXME need to fix this
     test "return email sent if mail delivered" do
       user_name = "user_name"
       notification_message = "notification_message"
@@ -68,6 +70,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on password reset link" do
+    # FIXME need to fix this
     test "return email sent if mail delivered" do
       auth_token = insert(:auth_token, value: @token, token_type: "password_verify")
 
@@ -95,6 +98,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on user account verification" do
+    # FIXME need to fix this
     test "return email sent if mail delivered" do
       email = Email.email_verification(@test_email, @token)
 
@@ -120,6 +124,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on waiting list approval" do
+    # FIXME need to fix this
     test "return email sent if mail delivered" do
       registration_url =
         URI.encode("#{System.get_env("WRAFT_URL")}/users/login/set_password?token=#{@token}")
@@ -143,6 +148,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on joining waiting list" do
+    # FIXME need to fix this
     test "return email sent if mail delivered" do
       email = Email.waiting_list_join(@test_email, @name)
       Test.deliver(email, [])
@@ -163,6 +169,7 @@ defmodule WraftDocWeb.Email.EmailTest do
     end
   end
 
+  # FIXME need to fix this
   describe "send email on organisation delete code" do
     test "return email sent if mail delivered" do
       email = Email.organisation_delete_code(@test_email, "code", @name, "org_name")
