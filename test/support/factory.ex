@@ -267,6 +267,7 @@ defmodule WraftDoc.Factory do
       editable: true,
       state: build(:state),
       content_type: build(:content_type),
+      creator: build(:user),
       allowed_users: []
     }
   end
@@ -327,6 +328,20 @@ defmodule WraftDoc.Factory do
       title: sequence(:title, &"title-#{&1}"),
       title_template: sequence(:title_template, &"title-[client]-#{&1}"),
       data: sequence(:data, &"data-#{&1}"),
+      serialized: %{
+        "data" =>
+          Jason.encode!(%{
+            "type" => "doc",
+            "content" => [
+              %{
+                "type" => "paragraph",
+                "content" => [
+                  %{"type" => "text", "text" => "Sample template"}
+                ]
+              }
+            ]
+          })
+      },
       content_type: build(:content_type)
     }
   end
