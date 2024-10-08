@@ -154,12 +154,14 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
     with {:ok, %TemplateAsset{} = template_asset} <-
            TemplateAssets.create_template_asset(current_user, params),
-         template_map <- TemplateAssets.get_wraft_json_map(current_user, template_asset.id),
+         {:ok, downloaded_zip_binary} <-
+           TemplateAssets.download_zip_from_minio(current_user, template_asset.id),
+         {:ok, template_map} <- TemplateAssets.get_wraft_json_map(downloaded_zip_binary),
          updated_params <- Map.merge(params, %{"wraft_json" => template_map}),
          {:ok, %TemplateAsset{} = updated_template_asset} <-
-           TemplateAssets.add_or_update_template_asset_json(template_asset, updated_params),
+           TemplateAssets.update_template_asset_json(template_asset, updated_params),
          file_entries <-
-           TemplateAssets.template_asset_file_list(current_user, updated_template_asset.id) do
+           TemplateAssets.template_asset_file_list(downloaded_zip_binary) do
       render(conn, "template_asset.json",
         template_asset: updated_template_asset,
         file_entries: file_entries
@@ -313,8 +315,10 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   def template_import(conn, %{"id" => template_asset_id}) do
     current_user = conn.assigns[:current_user]
 
-    with %DataTemplate{} = data_template <-
-           TemplateAssets.import_template(current_user, template_asset_id) do
+    with {:ok, downloaded_zip_binary} <-
+           TemplateAssets.download_zip_from_minio(current_user, template_asset_id),
+         %DataTemplate{} = data_template <-
+           TemplateAssets.import_template(current_user, downloaded_zip_binary) do
       render(conn, "show_template.json", %{template: data_template})
     end
   end

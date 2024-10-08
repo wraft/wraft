@@ -114,9 +114,11 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   @doc """
-  Add or update wraft_json into template asset table.
+  Update wraft_json into template asset table.
   """
-  def add_or_update_template_asset_json(%TemplateAsset{} = template_asset, attrs) do
+  @spec update_template_asset_json(TemplateAsset.t(), map()) ::
+          {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
+  def update_template_asset_json(%TemplateAsset{} = template_asset, attrs) do
     template_asset
     |> TemplateAsset.update_wraft_json_changeset(attrs)
     |> Repo.update()
@@ -125,63 +127,46 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Imports template asset.
   """
-  @spec import_template(User.t(), Ecto.UUID.t()) ::
+  @spec import_template(User.t(), binary()) ::
           DataTemplate.t() | {:error, any()}
-  def import_template(current_user, template_asset_id) do
-    with downloaded_file <- download_zip_from_minio(current_user, template_asset_id),
-         template_map <- get_wraft_json_map(current_user, template_asset_id) do
-      prepare_template(template_map, current_user, downloaded_file)
-    else
-      {:error, error} -> {:error, error}
+  def import_template(current_user, downloaded_zip_binary) do
+    case get_wraft_json_map(downloaded_zip_binary) do
+      {:ok, template_map} ->
+        prepare_template(template_map, current_user, downloaded_zip_binary)
     end
   end
 
-  defp download_zip_from_minio(current_user, template_asset_id) do
-    Minio.download(
-      "organisations/#{current_user.current_org_id}/template_assets/#{template_asset_id}"
-    )
+  @doc """
+  Download zip file from minio as binary.
+  """
+  @spec download_zip_from_minio(User.t(), Ecto.UUID.t()) :: {:error, any()} | {:ok, binary()}
+  def download_zip_from_minio(current_user, template_asset_id) do
+    downloaded_zip_binary =
+      Minio.download(
+        "organisations/#{current_user.current_org_id}/template_assets/#{template_asset_id}"
+      )
+
+    {:ok, downloaded_zip_binary}
+  rescue
+    error -> {:error, error.message}
   end
 
   @doc """
   Gets wraft json map.
   """
-  @spec get_wraft_json_map(User.t(), Ecto.UUID.t()) :: map()
-  def get_wraft_json_map(current_user, template_asset_id) do
-    {:ok, wraft_json} =
-      current_user
-      |> download_zip_from_minio(template_asset_id)
-      |> load_json_file()
-
-    Jason.decode!(wraft_json)
+  @spec get_wraft_json_map(binary()) :: {:ok, map()}
+  def get_wraft_json_map(downloaded_zip_binary) do
+    {:ok, wraft_json} = load_json_file(downloaded_zip_binary)
+    Jason.decode(wraft_json)
   end
-
-  # @spec template_asset_file_list(User.t(), Ecto.UUID.t()) :: [String.t()] | any()
-  # def template_asset_file_list(current_user, template_asset_id) do
-  #   entries =
-  #     current_user
-  #     |> download_zip_from_minio(template_asset_id)
-  #     |> get_zip_entries()
-
-  #   case entries do
-  #     {:ok, entries} ->
-  #       entries
-  #       |> Enum.map(& &1.file_name)
-  #       |> Enum.reject(fn file_name -> String.starts_with?(file_name, "__MACOSX/") end)
-
-  #     {:error, error} ->
-  #       error
-  #   end
-  # end
 
   @doc """
   Gets the list of specific items in template asset
   """
-  @spec template_asset_file_list(User.t(), Ecto.UUID.t()) :: {:ok, [String.t()]} | {:error, any()}
-  def template_asset_file_list(current_user, template_asset_id) do
-    with zip_binary <- download_zip_from_minio(current_user, template_asset_id),
-         {:ok, entries} <- get_zip_entries(zip_binary) do
-      filter_entries(entries)
-    else
+  @spec template_asset_file_list(binary()) :: {:ok, [String.t()]} | {:error, any()}
+  def template_asset_file_list(zip_binary) do
+    case get_zip_entries(zip_binary) do
+      {:ok, entries} -> filter_entries(entries)
       {:error, error} -> {:error, error}
     end
   end
@@ -264,7 +249,7 @@ defmodule WraftDoc.TemplateAssets do
 
   defp prepare_theme_assets(entries, downloaded_file, current_user) do
     entries
-    |> get_theme_font_entries()
+    |> get_theme_font_file_entries()
     |> extract_and_save_fonts(downloaded_file, current_user)
   end
 
@@ -279,7 +264,7 @@ defmodule WraftDoc.TemplateAssets do
     })
   end
 
-  defp get_theme_font_entries(entries) do
+  defp get_theme_font_file_entries(entries) do
     Enum.filter(entries, fn entry ->
       entry.file_name =~ ~r/^theme\/.*\.otf$/i
     end)
@@ -533,6 +518,7 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
+  # Not using now for future use
   # defp get_data_template_md(downloaded_file) do
   #   case get_zip_entries(downloaded_file) do
   #     {:ok, entries} ->

@@ -2,9 +2,10 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
   @moduledoc """
     The template asset model.
   """
-  alias __MODULE__
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
+
+  alias __MODULE__
 
   schema "template_asset" do
     field(:name, :string)
