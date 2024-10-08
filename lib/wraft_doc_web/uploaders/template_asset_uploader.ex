@@ -6,11 +6,9 @@ defmodule WraftDocWeb.TemplateAssetUploader do
 
   alias WraftDoc.TemplateAssets
 
-  # TODO need to limit zip size
-  @max_file_size 1 * 1024 * 1024
+  @max_file_size 5 * 1024 * 1024
   @versions [:original]
   @extension_whitelist ~w(.zip)
-  # @required_files ['wraft.json', 'page.md']
 
   def validate({file, _}) do
     file_extension =

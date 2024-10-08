@@ -25,7 +25,7 @@ defmodule WraftDoc.TemplateAssets do
 
   @internal_file "wraft.json"
   @allowed_folders ["theme", "layout", "contract"]
-  @allowed_files ["template.json", "template.md", "wraft.json"]
+  @allowed_files ["template.json", "wraft.json"]
 
   @doc """
   Create a template asset.
@@ -287,23 +287,19 @@ defmodule WraftDoc.TemplateAssets do
       {:ok, asset.id}
     else
       error ->
-        log_error(entry, error)
+        Logger.error("""
+        Failed to process entry: #{inspect(entry.file_name)}.
+        Error: #{inspect(error)}.
+        """)
+
         {:error, error}
     end
   end
 
-  # TODO: Check error handling required or not.
   defp write_temp_file(content) do
     temp_file_path = Briefly.create!()
     File.write(temp_file_path, content)
     {:ok, temp_file_path}
-  end
-
-  defp log_error(entry, error) do
-    Logger.error("""
-    Failed to process entry: #{inspect(entry.file_name)}.
-    Error: #{inspect(error)}.
-    """)
   end
 
   defp prepare_theme_asset_params(entry, temp_file_path, current_user) do
@@ -457,25 +453,6 @@ defmodule WraftDoc.TemplateAssets do
     }
   end
 
-  # Not using now for future use
-  # defp get_content_type_fields(content_type) do
-  #   field_types = Repo.all(from(ft in FieldType, select: {ft.name, ft.id}))
-  #   field_type_map = Map.new(field_types)
-
-  #   # Transform the fields to include field_type_id
-
-  #   _fields =
-  #     Enum.map(content_type["fields"], fn field ->
-  #       field_type = String.capitalize(field["type"])
-
-  #       %{
-  #         "field_type_id" => Map.get(field_type_map, field_type),
-  #         "key" => field["name"],
-  #         "name" => field["name"]
-  #       }
-  #     end)
-  # end
-
   defp prepare_data_template(current_user, template_map, downloaded_file, content_type) do
     with params <- prepare_data_template_attrs(template_map, downloaded_file, content_type.id),
          {:ok, %DataTemplate{} = data_template} <-
@@ -572,23 +549,21 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Validates the contents of a ZIP file uploaded via Waffle.
   """
-  @spec template_zip_validator(Waffle.File.t()) :: :ok | {:error, String.t()}
+  @spec template_zip_validator(Waffle.File.t()) :: :ok | {:error, any()}
   def template_zip_validator(file) do
     with {:ok, zip_binary} <- read_zip_contents(file.path),
-         true <- contains_wraft_json?(zip_binary),
+         file_entries_in_zip <- template_asset_file_list(zip_binary),
+         true <- validate_zip_entries(file_entries_in_zip),
          {:ok, wraft_json} <- extract_file_content(zip_binary, "wraft.json"),
          wraft_json_map <- Jason.decode!(wraft_json),
          true <- validate_wraft_json(wraft_json_map) do
       :ok
     else
-      false ->
-        {:error, "No wraft.json found."}
+      {:error, error} ->
+        {:error, error}
 
       {:error, :invalid_zip} ->
         {:error, "Invalid ZIP file."}
-
-      {:error, error} ->
-        {:error, error}
     end
   end
 
@@ -598,16 +573,7 @@ defmodule WraftDoc.TemplateAssets do
         {:ok, binary}
 
       _ ->
-        :error
-    end
-  end
-
-  defp contains_wraft_json?(zip_binary) do
-    with {:ok, unzip} <- Unzip.new(zip_binary),
-         file_entries <- Unzip.list_entries(unzip) do
-      Enum.any?(file_entries, fn entry -> entry.file_name == "wraft.json" end)
-    else
-      _ -> false
+        {:error, :invalid_zip}
     end
   end
 
@@ -632,13 +598,29 @@ defmodule WraftDoc.TemplateAssets do
     end)
   end
 
-  # TODO: Implement validating all required files in zip
-  # def contains_required_files?(entries) do
-  #   Enum.all?(@required_files, fn required_file ->
-  #     Enum.any?(entries, fn
-  #       %Unzip.Entry{file_name: _required_file} -> true
-  #       _ -> false
-  #     end)
-  #   end)
-  # end
+  defp validate_zip_entries(entries) do
+    folders_in_zip = extract_folders(entries)
+    files_in_zip = extract_files(entries)
+    missing_folders = @allowed_folders -- folders_in_zip
+    missing_files = @allowed_files -- files_in_zip
+
+    case {missing_folders, missing_files} do
+      {[], []} ->
+        true
+
+      _ ->
+        missing_items = Enum.concat(missing_folders, missing_files)
+        {:error, "Required items not found in this zip file: #{Enum.join(missing_items, ", ")}"}
+    end
+  end
+
+  defp extract_folders(entries) do
+    entries
+    |> Enum.filter(&String.ends_with?(&1, "/"))
+    |> Enum.map(&String.trim_trailing(&1, "/"))
+  end
+
+  defp extract_files(entries) do
+    Enum.filter(entries, &(!String.ends_with?(&1, "/")))
+  end
 end
