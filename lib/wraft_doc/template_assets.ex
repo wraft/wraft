@@ -166,15 +166,14 @@ defmodule WraftDoc.TemplateAssets do
   @spec template_asset_file_list(binary()) :: {:ok, [String.t()]} | {:error, any()}
   def template_asset_file_list(zip_binary) do
     case get_zip_entries(zip_binary) do
-      {:ok, entries} -> filter_entries(entries)
-      {:error, error} -> {:error, error}
-    end
-  end
+      {:ok, entries} ->
+        entries
+        |> Enum.map(& &1.file_name)
+        |> Enum.filter(&allowed_file?/1)
 
-  defp filter_entries(entries) do
-    entries
-    |> Enum.map(& &1.file_name)
-    |> Enum.filter(&allowed_file?/1)
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp allowed_file?(file_name) do
@@ -186,7 +185,7 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   @doc """
-  prepares template by taking Wraft_json map, current user, zip downloaded path
+  Prepares template by taking Wraft_json map, current user and zip binary.
   """
   @spec prepare_template(map(), User.t(), binary()) :: {:ok, any()} | {:error, any()}
   def prepare_template(template_map, current_user, downloaded_file) do
@@ -242,8 +241,6 @@ defmodule WraftDoc.TemplateAssets do
          params <- prepare_theme_attrs(theme, asset_ids),
          %Theme{} = theme <- Document.create_theme(current_user, params) do
       {:ok, theme}
-    else
-      {:error, error} -> {:error, error}
     end
   end
 
@@ -264,6 +261,7 @@ defmodule WraftDoc.TemplateAssets do
     })
   end
 
+  # TODO: update filter to allow only valid font files.
   defp get_theme_font_file_entries(entries) do
     Enum.filter(entries, fn entry ->
       entry.file_name =~ ~r/^theme\/.*\.otf$/i
@@ -294,13 +292,11 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
+  # TODO: Check error handling required or not.
   defp write_temp_file(content) do
     temp_file_path = Briefly.create!()
-
-    case File.write(temp_file_path, content) do
-      :ok -> {:ok, temp_file_path}
-      {:error, reason} -> {:error, reason}
-    end
+    File.write(temp_file_path, content)
+    {:ok, temp_file_path}
   end
 
   defp log_error(entry, error) do
@@ -341,8 +337,6 @@ defmodule WraftDoc.TemplateAssets do
          %Engine{} = engine <- Document.get_engine(params["engine_id"]),
          %Layout{} = layout <- Document.create_layout(current_user, engine, params) do
       {:ok, layout}
-    else
-      {:error, changeset} -> {:error, changeset}
     end
   end
 
@@ -352,19 +346,14 @@ defmodule WraftDoc.TemplateAssets do
     |> extract_and_prepare_layout_asset(downloaded_file, current_user)
   end
 
-  defp prepare_layout_attrs(
-         %{"name" => name, "meta" => meta, "description" => description, "slug" => slug} =
-           _layout,
-         engine_id,
-         asset_id
-       ) do
+  defp prepare_layout_attrs(layout, engine_id, asset_id) do
     %{
-      "name" => name,
-      "meta" => meta,
-      "description" => description,
+      "name" => layout["name"],
+      "meta" => layout["meta"],
+      "description" => layout["description"],
+      "slug" => layout["slug"],
       "engine_id" => engine_id,
       "assets" => asset_id,
-      "slug" => slug,
       "width" => 40,
       "height" => 40,
       "unit" => "cm"
@@ -412,6 +401,7 @@ defmodule WraftDoc.TemplateAssets do
     }
   end
 
+  # TODO Remove this function and update Enterprise.create_flow/2 with ok tuple.
   defp prepare_flow(flow, current_user) do
     case Enterprise.create_flow(current_user, flow) do
       %Flow{} = flow -> {:ok, flow}
@@ -424,8 +414,6 @@ defmodule WraftDoc.TemplateAssets do
            prepare_content_type_attrs(variant, current_user, theme_id, layout_id, flow_id),
          %ContentType{} = content_type <- Document.create_content_type(current_user, params) do
       {:ok, content_type}
-    else
-      {:error, changeset} -> {:error, changeset}
     end
   end
 
@@ -493,8 +481,6 @@ defmodule WraftDoc.TemplateAssets do
          {:ok, %DataTemplate{} = data_template} <-
            Document.create_data_template(current_user, content_type, params) do
       {:ok, data_template}
-    else
-      {:error, changeset} -> {:error, changeset}
     end
   end
 
