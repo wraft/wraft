@@ -1,164 +1,172 @@
 # Contributing to Wraft
 
-Thank you for your interest in contributing to this project! By participating, you agree to abide by the following guidelines.
+Welcome to Wraft! We're thrilled that you're interested in contributing. By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Table of Contents
 
+- [Quick Links](#quick-links)
 - [How to Contribute](#how-to-contribute)
-- [Reporting Issues](#reporting-issues)
-- [Pull Request Guidelines](#pull-request-guidelines)
-- [Code Style](#code-style)
-- [Testing](#testing)
+- [Development Setup](#development-setup)
+- [Submitting Changes](#submitting-changes)
+- [Reporting Bugs](#reporting-bugs)
+- [Requesting Enhancements](#requesting-enhancements)
+- [Style Guide](#style-guide)
+- [Recognition](#recognition)
 - [Getting Help](#getting-help)
+
+## Quick Links
+
+- Documentation: [Project Handbook](link-to-handbook) / [Roadmap](link-to-roadmap)
+- Issue Tracker: [GitHub Issues](link-to-issues)
+- Communication: [Forum](link-to-forum) / [Mailing List](link-to-mailing-list) / [IRC](irc-channel)
 
 ## How to Contribute
 
 ### 1. Fork the Repository
 
-Create your fork of the project to contribute without affecting the main repository.
+Create your own fork of the project to work on your changes without affecting the main repository.
 
 ### 2. Clone the Repository
 
-Clone your fork to start making changes and follow the instructions given in the `README.md` file.
-
 ```bash
-git clone https://github.com/wraft/wraft.git
+git clone https://github.com/your-username/wraft.git
 cd wraft
 ```
 
-### 3. Commit Hooks
+### 3. Development Setup
 
-Wraft uses `pre-commit` to standardise the code quality and style.
+1. Copy the example environment file:
 
-To install pre-commit:
-Using pip:
+   ```bash
+   cp .env.example .env.dev
+   ```
 
-```shell
-$ pip install pre-commit
-```
-Using homebrew:
-```
-$ brew install pre-commit
-```
-To verify installation:
-```
-$ pre-commit --version
-```
-Now to setup pre commit for Wraft:
-```
-$ pre-commit install
-```
+2. Edit `.env.dev` with your specific configuration.
 
-### 4. Testing Wraft
+3. Source the environment variables:
 
-```shell
-$ source .env && mix test
-```
+   ```bash
+   source .env.dev
+   ```
 
-### 5. Create a Branch (Git Flow)
+4. Install dependencies:
 
-Follow Git Flow when creating branches:
+   ```bash
+   mix deps.get
+   ```
 
-More details on Git Flow can be found [here](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow).
+5. Set up the database:
 
-- **Feature branches**: Use for new features or enhancements.
-  Example: `feature/my-new-feature`
-- **Bugfix branches**: Use for hotfixes or bug fixes.
-  Example: `bugfix/issue-123-fix`
+   ```bash
+   mix ecto.setup
+   ```
 
-- **Release branches**: Use for preparing releases.
-  Example: `release/1.2.0`
+6. Start the Phoenix server:
+   ```bash
+   mix phx.server
+   ```
 
-- **Hotfix branches**: Use for urgent fixes on production.
-  Example: `hotfix/urgent-issue`
+For more detailed instructions, please refer to our [README.md](README.md).
 
-Create your branch:
+### 4. Create a Branch
+
+We follow the Git Flow branching model:
+
+- Features: `feature/your-feature-name`
+- Bug fixes: `bugfix/issue-number-description`
+- Hotfixes: `hotfix/issue-number-description`
+- Releases: `release/version-number`
 
 ```bash
-git checkout -b feature/my-new-feature
+git checkout -b feature/your-feature-name
 ```
 
-### 6. Make Changes
+## Submitting Changes
 
-- Ensure your changes are meaningful and relevant.
-- Follow the code style guidelines outlined below.
+1. Ensure your code adheres to our [Style Guide](#style-guide).
+2. Run tests and ensure they all pass:
+   ```bash
+   mix test
+   ```
+3. Commit your changes using a descriptive commit message that follows our [commit message conventions](#commit-message-guidelines).
+4. Push your branch to your fork on GitHub.
+5. Submit a pull request to the `develop` branch of the main repository.
 
-### 7. Push Changes
+### Commit Message Guidelines
 
-Commit your changes and push to your fork. Follow the commit message guidelines below.
+We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
 
-#### Commit Message Guidelines
+```
+<type>[optional scope]: <description>
 
-Follow [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/) guidelines for writing commit messages.
+[optional body]
 
-Example for commit message format:
-  `"feat: add my new feature"`
-
-- feat(feature): Add my new feature
-- fix(bug): Fix the bug in the code
-- refactor(code): Refactor the code
-- docs(documentation): Update the documentation
-- test(testing): Add new test cases
-- style(code): Fix the code style
-
-```bash
-git add .
-git commit -m "feat: add my new feature"
-git push origin feature/my-new-feature
+[optional footer(s)]
 ```
 
-### 8. Submit a Pull Request (PR)
+Types include: feat, fix, docs, style, refactor, perf, test, chore
 
-Open a PR from your feature branch to the `develop` branch (or other relevant branches if necessary) and provide a detailed description of your changes.
+Example:
 
-## Reporting Issues
+```
+feat(auth): implement JWT authentication
 
-Before reporting an issue, check the [existing issues](https://github.com/wraft/wraft/issues) to see if it's already been reported.
+- Add JWT token generation
+- Implement token validation middleware
+- Update user model to include token field
 
-When creating a new issue, please include:
-
-- Clear and concise title.
-- Steps to reproduce the issue.
-- Expected behavior.
-- Actual behavior.
-- Logs or screenshots, if applicable.
-
-## Pull Request Guidelines
-
-- Ensure all tests pass before submitting a PR.
-- Write meaningful commit messages.
-- Avoid unrelated changes in the same PR.
-- Update documentation as necessary.
-- Ensure your code follows the [Code Style](#code-style) section below.
-
-## Code Style
-
-For Elixir code:
-
-- Follow [Elixir's official style guide](https://github.com/christopheradams/elixir_style_guide).
-- Use `mix format` and `mix credo` to format your code.
-
-### General Guidelines:
-
-- Module and function names should be descriptive.
-- Functions should have a single responsibility.
-- Use pattern matching where applicable.
-
-## Testing
-
-- Ensure you write tests for any new features or bug fixes.
-- Run the full test suite before submitting a pull request:
-
-```bash
-mix test
+Closes #123
 ```
 
-- Use `ExUnit` for testing and ensure your tests follow a clear and consistent structure.
+## Reporting Bugs
+
+Before submitting a bug report:
+
+1. Check the [existing issues](link-to-issues) to avoid duplicates.
+2. Ensure you're running the latest version of the project.
+
+When submitting a bug report:
+
+1. Use a clear and descriptive title.
+2. Describe the exact steps to reproduce the problem.
+3. Explain the behavior you observed and what you expected to see.
+4. Include relevant logs, screenshots, or code samples.
+5. Provide details about your environment (OS, Elixir version, etc.).
+
+You can use our [bug report template](link-to-bug-template) to ensure you include all necessary information.
+
+## Requesting Enhancements
+
+Enhancement suggestions are welcome! Please submit them as GitHub issues:
+
+1. Use a clear and descriptive title.
+2. Provide a detailed description of the proposed enhancement.
+3. Explain why this enhancement would be useful to most users.
+4. List possible alternatives you've considered.
+
+## Style Guide
+
+We follow the [Elixir Style Guide](https://github.com/christopheradams/elixir_style_guide). Please ensure your code adheres to these guidelines.
+
+Use the following tools to maintain code quality:
+
+- `mix format` to format your code
+- `mix credo` for static code analysis
+
+## Recognition
+
+We appreciate all contributions to Wraft! Contributors will be recognized in the following ways:
+
+- Your name will be added to our [CONTRIBUTORS.md](CONTRIBUTORS.md) file.
+- Significant contributions may be mentioned in release notes.
+- We use the [All Contributors](https://allcontributors.org/) specification to recognize various types of contributions.
 
 ## Getting Help
 
-If you have any questions, feel free to reach out to the project maintainers or open a [GitHub Discussion](https://github.com/project-name/discussions).
+If you need help or have questions:
 
----
+- Open a [GitHub Discussion](https://github.com/wraft/wraft/discussions)
+- Join our [community chat](link-to-chat)
+- Reach out to the maintainers: [maintainer@email.com](mailto:maintainer@email.com)
 
-This file now incorporates Git Flow practices and includes relevant guidance for contributors. Let me know if any further adjustments are needed!
+Thank you for contributing to Wraft! We look forward to collaborating with you.

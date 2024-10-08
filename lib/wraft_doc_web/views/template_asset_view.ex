@@ -21,7 +21,9 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
       }) do
     %{
       template_assets:
-        render_many(template_assets, TemplateAssetView, "template_asset.json", as: :template_asset),
+        render_many(template_assets, TemplateAssetView, "template_asset.json",
+          as: :template_asset
+        ),
       page_number: page_number,
       total_pages: total_pages,
       total_entries: total_entries

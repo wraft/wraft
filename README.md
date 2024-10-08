@@ -12,7 +12,6 @@
 
 # Wraft - Document Lifecycle Management
 
-
 Wraft is an open-source content authoring platform that's helps businesses produce their most important set of documents.
 Wraft helps author structured business content. From official letters to contracts, and beyond.
 
@@ -37,7 +36,7 @@ Wraft is built on top of open formats, using markdown and JSON. This means your 
 #### Pre-requisite
 
 - Elixir 1.14
-- Erlang/OTP 25.0
+- Erlang/OTP 26.0
 - Postgres
 - Minio - S3 compatible object storage
 - Pandoc
@@ -169,34 +168,20 @@ To start your Wraft app:
 
 **Load env variables**
 
-Make a .dev.env file in the root directory and add the environment variables.
+Make a .env.dev file in the root directory and add the environment variables.
 Refer `.env.example` for the list of variables.
 
 Source the environment variables from the file and start the server.
 
 ```shell
-$ mv .env.example .dev.env
-$ source .dev.env
+$ mv .env.example .env.dev
+$ source .env.dev
 ```
 
-**Install dependencies with**
+Setup the project
 
 ```shell
-$ mix deps.get
-```
-
-**Setup Database**
-
-- With seed data
-
-```shell
-$ mix ecto.setup
-```
-
-- Without seed data
-
-```shell
-$ mix ecto.create && mix ecto.migrate
+$ mix setup
 ```
 
 **Start Phoenix endpoint**
@@ -210,7 +195,7 @@ $ iex -S mix phx.server
 - Without interactive shell
 
 ```shell
-$ source .dev.env && mix phx.server
+$ source .env.dev && mix phx.server
 ```
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
@@ -249,16 +234,23 @@ $ git clone https://github.com/wraft/wraft.git
 $ cd wraft
 
 # Copy the example env to your own file and edit it
-$ cp .env.example .dev.env
+$ cp .env.example .env.dev
 
 #Load the development environment variables
-$ source .dev.env
+$ source .env.dev
 
 # Start the Docker containers
 $ docker-compose up -d
 
-# Visit localhost:4000
-$ http://localhost:4000
+# Visit localhost:3200
+$ http://localhost:3200
+```
+
+The default username and password
+
+```bash
+username: wraftuser@gmail.com
+password: password
 ```
 
 ## License
