@@ -18,7 +18,6 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Document.Layout
   alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise
-  alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
   alias WraftDoc.TemplateAssets.WraftJson
@@ -26,6 +25,8 @@ defmodule WraftDoc.TemplateAssets do
   @internal_file "wraft.json"
   @allowed_folders ["theme", "layout", "contract"]
   @allowed_files ["template.json", "wraft.json"]
+  # TODO only accept font files from this list.
+  # @font_style_name ~w(Regular Italic Bold BoldItalic)
 
   @doc """
   Create a template asset.
@@ -206,7 +207,7 @@ defmodule WraftDoc.TemplateAssets do
       prepare_theme(template_map["theme"], current_user, downloaded_file)
     end)
     |> Multi.run(:flow, fn _repo, _changes ->
-      prepare_flow(template_map["flow"], current_user)
+      Enterprise.create_flow(current_user, template_map["flow"])
     end)
     |> Multi.run(:layout, fn _repo, _changes ->
       prepare_layout(template_map["layout"], downloaded_file, current_user)
@@ -308,17 +309,18 @@ defmodule WraftDoc.TemplateAssets do
       "type" => "theme",
       "file" => %Plug.Upload{
         filename: Path.basename(entry.file_name),
-        content_type: get_content_type(entry.file_name),
+        content_type: get_file_type(entry.file_name),
         path: temp_file_path
       },
       "creator_id" => current_user.id
     }
   end
 
-  defp get_content_type(filename) do
+  defp get_file_type(filename) do
     case Path.extname(filename) do
       ".otf" -> "font/otf"
       ".ttf" -> "font/ttf"
+      ".pdf" -> "application/pdf"
       _ -> "application/octet-stream"
     end
   end
@@ -390,19 +392,11 @@ defmodule WraftDoc.TemplateAssets do
       "type" => "layout",
       "file" => %Plug.Upload{
         filename: Path.basename(entry.file_name),
-        content_type: get_content_type(entry.file_name),
+        content_type: get_file_type(entry.file_name),
         path: temp_file_path
       },
       "creator_id" => current_user.id
     }
-  end
-
-  # TODO Remove this function and update Enterprise.create_flow/2 with ok tuple.
-  defp prepare_flow(flow, current_user) do
-    case Enterprise.create_flow(current_user, flow) do
-      %Flow{} = flow -> {:ok, flow}
-      {:error, changeset} -> {:error, changeset}
-    end
   end
 
   defp prepare_content_type(variant, current_user, theme_id, layout_id, flow_id) do

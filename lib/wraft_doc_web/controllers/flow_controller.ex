@@ -299,7 +299,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %Flow{} = flow <-
+    with {:ok, %Flow{} = flow} <-
            Enterprise.create_flow(current_user, params) do
       render(conn, "flow.json", flow: flow)
     end
