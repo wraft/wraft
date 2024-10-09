@@ -25,8 +25,7 @@ defmodule WraftDoc.TemplateAssets do
   @internal_file "wraft.json"
   @allowed_folders ["theme", "layout", "contract"]
   @allowed_files ["template.json", "wraft.json"]
-  # TODO only accept font files from this list.
-  # @font_style_name ~w(Regular Italic Bold BoldItalic)
+  @font_style_name ~w(Regular Italic Bold BoldItalic)
 
   @doc """
   Create a template asset.
@@ -262,10 +261,12 @@ defmodule WraftDoc.TemplateAssets do
     })
   end
 
-  # TODO: update filter to allow only valid font files.
   defp get_theme_font_file_entries(entries) do
     Enum.filter(entries, fn entry ->
-      entry.file_name =~ ~r/^theme\/.*\.otf$/i
+      case Regex.run(~r/^theme\/.*-(?<style>\w+)\.otf$/i, entry.file_name) do
+        [_, style] when style in @font_style_name -> true
+        _ -> false
+      end
     end)
   end
 
