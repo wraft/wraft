@@ -187,7 +187,7 @@ defmodule WraftDoc.TemplateAssets do
     case prepare_template_transaction(template_map, current_user, downloaded_file) do
       {:ok, %{data_template: data_template}} ->
         Logger.info("Theme, Layout, Flow, variant created successfully.")
-        data_template
+        {:ok, data_template}
 
       {:error, _failed_operation, error, _changes_so_far} ->
         Logger.error("Failed to process. Error: #{inspect(error)}")
@@ -361,25 +361,22 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp extract_and_prepare_layout_asset(entries, downloaded_zip_file, current_user) do
-    entries
-    |> Enum.map(fn entry ->
-      with {:ok, content} <- extract_file_content(downloaded_zip_file, entry.file_name),
-           temp_file_path <- Briefly.create!(),
-           :ok <- File.write(temp_file_path, content),
-           asset_params <- prepare_layout_asset_params(entry, temp_file_path, current_user),
-           {:ok, asset} <- WraftDoc.Document.create_asset(current_user, asset_params) do
-        asset.id
-      else
-        error ->
-          Logger.error(
-            "Failed to process entry: #{inspect(entry.file_name)}. Error: #{inspect(error)}"
-          )
+    entry = List.first(entries)
 
-          nil
-      end
-    end)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(",")
+    with {:ok, content} <- extract_file_content(downloaded_zip_file, entry.file_name),
+         temp_file_path <- Briefly.create!(),
+         :ok <- File.write(temp_file_path, content),
+         asset_params <- prepare_layout_asset_params(entry, temp_file_path, current_user),
+         {:ok, asset} <- WraftDoc.Document.create_asset(current_user, asset_params) do
+      asset.id
+    else
+      error ->
+        Logger.error(
+          "Failed to process entry: #{inspect(entry.file_name)}. Error: #{inspect(error)}"
+        )
+
+        nil
+    end
   end
 
   defp prepare_layout_asset_params(entry, temp_file_path, current_user) do

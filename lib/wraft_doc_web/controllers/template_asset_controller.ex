@@ -49,7 +49,6 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
           description("A template asset and its details")
 
           properties do
-            # Ensuring consistency with key naming
             template_asset(Schema.ref(:TemplateAsset))
             creator(Schema.ref(:User))
           end
@@ -157,9 +156,10 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
          {:ok, downloaded_zip_binary} <-
            TemplateAssets.download_zip_from_minio(current_user, template_asset.id),
          {:ok, template_map} <- TemplateAssets.get_wraft_json_map(downloaded_zip_binary),
-         updated_params <- Map.merge(params, %{"wraft_json" => template_map}),
          {:ok, %TemplateAsset{} = updated_template_asset} <-
-           TemplateAssets.update_template_asset_json(template_asset, updated_params),
+           TemplateAssets.update_template_asset_json(template_asset, %{
+             "wraft_json" => template_map
+           }),
          file_entries <-
            TemplateAssets.template_asset_file_list(downloaded_zip_binary) do
       render(conn, "template_asset.json",
@@ -317,7 +317,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
     with {:ok, downloaded_zip_binary} <-
            TemplateAssets.download_zip_from_minio(current_user, template_asset_id),
-         %DataTemplate{} = data_template <-
+         {:ok, %DataTemplate{} = data_template} <-
            TemplateAssets.import_template(current_user, downloaded_zip_binary) do
       render(conn, "show_template.json", %{template: data_template})
     end
