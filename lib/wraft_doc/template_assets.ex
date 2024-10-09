@@ -30,9 +30,9 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Create a template asset.
   """
-
   # TODO - write test
-
+  @spec create_template_asset(User.t(), map()) ::
+          {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
   def create_template_asset(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
@@ -600,69 +600,48 @@ defmodule WraftDoc.TemplateAssets do
     Enum.filter(entries, &(!String.ends_with?(&1, "/")))
   end
 
-  def prepare_template(%{
-        data_template: data_template,
-        variant: variant,
-        layout: layout,
-        theme: theme,
-        current_user: current_user
-      }) do
+  def prepare_template(data_template, c_type, layout, theme, current_user) do
+
     template_name = data_template.title
 
-    with {:ok, folder_path} <- create_template_folder(template_name),
-         :ok <-
-           create_wraft_json(data_template, variant, layout, theme, folder_path, current_user),
-         {:ok, zip_path} <- zip_folder(folder_path, template_name) do
-      File.rm_rf(folder_path)
-      {:ok, zip_path}
-    else
-      {:error, reason} ->
-        Logger.error("Failed to prepare template: #{inspect(reason)}")
-        {:error, reason}
-    end
+    {:ok, folder_path} = create_template_folder(template_name)
+    create_wraft_json(data_template, c_type, layout, theme, folder_path, current_user)
+    {:ok, zip_path} = zip_folder(folder_path, template_name)
+
+    File.rm_rf(folder_path)
+    {:ok, zip_path}
   end
 
   defp create_template_folder(template_name) do
     folder_path = Path.join([template_name])
-
-    case File.mkdir_p(folder_path) do
-      :ok -> {:ok, folder_path}
-      {:error, reason} -> {:error, "Failed to create template folder: #{inspect(reason)}"}
-    end
+    File.mkdir_p!(folder_path)
+    {:ok, folder_path}
   end
 
-  defp create_wraft_json(data_template, variant, layout, theme, folder_path, current_user) do
-    wraft_data =
-      build_wraft_json(data_template, variant, layout, theme, folder_path, current_user)
+  defp create_wraft_json(data_template, c_type, layout, theme, folder_path, current_user) do
+    wraft_data = build_wraft_json(data_template, c_type, layout, theme, folder_path, current_user)
 
     wraft_path = Path.join(folder_path, "wraft.json")
 
-    case Jason.encode(wraft_data, pretty: true) do
-      {:ok, json} ->
-        case File.write(wraft_path, json) do
-          :ok -> :ok
-          {:error, reason} -> {:error, "Failed to write wraft.json: #{inspect(reason)}"}
-        end
-
-      {:error, reason} ->
-        {:error, "Failed to encode wraft JSON: #{inspect(reason)}"}
+    with {:ok, json} <- Jason.encode(wraft_data, pretty: true),
+         :ok <- File.write(wraft_path, json) do
+      :ok
+    else
+      {:error, reason} -> {:error, "Failed to create wraft.json: #{reason}"}
     end
   end
 
   defp zip_folder(folder_path, template_name) do
     zip_path = Path.join(System.tmp_dir!(), "#{template_name}.zip")
-
-    case :zip.create(String.to_charlist(zip_path), [String.to_charlist(folder_path)]) do
-      {:ok, _} -> {:ok, zip_path}
-      {:error, reason} -> {:error, "Failed to create zip file: #{inspect(reason)}"}
-    end
+    :zip.create(String.to_charlist(zip_path), [String.to_charlist(folder_path)])
+    {:ok, zip_path}
   end
 
-  defp build_wraft_json(data_template, theme, layout, variant, file_path, current_user) do
+  defp build_wraft_json(data_template, theme, layout, c_type, file_path, current_user) do
     %{
       "theme" => build_theme(theme, file_path, current_user),
       "layout" => build_layout(layout, file_path, current_user),
-      "variant" => build_variant(variant),
+      "variant" => build_c_type(c_type),
       "data_template" => %{
         "title" => data_template.title,
         "title_template" => data_template.title_template
@@ -688,12 +667,12 @@ defmodule WraftDoc.TemplateAssets do
     }
   end
 
-  def build_layout(layout, file_path, current_user) do
+  defp build_layout(layout, file_path, current_user) do
     %{
       "name" => layout.name,
       "slug" => make_slug(layout.slug, file_path),
       "slug_file" =>
-        remove_list(
+        List.hd(
           Enum.map(layout.assets, fn asset ->
             download_file(asset.id, current_user, file_path, "pdf", "layout")
           end)
@@ -704,14 +683,14 @@ defmodule WraftDoc.TemplateAssets do
     }
   end
 
-  defp build_variant(variant) do
+  defp build_c_type(c_type) do
     %{
-      "name" => variant.name,
-      "color" => variant.color,
-      "description" => variant.description,
-      "prefix" => variant.prefix,
+      "name" => c_type.name,
+      "color" => c_type.color,
+      "description" => c_type.description,
+      "prefix" => c_type.prefix,
       "fields" =>
-        Enum.map(variant.fields, fn field ->
+        Enum.map(c_type.fields, fn field ->
           %{
             "name" => field.name,
             "description" => field.description,
@@ -721,52 +700,35 @@ defmodule WraftDoc.TemplateAssets do
     }
   end
 
-  def remove_list([list]), do: list
-
-  def make_slug(slug, file_path) do
+  defp make_slug(slug, file_path) do
     path = :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
     System.cmd("cp", ["-a", path, file_path <> "/" <> slug])
     slug
   end
 
-  def download_file(
-        asset_id,
-        %{current_org_id: org_id} = current_user,
-        file_path,
-        format,
-        folder_name
-      ) do
+  defp download_file(
+         asset_id,
+         %{current_org_id: org_id} = _current_user,
+         file_path,
+         format,
+         folder_name
+       ) do
     file = Minio.download("organisations/#{org_id}/assets/#{asset_id}")
     name = Document.get_asset(asset_id, %{current_org_id: org_id})
     path = "#{file_path}/#{folder_name}/#{name}.#{format}"
+
     File.mkdir_p(Path.dirname(path))
-
-    case File.write(path, file) do
-      :ok ->
-        IO.puts("File successfully written: #{path}")
-        file_path
-
-      {:error, reason} ->
-        IO.puts("Error writing file #{path}: #{reason}")
-        nil
-    end
+    File.write!(path, file)
 
     "#{folder_name}/#{name}.#{format}"
   end
 
-  def create_files(folder_path, file_name, content) do
+  defp create_files(folder_path, file_name, content) do
     file_path = Path.join(folder_path, file_name)
-
-    case File.write(file_path, content) do
-      :ok -> IO.puts("File successfully written: #{file_path}")
-      {:error, reason} -> IO.puts("Error writing file #{file_path}: #{reason}")
-    end
+    File.write!(file_path, content)
   end
 
-  def fetch_file(file_path) do
-    case File.read(file_path) do
-      {:ok, content} -> content
-      {:error, reason} -> IO.puts("File #{reason}")
-    end
+  defp fetch_file(file_path) do
+    File.read!(file_path)
   end
 end

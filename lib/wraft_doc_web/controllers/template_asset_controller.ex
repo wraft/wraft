@@ -345,52 +345,24 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   end
 
   @spec template_export(Plug.Conn.t(), map) :: Plug.Conn.t()
+
   def template_export(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    case export_template(current_user, id) do
-      {:ok, zip_path, filename} ->
-        send_download(conn, {:file, zip_path}, filename: filename)
-
-      {:error, :not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{
-          status: "error",
-          message: "Data template, content type, layout, or theme not found"
-        })
-
-      {:error, reason} ->
-        conn
-        |> put_status(:internal_server_error)
-        |> json(%{
-          status: "error",
-          message: "Failed to retrieve or export template",
-          details: reason
-        })
-    end
-  end
-
-  defp export_template(current_user, id) do
     with %WraftDoc.Document.DataTemplate{} = data_template <-
            Document.get_d_template(current_user, id),
          %WraftDoc.Document.ContentType{} = variant <-
            Document.get_content_type(current_user, data_template.content_type_id),
          %WraftDoc.Document.Layout{} = layout <-
            Document.get_layout(variant.layout_id, current_user),
-         %WraftDoc.Document.Theme{} = theme <- Document.get_theme(variant.theme_id, current_user),
+         %WraftDoc.Document.Theme{} = theme <-
+           Document.get_theme(variant.theme_id, current_user),
          {:ok, zip_path} <-
-           TemplateAssets.prepare_template(%{
-             data_template: data_template,
-             variant: variant,
-             layout: layout,
-             theme: theme,
-             current_user: current_user
-           }) do
-      {:ok, zip_path, "#{data_template.title}.zip"}
+           TemplateAssets.prepare_template(data_template, variant, layout, theme, current_user) do
+      send_download(conn, {:file, zip_path}, filename: "#{data_template.title}.zip")
     else
-      nil -> {:error, :not_found}
-      {:error, _} = error -> error
+      nil -> {:error, nil}
+      {:error, reason} -> {:error, reason}
     end
   end
 end
