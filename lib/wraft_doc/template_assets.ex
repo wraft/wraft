@@ -617,7 +617,7 @@ defmodule WraftDoc.TemplateAssets do
     {:ok, folder_path}
   end
 
-  defp create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user)do
+  def create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user) do
     wraft_data = build_wraft_json(theme, layout, c_type, data_template, folder_path, current_user)
 
     wraft_path = Path.join(folder_path, "wraft.json")
@@ -636,7 +636,8 @@ defmodule WraftDoc.TemplateAssets do
     {:ok, zip_path}
   end
 
-  defp build_wraft_json(theme, layout, c_type, data_template, file_path, current_user) do
+
+  def build_wraft_json(theme, layout, c_type, data_template, file_path, current_user) do
     %{
       "theme" => build_theme(theme, file_path, current_user),
       "layout" => build_layout(layout, file_path, current_user),
@@ -649,6 +650,8 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp build_theme(theme, file_path, current_user) do
+    theme = Repo.preload(theme, :assets)
+
     %{
       "name" => theme.name,
       "fonts" =>
@@ -667,6 +670,8 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp build_layout(layout, file_path, current_user) do
+    layout = Repo.preload(layout, :assets)
+
     %{
       "name" => layout.name,
       "slug" => make_slug(layout.slug, file_path),
@@ -674,8 +679,8 @@ defmodule WraftDoc.TemplateAssets do
         List.first(
           Enum.map(layout.assets, fn asset ->
             download_file(asset.id, current_user, file_path, "pdf", "layout")
-          end
-        )),
+          end)
+        ),
       "meta" => "fields",
       "description" => layout.description,
       "engine" => "pandoc/latex"
@@ -683,6 +688,8 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp build_c_type(c_type) do
+    c_type = Repo.preload(c_type, [:theme, :layout, [fields: [:field_type]]])
+
     %{
       "name" => c_type.name,
       "color" => c_type.color,
@@ -713,21 +720,10 @@ defmodule WraftDoc.TemplateAssets do
          folder_name
        ) do
     file = Minio.download("organisations/#{org_id}/assets/#{asset_id}")
-    name = Document.get_asset(asset_id, %{current_org_id: org_id})
-    path = "#{file_path}/#{folder_name}/#{name}.#{format}"
-
+    asset = Document.get_asset(asset_id, %{current_org_id: org_id})
+    path = "#{file_path}/#{folder_name}/#{asset.name}.#{format}"
     File.mkdir_p(Path.dirname(path))
     File.write!(path, file)
-
-    "#{folder_name}/#{name}.#{format}"
-  end
-
-  defp create_files(folder_path, file_name, content) do
-    file_path = Path.join(folder_path, file_name)
-    File.write!(file_path, content)
-  end
-
-  defp fetch_file(file_path) do
-    File.read!(file_path)
+    "#{folder_name}/#{asset.name}.#{format}"
   end
 end
