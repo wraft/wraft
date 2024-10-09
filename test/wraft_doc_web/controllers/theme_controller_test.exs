@@ -123,10 +123,10 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
     assert json_response(conn, 404) == "Not Found"
   end
 
-  # FIXME need to fix this
   test "delete theme by given id", %{conn: conn} do
     user = conn.assigns[:current_user]
-    theme = insert(:theme, creator: user, organisation: List.first(user.owned_organisations))
+    organisation = List.first(user.owned_organisations)
+    theme = insert(:theme, creator: user, organisation: organisation)
     asset = insert(:asset, organisation: List.first(user.owned_organisations))
     insert(:theme_asset, theme: theme, asset: asset)
     count_before = Theme |> Repo.all() |> length()
@@ -136,7 +136,10 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
       :request,
       fn %ExAws.Operation.S3{} = operation ->
         assert operation.http_method == :get
-        assert operation.params == %{"prefix" => "uploads/theme/theme_preview/#{theme.id}"}
+
+        assert operation.params == %{
+                 "prefix" => "organisations/#{organisation.id}/theme/theme_preview/#{theme.id}"
+               }
 
         {
           :ok,
@@ -156,7 +159,10 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
       :request,
       fn %ExAws.Operation.S3{} = operation ->
         assert operation.http_method == :get
-        assert operation.params == %{"prefix" => "uploads/assets/#{asset.id}"}
+
+        assert operation.params == %{
+                 "prefix" => "organisations/#{organisation.id}/assets/#{asset.id}"
+               }
 
         {
           :ok,
