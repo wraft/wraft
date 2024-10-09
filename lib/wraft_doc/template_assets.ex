@@ -169,19 +169,14 @@ defmodule WraftDoc.TemplateAssets do
       {:ok, entries} ->
         entries
         |> Enum.map(& &1.file_name)
-        |> Enum.filter(&allowed_file?/1)
+        |> Enum.filter(fn file_name ->
+          Enum.any?(@allowed_folders, &String.starts_with?(file_name, "#{&1}/")) ||
+            file_name in @allowed_files
+        end)
 
       {:error, error} ->
         {:error, error}
     end
-  end
-
-  defp allowed_file?(file_name) do
-    allowed_folder?(file_name) || file_name in @allowed_files
-  end
-
-  defp allowed_folder?(file_name) do
-    Enum.any?(@allowed_folders, &String.starts_with?(file_name, "#{&1}/"))
   end
 
   @doc """
