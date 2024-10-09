@@ -39,26 +39,16 @@ defmodule WraftDoc.TemplateAssets.Theme do
   use Ecto.Schema
   import Ecto.Changeset
 
-  # alias WraftDoc.TemplateAssets.Colors
-  # alias WraftDoc.TemplateAssets.Font
-
-  # :fonts, :colors
   @required_fields [:name]
 
   embedded_schema do
     field(:name, :string)
-    # embeds_many :fonts, Font
-    # embeds_one :colors, Colors
-    # field :variant_link, :string
   end
 
   def changeset(struct, params) do
     struct
     |> cast(params, [:name])
     |> validate_required(@required_fields)
-
-    # |> cast_embed(:fonts, required: true)
-    # |> cast_embed(:colors, required: true)
   end
 end
 
@@ -116,18 +106,12 @@ defmodule WraftDoc.TemplateAssets.Layout do
   use Ecto.Schema
   import Ecto.Changeset
 
-  # alias WraftDoc.TemplateAssets.LayoutField
-  # alias WraftDoc.TemplateAssets.Meta
-
-  # :meta, :fields,
   @required_fields [:name, :slug, :slug_file, :description, :engine]
 
   embedded_schema do
     field(:name, :string)
     field(:slug, :string)
     field(:slug_file, :string)
-    # embeds_one :meta, Meta
-    # embeds_many :fields, LayoutField
     field(:description, :string)
     field(:engine, :string)
   end
@@ -136,9 +120,6 @@ defmodule WraftDoc.TemplateAssets.Layout do
     struct
     |> cast(params, [:name, :slug, :slug_file, :description, :engine])
     |> validate_required(@required_fields)
-
-    # |> cast_embed(:meta, required: true)
-    # |> cast_embed(:fields, required: true)
   end
 end
 
@@ -218,8 +199,6 @@ defmodule WraftDoc.TemplateAssets.Variant do
   use Ecto.Schema
   import Ecto.Changeset
 
-  # alias WraftDoc.TemplateAssets.VariantField
-
   @required_fields [:color, :name, :description, :prefix]
 
   embedded_schema do
@@ -227,15 +206,12 @@ defmodule WraftDoc.TemplateAssets.Variant do
     field(:name, :string)
     field(:description, :string)
     field(:prefix, :string)
-    # embeds_many :fields, VariantField
   end
 
   def changeset(struct, params) do
     struct
     |> cast(params, [:color, :name, :description, :prefix])
     |> validate_required(@required_fields)
-
-    # |> cast_embed(:fields, required: true)
   end
 end
 
