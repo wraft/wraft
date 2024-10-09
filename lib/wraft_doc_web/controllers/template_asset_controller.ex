@@ -351,14 +351,14 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
     with %WraftDoc.Document.DataTemplate{} = data_template <-
            Document.get_d_template(current_user, id),
-         %WraftDoc.Document.ContentType{} = variant <-
+         %WraftDoc.Document.ContentType{} = c_type <-
            Document.get_content_type(current_user, data_template.content_type_id),
          %WraftDoc.Document.Layout{} = layout <-
-           Document.get_layout(variant.layout_id, current_user),
+           Document.get_layout(c_type.layout_id, current_user),
          %WraftDoc.Document.Theme{} = theme <-
-           Document.get_theme(variant.theme_id, current_user),
+           Document.get_theme(c_type.theme_id, current_user),
          {:ok, zip_path} <-
-           TemplateAssets.prepare_template(data_template, variant, layout, theme, current_user) do
+           TemplateAssets.prepare_template(theme, layout, c_type, data_template, current_user) do
       send_download(conn, {:file, zip_path}, filename: "#{data_template.title}.zip")
     else
       nil -> {:error, nil}

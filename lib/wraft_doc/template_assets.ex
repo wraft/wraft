@@ -600,12 +600,11 @@ defmodule WraftDoc.TemplateAssets do
     Enum.filter(entries, &(!String.ends_with?(&1, "/")))
   end
 
-  def prepare_template(data_template, c_type, layout, theme, current_user) do
-
+  def prepare_template(theme, layout, c_type, data_template, current_user) do
     template_name = data_template.title
 
     {:ok, folder_path} = create_template_folder(template_name)
-    create_wraft_json(data_template, c_type, layout, theme, folder_path, current_user)
+    create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user)
     {:ok, zip_path} = zip_folder(folder_path, template_name)
 
     File.rm_rf(folder_path)
@@ -618,8 +617,8 @@ defmodule WraftDoc.TemplateAssets do
     {:ok, folder_path}
   end
 
-  defp create_wraft_json(data_template, c_type, layout, theme, folder_path, current_user) do
-    wraft_data = build_wraft_json(data_template, c_type, layout, theme, folder_path, current_user)
+  defp create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user)do
+    wraft_data = build_wraft_json(theme, layout, c_type, data_template, folder_path, current_user)
 
     wraft_path = Path.join(folder_path, "wraft.json")
 
@@ -637,7 +636,7 @@ defmodule WraftDoc.TemplateAssets do
     {:ok, zip_path}
   end
 
-  defp build_wraft_json(data_template, theme, layout, c_type, file_path, current_user) do
+  defp build_wraft_json(theme, layout, c_type, data_template, file_path, current_user) do
     %{
       "theme" => build_theme(theme, file_path, current_user),
       "layout" => build_layout(layout, file_path, current_user),
@@ -672,11 +671,11 @@ defmodule WraftDoc.TemplateAssets do
       "name" => layout.name,
       "slug" => make_slug(layout.slug, file_path),
       "slug_file" =>
-        List.hd(
+        List.first(
           Enum.map(layout.assets, fn asset ->
             download_file(asset.id, current_user, file_path, "pdf", "layout")
-          end)
-        ),
+          end
+        )),
       "meta" => "fields",
       "description" => layout.description,
       "engine" => "pandoc/latex"
