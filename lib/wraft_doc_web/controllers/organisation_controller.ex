@@ -303,7 +303,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
         with %Organisation{id: organisation_id} = organisation <-
                Enterprise.create_organisation(current_user, params),
              :ok <- Enterprise.insert_organisation_roles(organisation_id, current_user.id),
-             %Flow{} <-
+             {:ok, %Flow{}} <-
                Enterprise.create_flow(Map.put(current_user, :current_org_id, organisation_id), %{
                  "name" => "Wraft Flow",
                  "organisation_id" => organisation_id
