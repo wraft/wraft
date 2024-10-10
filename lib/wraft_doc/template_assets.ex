@@ -22,7 +22,6 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.TemplateAssets.TemplateAsset
   alias WraftDoc.TemplateAssets.WraftJson
 
-  @internal_file "wraft.json"
   @allowed_folders ["theme", "layout", "contract"]
   @allowed_files ["template.json", "wraft.json"]
   @font_style_name ~w(Regular Italic Bold BoldItalic)
@@ -130,7 +129,7 @@ defmodule WraftDoc.TemplateAssets do
   @spec import_template(User.t(), binary()) ::
           DataTemplate.t() | {:error, any()}
   def import_template(current_user, downloaded_zip_binary) do
-    case get_wraft_json_map(downloaded_zip_binary) do
+    case get_wraft_json(downloaded_zip_binary) do
       {:ok, template_map} ->
         prepare_template(template_map, current_user, downloaded_zip_binary)
     end
@@ -141,9 +140,11 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec download_zip_from_minio(User.t(), Ecto.UUID.t()) :: {:error, any()} | {:ok, binary()}
   def download_zip_from_minio(current_user, template_asset_id) do
+    %{zip_file: zip_file} = get_template_asset(template_asset_id, current_user)
+
     downloaded_zip_binary =
-      Minio.download(
-        "organisations/#{current_user.current_org_id}/template_assets/#{template_asset_id}"
+      Minio.get_object(
+        "organisations/#{current_user.current_org_id}/template_assets/#{template_asset_id}/template_#{zip_file.file_name}"
       )
 
     {:ok, downloaded_zip_binary}
@@ -154,15 +155,16 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Gets wraft json map.
   """
-  @spec get_wraft_json_map(binary()) :: {:ok, map()}
-  def get_wraft_json_map(downloaded_zip_binary) do
-    {:ok, wraft_json} = load_json_file(downloaded_zip_binary)
+  @spec get_wraft_json(binary()) :: {:ok, map()}
+  def get_wraft_json(downloaded_zip_binary) do
+    {:ok, wraft_json} = extract_file_content(downloaded_zip_binary, "wraft.json")
     Jason.decode(wraft_json)
   end
 
   @doc """
   Gets the list of specific items in template asset
   """
+  # TODO - Remove line:171 and make relevent changes.
   @spec template_asset_file_list(binary()) :: {:ok, [String.t()]} | {:error, any()}
   def template_asset_file_list(zip_binary) do
     case get_zip_entries(zip_binary) do
@@ -276,6 +278,7 @@ defmodule WraftDoc.TemplateAssets do
     |> Enum.join(",")
   end
 
+  # TODO - Rename this function.
   defp process_entry(entry, downloaded_zip_file, current_user) do
     with {:ok, content} <- extract_file_content(downloaded_zip_file, entry.file_name),
          {:ok, temp_file_path} <- write_temp_file(content),
@@ -508,6 +511,7 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
+  # TODO Check remove multiple calling, pass and entries at parent functions.
   @spec get_zip_entries(binary()) :: {:error, any()} | {:ok, [Unzip.Entry.t()]}
   def get_zip_entries(zip_binary) do
     with {:ok, unzip} <- Unzip.new(zip_binary),
@@ -517,20 +521,6 @@ defmodule WraftDoc.TemplateAssets do
       _ ->
         {:error, "Invalid ZIP entries."}
     end
-  end
-
-  defp load_json_file(file_binary) do
-    {:ok, unzip} = Unzip.new(file_binary)
-    internal_file = @internal_file
-    unzip_stream = Unzip.file_stream!(unzip, internal_file)
-
-    file_content =
-      unzip_stream
-      |> Enum.into([], fn chunk -> chunk end)
-      |> IO.iodata_to_binary()
-      |> String.trim()
-
-    {:ok, file_content}
   end
 
   @doc """

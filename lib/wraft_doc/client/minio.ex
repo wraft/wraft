@@ -126,5 +126,17 @@ defmodule WraftDoc.Client.Minio do
     |> @ex_aws_module.request()
   end
 
+  def get_object(file_path) do
+    bucket = bucket()
+
+    case bucket |> S3.get_object(file_path) |> @ex_aws_module.request() do
+      {:ok, %{body: binary}} ->
+        binary
+
+      {:error, _reason} ->
+        raise DownloadError
+    end
+  end
+
   defp bucket, do: System.get_env("MINIO_BUCKET")
 end

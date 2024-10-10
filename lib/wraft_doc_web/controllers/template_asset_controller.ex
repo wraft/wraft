@@ -82,9 +82,9 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
         swagger_schema do
           properties do
             template_assets(Schema.ref(:TemplateAssets))
-            page_number(:integer, "Page number", minimum: 0)
-            total_pages(:integer, "Total number of pages", minimum: 0)
-            total_entries(:integer, "Total number of contents", minimum: 0)
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
           end
 
           example(%{
@@ -144,7 +144,6 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     response(200, "OK", Schema.ref(:TemplateAsset))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
-    response(500, "Internal Server Error", Schema.ref(:Error))
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
@@ -155,7 +154,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
            TemplateAssets.create_template_asset(current_user, params),
          {:ok, downloaded_zip_binary} <-
            TemplateAssets.download_zip_from_minio(current_user, template_asset.id),
-         {:ok, template_map} <- TemplateAssets.get_wraft_json_map(downloaded_zip_binary),
+         {:ok, template_map} <- TemplateAssets.get_wraft_json(downloaded_zip_binary),
          {:ok, %TemplateAsset{} = updated_template_asset} <-
            TemplateAssets.update_template_asset_json(template_asset, %{
              "wraft_json" => template_map
