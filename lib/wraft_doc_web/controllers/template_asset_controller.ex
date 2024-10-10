@@ -147,22 +147,18 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, params) do
+  def create(conn, %{"zip_file" => zip_file} = params) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, %TemplateAsset{} = template_asset} <-
-           TemplateAssets.create_template_asset(current_user, params),
-         {:ok, downloaded_zip_binary} <-
-           TemplateAssets.download_zip_from_minio(current_user, template_asset.id),
-         {:ok, template_map} <- TemplateAssets.get_wraft_json(downloaded_zip_binary),
-         {:ok, %TemplateAsset{} = updated_template_asset} <-
-           TemplateAssets.update_template_asset_json(template_asset, %{
-             "wraft_json" => template_map
-           }),
+    with {:ok, zip_binary} <- TemplateAssets.read_zip_contents(zip_file.path),
+         {:ok, wraft_json} <- TemplateAssets.get_wraft_json(zip_binary),
+         params <- Map.put(params, "wraft_json", wraft_json),
          file_entries <-
-           TemplateAssets.template_asset_file_list(downloaded_zip_binary) do
+           TemplateAssets.template_asset_file_list(zip_binary),
+         {:ok, %TemplateAsset{} = template_asset} <-
+           TemplateAssets.create_template_asset(current_user, params) do
       render(conn, "template_asset.json",
-        template_asset: updated_template_asset,
+        template_asset: template_asset,
         file_entries: file_entries
       )
     end

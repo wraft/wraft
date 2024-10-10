@@ -113,17 +113,6 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   @doc """
-  Update wraft_json into template asset table.
-  """
-  @spec update_template_asset_json(TemplateAsset.t(), map()) ::
-          {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
-  def update_template_asset_json(%TemplateAsset{} = template_asset, attrs) do
-    template_asset
-    |> TemplateAsset.update_wraft_json_changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
   Imports template asset.
   """
   @spec import_template(User.t(), binary()) ::
@@ -269,7 +258,9 @@ defmodule WraftDoc.TemplateAssets do
 
   defp extract_and_save_fonts(entries, downloaded_zip_file, current_user) do
     entries
-    |> Task.async_stream(&process_entry(&1, downloaded_zip_file, current_user), timeout: :infinity)
+    |> Task.async_stream(&create_theme_asset(&1, downloaded_zip_file, current_user),
+      timeout: :infinity
+    )
     |> Enum.map(fn
       {:ok, {:ok, asset_id}} -> asset_id
       {:ok, {:error, _reason}} -> nil
@@ -278,8 +269,7 @@ defmodule WraftDoc.TemplateAssets do
     |> Enum.join(",")
   end
 
-  # TODO - Rename this function.
-  defp process_entry(entry, downloaded_zip_file, current_user) do
+  defp create_theme_asset(entry, downloaded_zip_file, current_user) do
     with {:ok, content} <- extract_file_content(downloaded_zip_file, entry.file_name),
          {:ok, temp_file_path} <- write_temp_file(content),
          asset_params = prepare_theme_asset_params(entry, temp_file_path, current_user),
@@ -288,7 +278,7 @@ defmodule WraftDoc.TemplateAssets do
     else
       error ->
         Logger.error("""
-        Failed to process entry: #{inspect(entry.file_name)}.
+        Failed to create theme asset: #{inspect(entry.file_name)}.
         Error: #{inspect(error)}.
         """)
 
@@ -538,19 +528,20 @@ defmodule WraftDoc.TemplateAssets do
     else
       {:error, error} ->
         {:error, error}
-
-      {:error, :invalid_zip} ->
-        {:error, "Invalid ZIP file."}
     end
   end
 
-  defp read_zip_contents(file_path) do
+  @doc """
+  Reads the contents of a ZIP file.
+  """
+  @spec read_zip_contents(String.t()) :: {:error, any()} | {:ok, binary()}
+  def read_zip_contents(file_path) do
     case File.read(file_path) do
       {:ok, binary} ->
         {:ok, binary}
 
       _ ->
-        {:error, :invalid_zip}
+        {:error, "Invalid ZIP file."}
     end
   end
 

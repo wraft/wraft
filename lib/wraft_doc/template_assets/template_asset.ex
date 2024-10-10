@@ -20,7 +20,7 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
 
   def changeset(%TemplateAsset{} = template_asset, attrs \\ %{}) do
     template_asset
-    |> cast(attrs, [:name, :organisation_id])
+    |> cast(attrs, [:name, :organisation_id, :wraft_json])
     |> validate_required([:name, :organisation_id])
   end
 
@@ -35,11 +35,5 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
     template_asset
     |> cast_attachments(attrs, [:zip_file])
     |> validate_required([:zip_file])
-  end
-
-  def update_wraft_json_changeset(%TemplateAsset{} = template_asset, attrs) do
-    template_asset
-    |> cast(attrs, [:wraft_json])
-    |> validate_required([:wraft_json])
   end
 end
