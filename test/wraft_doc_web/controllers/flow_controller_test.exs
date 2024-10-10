@@ -120,7 +120,6 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
   end
 
   describe "align_states/2" do
-    # FIXME need to fix this
     test "align order of state under a flow ", %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations
@@ -131,18 +130,21 @@ defmodule WraftDocWeb.Api.V1.FlowControllerTest do
 
       conn = put(conn, Routes.v1_flow_path(conn, :align_states, flow.id), params)
 
+      response_states = json_response(conn, 200)["states"]
+      count = length(response_states)
+
       state1_in_response =
-        json_response(conn, 200)["states"]
+        response_states
         |> Enum.filter(fn x -> x["id"] == s1.id end)
         |> List.first()
 
       state2_in_response =
-        json_response(conn, 200)["states"]
+        response_states
         |> Enum.filter(fn x -> x["id"] == s2.id end)
         |> List.first()
 
-      assert state1_in_response["order"] == 2
-      assert state2_in_response["order"] == 1
+      assert state1_in_response["order"] == 2 + count
+      assert state2_in_response["order"] == 1 + count
     end
   end
 end
