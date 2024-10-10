@@ -176,7 +176,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     assert List.to_string(instances) =~ dt2.raw
   end
 
-  # FIXME need to fix this
   test "all templates lists all instances under an organisation", %{conn: conn} do
     user = conn.assigns.current_user
     insert(:profile, user: user)
@@ -184,8 +183,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     ct1 = insert(:content_type, organisation: organisation)
     ct2 = insert(:content_type, organisation: organisation)
 
-    dt1 = insert(:instance, content_type: ct1, creator: user)
-    dt2 = insert(:instance, content_type: ct2, creator: user)
+    dt1 = insert(:instance, content_type: ct1, creator: user, allowed_users: [user.id])
+    dt2 = insert(:instance, content_type: ct2, creator: user, allowed_users: [user.id])
 
     conn = get(conn, Routes.v1_instance_path(conn, :all_contents))
 
@@ -223,12 +222,11 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   describe "DELETE /contents/:id" do
-    # FIXME need to fix this
     test "delete instance by given id", %{conn: conn} do
       user = conn.assigns.current_user
+      organisation = List.first(user.owned_organisations)
 
-      content_type =
-        insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+      content_type = insert(:content_type, creator: user, organisation: organisation)
 
       instance = insert(:instance, creator: user, content_type: content_type)
 
@@ -237,7 +235,10 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
         :stream!,
         fn %ExAws.Operation.S3{} = operation ->
           assert operation.http_method == :get
-          assert operation.params == %{"prefix" => "uploads/contents/#{instance.instance_id}"}
+
+          assert operation.params == %{
+                   "prefix" => "organisations/#{organisation.id}/contents/#{instance.instance_id}"
+                 }
 
           {
             :ok,
@@ -435,7 +436,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   end
 
   describe "approve/2" do
-    # FIXME need to fix this
     test "approve instance changes the state of instance to post state of approval system", %{
       conn: conn
     } do
@@ -445,6 +445,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       flow = insert(:flow, organisation: organisation)
       s1 = insert(:state, organisation: organisation, flow: flow, order: 1)
       s2 = insert(:state, organisation: organisation, flow: flow, order: 2)
+      insert(:state_users, state: s1, user: user)
       as = insert(:approval_system, flow: flow, approver: user, pre_state: s1, post_state: s2)
       content_type = insert(:content_type, organisation: organisation, flow: flow)
       instance = insert(:instance, creator: user, content_type: content_type, state: s1)
@@ -455,7 +456,6 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       assert json_response(conn, 200)["state"]["state"] == s2.state
     end
 
-    # FIXME need to fix this
     test "return error no permission for a wrong approver", %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations
@@ -470,12 +470,11 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
       conn = put(conn, Routes.v1_instance_path(conn, :approve, instance.id))
 
-      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
   end
 
   describe "reject/2" do
-    # FIXME need to fix this
     test "reject instance changes the state of instance to pre state of rejection system", %{
       conn: conn
     } do
@@ -486,6 +485,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       s1 = insert(:state, organisation: organisation, flow: flow, order: 1)
       s2 = insert(:state, organisation: organisation, flow: flow, order: 2)
       s3 = insert(:state, organisation: organisation, flow: flow, order: 3)
+      insert(:state_users, state: s1, user: user)
+      insert(:state_users, state: s2, user: user)
       as = insert(:approval_system, flow: flow, approver: user, pre_state: s1, post_state: s2)
       insert(:approval_system, flow: flow, approver: user, pre_state: s2, post_state: s3)
       content_type = insert(:content_type, organisation: organisation, flow: flow)

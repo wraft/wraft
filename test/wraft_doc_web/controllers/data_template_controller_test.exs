@@ -93,10 +93,11 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
     assert List.to_string(data_templates) =~ dt2.title
   end
 
-  # FIXME need to fix this
   test "all templates lists all data templates under an organisation", %{conn: conn} do
     user = conn.assigns.current_user
-    content_type = insert(:content_type)
+
+    content_type =
+      insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
 
     dt1 = insert(:data_template, creator: user, content_type: content_type)
     dt2 = insert(:data_template, creator: user, content_type: content_type)
