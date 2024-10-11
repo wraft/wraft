@@ -4,8 +4,6 @@ defmodule WraftDocWeb.TemplateAssetUploader do
   use Waffle.Definition
   use Waffle.Ecto.Definition
 
-  alias WraftDoc.TemplateAssets
-
   @max_file_size 5 * 1024 * 1024
   @versions [:original]
   @extension_whitelist ~w(.zip)
@@ -19,15 +17,9 @@ defmodule WraftDocWeb.TemplateAssetUploader do
     extension_allowed =
       Enum.member?(@extension_whitelist, file_extension) && file_size(file) <= @max_file_size
 
-    with true <- extension_allowed,
-         :ok <- TemplateAssets.template_zip_validator(file) do
-      :ok
-    else
-      false ->
-        {:error, "Invalid file extension."}
-
-      {:error, reason} ->
-        {:error, reason}
+    case extension_allowed do
+      true -> :ok
+      false -> {:error, "Invalid zip file size."}
     end
   end
 

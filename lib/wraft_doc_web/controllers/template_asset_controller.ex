@@ -9,7 +9,8 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     index: "template_asset:show",
     show: "template_asset:show",
     update: "template_asset:manage",
-    delete: "template_asset:delete"
+    delete: "template_asset:delete",
+    template_import: "template_asset:manage"
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -151,15 +152,16 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, zip_binary} <- TemplateAssets.read_zip_contents(zip_file.path),
+         file_entries_in_zip <-
+           TemplateAssets.template_asset_file_list(zip_binary),
+         :ok <- TemplateAssets.template_zip_validator(zip_binary, file_entries_in_zip),
          {:ok, wraft_json} <- TemplateAssets.get_wraft_json(zip_binary),
          params <- Map.put(params, "wraft_json", wraft_json),
-         file_entries <-
-           TemplateAssets.template_asset_file_list(zip_binary),
          {:ok, %TemplateAsset{} = template_asset} <-
            TemplateAssets.create_template_asset(current_user, params) do
       render(conn, "template_asset.json",
         template_asset: template_asset,
-        file_entries: file_entries
+        file_entries: file_entries_in_zip
       )
     end
   end

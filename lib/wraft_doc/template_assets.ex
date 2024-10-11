@@ -153,21 +153,26 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Gets the list of specific items in template asset
   """
-  # TODO - Remove line:171 and make relevent changes.
-  @spec template_asset_file_list(binary()) :: {:ok, [String.t()]} | {:error, any()}
+  @spec template_asset_file_list(binary()) :: [String.t()] | {:error, any()}
   def template_asset_file_list(zip_binary) do
     case get_zip_entries(zip_binary) do
       {:ok, entries} ->
-        entries
-        |> Enum.map(& &1.file_name)
-        |> Enum.filter(fn file_name ->
-          Enum.any?(@allowed_folders, &String.starts_with?(file_name, "#{&1}/")) ||
-            file_name in @allowed_files
-        end)
+        filter_entries(entries)
 
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  defp filter_entries(entries) do
+    Enum.reduce(entries, [], fn %{file_name: file_name}, acc ->
+      if Enum.any?(@allowed_folders, &String.starts_with?(file_name, "#{&1}/")) ||
+           file_name in @allowed_files do
+        [file_name | acc]
+      else
+        acc
+      end
+    end)
   end
 
   @doc """
@@ -221,6 +226,7 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
+  # TODO Using get_zip_entries in multiple places, can be refactored.
   defp prepare_theme(theme, current_user, downloaded_file) do
     with {:ok, entries} <- get_zip_entries(downloaded_file),
          asset_ids <- prepare_theme_assets(entries, downloaded_file, current_user),
@@ -314,6 +320,7 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
+  # TODO Using get_zip_entries in multiple places, can be refactored.
   defp prepare_layout(layouts, downloaded_file, current_user) do
     # filter engine name
     engine_id = get_engine(layouts["engine"])
@@ -472,6 +479,7 @@ defmodule WraftDoc.TemplateAssets do
   #   end
   # end
 
+  # TODO Using get_zip_entries in multiple places, can be refactored.
   defp get_data_template_procemirror(downloaded_file) do
     case get_zip_entries(downloaded_file) do
       {:ok, entries} ->
@@ -502,8 +510,7 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   # TODO Check remove multiple calling, pass and entries at parent functions.
-  @spec get_zip_entries(binary()) :: {:error, any()} | {:ok, [Unzip.Entry.t()]}
-  def get_zip_entries(zip_binary) do
+  defp get_zip_entries(zip_binary) do
     with {:ok, unzip} <- Unzip.new(zip_binary),
          entries <- Unzip.list_entries(unzip) do
       {:ok, entries}
@@ -516,14 +523,11 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Validates the contents of a ZIP file uploaded via Waffle.
   """
-  @spec template_zip_validator(Waffle.File.t()) :: :ok | {:error, any()}
-  def template_zip_validator(file) do
-    with {:ok, zip_binary} <- read_zip_contents(file.path),
-         file_entries_in_zip <- template_asset_file_list(zip_binary),
-         true <- validate_zip_entries(file_entries_in_zip),
-         {:ok, wraft_json} <- extract_file_content(zip_binary, "wraft.json"),
-         wraft_json_map <- Jason.decode!(wraft_json),
-         true <- validate_wraft_json(wraft_json_map) do
+  @spec template_zip_validator(binary(), [String.t()]) :: :ok | {:error, any()}
+  def template_zip_validator(zip_binary, file_entries_in_zip) do
+    with true <- validate_zip_entries(file_entries_in_zip),
+         {:ok, wraft_json} <- get_wraft_json(zip_binary),
+         true <- validate_wraft_json(wraft_json) do
       :ok
     else
       {:error, error} ->
@@ -550,7 +554,7 @@ defmodule WraftDoc.TemplateAssets do
     |> WraftJson.changeset(wraft_json)
     |> case do
       %{valid?: true} -> true
-      %{valid?: false} = changeset -> {:error, extract_errors(changeset)}
+      %{valid?: false} = changeset -> {:error, "wraft.json: #{extract_errors(changeset)}"}
     end
   end
 
