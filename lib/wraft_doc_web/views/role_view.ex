@@ -33,7 +33,7 @@ defmodule WraftDocWeb.Api.V1.RoleView do
 
   def render("unassign_role.json", %{}) do
     %{
-      info: "Unassigned the given role from the user successfully.!"
+      info: "Unassigned the given role for the user successfully.!"
     }
   end
 end
