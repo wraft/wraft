@@ -18,6 +18,7 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Document.Layout
   alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise
+  alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
   alias WraftDoc.TemplateAssets.WraftJson
@@ -118,9 +119,9 @@ defmodule WraftDoc.TemplateAssets do
   @spec import_template(User.t(), binary()) ::
           DataTemplate.t() | {:error, any()}
   def import_template(current_user, downloaded_zip_binary) do
-    case get_wraft_json(downloaded_zip_binary) do
-      {:ok, template_map} ->
-        prepare_template(template_map, current_user, downloaded_zip_binary)
+    with {:ok, entries} <- get_zip_entries(downloaded_zip_binary),
+         {:ok, template_map} <- get_wraft_json(downloaded_zip_binary) do
+      prepare_template(template_map, current_user, downloaded_zip_binary, entries)
     end
   end
 
@@ -178,9 +179,10 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Prepares template by taking Wraft_json map, current user and zip binary.
   """
-  @spec prepare_template(map(), User.t(), binary()) :: {:ok, any()} | {:error, any()}
-  def prepare_template(template_map, current_user, downloaded_file) do
-    case prepare_template_transaction(template_map, current_user, downloaded_file) do
+  @spec prepare_template(map(), User.t(), binary(), [String.t()]) ::
+          {:ok, any()} | {:error, any()}
+  def prepare_template(template_map, current_user, downloaded_file, entries) do
+    case prepare_template_transaction(template_map, current_user, downloaded_file, entries) do
       {:ok, %{data_template: data_template}} ->
         Logger.info("Theme, Layout, Flow, variant created successfully.")
         {:ok, data_template}
@@ -191,16 +193,16 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp prepare_template_transaction(template_map, current_user, downloaded_file) do
+  defp prepare_template_transaction(template_map, current_user, downloaded_file, entries) do
     Multi.new()
     |> Multi.run(:theme, fn _repo, _changes ->
-      prepare_theme(template_map["theme"], current_user, downloaded_file)
+      prepare_theme(template_map["theme"], current_user, downloaded_file, entries)
     end)
     |> Multi.run(:flow, fn _repo, _changes ->
       Enterprise.create_flow(current_user, template_map["flow"])
     end)
     |> Multi.run(:layout, fn _repo, _changes ->
-      prepare_layout(template_map["layout"], downloaded_file, current_user)
+      prepare_layout(template_map["layout"], downloaded_file, current_user, entries)
     end)
     |> Multi.run(:content_type, fn _repo, %{theme: theme, flow: flow, layout: layout} ->
       prepare_content_type(template_map["variant"], current_user, theme.id, layout.id, flow.id)
@@ -210,7 +212,8 @@ defmodule WraftDoc.TemplateAssets do
         current_user,
         template_map["data_template"],
         downloaded_file,
-        content_type
+        content_type,
+        entries
       )
     end)
     |> Repo.transaction()
@@ -226,10 +229,8 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  # TODO Using get_zip_entries in multiple places, can be refactored.
-  defp prepare_theme(theme, current_user, downloaded_file) do
-    with {:ok, entries} <- get_zip_entries(downloaded_file),
-         asset_ids <- prepare_theme_assets(entries, downloaded_file, current_user),
+  defp prepare_theme(theme, current_user, downloaded_file, entries) do
+    with asset_ids <- prepare_theme_assets(entries, downloaded_file, current_user),
          params <- prepare_theme_attrs(theme, asset_ids),
          %Theme{} = theme <- Document.create_theme(current_user, params) do
       {:ok, theme}
@@ -279,7 +280,7 @@ defmodule WraftDoc.TemplateAssets do
     with {:ok, content} <- extract_file_content(downloaded_zip_file, entry.file_name),
          {:ok, temp_file_path} <- write_temp_file(content),
          asset_params = prepare_theme_asset_params(entry, temp_file_path, current_user),
-         {:ok, asset} <- WraftDoc.Document.create_asset(current_user, asset_params) do
+         {:ok, asset} <- Document.create_asset(current_user, asset_params) do
       {:ok, asset.id}
     else
       error ->
@@ -320,13 +321,11 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  # TODO Using get_zip_entries in multiple places, can be refactored.
-  defp prepare_layout(layouts, downloaded_file, current_user) do
+  defp prepare_layout(layouts, downloaded_file, current_user, entries) do
     # filter engine name
     engine_id = get_engine(layouts["engine"])
 
-    with {:ok, entries} <- get_zip_entries(downloaded_file),
-         asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
+    with asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
          params <- prepare_layout_attrs(layouts, engine_id, asset_id),
          %Engine{} = engine <- Document.get_engine(params["engine_id"]),
          %Layout{} = layout <- Document.create_layout(current_user, engine, params) do
@@ -364,10 +363,9 @@ defmodule WraftDoc.TemplateAssets do
     entry = List.first(entries)
 
     with {:ok, content} <- extract_file_content(downloaded_zip_file, entry.file_name),
-         temp_file_path <- Briefly.create!(),
-         :ok <- File.write(temp_file_path, content),
+         {:ok, temp_file_path} <- write_temp_file(content),
          asset_params <- prepare_layout_asset_params(entry, temp_file_path, current_user),
-         {:ok, asset} <- WraftDoc.Document.create_asset(current_user, asset_params) do
+         {:ok, asset} <- Document.create_asset(current_user, asset_params) do
       asset.id
     else
       error ->
@@ -440,23 +438,24 @@ defmodule WraftDoc.TemplateAssets do
     }
   end
 
-  defp prepare_data_template(current_user, template_map, downloaded_file, content_type) do
-    with params <- prepare_data_template_attrs(template_map, downloaded_file, content_type.id),
+  defp prepare_data_template(current_user, template_map, downloaded_file, content_type, entries) do
+    with params <-
+           prepare_data_template_attrs(template_map, downloaded_file, content_type.id, entries),
          {:ok, %DataTemplate{} = data_template} <-
            Document.create_data_template(current_user, content_type, params) do
       {:ok, data_template}
     end
   end
 
-  defp prepare_data_template_attrs(template_map, downloaded_file, content_type_id) do
-    with procemirror_json <- get_data_template_procemirror(downloaded_file),
-         {:ok, json_data} <- extract_file_content(downloaded_file, procemirror_json),
+  defp prepare_data_template_attrs(template_map, downloaded_file, content_type_id, entries) do
+    with prosemirror_json <- get_data_template_prosemirror(entries),
+         {:ok, json_data} <- extract_file_content(downloaded_file, prosemirror_json),
          decoded_data <- Jason.decode!(json_data),
          serialized_prosemirror_data <- decoded_data["data"] do
       markdown_data =
         serialized_prosemirror_data
         |> Jason.decode!()
-        |> WraftDoc.ProsemirrorToMarkdown.convert()
+        |> ProsemirrorToMarkdown.convert()
 
       %{
         "c_type_id" => content_type_id,
@@ -479,18 +478,10 @@ defmodule WraftDoc.TemplateAssets do
   #   end
   # end
 
-  # TODO Using get_zip_entries in multiple places, can be refactored.
-  defp get_data_template_procemirror(downloaded_file) do
-    case get_zip_entries(downloaded_file) do
-      {:ok, entries} ->
-        procemirror_json =
-          Enum.find(entries, fn entry -> entry.file_name =~ ~r/template\.json$/i end)
+  defp get_data_template_prosemirror(entries) do
+    prosemirror_json = Enum.find(entries, fn entry -> entry.file_name =~ ~r/template\.json$/i end)
 
-        procemirror_json.file_name
-
-      _ ->
-        Logger.error("template_json not found")
-    end
+    prosemirror_json.file_name
   end
 
   defp extract_file_content(zip_file_binary, file_name) do
@@ -509,7 +500,6 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  # TODO Check remove multiple calling, pass and entries at parent functions.
   defp get_zip_entries(zip_binary) do
     with {:ok, unzip} <- Unzip.new(zip_binary),
          entries <- Unzip.list_entries(unzip) do
