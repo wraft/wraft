@@ -212,8 +212,7 @@ defmodule WraftDoc.TemplateAssets do
         current_user,
         template_map["data_template"],
         downloaded_file,
-        content_type,
-        entries
+        content_type
       )
     end)
     |> Repo.transaction()
@@ -438,32 +437,37 @@ defmodule WraftDoc.TemplateAssets do
     }
   end
 
-  defp prepare_data_template(current_user, template_map, downloaded_file, content_type, entries) do
-    with params <-
-           prepare_data_template_attrs(template_map, downloaded_file, content_type.id, entries),
+  defp prepare_data_template(current_user, template_map, downloaded_file, content_type) do
+    with params when is_map(params) <-
+           prepare_data_template_attrs(template_map, downloaded_file, content_type.id),
          {:ok, %DataTemplate{} = data_template} <-
            Document.create_data_template(current_user, content_type, params) do
       {:ok, data_template}
+    else
+      {:error, error} ->
+        {:error, error}
     end
   end
 
-  defp prepare_data_template_attrs(template_map, downloaded_file, content_type_id, entries) do
-    with prosemirror_json <- get_data_template_prosemirror(entries),
-         {:ok, json_data} <- extract_file_content(downloaded_file, prosemirror_json),
-         decoded_data <- Jason.decode!(json_data),
-         serialized_prosemirror_data <- decoded_data["data"] do
-      markdown_data =
-        serialized_prosemirror_data
-        |> Jason.decode!()
-        |> ProsemirrorToMarkdown.convert()
+  defp prepare_data_template_attrs(template_map, downloaded_file, content_type_id) do
+    case get_data_template_prosemirror(downloaded_file) do
+      {:ok, serialized_prosemirror_data} ->
+        markdown_data =
+          serialized_prosemirror_data
+          |> Jason.decode!()
+          |> ProsemirrorToMarkdown.convert()
 
-      %{
-        "c_type_id" => content_type_id,
-        "title" => template_map["title"],
-        "title_template" => template_map["title_template"],
-        "data" => markdown_data,
-        "serialized" => %{"data" => serialized_prosemirror_data}
-      }
+        %{
+          "c_type_id" => content_type_id,
+          "title" => template_map["title"],
+          "title_template" => template_map["title_template"],
+          "data" => markdown_data,
+          "serialized" => %{"data" => serialized_prosemirror_data}
+        }
+
+      {:error, error} ->
+        Logger.error("Failed to prepare data template. Error: #{inspect(error)}")
+        {:error, error}
     end
   end
 
@@ -478,10 +482,11 @@ defmodule WraftDoc.TemplateAssets do
   #   end
   # end
 
-  defp get_data_template_prosemirror(entries) do
-    prosemirror_json = Enum.find(entries, fn entry -> entry.file_name =~ ~r/template\.json$/i end)
-
-    prosemirror_json.file_name
+  defp get_data_template_prosemirror(downloaded_file) do
+    with {:ok, template_json} <- extract_file_content(downloaded_file, "template.json"),
+         serialized_prosemirror <- Jason.decode!(template_json) do
+      {:ok, serialized_prosemirror["data"]}
+    end
   end
 
   defp extract_file_content(zip_file_binary, file_name) do
