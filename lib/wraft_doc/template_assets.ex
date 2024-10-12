@@ -265,14 +265,23 @@ defmodule WraftDoc.TemplateAssets do
   defp extract_and_save_fonts(entries, downloaded_zip_file, current_user) do
     entries
     |> Task.async_stream(&create_theme_asset(&1, downloaded_zip_file, current_user),
-      timeout: :infinity
+      timeout: 60_000,
+      max_concurrency: 4
     )
-    |> Enum.map(fn
-      {:ok, {:ok, asset_id}} -> asset_id
-      {:ok, {:error, _reason}} -> nil
+    |> Enum.reduce("", fn
+      {:ok, asset_id}, "" ->
+        "#{asset_id}"
+
+      {:ok, {:error, _reason}}, acc ->
+        acc
+
+      {:ok, asset_id}, acc ->
+        "#{acc},#{asset_id}"
+
+      {:exit, reason}, acc ->
+        Logger.error("Saving font failed with reason: #{inspect(reason)}")
+        acc
     end)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join(",")
   end
 
   defp create_theme_asset(entry, downloaded_zip_file, current_user) do
@@ -280,7 +289,7 @@ defmodule WraftDoc.TemplateAssets do
          {:ok, temp_file_path} <- write_temp_file(content),
          asset_params = prepare_theme_asset_params(entry, temp_file_path, current_user),
          {:ok, asset} <- Document.create_asset(current_user, asset_params) do
-      {:ok, asset.id}
+      asset.id
     else
       error ->
         Logger.error("""
