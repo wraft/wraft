@@ -133,7 +133,7 @@ defmodule WraftDoc.Client.Minio do
       {:ok, %{body: binary}} ->
         binary
 
-      {:error, _reason} ->
+      _ ->
         raise DownloadError
     end
   end
