@@ -14,9 +14,9 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   alias WraftDocWeb.Guardian
 
   describe "signin/2" do
-    # FIXME Need to fix this, profile pic related.
     test "succesfully logs in with correct email-password combination" do
       user = insert(:user_with_personal_organisation)
+      insert(:profile, user: user)
       [organisation] = user.owned_organisations
       insert(:user_role, user: user, role: insert(:role, organisation: organisation))
       conn = build_conn()
@@ -402,10 +402,10 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   end
 
   describe "switch_organisation/2" do
-    # FIXME Need to fix this, profile pic related.
     test "renders response with 200 status code with ID of an organisation the user has joined",
          %{conn: conn} do
       user = conn.assigns[:current_user]
+      insert(:profile, user: user)
       %{id: organisation_id} = organisation = insert(:organisation)
       insert(:user_organisation, user: user, organisation: organisation)
 

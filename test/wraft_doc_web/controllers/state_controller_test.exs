@@ -6,7 +6,8 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   @moduletag :controller
 
   import WraftDoc.Factory
-  alias WraftDoc.{Enterprise.Flow.State, Repo}
+  alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Repo
 
   @valid_attrs %{
     state: "Published",
@@ -14,9 +15,10 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   }
 
   @invalid_attrs %{state: ""}
-  # FIXME Need to fix this, profile pic related.
+
   test "create states by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:profile, user: user)
     flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
 
     params = Map.merge(@valid_attrs, %{approvers: [user.id]})
@@ -32,11 +34,11 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     assert json_response(conn, 200)["state"] == @valid_attrs.state
   end
 
-  # FIXME Need to fix this, profile pic related.
   test "does not create states by invalid attrs", %{conn: conn} do
     user = conn.assigns[:current_user]
+    insert(:profile, user: user)
     flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
-    params = Map.merge(@valid_attrs, %{approvers: [user.id]})
+    params = Map.merge(@invalid_attrs, %{approvers: [user.id]})
 
     count_before = State |> Repo.all() |> length()
 

@@ -11,8 +11,9 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   }
 
   @invalid_attrs %{title: ""}
-  # FIXME Need to fix this, profile pic related.
   test "create block_templates by valid attrrs", %{conn: conn} do
+    user = conn.assigns.current_user
+    insert(:profile, user: user)
     count_before = BlockTemplate |> Repo.all() |> length()
 
     conn =
@@ -36,9 +37,9 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
     assert count_before == BlockTemplate |> Repo.all() |> length()
   end
 
-  # FIXME Need to fix this, profile pic related.
   test "update block_templates on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:profile, user: user)
 
     block_template =
       insert(:block_template, creator: user, organisation: List.first(user.owned_organisations))
@@ -71,6 +72,16 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   # FIXME Need to fix this, profile pic related.
   test "index lists assests by current user", %{conn: conn} do
     user = conn.assigns.current_user
+
+    insert(:profile,
+      profile_pic: %Plug.Upload{
+        content_type: "image/png",
+        filename: "avatar.png",
+        path: "priv/static/images/avatar.png"
+      },
+      user: user
+    )
+
     [organisation] = user.owned_organisations
     a1 = insert(:block_template, organisation: organisation)
     a2 = insert(:block_template, organisation: organisation)
@@ -82,9 +93,9 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
     assert List.to_string(block_templates) =~ a2.title
   end
 
-  # FIXME Need to fix this, profile pic related.
   test "show renders block_template details by id", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:profile, user: user)
 
     block_template =
       insert(:block_template, creator: user, organisation: List.first(user.owned_organisations))
@@ -102,6 +113,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   # FIXME Need to fix this, profile pic related.
   test "delete block_template by given id", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:profile, user: user)
     block_template = insert(:block_template, organisation: List.first(user.owned_organisations))
     count_before = BlockTemplate |> Repo.all() |> length()
 
