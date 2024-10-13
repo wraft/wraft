@@ -32,9 +32,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   @invalid_attrs %{name: ""}
 
   describe "create/2" do
-    # FIXME Need to fix this, profile pic related.
-    test "create content types by valid attrrs", %{conn: conn} do
+    test "create content types by valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:profile, user: user)
       [organisation] = user.owned_organisations
 
       %{id: flow_id} = insert(:flow, organisation: organisation)
@@ -216,9 +216,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   end
 
   describe "index/2" do
-    # FIXME Need to fix this, profile pic related.
     test "index lists content type by current user", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:profile, user: user)
       [organisation] = user.owned_organisations
       ct1 = insert(:content_type, creator: user, organisation: organisation)
       ct2 = insert(:content_type, creator: user, organisation: organisation)

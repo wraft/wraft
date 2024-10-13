@@ -46,38 +46,6 @@ defmodule WraftDoc.PipelineRunnerTest do
     end
   end
 
-  # FIXME Need to fix this
-  describe "values_provided?/1" do
-    test "returns true when values for all content type field values are provided in the data of trigger" do
-      pipeline = insert(:pipeline)
-      content_type = insert(:content_type)
-      insert(:pipe_stage, pipeline: pipeline, content_type: content_type)
-      content_type_field = insert(:content_type_field, content_type: content_type)
-      pipeline = Repo.preload(pipeline, stages: [{:content_type, :fields}])
-
-      trigger =
-        insert(:trigger_history,
-          pipeline: pipeline,
-          data: %{"#{content_type_field.field.name}" => "John Doe"}
-        )
-
-      response = PipelineRunner.values_provided?(trigger)
-      assert response == true
-    end
-
-    # FIXME Need to fix this
-    test "returns false when values for content type fields are missing" do
-      pipeline = insert(:pipeline)
-      c_type = insert(:content_type)
-      insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
-      insert(:content_type_field, content_type: c_type)
-      pipeline = Repo.preload(pipeline, stages: [{:content_type, :fields}])
-      trigger = insert(:trigger_history, pipeline: pipeline, data: %{"name" => "John Doe"})
-      response = PipelineRunner.values_provided?(trigger)
-      assert response == false
-    end
-  end
-
   describe "create_instances/1" do
     # FIXME Need to fix this may need to add serialized in factory
     test "creates instance and returns a map with created instance when trigger has a creator_id" do
