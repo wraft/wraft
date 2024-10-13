@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   alias WraftDocWeb.Guardian
 
   describe "signin/2" do
-    # FIXME need to fix this
+    # FIXME Need to fix this, profile pic related.
     test "succesfully logs in with correct email-password combination" do
       user = insert(:user_with_personal_organisation)
       [organisation] = user.owned_organisations
@@ -51,7 +51,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
                "Your email-password combination doesn't match. Please try again.!"
     end
 
-    # FIXME need to fix this
+    # FIXME Need to fix this
     test "returns error with non-existing email" do
       conn = build_conn()
 
@@ -142,7 +142,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       assert json_response(conn, 200)["info"] == "Approved"
     end
 
-    # FIXME need to fix this
+    # FIXME Need to fix this
     test "returns error with invalid token" do
       conn = build_conn()
       insert(:auth_token, value: "_3_-_A==", token_type: "password_verify")
@@ -202,7 +202,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       assert json_response(conn, 404) == "Not Found"
     end
 
-    # FIXME need to fix this
+    # FIXME Need to fix this
     test "returns error with invalid token" do
       conn = build_conn()
       insert(:auth_token, value: "_3_-_A==", token_type: "password_verify")
@@ -351,7 +351,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       assert json_response(conn, 200)["verification_status"] == true
     end
 
-    # FIXME need to fix this
+    # FIXME Need to fix this
     test "returns error with invalid token" do
       conn = build_conn()
       insert(:auth_token, value: "_3_-_A==", token_type: "email_verify")
@@ -406,7 +406,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   end
 
   describe "switch_organisation/2" do
-    # FIXME need to fix this
+    # FIXME Need to fix this, profile pic related.
     test "renders response with 200 status code with ID of an organisation the user has joined",
          %{conn: conn} do
       user = conn.assigns[:current_user]
@@ -442,7 +442,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
                })
     end
 
-    # FIXME need to fix this
+    # FIXME Need to fix this
     test "renders response with 401 status code with ID of an organisation the user has NOT joined",
          %{conn: conn} do
       %{id: organisation_id} = insert(:organisation)

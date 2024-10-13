@@ -46,7 +46,7 @@ defmodule WraftDoc.PipelineRunnerTest do
     end
   end
 
-  # FIXME need to fix this
+  # FIXME Need to fix this
   describe "values_provided?/1" do
     test "returns true when values for all content type field values are provided in the data of trigger" do
       pipeline = insert(:pipeline)
@@ -65,7 +65,7 @@ defmodule WraftDoc.PipelineRunnerTest do
       assert response == true
     end
 
-    # FIXME need to fix this
+    # FIXME Need to fix this
     test "returns false when values for content type fields are missing" do
       pipeline = insert(:pipeline)
       c_type = insert(:content_type)
@@ -79,7 +79,7 @@ defmodule WraftDoc.PipelineRunnerTest do
   end
 
   describe "create_instances/1" do
-    # FIXME need to fix this may need to add serialized in factory
+    # FIXME Need to fix this may need to add serialized in factory
     test "creates instance and returns a map with created instance when trigger has a creator_id" do
       pipeline = insert(:pipeline)
       flow = insert(:flow)
@@ -119,7 +119,7 @@ defmodule WraftDoc.PipelineRunnerTest do
       assert response.user.id == trigger.creator.id
     end
 
-    # FIXME need to fix this
+    # FIXME Need to fix this
     test "creates instance and returns a map with created instance when trigger does not have creator ID" do
       pipeline = insert(:pipeline)
       flow = insert(:flow)

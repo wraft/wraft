@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   }
 
   @invalid_attrs %{state: ""}
-  # FIXME need to fix this, profile pic related.
+  # FIXME Need to fix this, profile pic related.
   test "create states by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
     flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
@@ -32,7 +32,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     assert json_response(conn, 200)["state"] == @valid_attrs.state
   end
 
-  # FIXME need to fix this, profile pic related.
+  # FIXME Need to fix this, profile pic related.
   test "does not create states by invalid attrs", %{conn: conn} do
     user = conn.assigns[:current_user]
     flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
