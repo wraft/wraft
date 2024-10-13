@@ -3046,7 +3046,12 @@ defmodule WraftDoc.Document do
 
         Repo.preload(pipeline, [
           :creator,
-          stages: [[content_type: [{:fields, :field_type}]], :data_template, :state]
+          stages: [
+            [content_type: [{:fields, :field_type}]],
+            :data_template,
+            :state,
+            :form_mapping
+          ]
         ])
 
       {:error, _} = changeset ->

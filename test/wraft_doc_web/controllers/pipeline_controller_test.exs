@@ -16,18 +16,19 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   }
 
   describe "create/2" do
-    # FIXME need to fix this
     test "create pipeline by valid attrrs", %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations
       c_type = insert(:content_type, organisation: organisation)
       insert(:content_type_field, content_type: c_type)
       data_temp = insert(:data_template, content_type: c_type)
+      form = insert(:form, organisation: organisation, creator: user)
 
       params =
-        Map.put(@valid_attrs, :stages, [
-          %{content_type_id: c_type.id, data_template_id: data_temp.id}
-        ])
+        Map.merge(@valid_attrs, %{
+          stages: [%{content_type_id: c_type.id, data_template_id: data_temp.id}],
+          source_id: "#{form.id}"
+        })
 
       count_before = Pipeline |> Repo.all() |> length()
 
@@ -54,7 +55,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       assert json_response(conn, 200)["name"] == @valid_attrs.name
       assert json_response(conn, 200)["api_route"] == @valid_attrs.api_route
       assert json_response(conn, 200)["source"] == @valid_attrs.source
-      assert json_response(conn, 200)["source_id"] == @valid_attrs.source_id
+      assert json_response(conn, 200)["source_id"] == params.source_id
       assert content_types =~ c_type.name
       assert d_temps =~ data_temp.title
     end
@@ -94,7 +95,6 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   end
 
   describe "update/2" do
-    # FIXME need to fix this
     test "update pipeline on valid attributes", %{conn: conn} do
       user = conn.assigns[:current_user]
       [organisation] = user.owned_organisations
@@ -102,6 +102,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       insert(:pipe_stage, pipeline: pipeline)
       c_type = insert(:content_type, organisation: organisation)
       data_template = insert(:data_template, content_type: c_type)
+      insert(:pipe_stage, pipeline: pipeline, data_template: data_template, content_type: c_type)
 
       params =
         Map.put(@valid_attrs, :stages, [
@@ -152,7 +153,6 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   end
 
   describe "show/2" do
-    # FIXME need to fix this
     test "show renders pipeline details by id", %{conn: conn} do
       user = conn.assigns.current_user
       pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
@@ -161,13 +161,14 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
       pipe_stage = insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
       form_mapping = insert(:form_mapping, pipe_stage: pipe_stage)
       conn = get(conn, Routes.v1_pipeline_path(conn, :show, pipeline.id))
+
       assert json_response(conn, 200)["name"] == pipeline.name
       assert json_response(conn, 200)["api_route"] == pipeline.api_route
       assert json_response(conn, 200)["source"] == pipeline.source
       assert json_response(conn, 200)["source_id"] == pipeline.source_id
       assert json_response(conn, 200)["id"] == pipeline.id
 
-      assert List.first(List.first(json_response(conn, 200)["stages"])["form_mapping"])["id"] ==
+      assert List.first(json_response(conn, 200)["stages"])["form_mapping"]["id"] ==
                form_mapping.id
     end
 
