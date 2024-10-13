@@ -54,13 +54,16 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
       assert count_before - 1 == count_after
     end
 
-    # FIXME need to fix this
     test "error on attempting to delete superadmin role", %{conn: conn} do
-      role = Repo.get_by(Role, name: "superadmin")
+      user = conn.assigns.current_user
+      organisation = List.first(user.owned_organisations)
+      role = Repo.get_by(Role, name: "superadmin", organisation_id: organisation.id)
+
       count_before = Role |> Repo.all() |> length()
       conn = delete(conn, Routes.v1_role_path(conn, :delete, role.id))
       count_after = Role |> Repo.all() |> length()
-      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
       assert count_before == count_after
     end
   end
