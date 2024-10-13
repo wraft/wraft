@@ -51,7 +51,6 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
                "Your email-password combination doesn't match. Please try again.!"
     end
 
-    # FIXME Need to fix this
     test "returns error with non-existing email" do
       conn = build_conn()
 
@@ -65,7 +64,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
         )
 
       assert json_response(conn, 404)["errors"] ==
-               "Your email-password combination doesn't match. Please try again.!"
+               "No user with this email.!"
     end
 
     test "returns error when no password is given" do
@@ -142,12 +141,11 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       assert json_response(conn, 200)["info"] == "Approved"
     end
 
-    # FIXME Need to fix this
     test "returns error with invalid token" do
       conn = build_conn()
       insert(:auth_token, value: "_3_-_A==", token_type: "password_verify")
       conn = get(conn, Routes.v1_user_path(conn, :verify_token, "_3_-_A=="))
-      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
 
     test "returns error with expired token" do
@@ -202,7 +200,6 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       assert json_response(conn, 404) == "Not Found"
     end
 
-    # FIXME Need to fix this
     test "returns error with invalid token" do
       conn = build_conn()
       insert(:auth_token, value: "_3_-_A==", token_type: "password_verify")
@@ -210,7 +207,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn =
         post(conn, Routes.v1_user_path(conn, :reset, %{token: "_3_-_A==", password: "eeqeqe"}))
 
-      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
 
     test "returns error with expired token" do
@@ -351,12 +348,11 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       assert json_response(conn, 200)["verification_status"] == true
     end
 
-    # FIXME Need to fix this
     test "returns error with invalid token" do
       conn = build_conn()
       insert(:auth_token, value: "_3_-_A==", token_type: "email_verify")
       conn = get(conn, Routes.v1_user_path(conn, :verify_email_token, "_3_-_A=="))
-      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
 
     test "returns error with expired token" do
@@ -442,8 +438,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
                })
     end
 
-    # FIXME Need to fix this
-    test "renders response with 401 status code with ID of an organisation the user has NOT joined",
+    test "renders response with 403 status code with ID of an organisation the user has NOT joined",
          %{conn: conn} do
       %{id: organisation_id} = insert(:organisation)
 
@@ -453,7 +448,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
           Routes.v1_user_path(conn, :switch_organisation, %{organisation_id: organisation_id})
         )
 
-      assert %{"errors" => "You are not authorized for this action.!"} == json_response(conn, 401)
+      assert %{"errors" => "You are not authorized for this action.!"} == json_response(conn, 403)
     end
   end
 
