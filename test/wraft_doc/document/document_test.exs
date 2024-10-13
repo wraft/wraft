@@ -2903,7 +2903,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "insert_data_template_bulk_import_work/4" do
-    # FIXME need to fix this
+    # FIXME Need to fix this
     test "test creates bulk import data template backgroung job with valid attrs" do
       %{id: user_id} = insert(:user)
       %{id: c_type_id} = insert(:content_type)
@@ -2946,7 +2946,7 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  # FIXME need to fix this
+  # FIXME Need to fix this
   @tag :individual
   describe "insert_block_template_bulk_import_work/3" do
     test "test creates bulk import block template backgroung job with valid attrs" do
@@ -3718,7 +3718,7 @@ defmodule WraftDoc.DocumentTest do
       assert asset.file.file_name == params["file"].filename
     end
 
-    # FIXME need to fix this
+    # FIXME Need to fix this
     # TODO update with asset file rename
     test "only pdf files allowed for asset of layout type" do
       user = insert(:user_with_organisation)
@@ -3739,7 +3739,7 @@ defmodule WraftDoc.DocumentTest do
         Document.create_asset(user, params)
     end
 
-    # FIXME need to fix this
+    # FIXME Need to fix this
     test "only font files allowed for asset of theme type" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -4848,7 +4848,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "pipeline_update/3" do
-    # FIXME need to fix this, state id is removed check TODO at document:2938
+    # FIXME Need to fix this, state id is removed check TODO at document:2938
     test "updates pipeline with valid attrs" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations

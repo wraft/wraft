@@ -12,7 +12,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
   }
 
   describe "create" do
-    # FIXME need to fix this
+    # FIXME Need to fix this
     test "creates trigger history and pipeline run job with valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
 

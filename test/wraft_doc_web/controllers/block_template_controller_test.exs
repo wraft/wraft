@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
   }
 
   @invalid_attrs %{title: ""}
-  # FIXME need to fix this
+  # FIXME Need to fix this, profile pic related.
   test "create block_templates by valid attrrs", %{conn: conn} do
     count_before = BlockTemplate |> Repo.all() |> length()
 
@@ -36,7 +36,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
     assert count_before == BlockTemplate |> Repo.all() |> length()
   end
 
-  # FIXME need to fix this
+  # FIXME Need to fix this, profile pic related.
   test "update block_templates on valid attributes", %{conn: conn} do
     user = conn.assigns.current_user
 
@@ -68,7 +68,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
     assert json_response(conn, 422)["errors"]["title"] == ["can't be blank"]
   end
 
-  # FIXME need to fix this
+  # FIXME Need to fix this, profile pic related.
   test "index lists assests by current user", %{conn: conn} do
     user = conn.assigns.current_user
     [organisation] = user.owned_organisations
@@ -82,7 +82,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
     assert List.to_string(block_templates) =~ a2.title
   end
 
-  # FIXME need to fix this
+  # FIXME Need to fix this, profile pic related.
   test "show renders block_template details by id", %{conn: conn} do
     user = conn.assigns.current_user
 
@@ -99,7 +99,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
     assert json_response(conn, 400)["errors"] == "The BlockTemplate id does not exist..!"
   end
 
-  # FIXME need to fix this
+  # FIXME Need to fix this, profile pic related.
   test "delete block_template by given id", %{conn: conn} do
     user = conn.assigns.current_user
     block_template = insert(:block_template, organisation: List.first(user.owned_organisations))
@@ -110,7 +110,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateControllerTest do
     assert json_response(conn, 200)["title"] == block_template.title
   end
 
-  # FIXME need to fix this
+  # FIXME Need to fix this.
   test "test bulk import job creation for block template with valid attrs", %{conn: conn} do
     filename = Plug.Upload.random_file!("test")
     file = %Plug.Upload{filename: filename, path: filename}
