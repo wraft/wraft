@@ -5,7 +5,7 @@
 /pg
 
 # Ignore the environment variables file.
-/.dev.env
+/.env.dev
 
 # The directory Mix downloads your dependencies sources to.
 /deps
