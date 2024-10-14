@@ -47,7 +47,6 @@ defmodule WraftDoc.PipelineRunnerTest do
   end
 
   describe "create_instances/1" do
-    # FIXME Need to fix this may need to add serialized in factory
     test "creates instance and returns a map with created instance when trigger has a creator_id" do
       pipeline = insert(:pipeline)
       flow = insert(:flow)
@@ -55,10 +54,13 @@ defmodule WraftDoc.PipelineRunnerTest do
       insert(:state, flow: flow, order: 2)
       c_type1 = insert(:content_type, flow: flow)
       c_type2 = insert(:content_type, flow: flow)
-      insert(:pipe_stage, pipeline: pipeline, content_type: c_type1)
-      insert(:pipe_stage, pipeline: pipeline, content_type: c_type2)
+      pipe_stage1 = insert(:pipe_stage, pipeline: pipeline, content_type: c_type1)
+      pipe_stage2 = insert(:pipe_stage, pipeline: pipeline, content_type: c_type2)
       content_type_field_1 = insert(:content_type_field, content_type: c_type1)
       content_type_field_2 = insert(:content_type_field, content_type: c_type2)
+
+      insert(:form_mapping, pipe_stage: pipe_stage1)
+      insert(:form_mapping, pipe_stage: pipe_stage2)
 
       pipeline =
         Repo.preload(pipeline,
@@ -69,8 +71,8 @@ defmodule WraftDoc.PipelineRunnerTest do
         insert(:trigger_history,
           pipeline: pipeline,
           data: %{
-            "#{content_type_field_1.field.name}" => "John Doe",
-            "#{content_type_field_2.field.name}" => "John Doe Jr."
+            "#{content_type_field_1.field.id}" => "John Doe",
+            "#{content_type_field_2.field.id}" => "John Doe Jr."
           }
         )
 
@@ -87,7 +89,6 @@ defmodule WraftDoc.PipelineRunnerTest do
       assert response.user.id == trigger.creator.id
     end
 
-    # FIXME Need to fix this
     test "creates instance and returns a map with created instance when trigger does not have creator ID" do
       pipeline = insert(:pipeline)
       flow = insert(:flow)
@@ -95,10 +96,13 @@ defmodule WraftDoc.PipelineRunnerTest do
       insert(:state, flow: flow, order: 2)
       content_type1 = insert(:content_type, flow: flow)
       content_type2 = insert(:content_type, flow: flow)
-      insert(:pipe_stage, pipeline: pipeline, content_type: content_type1)
-      insert(:pipe_stage, pipeline: pipeline, content_type: content_type2)
+      pipe_stage1 = insert(:pipe_stage, pipeline: pipeline, content_type: content_type1)
+      pipe_stage2 = insert(:pipe_stage, pipeline: pipeline, content_type: content_type2)
       content_type_field_1 = insert(:content_type_field, content_type: content_type1)
       content_type_field_2 = insert(:content_type_field, content_type: content_type2)
+
+      insert(:form_mapping, pipe_stage: pipe_stage1)
+      insert(:form_mapping, pipe_stage: pipe_stage2)
 
       pipeline =
         Repo.preload(pipeline,
@@ -110,8 +114,8 @@ defmodule WraftDoc.PipelineRunnerTest do
           pipeline: pipeline,
           creator: nil,
           data: %{
-            "#{content_type_field_1.field.name}" => "John Doe",
-            "#{content_type_field_2.field.name}" => "John Doe Jr."
+            "#{content_type_field_1.field.id}" => "John Doe",
+            "#{content_type_field_2.field.id}" => "John Doe Jr."
           }
         )
 
