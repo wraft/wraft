@@ -126,9 +126,4 @@ defmodule WraftDocWeb.FallbackController do
     |> put_view(WraftDocWeb.ErrorView)
     |> render(:"404")
   end
-
-  def call(conn, {:error, reason}) do
-    body = Jason.encode!(%{errors: "Failed to retrieve or export template as #{reason}"})
-    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
-  end
 end

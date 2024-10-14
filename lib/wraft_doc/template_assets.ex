@@ -30,6 +30,7 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Create a template asset.
   """
+
   # TODO - write test
   @spec create_template_asset(User.t(), map()) ::
           {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
@@ -601,20 +602,21 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   def prepare_template(theme, layout, c_type, data_template, current_user) do
-    template_name = data_template.title
-
-    {:ok, folder_path} = create_template_folder(template_name)
-    create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user)
-    {:ok, zip_path} = zip_folder(folder_path, template_name)
-
-    File.rm_rf(folder_path)
-    {:ok, zip_path}
-  end
-
-  defp create_template_folder(template_name) do
-    folder_path = Path.join([template_name])
+    folder_path = data_template.title
     File.mkdir_p!(folder_path)
-    {:ok, folder_path}
+
+    case create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user) do
+      :ok ->
+        template_name = "#{data_template.title}.zip"
+        {:ok, zip_path} = zip_folder(folder_path, template_name)
+
+        File.rm_rf(folder_path)
+        {:ok, zip_path}
+
+      {:error, reason} ->
+        File.rm_rf(folder_path)
+        {:error, "Failed to prepare template: #{reason}"}
+    end
   end
 
   def create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user) do
@@ -635,7 +637,6 @@ defmodule WraftDoc.TemplateAssets do
     :zip.create(String.to_charlist(zip_path), [String.to_charlist(folder_path)])
     {:ok, zip_path}
   end
-
 
   def build_wraft_json(theme, layout, c_type, data_template, file_path, current_user) do
     %{
