@@ -5,22 +5,20 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Pipeline.Stage, Repo}
+  alias WraftDoc.Document.Pipeline.Stage
+  alias WraftDoc.Repo
 
   describe "create" do
-    # FIXME Need to fix this
     test "create pipe stage by valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations
       pipeline = insert(:pipeline, organisation: organisation)
       c_type = insert(:content_type, organisation: organisation)
       data_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: organisation)
 
       params = %{
         content_type_id: c_type.id,
-        data_template_id: data_temp.id,
-        state_id: state.id
+        data_template_id: data_temp.id
       }
 
       count_before = Stage |> Repo.all() |> length()
@@ -35,8 +33,6 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       assert json_response(conn, 200)["content_type"]["id"] == c_type.id
       assert json_response(conn, 200)["data_template"]["title"] == data_temp.title
       assert json_response(conn, 200)["data_template"]["id"] == data_temp.id
-      assert json_response(conn, 200)["state"]["state"] == state.state
-      assert json_response(conn, 200)["state"]["id"] == state.id
     end
 
     test "does not create pipe stage and returns not found with non existent datas in attrs", %{
@@ -44,8 +40,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
     } do
       params = %{
         content_type_id: Ecto.UUID.generate(),
-        data_template_id: Ecto.UUID.generate(),
-        state_id: Ecto.UUID.generate()
+        data_template_id: Ecto.UUID.generate()
       }
 
       count_before = Stage |> Repo.all() |> length()
@@ -65,12 +60,10 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       c_type = insert(:content_type)
       d_temp = insert(:data_template)
-      state = insert(:state)
 
       params = %{
         content_type_id: c_type.id,
-        data_template_id: d_temp.id,
-        state_id: state.id
+        data_template_id: d_temp.id
       }
 
       count_before = Stage |> Repo.all() |> length()
@@ -87,7 +80,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
     test "does not create pipe stage and returns not found with invalid datas", %{conn: conn} do
       user = conn.assigns.current_user
       pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
-      params = %{content_type_id: 3, data_template_id: 2, state_id: 1}
+      params = %{content_type_id: 3, data_template_id: 2}
 
       count_before = Stage |> Repo.all() |> length()
 
@@ -100,27 +93,23 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       assert json_response(conn, 404) == "Not Found"
     end
 
-    # FIXME Need to fix this
-    test "does not create pipe stage and returns error when content type and pipeline ID are same as a previously created stage",
+    test "does not create pipe stage and returns error when data template and pipeline ID are same as a previously created stage",
          %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations
       pipeline = insert(:pipeline, organisation: organisation)
       c_type = insert(:content_type, organisation: organisation)
       d_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: organisation)
 
       insert(:pipe_stage,
         pipeline: pipeline,
         content_type: c_type,
-        data_template: d_temp,
-        state: state
+        data_template: d_temp
       )
 
       params = %{
         content_type_id: c_type.id,
-        data_template_id: d_temp.id,
-        state_id: state.id
+        data_template_id: d_temp.id
       }
 
       count_before = Stage |> Repo.all() |> length()
@@ -131,7 +120,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
         |> doc(operation_id: "create_pipe_stage")
 
       assert count_before == Stage |> Repo.all() |> length()
-      assert json_response(conn, 422)["errors"]["content_type_id"] == ["Already added.!"]
+      assert json_response(conn, 422)["errors"]["data_template_id"] == ["Already added.!"]
     end
   end
 
@@ -168,8 +157,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
     } do
       params = %{
         content_type_id: Ecto.UUID.generate(),
-        data_template_id: Ecto.UUID.generate(),
-        state_id: Ecto.UUID.generate()
+        data_template_id: Ecto.UUID.generate()
       }
 
       count_before = Stage |> Repo.all() |> length()
@@ -190,12 +178,10 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       stage = insert(:pipe_stage, pipeline: pipeline)
       c_type = insert(:content_type)
       d_temp = insert(:data_template)
-      state = insert(:state)
 
       params = %{
         content_type_id: c_type.id,
-        data_template_id: d_temp.id,
-        state_id: state.id
+        data_template_id: d_temp.id
       }
 
       count_before = Stage |> Repo.all() |> length()
@@ -213,7 +199,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       user = conn.assigns.current_user
       pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       stage = insert(:pipe_stage, pipeline: pipeline)
-      params = %{content_type_id: 3, data_template_id: 2, state_id: 1}
+      params = %{content_type_id: 3, data_template_id: 2}
 
       count_before = Stage |> Repo.all() |> length()
 
@@ -226,29 +212,25 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
       assert json_response(conn, 404) == "Not Found"
     end
 
-    # FIXME Need to fix this
-    test "does not update pipe stage and returns error when content type and pipeline ID are same as a previously created stage",
+    test "does not update pipe stage and returns error when data template and pipeline ID are same as a previously created stage",
          %{conn: conn} do
       user = conn.assigns.current_user
       [organisation] = user.owned_organisations
       pipeline = insert(:pipeline, organisation: organisation)
       c_type = insert(:content_type, organisation: organisation)
       d_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: organisation)
 
       insert(:pipe_stage,
         pipeline: pipeline,
         content_type: c_type,
-        data_template: d_temp,
-        state: state
+        data_template: d_temp
       )
 
       stage = insert(:pipe_stage, pipeline: pipeline)
 
       params = %{
         content_type_id: c_type.id,
-        data_template_id: d_temp.id,
-        state_id: state.id
+        data_template_id: d_temp.id
       }
 
       count_before = Stage |> Repo.all() |> length()
@@ -259,7 +241,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
         |> doc(operation_id: "update_pipe_stage")
 
       assert count_before == Stage |> Repo.all() |> length()
-      assert json_response(conn, 422)["errors"]["content_type_id"] == ["Already added.!"]
+      assert json_response(conn, 422)["errors"]["data_template_id"] == ["Already added.!"]
     end
   end
 
