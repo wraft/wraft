@@ -361,9 +361,6 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
          {:ok, zip_path} <-
            TemplateAssets.prepare_template(theme, layout, c_type, data_template, current_user) do
       send_download(conn, {:file, zip_path}, filename: "#{data_template.title}.zip")
-    else
-      nil -> {:error, nil}
-      {:error, reason} -> {:error, reason}
     end
   end
 end

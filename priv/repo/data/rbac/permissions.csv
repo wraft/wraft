@@ -94,5 +94,5 @@ form_mapping:show,Form Mapping,Show
 template_asset:manage,TemplateAsset,Manage
 template_asset:delete,TemplateAsset,Delete
 template_asset:template_import,TemplateAsset,Manage
-template_asset_export,TemplateAsset, Manage
+template_asset:template_export,TemplateAsset, Manage
 dashboard:show,DashBoard,Show

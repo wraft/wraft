@@ -672,16 +672,12 @@ defmodule WraftDoc.TemplateAssets do
 
   defp build_layout(layout, file_path, current_user) do
     layout = Repo.preload(layout, :assets)
+    [asset | _] = layout.assets
 
     %{
       "name" => layout.name,
       "slug" => make_slug(layout.slug, file_path),
-      "slug_file" =>
-        List.first(
-          Enum.map(layout.assets, fn asset ->
-            download_file(asset.id, current_user, file_path, "pdf", "layout")
-          end)
-        ),
+      "slug_file" => download_file(asset.id, current_user, file_path, "pdf", "layout"),
       "meta" => "fields",
       "description" => layout.description,
       "engine" => "pandoc/latex"
