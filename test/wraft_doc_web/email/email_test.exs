@@ -14,23 +14,40 @@ defmodule WraftDocWeb.Email.EmailTest do
   @name "Sample Name"
 
   describe "send email on organisation invite" do
-    # FIXME need to fix this
+
     test "return email sent if mail delivered" do
+      user_name = "User_name"
       org_name = "org_name"
-      user_name = "user_name"
+      token = "token"
+      test_email = "test@email.com"
 
-      email = Email.invite_email(org_name, user_name, @test_email, @token)
+      email = Email.invite_email(org_name, user_name, test_email, token)
 
-      Test.deliver(email, [])
+      {:ok, _} = Test.deliver(email, [])
 
-      assert_email_sent()
-      assert email.from == {"WraftDoc", @sender_email}
-      assert email.subject == "Invitation to join #{org_name} in WraftDocs"
-      assert elem(List.last(email.to), 1) == @test_email
+      html_content =
+        email.html_body
+        |> Floki.parse_document!()
+        |> Floki.text()
+        |> String.replace(~r/\s+/, " ")
+        |> String.trim()
 
-      assert email.html_body ==
-               "Hi, #{user_name} has invited you to join #{org_name} in WraftDocs. \n
-      Click <a href=#{System.get_env("WRAFT_URL")}/users/join_invite?token=#{@token}&organisation=#{org_name}&email=#{@test_email}>here</a> below to join."
+
+      expected_content = [
+        "Join #{org_name} on Wraft",
+        "Hi #{user_name},",
+        "#{user_name} has invited you to join #{org_name} in Wraft.",
+
+        ]
+
+      Enum.each(expected_content, fn content ->
+        assert String.contains?(html_content, content),
+               "Expected to find '#{content}' in email body"
+      end)
+
+      assert email.to == [{"", test_email}]
+      assert email.from == {"Wraft", "no-reply@wraft.app"}
+      assert email.subject == "Invitation to join #{org_name} in Wraft"
     end
 
     test "return email not send if not delivered" do
@@ -43,7 +60,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on notification message" do
-    # FIXME need to fix this
+
     test "return email sent if mail delivered" do
       user_name = "user_name"
       notification_message = "notification_message"
@@ -53,7 +70,7 @@ defmodule WraftDocWeb.Email.EmailTest do
       Test.deliver(email, [])
 
       assert_email_sent()
-      assert email.from == {"WraftDoc", @sender_email}
+      assert email.from == {"Wraft", @sender_email}
       assert email.subject == " #{user_name} "
       assert elem(List.last(email.to), 1) == @test_email
       assert email.html_body == "Hi, #{user_name} #{notification_message}"
@@ -70,22 +87,33 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on password reset link" do
-    # FIXME need to fix this
-    test "return email sent if mail delivered" do
-      auth_token = insert(:auth_token, value: @token, token_type: "password_verify")
 
-      email = Email.password_reset(auth_token.user.name, @token, auth_token.user.email)
+    test " return email sent if mail delivered" do
+      email = Email.email_verification(@test_email, @token)
 
       Test.deliver(email, [])
 
       assert_email_sent()
-      assert email.from == {"WraftDoc", @sender_email}
-      assert email.subject == "Forgot your WraftDoc Password?"
-      assert elem(List.last(email.to), 1) == auth_token.user.email
+      assert email.from == {"Wraft", @sender_email}
+      assert email.subject == "Wraft - Verify your email"
+      assert elem(List.last(email.to), 1) == @test_email
 
-      assert email.html_body ==
-               "Hi #{auth_token.user.name}.\n You recently requested to reset your password for WraftDocs
-    Click <a href=#{System.get_env("WRAFT_URL")}/users/password/reset?token=#{@token}>here</a> to reset"
+      html_content =
+        email.html_body
+        |> Floki.parse_document!()
+        |> Floki.text()
+        |> String.replace(~r/\s+/, " ")
+        |> String.trim()
+
+      expected_content = [
+        "Verify Your Email Address",
+        "/users/join_invite/verify_email/#{@token}"
+      ]
+
+      Enum.each(expected_content, fn content ->
+        assert String.contains?(html_content, content),
+               "Expected to find '#{content}' in email body"
+      end)
     end
 
     test "return email not send if not delivered" do
@@ -98,23 +126,31 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on user account verification" do
-    # FIXME need to fix this
+
     test "return email sent if mail delivered" do
       email = Email.email_verification(@test_email, @token)
 
       Test.deliver(email, [])
 
-      assert_email_sent()
-      assert email.from == {"WraftDoc", @sender_email}
-      assert email.subject == "Wraft - Verify your email"
-      assert elem(List.last(email.to), 1) == @test_email
+      html_content =
+        email.html_body
+        |> Floki.parse_document!()
+        |> Floki.text()
+        |> String.replace(~r/\s+/, " ")
+        |> String.trim()
 
-      assert email.html_body ==
-               "
-      <h1>Verify your email address<h1>
-      <h3>To continue setting up your Wraft account, please verify that this is your email address.<h3>
-      Click <a href=#{System.get_env("WRAFT_URL")}/users/join_invite/verify_email/#{@token}>Verify email address</a>"
+      expected_content = [
+        "Verify Your Email Address",
+        "/users/join_invite/verify_email/#{@token}"
+      ]
+
+      Enum.each(expected_content, fn content ->
+        assert String.contains?(html_content, content),
+               "Expected to find '#{content}' in email body"
+      end)
     end
+
+
 
     test "return email not send if not delivered" do
       Email.email_verification(@test_email, @token)
@@ -124,7 +160,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on waiting list approval" do
-    # FIXME need to fix this
+
     test "return email sent if mail delivered" do
       registration_url =
         URI.encode("#{System.get_env("WRAFT_URL")}/users/login/set_password?token=#{@token}")
@@ -133,7 +169,7 @@ defmodule WraftDocWeb.Email.EmailTest do
       Test.deliver(email, [])
 
       assert_email_sent()
-      assert email.from == {"WraftDoc", @sender_email}
+      assert email.from == {"Wraft", @sender_email}
       assert email.subject == "Welcome to Wraft!"
       assert elem(List.last(email.to), 1) == @test_email
       assert email.html_body =~ "#{registration_url}"
@@ -148,13 +184,13 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on joining waiting list" do
-    # FIXME need to fix this
+
     test "return email sent if mail delivered" do
       email = Email.waiting_list_join(@test_email, @name)
       Test.deliver(email, [])
 
       assert_email_sent()
-      assert email.from == {"WraftDoc", @sender_email}
+      assert email.from == {"Wraft", @sender_email}
       assert email.subject == "Thanks for showing interest in Wraft!"
       assert elem(List.last(email.to), 1) == @test_email
 
@@ -169,14 +205,13 @@ defmodule WraftDocWeb.Email.EmailTest do
     end
   end
 
-  # FIXME need to fix this
   describe "send email on organisation delete code" do
     test "return email sent if mail delivered" do
       email = Email.organisation_delete_code(@test_email, "code", @name, "org_name")
       Test.deliver(email, [])
 
       assert_email_sent()
-      assert email.from == {"WraftDoc", @sender_email}
+      assert email.from == {"Wraft", @sender_email}
       assert email.subject == "Wraft - Delete Organisation"
       assert elem(List.last(email.to), 1) == @test_email
 

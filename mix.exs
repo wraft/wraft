@@ -103,6 +103,7 @@ defmodule WraftDoc.Mixfile do
       {:excoveralls, "~> 0.15.0", only: :test},
       {:faker, "~> 0.17"},
       {:mox, "~> 1.0"},
+      {:floki, "~> 0.36.0"},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
       # Pagination
       {:scrivener_ecto, "~> 2.7.0"},
