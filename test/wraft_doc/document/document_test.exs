@@ -3718,8 +3718,6 @@ defmodule WraftDoc.DocumentTest do
       assert asset.file.file_name == params["file"].filename
     end
 
-    # FIXME Need to fix this
-    # TODO update with asset file rename
     test "only pdf files allowed for asset of layout type" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
@@ -3739,15 +3737,14 @@ defmodule WraftDoc.DocumentTest do
         Document.create_asset(user, params)
     end
 
-    # FIXME Need to fix this
     test "only font files allowed for asset of theme type" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
 
       uploader = %Plug.Upload{
         content_type: "font/ttf",
-        filename: "roboto.ttf",
-        path: "test/helper/roboto.ttf"
+        filename: "Roboto-Regular.ttf",
+        path: "priv/wraft_files/Roboto/Roboto-Regular.ttf"
       }
 
       params =

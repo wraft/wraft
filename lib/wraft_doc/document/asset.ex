@@ -40,9 +40,15 @@ defmodule WraftDoc.Document.Asset do
 
   # Rename spaces to hyphens in the file name
   defp format_naming(changeset) do
-    changeset
-    |> get_change(:file)
-    |> Map.update!(:file_name, &String.replace(&1, ~r/\s+/, "-"))
-    |> (&put_change(changeset, :file, &1)).()
+    case changeset do
+      %Ecto.Changeset{valid?: false} ->
+        changeset
+
+      _ ->
+        changeset
+        |> get_change(:file)
+        |> Map.update!(:file_name, &String.replace(&1, ~r/\s+/, "-"))
+        |> (&put_change(changeset, :file, &1)).()
+    end
   end
 end

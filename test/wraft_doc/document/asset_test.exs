@@ -75,7 +75,6 @@ defmodule WraftDoc.Document.AssetTest do
       assert changeset.valid?
     end
 
-    # FIXME Need to fix this issues with format naming
     test "returns invalid changeset with invalid data", %{asset: asset} do
       changeset = Asset.file_changeset(asset, @invalid_attrs)
       refute changeset.valid?
@@ -97,7 +96,6 @@ defmodule WraftDoc.Document.AssetTest do
       end
     end
 
-    # FIXME Need to fix this
     test "returns error for invalid theme file type" do
       theme_file = %Plug.Upload{
         filename: "letterhead.pdf",
@@ -111,7 +109,6 @@ defmodule WraftDoc.Document.AssetTest do
       assert "invalid file type" in errors_on(changeset, :file)
     end
 
-    # FIXME Need to fix this
     test "returns error for invalid format for theme file name" do
       theme_file = %Plug.Upload{
         filename: "roboto.ttf",
