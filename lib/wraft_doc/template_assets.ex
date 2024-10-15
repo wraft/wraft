@@ -269,14 +269,14 @@ defmodule WraftDoc.TemplateAssets do
       max_concurrency: 4
     )
     |> Enum.reduce("", fn
-      {:ok, asset_id}, "" ->
+      {:ok, <<_::288>> = asset_id}, "" ->
         "#{asset_id}"
+
+      {:ok, <<_::288>> = asset_id}, acc ->
+        "#{acc},#{asset_id}"
 
       {:ok, {:error, _reason}}, acc ->
         acc
-
-      {:ok, asset_id}, acc ->
-        "#{acc},#{asset_id}"
 
       {:exit, reason}, acc ->
         Logger.error("Saving font failed with reason: #{inspect(reason)}")

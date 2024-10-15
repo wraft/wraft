@@ -127,9 +127,10 @@ defmodule WraftDoc.Client.Minio do
   end
 
   def get_object(file_path) do
-    bucket = bucket()
-
-    case bucket |> S3.get_object(file_path) |> @ex_aws_module.request() do
+    bucket()
+    |> S3.get_object(file_path)
+    |> @ex_aws_module.request()
+    |> case do
       {:ok, %{body: binary}} ->
         binary
 
