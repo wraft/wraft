@@ -3153,7 +3153,7 @@ defmodule WraftDoc.DocumentTest do
                  }
                )
 
-      # HACK need to check the lines below just commented for now
+      # HACK Theme preview currently not in use, just commented for now
       # dir = "uploads/theme/theme_preview/#{theme.id}"
       # assert {:ok, ls} = File.ls(dir)
       # assert File.exists?(dir)
@@ -4364,14 +4364,12 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "create_pipe_stage/3" do
-    # TODO need to check about state when creating pipe stage
     test "creates pipe stage with valid attrs" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
       pipeline = insert(:pipeline, organisation: organisation)
       c_type = insert(:content_type, organisation: organisation)
       d_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: organisation)
 
       attrs = %{
         "content_type_id" => c_type.id,
@@ -4393,8 +4391,6 @@ defmodule WraftDoc.DocumentTest do
       assert count_before + 1 == count_after
       assert stage.content_type_id == c_type.id
       assert stage.data_template_id == d_temp.id
-      # HACK when creating there is no such state is added to stage, for now just commented
-      # assert stage.state_id == state.id
       assert stage.pipeline_id == pipeline.id
       assert stage.creator_id == user.id
     end
@@ -4848,14 +4844,12 @@ defmodule WraftDoc.DocumentTest do
   end
 
   describe "pipeline_update/3" do
-    # FIXME Need to fix this, state id is removed check TODO at document:2938
     test "updates pipeline with valid attrs" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
       pipeline = insert(:pipeline)
       c_type = insert(:content_type, organisation: organisation)
       d_temp = insert(:data_template, content_type: c_type)
-      state = insert(:state, organisation: organisation)
 
       attrs = %{
         "name" => "pipeline",
@@ -4874,8 +4868,6 @@ defmodule WraftDoc.DocumentTest do
       assert pipeline.api_route == "www.crm.com"
       assert stage.content_type.name == c_type.name
       assert stage.data_template.title == d_temp.title
-      # HACK commented for now
-      # assert stage.state.state == state.state
     end
 
     test "returns error with invalid attrs" do
