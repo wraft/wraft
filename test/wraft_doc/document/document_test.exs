@@ -3718,6 +3718,26 @@ defmodule WraftDoc.DocumentTest do
       assert asset.file.file_name == params["file"].filename
     end
 
+    test "create asset with name formatting with valid data" do
+      user = insert(:user_with_organisation)
+      [organisation] = user.owned_organisations
+
+      params =
+        Map.merge(@valid_asset_attrs, %{
+          "file" => %Plug.Upload{
+            filename: "wraft invoice.pdf",
+            content_type: "application/pdf",
+            path: "test/helper/wraft invoice.pdf"
+          }
+        })
+
+      {:ok, asset} = Document.create_asset(user, params)
+
+      assert asset.id
+      assert asset.name == params["name"]
+      assert asset.file.file_name == "wraft-invoice.pdf"
+    end
+
     test "only pdf files allowed for asset of layout type" do
       user = insert(:user_with_organisation)
       [organisation] = user.owned_organisations
