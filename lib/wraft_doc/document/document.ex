@@ -1308,6 +1308,12 @@ defmodule WraftDoc.Document do
 
   defp instance_updated?(_old_instance, _new_instance), do: true
 
+  defp instance_updated?(new_instance) do
+    new_instance
+    |> get_last_version()
+    |> instance_updated?(new_instance)
+  end
+
   @doc """
   Update instance's state if the flow IDs of both
   the new state and the instance's content type are same.
@@ -1788,9 +1794,13 @@ defmodule WraftDoc.Document do
     # Generate QR code for the file
     task = Task.async(fn -> generate_qr(instance, base_content_dir) end)
 
+    instance_updated? = instance_updated?(instance)
     # Move old builds to the history folder
     current_instance_file = versioned_file_name(versions, instance_id, :current)
-    Task.start(fn -> move_old_builds(instance_dir_path, current_instance_file) end)
+
+    Task.start(fn ->
+      move_old_builds(instance_dir_path, current_instance_file, instance_updated?)
+    end)
 
     theme = get_theme_details(theme, base_content_dir)
 
@@ -1811,14 +1821,33 @@ defmodule WraftDoc.Document do
 
     File.write("#{base_content_dir}/content.md", content)
 
-    next_instance_file = versioned_file_name(versions, instance_id, :next)
-    pdf_file = Path.join(instance_dir_path, next_instance_file)
+    pdf_file = pdf_file_path(instance, instance_dir_path, instance_updated?)
 
     pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir)
 
     "pandoc"
     |> System.cmd(pandoc_commands, stderr_to_stdout: true)
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
+  end
+
+  defp pdf_file_path(
+         %Instance{instance_id: instance_id, versions: versions},
+         instance_dir_path,
+         true
+       ) do
+    versions
+    |> versioned_file_name(instance_id, :next)
+    |> then(&Path.join(instance_dir_path, &1))
+  end
+
+  defp pdf_file_path(
+         %Instance{instance_id: instance_id, versions: versions},
+         instance_dir_path,
+         false
+       ) do
+    versions
+    |> versioned_file_name(instance_id, :current)
+    |> then(&Path.join(instance_dir_path, &1))
   end
 
   defp versioned_file_name([], _instance_id, :current), do: nil
@@ -1999,12 +2028,15 @@ defmodule WraftDoc.Document do
   end
 
   # Move old builds to the history folder
-  @spec move_old_builds(String.t(), String.t()) :: {:ok, non_neg_integer()}
-  defp move_old_builds(instance_dir_path, file_name) do
-    history_file = Path.join(instance_dir_path <> "history/", file_name)
+  @spec move_old_builds(String.t(), String.t(), boolean()) :: {:ok, non_neg_integer()}
+  defp move_old_builds(instance_dir_path, file_name, true) do
+    history_file = Path.join(instance_dir_path <> "/history", file_name)
     old_file = Path.join(instance_dir_path, file_name)
     Minio.copy_files(history_file, old_file)
+    Minio.delete_file(old_file)
   end
+
+  defp move_old_builds(_, _, false), do: nil
 
   @doc """
   Insert the build history of the given instance.
