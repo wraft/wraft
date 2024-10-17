@@ -192,6 +192,15 @@ $else$
 \fi
 $endif$
 
+% Set the PDF metadata
+\usepackage{hyperref}
+\newcommand{\DocumentInstanceTitle}{$title$}
+\newcommand{\pdfAuthor}{$organisation_name$}
+\hypersetup{
+  pdftitle={\DocumentInstanceTitle},
+  pdfauthor={\pdfAuthor}
+}
+
 % set default figure placement to htbp
 \makeatletter
 \def\fps@figure{htbp}
