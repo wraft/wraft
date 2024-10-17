@@ -180,7 +180,7 @@ defmodule WraftDoc.PipelineRunner do
 
     builds =
       instances
-      |> Stream.map(fn x -> x |> Document.get_built_document(local: true) |> Map.get(:build) end)
+      |> Stream.map(fn x -> x |> Document.get_built_document() |> Map.get(:build) end)
       |> Stream.filter(fn x -> x != nil end)
       |> Enum.map(&String.to_charlist/1)
 
