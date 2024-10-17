@@ -1166,14 +1166,14 @@ defmodule WraftDoc.Document do
   Get the build document of the given instance.
   """
   # TODO - improve tests
-  @spec get_built_document(Instance.t(), list()) :: Instance.t() | nil
+  @spec get_built_document(Instance.t()) :: Instance.t() | nil
   def get_built_document(
         %{
           id: id,
           instance_id: instance_id,
-          content_type: %ContentType{organisation_id: org_id}
-        } = instance,
-        opts \\ []
+          content_type: %ContentType{organisation_id: org_id},
+          versions: versions
+        } = instance
       ) do
     query =
       from(h in History,
@@ -1190,12 +1190,12 @@ defmodule WraftDoc.Document do
         instance
 
       %History{} ->
-        doc_url =
-          if opts[:local] == true do
-            "uploads/organisations/#{org_id}/contents/#{instance_id}/final.pdf"
-          else
-            Minio.generate_url("organisations/#{org_id}/contents/#{instance_id}/final.pdf")
-          end
+        instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
+
+        file_path =
+          Path.join(instance_dir_path, versioned_file_name(versions, instance_id, :current))
+
+        doc_url = Minio.generate_url(file_path)
 
         Map.put(instance, :build, doc_url)
     end
@@ -1768,11 +1768,13 @@ defmodule WraftDoc.Document do
   # TODO - Dont need to pass layout as an argument, we can just preload it
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(
-        %Instance{instance_id: instance_id, content_type: content_type} = instance,
+        %Instance{instance_id: instance_id, content_type: content_type, versions: versions} =
+          instance,
         %Layout{slug: slug, organisation_id: org_id} = layout
       ) do
     content_type = Repo.preload(content_type, [:fields, :theme])
-    base_content_dir = Path.join(File.cwd!(), "organisations/#{org_id}/contents/#{instance_id}")
+    instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
+    base_content_dir = Path.join(File.cwd!(), instance_dir_path)
     File.mkdir_p(base_content_dir)
 
     # Load all the assets corresponding with the given theme
@@ -1787,7 +1789,8 @@ defmodule WraftDoc.Document do
     task = Task.async(fn -> generate_qr(instance, base_content_dir) end)
 
     # Move old builds to the history folder
-    Task.start(fn -> move_old_builds(instance_id, org_id) end)
+    current_instance_file = versioned_file_name(versions, instance_id, :current)
+    Task.start(fn -> move_old_builds(instance_dir_path, current_instance_file) end)
 
     theme = get_theme_details(theme, base_content_dir)
 
@@ -1808,8 +1811,8 @@ defmodule WraftDoc.Document do
 
     File.write("#{base_content_dir}/content.md", content)
 
-    file_path = "organisations/#{org_id}/contents/#{instance_id}"
-    pdf_file = concat_strings(file_path, "/final.pdf")
+    next_instance_file = versioned_file_name(versions, instance_id, :next)
+    pdf_file = Path.join(instance_dir_path, next_instance_file)
 
     pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir)
 
@@ -1817,6 +1820,17 @@ defmodule WraftDoc.Document do
     |> System.cmd(pandoc_commands, stderr_to_stdout: true)
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
   end
+
+  defp versioned_file_name([], _instance_id, :current), do: nil
+  defp versioned_file_name([_ | []], instance_id, :current), do: instance_id <> ".pdf"
+
+  defp versioned_file_name(versions, instance_id, :current),
+    do: instance_id <> "-v" <> to_string(length(versions) - 1) <> ".pdf"
+
+  defp versioned_file_name([], instance_id, :next), do: instance_id <> ".pdf"
+
+  defp versioned_file_name(versions, instance_id, :next),
+    do: instance_id <> "-v" <> to_string(length(versions)) <> ".pdf"
 
   defp prepare_markdown(
          %{id: instance_id, creator: %User{name: name, email: email}} = instance,
@@ -1985,29 +1999,10 @@ defmodule WraftDoc.Document do
   end
 
   # Move old builds to the history folder
-  @spec move_old_builds(String.t(), Ecto.UUID.t()) :: {:ok, non_neg_integer()}
-  defp move_old_builds(instance_id, org_id) do
-    path = "organisations/#{org_id}/contents/#{instance_id}/"
-    history_path = concat_strings(path, "history/")
-    old_file = concat_strings(path, "final.pdf")
-
-    history_file =
-      history_path
-      |> Minio.list_files()
-      |> List.first()
-      |> case do
-        nil ->
-          concat_strings(history_path, "final-v1.pdf")
-
-        object ->
-          ["final-v" <> version, ""] =
-            object |> String.split("/") |> List.last() |> String.split(".pdf")
-
-          version = version |> String.to_integer() |> add(1)
-
-          concat_strings(history_path, "final-v#{version}.pdf")
-      end
-
+  @spec move_old_builds(String.t(), String.t()) :: {:ok, non_neg_integer()}
+  defp move_old_builds(instance_dir_path, file_name) do
+    history_file = Path.join(instance_dir_path <> "history/", file_name)
+    old_file = Path.join(instance_dir_path, file_name)
     Minio.copy_files(history_file, old_file)
   end
 
@@ -3851,14 +3846,23 @@ defmodule WraftDoc.Document do
   """
   @spec send_document_email(Instance.t(), map()) :: {:ok, any()} | {:error, any()}
   def send_document_email(
-        %{instance_id: instance_id, content_type: %{organisation_id: org_id}} = _instance,
+        %{instance_id: instance_id, content_type: %{organisation_id: org_id}, versions: versions} =
+          _instance,
         %{"email" => email, "subject" => subject, "message" => message} = params
       ) do
-    document_pdf_binary =
-      Minio.download("organisations/#{org_id}/contents/#{instance_id}/final.pdf")
+    instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
+    instance_file_name = versioned_file_name(versions, instance_id, :current)
+    file_path = Path.join(instance_dir_path, instance_file_name)
+    document_pdf_binary = Minio.download(file_path)
 
     email
-    |> Email.document_instance_mail(subject, message, params["cc"], document_pdf_binary)
+    |> Email.document_instance_mail(
+      subject,
+      message,
+      params["cc"],
+      document_pdf_binary,
+      instance_file_name
+    )
     |> Mailer.deliver()
   end
 end
