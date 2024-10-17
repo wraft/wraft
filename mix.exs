@@ -126,6 +126,11 @@ defmodule WraftDoc.Mixfile do
       {:opus, "~> 0.8.3"},
       # PDF generation using wkhtmltopdf
       {:pdf_generator, "~> 0.6.2"},
+      # zip file
+      {:unzip, "~> 0.11"},
+
+      # Create and cleanup Tempfile
+      {:briefly, "~> 0.5.0"},
 
       # For admin pannel
       {:kaffy, "~> 0.10.0"},

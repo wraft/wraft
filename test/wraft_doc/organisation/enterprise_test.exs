@@ -50,7 +50,7 @@ defmodule WraftDoc.EnterpriseTest do
 
     count_before = Flow |> Repo.all() |> length()
     state_count_before = State |> Repo.all() |> length()
-    flow = Enterprise.create_flow(user, params)
+    {:ok, flow} = Enterprise.create_flow(user, params)
     count_after = Flow |> Repo.all() |> length()
     state_count_after = State |> Repo.all() |> length()
     assert flow.name == params["name"]
@@ -68,7 +68,7 @@ defmodule WraftDoc.EnterpriseTest do
 
     count_before = Flow |> Repo.all() |> length()
     state_count_before = State |> Repo.all() |> length()
-    flow = Enterprise.create_flow(user, params)
+    {:ok, flow} = Enterprise.create_flow(user, params)
     count_after = Flow |> Repo.all() |> length()
     state_count_after = State |> Repo.all() |> length()
     assert flow.name == params["name"]

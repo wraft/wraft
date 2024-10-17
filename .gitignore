@@ -22,6 +22,8 @@
 /uploads
 /organisations
 /temp
+/users
+/organisations
 /priv/static/swagger.json
 
 # Ignore assets that are produced by build tools.

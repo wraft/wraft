@@ -3,11 +3,12 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
   alias __MODULE__
   alias WraftDocWeb.Api.V1.UserView
 
-  def render("template_asset.json", %{template_asset: template_asset}) do
+  def render("template_asset.json", %{template_asset: template_asset, file_entries: file_entries}) do
     %{
       id: template_asset.id,
       name: template_asset.name,
       file: generate_url(template_asset),
+      file_entries: file_entries,
       inserted_at: template_asset.inserted_at,
       updated_at: template_asset.updated_at
     }
@@ -35,6 +36,18 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
       template_asset:
         render_one(template_asset, TemplateAssetView, "template_asset.json", as: :template_asset),
       creator: render_one(template_asset.creator, UserView, "user.json", as: :user)
+    }
+  end
+
+  def render("show_template.json", %{template: template}) do
+    %{
+      id: template.id,
+      title: template.title,
+      title_template: template.title_template,
+      data: template.data,
+      serialized: template.serialized,
+      inserted_at: template.inserted_at,
+      updated_at: template.updated_at
     }
   end
 

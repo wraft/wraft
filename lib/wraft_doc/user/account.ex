@@ -137,11 +137,10 @@ defmodule WraftDoc.Account do
                                      user: user,
                                      personal_organisation: %{organisation: organisation}
                                    } ->
-      {:ok,
-       Enterprise.create_flow(Map.put(user, :current_org_id, organisation.id), %{
-         "name" => "Wraft Flow",
-         "organisation_id" => organisation.id
-       })}
+      Enterprise.create_flow(Map.put(user, :current_org_id, organisation.id), %{
+        "name" => "Wraft Flow",
+        "organisation_id" => organisation.id
+      })
     end)
   end
 

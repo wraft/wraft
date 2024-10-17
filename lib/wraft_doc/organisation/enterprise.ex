@@ -120,7 +120,8 @@ defmodule WraftDoc.Enterprise do
     |> case do
       {:ok, flow} ->
         Task.start_link(fn -> create_default_states(current_user, flow, true) end)
-        Repo.preload(flow, :creator)
+        flow = Repo.preload(flow, :creator)
+        {:ok, flow}
 
       {:error, _} = changeset ->
         changeset
@@ -140,7 +141,8 @@ defmodule WraftDoc.Enterprise do
           create_default_states(current_user, flow)
         end)
 
-        Repo.preload(flow, :creator)
+        flow = Repo.preload(flow, :creator)
+        {:ok, flow}
 
       {:error, _} = changeset ->
         changeset
