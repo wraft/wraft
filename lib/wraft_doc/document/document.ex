@@ -1850,16 +1850,11 @@ defmodule WraftDoc.Document do
     |> then(&Path.join(instance_dir_path, &1))
   end
 
-  defp versioned_file_name([], _instance_id, :current), do: nil
-  defp versioned_file_name([_ | []], instance_id, :current), do: instance_id <> ".pdf"
-
   defp versioned_file_name(versions, instance_id, :current),
-    do: instance_id <> "-v" <> to_string(length(versions) - 1) <> ".pdf"
-
-  defp versioned_file_name([], instance_id, :next), do: instance_id <> ".pdf"
+    do: instance_id <> "-v" <> to_string(length(versions)) <> ".pdf"
 
   defp versioned_file_name(versions, instance_id, :next),
-    do: instance_id <> "-v" <> to_string(length(versions)) <> ".pdf"
+    do: instance_id <> "-v" <> to_string(length(versions) + 1) <> ".pdf"
 
   defp prepare_markdown(
          %{id: instance_id, creator: %User{name: name, email: email}} = instance,
