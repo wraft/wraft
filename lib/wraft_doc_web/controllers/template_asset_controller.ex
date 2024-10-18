@@ -359,7 +359,13 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
          %WraftDoc.Document.Theme{} = theme <-
            Document.get_theme(c_type.theme_id, current_user),
          {:ok, zip_path} <-
-           TemplateAssets.prepare_template(theme, layout, c_type, data_template, current_user) do
+           TemplateAssets.prepare_template_format(
+             theme,
+             layout,
+             c_type,
+             data_template,
+             current_user
+           ) do
       send_download(conn, {:file, zip_path}, filename: "#{data_template.title}.zip")
     end
   end

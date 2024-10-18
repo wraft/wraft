@@ -30,7 +30,6 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Create a template asset.
   """
-
   # TODO - write test
   @spec create_template_asset(User.t(), map()) ::
           {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
@@ -601,7 +600,10 @@ defmodule WraftDoc.TemplateAssets do
     Enum.filter(entries, &(!String.ends_with?(&1, "/")))
   end
 
-  def prepare_template(theme, layout, c_type, data_template, current_user) do
+  @doc """
+  Prepare all the nessecary files and format for zip export.
+  """
+  def prepare_template_format(theme, layout, c_type, data_template, current_user) do
     folder_path = data_template.title
     File.mkdir_p!(folder_path)
 
