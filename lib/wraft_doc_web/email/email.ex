@@ -128,26 +128,33 @@ defmodule WraftDocWeb.Mailer.Email do
   @doc """
     Document Instance Mail
   """
-  def document_instance_mail(email, subject, message, cc_list, document_pdf_binary) do
+  def document_instance_mail(
+        email,
+        subject,
+        message,
+        cc_list,
+        document_pdf_binary,
+        instance_file_name
+      ) do
     new()
     |> to(email)
     |> maybe_add_cc(cc_list)
     |> from({"Wraft", sender_email()})
     |> subject(subject)
     |> html_body(message)
-    |> add_attachment(document_pdf_binary)
+    |> add_attachment(document_pdf_binary, instance_file_name)
   end
 
   defp maybe_add_cc(email, nil), do: email
 
   defp maybe_add_cc(email, cc_list), do: cc(email, cc_list)
 
-  defp add_attachment(email, document_pdf_binary) do
+  defp add_attachment(email, document_pdf_binary, instance_file_name) do
     attachment(
       email,
       Attachment.new(
         {:data, document_pdf_binary},
-        filename: "final.pdf",
+        filename: instance_file_name,
         content_type: "application/pdf",
         type: :inline
       )
