@@ -9,8 +9,12 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias Ecto.Multi
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
+  alias WraftDoc.Account.User
   alias WraftDoc.Account.UserRole
+  alias WraftDoc.Document
   alias WraftDoc.Document.Asset
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Layout
   alias WraftDoc.Document.LayoutAsset
@@ -50,6 +54,55 @@ defmodule WraftDoc.Workers.DefaultWorker do
     }
   }
 
+  @content_type_params %{
+    "name" => "Wraft Variant",
+    "description" => "Wraft Variant",
+    "prefix" => "WRA",
+    "color" => "#000",
+    "fields" => [
+      %{
+        "field_type_id" => "ed89261d-1c36-47e2-99f9-1eef44f7b3b0",
+        "key" => "name",
+        "name" => "name"
+      },
+      %{
+        "field_type_id" => "e80264f3-3675-4d88-910b-1b723f97a4df",
+        "key" => "email",
+        "name" => "email"
+      },
+      %{
+        "field_type_id" => "58e54a9b-faf9-47e6-8995-20450096d74b",
+        "key" => "paymentSchedule",
+        "name" => "paymentSchedule"
+      },
+      %{
+        "field_type_id" => "6249b27d-f535-46d5-87f0-97dbbcc43f5f",
+        "key" => "date",
+        "name" => "date"
+      }
+    ]
+  }
+
+  @data_template_params %{
+    title: "Wraft Template",
+    title_template: "Wraft Template",
+    data: "This is a sample template...",
+    serialized: %{
+      "data" =>
+        Jason.encode!(%{
+          "type" => "doc",
+          "content" => [
+            %{
+              "type" => "paragraph",
+              "content" => [
+                %{"type" => "text", "text" => "This is a sample template..."}
+              ]
+            }
+          ]
+        })
+    }
+  }
+
   @impl Oban.Worker
   def perform(%Job{
         args: %{"organisation_id" => organisation_id, "user_id" => user_id},
@@ -71,8 +124,16 @@ defmodule WraftDoc.Workers.DefaultWorker do
     end
   end
 
-  def perform(%Job{tags: ["wraft_theme_and_layout"]} = job) do
+  def perform(%Job{tags: ["wraft_templates"]} = job) do
     organisation_id = job.args["organisation_id"]
+    flow_id = job.args["flow_id"]
+    current_user_id = job.args["current_user_id"]
+
+    current_user =
+      User
+      |> Repo.get(current_user_id)
+      |> Map.put(:current_org_id, organisation_id)
+
     %{id: engine_id} = Repo.get_by(Engine, name: "Pandoc")
 
     Multi.new()
@@ -92,6 +153,29 @@ defmodule WraftDoc.Workers.DefaultWorker do
     end)
     |> Multi.run(:upload_theme_asset, fn _, %{theme: theme} ->
       create_wraft_theme_assets(theme, organisation_id)
+    end)
+    |> Multi.run(:content_type, fn _, %{theme: theme, layout: layout} ->
+      create_wraft_variant(current_user, theme, layout, flow_id)
+    end)
+    |> Multi.insert(:data_template_1, fn %{content_type: content_type} ->
+      DataTemplate.changeset(
+        %DataTemplate{},
+        Map.merge(@data_template_params, %{
+          content_type_id: content_type.id,
+          creator_id: current_user_id
+        })
+      )
+    end)
+    |> Multi.insert(:data_template_2, fn %{content_type: content_type} ->
+      DataTemplate.changeset(
+        %DataTemplate{},
+        Map.merge(@data_template_params, %{
+          title: "Wraft Template 2",
+          title_template: "Wraft Template 2",
+          content_type_id: content_type.id,
+          creator_id: current_user_id
+        })
+      )
     end)
     |> Repo.transaction()
     |> case do
@@ -153,5 +237,25 @@ defmodule WraftDoc.Workers.DefaultWorker do
     Repo.insert(%LayoutAsset{layout_id: layout.id, asset_id: asset_id})
 
     {:ok, "ok"}
+  end
+
+  defp create_wraft_variant(current_user, theme, layout, flow_id) do
+    params =
+      Map.merge(@content_type_params, %{
+        "theme_id" => theme.id,
+        "layout_id" => layout.id,
+        "flow_id" => flow_id,
+        "creator_id" => current_user.id
+      })
+
+    # content_type = Document.create_content_type(current_user, params)
+    # {:ok, content_type}
+    case Document.create_content_type(current_user, params) do
+      %ContentType{} = content_type ->
+        {:ok, content_type}
+
+      changeset = {:error, _} ->
+        changeset
+    end
   end
 end

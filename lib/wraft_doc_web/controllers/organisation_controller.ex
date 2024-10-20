@@ -303,15 +303,19 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
         with %Organisation{id: organisation_id} = organisation <-
                Enterprise.create_organisation(current_user, params),
              :ok <- Enterprise.insert_organisation_roles(organisation_id, current_user.id),
-             {:ok, %Flow{}} <-
+             {:ok, %Flow{} = flow} <-
                Enterprise.create_flow(Map.put(current_user, :current_org_id, organisation_id), %{
                  "name" => "Wraft Flow",
                  "organisation_id" => organisation_id
                }),
              {:ok, %Oban.Job{}} <-
                Enterprise.create_default_worker_job(
-                 %{organisation_id: organisation_id},
-                 "wraft_theme_and_layout"
+                 %{
+                   organisation_id: organisation_id,
+                   flow_id: flow.id,
+                   current_user_id: current_user.id
+                 },
+                 "wraft_templates"
                ) do
           render(conn, "create.json", organisation: organisation)
         end
