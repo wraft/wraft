@@ -10,11 +10,13 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     show: "template_asset:show",
     update: "template_asset:manage",
     delete: "template_asset:delete",
-    template_import: "template_asset:manage"
+    template_import: "template_asset:manage",
+    template_export: "template_asset:manage"
 
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.Document
   alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.TemplateAsset
 
@@ -317,6 +319,54 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
          {:ok, %DataTemplate{} = data_template} <-
            TemplateAssets.import_template(current_user, downloaded_zip_binary) do
       render(conn, "show_template.json", %{template: data_template})
+    end
+  end
+
+  @doc """
+  Template asset export.
+  """
+  swagger_path :template_export do
+    post("/template_assets/:id/export/")
+    summary("Export template into a zip format")
+
+    description("
+  This creates a zip format from a data template id ,which can be used to export the templates")
+
+    operation_id("template_export")
+    consumes("application/json")
+
+    parameters do
+      id(:path, :string, "ID of the template asset to build", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowDataTemplate))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec template_export(Plug.Conn.t(), map) :: Plug.Conn.t()
+
+  def template_export(conn, %{"id" => id}) do
+    current_user = conn.assigns.current_user
+
+    with %WraftDoc.Document.DataTemplate{} = data_template <-
+           Document.get_d_template(current_user, id),
+         %WraftDoc.Document.ContentType{} = c_type <-
+           Document.get_content_type(current_user, data_template.content_type_id),
+         %WraftDoc.Document.Layout{} = layout <-
+           Document.get_layout(c_type.layout_id, current_user),
+         %WraftDoc.Document.Theme{} = theme <-
+           Document.get_theme(c_type.theme_id, current_user),
+         {:ok, zip_path} <-
+           TemplateAssets.prepare_template_format(
+             theme,
+             layout,
+             c_type,
+             data_template,
+             current_user
+           ) do
+      send_download(conn, {:file, zip_path}, filename: "#{data_template.title}.zip")
     end
   end
 end
