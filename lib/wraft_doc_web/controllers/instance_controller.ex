@@ -54,7 +54,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             instance_id: "OFFL01",
             raw: "Content",
             serialized: %{title: "Title of the content", body: "Body of the content"},
-            build: "/uploads/OFFL01/final.pdf",
+            build: "/uploads/OFFL01/OFFL01-v1.pdf",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
