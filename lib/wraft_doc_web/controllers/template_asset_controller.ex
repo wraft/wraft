@@ -15,6 +15,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  alias WraftDoc.Document
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document
   alias WraftDoc.TemplateAssets
