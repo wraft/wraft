@@ -599,4 +599,130 @@ defmodule WraftDoc.TemplateAssets do
   defp extract_files(entries) do
     Enum.filter(entries, &(!String.ends_with?(&1, "/")))
   end
+
+  @doc """
+  Prepare all the nessecary files and format for zip export.
+  """
+  def prepare_template_format(theme, layout, c_type, data_template, current_user) do
+    folder_path = data_template.title
+    File.mkdir_p!(folder_path)
+
+    case create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user) do
+      :ok ->
+        template_name = "#{data_template.title}.zip"
+        {:ok, zip_path} = zip_folder(folder_path, template_name)
+
+        File.rm_rf(folder_path)
+        {:ok, zip_path}
+
+      {:error, reason} ->
+        File.rm_rf(folder_path)
+        {:error, "Failed to prepare template: #{reason}"}
+    end
+  end
+
+  def create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user) do
+    wraft_data = build_wraft_json(theme, layout, c_type, data_template, folder_path, current_user)
+
+    wraft_path = Path.join(folder_path, "wraft.json")
+
+    with {:ok, json} <- Jason.encode(wraft_data, pretty: true),
+         :ok <- File.write(wraft_path, json) do
+      :ok
+    else
+      {:error, reason} -> {:error, "Failed to create wraft.json: #{reason}"}
+    end
+  end
+
+  defp zip_folder(folder_path, template_name) do
+    zip_path = Path.join(System.tmp_dir!(), "#{template_name}.zip")
+    :zip.create(String.to_charlist(zip_path), [String.to_charlist(folder_path)])
+    {:ok, zip_path}
+  end
+
+  def build_wraft_json(theme, layout, c_type, data_template, file_path, current_user) do
+    %{
+      "theme" => build_theme(theme, file_path, current_user),
+      "layout" => build_layout(layout, file_path, current_user),
+      "variant" => build_c_type(c_type),
+      "data_template" => %{
+        "title" => data_template.title,
+        "title_template" => data_template.title_template
+      }
+    }
+  end
+
+  defp build_theme(theme, file_path, current_user) do
+    theme = Repo.preload(theme, :assets)
+
+    %{
+      "name" => theme.name,
+      "fonts" =>
+        Enum.map(theme.assets, fn asset ->
+          %{
+            "fontName" => asset.name,
+            "filePath" => download_file(asset.id, current_user, file_path, "otf", "theme")
+          }
+        end),
+      "color" => %{
+        "body_color" => theme.body_color,
+        "primary_color" => theme.primary_color,
+        "secondary_color" => theme.secondary_color
+      }
+    }
+  end
+
+  defp build_layout(layout, file_path, current_user) do
+    layout = Repo.preload(layout, :assets)
+    [asset | _] = layout.assets
+
+    %{
+      "name" => layout.name,
+      "slug" => make_slug(layout.slug, file_path),
+      "slug_file" => download_file(asset.id, current_user, file_path, "pdf", "layout"),
+      "meta" => "fields",
+      "description" => layout.description,
+      "engine" => "pandoc/latex"
+    }
+  end
+
+  defp build_c_type(c_type) do
+    c_type = Repo.preload(c_type, [:theme, :layout, [fields: [:field_type]]])
+
+    %{
+      "name" => c_type.name,
+      "color" => c_type.color,
+      "description" => c_type.description,
+      "prefix" => c_type.prefix,
+      "fields" =>
+        Enum.map(c_type.fields, fn field ->
+          %{
+            "name" => field.name,
+            "description" => field.description,
+            "type" => field.field_type.name
+          }
+        end)
+    }
+  end
+
+  defp make_slug(slug, file_path) do
+    path = :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
+    System.cmd("cp", ["-a", path, file_path <> "/" <> slug])
+    slug
+  end
+
+  defp download_file(
+         asset_id,
+         %{current_org_id: org_id} = _current_user,
+         file_path,
+         format,
+         folder_name
+       ) do
+    file = Minio.download("organisations/#{org_id}/assets/#{asset_id}")
+    asset = Document.get_asset(asset_id, %{current_org_id: org_id})
+    path = "#{file_path}/#{folder_name}/#{asset.name}.#{format}"
+    File.mkdir_p(Path.dirname(path))
+    File.write!(path, file)
+    "#{folder_name}/#{asset.name}.#{format}"
+  end
 end
