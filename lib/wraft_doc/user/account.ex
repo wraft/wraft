@@ -142,6 +142,21 @@ defmodule WraftDoc.Account do
         "organisation_id" => organisation.id
       })
     end)
+    |> Multi.run(:default_templates, fn _repo,
+                                        %{
+                                          user: user,
+                                          personal_organisation: %{organisation: organisation},
+                                          default_flow: flow
+                                        } ->
+      Enterprise.create_default_worker_job(
+        %{
+          organisation_id: organisation.id,
+          flow_id: flow.id,
+          current_user_id: user.id
+        },
+        "wraft_templates"
+      )
+    end)
   end
 
   defp set_invited_user_status_to_expired(token) do
