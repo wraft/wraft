@@ -17,7 +17,6 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
   alias WraftDoc.Document
   alias WraftDoc.Document.DataTemplate
-  alias WraftDoc.Document
   alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.TemplateAsset
 
