@@ -1,0 +1,34 @@
+{
+  "content_type":{
+    "color":"#595e01",
+    "description":"Variant to create Offer Letter with few variable fields",
+    "fields":[
+      {
+        "name":"clientName",
+        "type":"string"
+      },
+      {
+        "name":"paymentSchedule",
+        "type":"string"
+      },
+      {
+        "name":"ourName",
+        "type":"string"
+      },
+      {
+        "name":"date",
+        "type":"date"
+      }
+    ],
+    "name":"Wraft Offer Letter",
+    "prefix":"WLV"
+  },
+  "data_template":{
+    "data":"Dear Employee\\_Name ,\n\nCongratulations! We are pleased to confirm that you have been selected to work for Company\\_Name . We are delighted to\n\nmake you the following job offer:\n\nThe position we are offering you is that of Job\\_Title with an annual cost to company of 330000. This position reports\n\nto Manager\\_Name .\n\nWe would like you to start work on Employee\\_Joining\\_Date. Please report to Manager\\_Name for documentation and\n\norientation. If this date is not acceptable, please contact me immediately. On joining, you will be invited to our HR tool (XPayroll)\n\nin which you may be required to upload your documents.\n\nPlease sign the enclosed copy of this letter and return it to me by Acceptance\\_Last\\_Date to indicate your acceptance of this\n\noffer.\n\nWe are confident you will be able to make a significant contribution to the success of Company\\_Name and look forward to\n\nworking with you.\n\nSincerely,\n\nHR\\_Name\n\nCompany\\_Name\n\nAccepted by,\n\nEmployee\\_Name",
+    "title":"Wraft Offer Letter Template",
+    "serialized":{
+      "data":"{\"content\":[{\"content\":[{\"text\":\"Dear \",\"type\":\"text\"},{\"attrs\":{\"id\":\"f1dbc793-4475-4618-aa9b-658c7264006a\",\"label\":\"Employee_Name\",\"mentionTag\":\"holder\",\"name\":\"Employee_Name\",\"named\":\"\"},\"type\":\"holder\"},{\"text\":\" ,\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"Congratulations! We are pleased to confirm that you have been selected to work for \",\"type\":\"text\"},{\"attrs\":{\"id\":\"a1afa979-a7de-4ed9-a66f-119c8e3371b6\",\"label\":\"Company_Name\",\"mentionTag\":\"holder\",\"name\":\"Company_Name\",\"named\":\"\"},\"type\":\"holder\"},{\"text\":\" . We are delighted to\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"make you the following job offer:\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"The position we are offering you is that of \",\"type\":\"text\"},{\"attrs\":{\"id\":\"73b233ac-523f-421b-941d-111c869f5cc7\",\"label\":\"Job_Title\",\"mentionTag\":\"holder\",\"name\":\"Job_Title\",\"named\":\"\"},\"type\":\"holder\"},{\"text\":\"  with an annual cost to company of 330000. This position reports\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"to \",\"type\":\"text\"},{\"attrs\":{\"id\":\"e7d20679-458d-413b-80fe-aecfca502a91\",\"label\":\"Manager_Name\",\"mentionTag\":\"holder\",\"name\":\"Manager_Name\",\"named\":\"\"},\"type\":\"holder\"},{\"text\":\" .\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"We would like you to start work on \",\"type\":\"text\"},{\"attrs\":{\"id\":\"ad028a51-1703-40fe-8701-e84e6a3eb846\",\"label\":\"Employee_Joining_Date\",\"mentionTag\":\"holder\",\"name\":\"Employee_Joining_Date\",\"named\":\"\"},\"type\":\"holder\"},{\"text\":\". Please report to \",\"type\":\"text\"},{\"attrs\":{\"id\":\"e7d20679-458d-413b-80fe-aecfca502a91\",\"label\":\"Manager_Name\",\"mentionTag\":\"holder\",\"name\":\"Manager_Name\",\"named\":\"\"},\"type\":\"holder\"},{\"text\":\"  for documentation and\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"orientation. If this date is not acceptable, please contact me immediately. On joining, you will be invited to our HR tool (XPayroll)\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"in which you may be required to upload your documents.\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"Please sign the enclosed copy of this letter and return it to me by \",\"type\":\"text\"},{\"attrs\":{\"id\":\"bae27fdf-a651-4e73-8411-93431a3a871d\",\"label\":\"Acceptance_Last_Date\",\"mentionTag\":\"holder\",\"name\":\"Acceptance_Last_Date\",\"named\":\"\"},\"type\":\"holder\"},{\"text\":\"  to indicate your acceptance of this\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"offer.\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"We are confident you will be able to make a significant contribution to the success of \",\"type\":\"text\"},{\"attrs\":{\"id\":\"a1afa979-a7de-4ed9-a66f-119c8e3371b6\",\"label\":\"Company_Name\",\"mentionTag\":\"holder\",\"name\":\"Company_Name\",\"named\":\"\"},\"type\":\"holder\"},{\"text\":\"  and look forward to\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"working with you.\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"Sincerely,\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"attrs\":{\"id\":\"9c6e6d51-2968-4146-a028-9b9d5776df05\",\"label\":\"HR_Name\",\"mentionTag\":\"holder\",\"name\":\"HR_Name\",\"named\":\"\"},\"type\":\"holder\"},{\"text\":\" \",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"attrs\":{\"id\":\"a1afa979-a7de-4ed9-a66f-119c8e3371b6\",\"label\":\"Company_Name\",\"mentionTag\":\"holder\",\"name\":\"Company_Name\",\"named\":\"\"},\"type\":\"holder\"},{\"text\":\" \",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"text\":\"Accepted by,\",\"type\":\"text\"}],\"type\":\"paragraph\"},{\"content\":[{\"attrs\":{\"id\":\"f1dbc793-4475-4618-aa9b-658c7264006a\",\"label\":\"Employee_Name\",\"mentionTag\":\"holder\",\"name\":\"Employee_Name\",\"named\":\"\"},\"type\":\"holder\"},{\"text\":\" \",\"type\":\"text\"}],\"type\":\"paragraph\"}],\"type\":\"doc\"}"
+    },
+    "title_template":"Offer Letter for [Employee_Name]"
+  }
+}
