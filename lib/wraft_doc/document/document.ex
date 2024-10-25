@@ -2303,7 +2303,7 @@ defmodule WraftDoc.Document do
   def field_type_index, do: Repo.all(FieldType, order_by: [desc: :id])
 
   @doc """
-  Get a field type from its UUID.
+  Get a field type.
   """
   @spec get_field_type(binary) :: FieldType.t()
   def get_field_type(<<_::288>> = field_type_id) do
@@ -2314,6 +2314,14 @@ defmodule WraftDoc.Document do
   end
 
   def get_field_type(_), do: {:error, :fake}
+
+  @spec get_field_type(String.t()) :: FieldType.t()
+  def get_field_type_by_name(field_type_name) do
+    case Repo.get_by(FieldType, name: field_type_name) do
+      %FieldType{} = field_type -> field_type
+      _ -> {:error, :invalid_id, "FieldType"}
+    end
+  end
 
   @doc """
   Update a field type

@@ -4,8 +4,6 @@ defmodule WraftDoc.Workers.DefaultWorker do
   """
   use Oban.Worker, queue: :default
 
-  import Ecto.Query
-
   require Logger
 
   alias Ecto.Multi
@@ -18,7 +16,6 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
-  alias WraftDoc.Document.FieldType
   alias WraftDoc.Document.Layout
   alias WraftDoc.Document.LayoutAsset
   alias WraftDoc.Document.Theme
@@ -80,12 +77,14 @@ defmodule WraftDoc.Workers.DefaultWorker do
     end
   end
 
-  # TODO Need to consider about the layout having pletter slug and h1 tags in md.
-  def perform(%Job{tags: ["wraft_templates"]} = job) do
-    organisation_id = job.args["organisation_id"]
-    flow_id = job.args["flow_id"]
-    current_user_id = job.args["current_user_id"]
-
+  def perform(%Job{
+        args: %{
+          "organisation_id" => organisation_id,
+          "current_user_id" => current_user_id,
+          "flow_id" => flow_id
+        },
+        tags: ["wraft_templates"]
+      }) do
     current_user =
       User
       |> Repo.get(current_user_id)
@@ -225,15 +224,12 @@ defmodule WraftDoc.Workers.DefaultWorker do
   end
 
   defp create_wraft_variant_params(current_user_id, params, theme_id, layout_id, flow_id) do
-    field_types = Repo.all(from(ft in FieldType, select: {ft.name, ft.id}))
-    field_type_map = Map.new(field_types)
-
     fields =
       Enum.map(params["fields"], fn field ->
         field_type = String.capitalize(field["type"])
 
         %{
-          "field_type_id" => Map.get(field_type_map, field_type),
+          "field_type_id" => Document.get_field_type_by_name(field_type).id,
           "key" => field["name"],
           "name" => field["name"]
         }
