@@ -13,7 +13,6 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias WraftDoc.Account.UserRole
   alias WraftDoc.Document
   alias WraftDoc.Document.Asset
-  alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Layout
@@ -130,7 +129,10 @@ defmodule WraftDoc.Workers.DefaultWorker do
       create_wraft_theme_assets(theme, organisation_id)
     end)
     |> Multi.run(:content_type_1, fn _, %{theme: theme, layout: layout} ->
-      create_wraft_variant(current_user, theme, layout, flow_id, offer_letter_content_type)
+      wraft_variant =
+        create_wraft_variant(current_user, theme, layout, flow_id, offer_letter_content_type)
+
+      {:ok, wraft_variant}
     end)
     |> Multi.insert(:data_template_1, fn %{content_type_1: content_type} ->
       DataTemplate.changeset(
@@ -142,7 +144,8 @@ defmodule WraftDoc.Workers.DefaultWorker do
       )
     end)
     |> Multi.run(:content_type_2, fn _, %{theme: theme, contract_layout: layout} ->
-      create_wraft_variant(current_user, theme, layout, flow_id, nda_content_type)
+      wraft_variant = create_wraft_variant(current_user, theme, layout, flow_id, nda_content_type)
+      {:ok, wraft_variant}
     end)
     |> Multi.insert(:data_template_2, fn %{content_type_2: content_type} ->
       DataTemplate.changeset(
@@ -216,11 +219,8 @@ defmodule WraftDoc.Workers.DefaultWorker do
   end
 
   defp create_wraft_variant(current_user, theme, layout, flow_id, params) do
-    with params <-
-           create_wraft_variant_params(current_user.id, params, theme.id, layout.id, flow_id),
-         %ContentType{} = content_type <- Document.create_content_type(current_user, params) do
-      {:ok, content_type}
-    end
+    params = create_wraft_variant_params(current_user.id, params, theme.id, layout.id, flow_id)
+    Document.create_content_type(current_user, params)
   end
 
   defp create_wraft_variant_params(current_user_id, params, theme_id, layout_id, flow_id) do

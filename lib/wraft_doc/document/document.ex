@@ -2315,7 +2315,7 @@ defmodule WraftDoc.Document do
 
   def get_field_type(_), do: {:error, :fake}
 
-  @spec get_field_type(String.t()) :: FieldType.t()
+  @spec get_field_type_by_name(String.t()) :: FieldType.t() | nil
   def get_field_type_by_name(field_type_name) do
     case Repo.get_by(FieldType, name: field_type_name) do
       %FieldType{} = field_type -> field_type
