@@ -2319,7 +2319,7 @@ defmodule WraftDoc.Document do
   def get_field_type_by_name(field_type_name) do
     case Repo.get_by(FieldType, name: field_type_name) do
       %FieldType{} = field_type -> field_type
-      _ -> {:error, :invalid_id, "FieldType"}
+      _ -> nil
     end
   end
 
