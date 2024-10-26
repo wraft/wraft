@@ -28,7 +28,6 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
   end
 
   describe "registration/1" do
-    # FIXME need to fix this
     test "succesfully registers users with valid attrs and organisation invite token", %{
       conn: conn
     } do
@@ -39,7 +38,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @valid_attrs["email"],
-          role: role.id
+          roles: [role.id]
         })
 
       insert(:auth_token, value: token, token_type: "invite")
@@ -52,8 +51,8 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
 
       assert json_response(conn, 201)["user"]["name"] == @valid_attrs["name"]
       assert json_response(conn, 201)["user"]["email"] == @valid_attrs["email"]
-      assert json_response(conn, 200)["user"]["organisation_id"]
-      assert json_response(conn, 200)["user"]["roles"] != []
+      assert json_response(conn, 201)["user"]["organisation_id"]
+      assert json_response(conn, 201)["user"]["roles"] != []
       assert json_response(conn, 201)["access_token"] != nil
       assert json_response(conn, 201)["refresh_token"] != nil
 
@@ -76,7 +75,6 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
       assert Enum.at(json_response(conn, 201)["organisations"], 0)["name"] == "Personal"
     end
 
-    # FIXME need to fix this
     test "register as admin if token contains admin role", %{conn: conn} do
       organisation = insert(:organisation)
       role = insert(:role, name: "super_admin", organisation: organisation)
@@ -85,7 +83,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @valid_attrs["email"],
-          role: role.id
+          roles: [role.id]
         })
 
       insert(:auth_token, value: token, token_type: "invite")
