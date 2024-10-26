@@ -14,7 +14,6 @@ defmodule WraftDocWeb.Email.EmailTest do
   @name "Sample Name"
 
   describe "send email on organisation invite" do
-
     test "return email sent if mail delivered" do
       user_name = "User_name"
       org_name = "org_name"
@@ -32,13 +31,11 @@ defmodule WraftDocWeb.Email.EmailTest do
         |> String.replace(~r/\s+/, " ")
         |> String.trim()
 
-
       expected_content = [
         "Join #{org_name} on Wraft",
         "Hi #{user_name},",
-        "#{user_name} has invited you to join #{org_name} in Wraft.",
-
-        ]
+        "#{user_name} has invited you to join #{org_name} in Wraft."
+      ]
 
       Enum.each(expected_content, fn content ->
         assert String.contains?(html_content, content),
@@ -60,7 +57,6 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on notification message" do
-
     test "return email sent if mail delivered" do
       user_name = "user_name"
       notification_message = "notification_message"
@@ -87,7 +83,6 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on password reset link" do
-
     test " return email sent if mail delivered" do
       email = Email.email_verification(@test_email, @token)
 
@@ -126,7 +121,6 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on user account verification" do
-
     test "return email sent if mail delivered" do
       email = Email.email_verification(@test_email, @token)
 
@@ -150,8 +144,6 @@ defmodule WraftDocWeb.Email.EmailTest do
       end)
     end
 
-
-
     test "return email not send if not delivered" do
       Email.email_verification(@test_email, @token)
 
@@ -160,7 +152,6 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on waiting list approval" do
-
     test "return email sent if mail delivered" do
       registration_url =
         URI.encode("#{System.get_env("WRAFT_URL")}/users/login/set_password?token=#{@token}")
@@ -184,7 +175,6 @@ defmodule WraftDocWeb.Email.EmailTest do
   end
 
   describe "send email on joining waiting list" do
-
     test "return email sent if mail delivered" do
       email = Email.waiting_list_join(@test_email, @name)
       Test.deliver(email, [])
