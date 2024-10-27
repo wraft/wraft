@@ -7,11 +7,19 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemControllerTest do
   @moduletag :controller
   import WraftDoc.Factory
 
+  setup %{conn: conn} do
+    current_user = conn.assigns.current_user
+    insert(:profile, user: current_user)
+    {:ok, conn: conn}
+  end
+
   describe "index/2" do
     test "lists all documents to approve for an user by user id", %{conn: conn} do
       current_user = conn.assigns.current_user
+      instance = insert(:instance, creator: current_user)
+      # insert(:profile, user: current_user)
       as = insert(:approval_system, approver: current_user)
-      insert(:instance_approval_system, approval_system: as)
+      insert(:instance_approval_system, approval_system: as, instance: instance)
 
       conn = get(conn, Routes.v1_instance_approval_system_path(conn, :index, current_user.id))
 
@@ -25,7 +33,9 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemControllerTest do
     test "lists all documents to approve for an user by current  user", %{conn: conn} do
       current_user = conn.assigns.current_user
       as = insert(:approval_system, approver: current_user)
-      insert(:instance_approval_system, approval_system: as)
+      instance = insert(:instance, creator: current_user)
+      # insert(:profile, user: current_user)
+      insert(:instance_approval_system, approval_system: as, instance: instance)
 
       conn = get(conn, Routes.v1_instance_approval_system_path(conn, :instances_to_approve))
 

@@ -20,7 +20,7 @@ config :wraft_doc, WraftDoc.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 10
 
-config :wraft_doc, Oban, queues: false, plugins: false, testing: :inline
+config :wraft_doc, Oban, queues: false, plugins: false
 
 config :wraft_doc, WraftDocWeb.Mailer, adapter: Swoosh.Adapters.Test
 
