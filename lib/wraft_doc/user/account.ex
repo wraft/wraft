@@ -181,8 +181,7 @@ defmodule WraftDoc.Account do
   """
   @spec allowed_to_unassign_role?(User.t(), Ecto.UUID.t(), Ecto.UUID.t()) ::
           boolean() | {:error, String.t()}
-  def allowed_to_unassign_role?(%User{current_org_id: org_id} = current_user, user_id, role_id) do
-    %Role{name: role_name} = get_role(current_user, role_id)
+  def allowed_to_unassign_role?(%User{current_org_id: org_id}, user_id, role_name) do
     user_role_count = user_roles_count(user_id, org_id)
 
     cond do

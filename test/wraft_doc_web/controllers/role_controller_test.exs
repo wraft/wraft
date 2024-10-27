@@ -110,19 +110,21 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
   describe "unassign_role/2" do
     test "successfully unassigns a role from a user", %{conn: conn} do
       organisation = List.first(conn.assigns.current_user.owned_organisations)
-      role = insert(:role, name: "editor", organisation: organisation)
+      role_1 = insert(:role, name: "editor", organisation: organisation)
+      role_2 = insert(:role, name: "any_role", organisation: organisation)
       user = insert(:user)
       insert(:user_organisation, user: user, organisation: organisation)
-      insert(:user_role, user: user, role: role)
+      insert(:user_role, user: user, role: role_1)
+      insert(:user_role, user: user, role: role_2)
 
       conn =
         delete(
           conn,
-          Routes.v1_role_path(conn, :unassign_role, user.id, role.id)
+          Routes.v1_role_path(conn, :unassign_role, user.id, role_1.id)
         )
 
       assert json_response(conn, 200) == %{
-               "info" => "Unassigned the given role from the user successfully.!"
+               "info" => "Unassigned the given role for the user successfully.!"
              }
     end
 

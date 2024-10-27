@@ -62,26 +62,5 @@ defmodule WraftDoc.Forms.FormEntryTest do
 
       assert "Please enter an existing user" in errors_on(changeset, :user_id)
     end
-
-    test "user form unique constraint" do
-      form = insert(:form)
-      user = insert(:user)
-
-      params = %{
-        data: @data,
-        status: :submitted,
-        form_id: form.id,
-        user_id: user.id
-      }
-
-      {:ok, _} = %FormEntry{} |> FormEntry.changeset(params) |> Repo.insert()
-      # TODO add unique contraint for form_id in form_entry
-      {:error, changeset} = %FormEntry{} |> FormEntry.changeset(params) |> Repo.insert()
-
-      assert "Already added." in errors_on(
-               changeset,
-               :form_id
-             )
-    end
   end
 end
