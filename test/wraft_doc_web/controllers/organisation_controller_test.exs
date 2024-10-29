@@ -104,7 +104,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
   end
 
   test "uploads new logo for organisation", %{conn: conn} do
-    organisation = insert(:organisation)
+    user = conn.assigns.current_user
+    [organisation] = user.owned_organisations
 
     params =
       Map.put(@valid_attrs, "logo", %Plug.Upload{
@@ -115,11 +116,27 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
     conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), params)
 
-    assert json_response(conn, 200)["logo"] =~ "logo_ABC%20enterprices.png"
+    assert json_response(conn, 200)["logo"] =~
+             "#{System.get_env("MINIO_URL")}/organisations/#{organisation.id}/logo/logo_#{organisation.id}.png"
   end
 
   test "does not update name of personal organisation", %{conn: conn} do
-    %{owned_organisations: [organisation]} = insert(:user_with_personal_organisation)
+    %{owned_organisations: [organisation]} = user = insert(:user_with_personal_organisation)
+    role = insert(:role, organisation: organisation)
+    insert(:user_role, user: user, role: role)
+
+    conn = assign(conn, :current_user, user)
+
+    {:ok, token, _} =
+      WraftDocWeb.Guardian.encode_and_sign(user, %{organisation_id: user.current_org_id},
+        token_type: "access",
+        ttl: {2, :hour}
+      )
+
+    conn =
+      conn
+      |> assign(:current_user, user)
+      |> put_req_header("authorization", "Bearer " <> token)
 
     conn = put(conn, Routes.v1_organisation_path(conn, :update, organisation), @valid_attrs)
 
@@ -173,7 +190,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
 
     test "return error if the token is invalid", %{conn: conn} do
       conn = delete(conn, Routes.v1_organisation_path(conn, :delete, %{"token" => "invalid"}))
-      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
 
     test "return error if user is not member of the organisation" do
@@ -212,7 +229,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
         |> Plug.Conn.assign(:current_user, user)
 
       conn = delete(conn, Routes.v1_organisation_path(conn, :delete, %{}))
-      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
   end
 
@@ -589,8 +606,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationControllerTest do
           Routes.v1_organisation_path(conn, :verify_invite_token, "invalid_token")
         )
 
-      assert conn.status == 401
-      assert json_response(conn, 401) == %{"errors" => "You are not authorized for this action.!"}
+      assert conn.status == 403
+      assert json_response(conn, 403) == %{"errors" => "You are not authorized for this action.!"}
     end
 
     test "verify_invite_token returns 404 and renders the error.json template when the organisation is not found" do

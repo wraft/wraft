@@ -205,7 +205,6 @@ defmodule WraftDoc.AuthTokensTest do
       {:ok, job} = AuthTokens.generate_delete_token_and_send_email(user, organisation)
 
       [auth_token] = Repo.all(AuthToken)
-
       [_, delete_code] = String.split(auth_token.value, ":")
 
       assert job.args == %{
@@ -245,7 +244,9 @@ defmodule WraftDoc.AuthTokensTest do
       {:ok, job} = AuthTokens.generate_delete_token_and_send_email(user, organisation)
 
       # Only one delete code exist at any given point of time.
-      [auth_token] = Repo.all(AuthToken)
+      # [auth_token] = Repo.all(AuthToken)
+      [auth_token | _] =
+        Repo.all(from(a in AuthToken, where: a.token_type == ^"delete_organisation"))
 
       assert job.args == %{
                email: user.email,

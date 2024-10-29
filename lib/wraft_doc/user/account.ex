@@ -137,11 +137,25 @@ defmodule WraftDoc.Account do
                                      user: user,
                                      personal_organisation: %{organisation: organisation}
                                    } ->
-      {:ok,
-       Enterprise.create_flow(Map.put(user, :current_org_id, organisation.id), %{
-         "name" => "Wraft Flow",
-         "organisation_id" => organisation.id
-       })}
+      Enterprise.create_flow(Map.put(user, :current_org_id, organisation.id), %{
+        "name" => "Wraft Flow",
+        "organisation_id" => organisation.id
+      })
+    end)
+    |> Multi.run(:default_templates, fn _repo,
+                                        %{
+                                          user: user,
+                                          personal_organisation: %{organisation: organisation},
+                                          default_flow: flow
+                                        } ->
+      Enterprise.create_default_worker_job(
+        %{
+          organisation_id: organisation.id,
+          flow_id: flow.id,
+          current_user_id: user.id
+        },
+        "wraft_templates"
+      )
     end)
   end
 
@@ -175,6 +189,50 @@ defmodule WraftDoc.Account do
       )
 
     Repo.one(query)
+  end
+
+  @doc """
+  Checks if the user is allowed to unassign the given role
+  """
+  @spec allowed_to_unassign_role?(User.t(), Ecto.UUID.t(), Ecto.UUID.t()) ::
+          boolean() | {:error, String.t()}
+  def allowed_to_unassign_role?(%User{current_org_id: org_id}, user_id, role_name) do
+    user_role_count = user_roles_count(user_id, org_id)
+
+    cond do
+      role_name == "superadmin" && superadmin_users_count(org_id) == 1 ->
+        {:error, "Cannot unassign the only superadmin role"}
+
+      user_role_count == 1 ->
+        {:error, "Cannot unassign the user's only role"}
+
+      true ->
+        true
+    end
+  end
+
+  @doc """
+    Get the number of roles a user has in a given organisation
+  """
+  @spec user_roles_count(Ecto.UUID.t(), Ecto.UUID.t()) :: integer()
+  def user_roles_count(user_id, organisation_id) do
+    UserRole
+    |> join(:inner, [ur], r in Role,
+      on: ur.role_id == r.id and ur.user_id == ^user_id and r.organisation_id == ^organisation_id
+    )
+    |> Repo.aggregate(:count, :id)
+  end
+
+  @doc """
+  Superadmin users count for the given organisation
+  """
+  @spec superadmin_users_count(Ecto.UUID.t()) :: integer()
+  def superadmin_users_count(organisation_id) do
+    UserRole
+    |> join(:inner, [ur], r in Role,
+      on: ur.role_id == r.id and r.name == "superadmin" and r.organisation_id == ^organisation_id
+    )
+    |> Repo.aggregate(:count, :id)
   end
 
   @doc """
@@ -711,7 +769,8 @@ defmodule WraftDoc.Account do
   @doc """
   Convert UTC time to the given timezone.
   """
-  @spec convert_utc_time(NaiveDateTime.t(), String.t()) :: NaiveDateTime.t()
+  @spec convert_utc_time(NaiveDateTime.t(), String.t()) ::
+          NaiveDateTime.t() | {:error, :invalid_datetime}
   def convert_utc_time(datetime, timezone) do
     datetime
     |> DateTime.from_naive("Etc/UTC")

@@ -1,4 +1,5 @@
 defmodule WraftDocWeb.Plug.AddActionLogTest do
+  import Ecto.Query
   use WraftDocWeb.ConnCase
   alias WraftDoc.ActionLog
   alias WraftDoc.Repo
@@ -16,8 +17,8 @@ defmodule WraftDocWeb.Plug.AddActionLogTest do
 
     count_before = ActionLog |> Repo.all() |> length
     AddActionLog.call(conn, %{})
-    all_actions = Repo.all(ActionLog)
-    last_action = List.last(all_actions)
+    all_actions = Repo.all(from(a in ActionLog, order_by: [desc: a.inserted_at]))
+    last_action = List.first(all_actions)
 
     assert count_before + 1 == length(all_actions)
     assert last_action.action == "test"

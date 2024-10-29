@@ -4,7 +4,8 @@ import Config
 # you can enable the server option below.
 config :wraft_doc, WraftDocWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4001],
-  server: false
+  server: false,
+  secret_key_base: Map.fetch!(System.get_env(), "SECRET_KEY_BASE")
 
 # Print only warnings and errors during test
 config :logger, level: :warn

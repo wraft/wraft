@@ -51,22 +51,22 @@
 \sectionfont{\color{foo}}
 
 $if(mainfont)$
-  \setmainfont[
-    Path=$path$/fonts/,
-    $for(mainfontoptions)$$mainfontoptions$$sep$,$endfor$
+\setmainfont[
+  Path=$path$/fonts/,
+  $for(mainfontoptions)$$mainfontoptions$$sep$,$endfor$
   ]{$mainfont$}
-$endif$
+  $endif$
 
-% Longtabe and friends
-\usepackage{rotating,multirow,longtable,booktabs}
+  % Longtabe and friends
+  \usepackage{rotating,multirow,longtable,booktabs}
 
-% Polyglossia settings
-\setmainlanguage{english} % or danish
-\addto\captionsenglish{%
+  % Polyglossia settings
+  \setmainlanguage{english} % or danish
+  \addto\captionsenglish{%
   \renewcommand{\contentsname}{Table of Contents}
-}
+  }
 \addto\captionsdanish{%
-  \renewcommand{\contentsname}{Indholdsfortegnelse}
+\renewcommand{\contentsname}{Indholdsfortegnelse}
 }
 
 \renewcommand{\baselinestretch}{1.25}
@@ -85,6 +85,15 @@ $highlighting-macros$
 
 \newcommand{\authorName}{$author_name$}
 \newcommand{\authorEmail}{$author_email$}
+
+% Set the PDF metadata
+\usepackage{hyperref}
+\newcommand{\DocumentInstanceTitle}{$title$}
+\newcommand{\pdfAuthor}{$organisation_name$}
+\hypersetup{
+  pdftitle={\DocumentInstanceTitle},
+  pdfauthor={\pdfAuthor}
+}
 
 % Don't let images overflow the page
 % Can still explicit set width/height/options for an image

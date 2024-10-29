@@ -5,7 +5,6 @@
 /pg
 
 # Ignore the environment variables file.
-/.dev.env
 .env
 .env.dev
 .env.prod
@@ -21,6 +20,8 @@
 
 /uploads
 /temp
+/users
+/organisations
 /priv/static/swagger.json
 
 # Ignore assets that are produced by build tools.

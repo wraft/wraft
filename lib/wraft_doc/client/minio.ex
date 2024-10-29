@@ -126,5 +126,22 @@ defmodule WraftDoc.Client.Minio do
     |> @ex_aws_module.request()
   end
 
+  @doc """
+  Get the object from the given path. Will raise error if object not found.
+  """
+  @spec get_object(String.t()) :: binary()
+  def get_object(file_path) do
+    bucket()
+    |> S3.get_object(file_path)
+    |> @ex_aws_module.request()
+    |> case do
+      {:ok, %{body: binary}} ->
+        binary
+
+      _ ->
+        raise DownloadError
+    end
+  end
+
   defp bucket, do: System.get_env("MINIO_BUCKET")
 end

@@ -6,7 +6,8 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
   @moduletag :controller
 
   import WraftDoc.Factory
-  alias WraftDoc.{Enterprise.Flow.State, Repo}
+  alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Repo
 
   @valid_attrs %{
     state: "Published",
@@ -17,13 +18,16 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
   test "create states by valid attrrs", %{conn: conn} do
     user = conn.assigns.current_user
+    insert(:profile, user: user)
     flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
+
+    params = Map.merge(@valid_attrs, %{approvers: [user.id]})
 
     count_before = State |> Repo.all() |> length()
 
     conn =
       conn
-      |> post(Routes.v1_state_path(conn, :create, flow.id), @valid_attrs)
+      |> post(Routes.v1_state_path(conn, :create, flow.id), params)
       |> doc(operation_id: "create_state")
 
     assert count_before + 1 == State |> Repo.all() |> length()
@@ -32,13 +36,15 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
 
   test "does not create states by invalid attrs", %{conn: conn} do
     user = conn.assigns[:current_user]
+    insert(:profile, user: user)
     flow = insert(:flow, creator: user, organisation: List.first(user.owned_organisations))
+    params = Map.merge(@invalid_attrs, %{approvers: [user.id]})
 
     count_before = State |> Repo.all() |> length()
 
     conn =
       conn
-      |> post(Routes.v1_state_path(conn, :create, flow.id), @invalid_attrs)
+      |> post(Routes.v1_state_path(conn, :create, flow.id), params)
       |> doc(operation_id: "create_state")
 
     assert json_response(conn, 422)["errors"]["state"] == ["can't be blank"]
@@ -49,11 +55,19 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     user = conn.assigns.current_user
     state = insert(:state, organisation: List.first(user.owned_organisations))
 
+    params =
+      Map.merge(@valid_attrs, %{
+        approvers: %{
+          "remove" => [user.id],
+          "add" => [user.id]
+        }
+      })
+
     count_before = State |> Repo.all() |> length()
 
     conn =
       conn
-      |> put(Routes.v1_state_path(conn, :update, state.id, @valid_attrs))
+      |> put(Routes.v1_state_path(conn, :update, state.id, params))
       |> doc(operation_id: "update_state")
 
     assert json_response(conn, 200)["state"]["order"] == @valid_attrs.order
@@ -65,9 +79,17 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     user = conn.assigns.current_user
     state = insert(:state, organisation: List.first(user.owned_organisations))
 
+    invalid_params =
+      Map.merge(@invalid_attrs, %{
+        approvers: %{
+          "remove" => [""],
+          "add" => [""]
+        }
+      })
+
     conn =
       conn
-      |> put(Routes.v1_state_path(conn, :update, state.id, @invalid_attrs))
+      |> put(Routes.v1_state_path(conn, :update, state.id, invalid_params))
       |> doc(operation_id: "update_state")
 
     assert json_response(conn, 422)["errors"]["state"] == ["can't be blank"]
@@ -82,7 +104,7 @@ defmodule WraftDocWeb.Api.V1.StateControllerTest do
     a2 = insert(:state, creator: user, organisation: organisation, flow: flow)
 
     conn = get(conn, Routes.v1_state_path(conn, :index, flow.id))
-    states_index = json_response(conn, 200)["states"]
+    states_index = json_response(conn, 200)
     states = Enum.map(states_index, fn %{"state" => state} -> state["state"] end)
     assert List.to_string(states) =~ a1.state
     assert List.to_string(states) =~ a2.state

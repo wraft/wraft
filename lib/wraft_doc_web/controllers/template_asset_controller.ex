@@ -9,26 +9,33 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     index: "template_asset:show",
     show: "template_asset:show",
     update: "template_asset:manage",
-    delete: "template_asset:delete"
+    delete: "template_asset:delete",
+    template_import: "template_asset:manage",
+    template_export: "template_asset:manage"
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  alias WraftDoc.Document
+  alias WraftDoc.Document.DataTemplate
   alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.TemplateAsset
 
+  @doc """
+  Creates a new template asset.
+  """
   def swagger_definitions do
     %{
       TemplateAsset:
         swagger_schema do
           title("Template Asset")
-          description("A Temaplate asset bundle.")
+          description("A Template asset bundle.")
 
           properties do
-            id(:string, "The ID of the template asset", required: true)
+            id(:string, "The ID of the template asset", required: true, format: "uuid")
             name(:string, "Name of the template asset")
             file(:string, "URL of the uploaded file")
-            inserted_at(:string, "When was the engine inserted", format: "ISO-8601")
-            updated_at(:string, "When was the engine last updated", format: "ISO-8601")
+            inserted_at(:string, "When the template asset was inserted", format: "ISO-8601")
+            updated_at(:string, "When the template asset was last updated", format: "ISO-8601")
           end
 
           example(%{
@@ -45,7 +52,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
           description("A template asset and its details")
 
           properties do
-            content(Schema.ref(:TemplateAsset))
+            template_asset(Schema.ref(:TemplateAsset))
             creator(Schema.ref(:User))
           end
 
@@ -97,6 +104,29 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
             total_pages: 2,
             total_entries: 15
           })
+        end,
+      ShowDataTemplate:
+        swagger_schema do
+          title("Data template and all its details")
+          description("API to show a data template and all its details")
+
+          properties do
+            data_template(Schema.ref(:LayoutAndEngine))
+            creator(Schema.ref(:User))
+            content_type(Schema.ref(:ContentTypeWithoutFields))
+          end
+
+          example(%{
+            data_template: %{
+              id: "1232148nb3478",
+              title: "Main Template",
+              title_template: "Letter for [user]",
+              data: "Hi [user]",
+              serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            }
+          })
         end
     }
   end
@@ -107,37 +137,46 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   swagger_path :create do
     post("/template_assets")
     summary("Create a template asset")
-    description("Create template asset API")
+    description("Create a new template asset and process the uploaded ZIP file")
     operation_id("create_asset")
     consumes("multipart/form-data")
 
     parameter(:name, :formData, :string, "Template Asset name", required: true)
-    parameter(:zip_file, :formData, :file, "Template Asset zip file to upload")
+    parameter(:zip_file, :formData, :file, "Template Asset zip file to upload", required: true)
 
-    response(200, "Ok", Schema.ref(:TemplateAsset))
+    response(200, "OK", Schema.ref(:TemplateAsset))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, params) do
+  def create(conn, %{"zip_file" => zip_file} = params) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, %TemplateAsset{} = template_asset} <-
+    with {:ok, zip_binary} <- TemplateAssets.read_zip_contents(zip_file.path),
+         file_entries_in_zip <-
+           TemplateAssets.template_asset_file_list(zip_binary),
+         :ok <- TemplateAssets.template_zip_validator(zip_binary, file_entries_in_zip),
+         {:ok, wraft_json} <- TemplateAssets.get_wraft_json(zip_binary),
+         params <- Map.put(params, "wraft_json", wraft_json),
+         {:ok, %TemplateAsset{} = template_asset} <-
            TemplateAssets.create_template_asset(current_user, params) do
-      render(conn, "template_asset.json", template_asset: template_asset)
+      render(conn, "template_asset.json",
+        template_asset: template_asset,
+        file_entries: file_entries_in_zip
+      )
     end
   end
 
   @doc """
-  Tempplate Asset index.
+  Template Asset index.
   """
   swagger_path :index do
     get("/template_assets")
     summary("Template Asset index")
     description("API to get the list of all template assets created so far under an organisation")
 
-    parameter(:page, :query, :string, "Page number")
+    parameter(:page, :query, :integer, "Page number")
 
     response(200, "Ok", Schema.ref(:TemplateAssetsIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
@@ -201,7 +240,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
     parameter(:id, :path, :string, "template asset id", required: true)
     parameter(:name, :formData, :string, "Template Asset name", required: true)
-    parameter(:zip_file, :formData, :file, "Template Asset file to upload")
+    parameter(:zip_file, :formData, :file, "Template Asset file to upload", required: false)
 
     response(200, "Ok", Schema.ref(:TemplateAsset))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -244,6 +283,90 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     with %TemplateAsset{} = template_asset <- TemplateAssets.get_template_asset(id, current_user),
          {:ok, %TemplateAsset{}} <- TemplateAssets.delete_template_asset(template_asset) do
       render(conn, "template_asset.json", template_asset: template_asset)
+    end
+  end
+
+  @doc """
+  Builds a template from an existing template asset.
+  """
+  swagger_path :template_import do
+    get("/template_assets/{id}/import")
+    summary("Build a template from an existing template asset")
+
+    description(
+      "Build a data template from a template asset to be used for document creation or further customization."
+    )
+
+    operation_id("build_template")
+    consumes("application/json")
+
+    parameters do
+      id(:path, :string, "ID of the template asset to build", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowDataTemplate))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec template_import(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def template_import(conn, %{"id" => template_asset_id}) do
+    current_user = conn.assigns[:current_user]
+
+    with {:ok, downloaded_zip_binary} <-
+           TemplateAssets.download_zip_from_minio(current_user, template_asset_id),
+         {:ok, %DataTemplate{} = data_template} <-
+           TemplateAssets.import_template(current_user, downloaded_zip_binary) do
+      render(conn, "show_template.json", %{template: data_template})
+    end
+  end
+
+  @doc """
+  Template asset export.
+  """
+  swagger_path :template_export do
+    post("/template_assets/:id/export/")
+    summary("Export template into a zip format")
+
+    description("
+  This creates a zip format from a data template id ,which can be used to export the templates")
+
+    operation_id("template_export")
+    consumes("application/json")
+
+    parameters do
+      id(:path, :string, "ID of the template asset to build", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowDataTemplate))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec template_export(Plug.Conn.t(), map) :: Plug.Conn.t()
+
+  def template_export(conn, %{"id" => id}) do
+    current_user = conn.assigns.current_user
+
+    with %WraftDoc.Document.DataTemplate{} = data_template <-
+           Document.get_d_template(current_user, id),
+         %WraftDoc.Document.ContentType{} = c_type <-
+           Document.get_content_type(current_user, data_template.content_type_id),
+         %WraftDoc.Document.Layout{} = layout <-
+           Document.get_layout(c_type.layout_id, current_user),
+         %WraftDoc.Document.Theme{} = theme <-
+           Document.get_theme(c_type.theme_id, current_user),
+         {:ok, zip_path} <-
+           TemplateAssets.prepare_template_format(
+             theme,
+             layout,
+             c_type,
+             data_template,
+             current_user
+           ) do
+      send_download(conn, {:file, zip_path}, filename: "#{data_template.title}.zip")
     end
   end
 end

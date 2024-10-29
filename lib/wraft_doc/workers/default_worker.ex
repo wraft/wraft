@@ -9,8 +9,11 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias Ecto.Multi
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
+  alias WraftDoc.Account.User
   alias WraftDoc.Account.UserRole
+  alias WraftDoc.Document
   alias WraftDoc.Document.Asset
+  alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Layout
   alias WraftDoc.Document.LayoutAsset
@@ -50,6 +53,8 @@ defmodule WraftDoc.Workers.DefaultWorker do
     }
   }
 
+  @template_files_path Application.compile_env!(:wraft_doc, [:default_template_files])
+
   @impl Oban.Worker
   def perform(%Job{
         args: %{"organisation_id" => organisation_id, "user_id" => user_id},
@@ -71,9 +76,27 @@ defmodule WraftDoc.Workers.DefaultWorker do
     end
   end
 
-  def perform(%Job{tags: ["wraft_theme_and_layout"]} = job) do
-    organisation_id = job.args["organisation_id"]
+  def perform(%Job{
+        args: %{
+          "organisation_id" => organisation_id,
+          "current_user_id" => current_user_id,
+          "flow_id" => flow_id
+        },
+        tags: ["wraft_templates"]
+      }) do
+    current_user =
+      User
+      |> Repo.get(current_user_id)
+      |> Map.put(:current_org_id, organisation_id)
+
     %{id: engine_id} = Repo.get_by(Engine, name: "Pandoc")
+
+    %{
+      offer_letter_content_type: offer_letter_content_type,
+      nda_content_type: nda_content_type,
+      offer_letter_data_template: offer_letter_data_template,
+      nda_data_template: nda_data_template
+    } = load_all_templates()
 
     Multi.new()
     |> Multi.insert(
@@ -87,11 +110,51 @@ defmodule WraftDoc.Workers.DefaultWorker do
         Map.merge(@wraft_layout_args, %{organisation_id: organisation_id, engine_id: engine_id})
       )
     )
+    |> Multi.insert(
+      :contract_layout,
+      Layout.changeset(
+        %Layout{},
+        Map.merge(@wraft_layout_args, %{
+          name: "Wraft Contract Layout",
+          organisation_id: organisation_id,
+          engine_id: engine_id,
+          slug: "contract"
+        })
+      )
+    )
     |> Multi.run(:upload_layout_asset, fn _, %{layout: layout} ->
       create_wraft_layout_assets(layout, organisation_id)
     end)
     |> Multi.run(:upload_theme_asset, fn _, %{theme: theme} ->
       create_wraft_theme_assets(theme, organisation_id)
+    end)
+    |> Multi.run(:content_type_1, fn _, %{theme: theme, layout: layout} ->
+      wraft_variant =
+        create_wraft_variant(current_user, theme, layout, flow_id, offer_letter_content_type)
+
+      {:ok, wraft_variant}
+    end)
+    |> Multi.insert(:data_template_1, fn %{content_type_1: content_type} ->
+      DataTemplate.changeset(
+        %DataTemplate{},
+        Map.merge(offer_letter_data_template, %{
+          "content_type_id" => content_type.id,
+          "creator_id" => current_user_id
+        })
+      )
+    end)
+    |> Multi.run(:content_type_2, fn _, %{theme: theme, contract_layout: layout} ->
+      wraft_variant = create_wraft_variant(current_user, theme, layout, flow_id, nda_content_type)
+      {:ok, wraft_variant}
+    end)
+    |> Multi.insert(:data_template_2, fn %{content_type_2: content_type} ->
+      DataTemplate.changeset(
+        %DataTemplate{},
+        Map.merge(nda_data_template, %{
+          "content_type_id" => content_type.id,
+          "creator_id" => current_user_id
+        })
+      )
     end)
     |> Repo.transaction()
     |> case do
@@ -153,5 +216,52 @@ defmodule WraftDoc.Workers.DefaultWorker do
     Repo.insert(%LayoutAsset{layout_id: layout.id, asset_id: asset_id})
 
     {:ok, "ok"}
+  end
+
+  defp create_wraft_variant(current_user, theme, layout, flow_id, params) do
+    params = create_wraft_variant_params(current_user.id, params, theme.id, layout.id, flow_id)
+    Document.create_content_type(current_user, params)
+  end
+
+  defp create_wraft_variant_params(current_user_id, params, theme_id, layout_id, flow_id) do
+    fields =
+      Enum.map(params["fields"], fn field ->
+        field_type = String.capitalize(field["type"])
+
+        %{
+          "field_type_id" => Document.get_field_type_by_name(field_type).id,
+          "key" => field["name"],
+          "name" => field["name"]
+        }
+      end)
+
+    Map.merge(params, %{
+      "theme_id" => theme_id,
+      "layout_id" => layout_id,
+      "flow_id" => flow_id,
+      "creator_id" => current_user_id,
+      "fields" => fields
+    })
+  end
+
+  def load_all_templates do
+    offer_letter_template_path = Path.join(@template_files_path, "offer_letter.json")
+    nda_template_path = Path.join(@template_files_path, "nda.json")
+
+    offer_letter = load_template(offer_letter_template_path)
+    nda = load_template(nda_template_path)
+
+    %{
+      offer_letter_content_type: offer_letter["content_type"],
+      nda_content_type: nda["content_type"],
+      offer_letter_data_template: offer_letter["data_template"],
+      nda_data_template: nda["data_template"]
+    }
+  end
+
+  defp load_template(path) do
+    path
+    |> File.read!()
+    |> Jason.decode!()
   end
 end

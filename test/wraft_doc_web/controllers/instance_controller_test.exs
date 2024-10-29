@@ -183,8 +183,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
     ct1 = insert(:content_type, organisation: organisation)
     ct2 = insert(:content_type, organisation: organisation)
 
-    dt1 = insert(:instance, content_type: ct1, creator: user)
-    dt2 = insert(:instance, content_type: ct2, creator: user)
+    dt1 = insert(:instance, content_type: ct1, creator: user, allowed_users: [user.id])
+    dt2 = insert(:instance, content_type: ct2, creator: user, allowed_users: [user.id])
 
     conn = get(conn, Routes.v1_instance_path(conn, :all_contents))
 
@@ -224,9 +224,9 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   describe "DELETE /contents/:id" do
     test "delete instance by given id", %{conn: conn} do
       user = conn.assigns.current_user
+      organisation = List.first(user.owned_organisations)
 
-      content_type =
-        insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+      content_type = insert(:content_type, creator: user, organisation: organisation)
 
       instance = insert(:instance, creator: user, content_type: content_type)
 
@@ -235,7 +235,10 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
         :stream!,
         fn %ExAws.Operation.S3{} = operation ->
           assert operation.http_method == :get
-          assert operation.params == %{"prefix" => "uploads/contents/#{instance.instance_id}"}
+
+          assert operation.params == %{
+                   "prefix" => "organisations/#{organisation.id}/contents/#{instance.instance_id}"
+                 }
 
           {
             :ok,
@@ -442,6 +445,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       flow = insert(:flow, organisation: organisation)
       s1 = insert(:state, organisation: organisation, flow: flow, order: 1)
       s2 = insert(:state, organisation: organisation, flow: flow, order: 2)
+      insert(:state_users, state: s1, user: user)
       as = insert(:approval_system, flow: flow, approver: user, pre_state: s1, post_state: s2)
       content_type = insert(:content_type, organisation: organisation, flow: flow)
       instance = insert(:instance, creator: user, content_type: content_type, state: s1)
@@ -466,7 +470,7 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
 
       conn = put(conn, Routes.v1_instance_path(conn, :approve, instance.id))
 
-      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
   end
 
@@ -481,6 +485,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
       s1 = insert(:state, organisation: organisation, flow: flow, order: 1)
       s2 = insert(:state, organisation: organisation, flow: flow, order: 2)
       s3 = insert(:state, organisation: organisation, flow: flow, order: 3)
+      insert(:state_users, state: s1, user: user)
+      insert(:state_users, state: s2, user: user)
       as = insert(:approval_system, flow: flow, approver: user, pre_state: s1, post_state: s2)
       insert(:approval_system, flow: flow, approver: user, pre_state: s2, post_state: s3)
       content_type = insert(:content_type, organisation: organisation, flow: flow)

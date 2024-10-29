@@ -32,8 +32,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   @invalid_attrs %{name: ""}
 
   describe "create/2" do
-    test "create content types by valid attrrs", %{conn: conn} do
+    test "create content types by valid attrs", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:profile, user: user)
       [organisation] = user.owned_organisations
 
       %{id: flow_id} = insert(:flow, organisation: organisation)
@@ -173,6 +174,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       params =
         Map.merge(setup_params(), %{flow_id: flow_id, layout_id: layout_id, theme_id: theme_id})
 
+      Enum.map(params.fields, fn field ->
+        insert(:content_type_field, content_type: content_type, field: field)
+      end)
+
       response =
         conn
         |> put(Routes.v1_content_type_path(conn, :update, content_type.id), params)
@@ -182,15 +187,17 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
       assert response["content_type"]["id"] == content_type.id
       assert response["content_type"]["name"] == @valid_attrs.name
 
-      assert Enum.map(
-               response["content_type"]["fields"],
-               &%{
-                 name: &1["name"],
-                 meta: &1["meta"],
-                 description: &1["description"],
-                 field_type_id: &1["field_type"]["id"]
-               }
-             ) == params.fields
+      assert Enum.sort(
+               Enum.map(
+                 response["content_type"]["fields"],
+                 &%{
+                   name: &1["name"],
+                   meta: &1["meta"],
+                   description: &1["description"],
+                   field_type_id: &1["field_type"]["id"]
+                 }
+               )
+             ) == Enum.sort(params.fields)
     end
 
     test "does't update content types for invalid attrs", %{conn: conn} do
@@ -211,6 +218,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   describe "index/2" do
     test "index lists content type by current user", %{conn: conn} do
       user = conn.assigns.current_user
+      insert(:profile, user: user)
       [organisation] = user.owned_organisations
       ct1 = insert(:content_type, creator: user, organisation: organisation)
       ct2 = insert(:content_type, creator: user, organisation: organisation)

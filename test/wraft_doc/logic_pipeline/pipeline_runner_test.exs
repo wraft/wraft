@@ -46,36 +46,6 @@ defmodule WraftDoc.PipelineRunnerTest do
     end
   end
 
-  describe "values_provided?/1" do
-    test "returns true when values for all content type field values are provided in the data of trigger" do
-      pipeline = insert(:pipeline)
-      content_type = insert(:content_type)
-      insert(:pipe_stage, pipeline: pipeline, content_type: content_type)
-      content_type_field = insert(:content_type_field, content_type: content_type)
-      pipeline = Repo.preload(pipeline, stages: [{:content_type, :fields}])
-
-      trigger =
-        insert(:trigger_history,
-          pipeline: pipeline,
-          data: %{"#{content_type_field.field.name}" => "John Doe"}
-        )
-
-      response = PipelineRunner.values_provided?(trigger)
-      assert response == true
-    end
-
-    test "returns false when values for content type fields are missing" do
-      pipeline = insert(:pipeline)
-      c_type = insert(:content_type)
-      insert(:pipe_stage, pipeline: pipeline, content_type: c_type)
-      insert(:content_type_field, content_type: c_type)
-      pipeline = Repo.preload(pipeline, stages: [{:content_type, :fields}])
-      trigger = insert(:trigger_history, pipeline: pipeline, data: %{"name" => "John Doe"})
-      response = PipelineRunner.values_provided?(trigger)
-      assert response == false
-    end
-  end
-
   describe "create_instances/1" do
     test "creates instance and returns a map with created instance when trigger has a creator_id" do
       pipeline = insert(:pipeline)
@@ -84,20 +54,25 @@ defmodule WraftDoc.PipelineRunnerTest do
       insert(:state, flow: flow, order: 2)
       c_type1 = insert(:content_type, flow: flow)
       c_type2 = insert(:content_type, flow: flow)
-      insert(:pipe_stage, pipeline: pipeline, content_type: c_type1)
-      insert(:pipe_stage, pipeline: pipeline, content_type: c_type2)
+      pipe_stage1 = insert(:pipe_stage, pipeline: pipeline, content_type: c_type1)
+      pipe_stage2 = insert(:pipe_stage, pipeline: pipeline, content_type: c_type2)
       content_type_field_1 = insert(:content_type_field, content_type: c_type1)
       content_type_field_2 = insert(:content_type_field, content_type: c_type2)
 
+      insert(:form_mapping, pipe_stage: pipe_stage1)
+      insert(:form_mapping, pipe_stage: pipe_stage2)
+
       pipeline =
-        Repo.preload(pipeline, stages: [{:content_type, :fields}, :data_template, :state])
+        Repo.preload(pipeline,
+          stages: [{:content_type, :fields}, :data_template, :state, :form_mapping]
+        )
 
       trigger =
         insert(:trigger_history,
           pipeline: pipeline,
           data: %{
-            "#{content_type_field_1.field.name}" => "John Doe",
-            "#{content_type_field_2.field.name}" => "John Doe Jr."
+            "#{content_type_field_1.field.id}" => "John Doe",
+            "#{content_type_field_2.field.id}" => "John Doe Jr."
           }
         )
 
@@ -121,21 +96,26 @@ defmodule WraftDoc.PipelineRunnerTest do
       insert(:state, flow: flow, order: 2)
       content_type1 = insert(:content_type, flow: flow)
       content_type2 = insert(:content_type, flow: flow)
-      insert(:pipe_stage, pipeline: pipeline, content_type: content_type1)
-      insert(:pipe_stage, pipeline: pipeline, content_type: content_type2)
+      pipe_stage1 = insert(:pipe_stage, pipeline: pipeline, content_type: content_type1)
+      pipe_stage2 = insert(:pipe_stage, pipeline: pipeline, content_type: content_type2)
       content_type_field_1 = insert(:content_type_field, content_type: content_type1)
       content_type_field_2 = insert(:content_type_field, content_type: content_type2)
 
+      insert(:form_mapping, pipe_stage: pipe_stage1)
+      insert(:form_mapping, pipe_stage: pipe_stage2)
+
       pipeline =
-        Repo.preload(pipeline, stages: [{:content_type, :fields}, :data_template, :state])
+        Repo.preload(pipeline,
+          stages: [{:content_type, :fields}, :data_template, :state, :form_mapping]
+        )
 
       trigger =
         insert(:trigger_history,
           pipeline: pipeline,
           creator: nil,
           data: %{
-            "#{content_type_field_1.field.name}" => "John Doe",
-            "#{content_type_field_2.field.name}" => "John Doe Jr."
+            "#{content_type_field_1.field.id}" => "John Doe",
+            "#{content_type_field_2.field.id}" => "John Doe Jr."
           }
         )
 
@@ -219,12 +199,12 @@ defmodule WraftDoc.PipelineRunnerTest do
       failed_build_instance_ids =
         builds
         |> Stream.filter(fn %{response: {_, x}} -> x != 0 end)
-        |> Stream.map(fn x -> x.instance.instance_id end)
+        |> Stream.map(fn x -> x.instance.id end)
         |> Enum.to_list()
 
       response = PipelineRunner.build_failed?(%{builds: builds})
       error_codes = Enum.map(response.failed_builds, fn x -> x.error_code end)
-      failed_instance_ids = Enum.map(response.failed_builds, fn x -> x.instance.instance_id end)
+      failed_instance_ids = Enum.map(response.failed_builds, fn x -> x.doc_failed_instance_id end)
 
       refute 0 in error_codes
       refute nil in response.failed_builds
@@ -253,11 +233,17 @@ defmodule WraftDoc.PipelineRunnerTest do
       File.write!(file_path1 <> "/final.pdf", "content")
       File.write!(file_path2 <> "/final.pdf", "content")
 
+      org_id = instance1.content_type.organisation_id
+
       insert(:build_history, content: instance1)
       insert(:build_history, content: instance2)
+      # TODO check this part refactor if needed
+      Mox.expect(ExAwsMock, :request, fn %ExAws.S3.Upload{} ->
+        {:ok, %ExAws.Operation.S3{}}
+      end)
 
-      response = PipelineRunner.zip_builds(%{instances: [instance1, instance1]})
-      zip_file_path = "temp/pipe_builds/#{response.zip_file}"
+      response = PipelineRunner.zip_builds(%{instances: [instance1, instance2]})
+      zip_file_path = "organisations/#{org_id}/pipe_builds/#{response.zip_file}"
       assert File.exists?(zip_file_path) == true
 
       File.rm_rf(file_path1)

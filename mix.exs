@@ -5,7 +5,7 @@ defmodule WraftDoc.Mixfile do
   def project do
     [
       app: :wraft_doc,
-      version: "0.4.2",
+      version: "0.4.3",
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: Mix.compilers() ++ [:phoenix_swagger],
@@ -103,6 +103,7 @@ defmodule WraftDoc.Mixfile do
       {:excoveralls, "~> 0.15.0", only: :test},
       {:faker, "~> 0.17"},
       {:mox, "~> 1.0"},
+      {:floki, "~> 0.36.0"},
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
       # Pagination
       {:scrivener_ecto, "~> 2.7.0"},
@@ -126,6 +127,11 @@ defmodule WraftDoc.Mixfile do
       {:opus, "~> 0.8.3"},
       # PDF generation using wkhtmltopdf
       {:pdf_generator, "~> 0.6.2"},
+      # zip file
+      {:unzip, "~> 0.11"},
+
+      # Create and cleanup Tempfile
+      {:briefly, "~> 0.5.0"},
 
       # For admin pannel
       {:kaffy, "~> 0.10.0"},

@@ -270,7 +270,9 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   def unassign_role(conn, %{"user_id" => user_id, "role_id" => role_id} = _params) do
     current_user = conn.assigns[:current_user]
 
-    with %UserRole{} = user_role <- Account.get_user_role(current_user, user_id, role_id),
+    with %Role{name: role_name} <- Account.get_role(current_user, role_id),
+         true <- Account.allowed_to_unassign_role?(current_user, user_id, role_name),
+         %UserRole{} = user_role <- Account.get_user_role(current_user, user_id, role_id),
          {:ok, _} <- Account.delete_user_role(user_role) do
       render(conn, "unassign_role.json")
     end
