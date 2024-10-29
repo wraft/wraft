@@ -83,6 +83,7 @@ defmodule WraftDoc.Factory do
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       current_org_id: organisation.id,
+      last_signed_in_org: organisation.id,
       owned_organisations: [organisation]
     }
   end
@@ -234,7 +235,7 @@ defmodule WraftDoc.Factory do
   def layout_factory do
     %Layout{
       name: sequence(:name, &"layout-#{&1}"),
-      description: sequence(:description, &"laout for document-#{&1}"),
+      description: sequence(:description, &"layout for document-#{&1}"),
       width: :rand.uniform(16),
       height: :rand.uniform(16),
       unit: sequence(:name, &"layout-#{&1}"),
@@ -266,6 +267,7 @@ defmodule WraftDoc.Factory do
       editable: true,
       state: build(:state),
       content_type: build(:content_type),
+      creator: build(:user),
       allowed_users: []
     }
   end
@@ -282,7 +284,7 @@ defmodule WraftDoc.Factory do
   def state_factory do
     %State{
       state: sequence(:state, &"state-#{&1}"),
-      order: 1,
+      order: sequence(:order, & &1),
       organisation: build(:organisation),
       flow: build(:flow)
     }
@@ -326,6 +328,20 @@ defmodule WraftDoc.Factory do
       title: sequence(:title, &"title-#{&1}"),
       title_template: sequence(:title_template, &"title-[client]-#{&1}"),
       data: sequence(:data, &"data-#{&1}"),
+      serialized: %{
+        "data" =>
+          Jason.encode!(%{
+            "type" => "doc",
+            "content" => [
+              %{
+                "type" => "paragraph",
+                "content" => [
+                  %{"type" => "text", "text" => "Sample template"}
+                ]
+              }
+            ]
+          })
+      },
       content_type: build(:content_type)
     }
   end
@@ -624,6 +640,7 @@ defmodule WraftDoc.Factory do
 
   def form_field_factory do
     %FormField{
+      order: sequence(:order, & &1),
       validations: [
         %{
           validation: %{"rule" => "required", "value" => Enum.random([true, false])},

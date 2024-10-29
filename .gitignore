@@ -5,7 +5,6 @@
 /pg
 
 # Ignore the environment variables file.
-/.dev.env
 .env
 .env.dev
 .env.prod
@@ -20,7 +19,6 @@
 *.ez
 
 /uploads
-/organisations
 /temp
 /users
 /organisations

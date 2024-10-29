@@ -87,7 +87,7 @@ defmodule WraftDoc.Document.AssetTest do
         theme_file = %Plug.Upload{
           filename: "Roboto-#{font_style}.ttf",
           content_type: "font/ttf",
-          path: File.cwd!() <> "/priv/static/wraft_files/Roboto/Roboto-#{font_style}.ttf"
+          path: File.cwd!() <> "/priv/wraft_files/Roboto/Roboto-#{font_style}.ttf"
         }
 
         asset = insert(:asset, name: "Bold", type: "theme")
@@ -100,7 +100,7 @@ defmodule WraftDoc.Document.AssetTest do
       theme_file = %Plug.Upload{
         filename: "letterhead.pdf",
         content_type: "application/pdf",
-        path: File.cwd!() <> "/priv/static/wraft_files/letterhead.pdf"
+        path: File.cwd!() <> "/priv/wraft_files/letterhead.pdf"
       }
 
       asset = insert(:asset, name: "Bold", type: "theme")

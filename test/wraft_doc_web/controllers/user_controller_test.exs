@@ -16,6 +16,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
   describe "signin/2" do
     test "succesfully logs in with correct email-password combination" do
       user = insert(:user_with_personal_organisation)
+      insert(:profile, user: user)
       [organisation] = user.owned_organisations
       insert(:user_role, user: user, role: insert(:role, organisation: organisation))
       conn = build_conn()
@@ -63,7 +64,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
         )
 
       assert json_response(conn, 404)["errors"] ==
-               "Your email-password combination doesn't match. Please try again.!"
+               "No user with this email.!"
     end
 
     test "returns error when no password is given" do
@@ -144,7 +145,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       insert(:auth_token, value: "_3_-_A==", token_type: "password_verify")
       conn = get(conn, Routes.v1_user_path(conn, :verify_token, "_3_-_A=="))
-      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
 
     test "returns error with expired token" do
@@ -206,7 +207,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn =
         post(conn, Routes.v1_user_path(conn, :reset, %{token: "_3_-_A==", password: "eeqeqe"}))
 
-      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
 
     test "returns error with expired token" do
@@ -351,7 +352,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
       conn = build_conn()
       insert(:auth_token, value: "_3_-_A==", token_type: "email_verify")
       conn = get(conn, Routes.v1_user_path(conn, :verify_email_token, "_3_-_A=="))
-      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
     end
 
     test "returns error with expired token" do
@@ -404,6 +405,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
     test "renders response with 200 status code with ID of an organisation the user has joined",
          %{conn: conn} do
       user = conn.assigns[:current_user]
+      insert(:profile, user: user)
       %{id: organisation_id} = organisation = insert(:organisation)
       insert(:user_organisation, user: user, organisation: organisation)
 
@@ -436,7 +438,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
                })
     end
 
-    test "renders response with 401 status code with ID of an organisation the user has NOT joined",
+    test "renders response with 403 status code with ID of an organisation the user has NOT joined",
          %{conn: conn} do
       %{id: organisation_id} = insert(:organisation)
 
@@ -446,7 +448,7 @@ defmodule WraftDocWeb.Api.V1.UserControllerTest do
           Routes.v1_user_path(conn, :switch_organisation, %{organisation_id: organisation_id})
         )
 
-      assert %{"errors" => "You are not authorized for this action.!"} == json_response(conn, 401)
+      assert %{"errors" => "You are not authorized for this action.!"} == json_response(conn, 403)
     end
   end
 

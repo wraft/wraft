@@ -49,7 +49,7 @@ defmodule WraftDoc.WaitingListsTest do
         })
 
       assert job.args == %{
-               user_name: user_name,
+               name: user_name,
                email: @valid_params["email"]
              }
 
@@ -57,7 +57,7 @@ defmodule WraftDoc.WaitingListsTest do
         worker: EmailWorker,
         args: %{
           email: job.args.email,
-          user_name: job.args.user_name
+          name: job.args.name
         },
         queue: :mailer
       )

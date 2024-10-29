@@ -164,12 +164,27 @@ defmodule WraftDoc.EctoType.ValidationTypeTest do
 
   describe "cast/1 for validation rule :options" do
     test "casts valid options" do
-      input = %{"rule" => "options", "value" => ["male", "female", "other"]}
+      input = %{"rule" => "options", "value" => ["male", "female", "other"], "multiple" => true}
       assert {:ok, input} == ValidationType.cast(input)
     end
 
+    test "casts valid options with multiple value false" do
+      input = %{"rule" => "options", "value" => ["male", "female", "other"], "multiple" => false}
+      assert {:ok, input} == ValidationType.cast(input)
+    end
+
+    test "fails to cast when multiple is invalid" do
+      input = %{
+        "rule" => "options",
+        "value" => ["male", "female", "other"],
+        "multiple" => "invalid_value"
+      }
+
+      assert :error == ValidationType.cast(input)
+    end
+
     test "fails to cast when value is not a list" do
-      input = %{"rule" => "file_size", "value" => "male,female,other"}
+      input = %{"rule" => "options", "value" => "male, female, other"}
       assert :error == ValidationType.cast(input)
     end
   end

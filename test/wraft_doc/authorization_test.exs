@@ -4,7 +4,7 @@ defmodule WraftDoc.AuthorizationTest do
   alias WraftDoc.Authorization
   alias WraftDoc.Authorization.Permission
 
-  @resource_count 32
+  @resource_count 36
 
   describe "list_permissions/0" do
     test "lists all permissions grouped by resource" do

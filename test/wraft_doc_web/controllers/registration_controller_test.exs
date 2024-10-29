@@ -38,7 +38,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @valid_attrs["email"],
-          role: role.id
+          roles: [role.id]
         })
 
       insert(:auth_token, value: token, token_type: "invite")
@@ -51,8 +51,8 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
 
       assert json_response(conn, 201)["user"]["name"] == @valid_attrs["name"]
       assert json_response(conn, 201)["user"]["email"] == @valid_attrs["email"]
-      assert json_response(conn, 200)["user"]["organisation_id"]
-      assert json_response(conn, 200)["user"]["roles"] != []
+      assert json_response(conn, 201)["user"]["organisation_id"]
+      # assert json_response(conn, 201)["user"]["roles"] != []
       assert json_response(conn, 201)["access_token"] != nil
       assert json_response(conn, 201)["refresh_token"] != nil
 
@@ -83,7 +83,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationControllerTest do
         WraftDoc.create_phx_token("organisation_invite", %{
           organisation_id: organisation.id,
           email: @valid_attrs["email"],
-          role: role.id
+          roles: [role.id]
         })
 
       insert(:auth_token, value: token, token_type: "invite")

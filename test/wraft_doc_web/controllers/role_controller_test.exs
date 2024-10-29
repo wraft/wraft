@@ -55,11 +55,15 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
     end
 
     test "error on attempting to delete superadmin role", %{conn: conn} do
-      role = Repo.get_by(Role, name: "superadmin")
+      user = conn.assigns.current_user
+      organisation = List.first(user.owned_organisations)
+      role = Repo.get_by(Role, name: "superadmin", organisation_id: organisation.id)
+
       count_before = Role |> Repo.all() |> length()
       conn = delete(conn, Routes.v1_role_path(conn, :delete, role.id))
       count_after = Role |> Repo.all() |> length()
-      assert json_response(conn, 401)["errors"] == "You are not authorized for this action.!"
+
+      assert json_response(conn, 403)["errors"] == "You are not authorized for this action.!"
       assert count_before == count_after
     end
   end
@@ -106,19 +110,21 @@ defmodule WraftDocWeb.Api.V1.RoleControllerTest do
   describe "unassign_role/2" do
     test "successfully unassigns a role from a user", %{conn: conn} do
       organisation = List.first(conn.assigns.current_user.owned_organisations)
-      role = insert(:role, name: "editor", organisation: organisation)
+      role_1 = insert(:role, name: "editor", organisation: organisation)
+      role_2 = insert(:role, name: "any_role", organisation: organisation)
       user = insert(:user)
       insert(:user_organisation, user: user, organisation: organisation)
-      insert(:user_role, user: user, role: role)
+      insert(:user_role, user: user, role: role_1)
+      insert(:user_role, user: user, role: role_2)
 
       conn =
         delete(
           conn,
-          Routes.v1_role_path(conn, :unassign_role, user.id, role.id)
+          Routes.v1_role_path(conn, :unassign_role, user.id, role_1.id)
         )
 
       assert json_response(conn, 200) == %{
-               "info" => "Unassigned the given role from the user successfully.!"
+               "info" => "Unassigned the given role for the user successfully.!"
              }
     end
 

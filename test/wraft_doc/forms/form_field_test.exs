@@ -7,16 +7,18 @@ defmodule WraftDoc.Form.FormFieldTest do
 
   @invalid_attrs %{form_id: nil, field_id: nil}
 
-  @validation [
+  @validations [
     %{
-      "validation" => %{rule: :required, value: false},
+      "validation" => %{"rule" => "required", "value" => false},
       "error_message" => "Some error message"
     },
     %{
-      "validation" => %{rule: :min_length, value: 10},
+      "validation" => %{"rule" => "min_length", "value" => 10},
       "error_message" => "Some error message 2"
     }
   ]
+
+  @order 1
 
   describe "changeset/2" do
     test "changeset with valid attributes" do
@@ -25,7 +27,8 @@ defmodule WraftDoc.Form.FormFieldTest do
 
       changeset =
         FormField.changeset(%FormField{}, %{
-          validation: @validation,
+          order: @order,
+          validations: @validations,
           form_id: form.id,
           field_id: field.id
         })
@@ -42,7 +45,8 @@ defmodule WraftDoc.Form.FormFieldTest do
       field = insert(:field)
 
       params = %{
-        validation: @validation,
+        order: @order,
+        validations: @validations,
         form_id: Ecto.UUID.generate(),
         field_id: field.id
       }
@@ -56,7 +60,8 @@ defmodule WraftDoc.Form.FormFieldTest do
       form = insert(:form)
 
       params = %{
-        validation: @validation,
+        validations: @validations,
+        order: @order,
         form_id: form.id,
         field_id: Ecto.UUID.generate()
       }
@@ -71,14 +76,16 @@ defmodule WraftDoc.Form.FormFieldTest do
       field = insert(:field)
 
       params = %{
-        validation: @validation,
+        order: @order,
+        validations: @validations,
         form_id: form.id,
         field_id: field.id
       }
 
       {:ok, _} = %FormField{} |> FormField.changeset(params) |> Repo.insert()
 
-      {:error, changeset} = %FormField{} |> FormField.changeset(params) |> Repo.insert()
+      {:error, changeset} =
+        %FormField{} |> FormField.changeset(%{params | order: @order + 1}) |> Repo.insert()
 
       assert "already exist" in errors_on(
                changeset,

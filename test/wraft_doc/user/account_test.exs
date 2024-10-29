@@ -362,13 +362,15 @@ defmodule WraftDoc.AccountTest do
 
   describe "delete_role/1" do
     test "returns the role after deleting the role" do
-      role = insert(:role)
+      role = insert(:role, name: "user")
+
       assert {:ok, %Role{}} = Account.delete_role(role)
       assert nil == Repo.get(Role, role.id)
     end
 
     test "raises with invalid role" do
-      assert_raise(BadMapError, fn -> Account.delete_role(nil) end)
+      assert {:error, :no_permission} = Account.delete_role("invalid role")
+      assert {:error, :no_permission} = Account.delete_role(nil)
     end
 
     test "returns error on attempting to delete superadmin role" do
