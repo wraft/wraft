@@ -13,6 +13,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     show_content_type_role: "content_type:show",
     search: "content_type:show"
 
+  # 30 days
+  @one_month 60 * 60 * 24 * 30 * 1000
+  plug WraftDocWeb.Plug.RateLimiter, create: [scale: @one_month, limit: 50]
+
   action_fallback(WraftDocWeb.FallbackController)
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentType

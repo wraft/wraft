@@ -149,7 +149,10 @@ defmodule WraftDoc.Mixfile do
 
       # mjml
       {:mjml, "~> 3.0"},
-      {:mjml_eex, "~> 0.10.0"}
+      {:mjml_eex, "~> 0.10.0"},
+
+      # rate limit
+      {:hammer, "~> 6.2.1"}
     ]
   end
 

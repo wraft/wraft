@@ -139,6 +139,9 @@ config :fun_with_flags, :cache,
   enabled: false,
   ttl: 900
 
+config :hammer,
+  backend: {Hammer.Backend.ETS, [expiry_ms: 60_000 * 60 * 4, cleanup_interval_ms: 60_000 * 10]}
+
 config :wraft_doc,
   permissions_file: "priv/repo/data/rbac/permissions.csv",
   theme_folder: "priv/wraft_files/Roboto",

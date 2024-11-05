@@ -35,6 +35,10 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.CurrentAdmin)
   end
 
+  pipeline :rate_limit do
+    plug(WraftDocWeb.Plug.RateLimiter)
+  end
+
   pipeline :flags do
     plug(:accepts, ["html"])
     plug(:put_secure_browser_headers)
@@ -61,7 +65,7 @@ defmodule WraftDocWeb.Router do
 
   # Scope which does not need authorization.
   scope "/api", WraftDocWeb do
-    pipe_through(:api)
+    pipe_through([:api, :rate_limit])
 
     # user
     scope "/v1", Api.V1, as: :v1 do
@@ -108,7 +112,7 @@ defmodule WraftDocWeb.Router do
 
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth, :valid_membership, :ex_audit_track, :email_verify])
+    pipe_through([:api, :api_auth, :rate_limit, :valid_membership, :ex_audit_track, :email_verify])
 
     scope "/v1", Api.V1, as: :v1 do
       # Current user details

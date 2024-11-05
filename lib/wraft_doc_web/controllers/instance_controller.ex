@@ -18,6 +18,10 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     approve: "instance:review",
     reject: "instance:review"
 
+  # 30 days
+  @one_month 60 * 60 * 24 * 30 * 1000
+  plug WraftDocWeb.Plug.RateLimiter, build: [scale: @one_month, limit: 50]
+
   action_fallback(WraftDocWeb.FallbackController)
 
   require Logger
