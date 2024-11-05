@@ -16,6 +16,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Plan
 
+  # TODO : may need to sync with paddle plans
   def swagger_definitions do
     %{
       Plan:
