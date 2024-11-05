@@ -8,7 +8,6 @@ defmodule WraftDoc.Repo.Migrations.UpdatePlansTable do
 
       add(:yearly_product_id, :string)
       add(:monthly_product_id, :string)
-
       add(:limits, :map)
     end
   end
