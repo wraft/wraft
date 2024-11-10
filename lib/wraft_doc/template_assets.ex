@@ -553,6 +553,33 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
+  @doc """
+  Gets the zip file from the URL.
+  """
+  @spec get_zip_from_url(String.t()) :: {:error, any()} | {:ok, binary()}
+  def get_zip_from_url(url) do
+    case URI.parse(url).host do
+      "wraft.app" ->
+        get_zip_binary(url)
+
+      _ ->
+        {:error, "Invalid domain. Only URLs from 'wraft.app' are allowed."}
+    end
+  end
+
+  defp get_zip_binary(url) do
+    case HTTPoison.get(url, [], follow_redirect: true) do
+      {:ok, %{status_code: 200, body: binary}} ->
+        {:ok, binary}
+
+      {:ok, %{status_code: status_code}} ->
+        {:error, "Failed to fetch file. Received status code: #{status_code}."}
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {:error, "HTTP request failed: #{reason}"}
+    end
+  end
+
   defp validate_wraft_json(wraft_json) do
     %WraftJson{}
     |> WraftJson.changeset(wraft_json)

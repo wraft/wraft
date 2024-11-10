@@ -168,6 +168,25 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     end
   end
 
+  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def create(conn, %{"zip_url" => zip_url} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with {:ok, zip_binary} <- TemplateAssets.get_zip_from_url(zip_url),
+         file_entries_in_zip <-
+           TemplateAssets.template_asset_file_list(zip_binary),
+         :ok <- TemplateAssets.template_zip_validator(zip_binary, file_entries_in_zip),
+         {:ok, wraft_json} <- TemplateAssets.get_wraft_json(zip_binary),
+         params <- Map.put(params, "wraft_json", wraft_json),
+         {:ok, %TemplateAsset{} = template_asset} <-
+           TemplateAssets.create_template_asset(current_user, params) do
+      render(conn, "template_asset.json",
+        template_asset: template_asset,
+        file_entries: file_entries_in_zip
+      )
+    end
+  end
+
   @doc """
   Template Asset index.
   """

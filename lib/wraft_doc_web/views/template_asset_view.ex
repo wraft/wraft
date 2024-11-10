@@ -9,6 +9,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
       name: template_asset.name,
       file: generate_url(template_asset),
       file_entries: file_entries,
+      wraft_json: template_asset.wraft_json,
       inserted_at: template_asset.inserted_at,
       updated_at: template_asset.updated_at
     }
