@@ -53,20 +53,7 @@ defmodule WraftDoc.Billing do
 
   def change_plan(user, new_plan_id) do
     subscription = active_subscription_for(user.id)
-    # plan = Plans.find(new_plan_id)
 
-    # limit_checking_opts =
-    #   if user.allow_next_upgrade_override do
-    #     [ignore_pageview_limit: true]
-    #   else
-    #     []
-    #   end
-    do_change_plan(subscription, new_plan_id)
-    # with :ok <- Quota.ensure_within_plan_limits(user, plan, limit_checking_opts),
-    #      do: do_change_plan(subscription, new_plan_id)
-  end
-
-  defp do_change_plan(subscription, new_plan_id) do
     res =
       PaddleApi.update_subscription(subscription.provider_subscription_id, %{
         provider_plan_id: new_plan_id
@@ -94,6 +81,16 @@ defmodule WraftDoc.Billing do
            subscription.provider_subscription_id,
            new_plan_id
          ) do
+      {:ok, response} ->
+        {:ok, response}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def cancel_subscription(subscription) do
+    case PaddleApi.cancel_subscription(subscription.provider_subscription_id) do
       {:ok, response} ->
         {:ok, response}
 
@@ -168,7 +165,7 @@ defmodule WraftDoc.Billing do
 
     if subscription do
       {:ok, api_subscription} = PaddleApi.get_subscription(subscription.paddle_subscription_id)
-      # check this
+
       amount =
         :erlang.float_to_binary(api_subscription["next_payment"]["amount"] / 1, decimals: 2)
 

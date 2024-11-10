@@ -279,18 +279,16 @@ defmodule WraftDocWeb.Router do
       # put("/collection_fields/:id", CollectionFormFieldController, :update)
       # delete("/collection_fields/:id", CollectionFormFieldController, :delete)
 
-      get("/billing/plans", BillingController, :choose_plan)
-      # post("/billing/create", BillingController, :create_subscription)
+      # Billing
+      # get("/billing/plans", BillingController, :choose_plan)
       get("/billing/change-plan/:plan_id", BillingController, :change_plan)
-      # get "/billing/change-plan/preview/:plan_id", BillingController, :change_plan_preview
-      post("/billing/upgrade", BillingController, :upgrade_subscription)
+      get("/billing/change-plan/preview/:plan_id", BillingController, :change_plan_preview)
       post("/billing/cancel", BillingController, :cancel_subscription)
-      # user_id
       get("/billing/active_subscription", BillingController, :get_active_subscription)
-      # get "/billing/subscription/ping", BillingController, :ping_subscription
+      get("/billing/subscription/ping", BillingController, :ping_subscription)
       # resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
       # Vendor webhook
-      # post("/vendors/webhook", VendorsWebhookController, :webhook)
+      # post("/vendors/notification", VendorsWebhookController, :webhook)
 
       # Update membership plan
       put("/memberships/:id", MembershipController, :update)
