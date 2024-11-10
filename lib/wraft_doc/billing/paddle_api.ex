@@ -9,10 +9,6 @@ defmodule WraftDoc.Billing.PaddleApi do
   plug Tesla.Middleware.JSON
   # plug Tesla.Middleware.BaseUrl, "https://vendors.paddle.com"
 
-  # @headers [
-  #   {"content-type", "application/json"},
-  #   {"accept", "application/json"}
-  # ]
   @paddle_vendor_id System.get_env("PADDLE_VENDOR_ID")
   @paddle_api_key System.get_env("PADDLE_API_KEY")
 
@@ -100,6 +96,27 @@ defmodule WraftDoc.Billing.PaddleApi do
     end
   end
 
+  def cancel_subscription(paddle_subscription_id) do
+    params = %{
+      vendor_id: @paddle_vendor_id,
+      vendor_auth_code: @paddle_api_key,
+      subscription_id: paddle_subscription_id
+    }
+
+    cancel_subscription_url()
+    |> post(params)
+    |> case do
+      {:ok, %Tesla.Env{status: 200, body: %{"success" => true, "response" => response}}} ->
+        {:ok, response}
+
+      {:ok, %Tesla.Env{status: 200, body: %{"success" => false, "error" => error}}} ->
+        {:error, error}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   def vendors_domain do
     if Mix.env() in [:dev, :test] do
       "https://sandbox-vendors.paddle.com"
@@ -122,6 +139,10 @@ defmodule WraftDoc.Billing.PaddleApi do
 
   defp update_subscription_url do
     Path.join(vendors_domain(), "/api/2.0/subscription/users/update")
+  end
+
+  defp cancel_subscription_url do
+    Path.join(vendors_domain(), "/api/2.0/subscription/users_cancel")
   end
 
   defp get_subscription_url do

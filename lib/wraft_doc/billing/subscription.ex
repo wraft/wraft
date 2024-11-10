@@ -13,7 +13,7 @@ defmodule WraftDoc.Billing.Subscription do
     field(:current_period_end, :utc_datetime)
     field(:canceled_at, :utc_datetime)
     field(:next_payment_date, :date)
-    field(:next_bill_amount, :decimal)
+    field(:next_bill_amount, :string)
     field(:currency, :string)
     field(:update_url, :string)
     field(:cancel_url, :string)
