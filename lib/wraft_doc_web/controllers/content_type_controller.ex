@@ -32,6 +32,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           properties do
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description", required: true)
+            type(:string, "Type of content type, eg: contract")
             fields(Schema.ref(:ContentTypeFieldRequests))
             layout_id(:string, "ID of the layout selected", required: true)
             flow_id(:string, "ID of the flow selected", required: true)
@@ -46,6 +47,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           example(%{
             name: "Offer letter",
             description: "An offer letter",
+            type: "contract",
             fields: [
               %{
                 name: "position",
@@ -161,6 +163,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id(:string, "The ID of the content type", required: true)
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description")
+            type(:string, "Type of the content type eg: contract")
             color(:string, "Hex code of color")
             prefix(:string, "Prefix to be used for generating Unique ID for contents")
             inserted_at(:string, "When was the user inserted", format: "ISO-8601")
@@ -232,6 +235,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id(:string, "The ID of the content type", required: true)
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description")
+            type(:string, "Content Type's type eg: contract")
             fields(Schema.ref(:ContentTypeFields))
             prefix(:string, "Prefix to be used for generating Unique ID for contents")
             color(:string, "Hex code of color")
@@ -320,6 +324,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id(:string, "The ID of the content type", required: true)
             name(:string, "Content Type's name", required: true)
             description(:string, "Content Type's description")
+            type(:string, "Type of content type, eg: contract")
             fields(Schema.ref(:ContentTypeFields))
             prefix(:string, "Prefix to be used for generating Unique ID for contents")
             color(:string, "Hex code of color")
@@ -333,6 +338,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             id: "1232148nb3478",
             name: "Offer letter",
             description: "An offer letter",
+            type: "contract",
             fields: [
               %{name: "position", field_type_id: "kjb14713132lkdac"},
               %{name: "name", field_type_id: "kjb2347mnsad"}
@@ -383,6 +389,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
               id: "1232148nb3478",
               name: "Offer letter",
               description: "An offer letter",
+              type: "contract",
               fields: [
                 %{name: "position", field_type_id: "kjb14713132lkdac"},
                 %{name: "name", field_type_id: "kjb2347mnsad"}
