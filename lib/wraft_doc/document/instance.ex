@@ -19,6 +19,7 @@ defmodule WraftDoc.Document.Instance do
     field(:instance_id, :string)
     field(:raw, :string)
     field(:serialized, :map, default: %{})
+    field(:meta, :map, default: %{})
     field(:type, :integer)
     field(:build, :string, virtual: true)
     field(:next_state, :string, virtual: true)
