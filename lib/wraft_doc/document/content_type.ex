@@ -10,7 +10,7 @@ defmodule WraftDoc.Document.ContentType do
   alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise.Flow
 
-  @document_type [:contract]
+  @document_type [:contract, :document]
   @derive {Jason.Encoder, only: [:id]}
 
   schema "content_type" do
@@ -18,7 +18,7 @@ defmodule WraftDoc.Document.ContentType do
     field(:description, :string)
     field(:color, :string)
     field(:prefix, :string)
-    field(:type, Ecto.Enum, values: @document_type)
+    field(:type, Ecto.Enum, values: @document_type, default: :document)
     belongs_to(:layout, Layout)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)

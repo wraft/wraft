@@ -603,7 +603,12 @@ defmodule WraftDoc.Document do
   @doc """
   Same as create_instance/4, to create instance and its approval system
   """
-  def create_instance(current_user, %{id: c_id, prefix: prefix} = content_type, _state, params) do
+  def create_instance(
+        current_user,
+        %{id: c_id, prefix: prefix, type: type} = content_type,
+        _state,
+        params
+      ) do
     instance_id = create_instance_id(c_id, prefix)
 
     params =
@@ -613,7 +618,7 @@ defmodule WraftDoc.Document do
     |> Multi.insert(
       :instance,
       content_type
-      |> build_assoc(:instances, creator: current_user)
+      |> build_assoc(:instances, creator: current_user, document_type: type)
       |> Instance.changeset(params)
     )
     |> Multi.run(:counter_increment, fn _, _ -> create_or_update_counter(content_type) end)
@@ -642,14 +647,14 @@ defmodule WraftDoc.Document do
   # @spec create_instance(ContentType.t(), State.t(), map) ::
   #         %Instance{content_type: ContentType.t(), state: State.t()}
   #         | {:error, Ecto.Changeset.t()}
-  def create_instance(%{id: c_id, prefix: prefix} = c_type, _state, params) do
+  def create_instance(%{id: c_id, prefix: prefix, type: type} = c_type, _state, params) do
     instance_id = create_instance_id(c_id, prefix)
 
     params =
       Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => [params["creator_id"]]})
 
     c_type
-    |> build_assoc(:instances)
+    |> build_assoc(:instances, document_type: type)
     |> Instance.changeset(params)
     |> Repo.insert()
     |> case do
@@ -669,7 +674,7 @@ defmodule WraftDoc.Document do
   @spec create_instance(User.t(), ContentType.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
-  def create_instance(%User{} = current_user, content_type, params) do
+  def create_instance(%User{} = current_user, %ContentType{type: type} = content_type, params) do
     instance_id = create_instance_id(content_type.id, content_type.prefix)
 
     params =
@@ -682,7 +687,7 @@ defmodule WraftDoc.Document do
     |> Multi.insert(
       :instance,
       content_type
-      |> build_assoc(:instances, creator: current_user)
+      |> build_assoc(:instances, creator: current_user, document_type: type)
       |> Instance.changeset(params)
     )
     |> Multi.run(:counter_increment, fn _, _ -> create_or_update_counter(content_type) end)
