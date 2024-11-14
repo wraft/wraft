@@ -145,6 +145,7 @@ defmodule WraftDoc.Factory do
     %ContentType{
       name: sequence(:name, &"name-#{&1}"),
       description: "A content type to create documents",
+      type: Enum.random(["document", "contract"]),
       prefix: "OFFR",
       organisation: build(:organisation),
       layout: build(:layout),
