@@ -18,6 +18,7 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Document.Layout
   alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Flow
   alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
@@ -191,13 +192,18 @@ defmodule WraftDoc.TemplateAssets do
       prepare_theme(template_map["theme"], current_user, downloaded_file, entries)
     end)
     |> Multi.run(:flow, fn _repo, _changes ->
-      Enterprise.create_flow(current_user, template_map["flow"])
+      params = update_conflicting_name(template_map["flow"], Flow)
+      Enterprise.create_flow(current_user, params)
     end)
     |> Multi.run(:layout, fn _repo, _changes ->
-      prepare_layout(template_map["layout"], downloaded_file, current_user, entries)
+      template_map["layout"]
+      |> update_conflicting_name(Layout)
+      |> prepare_layout(downloaded_file, current_user, entries)
     end)
     |> Multi.run(:content_type, fn _repo, %{theme: theme, flow: flow, layout: layout} ->
-      prepare_content_type(template_map["variant"], current_user, theme.id, layout.id, flow.id)
+      template_map["variant"]
+      |> update_conflicting_name(ContentType)
+      |> prepare_content_type(current_user, theme.id, layout.id, flow.id)
     end)
     |> Multi.run(:data_template, fn _repo, %{content_type: content_type} ->
       prepare_data_template(
@@ -772,5 +778,28 @@ defmodule WraftDoc.TemplateAssets do
     File.mkdir_p(Path.dirname(path))
     File.write!(path, file)
     "#{folder_name}/#{asset.name}.#{format}"
+  end
+
+  defp update_conflicting_name(map, type) do
+    name = unique_name(map["name"], type)
+    put_in(map, ["name"], name)
+  end
+
+  defp increment_name(name) do
+    case Regex.run(~r/^(.*?)(\d+)$/, name, capture: :all_but_first) do
+      [base, num] -> "#{String.trim(base)} #{String.to_integer(num) + 1}"
+      _ -> "#{name} 2"
+    end
+  end
+
+  defp unique_name(name, type) do
+    query = from(f in type, where: f.name == ^name)
+
+    if Repo.exists?(query) do
+      incremented_name = increment_name(name)
+      unique_name(incremented_name, type)
+    else
+      name
+    end
   end
 end
