@@ -13,13 +13,16 @@ defmodule WraftDoc.Document.Instance do
   use WraftDoc.Schema
 
   alias __MODULE__
+  alias WraftDoc.EctoType.DocumentMetaType
+
   def types, do: [normal: 1, bulk_build: 2, pipeline_api: 3, pipeline_hook: 4]
 
   schema "content" do
     field(:instance_id, :string)
     field(:raw, :string)
     field(:serialized, :map, default: %{})
-    field(:meta, :map, default: %{})
+    field(:document_type, :string, virtual: true)
+    field(:meta, DocumentMetaType)
     field(:type, :integer)
     field(:build, :string, virtual: true)
     field(:next_state, :string, virtual: true)
@@ -48,6 +51,7 @@ defmodule WraftDoc.Document.Instance do
     |> cast(attrs, [
       :instance_id,
       :raw,
+      :document_type,
       :serialized,
       :content_type_id,
       :type,
@@ -55,7 +59,15 @@ defmodule WraftDoc.Document.Instance do
       :vendor_id,
       :allowed_users
     ])
-    |> validate_required([:instance_id, :raw, :serialized, :type, :content_type_id])
+    |> validate_required([
+      :instance_id,
+      :raw,
+      :document_type,
+      :serialized,
+      :type,
+      :content_type_id
+    ])
+    |> DocumentMetaType.cast_meta(attrs)
     |> unique_constraint(:instance_id,
       message: "Instance with the ID exists.!",
       name: :content_organisation_unique_index
