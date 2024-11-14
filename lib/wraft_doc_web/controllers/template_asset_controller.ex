@@ -42,6 +42,26 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
             id: "1232148nb3478",
             name: "Template Asset",
             file: "/contract.zip",
+            file_entries: [
+              "wraft.json",
+              "theme/HubotSans-RegularItalic.otf",
+              "theme/HubotSans-Regular.otf",
+              "theme/HubotSans-BoldItalic.otf",
+              "theme/HubotSans-Bold.otf",
+              "theme/",
+              "template.json",
+              "layout/gradient.pdf",
+              "layout/",
+              "contract/template.tex",
+              "contract/"
+            ],
+            wraft_json: %{
+              data_template: "data_template/",
+              layout: "layout/gradient.pdf",
+              flow: "flow/",
+              theme: "theme/",
+              contract: "contract/"
+            },
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -127,6 +147,46 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
               inserted_at: "2020-02-21T14:00:00Z"
             }
           })
+        end,
+      PublicTemplateList:
+        swagger_schema do
+          title("Public Template List")
+          description("A list of public templates, each with a file name and path.")
+          type(:object)
+
+          properties do
+            templates(%Schema{
+              type: :array,
+              description: "List of templates with file name and path",
+              items: %Schema{
+                type: :object,
+                properties: %{
+                  file_name: %Schema{type: :string, description: "The name of the file"},
+                  path: %Schema{type: :string, description: "The full path to the file"}
+                }
+              }
+            })
+          end
+
+          example(%{
+            templates: [
+              %{
+                file_name: "contract.zip",
+                path: "templates/contract.zip"
+              },
+              %{
+                file_name: "nda.zip",
+                path: "templates/nda.zip"
+              }
+            ]
+          })
+        end,
+      FileDownloadResponse:
+        swagger_schema do
+          title("File Download Response")
+          description("Response for a file download, represented as a binary.")
+          type(:file)
+          example("Binary data representing the downloaded file.")
         end
     }
   end
@@ -360,14 +420,13 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
       id(:path, :string, "ID of the template asset to build", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:ShowDataTemplate))
+    response(200, "Ok", Schema.ref(:FileDownloadResponse))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(404, "Not found", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec template_export(Plug.Conn.t(), map) :: Plug.Conn.t()
-
   def template_export(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
@@ -388,6 +447,43 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
              current_user
            ) do
       send_download(conn, {:file, zip_path}, filename: "#{data_template.title}.zip")
+    end
+  end
+
+  @doc """
+  List all templates.
+  """
+  swagger_path :list_public_templates do
+    get("/t")
+    summary("List Public Templates")
+    description("Fetches a list of all public templates available.")
+    produces("application/json")
+    response(200, "Success", Schema.ref(:PublicTemplateList))
+    response(400, "Bad Request", Schema.ref(:Error))
+  end
+
+  def list_public_templates(conn, _params) do
+    with {:ok, template_list} <- TemplateAssets.list_public_templates() do
+      render(conn, "list_public_templates.json", %{templates: template_list})
+    end
+  end
+
+  @doc """
+  Download a public template.
+  """
+  swagger_path :download_public_template do
+    get("/t/:file_name")
+    summary("Download Public Template")
+    description("Downloads a specified public template file.")
+    produces("application/octet-stream")
+    parameter(:file_name, :path, :string, "Name of the template file to download", required: true)
+    response(200, "File downloaded successfully", Schema.ref(:FileDownloadResponse))
+    response(400, "Template download failed", Schema.ref(:Error))
+  end
+
+  def download_public_template(conn, %{"file_name" => template_name}) do
+    with {:ok, template} <- TemplateAssets.download_public_template(template_name) do
+      send_download(conn, {:binary, template}, filename: template_name)
     end
   end
 end
