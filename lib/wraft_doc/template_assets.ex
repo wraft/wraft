@@ -193,17 +193,17 @@ defmodule WraftDoc.TemplateAssets do
     end)
     |> Multi.run(:flow, fn _repo, _changes ->
       template_map["flow"]
-      |> update_conflicting_name(Flow)
+      |> update_conflicting_name(Flow, current_user)
       |> then(&Enterprise.create_flow(current_user, &1))
     end)
     |> Multi.run(:layout, fn _repo, _changes ->
       template_map["layout"]
-      |> update_conflicting_name(Layout)
+      |> update_conflicting_name(Layout, current_user)
       |> prepare_layout(downloaded_file, current_user, entries)
     end)
     |> Multi.run(:content_type, fn _repo, %{theme: theme, flow: flow, layout: layout} ->
       template_map["variant"]
-      |> update_conflicting_name(ContentType)
+      |> update_conflicting_name(ContentType, current_user)
       |> prepare_content_type(current_user, theme.id, layout.id, flow.id)
     end)
     |> Multi.run(:data_template, fn _repo, %{content_type: content_type} ->
@@ -771,8 +771,8 @@ defmodule WraftDoc.TemplateAssets do
     "#{folder_name}/#{asset.name}.#{format}"
   end
 
-  defp update_conflicting_name(map, type) do
-    name = unique_name(map["name"], type)
+  defp update_conflicting_name(map, type, current_user) do
+    name = unique_name(map["name"], type, current_user)
     put_in(map, ["name"], name)
   end
 
@@ -783,12 +783,15 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp unique_name(name, type) do
-    query = from(f in type, where: f.name == ^name)
+  defp unique_name(name, type, current_user) do
+    query =
+      from(f in type,
+        where: f.name == ^name and f.organisation_id == ^current_user.current_org_id
+      )
 
     if Repo.exists?(query) do
       incremented_name = increment_name(name)
-      unique_name(incremented_name, type)
+      unique_name(incremented_name, type, current_user)
     else
       name
     end
