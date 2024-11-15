@@ -107,9 +107,9 @@ defmodule WraftDocWeb.Router do
 
     # templates
     scope "/v1", Api.V1, as: :v1 do
-      scope "/t" do
+      scope "/templates" do
         get("/", TemplateAssetController, :list_public_templates)
-        get("/:file_name", TemplateAssetController, :download_public_template)
+        get("/:file_name/download", TemplateAssetController, :download_public_template)
       end
     end
   end

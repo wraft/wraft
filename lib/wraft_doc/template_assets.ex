@@ -192,8 +192,9 @@ defmodule WraftDoc.TemplateAssets do
       prepare_theme(template_map["theme"], current_user, downloaded_file, entries)
     end)
     |> Multi.run(:flow, fn _repo, _changes ->
-      params = update_conflicting_name(template_map["flow"], Flow)
-      Enterprise.create_flow(current_user, params)
+      template_map["flow"]
+      |> update_conflicting_name(Flow)
+      |> then(&Enterprise.create_flow(current_user, &1))
     end)
     |> Multi.run(:layout, fn _repo, _changes ->
       template_map["layout"]
@@ -624,16 +625,6 @@ defmodule WraftDoc.TemplateAssets do
     Map.put(params, "zip_file", file)
   end
 
-  defp get_zip_from_url(url) do
-    case URI.parse(url).host do
-      "wraft.app" ->
-        get_zip_binary_from_url(url)
-
-      _ ->
-        {:error, "Invalid domain. Only URLs from 'wraft.app' are allowed."}
-    end
-  end
-
   defp get_zip_binary_from_url(url) do
     case HTTPoison.get(url, [], follow_redirect: true) do
       {:ok, %{status_code: 200, body: binary}} ->
@@ -652,7 +643,7 @@ defmodule WraftDoc.TemplateAssets do
        }),
        do: read_zip_contents(file_path)
 
-  defp get_zip_binary(:url, url), do: get_zip_from_url(url)
+  defp get_zip_binary(:url, url), do: get_zip_binary_from_url(url)
 
   @doc """
   Prepare all the nessecary files and format for zip export.

@@ -454,7 +454,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   List all templates.
   """
   swagger_path :list_public_templates do
-    get("/t")
+    get("/templates")
     summary("List Public Templates")
     description("Fetches a list of all public templates available.")
     produces("application/json")
@@ -472,7 +472,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   Download a public template.
   """
   swagger_path :download_public_template do
-    get("/t/:file_name")
+    get("/templates/:file_name/download")
     summary("Download Public Template")
     description("Downloads a specified public template file.")
     produces("application/octet-stream")
