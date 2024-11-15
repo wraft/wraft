@@ -172,19 +172,32 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
             templates: [
               %{
                 file_name: "contract.zip",
-                path: "templates/contract.zip"
+                path: "public/templates/contract.zip"
               },
               %{
                 file_name: "nda.zip",
-                path: "templates/nda.zip"
+                path: "public/templates/nda.zip"
               }
             ]
           })
         end,
+      DownloadTemplateResponse:
+        swagger_schema do
+          title("Download Template Response")
+          description("Response containing the pre-signed URL for downloading the template.")
+          type(:object)
+
+          properties do
+            template_url(:string, "Pre-signed URL for downloading the template",
+              example:
+                "https://minio.example.com/bucket/templates/example-template.zip?X-Amz-Signature=..."
+            )
+          end
+        end,
       FileDownloadResponse:
         swagger_schema do
           title("File Download Response")
-          description("Response for a file download, represented as a binary.")
+          description("Response for a file download.")
           type(:file)
           example("Binary data representing the downloaded file.")
         end
@@ -473,17 +486,17 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   """
   swagger_path :download_public_template do
     get("/templates/:file_name/download")
-    summary("Download Public Template")
-    description("Downloads a specified public template file.")
-    produces("application/octet-stream")
+    summary("Get Download URL for Public Template")
+    description("Generates a pre-signed URL for downloading a specified public template file.")
+    produces("application/json")
     parameter(:file_name, :path, :string, "Name of the template file to download", required: true)
-    response(200, "File downloaded successfully", Schema.ref(:FileDownloadResponse))
-    response(400, "Template download failed", Schema.ref(:Error))
+    response(200, "Pre-signed URL generated successfully", Schema.ref(:DownloadTemplateResponse))
+    response(400, "Failed to generate pre-signed URL", Schema.ref(:Error))
   end
 
   def download_public_template(conn, %{"file_name" => template_name}) do
-    with {:ok, template} <- TemplateAssets.download_public_template(template_name) do
-      send_download(conn, {:binary, template}, filename: template_name)
+    with {:ok, template_url} <- TemplateAssets.download_public_template(template_name) do
+      render(conn, "download_public_template.json", %{template_url: template_url})
     end
   end
 end

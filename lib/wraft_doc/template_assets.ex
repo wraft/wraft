@@ -802,17 +802,15 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec list_public_templates() :: {:ok, list()}
   def list_public_templates do
-    template_list =
-      "templates/"
-      |> Minio.list_files()
-      |> Enum.map(fn path ->
-        %{
-          file_name: Path.basename(path),
-          path: path
-        }
-      end)
-
-    {:ok, template_list}
+    "public/templates/"
+    |> Minio.list_files()
+    |> Enum.map(fn path ->
+      %{
+        file_name: Path.basename(path),
+        path: path
+      }
+    end)
+    |> then(&{:ok, &1})
   end
 
   @doc """
@@ -820,9 +818,8 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec download_public_template(String.t()) :: {:ok, binary()} | {:error, String.t()}
   def download_public_template(template_name) do
-    template = Minio.download("templates/#{template_name}")
-    {:ok, template}
-  rescue
-    _ -> {:error, "Template download failed."}
+    "public/templates/#{template_name}"
+    |> Minio.generate_url()
+    |> then(&{:ok, &1})
   end
 end

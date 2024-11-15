@@ -58,6 +58,12 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
     }
   end
 
+  def render("download_public_template.json", %{template_url: template_url}) do
+    %{
+      template_url: template_url
+    }
+  end
+
   defp generate_url(%{zip_file: zip_file} = template_asset) do
     WraftDocWeb.TemplateAssetUploader.url({zip_file, template_asset}, signed: true)
   end
