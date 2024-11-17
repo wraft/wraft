@@ -9,12 +9,13 @@ defmodule WraftDoc.EctoType.DocumentMetaType do
   alias WraftDoc.Document.Instance
 
   # List of supported document types
-  @document_meta_types ~w(contract document)
+  @document_meta_types ~w(contract document)a
 
   def type, do: :map
 
-  def cast(%{type: type} = meta_data) when type in @document_meta_types do
+  def cast(%{"type" => type} = meta_data) when type in @document_meta_types do
     type
+    |> Atom.to_string()
     |> document_module()
     |> then(&{:ok, &1.changeset(struct(&1), meta_data)})
   end
@@ -33,21 +34,33 @@ defmodule WraftDoc.EctoType.DocumentMetaType do
   defp document_module(type), do: Module.concat(Instance, :"#{Macro.camelize(type)}Meta")
 
   # Add meta data to the changeset
-  def cast_meta(changeset, attrs) do
-    # Add the document type to the meta
-    attrs = %{attrs | meta: Map.put(attrs[:meta], :type, get_field(changeset, :document_type))}
-    # Cast the meta data
-    changeset = cast(changeset, attrs, [:meta])
-    # If the meta data is valid, add it to the changeset
-    case get_change(changeset, :meta) do
-      %Ecto.Changeset{valid?: true} ->
-        %{changeset | changes: Map.put(changeset.changes, :meta, attrs[:meta])}
+  def cast_meta(changeset, %{"meta" => meta} = attrs) when is_map(meta) do
+    attrs =
+      update_in(attrs["meta"], &Map.put_new(&1, "type", get_field(changeset, :document_type)))
 
-      %Ecto.Changeset{valid?: false} = meta_changeset ->
-        # Merge errors from the nested changeset (meta) into the parent changeset
-        changeset = add_error(changeset, :meta, "invalid meta data", meta_changeset.errors)
-        # Delete the nested meta changeset from the parent changeset
-        %{changeset | changes: Map.delete(changeset.changes, :meta)}
+    changeset
+    |> cast(attrs, [:meta])
+    |> validate_meta_changes()
+  end
+
+  def cast_meta(changeset, attrs) when is_map(attrs) do
+    cast_meta(
+      changeset,
+      Map.put(attrs, "meta", %{"type" => get_field(changeset, :document_type)})
+    )
+  end
+
+  def cast_meta(changeset, _), do: changeset
+
+  defp validate_meta_changes(changeset) do
+    case get_change(changeset, :meta) do
+      %Ecto.Changeset{valid?: true, changes: changes} ->
+        put_change(changeset, :meta, changes)
+
+      %Ecto.Changeset{valid?: false, errors: errors} ->
+        changeset
+        |> add_error(:meta, "invalid meta data", errors)
+        |> delete_change(:meta)
 
       nil ->
         changeset
