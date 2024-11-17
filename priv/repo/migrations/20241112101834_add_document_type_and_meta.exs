@@ -9,5 +9,7 @@ defmodule WraftDoc.Repo.Migrations.AddDocumentTypeAndMeta do
     alter table(:content_type) do
       add(:type, :string)
     end
+
+    execute("UPDATE content_type SET type = 'document' WHERE type IS NULL")
   end
 end
