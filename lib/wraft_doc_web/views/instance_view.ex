@@ -17,6 +17,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       content: %{
         id: content.id,
         instance_id: content.instance_id,
+        meta: content.meta,
         raw: content.raw,
         approval_status: content.approval_status,
         type: content.type,
