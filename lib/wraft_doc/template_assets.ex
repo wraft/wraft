@@ -186,32 +186,49 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp prepare_template_transaction(template_map, current_user, downloaded_file, entries) do
+  defp prepare_template_transaction(
+         %{
+           "theme" => theme,
+           "flow" => flow,
+           "layout" => layout,
+           "variant" => variant,
+           "data_template" => data_template
+         },
+         current_user,
+         downloaded_file,
+         entries
+       ) do
     Multi.new()
     |> Multi.run(:theme, fn _repo, _changes ->
-      prepare_theme(template_map["theme"], current_user, downloaded_file, entries)
+      theme
+      |> update_conflicting_name(Theme, current_user)
+      |> prepare_theme(current_user, downloaded_file, entries)
     end)
     |> Multi.run(:flow, fn _repo, _changes ->
-      template_map["flow"]
+      flow
       |> update_conflicting_name(Flow, current_user)
       |> then(&Enterprise.create_flow(current_user, &1))
     end)
     |> Multi.run(:layout, fn _repo, _changes ->
-      template_map["layout"]
+      layout
       |> update_conflicting_name(Layout, current_user)
       |> prepare_layout(downloaded_file, current_user, entries)
     end)
     |> Multi.run(:content_type, fn _repo, %{theme: theme, flow: flow, layout: layout} ->
-      template_map["variant"]
+      variant
       |> update_conflicting_name(ContentType, current_user)
       |> prepare_content_type(current_user, theme.id, layout.id, flow.id)
     end)
     |> Multi.run(:data_template, fn _repo, %{content_type: content_type} ->
-      prepare_data_template(
-        current_user,
-        template_map["data_template"],
-        downloaded_file,
-        content_type
+      data_template
+      |> update_conflicting_name(DataTemplate, current_user)
+      |> then(
+        &prepare_data_template(
+          current_user,
+          &1,
+          downloaded_file,
+          content_type
+        )
       )
     end)
     |> Repo.transaction()
@@ -241,10 +258,12 @@ defmodule WraftDoc.TemplateAssets do
     |> extract_and_save_fonts(downloaded_file, current_user)
   end
 
-  defp prepare_theme_attrs(%{"name" => name, "colors" => colors}, asset_ids) do
+  defp prepare_theme_attrs(%{"name" => name, "colors" => colors, "fonts" => fonts}, asset_ids) do
+    font_name = fonts |> List.first() |> Map.get("fontName", name)
+
     Map.merge(colors, %{
       "name" => name,
-      "font" => name,
+      "font" => font_name,
       "primary_color" => colors["primaryColor"],
       "secondary_color" => colors["secondaryColor"],
       "body_color" => colors["bodyColor"],
@@ -771,9 +790,16 @@ defmodule WraftDoc.TemplateAssets do
     "#{folder_name}/#{asset.name}.#{format}"
   end
 
-  defp update_conflicting_name(map, type, current_user) do
-    name = unique_name(map["name"], type, current_user)
-    put_in(map, ["name"], name)
+  defp update_conflicting_name(%{"title" => title} = map, DataTemplate, current_user) do
+    title
+    |> unique_name(DataTemplate, current_user)
+    |> then(&put_in(map, ["title"], &1))
+  end
+
+  defp update_conflicting_name(%{"name" => name} = map, type, current_user) do
+    name
+    |> unique_name(type, current_user)
+    |> then(&put_in(map, ["name"], &1))
   end
 
   defp increment_name(name) do
@@ -784,17 +810,28 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp unique_name(name, type, current_user) do
-    query =
-      from(f in type,
-        where: f.name == ^name and f.organisation_id == ^current_user.current_org_id
-      )
+    name
+    |> build_uniqueness_query(type, current_user)
+    |> Repo.exists?()
+    |> case do
+      true ->
+        name
+        |> increment_name()
+        |> unique_name(type, current_user)
 
-    if Repo.exists?(query) do
-      incremented_name = increment_name(name)
-      unique_name(incremented_name, type, current_user)
-    else
-      name
+      false ->
+        name
     end
+  end
+
+  defp build_uniqueness_query(name, DataTemplate, current_user) do
+    from(f in DataTemplate, where: f.title == ^name and f.creator_id == ^current_user.id)
+  end
+
+  defp build_uniqueness_query(name, type, current_user) do
+    from(f in type,
+      where: f.name == ^name and f.organisation_id == ^current_user.current_org_id
+    )
   end
 
   @doc """
