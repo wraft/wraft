@@ -9,6 +9,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
       name: template_asset.name,
       file: generate_url(template_asset),
       file_entries: file_entries,
+      wraft_json: template_asset.wraft_json,
       inserted_at: template_asset.inserted_at,
       updated_at: template_asset.updated_at
     }
@@ -48,6 +49,18 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
       serialized: template.serialized,
       inserted_at: template.inserted_at,
       updated_at: template.updated_at
+    }
+  end
+
+  def render("list_public_templates.json", %{templates: template_list}) do
+    %{
+      templates: template_list
+    }
+  end
+
+  def render("download_public_template.json", %{template_url: template_url}) do
+    %{
+      template_url: template_url
     }
   end
 

@@ -18,6 +18,7 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Document.Layout
   alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Flow
   alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
@@ -142,20 +143,12 @@ defmodule WraftDoc.TemplateAssets do
     error -> {:error, error.message}
   end
 
-  @doc """
-  Gets wraft json map.
-  """
-  @spec get_wraft_json(binary()) :: {:ok, map()}
-  def get_wraft_json(downloaded_zip_binary) do
+  defp get_wraft_json(downloaded_zip_binary) do
     {:ok, wraft_json} = extract_file_content(downloaded_zip_binary, "wraft.json")
     Jason.decode(wraft_json)
   end
 
-  @doc """
-  Gets the list of specific items in template asset
-  """
-  @spec template_asset_file_list(binary()) :: [String.t()] | {:error, any()}
-  def template_asset_file_list(zip_binary) do
+  defp template_asset_file_list(zip_binary) do
     case get_zip_entries(zip_binary) do
       {:ok, entries} ->
         filter_entries(entries)
@@ -193,26 +186,49 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp prepare_template_transaction(template_map, current_user, downloaded_file, entries) do
+  defp prepare_template_transaction(
+         %{
+           "theme" => theme,
+           "flow" => flow,
+           "layout" => layout,
+           "variant" => variant,
+           "data_template" => data_template
+         },
+         current_user,
+         downloaded_file,
+         entries
+       ) do
     Multi.new()
     |> Multi.run(:theme, fn _repo, _changes ->
-      prepare_theme(template_map["theme"], current_user, downloaded_file, entries)
+      theme
+      |> update_conflicting_name(Theme, current_user)
+      |> prepare_theme(current_user, downloaded_file, entries)
     end)
     |> Multi.run(:flow, fn _repo, _changes ->
-      Enterprise.create_flow(current_user, template_map["flow"])
+      flow
+      |> update_conflicting_name(Flow, current_user)
+      |> then(&Enterprise.create_flow(current_user, &1))
     end)
     |> Multi.run(:layout, fn _repo, _changes ->
-      prepare_layout(template_map["layout"], downloaded_file, current_user, entries)
+      layout
+      |> update_conflicting_name(Layout, current_user)
+      |> prepare_layout(downloaded_file, current_user, entries)
     end)
     |> Multi.run(:content_type, fn _repo, %{theme: theme, flow: flow, layout: layout} ->
-      prepare_content_type(template_map["variant"], current_user, theme.id, layout.id, flow.id)
+      variant
+      |> update_conflicting_name(ContentType, current_user)
+      |> prepare_content_type(current_user, theme.id, layout.id, flow.id)
     end)
     |> Multi.run(:data_template, fn _repo, %{content_type: content_type} ->
-      prepare_data_template(
-        current_user,
-        template_map["data_template"],
-        downloaded_file,
-        content_type
+      data_template
+      |> update_conflicting_name(DataTemplate, current_user)
+      |> then(
+        &prepare_data_template(
+          current_user,
+          &1,
+          downloaded_file,
+          content_type
+        )
       )
     end)
     |> Repo.transaction()
@@ -242,10 +258,12 @@ defmodule WraftDoc.TemplateAssets do
     |> extract_and_save_fonts(downloaded_file, current_user)
   end
 
-  defp prepare_theme_attrs(%{"name" => name, "colors" => colors}, asset_ids) do
+  defp prepare_theme_attrs(%{"name" => name, "colors" => colors, "fonts" => fonts}, asset_ids) do
+    font_name = fonts |> List.first() |> Map.get("fontName", name)
+
     Map.merge(colors, %{
       "name" => name,
-      "font" => name,
+      "font" => font_name,
       "primary_color" => colors["primaryColor"],
       "secondary_color" => colors["secondaryColor"],
       "body_color" => colors["bodyColor"],
@@ -524,11 +542,7 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  @doc """
-  Validates the contents of a ZIP file uploaded via Waffle.
-  """
-  @spec template_zip_validator(binary(), [String.t()]) :: :ok | {:error, any()}
-  def template_zip_validator(zip_binary, file_entries_in_zip) do
+  defp template_zip_validator(zip_binary, file_entries_in_zip) do
     with true <- validate_zip_entries(file_entries_in_zip),
          {:ok, wraft_json} <- get_wraft_json(zip_binary),
          true <- validate_wraft_json(wraft_json) do
@@ -539,11 +553,7 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  @doc """
-  Reads the contents of a ZIP file.
-  """
-  @spec read_zip_contents(String.t()) :: {:error, any()} | {:ok, binary()}
-  def read_zip_contents(file_path) do
+  defp read_zip_contents(file_path) do
     case File.read(file_path) do
       {:ok, binary} ->
         {:ok, binary}
@@ -599,6 +609,60 @@ defmodule WraftDoc.TemplateAssets do
   defp extract_files(entries) do
     Enum.filter(entries, &(!String.ends_with?(&1, "/")))
   end
+
+  @doc """
+  Processes a template asset by extracting and validating the contents of a ZIP file or URL, returning
+  a modified parameters map with extracted data, the binary content of the ZIP, and a list of file entries.
+  """
+  @spec process_template_asset(map(), :file | :url, Plug.Upload.t() | String.t()) ::
+          {map(), binary(), [String.t()]} | {:error, any()}
+  def process_template_asset(params, source_type, source_value) do
+    with {:ok, zip_binary} <- get_zip_binary(source_type, source_value),
+         file_entries_in_zip <- template_asset_file_list(zip_binary),
+         :ok <- template_zip_validator(zip_binary, file_entries_in_zip),
+         {:ok, wraft_json} <- get_wraft_json(zip_binary),
+         params <- Map.put(params, "wraft_json", wraft_json) do
+      {params, zip_binary, file_entries_in_zip}
+    end
+  end
+
+  @doc """
+  Adds a ZIP file to the params map as a `Plug.Upload` struct.
+  """
+  @spec add_file_to_params(map(), binary(), String.t()) :: map()
+  def add_file_to_params(params, zip_binary, zip_url) do
+    file_path = Briefly.create!()
+    File.write!(file_path, zip_binary)
+    file_name = zip_url |> URI.parse() |> Map.get(:path) |> Path.basename()
+
+    file = %Plug.Upload{
+      filename: file_name,
+      content_type: "application/zip",
+      path: file_path
+    }
+
+    Map.put(params, "zip_file", file)
+  end
+
+  defp get_zip_binary_from_url(url) do
+    case HTTPoison.get(url, [], follow_redirect: true) do
+      {:ok, %{status_code: 200, body: binary}} ->
+        {:ok, binary}
+
+      {:ok, %{status_code: status_code}} ->
+        {:error, "Failed to fetch file. Received status code: #{status_code}."}
+
+      {:error, %HTTPoison.Error{reason: reason}} ->
+        {:error, "HTTP request failed: #{reason}"}
+    end
+  end
+
+  defp get_zip_binary(:file, %Plug.Upload{
+         path: file_path
+       }),
+       do: read_zip_contents(file_path)
+
+  defp get_zip_binary(:url, url), do: get_zip_binary_from_url(url)
 
   @doc """
   Prepare all the nessecary files and format for zip export.
@@ -724,5 +788,75 @@ defmodule WraftDoc.TemplateAssets do
     File.mkdir_p(Path.dirname(path))
     File.write!(path, file)
     "#{folder_name}/#{asset.name}.#{format}"
+  end
+
+  defp update_conflicting_name(%{"title" => title} = map, DataTemplate, current_user) do
+    title
+    |> unique_name(DataTemplate, current_user)
+    |> then(&put_in(map, ["title"], &1))
+  end
+
+  defp update_conflicting_name(%{"name" => name} = map, type, current_user) do
+    name
+    |> unique_name(type, current_user)
+    |> then(&put_in(map, ["name"], &1))
+  end
+
+  defp increment_name(name) do
+    case Regex.run(~r/^(.*?)(\d+)$/, name, capture: :all_but_first) do
+      [base, num] -> "#{String.trim(base)} #{String.to_integer(num) + 1}"
+      _ -> "#{name} 2"
+    end
+  end
+
+  defp unique_name(name, type, current_user) do
+    name
+    |> build_uniqueness_query(type, current_user)
+    |> Repo.exists?()
+    |> case do
+      true ->
+        name
+        |> increment_name()
+        |> unique_name(type, current_user)
+
+      false ->
+        name
+    end
+  end
+
+  defp build_uniqueness_query(name, DataTemplate, current_user) do
+    from(f in DataTemplate, where: f.title == ^name and f.creator_id == ^current_user.id)
+  end
+
+  defp build_uniqueness_query(name, type, current_user) do
+    from(f in type,
+      where: f.name == ^name and f.organisation_id == ^current_user.current_org_id
+    )
+  end
+
+  @doc """
+  List all the public templates.
+  """
+  @spec list_public_templates() :: {:ok, list()}
+  def list_public_templates do
+    "public/templates/"
+    |> Minio.list_files()
+    |> Enum.map(fn path ->
+      %{
+        file_name: Path.basename(path),
+        path: path
+      }
+    end)
+    |> then(&{:ok, &1})
+  end
+
+  @doc """
+  Download template from minio.
+  """
+  @spec download_public_template(String.t()) :: {:ok, binary()} | {:error, String.t()}
+  def download_public_template(template_name) do
+    "public/templates/#{template_name}"
+    |> Minio.generate_url()
+    |> then(&{:ok, &1})
   end
 end
