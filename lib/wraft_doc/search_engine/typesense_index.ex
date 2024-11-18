@@ -1,4 +1,4 @@
-defprotocol WraftDoc.SearchEngine.Index do
+defprotocol WraftDoc.SearchEngine.TypesenseIndex do
   @moduledoc """
   Protocol defining the interface for converting records to Typesense documents.
   """
@@ -22,7 +22,7 @@ defprotocol WraftDoc.SearchEngine.Index do
   def collection_schema(struct)
 end
 
-defimpl WraftDoc.SearchEngine.Index, for: WraftDoc.Document.ContentType do
+defimpl WraftDoc.SearchEngine.TypesenseIndex, for: WraftDoc.Document.ContentType do
   @moduledoc """
   Implementation of the Index protocol for ContentType schema.
   Handles conversion of ContentType records for Typesense indexing.
@@ -78,8 +78,7 @@ defimpl WraftDoc.SearchEngine.Index, for: WraftDoc.Document.ContentType do
         %{name: "creator_id", type: "string"},
         %{name: "inserted_at", type: "string"},
         %{name: "updated_at", type: "string"}
-      ],
-      default_sorting_field: "inserted_at"
+      ]
     }
   end
 end
