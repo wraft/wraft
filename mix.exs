@@ -150,7 +150,10 @@ defmodule WraftDoc.Mixfile do
 
       # mjml
       {:mjml, "~> 3.0"},
-      {:mjml_eex, "~> 0.10.0"}
+      {:mjml_eex, "~> 0.10.0"},
+
+      #search
+      {:ex_typesense, "~> 0.6"}
     ]
   end
 
