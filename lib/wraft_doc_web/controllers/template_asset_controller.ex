@@ -42,6 +42,26 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
             id: "1232148nb3478",
             name: "Template Asset",
             file: "/contract.zip",
+            file_entries: [
+              "wraft.json",
+              "theme/HubotSans-RegularItalic.otf",
+              "theme/HubotSans-Regular.otf",
+              "theme/HubotSans-BoldItalic.otf",
+              "theme/HubotSans-Bold.otf",
+              "theme/",
+              "template.json",
+              "layout/gradient.pdf",
+              "layout/",
+              "contract/template.tex",
+              "contract/"
+            ],
+            wraft_json: %{
+              data_template: "data_template/",
+              layout: "layout/gradient.pdf",
+              flow: "flow/",
+              theme: "theme/",
+              contract: "contract/"
+            },
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -127,6 +147,59 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
               inserted_at: "2020-02-21T14:00:00Z"
             }
           })
+        end,
+      PublicTemplateList:
+        swagger_schema do
+          title("Public Template List")
+          description("A list of public templates, each with a file name and path.")
+          type(:object)
+
+          properties do
+            templates(%Schema{
+              type: :array,
+              description: "List of templates with file name and path",
+              items: %Schema{
+                type: :object,
+                properties: %{
+                  file_name: %Schema{type: :string, description: "The name of the file"},
+                  path: %Schema{type: :string, description: "The full path to the file"}
+                }
+              }
+            })
+          end
+
+          example(%{
+            templates: [
+              %{
+                file_name: "contract.zip",
+                path: "public/templates/contract.zip"
+              },
+              %{
+                file_name: "nda.zip",
+                path: "public/templates/nda.zip"
+              }
+            ]
+          })
+        end,
+      DownloadTemplateResponse:
+        swagger_schema do
+          title("Download Template Response")
+          description("Response containing the pre-signed URL for downloading the template.")
+          type(:object)
+
+          properties do
+            template_url(:string, "Pre-signed URL for downloading the template",
+              example:
+                "https://minio.example.com/bucket/templates/example-template.zip?X-Amz-Signature=..."
+            )
+          end
+        end,
+      FileDownloadResponse:
+        swagger_schema do
+          title("File Download Response")
+          description("Response for a file download.")
+          type(:file)
+          example("Binary data representing the downloaded file.")
         end
     }
   end
@@ -137,12 +210,21 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   swagger_path :create do
     post("/template_assets")
     summary("Create a template asset")
-    description("Create a new template asset and process the uploaded ZIP file")
+
+    description("""
+    Create a new template asset by either:
+    - Uploading a ZIP file
+    - Providing a URL to a ZIP file
+
+    Only one of `zip_file` or `zip_url` should be provided.
+    """)
+
     operation_id("create_asset")
     consumes("multipart/form-data")
 
-    parameter(:name, :formData, :string, "Template Asset name", required: true)
-    parameter(:zip_file, :formData, :file, "Template Asset zip file to upload", required: true)
+    parameter(:name, :formData, :string, "Template Asset name")
+    parameter(:zip_file, :formData, :file, "Template Asset ZIP file to upload")
+    parameter(:zip_url, :formData, :string, "URL to the Template Asset ZIP file")
 
     response(200, "OK", Schema.ref(:TemplateAsset))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -151,16 +233,28 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, %{"zip_file" => zip_file} = params) do
-    current_user = conn.assigns[:current_user]
+    current_user = conn.assigns.current_user
 
-    with {:ok, zip_binary} <- TemplateAssets.read_zip_contents(zip_file.path),
-         file_entries_in_zip <-
-           TemplateAssets.template_asset_file_list(zip_binary),
-         :ok <- TemplateAssets.template_zip_validator(zip_binary, file_entries_in_zip),
-         {:ok, wraft_json} <- TemplateAssets.get_wraft_json(zip_binary),
-         params <- Map.put(params, "wraft_json", wraft_json),
+    with {params, _, file_entries_in_zip} <-
+           TemplateAssets.process_template_asset(params, :file, zip_file),
          {:ok, %TemplateAsset{} = template_asset} <-
            TemplateAssets.create_template_asset(current_user, params) do
+      render(conn, "template_asset.json",
+        template_asset: template_asset,
+        file_entries: file_entries_in_zip
+      )
+    end
+  end
+
+  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def create(conn, %{"zip_url" => zip_url} = params) do
+    current_user = conn.assigns.current_user
+
+    with {params, zip_binary, file_entries_in_zip} <-
+           TemplateAssets.process_template_asset(params, :url, zip_url),
+         updated_params <- TemplateAssets.add_file_to_params(params, zip_binary, zip_url),
+         {:ok, %TemplateAsset{} = template_asset} <-
+           TemplateAssets.create_template_asset(current_user, updated_params) do
       render(conn, "template_asset.json",
         template_asset: template_asset,
         file_entries: file_entries_in_zip
@@ -339,14 +433,13 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
       id(:path, :string, "ID of the template asset to build", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:ShowDataTemplate))
+    response(200, "Ok", Schema.ref(:FileDownloadResponse))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(404, "Not found", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec template_export(Plug.Conn.t(), map) :: Plug.Conn.t()
-
   def template_export(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
@@ -367,6 +460,43 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
              current_user
            ) do
       send_download(conn, {:file, zip_path}, filename: "#{data_template.title}.zip")
+    end
+  end
+
+  @doc """
+  List all templates.
+  """
+  swagger_path :list_public_templates do
+    get("template_assets/public/templates")
+    summary("List Public Templates")
+    description("Fetches a list of all public templates available.")
+    produces("application/json")
+    response(200, "Success", Schema.ref(:PublicTemplateList))
+    response(400, "Bad Request", Schema.ref(:Error))
+  end
+
+  def list_public_templates(conn, _params) do
+    with {:ok, template_list} <- TemplateAssets.list_public_templates() do
+      render(conn, "list_public_templates.json", %{templates: template_list})
+    end
+  end
+
+  @doc """
+  Download a public template.
+  """
+  swagger_path :download_public_template do
+    get("template_assets/public/templates/:file_name/download")
+    summary("Get Download URL for Public Template")
+    description("Generates a pre-signed URL for downloading a specified public template file.")
+    produces("application/json")
+    parameter(:file_name, :path, :string, "Name of the template file to download", required: true)
+    response(200, "Pre-signed URL generated successfully", Schema.ref(:DownloadTemplateResponse))
+    response(400, "Failed to generate pre-signed URL", Schema.ref(:Error))
+  end
+
+  def download_public_template(conn, %{"file_name" => template_name}) do
+    with {:ok, template_url} <- TemplateAssets.download_public_template(template_name) do
+      render(conn, "download_public_template.json", %{template_url: template_url})
     end
   end
 end

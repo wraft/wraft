@@ -104,6 +104,14 @@ defmodule WraftDocWeb.Router do
       # Set Password for first time
       post("/users/set_password", UserController, :set_password)
     end
+
+    # templates
+    scope "/v1", Api.V1, as: :v1 do
+      scope "/template_assets/public/templates" do
+        get("/", TemplateAssetController, :list_public_templates)
+        get("/:file_name/download", TemplateAssetController, :download_public_template)
+      end
+    end
   end
 
   # Scope which requires authorization.
