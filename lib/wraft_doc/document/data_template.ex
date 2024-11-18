@@ -1,6 +1,7 @@
 defmodule WraftDoc.Document.DataTemplate do
   @moduledoc false
   use WraftDoc.Schema
+  use EctoTypesense.Schema
 
   alias __MODULE__
 
