@@ -615,21 +615,25 @@ defmodule WraftDoc.TemplateAssets do
   a modified parameters map with extracted data, the binary content of the ZIP, and a list of file entries.
   """
   @spec process_template_asset(map(), :file | :url, Plug.Upload.t() | String.t()) ::
-          {map(), binary(), [String.t()]} | {:error, any()}
+          {:ok, map(), binary()} | {:error, any()}
   def process_template_asset(params, source_type, source_value) do
     with {:ok, zip_binary} <- get_zip_binary(source_type, source_value),
          file_entries_in_zip <- template_asset_file_list(zip_binary),
          :ok <- template_zip_validator(zip_binary, file_entries_in_zip),
-         {:ok, wraft_json} <- get_wraft_json(zip_binary),
-         params <- Map.put(params, "wraft_json", wraft_json) do
-      {params, zip_binary, file_entries_in_zip}
+         {:ok, wraft_json} <- get_wraft_json(zip_binary) do
+      params
+      |> Map.merge(%{
+        "wraft_json" => wraft_json,
+        "file_entries" => file_entries_in_zip
+      })
+      |> then(&{:ok, &1, zip_binary})
     end
   end
 
   @doc """
   Adds a ZIP file to the params map as a `Plug.Upload` struct.
   """
-  @spec add_file_to_params(map(), binary(), String.t()) :: map()
+  @spec add_file_to_params(map(), binary(), String.t()) :: {:ok, map()}
   def add_file_to_params(params, zip_binary, zip_url) do
     file_path = Briefly.create!()
     File.write!(file_path, zip_binary)
@@ -641,7 +645,9 @@ defmodule WraftDoc.TemplateAssets do
       path: file_path
     }
 
-    Map.put(params, "zip_file", file)
+    params
+    |> Map.put("zip_file", file)
+    |> then(&{:ok, &1})
   end
 
   defp get_zip_binary_from_url(url) do
