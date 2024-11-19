@@ -11,6 +11,7 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
     field(:name, :string)
     field(:zip_file, WraftDocWeb.TemplateAssetUploader.Type)
     field(:wraft_json, :map)
+    field(:file_entries, {:array, :string})
 
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
@@ -20,13 +21,13 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
 
   def changeset(%TemplateAsset{} = template_asset, attrs \\ %{}) do
     template_asset
-    |> cast(attrs, [:name, :organisation_id, :wraft_json])
+    |> cast(attrs, [:name, :organisation_id, :wraft_json, :file_entries])
     |> validate_required([:name, :organisation_id])
   end
 
   def update_changeset(%TemplateAsset{} = template_asset, attrs \\ %{}) do
     template_asset
-    |> cast(attrs, [:name])
+    |> cast(attrs, [:name, :wraft_json, :file_entries])
     |> cast_attachments(attrs, [:zip_file])
     |> validate_required([:name, :zip_file])
   end
