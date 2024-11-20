@@ -719,6 +719,17 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+    Update document meta data.
+  """
+  @spec update_instance(Instance.t(), map) ::
+          {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
+  def update_meta(instance, params) do
+    instance
+    |> Instance.meta_changeset(params)
+    |> Repo.update()
+  end
+
+  @doc """
   Relate instace with approval system on creation
   ## Params
   * content_type - A content type struct
