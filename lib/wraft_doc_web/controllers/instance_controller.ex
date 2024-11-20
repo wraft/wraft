@@ -405,6 +405,27 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             "message" => "Body of the email",
             "cc" => ["cc1@example.com", "cc2@example.com"]
           })
+        end,
+      MetaUpdateRequest:
+        swagger_schema do
+          title("Meta update request")
+          description("Meta update request")
+
+          properties do
+            meta(:map, "Meta", required: true)
+          end
+
+          example(%{
+            "meta" => %{
+              "type" => "contract",
+              "status" => "draft",
+              "expiry_date" => "2020-02-21",
+              "contract_value" => 100_000.0,
+              "counter_parties" => ["Vos Services"],
+              "clauses" => [],
+              "reminder" => []
+            }
+          })
         end
     }
   end
@@ -614,6 +635,35 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Document.get_instance(id, current_user),
          %Instance{} = instance <- Document.update_instance(instance, params) do
+      render(conn, "show.json", instance: instance)
+    end
+  end
+
+  @doc """
+  Update meta data of an instance.
+  """
+  swagger_path :update_meta do
+    put("/contents/{id}/meta")
+    summary("Update meta data of an instance")
+    description("API to update meta data of an instance")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+      content(:body, Schema.ref(:MetaUpdateRequest), "Meta data to be updated", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContent))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec update_meta(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update_meta(conn, %{"id" => id} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with %Instance{} = instance <- Document.get_instance(id, current_user),
+         %Instance{} = instance <- Document.update_meta(instance, params) do
       render(conn, "show.json", instance: instance)
     end
   end

@@ -70,6 +70,13 @@ defmodule WraftDoc.Document.Instance do
     )
   end
 
+  def meta_changeset(%Instance{} = instance, attrs \\ %{}) do
+    instance
+    |> cast(attrs, [:meta])
+    |> validate_required([:meta])
+    |> DocumentMetaType.cast_meta(attrs)
+  end
+
   def update_changeset(%Instance{} = instance, attrs \\ %{}) do
     instance
     |> cast(attrs, [:instance_id, :raw, :serialized])
