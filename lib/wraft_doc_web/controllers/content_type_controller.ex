@@ -592,7 +592,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
          %Theme{} <- Document.get_theme(theme_id, current_user),
          %ContentType{} = content_type <-
            Document.create_content_type(current_user, params) do
-      Typesense.create_document(content_type, content_type)
+            IO.inspect(content_type)
+      Typesense.create_document(content_type, "content_types")
       render(conn, :create, content_type: content_type)
     end
   end
@@ -660,6 +661,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     current_user = conn.assigns[:current_user]
 
     with %ContentType{} = content_type <- Document.show_content_type(current_user, id) do
+      IO.inspect(content_type)
       render(conn, "show.json", content_type: content_type)
     end
   end
