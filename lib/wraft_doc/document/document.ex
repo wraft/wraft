@@ -723,9 +723,11 @@ defmodule WraftDoc.Document do
   """
   @spec update_instance(Instance.t(), map) ::
           {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def update_meta(instance, params) do
-    instance
-    |> Instance.meta_changeset(params)
+  def update_meta(%Instance{meta: %{"type" => type} = meta} = instance, params) do
+    params
+    |> put_in(["meta"], Map.merge(meta, params["meta"]))
+    |> put_in(["meta", "type"], String.to_existing_atom(type))
+    |> then(&Instance.meta_changeset(instance, &1))
     |> Repo.update()
   end
 
