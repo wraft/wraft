@@ -41,6 +41,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
   def render("instance.json", %{instance: instance}) do
     %{
       id: instance.id,
+      meta: instance.meta,
       instance_id: instance.instance_id,
       approval_status: instance.approval_status,
       raw: instance.raw,

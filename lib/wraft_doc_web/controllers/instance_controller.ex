@@ -663,8 +663,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Document.get_instance(id, current_user),
-         %Instance{} = instance <- Document.update_meta(instance, params) do
-      render(conn, "show.json", instance: instance)
+         {:ok, %Instance{} = instance} <- Document.update_meta(instance, params) do
+      render(conn, "instance.json", instance: instance)
     end
   end
 

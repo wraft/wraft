@@ -72,8 +72,7 @@ defmodule WraftDoc.Document.Instance do
 
   def meta_changeset(%Instance{} = instance, attrs \\ %{}) do
     instance
-    |> cast(attrs, [:meta])
-    |> validate_required([:meta])
+    |> cast(attrs, [])
     |> DocumentMetaType.cast_meta(attrs)
   end
 
