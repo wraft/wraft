@@ -10,6 +10,7 @@ defmodule WraftDoc.Search.Typesense do
   end
 
   def create_document(document, collection_name) do
+    document = Encoder.to_document(document)
     typesense_document = Map.merge(document, %{collection_name: "#{collection_name}"})
     ExTypesense.create_document(typesense_document)
   end

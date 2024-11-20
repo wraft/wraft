@@ -40,29 +40,9 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.ContentType do
       theme_id: to_string(content_type.theme_id),
       organisation_id: to_string(content_type.organisation_id),
       creator_id: to_string(content_type.creator_id),
-      inserted_at: DateTime.to_unix(content_type.inserted_at),
-      updated_at: DateTime.to_unix(content_type.updated_at)
-    }
-  end
-
-  def collection_schema(_content_type) do
-    %{
-      name: "content_types",
-      fields: [
-        %{name: "id", type: "string"},
-        %{name: "record_type", type: "string"},
-        %{name: "name", type: "string"},
-        %{name: "description", type: "string", optional: true},
-        %{name: "color", type: "string"},
-        %{name: "prefix", type: "string"},
-        %{name: "layout_id", type: "string"},
-        %{name: "flow_id", type: "string"},
-        %{name: "theme_id", type: "string"},
-        %{name: "organisation_id", type: "string"},
-        %{name: "creator_id", type: "string"},
-        %{name: "inserted_at", type: "string"},
-        %{name: "updated_at", type: "string"}
-      ]
+      inserted_at:
+        content_type.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
+      updated_at: content_type.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
     }
   end
 
