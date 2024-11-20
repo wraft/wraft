@@ -18,7 +18,6 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.DataTemplate
-  alias MyApp.TypesenseContext
 
   def swagger_definitions do
     %{

@@ -1,4 +1,4 @@
-defprotocol WraftDoc.SearchEngine.TypesenseIndex do
+defprotocol WraftDoc.Search.Encoder do
   @moduledoc """
   Protocol defining the interface for converting records to Typesense documents.
   """
@@ -14,15 +14,9 @@ defprotocol WraftDoc.SearchEngine.TypesenseIndex do
   """
   @spec collection_name(t()) :: String.t()
   def collection_name(struct)
-
-  @doc """
-  Returns the schema configuration for the collection.
-  """
-  @spec collection_schema(t()) :: map()
-  def collection_schema(struct)
 end
 
-defimpl WraftDoc.SearchEngine.TypesenseIndex, for: WraftDoc.Document.ContentType do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.ContentType do
   @moduledoc """
   Implementation of the Index protocol for ContentType schema.
   Handles conversion of ContentType records for Typesense indexing.
@@ -36,9 +30,9 @@ defimpl WraftDoc.SearchEngine.TypesenseIndex, for: WraftDoc.Document.ContentType
   def to_document(%ContentType{} = content_type) do
     %{
       id: to_string(content_type.id),
-      record_type: "content_type",
+      collection_name: "content_type",
       name: content_type.name,
-      description: content_type.description || "",
+      description: content_type.description,
       color: content_type.color,
       prefix: content_type.prefix,
       layout_id: to_string(content_type.layout_id),
@@ -46,21 +40,11 @@ defimpl WraftDoc.SearchEngine.TypesenseIndex, for: WraftDoc.Document.ContentType
       theme_id: to_string(content_type.theme_id),
       organisation_id: to_string(content_type.organisation_id),
       creator_id: to_string(content_type.creator_id),
-      inserted_at: DateTime.to_iso8601(content_type.inserted_at),
-      updated_at: DateTime.to_iso8601(content_type.updated_at)
+      inserted_at: DateTime.to_unix(content_type.inserted_at),
+      updated_at: DateTime.to_unix(content_type.updated_at)
     }
   end
 
-  @doc """
-  Returns the Typesense collection name for ContentType records.
-  """
-  def collection_name(_content_type) do
-    "content_types"
-  end
-
-  @doc """
-  Returns the schema configuration for the ContentType collection.
-  """
   def collection_schema(_content_type) do
     %{
       name: "content_types",
@@ -81,4 +65,9 @@ defimpl WraftDoc.SearchEngine.TypesenseIndex, for: WraftDoc.Document.ContentType
       ]
     }
   end
+
+  @doc """
+  Returns the Typesense collection name for ContentType records.
+  """
+  def collection_name(_content_type), do: "content_types"
 end

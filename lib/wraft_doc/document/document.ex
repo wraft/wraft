@@ -4,7 +4,6 @@ defmodule WraftDoc.Document do
   """
   import Ecto
   import Ecto.Query
-  import EctoTypesense
   require Logger
 
   alias Ecto.Multi
@@ -3960,26 +3959,5 @@ defmodule WraftDoc.Document do
       instance_file_name
     )
     |> Mailer.deliver()
-  end
-  def search(query) do
-    Document.DataTemplate
-      |> typesense_search(query)
-      |> Repo.all()
-  end
-  def get_content_type(%User{current_org_id: org_id}, <<_::288>> = id) do
-    ContentType
-    |> Repo.get_by(id: id, organisation_id: org_id)
-    |> case do
-      %ContentType{} = content_type ->
-        Repo.preload(content_type, [
-          :layout,
-          :creator,
-          {:theme, :assets},
-          [{:flow, :states}, {:fields, :field_type}]
-        ])
-
-      _ ->
-        {:error, :invalid_id, "ContentType"}
-    end
   end
 end

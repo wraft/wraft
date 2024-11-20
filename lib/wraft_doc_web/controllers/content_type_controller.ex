@@ -20,6 +20,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Search.Typesense
 
   def swagger_definitions do
     %{
@@ -591,6 +592,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
          %Theme{} <- Document.get_theme(theme_id, current_user),
          %ContentType{} = content_type <-
            Document.create_content_type(current_user, params) do
+            IO.inspect(content_type)
+            Typesense.create_document(content_type,content_type)
       render(conn, :create, content_type: content_type)
     end
   end
