@@ -6,8 +6,7 @@ defmodule WraftDoc.Search.Typesense do
   alias WraftDoc.Search.Encoder
 
   def create_collection(schema) do
-      Encoder.to_document(schema)
-      |> ExTypesense.create_collection()
+    ExTypesense.create_collection(Encoder.to_document(schema))
   end
 
   def create_document(document, collection_name) do
@@ -19,7 +18,7 @@ defmodule WraftDoc.Search.Typesense do
     ExTypesense.get_document("#{collection_name}", to_string(id))
   end
 
-  def update_document(document,collection_name) do
+  def update_document(document, collection_name) do
     typesense_document = Map.merge(document, %{collection_name: "#{collection_name}"})
     ExTypesense.update_document(typesense_document)
   end
