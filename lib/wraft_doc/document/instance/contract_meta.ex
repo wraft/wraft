@@ -5,7 +5,7 @@ defmodule WraftDoc.Document.Instance.ContractMeta do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @contract_fields ~w(status expiry_date contract_value counter_parties clauses remainder)a
+  @contract_fields ~w(status expiry_date contract_value counter_parties clauses reminder)a
   @contract_status ~w(draft review active expired)a
 
   @primary_key false
@@ -16,7 +16,7 @@ defmodule WraftDoc.Document.Instance.ContractMeta do
     field(:contract_value, :decimal)
     field(:counter_parties, {:array, :string}, default: [])
     field(:clauses, {:array, :map}, default: [])
-    field(:remainder, {:array, :map}, default: [])
+    field(:reminder, {:array, :map}, default: [])
   end
 
   def changeset(contract_meta, attrs \\ %{}) do
