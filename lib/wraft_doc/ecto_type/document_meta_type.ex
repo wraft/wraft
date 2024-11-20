@@ -15,7 +15,7 @@ defmodule WraftDoc.EctoType.DocumentMetaType do
 
   def cast(%{"type" => type} = meta_data) when type in @document_meta_types do
     type
-    |> Atom.to_string()
+    |> to_string()
     |> document_module()
     |> then(&{:ok, &1.changeset(struct(&1), meta_data)})
   end
@@ -59,7 +59,7 @@ defmodule WraftDoc.EctoType.DocumentMetaType do
 
       %Ecto.Changeset{valid?: false, errors: errors} ->
         changeset
-        |> add_error(:meta, "invalid meta data", errors)
+        |> add_error(:meta, inspect(errors))
         |> delete_change(:meta)
 
       nil ->
