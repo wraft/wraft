@@ -847,13 +847,29 @@ defmodule WraftDoc.TemplateAssets do
   def list_public_templates do
     "public/templates/"
     |> Minio.list_files()
-    |> Enum.map(fn path ->
-      %{
-        file_name: Path.basename(path),
-        path: path
-      }
+    |> Enum.reduce([], fn path, acc ->
+      if String.ends_with?(path, ".zip") do
+        rootname = get_rootname(path)
+
+        [
+          %{
+            file_name: rootname,
+            path: "public/templates/#{rootname}/#{rootname}.zip",
+            thumbnail_url: Minio.generate_url("public/templates/#{rootname}/thumbnail.png")
+          }
+          | acc
+        ]
+      else
+        acc
+      end
     end)
     |> then(&{:ok, &1})
+  end
+
+  def get_rootname(path) do
+    path
+    |> Path.basename()
+    |> Path.rootname()
   end
 
   @doc """
@@ -861,7 +877,9 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec download_public_template(String.t()) :: {:ok, binary()} | {:error, String.t()}
   def download_public_template(template_name) do
-    "public/templates/#{template_name}"
+    template_name
+    |> get_rootname()
+    |> then(&"public/templates/#{&1}/#{&1}.zip")
     |> Minio.generate_url()
     |> then(&{:ok, &1})
   end

@@ -505,8 +505,13 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   end
 
   def download_public_template(conn, %{"file_name" => template_name}) do
-    with {:ok, template_url} <- TemplateAssets.download_public_template(template_name) do
+    with template_name <- ensure_zip_extension(template_name),
+         {:ok, template_url} <- TemplateAssets.download_public_template(template_name) do
       render(conn, "download_public_template.json", %{template_url: template_url})
     end
+  end
+
+  defp ensure_zip_extension(name) do
+    if String.ends_with?(name, ".zip"), do: name, else: name <> ".zip"
   end
 end

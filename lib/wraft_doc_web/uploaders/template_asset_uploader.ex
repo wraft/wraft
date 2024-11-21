@@ -28,7 +28,15 @@ defmodule WraftDocWeb.TemplateAssetUploader do
   end
 
   def storage_dir(_version, {_file, scope}) do
-    "organisations/#{scope.organisation_id}/template_assets/#{scope.id}"
+    case scope.organisation_id do
+      nil ->
+        scope.zip_file.file_name
+        |> Path.rootname()
+        |> then(&"public/templates/#{&1}/")
+
+      organisation_id ->
+        "organisations/#{organisation_id}/template_assets/#{scope.id}"
+    end
   end
 
   defp file_size(%Waffle.File{} = file), do: file.path |> File.stat!() |> Map.get(:size)
