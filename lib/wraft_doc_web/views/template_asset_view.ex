@@ -7,7 +7,8 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
     %{
       id: template_asset.id,
       name: template_asset.name,
-      file: generate_url(template_asset),
+      file: generate_zip_url(template_asset),
+      thumbnail: generate_thumbnail_url(template_asset),
       file_entries: template_asset.file_entries,
       wraft_json: template_asset.wraft_json,
       inserted_at: template_asset.inserted_at,
@@ -64,7 +65,11 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
     }
   end
 
-  defp generate_url(%{zip_file: zip_file} = template_asset) do
+  defp generate_zip_url(%{zip_file: zip_file} = template_asset) do
     WraftDocWeb.TemplateAssetUploader.url({zip_file, template_asset}, signed: true)
+  end
+
+  defp generate_thumbnail_url(%{thumbnail: thumbnail} = template_asset) do
+    WraftDocWeb.TemplateAssetThumbnailUploader.url({thumbnail, template_asset}, signed: true)
   end
 end
