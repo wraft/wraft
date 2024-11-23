@@ -23,14 +23,20 @@ defmodule WraftDocWeb.TemplateAssetUploader do
     end
   end
 
-  def filename(_version, {file, _template}) do
-    String.replace("template_" <> Path.rootname(file.file_name, ".zip"), ~r/\s+/, "-")
+  def filename(_version, {file, scope}) do
+    case scope.organisation_id do
+      nil ->
+        Path.rootname(scope.zip_file_name)
+
+      _organisation_id ->
+        String.replace("template_" <> Path.rootname(file.file_name, ".zip"), ~r/\s+/, "-")
+    end
   end
 
   def storage_dir(_version, {_file, scope}) do
     case scope.organisation_id do
       nil ->
-        scope.zip_file.file_name
+        scope.zip_file_name
         |> Path.rootname()
         |> then(&"public/templates/#{&1}/")
 

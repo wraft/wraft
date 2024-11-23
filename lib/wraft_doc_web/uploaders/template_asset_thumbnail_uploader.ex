@@ -30,7 +30,7 @@ defmodule WraftDocWeb.TemplateAssetThumbnailUploader do
   def storage_dir(_version, {_file, scope}) do
     case scope.organisation_id do
       nil ->
-        scope.zip_file.file_name
+        scope.zip_file_name
         |> Path.rootname()
         |> then(&"public/templates/#{&1}/")
 

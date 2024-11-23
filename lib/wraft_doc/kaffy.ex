@@ -47,6 +47,10 @@ defmodule WraftDoc.Kaffy.Config do
           field_type: [
             schema: WraftDoc.Document.FieldType,
             admin: WraftDocWeb.FieldTypeAdmin
+          ],
+          template_asset: [
+            schema: WraftDoc.TemplateAssets.TemplateAsset,
+            admin: WraftDocWeb.TemplateAssets.TemplateAssetAdmin
           ]
         ]
       ]
