@@ -440,6 +440,22 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   end
 
   @doc """
+  Checks for the missing items in template asset and makes user include the missing item ids in actual import.
+  """
+  @spec template_import(Plug.Conn.t(), map) :: Plug.Conn.t()
+  # TODO add swagger definitions
+  def template_pre_import(conn, %{"id" => template_asset_id}) do
+    current_user = conn.assigns[:current_user]
+
+    with {:ok, downloaded_zip_binary} <-
+           TemplateAssets.download_zip_from_minio(current_user, template_asset_id),
+         {:ok, result} <-
+           TemplateAssets.pre_import_template(downloaded_zip_binary) do
+      render(conn, "template_pre_import.json", result: result)
+    end
+  end
+
+  @doc """
   Template asset export.
   """
   swagger_path :template_export do
