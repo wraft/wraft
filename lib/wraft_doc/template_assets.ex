@@ -136,9 +136,7 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp has_items(template_map) do
-    required_keys = ["layout", "theme", "flow", "variant", "data_template"]
-
-    Enum.filter(required_keys, fn key ->
+    Enum.filter(@required_items, fn key ->
       Map.has_key?(template_map, key)
     end)
   end
@@ -171,6 +169,29 @@ defmodule WraftDoc.TemplateAssets do
         end)
         |> then(&{:error, %{missing_items: &1}})
     end
+  end
+
+  @doc """
+  Pre-import template asset returns existing and missing items.
+  """
+  @spec pre_import_template(binary()) :: {:ok, map()} | {:error, any()}
+  def pre_import_template(downloaded_zip_binary) do
+    {:ok, template_map} = get_wraft_json(downloaded_zip_binary)
+
+    existing_items =
+      %{
+        theme: Map.get(template_map, "theme"),
+        layout: Map.get(template_map, "layout"),
+        flow: Map.get(template_map, "flow"),
+        data_template: Map.get(template_map, "data_template"),
+        variant: Map.get(template_map, "variant")
+      }
+      |> Enum.filter(fn {_key, value} -> value != nil end)
+      |> Enum.into(%{})
+
+    missing_items = @required_items -- has_items(template_map)
+
+    {:ok, %{existing_items: existing_items, missing_items: missing_items}}
   end
 
   @doc """

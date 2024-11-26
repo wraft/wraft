@@ -58,6 +58,13 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
     }
   end
 
+  def render("template_pre_import.json", %{result: result}) do
+    %{
+      existing_items: result.existing_items,
+      missing_items: result.missing_items
+    }
+  end
+
   def render("list_public_templates.json", %{templates: template_list}) do
     %{
       templates: template_list
