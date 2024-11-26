@@ -41,15 +41,20 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
     }
   end
 
-  def render("show_template.json", %{template: template}) do
+  def render("show_template.json", %{result: result}) do
     %{
-      id: template.id,
-      title: template.title,
-      title_template: template.title_template,
-      data: template.data,
-      serialized: template.serialized,
-      inserted_at: template.inserted_at,
-      updated_at: template.updated_at
+      message: "Template imported successfully",
+      items:
+        Enum.map(result, fn {key, value} ->
+          field_name = if Map.has_key?(value, :title), do: :title, else: :name
+
+          %{
+            "item_type" => to_string(key),
+            "id" => value.id,
+            field_name => Map.get(value, field_name),
+            "created_at" => value.inserted_at
+          }
+        end)
     }
   end
 

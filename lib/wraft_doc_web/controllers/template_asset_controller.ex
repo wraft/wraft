@@ -16,7 +16,6 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Document
-  alias WraftDoc.Document.DataTemplate
   alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.TemplateAsset
 
@@ -394,7 +393,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   Builds a template from an existing template asset.
   """
   swagger_path :template_import do
-    get("/template_assets/{id}/import")
+    post("/template_assets/{id}/import")
     summary("Build a template from an existing template asset")
 
     description(
@@ -406,6 +405,10 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
     parameters do
       id(:path, :string, "ID of the template asset to build", required: true)
+      theme_id(:formData, :string, "ID of the theme to build the template from")
+      flow_id(:formData, :string, "ID of the flow to build the template from")
+      layout_id(:formData, :string, "ID of the layout to build the template from")
+      content_type_id(:formData, :string, "ID of the content type to build the template from")
     end
 
     response(200, "Ok", Schema.ref(:ShowDataTemplate))
@@ -415,15 +418,25 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   end
 
   @spec template_import(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def template_import(conn, %{"id" => template_asset_id}) do
+  def template_import(conn, %{"id" => template_asset_id} = params) do
     current_user = conn.assigns[:current_user]
 
     with {:ok, downloaded_zip_binary} <-
            TemplateAssets.download_zip_from_minio(current_user, template_asset_id),
-         {:ok, %DataTemplate{} = data_template} <-
-           TemplateAssets.import_template(current_user, downloaded_zip_binary) do
-      render(conn, "show_template.json", %{template: data_template})
+         options <- format_opts(params),
+         {:ok, result} <-
+           TemplateAssets.import_template(current_user, downloaded_zip_binary, options) do
+      render(conn, "show_template.json", result: result)
     end
+  end
+
+  defp format_opts(params) do
+    Enum.reduce([:theme_id, :flow_id, :layout_id, :content_type_id], [], fn key, acc ->
+      case Map.get(params, Atom.to_string(key)) do
+        nil -> acc
+        value -> [{key, value} | acc]
+      end
+    end)
   end
 
   @doc """
