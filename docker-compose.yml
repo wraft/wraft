@@ -29,6 +29,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       SENTRY_DSN: ${SENTRY_DSN}
+      XELATEX_PATH: ${XELATEX_PATH}
     ports:
       - 4000:4000
     depends_on:
@@ -73,10 +74,10 @@ services:
     depends_on:
       - minio
     entrypoint: >
-      /bin/sh -c " 
-      /usr/bin/mc config host add myminio $$MINIO_URL $${MINIO_ROOT_USER} $$MINIO_ROOT_PASSWORD; 
-      /usr/bin/mc mb -p myminio/$${MINIO_BUCKET}; 
-      /usr/bin/mc policy set public myminio/$${MINIO_BUCKET}; 
+      /bin/sh -c "
+      /usr/bin/mc config host add myminio $$MINIO_URL $${MINIO_ROOT_USER} $$MINIO_ROOT_PASSWORD;
+      /usr/bin/mc mb -p myminio/$${MINIO_BUCKET};
+      /usr/bin/mc policy set public myminio/$${MINIO_BUCKET};
       exit 0;"
 
 volumes:
