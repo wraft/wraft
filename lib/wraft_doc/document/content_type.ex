@@ -2,6 +2,8 @@ defmodule WraftDoc.Document.ContentType do
   @moduledoc """
     The content type model.
   """
+  @behaviour ExTypesense
+
   use WraftDoc.Schema
 
   alias __MODULE__
@@ -82,5 +84,26 @@ defmodule WraftDoc.Document.ContentType do
     |> organisation_constraint(Theme, :theme_id)
     |> validate_length(:prefix, min: 2, max: 6)
     |> validate_format(:color, ~r/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/)
+  end
+
+  @impl ExTypesense
+
+  def get_field_types do
+    %{
+      fields: [
+        %{name: "id", type: "string", facet: false},
+        %{name: "name", type: "string", facet: false},
+        %{name: "description", type: "string", facet: false},
+        %{name: "color", type: "string", facet: true},
+        %{name: "prefix", type: "string", facet: true},
+        %{name: "layout_id", type: "string", facet: true},
+        %{name: "flow_id", type: "string", facet: true},
+        %{name: "theme_id", type: "string", facet: true},
+        %{name: "organisation_id", type: "string", facet: true},
+        %{name: "creator_id", type: "string", facet: true},
+        %{name: "inserted_at", type: "int64", facet: false},
+        %{name: "updated_at", type: "int64", facet: false}
+      ]
+    }
   end
 end
