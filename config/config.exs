@@ -68,13 +68,6 @@ config :wraft_doc, Oban,
      ]}
   ]
 
-config :ex_typesense,
-  api_key: System.fetch_env!("TYPESENSE_API_KEY"),
-  host: System.fetch_env!("TYPESENSE_HOST"),
-  port: System.fetch_env!("TYPESENSE_PORT"),
-  scheme: System.fetch_env!("TYPESENSE_SCHEME"),
-  options: %{}
-
 # File Upload config
 config :waffle,
   storage: Waffle.Storage.S3

@@ -12,6 +12,8 @@ defmodule WraftDoc.Document.Theme do
   * `preview_file` - The Preview file to use. currently supporting formats are `.png` `.jpeg` `.pdf` `.jpg` `.gif`.
   * `file` - The font file to use. currently supporting formats are `.ttf` `.otf`.
   """
+  @behaviour ExTypesense
+
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
   alias __MODULE__
@@ -69,5 +71,25 @@ defmodule WraftDoc.Document.Theme do
     |> validate_format(:body_color, @hex_format, message: @hex_code_warning_msg)
     |> validate_format(:primary_color, @hex_format, message: @hex_code_warning_msg)
     |> validate_format(:secondary_color, @hex_format, message: @hex_code_warning_msg)
+  end
+
+  @impl ExTypesense
+  def get_field_types do
+    %{
+      fields: [
+        %{name: "id", type: "string", facet: false},
+        %{name: "name", type: "string", facet: false},
+        %{name: "font", type: "string", facet: false},
+        %{name: "typescale", type: "string", facet: false},
+        %{name: "body_color", type: "string", facet: true},
+        %{name: "primary_color", type: "string", facet: true},
+        %{name: "secondary_color", type: "string", facet: true},
+        %{name: "preview_file", type: "string", facet: false},
+        %{name: "creator_id", type: "string", facet: true},
+        %{name: "organisation_id", type: "string", facet: true},
+        %{name: "inserted_at", type: "int64", facet: false},
+        %{name: "updated_at", type: "int64", facet: false}
+      ]
+    }
   end
 end

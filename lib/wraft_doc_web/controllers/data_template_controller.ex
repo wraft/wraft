@@ -18,6 +18,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.Search.Typesense
 
   def swagger_definitions do
     %{
@@ -211,6 +212,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
     with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_id),
          {:ok, %DataTemplate{} = d_template} <-
            Document.create_data_template(current_user, c_type, params) do
+      Typesense.create_document(d_template, "data_template")
       render(conn, "create.json", d_template: d_template)
     end
   end
@@ -342,6 +344,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
     with %DataTemplate{} = d_temp <- Document.get_d_template(current_user, id),
          %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, params) do
+      Typesense.update_document(d_temp, "data_template")
       render(conn, "show.json", d_template: d_temp)
     end
   end
@@ -370,6 +373,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
     with %DataTemplate{} = d_temp <- Document.get_d_template(current_user, id),
          {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp) do
+      Typesense.delete_document(d_temp, "data_template")
       render(conn, "create.json", d_template: d_temp)
     end
   end
