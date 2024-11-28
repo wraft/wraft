@@ -199,6 +199,124 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
           description("Response for a file download.")
           type(:file)
           example("Binary data representing the downloaded file.")
+        end,
+      TemplateImport:
+        swagger_schema do
+          title("Template Import Response")
+          description("Response containing details of imported template components")
+
+          properties do
+            message(:string, "Status message of the import operation")
+
+            items(%Schema{
+              type: :array,
+              description: "List of imported template components",
+              items: %Schema{
+                type: :object,
+                properties: %{
+                  item_type: %Schema{
+                    type: :string,
+                    description: "Type of the imported item",
+                    enum: ["flow", "data_template", "layout", "theme", "variant"]
+                  },
+                  id: %Schema{
+                    type: :string,
+                    description: "Unique identifier of the imported item",
+                    format: "uuid"
+                  },
+                  name: %Schema{
+                    type: :string,
+                    description: "Name of the imported item (for most item types)"
+                  },
+                  title: %Schema{
+                    type: :string,
+                    description: "Title of the imported item (for data_template)"
+                  },
+                  created_at: %Schema{
+                    type: :string,
+                    description: "Timestamp of item creation",
+                    format: "date-time"
+                  }
+                }
+              }
+            })
+          end
+
+          example(%{
+            message: "Template imported successfully",
+            items: [
+              %{
+                item_type: "flow",
+                id: "dc0c7d4c-1328-45c0-ba3b-af841f7f5b59",
+                name: "Contract flow 23",
+                created_at: "2024-11-26T21:18:35"
+              },
+              %{
+                item_type: "data_template",
+                id: "98f49a33-5a5f-4455-910c-11f7f3e1a575",
+                title: "Contract 33",
+                created_at: "2024-11-26T21:18:36"
+              }
+            ]
+          })
+        end,
+      TemplatePreImport:
+        swagger_schema do
+          title("Template Pre-Import Response")
+
+          description(
+            "Response containing existing and missing items for template import preparation"
+          )
+
+          properties do
+            missing_items(%Schema{
+              type: :array,
+              description: "List of item types missing from the template asset",
+              items: %Schema{
+                type: :string,
+                enum: ["layout", "theme", "flow", "data_template", "variant"]
+              }
+            })
+
+            existing_items(%Schema{
+              type: :object,
+              description: "Details of existing items in the template asset",
+              properties: %{
+                data_template: %Schema{
+                  type: :object,
+                  description: "Existing data template details",
+                  properties: %{
+                    title: %Schema{type: :string, description: "Title of the data template"},
+                    title_template: %Schema{type: :string, description: "Template for the title"}
+                  }
+                },
+                variant: %Schema{
+                  type: :object,
+                  description: "Existing variant details",
+                  properties: %{
+                    name: %Schema{type: :string, description: "Name of the variant"},
+                    description: %Schema{type: :string, description: "Description of the variant"},
+                    prefix: %Schema{type: :string, description: "Prefix for the variant"}
+                  }
+                }
+              }
+            })
+          end
+
+          example(%{
+            missing_items: ["layout", "theme", "flow"],
+            existing_items: %{
+              data_template: %{
+                title: "Contract",
+                title_template: "Contract for [clientName]"
+              },
+              variant: %{
+                name: "Contract",
+                description: "Variant for contract layouts",
+                prefix: "CTR"
+              }
+            }
+          })
         end
     }
   end
@@ -411,7 +529,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
       content_type_id(:formData, :string, "ID of the content type to build the template from")
     end
 
-    response(200, "Ok", Schema.ref(:ShowDataTemplate))
+    response(200, "Ok", Schema.ref(:TemplateImport))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(404, "Not found", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
@@ -442,8 +560,27 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   @doc """
   Checks for the missing items in template asset and makes user include the missing item ids in actual import.
   """
+  swagger_path :template_pre_import do
+    post("/template_assets/{id}/pre_import")
+    summary("Prepare template asset for import")
+
+    description(
+      "Check for missing items in template asset and identify what needs to be included"
+    )
+
+    operation_id("pre_import_template")
+    consumes("application/json")
+
+    parameters do
+      id(:path, :string, "ID of the template asset to pre-import", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:TemplatePreImport))
+    response(404, "Not found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
   @spec template_import(Plug.Conn.t(), map) :: Plug.Conn.t()
-  # TODO add swagger definitions
   def template_pre_import(conn, %{"id" => template_asset_id}) do
     current_user = conn.assigns[:current_user]
 
