@@ -13,14 +13,13 @@ defmodule WraftDoc.Document.Layout do
     field(:height, :float)
     field(:unit, :string)
     field(:slug, :string)
-    field(:slug_file, WraftDocWeb.LayoutSlugUploader.Type)
     field(:screenshot, WraftDocWeb.LayoutScreenShotUploader.Type)
+
     belongs_to(:engine, WraftDoc.Document.Engine)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     has_many(:content_types, WraftDoc.Document.ContentType)
-
     has_many(:layout_assets, WraftDoc.Document.LayoutAsset)
     has_many(:assets, through: [:layout_assets, :asset])
 
@@ -63,7 +62,7 @@ defmodule WraftDoc.Document.Layout do
       :slug,
       :engine_id
     ])
-    |> cast_attachments(attrs, [:slug_file, :screenshot])
+    |> cast_attachments(attrs, [:screenshot])
     |> validate_required([
       :name,
       :description,
@@ -77,6 +76,6 @@ defmodule WraftDoc.Document.Layout do
   end
 
   def file_changeset(%Layout{} = layout, attrs \\ %{}) do
-    cast_attachments(layout, attrs, [:slug_file, :screenshot])
+    cast_attachments(layout, attrs, [:screenshot])
   end
 end
