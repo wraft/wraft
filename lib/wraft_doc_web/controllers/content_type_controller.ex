@@ -592,7 +592,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
          %Theme{} <- Document.get_theme(theme_id, current_user),
          %ContentType{} = content_type <-
            Document.create_content_type(current_user, params) do
-      Typesense.create_document(content_type, "content_types")
+      Typesense.create_document(content_type, "content_type")
       render(conn, :create, content_type: content_type)
     end
   end
@@ -690,7 +690,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     with %ContentType{} = content_type <- Document.get_content_type(current_user, uuid),
          %ContentType{} = content_type <-
            Document.update_content_type(content_type, current_user, params) do
-      Typesense.update_document(content_type, "content_types")
+      Typesense.update_document(content_type, "content_type")
       render(conn, "show.json", content_type: content_type)
     end
   end
@@ -719,7 +719,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
     with %ContentType{} = content_type <- Document.get_content_type(current_user, id),
          {:ok, %ContentType{}} <- Document.delete_content_type(content_type) do
-      Typesense.delete_document(content_type, "content_types")
+      Typesense.delete_document(content_type.id, "content_type")
       render(conn, "content_type.json", content_type: content_type)
     end
   end

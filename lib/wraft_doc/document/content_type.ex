@@ -92,7 +92,7 @@ defmodule WraftDoc.Document.ContentType do
     %{
       fields: [
         %{name: "id", type: "string", facet: false},
-        %{name: "name", type: "string", facet: false},
+        %{name: "name", type: "string", facet: true},
         %{name: "description", type: "string", facet: false},
         %{name: "color", type: "string", facet: true},
         %{name: "prefix", type: "string", facet: true},

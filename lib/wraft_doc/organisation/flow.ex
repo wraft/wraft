@@ -73,7 +73,6 @@ defmodule WraftDoc.Enterprise.Flow do
         %{name: "id", type: "string", facet: false},
         %{name: "name", type: "string", facet: false},
         %{name: "controlled", type: "bool", facet: true},
-        %{name: "control_data", type: "object", facet: false},
         %{name: "creator_id", type: "string", facet: true},
         %{name: "organisation_id", type: "string", facet: true},
         %{name: "inserted_at", type: "int64", facet: false},

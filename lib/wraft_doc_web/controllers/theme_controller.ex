@@ -334,7 +334,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     with %Theme{} = theme <- Document.get_theme(uuid, current_user),
          {:ok, %Theme{}} <- Document.delete_theme(theme) do
-      Typesense.delete_document(theme, "theme")
+      Typesense.delete_document(theme.id, "theme")
       render(conn, "create.json", theme: theme)
     end
   end
