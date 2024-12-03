@@ -4,6 +4,8 @@ defmodule WraftDocWeb.FrameUploader do
   use Waffle.Definition
   use Waffle.Ecto.Definition
 
+  # alias WraftDoc.Document.Frames
+
   @versions [:original]
   @extension_whitelist ~w(.tex)
 
@@ -16,8 +18,14 @@ defmodule WraftDocWeb.FrameUploader do
     @extension_whitelist
     |> Enum.member?(file_extension)
     |> case do
-      true -> :ok
-      false -> {:error, "Invalid tex file."}
+      true ->
+        :ok
+
+      false ->
+        {:error, "Invalid tex file."}
+        # with {:ok, _} <- Frames.validate_latex_file(file) do
+        #   :ok
+        # end
     end
   end
 
