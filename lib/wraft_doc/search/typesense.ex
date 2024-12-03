@@ -11,19 +11,8 @@ defmodule WraftDoc.Search.Typesense do
 
   def create_document(document, collection_name) do
     document = Encoder.to_document(document)
-    typesense_document = Map.merge(document, %{collection_name: collection_name})
-    ExTypesense.create_document(typesense_document)
+    ExTypesense.create_document(document)
   end
-
-  # def create_document(document, collection_name) do
-
-  #   case ExTypesense.get_collection(collection_name) do
-  #     {:error, "Not Found"} -> create_collection()
-  #     _->  document = Encoder.to_document(document)
-  #     typesense_document = Map.merge(document, %{collection_name: "#{collection_name}"})
-  #     ExTypesense.create_document(typesense_document)
-  #   end
-  # end
 
   def get_document(id, collection_name) do
     ExTypesense.get_document(collection_name, to_string(id))
@@ -31,15 +20,22 @@ defmodule WraftDoc.Search.Typesense do
 
   def update_document(document, collection_name) do
     document = Encoder.to_document(document)
-    typesense_document = Map.merge(document, %{collection_name: collection_name})
-    ExTypesense.update_document(typesense_document)
+    ExTypesense.upsert_document(document)
   end
 
   def delete_document(id, collection_name) do
-    ExTypesense.delete_document(collection_name, id)
+    query = %{filter_by: "id: #{id}"}
+    ExTypesense.delete_documents_by_query(collection_name, query)
   end
 
-  def search(collection_name, search_params) do
-    ExTypesense.search(collection_name, search_params)
+  def search(query) do
+    collection_names = ["content_type", "theme", "layout", "flow", "data_template"]
+
+    searches =
+      Enum.map(collection_names, fn collection_name ->
+        %{collection: collection_name, q: query, query_by: "name"}
+      end)
+
+    ExTypesense.multi_search(searches)
   end
 end

@@ -88,14 +88,12 @@ defmodule WraftDoc.Document.Layout do
     %{
       fields: [
         %{name: "id", type: "string", facet: false},
-        %{name: "name", type: "string", facet: false},
-        %{name: "description", type: "string", facet: false},
+        %{name: "name", type: "string", facet: true},
+        %{name: "description", type: "string", facet: true},
         %{name: "width", type: "float", facet: false},
         %{name: "height", type: "float", facet: false},
         %{name: "unit", type: "string", facet: true},
-        %{name: "slug", type: "string", facet: false},
-        %{name: "slug_file", type: "string", facet: false},
-        %{name: "screenshot", type: "string", facet: false},
+        %{name: "slug", type: "string", facet: true},
         %{name: "engine_id", type: "string", facet: true},
         %{name: "creator_id", type: "string", facet: true},
         %{name: "organisation_id", type: "string", facet: true},

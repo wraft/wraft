@@ -447,7 +447,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     with %Layout{} = layout <- Document.get_layout(id, current_user),
          {:ok, %Layout{}} <- Document.delete_layout(layout) do
-      Typesense.delete_document(layout, "layout")
+      Typesense.delete_document(layout.id, "layout")
       render(conn, "layout.json", doc_layout: layout)
     end
   end

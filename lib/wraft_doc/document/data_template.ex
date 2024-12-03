@@ -28,9 +28,9 @@ defmodule WraftDoc.Document.DataTemplate do
     %{
       fields: [
         %{name: "id", type: "string", facet: false},
-        %{name: "title", type: "string", facet: false},
-        %{name: "title_template", type: "string", facet: false},
-        %{name: "data", type: "string", facet: false},
+        %{name: "title", type: "string", facet: true},
+        %{name: "title_template", type: "string", facet: true},
+        %{name: "data", type: "string", facet: true},
         %{name: "serialized", type: "string", facet: false},
         %{name: "content_type_id", type: "string", facet: true},
         %{name: "creator_id", type: "string", facet: true},

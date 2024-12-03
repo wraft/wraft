@@ -453,7 +453,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
     with %Flow{} = flow <- Enterprise.get_flow(id, current_user),
          {:ok, %Flow{}} <- Enterprise.delete_flow(flow) do
-      Typesense.delete_document(flow, "flow")
+      Typesense.delete_document(flow.id, "flow")
       render(conn, "flow.json", flow: flow)
     end
   end
