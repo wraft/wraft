@@ -302,7 +302,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
     with {:ok, %Flow{} = flow} <-
            Enterprise.create_flow(current_user, params) do
-      Typesense.create_document(flow, "flow")
+      Typesense.create_document(flow)
       render(conn, "flow.json", flow: flow)
     end
   end
@@ -398,7 +398,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
     with %Flow{} = flow <- Enterprise.get_flow(id, current_user),
          %Flow{} = flow <- Enterprise.update_flow(flow, params) do
-      Typesense.update_document(flow, "flow")
+      Typesense.update_document(flow)
       render(conn, "update.json", flow: flow)
     end
   end
