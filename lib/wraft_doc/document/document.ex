@@ -66,7 +66,7 @@ defmodule WraftDoc.Document do
       {:ok, layout} ->
         layout = layout_files_upload(layout, params)
         fetch_and_associcate_assets(layout, current_user, params)
-        Repo.preload(layout, [:engine, :creator, :assets])
+        Repo.preload(layout, [:engine, :creator, :assets, :frame])
 
       changeset = {:error, _} ->
         changeset
@@ -1776,7 +1776,7 @@ defmodule WraftDoc.Document do
   def build_doc(
         %Instance{instance_id: instance_id, content_type: content_type, versions: versions} =
           instance,
-        %Layout{slug: slug, organisation_id: org_id} = layout
+        %Layout{organisation_id: org_id} = layout
       ) do
     content_type = Repo.preload(content_type, [:fields, :theme])
     instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
@@ -1786,8 +1786,10 @@ defmodule WraftDoc.Document do
     # Load all the assets corresponding with the given theme
     theme = Repo.preload(content_type.theme, [:assets])
 
-    # slug files: there are only two types of templates: contract and pletter
-    file_path = :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
+    file_path =
+      layout
+      |> Repo.preload([:frame])
+      |> download_slug_file()
 
     System.cmd("cp", ["-a", file_path, base_content_dir])
 
@@ -1820,7 +1822,6 @@ defmodule WraftDoc.Document do
       )
 
     File.write("#{base_content_dir}/content.md", content)
-
     pdf_file = pdf_file_path(instance, instance_dir_path, instance_updated?)
 
     pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir)
@@ -1828,6 +1829,36 @@ defmodule WraftDoc.Document do
     "pandoc"
     |> System.cmd(pandoc_commands, stderr_to_stdout: true)
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
+  end
+
+  defp download_slug_file(%Layout{frame: frame, slug: slug}) do
+    case frame do
+      nil ->
+        :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
+
+      frame ->
+        :wraft_doc
+        |> :code.priv_dir()
+        |> Path.join("slugs/#{frame.name}/.")
+        |> File.exists?()
+        |> case do
+          true ->
+            :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{frame.name}/.")
+
+          false ->
+            slug_file_binary =
+              frame
+              |> then(&"organisations/#{&1.organisation_id}/frames/#{&1.id}")
+              |> Minio.download()
+
+            slugs_dir = :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{frame.name}/.")
+            File.mkdir_p!(slugs_dir)
+
+            template_path = Path.join(slugs_dir, "template.tex")
+            File.write!(template_path, slug_file_binary)
+            slugs_dir
+        end
+    end
   end
 
   defp pdf_file_path(
@@ -1866,7 +1897,7 @@ defmodule WraftDoc.Document do
        ) do
     header =
       Enum.reduce(layout.assets, header, fn x, acc ->
-        find_asset_header_values(x, acc, layout.slug, instance)
+        find_asset_header_values(x, acc, layout, instance)
       end)
 
     qr_code = Task.await(task)
@@ -1915,9 +1946,13 @@ defmodule WraftDoc.Document do
     theme.assets
     |> Stream.map(fn asset ->
       file_name = asset.file.file_name
-
       binary = Minio.download("organisations/#{org_id}/assets/#{asset.id}/#{file_name}")
-      asset_file_path = "#{mkdir}/fonts/#{file_name}"
+
+      mkdir
+      |> Path.join("fonts")
+      |> File.mkdir_p!()
+
+      asset_file_path = Path.join(mkdir, "fonts/#{file_name}")
       File.write!(asset_file_path, binary)
 
       [_, font_type, _] = String.split(file_name, ~r/[-.]/)
@@ -1984,7 +2019,7 @@ defmodule WraftDoc.Document do
   defp find_asset_header_values(
          %Asset{name: name, file: file, organisation_id: org_id} = asset,
          acc,
-         slug,
+         %Layout{frame: frame, slug: slug},
          %Instance{
            instance_id: instance_id
          }
@@ -1996,7 +2031,7 @@ defmodule WraftDoc.Document do
 
     File.write!(asset_file_path, binary)
 
-    if slug == "pletter" do
+    if frame != nil || slug == "pletter" do
       concat_strings(acc, "letterhead: #{asset_file_path} \n")
     else
       concat_strings(acc, "#{name}: #{asset_file_path} \n")

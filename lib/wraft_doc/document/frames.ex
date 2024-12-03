@@ -79,6 +79,15 @@ defmodule WraftDoc.Document.Frames do
   def delete_frame(%Frame{} = frame) do
     case Minio.delete_file("organisations/#{frame.organisation_id}/frames/#{frame.id}") do
       {:ok, _} ->
+        frame_path =
+          :wraft_doc
+          |> :code.priv_dir()
+          |> Path.join("slugs/#{frame.name}")
+
+        if File.exists?(frame_path) do
+          File.rm_rf(frame_path)
+        end
+
         Repo.delete(frame)
 
       {:error, reason} ->

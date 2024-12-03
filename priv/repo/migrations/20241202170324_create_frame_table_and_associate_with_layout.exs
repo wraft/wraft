@@ -16,5 +16,15 @@ defmodule WraftDoc.Repo.Migrations.CreateFrameTableAndAssociateWithLayout do
 
       timestamps()
     end
+
+    create(
+      unique_index(:frame, [:name, :organisation_id], name: :frame_name_organisation_id_index)
+    )
+
+    alter table(:layout) do
+      remove(:slug_file)
+
+      add(:frame_id, references(:frame, type: :uuid, column: :id, on_delete: :nilify_all))
+    end
   end
 end
