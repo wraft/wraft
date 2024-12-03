@@ -204,7 +204,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
     current_user = conn.assigns[:current_user]
 
     with %Theme{} = theme <- Document.create_theme(current_user, params) do
-      Typesense.create_document(theme, "theme")
+      Typesense.create_document(theme)
       render(conn, "create.json", theme: theme)
     end
   end
@@ -306,7 +306,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     with %Theme{} = theme <- Document.get_theme(theme_uuid, current_user),
          %Theme{} = theme <- Document.update_theme(theme, current_user, params) do
-      Typesense.update_document(theme, "theme")
+      Typesense.update_document(theme)
       render(conn, "create.json", theme: theme)
     end
   end

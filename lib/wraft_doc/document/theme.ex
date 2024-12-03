@@ -59,17 +59,6 @@ defmodule WraftDoc.Document.Theme do
     |> validate_format(:secondary_color, @hex_format, message: @hex_code_warning_msg)
   end
 
-  # def changeset(%Theme{} = theme, attrs \\ %{}) do
-  #   attrs = update_in(attrs["typescale"] || attrs[:typescale], &serialize_typescale/1)
-
-  #   theme
-  #   |> cast(attrs, @fields)
-  #   |> validate_required([:name, :font, :organisation_id])
-  #   |> validate_format(:body_color, @hex_format, message: @hex_code_warning_msg)
-  #   |> validate_format(:primary_color, @hex_format, message: @hex_code_warning_msg)
-  #   |> validate_format(:secondary_color, @hex_format, message: @hex_code_warning_msg)
-  # end
-
   def file_changeset(%Theme{} = theme, attrs \\ %{}) do
     cast_attachments(theme, attrs, [:preview_file])
   end
@@ -83,18 +72,6 @@ defmodule WraftDoc.Document.Theme do
     |> validate_format(:primary_color, @hex_format, message: @hex_code_warning_msg)
     |> validate_format(:secondary_color, @hex_format, message: @hex_code_warning_msg)
   end
-
-  # def update_changeset(%Theme{} = theme, attrs \\ %{}) do
-  #   attrs = update_in(attrs["typescale"] || attrs[:typescale], &serialize_typescale/1)
-
-  #   theme
-  #   |> cast(attrs, @fields)
-  #   |> cast_attachments(attrs, [:preview_file])
-  #   |> validate_required([:name, :font, :typescale])
-  #   |> validate_format(:body_color, @hex_format, message: @hex_code_warning_msg)
-  #   |> validate_format(:primary_color, @hex_format, message: @hex_code_warning_msg)
-  #   |> validate_format(:secondary_color, @hex_format, message: @hex_code_warning_msg)
-  # end
 
   @impl ExTypesense
   def get_field_types do

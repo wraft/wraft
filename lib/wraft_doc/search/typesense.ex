@@ -9,7 +9,7 @@ defmodule WraftDoc.Search.Typesense do
     ExTypesense.create_collection(schema)
   end
 
-  def create_document(document, collection_name) do
+  def create_document(document) do
     document = Encoder.to_document(document)
     ExTypesense.create_document(document)
   end
@@ -18,7 +18,7 @@ defmodule WraftDoc.Search.Typesense do
     ExTypesense.get_document(collection_name, to_string(id))
   end
 
-  def update_document(document, collection_name) do
+  def update_document(document) do
     document = Encoder.to_document(document)
     ExTypesense.upsert_document(document)
   end
