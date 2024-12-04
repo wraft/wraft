@@ -2,10 +2,17 @@ defmodule WraftDocWeb.Api.V1.FrameController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  alias WraftDoc.Document.Frame
-  alias WraftDoc.Document.Frames
+  plug WraftDocWeb.Plug.Authorized,
+    create: "frame:manage",
+    index: "frame:show",
+    show: "frame:show",
+    update: "frame:manage",
+    delete: "frame:delete"
 
   action_fallback(WraftDocWeb.FallbackController)
+
+  alias WraftDoc.Document.Frame
+  alias WraftDoc.Document.Frames
 
   def swagger_definitions do
     %{

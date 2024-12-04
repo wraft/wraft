@@ -272,7 +272,7 @@ defmodule WraftDoc.Document do
         where: l.organisation_id == ^org_id,
         where: ^layout_index_filter_by_name(params),
         order_by: ^layout_index_sort(params),
-        preload: [:engine, :assets]
+        preload: [:engine, :assets, :frame]
       )
 
     Repo.paginate(query, params)
@@ -302,7 +302,7 @@ defmodule WraftDoc.Document do
   def show_layout(id, user) do
     with %Layout{} = layout <-
            get_layout(id, user) do
-      Repo.preload(layout, [:engine, :creator, :assets])
+      Repo.preload(layout, [:engine, :creator, :assets, :frame])
     end
   end
 
@@ -363,7 +363,7 @@ defmodule WraftDoc.Document do
 
       {:ok, layout} ->
         fetch_and_associcate_assets(layout, current_user, params)
-        Repo.preload(layout, [:engine, :creator, :assets])
+        Repo.preload(layout, [:engine, :creator, :assets, :frame])
     end
   end
 
@@ -1831,33 +1831,36 @@ defmodule WraftDoc.Document do
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
   end
 
-  defp download_slug_file(%Layout{frame: frame, slug: slug}) do
-    case frame do
-      nil ->
-        :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
+  defp download_slug_file(%Layout{frame: nil, slug: slug}),
+    do: :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
 
-      frame ->
+  defp download_slug_file(%Layout{frame: frame, organisation_id: organisation_id}) do
+    :wraft_doc
+    |> :code.priv_dir()
+    |> Path.join("slugs/organisation/#{organisation_id}/#{frame.name}/.")
+    |> File.exists?()
+    |> case do
+      true ->
         :wraft_doc
         |> :code.priv_dir()
-        |> Path.join("slugs/#{frame.name}/.")
-        |> File.exists?()
-        |> case do
-          true ->
-            :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{frame.name}/.")
+        |> Path.join("slugs/organisation/#{organisation_id}/#{frame.name}/.")
 
-          false ->
-            slug_file_binary =
-              frame
-              |> then(&"organisations/#{&1.organisation_id}/frames/#{&1.id}")
-              |> Minio.download()
+      false ->
+        slug_file_binary =
+          frame
+          |> then(&"organisations/#{&1.organisation_id}/frames/#{&1.id}")
+          |> Minio.download()
 
-            slugs_dir = :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{frame.name}/.")
-            File.mkdir_p!(slugs_dir)
+        slugs_dir =
+          :wraft_doc
+          |> :code.priv_dir()
+          |> Path.join("slugs/organisation/#{organisation_id}/#{frame.name}/.")
 
-            template_path = Path.join(slugs_dir, "template.tex")
-            File.write!(template_path, slug_file_binary)
-            slugs_dir
-        end
+        File.mkdir_p!(slugs_dir)
+
+        template_path = Path.join(slugs_dir, "template.tex")
+        File.write!(template_path, slug_file_binary)
+        slugs_dir
     end
   end
 

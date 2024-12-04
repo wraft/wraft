@@ -13,7 +13,7 @@ defmodule WraftDoc.Document.Frames do
   @doc """
   Lists all frames.
   """
-  @spec list_frames(User.t(), map) :: map
+  @spec list_frames(User.t(), map()) :: map()
   def list_frames(%{current_org_id: organisation_id}, params) do
     query =
       from(s in Frame,
@@ -27,7 +27,7 @@ defmodule WraftDoc.Document.Frames do
   def list_frames(_, _), do: {:error, :fake}
 
   @doc """
-  Gets a specific frame.
+  Retrieves a specific frame.
   """
   @spec get_frame(binary(), User.t()) :: Frame.t() | nil
   def get_frame(<<_::288>> = id, %{current_org_id: organisation_id}) do
@@ -76,13 +76,13 @@ defmodule WraftDoc.Document.Frames do
   Delete a frame.
   """
   @spec delete_frame(Frame.t()) :: {:ok, Frame.t()} | {:error, Ecto.Changeset.t()}
-  def delete_frame(%Frame{} = frame) do
-    case Minio.delete_file("organisations/#{frame.organisation_id}/frames/#{frame.id}") do
+  def delete_frame(%Frame{id: frame_id, organisation_id: organisation_id, name: name} = frame) do
+    case Minio.delete_file("organisations/#{organisation_id}/frames/#{frame_id}") do
       {:ok, _} ->
         frame_path =
           :wraft_doc
           |> :code.priv_dir()
-          |> Path.join("slugs/#{frame.name}")
+          |> Path.join("slugs/#{name}")
 
         if File.exists?(frame_path) do
           File.rm_rf(frame_path)

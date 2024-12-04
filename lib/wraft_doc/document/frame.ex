@@ -19,9 +19,6 @@ defmodule WraftDoc.Document.Frame do
     frame
     |> cast(attrs, [:name, :organisation_id, :creator_id])
     |> validate_required([:name, :organisation_id, :creator_id])
-    |> validate_exclusion(:name, @reserved_names,
-      message: "is a reserved name and cannot be used"
-    )
     |> unique_constraint(:name,
       name: :frame_name_organisation_id_index,
       message: "Frame with the same name  under your organisation exists.!"
