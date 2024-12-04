@@ -7,5 +7,7 @@ defmodule WraftDoc.Repo.Migrations.GuestUserTable do
       add(:email, :string, null: false)
       timestamps()
     end
+
+    create(unique_index(:guest_user, [:email]))
   end
 end
