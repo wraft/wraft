@@ -36,13 +36,13 @@ defmodule WraftDoc.Document.Layout do
       :height,
       :unit,
       :slug,
+      :frame_id,
       :organisation_id,
       :engine_id
     ])
     |> validate_required([
       :name,
       :description,
-      :slug,
       :organisation_id,
       :engine_id
     ])
@@ -61,13 +61,13 @@ defmodule WraftDoc.Document.Layout do
       :height,
       :unit,
       :slug,
+      :frame_id,
       :engine_id
     ])
     |> cast_attachments(attrs, [:screenshot])
     |> validate_required([
       :name,
       :description,
-      :slug,
       :engine_id
     ])
     |> unique_constraint(:name,

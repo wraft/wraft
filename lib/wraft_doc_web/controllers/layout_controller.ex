@@ -73,7 +73,16 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             height: 20.0,
             unit: "cm",
             slug: "Pandoc",
-            frame_id: "1232148nb3478",
+            frame: %{
+              id: "123e4567-e89b-12d3-a456-426614174000",
+              name: "my-document-frame",
+              frame: %{
+                file_name: "template.tex",
+                updated_at: "2024-11-29T12:56:47"
+              },
+              inserted_at: "2024-01-15T10:30:00Z",
+              updated_at: "2024-01-15T10:30:00Z"
+            },
             screenshot: "/official_letter.jpg",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
@@ -108,8 +117,17 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             height: 20.0,
             unit: "cm",
             slug: "Pandoc",
-            frame_id: "1232148nb3478",
             screenshot: "/official_letter.jpg",
+            frame: %{
+              id: "123e4567-e89b-12d3-a456-426614174000",
+              name: "my-document-frame",
+              frame: %{
+                file_name: "template.tex",
+                updated_at: "2024-11-29T12:56:47"
+              },
+              inserted_at: "2024-01-15T10:30:00Z",
+              updated_at: "2024-01-15T10:30:00Z"
+            },
             engine: %{
               id: "1232148nb3478",
               name: "Pandoc",
@@ -156,8 +174,17 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
               height: 20.0,
               unit: "cm",
               slug: "Pandoc",
-              frame_id: "1232148nb3478",
               screenshot: "/official_letter.jpg",
+              frame: %{
+                id: "123e4567-e89b-12d3-a456-426614174000",
+                name: "my-document-frame",
+                frame: %{
+                  file_name: "template.tex",
+                  updated_at: "2024-11-29T12:56:47"
+                },
+                inserted_at: "2024-01-15T10:30:00Z",
+                updated_at: "2024-01-15T10:30:00Z"
+              },
               engine: %{
                 id: "1232148nb3478",
                 name: "Pandoc",
@@ -197,7 +224,16 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
                 height: 20.0,
                 unit: "cm",
                 slug: "Pandoc",
-                frame_id: "1232148nb3478",
+                frame: %{
+                  id: "123e4567-e89b-12d3-a456-426614174000",
+                  name: "my-document-frame",
+                  frame: %{
+                    file_name: "template.tex",
+                    updated_at: "2024-11-29T12:56:47"
+                  },
+                  inserted_at: "2024-01-15T10:30:00Z",
+                  updated_at: "2024-01-15T10:30:00Z"
+                },
                 screenshot: "/official_letter.jpg",
                 engine: %{
                   id: "1232148nb3478",
