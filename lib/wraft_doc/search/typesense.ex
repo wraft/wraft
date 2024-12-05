@@ -28,14 +28,46 @@ defmodule WraftDoc.Search.Typesense do
     ExTypesense.delete_documents_by_query(collection_name, query)
   end
 
-  def search(query) do
+  def index_document(collection_name) do
+    ExTypesense.index_multiple_documents(collection_name)
+  end
+
+  def search(query, collection_name \\ nil, opts \\ []) do
     collection_names = ["content_type", "theme", "layout", "flow", "data_template"]
 
-    searches =
-      Enum.map(collection_names, fn collection_name ->
-        %{collection: collection_name, q: query, query_by: "name"}
-      end)
+    if is_nil(collection_name) do
+      searches =
+        Enum.map(collection_names, fn col ->
+          %{
+            collection: col,
+            q: query,
+            query_by: opts[:query_by]
+          }
+        end)
 
-    ExTypesense.multi_search(searches)
+      ExTypesense.multi_search(searches)
+    else
+      search_params = %{
+        collection: collection_name,
+        q: query,
+        query_by: opts[:query_by],
+        filter_by: opts[:filter_by],
+        sort_by: opts[:sort_by],
+        page: opts[:page],
+        per_page: opts[:per_page]
+      }
+
+      search_params =
+        if opts[:prefix] do
+          Map.put(search_params, :prefix, true)
+        else
+          search_params
+        end
+
+      clean_search_params =
+        Enum.into(Enum.reject(search_params, fn {_k, v} -> is_nil(v) end), %{})
+
+      ExTypesense.search(collection_name, clean_search_params)
+    end
   end
 end
