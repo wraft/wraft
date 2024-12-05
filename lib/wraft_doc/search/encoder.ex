@@ -4,28 +4,14 @@ defprotocol WraftDoc.Search.Encoder do
   """
 
   @doc """
-  Converts a struct to a map format .
+  Converts a struct to a map format.
   """
   @spec to_document(t()) :: map()
   def to_document(struct)
 end
 
-defimpl WraftDoc.Search.Encoder,
-  for: [
-    WraftDoc.Document.ContentType,
-    WraftDoc.Document.DataTemplate,
-    WraftDoc.Document.Layout,
-    WraftDoc.Document.Theme,
-    WraftDoc.Enterprise.Flow
-  ] do
-  @moduledoc """
-  Handles conversion of schema for Typesense .
-  """
-
-  alias WraftDoc.Document.{ContentType, DataTemplate, Layout, Theme}
-  alias WraftDoc.Enterprise.Flow
-
-  def to_document(%ContentType{} = content_type) do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.ContentType do
+  def to_document(%WraftDoc.Document.ContentType{} = content_type) do
     %{
       id: to_string(content_type.id),
       collection_name: "content_type",
@@ -38,12 +24,15 @@ defimpl WraftDoc.Search.Encoder,
       theme_id: to_string(content_type.theme_id),
       organisation_id: to_string(content_type.organisation_id),
       creator_id: to_string(content_type.creator_id),
-      inserted_at: format_timestamp(content_type.inserted_at),
-      updated_at: format_timestamp(content_type.updated_at)
+      inserted_at:
+        content_type.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
+      updated_at: content_type.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
     }
   end
+end
 
-  def to_document(%DataTemplate{} = data_template) do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.DataTemplate do
+  def to_document(%WraftDoc.Document.DataTemplate{} = data_template) do
     %{
       id: to_string(data_template.id),
       collection_name: "data_template",
@@ -53,12 +42,16 @@ defimpl WraftDoc.Search.Encoder,
       serialized: Jason.encode!(data_template.serialized),
       content_type_id: to_string(data_template.content_type_id),
       creator_id: to_string(data_template.creator_id),
-      inserted_at: format_timestamp(data_template.inserted_at),
-      updated_at: format_timestamp(data_template.updated_at)
+      inserted_at:
+        data_template.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
+      updated_at:
+        data_template.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
     }
   end
+end
 
-  def to_document(%Layout{} = layout) do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.Layout do
+  def to_document(%WraftDoc.Document.Layout{} = layout) do
     %{
       id: to_string(layout.id),
       collection_name: "layout",
@@ -71,12 +64,14 @@ defimpl WraftDoc.Search.Encoder,
       engine_id: to_string(layout.engine_id),
       creator_id: to_string(layout.creator_id),
       organisation_id: to_string(layout.organisation_id),
-      inserted_at: format_timestamp(layout.inserted_at),
-      updated_at: format_timestamp(layout.updated_at)
+      inserted_at: layout.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
+      updated_at: layout.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
     }
   end
+end
 
-  def to_document(%Theme{} = theme) do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.Theme do
+  def to_document(%WraftDoc.Document.Theme{} = theme) do
     %{
       id: to_string(theme.id),
       collection_name: "theme",
@@ -88,12 +83,14 @@ defimpl WraftDoc.Search.Encoder,
       secondary_color: theme.secondary_color,
       creator_id: to_string(theme.creator_id),
       organisation_id: to_string(theme.organisation_id),
-      inserted_at: format_timestamp(theme.inserted_at),
-      updated_at: format_timestamp(theme.updated_at)
+      inserted_at: theme.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
+      updated_at: theme.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
     }
   end
+end
 
-  def to_document(%Flow{} = flow) do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.Enterprise.Flow do
+  def to_document(%WraftDoc.Enterprise.Flow{} = flow) do
     %{
       id: to_string(flow.id),
       collection_name: "flow",
@@ -101,14 +98,8 @@ defimpl WraftDoc.Search.Encoder,
       controlled: flow.controlled,
       creator_id: to_string(flow.creator_id),
       organisation_id: to_string(flow.organisation_id),
-      inserted_at: format_timestamp(flow.inserted_at),
-      updated_at: format_timestamp(flow.updated_at)
+      inserted_at: flow.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
+      updated_at: flow.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
     }
-  end
-
-  defp format_timestamp(naive_datetime) do
-    naive_datetime
-    |> DateTime.from_naive!("Etc/UTC")
-    |> DateTime.to_unix()
   end
 end

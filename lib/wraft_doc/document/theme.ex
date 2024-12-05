@@ -91,19 +91,4 @@ defmodule WraftDoc.Document.Theme do
       ]
     }
   end
-
-  # Add these helper functions to serialize/deserialize typescale
-  def serialize_typescale(typescale) when is_map(typescale) do
-    Jason.encode!(typescale)
-  end
-
-  def serialize_typescale(typescale), do: typescale
-
-  def deserialize_typescale(typescale) when is_binary(typescale) do
-    Jason.decode!(typescale)
-  rescue
-    _ -> %{}
-  end
-
-  def deserialize_typescale(typescale), do: typescale
 end

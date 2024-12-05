@@ -334,6 +334,9 @@ defmodule WraftDocWeb.Router do
 
       resources("/organisation-fields", OrganisationFieldController, except: [:new, :edit])
 
+      # Search
+      get("/search", SearchController, :search)
+
       # post("/approval_systems/:id/approve", ApprovalSystemController, :approve)
 
       scope "/pipelines" do
