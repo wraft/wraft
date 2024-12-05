@@ -22,9 +22,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   require Logger
 
-  alias WraftDoc.Account
-  alias WraftDoc.AuthTokens
-  alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Client.Minio.DownloadError
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentCollaboration
@@ -528,6 +525,23 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               "clauses" => [],
               "reminder" => []
             }
+          })
+        end,
+      ShareDocumentRequest:
+        swagger_schema do
+          title("Share document request")
+          description("Request to share a document")
+
+          properties do
+            email(:string, "Email", required: true)
+            role(:string, "Role", required: true, enum: ["suggestor", "viewer"])
+            state_id(:string, "Document State", required: true)
+          end
+
+          example(%{
+            "email" => "example@example.com",
+            "role" => "suggestor",
+            "state_id" => "a102cdb1-e5f4-4c28-98ec-9a10a94b9173"
           })
         end
     }
