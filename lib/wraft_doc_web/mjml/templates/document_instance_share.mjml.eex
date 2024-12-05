@@ -1,0 +1,54 @@
+<mjml>
+  <mj-head>
+    <mj-title>Access Grant for Wraft Document <%= @instance_id %> </mj-title>
+    <mj-font name="Arial" href="https://fonts.googleapis.com/css?family=Arial" />
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" color="#555555" line-height="1.5" />
+      <mj-button background-color="#4CAF50" color="white" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column width="100%">
+        <mj-image src="https://dev.wraft.co/logo.png" alt="Wraft Logo" align="center" width="120px" />
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-text font-size="24px" color="#333333" font-weight="bold">
+          Your Document Link
+        </mj-text>
+        <mj-text>
+          Dear Sir,
+        </mj-text>
+        <mj-text>
+          You have been granted access to a document with <%= @instance_id %> on Wraft. To view the document, please click the button below:
+        </mj-text>
+        <mj-button background-color="#004A0F" href="<%= @document_access_url %>" padding="20px 0">
+          View Document
+        </mj-button>
+        <mj-text>
+          This link is secured with a unique token and will expire in 24 hours for security reasons. If the link has expired or you encounter any issues, please request a new access link.
+        </mj-text>
+        <mj-text>
+          If you're having trouble clicking the button, copy and paste the URL below into your web browser:
+        </mj-text>
+        <mj-text font-size="14px" color="#888888">
+          <%= @document_access_url %>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-divider border-color="#cccccc" border-width="1px" />
+        <mj-text font-size="14px" color="#888888" align="center">
+          This is an automated message from Wraft. Please do not reply to this email.
+        </mj-text>
+        <mj-text font-size="14px" color="#888888" align="center">
+          If you need assistance, please contact our support team at support@wraft.co
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

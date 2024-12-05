@@ -111,6 +111,23 @@ defmodule WraftDoc.Workers.EmailWorker do
 
   def perform(%Job{
         args: %{
+          "email" => email,
+          "token" => token,
+          "instance_id" => instance_id
+        },
+        tags: ["document_instance_share"]
+      }) do
+    Logger.info("Document instance share mailer job started.")
+
+    email
+    |> Email.document_instance_share(token, instance_id)
+    |> Mailer.deliver()
+
+    Logger.info("Document  instance share mailer job end.")
+  end
+
+  def perform(%Job{
+        args: %{
           "token" => token,
           "email" => email
         }

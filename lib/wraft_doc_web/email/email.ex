@@ -128,6 +128,20 @@ defmodule WraftDocWeb.Mailer.Email do
   @doc """
     Document Instance Mail
   """
+  def document_instance_share(email, token, instance_id) do
+    document_access_url = build_document_instance_url(token)
+    body = %{document_access_url: document_access_url, instance_id: instance_id}
+
+    new()
+    |> to(email)
+    |> from({"Wraft", sender_email()})
+    |> subject("Wraft - Document Share")
+    |> html_body(MJML.DocumentInstanceShare.render(body))
+  end
+
+  @doc """
+    Document Instance Mail
+  """
   def document_instance_mail(
         email,
         subject,
@@ -183,6 +197,10 @@ defmodule WraftDocWeb.Mailer.Email do
 
   defp build_email_verification_url(token) do
     URI.encode("#{frontend_url()}/users/join_invite/verify_email/#{token}}")
+  end
+
+  defp build_document_instance_url(token) do
+    URI.encode("#{frontend_url()}/documents/instance/#{token}")
   end
 
   defp build_join_url(org_name, email, token) do
