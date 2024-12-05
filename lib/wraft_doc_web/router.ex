@@ -238,6 +238,8 @@ defmodule WraftDocWeb.Router do
       patch("/contents/:id/lock-unlock", InstanceController, :lock_unlock)
       get("/contents/title/search", InstanceController, :search)
       get("/contents/:id/change/:v_id", InstanceController, :change)
+      # Share an instance
+      post("/contents/:id/share", InstanceController, :share)
       # Approve a document
       put("/contents/:id/approve", InstanceController, :approve)
       put("/contents/:id/reject", InstanceController, :reject)

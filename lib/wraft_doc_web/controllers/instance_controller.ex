@@ -22,6 +22,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   require Logger
 
+  alias WraftDoc.Account
+  alias WraftDoc.AuthTokens
+  alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Client.Minio.DownloadError
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentType
@@ -404,6 +407,23 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             "subject" => "Subject of the email",
             "message" => "Body of the email",
             "cc" => ["cc1@example.com", "cc2@example.com"]
+          })
+        end,
+      ShareDocumentRequest:
+        swagger_schema do
+          title("Share document request")
+          description("Request to share a document")
+
+          properties do
+            email(:string, "Email", required: true)
+            role(:string, "Role", required: true, enum: ["suggestor", "viewer"])
+            state_id(:string, "Document State", required: true)
+          end
+
+          example(%{
+            "email" => "example@example.com",
+            "role" => "suggestor",
+            "state_id" => "a102cdb1-e5f4-4c28-98ec-9a10a94b9173"
           })
         end
     }
@@ -933,6 +953,36 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     with %Instance{} = instance <- Document.show_instance(id, current_user),
          {:ok, _} <- Document.send_document_email(instance, params) do
       render(conn, "email.json", %{info: "Email sent successfully"})
+    end
+  end
+
+  @doc """
+   Share an instance.
+  """
+  swagger_path :share do
+    post("/contents/{id}/share")
+    summary("Share an instance")
+    description("Api to share an instance")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+      content(:body, Schema.ref(:ShareDocumentRequest), "Share Request", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ShowContent))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec share(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def share(conn, %{"id" => document_id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Document.show_instance(document_id, current_user),
+         user <- Account.get_user_by_email(params),
+         {:ok, %AuthToken{value: token}} <- AuthTokens.create_document_invite_token(user, params),
+         %Instance{} = instance <- Document.send_email(instance, user, token) do
+      render(conn, "show.json", instance: instance)
     end
   end
 end

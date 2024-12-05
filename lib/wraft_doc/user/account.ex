@@ -7,6 +7,7 @@ defmodule WraftDoc.Account do
 
   alias Ecto.Multi
   alias WraftDoc.Account.Activity
+  alias WraftDoc.Account.GuestUser
   alias WraftDoc.Account.Profile
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.RoleGroup
@@ -804,5 +805,45 @@ defmodule WraftDoc.Account do
       {:ok, datetime} -> Timex.Timezone.convert(datetime, timezone)
       {:error, _} -> {:error, :invalid_datetime}
     end
+  end
+
+  @doc """
+   Get user or guest user by email.
+  """
+  @spec get_user_by_email(map()) :: User.t() | GuestUser.t()
+  def get_user_or_guest_user(%{"email" => email} = _params) do
+    case get_user_by_email(email) do
+      nil ->
+        get_or_create_guest_user(email)
+
+      user ->
+        user
+    end
+  end
+
+  @doc """
+  Get or create guest user struct from given email
+  """
+  @spec get_or_create_guest_user(binary()) :: GuestUser.t() | nil
+  def get_or_create_guest_user(email) when is_binary(email) do
+    case Repo.get_by(GuestUser, email: email) do
+      nil ->
+        create_guest_user(%{"email" => email})
+
+      guest_user ->
+        guest_user
+    end
+  end
+
+  def get_guest_user_by_email(_email), do: nil
+
+  @doc """
+  Create a guest user.
+  """
+  @spec create_guest_user(map()) :: {:ok, GuestUser.t()} | {:error, Ecto.Changeset.t()}
+  def create_guest_user(%{"email" => _email} = params) do
+    %GuestUser{}
+    |> GuestUser.changeset(params)
+    |> Repo.insert()
   end
 end

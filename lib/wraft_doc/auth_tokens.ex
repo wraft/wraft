@@ -134,6 +134,29 @@ defmodule WraftDoc.AuthTokens do
   end
 
   @doc """
+   Create document invite token
+  """
+  @spec create_document_invite_token(User.t(), map()) :: {:ok, AuthToken.t()}
+  def create_document_invite_token(
+        user,
+        %{"email" => email, "role" => role, "id" => document_id, "state_id" => state_id}
+      ) do
+    token =
+      WraftDoc.create_phx_token("document_invite", %{
+        email: email,
+        role: role,
+        document_id: document_id,
+        state_id: state_id
+      })
+
+    params = %{value: token, token_type: "document_invite"}
+
+    auth_token = insert_auth_token!(user, params)
+
+    {:ok, auth_token}
+  end
+
+  @doc """
   Verify Delete Organisation Token
   """
   @spec verify_delete_token(User.t(), map()) ::
@@ -233,6 +256,25 @@ defmodule WraftDoc.AuthTokens do
 
       %AuthToken{value: token} ->
         case phoenix_token_verify(token, "email_verification", max_age: 7200) do
+          {:ok, payload} ->
+            {:ok, payload}
+
+          {:error, :expired} ->
+            {:error, :expired}
+
+          _ ->
+            {:error, :fake}
+        end
+    end
+  end
+
+  def check_token(token, token_type) when token_type == :document_invite do
+    case get_auth_token(token, token_type) do
+      nil ->
+        {:error, :fake}
+
+      %AuthToken{value: token} ->
+        case phoenix_token_verify(token, "document_invite", max_age: 864_000) do
           {:ok, payload} ->
             {:ok, payload}
 

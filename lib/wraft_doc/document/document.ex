@@ -48,6 +48,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.Workers.BulkWorker
+  alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Mailer
   alias WraftDocWeb.Mailer.Email
 
@@ -3959,5 +3960,18 @@ defmodule WraftDoc.Document do
       instance_file_name
     )
     |> Mailer.deliver()
+  end
+
+  @doc """
+  Share document
+  """
+  def send_email(instance, user, token) do
+    %{
+      email: user.email,
+      token: token,
+      instance_id: instance.instance_id
+    }
+    |> EmailWorker.new(queue: "mailer", tags: ["document_instance_share"])
+    |> Oban.insert()
   end
 end
