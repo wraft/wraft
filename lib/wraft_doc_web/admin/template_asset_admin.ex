@@ -9,6 +9,8 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.TemplateAsset
+  alias WraftDocWeb.TemplateAssetThumbnailUploader
+  alias WraftDocWeb.TemplateAssetUploader
 
   def index(_) do
     [
@@ -38,9 +40,9 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
     ]
   end
 
-  defp admin_changeset(params) do
+  defp admin_changeset(%{"zip_file" => %{filename: zip_file_name}} = params) do
     %TemplateAsset{}
-    |> Map.merge(%{:zip_file_name => params["zip_file"].filename})
+    |> Map.merge(%{:zip_file_name => zip_file_name})
     |> TemplateAsset.changeset(params)
     |> then(&{:ok, &1})
   end
@@ -98,8 +100,8 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
 
   def after_delete(_conn, %{zip_file: zip_file, thumbnail: thumbnail} = template_asset) do
     with template_asset <- Map.put(template_asset, :zip_file_name, zip_file.file_name),
-         :ok <- WraftDocWeb.TemplateAssetUploader.delete({zip_file, template_asset}),
-         :ok <- WraftDocWeb.TemplateAssetThumbnailUploader.delete({thumbnail, template_asset}) do
+         :ok <- TemplateAssetUploader.delete({zip_file, template_asset}),
+         :ok <- TemplateAssetThumbnailUploader.delete({thumbnail, template_asset}) do
       {:ok, template_asset}
     end
   end

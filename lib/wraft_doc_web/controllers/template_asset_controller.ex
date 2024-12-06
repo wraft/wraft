@@ -161,7 +161,11 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
                 type: :object,
                 properties: %{
                   file_name: %Schema{type: :string, description: "The name of the file"},
-                  path: %Schema{type: :string, description: "The full path to the file"}
+                  path: %Schema{type: :string, description: "The full path to the file"},
+                  thumbnail_url: %Schema{
+                    type: :string,
+                    description: "Signed URL of the thumbnail image of the template asset"
+                  }
                 }
               }
             })
@@ -170,12 +174,16 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
           example(%{
             templates: [
               %{
-                file_name: "contract.zip",
-                path: "public/templates/contract.zip"
+                file_name: "contract",
+                path: "public/templates/contract.zip",
+                thumbnail_url:
+                  "http://minio.example.com/wraft/public/templates/contract-template/thumbnail.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20241208%2Flocal%2Fs3%2Faws4_request&X-Amz-Date=20241208T150056Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Signature=..."
               },
               %{
-                file_name: "nda.zip",
-                path: "public/templates/nda.zip"
+                file_name: "nda",
+                path: "public/templates/nda.zip",
+                thumbnail_url:
+                  "http://127.0.0.1:9000/wraft/public/templates/nda/thumbnail.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20241208%2Flocal%2Fs3%2Faws4_request&X-Amz-Date=20241208T150056Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Signature=..."
               }
             ]
           })
@@ -561,7 +569,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   Checks for the missing items in template asset and makes user include the missing item ids in actual import.
   """
   swagger_path :template_pre_import do
-    post("/template_assets/{id}/pre_import")
+    get("/template_assets/{id}/pre_import")
     summary("Prepare template asset for import")
 
     description(
@@ -580,7 +588,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec template_import(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec template_pre_import(Plug.Conn.t(), map) :: Plug.Conn.t()
   def template_pre_import(conn, %{"id" => template_asset_id}) do
     current_user = conn.assigns[:current_user]
 
@@ -596,11 +604,11 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   Template asset export.
   """
   swagger_path :template_export do
-    post("/template_assets/:id/export/")
-    summary("Export template into a zip format")
+    post("/template_assets/{id}/export/")
+    summary("Export data template into a zip format")
 
     description("
-  This creates a zip format from a data template id ,which can be used to export the templates")
+  This creates a zip file containing all assets of data template from its id")
 
     operation_id("template_export")
     consumes("application/json")
@@ -643,7 +651,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   List all templates.
   """
   swagger_path :list_public_templates do
-    get("template_assets/public/templates")
+    get("/template_assets/public/templates")
     summary("List Public Templates")
     description("Fetches a list of all public templates available.")
     produces("application/json")
@@ -661,7 +669,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   Download a public template.
   """
   swagger_path :download_public_template do
-    get("template_assets/public/templates/:file_name/download")
+    get("/template_assets/public/templates/:file_name/download")
     summary("Get Download URL for Public Template")
     description("Generates a pre-signed URL for downloading a specified public template file.")
     produces("application/json")
@@ -671,13 +679,8 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   end
 
   def download_public_template(conn, %{"file_name" => template_name}) do
-    with template_name <- ensure_zip_extension(template_name),
-         {:ok, template_url} <- TemplateAssets.download_public_template(template_name) do
+    with {:ok, template_url} <- TemplateAssets.download_public_template(template_name) do
       render(conn, "download_public_template.json", %{template_url: template_url})
     end
-  end
-
-  defp ensure_zip_extension(name) do
-    if String.ends_with?(name, ".zip"), do: name, else: name <> ".zip"
   end
 end

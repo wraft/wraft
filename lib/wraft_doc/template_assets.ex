@@ -108,9 +108,10 @@ defmodule WraftDoc.TemplateAssets do
   # TODO - Write tests
   @spec delete_template_asset(TemplateAsset.t()) ::
           {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
-  def delete_template_asset(%TemplateAsset{organisation_id: org_id} = template_asset) do
-    # Delete the template asset file
-    Minio.delete_file("organisations/#{org_id}/template_assets/#{template_asset.id}")
+  def delete_template_asset(
+        %TemplateAsset{id: id, organisation_id: organisation_id} = template_asset
+      ) do
+    Minio.delete_file("organisations/#{organisation_id}/template_assets/#{id}")
 
     Repo.delete(template_asset)
   end
@@ -990,7 +991,7 @@ defmodule WraftDoc.TemplateAssets do
     "public/templates/"
     |> Minio.list_files()
     |> Enum.reduce([], fn path, acc ->
-      if String.ends_with?(path, ".zip") do
+      if Path.extname(path) == ".zip" do
         rootname = get_rootname(path)
 
         [
@@ -1020,7 +1021,6 @@ defmodule WraftDoc.TemplateAssets do
   @spec download_public_template(String.t()) :: {:ok, binary()} | {:error, String.t()}
   def download_public_template(template_name) do
     template_name
-    |> get_rootname()
     |> then(&"public/templates/#{&1}/#{&1}.zip")
     |> Minio.generate_url()
     |> then(&{:ok, &1})
