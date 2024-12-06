@@ -240,6 +240,8 @@ defmodule WraftDocWeb.Router do
       get("/contents/:id/change/:v_id", InstanceController, :change)
       # Share an instance
       post("/contents/:id/share", InstanceController, :share)
+      # Verify access to an instance
+      get("/contents/:id/verify_access/:token", InstanceController, :verify_document_access)
       # Approve a document
       put("/contents/:id/approve", InstanceController, :approve)
       put("/contents/:id/reject", InstanceController, :reject)

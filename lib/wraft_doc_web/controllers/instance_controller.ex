@@ -27,6 +27,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Client.Minio.DownloadError
   alias WraftDoc.Document
+  alias WraftDoc.Document.ContentCollaboration
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.Instance
   alias WraftDoc.Document.Layout
@@ -417,13 +418,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           properties do
             email(:string, "Email", required: true)
             role(:string, "Role", required: true, enum: ["suggestor", "viewer"])
-            state_id(:string, "Document State", required: true)
           end
 
           example(%{
             "email" => "example@example.com",
-            "role" => "suggestor",
-            "state_id" => "a102cdb1-e5f4-4c28-98ec-9a10a94b9173"
+            "role" => "suggestor"
           })
         end
     }
@@ -978,11 +977,45 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def share(conn, %{"id" => document_id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Document.show_instance(document_id, current_user),
+    with %Instance{state_id: state_id} = instance <-
+           Document.show_instance(document_id, current_user),
          user <- Account.get_user_by_email(params),
-         {:ok, %AuthToken{value: token}} <- AuthTokens.create_document_invite_token(user, params),
+         {:ok, %ContentCollaboration{}} <-
+           Document.add_content_collaborator(instance, user, params),
+         {:ok, %AuthToken{value: token}} <-
+           AuthTokens.create_document_invite_token(user, state_id, params),
          %Instance{} = instance <- Document.send_email(instance, user, token) do
       render(conn, "show.json", instance: instance)
+    end
+  end
+
+  @doc """
+  Verify document invite token.
+  """
+  swagger_path :verify_document_access do
+    get("/contents/{id}/verify_access/{token}")
+    summary("Verify document invite token")
+    description("Api to verify document invite token")
+
+    parameters do
+      token(:path, :string, "Invite token", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:VerifyDocumentInviteTokenResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec verify_document_access(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def verify_document_access(conn, %{"token" => token, "id" => document_id}) do
+    with {:ok, %{email: email, document_id: ^document_id, state_id: state_id}} <-
+           AuthTokens.check_token(token, :document_invite),
+         user <- Account.get_user_by_email(email),
+         %ContentCollaboration{} = content_collaboration <-
+           Document.get_content_collaboration(document_id, user, state_id),
+         {:ok, %ContentCollaboration{}} <-
+           Document.accept_document_access(content_collaboration, user) do
+      render(conn, "check_token.json", token: token)
     end
   end
 end

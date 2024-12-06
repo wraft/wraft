@@ -7,6 +7,7 @@ defmodule WraftDoc.Document do
   require Logger
 
   alias Ecto.Multi
+  alias WraftDoc.Account.GuestUser
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
   alias WraftDoc.Client.Minio
@@ -16,6 +17,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
   alias WraftDoc.Document.Comment
+  alias WraftDoc.Document.ContentCollaboration
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.ContentTypeField
   alias WraftDoc.Document.ContentTypeRole
@@ -3965,6 +3967,7 @@ defmodule WraftDoc.Document do
   @doc """
   Share document
   """
+  @spec send_email(Instance.t(), User.t(), String.t()) :: Oban.Job.t()
   def send_email(instance, user, token) do
     %{
       email: user.email,
@@ -3973,5 +3976,63 @@ defmodule WraftDoc.Document do
     }
     |> EmailWorker.new(queue: "mailer", tags: ["document_instance_share"])
     |> Oban.insert()
+  end
+
+  @doc """
+  Add Content Collaborator
+  """
+  @spec add_content_collaborator(Instance.t(), User.t() | GuestUser.t(), map()) ::
+          {:ok, ContentCollaboration.t()} | {:error, Ecto.Changeset.t()}
+  def add_content_collaborator(%Instance{id: content_id, state_id: state_id}, %User{} = user, %{
+        role: role
+      }) do
+    insert_content_collaborator(%{
+      content_id: content_id,
+      user_id: user.id,
+      state_id: state_id,
+      role: role
+    })
+  end
+
+  def add_content_collaborator(%Instance{id: content_id}, %GuestUser{} = user, %{role: role}) do
+    insert_content_collaborator(%{content_id: content_id, guest_user_id: user.id, role: role})
+  end
+
+  defp insert_content_collaborator(params) do
+    %ContentCollaboration{}
+    |> ContentCollaboration.changeset(params)
+    |> Repo.insert()
+  end
+
+  @doc """
+    Get Content Collaboration
+  """
+  def get_content_collaboration(document_id, %User{id: user_id}, state_id) do
+    ContentCollaboration
+    |> where(
+      [cc],
+      cc.content_id == ^document_id and cc.user_id == ^user_id and cc.state_id == ^state_id
+    )
+    |> Repo.one()
+  end
+
+  def get_content_collaboration(document_id, %GuestUser{id: user_id}, state_id) do
+    ContentCollaboration
+    |> where(
+      [cc],
+      cc.content_id == ^document_id and cc.guest_user_id == ^user_id and cc.state_id == ^state_id
+    )
+    |> Repo.one()
+  end
+
+  @doc """
+  Accept Content Collaboration
+  """
+  @spec accept_document_access(ContentCollaboration.t(), User.t()) ::
+          {:ok, ContentCollaboration.t()}
+  def accept_document_access(content_collaboration, user) do
+    content_collaboration
+    |> ContentCollaboration.status_update_changeset(user)
+    |> Repo.update()
   end
 end

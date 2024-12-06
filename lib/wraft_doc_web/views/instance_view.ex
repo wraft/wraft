@@ -142,6 +142,12 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
+  def render("check_token.json", %{token: _}) do
+    %{
+      info: "Token is valid"
+    }
+  end
+
   def generate_url(%{profile_pic: pic} = profile) do
     WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
   end

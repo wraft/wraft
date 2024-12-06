@@ -136,10 +136,11 @@ defmodule WraftDoc.AuthTokens do
   @doc """
    Create document invite token
   """
-  @spec create_document_invite_token(User.t(), map()) :: {:ok, AuthToken.t()}
+  @spec create_document_invite_token(User.t(), Ecto.UUID.t(), map()) :: {:ok, AuthToken.t()}
   def create_document_invite_token(
         user,
-        %{"email" => email, "role" => role, "id" => document_id, "state_id" => state_id}
+        state_id,
+        %{"email" => email, "role" => role, "id" => document_id}
       ) do
     token =
       WraftDoc.create_phx_token("document_invite", %{
