@@ -6,7 +6,8 @@ defmodule WraftDoc.Repo.Migrations.ContentCollaboration do
 
     create table(:content_collaboration, primary_key: false) do
       add(:id, :uuid, primary_key: true)
-      add(:roles, :string)
+      add(:role, :string)
+      add(:status, :string)
       add(:content_id, references(:content, type: :uuid, column: :id, on_delete: :nilify_all))
       add(:state_id, references(:state, type: :uuid, column: :id, on_delete: :nilify_all))
       add(:user_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
