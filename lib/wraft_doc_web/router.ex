@@ -178,6 +178,7 @@ defmodule WraftDocWeb.Router do
 
       # Enginebody
       resources("/engines", EngineController, only: [:index])
+      resources("/frames", FrameController)
 
       scope "/forms" do
         # Forms
