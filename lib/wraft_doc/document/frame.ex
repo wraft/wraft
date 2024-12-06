@@ -3,8 +3,6 @@ defmodule WraftDoc.Document.Frame do
   use Waffle.Ecto.Schema
   use WraftDoc.Schema
 
-  @reserved_names ["contract", "pletter", "gantt_chart"]
-
   schema "frame" do
     field(:name, :string)
     field(:frame_file, WraftDocWeb.FrameUploader.Type)
@@ -36,9 +34,6 @@ defmodule WraftDoc.Document.Frame do
     |> cast(attrs, [:name, :organisation_id, :creator_id])
     |> cast_attachments(attrs, [:frame_file])
     |> validate_required([:name, :frame_file])
-    |> validate_exclusion(:name, @reserved_names,
-      message: "is a reserved name and cannot be used"
-    )
     |> unique_constraint(:name,
       name: :frame_name_organisation_id_index,
       message: "Frame with the same name  under your organisation exists.!"

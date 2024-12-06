@@ -256,10 +256,10 @@ defmodule WraftDocWeb.Api.V1.FrameController do
   def update(conn, %{"id" => frame_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Frame{} = existing_frame <- Frames.get_frame(frame_uuid, current_user),
-         {:ok, %Frame{} = updated_frame} <-
-           Frames.update_frame(existing_frame, current_user, params) do
-      render(conn, "create.json", frame: updated_frame)
+    with %Frame{} = frame <- Frames.get_frame(frame_uuid, current_user),
+         {:ok, %Frame{} = frame} <-
+           Frames.update_frame(frame, current_user, params) do
+      render(conn, "create.json", frame: frame)
     end
   end
 
