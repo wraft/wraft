@@ -32,4 +32,10 @@ defmodule WraftDoc.Document.ContentCollaboration do
     |> cast(attrs, [:status])
     |> validate_required([:status])
   end
+
+  def role_update_changeset(content_collaboration, attrs) do
+    content_collaboration
+    |> cast(attrs, [:role])
+    |> validate_required([:role])
+  end
 end
