@@ -4025,6 +4025,9 @@ defmodule WraftDoc.Document do
     |> Repo.one()
   end
 
+  def get_content_collaboration(content_collaboration_id),
+    do: Repo.get(ContentCollaboration, content_collaboration_id)
+
   @doc """
     Revoke Content Collaboration Access
   """
@@ -4054,5 +4057,16 @@ defmodule WraftDoc.Document do
     |> where([cc], cc.content_id == ^content_id and cc.state_id == ^state_id)
     |> preload([cc], [:user, :guest_user])
     |> Repo.all()
+  end
+
+  @doc """
+    Update Content Collaborator Role
+  """
+  @spec update_collaborator_role(ContentCollaboration.t(), map()) ::
+          {:ok, ContentCollaboration.t()} | {:error, Ecto.Changeset.t()}
+  def update_collaborator_role(content_collaboration, %{"role" => _role} = params) do
+    content_collaboration
+    |> ContentCollaboration.role_update_changeset(params)
+    |> Repo.update()
   end
 end

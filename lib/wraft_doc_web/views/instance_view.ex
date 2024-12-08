@@ -129,6 +129,17 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
+  def render("content_collaboration.json", %{content_collaboration: content_collaboration}) do
+    %{
+      id: content_collaboration.id,
+      content_id: content_collaboration.content_id,
+      user_id: content_collaboration.user_id,
+      guest_user_id: content_collaboration.guest_user_id,
+      role: content_collaboration.role,
+      status: content_collaboration.status
+    }
+  end
+
   def render("build_fail.json", %{exit_code: exit_code}) do
     %{
       info: "Build failed",

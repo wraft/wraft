@@ -1093,4 +1093,42 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       render(conn, "collaborators.json", content_collaboration: content_collaboration)
     end
   end
+
+  @doc """
+  Update Collaborator role.
+  """
+  swagger_path :update_collaborator_role do
+    put("/contents/{id}/collaborators/{content_collab_id}")
+    summary("Update Collaborator role")
+    description("Api to update collaborator role")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+      content_collab_id(:path, :string, "Collaborator id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec update_collaborator_role(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def update_collaborator_role(
+        conn,
+        %{
+          "id" => document_id,
+          "content_collab_id" => content_collab_id
+        } = params
+      ) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = _instance <- Document.show_instance(document_id, current_user),
+         %ContentCollaboration{} = content_collaboration <-
+           Document.get_content_collaboration(content_collab_id),
+         %ContentCollaboration{} = content_collaboration <-
+           Document.update_collaborator_role(content_collaboration, params) do
+      render(conn, "show_content_collaboration.json",
+        content_collaboration: content_collaboration
+      )
+    end
+  end
 end

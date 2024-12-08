@@ -246,6 +246,13 @@ defmodule WraftDocWeb.Router do
       delete("/contents/:id/revoke_access/:token", InstanceController, :revoke_document_access)
       # List collaborators
       get("/contents/:id/collaborators", InstanceController, :list_collaborators)
+      # Update role for a collaborator
+      put(
+        "/contents/:id/collaborators/:content_collab_id",
+        InstanceController,
+        :update_collaborator_role
+      )
+
       # Approve a document
       put("/contents/:id/approve", InstanceController, :approve)
       put("/contents/:id/reject", InstanceController, :reject)
