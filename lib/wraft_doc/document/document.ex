@@ -3971,6 +3971,15 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
+    Revoke Content Collaboration Access
+  """
+  @spec revoke_document_access(ContentCollaboration.t()) ::
+          {:ok, ContentCollaboration.t()} | {:error, Ecto.Changeset.t()}
+  def revoke_document_access(content_collaboration) do
+    Repo.delete(content_collaboration)
+  end
+
+  @doc """
   Accept Content Collaboration
   """
   @spec accept_document_access(ContentCollaboration.t(), User.t()) ::
