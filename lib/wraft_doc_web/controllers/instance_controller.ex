@@ -424,6 +424,19 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             "email" => "example@example.com",
             "role" => "suggestor"
           })
+        end,
+      VerifyDocumentInviteTokenResponse:
+        swagger_schema do
+          title("Verify document invite token response")
+          description("Response for document invite token verification")
+
+          properties do
+            info(:string, "Info")
+          end
+
+          example(%{
+            info: "Invite token verified successfully"
+          })
         end
     }
   end
@@ -1052,6 +1065,32 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
          {:ok, %ContentCollaboration{}} <-
            Document.revoke_document_access(content_collaboration) do
       render(conn, "show.json", instance: instance)
+    end
+  end
+
+  @doc """
+  List document instance collaborators.
+  """
+  swagger_path :collaborators do
+    get("/contents/{id}/collaborators")
+    summary("List document instance collaborators")
+    description("Api to list document instance collaborators")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Collaborators))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec list_collaborators(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def list_collaborators(conn, %{"id" => document_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Document.show_instance(document_id, current_user),
+         %ContentCollaboration{} = content_collaboration <- Document.list_collaborators(instance) do
+      render(conn, "collaborators.json", content_collaboration: content_collaboration)
     end
   end
 end

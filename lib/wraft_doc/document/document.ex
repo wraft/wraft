@@ -4044,4 +4044,15 @@ defmodule WraftDoc.Document do
     |> ContentCollaboration.status_update_changeset(user)
     |> Repo.update()
   end
+
+  @doc """
+    List collabortors for a document.
+  """
+  @spec list_collaborators(Instance.t()) :: [ContentCollaboration.t()]
+  def list_collaborators(%Instance{id: content_id, state_id: state_id}) do
+    ContentCollaboration
+    |> where([cc], cc.content_id == ^content_id and cc.state_id == ^state_id)
+    |> preload([cc], [:user, :guest_user])
+    |> Repo.all()
+  end
 end
