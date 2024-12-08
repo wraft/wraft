@@ -27,27 +27,27 @@ defmodule WraftDocWeb.Api.V1.BillingView do
 
   def render("change_plan_preview.json", %{preview_info: preview_info}) do
     %{
-      status: preview_info["data"]["status"],
-      currency_code: preview_info["data"]["currency_code"],
+      status: preview_info["status"],
+      currency_code: preview_info["currency_code"],
       billing_cycle: %{
-        frequency: preview_info["data"]["billing_cycle"]["frequency"],
-        interval: preview_info["data"]["billing_cycle"]["interval"]
+        frequency: preview_info["billing_cycle"]["frequency"],
+        interval: preview_info["billing_cycle"]["interval"]
       },
       current_billing_period: %{
-        starts_at: preview_info["data"]["current_billing_period"]["starts_at"],
-        ends_at: preview_info["data"]["current_billing_period"]["ends_at"]
+        starts_at: preview_info["current_billing_period"]["starts_at"],
+        ends_at: preview_info["current_billing_period"]["ends_at"]
       },
       recurring_transaction_totals: %{
-        subtotal: preview_info["data"]["recurring_transaction_details"]["totals"]["subtotal"],
-        tax: preview_info["data"]["recurring_transaction_details"]["totals"]["tax"],
-        total: preview_info["data"]["recurring_transaction_details"]["totals"]["total"]
+        subtotal: preview_info["recurring_transaction_details"]["totals"]["subtotal"],
+        tax: preview_info["recurring_transaction_details"]["totals"]["tax"],
+        total: preview_info["recurring_transaction_details"]["totals"]["total"]
       },
-      next_billed_at: preview_info["data"]["next_billed_at"],
+      next_billed_at: preview_info["next_billed_at"],
       product_details:
-        product_details(preview_info["data"]["recurring_transaction_details"]["line_items"]),
+        product_details(preview_info["recurring_transaction_details"]["line_items"]),
       management_urls: %{
-        update_payment_method: preview_info["data"]["management_urls"]["update_payment_method"],
-        cancel: preview_info["data"]["management_urls"]["cancel"]
+        update_payment_method: preview_info["management_urls"]["update_payment_method"],
+        cancel: preview_info["management_urls"]["cancel"]
       }
     }
   end

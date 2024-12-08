@@ -4,6 +4,25 @@ defmodule WraftDoc.Billing.Subscription do
   """
   use WraftDoc.Schema
 
+  @changeset_fields [
+    :provider_subscription_id,
+    :provider_plan_id,
+    :provider,
+    :status,
+    :current_period_start,
+    :current_period_end,
+    :canceled_at,
+    :next_payment_date,
+    :next_bill_amount,
+    :currency,
+    :update_url,
+    :cancel_url,
+    :metadata,
+    :user_id,
+    :organisation_id,
+    :plan_id
+  ]
+
   schema "subscriptions" do
     field(:provider_subscription_id, :string)
     field(:provider_plan_id, :string)
@@ -28,24 +47,7 @@ defmodule WraftDoc.Billing.Subscription do
 
   def changeset(subscription, attrs \\ %{}) do
     subscription
-    |> cast(attrs, [
-      :provider_subscription_id,
-      :provider_plan_id,
-      :provider,
-      :status,
-      :current_period_start,
-      :current_period_end,
-      :canceled_at,
-      :next_payment_date,
-      :next_bill_amount,
-      :currency,
-      :update_url,
-      :cancel_url,
-      :metadata,
-      :user_id,
-      :organisation_id,
-      :plan_id
-    ])
+    |> cast(attrs, @changeset_fields)
     |> validate_required([
       :provider_subscription_id,
       :provider_plan_id,
@@ -60,6 +62,30 @@ defmodule WraftDoc.Billing.Subscription do
       :plan_id
     ])
     |> unique_constraint(:provider_subscription_id)
-    |> validate_format(:currency, ~r/^[A-Z]{3}$/)
+    |> foreign_key_constraint(:plan_id,
+      name: :subscriptions_plan_id_fkey,
+      message: "Cannot delete plan due to associated subscriptions."
+    )
+  end
+
+  def cancel_changeset(subscription, attrs \\ %{}) do
+    subscription
+    |> cast(attrs, @changeset_fields)
+    |> validate_required([
+      :provider_subscription_id,
+      :provider_plan_id,
+      :provider,
+      :status,
+      :next_bill_amount,
+      :currency,
+      :user_id,
+      :organisation_id,
+      :plan_id
+    ])
+    |> unique_constraint(:provider_subscription_id)
+    |> foreign_key_constraint(:plan_id,
+      name: :subscriptions_plan_id_fkey,
+      message: "Cannot delete plan due to associated subscriptions."
+    )
   end
 end

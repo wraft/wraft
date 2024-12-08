@@ -3,6 +3,8 @@ defmodule WraftDocWeb.PlanAdmin do
   Admin panel for plan module
   """
 
+  alias WraftDoc.Enterprise
+
   def index(_) do
     [
       name: %{name: "Name", value: fn x -> x.name end},
@@ -23,5 +25,44 @@ defmodule WraftDocWeb.PlanAdmin do
 
   def ordering(_) do
     [desc: :inserted_at]
+  end
+
+  def insert(conn, _changeset) do
+    current_user = conn.assigns[:admin_session]
+    params = conn.params["plan"]
+
+    case Enterprise.create_plan(current_user, params) do
+      {:ok, plan} ->
+        {:ok, plan}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  def update(conn, changeset) do
+    current_user = conn.assigns[:admin_session]
+    params = conn.params["plan"]
+    plan = changeset.data
+
+    case Enterprise.update_plan(current_user, plan, params) do
+      {:ok, plan} ->
+        {:ok, plan}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  def delete(_conn, changeset) do
+    changeset.data
+    |> Enterprise.delete_plan()
+    |> case do
+      {:ok, plan} ->
+        {:ok, plan}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 end
