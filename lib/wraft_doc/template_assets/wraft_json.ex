@@ -23,11 +23,11 @@ defmodule WraftDoc.TemplateAssets.WraftJson do
   def changeset(struct, params) do
     struct
     |> cast(params, [])
-    |> cast_embed(:theme, required: true)
-    |> cast_embed(:layout, required: true)
-    |> cast_embed(:flow, required: true)
-    |> cast_embed(:variant, required: true)
-    |> cast_embed(:data_template, required: true)
+    |> cast_embed(:theme)
+    |> cast_embed(:layout)
+    |> cast_embed(:flow)
+    |> cast_embed(:variant)
+    |> cast_embed(:data_template)
   end
 end
 
