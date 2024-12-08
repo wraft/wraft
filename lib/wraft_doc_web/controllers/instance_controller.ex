@@ -998,6 +998,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     description("Api to verify document invite token")
 
     parameters do
+      id(:path, :string, "Instance id", required: true)
       token(:path, :string, "Invite token", required: true)
     end
 
@@ -1016,6 +1017,41 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
          {:ok, %ContentCollaboration{}} <-
            Document.accept_document_access(content_collaboration, user) do
       render(conn, "check_token.json", token: token)
+    end
+  end
+
+  @doc """
+  Revoke document access.
+  """
+  swagger_path :revoke_document_access do
+    PhoenixSwagger.Path.delete("/contents/{id}/revoke_access/{token}")
+    summary("Revoke document access")
+    description("Api to revoke document access")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+      token(:path, :string, "Invite token", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec revoke_document_access(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def revoke_document_access(conn, %{"id" => document_id, "token" => token}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Document.show_instance(document_id, current_user),
+         {:ok, %{email: email, document_id: ^document_id, state_id: state_id}} <-
+           AuthTokens.check_token(token, :document_invite),
+         user <- Account.get_user_by_email(email),
+         %ContentCollaboration{} = content_collaboration <-
+           Document.get_content_collaboration(document_id, user, state_id),
+         {:ok, %ContentCollaboration{}} <-
+           Document.revoke_document_access(content_collaboration) do
+      render(conn, "show.json", instance: instance)
     end
   end
 end
