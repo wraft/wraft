@@ -124,29 +124,6 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
             total_entries: 15
           })
         end,
-      ShowDataTemplate:
-        swagger_schema do
-          title("Data template and all its details")
-          description("API to show a data template and all its details")
-
-          properties do
-            data_template(Schema.ref(:LayoutAndEngine))
-            creator(Schema.ref(:User))
-            content_type(Schema.ref(:ContentTypeWithoutFields))
-          end
-
-          example(%{
-            data_template: %{
-              id: "1232148nb3478",
-              title: "Main Template",
-              title_template: "Letter for [user]",
-              data: "Hi [user]",
-              serialized: %{title: "Offer letter of [client]", data: "Hi [user]"},
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            }
-          })
-        end,
       PublicTemplateList:
         swagger_schema do
           title("Public Template List")
@@ -549,20 +526,11 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
     with {:ok, downloaded_zip_binary} <-
            TemplateAssets.download_zip_from_minio(current_user, template_asset_id),
-         options <- format_opts(params),
+         options <- TemplateAssets.format_opts(params),
          {:ok, result} <-
            TemplateAssets.import_template(current_user, downloaded_zip_binary, options) do
       render(conn, "show_template.json", result: result)
     end
-  end
-
-  defp format_opts(params) do
-    Enum.reduce([:theme_id, :flow_id, :layout_id, :content_type_id], [], fn key, acc ->
-      case Map.get(params, Atom.to_string(key)) do
-        nil -> acc
-        value -> [{key, value} | acc]
-      end
-    end)
   end
 
   @doc """

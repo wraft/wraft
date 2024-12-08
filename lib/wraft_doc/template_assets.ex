@@ -173,6 +173,19 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   @doc """
+  Format optional params.
+  """
+  @spec format_opts(map()) :: list()
+  def format_opts(params) do
+    Enum.reduce([:theme_id, :flow_id, :layout_id, :content_type_id], [], fn key, acc ->
+      case Map.get(params, Atom.to_string(key)) do
+        nil -> acc
+        value -> [{key, value} | acc]
+      end
+    end)
+  end
+
+  @doc """
   Pre-import template asset returns existing and missing items.
   """
   @spec pre_import_template(binary()) :: {:ok, map()} | {:error, any()}
@@ -1009,7 +1022,7 @@ defmodule WraftDoc.TemplateAssets do
     |> then(&{:ok, &1})
   end
 
-  def get_rootname(path) do
+  defp get_rootname(path) do
     path
     |> Path.basename()
     |> Path.rootname()

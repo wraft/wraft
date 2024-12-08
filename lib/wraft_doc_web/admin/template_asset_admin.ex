@@ -72,7 +72,7 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
   end
 
   defp check_zip_exists(%{"zip_file" => %Plug.Upload{filename: filename}}) do
-    if String.ends_with?(filename, ".zip") do
+    if Path.extname(filename) == ".zip" do
       :ok
     else
       {:error, "is not valid"}
