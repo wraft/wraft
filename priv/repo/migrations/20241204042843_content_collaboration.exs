@@ -1,8 +1,8 @@
 defmodule WraftDoc.Repo.Migrations.ContentCollaboration do
   use Ecto.Migration
 
-  def change do
-    drop(table(:content_collab))
+  def up do
+    drop_if_exists(table(:content_collab))
 
     create table(:content_collaboration, primary_key: false) do
       add(:id, :uuid, primary_key: true)
@@ -22,5 +22,9 @@ defmodule WraftDoc.Repo.Migrations.ContentCollaboration do
 
     create(unique_index(:content_collaboration, [:content_id, :user_id, :state_id]))
     create(unique_index(:content_collaboration, [:content_id, :guest_user_id, :state_id]))
+  end
+
+  def down do
+    drop_if_exists(table(:content_collaboration))
   end
 end
