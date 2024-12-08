@@ -2,7 +2,8 @@ defmodule WraftDoc.Repo.Migrations.CreateSubscriptionTable do
   use Ecto.Migration
 
   def change do
-    create table(:subscriptions) do
+    create table(:subscriptions, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
       add(:provider_subscription_id, :string)
       add(:provider_plan_id, :string)
       add(:provider, :string)

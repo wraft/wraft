@@ -2,10 +2,14 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
+  action_fallback(WraftDocWeb.FallbackController)
+
   alias WraftDoc.Billing
   alias WraftDoc.Billing.Subscription
 
   # TODO add RBAC.
+  # TODO add pause and resume subscription API.
+  # TODO check possibility of activate-trialing-subscription API.
 
   def swagger_definitions do
     %{
@@ -130,7 +134,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   def get_active_subscription(conn, _params) do
     current_user = conn.assigns.current_user
 
-    with %Subscription{} = subscription <- Billing.active_subscription_for(current_user.id) do
+    with {:ok, %Subscription{} = subscription} <- Billing.active_subscription_for(current_user.id) do
       render(conn, "subscription.json", subscription: subscription)
     end
   end
@@ -165,11 +169,12 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   end
 
   @spec change_plan_preview(Plug.Conn.t(), any()) :: Plug.Conn.t()
-  def change_plan_preview(conn, %{"plan_id" => new_plan_id}) do
+  def change_plan_preview(conn, %{"plan_id" => plan_id}) do
     current_user = conn.assigns.current_user
 
-    with %Subscription{} = subscription <- Billing.active_subscription_for(current_user.id),
-         {:ok, preview_info} <- Billing.change_plan_preview(subscription, new_plan_id) do
+    with {:ok, %Subscription{} = subscription} <-
+           Billing.active_subscription_for(current_user.id),
+         {:ok, preview_info} <- Billing.change_plan_preview(subscription, plan_id) do
       render(conn, "change_plan_preview.json", preview_info: preview_info)
     end
   end
@@ -187,12 +192,13 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     response(404, "Active subscription not found")
   end
 
-  @spec change_plan(Plug.Conn.t(), any()) :: Plug.Conn.t()
-  def change_plan(conn, %{"new_plan_id" => new_plan_id}) do
+  # @spec change_plan(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  def change_plan(conn, %{"plan_id" => plan_id}) do
     current_user = conn.assigns.current_user
 
-    with %Subscription{} = subscription <- Billing.active_subscription_for(current_user.id),
-         {:ok, _subscription} <- Billing.change_plan(subscription, new_plan_id) do
+    with {:ok, %Subscription{} = subscription} <-
+           Billing.active_subscription_for(current_user.id),
+         {:ok, _subscription} <- Billing.change_plan(subscription, plan_id) do
       render(conn, "change_plan_success.json")
     end
   end
@@ -209,7 +215,8 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   def cancel_subscription(conn, _params) do
     current_user = conn.assigns.current_user
 
-    with %Subscription{} = subscription <- Billing.active_subscription_for(current_user.id),
+    with {:ok, %Subscription{} = subscription} <-
+           Billing.active_subscription_for(current_user.id),
          {:ok, _subscription} <- Billing.cancel_subscription(subscription) do
       render(conn, "cancel_subscription.json")
     end

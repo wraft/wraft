@@ -90,7 +90,9 @@ defmodule WraftDocWeb.Api.V1.PlanController do
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
   def create(conn, params) do
-    with {:ok, %Plan{} = plan} <- Enterprise.create_plan(params) do
+    current_user = conn.assigns.current_user
+
+    with {:ok, %Plan{} = plan} <- Enterprise.create_plan(current_user, params) do
       render(conn, "plan.json", plan: plan)
     end
   end
@@ -107,8 +109,9 @@ defmodule WraftDocWeb.Api.V1.PlanController do
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, _params) do
-    plans = Enterprise.plan_index()
-    render(conn, "plans.json", plans: plans)
+    with plans <- Enterprise.plan_index() do
+      render(conn, "plans.json", plans: plans)
+    end
   end
 
   swagger_path :show do
@@ -149,9 +152,11 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => p_uuid} = params) do
-    with %Plan{} = plan <- Enterprise.get_plan(p_uuid),
-         {:ok, %Plan{} = plan} <- Enterprise.update_plan(plan, params) do
+  def update(conn, %{"id" => plan_uuid} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Plan{} = plan <- Enterprise.get_plan(plan_uuid),
+         {:ok, %Plan{} = plan} <- Enterprise.update_plan(current_user, plan, params) do
       render(conn, "plan.json", plan: plan)
     end
   end

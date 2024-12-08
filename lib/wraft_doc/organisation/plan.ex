@@ -11,14 +11,13 @@ defmodule WraftDoc.Enterprise.Plan do
   schema "plan" do
     field(:name, :string)
     field(:description, :string)
-    field(:yearly_product_id, :string)
-    field(:yearly_amount, :string)
-    field(:monthly_product_id, :string)
+    field(:paddle_product_id, :string)
+    field(:monthly_price_id, :string)
     field(:monthly_amount, :string)
+    field(:yearly_price_id, :string)
+    field(:yearly_amount, :string)
 
     embeds_one(:limits, Limits)
-
-    # has_many(:subscriptions, Subscription)
 
     timestamps()
   end
@@ -28,16 +27,20 @@ defmodule WraftDoc.Enterprise.Plan do
     |> cast(attrs, [
       :name,
       :description,
-      :yearly_amount,
+      :paddle_product_id,
+      :monthly_price_id,
       :monthly_amount,
-      :yearly_product_id,
-      :monthly_product_id,
-      :limits,
-      :subscriptions
+      :yearly_price_id,
+      :yearly_amount
     ])
-    |> validate_required([:name, :description, :yearly_product_id, :monthly_product_id, :limits])
+    |> cast_embed(:limits)
+    |> validate_required([:name, :description])
     |> unique_constraint(:name,
       name: :plan_unique_index,
+      message: "A plan with the same name exists.!"
+    )
+    |> unique_constraint(:name,
+      name: :plan_pkey,
       message: "A plan with the same name exists.!"
     )
   end

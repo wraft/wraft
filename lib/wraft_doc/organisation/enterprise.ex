@@ -14,6 +14,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Account.UserRole
   alias WraftDoc.Authorization.Permission
   alias WraftDoc.AuthTokens
+  alias WraftDoc.Billing.PaddleApi
   alias WraftDoc.Client.Razorpay
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
@@ -920,9 +921,51 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Creates a plan.
   """
-  @spec create_plan(map) :: {:ok, Plan.t()}
-  def create_plan(params) do
-    %Plan{} |> Plan.changeset(params) |> Repo.insert()
+  @spec create_plan(User.t(), map()) :: {:ok, Plan.t()}
+  def create_plan(current_user, params) do
+    params =
+      Map.merge(params, %{
+        "creator_id" => current_user.id,
+        "organisation_id" => Map.get(current_user, :current_org_id, nil)
+      })
+
+    Multi.new()
+    |> Multi.insert(:plan, Plan.changeset(%Plan{}, params))
+    |> Multi.run(:product, fn _, _ ->
+      PaddleApi.create_product(params)
+    end)
+    |> Multi.run(:monthly_price, fn _, %{product: %{"id" => paddle_product_id}} ->
+      params
+      |> Map.merge(%{"paddle_product_id" => paddle_product_id})
+      |> PaddleApi.create_price()
+    end)
+    |> Multi.run(:yearly_price, fn _, %{product: %{"id" => paddle_product_id}} ->
+      params
+      |> Map.merge(%{"paddle_product_id" => paddle_product_id, "monthly_amount" => nil})
+      |> PaddleApi.create_price()
+    end)
+    |> Multi.update(
+      :update_plan,
+      fn %{
+           plan: plan,
+           product: %{"id" => paddle_product_id},
+           monthly_price: %{"id" => paddle_monthly_price_id},
+           yearly_price: %{"id" => paddle_yearly_price_id}
+         } ->
+        params
+        |> Map.merge(%{
+          "paddle_product_id" => paddle_product_id,
+          "monthly_price_id" => paddle_monthly_price_id,
+          "yearly_price_id" => paddle_yearly_price_id
+        })
+        |> then(&Plan.changeset(plan, &1))
+      end
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_plan: plan}} -> {:ok, plan}
+      {:error, _, changeset, _} -> {:error, changeset}
+    end
   end
 
   @doc """
@@ -930,8 +973,8 @@ defmodule WraftDoc.Enterprise do
   """
   @spec get_plan(Ecto.UUID.t()) :: Plan.t() | nil
 
-  def get_plan(<<_::288>> = p_id) do
-    case Repo.get(Plan, p_id) do
+  def get_plan(<<_::288>> = plan_id) do
+    case Repo.get(Plan, plan_id) do
       %Plan{} = plan -> plan
       _ -> {:error, :invalid_id, "Plan"}
     end
@@ -951,8 +994,52 @@ defmodule WraftDoc.Enterprise do
   Updates a plan.
   """
   @spec update_plan(Plan.t(), map) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}
-  def update_plan(%Plan{} = plan, params) do
-    plan |> Plan.changeset(params) |> Repo.update()
+  def update_plan(
+        current_user,
+        %Plan{
+          paddle_product_id: paddle_product_id,
+          monthly_price_id: monthly_price_id,
+          yearly_price_id: yearly_price_id
+        } = plan,
+        params
+      ) do
+    params =
+      Map.merge(params, %{
+        "creator_id" => current_user.id,
+        "organisation_id" => Map.get(current_user, :current_org_id, nil)
+      })
+
+    Multi.new()
+    |> Multi.run(:product, fn _, _ ->
+      PaddleApi.update_product(paddle_product_id, params)
+    end)
+    |> Multi.run(:monthly_price, fn _, _ ->
+      PaddleApi.update_price(monthly_price_id, params)
+    end)
+    |> Multi.run(:yearly_price, fn _, _ ->
+      params
+      |> Map.merge(%{"monthly_amount" => nil})
+      |> then(&PaddleApi.update_price(yearly_price_id, &1))
+    end)
+    |> Multi.update(
+      :plan,
+      fn %{
+           monthly_price: %{"id" => paddle_monthly_price_id},
+           yearly_price: %{"id" => paddle_yearly_price_id}
+         } ->
+        params
+        |> Map.merge(%{
+          "monthly_price_id" => paddle_monthly_price_id,
+          "yearly_price_id" => paddle_yearly_price_id
+        })
+        |> then(&Plan.changeset(plan, &1))
+      end
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{plan: plan}} -> {:ok, plan}
+      {:error, _, changeset, _} -> {:error, changeset}
+    end
   end
 
   def update_plan(_, _), do: nil
@@ -961,8 +1048,23 @@ defmodule WraftDoc.Enterprise do
   Deletes a plan
   """
   @spec delete_plan(Plan.t()) :: {:ok, Plan.t()} | nil
-  def delete_plan(%Plan{} = plan) do
-    Repo.delete(plan)
+  def delete_plan(%Plan{paddle_product_id: paddle_product_id} = plan) do
+    Multi.new()
+    |> Multi.delete(:plan, plan)
+    |> Multi.run(:paddle, fn _, _ ->
+      PaddleApi.delete_product(paddle_product_id)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{plan: plan}} ->
+        {:ok, plan}
+
+      {:error, :plan, %Ecto.ConstraintError{}, _} ->
+        {:error, "Failed to delete plan, associated subscriptions exists."}
+
+      {:error, :paddle, error, _} ->
+        {:error, "Failed to delete plan in Paddle: #{inspect(error)}"}
+    end
   end
 
   def delete_plan(_), do: nil

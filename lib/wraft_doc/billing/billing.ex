@@ -9,7 +9,16 @@ defmodule WraftDoc.Billing do
   alias WraftDoc.Repo
 
   def active_subscription_for(user_id) do
-    user_id |> active_subscription_query() |> Repo.one()
+    user_id
+    |> active_subscription_query()
+    |> Repo.one()
+    |> case do
+      %Subscription{} = subscription ->
+        {:ok, subscription}
+
+      _ ->
+        {:error, :no_active_subscription}
+    end
   end
 
   def has_active_subscription?(user_id) do
@@ -18,7 +27,6 @@ defmodule WraftDoc.Billing do
 
   defp active_subscription_query(user_id) do
     from(s in Subscription,
-      # check and update status
       where: s.user_id == ^user_id and s.status == ^"active",
       order_by: [desc: s.inserted_at],
       limit: 1
@@ -51,28 +59,26 @@ defmodule WraftDoc.Billing do
     end)
   end
 
-  def change_plan(user, new_plan_id) do
-    subscription = active_subscription_for(user.id)
-
-    res =
-      PaddleApi.update_subscription(subscription.provider_subscription_id, %{
-        provider_plan_id: new_plan_id
-      })
-
-    case res do
+  def change_plan(
+        %Subscription{provider_subscription_id: provider_subscription_id} = subscription,
+        plan_id
+      ) do
+    provider_subscription_id
+    |> PaddleApi.update_subscription(plan_id)
+    |> case do
       {:ok, response} ->
-        amount = :erlang.float_to_binary(response["next_payment"]["amount"] / 1, decimals: 2)
-
         subscription
         |> Subscription.changeset(%{
-          provider_plan_id: Integer.to_string(response["plan_id"]),
-          next_bill_amount: amount,
-          next_payment_date: response["next_payment"]["date"]
+          provider_plan_id: Enum.at(response["items"], 0)["price"]["id"],
+          next_bill_amount: Enum.at(response["items"], 0)["price"]["unit_price"]["amount"],
+          next_payment_date: response["next_billed_at"],
+          current_period_start: response["current_billing_period"]["starts_at"],
+          current_period_end: response["current_billing_period"]["ends_at"]
         })
         |> Repo.update()
 
-      error ->
-        error
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -105,8 +111,71 @@ defmodule WraftDoc.Billing do
     |> Repo.insert!()
   end
 
+  # defp format_subscription_params(params) do
+  #   %{
+  #     "provider_subscription_id" => params["id"],
+  #     "provider_plan_id" => params["items"][0]["price"]["id"],
+  #     "provider" => "paddle",
+  #     "status" => params["status"],
+  #     "current_period_start" => params["current_billing_period"]["starts_at"],
+  #     "current_period_end" => params["current_billing_period"]["ends_at"],
+  #     "next_bill_amount" => params["items"][0]["price"]["unit_price"]["amount"],
+  #     "next_payment_date" => params["next_billed_at"],
+  #     "currency" => params["currency_code"],
+  #     "plan_id" => params["custom_data"]["plan_id"],
+  #     "user_id" => params["custom_data"]["user_id"],
+  #     "organisation_id" => params["custom_data"]["organisation_id"]
+  #   }
+  # end
+
+  # TODO check error handling.
+  defp format_subscription_params(params) do
+    with {:ok, first_item} <- extract_first_item(params),
+         {:ok, price} <- extract_price(first_item),
+         {:ok, custom_data} <- extract_custom_data(params) do
+      %{
+        provider_subscription_id: params["id"],
+        provider_plan_id: price["id"],
+        provider: "paddle",
+        status: params["status"],
+        current_period_start: get_in(params, ["current_billing_period", "starts_at"]),
+        current_period_end: get_in(params, ["current_billing_period", "ends_at"]),
+        next_bill_amount: price["unit_price"]["amount"],
+        next_payment_date: params["next_billed_at"],
+        currency: params["currency_code"],
+        plan_id: custom_data["plan_id"],
+        user_id: custom_data["user_id"],
+        organisation_id: custom_data["organisation_id"]
+      }
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp extract_first_item(params) do
+    case params["items"] do
+      [first_item | _] -> {:ok, first_item}
+      _ -> {:error, :missing_items}
+    end
+  end
+
+  defp extract_price(item) do
+    case item["price"] do
+      %{} = price -> {:ok, price}
+      _ -> {:error, :missing_price}
+    end
+  end
+
+  defp extract_custom_data(params) do
+    case params["custom_data"] do
+      %{} = custom_data -> {:ok, custom_data}
+      _ -> {:error, :missing_custom_data}
+    end
+  end
+
   defp handle_subscription_updated(params) do
-    subscription = Repo.get_by(Subscription, paddle_subscription_id: params["subscription_id"])
+    subscription = Repo.get_by(Subscription, provider_subscription_id: params["id"])
 
     # In a situation where the subscription is paused and a payment succeeds, we
     # get notified of two "subscription_updated" webhook alerts from Paddle at the
@@ -124,10 +193,7 @@ defmodule WraftDoc.Billing do
     irrelevant? = params["old_status"] == "paused" && params["status"] == "past_due"
 
     if subscription && not irrelevant? do
-      params =
-        params
-        |> format_params()
-        |> format_subscription_params()
+      params = format_subscription_params(params)
 
       subscription
       |> Subscription.changeset(params)
@@ -138,21 +204,17 @@ defmodule WraftDoc.Billing do
   defp handle_subscription_cancelled(params) do
     subscription =
       Subscription
-      |> Repo.get_by(provider_subscription_id: params["subscription_id"])
+      |> Repo.get_by(provider_subscription_id: params["id"])
       |> Repo.preload(:user)
 
     if subscription do
       changeset =
-        Subscription.changeset(subscription, %{
-          status: params["status"]
+        Subscription.cancel_changeset(subscription, %{
+          status: "canceled",
+          canceled_at: params["canceled_at"]
         })
 
       Repo.update!(changeset)
-      # implement mail if needed
-      # subscription
-      # |> Map.fetch!(:user)
-      # |> WraftDoc.Email.cancellation_email()
-      # |> WraftDoc.Mailer.send()
     end
   end
 
@@ -178,78 +240,5 @@ defmodule WraftDoc.Billing do
       |> Repo.update!()
       |> Repo.preload(:user)
     end
-  end
-
-  defp format_params(%{"passthrough" => passthrough} = params) do
-    passthrough
-    |> to_string()
-    |> String.split(";")
-    |> case do
-      # [user_id] ->
-      #   user = Repo.get!(User, user_id)
-
-      ["user:" <> user_id, "organisation_id:" <> organisation_id] ->
-        params
-        |> Map.put("passthrough", user_id)
-        |> Map.put("organisation_id", organisation_id)
-    end
-  end
-
-  defp format_params(params) do
-    params
-  end
-
-  def format_subscription_params(data) do
-    %{
-      "provider_subscription_id" => data["id"],
-      "provider" => "paddle",
-      "status" => data["state"],
-      "current_period_start" => parse_unix_timestamp(data["beginInSeconds"]),
-      "current_period_end" => parse_unix_timestamp(data["nextInSeconds"]),
-      "canceled_at" => parse_unix_timestamp(data["canceledDateInSeconds"]),
-      "next_payment_date" => parse_date_from_seconds(data["nextChargeDateInSeconds"]),
-      "next_bill_amount" => to_string(data["nextChargeTotal"]),
-      "plan_id" => data["passthrough"]["plan_id"],
-      "user_id" => data["passthrough"]["user_id"],
-      "currency" => data["currency"],
-      "update_url" => data["update_url"],
-      "cancel_url" => data["cancel_url"],
-      # store entire map or select specific fields if needed
-      "metadata" => data
-    }
-  end
-
-  # may remove this function.
-  defp parse_unix_timestamp(nil), do: nil
-
-  defp parse_unix_timestamp(timestamp) do
-    DateTime.from_unix!(timestamp)
-  end
-
-  defp parse_date_from_seconds(nil), do: nil
-
-  defp parse_date_from_seconds(seconds) do
-    seconds
-    |> DateTime.from_unix!()
-    |> DateTime.to_date()
-  end
-
-  def pretty_join([str]), do: str
-
-  def pretty_join(list) do
-    [last_string | rest] = Enum.reverse(list)
-
-    rest_string =
-      rest
-      |> Enum.reverse()
-      |> Enum.join(", ")
-
-    "#{rest_string} and #{last_string}"
-  end
-
-  def pretty_list(list) do
-    list
-    |> Enum.map(&String.replace("#{&1}", "_", " "))
-    |> pretty_join()
   end
 end
