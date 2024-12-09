@@ -88,9 +88,12 @@ form:delete,Form,Delete
 form_entry:show,Form Entry,Show
 form_entry:manage,Form Entry,Manage
 form_entry:delete,Form Entry,Delete
-template_asset:show,TemplateAsset,Show
 form_mapping:manage,Form Mapping,Manage
 form_mapping:show,Form Mapping,Show
+template_asset:show,TemplateAsset,Show
 template_asset:manage,TemplateAsset,Manage
 template_asset:delete,TemplateAsset,Delete
 dashboard:show,DashBoard,Show
+frame:show,Frame,Show
+frame:manage,Frame,Manage
+frame:delete,Frame,Delete

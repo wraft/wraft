@@ -1,7 +1,9 @@
 defmodule WraftDocWeb.Api.V1.LayoutView do
   use WraftDocWeb, :view
+  alias WraftDoc.Document.Layout
   alias WraftDocWeb.Api.V1.AssetView
   alias WraftDocWeb.Api.V1.EngineView
+  alias WraftDocWeb.Api.V1.FrameView
   alias WraftDocWeb.Api.V1.UserView
   alias __MODULE__
 
@@ -14,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       height: layout.height,
       unit: layout.unit,
       slug: layout.slug,
-      slug_file: generate_url(layout),
+      frame: render_frame(layout),
       screenshot: generate_ss_url(layout),
       inserted_at: layout.inserted_at,
       update_at: layout.updated_at,
@@ -32,7 +34,6 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       height: layout.height,
       unit: layout.unit,
       slug: layout.slug,
-      slug_file: generate_url(layout),
       screenshot: generate_ss_url(layout),
       inserted_at: layout.inserted_at,
       update_at: layout.updated_at
@@ -60,11 +61,13 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
     }
   end
 
-  defp generate_url(%{slug_file: file} = layout) do
-    WraftDocWeb.LayoutSlugUploader.url({file, layout}, signed: true)
-  end
-
   defp generate_ss_url(%{screenshot: file} = layout) do
     WraftDocWeb.LayoutScreenShotUploader.url({file, layout}, signed: true)
   end
+
+  # HACK: Handle nil case of frame, frame is optional.
+  defp render_frame(%Layout{frame: %WraftDoc.Document.Frame{} = frame}),
+    do: render_one(frame, FrameView, "create.json", as: :frame)
+
+  defp render_frame(_), do: nil
 end
