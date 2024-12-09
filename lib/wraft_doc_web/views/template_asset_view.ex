@@ -3,12 +3,13 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
   alias __MODULE__
   alias WraftDocWeb.Api.V1.UserView
 
-  def render("template_asset.json", %{template_asset: template_asset, file_entries: file_entries}) do
+  def render("template_asset.json", %{template_asset: template_asset}) do
     %{
       id: template_asset.id,
       name: template_asset.name,
-      file: generate_url(template_asset),
-      file_entries: file_entries,
+      file: generate_zip_url(template_asset),
+      thumbnail: generate_thumbnail_url(template_asset),
+      file_entries: template_asset.file_entries,
       wraft_json: template_asset.wraft_json,
       inserted_at: template_asset.inserted_at,
       updated_at: template_asset.updated_at
@@ -40,15 +41,27 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
     }
   end
 
-  def render("show_template.json", %{template: template}) do
+  def render("show_template.json", %{result: result}) do
     %{
-      id: template.id,
-      title: template.title,
-      title_template: template.title_template,
-      data: template.data,
-      serialized: template.serialized,
-      inserted_at: template.inserted_at,
-      updated_at: template.updated_at
+      message: "Template imported successfully",
+      items:
+        Enum.map(result, fn {key, value} ->
+          field_name = if Map.has_key?(value, :title), do: :title, else: :name
+
+          %{
+            "item_type" => to_string(key),
+            "id" => value.id,
+            field_name => Map.get(value, field_name),
+            "created_at" => value.inserted_at
+          }
+        end)
+    }
+  end
+
+  def render("template_pre_import.json", %{result: result}) do
+    %{
+      existing_items: result.existing_items,
+      missing_items: result.missing_items
     }
   end
 
@@ -64,7 +77,11 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
     }
   end
 
-  defp generate_url(%{zip_file: zip_file} = template_asset) do
+  defp generate_zip_url(%{zip_file: zip_file} = template_asset) do
     WraftDocWeb.TemplateAssetUploader.url({zip_file, template_asset}, signed: true)
+  end
+
+  defp generate_thumbnail_url(%{thumbnail: thumbnail} = template_asset) do
+    WraftDocWeb.TemplateAssetThumbnailUploader.url({thumbnail, template_asset}, signed: true)
   end
 end
