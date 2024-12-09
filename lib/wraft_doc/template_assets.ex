@@ -24,6 +24,7 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.TemplateAssets.TemplateAsset
   alias WraftDoc.TemplateAssets.WraftJson
 
+  @required_items ["layout", "theme", "flow", "variant"]
   @allowed_folders ["theme", "layout", "contract"]
   @allowed_files ["template.json", "wraft.json"]
   @font_style_name ~w(Regular Italic Bold BoldItalic)
@@ -107,9 +108,10 @@ defmodule WraftDoc.TemplateAssets do
   # TODO - Write tests
   @spec delete_template_asset(TemplateAsset.t()) ::
           {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
-  def delete_template_asset(%TemplateAsset{organisation_id: org_id} = template_asset) do
-    # Delete the template asset file
-    Minio.delete_file("organisations/#{org_id}/template_assets/#{template_asset.id}")
+  def delete_template_asset(
+        %TemplateAsset{id: id, organisation_id: organisation_id} = template_asset
+      ) do
+    Minio.delete_file("organisations/#{organisation_id}/template_assets/#{id}")
 
     Repo.delete(template_asset)
   end
@@ -117,13 +119,93 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Imports template asset.
   """
-  @spec import_template(User.t(), binary()) ::
+  @spec import_template(User.t(), binary(), list()) ::
           DataTemplate.t() | {:error, any()}
-  def import_template(current_user, downloaded_zip_binary) do
+  def import_template(current_user, downloaded_zip_binary, opts \\ []) do
     with {:ok, entries} <- get_zip_entries(downloaded_zip_binary),
-         {:ok, template_map} <- get_wraft_json(downloaded_zip_binary) do
-      prepare_template(template_map, current_user, downloaded_zip_binary, entries)
+         {:ok, template_map} <- get_wraft_json(downloaded_zip_binary),
+         contained_items <- has_items(template_map),
+         :ok <- validate_required_items(contained_items, opts) do
+      prepare_template(
+        template_map,
+        current_user,
+        downloaded_zip_binary,
+        entries,
+        opts
+      )
     end
+  end
+
+  defp has_items(template_map) do
+    Enum.filter(@required_items, fn key ->
+      Map.has_key?(template_map, key)
+    end)
+  end
+
+  defp validate_required_items(contained_items, opts) do
+    optional_ids = [
+      Keyword.get(opts, :layout_id),
+      Keyword.get(opts, :theme_id),
+      Keyword.get(opts, :flow_id),
+      Keyword.get(opts, :content_type_id)
+    ]
+
+    @required_items
+    |> Enum.filter(fn key ->
+      key not in contained_items &&
+        is_nil(Enum.at(optional_ids, Enum.find_index(@required_items, &(&1 == key))))
+    end)
+    |> case do
+      [] ->
+        :ok
+
+      missing_items ->
+        missing_items
+        |> Enum.map(fn item ->
+          %{
+            item: item,
+            message:
+              "Either '#{item}' must be in the ZIP or the corresponding #{item}_id must be provided"
+          }
+        end)
+        |> then(&{:error, %{missing_items: &1}})
+    end
+  end
+
+  @doc """
+  Format optional params.
+  """
+  @spec format_opts(map()) :: list()
+  def format_opts(params) do
+    Enum.reduce([:theme_id, :flow_id, :layout_id, :content_type_id], [], fn key, acc ->
+      case Map.get(params, Atom.to_string(key)) do
+        nil -> acc
+        value -> [{key, value} | acc]
+      end
+    end)
+  end
+
+  @doc """
+  Pre-import template asset returns existing and missing items.
+  """
+  @spec pre_import_template(binary()) :: {:ok, map()} | {:error, any()}
+  def pre_import_template(downloaded_zip_binary) do
+    {:ok, template_map} = get_wraft_json(downloaded_zip_binary)
+
+    existing_items =
+      %{
+        theme: Map.get(template_map, "theme"),
+        layout: Map.get(template_map, "layout"),
+        flow: Map.get(template_map, "flow"),
+        data_template: Map.get(template_map, "data_template"),
+        variant: Map.get(template_map, "variant")
+      }
+      |> Enum.filter(fn {_key, value} -> value != nil end)
+      |> Enum.into(%{})
+
+    missing_items = @required_items -- has_items(template_map)
+
+    {:ok, %{existing_items: existing_items, missing_items: missing_items}}
   end
 
   @doc """
@@ -169,16 +251,33 @@ defmodule WraftDoc.TemplateAssets do
     end)
   end
 
-  @doc """
-  Prepares template by taking Wraft_json map, current user and zip binary.
-  """
-  @spec prepare_template(map(), User.t(), binary(), [String.t()]) ::
-          {:ok, any()} | {:error, any()}
-  def prepare_template(template_map, current_user, downloaded_file, entries) do
-    case prepare_template_transaction(template_map, current_user, downloaded_file, entries) do
-      {:ok, %{data_template: data_template}} ->
+  defp prepare_template(
+         template_map,
+         current_user,
+         downloaded_file,
+         entries,
+         opts
+       ) do
+    case prepare_template_transaction(
+           template_map,
+           current_user,
+           downloaded_file,
+           entries,
+           opts
+         ) do
+      {:ok, result} ->
         Logger.info("Theme, Layout, Flow, variant created successfully.")
-        {:ok, data_template}
+
+        %{
+          theme: Map.get(result, :theme),
+          flow: Map.get(result, :flow),
+          layout: Map.get(result, :layout),
+          variant: Map.get(result, :content_type),
+          data_template: Map.get(result, :data_template)
+        }
+        |> Enum.filter(fn {_key, value} -> value != nil end)
+        |> Enum.into(%{})
+        |> then(&{:ok, &1})
 
       {:error, _failed_operation, error, _changes_so_far} ->
         Logger.error("Failed to process. Error: #{inspect(error)}")
@@ -187,52 +286,118 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp prepare_template_transaction(
-         %{
-           "theme" => theme,
-           "flow" => flow,
-           "layout" => layout,
-           "variant" => variant,
-           "data_template" => data_template
-         },
+         template_map,
          current_user,
          downloaded_file,
-         entries
+         entries,
+         opts
        ) do
-    Multi.new()
-    |> Multi.run(:theme, fn _repo, _changes ->
+    build_multi()
+    |> add_theme_step(template_map, current_user, downloaded_file, entries)
+    |> add_flow_step(template_map, current_user)
+    |> add_layout_step(template_map, current_user, downloaded_file, entries)
+    |> add_variant_step(template_map, current_user, opts)
+    |> add_data_template_step(template_map, current_user, downloaded_file, opts)
+    |> Repo.transaction()
+  end
+
+  defp build_multi, do: Multi.new()
+
+  defp add_theme_step(multi, %{"theme" => theme}, current_user, downloaded_file, entries) do
+    Multi.run(multi, :theme, fn _repo, _changes ->
       theme
       |> update_conflicting_name(Theme, current_user)
       |> prepare_theme(current_user, downloaded_file, entries)
     end)
-    |> Multi.run(:flow, fn _repo, _changes ->
+  end
+
+  defp add_theme_step(multi, _template_map, _current_user, _downloaded_file, _entries), do: multi
+
+  defp add_flow_step(multi, %{"flow" => flow}, current_user) do
+    Multi.run(multi, :flow, fn _repo, _changes ->
       flow
       |> update_conflicting_name(Flow, current_user)
       |> then(&Enterprise.create_flow(current_user, &1))
     end)
-    |> Multi.run(:layout, fn _repo, _changes ->
+  end
+
+  defp add_flow_step(multi, _template_map, _current_user), do: multi
+
+  defp add_layout_step(multi, %{"layout" => layout}, current_user, downloaded_file, entries) do
+    Multi.run(multi, :layout, fn _repo, _changes ->
       layout
       |> update_conflicting_name(Layout, current_user)
       |> prepare_layout(downloaded_file, current_user, entries)
     end)
-    |> Multi.run(:content_type, fn _repo, %{theme: theme, flow: flow, layout: layout} ->
+  end
+
+  defp add_layout_step(multi, _template_map, _current_user, _downloaded_file, _entries), do: multi
+
+  defp add_variant_step(multi, %{"variant" => variant}, current_user, opts) do
+    theme_id = Keyword.get(opts, :theme_id, nil)
+    layout_id = Keyword.get(opts, :layout_id, nil)
+    flow_id = Keyword.get(opts, :flow_id, nil)
+
+    Multi.run(multi, :content_type, fn _repo, changes ->
+      theme = Map.get(changes, :theme, nil)
+      layout = Map.get(changes, :layout, nil)
+      flow = Map.get(changes, :flow, nil)
+
       variant
       |> update_conflicting_name(ContentType, current_user)
-      |> prepare_content_type(current_user, theme.id, layout.id, flow.id)
-    end)
-    |> Multi.run(:data_template, fn _repo, %{content_type: content_type} ->
-      data_template
-      |> update_conflicting_name(DataTemplate, current_user)
-      |> then(
-        &prepare_data_template(
-          current_user,
-          &1,
-          downloaded_file,
-          content_type
-        )
+      |> prepare_content_type(
+        current_user,
+        theme_id || (theme && theme.id),
+        layout_id || (layout && layout.id),
+        flow_id || (flow && flow.id)
       )
     end)
-    |> Repo.transaction()
   end
+
+  defp add_variant_step(multi, _template_map, _current_user, _opts), do: multi
+
+  defp add_data_template_step(
+         multi,
+         %{"data_template" => data_template},
+         current_user,
+         downloaded_file,
+         opts
+       ) do
+    Multi.run(multi, :data_template, fn _repo, changes ->
+      changes
+      |> get_content_type(opts)
+      |> case do
+        {:ok, %ContentType{} = content_type} ->
+          data_template
+          |> update_conflicting_name(DataTemplate, current_user)
+          |> then(&prepare_data_template(current_user, &1, downloaded_file, content_type))
+
+        error ->
+          error
+      end
+    end)
+  end
+
+  defp add_data_template_step(multi, _template_map, _current_user, _downloaded_file, _opts),
+    do: multi
+
+  defp get_content_type(changes, opts) do
+    changes
+    |> Map.get(:content_type, nil)
+    |> case do
+      nil ->
+        opts
+        |> Keyword.get(:content_type_id)
+        |> get_content_type_from_id()
+
+      content_type ->
+        {:ok, content_type}
+    end
+  end
+
+  defp get_content_type_from_id(nil), do: {:error, "content type id not found"}
+
+  defp get_content_type_from_id(id), do: {:ok, Document.get_content_type_from_id(id)}
 
   defp get_engine(engine) do
     # TODO multiple engines selection
@@ -585,25 +750,16 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp validate_zip_entries(entries) do
-    folders_in_zip = extract_folders(entries)
     files_in_zip = extract_files(entries)
-    missing_folders = @allowed_folders -- folders_in_zip
     missing_files = @allowed_files -- files_in_zip
 
-    case {missing_folders, missing_files} do
-      {[], []} ->
+    case missing_files do
+      [] ->
         true
 
       _ ->
-        missing_items = Enum.concat(missing_folders, missing_files)
-        {:error, "Required items not found in this zip file: #{Enum.join(missing_items, ", ")}"}
+        {:error, "Required items not found in this zip file: #{Enum.join(missing_files, ", ")}"}
     end
-  end
-
-  defp extract_folders(entries) do
-    entries
-    |> Enum.filter(&String.ends_with?(&1, "/"))
-    |> Enum.map(&String.trim_trailing(&1, "/"))
   end
 
   defp extract_files(entries) do
@@ -615,21 +771,25 @@ defmodule WraftDoc.TemplateAssets do
   a modified parameters map with extracted data, the binary content of the ZIP, and a list of file entries.
   """
   @spec process_template_asset(map(), :file | :url, Plug.Upload.t() | String.t()) ::
-          {map(), binary(), [String.t()]} | {:error, any()}
+          {:ok, map(), binary()} | {:error, any()}
   def process_template_asset(params, source_type, source_value) do
     with {:ok, zip_binary} <- get_zip_binary(source_type, source_value),
          file_entries_in_zip <- template_asset_file_list(zip_binary),
          :ok <- template_zip_validator(zip_binary, file_entries_in_zip),
-         {:ok, wraft_json} <- get_wraft_json(zip_binary),
-         params <- Map.put(params, "wraft_json", wraft_json) do
-      {params, zip_binary, file_entries_in_zip}
+         {:ok, wraft_json} <- get_wraft_json(zip_binary) do
+      params
+      |> Map.merge(%{
+        "wraft_json" => wraft_json,
+        "file_entries" => file_entries_in_zip
+      })
+      |> then(&{:ok, &1, zip_binary})
     end
   end
 
   @doc """
   Adds a ZIP file to the params map as a `Plug.Upload` struct.
   """
-  @spec add_file_to_params(map(), binary(), String.t()) :: map()
+  @spec add_file_to_params(map(), binary(), String.t()) :: {:ok, map()}
   def add_file_to_params(params, zip_binary, zip_url) do
     file_path = Briefly.create!()
     File.write!(file_path, zip_binary)
@@ -641,7 +801,9 @@ defmodule WraftDoc.TemplateAssets do
       path: file_path
     }
 
-    Map.put(params, "zip_file", file)
+    params
+    |> Map.put("zip_file", file)
+    |> then(&{:ok, &1})
   end
 
   defp get_zip_binary_from_url(url) do
@@ -841,13 +1003,29 @@ defmodule WraftDoc.TemplateAssets do
   def list_public_templates do
     "public/templates/"
     |> Minio.list_files()
-    |> Enum.map(fn path ->
-      %{
-        file_name: Path.basename(path),
-        path: path
-      }
+    |> Enum.reduce([], fn path, acc ->
+      if Path.extname(path) == ".zip" do
+        rootname = get_rootname(path)
+
+        [
+          %{
+            file_name: rootname,
+            path: "public/templates/#{rootname}/#{rootname}.zip",
+            thumbnail_url: Minio.generate_url("public/templates/#{rootname}/thumbnail.png")
+          }
+          | acc
+        ]
+      else
+        acc
+      end
     end)
     |> then(&{:ok, &1})
+  end
+
+  defp get_rootname(path) do
+    path
+    |> Path.basename()
+    |> Path.rootname()
   end
 
   @doc """
@@ -855,7 +1033,8 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec download_public_template(String.t()) :: {:ok, binary()} | {:error, String.t()}
   def download_public_template(template_name) do
-    "public/templates/#{template_name}"
+    template_name
+    |> then(&"public/templates/#{&1}/#{&1}.zip")
     |> Minio.generate_url()
     |> then(&{:ok, &1})
   end
