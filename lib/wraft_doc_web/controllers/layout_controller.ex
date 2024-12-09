@@ -59,7 +59,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             height(:float, "Height of the layout")
             unit(:string, "Unit of dimensions")
             slug(:string, "Name of the slug to be used for the layout")
-            slug_file(:string, "URL of the uploaded slug file")
+            frame_id(:string, "The ID of the layout")
             screenshot(:string, "URL of the uploaded screenshot")
             inserted_at(:string, "When was the layout created", format: "ISO-8601")
             updated_at(:string, "When was the layout last updated", format: "ISO-8601")
@@ -73,7 +73,16 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             height: 20.0,
             unit: "cm",
             slug: "Pandoc",
-            slug_file: "/official_letter.zip",
+            frame: %{
+              id: "123e4567-e89b-12d3-a456-426614174000",
+              name: "my-document-frame",
+              frame: %{
+                file_name: "template.tex",
+                updated_at: "2024-11-29T12:56:47"
+              },
+              inserted_at: "2024-01-15T10:30:00Z",
+              updated_at: "2024-01-15T10:30:00Z"
+            },
             screenshot: "/official_letter.jpg",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
@@ -92,7 +101,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             height(:float, "Height of the layout")
             unit(:string, "Unit of dimensions")
             slug(:string, "Name of the slug to be used for the layout")
-            slug_file(:string, "URL of the uploaded slug file")
+            frame_id(:string, "The ID of the layout")
             screenshot(:string, "URL of the uploaded screenshot")
             engine(Schema.ref(:Engine))
             assets(Schema.ref(:Assets))
@@ -108,8 +117,17 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             height: 20.0,
             unit: "cm",
             slug: "Pandoc",
-            slug_file: "/official_letter.zip",
             screenshot: "/official_letter.jpg",
+            frame: %{
+              id: "123e4567-e89b-12d3-a456-426614174000",
+              name: "my-document-frame",
+              frame: %{
+                file_name: "template.tex",
+                updated_at: "2024-11-29T12:56:47"
+              },
+              inserted_at: "2024-01-15T10:30:00Z",
+              updated_at: "2024-01-15T10:30:00Z"
+            },
             engine: %{
               id: "1232148nb3478",
               name: "Pandoc",
@@ -156,8 +174,17 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
               height: 20.0,
               unit: "cm",
               slug: "Pandoc",
-              slug_file: "/official_letter.zip",
               screenshot: "/official_letter.jpg",
+              frame: %{
+                id: "123e4567-e89b-12d3-a456-426614174000",
+                name: "my-document-frame",
+                frame: %{
+                  file_name: "template.tex",
+                  updated_at: "2024-11-29T12:56:47"
+                },
+                inserted_at: "2024-01-15T10:30:00Z",
+                updated_at: "2024-01-15T10:30:00Z"
+              },
               engine: %{
                 id: "1232148nb3478",
                 name: "Pandoc",
@@ -197,7 +224,16 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
                 height: 20.0,
                 unit: "cm",
                 slug: "Pandoc",
-                slug_file: "/official_letter.zip",
+                frame: %{
+                  id: "123e4567-e89b-12d3-a456-426614174000",
+                  name: "my-document-frame",
+                  frame: %{
+                    file_name: "template.tex",
+                    updated_at: "2024-11-29T12:56:47"
+                  },
+                  inserted_at: "2024-01-15T10:30:00Z",
+                  updated_at: "2024-01-15T10:30:00Z"
+                },
                 screenshot: "/official_letter.jpg",
                 engine: %{
                   id: "1232148nb3478",
@@ -244,7 +280,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:slug, :formData, :string, "Name of slug to be used")
 
-    parameter(:slug_file, :formData, :file, "Slug file to upload")
+    parameter(:frame_id, :formData, :string, "ID of the frame")
 
     parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
 
@@ -362,7 +398,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:slug, :formData, :string, "Name of slug to be used")
 
-    parameter(:slug_file, :formData, :file, "Slug file to upload")
+    parameter(:frame_id, :formData, :string, "Slug file to upload")
 
     parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
 
