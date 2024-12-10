@@ -13,5 +13,10 @@ defmodule WraftDoc.Account.GuestUser do
     guest_user
     |> cast(attrs, [:email])
     |> validate_required([:email])
+    |> validate_format(:email, ~r/@/)
+    |> unique_constraint(:email,
+      message: "Email already taken.! Try another email.",
+      name: :guest_user_email_index
+    )
   end
 end

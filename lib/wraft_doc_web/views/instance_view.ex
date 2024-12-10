@@ -129,14 +129,21 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
-  def render("content_collaboration.json", %{content_collaboration: content_collaboration}) do
+  def render("collaborator.json", %{collaborator: collaborator}) do
     %{
-      id: content_collaboration.id,
-      content_id: content_collaboration.content_id,
-      user_id: content_collaboration.user_id,
-      guest_user_id: content_collaboration.guest_user_id,
-      role: content_collaboration.role,
-      status: content_collaboration.status
+      id: collaborator.id,
+      content_id: collaborator.content_id,
+      user_id: collaborator.user_id,
+      guest_user_id: collaborator.guest_user_id,
+      role: collaborator.role,
+      status: collaborator.status
+    }
+  end
+
+  def render("collaborators.json", %{collaborators: collaborators}) do
+    %{
+      collaborators:
+        render_many(collaborators, InstanceView, "collaborator.json", as: :collaborator)
     }
   end
 
