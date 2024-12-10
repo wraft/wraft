@@ -137,7 +137,10 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       user_id: collaborator.user_id,
       guest_user_id: collaborator.guest_user_id,
       role: collaborator.role,
-      status: collaborator.status
+      status: collaborator.status,
+      user: render_one(collaborator.user, UserView, "user.json", as: :user),
+      guest_user:
+        render_one(collaborator.guest_user, UserView, "guest_user.json", as: :guest_user)
     }
   end
 

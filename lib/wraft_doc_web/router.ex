@@ -241,12 +241,17 @@ defmodule WraftDocWeb.Router do
       # Share an instance
       post("/contents/:id/invite", InstanceController, :invite)
       # Revoke document access
-      delete("/contents/:id/revoke_access", InstanceController, :revoke_document_access)
+      patch(
+        "/contents/:id/revoke_access/:collaborator_id",
+        InstanceController,
+        :revoke_document_access
+      )
+
       # List collaborators
       get("/contents/:id/collaborators", InstanceController, :list_collaborators)
       # Update role for a collaborator
-      put(
-        "/contents/:id/collaborators/:content_collab_id",
+      patch(
+        "/contents/:id/collaborators/:collaborator_id",
         InstanceController,
         :update_collaborator_role
       )

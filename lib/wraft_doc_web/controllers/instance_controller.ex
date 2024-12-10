@@ -410,7 +410,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             "cc" => ["cc1@example.com", "cc2@example.com"]
           })
         end,
-      ShareDocumentRequest:
+      InviteDocumentRequest:
         swagger_schema do
           title("Share document request")
           description("Request to share a document")
@@ -436,19 +436,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
           example(%{
             info: "Invite token verified successfully"
-          })
-        end,
-      RevokeDocumentAccessRequest:
-        swagger_schema do
-          title("Revoke document access request")
-          description("Request to revoke document access")
-
-          properties do
-            token(:string, "token", required: true)
-          end
-
-          example(%{
-            token: "U0ZNeU5UWS5nMmdEZEFBQUFBUj"
           })
         end,
       Collaborator:
@@ -1016,7 +1003,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     parameters do
       id(:path, :string, "Instance id", required: true)
-      content(:body, Schema.ref(:ShareDocumentRequest), "Share Request", required: true)
+      content(:body, Schema.ref(:InviteDocumentRequest), "Share Request", required: true)
     end
 
     response(200, "Ok", Schema.ref(:Collaborator))
@@ -1075,13 +1062,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   Revoke document access.
   """
   swagger_path :revoke_document_access do
-    PhoenixSwagger.Path.delete("/contents/{id}/revoke_access")
+    put("/contents/{id}/revoke_access/{collaborator_id}")
     summary("Revoke document access")
     description("Api to revoke document access")
 
     parameters do
       id(:path, :string, "Instance id", required: true)
-      token(:body, Schema.ref(:RevokeDocumentAccessRequest), "Revoke Request", required: true)
+      collaborator_id(:path, :string, "Collaborator id", required: true)
     end
 
     response(200, "Ok", Schema.ref(:Collaborator))
@@ -1091,16 +1078,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec revoke_document_access(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def revoke_document_access(conn, %{"id" => document_id, "token" => token}) do
-    %{current_org_id: organisation_id} = conn.assigns.current_user
+  def revoke_document_access(conn, %{"id" => document_id, "collaborator_id" => collaborator_id}) do
+    current_user = conn.assigns.current_user
 
-    with {:ok, %{email: email, document_id: ^document_id, state_id: state_id}} <-
-           AuthTokens.check_token(token, :document_invite),
-         user <-
-           Account.get_user_or_guest_user(%{email: email, organisation_id: organisation_id}),
+    with %Instance{} = _instance <- Document.show_instance(document_id, current_user),
          %ContentCollaboration{} = collaborator <-
-           Document.get_content_collaboration(document_id, user, state_id),
-         {:ok, %ContentCollaboration{}} <-
+           Document.get_content_collaboration(collaborator_id),
+         %ContentCollaboration{} = collaborator <-
            Document.revoke_document_access(collaborator) do
       render(conn, "collaborator.json", collaborator: collaborator)
     end
@@ -1136,13 +1120,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   Update Collaborator role.
   """
   swagger_path :update_collaborator_role do
-    put("/contents/{id}/collaborators/{content_collab_id}")
+    patch("/contents/{id}/collaborators/{collaborator_id}")
     summary("Update Collaborator role")
     description("Api to update collaborator role")
 
     parameters do
       id(:path, :string, "Instance id", required: true)
-      content_collab_id(:path, :string, "Collaborator id", required: true)
+      collaborator_id(:path, :string, "Collaborator id", required: true)
     end
 
     response(200, "Ok", Schema.ref(:Content))
@@ -1154,19 +1138,17 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
         conn,
         %{
           "id" => document_id,
-          "content_collab_id" => content_collab_id
+          "collaborator_id" => collaborator_id
         } = params
       ) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = _instance <- Document.show_instance(document_id, current_user),
-         %ContentCollaboration{} = content_collaboration <-
-           Document.get_content_collaboration(content_collab_id),
-         %ContentCollaboration{} = content_collaboration <-
-           Document.update_collaborator_role(content_collaboration, params) do
-      render(conn, "show_content_collaboration.json",
-        content_collaboration: content_collaboration
-      )
+         %ContentCollaboration{} = collaborator <-
+           Document.get_content_collaboration(collaborator_id),
+         %ContentCollaboration{} = collaborator <-
+           Document.update_collaborator_role(collaborator, params) do
+      render(conn, "collaborator.json", collaborator: collaborator)
     end
   end
 end

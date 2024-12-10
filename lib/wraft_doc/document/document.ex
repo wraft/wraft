@@ -4043,9 +4043,18 @@ defmodule WraftDoc.Document do
     Revoke Content Collaboration Access
   """
   @spec revoke_document_access(ContentCollaboration.t()) ::
-          {:ok, ContentCollaboration.t()} | {:error, Ecto.Changeset.t()}
+          ContentCollaboration.t() | {:error, Ecto.Changeset.t()}
   def revoke_document_access(collaborator) do
-    Repo.delete(collaborator)
+    collaborator
+    |> ContentCollaboration.status_update_changeset(%{status: "revoked"})
+    |> Repo.update()
+    |> case do
+      {:ok, collaborator} ->
+        Repo.preload(collaborator, [:user, :guest_user])
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -4074,10 +4083,17 @@ defmodule WraftDoc.Document do
     Update Content Collaborator Role
   """
   @spec update_collaborator_role(ContentCollaboration.t(), map()) ::
-          {:ok, ContentCollaboration.t()} | {:error, Ecto.Changeset.t()}
+          ContentCollaboration.t() | {:error, Ecto.Changeset.t()}
   def update_collaborator_role(content_collaboration, %{"role" => _role} = params) do
     content_collaboration
     |> ContentCollaboration.role_update_changeset(params)
     |> Repo.update()
+    |> case do
+      {:ok, content_collaboration} ->
+        Repo.preload(content_collaboration, [:user, :guest_user])
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 end

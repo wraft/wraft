@@ -851,16 +851,6 @@ defmodule WraftDoc.Account do
     end
   end
 
-  def get_user_or_guest_user(%{email: email, organisation_id: organisation_id}) do
-    case get_user_by_email_and_org(organisation_id, email) do
-      nil ->
-        get_guest_user(email)
-
-      user ->
-        user
-    end
-  end
-
   # Private
   defp get_organisation_id_from_document(document_id) do
     Instance
