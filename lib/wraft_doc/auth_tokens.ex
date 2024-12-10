@@ -136,9 +136,8 @@ defmodule WraftDoc.AuthTokens do
   @doc """
    Create document invite token
   """
-  @spec create_document_invite_token(User.t(), Ecto.UUID.t(), map()) :: {:ok, AuthToken.t()}
+  @spec create_document_invite_token(Ecto.UUID.t(), map()) :: {:ok, AuthToken.t()}
   def create_document_invite_token(
-        user,
         state_id,
         %{"email" => email, "role" => role, "id" => document_id}
       ) do
@@ -152,9 +151,7 @@ defmodule WraftDoc.AuthTokens do
 
     params = %{value: token, token_type: "document_invite"}
 
-    auth_token = insert_auth_token!(user, params)
-
-    {:ok, auth_token}
+    insert_auth_token!(params)
   end
 
   @doc """

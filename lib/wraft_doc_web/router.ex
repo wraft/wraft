@@ -240,10 +240,8 @@ defmodule WraftDocWeb.Router do
       get("/contents/:id/change/:v_id", InstanceController, :change)
       # Share an instance
       post("/contents/:id/share", InstanceController, :share)
-      # Verify access to an instance
-      get("/contents/:id/verify_access/:token", InstanceController, :verify_document_access)
       # Revoke document access
-      delete("/contents/:id/revoke_access/:token", InstanceController, :revoke_document_access)
+      delete("/contents/:id/revoke_access", InstanceController, :revoke_document_access)
       # List collaborators
       get("/contents/:id/collaborators", InstanceController, :list_collaborators)
       # Update role for a collaborator

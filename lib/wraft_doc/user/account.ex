@@ -20,6 +20,8 @@ defmodule WraftDoc.Account do
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.BlockTemplate
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.Instance
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
@@ -496,8 +498,19 @@ defmodule WraftDoc.Account do
   Get a user from its ID.
   """
   @spec get_user(String.t()) :: User.t() | nil
-  def get_user(id) do
-    Repo.get(User, id)
+  def get_user(id), do: Repo.get(User, id)
+
+  @doc """
+   Get the user from given email and organisation
+  """
+  @spec get_user_by_email_and_org(Ecto.UUID.t(), binary) :: User.t() | nil
+  def get_user_by_email_and_org(organisation_id, email) do
+    User
+    |> join(:inner, [u], uo in UserOrganisation,
+      on: uo.user_id == u.id and uo.organisation_id == ^organisation_id
+    )
+    |> where([u], u.email == ^email)
+    |> Repo.one()
   end
 
   # Get the user struct from given email
@@ -808,11 +821,11 @@ defmodule WraftDoc.Account do
   end
 
   @doc """
-   Get user or guest user by email.
+   Get user within current organisation or guest user by email or create guest user.
   """
-  @spec get_user_by_email(map()) :: User.t() | GuestUser.t()
-  def get_user_or_guest_user(%{"email" => email} = _params) do
-    case get_user_by_email(email) do
+  @spec get_user_or_guest_user(User.t(), map()) :: User.t() | GuestUser.t()
+  def get_user_or_guest_user(%{current_org_id: organisation_id}, %{"email" => email}) do
+    case get_user_by_email_and_org(organisation_id, email) do
       nil ->
         get_or_create_guest_user(email)
 
@@ -822,9 +835,45 @@ defmodule WraftDoc.Account do
   end
 
   @doc """
+  Get user within organisation or guest user by email.
+  """
+  @spec get_user_or_guest_user(map()) :: User.t() | GuestUser.t()
+  def get_user_or_guest_user(%{email: email, document_id: document_id}) do
+    document_id
+    |> get_organisation_id_from_document()
+    |> get_user_or_guest_user(email)
+    |> case do
+      nil ->
+        get_guest_user(email)
+
+      user ->
+        user
+    end
+  end
+
+  def get_user_or_guest_user(%{email: email, organisation_id: organisation_id}) do
+    case get_user_by_email_and_org(organisation_id, email) do
+      nil ->
+        get_guest_user(email)
+
+      user ->
+        user
+    end
+  end
+
+  # Private
+  defp get_organisation_id_from_document(document_id) do
+    Instance
+    |> Repo.get(document_id)
+    |> Repo.preload(:content_type)
+    |> Map.get(:content_type)
+    |> Map.get(:organisation_id)
+  end
+
+  @doc """
   Get or create guest user struct from given email
   """
-  @spec get_or_create_guest_user(binary()) :: GuestUser.t() | nil
+  @spec get_or_create_guest_user(binary()) :: GuestUser.t() | {:error, Ecto.Changeset.t()}
   def get_or_create_guest_user(email) when is_binary(email) do
     case Repo.get_by(GuestUser, email: email) do
       nil ->
@@ -835,15 +884,25 @@ defmodule WraftDoc.Account do
     end
   end
 
-  def get_guest_user_by_email(_email), do: nil
-
   @doc """
   Create a guest user.
   """
-  @spec create_guest_user(map()) :: {:ok, GuestUser.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_guest_user(map()) :: GuestUser.t() | Ecto.Changeset.t()
   def create_guest_user(%{"email" => _email} = params) do
     %GuestUser{}
     |> GuestUser.changeset(params)
     |> Repo.insert()
+    |> case do
+      {:ok, guest_user} -> guest_user
+      {:error, _} = changeset -> changeset
+    end
+  end
+
+  @doc """
+    Get guest user by email
+  """
+  @spec get_guest_user(binary()) :: GuestUser.t() | nil
+  def get_guest_user(email) do
+    Repo.get_by(GuestUser, email: email)
   end
 end

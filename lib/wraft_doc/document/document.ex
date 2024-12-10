@@ -3984,7 +3984,7 @@ defmodule WraftDoc.Document do
   @spec add_content_collaborator(Instance.t(), User.t() | GuestUser.t(), map()) ::
           {:ok, ContentCollaboration.t()} | {:error, Ecto.Changeset.t()}
   def add_content_collaborator(%Instance{id: content_id, state_id: state_id}, %User{} = user, %{
-        role: role
+        "role" => role
       }) do
     insert_content_collaborator(%{
       content_id: content_id,
@@ -3994,9 +3994,20 @@ defmodule WraftDoc.Document do
     })
   end
 
-  def add_content_collaborator(%Instance{id: content_id}, %GuestUser{} = user, %{role: role}) do
-    insert_content_collaborator(%{content_id: content_id, guest_user_id: user.id, role: role})
+  def add_content_collaborator(
+        %Instance{id: content_id, state_id: state_id},
+        %GuestUser{} = user,
+        %{"role" => role}
+      ) do
+    insert_content_collaborator(%{
+      content_id: content_id,
+      guest_user_id: user.id,
+      state_id: state_id,
+      role: role
+    })
   end
+
+  def add_content_collaborator(_, _, _), do: {:error, "Invalid email"}
 
   defp insert_content_collaborator(params) do
     %ContentCollaboration{}
@@ -4033,18 +4044,18 @@ defmodule WraftDoc.Document do
   """
   @spec revoke_document_access(ContentCollaboration.t()) ::
           {:ok, ContentCollaboration.t()} | {:error, Ecto.Changeset.t()}
-  def revoke_document_access(content_collaboration) do
-    Repo.delete(content_collaboration)
+  def revoke_document_access(collaborator) do
+    Repo.delete(collaborator)
   end
 
   @doc """
   Accept Content Collaboration
   """
-  @spec accept_document_access(ContentCollaboration.t(), User.t()) ::
+  @spec accept_document_access(ContentCollaboration.t()) ::
           {:ok, ContentCollaboration.t()}
-  def accept_document_access(content_collaboration, user) do
+  def accept_document_access(content_collaboration) do
     content_collaboration
-    |> ContentCollaboration.status_update_changeset(user)
+    |> ContentCollaboration.status_update_changeset(%{status: "accepted"})
     |> Repo.update()
   end
 

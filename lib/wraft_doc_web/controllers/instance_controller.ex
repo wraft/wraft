@@ -437,6 +437,44 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           example(%{
             info: "Invite token verified successfully"
           })
+        end,
+      RevokeDocumentAccessRequest:
+        swagger_schema do
+          title("Revoke document access request")
+          description("Request to revoke document access")
+
+          properties do
+            token(:string, "token", required: true)
+          end
+
+          example(%{
+            token: "U0ZNeU5UWS5nMmdEZEFBQUFBUj"
+          })
+        end,
+      Collaborator:
+        swagger_schema do
+          title("Collaborator")
+          description("A collaborator")
+
+          properties do
+            id(:string, "Id")
+            name(:string, "Name")
+            email(:string, "Email")
+            role(:string, "Role")
+            status(:string, "Status")
+            created_at(:string, "Created at")
+            updated_at(:string, "Updated at")
+          end
+
+          example(%{
+            id: "6529b52b-071c-4b82-950c-539b73b8833e",
+            name: "John Doe",
+            email: "john@example.com",
+            role: "viewer",
+            status: "active",
+            created_at: "2023-04-23T10:00:00Z",
+            updated_at: "2023-04-23T10:00:00Z"
+          })
         end
     }
   end
@@ -981,7 +1019,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       content(:body, Schema.ref(:ShareDocumentRequest), "Share Request", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:ShowContent))
+    response(200, "Ok", Schema.ref(:Collaborator))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
@@ -992,13 +1030,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{state_id: state_id} = instance <-
            Document.show_instance(document_id, current_user),
-         user <- Account.get_user_by_email(params),
-         {:ok, %ContentCollaboration{}} <-
+         user <- Account.get_user_or_guest_user(current_user, params),
+         {:ok, %ContentCollaboration{} = collaborator} <-
            Document.add_content_collaborator(instance, user, params),
          {:ok, %AuthToken{value: token}} <-
-           AuthTokens.create_document_invite_token(user, state_id, params),
-         %Instance{} = instance <- Document.send_email(instance, user, token) do
-      render(conn, "show.json", instance: instance)
+           AuthTokens.create_document_invite_token(state_id, params),
+         {:ok, %Oban.Job{}} <- Document.send_email(instance, user, token) do
+      render(conn, "collaborator.json", collaborator: collaborator)
     end
   end
 
@@ -1024,11 +1062,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def verify_document_access(conn, %{"token" => token, "id" => document_id}) do
     with {:ok, %{email: email, document_id: ^document_id, state_id: state_id}} <-
            AuthTokens.check_token(token, :document_invite),
-         user <- Account.get_user_by_email(email),
+         user <- Account.get_user_or_guest_user(%{email: email, document_id: document_id}),
          %ContentCollaboration{} = content_collaboration <-
            Document.get_content_collaboration(document_id, user, state_id),
          {:ok, %ContentCollaboration{}} <-
-           Document.accept_document_access(content_collaboration, user) do
+           Document.accept_document_access(content_collaboration) do
       render(conn, "check_token.json", token: token)
     end
   end
@@ -1037,16 +1075,16 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   Revoke document access.
   """
   swagger_path :revoke_document_access do
-    PhoenixSwagger.Path.delete("/contents/{id}/revoke_access/{token}")
+    PhoenixSwagger.Path.delete("/contents/{id}/revoke_access")
     summary("Revoke document access")
     description("Api to revoke document access")
 
     parameters do
       id(:path, :string, "Instance id", required: true)
-      token(:path, :string, "Invite token", required: true)
+      token(:body, Schema.ref(:RevokeDocumentAccessRequest), "Revoke Request", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:Content))
+    response(200, "Ok", Schema.ref(:Collaborator))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not found", Schema.ref(:Error))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -1054,17 +1092,17 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   @spec revoke_document_access(Plug.Conn.t(), map) :: Plug.Conn.t()
   def revoke_document_access(conn, %{"id" => document_id, "token" => token}) do
-    current_user = conn.assigns.current_user
+    %{current_org_id: organisation_id} = conn.assigns.current_user
 
-    with %Instance{} = instance <- Document.show_instance(document_id, current_user),
-         {:ok, %{email: email, document_id: ^document_id, state_id: state_id}} <-
+    with {:ok, %{email: email, document_id: ^document_id, state_id: state_id}} <-
            AuthTokens.check_token(token, :document_invite),
-         user <- Account.get_user_by_email(email),
-         %ContentCollaboration{} = content_collaboration <-
+         user <-
+           Account.get_user_or_guest_user(%{email: email, organisation_id: organisation_id}),
+         %ContentCollaboration{} = collaborator <-
            Document.get_content_collaboration(document_id, user, state_id),
          {:ok, %ContentCollaboration{}} <-
-           Document.revoke_document_access(content_collaboration) do
-      render(conn, "show.json", instance: instance)
+           Document.revoke_document_access(collaborator) do
+      render(conn, "collaborator.json", collaborator: collaborator)
     end
   end
 
@@ -1080,7 +1118,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       id(:path, :string, "Instance id", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:Collaborators))
+    response(200, "Ok", Schema.ref(:Collaborator))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
@@ -1089,8 +1127,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Document.show_instance(document_id, current_user),
-         %ContentCollaboration{} = content_collaboration <- Document.list_collaborators(instance) do
-      render(conn, "collaborators.json", content_collaboration: content_collaboration)
+         %ContentCollaboration{} = collaborators <- Document.list_collaborators(instance) do
+      render(conn, "collaborators.json", collaborators: collaborators)
     end
   end
 

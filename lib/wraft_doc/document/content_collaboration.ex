@@ -22,8 +22,8 @@ defmodule WraftDoc.Document.ContentCollaboration do
     |> cast(attrs, @fields)
     |> validate_required(@fields -- [:guest_user_id, :user_id])
     |> unique_constraint(@fields,
-      name: :content_collab_user_state_content_unique_index,
-      message: "already exist"
+      name: :content_collaboration_content_id_guest_user_id_state_id_index,
+      message: "content collaborator already exist"
     )
   end
 
