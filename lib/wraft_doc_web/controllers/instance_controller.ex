@@ -1009,8 +1009,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   @doc """
    Share an instance.
   """
-  swagger_path :share do
-    post("/contents/{id}/share")
+  swagger_path :invite do
+    post("/contents/{id}/invite")
     summary("Share an instance")
     description("Api to share an instance")
 
@@ -1024,8 +1024,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec share(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def share(conn, %{"id" => document_id} = params) do
+  @spec invite(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def invite(conn, %{"id" => document_id} = params) do
     current_user = conn.assigns.current_user
 
     with %Instance{state_id: state_id} = instance <-
@@ -1127,7 +1127,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Document.show_instance(document_id, current_user),
-         %ContentCollaboration{} = collaborators <- Document.list_collaborators(instance) do
+         [%ContentCollaboration{} | _] = collaborators <- Document.list_collaborators(instance) do
       render(conn, "collaborators.json", collaborators: collaborators)
     end
   end

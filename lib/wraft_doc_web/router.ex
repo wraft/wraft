@@ -239,7 +239,7 @@ defmodule WraftDocWeb.Router do
       get("/contents/title/search", InstanceController, :search)
       get("/contents/:id/change/:v_id", InstanceController, :change)
       # Share an instance
-      post("/contents/:id/share", InstanceController, :share)
+      post("/contents/:id/invite", InstanceController, :invite)
       # Revoke document access
       delete("/contents/:id/revoke_access", InstanceController, :revoke_document_access)
       # List collaborators
