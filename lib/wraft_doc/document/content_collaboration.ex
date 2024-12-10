@@ -9,7 +9,7 @@ defmodule WraftDoc.Document.ContentCollaboration do
 
   schema "content_collaboration" do
     field(:role, Ecto.Enum, values: @roles)
-    field(:status, Ecto.Enum, values: [:pending, :accepted], default: :pending)
+    field(:status, Ecto.Enum, values: [:pending, :accepted, :revoked], default: :pending)
     belongs_to(:content, WraftDoc.Document.Instance)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:guest_user, WraftDoc.Account.GuestUser)
