@@ -16,7 +16,6 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Plan
 
-  # TODO : may need to sync with paddle plans
   def swagger_definitions do
     %{
       Plan:
@@ -28,8 +27,8 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             id(:string, "Plan id")
             name(:string, "Plan name")
             description(:string, "Plan description")
-            yearly_amount(:integer, "Yearly amount of the plan")
-            monthly_amount(:integer, "Monthly amount of the plan")
+            yearly_amount(:string, "Yearly amount of the plan")
+            monthly_amount(:string, "Monthly amount of the plan")
             inserted_at(:string, "When was the plan inserted", format: "ISO-8601")
             updated_at(:string, "When was the plan last updated", format: "ISO-8601")
           end
@@ -38,8 +37,8 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             id: "c68b0988-790b-45e8-965c-c4aeb427e70d",
             name: "Basic",
             description: "A basic plan",
-            yearly_amount: 10,
-            monthly_amount: 6,
+            yearly_amount: "10",
+            monthly_amount: "6",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -52,15 +51,15 @@ defmodule WraftDocWeb.Api.V1.PlanController do
           properties do
             name(:string, "Plan name", required: true)
             description(:string, "Plan description", required: true)
-            yearly_amount(:integer, "Yearly amount of the plan")
-            monthly_amount(:integer, "Monthly amount of the plan")
+            yearly_amount(:string, "Yearly amount of the plan")
+            monthly_amount(:string, "Monthly amount of the plan")
           end
 
           example(%{
             name: "Basic",
             description: "A basic plan",
-            yearly_amount: 10,
-            monthly_amount: 6
+            yearly_amount: "10",
+            monthly_amount: "6"
           })
         end,
       Plans:

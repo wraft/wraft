@@ -52,7 +52,8 @@ defmodule WraftDocWeb.Endpoint do
     Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
-    json_decoder: Jason
+    json_decoder: Jason,
+    body_reader: {WraftDocWeb.RawBodyReader, :read_body, []}
   )
 
   plug Sentry.PlugContext

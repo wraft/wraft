@@ -87,11 +87,6 @@ defmodule WraftDoc.Billing.PaddleApi do
     end
   end
 
-  def cancel_pending_changes(subscription_id) do
-    cancel_url = "https://sandbox-api.paddle.com/subscriptions/#{subscription_id}/updates/cancel"
-    post(cancel_url, %{})
-  end
-
   def cancel_subscription(paddle_subscription_id) do
     params = %{
       effective_from: "immediately"
