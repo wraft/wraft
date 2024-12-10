@@ -2,6 +2,8 @@ defmodule WraftDoc.Enterprise.Flow do
   @moduledoc """
     The work flow model.
   """
+  @behaviour ExTypesense
+
   use WraftDoc.Schema
 
   alias __MODULE__
@@ -61,5 +63,21 @@ defmodule WraftDoc.Enterprise.Flow do
     flow
     |> cast(attrs, [])
     |> cast_assoc(:states, with: &Flow.State.order_update_changeset/2)
+  end
+
+  @impl ExTypesense
+  def get_field_types do
+    %{
+      enable_nested_fields: true,
+      fields: [
+        %{name: "id", type: "string", facet: false},
+        %{name: "name", type: "string", facet: false},
+        %{name: "controlled", type: "bool", facet: true},
+        %{name: "creator_id", type: "string", facet: true},
+        %{name: "organisation_id", type: "string", facet: true},
+        %{name: "inserted_at", type: "int64", facet: false},
+        %{name: "updated_at", type: "int64", facet: false}
+      ]
+    }
   end
 end
