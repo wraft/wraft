@@ -22,6 +22,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   require Logger
 
+  alias WraftDoc.Account
+  alias WraftDoc.AuthTokens
+  alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Client.Minio.DownloadError
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentCollaboration
