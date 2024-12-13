@@ -11,6 +11,7 @@ defmodule WraftDoc.Account.User do
     field(:encrypted_password, :string)
     field(:password, :string, virtual: true)
     field(:email_verify, :boolean, default: false)
+    field(:guest, :boolean, default: false)
     field(:deleted_at, :naive_datetime)
     field(:signed_in_at, :naive_datetime)
     field(:last_signed_in_org, Ecto.UUID)
@@ -37,7 +38,7 @@ defmodule WraftDoc.Account.User do
     has_many(:assets, WraftDoc.Document.Asset, foreign_key: :creator_id)
     has_many(:template_assets, WraftDoc.TemplateAssets.TemplateAsset, foreign_key: :creator_id)
     has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :creator_id)
-    has_many(:content_collab, WraftDoc.Document.ContentCollab)
+    has_many(:content_collaboration, WraftDoc.Document.ContentCollaboration)
 
     has_many(:blocks, WraftDoc.Document.Block, foreign_key: :creator_id)
 

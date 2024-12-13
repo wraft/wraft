@@ -4000,13 +4000,19 @@ defmodule WraftDoc.Document do
   @doc """
   Add Content Collaborator
   """
-  @spec add_content_collaborator(Instance.t(), User.t() | GuestUser.t(), map()) ::
+  @spec add_content_collaborator(User.t(), Instance.t(), User.t() | GuestUser.t(), map()) ::
           {:ok, ContentCollaboration.t()} | {:error, Ecto.Changeset.t()}
-  def add_content_collaborator(%Instance{id: content_id, state_id: state_id}, %User{} = user, %{
-        "role" => role
-      }) do
+  def add_content_collaborator(
+        %User{id: invited_by_id},
+        %Instance{id: content_id, state_id: state_id},
+        %User{} = user,
+        %{
+          "role" => role
+        }
+      ) do
     insert_content_collaborator(%{
       content_id: content_id,
+      invited_by_id: invited_by_id,
       user_id: user.id,
       state_id: state_id,
       role: role
@@ -4014,12 +4020,14 @@ defmodule WraftDoc.Document do
   end
 
   def add_content_collaborator(
+        %User{id: invited_by_id},
         %Instance{id: content_id, state_id: state_id},
         %GuestUser{} = user,
         %{"role" => role}
       ) do
     insert_content_collaborator(%{
       content_id: content_id,
+      invited_by_id: invited_by_id,
       guest_user_id: user.id,
       state_id: state_id,
       role: role
@@ -4061,11 +4069,15 @@ defmodule WraftDoc.Document do
   @doc """
     Revoke Content Collaboration Access
   """
-  @spec revoke_document_access(ContentCollaboration.t()) ::
+  @spec revoke_document_access(User.t(), ContentCollaboration.t()) ::
           ContentCollaboration.t() | {:error, Ecto.Changeset.t()}
-  def revoke_document_access(collaborator) do
+  def revoke_document_access(%User{id: revoked_by_id}, collaborator) do
     collaborator
-    |> ContentCollaboration.status_update_changeset(%{status: "revoked"})
+    |> ContentCollaboration.status_update_changeset(%{
+      status: "revoked",
+      revoked_by_id: revoked_by_id,
+      revoked_at: DateTime.utc_now()
+    })
     |> Repo.update()
     |> case do
       {:ok, collaborator} ->

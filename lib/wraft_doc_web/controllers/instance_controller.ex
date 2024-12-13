@@ -1132,7 +1132,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            Document.show_instance(document_id, current_user),
          user <- Account.get_user_or_guest_user(current_user, params),
          {:ok, %ContentCollaboration{} = collaborator} <-
-           Document.add_content_collaborator(instance, user, params),
+           Document.add_content_collaborator(current_user, instance, user, params),
          {:ok, %AuthToken{value: token}} <-
            AuthTokens.create_document_invite_token(state_id, params),
          {:ok, %Oban.Job{}} <- Document.send_email(instance, user, token) do
@@ -1198,7 +1198,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
          %ContentCollaboration{} = collaborator <-
            Document.get_content_collaboration(collaborator_id),
          %ContentCollaboration{} = collaborator <-
-           Document.revoke_document_access(collaborator) do
+           Document.revoke_document_access(current_user, collaborator) do
       render(conn, "collaborator.json", collaborator: collaborator)
     end
   end
