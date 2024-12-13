@@ -132,6 +132,7 @@ defmodule WraftDoc.Mixfile do
 
       # Create and cleanup Tempfile
       {:briefly, "~> 0.5.0"},
+      {:sizeable, "~> 1.0"},
 
       # For admin pannel
       {:kaffy, "~> 0.10.0"},

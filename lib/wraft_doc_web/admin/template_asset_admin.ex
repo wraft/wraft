@@ -15,6 +15,7 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
   def index(_) do
     [
       name: %{label: "Name", type: :string},
+      description: %{label: "Description", type: :string},
       inserted_at: %{label: "Created At", type: :datetime},
       updated_at: %{label: "Updated At", type: :datetime}
     ]
@@ -29,6 +30,7 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
   def form_fields(_) do
     [
       name: %{type: :text, required: true},
+      description: %{type: :text},
       zip_file: %{
         type: :file,
         required: true

@@ -23,6 +23,8 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
   alias WraftDoc.TemplateAssets.WraftJson
+  alias WraftDocWeb.TemplateAssetThumbnailUploader
+  alias WraftDocWeb.TemplateAssetUploader
 
   @required_items ["layout", "theme", "flow", "variant"]
   @allowed_folders ["theme", "layout", "contract"]
@@ -91,6 +93,13 @@ defmodule WraftDoc.TemplateAssets do
   @spec get_template_asset(binary(), User.t()) :: TemplateAsset.t() | {:error, atom()}
   def get_template_asset(<<_::288>> = id, %{current_org_id: org_id}),
     do: Repo.get_by(TemplateAsset, id: id, organisation_id: org_id)
+
+  def get_template_asset(_, _), do: {:error, :fake}
+
+  def get_template_asset(<<_::288>> = id),
+    do: Repo.get_by(TemplateAsset, id: id)
+
+  def get_template_asset(_), do: {:error, :fake}
 
   @doc """
   Update a template asset.
@@ -213,14 +222,14 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec download_zip_from_minio(User.t(), Ecto.UUID.t()) :: {:error, any()} | {:ok, binary()}
   def download_zip_from_minio(current_user, template_asset_id) do
-    %{zip_file: zip_file} = get_template_asset(template_asset_id, current_user)
-
-    downloaded_zip_binary =
-      Minio.get_object(
-        "organisations/#{current_user.current_org_id}/template_assets/#{template_asset_id}/template_#{zip_file.file_name}"
-      )
-
-    {:ok, downloaded_zip_binary}
+    with %TemplateAsset{zip_file: zip_file} <-
+           get_template_asset(template_asset_id, current_user),
+         downloaded_zip_binary <-
+           Minio.get_object(
+             "organisations/#{current_user.current_org_id}/template_assets/#{template_asset_id}/template_#{zip_file.file_name}"
+           ) do
+      {:ok, downloaded_zip_binary}
+    end
   rescue
     error -> {:error, error.message}
   end
@@ -996,36 +1005,39 @@ defmodule WraftDoc.TemplateAssets do
     )
   end
 
-  @doc """
-  List all the public templates.
-  """
-  @spec list_public_templates() :: {:ok, list()}
-  def list_public_templates do
-    "public/templates/"
-    |> Minio.list_files()
-    |> Enum.reduce([], fn path, acc ->
-      if Path.extname(path) == ".zip" do
-        rootname = get_rootname(path)
-
-        [
-          %{
-            file_name: rootname,
-            path: "public/templates/#{rootname}/#{rootname}.zip",
-            thumbnail_url: Minio.generate_url("public/templates/#{rootname}/thumbnail.png")
-          }
-          | acc
-        ]
-      else
-        acc
-      end
-    end)
-    |> then(&{:ok, &1})
-  end
-
   defp get_rootname(path) do
     path
     |> Path.basename()
     |> Path.rootname()
+  end
+
+  @doc """
+  Index of all public template assets.
+  """
+  @spec public_template_asset_index() :: {:ok, list()}
+  def public_template_asset_index do
+    query =
+      from(t in TemplateAsset,
+        where: is_nil(t.organisation_id) and is_nil(t.creator_id),
+        order_by: [desc: t.inserted_at]
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.map(fn template_asset ->
+      rootname = get_rootname(template_asset.zip_file.file_name)
+
+      %{
+        id: template_asset.id,
+        name: template_asset.name,
+        description: template_asset.description,
+        file_name: rootname,
+        file_size: generate_zip_file_size(template_asset),
+        zip_file_url: Minio.generate_url("public/templates/#{rootname}/#{rootname}.zip"),
+        thumbnail_url: Minio.generate_url("public/templates/#{rootname}/thumbnail.png")
+      }
+    end)
+    |> then(&{:ok, &1})
   end
 
   @doc """
@@ -1037,5 +1049,41 @@ defmodule WraftDoc.TemplateAssets do
     |> then(&"public/templates/#{&1}/#{&1}.zip")
     |> Minio.generate_url()
     |> then(&{:ok, &1})
+  end
+
+  @doc """
+  Retrieves the zip file size from minio.
+  """
+  @spec generate_zip_file_size(TemplateAsset.t()) :: String.t()
+  def generate_zip_file_size(template_asset) do
+    template_asset.organisation_id
+    |> case do
+      nil ->
+        template_asset.zip_file.file_name
+        |> get_rootname()
+        |> then(&"public/templates/#{&1}/#{&1}.zip")
+
+      organisation_id ->
+        "organisations/#{organisation_id}/template_assets/#{template_asset.id}/template_#{template_asset.zip_file.file_name}"
+    end
+    |> Minio.get_file_size()
+  end
+
+  @doc """
+  Generates the zip url for the template asset.
+  """
+  @spec generate_zip_url(TemplateAsset.t()) :: String.t()
+  def generate_zip_url(%{zip_file: zip_file} = template_asset) do
+    template_asset = Map.put(template_asset, :zip_file_name, zip_file.file_name)
+    TemplateAssetUploader.url({zip_file, template_asset})
+  end
+
+  @doc """
+  Generates the thumbnail url for the template asset.
+  """
+  @spec generate_thumbnail_url(TemplateAsset.t()) :: String.t()
+  def generate_thumbnail_url(%{thumbnail: thumbnail, zip_file: zip_file} = template_asset) do
+    template_asset = Map.put(template_asset, :zip_file_name, zip_file.file_name)
+    TemplateAssetThumbnailUploader.url({thumbnail, template_asset})
   end
 end

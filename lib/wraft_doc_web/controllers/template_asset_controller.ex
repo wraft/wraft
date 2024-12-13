@@ -137,11 +137,20 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
               items: %Schema{
                 type: :object,
                 properties: %{
+                  id: %Schema{type: :string, description: "Template asset id"},
+                  name: %Schema{type: :string, description: "Template asset name"},
+                  description: %Schema{
+                    type: :string,
+                    description: "Template asset description"
+                  },
                   file_name: %Schema{type: :string, description: "The name of the file"},
-                  path: %Schema{type: :string, description: "The full path to the file"},
+                  zip_file_url: %Schema{
+                    type: :string,
+                    description: "URL of the zip file in the template asset"
+                  },
                   thumbnail_url: %Schema{
                     type: :string,
-                    description: "Signed URL of the thumbnail image of the template asset"
+                    description: "URL of the thumbnail image of the template asset"
                   }
                 }
               }
@@ -151,16 +160,26 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
           example(%{
             templates: [
               %{
+                id: "53d2de6d-e0ad-4c5a-a302-6af54fa36920",
+                name: "Contract",
+                description: "description",
                 file_name: "contract",
-                path: "public/templates/contract.zip",
+                file_size: "94.38 KB",
                 thumbnail_url:
-                  "http://minio.example.com/wraft/public/templates/contract-template/thumbnail.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20241208%2Flocal%2Fs3%2Faws4_request&X-Amz-Date=20241208T150056Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Signature=..."
+                  "http://minio.example.com/wraft/public/templates/contract-template/thumbnail.png",
+                zip_file_url:
+                  "http://minio.example.com/wraft/public/templates/contract-template/zip_file.zip"
               },
               %{
-                file_name: "nda",
-                path: "public/templates/nda.zip",
+                id: "53d2de6d-e0ad-4c5a-a302-6af54fa36920",
+                name: "Contract",
+                description: "description",
+                file_name: "contract",
+                file_size: "94.38 KB",
                 thumbnail_url:
-                  "http://127.0.0.1:9000/wraft/public/templates/nda/thumbnail.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20241208%2Flocal%2Fs3%2Faws4_request&X-Amz-Date=20241208T150056Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Signature=..."
+                  "http://minio.example.com/wraft/public/templates/contract-template/thumbnail.png",
+                zip_file_url:
+                  "http://minio.example.com/wraft/public/templates/contract-template/zip_file.zip"
               }
             ]
           })
@@ -628,7 +647,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   end
 
   def list_public_templates(conn, _params) do
-    with {:ok, template_list} <- TemplateAssets.list_public_templates() do
+    with {:ok, template_list} <- TemplateAssets.public_template_asset_index() do
       render(conn, "list_public_templates.json", %{templates: template_list})
     end
   end
