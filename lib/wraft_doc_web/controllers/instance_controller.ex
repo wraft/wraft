@@ -29,6 +29,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentCollaboration
   alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.CounterParties
   alias WraftDoc.Document.Instance
   alias WraftDoc.Document.Layout
   alias WraftDoc.Enterprise
@@ -459,6 +460,51 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             email: "john@example.com",
             role: "viewer",
             status: "active",
+            created_at: "2023-04-23T10:00:00Z",
+            updated_at: "2023-04-23T10:00:00Z"
+          })
+        end,
+      CounterPartiesRequest:
+        swagger_schema do
+          title("Counter parties request")
+          description("Request to create counter parties")
+
+          properties do
+            name(:string, "Name", required: true)
+            guest_user_id(:string, "Guest user id", required: true)
+          end
+
+          example(%{
+            name: "John Doe",
+            guest_user_id: "1232148nb3478"
+          })
+        end,
+      CounterPartiesResponse:
+        swagger_schema do
+          title("Counter parties response")
+          description("Response for counter parties")
+
+          properties do
+            id(:string, "Id")
+            name(:string, "Name")
+            guest_user_id(:string, "Guest user id")
+            content(Schema.ref(:Content))
+            created_at(:string, "Created at")
+            updated_at(:string, "Updated at")
+          end
+
+          example(%{
+            id: "6529b52b-071c-4b82-950c-539b73b8833e",
+            name: "John Doe",
+            guest_user_id: "1232148nb3478",
+            content: %{
+              id: "1232148nb3478",
+              instance_id: "OFFL01",
+              raw: "Content",
+              serialized: %{title: "Title of the content", body: "Body of the content"},
+              updated_at: "2020-01-21T14:00:00Z",
+              inserted_at: "2020-02-21T14:00:00Z"
+            },
             created_at: "2023-04-23T10:00:00Z",
             updated_at: "2023-04-23T10:00:00Z"
           })
@@ -1149,6 +1195,66 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
          %ContentCollaboration{} = collaborator <-
            Document.update_collaborator_role(collaborator, params) do
       render(conn, "collaborator.json", collaborator: collaborator)
+    end
+  end
+
+  @doc """
+  Add counterpart to a contract document
+  """
+  swagger_path :add_counterparty do
+    post("/contents/{id}/add_counterparty")
+    summary("Add counterparty to a document")
+    description("Api to add counterpart to a document")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+      counterparty(:body, Schema.ref(:CounterPartyRequest), "CounterParty", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:CounterPartyResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec add_counterparty(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def add_counterparty(conn, %{"id" => document_id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Document.show_instance(document_id, current_user),
+         %CounterParties{} = counterparty <- Document.add_counterparty(instance, params) do
+      render(conn, "counterparty.json", counterparty: counterparty)
+    end
+  end
+
+  @doc """
+  Remove counterparty from a contract document
+  """
+  swagger_path :remove_counterparty do
+    PhoenixSwagger.Path.delete("/contents/{id}/remove_counterparty/{counterparty_id}")
+    summary("Remove counterparty from a document")
+    description("Api to remove counterparty from a document")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+      counterparty_id(:path, :string, "Counterparty id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:CounterPartyResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec remove_counterparty(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def remove_counterparty(conn, %{"id" => document_id, "counterparty_id" => counterparty_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = _instance <- Document.show_instance(document_id, current_user),
+         %CounterParties{} = counterparty <-
+           Document.get_counterparty(document_id, counterparty_id),
+         %CounterParties{} = counterparty <- Document.remove_counterparty(counterparty) do
+      render(conn, "counterparty.json", counterparty: counterparty)
     end
   end
 end

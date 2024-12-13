@@ -151,6 +151,16 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
+  def render("counterparty.json", %{counterparty: counterparty}) do
+    %{
+      id: counterparty.id,
+      name: counterparty.name,
+      content: render_one(counterparty.content, InstanceView, "instance.json", as: :content),
+      guest_user:
+        render_one(counterparty.guest_user, UserView, "guest_user.json", as: :guest_user)
+    }
+  end
+
   def render("build_fail.json", %{exit_code: exit_code}) do
     %{
       info: "Build failed",

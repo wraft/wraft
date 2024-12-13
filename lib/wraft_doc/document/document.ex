@@ -22,6 +22,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Document.ContentTypeField
   alias WraftDoc.Document.ContentTypeRole
   alias WraftDoc.Document.Counter
+  alias WraftDoc.Document.CounterParties
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Field
@@ -4095,5 +4096,47 @@ defmodule WraftDoc.Document do
       {:error, changeset} ->
         {:error, changeset}
     end
+  end
+
+  @doc """
+  Get counterparty for a contract document
+  """
+  @spec get_counterparty(String.t(), String.t()) :: CounterParties.t() | nil
+  def get_counterparty(document_id, counterparty_id) do
+    Repo.get_by(CounterParties, content_id: document_id, counterparty_id: counterparty_id)
+  end
+
+  @doc """
+   Add counterparty to content
+  """
+  def add_counterparty(%Instance{id: content_id}, %{
+        "guest_user_id" => guest_user_id,
+        "name" => name
+      }) do
+    CounterParties
+    |> CounterParties.changeset(%{
+      name: name,
+      content_id: content_id,
+      guest_user_id: guest_user_id
+    })
+    |> Repo.insert()
+    |> case do
+      {:ok, counter_party} ->
+        Repo.preload(counter_party, [:guest_user, :content])
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  def add_counterparty(_, _), do: nil
+
+  @doc """
+    Remove counterparty from content
+  """
+  @spec remove_counterparty(CounterParties.t()) ::
+          {:ok, CounterParties.t()} | {:error, Ecto.Changeset.t()}
+  def remove_counterparty(%CounterParties{} = counterparty) do
+    Repo.delete(counterparty)
   end
 end

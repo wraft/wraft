@@ -256,6 +256,15 @@ defmodule WraftDocWeb.Router do
         :update_collaborator_role
       )
 
+      # Add a counterparty
+      post("/contents/:id/add_counterpart", InstanceController, :add_counterparty)
+      # Delete counterpart
+      delete(
+        "/contents/:id/remove_counterparty/:counterparty_id",
+        InstanceController,
+        :remove_counterpart
+      )
+
       # Approve a document
       put("/contents/:id/approve", InstanceController, :approve)
       put("/contents/:id/reject", InstanceController, :reject)
