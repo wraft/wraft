@@ -314,6 +314,13 @@ defmodule WraftDocWeb.Router do
       # Template Assets
       resources("/template_assets", TemplateAssetController)
       post("/template_assets/:id/import", TemplateAssetController, :template_import)
+
+      post(
+        "/template_assets/public/:id/install",
+        TemplateAssetController,
+        :import_public_template
+      )
+
       post("/template_assets/:id/export", TemplateAssetController, :template_export)
       get("/template_assets/:id/pre_import", TemplateAssetController, :template_pre_import)
 

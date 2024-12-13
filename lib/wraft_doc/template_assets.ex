@@ -234,6 +234,18 @@ defmodule WraftDoc.TemplateAssets do
     error -> {:error, error.message}
   end
 
+  def download_zip_from_minio(template_asset_id) do
+    with %TemplateAsset{zip_file: zip_file} <-
+           get_template_asset(template_asset_id),
+         file_name <- get_rootname(zip_file.file_name),
+         downloaded_zip_binary <-
+           Minio.get_object("public/templates/#{file_name}/#{file_name}.zip") do
+      {:ok, downloaded_zip_binary}
+    end
+  rescue
+    error -> {:error, error.message}
+  end
+
   defp get_wraft_json(downloaded_zip_binary) do
     {:ok, wraft_json} = extract_file_content(downloaded_zip_binary, "wraft.json")
     Jason.decode(wraft_json)
@@ -1033,12 +1045,14 @@ defmodule WraftDoc.TemplateAssets do
         description: template_asset.description,
         file_name: rootname,
         file_size: generate_zip_file_size(template_asset),
-        zip_file_url: Minio.generate_url("public/templates/#{rootname}/#{rootname}.zip"),
-        thumbnail_url: Minio.generate_url("public/templates/#{rootname}/thumbnail.png")
+        zip_file_url: Path.join(minio_url(), "public/templates/#{rootname}/#{rootname}.zip"),
+        thumbnail_url: Path.join(minio_url(), "public/templates/#{rootname}/thumbnail.png")
       }
     end)
     |> then(&{:ok, &1})
   end
+
+  defp minio_url, do: Path.join(System.get_env("MINIO_URL"), System.get_env("MINIO_BUCKET"))
 
   @doc """
   Download template from minio.

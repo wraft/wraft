@@ -86,7 +86,7 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
   end
 
   def after_insert(conn, template_asset) do
-    params = conn.params["template_asset"] || %{}
+    params = conn.params["template_asset"]
 
     template_asset
     |> admin_file_changeset(params)
