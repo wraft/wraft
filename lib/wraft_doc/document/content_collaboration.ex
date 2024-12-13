@@ -4,7 +4,7 @@ defmodule WraftDoc.Document.ContentCollaboration do
   """
   use WraftDoc.Schema
 
-  @roles [:suggestor, :viewer]
+  @roles [:suggestor, :viewer, :editor]
   @fields [:role, :content_id, :state_id, :user_id, :guest_user_id]
 
   schema "content_collaboration" do
