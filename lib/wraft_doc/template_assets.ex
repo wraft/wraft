@@ -15,6 +15,8 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.FieldType
+  alias WraftDoc.Document.Frame
+  alias WraftDoc.Document.Frames
   alias WraftDoc.Document.Layout
   alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise
@@ -27,7 +29,7 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDocWeb.TemplateAssetUploader
 
   @required_items ["layout", "theme", "flow", "variant"]
-  @allowed_folders ["theme", "layout", "contract"]
+  @allowed_folders ["theme", "layout", "contract", "frame"]
   @allowed_files ["template.json", "wraft.json"]
   @font_style_name ~w(Regular Italic Bold BoldItalic)
 
@@ -292,6 +294,7 @@ defmodule WraftDoc.TemplateAssets do
         %{
           theme: Map.get(result, :theme),
           flow: Map.get(result, :flow),
+          frame: Map.get(result, :frame),
           layout: Map.get(result, :layout),
           variant: Map.get(result, :content_type),
           data_template: Map.get(result, :data_template)
@@ -316,7 +319,8 @@ defmodule WraftDoc.TemplateAssets do
     build_multi()
     |> add_theme_step(template_map, current_user, downloaded_file, entries)
     |> add_flow_step(template_map, current_user)
-    |> add_layout_step(template_map, current_user, downloaded_file, entries)
+    |> add_frame_step(template_map, current_user, downloaded_file, entries)
+    |> add_layout_step(template_map, current_user, downloaded_file, entries, opts)
     |> add_variant_step(template_map, current_user, opts)
     |> add_data_template_step(template_map, current_user, downloaded_file, opts)
     |> Repo.transaction()
@@ -334,25 +338,51 @@ defmodule WraftDoc.TemplateAssets do
 
   defp add_theme_step(multi, _template_map, _current_user, _downloaded_file, _entries), do: multi
 
-  defp add_flow_step(multi, %{"flow" => flow}, current_user) do
-    Multi.run(multi, :flow, fn _repo, _changes ->
+  defp add_flow_step(multi, %{"flow" => flow}, %{current_org_id: org_id} = current_user) do
+    flow =
       flow
+      |> Map.merge(%{"organisation_id" => org_id})
       |> update_conflicting_name(Flow, current_user)
-      |> then(&Enterprise.create_flow(current_user, &1))
+
+    multi
+    |> Multi.insert(
+      :flow,
+      current_user
+      |> build_assoc(:flows)
+      |> Flow.changeset(flow)
+    )
+    |> Multi.run(:default_flow_states, fn _repo, %{flow: flow} ->
+      current_user
+      |> Enterprise.create_default_states(flow)
+      |> then(&{:ok, &1})
     end)
   end
 
   defp add_flow_step(multi, _template_map, _current_user), do: multi
 
-  defp add_layout_step(multi, %{"layout" => layout}, current_user, downloaded_file, entries) do
-    Multi.run(multi, :layout, fn _repo, _changes ->
+  defp add_layout_step(multi, %{"layout" => layout}, current_user, downloaded_file, entries, opts) do
+    Multi.run(multi, :layout, fn _repo, changes ->
+      frame_id = Keyword.get(opts, :frame_id, nil)
+      frame = Map.get(changes, :frame, nil)
+
       layout
       |> update_conflicting_name(Layout, current_user)
-      |> prepare_layout(downloaded_file, current_user, entries)
+      |> prepare_layout(downloaded_file, current_user, entries, frame_id || (frame && frame.id))
     end)
   end
 
-  defp add_layout_step(multi, _template_map, _current_user, _downloaded_file, _entries), do: multi
+  defp add_layout_step(multi, _template_map, _current_user, _downloaded_file, _entries, _opts),
+    do: multi
+
+  defp add_frame_step(multi, %{"frame" => frame}, current_user, downloaded_file, entries) do
+    Multi.run(multi, :frame, fn _repo, _changes ->
+      frame
+      |> update_conflicting_name(Frame, current_user)
+      |> prepare_frame(downloaded_file, current_user, entries)
+    end)
+  end
+
+  defp add_frame_step(multi, _template_map, _current_user, _downloaded_file, _entries), do: multi
 
   defp add_variant_step(multi, %{"variant" => variant}, current_user, opts) do
     theme_id = Keyword.get(opts, :theme_id, nil)
@@ -529,16 +559,17 @@ defmodule WraftDoc.TemplateAssets do
       ".otf" -> "font/otf"
       ".ttf" -> "font/ttf"
       ".pdf" -> "application/pdf"
+      ".tex" -> "application/x-tex"
       _ -> "application/octet-stream"
     end
   end
 
-  defp prepare_layout(layouts, downloaded_file, current_user, entries) do
+  defp prepare_layout(layouts, downloaded_file, current_user, entries, frame_id) do
     # filter engine name
     engine_id = get_engine(layouts["engine"])
 
     with asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
-         params <- prepare_layout_attrs(layouts, engine_id, asset_id),
+         params <- prepare_layout_attrs(layouts, engine_id, asset_id, frame_id),
          %Engine{} = engine <- Document.get_engine(params["engine_id"]),
          %Layout{} = layout <- Document.create_layout(current_user, engine, params) do
       {:ok, layout}
@@ -551,7 +582,7 @@ defmodule WraftDoc.TemplateAssets do
     |> extract_and_prepare_layout_asset(downloaded_file, current_user)
   end
 
-  defp prepare_layout_attrs(layout, engine_id, asset_id) do
+  defp prepare_layout_attrs(layout, engine_id, asset_id, frame_id) do
     %{
       "name" => layout["name"],
       "meta" => layout["meta"],
@@ -561,7 +592,8 @@ defmodule WraftDoc.TemplateAssets do
       "assets" => asset_id,
       "width" => 40,
       "height" => 40,
-      "unit" => "cm"
+      "unit" => "cm",
+      "frame_id" => frame_id
     }
   end
 
@@ -600,6 +632,68 @@ defmodule WraftDoc.TemplateAssets do
       },
       "creator_id" => current_user.id
     }
+  end
+
+  defp prepare_frame(frame, downloaded_file, current_user, entries) do
+    with {:ok, attrs, content} <-
+           prepare_frame_attrs(frame, current_user, downloaded_file, entries),
+         {:ok, frame} <- Frames.create_frame(current_user, attrs) do
+      frame
+      |> local_frame_path()
+      |> File.write!(content)
+
+      {:ok, frame}
+    end
+  end
+
+  defp prepare_frame_attrs(frame, _current_user, downloaded_file, entries) do
+    with {:ok, entry} <- get_frame_file_entry(entries),
+         {:ok, content} <- extract_file_content(downloaded_file, entry.file_name),
+         {:ok, temp_file_path} <- write_temp_file(content) do
+      frame
+      |> Map.merge(%{
+        "frame_file" => %Plug.Upload{
+          filename: Path.basename(entry.file_name),
+          content_type: get_file_type(entry.file_name),
+          path: temp_file_path
+        }
+      })
+      |> then(&{:ok, &1, content})
+    end
+  end
+
+  defp get_frame_file_entry(entries) do
+    entries
+    |> Enum.filter(fn entry ->
+      entry.file_name =~ ~r/^frame\/.*\.tex$/i
+    end)
+    |> List.first()
+    |> case do
+      nil -> {:error, "frame file entries not found"}
+      entry -> {:ok, entry}
+    end
+  end
+
+  defp local_frame_path(%Frame{name: name, organisation_id: organisation_id}) do
+    :wraft_doc
+    |> :code.priv_dir()
+    |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
+    |> File.exists?()
+    |> case do
+      true ->
+        :wraft_doc
+        |> :code.priv_dir()
+        |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
+
+      false ->
+        slugs_dir =
+          :wraft_doc
+          |> :code.priv_dir()
+          |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
+
+        File.mkdir_p!(slugs_dir)
+        Path.join(slugs_dir, "template.tex")
+    end
   end
 
   defp prepare_content_type(variant, current_user, theme_id, layout_id, flow_id) do
