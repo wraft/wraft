@@ -1151,7 +1151,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            AuthTokens.create_document_invite_token(invited_user, state_id, params) do
       # Just temporarily, ideally to be send via mailer
       Logger.info("Invite token generated for user: #{token}")
-      render(conn, "collaborator.json", collaborator: collaborator)
+      render(conn, "collaborator.json", collaborator: collaborator, token: token)
     end
   end
 
