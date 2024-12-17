@@ -1158,6 +1158,10 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve tests
   @spec get_instance(binary, User.t()) :: Instance.t()
+  def get_instance(<<_::288>> = document_id, %{current_org_id: nil}) do
+    Repo.get(Instance, document_id)
+  end
+
   def get_instance(<<_::288>> = id, %{current_org_id: org_id}) do
     query =
       from(i in Instance,
@@ -1197,6 +1201,10 @@ defmodule WraftDoc.Document do
       ])
       |> get_built_document()
     end
+  end
+
+  def show_instance_guest(document_id) do
+    Repo.get(Instance, document_id)
   end
 
   @doc """
@@ -4000,47 +4008,35 @@ defmodule WraftDoc.Document do
   @doc """
   Add Content Collaborator
   """
-  @spec add_content_collaborator(User.t(), Instance.t(), User.t() | GuestUser.t(), map()) ::
-          {:ok, ContentCollaboration.t()} | {:error, Ecto.Changeset.t()}
+  @spec add_content_collaborator(User.t(), Instance.t(), User.t(), map()) ::
+          ContentCollaboration.t() | {:error, Ecto.Changeset.t()}
   def add_content_collaborator(
         %User{id: invited_by_id},
         %Instance{id: content_id, state_id: state_id},
-        %User{} = user,
+        %User{id: user_id},
         %{
           "role" => role
         }
       ) do
-    insert_content_collaborator(%{
+    %ContentCollaboration{}
+    |> ContentCollaboration.changeset(%{
       content_id: content_id,
+      user_id: user_id,
       invited_by_id: invited_by_id,
-      user_id: user.id,
       state_id: state_id,
       role: role
     })
-  end
+    |> Repo.insert()
+    |> case do
+      {:ok, content_collaboration} ->
+        Repo.preload(content_collaboration, [:user])
 
-  def add_content_collaborator(
-        %User{id: invited_by_id},
-        %Instance{id: content_id, state_id: state_id},
-        %GuestUser{} = user,
-        %{"role" => role}
-      ) do
-    insert_content_collaborator(%{
-      content_id: content_id,
-      invited_by_id: invited_by_id,
-      guest_user_id: user.id,
-      state_id: state_id,
-      role: role
-    })
+      changeset = {:error, _} ->
+        changeset
+    end
   end
 
   def add_content_collaborator(_, _, _), do: {:error, "Invalid email"}
-
-  defp insert_content_collaborator(params) do
-    %ContentCollaboration{}
-    |> ContentCollaboration.changeset(params)
-    |> Repo.insert()
-  end
 
   @doc """
     Get Content Collaboration
@@ -4093,11 +4089,36 @@ defmodule WraftDoc.Document do
   """
   @spec accept_document_access(ContentCollaboration.t()) ::
           {:ok, ContentCollaboration.t()}
-  def accept_document_access(content_collaboration) do
+  def accept_document_access(%{"status" => "pending"} = content_collaboration) do
     content_collaboration
     |> ContentCollaboration.status_update_changeset(%{status: "accepted"})
     |> Repo.update()
   end
+
+  def accept_document_access(%{"status" => "accepted"} = content_collaboration) do
+    {:ok, content_collaboration}
+  end
+
+  def accept_document_access(_), do: {:error, "Invalid status"}
+
+  @doc """
+    Check if user has access to a document
+  """
+  @spec has_access?(User.t(), Ecto.UUID.t()) :: boolean()
+  def has_access?(%User{id: user_id, is_guest: true}, document_id) do
+    ContentCollaboration
+    |> where(
+      [cc],
+      cc.content_id == ^document_id and cc.user_id == ^user_id and cc.status == :accepted
+    )
+    |> Repo.exists?()
+    |> case do
+      true -> true
+      false -> {:error, "Collaborator does not have access to the document"}
+    end
+  end
+
+  def has_access?(%User{is_guest: false}, _), do: {:error, "Invalid user"}
 
   @doc """
     List collabortors for a document.

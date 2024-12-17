@@ -37,6 +37,10 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.CurrentAdmin)
   end
 
+  pipeline :guest_user do
+    plug(WraftDocWeb.Plug.GuestUserCheck)
+  end
+
   pipeline :flags do
     plug(:accepts, ["html"])
     plug(:put_secure_browser_headers)
@@ -126,9 +130,31 @@ defmodule WraftDocWeb.Router do
     end
   end
 
+  # Scope for guest users
+  # scope "/api", WraftDocWeb do
+  #   pipe_through([:api, :guest_user])
+
+  #   scope "/v1/guest", Api.V1, as: :v1 do
+  #     resources("/contents", InstanceController, only: [:show])
+  #   end
+  # end
+
+  scope "/api", WraftDocWeb do
+    pipe_through([:api, :api_auth])
+
+    scope "/v1/guest", Api.V1, as: :v1 do
+      get("/contents/:id", InstanceController, :show)
+    end
+  end
+
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
     pipe_through([:api, :api_auth, :valid_membership, :ex_audit_track, :email_verify])
+
+    # scope "/v1/guest", Api.V1, as: :v1 do
+    #   pipe_through(:guest_user)
+    #   get("/contents/:id", InstanceController, :show)
+    # end
 
     scope "/v1", Api.V1, as: :v1 do
       # Current user details

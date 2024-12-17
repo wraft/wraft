@@ -21,7 +21,6 @@ defmodule WraftDoc.Repo.Migrations.ContentCollaboration do
     end
 
     create(unique_index(:content_collaboration, [:content_id, :user_id, :state_id]))
-    create(unique_index(:content_collaboration, [:content_id, :guest_user_id, :state_id]))
   end
 
   def down do
