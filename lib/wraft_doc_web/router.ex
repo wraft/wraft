@@ -267,29 +267,29 @@ defmodule WraftDocWeb.Router do
       get("/contents/title/search", InstanceController, :search)
       get("/contents/:id/change/:v_id", InstanceController, :change)
       # Share an instance
-      post("/contents/:id/invite", InstanceController, :invite)
+      post("/contents/:id/invite", InstanceGuestController, :invite)
       # Revoke document access
       patch(
         "/contents/:id/revoke_access/:collaborator_id",
-        InstanceController,
+        InstanceGuestController,
         :revoke_document_access
       )
 
       # List collaborators
-      get("/contents/:id/collaborators", InstanceController, :list_collaborators)
+      get("/contents/:id/collaborators", InstanceGuestController, :list_collaborators)
       # Update role for a collaborator
       patch(
         "/contents/:id/collaborators/:collaborator_id",
-        InstanceController,
+        InstanceGuestController,
         :update_collaborator_role
       )
 
       # Add a counterparty
-      post("/contents/:id/add_counterpart", InstanceController, :add_counterparty)
+      post("/contents/:id/add_counterpart", InstanceGuestController, :add_counterparty)
       # Delete counterpart
       delete(
         "/contents/:id/remove_counterparty/:counterparty_id",
-        InstanceController,
+        InstanceGuestController,
         :remove_counterpart
       )
 

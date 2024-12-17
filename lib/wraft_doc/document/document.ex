@@ -7,7 +7,6 @@ defmodule WraftDoc.Document do
   require Logger
 
   alias Ecto.Multi
-  alias WraftDoc.Account.GuestUser
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
   alias WraftDoc.Client.Minio
@@ -4050,15 +4049,6 @@ defmodule WraftDoc.Document do
     |> Repo.one()
   end
 
-  def get_content_collaboration(document_id, %GuestUser{id: user_id}, state_id) do
-    ContentCollaboration
-    |> where(
-      [cc],
-      cc.content_id == ^document_id and cc.guest_user_id == ^user_id and cc.state_id == ^state_id
-    )
-    |> Repo.one()
-  end
-
   def get_content_collaboration(content_collaboration_id),
     do: Repo.get(ContentCollaboration, content_collaboration_id)
 
@@ -4127,7 +4117,7 @@ defmodule WraftDoc.Document do
   def list_collaborators(%Instance{id: content_id, state_id: state_id}) do
     ContentCollaboration
     |> where([cc], cc.content_id == ^content_id and cc.state_id == ^state_id)
-    |> preload([cc], [:user, :guest_user])
+    |> preload([cc], [:user])
     |> Repo.all()
   end
 

@@ -7,7 +7,8 @@ defmodule WraftDoc.Document.CounterParties do
   schema "counter_parties" do
     field(:name, :string)
     belongs_to(:content, WraftDoc.Document.Instance)
-    belongs_to(:guest_user, WraftDoc.Account.GuestUser)
+    # TODO replace it with user schema
+    # belongs_to(:guest_user, WraftDoc.Account.GuestUser)
     timestamps()
   end
 
