@@ -984,26 +984,38 @@ defmodule WraftDoc.Document do
   """
   @spec instance_index_of_an_organisation(User.t(), map) :: map
   def instance_index_of_an_organisation(%{current_org_id: org_id} = current_user, params) do
-    Instance
-    |> join(:inner, [i], ct in ContentType,
-      on: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
-      as: :content_type
-    )
-    |> where([i], ^current_user.id in i.allowed_users)
-    |> where(^instance_index_filter_by_instance_id(params))
-    |> where(^instance_index_filter_by_content_type_name(params))
-    |> where(^instance_index_filter_by_instance_title(params))
-    |> instance_index_filter_by_state(params, org_id)
-    |> where(^instance_index_filter_by_creator(params))
-    |> order_by(^instance_index_sort(params))
-    |> preload([
-      :content_type,
-      :state,
-      :vendor,
-      {:instance_approval_systems, :approver},
-      {:creator, :profile}
-    ])
-    |> Repo.paginate(params)
+    is_superadmin =
+      Enum.any?(current_user.user_roles, fn user_role ->
+        user_role.role == org_id and user_role.role.name == "superadmin"
+      end)
+
+    base_query =
+      Instance
+      |> join(:inner, [i], ct in ContentType,
+        on: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
+        as: :content_type
+      )
+      |> where(^instance_index_filter_by_instance_id(params))
+      |> where(^instance_index_filter_by_content_type_name(params))
+      |> where(^instance_index_filter_by_instance_title(params))
+      |> instance_index_filter_by_state(params, org_id)
+      |> where(^instance_index_filter_by_creator(params))
+      |> order_by(^instance_index_sort(params))
+      |> preload([
+        :content_type,
+        :state,
+        :vendor,
+        {:instance_approval_systems, :approver},
+        {:creator, :profile}
+      ])
+
+    if is_superadmin do
+      Repo.paginate(base_query, params)
+    else
+      base_query
+      |> where([i], ^current_user.id in i.allowed_users)
+      |> Repo.paginate(params)
+    end
   end
 
   def instance_index_of_an_organisation(_, _), do: {:error, :invalid_id}
