@@ -12,11 +12,6 @@ defmodule WraftDoc.Repo.Migrations.ContentCollaboration do
       add(:state_id, references(:state, type: :uuid, column: :id, on_delete: :nilify_all))
       add(:user_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
 
-      add(
-        :guest_user_id,
-        references(:guest_user, type: :uuid, column: :id, on_delete: :nilify_all)
-      )
-
       timestamps()
     end
 
