@@ -529,6 +529,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
       id(:path, :string, "ID of the template asset to build", required: true)
       theme_id(:formData, :string, "ID of the theme to build the template from")
       flow_id(:formData, :string, "ID of the flow to build the template from")
+      frame_id(:formData, :string, "ID of the frame to build the template from")
       layout_id(:formData, :string, "ID of the layout to build the template from")
       content_type_id(:formData, :string, "ID of the content type to build the template from")
     end
@@ -544,7 +545,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, downloaded_zip_binary} <-
-           TemplateAssets.download_zip_from_minio(current_user, template_asset_id),
+           TemplateAssets.download_zip_from_storage(current_user, template_asset_id),
          options <- TemplateAssets.format_opts(params),
          {:ok, result} <-
            TemplateAssets.import_template(current_user, downloaded_zip_binary, options) do
@@ -580,7 +581,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, downloaded_zip_binary} <-
-           TemplateAssets.download_zip_from_minio(current_user, template_asset_id),
+           TemplateAssets.download_zip_from_storage(current_user, template_asset_id),
          {:ok, result} <-
            TemplateAssets.pre_import_template(downloaded_zip_binary) do
       render(conn, "template_pre_import.json", result: result)
@@ -703,7 +704,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, downloaded_zip_binary} <-
-           TemplateAssets.download_zip_from_minio(template_asset_id),
+           TemplateAssets.download_zip_from_storage(template_asset_id),
          options <- TemplateAssets.format_opts(params),
          {:ok, result} <-
            TemplateAssets.import_template(current_user, downloaded_zip_binary, options) do

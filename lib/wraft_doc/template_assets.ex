@@ -25,11 +25,9 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
   alias WraftDoc.TemplateAssets.WraftJson
-  alias WraftDocWeb.TemplateAssetThumbnailUploader
-  alias WraftDocWeb.TemplateAssetUploader
 
-  @required_items ["layout", "theme", "flow", "variant"]
-  @allowed_folders ["theme", "layout", "contract", "frame"]
+  @required_items ["layout", "theme", "flow", "variant", "frame"]
+  @allowed_folders ["theme", "layout", "frame"]
   @allowed_files ["template.json", "wraft.json"]
   @font_style_name ~w(Regular Italic Bold BoldItalic)
 
@@ -158,7 +156,8 @@ defmodule WraftDoc.TemplateAssets do
       Keyword.get(opts, :layout_id),
       Keyword.get(opts, :theme_id),
       Keyword.get(opts, :flow_id),
-      Keyword.get(opts, :content_type_id)
+      Keyword.get(opts, :content_type_id),
+      Keyword.get(opts, :frame_id)
     ]
 
     @required_items
@@ -188,7 +187,7 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec format_opts(map()) :: list()
   def format_opts(params) do
-    Enum.reduce([:theme_id, :flow_id, :layout_id, :content_type_id], [], fn key, acc ->
+    Enum.reduce([:theme_id, :flow_id, :layout_id, :content_type_id, :frame_id], [], fn key, acc ->
       case Map.get(params, Atom.to_string(key)) do
         nil -> acc
         value -> [{key, value} | acc]
@@ -207,6 +206,7 @@ defmodule WraftDoc.TemplateAssets do
       %{
         theme: Map.get(template_map, "theme"),
         layout: Map.get(template_map, "layout"),
+        frame: Map.get(template_map, "frame"),
         flow: Map.get(template_map, "flow"),
         data_template: Map.get(template_map, "data_template"),
         variant: Map.get(template_map, "variant")
@@ -220,10 +220,10 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   @doc """
-  Download zip file from minio as binary.
+  Download zip file from storage as binary.
   """
-  @spec download_zip_from_minio(User.t(), Ecto.UUID.t()) :: {:error, any()} | {:ok, binary()}
-  def download_zip_from_minio(current_user, template_asset_id) do
+  @spec download_zip_from_storage(User.t(), Ecto.UUID.t()) :: {:error, any()} | {:ok, binary()}
+  def download_zip_from_storage(current_user, template_asset_id) do
     with %TemplateAsset{zip_file: zip_file} <-
            get_template_asset(template_asset_id, current_user),
          downloaded_zip_binary <-
@@ -236,7 +236,7 @@ defmodule WraftDoc.TemplateAssets do
     error -> {:error, error.message}
   end
 
-  def download_zip_from_minio(template_asset_id) do
+  def download_zip_from_storage(template_asset_id) do
     with %TemplateAsset{zip_file: zip_file} <-
            get_template_asset(template_asset_id),
          file_name <- get_rootname(zip_file.file_name),
@@ -796,6 +796,16 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
+  defp read_zip_contents(file_path) do
+    case File.read(file_path) do
+      {:ok, binary} ->
+        {:ok, binary}
+
+      _ ->
+        {:error, "Invalid ZIP file."}
+    end
+  end
+
   defp extract_file_content(zip_file_binary, file_name) do
     {:ok, unzip} = Unzip.new(zip_file_binary)
     unzip_stream = Unzip.file_stream!(unzip, file_name)
@@ -825,7 +835,8 @@ defmodule WraftDoc.TemplateAssets do
   defp template_zip_validator(zip_binary, file_entries_in_zip) do
     with true <- validate_zip_entries(file_entries_in_zip),
          {:ok, wraft_json} <- get_wraft_json(zip_binary),
-         true <- validate_wraft_json(wraft_json) do
+         true <- validate_wraft_json(wraft_json),
+         :ok <- validate_wraft_json_folders(file_entries_in_zip, wraft_json) do
       :ok
     else
       {:error, error} ->
@@ -833,13 +844,16 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp read_zip_contents(file_path) do
-    case File.read(file_path) do
-      {:ok, binary} ->
-        {:ok, binary}
+  defp validate_zip_entries(entries) do
+    files_in_zip = extract_files(entries)
+    missing_files = @allowed_files -- files_in_zip
+
+    case missing_files do
+      [] ->
+        true
 
       _ ->
-        {:error, "Invalid ZIP file."}
+        {:error, "Required items not found in this zip file: #{Enum.join(missing_files, ", ")}"}
     end
   end
 
@@ -859,26 +873,40 @@ defmodule WraftDoc.TemplateAssets do
         String.replace(acc, "%{#{key}}", to_string(value))
       end)
     end)
-    |> Enum.map_join("; ", fn {field, messages} ->
-      "#{field}: #{Enum.join(messages, ", ")}"
-    end)
+    |> format_errors()
   end
 
-  defp validate_zip_entries(entries) do
-    files_in_zip = extract_files(entries)
-    missing_files = @allowed_files -- files_in_zip
+  defp format_errors(errors, prefix \\ "") do
+    Enum.map_join(errors, "; ", fn
+      {field, sub_errors} when is_map(sub_errors) ->
+        new_prefix = if prefix == "", do: to_string(field), else: "#{prefix}.#{field}"
+        format_errors(sub_errors, new_prefix)
 
-    case missing_files do
-      [] ->
-        true
-
-      _ ->
-        {:error, "Required items not found in this zip file: #{Enum.join(missing_files, ", ")}"}
-    end
+      {field, messages} ->
+        field_name = if prefix == "", do: to_string(field), else: "#{prefix}.#{field}"
+        "#{field_name}: #{Enum.join(messages, ", ")}"
+    end)
   end
 
   defp extract_files(entries) do
     Enum.filter(entries, &(!String.ends_with?(&1, "/")))
+  end
+
+  defp validate_wraft_json_folders(file_entries, wraft_json) do
+    @required_items
+    |> Enum.filter(fn item ->
+      Map.get(wraft_json, item) != nil and item in @allowed_folders
+    end)
+    |> Enum.reject(fn folder ->
+      Enum.any?(file_entries, &String.starts_with?(&1, "#{folder}/"))
+    end)
+    |> case do
+      [] ->
+        :ok
+
+      missing_folders ->
+        {:error, "Missing required folders for: #{Enum.join(missing_folders, ", ")}"}
+    end
   end
 
   @doc """
@@ -1138,18 +1166,18 @@ defmodule WraftDoc.TemplateAssets do
         name: template_asset.name,
         description: template_asset.description,
         file_name: rootname,
-        file_size: generate_zip_file_size(template_asset),
-        zip_file_url: Path.join(minio_url(), "public/templates/#{rootname}/#{rootname}.zip"),
-        thumbnail_url: Path.join(minio_url(), "public/templates/#{rootname}/thumbnail.png")
+        file_size: template_asset.zip_file_size,
+        zip_file_url: Path.join(storage_url(), "public/templates/#{rootname}/#{rootname}.zip"),
+        thumbnail_url: Path.join(storage_url(), "public/templates/#{rootname}/thumbnail.png")
       }
     end)
     |> then(&{:ok, &1})
   end
 
-  defp minio_url, do: Path.join(System.get_env("MINIO_URL"), System.get_env("MINIO_BUCKET"))
+  defp storage_url, do: Path.join(System.get_env("MINIO_URL"), System.get_env("MINIO_BUCKET"))
 
   @doc """
-  Download template from minio.
+  Download template from storage.
   """
   @spec download_public_template(String.t()) :: {:ok, binary()} | {:error, String.t()}
   def download_public_template(template_name) do
@@ -1157,41 +1185,5 @@ defmodule WraftDoc.TemplateAssets do
     |> then(&"public/templates/#{&1}/#{&1}.zip")
     |> Minio.generate_url()
     |> then(&{:ok, &1})
-  end
-
-  @doc """
-  Retrieves the zip file size from minio.
-  """
-  @spec generate_zip_file_size(TemplateAsset.t()) :: String.t()
-  def generate_zip_file_size(template_asset) do
-    template_asset.organisation_id
-    |> case do
-      nil ->
-        template_asset.zip_file.file_name
-        |> get_rootname()
-        |> then(&"public/templates/#{&1}/#{&1}.zip")
-
-      organisation_id ->
-        "organisations/#{organisation_id}/template_assets/#{template_asset.id}/template_#{template_asset.zip_file.file_name}"
-    end
-    |> Minio.get_file_size()
-  end
-
-  @doc """
-  Generates the zip url for the template asset.
-  """
-  @spec generate_zip_url(TemplateAsset.t()) :: String.t()
-  def generate_zip_url(%{zip_file: zip_file} = template_asset) do
-    template_asset = Map.put(template_asset, :zip_file_name, zip_file.file_name)
-    TemplateAssetUploader.url({zip_file, template_asset})
-  end
-
-  @doc """
-  Generates the thumbnail url for the template asset.
-  """
-  @spec generate_thumbnail_url(TemplateAsset.t()) :: String.t()
-  def generate_thumbnail_url(%{thumbnail: thumbnail, zip_file: zip_file} = template_asset) do
-    template_asset = Map.put(template_asset, :zip_file_name, zip_file.file_name)
-    TemplateAssetThumbnailUploader.url({thumbnail, template_asset})
   end
 end

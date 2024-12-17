@@ -143,30 +143,5 @@ defmodule WraftDoc.Client.Minio do
     end
   end
 
-  @doc """
-  Get the size of the file at given path.
-  """
-  @spec get_file_size(String.t()) :: binary() | nil
-  def get_file_size(file_path) do
-    bucket()
-    |> ExAws.S3.head_object(file_path)
-    |> ExAws.request()
-    |> case do
-      {:ok, %{headers: headers}} ->
-        headers
-        |> List.keyfind("Content-Length", 0)
-        |> case do
-          {"Content-Length", size} ->
-            Sizeable.filesize(size)
-
-          nil ->
-            nil
-        end
-
-      {:error, _reason} ->
-        nil
-    end
-  end
-
   defp bucket, do: System.get_env("MINIO_BUCKET")
 end

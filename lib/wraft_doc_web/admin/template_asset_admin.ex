@@ -2,6 +2,7 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
   @moduledoc """
   Admin panel configuration for managing template assets in Kaffy.
   """
+  use Ecto.Schema
   use Waffle.Ecto.Schema
 
   import Ecto.Query
@@ -16,6 +17,7 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
     [
       name: %{label: "Name", type: :string},
       description: %{label: "Description", type: :string},
+      zip_file_size: %{label: "Zip size", type: :string},
       inserted_at: %{label: "Created At", type: :datetime},
       updated_at: %{label: "Updated At", type: :datetime}
     ]
@@ -46,6 +48,7 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
     %TemplateAsset{}
     |> Map.merge(%{:zip_file_name => zip_file_name})
     |> TemplateAsset.changeset(params)
+    |> TemplateAsset.add_zip_file_size(params)
     |> then(&{:ok, &1})
   end
 
@@ -97,6 +100,13 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
 
       {:error, error_changeset} ->
         {:error, error_changeset}
+    end
+  end
+
+  def after_delete(_conn, %{zip_file: zip_file, thumbnail: nil} = template_asset) do
+    with template_asset <- Map.put(template_asset, :zip_file_name, zip_file.file_name),
+         :ok <- TemplateAssetUploader.delete({zip_file, template_asset}) do
+      {:ok, template_asset}
     end
   end
 
