@@ -137,11 +137,35 @@ defmodule WraftDoc.AuthTokens do
   @doc """
    Create document invite token
   """
-  @spec create_document_invite_token(User.t(), Ecto.UUID.t(), map()) :: {:ok, AuthToken.t()}
+  @spec create_document_invite_token(Ecto.UUID.t(), map()) :: {:ok, AuthToken.t()}
   def create_document_invite_token(
-        %User{} = user,
         state_id,
         %{"email" => email, "role" => role, "id" => document_id}
+      ) do
+    token =
+      WraftDoc.create_phx_token("document_invite", %{
+        email: email,
+        role: role,
+        document_id: document_id,
+        state_id: state_id
+      })
+
+    params = %{value: token, token_type: "document_invite"}
+
+    insert_auth_token!(params)
+  end
+
+  @doc """
+   Create guest access token.
+  """
+  @spec create_guest_access_token(User.t(), Ecto.UUID.t(), String.t(), String.t(), Ecto.UUID.t()) ::
+          {:ok, AuthToken.t()}
+  def create_guest_access_token(
+        %User{} = user,
+        <<_::288>> = state_id,
+        email,
+        role,
+        <<_::288>> = document_id
       ) do
     {:ok, token, _} =
       Guardian.encode_and_sign(

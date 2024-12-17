@@ -97,3 +97,6 @@ dashboard:show,DashBoard,Show
 frame:show,Frame,Show
 frame:manage,Frame,Manage
 frame:delete,Frame,Delete
+instance_guest:show,Instance Guest,Show
+instance_guest:manage,Instance Guest,Manage
+instance_guest:delete,Instance Guest,Delete
