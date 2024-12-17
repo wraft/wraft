@@ -131,13 +131,14 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
-  def render("collaborator.json", %{collaborator: collaborator}) do
+  def render("collaborator.json", %{collaborator: collaborator, token: token}) do
     %{
       id: collaborator.id,
       content_id: collaborator.content_id,
       state_id: collaborator.state_id,
       role: collaborator.role,
       status: collaborator.status,
+      token: token,
       user: render_one(collaborator.user, UserView, "user.json", as: :user)
     }
   end
