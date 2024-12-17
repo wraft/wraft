@@ -11,7 +11,7 @@ defmodule WraftDoc.Account.User do
     field(:encrypted_password, :string)
     field(:password, :string, virtual: true)
     field(:email_verify, :boolean, default: false)
-    field(:guest, :boolean, default: false)
+    field(:is_guest, :boolean, default: false)
     field(:deleted_at, :naive_datetime)
     field(:signed_in_at, :naive_datetime)
     field(:last_signed_in_org, Ecto.UUID)
@@ -130,5 +130,16 @@ defmodule WraftDoc.Account.User do
     user
     |> cast(attrs, [:deleted_at])
     |> validate_required([:deleted_at])
+  end
+
+  def guest_user_changeset(guest_user, attrs \\ %{}) do
+    guest_user
+    |> cast(attrs, [:email, :is_guest, :name, :password])
+    |> validate_required([:email, :is_guest, :name, :password])
+    |> validate_length(:name, min: 2)
+    |> validate_format(:name, ~r/^[A-z ]+$/)
+    |> validate_format(:email, ~r/@/)
+    |> unique_constraint(:email, message: "Email already taken.! Try another email.")
+    |> generate_encrypted_password
   end
 end

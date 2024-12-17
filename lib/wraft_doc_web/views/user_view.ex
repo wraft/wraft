@@ -52,18 +52,10 @@ defmodule WraftDocWeb.Api.V1.UserView do
       id: user.id,
       name: user.name,
       email: user.email,
+      is_guest: user.is_guest,
       email_verify: user.email_verify,
       inserted_at: user.inserted_at,
       updated_at: user.updated_at
-    }
-  end
-
-  def render("guest_user.json", %{guest_user: guest_user}) do
-    %{
-      id: guest_user.id,
-      email: guest_user.email,
-      inserted_at: guest_user.inserted_at,
-      updated_at: guest_user.updated_at
     }
   end
 

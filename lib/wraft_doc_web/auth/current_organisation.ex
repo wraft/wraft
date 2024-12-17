@@ -16,6 +16,16 @@ defmodule WraftDocWeb.CurrentOrganisation do
 
   def init(opts), do: opts
 
+  def call(
+        %Plug.Conn{query_params: %{"type" => "guest"}, assigns: %{current_user: current_user}} =
+          conn,
+        _opts
+      ) do
+    current_user
+    |> Map.merge(%{current_org_id: nil})
+    |> then(&assign(conn, :current_user, &1))
+  end
+
   def call(conn, _opts) do
     %{"organisation_id" => org_id} = current_claims(conn)
 

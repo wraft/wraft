@@ -46,7 +46,13 @@ defmodule WraftDocWeb.Plug.AddActionLog do
     actor_agent = conn |> get_req_header("user-agent") |> List.first()
     action = Atom.to_string(conn.private.phoenix_action)
     params = change_structs_to_maps(params)
-    organisation = Repo.get(Organisation, user.current_org_id)
+
+    organisation =
+      if user.current_org_id do
+        Repo.get(Organisation, user.current_org_id)
+      else
+        nil
+      end
 
     %{
       actor: Map.put(user, :organisation, organisation),

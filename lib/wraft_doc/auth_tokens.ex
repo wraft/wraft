@@ -13,6 +13,7 @@ defmodule WraftDoc.AuthTokens do
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Endpoint
+  alias WraftDocWeb.Guardian
 
   @base_googe_auth_url "https://www.googleapis.com/oauth2/v3/tokeninfo?id_token="
 
@@ -136,22 +137,24 @@ defmodule WraftDoc.AuthTokens do
   @doc """
    Create document invite token
   """
-  @spec create_document_invite_token(Ecto.UUID.t(), map()) :: {:ok, AuthToken.t()}
+  @spec create_document_invite_token(User.t(), Ecto.UUID.t(), map()) :: {:ok, AuthToken.t()}
   def create_document_invite_token(
+        %User{} = user,
         state_id,
         %{"email" => email, "role" => role, "id" => document_id}
       ) do
-    token =
-      WraftDoc.create_phx_token("document_invite", %{
-        email: email,
-        role: role,
-        document_id: document_id,
-        state_id: state_id
-      })
+    {:ok, token, _} =
+      Guardian.encode_and_sign(
+        user,
+        %{email: email, role: role, document_id: document_id, state_id: state_id},
+        token_type: "access",
+        ttl: nil
+      )
 
     params = %{value: token, token_type: "document_invite"}
+    auth_token = insert_auth_token!(user, params)
 
-    insert_auth_token!(params)
+    {:ok, auth_token}
   end
 
   @doc """
