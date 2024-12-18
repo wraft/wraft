@@ -3,14 +3,13 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestView do
 
   alias WraftDocWeb.Api.V1.UserView
 
-  def render("collaborator.json", %{collaborator: collaborator, token: token}) do
+  def render("collaborator.json", %{collaborator: collaborator}) do
     %{
       id: collaborator.id,
       content_id: collaborator.content_id,
       state_id: collaborator.state_id,
       role: collaborator.role,
       status: collaborator.status,
-      token: token,
       user: render_one(collaborator.user, UserView, "user.json", as: :user)
     }
   end
@@ -18,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestView do
   def render("collaborators.json", %{collaborators: collaborators}) do
     %{
       collaborators:
-        render_many(collaborators, InstanceView, "collaborator.json", as: :collaborator)
+        render_many(collaborators, __MODULE__, "collaborator.json", as: :collaborator)
     }
   end
 

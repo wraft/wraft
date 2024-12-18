@@ -201,7 +201,7 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
            AuthTokens.create_document_invite_token(state_id, params) do
       # Just temporarily, ideally to be send via mailer
       Logger.info("Invite token generated for user: #{token}")
-      render(conn, "collaborator.json", collaborator: collaborator, token: token)
+      render(conn, "collaborator.json", collaborator: collaborator)
     end
   end
 
@@ -224,17 +224,17 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   end
 
   @spec verify_document_access(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def verify_document_access(conn, %{"token" => token, "id" => document_id}) do
+  def verify_document_access(conn, %{"token" => invite_token, "id" => document_id}) do
     with {:ok, %{email: email, document_id: ^document_id, state_id: state_id, role: role}} <-
-           AuthTokens.check_token(token, :document_invite),
+           AuthTokens.check_token(invite_token, :document_invite),
          %User{} = invited_user <- Account.get_user_by_email(email),
          %ContentCollaboration{} = content_collaboration <-
            Document.get_content_collaboration(document_id, invited_user, state_id),
          {:ok, %ContentCollaboration{}} <-
            Document.accept_document_access(content_collaboration),
-         {:ok, %AuthToken{value: token}} <-
+         {:ok, %AuthToken{value: guest_access_token}} <-
            AuthTokens.create_guest_access_token(invited_user, state_id, email, role, document_id) do
-      render(conn, "verify_collaborator.json", user: invited_user, token: token)
+      render(conn, "verify_collaborator.json", user: invited_user, token: guest_access_token)
     end
   end
 

@@ -4067,7 +4067,7 @@ defmodule WraftDoc.Document do
     |> Repo.update()
     |> case do
       {:ok, collaborator} ->
-        Repo.preload(collaborator, [:user, :guest_user])
+        Repo.preload(collaborator, [:user])
 
       {:error, changeset} ->
         {:error, changeset}
@@ -4079,13 +4079,13 @@ defmodule WraftDoc.Document do
   """
   @spec accept_document_access(ContentCollaboration.t()) ::
           {:ok, ContentCollaboration.t()}
-  def accept_document_access(%{"status" => "pending"} = content_collaboration) do
+  def accept_document_access(%{status: :pending} = content_collaboration) do
     content_collaboration
     |> ContentCollaboration.status_update_changeset(%{status: "accepted"})
     |> Repo.update()
   end
 
-  def accept_document_access(%{"status" => "accepted"} = content_collaboration) do
+  def accept_document_access(%{status: :accepted} = content_collaboration) do
     {:ok, content_collaboration}
   end
 

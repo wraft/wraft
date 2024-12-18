@@ -6,10 +6,11 @@ defmodule WraftDoc.Document.ContentCollaboration do
 
   @roles [:suggestor, :viewer, :editor]
   @fields [:role, :content_id, :state_id, :user_id, :invited_by_id]
+  @statuses [:pending, :accepted, :revoked]
 
   schema "content_collaboration" do
     field(:role, Ecto.Enum, values: @roles)
-    field(:status, Ecto.Enum, values: [:pending, :accepted, :revoked], default: :pending)
+    field(:status, Ecto.Enum, values: @statuses, default: :pending)
     field(:revoked_at, :utc_datetime)
     belongs_to(:content, WraftDoc.Document.Instance)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)

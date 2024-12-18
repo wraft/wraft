@@ -99,6 +99,15 @@ defmodule WraftDocWeb.Router do
         resources("/plans", PlanController, only: [:show, :index])
       end
 
+      # Verify access to a document instance
+      get(
+        "/guest/contents/:id/verify_access/:token",
+        InstanceGuestController,
+        :verify_document_access
+      )
+
+      # Show and index plans
+      resources("/plans", PlanController, only: [:show, :index])
       # Verify invite token
       get(
         "/organisations/verify_invite_token/:token",
