@@ -984,10 +984,9 @@ defmodule WraftDoc.Document do
   """
   @spec instance_index_of_an_organisation(User.t(), map) :: map
   def instance_index_of_an_organisation(%{current_org_id: org_id} = current_user, params) do
-    is_superadmin =
-      Enum.any?(current_user.user_roles, fn user_role ->
-        user_role.role == org_id and user_role.role.name == "superadmin"
-      end)
+    role_names = current_user.role_names
+
+    is_superadmin = "superadmin" in role_names
 
     base_query =
       Instance
