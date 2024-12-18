@@ -86,7 +86,12 @@ defmodule WraftDocWeb.Router do
       # Verify Email Verification Token
       get("/user/verify_email_token/:token", UserController, :verify_email_token)
       # Verify access to a document instance
-      get("/contents/:id/verify_access/:token", InstanceGuestController, :verify_document_access)
+      get(
+        "/guest/contents/:id/verify_access/:token",
+        InstanceGuestController,
+        :verify_document_access
+      )
+
       # Show and index plans
       resources("/plans", PlanController, only: [:show, :index])
       # Verify invite token
