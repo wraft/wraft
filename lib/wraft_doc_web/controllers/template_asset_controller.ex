@@ -689,6 +689,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     parameters do
       id(:path, :string, "ID of the template asset to build", required: true)
       theme_id(:formData, :string, "ID of the theme to build the template from")
+      frame_id(:formData, :string, "ID of the frame to build the template from")
       flow_id(:formData, :string, "ID of the flow to build the template from")
       layout_id(:formData, :string, "ID of the layout to build the template from")
       content_type_id(:formData, :string, "ID of the content type to build the template from")

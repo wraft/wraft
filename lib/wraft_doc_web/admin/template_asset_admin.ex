@@ -17,8 +17,8 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
     [
       name: %{label: "Name", type: :string},
       description: %{label: "Description", type: :string},
-      zip_file_size: %{label: "Zip size", type: :string},
-      inserted_at: %{label: "Created At", type: :datetime},
+      zip_file_size: %{name: "Zip size", type: :string},
+      inserted_at: %{name: "Created At", type: :datetime},
       updated_at: %{label: "Updated At", type: :datetime}
     ]
   end

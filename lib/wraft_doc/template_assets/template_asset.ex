@@ -11,7 +11,6 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
     field(:name, :string)
     field(:description, :string)
     field(:zip_file, WraftDocWeb.TemplateAssetUploader.Type)
-    # check need of virtual
     field(:zip_file_size, :string)
     field(:thumbnail, WraftDocWeb.TemplateAssetThumbnailUploader.Type)
     field(:wraft_json, :map)

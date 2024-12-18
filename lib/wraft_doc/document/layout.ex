@@ -46,6 +46,7 @@ defmodule WraftDoc.Document.Layout do
       :organisation_id,
       :engine_id
     ])
+    |> foreign_key_constraint(:frame_id, message: "Please enter an existing frame")
     |> unique_constraint(:name,
       message: "Layout with the same name exists. Use another name.!",
       name: :layout_organisation_unique_index
