@@ -8,6 +8,7 @@ defmodule WraftDoc.TemplateAssets.WraftJson do
 
   alias WraftDoc.TemplateAssets.DataTemplate
   alias WraftDoc.TemplateAssets.Flow
+  alias WraftDoc.TemplateAssets.Frame
   alias WraftDoc.TemplateAssets.Layout
   alias WraftDoc.TemplateAssets.Theme
   alias WraftDoc.TemplateAssets.Variant
@@ -15,6 +16,7 @@ defmodule WraftDoc.TemplateAssets.WraftJson do
   schema "wraft_json" do
     embeds_one(:theme, Theme)
     embeds_one(:layout, Layout)
+    embeds_one(:frame, Frame)
     embeds_one(:flow, Flow)
     embeds_one(:variant, Variant)
     embeds_one(:data_template, DataTemplate)
@@ -23,11 +25,12 @@ defmodule WraftDoc.TemplateAssets.WraftJson do
   def changeset(struct, params) do
     struct
     |> cast(params, [])
-    |> cast_embed(:theme)
-    |> cast_embed(:layout)
-    |> cast_embed(:flow)
-    |> cast_embed(:variant)
-    |> cast_embed(:data_template)
+    |> cast_embed(:theme, with: &Theme.changeset/2, required: false)
+    |> cast_embed(:layout, with: &Layout.changeset/2, required: false)
+    |> cast_embed(:frame, with: &Frame.changeset/2, required: false)
+    |> cast_embed(:flow, with: &Flow.changeset/2, required: false)
+    |> cast_embed(:variant, with: &Variant.changeset/2, required: false)
+    |> cast_embed(:data_template, with: &DataTemplate.changeset/2, required: false)
   end
 end
 
@@ -173,6 +176,27 @@ end
 defmodule WraftDoc.TemplateAssets.Flow do
   @moduledoc """
   Schema for Flow in wraft_json
+  """
+
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @required_fields [:name]
+
+  embedded_schema do
+    field(:name, :string)
+  end
+
+  def changeset(struct, params) do
+    struct
+    |> cast(params, @required_fields)
+    |> validate_required(@required_fields)
+  end
+end
+
+defmodule WraftDoc.TemplateAssets.Frame do
+  @moduledoc """
+  Schema for frame in wraft_json
   """
 
   use Ecto.Schema

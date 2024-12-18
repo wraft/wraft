@@ -4,7 +4,7 @@ defmodule WraftDocWeb.TemplateAssetUploader do
   use Waffle.Definition
   use Waffle.Ecto.Definition
 
-  @max_file_size 5 * 1024 * 1024
+  @max_file_size 1 * 1024 * 1024
   @versions [:original]
   @extension_whitelist ~w(.zip)
 

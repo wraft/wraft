@@ -24,6 +24,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType
+  alias WraftDoc.Document.Frame
   alias WraftDoc.Document.Instance
   alias WraftDoc.Document.Instance.History
   alias WraftDoc.Document.Instance.Version
@@ -1814,7 +1815,7 @@ defmodule WraftDoc.Document do
     content =
       prepare_markdown(
         instance,
-        Repo.preload(layout, [:organisation]),
+        Repo.preload(layout, [:organisation, :frame]),
         header,
         base_content_dir,
         theme,
@@ -1834,32 +1835,34 @@ defmodule WraftDoc.Document do
   defp download_slug_file(%Layout{frame: nil, slug: slug}),
     do: :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
 
-  defp download_slug_file(%Layout{frame: frame, organisation_id: organisation_id}) do
+  defp download_slug_file(%Layout{
+         frame: %Frame{id: frame_id, name: name},
+         organisation_id: organisation_id
+       }) do
     :wraft_doc
     |> :code.priv_dir()
-    |> Path.join("slugs/organisation/#{organisation_id}/#{frame.name}/.")
+    |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
     |> File.exists?()
     |> case do
       true ->
         :wraft_doc
         |> :code.priv_dir()
-        |> Path.join("slugs/organisation/#{organisation_id}/#{frame.name}/.")
+        |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
 
       false ->
-        slug_file_binary =
-          frame
-          |> then(&"organisations/#{&1.organisation_id}/frames/#{&1.id}")
-          |> Minio.download()
-
         slugs_dir =
           :wraft_doc
           |> :code.priv_dir()
-          |> Path.join("slugs/organisation/#{organisation_id}/#{frame.name}/.")
+          |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
 
         File.mkdir_p!(slugs_dir)
 
         template_path = Path.join(slugs_dir, "template.tex")
-        File.write!(template_path, slug_file_binary)
+
+        "organisations/#{organisation_id}/frames/#{frame_id}"
+        |> Minio.download()
+        |> then(&File.write!(template_path, &1))
+
         slugs_dir
     end
   end

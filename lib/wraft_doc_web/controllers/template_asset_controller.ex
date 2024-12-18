@@ -137,11 +137,20 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
               items: %Schema{
                 type: :object,
                 properties: %{
+                  id: %Schema{type: :string, description: "Template asset id"},
+                  name: %Schema{type: :string, description: "Template asset name"},
+                  description: %Schema{
+                    type: :string,
+                    description: "Template asset description"
+                  },
                   file_name: %Schema{type: :string, description: "The name of the file"},
-                  path: %Schema{type: :string, description: "The full path to the file"},
+                  zip_file_url: %Schema{
+                    type: :string,
+                    description: "URL of the zip file in the template asset"
+                  },
                   thumbnail_url: %Schema{
                     type: :string,
-                    description: "Signed URL of the thumbnail image of the template asset"
+                    description: "URL of the thumbnail image of the template asset"
                   }
                 }
               }
@@ -151,16 +160,26 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
           example(%{
             templates: [
               %{
+                id: "53d2de6d-e0ad-4c5a-a302-6af54fa36920",
+                name: "Contract",
+                description: "description",
                 file_name: "contract",
-                path: "public/templates/contract.zip",
+                file_size: "94.38 KB",
                 thumbnail_url:
-                  "http://minio.example.com/wraft/public/templates/contract-template/thumbnail.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20241208%2Flocal%2Fs3%2Faws4_request&X-Amz-Date=20241208T150056Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Signature=..."
+                  "http://minio.example.com/wraft/public/templates/contract-template/thumbnail.png",
+                zip_file_url:
+                  "http://minio.example.com/wraft/public/templates/contract-template/zip_file.zip"
               },
               %{
-                file_name: "nda",
-                path: "public/templates/nda.zip",
+                id: "53d2de6d-e0ad-4c5a-a302-6af54fa36920",
+                name: "Contract",
+                description: "description",
+                file_name: "contract",
+                file_size: "94.38 KB",
                 thumbnail_url:
-                  "http://127.0.0.1:9000/wraft/public/templates/nda/thumbnail.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20241208%2Flocal%2Fs3%2Faws4_request&X-Amz-Date=20241208T150056Z&X-Amz-Expires=300&X-Amz-SignedHeaders=host&X-Amz-Signature=..."
+                  "http://minio.example.com/wraft/public/templates/contract-template/thumbnail.png",
+                zip_file_url:
+                  "http://minio.example.com/wraft/public/templates/contract-template/zip_file.zip"
               }
             ]
           })
@@ -510,6 +529,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
       id(:path, :string, "ID of the template asset to build", required: true)
       theme_id(:formData, :string, "ID of the theme to build the template from")
       flow_id(:formData, :string, "ID of the flow to build the template from")
+      frame_id(:formData, :string, "ID of the frame to build the template from")
       layout_id(:formData, :string, "ID of the layout to build the template from")
       content_type_id(:formData, :string, "ID of the content type to build the template from")
     end
@@ -525,7 +545,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, downloaded_zip_binary} <-
-           TemplateAssets.download_zip_from_minio(current_user, template_asset_id),
+           TemplateAssets.download_zip_from_storage(current_user, template_asset_id),
          options <- TemplateAssets.format_opts(params),
          {:ok, result} <-
            TemplateAssets.import_template(current_user, downloaded_zip_binary, options) do
@@ -561,7 +581,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, downloaded_zip_binary} <-
-           TemplateAssets.download_zip_from_minio(current_user, template_asset_id),
+           TemplateAssets.download_zip_from_storage(current_user, template_asset_id),
          {:ok, result} <-
            TemplateAssets.pre_import_template(downloaded_zip_binary) do
       render(conn, "template_pre_import.json", result: result)
@@ -628,7 +648,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   end
 
   def list_public_templates(conn, _params) do
-    with {:ok, template_list} <- TemplateAssets.list_public_templates() do
+    with {:ok, template_list} <- TemplateAssets.public_template_asset_index() do
       render(conn, "list_public_templates.json", %{templates: template_list})
     end
   end
@@ -649,6 +669,47 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   def download_public_template(conn, %{"file_name" => template_name}) do
     with {:ok, template_url} <- TemplateAssets.download_public_template(template_name) do
       render(conn, "download_public_template.json", %{template_url: template_url})
+    end
+  end
+
+  @doc """
+  Builds a template from an existing template asset.
+  """
+  swagger_path :import_public_template do
+    post("/template_assets/public/{id}/install")
+    summary("Import template from public template asset")
+
+    description(
+      "Import a data template from a public template asset to be used for document creation or further customization."
+    )
+
+    operation_id("build_template")
+    consumes("application/json")
+
+    parameters do
+      id(:path, :string, "ID of the template asset to build", required: true)
+      theme_id(:formData, :string, "ID of the theme to build the template from")
+      frame_id(:formData, :string, "ID of the frame to build the template from")
+      flow_id(:formData, :string, "ID of the flow to build the template from")
+      layout_id(:formData, :string, "ID of the layout to build the template from")
+      content_type_id(:formData, :string, "ID of the content type to build the template from")
+    end
+
+    response(200, "Ok", Schema.ref(:TemplateImport))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  def import_public_template(conn, %{"id" => template_asset_id} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with {:ok, downloaded_zip_binary} <-
+           TemplateAssets.download_zip_from_storage(template_asset_id),
+         options <- TemplateAssets.format_opts(params),
+         {:ok, result} <-
+           TemplateAssets.import_template(current_user, downloaded_zip_binary, options) do
+      render(conn, "show_template.json", result: result)
     end
   end
 end

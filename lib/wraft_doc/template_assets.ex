@@ -15,6 +15,8 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.FieldType
+  alias WraftDoc.Document.Frame
+  alias WraftDoc.Document.Frames
   alias WraftDoc.Document.Layout
   alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise
@@ -24,8 +26,8 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.TemplateAssets.TemplateAsset
   alias WraftDoc.TemplateAssets.WraftJson
 
-  @required_items ["layout", "theme", "flow", "variant"]
-  @allowed_folders ["theme", "layout", "contract"]
+  @required_items ["layout", "theme", "flow", "variant", "frame"]
+  @allowed_folders ["theme", "layout", "frame"]
   @allowed_files ["template.json", "wraft.json"]
   @font_style_name ~w(Regular Italic Bold BoldItalic)
 
@@ -92,6 +94,13 @@ defmodule WraftDoc.TemplateAssets do
   def get_template_asset(<<_::288>> = id, %{current_org_id: org_id}),
     do: Repo.get_by(TemplateAsset, id: id, organisation_id: org_id)
 
+  def get_template_asset(_, _), do: {:error, :fake}
+
+  def get_template_asset(<<_::288>> = id),
+    do: Repo.get_by(TemplateAsset, id: id)
+
+  def get_template_asset(_), do: {:error, :fake}
+
   @doc """
   Update a template asset.
   """
@@ -147,7 +156,8 @@ defmodule WraftDoc.TemplateAssets do
       Keyword.get(opts, :layout_id),
       Keyword.get(opts, :theme_id),
       Keyword.get(opts, :flow_id),
-      Keyword.get(opts, :content_type_id)
+      Keyword.get(opts, :content_type_id),
+      Keyword.get(opts, :frame_id)
     ]
 
     @required_items
@@ -177,7 +187,7 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec format_opts(map()) :: list()
   def format_opts(params) do
-    Enum.reduce([:theme_id, :flow_id, :layout_id, :content_type_id], [], fn key, acc ->
+    Enum.reduce([:theme_id, :flow_id, :layout_id, :content_type_id, :frame_id], [], fn key, acc ->
       case Map.get(params, Atom.to_string(key)) do
         nil -> acc
         value -> [{key, value} | acc]
@@ -196,6 +206,7 @@ defmodule WraftDoc.TemplateAssets do
       %{
         theme: Map.get(template_map, "theme"),
         layout: Map.get(template_map, "layout"),
+        frame: Map.get(template_map, "frame"),
         flow: Map.get(template_map, "flow"),
         data_template: Map.get(template_map, "data_template"),
         variant: Map.get(template_map, "variant")
@@ -209,18 +220,30 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   @doc """
-  Download zip file from minio as binary.
+  Download zip file from storage as binary.
   """
-  @spec download_zip_from_minio(User.t(), Ecto.UUID.t()) :: {:error, any()} | {:ok, binary()}
-  def download_zip_from_minio(current_user, template_asset_id) do
-    %{zip_file: zip_file} = get_template_asset(template_asset_id, current_user)
+  @spec download_zip_from_storage(User.t(), Ecto.UUID.t()) :: {:error, any()} | {:ok, binary()}
+  def download_zip_from_storage(current_user, template_asset_id) do
+    with %TemplateAsset{zip_file: zip_file} <-
+           get_template_asset(template_asset_id, current_user),
+         downloaded_zip_binary <-
+           Minio.get_object(
+             "organisations/#{current_user.current_org_id}/template_assets/#{template_asset_id}/template_#{zip_file.file_name}"
+           ) do
+      {:ok, downloaded_zip_binary}
+    end
+  rescue
+    error -> {:error, error.message}
+  end
 
-    downloaded_zip_binary =
-      Minio.get_object(
-        "organisations/#{current_user.current_org_id}/template_assets/#{template_asset_id}/template_#{zip_file.file_name}"
-      )
-
-    {:ok, downloaded_zip_binary}
+  def download_zip_from_storage(template_asset_id) do
+    with %TemplateAsset{zip_file: zip_file} <-
+           get_template_asset(template_asset_id),
+         file_name <- get_rootname(zip_file.file_name),
+         downloaded_zip_binary <-
+           Minio.get_object("public/templates/#{file_name}/#{file_name}.zip") do
+      {:ok, downloaded_zip_binary}
+    end
   rescue
     error -> {:error, error.message}
   end
@@ -271,6 +294,7 @@ defmodule WraftDoc.TemplateAssets do
         %{
           theme: Map.get(result, :theme),
           flow: Map.get(result, :flow),
+          frame: Map.get(result, :frame),
           layout: Map.get(result, :layout),
           variant: Map.get(result, :content_type),
           data_template: Map.get(result, :data_template)
@@ -295,7 +319,8 @@ defmodule WraftDoc.TemplateAssets do
     build_multi()
     |> add_theme_step(template_map, current_user, downloaded_file, entries)
     |> add_flow_step(template_map, current_user)
-    |> add_layout_step(template_map, current_user, downloaded_file, entries)
+    |> add_frame_step(template_map, current_user, downloaded_file, entries)
+    |> add_layout_step(template_map, current_user, downloaded_file, entries, opts)
     |> add_variant_step(template_map, current_user, opts)
     |> add_data_template_step(template_map, current_user, downloaded_file, opts)
     |> Repo.transaction()
@@ -313,25 +338,51 @@ defmodule WraftDoc.TemplateAssets do
 
   defp add_theme_step(multi, _template_map, _current_user, _downloaded_file, _entries), do: multi
 
-  defp add_flow_step(multi, %{"flow" => flow}, current_user) do
-    Multi.run(multi, :flow, fn _repo, _changes ->
+  defp add_flow_step(multi, %{"flow" => flow}, %{current_org_id: org_id} = current_user) do
+    flow =
       flow
+      |> Map.merge(%{"organisation_id" => org_id})
       |> update_conflicting_name(Flow, current_user)
-      |> then(&Enterprise.create_flow(current_user, &1))
+
+    multi
+    |> Multi.insert(
+      :flow,
+      current_user
+      |> build_assoc(:flows)
+      |> Flow.changeset(flow)
+    )
+    |> Multi.run(:default_flow_states, fn _repo, %{flow: flow} ->
+      current_user
+      |> Enterprise.create_default_states(flow)
+      |> then(&{:ok, &1})
     end)
   end
 
   defp add_flow_step(multi, _template_map, _current_user), do: multi
 
-  defp add_layout_step(multi, %{"layout" => layout}, current_user, downloaded_file, entries) do
-    Multi.run(multi, :layout, fn _repo, _changes ->
+  defp add_layout_step(multi, %{"layout" => layout}, current_user, downloaded_file, entries, opts) do
+    Multi.run(multi, :layout, fn _repo, changes ->
+      frame_id = Keyword.get(opts, :frame_id, nil)
+      frame = Map.get(changes, :frame, nil)
+
       layout
       |> update_conflicting_name(Layout, current_user)
-      |> prepare_layout(downloaded_file, current_user, entries)
+      |> prepare_layout(downloaded_file, current_user, entries, frame_id || (frame && frame.id))
     end)
   end
 
-  defp add_layout_step(multi, _template_map, _current_user, _downloaded_file, _entries), do: multi
+  defp add_layout_step(multi, _template_map, _current_user, _downloaded_file, _entries, _opts),
+    do: multi
+
+  defp add_frame_step(multi, %{"frame" => frame}, current_user, downloaded_file, entries) do
+    Multi.run(multi, :frame, fn _repo, _changes ->
+      frame
+      |> update_conflicting_name(Frame, current_user)
+      |> prepare_frame(downloaded_file, current_user, entries)
+    end)
+  end
+
+  defp add_frame_step(multi, _template_map, _current_user, _downloaded_file, _entries), do: multi
 
   defp add_variant_step(multi, %{"variant" => variant}, current_user, opts) do
     theme_id = Keyword.get(opts, :theme_id, nil)
@@ -508,16 +559,17 @@ defmodule WraftDoc.TemplateAssets do
       ".otf" -> "font/otf"
       ".ttf" -> "font/ttf"
       ".pdf" -> "application/pdf"
+      ".tex" -> "application/x-tex"
       _ -> "application/octet-stream"
     end
   end
 
-  defp prepare_layout(layouts, downloaded_file, current_user, entries) do
+  defp prepare_layout(layouts, downloaded_file, current_user, entries, frame_id) do
     # filter engine name
     engine_id = get_engine(layouts["engine"])
 
     with asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
-         params <- prepare_layout_attrs(layouts, engine_id, asset_id),
+         params <- prepare_layout_attrs(layouts, engine_id, asset_id, frame_id),
          %Engine{} = engine <- Document.get_engine(params["engine_id"]),
          %Layout{} = layout <- Document.create_layout(current_user, engine, params) do
       {:ok, layout}
@@ -530,7 +582,7 @@ defmodule WraftDoc.TemplateAssets do
     |> extract_and_prepare_layout_asset(downloaded_file, current_user)
   end
 
-  defp prepare_layout_attrs(layout, engine_id, asset_id) do
+  defp prepare_layout_attrs(layout, engine_id, asset_id, frame_id) do
     %{
       "name" => layout["name"],
       "meta" => layout["meta"],
@@ -540,7 +592,8 @@ defmodule WraftDoc.TemplateAssets do
       "assets" => asset_id,
       "width" => 40,
       "height" => 40,
-      "unit" => "cm"
+      "unit" => "cm",
+      "frame_id" => frame_id
     }
   end
 
@@ -579,6 +632,68 @@ defmodule WraftDoc.TemplateAssets do
       },
       "creator_id" => current_user.id
     }
+  end
+
+  defp prepare_frame(frame, downloaded_file, current_user, entries) do
+    with {:ok, attrs, content} <-
+           prepare_frame_attrs(frame, current_user, downloaded_file, entries),
+         {:ok, frame} <- Frames.create_frame(current_user, attrs) do
+      frame
+      |> local_frame_path()
+      |> File.write!(content)
+
+      {:ok, frame}
+    end
+  end
+
+  defp prepare_frame_attrs(frame, _current_user, downloaded_file, entries) do
+    with {:ok, entry} <- get_frame_file_entry(entries),
+         {:ok, content} <- extract_file_content(downloaded_file, entry.file_name),
+         {:ok, temp_file_path} <- write_temp_file(content) do
+      frame
+      |> Map.merge(%{
+        "frame_file" => %Plug.Upload{
+          filename: Path.basename(entry.file_name),
+          content_type: get_file_type(entry.file_name),
+          path: temp_file_path
+        }
+      })
+      |> then(&{:ok, &1, content})
+    end
+  end
+
+  defp get_frame_file_entry(entries) do
+    entries
+    |> Enum.filter(fn entry ->
+      entry.file_name =~ ~r/^frame\/.*\.tex$/i
+    end)
+    |> List.first()
+    |> case do
+      nil -> {:error, "frame file entries not found"}
+      entry -> {:ok, entry}
+    end
+  end
+
+  defp local_frame_path(%Frame{name: name, organisation_id: organisation_id}) do
+    :wraft_doc
+    |> :code.priv_dir()
+    |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
+    |> File.exists?()
+    |> case do
+      true ->
+        :wraft_doc
+        |> :code.priv_dir()
+        |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
+
+      false ->
+        slugs_dir =
+          :wraft_doc
+          |> :code.priv_dir()
+          |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
+
+        File.mkdir_p!(slugs_dir)
+        Path.join(slugs_dir, "template.tex")
+    end
   end
 
   defp prepare_content_type(variant, current_user, theme_id, layout_id, flow_id) do
@@ -681,6 +796,16 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
+  defp read_zip_contents(file_path) do
+    case File.read(file_path) do
+      {:ok, binary} ->
+        {:ok, binary}
+
+      _ ->
+        {:error, "Invalid ZIP file."}
+    end
+  end
+
   defp extract_file_content(zip_file_binary, file_name) do
     {:ok, unzip} = Unzip.new(zip_file_binary)
     unzip_stream = Unzip.file_stream!(unzip, file_name)
@@ -710,7 +835,8 @@ defmodule WraftDoc.TemplateAssets do
   defp template_zip_validator(zip_binary, file_entries_in_zip) do
     with true <- validate_zip_entries(file_entries_in_zip),
          {:ok, wraft_json} <- get_wraft_json(zip_binary),
-         true <- validate_wraft_json(wraft_json) do
+         true <- validate_wraft_json(wraft_json),
+         :ok <- validate_wraft_json_folders(file_entries_in_zip, wraft_json) do
       :ok
     else
       {:error, error} ->
@@ -718,13 +844,16 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp read_zip_contents(file_path) do
-    case File.read(file_path) do
-      {:ok, binary} ->
-        {:ok, binary}
+  defp validate_zip_entries(entries) do
+    files_in_zip = extract_files(entries)
+    missing_files = @allowed_files -- files_in_zip
+
+    case missing_files do
+      [] ->
+        true
 
       _ ->
-        {:error, "Invalid ZIP file."}
+        {:error, "Required items not found in this zip file: #{Enum.join(missing_files, ", ")}"}
     end
   end
 
@@ -744,26 +873,40 @@ defmodule WraftDoc.TemplateAssets do
         String.replace(acc, "%{#{key}}", to_string(value))
       end)
     end)
-    |> Enum.map_join("; ", fn {field, messages} ->
-      "#{field}: #{Enum.join(messages, ", ")}"
-    end)
+    |> format_errors()
   end
 
-  defp validate_zip_entries(entries) do
-    files_in_zip = extract_files(entries)
-    missing_files = @allowed_files -- files_in_zip
+  defp format_errors(errors, prefix \\ "") do
+    Enum.map_join(errors, "; ", fn
+      {field, sub_errors} when is_map(sub_errors) ->
+        new_prefix = if prefix == "", do: to_string(field), else: "#{prefix}.#{field}"
+        format_errors(sub_errors, new_prefix)
 
-    case missing_files do
-      [] ->
-        true
-
-      _ ->
-        {:error, "Required items not found in this zip file: #{Enum.join(missing_files, ", ")}"}
-    end
+      {field, messages} ->
+        field_name = if prefix == "", do: to_string(field), else: "#{prefix}.#{field}"
+        "#{field_name}: #{Enum.join(messages, ", ")}"
+    end)
   end
 
   defp extract_files(entries) do
     Enum.filter(entries, &(!String.ends_with?(&1, "/")))
+  end
+
+  defp validate_wraft_json_folders(file_entries, wraft_json) do
+    @required_items
+    |> Enum.filter(fn item ->
+      Map.get(wraft_json, item) != nil and item in @allowed_folders
+    end)
+    |> Enum.reject(fn folder ->
+      Enum.any?(file_entries, &String.starts_with?(&1, "#{folder}/"))
+    end)
+    |> case do
+      [] ->
+        :ok
+
+      missing_folders ->
+        {:error, "Missing required folders for: #{Enum.join(missing_folders, ", ")}"}
+    end
   end
 
   @doc """
@@ -996,32 +1139,6 @@ defmodule WraftDoc.TemplateAssets do
     )
   end
 
-  @doc """
-  List all the public templates.
-  """
-  @spec list_public_templates() :: {:ok, list()}
-  def list_public_templates do
-    "public/templates/"
-    |> Minio.list_files()
-    |> Enum.reduce([], fn path, acc ->
-      if Path.extname(path) == ".zip" do
-        rootname = get_rootname(path)
-
-        [
-          %{
-            file_name: rootname,
-            path: "public/templates/#{rootname}/#{rootname}.zip",
-            thumbnail_url: Minio.generate_url("public/templates/#{rootname}/thumbnail.png")
-          }
-          | acc
-        ]
-      else
-        acc
-      end
-    end)
-    |> then(&{:ok, &1})
-  end
-
   defp get_rootname(path) do
     path
     |> Path.basename()
@@ -1029,7 +1146,38 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   @doc """
-  Download template from minio.
+  Index of all public template assets.
+  """
+  @spec public_template_asset_index() :: {:ok, list()}
+  def public_template_asset_index do
+    query =
+      from(t in TemplateAsset,
+        where: is_nil(t.organisation_id) and is_nil(t.creator_id),
+        order_by: [desc: t.inserted_at]
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.map(fn template_asset ->
+      rootname = get_rootname(template_asset.zip_file.file_name)
+
+      %{
+        id: template_asset.id,
+        name: template_asset.name,
+        description: template_asset.description,
+        file_name: rootname,
+        file_size: template_asset.zip_file_size,
+        zip_file_url: Path.join(storage_url(), "public/templates/#{rootname}/#{rootname}.zip"),
+        thumbnail_url: Path.join(storage_url(), "public/templates/#{rootname}/thumbnail.png")
+      }
+    end)
+    |> then(&{:ok, &1})
+  end
+
+  defp storage_url, do: Path.join(System.get_env("MINIO_URL"), System.get_env("MINIO_BUCKET"))
+
+  @doc """
+  Download template from storage.
   """
   @spec download_public_template(String.t()) :: {:ok, binary()} | {:error, String.t()}
   def download_public_template(template_name) do
