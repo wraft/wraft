@@ -1156,7 +1156,7 @@ defmodule WraftDoc.Document do
   Get an instance from its UUID.
   """
   # TODO - improve tests
-  @spec get_instance(binary, User.t()) :: Instance.t()
+  @spec get_instance(binary, User.t()) :: Instance.t() | nil
   def get_instance(<<_::288>> = document_id, %{current_org_id: nil}) do
     Repo.get(Instance, document_id)
   end

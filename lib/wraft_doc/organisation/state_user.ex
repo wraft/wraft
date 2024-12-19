@@ -25,7 +25,7 @@ defmodule WraftDoc.Enterprise.StateUser do
     |> foreign_key_constraint(:user_id, message: "Please enter a valid user")
   end
 
-  def add_document_level_user_changeset(state_users, params \\ %{}) do
+  def add_document_level_user_changeset(%__MODULE__{} = state_users, params \\ %{}) do
     state_users
     |> cast(params, @fields ++ [:content_id])
     |> validate_required(@fields ++ [:content_id])

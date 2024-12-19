@@ -342,10 +342,10 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
 
     parameters do
       id(:path, :string, "Instance id", required: true)
-      counterparty(:body, Schema.ref(:CounterPartyRequest), "CounterParty", required: true)
+      # counterparty(:body, Schema.ref(:CounterPartyRequest), "CounterParty", required: true)
     end
 
-    response(200, "Ok", Schema.ref(:CounterPartyResponse))
+    # response(200, "Ok", Schema.ref(:CounterPartyResponse))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not found", Schema.ref(:Error))
     response(422, "Unprocessable Entity", Schema.ref(:Error))

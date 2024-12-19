@@ -335,7 +335,7 @@ defmodule WraftDoc.Enterprise do
     query =
       from(s in State,
         join: f in Flow,
-        on: f.id == ^flow_uuid and s.flow_id == f.id and is_nil(s.content_id),
+        on: f.id == ^flow_uuid and s.flow_id == f.id,
         order_by: [desc: s.id],
         preload: [:flow, :creator, approvers: [:profile]]
       )
@@ -346,26 +346,41 @@ defmodule WraftDoc.Enterprise do
   @doc """
     Add user to flow state at document level.
   """
-  @spec add_user_to_state(map()) :: {:ok, State.t()} | {:error, Ecto.Changeset.t()}
-  def add_user_to_state(params) do
+  @spec add_user_to_state(State.t(), map()) :: State.t() | {:error, Ecto.Changeset.t()}
+  def add_user_to_state(%State{} = state, params) do
     %StateUser{}
     |> StateUser.add_document_level_user_changeset(params)
     |> Repo.insert()
     |> case do
-      {:ok, state_user} ->
-        Repo.preload(state_user, :user)
+      {:ok, _state_user} ->
+        state
+        |> Repo.reload()
+        |> Repo.preload(approvers: [:profile])
 
-      {:error, _} = changeset ->
-        changeset
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 
   @doc """
     Remove user from a flow state at document level.
   """
-  @spec remove_user_from_state(map()) :: {:ok, StateUser.t()} | {:error, Ecto.Changeset.t()}
-  def remove_user_from_state(%StateUser{content_id: <<_::288>> = _document_id} = state_user) do
-    Repo.delete(state_user)
+  @spec remove_user_from_state(State.t(), map()) :: State.t() | {:error, Ecto.Changeset.t()}
+  def remove_user_from_state(
+        %State{} = state,
+        %StateUser{content_id: <<_::288>> = _document_id} = state_user
+      ) do
+    state_user
+    |> Repo.delete()
+    |> case do
+      {:ok, _state_user} ->
+        state
+        |> Repo.reload()
+        |> Repo.preload(approvers: [:profile])
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -420,9 +435,14 @@ defmodule WraftDoc.Enterprise do
   @doc """
     Get user for a given state
   """
-  @spec get_state_user(binary(), binary()) :: StateUser.t() | nil
+  @spec get_state_user(binary(), binary()) :: {:error, String.t()} | nil
   def get_state_user(user_id, state_id) do
-    Repo.get_by(StateUser, state_id: state_id, user_id: user_id)
+    StateUser
+    |> Repo.get_by(state_id: state_id, user_id: user_id)
+    |> case do
+      nil -> nil
+      _state_user -> {:error, "User already exists."}
+    end
   end
 
   @doc """

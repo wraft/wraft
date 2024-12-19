@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Account.User
+  alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Document
   alias WraftDoc.Document.Instance
   alias WraftDoc.Enterprise
@@ -182,11 +182,11 @@ defmodule WraftDocWeb.Api.V1.StateController do
       StateUserDocumentLevelRequest:
         swagger_schema do
           properties do
-            document_id(:string, "Document id", required: true)
+            content_id(:string, "Document id", required: true)
           end
 
           example(%{
-            document_id: "f0b206b0-94e5-4bcb-a87b-1656166d9ebb"
+            content_id: "f0b206b0-94e5-4bcb-a87b-1656166d9ebb"
           })
         end
     }
@@ -216,7 +216,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
     with %Flow{} = flow <- Enterprise.get_flow(flow_id, current_user),
          %State{} = state <- Enterprise.create_state(current_user, flow, params) do
-      render(conn, "create_with_approvers.json", state: state)
+      render(conn, "state_with_approvers.json", state: state)
     end
   end
 
@@ -331,16 +331,16 @@ defmodule WraftDocWeb.Api.V1.StateController do
   @spec add_user_to_state(Plug.Conn.t(), map) :: Plug.Conn.t()
   def add_user_to_state(
         conn,
-        %{"state_id" => state_id, "document_id" => document_id, "user_id" => user_id} = params
+        %{"state_id" => state_id, "content_id" => document_id, "user_id" => user_id} = params
       ) do
     current_user = conn.assigns[:current_user]
 
-    with %State{} <- Enterprise.get_state(current_user, state_id),
+    with %State{} = state <- Enterprise.get_state(current_user, state_id),
          %Instance{} <- Document.get_instance(document_id, current_user),
-         %User{} <- Enterprise.get_user_organisation(current_user, user_id),
+         %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
          nil <- Enterprise.get_state_user(user_id, state_id),
-         {:ok, %State{} = state} <- Enterprise.add_user_to_state(params) do
-      render(conn, "show.json", state: state)
+         %State{} = state <- Enterprise.add_user_to_state(state, params) do
+      render(conn, "state_with_approvers.json", state: state)
     end
   end
 
@@ -372,17 +372,17 @@ defmodule WraftDocWeb.Api.V1.StateController do
   @spec remove_user_from_state(Plug.Conn.t(), map) :: Plug.Conn.t()
   def remove_user_from_state(conn, %{
         "state_id" => state_id,
-        "document_id" => document_id,
+        "content_id" => document_id,
         "user_id" => user_id
       }) do
     current_user = conn.assigns[:current_user]
 
-    with %State{} <- Enterprise.get_state(current_user, state_id),
+    with %State{} = state <- Enterprise.get_state(current_user, state_id),
          %Instance{} <- Document.get_instance(document_id, current_user),
-         %User{} <- Enterprise.get_user_organisation(current_user, user_id),
+         %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
          %StateUser{} = state_user <- Enterprise.get_state_user(user_id, state_id, document_id),
-         {:ok, %StateUser{} = state} <- Enterprise.remove_user_from_state(state_user) do
-      render(conn, "show.json", state: state)
+         %State{} = state <- Enterprise.remove_user_from_state(state, state_user) do
+      render(conn, "state_with_approvers.json", state: state)
     end
   end
 end
