@@ -8,13 +8,19 @@ defmodule WraftDocWeb.Api.V1.StateController do
     create: "state:manage",
     index: "state:show",
     update: "state:manage",
-    delete: "state:delete"
+    delete: "state:delete",
+    add_user_to_state: "state:manage",
+    remove_user_from_state: "state:delete"
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  alias WraftDoc.Account.User
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Instance
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Enterprise.StateUser
 
   def swagger_definitions do
     %{
@@ -172,6 +178,16 @@ defmodule WraftDocWeb.Api.V1.StateController do
               }
             ]
           })
+        end,
+      StateUserDocumentLevelRequest:
+        swagger_schema do
+          properties do
+            document_id(:string, "Document id", required: true)
+          end
+
+          example(%{
+            document_id: "f0b206b0-94e5-4bcb-a87b-1656166d9ebb"
+          })
         end
     }
   end
@@ -284,6 +300,89 @@ defmodule WraftDocWeb.Api.V1.StateController do
       Task.start(fn -> Enterprise.shuffle_order(state, -1) end)
 
       render(conn, "create.json", state: state)
+    end
+  end
+
+  @doc """
+    Add user to flow state at content level.
+  """
+  swagger_path :add_user_to_state do
+    post("states/{state_id}/users/{user_id}")
+    summary("Add user to state at document level")
+    description("Add user to flow state at document level")
+
+    parameters do
+      state_id(:path, :string, "State id", required: true)
+      user_id(:path, :string, "User id", required: true)
+
+      state_user_document_level(
+        :body,
+        Schema.ref(:StateUserDocumentLevelRequest),
+        "State user document level",
+        required: true
+      )
+    end
+
+    response(200, "Ok", Schema.ref(:State))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec add_user_to_state(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def add_user_to_state(
+        conn,
+        %{"state_id" => state_id, "document_id" => document_id, "user_id" => user_id} = params
+      ) do
+    current_user = conn.assigns[:current_user]
+
+    with %State{} <- Enterprise.get_state(current_user, state_id),
+         %Instance{} <- Document.get_instance(document_id, current_user),
+         %User{} <- Enterprise.get_user_organisation(current_user, user_id),
+         nil <- Enterprise.get_state_user(user_id, state_id),
+         {:ok, %State{} = state} <- Enterprise.add_user_to_state(params) do
+      render(conn, "show.json", state: state)
+    end
+  end
+
+  @doc """
+  Remove user from a flow state at document level.
+  """
+  swagger_path :remove_user_from_state do
+    PhoenixSwagger.Path.delete("/states/{state_id}/users/{user_id}")
+    summary("Remove user from state at document level")
+    description("Remove user from flow state at document level")
+
+    parameters do
+      state_id(:path, :string, "State id", required: true)
+      user_id(:path, :string, "User id", required: true)
+
+      state_user_document_level(
+        :body,
+        Schema.ref(:StateUserDocumentLevelRequest),
+        "State user document level",
+        required: true
+      )
+    end
+
+    response(200, "Ok", Schema.ref(:State))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec remove_user_from_state(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def remove_user_from_state(conn, %{
+        "state_id" => state_id,
+        "document_id" => document_id,
+        "user_id" => user_id
+      }) do
+    current_user = conn.assigns[:current_user]
+
+    with %State{} <- Enterprise.get_state(current_user, state_id),
+         %Instance{} <- Document.get_instance(document_id, current_user),
+         %User{} <- Enterprise.get_user_organisation(current_user, user_id),
+         %StateUser{} = state_user <- Enterprise.get_state_user(user_id, state_id, document_id),
+         {:ok, %StateUser{} = state} <- Enterprise.remove_user_from_state(state_user) do
+      render(conn, "show.json", state: state)
     end
   end
 end
