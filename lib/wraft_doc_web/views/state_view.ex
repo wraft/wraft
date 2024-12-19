@@ -13,7 +13,7 @@ defmodule WraftDocWeb.Api.V1.StateView do
     }
   end
 
-  def render("create_with_approvers.json", %{state: state}) do
+  def render("state_with_approvers.json", %{state: state}) do
     %{
       id: state.id,
       state: state.state,
@@ -47,7 +47,7 @@ defmodule WraftDocWeb.Api.V1.StateView do
 
   def render("show.json", %{state: state}) do
     %{
-      state: render_one(state, StateView, "create_with_approvers.json", as: :state),
+      state: render_one(state, StateView, "state_with_approvers.json", as: :state),
       flow: render_one(state.flow, FlowView, "flow.json", as: :flow),
       creator: render_one(state.creator, UserView, "user.json", as: :user)
     }
