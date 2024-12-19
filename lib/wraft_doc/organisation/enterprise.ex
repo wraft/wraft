@@ -335,12 +335,37 @@ defmodule WraftDoc.Enterprise do
     query =
       from(s in State,
         join: f in Flow,
-        on: f.id == ^flow_uuid and s.flow_id == f.id,
+        on: f.id == ^flow_uuid and s.flow_id == f.id and is_nil(s.content_id),
         order_by: [desc: s.id],
         preload: [:flow, :creator, approvers: [:profile]]
       )
 
     Repo.all(query)
+  end
+
+  @doc """
+    Add user to flow state at document level.
+  """
+  @spec add_user_to_state(map()) :: {:ok, State.t()} | {:error, Ecto.Changeset.t()}
+  def add_user_to_state(params) do
+    %StateUser{}
+    |> StateUser.add_document_level_user_changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, state_user} ->
+        Repo.preload(state_user, :user)
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+    Remove user from a flow state at document level.
+  """
+  @spec remove_user_from_state(map()) :: {:ok, StateUser.t()} | {:error, Ecto.Changeset.t()}
+  def remove_user_from_state(%StateUser{content_id: <<_::288>> = _document_id} = state_user) do
+    Repo.delete(state_user)
   end
 
   @doc """
@@ -379,11 +404,33 @@ defmodule WraftDoc.Enterprise do
   def update_state(_state, _params), do: {:error, :invalid_data}
 
   defp add_approvers(approvers, state) do
-    Enum.each(approvers, fn approver_id ->
-      Repo.insert(StateUser.changeset(%StateUser{}, %{state_id: state.id, user_id: approver_id}))
-    end)
+    Enum.each(approvers, fn approver_id -> add_state_user(approver_id, state.id) end)
 
     {:ok, :ok}
+  end
+
+  @doc """
+  Add user to state
+  """
+  @spec add_state_user(binary(), binary()) :: {:ok, StateUser.t()} | {:error, Ecto.Changeset.t()}
+  def add_state_user(user_id, state_id) do
+    Repo.insert(StateUser.changeset(%StateUser{}, %{state_id: state_id, user_id: user_id}))
+  end
+
+  @doc """
+    Get user for a given state
+  """
+  @spec get_state_user(binary(), binary()) :: StateUser.t() | nil
+  def get_state_user(user_id, state_id) do
+    Repo.get_by(StateUser, state_id: state_id, user_id: user_id)
+  end
+
+  @doc """
+  Get state user for given state along with document id.
+  """
+  @spec get_state_user(binary(), binary(), binary()) :: StateUser.t() | nil
+  def get_state_user(user_id, state_id, document_id) do
+    Repo.get_by(StateUser, state_id: state_id, user_id: user_id, content_id: document_id)
   end
 
   def remove_approvers(approvers_to_remove, state_id) do
