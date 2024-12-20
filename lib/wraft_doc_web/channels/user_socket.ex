@@ -8,6 +8,7 @@ defmodule WraftDocWeb.UserSocket do
 
   ## Channels
   channel("notification:*", WraftDocWeb.NotificationChannel)
+  channel("y_doc_room:*", WraftDocWeb.YDocRoomChannel)
 
   # channel("room:*", WraftDocWeb.NotificationChannel)
 
