@@ -172,7 +172,7 @@ defmodule WraftDoc.AuthTokens do
         user,
         %{email: email, role: role, document_id: document_id, state_id: state_id},
         token_type: "access",
-        ttl: nil
+        ttl: {72, :hours}
       )
 
     params = %{value: token, token_type: "document_invite"}
