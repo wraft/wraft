@@ -987,14 +987,12 @@ defmodule WraftDoc.Document do
         %{current_org_id: org_id, role_names: role_names} = current_user,
         params
       ) do
-    is_superadmin = "superadmin" in role_names
-
     Instance
     |> join(:inner, [i], ct in ContentType,
       on: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
       as: :content_type
     )
-    |> superadmin_check(is_superadmin, current_user)
+    |> superadmin_check("superadmin" in role_names, current_user)
     |> where(^instance_index_filter_by_instance_id(params))
     |> where(^instance_index_filter_by_content_type_name(params))
     |> where(^instance_index_filter_by_instance_title(params))
