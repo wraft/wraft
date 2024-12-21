@@ -330,17 +330,24 @@ defmodule WraftDoc.Enterprise do
   @doc """
   State index under a flow.
   """
-  @spec state_index(binary()) :: map
-  def state_index(<<_::288>> = flow_uuid) do
-    query =
-      from(s in State,
-        join: f in Flow,
-        on: f.id == ^flow_uuid and s.flow_id == f.id,
-        order_by: [desc: s.id],
-        preload: [:flow, :creator, approvers: [:profile]]
-      )
+  @spec state_index(binary()) :: map()
+  def state_index(flow_uuid) do
+    approvers_preloader = fn state_ids -> fetch_approvers_by_state_ids(state_ids) end
 
-    Repo.all(query)
+    State
+    |> join(:inner, [s], f in Flow, on: f.id == ^flow_uuid and s.flow_id == f.id)
+    |> order_by([s], desc: s.id)
+    |> preload([s], [:flow, :creator, approvers: ^{approvers_preloader, :profile}])
+    |> Repo.all()
+  end
+
+  # Private
+  defp fetch_approvers_by_state_ids(state_ids) do
+    User
+    |> join(:inner, [u], su in StateUser, on: u.id == su.user_id and is_nil(su.content_id))
+    |> where([_u, su], su.state_id in ^state_ids)
+    |> select([u, su], {su.state_id, u})
+    |> Repo.all()
   end
 
   @doc """
