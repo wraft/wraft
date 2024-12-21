@@ -188,6 +188,25 @@ defmodule WraftDocWeb.Api.V1.StateController do
           example(%{
             content_id: "f0b206b0-94e5-4bcb-a87b-1656166d9ebb"
           })
+        end,
+      StateUserDocumentLevelResponse:
+        swagger_schema do
+          properties do
+            users(Schema.ref(:User))
+          end
+
+          example(%{
+            users: [
+              %{
+                id: "1232148nb3478",
+                name: "John Doe",
+                email: "email@xyz.com",
+                email_verify: true,
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              }
+            ]
+          })
         end
     }
   end
@@ -236,10 +255,34 @@ defmodule WraftDocWeb.Api.V1.StateController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"flow_id" => flow_uuid} = _params) do
     with states <- Enterprise.state_index(flow_uuid) do
       render(conn, "index.json", states: states)
+    end
+  end
+
+  @doc """
+  List users in a state
+  """
+  swagger_path :list_users_in_state do
+    get("/states/{state_id}/users")
+    summary("List users in a state")
+    description("List users in a state")
+
+    parameters do
+      state_id(:path, :string, "state id", required: true)
+      document_id(:query, :string, "document id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:StateUserDocumentLevelResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec list_users_in_state(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def list_users_in_state(conn, %{"state_id" => state_id, "document_id" => document_id}) do
+    with users <- Enterprise.fetch_flow_state_users(state_id, document_id) do
+      render(conn, "list_users_in_state.json", users: users)
     end
   end
 
