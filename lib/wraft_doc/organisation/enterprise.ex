@@ -351,6 +351,27 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+    Fetch flow state users for a document
+  """
+  @spec fetch_flow_state_users(binary(), binary()) :: [User.t()]
+  def fetch_flow_state_users(<<_::288>> = state_id, <<_::288>> = document_id) do
+    users_content_type_level =
+      User
+      |> join(:inner, [u], su in StateUser, on: u.id == su.user_id)
+      |> where([_u, su], su.state_id == ^state_id and su.content_id == ^document_id)
+
+    users_document_level =
+      User
+      |> join(:inner, [u], su in StateUser, on: u.id == su.user_id)
+      |> where([_u, su], su.state_id == ^state_id and is_nil(su.content_id))
+
+    users_content_type_level
+    |> union(^users_document_level)
+    |> preload([_u], [:profile])
+    |> Repo.all()
+  end
+
+  @doc """
     Add user to flow state at document level.
   """
   @spec add_user_to_state(State.t(), map()) :: State.t() | {:error, Ecto.Changeset.t()}

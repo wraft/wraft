@@ -25,6 +25,12 @@ defmodule WraftDocWeb.Api.V1.StateView do
     }
   end
 
+  def render("list_users_in_state.json", %{users: users}) do
+    %{
+      users: render_many(users, UserView, "user_id_and_name.json", as: :user)
+    }
+  end
+
   def render("instance_state.json", %{state: state}) do
     %{
       id: state.id,

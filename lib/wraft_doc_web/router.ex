@@ -263,9 +263,10 @@ defmodule WraftDocWeb.Router do
       # State delete and update
       resources("/states", StateController, only: [:update, :delete])
 
-      # Add or remove user to state at document level
+      # Add, remove or list user to state at document level
       post("/states/:state_id/users/:user_id", StateController, :add_user_to_state)
       delete("/states/:state_id/users/:user_id", StateController, :remove_user_from_state)
+      get("/states/:state_id/users", StateController, :list_users_in_state)
 
       # Data template show, delete and update
       resources("/data_templates", DataTemplateController, only: [:show, :update, :delete])
