@@ -1,19 +1,31 @@
-defmodule WraftDocWeb.PlanAdmin do
+defmodule WraftDocWeb.EnterprisePlanAdmin do
   @moduledoc """
-  Admin panel for plan module
+  Admin panel for custom enterprise plan.
   """
+
   import Ecto.Query
   use Ecto.Schema
 
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Plan
 
+  def plural_name(_schema), do: "Enterprise Plans"
+
   def index(_) do
     [
       name: %{name: "Name", value: fn x -> x.name end},
       description: %{name: "Description", value: fn x -> x.description end},
-      yearly_amount: %{name: "Yearly amount", vlue: fn x -> x.yearly_amount end},
-      monthly_amount: %{name: "Monthly amount", value: fn x -> x.monthly_amount end}
+      custom: %{
+        name: "amount",
+        value: fn x -> if x.custom != nil, do: x.custom.custom_amount end
+      },
+      custom_period: %{
+        name: "duration",
+        value: fn x ->
+          if x.custom != nil,
+            do: "#{x.custom.custom_period_frequency} x #{x.custom.custom_period}"
+        end
+      }
     ]
   end
 
@@ -21,12 +33,16 @@ defmodule WraftDocWeb.PlanAdmin do
     [
       name: %{label: "Name"},
       description: %{label: "Description", type: :textarea},
-      yearly_amount: %{label: "Yearly amount", type: :string, required: true},
-      monthly_amount: %{label: "Monthly amount", type: :string, required: true},
       limits: %{
         label: "Limits",
-        required: true,
         help_text: "Define usage limits for this plan."
+      },
+      custom: %{
+        label: "Custom",
+        help_text: """
+          Define custom pricing for this plan.
+          Frequency of custom period. For example, if you select 'month' as the custom period and set the frequency to 3, the plan will be billed every 3 months.
+        """
       }
     ]
   end
@@ -37,23 +53,23 @@ defmodule WraftDocWeb.PlanAdmin do
 
   def custom_index_query(_conn, _schema, _query) do
     from(p in Plan,
-      where: is_nil(p.custom)
+      where: not is_nil(p.custom)
     )
   end
 
   def create_changeset(schema, attrs) do
-    Plan.plan_changeset(schema, attrs)
+    Plan.custom_plan_changeset(schema, attrs)
   end
 
   def update_changeset(schema, attrs) do
-    Plan.plan_changeset(schema, attrs)
+    Plan.custom_plan_changeset(schema, attrs)
   end
 
   def insert(conn, changeset) do
-    current_user = conn.assigns[:admin_session]
+    params = conn.params["plan"]
 
-    conn.params["plan"]
-    |> then(&Enterprise.create_plan(current_user, &1))
+    conn.assigns[:admin_session]
+    |> Enterprise.create_plan(params)
     |> case do
       {:ok, plan} ->
         {:ok, plan}

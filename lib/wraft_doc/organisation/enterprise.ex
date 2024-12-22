@@ -934,29 +934,25 @@ defmodule WraftDoc.Enterprise do
     |> Multi.run(:product, fn _, _ ->
       PaddleApi.create_product(params)
     end)
-    |> Multi.run(:monthly_price, fn _, %{product: %{"id" => paddle_product_id}} ->
-      params
-      |> Map.merge(%{"paddle_product_id" => paddle_product_id})
-      |> PaddleApi.create_price()
-    end)
-    |> Multi.run(:yearly_price, fn _, %{product: %{"id" => paddle_product_id}} ->
-      params
-      |> Map.merge(%{"paddle_product_id" => paddle_product_id, "monthly_amount" => nil})
-      |> PaddleApi.create_price()
-    end)
+    |> create_monthly_plan(params)
+    |> create_yearly_plan(params)
+    |> create_custom_plan(params)
     |> Multi.update(
       :update_plan,
       fn %{
            plan: plan,
-           product: %{"id" => paddle_product_id},
-           monthly_price: %{"id" => paddle_monthly_price_id},
-           yearly_price: %{"id" => paddle_yearly_price_id}
-         } ->
+           product: %{"id" => paddle_product_id}
+         } = result ->
+        paddle_monthly_price_id = get_in(result, [:monthly_price, "id"])
+        paddle_yearly_price_id = get_in(result, [:yearly_price, "id"])
+        paddle_custom_price_id = get_in(result, [:custom_price, "id"])
+
         params
         |> Map.merge(%{
           "paddle_product_id" => paddle_product_id,
           "monthly_price_id" => paddle_monthly_price_id,
-          "yearly_price_id" => paddle_yearly_price_id
+          "yearly_price_id" => paddle_yearly_price_id,
+          "custom_price_id" => paddle_custom_price_id
         })
         |> then(&Plan.changeset(plan, &1))
       end
@@ -967,6 +963,43 @@ defmodule WraftDoc.Enterprise do
       {:error, _, changeset, _} -> {:error, changeset}
     end
   end
+
+  defp create_monthly_plan(multi, %{"monthly_amount" => monthly_amount} = params)
+       when monthly_amount != nil do
+    Multi.run(multi, :monthly_price, fn _, %{product: %{"id" => paddle_product_id}} ->
+      params
+      |> Map.merge(%{"paddle_product_id" => paddle_product_id})
+      |> PaddleApi.create_price()
+    end)
+  end
+
+  defp create_monthly_plan(multi, _), do: multi
+
+  defp create_yearly_plan(multi, %{"yearly_amount" => yearly_amount} = params)
+       when yearly_amount != nil do
+    Multi.run(multi, :yearly_price, fn _, %{product: %{"id" => paddle_product_id}} ->
+      params
+      |> Map.merge(%{"paddle_product_id" => paddle_product_id, "monthly_amount" => nil})
+      |> PaddleApi.create_price()
+    end)
+  end
+
+  defp create_yearly_plan(multi, _), do: multi
+
+  defp create_custom_plan(multi, %{"custom" => custom} = params) when custom != nil do
+    Multi.run(multi, :custom_price, fn _, %{product: %{"id" => paddle_product_id}} ->
+      params
+      |> Map.merge(%{
+        "paddle_product_id" => paddle_product_id,
+        "custom" => custom,
+        "monthly_amount" => nil,
+        "yearly_amount" => nil
+      })
+      |> PaddleApi.create_price()
+    end)
+  end
+
+  defp create_custom_plan(multi, _), do: multi
 
   @doc """
   Get a plan from its UUID.
@@ -999,7 +1032,8 @@ defmodule WraftDoc.Enterprise do
         %Plan{
           paddle_product_id: paddle_product_id,
           monthly_price_id: monthly_price_id,
-          yearly_price_id: yearly_price_id
+          yearly_price_id: yearly_price_id,
+          custom_price_id: custom_price_id
         } = plan,
         params
       ) do
@@ -1013,24 +1047,21 @@ defmodule WraftDoc.Enterprise do
     |> Multi.run(:product, fn _, _ ->
       PaddleApi.update_product(paddle_product_id, params)
     end)
-    |> Multi.run(:monthly_price, fn _, _ ->
-      PaddleApi.update_price(monthly_price_id, params)
-    end)
-    |> Multi.run(:yearly_price, fn _, _ ->
-      params
-      |> Map.merge(%{"monthly_amount" => nil})
-      |> then(&PaddleApi.update_price(yearly_price_id, &1))
-    end)
+    |> update_monthly_plan(monthly_price_id, params)
+    |> update_yearly_plan(yearly_price_id, params)
+    |> update_custom_plan(custom_price_id, params)
     |> Multi.update(
       :plan,
-      fn %{
-           monthly_price: %{"id" => paddle_monthly_price_id},
-           yearly_price: %{"id" => paddle_yearly_price_id}
-         } ->
+      fn result ->
+        paddle_monthly_price_id = get_in(result, [:monthly_price, "id"])
+        paddle_yearly_price_id = get_in(result, [:yearly_price, "id"])
+        paddle_custom_price_id = get_in(result, [:custom_price, "id"])
+
         params
         |> Map.merge(%{
           "monthly_price_id" => paddle_monthly_price_id,
-          "yearly_price_id" => paddle_yearly_price_id
+          "yearly_price_id" => paddle_yearly_price_id,
+          "custom_price_id" => paddle_custom_price_id
         })
         |> then(&Plan.changeset(plan, &1))
       end
@@ -1043,6 +1074,44 @@ defmodule WraftDoc.Enterprise do
   end
 
   def update_plan(_, _), do: nil
+
+  defp update_monthly_plan(
+         multi,
+         monthly_price_id,
+         %{"monthly_amount" => monthly_amount} = params
+       )
+       when monthly_amount != nil do
+    Multi.run(multi, :monthly_price, fn _, _ ->
+      PaddleApi.update_price(monthly_price_id, params)
+    end)
+  end
+
+  defp update_monthly_plan(multi, _, _), do: multi
+
+  defp update_yearly_plan(multi, yearly_price_id, %{"yearly_amount" => yearly_amount} = params)
+       when yearly_amount != nil do
+    Multi.run(multi, :yearly_price, fn _, _ ->
+      params
+      |> Map.merge(%{"monthly_amount" => nil})
+      |> then(&PaddleApi.update_price(yearly_price_id, &1))
+    end)
+  end
+
+  defp update_yearly_plan(multi, _, _), do: multi
+
+  defp update_custom_plan(multi, custom_price_id, %{"custom" => custom} = params) do
+    Multi.run(multi, :custom_price, fn _, _ ->
+      params
+      |> Map.merge(%{
+        "custom" => custom,
+        "monthly_amount" => nil,
+        "yearly_amount" => nil
+      })
+      |> then(&PaddleApi.update_price(custom_price_id, &1))
+    end)
+  end
+
+  defp update_custom_plan(multi, _, _), do: multi
 
   @doc """
   Deletes a plan

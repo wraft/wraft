@@ -15,11 +15,27 @@ defmodule WraftDoc.Enterprise.Plan.Limits do
   This structure helps rate-limiting plugs capture specific limits based on the context of each controller action.
   """
   use Ecto.Schema
+  import Ecto.Changeset
+
+  @primary_key false
+  @fields [
+    :instance_create,
+    :content_type_create,
+    :organisation_create,
+    :organisation_invite
+  ]
+  @derive {Jason.Encoder, only: @fields}
 
   embedded_schema do
     field(:instance_create, :integer)
     field(:content_type_create, :integer)
     field(:organisation_create, :integer)
     field(:organisation_invite, :integer)
+  end
+
+  def changeset(struct, params) do
+    struct
+    |> cast(params, @fields)
+    |> validate_required(@fields)
   end
 end
