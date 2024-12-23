@@ -468,10 +468,11 @@ defmodule WraftDoc.Enterprise do
   @spec get_state_user(binary(), binary()) :: {:error, String.t()} | nil
   def get_state_user(user_id, state_id) do
     StateUser
-    |> Repo.get_by(state_id: state_id, user_id: user_id)
+    |> where([st], st.state_id == ^state_id and st.user_id == ^user_id and is_nil(st.content_id))
+    |> Repo.one()
     |> case do
       nil -> nil
-      _state_user -> {:error, "User already exists."}
+      _state_user -> {:error, "User already exists as an approver."}
     end
   end
 
@@ -502,7 +503,11 @@ defmodule WraftDoc.Enterprise do
   end
 
   def delete_approver(approver_id, state_id) do
-    query = from(st in StateUser, where: st.user_id == ^approver_id and st.state_id == ^state_id)
+    query =
+      from(st in StateUser,
+        where: st.user_id == ^approver_id and st.state_id == ^state_id and is_nil(st.content_id)
+      )
+
     approver = Repo.one(query)
 
     if approver do
