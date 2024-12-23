@@ -3,7 +3,6 @@ defmodule WraftDocWeb.Api.V1.PlanView do
   View module for Plan controller.
   """
   use WraftDocWeb, :view
-  alias __MODULE__
 
   def render("plan.json", %{plan: %{custom: custom} = plan}) when custom != nil do
     %{
@@ -40,6 +39,11 @@ defmodule WraftDocWeb.Api.V1.PlanView do
   end
 
   def render("plans.json", %{plans: plans}) do
-    render_many(plans, PlanView, "plan.json", as: :plan)
+    {enterprise_plans, regular_plans} = Enum.split_with(plans, &(&1.custom != nil))
+
+    %{
+      plans: render_many(regular_plans, __MODULE__, "plan.json", as: :plan),
+      enterprise_plans: render_many(enterprise_plans, __MODULE__, "plan.json", as: :plan)
+    }
   end
 end

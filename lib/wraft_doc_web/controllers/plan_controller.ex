@@ -39,6 +39,46 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             description: "A basic plan",
             yearly_amount: "10",
             monthly_amount: "6",
+            limits: %{
+              instance_create: 25,
+              content_type_create: 25,
+              organisation_create: 25,
+              organisation_invite: 25
+            },
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
+      EnterprisePlan:
+        swagger_schema do
+          title("Plan")
+          description("A plan")
+
+          properties do
+            id(:string, "Plan id")
+            name(:string, "Plan name")
+            description(:string, "Plan description")
+            yearly_amount(:string, "Yearly amount of the plan")
+            monthly_amount(:string, "Monthly amount of the plan")
+            inserted_at(:string, "When was the plan inserted", format: "ISO-8601")
+            updated_at(:string, "When was the plan last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "c68b0988-790b-45e8-965c-c4aeb427e70d",
+            name: "Basic",
+            description: "A basic plan",
+            limits: %{
+              instance_create: 25,
+              content_type_create: 25,
+              organisation_create: 25,
+              organisation_invite: 25
+            },
+            custom: %{
+              custom_amount: "499",
+              custom_period: "month",
+              custom_period_frequency: 4
+            },
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -62,12 +102,25 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             monthly_amount: "6"
           })
         end,
+      PlanResponse:
+        swagger_schema do
+          title("Plan Response")
+          description("Response containing either a regular plan or an enterprise plan")
+
+          properties do
+            plan(Schema.ref(:Plan), "Regular Plan")
+            enterprise_plan(Schema.ref(:EnterprisePlan), "Enterprise Plan")
+          end
+        end,
       Plans:
         swagger_schema do
           title("All plans")
           description("All plans that have been created")
-          type(:array)
-          items(Schema.ref(:Plan))
+
+          properties do
+            plan(:array, "Regular plans", items: Schema.ref(:Plan))
+            enterprise_plans(:array, "Enterprise plans", items: Schema.ref(:EnterprisePlan))
+          end
         end
     }
   end
@@ -123,7 +176,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
       id(:path, :string, "ID of the plan")
     end
 
-    response(200, "OK", Schema.ref(:Plan))
+    response(200, "OK", Schema.ref(:PlanResponse))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
@@ -145,7 +198,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
       plan(:body, Schema.ref(:PlanRequest), "Plan to be updated", required: true)
     end
 
-    response(200, "Updated", Schema.ref(:Plan))
+    response(200, "Updated", Schema.ref(:PlanResponse))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
@@ -170,7 +223,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
       id(:path, :string, "ID of the plan to be deleted")
     end
 
-    response(200, "OK", Schema.ref(:Plan))
+    response(200, "OK", Schema.ref(:PlanResponse))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
