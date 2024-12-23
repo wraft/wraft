@@ -229,9 +229,11 @@ defmodule WraftDoc.Enterprise do
   @spec show_flow(binary, User.t()) :: Flow.t() | nil
   def show_flow(flow_id, user) do
     with %Flow{} = flow <- get_flow(flow_id, user) do
+      approvers_preloader = fn state_ids -> fetch_approvers_by_state_ids(state_ids) end
+
       Repo.preload(flow, [
         :creator,
-        {:states, [approvers: [:profile]]},
+        {:states, approvers: {approvers_preloader, :profile}},
         approval_systems: [:pre_state, :post_state, :approver]
       ])
     end
