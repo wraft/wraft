@@ -114,6 +114,10 @@ config :ex_audit,
 
 config :wraft_doc, WraftDoc.Client.Razorpay, base_url: "https://api.razorpay.com/v1/payments"
 
+config :wraft_doc,
+  paddle_api: WraftDoc.Billing.PaddleApi,
+  paddle_webhook_secret: System.get_env("PADDLE_WEBHOOK_SECRET")
+
 config :pdf_generator,
   raise_on_missing_wkhtmltopdf_binary: false
 

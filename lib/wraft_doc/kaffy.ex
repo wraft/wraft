@@ -29,7 +29,14 @@ defmodule WraftDoc.Kaffy.Config do
             admin: WraftDocWeb.OrganisationAdmin
           ],
           membership: [schema: WraftDoc.Enterprise.Membership, admin: WraftDocWeb.MembershipAdmin],
-          plan: [schema: WraftDoc.Enterprise.Plan, admin: WraftDocWeb.PlanAdmin]
+          plan: [
+            schema: WraftDoc.Enterprise.Plan,
+            admin: WraftDocWeb.PlanAdmin
+          ],
+          enterprise_plan: [
+            schema: WraftDoc.Enterprise.Plan,
+            admin: WraftDocWeb.EnterprisePlanAdmin
+          ]
         ]
       ],
       waiting_list: [
