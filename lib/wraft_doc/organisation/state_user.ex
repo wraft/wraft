@@ -33,6 +33,10 @@ defmodule WraftDoc.Enterprise.StateUser do
       name: :state_users_state_id_user_id_index,
       message: "already exist"
     )
+    |> unique_constraint(@fields ++ [:content_id],
+      name: "state_users_state_id_user_id_content_id_index",
+      message: "already exist"
+    )
     |> foreign_key_constraint(:state_id, message: "Please enter an existing state")
     |> foreign_key_constraint(:user_id, message: "Please enter a valid user")
     |> foreign_key_constraint(:content_id, message: "Please enter a valid document")
