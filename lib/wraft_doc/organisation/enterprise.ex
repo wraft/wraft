@@ -17,6 +17,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Billing.PaddleApi
   alias WraftDoc.Billing.Subscription
   alias WraftDoc.Client.Razorpay
+  alias WraftDoc.Document.Instance
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
@@ -376,29 +377,57 @@ defmodule WraftDoc.Enterprise do
   @doc """
     Add user to flow state at document level.
   """
-  @spec add_user_to_state(State.t(), map()) :: State.t() | {:error, Ecto.Changeset.t()}
-  def add_user_to_state(%State{} = state, params) do
-    %StateUser{}
-    |> StateUser.add_document_level_user_changeset(params)
-    |> Repo.insert()
+  @spec add_user_to_state(Instance.t(), State.t(), map()) ::
+          State.t() | {:error, Ecto.Changeset.t()}
+  def add_user_to_state(
+        %Instance{allowed_users: allowed_users} = instance,
+        %State{} = state,
+        %{"user_id" => user_id} = params
+      ) do
+    instance
+    |> maybe_update_allowed_users(user_id, allowed_users)
     |> case do
-      {:ok, _state_user} ->
-        state
-        |> Repo.reload()
-        |> Repo.preload(approvers: [:profile])
+      {:ok, _instance} ->
+        %StateUser{}
+        |> StateUser.add_document_level_user_changeset(params)
+        |> Repo.insert()
+        |> case do
+          {:ok, _state_user} ->
+            state
+            |> Repo.reload()
+            |> Repo.preload(approvers: [:profile])
+
+          {:error, changeset} ->
+            {:error, changeset}
+        end
 
       {:error, changeset} ->
         {:error, changeset}
     end
   end
 
+  # Private
+  defp maybe_update_allowed_users(instance, user_id, allowed_users) do
+    if user_id in allowed_users do
+      {:ok, instance}
+    else
+      instance
+      |> Instance.update_allowed_users_changeset(%{
+        "allowed_users" => allowed_users ++ [user_id]
+      })
+      |> Repo.update()
+    end
+  end
+
   @doc """
     Remove user from a flow state at document level.
   """
-  @spec remove_user_from_state(State.t(), map()) :: State.t() | {:error, Ecto.Changeset.t()}
+  @spec remove_user_from_state(Instance.t(), State.t(), map()) ::
+          State.t() | {:error, Ecto.Changeset.t()}
   def remove_user_from_state(
+        %Instance{allowed_users: allowed_users} = instance,
         %State{} = state,
-        %StateUser{content_id: <<_::288>> = _document_id} = state_user
+        %StateUser{content_id: <<_::288>> = _document_id, user_id: user_id} = state_user
       ) do
     state_user
     |> Repo.delete()
@@ -407,9 +436,27 @@ defmodule WraftDoc.Enterprise do
         state
         |> Repo.reload()
         |> Repo.preload(approvers: [:profile])
+        |> maybe_remove_allowed_user(instance, user_id, allowed_users)
 
       {:error, changeset} ->
         {:error, changeset}
+    end
+  end
+
+  # Private
+  defp maybe_remove_allowed_user(state, instance, user_id, allowed_users) do
+    if user_id in allowed_users do
+      updated_users = List.delete(allowed_users, user_id)
+
+      instance
+      |> Instance.update_allowed_users_changeset(%{"allowed_users" => updated_users})
+      |> Repo.update()
+      |> case do
+        {:ok, _instance} -> state
+        {:error, _changeset} -> state
+      end
+    else
+      state
     end
   end
 

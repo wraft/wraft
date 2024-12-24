@@ -379,10 +379,10 @@ defmodule WraftDocWeb.Api.V1.StateController do
     current_user = conn.assigns[:current_user]
 
     with %State{} = state <- Enterprise.get_state(current_user, state_id),
-         %Instance{} <- Document.get_instance(document_id, current_user),
+         %Instance{} = instance <- Document.get_instance(document_id, current_user),
          %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
          nil <- Enterprise.get_state_user(user_id, state_id),
-         %State{} = state <- Enterprise.add_user_to_state(state, params) do
+         %State{} = state <- Enterprise.add_user_to_state(instance, state, params) do
       render(conn, "state_with_approvers.json", state: state)
     end
   end
@@ -421,10 +421,10 @@ defmodule WraftDocWeb.Api.V1.StateController do
     current_user = conn.assigns[:current_user]
 
     with %State{} = state <- Enterprise.get_state(current_user, state_id),
-         %Instance{} <- Document.get_instance(document_id, current_user),
+         %Instance{} = instance <- Document.get_instance(document_id, current_user),
          %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
          %StateUser{} = state_user <- Enterprise.get_state_user(user_id, state_id, document_id),
-         %State{} = state <- Enterprise.remove_user_from_state(state, state_user) do
+         %State{} = state <- Enterprise.remove_user_from_state(instance, state, state_user) do
       render(conn, "state_with_approvers.json", state: state)
     end
   end

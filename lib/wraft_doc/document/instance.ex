@@ -96,6 +96,12 @@ defmodule WraftDoc.Document.Instance do
     |> validate_required([:state_id])
   end
 
+  def update_allowed_users_changeset(%Instance{} = instance, attrs \\ %{}) do
+    instance
+    |> cast(attrs, [:allowed_users])
+    |> validate_required([:allowed_users])
+  end
+
   def lock_modify_changeset(instance, attrs \\ %{}) do
     instance
     |> cast(attrs, [:editable])
