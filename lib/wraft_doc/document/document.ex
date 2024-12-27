@@ -4030,12 +4030,34 @@ defmodule WraftDoc.Document do
       {:ok, content_collaboration} ->
         Repo.preload(content_collaboration, [:user])
 
+      changeset =
+          {:error, %Ecto.Changeset{errors: [role: {"This email has already been invited.", _}]}} ->
+        content_id
+        |> get_content_collaboration(%User{id: user_id}, state_id)
+        |> handle_invite_again(changeset)
+
       changeset = {:error, _} ->
         changeset
     end
   end
 
   def add_content_collaborator(_, _, _), do: {:error, "Invalid email"}
+
+  # Invite again after revoked
+  defp handle_invite_again(%ContentCollaboration{status: :revoked} = content_collaboration, _) do
+    content_collaboration
+    |> ContentCollaboration.status_update_changeset(%{status: "pending"})
+    |> Repo.update()
+    |> case do
+      {:ok, content_collaboration} ->
+        Repo.preload(content_collaboration, [:user])
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  defp handle_invite_again(_, changeset), do: changeset
 
   @doc """
     Get Content Collaboration
