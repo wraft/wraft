@@ -18,7 +18,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Layout
   alias WraftDoc.Document.LayoutAsset
-  alias WraftDoc.Search.Typesense
+  alias WraftDoc.Search.Broadcaster, as: Typesense
 
   def swagger_definitions do
     %{
