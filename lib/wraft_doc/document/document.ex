@@ -4057,7 +4057,10 @@ defmodule WraftDoc.Document do
   """
   @spec revoke_document_access(User.t(), ContentCollaboration.t()) ::
           ContentCollaboration.t() | {:error, Ecto.Changeset.t()}
-  def revoke_document_access(%User{id: revoked_by_id}, collaborator) do
+  def revoke_document_access(
+        %User{id: revoked_by_id},
+        %ContentCollaboration{status: :accepted} = collaborator
+      ) do
     collaborator
     |> ContentCollaboration.status_update_changeset(%{
       status: "revoked",
@@ -4073,6 +4076,12 @@ defmodule WraftDoc.Document do
         {:error, changeset}
     end
   end
+
+  def revoke_document_access(_, %ContentCollaboration{status: :pending}),
+    do: {:error, "Collaborator not accepted"}
+
+  def revoke_document_access(_, %ContentCollaboration{status: :revoked}),
+    do: {:error, "Collaborator already revoked"}
 
   @doc """
   Accept Content Collaboration
