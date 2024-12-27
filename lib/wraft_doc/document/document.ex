@@ -984,13 +984,16 @@ defmodule WraftDoc.Document do
   List all instances under an organisation.
   """
   @spec instance_index_of_an_organisation(User.t(), map) :: map
-  def instance_index_of_an_organisation(%{current_org_id: org_id} = current_user, params) do
+  def instance_index_of_an_organisation(
+        %{current_org_id: org_id, role_names: role_names} = current_user,
+        params
+      ) do
     Instance
     |> join(:inner, [i], ct in ContentType,
       on: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
       as: :content_type
     )
-    |> where([i], ^current_user.id in i.allowed_users)
+    |> superadmin_check("superadmin" in role_names, current_user)
     |> where(^instance_index_filter_by_instance_id(params))
     |> where(^instance_index_filter_by_content_type_name(params))
     |> where(^instance_index_filter_by_instance_title(params))
@@ -1008,6 +1011,17 @@ defmodule WraftDoc.Document do
   end
 
   def instance_index_of_an_organisation(_, _), do: {:error, :invalid_id}
+
+  defp superadmin_check(query, true, current_user) do
+    where(
+      query,
+      [i],
+      (is_nil(i.state_id) and i.creator_id == ^current_user.id) or not is_nil(i.state_id)
+    )
+  end
+
+  defp superadmin_check(query, false, current_user),
+    do: where(query, [i], ^current_user.id in i.allowed_users)
 
   @doc """
   List all instances under a content types.
