@@ -1011,7 +1011,13 @@ defmodule WraftDoc.Document do
 
   def instance_index_of_an_organisation(_, _), do: {:error, :invalid_id}
 
-  defp superadmin_check(query, true, _), do: query
+  defp superadmin_check(query, true, current_user) do
+    where(
+      query,
+      [i],
+      (is_nil(i.state_id) and i.creator_id == ^current_user.id) or not is_nil(i.state_id)
+    )
+  end
 
   defp superadmin_check(query, false, current_user),
     do: where(query, [i], ^current_user.id in i.allowed_users)
