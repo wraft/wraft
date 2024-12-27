@@ -235,6 +235,14 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
          {:ok, %AuthToken{value: guest_access_token}} <-
            AuthTokens.create_guest_access_token(invited_user, state_id, email, role, document_id) do
       render(conn, "verify_collaborator.json", user: invited_user, token: guest_access_token)
+    else
+      _ ->
+        conn
+        |> put_resp_header("content-type", "application/json")
+        |> send_resp(
+          401,
+          Jason.encode!(%{errors: "Document id does not match the invite token."})
+        )
     end
   end
 
