@@ -4113,13 +4113,15 @@ defmodule WraftDoc.Document do
   @doc """
     List collabortors for a document.
   """
-  @spec list_collaborators(Instance.t()) :: [ContentCollaboration.t()]
-  def list_collaborators(%Instance{id: content_id, state_id: state_id}) do
+  @spec list_collaborators(Instance.t()) :: [ContentCollaboration.t()] | []
+  def list_collaborators(%Instance{id: <<_::288>> = content_id, state_id: <<_::288>> = state_id}) do
     ContentCollaboration
     |> where([cc], cc.content_id == ^content_id and cc.state_id == ^state_id)
     |> preload([cc], [:user])
     |> Repo.all()
   end
+
+  def list_collaborators(_), do: []
 
   @doc """
     Update Content Collaborator Role

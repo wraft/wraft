@@ -291,7 +291,7 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Document.show_instance(document_id, current_user),
-         [%ContentCollaboration{} | _] = collaborators <- Document.list_collaborators(instance) do
+         collaborators when is_list(collaborators) <- Document.list_collaborators(instance) do
       render(conn, "collaborators.json", collaborators: collaborators)
     end
   end
