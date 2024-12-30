@@ -7,7 +7,6 @@ defmodule WraftDoc.Account do
 
   alias Ecto.Multi
   alias WraftDoc.Account.Activity
-  alias WraftDoc.Account.GuestUser
   alias WraftDoc.Account.Profile
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.RoleGroup
@@ -818,38 +817,6 @@ defmodule WraftDoc.Account do
     end
   end
 
-  # @doc """
-  #  Get user within current organisation or guest user by email or create guest user.
-  # """
-  # @spec get_user_or_guest_user(User.t(), map()) :: User.t() | GuestUser.t()
-  # def get_user_or_guest_user(%{current_org_id: organisation_id}, %{"email" => email}) do
-  #   # TODO dont consider if the user is within organisation
-  #   # case get_user_by_email_and_org(organisation_id, email) do
-  #   #   nil ->
-  #   #     get_or_create_guest_user(email)
-
-  #   #   user ->
-  #   #     user
-  #   # end
-  # end
-
-  # @doc """
-  # Get user within organisation or guest user by email.
-  # """
-  # @spec get_user_or_guest_user(map()) :: User.t() | GuestUser.t()
-  # def get_user_or_guest_user(%{email: email, document_id: document_id}) do
-  #   document_id
-  #   |> get_organisation_id_from_document()
-  #   |> get_user_or_guest_user(email)
-  #   |> case do
-  #     nil ->
-  #       get_guest_user(email)
-
-  #     user ->
-  #       user
-  #   end
-  # end
-
   @doc """
   Get or create guest user struct from given email
   """
@@ -879,13 +846,5 @@ defmodule WraftDoc.Account do
       {:ok, guest_user} -> guest_user
       {:error, _} = changeset -> changeset
     end
-  end
-
-  @doc """
-    Get guest user by email
-  """
-  @spec get_guest_user(binary()) :: GuestUser.t() | nil
-  def get_guest_user(email) do
-    Repo.get_by(GuestUser, email: email)
   end
 end

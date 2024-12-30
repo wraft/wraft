@@ -126,27 +126,6 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
             updated_at: "2023-04-23T10:00:00Z"
           })
         end,
-      MetaUpdateRequest:
-        swagger_schema do
-          title("Meta update request")
-          description("Meta update request")
-
-          properties do
-            meta(:map, "Meta", required: true)
-          end
-
-          example(%{
-            "meta" => %{
-              "type" => "contract",
-              "status" => "draft",
-              "expiry_date" => "2020-02-21",
-              "contract_value" => 100_000.0,
-              "counter_parties" => ["Vos Services"],
-              "clauses" => [],
-              "reminder" => []
-            }
-          })
-        end,
       ShareDocumentRequest:
         swagger_schema do
           title("Share document request")
@@ -189,18 +168,14 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   def invite(conn, %{"id" => document_id, "email" => _email} = params) do
     current_user = conn.assigns.current_user
 
-    # send email in the end after the collaborator is created,
-    # didnt want to invoke sendgrid api all the time
-    # {:ok, %Oban.Job{}} <- Document.send_email(instance, invited_user, token)
     with %Instance{state_id: state_id} = instance <-
            Document.show_instance(document_id, current_user),
          %User{} = invited_user <- Account.get_or_create_guest_user(params),
          %ContentCollaboration{} = collaborator <-
            Document.add_content_collaborator(current_user, instance, invited_user, params),
          {:ok, %AuthToken{value: token}} <-
-           AuthTokens.create_document_invite_token(state_id, params) do
-      # Just temporarily, ideally to be send via mailer
-      Logger.info("Invite token generated for user: #{token}")
+           AuthTokens.create_document_invite_token(state_id, params),
+         {:ok, %Oban.Job{}} <- Document.send_email(instance, invited_user, token) do
       render(conn, "collaborator.json", collaborator: collaborator)
     end
   end
