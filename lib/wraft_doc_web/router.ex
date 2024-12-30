@@ -65,6 +65,7 @@ defmodule WraftDocWeb.Router do
 
     # user
     scope "/v1", Api.V1, as: :v1 do
+      post("/vendors/webhook", VendorsWebhookController, :webhook)
       resources("/users/signup/", RegistrationController, only: [:create])
       post("/users/signin", UserController, :signin)
       # Google Signin
@@ -278,7 +279,16 @@ defmodule WraftDocWeb.Router do
       # put("/collection_fields/:id", CollectionFormFieldController, :update)
       # delete("/collection_fields/:id", CollectionFormFieldController, :delete)
 
-      resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
+      # Billing
+      get("/billing/subscription/ping", BillingController, :ping_subscription)
+      get("/billing/active_subscription", BillingController, :get_active_subscription)
+      post("/billing/change-plan/:plan_id", BillingController, :change_plan)
+      post("/billing/change-plan/preview/:plan_id", BillingController, :change_plan_preview)
+      delete("/billing/cancel", BillingController, :cancel_subscription)
+      # resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
+      # Vendor webhook
+      # post("/vendors/notification", VendorsWebhookController, :webhook)
+
       # Update membership plan
       put("/memberships/:id", MembershipController, :update)
       # Get memberhsip
