@@ -43,6 +43,10 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.CurrentAdmin)
   end
 
+  pipeline :enterprise_plan_params do
+    plug WraftDocWeb.Plugs.KaffyAdminPlug
+  end
+
   scope "/", WraftDocWeb do
     # Use the default browser stack
     pipe_through(:browser)
@@ -382,7 +386,7 @@ defmodule WraftDocWeb.Router do
     end
   end
 
-  use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin]
+  use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin, :enterprise_plan_params]
 
   scope "/admin", WraftDocWeb do
     pipe_through([:kaffy_browser, :current_admin])

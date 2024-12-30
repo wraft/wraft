@@ -9,7 +9,9 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Plan
 
-  def plural_name(_schema), do: "Enterprise Plans"
+  def plural_name(_), do: "Enterprise Plans"
+
+  def singular_name(_), do: "Enterprise Plan"
 
   def index(_) do
     [
@@ -31,8 +33,11 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
 
   def form_fields(_) do
     [
-      name: %{label: "Name"},
-      description: %{label: "Description", type: :textarea},
+      name: %{
+        label: "Name",
+        required: true
+      },
+      description: %{label: "Description", required: true, type: :textarea},
       limits: %{
         label: "Limits",
         help_text: "Define usage limits for this plan."
@@ -78,7 +83,7 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
         {:error, changeset}
 
       {:error, error} ->
-        custom_error(changeset, error)
+        {:error, {changeset, error}}
     end
   end
 
@@ -96,7 +101,7 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
         {:error, changeset}
 
       {:error, error} ->
-        custom_error(changeset, error)
+        {:error, {changeset, error}}
     end
   end
 
@@ -107,14 +112,11 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
       {:ok, plan} ->
         {:ok, plan}
 
-      {:error, changeset} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         {:error, changeset}
-    end
-  end
 
-  defp custom_error(changeset, error_message) do
-    changeset
-    |> Ecto.Changeset.add_error(:name, error_message)
-    |> then(&{:error, &1})
+      {:error, error} ->
+        {:error, {changeset, error}}
+    end
   end
 end

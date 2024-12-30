@@ -6,7 +6,7 @@ defmodule WraftDoc.Enterprise.Plan do
 
   alias __MODULE__
   alias __MODULE__.Limits
-  alias WraftDoc.Enterprise.Plan.Custom
+  alias __MODULE__.Custom
 
   schema "plan" do
     field(:name, :string)
@@ -54,8 +54,7 @@ defmodule WraftDoc.Enterprise.Plan do
       :monthly_price_id,
       :monthly_amount,
       :yearly_price_id,
-      :yearly_amount,
-      :custom_price_id
+      :yearly_amount
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> validate_required([:name, :description, :monthly_amount, :yearly_amount])
