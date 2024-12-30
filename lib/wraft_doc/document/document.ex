@@ -3998,7 +3998,8 @@ defmodule WraftDoc.Document do
     %{
       email: user.email,
       token: token,
-      instance_id: instance.instance_id
+      instance_id: instance.instance_id,
+      document_id: instance.id
     }
     |> EmailWorker.new(queue: "mailer", tags: ["document_instance_share"])
     |> Oban.insert()
