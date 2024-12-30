@@ -434,76 +434,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             info: "Invite token verified successfully"
           })
         end,
-      Collaborator:
-        swagger_schema do
-          title("Collaborator")
-          description("A collaborator")
-
-          properties do
-            id(:string, "Id")
-            name(:string, "Name")
-            email(:string, "Email")
-            role(:string, "Role")
-            status(:string, "Status")
-            created_at(:string, "Created at")
-            updated_at(:string, "Updated at")
-          end
-
-          example(%{
-            id: "6529b52b-071c-4b82-950c-539b73b8833e",
-            name: "John Doe",
-            email: "john@example.com",
-            role: "viewer",
-            status: "active",
-            created_at: "2023-04-23T10:00:00Z",
-            updated_at: "2023-04-23T10:00:00Z"
-          })
-        end,
-      CounterPartiesRequest:
-        swagger_schema do
-          title("Counter parties request")
-          description("Request to create counter parties")
-
-          properties do
-            name(:string, "Name", required: true)
-            guest_user_id(:string, "Guest user id", required: true)
-          end
-
-          example(%{
-            name: "John Doe",
-            guest_user_id: "1232148nb3478"
-          })
-        end,
-      CounterPartiesResponse:
-        swagger_schema do
-          title("Counter parties response")
-          description("Response for counter parties")
-
-          properties do
-            id(:string, "Id")
-            name(:string, "Name")
-            guest_user_id(:string, "Guest user id")
-            content(Schema.ref(:Content))
-            created_at(:string, "Created at")
-            updated_at(:string, "Updated at")
-          end
-
-          example(%{
-            id: "6529b52b-071c-4b82-950c-539b73b8833e",
-            name: "John Doe",
-            guest_user_id: "1232148nb3478",
-            content: %{
-              id: "1232148nb3478",
-              instance_id: "OFFL01",
-              raw: "Content",
-              serialized: %{title: "Title of the content", body: "Body of the content"},
-              updated_at: "2020-01-21T14:00:00Z",
-              inserted_at: "2020-02-21T14:00:00Z"
-            },
-            created_at: "2023-04-23T10:00:00Z",
-            updated_at: "2023-04-23T10:00:00Z"
-          })
-        end,
       MetaUpdateRequest:
         swagger_schema do
           title("Meta update request")
@@ -523,23 +453,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               "clauses" => [],
               "reminder" => []
             }
-          })
-        end,
-      ShareDocumentRequest:
-        swagger_schema do
-          title("Share document request")
-          description("Request to share a document")
-
-          properties do
-            email(:string, "Email", required: true)
-            role(:string, "Role", required: true, enum: ["suggestor", "viewer"])
-            state_id(:string, "Document State", required: true)
-          end
-
-          example(%{
-            "email" => "example@example.com",
-            "role" => "suggestor",
-            "state_id" => "a102cdb1-e5f4-4c28-98ec-9a10a94b9173"
           })
         end
     }

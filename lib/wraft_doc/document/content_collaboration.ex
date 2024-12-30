@@ -14,7 +14,6 @@ defmodule WraftDoc.Document.ContentCollaboration do
     field(:revoked_at, :utc_datetime)
     belongs_to(:content, WraftDoc.Document.Instance)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
-    # belongs_to(:guest_user, WraftDoc.Account.GuestUser)
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:invited_by, WraftDoc.Account.User, foreign_key: :invited_by_id)
     belongs_to(:revoked_by, WraftDoc.Account.User, foreign_key: :revoked_by_id)
