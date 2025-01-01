@@ -4126,8 +4126,8 @@ defmodule WraftDoc.Document do
   @doc """
     Check if user has access to a document
   """
-  @spec has_access?(User.t(), Ecto.UUID.t()) :: boolean()
-  def has_access?(%User{id: user_id, is_guest: true}, document_id) do
+  @spec has_access?(User.t(), Ecto.UUID.t()) :: boolean() | {:error, String.t()}
+  def has_access?(%User{id: user_id}, document_id) do
     ContentCollaboration
     |> where(
       [cc],
@@ -4140,7 +4140,8 @@ defmodule WraftDoc.Document do
     end
   end
 
-  def has_access?(%User{is_guest: false}, _), do: {:error, "Invalid user"}
+  # TODO removed because user can be guest to wraft or internal but not within organisation
+  # def has_access?(%User{is_guest: false}, _), do: {:error, "Invalid user"}
 
   @doc """
     List collabortors for a document.
@@ -4166,7 +4167,7 @@ defmodule WraftDoc.Document do
     |> Repo.update()
     |> case do
       {:ok, content_collaboration} ->
-        Repo.preload(content_collaboration, [:user, :guest_user])
+        Repo.preload(content_collaboration, [:user])
 
       {:error, changeset} ->
         {:error, changeset}
