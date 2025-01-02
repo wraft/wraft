@@ -3,6 +3,7 @@ defmodule WraftDoc.Search.Typesense do
   Handles operations for Typesense
   """
 
+  alias WraftDoc.Repo
   alias WraftDoc.Search.Encoder
 
   def create_collection(schema) do
@@ -28,8 +29,30 @@ defmodule WraftDoc.Search.Typesense do
     ExTypesense.delete_documents_by_query(collection_name, query)
   end
 
-  def index_document(collection_name) do
-    ExTypesense.index_multiple_documents(collection_name)
+  def initialize do
+    collections = [
+      {WraftDoc.Document.Theme, "theme"},
+      {WraftDoc.Document.ContentType, "content_type"},
+      {WraftDoc.Document.DataTemplate, "data_template"},
+      {WraftDoc.Document.Layout, "layout"},
+      {WraftDoc.Enterprise.Flow, "flow"}
+    ]
+
+    Enum.each(collections, fn {schema, collection_name} ->
+      collection(schema, collection_name)
+    end)
+  end
+
+  defp collection(schema, collection_name) do
+    create_collection(schema)
+    reindex_data(schema, collection_name)
+  end
+
+  defp reindex_data(schema, collection_name) do
+    records = Repo.all(schema)
+    document = Enum.map(records, &Encoder.to_document/1)
+
+    ExTypesense.index_multiple_documents(%{collection_name: collection_name, documents: document})
   end
 
   def search(query, collection_name \\ nil, opts \\ []) do
