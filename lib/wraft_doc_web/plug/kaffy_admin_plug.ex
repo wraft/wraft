@@ -1,4 +1,7 @@
 defmodule WraftDocWeb.Plugs.KaffyAdminPlug do
+  @moduledoc """
+  Adds schema params under resource.
+  """
   def init(opts), do: opts
 
   def call(conn, _opts) do

@@ -5,8 +5,8 @@ defmodule WraftDoc.Enterprise.Plan do
   use WraftDoc.Schema
 
   alias __MODULE__
-  alias __MODULE__.Limits
   alias __MODULE__.Custom
+  alias __MODULE__.Limits
 
   schema "plan" do
     field(:name, :string)

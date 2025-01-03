@@ -3,6 +3,8 @@ defmodule WraftDoc.Kaffy.Config do
   Config admin panel
   """
 
+  alias WraftDoc.DeploymentMode
+
   def create_resources(_conn) do
     [
       account: [
@@ -23,21 +25,7 @@ defmodule WraftDoc.Kaffy.Config do
       ],
       enterprise: [
         name: "Enterprise",
-        resources: [
-          organisation: [
-            schema: WraftDoc.Enterprise.Organisation,
-            admin: WraftDocWeb.OrganisationAdmin
-          ],
-          membership: [schema: WraftDoc.Enterprise.Membership, admin: WraftDocWeb.MembershipAdmin],
-          plan: [
-            schema: WraftDoc.Enterprise.Plan,
-            admin: WraftDocWeb.PlanAdmin
-          ],
-          enterprise_plan: [
-            schema: WraftDoc.Enterprise.Plan,
-            admin: WraftDocWeb.EnterprisePlanAdmin
-          ]
-        ]
+        resources: enterprise_resources()
       ],
       waiting_list: [
         name: "Waiting List",
@@ -62,5 +50,33 @@ defmodule WraftDoc.Kaffy.Config do
         ]
       ]
     ]
+  end
+
+  defp enterprise_resources do
+    resourses = [
+      organisation: [
+        schema: WraftDoc.Enterprise.Organisation,
+        admin: WraftDocWeb.OrganisationAdmin
+      ],
+      membership: [schema: WraftDoc.Enterprise.Membership, admin: WraftDocWeb.MembershipAdmin]
+    ]
+
+    case DeploymentMode.saas?() do
+      true ->
+        resourses ++
+          [
+            plan: [
+              schema: WraftDoc.Enterprise.Plan,
+              admin: WraftDocWeb.PlanAdmin
+            ],
+            enterprise_plan: [
+              schema: WraftDoc.Enterprise.Plan,
+              admin: WraftDocWeb.EnterprisePlanAdmin
+            ]
+          ]
+
+      false ->
+        resourses
+    end
   end
 end

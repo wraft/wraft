@@ -16,6 +16,9 @@ config :wraft_doc, WraftDocWeb.Endpoint,
   pubsub_server: WraftDoc.PubSub,
   live_view: [signing_salt: "2B8BVDxqHCMKIa5cHoQ2lM0Ne7gUxvkb"]
 
+config :wraft_doc,
+  deployement_mode: System.get_env("DEPLOYEMENT_MODE")
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.15.3",

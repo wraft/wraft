@@ -2,6 +2,8 @@ defmodule WraftDocWeb.Router do
   use WraftDocWeb, :router
   import Phoenix.LiveDashboard.Router
 
+  alias WraftDoc.DeploymentMode
+
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -69,7 +71,10 @@ defmodule WraftDocWeb.Router do
 
     # user
     scope "/v1", Api.V1, as: :v1 do
-      post("/vendors/webhook", VendorsWebhookController, :webhook)
+      if DeploymentMode.saas?() do
+        post("/vendors/webhook", VendorsWebhookController, :webhook)
+      end
+
       resources("/users/signup/", RegistrationController, only: [:create])
       post("/users/signin", UserController, :signin)
       # Google Signin
@@ -283,23 +288,24 @@ defmodule WraftDocWeb.Router do
       # put("/collection_fields/:id", CollectionFormFieldController, :update)
       # delete("/collection_fields/:id", CollectionFormFieldController, :delete)
 
-      # Billing
-      get("/billing/subscription/ping", BillingController, :ping_subscription)
-      get("/billing/active_subscription", BillingController, :get_active_subscription)
-      post("/billing/change-plan/:plan_id", BillingController, :change_plan)
-      post("/billing/change-plan/preview/:plan_id", BillingController, :change_plan_preview)
-      delete("/billing/cancel", BillingController, :cancel_subscription)
-      # resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
-      # Vendor webhook
-      # post("/vendors/notification", VendorsWebhookController, :webhook)
+      if DeploymentMode.saas?() do
+        # Billing
+        get("/billing/subscription/ping", BillingController, :ping_subscription)
+        get("/billing/active_subscription", BillingController, :get_active_subscription)
+        post("/billing/change-plan/:plan_id", BillingController, :change_plan)
+        post("/billing/change-plan/preview/:plan_id", BillingController, :change_plan_preview)
+        delete("/billing/cancel", BillingController, :cancel_subscription)
 
-      # Update membership plan
-      put("/memberships/:id", MembershipController, :update)
-      # Get memberhsip
-      get("/organisations/:id/memberships", MembershipController, :show)
+        # resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
 
-      # Payments
-      resources("/payments", PaymentController, only: [:index, :show])
+        # Update membership plan
+        put("/memberships/:id", MembershipController, :update)
+        # Get memberhsip
+        get("/organisations/:id/memberships", MembershipController, :show)
+
+        # Payments
+        resources("/payments", PaymentController, only: [:index, :show])
+      end
 
       # Blocks
       resources("/blocks", BlockController, except: [:index])
@@ -378,15 +384,21 @@ defmodule WraftDocWeb.Router do
     pipe_through([:api, :api_auth, :ex_audit_track, :email_verify])
 
     scope "/v1", Api.V1, as: :v1 do
-      # Create, Update and delete plans
-      resources("/plans", PlanController, only: [:create, :update, :delete])
+      if DeploymentMode.saas?() do
+        # Create, Update and delete plans
+        resources("/plans", PlanController, only: [:create, :update, :delete])
+      end
 
       # List all organisation details
       get("/organisations", OrganisationController, :index)
     end
   end
 
-  use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin, :enterprise_plan_params]
+  if DeploymentMode.saas?() do
+    use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin, :enterprise_plan_params]
+  else
+    use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin]
+  end
 
   scope "/admin", WraftDocWeb do
     pipe_through([:kaffy_browser, :current_admin])
