@@ -2871,9 +2871,18 @@ defmodule WraftDoc.Document do
   Create a comment
   """
   # TODO - improve tests
-  def create_comment(%{current_org_id: org_id} = current_user, params) do
+  def create_comment(%{current_org_id: <<_::288>> = org_id} = current_user, params) do
     params = Map.put(params, "organisation_id", org_id)
+    insert_comment(current_user, params)
+  end
 
+  def create_comment(%{current_org_id: nil} = current_user, params),
+    do: insert_comment(current_user, params)
+
+  def create_comment(_, _), do: {:error, :fake}
+
+  # Private
+  defp insert_comment(current_user, params) do
     current_user
     |> build_assoc(:comments)
     |> Comment.changeset(params)
@@ -2886,8 +2895,6 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
-
-  def create_comment(_, _), do: {:error, :fake}
 
   @doc """
   Get a comment by uuid.

@@ -32,8 +32,7 @@ defmodule WraftDoc.Document.Comment do
       :is_parent,
       :master,
       :master_id,
-      :user_id,
-      :organisation_id
+      :user_id
     ])
   end
 
