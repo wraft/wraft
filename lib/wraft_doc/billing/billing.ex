@@ -1,6 +1,6 @@
 defmodule WraftDoc.Billing do
   @moduledoc """
-  The billing module.
+  The billing module for wraft subscription management.
   """
   import Ecto.Query
 
@@ -8,6 +8,10 @@ defmodule WraftDoc.Billing do
   alias __MODULE__.Subscription
   alias WraftDoc.Repo
 
+  @doc """
+  Gets active subscription of a user.
+  """
+  @spec active_subscription_for(Ecto.UUID.t()) :: {:ok, Subscription.t()} | {:error, atom()}
   def active_subscription_for(user_id) do
     user_id
     |> active_subscription_query()
@@ -21,6 +25,10 @@ defmodule WraftDoc.Billing do
     end
   end
 
+  @doc """
+  Returns true  user has active subscription.
+  """
+  @spec has_active_subscription?(Ecto.UUID.t()) :: boolean()
   def has_active_subscription?(user_id) do
     user_id |> active_subscription_query() |> Repo.exists?()
   end
@@ -33,6 +41,10 @@ defmodule WraftDoc.Billing do
     )
   end
 
+  @doc """
+  Create subscription.
+  """
+  @spec subscription_created(map()) :: {:ok, Subscription.t()} | {:error, any()}
   def subscription_created(params) do
     params = format_subscription_params(params)
 
@@ -41,30 +53,47 @@ defmodule WraftDoc.Billing do
     end)
   end
 
+  @doc """
+  Update subscription.
+  """
+  @spec subscription_updated(map()) :: {:ok, Subscription.t()} | {:error, any()}
   def subscription_updated(params) do
     Repo.transaction(fn ->
       handle_subscription_updated(params)
     end)
   end
 
+  @doc """
+  Cancel subscription.
+  """
+  @spec subscription_cancelled(map()) :: {:ok, Subscription.t()} | {:error, any()}
   def subscription_cancelled(params) do
     Repo.transaction(fn ->
       handle_subscription_cancelled(params)
     end)
   end
 
-  def subscription_payment_succeeded(params) do
-    Repo.transaction(fn ->
-      handle_subscription_payment_succeeded(params)
-    end)
-  end
+  # may use later
+  # @doc """
+  # Update subscription when payment succeeded.
+  # """
+  # @spec subscription_payment_succeeded(map()) :: {:ok, Subscription.t()} | {:error, any()}
+  # def subscription_payment_succeeded(params) do
+  #   Repo.transaction(fn ->
+  #     handle_subscription_payment_succeeded(params)
+  #   end)
+  # end
 
+  @doc """
+  Update subscription when plan changed.
+  """
+  @spec change_plan(Subscription.t(), binary()) :: {:ok, Subscription.t()} | {:error, any()}
   def change_plan(
         %Subscription{provider_subscription_id: provider_subscription_id} = subscription,
-        plan_id
+        paddle_price_id
       ) do
     provider_subscription_id
-    |> PaddleApi.update_subscription(plan_id)
+    |> PaddleApi.update_subscription(paddle_price_id)
     |> case do
       {:ok, response} ->
         subscription
@@ -82,36 +111,43 @@ defmodule WraftDoc.Billing do
     end
   end
 
-  def change_plan_preview(subscription, new_plan_id) do
+  @doc """
+  Gets preview of a plan changes.
+  """
+  @spec change_plan_preview(Subscription.t(), binary()) :: {:ok, map()} | {:error, any()}
+  def change_plan_preview(subscription, paddle_price_id) do
     case PaddleApi.update_subscription_preview(
            subscription.provider_subscription_id,
-           new_plan_id
+           paddle_price_id
          ) do
       {:ok, response} ->
         {:ok, response}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
+  @doc """
+  Cancel subscription.
+  """
+  @spec cancel_subscription(Subscription.t()) :: {:ok, Subscription.t()} | {:error, any()}
   def cancel_subscription(subscription) do
     case PaddleApi.cancel_subscription(subscription.provider_subscription_id) do
       {:ok, response} ->
         {:ok, response}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
   defp handle_subscription_created(params) do
     %Subscription{}
     |> Subscription.changeset(params)
-    |> Repo.insert!()
+    |> Repo.insert()
   end
 
-  # TODO check error handling.
   defp format_subscription_params(params) do
     with {:ok, first_item} <- extract_first_item(params),
          {:ok, price} <- extract_price(first_item),
@@ -131,8 +167,8 @@ defmodule WraftDoc.Billing do
         organisation_id: custom_data["organisation_id"]
       }
     else
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -180,7 +216,7 @@ defmodule WraftDoc.Billing do
 
       subscription
       |> Subscription.changeset(params)
-      |> Repo.update!()
+      |> Repo.update()
     end
   end
 
@@ -197,31 +233,29 @@ defmodule WraftDoc.Billing do
           canceled_at: params["canceled_at"]
         })
 
-      Repo.update!(changeset)
+      Repo.update(changeset)
     end
   end
 
-  def get_subscription(subscription_id) do
-    Repo.get_by(Subscription, provider_subscription_id: subscription_id)
-  end
+  # may need in future
+  # defp get_subscription(subscription_id) do
+  #   Repo.get_by(Subscription, provider_subscription_id: subscription_id)
+  # end
 
-  defp handle_subscription_payment_succeeded(params) do
-    subscription = Repo.get_by(Subscription, provider_subscription_id: params["subscription_id"])
+  # defp handle_subscription_payment_succeeded(params) do
+  #   subscription =
+  #   params["subscription_id"]
+  #   |> get_subscription()
+  #   |> if do
 
-    if subscription do
-      {:ok, api_subscription} = PaddleApi.get_subscription(subscription.paddle_subscription_id)
-
-      amount =
-        :erlang.float_to_binary(api_subscription["next_payment"]["amount"] / 1, decimals: 2)
-
-      subscription
-      |> Subscription.changeset(%{
-        next_bill_amount: amount,
-        next_payment_date: api_subscription["next_payment"]["date"],
-        current_period_start: api_subscription["last_payment"]["date"]
-      })
-      |> Repo.update!()
-      |> Repo.preload(:user)
-    end
-  end
+  #     subscription
+  #     |> Subscription.changeset(%{
+  #       next_bill_amount: params["next_payment"]["amount"],
+  #       next_payment_date: params["next_payment"]["date"],
+  #       current_period_start: params["last_payment"]["date"]
+  #     })
+  #     |> Repo.update()
+  #     |> Repo.preload(:user)
+  #   end
+  # end
 end

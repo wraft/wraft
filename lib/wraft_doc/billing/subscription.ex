@@ -4,6 +4,8 @@ defmodule WraftDoc.Billing.Subscription do
   """
   use WraftDoc.Schema
 
+  @type t :: %__MODULE__{}
+
   @changeset_fields [
     :provider_subscription_id,
     :provider_plan_id,

@@ -1,6 +1,6 @@
 defmodule WraftDoc.Billing.PaddleApi do
   @moduledoc """
-  Paddle API.
+  This module helps to interact with paddle APIs.
   """
   use Tesla
 
@@ -14,7 +14,10 @@ defmodule WraftDoc.Billing.PaddleApi do
 
   # TODO use transaction paid webhook and add status to subscription
 
-  # TODO Add docs and spec
+  @doc """
+  Retrieves paddle paddle subscription entity.
+  """
+  @spec get_subscription(binary()) :: {:ok, map()} | {:error, binary()} | {:error, map()}
   def get_subscription(subscription_id) do
     subscription_id
     |> get_subscription_url()
@@ -26,17 +29,22 @@ defmodule WraftDoc.Billing.PaddleApi do
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
-  def update_subscription_preview(paddle_subscription_id, new_plan_id) do
+  @doc """
+  Previews plan change.
+  """
+  @spec update_subscription_preview(binary(), binary()) ::
+          {:ok, map()} | {:error, binary()} | {:error, map()}
+  def update_subscription_preview(paddle_subscription_id, paddle_price_id) do
     params = %{
       collection_mode: "automatic",
       items: [
         %{
-          price_id: new_plan_id,
+          price_id: paddle_price_id,
           quantity: 1
         }
       ],
@@ -54,17 +62,22 @@ defmodule WraftDoc.Billing.PaddleApi do
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
-  def update_subscription(paddle_subscription_id, new_plan_id) do
+  @doc """
+  Update paddle subscription entity.
+  """
+  @spec update_subscription(binary(), binary()) ::
+          {:ok, map()} | {:error, binary()} | {:error, map()}
+  def update_subscription(paddle_subscription_id, paddle_price_id) do
     params = %{
       collection_mode: "automatic",
       items: [
         %{
-          price_id: new_plan_id,
+          price_id: paddle_price_id,
           quantity: 1
         }
       ],
@@ -82,12 +95,17 @@ defmodule WraftDoc.Billing.PaddleApi do
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
+  @doc """
+  Cancels paddle subscription entity
+  """
+  @spec cancel_subscription(binary()) :: {:ok, map()} | {:error, binary()} | {:error, map()}
   def cancel_subscription(paddle_subscription_id) do
+    # TODO check effects from when and does it changes db.
     params = %{
       effective_from: "immediately"
     }
@@ -105,11 +123,15 @@ defmodule WraftDoc.Billing.PaddleApi do
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
+  @doc """
+  Create paddle price entity.
+  """
+  @spec create_price(map()) :: {:ok, map()} | {:error, binary()} | {:error, map()}
   def create_price(params) do
     params = format_price_params(params)
 
@@ -125,15 +147,19 @@ defmodule WraftDoc.Billing.PaddleApi do
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
-  def update_price(price_id, params) do
+  @doc """
+  Update paddle price entity.
+  """
+  @spec update_price(binary(), map()) :: {:ok, map()} | {:error, binary()} | {:error, map()}
+  def update_price(paddle_price_id, params) do
     params = format_price_params(params)
 
-    price_id
+    paddle_price_id
     |> update_price_url()
     |> patch(params)
     |> case do
@@ -143,8 +169,8 @@ defmodule WraftDoc.Billing.PaddleApi do
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -296,6 +322,10 @@ defmodule WraftDoc.Billing.PaddleApi do
     }
   end
 
+  @doc """
+  Create paddle product entity.
+  """
+  @spec create_product(map()) :: {:ok, map()} | {:error, binary()} | {:error, map()}
   def create_product(%{"name" => name, "description" => description}) do
     params = %{
       "name" => name,
@@ -314,12 +344,16 @@ defmodule WraftDoc.Billing.PaddleApi do
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
-  def update_product(product_id, %{"name" => name, "description" => description}) do
+  @doc """
+  Update paddle product entity.
+  """
+  @spec update_product(binary(), map()) :: {:ok, map()} | {:error, binary()} | {:error, map()}
+  def update_product(paddle_product_id, %{"name" => name, "description" => description}) do
     params = %{
       "name" => name,
       "description" => description,
@@ -328,7 +362,7 @@ defmodule WraftDoc.Billing.PaddleApi do
       "custom_data" => nil
     }
 
-    product_id
+    paddle_product_id
     |> update_product_url()
     |> patch(params)
     |> case do
@@ -338,17 +372,21 @@ defmodule WraftDoc.Billing.PaddleApi do
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
-  def delete_product(product_id) do
+  @doc """
+  Delete paddle product entity.
+  """
+  @spec delete_product(binary()) :: {:ok, map()} | {:error, binary()} | {:error, map()}
+  def delete_product(paddle_product_id) do
     params = %{
       "status" => "archived"
     }
 
-    product_id
+    paddle_product_id
     |> delete_product_url()
     |> patch(params)
     |> case do
@@ -358,8 +396,8 @@ defmodule WraftDoc.Billing.PaddleApi do
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 
@@ -403,7 +441,7 @@ defmodule WraftDoc.Billing.PaddleApi do
     if Mix.env() in [:dev, :test] do
       "https://sandbox-api.paddle.com"
     else
-      "https://vendors.paddle.com"
+      "https://api.paddle.com"
     end
   end
 end
