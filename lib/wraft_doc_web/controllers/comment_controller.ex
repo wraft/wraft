@@ -136,6 +136,15 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def create(conn, %{"master_id" => document_id, "type" => "guest"} = params) do
+    current_user = conn.assigns.current_user
+
+    with true <- Document.has_access?(current_user, document_id),
+         %Comment{} = comment <- Document.create_comment(current_user, params) do
+      render(conn, "comment.json", comment: comment)
+    end
+  end
+
   def create(conn, params) do
     current_user = conn.assigns.current_user
 

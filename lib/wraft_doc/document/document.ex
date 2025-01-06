@@ -4140,6 +4140,21 @@ defmodule WraftDoc.Document do
     end
   end
 
+  @spec has_access?(User.t(), Ecto.UUID.t(), String.t()) :: boolean() | {:error, String.t()}
+  def has_access?(%User{id: user_id}, document_id, :editor) do
+    ContentCollaboration
+    |> where(
+      [cc],
+      cc.content_id == ^document_id and cc.user_id == ^user_id and cc.status == :accepted and
+        cc.role == :editor
+    )
+    |> Repo.exists?()
+    |> case do
+      true -> true
+      false -> {:error, "Collaborator does not have access to the document"}
+    end
+  end
+
   # TODO removed because user can be guest to wraft or internal but not within organisation
   # def has_access?(%User{is_guest: false}, _), do: {:error, "Invalid user"}
 

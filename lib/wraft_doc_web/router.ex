@@ -140,7 +140,8 @@ defmodule WraftDocWeb.Router do
     pipe_through([:api, :api_auth])
 
     scope "/v1/guest", Api.V1, as: :v1 do
-      get("/contents/:id", InstanceController, :show)
+      resources("/contents", InstanceController, only: [:show, :update])
+      resources("/comments", CommentController, only: [:create])
     end
   end
 

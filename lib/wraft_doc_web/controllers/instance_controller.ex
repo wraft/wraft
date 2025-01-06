@@ -668,6 +668,17 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  # Guest user
+  def update(conn, %{"id" => document_id, "type" => "guest"} = params) do
+    current_user = conn.assigns.current_user
+
+    with true <- Document.has_access?(current_user, document_id, :editor),
+         %Instance{} = instance <- Document.get_instance(document_id, current_user),
+         %Instance{} = instance <- Document.update_instance(instance, params) do
+      render(conn, "show.json", instance: instance)
+    end
+  end
+
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
