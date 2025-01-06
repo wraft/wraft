@@ -174,153 +174,73 @@ defmodule WraftDoc.Billing.PaddleApi do
     end
   end
 
-  defp format_price_params(
-         %{
-           "paddle_product_id" => product_id,
-           "description" => description,
-           "custom" => %{
-             "custom_amount" => custom_amount,
-             "custom_period" => custom_period,
-             "custom_period_frequency" => frequency
-           }
-         } = params
-       ) do
-    %{
-      product_id: product_id,
-      description: description,
-      billing_cycle: %{
-        interval: custom_period,
-        frequency: String.to_integer(frequency)
-      },
+  defp format_price_params(params) do
+    base_params = %{
+      description: params["description"],
       quantity: %{
         minimum: 1,
         maximum: 1
-      },
-      unit_price: %{
-        amount: custom_amount,
-        currency_code: "USD"
       },
       custom_data: %{
         creator_id: Map.get(params, "creator_id", nil),
         organisation_id: Map.get(params, "organisation_id", nil)
       }
     }
+
+    params
+    |> get_billing_details()
+    |> maybe_add_product_id(params)
+    |> Map.merge(base_params)
   end
 
-  defp format_price_params(
-         %{
-           "description" => description,
-           "custom" => %{
-             "custom_amount" => custom_amount,
-             "custom_period" => custom_period,
-             "custom_period_frequency" => frequency
-           }
-         } = params
-       ) do
+  defp get_billing_details(%{
+         "custom" => %{
+           "custom_amount" => amount,
+           "custom_period" => period,
+           "custom_period_frequency" => frequency
+         }
+       }) do
     %{
-      description: description,
       billing_cycle: %{
-        interval: custom_period,
+        interval: period,
         frequency: String.to_integer(frequency)
-      },
-      quantity: %{
-        minimum: 1,
-        maximum: 1
-      },
-      unit_price: %{
-        amount: custom_amount,
-        currency_code: "USD"
-      },
-      custom_data: %{
-        creator_id: Map.get(params, "creator_id", nil),
-        organisation_id: Map.get(params, "organisation_id", nil)
-      }
-    }
-  end
-
-  defp format_price_params(
-         %{
-           "paddle_product_id" => product_id,
-           "description" => description,
-           "monthly_amount" => monthly_amount,
-           "yearly_amount" => yearly_amount
-         } = params
-       ) do
-    # set in case
-    {interval, amount} =
-      cond do
-        monthly_amount not in [nil, ""] ->
-          {"month", monthly_amount}
-
-        yearly_amount not in [nil, ""] ->
-          {"year", yearly_amount}
-
-        true ->
-          {"unknown", nil}
-      end
-
-    %{
-      product_id: product_id,
-      description: description,
-      billing_cycle: %{
-        interval: interval,
-        frequency: 1
-      },
-      quantity: %{
-        minimum: 1,
-        maximum: 1
       },
       unit_price: %{
         amount: amount,
         currency_code: "USD"
-      },
-      custom_data: %{
-        creator_id: Map.get(params, "creator_id", nil),
-        organisation_id: Map.get(params, "organisation_id", nil)
       }
     }
   end
 
-  defp format_price_params(
-         %{
-           "description" => description,
-           "monthly_amount" => monthly_amount,
-           "yearly_amount" => yearly_amount
-         } = params
-       ) do
-    # set in case
-    {interval, amount} =
-      cond do
-        monthly_amount not in [nil, ""] ->
-          {"month", monthly_amount}
-
-        yearly_amount not in [nil, ""] ->
-          {"year", yearly_amount}
-
-        true ->
-          {"month", monthly_amount}
-      end
+  defp get_billing_details(%{"monthly_amount" => monthly_amount, "yearly_amount" => yearly_amount}) do
+    {interval, amount} = determine_billing_interval(monthly_amount, yearly_amount)
 
     %{
-      description: description,
       billing_cycle: %{
         interval: interval,
         frequency: 1
       },
-      quantity: %{
-        minimum: 1,
-        maximum: 1
-      },
       unit_price: %{
         amount: amount,
         currency_code: "USD"
-      },
-      custom_data: %{
-        creator_id: Map.get(params, "creator_id", nil),
-        organisation_id: Map.get(params, "organisation_id", nil)
       }
     }
   end
+
+  defp determine_billing_interval(monthly_amount, yearly_amount) do
+    cond do
+      is_valid_amount?(monthly_amount) -> {"month", monthly_amount}
+      is_valid_amount?(yearly_amount) -> {"year", yearly_amount}
+      true -> {"month", monthly_amount}
+    end
+  end
+
+  defp is_valid_amount?(amount), do: amount not in [nil, ""]
+
+  defp maybe_add_product_id(params, %{"paddle_product_id" => product_id}),
+    do: Map.put(params, :product_id, product_id)
+
+  defp maybe_add_product_id(params, _), do: params
 
   @doc """
   Create paddle product entity.
