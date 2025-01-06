@@ -124,7 +124,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   end
 
   swagger_path :get_active_subscription do
-    get("/api/v1/billing/active_subscription")
+    get("/billing/subscription/active")
     summary("Retrieve active subscription")
     description("Fetches the current active subscription for the logged-in user.")
 
@@ -142,7 +142,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   end
 
   swagger_path :ping_subscription do
-    get("/api/v1/billing/ping_subscription")
+    get("/billing/subscription/ping")
     summary("Check active subscription status")
     description("Returns a boolean indicating if the user has an active subscription.")
 
@@ -158,7 +158,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   end
 
   swagger_path :change_plan_preview do
-    post("/api/v1/billing/change_plan_preview")
+    post("/billing/change_plan_preview")
     summary("Preview a plan change")
     description("Provides a preview of subscription changes when switching to a new plan.")
 
@@ -182,7 +182,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   end
 
   swagger_path :change_plan do
-    post("/api/v1/billing/change_plan")
+    post("/billing/change_plan")
     summary("Change subscription plan")
     description("Applies a new plan to the user's current subscription.")
 
@@ -206,7 +206,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   end
 
   swagger_path :cancel_subscription do
-    delete("/api/v1/billing/cancel_subscription")
+    delete("/billing/subscription/cancel")
     summary("Cancel subscription")
     description("Cancels the user's active subscription.")
     response(200, "Subscription cancelled successfully")

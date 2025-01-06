@@ -26,11 +26,12 @@ defmodule WraftDocWeb.Api.V1.VendorsWebhookController do
     |> webhook_response(conn, params)
   end
 
-  def webhook(conn, %{"event_type" => "subscription_payment_succeeded", "data" => params}) do
-    params
-    |> Billing.subscription_payment_succeeded()
-    |> webhook_response(conn, params)
-  end
+  # may need to implement for notifications
+  # def webhook(conn, %{"event_type" => "subscription_payment_succeeded", "data" => params}) do
+  #   params
+  #   |> Billing.subscription_payment_succeeded()
+  #   |> webhook_response(conn, params)
+  # end
 
   def webhook(conn, _params) do
     conn |> send_resp(404, "") |> halt

@@ -1,6 +1,8 @@
 defmodule WraftDoc.Repo.Migrations.UpdatePlansTable do
   use Ecto.Migration
 
+  alias WraftDoc.DeploymentMode
+
   if DeploymentMode.saas?() do
     def change do
       alter table(:plan) do

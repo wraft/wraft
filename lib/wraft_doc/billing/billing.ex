@@ -111,23 +111,6 @@ defmodule WraftDoc.Billing do
     |> Repo.insert!()
   end
 
-  # defp format_subscription_params(params) do
-  #   %{
-  #     "provider_subscription_id" => params["id"],
-  #     "provider_plan_id" => params["items"][0]["price"]["id"],
-  #     "provider" => "paddle",
-  #     "status" => params["status"],
-  #     "current_period_start" => params["current_billing_period"]["starts_at"],
-  #     "current_period_end" => params["current_billing_period"]["ends_at"],
-  #     "next_bill_amount" => params["items"][0]["price"]["unit_price"]["amount"],
-  #     "next_payment_date" => params["next_billed_at"],
-  #     "currency" => params["currency_code"],
-  #     "plan_id" => params["custom_data"]["plan_id"],
-  #     "user_id" => params["custom_data"]["user_id"],
-  #     "organisation_id" => params["custom_data"]["organisation_id"]
-  #   }
-  # end
-
   # TODO check error handling.
   defp format_subscription_params(params) do
     with {:ok, first_item} <- extract_first_item(params),

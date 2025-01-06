@@ -27,6 +27,16 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
           if x.custom != nil,
             do: "#{x.custom.custom_period_frequency} x #{x.custom.custom_period}"
         end
+      },
+      pay_link: %{
+        name: "Link",
+        value: fn x ->
+          if x.custom != nil do
+            "PAY_LINK_BASE"
+            |> System.get_env()
+            |> Path.join(x.custom_price_id)
+          end
+        end
       }
     ]
   end

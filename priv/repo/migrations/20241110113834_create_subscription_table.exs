@@ -1,6 +1,8 @@
 defmodule WraftDoc.Repo.Migrations.CreateSubscriptionTable do
   use Ecto.Migration
 
+  alias WraftDoc.DeploymentMode
+
   if DeploymentMode.saas?() do
     def change do
       create table(:subscriptions, primary_key: false) do

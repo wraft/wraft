@@ -1,6 +1,8 @@
 defmodule WraftDoc.Repo.Migrations.CreatePlansTable do
   use Ecto.Migration
 
+  alias WraftDoc.DeploymentMode
+
   if DeploymentMode.saas?() do
     def up do
       create table(:plan, primary_key: false) do

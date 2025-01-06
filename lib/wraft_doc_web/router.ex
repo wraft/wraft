@@ -291,10 +291,10 @@ defmodule WraftDocWeb.Router do
       if DeploymentMode.saas?() do
         # Billing
         get("/billing/subscription/ping", BillingController, :ping_subscription)
-        get("/billing/active_subscription", BillingController, :get_active_subscription)
+        get("/billing/subscription/active", BillingController, :get_active_subscription)
         post("/billing/change-plan/:plan_id", BillingController, :change_plan)
         post("/billing/change-plan/preview/:plan_id", BillingController, :change_plan_preview)
-        delete("/billing/cancel", BillingController, :cancel_subscription)
+        delete("/billing/subscription/cancel", BillingController, :cancel_subscription)
 
         # resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
 
