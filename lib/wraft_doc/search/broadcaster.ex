@@ -14,7 +14,6 @@ defmodule WraftDoc.Search.Broadcaster do
     :create_collection
   ]
 
-  # Define operations that take a single parameter
   for operation <- @operations do
     def unquote(operation)(document) do
       PubSub.broadcast(@pubsub, @topic, {unquote(operation), document})
