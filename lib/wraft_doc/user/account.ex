@@ -107,7 +107,10 @@ defmodule WraftDoc.Account do
 
   defp basic_registration_multi(multi, params) do
     multi
-    |> Multi.insert(:user, User.changeset(%User{}, params))
+    |> Multi.insert(:user, User.changeset(%User{}, params),
+      on_conflict: {:replace_all_except, [:email]},
+      conflict_target: :email
+    )
     |> Multi.insert(:profile, fn %{user: user} ->
       user |> build_assoc(:profile) |> Profile.changeset(params)
     end)

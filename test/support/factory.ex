@@ -21,7 +21,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
   alias WraftDoc.Document.Comment
-  alias WraftDoc.Document.ContentCollab
+  alias WraftDoc.Document.ContentCollaboration
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.ContentTypeField
   alias WraftDoc.Document.ContentTypeRole
@@ -68,7 +68,8 @@ defmodule WraftDoc.Factory do
       password: "encrypt",
       encrypted_password: Bcrypt.hash_pwd_salt("encrypt"),
       current_org_id: nil,
-      owned_organisations: []
+      owned_organisations: [],
+      is_guest: false
     }
   end
 
@@ -299,11 +300,19 @@ defmodule WraftDoc.Factory do
   end
 
   def content_collab_factory do
-    %ContentCollab{
+    %ContentCollaboration{
       content: build(:instance),
       user: build(:user),
       state: build(:state),
-      roles: Enum.random([:editor, :viewer, :commenter])
+      # Assuming these are the roles in @roles
+      role: Enum.random([:suggestor, :viewer, :editor]),
+      # Default status
+      status: :pending,
+      invited_by: build(:user),
+      # Default to nil
+      revoked_by: nil,
+      # Default to nil
+      revoked_at: nil
     }
   end
 
