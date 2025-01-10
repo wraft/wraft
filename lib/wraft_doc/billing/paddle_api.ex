@@ -321,6 +321,47 @@ defmodule WraftDoc.Billing.PaddleApi do
     end
   end
 
+  def create_checkout_url(plan) do
+    params = %{
+      items: [
+        %{
+          quantity: 1,
+          price_id: plan.custom_price_id
+        }
+      ],
+      currency_code: "USD",
+      collection_mode: "manual",
+      billing_details: %{
+        enable_checkout: true,
+        payment_terms: %{
+          interval: plan.custom.custom_period,
+          frequency: plan.custom.custom_period_frequency
+        }
+      },
+      billing_period: %{
+        starts_at: DateTime.to_iso8601(DateTime.utc_now()),
+        ends_at: DateTime.to_iso8601(plan.custom.end_date)
+      },
+      custom_data: %{
+        plan_id: plan.id,
+        organisation_id: plan.organisation_id
+      }
+    }
+
+    create_transaction_url()
+    |> post(params)
+    |> case do
+      {:ok, %Tesla.Env{status: 201, body: %{"data" => %{"checkout" => %{"url" => url}}}}} ->
+        {:ok, url}
+
+      {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
+        {:error, error_details}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   defp create_price_url do
     Path.join(vendors_domain(), "/prices")
   end
@@ -355,6 +396,10 @@ defmodule WraftDoc.Billing.PaddleApi do
 
   defp get_subscription_url(subscription_id) do
     Path.join(vendors_domain(), "/subscriptions/#{subscription_id}")
+  end
+
+  defp create_transaction_url do
+    Path.join(vendors_domain(), "/transactions")
   end
 
   defp vendors_domain do

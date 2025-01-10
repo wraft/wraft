@@ -6,6 +6,7 @@ defmodule WraftDoc.Billing do
 
   alias __MODULE__.PaddleApi
   alias __MODULE__.Subscription
+  alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Repo
 
   @doc """
@@ -48,9 +49,21 @@ defmodule WraftDoc.Billing do
   def subscription_created(params) do
     params = format_subscription_params(params)
 
+    update_plan_with_transaction_completed(params)
+
     Repo.transaction(fn ->
       handle_subscription_created(params)
     end)
+  end
+
+  defp update_plan_with_transaction_completed(%{custom_data: %{"plan_id" => plan_id}} = _params) do
+    query = from(p in Plan, where: p.id == ^plan_id)
+
+    Repo.update_all(query,
+      set: [
+        transaction_completed: true
+      ]
+    )
   end
 
   @doc """

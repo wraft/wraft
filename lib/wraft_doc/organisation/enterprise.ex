@@ -926,7 +926,7 @@ defmodule WraftDoc.Enterprise do
     params =
       Map.merge(params, %{
         "creator_id" => current_user.id,
-        "organisation_id" => Map.get(current_user, :current_org_id, nil)
+        "organisation_id" => Map.get(current_user, :current_org_id, params["organisation_id"])
       })
 
     Multi.new()

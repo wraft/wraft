@@ -7,6 +7,7 @@ defmodule WraftDoc.Enterprise.Plan do
   alias __MODULE__
   alias __MODULE__.Custom
   alias __MODULE__.Limits
+  alias WraftDoc.Enterprise.Organisation
 
   schema "plan" do
     field(:name, :string)
@@ -17,9 +18,12 @@ defmodule WraftDoc.Enterprise.Plan do
     field(:yearly_price_id, :string)
     field(:yearly_amount, :string)
     field(:custom_price_id, :string)
+    field(:transaction_completed, :boolean, default: false)
 
-    embeds_one(:custom, Custom, on_replace: :delete)
+    belongs_to(:organisation, Organisation)
+
     embeds_one(:limits, Limits, on_replace: :delete)
+    embeds_one(:custom, Custom, on_replace: :delete)
 
     timestamps()
   end
@@ -34,7 +38,9 @@ defmodule WraftDoc.Enterprise.Plan do
       :monthly_amount,
       :yearly_price_id,
       :yearly_amount,
-      :custom_price_id
+      :organisation_id,
+      :custom_price_id,
+      :transaction_completed
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> cast_embed(:custom)
@@ -70,10 +76,12 @@ defmodule WraftDoc.Enterprise.Plan do
       :name,
       :description,
       :paddle_product_id,
-      :custom_price_id
+      :organisation_id,
+      :custom_price_id,
+      :transaction_completed
     ])
-    |> cast_embed(:limits, required: true)
-    |> cast_embed(:custom, required: true)
+    |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
+    |> cast_embed(:custom, with: &Custom.changeset/2, required: true)
     |> validate_required([:name, :description])
     |> unique_constraint(:name,
       name: :plan_unique_index,
@@ -82,6 +90,7 @@ defmodule WraftDoc.Enterprise.Plan do
   end
 end
 
+# TODO Need implement date validation.
 defmodule WraftDoc.Enterprise.Plan.Custom do
   @moduledoc """
   The custom plan model.
@@ -91,12 +100,13 @@ defmodule WraftDoc.Enterprise.Plan.Custom do
   import Ecto.Changeset
 
   @primary_key false
-  @fields [:custom_amount, :custom_period, :custom_period_frequency]
+  @fields [:custom_amount, :custom_period, :custom_period_frequency, :end_date]
 
   embedded_schema do
     field(:custom_amount, :string)
     field(:custom_period, Ecto.Enum, values: [:day, :week, :month, :year])
     field(:custom_period_frequency, :integer)
+    field(:end_date, :utc_datetime)
   end
 
   def changeset(struct, params) do
