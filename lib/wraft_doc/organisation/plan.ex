@@ -12,13 +12,14 @@ defmodule WraftDoc.Enterprise.Plan do
   schema "plan" do
     field(:name, :string)
     field(:description, :string)
+    field(:features, WraftDocWeb.Kaffy.ArrayField)
     field(:paddle_product_id, :string)
     field(:monthly_price_id, :string)
     field(:monthly_amount, :string)
     field(:yearly_price_id, :string)
     field(:yearly_amount, :string)
+    field(:is_active?, :boolean, default: true)
     field(:custom_price_id, :string)
-    field(:transaction_completed, :boolean, default: false)
 
     belongs_to(:organisation, Organisation)
 
@@ -40,7 +41,8 @@ defmodule WraftDoc.Enterprise.Plan do
       :yearly_amount,
       :organisation_id,
       :custom_price_id,
-      :transaction_completed
+      :features,
+      :is_active?
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> cast_embed(:custom)
@@ -59,8 +61,10 @@ defmodule WraftDoc.Enterprise.Plan do
       :paddle_product_id,
       :monthly_price_id,
       :monthly_amount,
+      :features,
       :yearly_price_id,
-      :yearly_amount
+      :yearly_amount,
+      :is_active?
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> validate_required([:name, :description, :monthly_amount, :yearly_amount])
@@ -76,9 +80,9 @@ defmodule WraftDoc.Enterprise.Plan do
       :name,
       :description,
       :paddle_product_id,
+      :features,
       :organisation_id,
-      :custom_price_id,
-      :transaction_completed
+      :custom_price_id
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> cast_embed(:custom, with: &Custom.changeset/2, required: true)
@@ -90,7 +94,6 @@ defmodule WraftDoc.Enterprise.Plan do
   end
 end
 
-# TODO Need implement date validation.
 defmodule WraftDoc.Enterprise.Plan.Custom do
   @moduledoc """
   The custom plan model.

@@ -7,12 +7,13 @@ defmodule WraftDocWeb.PlanAdmin do
 
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Plan
+  alias WraftDoc.Repo
 
   def index(_) do
     [
       name: %{name: "Name", value: fn x -> x.name end},
       description: %{name: "Description", value: fn x -> x.description end},
-      yearly_amount: %{name: "Yearly amount", vlue: fn x -> x.yearly_amount end},
+      yearly_amount: %{name: "Yearly amount", value: fn x -> x.yearly_amount end},
       monthly_amount: %{name: "Monthly amount", value: fn x -> x.monthly_amount end}
     ]
   end
@@ -23,6 +24,9 @@ defmodule WraftDocWeb.PlanAdmin do
       description: %{label: "Description", type: :textarea},
       yearly_amount: %{label: "Yearly amount", type: :string, required: true},
       monthly_amount: %{label: "Monthly amount", type: :string, required: true},
+      features: %{
+        label: "Features"
+      },
       limits: %{
         label: "Limits",
         required: true,
@@ -31,13 +35,18 @@ defmodule WraftDocWeb.PlanAdmin do
     ]
   end
 
+  def default_actions(_schema) do
+    [:new, :delete]
+  end
+
   def ordering(_) do
     [desc: :inserted_at]
   end
 
   def custom_index_query(_conn, _schema, _query) do
     from(p in Plan,
-      where: is_nil(p.custom)
+      where: is_nil(p.custom),
+      where: p.is_active? == true
     )
   end
 
@@ -85,8 +94,9 @@ defmodule WraftDocWeb.PlanAdmin do
   end
 
   def delete(_conn, changeset) do
-    changeset.data
-    |> Enterprise.delete_plan()
+    changeset
+    |> Ecto.Changeset.change(%{is_active?: false})
+    |> Repo.update()
     |> case do
       {:ok, plan} ->
         {:ok, plan}
@@ -96,9 +106,7 @@ defmodule WraftDocWeb.PlanAdmin do
     end
   end
 
-  defp custom_error(changeset, error_message) do
-    changeset
-    |> Ecto.Changeset.add_error(:name, error_message)
-    |> then(&{:error, &1})
+  defp custom_error(changeset, error) do
+    {:error, {changeset, error}}
   end
 end

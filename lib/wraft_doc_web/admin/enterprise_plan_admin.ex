@@ -42,14 +42,6 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
     [
       paylink: %{
         name: "Copy pay link",
-        # inputs: [
-        #   org_select: %{
-        #     name: "organisation_id",
-        #     title: "Select Organisation",
-        #     type: :select,
-        #     options: get_organisations()
-        #   }
-        # ],
         action: fn _conn, plan ->
           plan
           |> PaddleApi.create_checkout_url()
@@ -86,6 +78,9 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
         required: true
       },
       description: %{label: "Description", required: true, type: :textarea},
+      features: %{
+        label: "Features"
+      },
       limits: %{
         label: "Limits",
         help_text: "Define usage limits for this plan."
@@ -119,63 +114,10 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
     |> Enum.map(&{&1.name, &1.id})
   end
 
-  # defp get_plans do
-  #   Plan
-  #   |> where([p], not is_nil(p.custom))
-  #   |> order_by(asc: :name)
-  #   |> Repo.all()
-  #   |> Enum.map(&{"#{&1.name} - #{&1.description}", &1.id})
-  # end
-
-  # list resource will be used in future
-  # def list_actions(_conn) do
-  #   [
-  #     generate_bulk_paylinks: %{
-  #       name: "Generate Payment Links",
-  #       prompt: true,
-  #       modal_message: "Select plan and organization to generate payment link",
-  #       inputs: [
-  #         %{name: "plan", title: "Select Plan", use_select: true, options: get_plans()},
-  #         %{name: "organisation_id", title: "Select organisation", use_select: true, options: get_organisations()},
-  #       ],
-  #       action: fn _conn, _plan, params ->
-  #
-  #         # plan
-  #         # |> PaddleApi.create_checkout_url()
-  #         # |> case do
-  #         #   {:ok, url} ->
-  #         #     copy_to_clipboard(url)
-  #         #     :ok
-
-  #         #   {:error, _error} ->
-  #         #     {:error, "Failed to create pay link"}
-  #         # end
-  #         :ok
-  #       end
-  #     }
-  #   ]
-  # end
-
-  # defp get_organisations do
-  #   Organisation
-  #   |> where([o], o.name != "Personal")
-  #   |> order_by(asc: :name)
-  #   |> WraftDoc.Repo.all()
-  #   |> Enum.map(&[&1.name, &1.id])
-  # end
-
-  # defp get_plans do
-  #   Plan
-  #   |> where([p], not is_nil(p.custom))
-  #   |> order_by(asc: :name)
-  #   |> WraftDoc.Repo.all()
-  #   |> Enum.map(&["#{&1.name} - #{&1.description}", &1])
-  # end
-
   def custom_index_query(_conn, _schema, _query) do
     from(p in Plan,
       where: not is_nil(p.custom),
-      where: not p.transaction_completed
+      where: p.is_active? == true
     )
   end
 
@@ -223,8 +165,9 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
   end
 
   def delete(_conn, changeset) do
-    changeset.data
-    |> Enterprise.delete_plan()
+    changeset
+    |> Ecto.Changeset.change(%{is_active?: false})
+    |> Repo.update()
     |> case do
       {:ok, plan} ->
         {:ok, plan}

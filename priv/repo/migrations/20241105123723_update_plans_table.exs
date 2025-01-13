@@ -13,8 +13,9 @@ defmodule WraftDoc.Repo.Migrations.UpdatePlansTable do
         add(:monthly_price_id, :string)
         add(:yearly_price_id, :string)
         add(:custom_price_id, :string)
+        add(:features, {:array, :string})
+        add(:is_active?, :boolean, default: true)
         add(:organisation_id, references(:organisation, on_delete: :nothing, type: :uuid))
-        add(:transaction_completed, :boolean, default: false)
         add(:limits, :map)
         add(:custom, :map)
       end

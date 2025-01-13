@@ -49,19 +49,19 @@ defmodule WraftDoc.Billing do
   def subscription_created(params) do
     params = format_subscription_params(params)
 
-    update_plan_with_transaction_completed(params)
+    update_plan_status(params)
 
     Repo.transaction(fn ->
       handle_subscription_created(params)
     end)
   end
 
-  defp update_plan_with_transaction_completed(%{custom_data: %{"plan_id" => plan_id}} = _params) do
-    query = from(p in Plan, where: p.id == ^plan_id)
+  defp update_plan_status(%{custom_data: %{"plan_id" => plan_id}} = _params) do
+    query = from(p in Plan, where: p.id == ^plan_id, where: not is_nil(p.custom))
 
     Repo.update_all(query,
       set: [
-        transaction_completed: true
+        is_active?: false
       ]
     )
   end
