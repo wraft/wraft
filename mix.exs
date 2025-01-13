@@ -154,6 +154,11 @@ defmodule WraftDoc.Mixfile do
 
       # search
       {:ex_typesense, "~> 0.6"}
+      {:mjml_eex, "~> 0.10.0"},
+
+      # live collaboration
+      {:rustler, ">= 0.34.0"},
+      {:y_ex, "~> 0.6.5"}
     ]
   end
 

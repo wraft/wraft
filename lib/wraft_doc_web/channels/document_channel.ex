@@ -3,17 +3,18 @@ defmodule WraftDocWeb.DocumentChannel do
   Channel module for Document Collabaration
   """
   require Logger
-  
+
   use Phoenix.Channel
   alias Yex.Sync.SharedDoc
+
   @impl true
-  def join("y_doc_room:" <> doc_name, payload, socket) do
+  def join("y_doc_room:" <> content_id, payload, socket) do
     if authorized?(payload) do
-      case start_shared_doc(doc_name) do
+      case start_shared_doc(content_id) do
         {:ok, docpid} ->
           Process.monitor(docpid)
           SharedDoc.observe(docpid)
-          {:ok, socket |> assign(doc_name: doc_name, doc_pid: docpid)}
+          {:ok, socket |> assign(content_id: content_id, doc_pid: docpid)}
 
         {:error, reason} ->
           {:error, %{reason: reason}}
@@ -48,11 +49,11 @@ defmodule WraftDocWeb.DocumentChannel do
     {:stop, {:error, "remote process crash"}, socket}
   end
 
-  defp start_shared_doc(doc_name) do
-    case :global.whereis_name({__MODULE__, doc_name}) do
+  defp start_shared_doc(content_id) do
+    case :global.whereis_name({__MODULE__, content_id}) do
       :undefined ->
-        SharedDoc.start([doc_name: doc_name, persistence: YPhoenix.EctoPersistence],
-          name: {:global, {__MODULE__, doc_name}}
+        SharedDoc.start([doc_name: content_id, persistence: WraftDoc.EctoPersistence],
+          name: {:global, {__MODULE__, content_id}}
         )
 
       pid ->
@@ -66,9 +67,11 @@ defmodule WraftDocWeb.DocumentChannel do
         {:ok, pid}
 
       {:error, reason} ->
+        IO.inspect(reason, label: "reason")
+
         Logger.error("""
         Failed to start shareddoc.
-        Room: #{inspect(doc_name)}
+        Room: #{inspect(content_id)}
         Reason: #{inspect(reason)}
         """)
 

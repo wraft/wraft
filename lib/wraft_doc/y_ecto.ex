@@ -11,10 +11,10 @@ defmodule WraftDoc.YEcto do
 
       @flush_size 400
 
-      def get_y_doc(doc_name) do
+      def get_y_doc(content_id) do
         ydoc = Yex.Doc.new()
 
-        updates = get_updates(doc_name)
+        updates = get_updates(content_id)
 
         Yex.Doc.transaction(ydoc, fn ->
           Enum.each(updates, fn update ->
@@ -26,67 +26,72 @@ defmodule WraftDoc.YEcto do
           {:ok, u} = Yex.encode_state_as_update(ydoc)
           {:ok, sv} = Yex.encode_state_vector(ydoc)
           clock = List.last(updates, nil).inserted_at
-          flush_document(doc_name, u, sv, clock)
+          flush_document(content_id, u, sv, clock)
         end
 
         ydoc
       end
 
-      def insert_update(doc_name, value) do
-        @repo.insert(%@schema{docName: doc_name, value: value, version: :v1})
+      def insert_update(content_id, value) do
+        @repo.insert(%@schema{content_id: content_id, value: value, version: :v1})
+        |> IO.inspect(label: "insert_update")
       end
 
-      def get_state_vector(doc_name) do
+      def get_state_vector(content_id) do
         query =
-          from y in @schema,
-            where: y.docName == ^doc_name and y.version == :v1_sv,
+          from(y in @schema,
+            where: y.content_id == ^content_id and y.version == :v1_sv,
             select: y
+          )
 
         @repo.one(query)
       end
 
-      def get_diff(doc_name, sv) do
-        doc = get_y_doc(doc_name)
+      def get_diff(content_id, sv) do
+        doc = get_y_doc(content_id)
         Yex.encode_state_as_update(doc, sv)
       end
 
-      def clear_document(doc_name) do
+      def clear_document(content_id) do
         query =
-          from y in @schema,
-            where: y.docName == ^doc_name
+          from(y in @schema,
+            where: y.content_id == ^content_id
+          )
 
         @repo.delete_all(query)
       end
 
-      defp put_state_vector(doc_name, state_vector) do
-        case get_state_vector(doc_name) do
-          nil -> %@schema{docName: doc_name, version: :v1_sv}
+      defp put_state_vector(content_id, state_vector) do
+        case get_state_vector(content_id) do
+          nil -> %@schema{content_id: content_id, version: :v1_sv}
           state_vector -> state_vector
         end
         |> @schema.changeset(%{value: state_vector})
         |> @repo.insert_or_update()
       end
 
-      defp get_updates(doc_name) do
+      defp get_updates(content_id) do
         query =
-          from y in @schema,
-            where: y.docName == ^doc_name and y.version == :v1,
+          from(y in @schema,
+            where: y.content_id == ^content_id and y.version == :v1,
             select: y,
             order_by: y.inserted_at
+          )
 
         @repo.all(query)
       end
 
-      defp flush_document(doc_name, updates, sv, clock) do
-        @repo.insert(%@schema{docName: doc_name, value: updates, version: :v1})
-        put_state_vector(doc_name, sv)
-        clear_updates_to(doc_name, clock)
+      defp flush_document(content_id, updates, sv, clock) do
+        @repo.insert(%@schema{content_id: content_id, value: updates, version: :v1})
+        put_state_vector(content_id, sv)
+        clear_updates_to(content_id, clock)
       end
 
-      defp clear_updates_to(doc_name, to) do
+      defp clear_updates_to(content_id, to) do
         query =
-          from y in @schema,
-            where: y.docName == ^doc_name and y.inserted_at < ^to
+          from(y in @schema,
+            where: y.content_id == ^content_id and y.inserted_at < ^to
+          )
 
         @repo.delete_all(query)
       end

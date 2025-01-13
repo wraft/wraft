@@ -3,9 +3,10 @@ defmodule WraftDoc.YjsWritings do
   import Ecto.Changeset
 
   schema "yjs-writings" do
-    field :value, :binary
-    field :version, Ecto.Enum, values: [:v1, :v1_sv]
-    field :docName, :string
+    field(:value, :binary)
+    field(:version, Ecto.Enum, values: [:v1, :v1_sv])
+    field(:content_id, :binary_id)
+    # belongs_to :content, WraftDoc.Document.Instance
 
     timestamps(type: :utc_datetime)
   end
@@ -13,7 +14,7 @@ defmodule WraftDoc.YjsWritings do
   @doc false
   def changeset(yjs_writings, attrs) do
     yjs_writings
-    |> cast(attrs, [:docName, :value, :version])
-    |> validate_required([:docName, :value, :version])
+    |> cast(attrs, [:content_id, :value, :version])
+    |> validate_required([:content_id, :value, :version])
   end
 end
