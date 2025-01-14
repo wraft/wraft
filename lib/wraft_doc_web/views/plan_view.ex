@@ -46,4 +46,10 @@ defmodule WraftDocWeb.Api.V1.PlanView do
       enterprise_plans: render_many(enterprise_plans, __MODULE__, "plan.json", as: :plan)
     }
   end
+
+  def render("active_standard_plan.json", %{plans: plans}) do
+    %{
+      plans: render_many(plans, __MODULE__, "plan.json", as: :plan)
+    }
+  end
 end

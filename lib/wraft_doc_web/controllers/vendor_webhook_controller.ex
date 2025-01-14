@@ -68,10 +68,6 @@ defmodule WraftDocWeb.Api.V1.VendorsWebhookController do
       {:error, error} ->
         error_response(conn, 400, error)
     end
-
-    # rescue
-    #   {:error, error} ->
-    #     error_response(conn, 401, error)
   end
 
   defp error_response(conn, status_code, error) do

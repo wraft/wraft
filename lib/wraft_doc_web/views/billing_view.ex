@@ -1,6 +1,10 @@
 defmodule WraftDocWeb.Api.V1.BillingView do
   use WraftDocWeb, :view
 
+  alias WraftDocWeb.Api.V1.OrganisationView
+  alias WraftDocWeb.Api.V1.PlanView
+  alias WraftDocWeb.Api.V1.UserView
+
   def render("subscription.json", %{subscription: subscription}) do
     %{
       id: subscription.id,
@@ -15,7 +19,16 @@ defmodule WraftDocWeb.Api.V1.BillingView do
       next_bill_amount: subscription.next_bill_amount,
       currency: subscription.currency,
       update_url: subscription.update_url,
-      cancel_url: subscription.cancel_url
+      cancel_url: subscription.cancel_url,
+      user_id: subscription.user_id,
+      user: render_one(subscription.user, UserView, "user.json", as: :user),
+      organisation_id: subscription.organisation_id,
+      organisation:
+        render_one(subscription.organisation, OrganisationView, "organisation.json",
+          as: :organisation
+        ),
+      plan_id: subscription.plan_id,
+      plan: render_one(subscription.plan, PlanView, "plan.json", as: :plan)
     }
   end
 

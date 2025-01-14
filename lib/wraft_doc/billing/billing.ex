@@ -13,10 +13,11 @@ defmodule WraftDoc.Billing do
   Gets active subscription of a user.
   """
   @spec active_subscription_for(Ecto.UUID.t()) :: {:ok, Subscription.t()} | {:error, atom()}
-  def active_subscription_for(user_id) do
-    user_id
+  def active_subscription_for(<<_::288>> = organisation_id) do
+    organisation_id
     |> active_subscription_query()
     |> Repo.one()
+    |> Repo.preload([:user, :organisation, :plan])
     |> case do
       %Subscription{} = subscription ->
         {:ok, subscription}
@@ -26,17 +27,19 @@ defmodule WraftDoc.Billing do
     end
   end
 
+  def active_subscription_for(_), do: {:error, :invalid_id, "Organisation"}
+
   @doc """
   Returns true  user has active subscription.
   """
   @spec has_active_subscription?(Ecto.UUID.t()) :: boolean()
-  def has_active_subscription?(user_id) do
-    user_id |> active_subscription_query() |> Repo.exists?()
+  def has_active_subscription?(organisation_id) do
+    organisation_id |> active_subscription_query() |> Repo.exists?()
   end
 
-  defp active_subscription_query(user_id) do
+  defp active_subscription_query(organisation_id) do
     from(s in Subscription,
-      where: s.user_id == ^user_id and s.status == ^"active",
+      where: s.organisation_id == ^organisation_id and s.status == ^"active",
       order_by: [desc: s.inserted_at],
       limit: 1
     )

@@ -27,8 +27,13 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             id(:string, "Plan id")
             name(:string, "Plan name")
             description(:string, "Plan description")
-            yearly_amount(:string, "Yearly amount of the plan")
+            features(:array, "Plan features")
+            monthly_price_id(:string, "Monthly price ID")
             monthly_amount(:string, "Monthly amount of the plan")
+            yearly_price_id(:string, "Yearly price ID")
+            yearly_amount(:string, "Yearly amount of the plan")
+            paddle_product_id(:string, "Paddle product ID")
+            limits(:map, "Limits of the plan")
             inserted_at(:string, "When was the plan inserted", format: "ISO-8601")
             updated_at(:string, "When was the plan last updated", format: "ISO-8601")
           end
@@ -37,8 +42,12 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             id: "c68b0988-790b-45e8-965c-c4aeb427e70d",
             name: "Basic",
             description: "A basic plan",
+            features: ["Feature 1", "Feature 2"],
+            monthly_price_id: "123456789",
+            yearly_price_id: "123456789",
             yearly_amount: "10",
             monthly_amount: "6",
+            paddle_product_id: "123456789",
             limits: %{
               instance_create: 25,
               content_type_create: 25,
@@ -51,15 +60,17 @@ defmodule WraftDocWeb.Api.V1.PlanController do
         end,
       EnterprisePlan:
         swagger_schema do
-          title("Plan")
-          description("A plan")
+          title("Enterprise Plan")
+          description("A custom enterprise plan")
 
           properties do
             id(:string, "Plan id")
             name(:string, "Plan name")
             description(:string, "Plan description")
-            yearly_amount(:string, "Yearly amount of the plan")
-            monthly_amount(:string, "Monthly amount of the plan")
+            features(:array, "Plan features")
+            custom_price_id(:string, "Custom price ID")
+            limits(:map, "Limits of the plan")
+            custom(:map, "Custom plan")
             inserted_at(:string, "When was the plan inserted", format: "ISO-8601")
             updated_at(:string, "When was the plan last updated", format: "ISO-8601")
           end
@@ -68,6 +79,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             id: "c68b0988-790b-45e8-965c-c4aeb427e70d",
             name: "Basic",
             description: "A basic plan",
+            features: ["Feature 1", "Feature 2"],
             limits: %{
               instance_create: 25,
               content_type_create: 25,
@@ -79,6 +91,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
               custom_period: "month",
               custom_period_frequency: 4
             },
+            organisation_id: "c68b0988-790b-45e8-965c-c4aeb427e70d",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -163,6 +176,22 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   def index(conn, _params) do
     with plans <- Enterprise.plan_index() do
       render(conn, "plans.json", plans: plans)
+    end
+  end
+
+  swagger_path :active_standard_plans do
+    get("/plans/active_standard_plans")
+    summary("Active Standard Plans")
+    description("List all active standard plans")
+    operation_id("active_standard_plans")
+
+    response(200, "OK", Schema.ref(:Plans))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  def active_standard_plans(conn, _params) do
+    with plans <- Enterprise.active_standard_plans() do
+      render(conn, "active_standard_plan.json", plans: plans)
     end
   end
 

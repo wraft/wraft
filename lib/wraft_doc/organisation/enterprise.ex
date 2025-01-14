@@ -1024,6 +1024,17 @@ defmodule WraftDoc.Enterprise do
   end
 
   @doc """
+  Retrieve all standard plans.
+  """
+  @spec active_standard_plans() :: [Plan.t()]
+  def active_standard_plans do
+    Plan
+    |> where([p], is_nil(p.custom))
+    |> where([p], p.is_active? == true)
+    |> Repo.all()
+  end
+
+  @doc """
   Updates a plan.
   """
   @spec update_plan(Plan.t(), map) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}

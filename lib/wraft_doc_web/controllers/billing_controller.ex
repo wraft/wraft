@@ -32,6 +32,9 @@ defmodule WraftDocWeb.Api.V1.BillingController do
             next_payment_date(:string, "Next payment date. Format: ISO8601 datetime")
             next_bill_amount(:number, "Amount of next bill")
             currency(:string, "Currency code")
+            organisation_id(:string, "Organization ID")
+            user_id(:string, "User ID")
+            plan_id(:string, "Plan ID")
             update_url(:string, "URL to update subscription")
             cancel_url(:string, "URL to cancel subscription")
           end
@@ -136,7 +139,8 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   def get_active_subscription(conn, _params) do
     current_user = conn.assigns.current_user
 
-    with {:ok, %Subscription{} = subscription} <- Billing.active_subscription_for(current_user.id) do
+    with {:ok, %Subscription{} = subscription} <-
+           Billing.active_subscription_for(current_user.current_org_id) do
       render(conn, "subscription.json", subscription: subscription)
     end
   end
@@ -153,7 +157,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   def ping_subscription(%Plug.Conn{} = conn, _params) do
     current_user = conn.assigns.current_user
 
-    subscribed? = Billing.has_active_subscription?(current_user.id)
+    subscribed? = Billing.has_active_subscription?(current_user.current_org_id)
     render(conn, "is_subscribed.json", is_subscribed: subscribed?)
   end
 
@@ -175,7 +179,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     current_user = conn.assigns.current_user
 
     with {:ok, %Subscription{} = subscription} <-
-           Billing.active_subscription_for(current_user.id),
+           Billing.active_subscription_for(current_user.current_org_id),
          {:ok, preview_info} <- Billing.change_plan_preview(subscription, plan_id) do
       render(conn, "change_plan_preview.json", preview_info: preview_info)
     end
@@ -199,7 +203,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     current_user = conn.assigns.current_user
 
     with {:ok, %Subscription{} = subscription} <-
-           Billing.active_subscription_for(current_user.id),
+           Billing.active_subscription_for(current_user.current_org_id),
          {:ok, _subscription} <- Billing.change_plan(subscription, plan_id) do
       render(conn, "change_plan_success.json")
     end
@@ -218,7 +222,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     current_user = conn.assigns.current_user
 
     with {:ok, %Subscription{} = subscription} <-
-           Billing.active_subscription_for(current_user.id),
+           Billing.active_subscription_for(current_user.current_org_id),
          {:ok, _subscription} <- Billing.cancel_subscription(subscription) do
       render(conn, "cancel_subscription.json")
     end

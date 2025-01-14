@@ -92,6 +92,7 @@ defmodule WraftDocWeb.Router do
       # Verify Email Verification Token
       get("/user/verify_email_token/:token", UserController, :verify_email_token)
       # Show and index plans
+      get("/plans/active_standard_plans", PlanController, :active_standard_plans)
       resources("/plans", PlanController, only: [:show, :index])
       # Verify invite token
       get(
