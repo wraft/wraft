@@ -1,22 +1,27 @@
 defmodule WraftDocWeb.NotificationChannel do
   @moduledoc """
-  Channel module for notification
+  Channel for handling real-time notification updates via WebSocket.
+  Manages client connections and message broadcasting.
   """
-  use Phoenix.Channel
-  alias WraftDoc.Notifications
 
+  use Phoenix.Channel
+  require Logger
+
+  alias WraftDoc.Notifications
+  alias WraftDoc.Notifications.NotificationServer
+  @impl true
   def join("notification:" <> user_id, _payload, socket) do
-    if authorized?(user_id, socket.assigns.current_user) do
-      {:ok, socket}
+    with {:ok, parsed_id} <- parse_user_id(user_id),
+         :ok <- authorize_user(parsed_id, socket.assigns.current_user),
+         :ok <- NotificationServer.subscribe(user_id) do
+      {:ok, assign(socket, :user_id, parsed_id)}
     else
-      {:error, %{reason: "unauthorized"}}
+      {:error, _reason} = error ->
+        error
     end
   end
 
-  # def join("notification:" <> _private_room_id, _params, _socket) do
-  #   {:error, %{reason: "unauthorized"}}
-  # end
-
+  @impl true
   def handle_in("list_notifications", _payload, socket) do
     notifications =
       socket.assigns.current_user
@@ -28,15 +33,7 @@ defmodule WraftDocWeb.NotificationChannel do
     {:reply, {:ok, %{notifications: notifications, read_status: read_status}}, socket}
   end
 
-  # def handle_in("new_msg", %{"body" => body}, socket) do
-  #   broadcast!(socket, "new_msg", %{body: body})
-  #   {:noreply, socket}
-  # end
-
-  def handle_in("ping", payload, socket) do
-    {:reply, {:ok, payload}, socket}
-  end
-
+  @impl true
   def handle_in("read_all", _, socket) do
     notifications =
       socket.assigns.current_user
@@ -48,11 +45,35 @@ defmodule WraftDocWeb.NotificationChannel do
     {:reply, {:ok, %{notifications: notifications, read_status: true}}}
   end
 
-  # It is also common to receive messages from the client and
-  # broadcast to everyone in the current topic (room:lobby).
+  def handle_in("ping", payload, socket) do
+    {:reply, {:ok, payload}, socket}
+  end
+
   def handle_in("shout", payload, socket) do
     broadcast!(socket, "shout", payload)
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info({:new_notification, message}, socket) do
+    {:noreply, push(socket, "message_created", %{body: message})}
+  end
+
+  @impl true
+  def handle_info({:notification_updated, message}, socket) do
+    {:noreply, push(socket, "notification_updated", %{body: message})}
+  end
+
+  @impl true
+  def handle_info({:all_notifications_read, metadata}, socket) do
+    {:noreply, push(socket, "all_notifications_read", metadata)}
+  end
+
+  defp parse_user_id(user_id) do
+    case Integer.parse(user_id) do
+      {id, ""} -> {:ok, id}
+      _ -> {:error, :invalid_user_id}
+    end
   end
 
   def broad_cast(message, user) do
@@ -84,7 +105,18 @@ defmodule WraftDocWeb.NotificationChannel do
     |> Map.merge(socket)
   end
 
-  defp authorized?(user_id, current_user) do
-    String.to_integer(user_id) === current_user.id
+  defp authorize_user(user_id, %{id: current_user_id}) do
+    if user_id == current_user_id do
+      :ok
+    else
+      {:error, :unauthorized}
+    end
+  end
+
+  defp authorize_user(_, _), do: {:error, :invalid_user}
+  @impl true
+  def terminate(_reason, socket) do
+    NotificationServer.unsubscribe(socket.assigns.user_id)
+    :ok
   end
 end

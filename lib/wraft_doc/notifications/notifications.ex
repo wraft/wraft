@@ -6,6 +6,7 @@ defmodule WraftDoc.Notifications do
 
   alias WraftDoc.Account.User
   alias WraftDoc.Notifications.Notification
+  alias WraftDoc.Notifications.NotificationServer
   alias WraftDoc.Notifications.UserNotifications
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
@@ -13,77 +14,79 @@ defmodule WraftDoc.Notifications do
   @doc """
   Create notification entry
   """
-  def create_notification(user, params) do
-    %Notification{}
-    |> Notification.changeset(Map.merge(params, %{"actor_id" => user.id}))
-    |> Repo.insert!()
 
-    # |> broad_cast_notifiation(recipient)
-  end
-
-  def create_notification(%{"recipient_id" => recipient_uuid, "actor_id" => actor_uuid} = params) do
-    recipient = Repo.get_by(User, id: recipient_uuid)
-    actor = Repo.get_by(User, id: actor_uuid)
-
-    params =
-      Map.merge(params, %{
-        "recipient_id" => recipient.id,
-        "actor_id" => actor.id
-      })
-
-    %Notification{}
-    |> Notification.changeset(params)
-    |> Repo.insert()
-    |> case do
-      {:ok, notification} ->
-        broad_cast_notifiation(notification, recipient)
-        notification
-
-      {:error, _} = changeset ->
-        changeset
+  def create_notification(%User{} = actor, params) when is_map(params) do
+    with {:ok, recipient} <- fetch_user(params["recipient_id"]),
+         {:ok, notification} <- save_notification(actor, recipient, params),
+         :ok <- broadcast_notification(notification, recipient),
+         :ok <- schedule_email(notification, recipient) do
+      {:ok, notification}
+    else
+      {:error, _reason} = error ->
+        error
     end
   end
 
   def create_notification(_), do: nil
 
-  def broad_cast_notifiation(notification, recipient) do
+  defp fetch_user(nil), do: {:error, :invalid_recipient}
+
+  defp fetch_user(id) do
+    case Repo.get(User, id) do
+      nil -> {:error, :invalid_recipient}
+      user -> {:ok, user}
+    end
+  end
+
+  defp save_notification(actor, recipient, params) do
+    %Notification{}
+    |> Notification.changeset(
+      Map.merge(params, %{"actor_id" => actor.id, "recipient_id" => recipient.id})
+    )
+    |> Repo.insert()
+  end
+
+  defp broadcast_notification(notification, recipient) do
+    message = format_notification_message(notification)
+
+    NotificationServer.broadcast_notification(message, recipient)
+    :ok
+  rescue
+    _exception ->
+      {:error, :broadcast_failed}
+  end
+
+  defp schedule_email(notification, recipient) do
     %{
       user_name: recipient.name,
-      notification_message: get_email_message(notification),
+      notification_message: format_email_message(notification),
       email: recipient.email
     }
     |> EmailWorker.new(
-      queue: "mailer",
-      tags: ["notification"]
+      queue: Application.get_env(:wraft_doc, :notification_queue, "mailer"),
+      tags: ["notification"],
+      max_attempts: 3
     )
     |> Oban.insert()
-
-    message = get_notification_message(notification)
-
-    WraftDocWeb.NotificationChannel.broad_cast(message, recipient)
-    # WraftDoc.NotificationChannel.broad_cast(notification.recipient_id)
+    |> case do
+      {:ok, _job} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @doc """
   List notifications for an user
-  ## Parameters
-  * `current_user`- user struct
   """
-  def list_notifications(current_user) do
-    query =
-      from(n in Notification,
-        where: n.recipient_id == ^current_user.id,
-        order_by: [desc: n.inserted_at],
-        preload: [:actor]
-      )
-
-    Repo.all(query)
+  def list_notifications(%User{} = current_user) do
+    Notification
+    |> where([n], n.recipient_id == ^current_user.id)
+    |> order_by(desc: :inserted_at)
+    |> preload(:actor)
+    |> Repo.all()
   end
 
   @doc """
   Returns notification message for particular action
-  ## Parameters
-  * `notification` - notification struct
   """
   def get_notification_message(notification) do
     message =
@@ -112,10 +115,7 @@ defmodule WraftDoc.Notifications do
 
   @doc """
   List unread notifications for an user
-  ## Parameters
-  * `current_user`- user struct
   """
-  @spec list_unread_notifications(User.t(), map) :: map
   def list_unread_notifications(%User{current_org_id: org_id} = user, params) do
     UserNotifications
     |> where(
@@ -129,8 +129,6 @@ defmodule WraftDoc.Notifications do
 
   @doc """
   Mark notification as read
-  ## Parameters
-  * `user_notification`- user notification struct
   """
   @spec read_notification(UserNotifications.t()) :: UserNotifications.t()
   def read_notification(user_notification) do
@@ -141,8 +139,6 @@ defmodule WraftDoc.Notifications do
 
   @doc """
   Count unread notifications for an user
-  ## Parameters
-  * `current_user`- user struct
   """
   @spec unread_notification_count(User.t()) :: integer
   def unread_notification_count(%User{current_org_id: org_id} = user) do
@@ -157,8 +153,6 @@ defmodule WraftDoc.Notifications do
 
   @doc """
   Mark all notifications as read
-  ## Parameters
-  * `current_user`- user struct
   """
   @spec read_all_notifications(User.t()) :: {integer(), nil}
   def read_all_notifications(%User{current_org_id: org_id} = current_user) do
@@ -173,9 +167,6 @@ defmodule WraftDoc.Notifications do
 
   @doc """
   Get user notification
-  ## Parameters
-  * `current_user`- user struct
-  * `notification` - notification struct
   """
   @spec get_user_notification(User.t(), Ecto.UUID.t()) :: UserNotifications.t() | nil
   def get_user_notification(%User{current_org_id: org_id} = current_user, notification_id) do
@@ -186,5 +177,27 @@ defmodule WraftDoc.Notifications do
         un.organisation_id == ^org_id and un.status == :unread
     )
     |> Repo.one()
+  end
+
+  @doc """
+  Formats a notification message based on its action.
+  """
+  @spec format_notification_message(Notification.t()) :: map
+  def format_notification_message(
+        %WraftDoc.Notifications.Notification{action: %{"type" => "assigned_as_approver"}} =
+          notification
+      ) do
+    %{
+      id: notification.id,
+      message: "You have been assigned to approve a document"
+    }
+  end
+
+  @doc """
+  Formats the email message for a notification.
+  """
+  @spec format_email_message(Notification.t()) :: String.t()
+  def format_email_message(%Notification{action: "assigned_as_approver"}) do
+    "You have been assigned to approve a document"
   end
 end
