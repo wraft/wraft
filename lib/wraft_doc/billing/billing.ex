@@ -56,7 +56,7 @@ defmodule WraftDoc.Billing do
     end)
   end
 
-  defp update_plan_status(%{custom_data: %{"plan_id" => plan_id}} = _params) do
+  defp update_plan_status(%{plan_id: plan_id} = _params) do
     query = from(p in Plan, where: p.id == ^plan_id, where: not is_nil(p.custom))
 
     Repo.update_all(query,
