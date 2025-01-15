@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
   alias WraftDoc.Document
   alias WraftDoc.Document.Theme
-  alias WraftDoc.Search.Broadcaster, as: Typesense
+  alias WraftDoc.Search.TypesenseServer, as: Typesense
 
   def swagger_definitions do
     %{

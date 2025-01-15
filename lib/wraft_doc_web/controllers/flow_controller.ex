@@ -16,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
-  alias WraftDoc.Search.Broadcaster, as: Typesense
+  alias WraftDoc.Search.TypesenseServer, as: Typesense
 
   def swagger_definitions do
     %{
