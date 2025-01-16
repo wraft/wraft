@@ -7,6 +7,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Billing
+  alias WraftDoc.Billing.PaddleApi
   alias WraftDoc.Billing.Subscription
 
   # TODO add RBAC.
@@ -234,6 +235,21 @@ defmodule WraftDocWeb.Api.V1.BillingController do
            Billing.active_subscription_for(current_user.current_org_id),
          {:ok, _subscription} <- Billing.cancel_subscription(subscription) do
       render(conn, "cancel_subscription.json")
+    end
+  end
+
+  swagger_path :get_invoice do
+    get("/billing/subscription/:transaction_id/invoice")
+    summary("Generates invoice url of given transaction id")
+    description("Returns invoice url to download invoice pdf")
+    response(200, "Invoice url generated successfully", Schema.ref(:InvoiceUrl))
+    response(404, "Failed to generate invoid url", Schema.ref(:Error))
+  end
+
+  @spec get_invoice(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  def get_invoice(conn, params) do
+    with {:ok, url} <- PaddleApi.get_invoice_pdf(params["transaction_id"]) do
+      render(conn, "invoice.json", invoice_url: url)
     end
   end
 end

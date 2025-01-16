@@ -362,6 +362,22 @@ defmodule WraftDoc.Billing.PaddleApi do
     end
   end
 
+  def get_invoice_pdf(transaction_id) do
+    transaction_id
+    |> get_invoice_pdf_url()
+    |> get()
+    |> case do
+      {:ok, %Tesla.Env{status: 200, body: %{"data" => %{"url" => url}}}} ->
+        {:ok, url}
+
+      {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
+        {:error, error_details}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   defp create_price_url do
     Path.join(vendors_domain(), "/prices")
   end
@@ -400,6 +416,10 @@ defmodule WraftDoc.Billing.PaddleApi do
 
   defp create_transaction_url do
     Path.join(vendors_domain(), "/transactions")
+  end
+
+  defp get_invoice_pdf_url(transaction_id) do
+    Path.join(vendors_domain(), "/transactions/#{transaction_id}/invoice")
   end
 
   defp vendors_domain do
