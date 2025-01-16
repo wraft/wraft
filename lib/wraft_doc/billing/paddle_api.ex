@@ -107,7 +107,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   def cancel_subscription(paddle_subscription_id) do
     # TODO check effects from when and does it changes db.
     params = %{
-      effective_from: "immediately"
+      effective_from: "next_billing_period"
     }
 
     paddle_subscription_id

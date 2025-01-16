@@ -15,6 +15,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Authorization.Permission
   alias WraftDoc.AuthTokens
   alias WraftDoc.Billing.PaddleApi
+  alias WraftDoc.Billing.Subscription
   alias WraftDoc.Client.Razorpay
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
@@ -42,8 +43,9 @@ defmodule WraftDoc.Enterprise do
     %{"state" => "Publish", "order" => 3, "approvers" => []}
   ]
 
-  @trial_plan_name "Free Trial"
-  @trial_duration 14
+  # @trial_plan_name "Free plan"
+  # @trial_plan_description "A free plan"
+  # @trial_duration 14
 
   @superadmin_role "superadmin"
   @editor_role "editor"
@@ -548,8 +550,8 @@ defmodule WraftDoc.Enterprise do
     |> Multi.insert(:user_organisation, fn %{organisation: org} ->
       UserOrganisation.changeset(%UserOrganisation{}, %{user_id: user.id, organisation_id: org.id})
     end)
-    |> Multi.run(:membership, fn _repo, %{organisation: organisation} ->
-      create_membership(organisation)
+    |> Multi.run(:subscription, fn _repo, %{organisation: organisation} ->
+      create_free_subscription(organisation.id)
     end)
     |> Repo.transaction()
     |> case do
@@ -570,8 +572,8 @@ defmodule WraftDoc.Enterprise do
       |> build_assoc(:owned_organisations)
       |> Organisation.personal_organisation_changeset(params)
     )
-    |> Multi.run(:membership, fn _repo, %{organisation: organisation} ->
-      create_membership(organisation)
+    |> Multi.run(:subscription, fn _repo, %{organisation: organisation} ->
+      create_free_subscription(organisation.id)
     end)
     |> Repo.transaction()
   end
@@ -1149,23 +1151,40 @@ defmodule WraftDoc.Enterprise do
 
   def delete_plan(_), do: nil
 
-  # Create free trial membership for the given organisation.
-  @spec create_membership(Organisation.t()) :: Membership.t()
-  defp create_membership(%Organisation{id: id} = _organisation) do
-    plan = Repo.get_by(Plan, name: @trial_plan_name)
-    start_date = Timex.now()
-    end_date = find_end_date(start_date, @trial_duration)
-    params = %{start_date: start_date, end_date: end_date, plan_duration: @trial_duration}
+  def create_free_subscription(organisation_id) do
+    plan = Repo.get_by(Plan, name: "Free trial")
 
-    plan
-    |> build_assoc(:memberships, organisation_id: id)
-    |> Membership.changeset(params)
-    |> Repo.insert!()
-    |> case do
-      %Membership{} = membership -> {:ok, membership}
-      changeset -> {:error, changeset}
-    end
+    params = %{
+      plan_id: plan.id,
+      organisation_id: organisation_id,
+      currency: "USD",
+      status: "active",
+      next_bill_amount: "0",
+      type: :free
+    }
+
+    %Subscription{}
+    |> Subscription.free_subscription_changeset(params)
+    |> Repo.insert()
   end
+
+  # Create free trial membership for the given organisation.
+  # @spec create_membership(Organisation.t()) :: Membership.t()
+  # defp create_membership(%Organisation{id: id} = _organisation) do
+  #   plan = Repo.get_by(Plan, name: @trial_plan_name)
+  #   start_date = Timex.now()
+  #   end_date = find_end_date(start_date, @trial_duration)
+  #   params = %{start_date: start_date, end_date: end_date, plan_duration: @trial_duration}
+
+  #   plan
+  #   |> build_assoc(:memberships, organisation_id: id)
+  #   |> Membership.changeset(params)
+  #   |> Repo.insert!()
+  #   |> case do
+  #     %Membership{} = membership -> {:ok, membership}
+  #     changeset -> {:error, changeset}
+  #   end
+  # end
 
   # Find the end date of a membership from the start date and duration of the
   # membership.

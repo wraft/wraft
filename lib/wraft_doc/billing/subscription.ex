@@ -10,6 +10,7 @@ defmodule WraftDoc.Billing.Subscription do
     :provider_subscription_id,
     :provider_plan_id,
     :provider,
+    :type,
     :status,
     :current_period_start,
     :current_period_end,
@@ -22,7 +23,8 @@ defmodule WraftDoc.Billing.Subscription do
     :metadata,
     :user_id,
     :organisation_id,
-    :plan_id
+    :plan_id,
+    :transaction_id
   ]
 
   schema "subscriptions" do
@@ -39,6 +41,8 @@ defmodule WraftDoc.Billing.Subscription do
     field(:update_url, :string)
     field(:cancel_url, :string)
     field(:metadata, :map)
+    field(:type, Ecto.Enum, values: [:free, :regular, :enterprise])
+    field(:transaction_id, :string)
 
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
@@ -61,7 +65,9 @@ defmodule WraftDoc.Billing.Subscription do
       :currency,
       :user_id,
       :organisation_id,
-      :plan_id
+      :plan_id,
+      :type,
+      :transaction_id
     ])
     |> unique_constraint(:provider_subscription_id)
     |> foreign_key_constraint(:plan_id,
@@ -89,5 +95,9 @@ defmodule WraftDoc.Billing.Subscription do
       name: :subscriptions_plan_id_fkey,
       message: "Cannot delete plan due to associated subscriptions."
     )
+  end
+
+  def free_subscription_changeset(subscription, attrs) do
+    cast(subscription, attrs, @changeset_fields)
   end
 end

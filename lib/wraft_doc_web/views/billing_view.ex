@@ -77,6 +77,12 @@ defmodule WraftDocWeb.Api.V1.BillingView do
     }
   end
 
+  def render("invoice.json", %{invoice_url: invoice_url}) do
+    %{
+      invoice_url: invoice_url
+    }
+  end
+
   defp product_details(items) do
     Enum.map(items, fn item ->
       %{

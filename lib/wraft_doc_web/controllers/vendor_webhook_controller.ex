@@ -31,12 +31,6 @@ defmodule WraftDocWeb.Api.V1.VendorsWebhookController do
   #   |> webhook_response(conn, params)
   # end
 
-  def webhook(conn, %{"event_type" => "transaction.completed", "data" => params}) do
-    params
-    |> Billing.subscription_cancelled()
-    |> webhook_response(conn, params)
-  end
-
   def webhook(conn, _params) do
     conn |> send_resp(404, "") |> halt
   end

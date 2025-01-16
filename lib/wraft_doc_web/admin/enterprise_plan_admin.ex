@@ -130,7 +130,7 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
   end
 
   def insert(conn, changeset) do
-    params = conn.params["plan"]
+    params = Map.merge(conn.params["plan"], %{"type" => :enterprise})
 
     conn.assigns[:admin_session]
     |> Enterprise.create_plan(params)

@@ -62,6 +62,7 @@ defmodule WraftDocWeb.PlanAdmin do
     current_user = conn.assigns[:admin_session]
 
     conn.params["plan"]
+    |> Map.merge(%{"type" => :regular})
     |> then(&Enterprise.create_plan(current_user, &1))
     |> case do
       {:ok, plan} ->

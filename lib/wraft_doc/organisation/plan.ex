@@ -18,6 +18,7 @@ defmodule WraftDoc.Enterprise.Plan do
     field(:monthly_amount, :string)
     field(:yearly_price_id, :string)
     field(:yearly_amount, :string)
+    field(:type, Ecto.Enum, values: [:free, :regular, :enterprise])
     field(:is_active?, :boolean, default: true)
     field(:custom_price_id, :string)
 
@@ -41,6 +42,7 @@ defmodule WraftDoc.Enterprise.Plan do
       :yearly_amount,
       :organisation_id,
       :custom_price_id,
+      :type,
       :features,
       :is_active?
     ])
@@ -62,6 +64,7 @@ defmodule WraftDoc.Enterprise.Plan do
       :monthly_price_id,
       :monthly_amount,
       :features,
+      :type,
       :yearly_price_id,
       :yearly_amount,
       :is_active?
@@ -81,6 +84,7 @@ defmodule WraftDoc.Enterprise.Plan do
       :description,
       :paddle_product_id,
       :features,
+      :type,
       :organisation_id,
       :custom_price_id
     ])

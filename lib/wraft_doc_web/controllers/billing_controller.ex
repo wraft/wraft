@@ -39,6 +39,15 @@ defmodule WraftDocWeb.Api.V1.BillingController do
             cancel_url(:string, "URL to cancel subscription")
           end
         end,
+      InvoiceUrl:
+        swagger_schema do
+          title("Invoice url")
+          description("The url for invoice pdf.")
+
+          properties do
+            invoice_url(:string, "Invoice url")
+          end
+        end,
       IsSubscribed:
         swagger_schema do
           title("Subscription Status")

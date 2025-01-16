@@ -3,11 +3,26 @@ defmodule WraftDoc.Billing do
   The billing module for wraft subscription management.
   """
   import Ecto.Query
+  alias Ecto.Multi
 
   alias __MODULE__.PaddleApi
   alias __MODULE__.Subscription
+  alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Repo
+
+  @doc """
+  Get a subscription from its UUID.
+  """
+  @spec get_subscription(Ecto.UUID.t()) :: Subscription.t() | nil
+  def get_subscription(<<_::288>> = subscription_id) do
+    case Repo.get(Subscription, subscription_id) do
+      %Subscription{} = subscription -> subscription
+      _ -> {:error, :invalid_id, "Subscription"}
+    end
+  end
+
+  def get_subscription(_), do: {:error, :invalid_id, "Subscription"}
 
   @doc """
   Gets active subscription of a user.
@@ -50,23 +65,31 @@ defmodule WraftDoc.Billing do
   """
   @spec subscription_created(map()) :: {:ok, Subscription.t()} | {:error, any()}
   def subscription_created(params) do
-    params = format_subscription_params(params)
-
-    update_plan_status(params)
+    params =
+      params
+      |> format_subscription_params()
+      |> update_plan_status()
 
     Repo.transaction(fn ->
       handle_subscription_created(params)
     end)
   end
 
-  defp update_plan_status(%{plan_id: plan_id} = _params) do
-    query = from(p in Plan, where: p.id == ^plan_id, where: not is_nil(p.custom))
+  defp update_plan_status(%{plan_id: plan_id} = params) do
+    case Repo.get(Plan, plan_id) do
+      %Plan{type: :regular} ->
+        Map.put(params, :type, :regular)
 
-    Repo.update_all(query,
-      set: [
-        is_active?: false
-      ]
-    )
+      %Plan{type: :enterprise} = plan ->
+        plan
+        |> Plan.changeset(%{is_active?: false})
+        |> Repo.update()
+
+        Map.put(params, :type, :enterprise)
+
+      _ ->
+        params
+    end
   end
 
   @doc """
@@ -158,10 +181,22 @@ defmodule WraftDoc.Billing do
     end
   end
 
-  defp handle_subscription_created(params) do
-    %Subscription{}
-    |> Subscription.changeset(params)
-    |> Repo.insert()
+  defp handle_subscription_created(%{organisation_id: organisation_id} = params) do
+    case Repo.get_by(Subscription, organisation_id: organisation_id) do
+      %Subscription{type: :free} = existing_subscription ->
+        Multi.new()
+        |> Multi.delete(:delete_existing, existing_subscription)
+        |> Multi.insert(:new_subscription, Subscription.changeset(%Subscription{}, params))
+        |> Repo.transaction()
+
+      %Subscription{} ->
+        {:error, :subscription_exists}
+
+      nil ->
+        %Subscription{}
+        |> Subscription.changeset(params)
+        |> Repo.insert()
+    end
   end
 
   defp format_subscription_params(params) do
@@ -178,6 +213,7 @@ defmodule WraftDoc.Billing do
         next_bill_amount: price["unit_price"]["amount"],
         next_payment_date: params["next_billed_at"],
         currency: params["currency_code"],
+        transaction_id: params["transaction_id"],
         plan_id: custom_data["plan_id"],
         user_id: custom_data["user_id"],
         organisation_id: custom_data["organisation_id"]
@@ -236,21 +272,20 @@ defmodule WraftDoc.Billing do
     end
   end
 
+  # need to check its free sub or not?
   defp handle_subscription_cancelled(params) do
     subscription =
       Subscription
       |> Repo.get_by(provider_subscription_id: params["id"])
       |> Repo.preload(:user)
 
-    if subscription do
-      changeset =
-        Subscription.cancel_changeset(subscription, %{
-          status: "canceled",
-          canceled_at: params["canceled_at"]
-        })
-
-      Repo.update(changeset)
-    end
+    Multi.new()
+    |> Multi.delete(:delete_subscription, subscription)
+    |> Multi.run(
+      :create_free_plan,
+      Enterprise.create_free_subscription(params["organisation_id"])
+    )
+    |> Repo.transaction()
   end
 
   # may need in future

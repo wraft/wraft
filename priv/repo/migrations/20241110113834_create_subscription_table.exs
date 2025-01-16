@@ -11,6 +11,8 @@ defmodule WraftDoc.Repo.Migrations.CreateSubscriptionTable do
         add(:provider_plan_id, :string)
         add(:provider, :string)
         add(:status, :string)
+        add(:type, :string)
+        add(:transaction_id, :string)
         add(:current_period_start, :utc_datetime)
         add(:current_period_end, :utc_datetime)
         add(:canceled_at, :utc_datetime)
