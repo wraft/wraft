@@ -9,7 +9,7 @@ defmodule WraftDoc.Notifications.Notification do
   schema "notification" do
     field(:type, WraftDoc.EctoType.AtomType)
     field(:message, :string)
-    field(:is_global, :boolean, default: false)
+    field(:scope, :string, default: "user")
     field(:action, :map, default: %{})
     belongs_to(:actor, WraftDoc.Account.User)
 
