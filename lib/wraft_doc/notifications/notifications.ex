@@ -17,8 +17,10 @@ defmodule WraftDoc.Notifications do
 
   def create_notification(%User{} = actor, params) when is_map(params) do
     with {:ok, recipient} <- fetch_user(params["recipient_id"]),
-         {:ok, notification} <- save_notification(actor, recipient, params),
-         :ok <- broadcast_notification(notification, recipient),
+         {:ok, notification} <- make_notification(actor, recipient, params),
+         {:ok, _user_notifcation} <-
+           make_user_notification(actor, recipient, notification.id),
+         :ok <- handle_notification(notification, recipient),
          :ok <- schedule_email(notification, recipient) do
       {:ok, notification}
     else
@@ -38,17 +40,33 @@ defmodule WraftDoc.Notifications do
     end
   end
 
-  defp save_notification(actor, recipient, params) do
+  defp make_notification(actor, recipient, params) do
+    notification_params =
+      Map.merge(params, %{
+        "actor_id" => actor.id,
+        "recipient_id" => recipient.id
+      })
+
     %Notification{}
-    |> Notification.changeset(
-      Map.merge(params, %{"actor_id" => actor.id, "recipient_id" => recipient.id})
-    )
+    |> Notification.changeset(notification_params)
     |> Repo.insert()
   end
 
-  defp broadcast_notification(notification, recipient) do
-    message = format_notification_message(notification)
+  defp make_user_notification(_actor, recipient, notification_id) do
+    user_notification_params = %{
+      "notification_id" => notification_id,
+      "recipient_id" => recipient.id,
+      "status" => :unread
+    }
 
+    %UserNotifications{}
+    |> UserNotifications.changeset(user_notification_params)
+    |> Repo.insert()
+  end
+
+  defp handle_notification(notification, recipient) do
+    message = format_notification_message(notification)
+    # TODO # additional funtions , type of notification , scope of notification
     NotificationServer.broadcast_notification(message, recipient)
     :ok
   rescue
