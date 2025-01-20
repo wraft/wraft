@@ -64,9 +64,10 @@ defmodule WraftDocWeb.Api.V1.BillingView do
     }
   end
 
-  def render("cancel_subscription.json", _) do
+  def render("cancel_subscription.json", %{subscription: subscription}) do
     %{
-      message: "Subscription canceled successfully"
+      message: "Subscription canceled successfully",
+      subscription: render_one(subscription, __MODULE__, "subscription.json", as: :subscription)
     }
   end
 

@@ -12,8 +12,6 @@ defmodule WraftDoc.Billing.PaddleApi do
   plug Tesla.Middleware.JSON
   plug Tesla.Middleware.BaseUrl, vendors_domain()
 
-  # TODO use transaction paid webhook and add status to subscription
-
   @doc """
   Retrieves paddle paddle subscription entity.
   """
@@ -105,7 +103,6 @@ defmodule WraftDoc.Billing.PaddleApi do
   """
   @spec cancel_subscription(binary()) :: {:ok, map()} | {:error, binary()} | {:error, map()}
   def cancel_subscription(paddle_subscription_id) do
-    # TODO check effects from when and does it changes db.
     params = %{
       effective_from: "immediately"
     }

@@ -292,13 +292,13 @@ defmodule WraftDocWeb.Router do
       if DeploymentMode.saas?() do
         # Billing
         get("/billing/subscription/:transaction_id/invoice", BillingController, :get_invoice)
-        get("/billing/subscription/get_subsctiption", BillingController, :get_subsctiption)
+        get("/billing/subscription", BillingController, :get_subsctiption)
         get("/billing/subscription/active", BillingController, :get_active_subscription)
         post("/billing/change-plan/:plan_id", BillingController, :change_plan)
         post("/billing/change-plan/preview/:plan_id", BillingController, :change_plan_preview)
         delete("/billing/subscription/cancel", BillingController, :cancel_subscription)
         get("/billing/subscription/history", BillingController, :subscription_history_index)
-        # check availability of plan:
+
         get(
           "/billing/subscription/:organisation_id/transactions",
           BillingController,

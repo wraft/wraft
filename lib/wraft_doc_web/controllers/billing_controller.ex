@@ -21,7 +21,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
           description("A user's subscription details")
 
           properties do
-            id(:integer, "Subscription ID")
+            id(:string, "Subscription ID")
             provider_subscription_id(:string, "Provider's subscription ID")
             provider_plan_id(:string, "Provider's plan ID")
             provider(:string, "Subscription provider name")
@@ -38,6 +38,27 @@ defmodule WraftDocWeb.Api.V1.BillingController do
             update_url(:string, "URL to update subscription")
             cancel_url(:string, "URL to cancel subscription")
           end
+
+          example(%{
+            id: "4296a052-e147-491b-84cf-9931e4776410",
+            provider_subscription_id: "sub_01jj2hnvs63hsbhea7qw6k7m0z",
+            provider_plan_id: "pri_01jj19s7ev25a4a1m3b6efbpgd",
+            provider: "paddle",
+            status: "active",
+            type: "regular",
+            current_period_start: "2025-01-20T19:18:01Z",
+            current_period_end: "2025-02-20T19:18:01Z",
+            canceled_at: nil,
+            next_payment_date: "2025-02-20",
+            next_bill_amount: 467,
+            currency: "INR",
+            organisation_id: "a19aadca-7655-40e7-9647-0a2bd49d20cc",
+            user_id: "b0c5cfc9-bdd4-4809-898f-d75e6b95e719",
+            plan_id: "5932900c-8d9a-4493-95f9-96375032cabc",
+            transaction_id: "txn_01jj2jd17gg4n3j1k71zm6eatv",
+            update_url: nil,
+            cancel_url: nil
+          })
         end,
       InvoiceUrl:
         swagger_schema do
@@ -48,13 +69,18 @@ defmodule WraftDocWeb.Api.V1.BillingController do
             invoice_url(:string, "Invoice url")
           end
         end,
-      IsSubscribed:
+      ChangePlan:
         swagger_schema do
-          title("Subscription Status")
-          description("Simple boolean indicating if user has an active subscription")
+          title("Plan Change")
+          description("plan change")
 
           properties do
-            is_subscribed(:boolean, "Whether user has an active subscription")
+            message(:string, "message of plan change")
+
+            subscription(
+              Schema.ref(:Subscription),
+              "active subscription"
+            )
           end
         end,
       ChangePlanPreview:
@@ -132,6 +158,20 @@ defmodule WraftDocWeb.Api.V1.BillingController do
             cancel(:string, "URL to cancel subscription")
           end
         end,
+      CancelSubscription:
+        swagger_schema do
+          title("Cancel Subscription")
+          description("Cancel subscription")
+
+          properties do
+            message(:string, "message of cancel subscription")
+
+            subscription(
+              Schema.ref(:Subscription),
+              "active subscription"
+            )
+          end
+        end,
       Transaction:
         swagger_schema do
           title("Transaction")
@@ -164,7 +204,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
             total_entries(:integer, "Total number of contents")
           end
         end,
-      SubscriptionHistory:
+      SubscriptionHistories:
         swagger_schema do
           title("Subscription History")
           description("Subscription history details")
@@ -174,6 +214,33 @@ defmodule WraftDocWeb.Api.V1.BillingController do
             page_number(:integer, "Page number")
             total_pages(:integer, "Total number of pages")
             total_entries(:integer, "Total number of contents")
+          end
+        end,
+      SubscriptionHistory:
+        swagger_schema do
+          title("Subscription History")
+          description("Subscription history details")
+
+          properties do
+            id(:string, "Subscription history ID")
+            provider_subscription_id(:string, "Subscription ID")
+            user_id(:string, "User ID")
+            organisation_id(:string, "Organization ID")
+            plan_id(:string, "Plan ID")
+            amount(:string, "amount")
+            plan_name(:string, "plan name")
+            event_type(:string, "event type")
+            transaction_id(:string, "transaction id")
+
+            current_subscription_start(
+              :string,
+              "Subscription creation date. Format: ISO8601 datetime"
+            )
+
+            current_subscription_end(
+              :string,
+              "Subscription update date. Format: ISO8601 datetime"
+            )
           end
         end
     }
@@ -185,7 +252,9 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     description("Fetches the current active subscription for the logged-in user.")
 
     response(200, "Active subscription retrieved successfully", Schema.ref(:Subscription))
-    response(404, "Active subscription not found")
+    response(400, "Failed to fetch active subscription", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "not found")
   end
 
   @spec get_active_subscription(Plug.Conn.t(), any()) :: Plug.Conn.t()
@@ -199,12 +268,14 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   end
 
   swagger_path :get_subsctiption do
-    get("/billing/subscription/get_subsctiption")
+    get("/billing/subscription")
     summary("Get subscription")
     description("Gets the current subscription of current organisation")
 
-    response(200, "Subscription status", Schema.ref(:IsSubscribed))
-    response(404, "Subscription not found")
+    response(200, "Subscription", Schema.ref(:Subscription))
+    response(400, "Failed to fetch subscription", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "not found")
   end
 
   @spec get_subsctiption(Plug.Conn.t(), any()) :: Plug.Conn.t()
@@ -218,16 +289,18 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   end
 
   swagger_path :change_plan_preview do
-    post("/billing/change_plan_preview")
+    post("/billing/change-plan/preview/{plan_id}")
     summary("Preview a plan change")
     description("Provides a preview of subscription changes when switching to a new plan.")
 
-    parameters do
-      plan_id(:body, :integer, "New plan ID", required: true)
-    end
+    consumes("multipart/form-data")
+
+    parameter(:plan_id, :path, :string, "Plan id")
 
     response(200, "Change plan preview retrieved successfully", Schema.ref(:ChangePlanPreview))
-    response(404, "Active subscription not found")
+    response(400, "", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "not found")
   end
 
   @spec change_plan_preview(Plug.Conn.t(), any()) :: Plug.Conn.t()
@@ -242,16 +315,18 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   end
 
   swagger_path :change_plan do
-    post("/billing/change_plan")
+    post("/billing/change-plan/{plan_id}")
     summary("Change subscription plan")
     description("Applies a new plan to the user's current subscription.")
 
-    parameters do
-      new_plan_id(:body, :integer, "New plan ID", required: true)
-    end
+    consumes("multipart/form-data")
 
-    response(200, "Plan changed successfully")
-    response(404, "Active subscription not found")
+    parameter(:plan_id, :path, :string, "Plan id")
+
+    response(200, "Plan changed successfully", Schema.ref(:ChangePlan))
+    response(400, "", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "not found", Schema.ref(:Error))
   end
 
   @spec change_plan(Plug.Conn.t(), any()) :: Plug.Conn.t()
@@ -269,8 +344,11 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     delete("/billing/subscription/cancel")
     summary("Cancel subscription")
     description("Cancels the user's active subscription.")
-    response(200, "Subscription cancelled successfully")
-    response(404, "Active subscription not found")
+
+    response(200, "Subscription cancelled successfully", Schema.ref(:CancelSubscription))
+    response(400, "", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "not found")
   end
 
   @spec cancel_subscription(Plug.Conn.t(), any()) :: Plug.Conn.t()
@@ -285,11 +363,17 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   end
 
   swagger_path :get_invoice do
-    get("/billing/subscription/:transaction_id/invoice")
+    get("/billing/subscription/{transaction_id}/invoice")
     summary("Generates invoice url of given transaction id")
     description("Returns invoice url to download invoice pdf")
+
+    parameters do
+      transaction_id(:path, :string, "Transaction id", required: true)
+    end
+
     response(200, "Invoice url generated successfully", Schema.ref(:InvoiceUrl))
-    response(404, "Failed to generate invoid url", Schema.ref(:Error))
+    response(400, "Failed to generate invoid url", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @spec get_invoice(Plug.Conn.t(), any()) :: Plug.Conn.t()
@@ -304,10 +388,17 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     summary("Returns all subscription history under an organisation")
     description("Returns all subscription history under an organisation")
 
-    parameter(:organisation_id, :path, :string, "organisation id", required: true)
+    parameter(:organisation_id, :formData, :string, "organisation id", required: true)
 
-    response(200, "Subscription history retrieved successfully", Schema.ref(:SubscriptionHistory))
-    response(404, "Subscription history not found")
+    response(
+      200,
+      "Subscription history retrieved successfully",
+      Schema.ref(:SubscriptionHistories)
+    )
+
+    response(400, "", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "not found")
   end
 
   def subscription_history_index(conn, params) do
@@ -332,8 +423,14 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     get("/billing/subscription/{organisation_id}/transactions")
     summary("Returns all transaction under an organisation")
     description("Returns all transaction under an organisation")
+
+    parameters do
+      organisation_id(:path, :string, "Organisation id", required: true)
+    end
+
     response(200, "", Schema.ref(:Transactions))
-    response(404, "Failed to fetch transactions", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(400, "Failed to fetch transactions", Schema.ref(:Error))
   end
 
   @spec get_transactions(Plug.Conn.t(), any()) :: Plug.Conn.t()

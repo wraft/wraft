@@ -343,7 +343,6 @@ defmodule WraftDoc.Billing do
     # relevant to us).
     irrelevant? = params["old_status"] == "paused" && params["status"] == "past_due"
 
-    # also move current subscription with transaction id, duration to history
     if subscription && not irrelevant? do
       params = format_subscription_params(params)
 
