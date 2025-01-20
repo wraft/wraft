@@ -13,6 +13,7 @@ defmodule WraftDocWeb.Api.V1.BillingView do
       transaction_id: subscription.transaction_id,
       provider: subscription.provider,
       status: subscription.status,
+      type: subscription.type,
       current_period_start: subscription.current_period_start,
       current_period_end: subscription.current_period_end,
       canceled_at: subscription.canceled_at,
@@ -30,12 +31,6 @@ defmodule WraftDocWeb.Api.V1.BillingView do
         ),
       plan_id: subscription.plan_id,
       plan: render_one(subscription.plan, PlanView, "plan.json", as: :plan)
-    }
-  end
-
-  def render("is_subscribed.json", %{is_subscribed: is_subscribed}) do
-    %{
-      is_subscribed: is_subscribed
     }
   end
 
@@ -83,15 +78,14 @@ defmodule WraftDocWeb.Api.V1.BillingView do
 
   def render("subscription_history.json", %{subscription_history: subscription_history}) do
     %{
+      id: subscription_history.id,
       provider_subscription_id: subscription_history.provider_subscription_id,
       current_subscription_start: subscription_history.current_subscription_start,
       current_subscription_end: subscription_history.current_subscription_end,
       amount: subscription_history.amount,
       plan_name: subscription_history.plan_name,
-      # event_type: subscription_history.event_type,
+      event_type: subscription_history.event_type,
       transaction_id: subscription_history.transaction_id,
-      # check needed
-      # transaction_date: subscription_history.transaction_date,
       user_id: subscription_history.user_id,
       user: render_one(subscription_history.user, UserView, "user.json", as: :user),
       organisation_id: subscription_history.organisation_id,

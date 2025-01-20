@@ -9,25 +9,39 @@ defmodule WraftDoc.Billing do
   alias __MODULE__.Subscription
   alias __MODULE__.SubscriptionHistory
   alias __MODULE__.Transaction
+  alias WraftDoc.Account.User
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Repo
 
   @doc """
+  Get a subscription of a user's current organisation.
+  """
+  def get_subscription(%User{current_org_id: current_org_id}) do
+    Subscription
+    |> Repo.get_by(organisation_id: current_org_id)
+    |> Repo.preload([:user, :organisation, :plan])
+    |> case do
+      %Subscription{} = subscription -> {:ok, subscription}
+      _ -> nil
+    end
+  end
+
+  @doc """
   Get a subscription from its UUID.
   """
-  @spec get_subscription(Ecto.UUID.t()) :: Subscription.t() | nil
-  def get_subscription(<<_::288>> = subscription_id) do
+  @spec get_subscription_by_id(Ecto.UUID.t()) :: Subscription.t() | nil
+  def get_subscription_by_id(<<_::288>> = subscription_id) do
     case Repo.get(Subscription, subscription_id) do
       %Subscription{} = subscription -> subscription
       _ -> {:error, :invalid_id, "Subscription"}
     end
   end
 
-  def get_subscription(_), do: {:error, :invalid_id, "Subscription"}
+  def get_subscription_by_id(_), do: {:error, :invalid_id, "Subscription"}
 
   @doc """
-  Gets active subscription of a user.
+  Get active subscription of a user's organisation.
   """
   @spec active_subscription_for(Ecto.UUID.t()) :: {:ok, Subscription.t()} | {:error, atom()}
   def active_subscription_for(<<_::288>> = organisation_id) do
@@ -72,17 +86,40 @@ defmodule WraftDoc.Billing do
       |> format_subscription_params()
       |> update_plan_status()
 
-    case Repo.get_by(Subscription, organisation_id: params.organisation_id) do
-      %Subscription{type: :free} = existing_subscription ->
+    Subscription
+    |> Repo.get_by(organisation_id: params.organisation_id)
+    |> case do
+      %Subscription{type: :free} = subscription ->
         Multi.new()
-        |> Multi.delete(:delete_existing, existing_subscription)
+        |> Multi.delete(:delete_existing, subscription)
         |> Multi.insert(:new_subscription, Subscription.changeset(%Subscription{}, params))
         |> Repo.transaction()
 
-      nil ->
-        %Subscription{}
-        |> Subscription.changeset(params)
-        |> Repo.insert()
+      %Subscription{} = subscription ->
+        Multi.new()
+        |> Multi.insert(
+          :create_history,
+          SubscriptionHistory.changeset(%SubscriptionHistory{}, %{
+            provider_subscription_id: subscription.provider_subscription_id,
+            event_type: "plan updated",
+            current_subscription_start: subscription.current_period_start,
+            current_subscription_end: subscription.current_period_end,
+            transaction_id: subscription.transaction_id,
+            user_id: subscription.user_id,
+            organisation_id: subscription.organisation_id,
+            plan_id: subscription.plan_id
+          })
+        )
+        |> Multi.delete(:delete_existing, subscription)
+        |> Multi.insert(:new_subscription, Subscription.changeset(%Subscription{}, params))
+        |> Repo.transaction()
+    end
+    |> case do
+      {:ok, %{new_subscription: subscription}} ->
+        {:ok, subscription}
+
+      {:error, _, error, _} ->
+        {:error, error}
     end
   end
 
@@ -108,7 +145,15 @@ defmodule WraftDoc.Billing do
   """
   @spec subscription_updated(map()) :: {:ok, Subscription.t()} | {:error, any()}
   def subscription_updated(params) do
-    handle_subscription_updated(params)
+    params
+    |> handle_subscription_updated()
+    |> case do
+      {:ok, %{update_subscription: subscription}} ->
+        {:ok, subscription}
+
+      {:error, _, error, _} ->
+        {:error, error}
+    end
   end
 
   @doc """
@@ -127,8 +172,8 @@ defmodule WraftDoc.Billing do
       SubscriptionHistory.changeset(%SubscriptionHistory{}, %{
         provider_subscription_id: subscription.provider_subscription_id,
         event_type: "cancelled",
-        current_period_start: subscription.current_period_start,
-        current_period_end: subscription.current_period_end,
+        current_subscription_start: subscription.current_period_start,
+        current_subscription_end: subscription.current_period_end,
         transaction_id: subscription.transaction_id,
         user_id: subscription.user_id,
         organisation_id: subscription.organisation_id,
@@ -144,6 +189,13 @@ defmodule WraftDoc.Billing do
       end
     )
     |> Repo.transaction()
+    |> case do
+      {:ok, %{delete_subscription: subscription}} ->
+        {:ok, subscription}
+
+      {:error, _, error, _} ->
+        {:error, error}
+    end
   end
 
   # may use later
@@ -318,14 +370,14 @@ defmodule WraftDoc.Billing do
   end
 
   # may need in future
-  # defp get_subscription(subscription_id) do
+  # defp get_subscription_by_id(subscription_id) do
   #   Repo.get_by(Subscription, provider_subscription_id: subscription_id)
   # end
 
   # defp handle_subscription_payment_succeeded(params) do
   #   subscription =
   #   params["subscription_id"]
-  #   |> get_subscription()
+  #   |> get_subscription_by_id()
   #   |> if do
 
   #     subscription

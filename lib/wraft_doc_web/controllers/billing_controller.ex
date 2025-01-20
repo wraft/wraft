@@ -198,20 +198,23 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     end
   end
 
-  swagger_path :ping_subscription do
-    get("/billing/subscription/ping")
-    summary("Check active subscription status")
-    description("Returns a boolean indicating if the user has an active subscription.")
+  swagger_path :get_subsctiption do
+    get("/billing/subscription/get_subsctiption")
+    summary("Get subscription")
+    description("Gets the current subscription of current organisation")
 
     response(200, "Subscription status", Schema.ref(:IsSubscribed))
+    response(404, "Subscription not found")
   end
 
-  @spec ping_subscription(Plug.Conn.t(), any()) :: Plug.Conn.t()
-  def ping_subscription(%Plug.Conn{} = conn, _params) do
+  @spec get_subsctiption(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  def get_subsctiption(%Plug.Conn{} = conn, _params) do
     current_user = conn.assigns.current_user
 
-    subscribed? = Billing.has_active_subscription?(current_user.current_org_id)
-    render(conn, "is_subscribed.json", is_subscribed: subscribed?)
+    with {:ok, %Subscription{} = subscription} <-
+           Billing.get_subscription(current_user) do
+      render(conn, "subscription.json", subscription: subscription)
+    end
   end
 
   swagger_path :change_plan_preview do

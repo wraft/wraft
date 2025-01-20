@@ -39,6 +39,7 @@ defmodule WraftDoc.Repo.Migrations.CreateSubscriptionTable do
         add(:provider_subscription_id, :string)
         add(:current_subscription_start, :utc_datetime)
         add(:current_subscription_end, :utc_datetime)
+        add(:amount, :string)
         add(:event_type, :string)
         add(:transaction_id, :string)
         add(:metadata, :map)
