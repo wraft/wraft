@@ -25,6 +25,8 @@ defmodule WraftDoc.Billing.Transaction do
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:plan, WraftDoc.Enterprise.Plan)
+
+    timestamps()
   end
 
   def changeset(transaction, attrs) do
@@ -61,8 +63,6 @@ defmodule WraftDoc.Billing.Transaction do
       :tax,
       :total_amount,
       :currency,
-      :payment_method,
-      :payment_method_details,
       :organisation_id,
       :plan_id
     ])

@@ -23,8 +23,8 @@ defmodule WraftDoc.Billing.PaddleApi do
     |> get_subscription_url()
     |> get()
     |> case do
-      {:ok, %Tesla.Env{status: 200, body: %{"data" => subscription_data}}} ->
-        {:ok, subscription_data}
+      {:ok, %Tesla.Env{status: 200, body: %{"data" => data}}} ->
+        {:ok, data}
 
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
@@ -83,8 +83,6 @@ defmodule WraftDoc.Billing.PaddleApi do
       ],
       proration_billing_mode: "prorated_immediately",
       on_payment_failure: "prevent_change"
-      # custom_data: %{
-      # }
     }
 
     paddle_subscription_id
@@ -119,9 +117,6 @@ defmodule WraftDoc.Billing.PaddleApi do
       {:ok, %Tesla.Env{status: 200, body: %{"data" => data}}} ->
         {:ok, data}
 
-      {:ok, %Tesla.Env{status: 404, body: %{"success" => false, "error" => error}}} ->
-        {:error, error}
-
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
 
@@ -140,11 +135,8 @@ defmodule WraftDoc.Billing.PaddleApi do
     create_price_url()
     |> post(params)
     |> case do
-      {:ok, %Tesla.Env{status: 201, body: %{"data" => price_data}}} ->
-        {:ok, price_data}
-
-      {:ok, %Tesla.Env{status: 200, body: body}} ->
-        {:error, body}
+      {:ok, %Tesla.Env{status: 201, body: %{"data" => data}}} ->
+        {:ok, data}
 
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
@@ -165,8 +157,8 @@ defmodule WraftDoc.Billing.PaddleApi do
     |> update_price_url()
     |> patch(params)
     |> case do
-      {:ok, %Tesla.Env{status: 200, body: %{"data" => price_data}}} ->
-        {:ok, price_data}
+      {:ok, %Tesla.Env{status: 200, body: %{"data" => data}}} ->
+        {:ok, data}
 
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
@@ -260,8 +252,8 @@ defmodule WraftDoc.Billing.PaddleApi do
     create_product_url()
     |> post(params)
     |> case do
-      {:ok, %Tesla.Env{status: 201, body: %{"data" => product_data}}} ->
-        {:ok, product_data}
+      {:ok, %Tesla.Env{status: 201, body: %{"data" => data}}} ->
+        {:ok, data}
 
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
@@ -288,8 +280,8 @@ defmodule WraftDoc.Billing.PaddleApi do
     |> update_product_url()
     |> patch(params)
     |> case do
-      {:ok, %Tesla.Env{status: 200, body: %{"data" => response}}} ->
-        {:ok, response}
+      {:ok, %Tesla.Env{status: 200, body: %{"data" => data}}} ->
+        {:ok, data}
 
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}
@@ -312,8 +304,8 @@ defmodule WraftDoc.Billing.PaddleApi do
     |> delete_product_url()
     |> patch(params)
     |> case do
-      {:ok, %Tesla.Env{status: 200, body: %{"data" => response}}} ->
-        {:ok, response}
+      {:ok, %Tesla.Env{status: 200, body: %{"data" => data}}} ->
+        {:ok, data}
 
       {:ok, %Tesla.Env{status: _status, body: %{"error" => %{"detail" => error_details}}}} ->
         {:error, error_details}

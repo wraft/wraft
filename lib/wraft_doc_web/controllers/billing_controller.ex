@@ -12,7 +12,6 @@ defmodule WraftDocWeb.Api.V1.BillingController do
 
   # TODO add RBAC.
   # TODO add pause and resume subscription API.
-  # TODO check possibility of activate-trialing-subscription API.
 
   def swagger_definitions do
     %{
@@ -133,18 +132,6 @@ defmodule WraftDocWeb.Api.V1.BillingController do
             cancel(:string, "URL to cancel subscription")
           end
         end,
-      Transactions:
-        swagger_schema do
-          title("Transaction")
-          description("Transaction details")
-
-          properties do
-            layouts(Schema.ref(:Transaction))
-            page_number(:integer, "Page number")
-            total_pages(:integer, "Total number of pages")
-            total_entries(:integer, "Total number of contents")
-          end
-        end,
       Transaction:
         swagger_schema do
           title("Transaction")
@@ -163,6 +150,30 @@ defmodule WraftDocWeb.Api.V1.BillingController do
             type(:string, "Transaction type")
             payment_method(:string, "Payment method used for the transaction")
             payment_method_details(:string, "Details about the payment method")
+          end
+        end,
+      Transactions:
+        swagger_schema do
+          title("Transaction")
+          description("Transaction details")
+
+          properties do
+            transactions(Schema.ref(:Transaction))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+        end,
+      SubscriptionHistory:
+        swagger_schema do
+          title("Subscription History")
+          description("Subscription history details")
+
+          properties do
+            subscription_history(Schema.ref(:SubscriptionHistory))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
           end
         end
     }
@@ -240,14 +251,14 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     response(404, "Active subscription not found")
   end
 
-  # @spec change_plan(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  @spec change_plan(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def change_plan(conn, %{"plan_id" => plan_id}) do
     current_user = conn.assigns.current_user
 
     with {:ok, %Subscription{} = subscription} <-
            Billing.active_subscription_for(current_user.current_org_id),
          {:ok, _subscription} <- Billing.change_plan(subscription, plan_id) do
-      render(conn, "change_plan_success.json")
+      render(conn, "change_plan.json", subscription: subscription)
     end
   end
 
@@ -266,7 +277,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     with {:ok, %Subscription{} = subscription} <-
            Billing.active_subscription_for(current_user.current_org_id),
          {:ok, _subscription} <- Billing.cancel_subscription(subscription) do
-      render(conn, "cancel_subscription.json")
+      render(conn, "cancel_subscription.json", subscription: subscription)
     end
   end
 
@@ -283,6 +294,17 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     with {:ok, url} <- PaddleApi.get_invoice_pdf(params["transaction_id"]) do
       render(conn, "invoice.json", invoice_url: url)
     end
+  end
+
+  swagger_path :get_subscription_history do
+    get("/billing/subscription/history")
+    summary("Returns all subscription history under an organisation")
+    description("Returns all subscription history under an organisation")
+
+    parameter(:organisation_id, :path, :string, "organisation id", required: true)
+
+    response(200, "Subscription history retrieved successfully", Schema.ref(:SubscriptionHistory))
+    response(404, "Subscription history not found")
   end
 
   def subscription_history_index(conn, params) do
@@ -304,7 +326,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   end
 
   swagger_path :get_transactions do
-    get("/billing/subscription/:organisation_id/transactions")
+    get("/billing/subscription/{organisation_id}/transactions")
     summary("Returns all transaction under an organisation")
     description("Returns all transaction under an organisation")
     response(200, "", Schema.ref(:Transactions))

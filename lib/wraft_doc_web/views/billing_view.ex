@@ -59,16 +59,13 @@ defmodule WraftDocWeb.Api.V1.BillingView do
       next_billed_at: preview_info["next_billed_at"],
       product_details:
         product_details(preview_info["recurring_transaction_details"]["line_items"])
-      # management_urls: %{
-      #   update_payment_method: preview_info["management_urls"]["update_payment_method"],
-      #   cancel: preview_info["management_urls"]["cancel"]
-      # }
     }
   end
 
-  def render("change_plan_success.json", _) do
+  def render("change_plan.json", %{subscription: subscription}) do
     %{
-      message: "Plan changed successfully"
+      message: "Plan changed successfully",
+      subscription: render_one(subscription, __MODULE__, "subscription.json", as: :subscription)
     }
   end
 

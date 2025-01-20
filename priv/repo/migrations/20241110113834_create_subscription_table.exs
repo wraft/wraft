@@ -46,6 +46,8 @@ defmodule WraftDoc.Repo.Migrations.CreateSubscriptionTable do
         add(:user_id, references(:user, on_delete: :nothing, type: :uuid))
         add(:organisation_id, references(:organisation, on_delete: :nothing, type: :uuid))
         add(:plan_id, references(:plan, on_delete: :nothing, type: :uuid))
+
+        timestamps()
       end
 
       create table(:transaction, primary_key: false) do
@@ -69,6 +71,8 @@ defmodule WraftDoc.Repo.Migrations.CreateSubscriptionTable do
         add(:user_id, references(:user, on_delete: :nothing, type: :uuid))
         add(:organisation_id, references(:organisation, on_delete: :nothing, type: :uuid))
         add(:plan_id, references(:plan, on_delete: :nothing, type: :uuid))
+
+        timestamps()
       end
 
       create(index(:transaction, [:organisation_id]))

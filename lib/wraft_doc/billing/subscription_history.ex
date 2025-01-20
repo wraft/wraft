@@ -36,10 +36,12 @@ defmodule WraftDoc.Billing.SubscriptionHistory do
       :plan_id
     ])
     |> validate_required([
-      :organisation_id,
-      :plan_id,
+      :provider_subscription_id,
       :current_subscription_start,
-      :transaction_id
+      :current_subscription_end,
+      :event_type,
+      :organisation_id,
+      :plan_id
     ])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:organisation_id)

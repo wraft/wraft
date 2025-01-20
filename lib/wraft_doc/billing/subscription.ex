@@ -76,6 +76,26 @@ defmodule WraftDoc.Billing.Subscription do
     )
   end
 
+  def update_changeset(subscription, attrs \\ %{}) do
+    subscription
+    |> cast(attrs, @changeset_fields)
+    |> validate_required([
+      :provider_subscription_id,
+      :provider_plan_id,
+      :provider,
+      :status,
+      :current_period_start,
+      :current_period_end,
+      :next_bill_amount,
+      :currency,
+      :user_id,
+      :organisation_id,
+      :plan_id,
+      :type
+    ])
+    |> unique_constraint(:provider_subscription_id)
+  end
+
   def cancel_changeset(subscription, attrs \\ %{}) do
     subscription
     |> cast(attrs, @changeset_fields)

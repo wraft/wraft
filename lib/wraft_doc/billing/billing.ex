@@ -72,9 +72,18 @@ defmodule WraftDoc.Billing do
       |> format_subscription_params()
       |> update_plan_status()
 
-    Repo.transaction(fn ->
-      handle_subscription_created(params)
-    end)
+    case Repo.get_by(Subscription, organisation_id: params.organisation_id) do
+      %Subscription{type: :free} = existing_subscription ->
+        Multi.new()
+        |> Multi.delete(:delete_existing, existing_subscription)
+        |> Multi.insert(:new_subscription, Subscription.changeset(%Subscription{}, params))
+        |> Repo.transaction()
+
+      nil ->
+        %Subscription{}
+        |> Subscription.changeset(params)
+        |> Repo.insert()
+    end
   end
 
   defp update_plan_status(%{plan_id: plan_id} = params) do
@@ -99,9 +108,7 @@ defmodule WraftDoc.Billing do
   """
   @spec subscription_updated(map()) :: {:ok, Subscription.t()} | {:error, any()}
   def subscription_updated(params) do
-    Repo.transaction(fn ->
-      handle_subscription_updated(params)
-    end)
+    handle_subscription_updated(params)
   end
 
   @doc """
@@ -109,9 +116,34 @@ defmodule WraftDoc.Billing do
   """
   @spec subscription_cancelled(map()) :: {:ok, Subscription.t()} | {:error, any()}
   def subscription_cancelled(params) do
-    Repo.transaction(fn ->
-      handle_subscription_cancelled(params)
-    end)
+    subscription =
+      Subscription
+      |> Repo.get_by(provider_subscription_id: params["id"])
+      |> Repo.preload(:user)
+
+    Multi.new()
+    |> Multi.insert(
+      :create_history,
+      SubscriptionHistory.changeset(%SubscriptionHistory{}, %{
+        provider_subscription_id: subscription.provider_subscription_id,
+        event_type: "cancelled",
+        current_period_start: subscription.current_period_start,
+        current_period_end: subscription.current_period_end,
+        transaction_id: subscription.transaction_id,
+        user_id: subscription.user_id,
+        organisation_id: subscription.organisation_id,
+        plan_id: subscription.plan_id,
+        metadata: subscription
+      })
+    )
+    |> Multi.delete(:delete_subscription, subscription)
+    |> Multi.run(
+      :create_free_plan,
+      fn _repo, _changes ->
+        Enterprise.create_free_subscription(params["organisation_id"])
+      end
+    )
+    |> Repo.transaction()
   end
 
   # may use later
@@ -130,22 +162,23 @@ defmodule WraftDoc.Billing do
   """
   @spec change_plan(Subscription.t(), binary()) :: {:ok, Subscription.t()} | {:error, any()}
   def change_plan(
-        %Subscription{provider_subscription_id: provider_subscription_id} = subscription,
+        %Subscription{provider_plan_id: provider_plan_id},
+        paddle_price_id
+      )
+      when paddle_price_id == provider_plan_id,
+      do: {:error, "Already have same plan."}
+
+  def change_plan(
+        %Subscription{
+          provider_subscription_id: provider_subscription_id
+        },
         paddle_price_id
       ) do
     provider_subscription_id
     |> PaddleApi.update_subscription(paddle_price_id)
     |> case do
       {:ok, response} ->
-        subscription
-        |> Subscription.changeset(%{
-          provider_plan_id: Enum.at(response["items"], 0)["price"]["id"],
-          next_bill_amount: Enum.at(response["items"], 0)["price"]["unit_price"]["amount"],
-          next_payment_date: response["next_billed_at"],
-          current_period_start: response["current_billing_period"]["starts_at"],
-          current_period_end: response["current_billing_period"]["ends_at"]
-        })
-        |> Repo.update()
+        {:ok, response}
 
       {:error, error} ->
         {:error, error}
@@ -156,9 +189,16 @@ defmodule WraftDoc.Billing do
   Gets preview of a plan changes.
   """
   @spec change_plan_preview(Subscription.t(), binary()) :: {:ok, map()} | {:error, any()}
-  def change_plan_preview(subscription, paddle_price_id) do
+  def change_plan_preview(%Subscription{provider_plan_id: provider_plan_id}, paddle_price_id)
+      when paddle_price_id == provider_plan_id,
+      do: {:error, "Already have same plan."}
+
+  def change_plan_preview(
+        %Subscription{provider_subscription_id: provider_subscription_id},
+        paddle_price_id
+      ) do
     case PaddleApi.update_subscription_preview(
-           subscription.provider_subscription_id,
+           provider_subscription_id,
            paddle_price_id
          ) do
       {:ok, response} ->
@@ -173,6 +213,10 @@ defmodule WraftDoc.Billing do
   Cancel subscription.
   """
   @spec cancel_subscription(Subscription.t()) :: {:ok, Subscription.t()} | {:error, any()}
+
+  def cancel_subscription(%Subscription{type: :free}),
+    do: {:error, "Free subscription cannot be cancelled"}
+
   def cancel_subscription(subscription) do
     case PaddleApi.cancel_subscription(subscription.provider_subscription_id) do
       {:ok, response} ->
@@ -180,24 +224,6 @@ defmodule WraftDoc.Billing do
 
       {:error, error} ->
         {:error, error}
-    end
-  end
-
-  defp handle_subscription_created(%{organisation_id: organisation_id} = params) do
-    case Repo.get_by(Subscription, organisation_id: organisation_id) do
-      %Subscription{type: :free} = existing_subscription ->
-        Multi.new()
-        |> Multi.delete(:delete_existing, existing_subscription)
-        |> Multi.insert(:new_subscription, Subscription.changeset(%Subscription{}, params))
-        |> Repo.transaction()
-
-      %Subscription{} ->
-        {:error, :subscription_exists}
-
-      nil ->
-        %Subscription{}
-        |> Subscription.changeset(params)
-        |> Repo.insert()
     end
   end
 
@@ -269,41 +295,26 @@ defmodule WraftDoc.Billing do
     if subscription && not irrelevant? do
       params = format_subscription_params(params)
 
-      subscription
-      |> Subscription.changeset(params)
-      |> Repo.update()
+      Multi.new()
+      |> Multi.insert(
+        :create_history,
+        SubscriptionHistory.changeset(%SubscriptionHistory{}, %{
+          provider_subscription_id: subscription.provider_subscription_id,
+          event_type: "plan updated",
+          current_subscription_start: subscription.current_period_start,
+          current_subscription_end: subscription.current_period_end,
+          transaction_id: subscription.transaction_id,
+          user_id: subscription.user_id,
+          organisation_id: subscription.organisation_id,
+          plan_id: subscription.plan_id
+        })
+      )
+      |> Multi.update(
+        :update_subscription,
+        Subscription.update_changeset(subscription, params)
+      )
+      |> Repo.transaction()
     end
-  end
-
-  # need to check its free sub or not?
-  defp handle_subscription_cancelled(params) do
-    subscription =
-      Subscription
-      |> Repo.get_by(provider_subscription_id: params["id"])
-      |> Repo.preload(:user)
-
-    Multi.new()
-    |> Multi.insert(
-      :create_history,
-      SubscriptionHistory.changeset(%SubscriptionHistory{}, %{
-        provider_subscription_id: subscription.provider_subscription_id,
-        event_type: "cancelled",
-        current_period_start: subscription.current_period_start,
-        current_period_end: subscription.current_period_end,
-        transaction_id: subscription.transaction_id,
-        user_id: subscription.user_id,
-        organisation_id: subscription.organisation_id,
-        plan_id: subscription.plan_id,
-        metadata: subscription
-      })
-    )
-    |> Multi.delete(:delete_subscription, subscription)
-    |> Multi.run(
-      :create_free_plan,
-      fn _repo, _changes ->
-        Enterprise.create_free_subscription(params["organisation_id"])
-      end
-    )
   end
 
   # may need in future
@@ -331,7 +342,7 @@ defmodule WraftDoc.Billing do
   @doc """
   Retrieves subscription history of an organisation.
   """
-  @spec subscription_index(User.t(), map()) :: map()
+  @spec subscription_index(User.t(), map()) :: Scrivener.Page.t()
   def subscription_index(%{current_org_id: organisation_id}, params) do
     query =
       from(sh in SubscriptionHistory,
@@ -342,6 +353,10 @@ defmodule WraftDoc.Billing do
     Repo.paginate(query, params)
   end
 
+  @doc """
+  Retrieves transactions of an organisation.
+  """
+  @spec get_transactions(Ecto.UUID.t(), map()) :: Scrivener.Page.t()
   def get_transactions(organisation_id, params) do
     query =
       from(t in Transaction,
@@ -361,6 +376,19 @@ defmodule WraftDoc.Billing do
     |> format_transaction_params()
     |> then(&Transaction.changeset(%Transaction{}, &1))
     |> Repo.insert()
+    |> case do
+      {:ok, transaction} ->
+        # Subscription update webhook response doesn't contain transaction_id
+        # so we need to update subscription with latest transaction_id
+        Subscription
+        |> where(provider_subscription_id: ^transaction.provider_subscription_id)
+        |> Repo.update_all(set: [transaction_id: transaction.transaction_id])
+
+        {:ok, transaction}
+
+      {:error, error} ->
+        {:error, error}
+    end
   end
 
   defp format_transaction_params(params) do
