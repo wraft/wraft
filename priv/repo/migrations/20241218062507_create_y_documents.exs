@@ -1,8 +1,8 @@
-defmodule WraftDoc.Repo.Migrations.CreateYjsWritings do
+defmodule WraftDoc.Repo.Migrations.CreateYDocuments do
   use Ecto.Migration
 
   def change do
-    create table("yjs-writings") do
+    create table("y_documents") do
       add(:value, :binary)
       add(:version, :string)
       add(:content_id, :binary_id)
@@ -11,6 +11,6 @@ defmodule WraftDoc.Repo.Migrations.CreateYjsWritings do
       timestamps(type: :utc_datetime)
     end
 
-    create(index("yjs-writings", [:content_id, :version]))
+    create(index("y_documents", [:content_id, :version]))
   end
 end

@@ -8,7 +8,7 @@ defmodule WraftDocWeb.DocumentChannel do
   alias Yex.Sync.SharedDoc
 
   @impl true
-  def join("y_doc_room:" <> content_id, payload, socket) do
+  def join("doc_room:" <> content_id, payload, socket) do
     if authorized?(payload) do
       case start_shared_doc(content_id) do
         {:ok, docpid} ->
@@ -67,8 +67,6 @@ defmodule WraftDocWeb.DocumentChannel do
         {:ok, pid}
 
       {:error, reason} ->
-        IO.inspect(reason, label: "reason")
-
         Logger.error("""
         Failed to start shareddoc.
         Room: #{inspect(content_id)}

@@ -9,18 +9,25 @@ defmodule WraftDoc.YEcto do
       @repo unquote(repo)
       @schema unquote(schema)
 
-      @flush_size 400
+      @flush_size 100
 
       def get_y_doc(content_id) do
         ydoc = Yex.Doc.new()
-
         updates = get_updates(content_id)
+
+        map = Yex.Doc.get_map(ydoc, "doc-initial")
 
         Yex.Doc.transaction(ydoc, fn ->
           Enum.each(updates, fn update ->
             Yex.apply_update(ydoc, update.value)
           end)
         end)
+
+        if length(updates) > 0 do
+          Yex.Map.delete(map, "initialLoad")
+        else
+          Yex.Map.set(map, "initialLoad", "true")
+        end
 
         if length(updates) > @flush_size do
           {:ok, u} = Yex.encode_state_as_update(ydoc)
@@ -34,7 +41,6 @@ defmodule WraftDoc.YEcto do
 
       def insert_update(content_id, value) do
         @repo.insert(%@schema{content_id: content_id, value: value, version: :v1})
-        |> IO.inspect(label: "insert_update")
       end
 
       def get_state_vector(content_id) do
