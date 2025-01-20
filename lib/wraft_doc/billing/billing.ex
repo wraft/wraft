@@ -7,6 +7,8 @@ defmodule WraftDoc.Billing do
 
   alias __MODULE__.PaddleApi
   alias __MODULE__.Subscription
+  alias __MODULE__.SubscriptionHistory
+  alias __MODULE__.Transaction
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Repo
@@ -263,6 +265,7 @@ defmodule WraftDoc.Billing do
     # relevant to us).
     irrelevant? = params["old_status"] == "paused" && params["status"] == "past_due"
 
+    # also move current subscription with transaction id, duration to history
     if subscription && not irrelevant? do
       params = format_subscription_params(params)
 
@@ -280,12 +283,27 @@ defmodule WraftDoc.Billing do
       |> Repo.preload(:user)
 
     Multi.new()
+    |> Multi.insert(
+      :create_history,
+      SubscriptionHistory.changeset(%SubscriptionHistory{}, %{
+        provider_subscription_id: subscription.provider_subscription_id,
+        event_type: "cancelled",
+        current_period_start: subscription.current_period_start,
+        current_period_end: subscription.current_period_end,
+        transaction_id: subscription.transaction_id,
+        user_id: subscription.user_id,
+        organisation_id: subscription.organisation_id,
+        plan_id: subscription.plan_id,
+        metadata: subscription
+      })
+    )
     |> Multi.delete(:delete_subscription, subscription)
     |> Multi.run(
       :create_free_plan,
-      Enterprise.create_free_subscription(params["organisation_id"])
+      fn _repo, _changes ->
+        Enterprise.create_free_subscription(params["organisation_id"])
+      end
     )
-    |> Repo.transaction()
   end
 
   # may need in future
@@ -309,4 +327,81 @@ defmodule WraftDoc.Billing do
   #     |> Repo.preload(:user)
   #   end
   # end
+
+  @doc """
+  Retrieves subscription history of an organisation.
+  """
+  @spec subscription_index(User.t(), map()) :: map()
+  def subscription_index(%{current_org_id: organisation_id}, params) do
+    query =
+      from(sh in SubscriptionHistory,
+        where: sh.organisation_id == ^organisation_id,
+        preload: [:user, :organisation, :plan]
+      )
+
+    Repo.paginate(query, params)
+  end
+
+  def get_transactions(organisation_id, params) do
+    query =
+      from(t in Transaction,
+        where: t.organisation_id == ^organisation_id,
+        preload: [:organisation, :user, :plan]
+      )
+
+    Repo.paginate(query, params)
+  end
+
+  @doc """
+  Adds completed transaction to the database.
+  """
+  @spec transaction_completed(map()) :: {:ok, Transaction.t()} | {:error, any()}
+  def transaction_completed(params) do
+    params
+    |> format_transaction_params()
+    |> then(&Transaction.changeset(%Transaction{}, &1))
+    |> Repo.insert()
+  end
+
+  defp format_transaction_params(params) do
+    %{
+      transaction_id: params["id"],
+      invoice_number: params["invoice_number"],
+      invoice_id: params["invoice_id"],
+      date: parse_datetime(params["billed_at"]),
+      provider_subscription_id: params["subscription_id"],
+      provider_plan_id: get_in(params, ["items", Access.at(0), "price", "id"]),
+      billing_period_start: parse_datetime(params["billing_period"]["starts_at"]),
+      billing_period_end: parse_datetime(params["billing_period"]["ends_at"]),
+      subtotal_amount: params["details"]["totals"]["subtotal"],
+      tax: params["details"]["totals"]["tax"],
+      total_amount: params["details"]["totals"]["total"],
+      currency: params["currency_code"],
+      payment_method: get_payment_method(params),
+      payment_method_details: get_payment_method_details(params),
+      organisation_id: params["custom_data"]["organisation_id"],
+      user_id: params["custom_data"]["user_id"],
+      plan_id: params["custom_data"]["plan_id"]
+    }
+  end
+
+  defp parse_datetime(nil), do: nil
+
+  defp parse_datetime(datetime) do
+    datetime
+    |> NaiveDateTime.from_iso8601!()
+    |> DateTime.from_naive!("Etc/UTC")
+  end
+
+  defp get_payment_method(params) do
+    params["payments"]
+    |> Enum.find(fn payment -> payment["status"] == "captured" end)
+    |> then(fn payment -> payment && payment["method_details"]["type"] end)
+  end
+
+  defp get_payment_method_details(params) do
+    params["payments"]
+    |> Enum.find(fn payment -> payment["status"] == "captured" end)
+    |> then(fn payment -> payment && payment["method_details"] end)
+  end
 end

@@ -83,6 +83,8 @@ defmodule WraftDoc.Billing.PaddleApi do
       ],
       proration_billing_mode: "prorated_immediately",
       on_payment_failure: "prevent_change"
+      # custom_data: %{
+      # }
     }
 
     paddle_subscription_id
@@ -107,7 +109,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   def cancel_subscription(paddle_subscription_id) do
     # TODO check effects from when and does it changes db.
     params = %{
-      effective_from: "next_billing_period"
+      effective_from: "immediately"
     }
 
     paddle_subscription_id

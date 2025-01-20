@@ -132,6 +132,38 @@ defmodule WraftDocWeb.Api.V1.BillingController do
             update_payment_method(:string, "URL to update payment method")
             cancel(:string, "URL to cancel subscription")
           end
+        end,
+      Transactions:
+        swagger_schema do
+          title("Transaction")
+          description("Transaction details")
+
+          properties do
+            layouts(Schema.ref(:Transaction))
+            page_number(:integer, "Page number")
+            total_pages(:integer, "Total number of pages")
+            total_entries(:integer, "Total number of contents")
+          end
+        end,
+      Transaction:
+        swagger_schema do
+          title("Transaction")
+          description("Transaction details")
+
+          properties do
+            id(:string, "Transaction ID")
+            user_id(:string, "User ID")
+            org_id(:string, "Organization ID")
+            amount(:number, "Transaction amount")
+            currency(:string, "Transaction currency")
+            description(:string, "Transaction description")
+            created_at(:string, "Transaction creation date. Format: ISO8601 datetime")
+            updated_at(:string, "Transaction update date. Format: ISO8601 datetime")
+            status(:string, "Transaction status")
+            type(:string, "Transaction type")
+            payment_method(:string, "Payment method used for the transaction")
+            payment_method_details(:string, "Details about the payment method")
+          end
         end
     }
   end
@@ -250,6 +282,49 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   def get_invoice(conn, params) do
     with {:ok, url} <- PaddleApi.get_invoice_pdf(params["transaction_id"]) do
       render(conn, "invoice.json", invoice_url: url)
+    end
+  end
+
+  def subscription_history_index(conn, params) do
+    current_user = conn.assigns.current_user
+
+    with %{
+           entries: subscription_histories,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Billing.subscription_index(current_user, params) do
+      render(conn, "subscription_history_index.json",
+        subscription_histories: subscription_histories,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
+    end
+  end
+
+  swagger_path :get_transactions do
+    get("/billing/subscription/:organisation_id/transactions")
+    summary("Returns all transaction under an organisation")
+    description("Returns all transaction under an organisation")
+    response(200, "", Schema.ref(:Transactions))
+    response(404, "Failed to fetch transactions", Schema.ref(:Error))
+  end
+
+  @spec get_transactions(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  def get_transactions(conn, %{"organisation_id" => organisation_id} = params) do
+    with %{
+           entries: transactions,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Billing.get_transactions(organisation_id, params) do
+      render(conn, "transactions_index.json",
+        transactions: transactions,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
     end
   end
 end

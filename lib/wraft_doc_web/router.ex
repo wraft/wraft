@@ -298,6 +298,12 @@ defmodule WraftDocWeb.Router do
         post("/billing/change-plan/preview/:plan_id", BillingController, :change_plan_preview)
         delete("/billing/subscription/cancel", BillingController, :cancel_subscription)
 
+        get(
+          "/billing/subscription/:organisation_id/transactions",
+          BillingController,
+          :get_transactions
+        )
+
         # resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
 
         # Update membership plan
