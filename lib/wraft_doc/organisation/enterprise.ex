@@ -1166,7 +1166,6 @@ defmodule WraftDoc.Enterprise do
     %Subscription{}
     |> Subscription.free_subscription_changeset(params)
     |> Repo.insert()
-    |> then(&{:ok, &1})
   end
 
   # Create free trial membership for the given organisation.

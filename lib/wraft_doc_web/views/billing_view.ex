@@ -84,7 +84,6 @@ defmodule WraftDocWeb.Api.V1.BillingView do
       current_subscription_start: subscription_history.current_subscription_start,
       current_subscription_end: subscription_history.current_subscription_end,
       amount: subscription_history.amount,
-      plan_name: subscription_history.plan_name,
       event_type: subscription_history.event_type,
       transaction_id: subscription_history.transaction_id,
       user_id: subscription_history.user_id,

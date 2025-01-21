@@ -91,7 +91,7 @@ defmodule WraftDoc.Billing do
     |> case do
       %Subscription{type: :free} = subscription ->
         Multi.new()
-        |> Multi.delete(:delete_existing, subscription)
+        |> Multi.delete(:delete_existing_subscription, subscription)
         |> Multi.insert(:new_subscription, Subscription.changeset(%Subscription{}, params))
         |> Repo.transaction()
 
@@ -110,7 +110,12 @@ defmodule WraftDoc.Billing do
             plan_id: subscription.plan_id
           })
         )
-        |> Multi.delete(:delete_existing, subscription)
+        |> Multi.delete(:delete_existing_subscription, subscription)
+        |> Multi.insert(:new_subscription, Subscription.changeset(%Subscription{}, params))
+        |> Repo.transaction()
+
+      _ ->
+        Multi.new()
         |> Multi.insert(:new_subscription, Subscription.changeset(%Subscription{}, params))
         |> Repo.transaction()
     end
@@ -144,7 +149,7 @@ defmodule WraftDoc.Billing do
   Update subscription.
   """
   @spec subscription_updated(map()) :: {:ok, Subscription.t()} | {:error, any()}
-  def subscription_updated(params) do
+  def subscription_updated(%{"status" => status} = params) when status == "active" do
     params
     |> handle_subscription_updated()
     |> case do
@@ -155,6 +160,8 @@ defmodule WraftDoc.Billing do
         {:error, error}
     end
   end
+
+  def subscription_updated(%{"status" => status}), do: {:error, "Invalid status: #{status}"}
 
   @doc """
   Cancel subscription.
@@ -177,15 +184,14 @@ defmodule WraftDoc.Billing do
         transaction_id: subscription.transaction_id,
         user_id: subscription.user_id,
         organisation_id: subscription.organisation_id,
-        plan_id: subscription.plan_id,
-        metadata: subscription
+        plan_id: subscription.plan_id
       })
     )
     |> Multi.delete(:delete_subscription, subscription)
     |> Multi.run(
       :create_free_plan,
       fn _repo, _changes ->
-        Enterprise.create_free_subscription(params["organisation_id"])
+        Enterprise.create_free_subscription(params["custom_data"]["organisation_id"])
       end
     )
     |> Repo.transaction()
@@ -213,6 +219,13 @@ defmodule WraftDoc.Billing do
   Update subscription when plan changed.
   """
   @spec change_plan(Subscription.t(), binary()) :: {:ok, Subscription.t()} | {:error, any()}
+
+  def change_plan(
+        %Subscription{type: :free},
+        _
+      ),
+      do: {:error, "Can't change plan for free plan, create new subscription"}
+
   def change_plan(
         %Subscription{provider_plan_id: provider_plan_id},
         paddle_price_id
@@ -241,6 +254,9 @@ defmodule WraftDoc.Billing do
   Gets preview of a plan changes.
   """
   @spec change_plan_preview(Subscription.t(), binary()) :: {:ok, map()} | {:error, any()}
+  def change_plan_preview(%Subscription{type: :free}, _),
+    do: {:error, "Preview not available for free plan."}
+
   def change_plan_preview(%Subscription{provider_plan_id: provider_plan_id}, paddle_price_id)
       when paddle_price_id == provider_plan_id,
       do: {:error, "Already have same plan."}

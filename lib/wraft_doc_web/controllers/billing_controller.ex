@@ -334,7 +334,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     current_user = conn.assigns.current_user
 
     with {:ok, %Subscription{} = subscription} <-
-           Billing.active_subscription_for(current_user.current_org_id),
+           Billing.get_subscription(current_user),
          {:ok, _subscription} <- Billing.change_plan(subscription, plan_id) do
       render(conn, "change_plan.json", subscription: subscription)
     end

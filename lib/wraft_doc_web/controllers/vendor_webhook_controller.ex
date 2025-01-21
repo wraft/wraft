@@ -24,13 +24,6 @@ defmodule WraftDocWeb.Api.V1.VendorsWebhookController do
     |> webhook_response(conn, params)
   end
 
-  # may need to implement for notifications
-  # def webhook(conn, %{"event_type" => "subscription_payment_succeeded", "data" => params}) do
-  #   params
-  #   |> Billing.subscription_payment_succeeded()
-  #   |> webhook_response(conn, params)
-  # end
-
   def webhook(conn, %{"event_type" => "transaction.completed", "data" => params}) do
     params
     |> Billing.transaction_completed()
@@ -52,19 +45,15 @@ defmodule WraftDocWeb.Api.V1.VendorsWebhookController do
   end
 
   def verify_signature(conn, _opts) do
-    %{"ts" => timestamp, "h1" => received_signature} = parse_signature_header(conn)
-
-    conn
-    |> build_signed_payload(timestamp)
-    |> compute_signature()
-    |> case do
-      {:ok, computed_signature} ->
-        if Plug.Crypto.secure_compare(received_signature, computed_signature) do
-          conn
-        else
-          error_response(conn, 403, "You are not authorized for this action!")
-        end
-
+    with %{"ts" => timestamp, "h1" => received_signature} <- parse_signature_header(conn),
+         {:ok, computed_signature} <-
+           conn |> build_signed_payload(timestamp) |> compute_signature() do
+      if Plug.Crypto.secure_compare(received_signature, computed_signature) do
+        conn
+      else
+        error_response(conn, 403, "You are not authorized for this action!")
+      end
+    else
       {:error, error} ->
         error_response(conn, 400, error)
     end
@@ -86,7 +75,7 @@ defmodule WraftDocWeb.Api.V1.VendorsWebhookController do
       nil ->
         {:error, "Missing paddle-signature header"}
 
-      {_, header_value} ->
+      {_, header_value} when is_binary(header_value) ->
         header_value
         |> String.split(";")
         |> Enum.map(fn item ->
@@ -95,6 +84,9 @@ defmodule WraftDocWeb.Api.V1.VendorsWebhookController do
         end)
         |> Enum.into(%{})
         |> then(fn %{"ts" => _, "h1" => _} = parsed -> parsed end)
+
+      _ ->
+        {:error, "Invalid signature header format"}
     end
   end
 

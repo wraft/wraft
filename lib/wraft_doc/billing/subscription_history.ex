@@ -9,8 +9,6 @@ defmodule WraftDoc.Billing.SubscriptionHistory do
     field(:current_subscription_start, :utc_datetime)
     field(:current_subscription_end, :utc_datetime)
     field(:amount, :string)
-    field(:plan_name, :string)
-
     field(:event_type, :string)
     field(:transaction_id, :string)
     field(:metadata, :map)

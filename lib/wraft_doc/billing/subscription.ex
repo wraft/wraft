@@ -118,6 +118,14 @@ defmodule WraftDoc.Billing.Subscription do
   end
 
   def free_subscription_changeset(subscription, attrs) do
-    cast(subscription, attrs, @changeset_fields)
+    subscription
+    |> cast(attrs, @changeset_fields)
+    |> validate_required([
+      :next_bill_amount,
+      :currency,
+      :organisation_id,
+      :plan_id,
+      :type
+    ])
   end
 end
