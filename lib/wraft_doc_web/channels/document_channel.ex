@@ -14,7 +14,7 @@ defmodule WraftDocWeb.DocumentChannel do
         {:ok, docpid} ->
           Process.monitor(docpid)
           SharedDoc.observe(docpid)
-          {:ok, socket |> assign(content_id: content_id, doc_pid: docpid)}
+          {:ok, assign(socket, content_id: content_id, doc_pid: docpid)}
 
         {:error, reason} ->
           {:error, %{reason: reason}}
@@ -49,17 +49,19 @@ defmodule WraftDocWeb.DocumentChannel do
     {:stop, {:error, "remote process crash"}, socket}
   end
 
-  defp start_shared_doc(content_id) do
-    case :global.whereis_name({__MODULE__, content_id}) do
-      :undefined ->
-        SharedDoc.start([doc_name: content_id, persistence: WraftDoc.EctoPersistence],
-          name: {:global, {__MODULE__, content_id}}
-        )
+  def start_shared_doc(content_id) do
+    result =
+      case :global.whereis_name({__MODULE__, content_id}) do
+        :undefined ->
+          SharedDoc.start([doc_name: content_id, persistence: WraftDoc.EctoPersistence],
+            name: {:global, {__MODULE__, content_id}}
+          )
 
-      pid ->
-        {:ok, pid}
-    end
-    |> case do
+        pid ->
+          {:ok, pid}
+      end
+
+    case result do
       {:ok, pid} ->
         {:ok, pid}
 

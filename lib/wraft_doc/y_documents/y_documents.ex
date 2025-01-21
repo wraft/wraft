@@ -1,4 +1,8 @@
 defmodule WraftDoc.YDocuments do
+  @moduledoc """
+  YDocuments
+  """
+
   use Ecto.Schema
   import Ecto.Changeset
 

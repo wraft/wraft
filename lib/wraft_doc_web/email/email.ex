@@ -198,7 +198,7 @@ defmodule WraftDocWeb.Mailer.Email do
   end
 
   defp build_document_instance_url(token, document_id) do
-    URI.encode("#{frontend_url()}/content/#{document_id}?type=invite&token=#{token}")
+    URI.encode("#{frontend_url()}/documents/#{document_id}?type=invite&token=#{token}")
   end
 
   defp build_join_url(org_name, email, token) do

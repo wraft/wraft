@@ -1,4 +1,8 @@
 defmodule WraftDoc.YEcto do
+  @moduledoc """
+  Yex Ecto
+  """
+
   defmacro __using__(opts) do
     repo = opts[:repo]
     schema = opts[:schema]
@@ -68,12 +72,14 @@ defmodule WraftDoc.YEcto do
       end
 
       defp put_state_vector(content_id, state_vector) do
-        case get_state_vector(content_id) do
-          nil -> %@schema{content_id: content_id, version: :v1_sv}
-          state_vector -> state_vector
-        end
-        |> @schema.changeset(%{value: state_vector})
-        |> @repo.insert_or_update()
+        state_vector_record =
+          case get_state_vector(content_id) do
+            nil -> %@schema{content_id: content_id, version: :v1_sv}
+            state_vector -> state_vector
+          end
+
+        changeset = @schema.changeset(state_vector_record, %{value: state_vector})
+        @repo.insert_or_update(changeset)
       end
 
       defp get_updates(content_id) do

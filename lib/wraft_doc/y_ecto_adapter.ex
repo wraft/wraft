@@ -1,8 +1,16 @@
 defmodule WraftDoc.YEctoAdapter do
+  @moduledoc """
+  Yex Ecto Adapter
+  """
+
   use WraftDoc.YEcto, repo: WraftDoc.Repo, schema: WraftDoc.YDocuments
 end
 
 defmodule WraftDoc.EctoPersistence do
+  @moduledoc """
+  Ecto Persistence
+  """
+
   @behaviour Yex.Sync.SharedDoc.PersistenceBehaviour
   @impl true
   def bind(_state, content_id, doc) do
