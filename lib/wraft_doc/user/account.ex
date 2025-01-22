@@ -132,6 +132,12 @@ defmodule WraftDoc.Account do
         "personal_organisation_roles"
       )
     end)
+    |> Multi.run(:free_subscription, fn _repo,
+                                        %{
+                                          personal_organisation: %{organisation: organisation}
+                                        } ->
+      Enterprise.create_free_subscription(organisation.id)
+    end)
     |> Multi.run(:default_flow, fn _repo,
                                    %{
                                      user: user,

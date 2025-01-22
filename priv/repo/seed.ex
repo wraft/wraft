@@ -81,6 +81,8 @@ defmodule WraftDoc.Seed do
     organisation =
       Repo.insert!(%Organisation{name: "Personal", email: user.email, creator_id: user.id})
 
+    Enterprise.create_free_subscription(organisation.id)
+
     # Update the user with the last signed in organisation
     user =
       user
