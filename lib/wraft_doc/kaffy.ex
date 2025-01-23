@@ -57,8 +57,7 @@ defmodule WraftDoc.Kaffy.Config do
       organisation: [
         schema: WraftDoc.Enterprise.Organisation,
         admin: WraftDocWeb.OrganisationAdmin
-      ],
-      membership: [schema: WraftDoc.Enterprise.Membership, admin: WraftDocWeb.MembershipAdmin]
+      ]
     ]
 
     case DeploymentMode.saas?() do
