@@ -872,6 +872,14 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Document.show_instance(id, current_user),
          %Instance{} = instance <- Document.approve_instance(current_user, instance) do
+      WraftDoc.Notifications.create_notification(current_user, %{
+        type: :organisation_document_flow_pending,
+        organisation_id: current_user.last_signed_in_org,
+        document_id: instance.id,
+        state_id: instance.state_id,
+        user: current_user
+      })
+
       render(conn, "approve_or_reject.json", %{instance: instance})
     end
   end
