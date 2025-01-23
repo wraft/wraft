@@ -14,8 +14,6 @@ defmodule WraftDoc.Repo.Migrations.CreatePlansTable do
 
         timestamps()
       end
-
-      create(unique_index(:plan, [:name], name: :plan_unique_index))
     end
 
     def down do

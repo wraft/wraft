@@ -171,10 +171,6 @@ defmodule WraftDoc.Billing.PaddleApi do
       quantity: %{
         minimum: 1,
         maximum: 1
-      },
-      custom_data: %{
-        creator_id: Map.get(params, "creator_id", nil),
-        organisation_id: Map.get(params, "organisation_id", nil)
       }
     }
 
@@ -189,7 +185,8 @@ defmodule WraftDoc.Billing.PaddleApi do
            "custom_amount" => amount,
            "custom_period" => period,
            "custom_period_frequency" => frequency
-         }
+         },
+         "currency" => currency
        }) do
     %{
       billing_cycle: %{
@@ -198,35 +195,28 @@ defmodule WraftDoc.Billing.PaddleApi do
       },
       unit_price: %{
         amount: amount,
-        currency_code: "USD"
+        currency_code: currency
       }
     }
   end
 
-  defp get_billing_details(%{"monthly_amount" => monthly_amount, "yearly_amount" => yearly_amount}) do
-    {interval, amount} = determine_billing_interval(monthly_amount, yearly_amount)
-
+  defp get_billing_details(%{
+         "plan_amount" => plan_amount,
+         "currency" => currency,
+         "billing_interval" => billing_interval
+       })
+       when billing_interval != :custom do
     %{
       billing_cycle: %{
-        interval: interval,
+        interval: billing_interval,
         frequency: 1
       },
       unit_price: %{
-        amount: amount,
-        currency_code: "USD"
+        amount: plan_amount,
+        currency_code: currency
       }
     }
   end
-
-  defp determine_billing_interval(monthly_amount, yearly_amount) do
-    cond do
-      is_valid_amount?(monthly_amount) -> {"month", monthly_amount}
-      is_valid_amount?(yearly_amount) -> {"year", yearly_amount}
-      true -> {"month", monthly_amount}
-    end
-  end
-
-  defp is_valid_amount?(amount), do: amount not in [nil, ""]
 
   defp maybe_add_product_id(params, %{"product_id" => product_id}),
     do: Map.put(params, :product_id, product_id)
@@ -317,10 +307,10 @@ defmodule WraftDoc.Billing.PaddleApi do
       items: [
         %{
           quantity: 1,
-          price_id: plan.custom_price_id
+          price_id: plan.plan_id
         }
       ],
-      currency_code: "USD",
+      currency_code: plan.currency,
       collection_mode: "manual",
       billing_details: %{
         enable_checkout: true,

@@ -81,6 +81,14 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
       features: %{
         label: "Features"
       },
+      currency: %{label: "Currency"},
+      billing_interval: %{
+        label: "Billing interval",
+        type: :choices,
+        choices: [
+          {"custom", :custom}
+        ]
+      },
       limits: %{
         label: "Limits",
         help_text: "Define usage limits for this plan."
@@ -132,8 +140,8 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
   def insert(conn, changeset) do
     params = Map.merge(conn.params["plan"], %{"type" => :enterprise})
 
-    conn.assigns[:admin_session]
-    |> Enterprise.create_plan(params)
+    params
+    |> Enterprise.create_plan()
     |> case do
       {:ok, plan} ->
         {:ok, plan}
@@ -148,10 +156,9 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
 
   def update(conn, changeset) do
     params = conn.params["plan"]
-    plan = changeset.data
 
-    conn.assigns[:admin_session]
-    |> Enterprise.update_plan(plan, params)
+    changeset.data
+    |> Enterprise.update_plan(params)
     |> case do
       {:ok, plan} ->
         {:ok, plan}

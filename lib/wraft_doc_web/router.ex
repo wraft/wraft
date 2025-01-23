@@ -393,11 +393,6 @@ defmodule WraftDocWeb.Router do
     pipe_through([:api, :api_auth, :ex_audit_track, :email_verify])
 
     scope "/v1", Api.V1, as: :v1 do
-      if DeploymentMode.saas?() do
-        # Create, Update and delete plans
-        resources("/plans", PlanController, only: [:create, :update, :delete])
-      end
-
       # List all organisation details
       get("/organisations", OrganisationController, :index)
     end

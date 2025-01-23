@@ -14,13 +14,12 @@ defmodule WraftDoc.Enterprise.Plan do
     field(:description, :string)
     field(:features, WraftDocWeb.Kaffy.ArrayField)
     field(:product_id, :string)
-    field(:monthly_product_id, :string)
-    field(:monthly_amount, :string)
-    field(:yearly_product_id, :string)
-    field(:yearly_amount, :string)
+    field(:plan_id, :string)
+    field(:plan_amount, :string)
+    field(:billing_interval, Ecto.Enum, values: [:month, :year, :custom])
     field(:type, Ecto.Enum, values: [:free, :regular, :enterprise])
     field(:is_active?, :boolean, default: true)
-    field(:custom_price_id, :string)
+    field(:currency, :string, default: "USD")
 
     belongs_to(:organisation, Organisation)
 
@@ -36,12 +35,10 @@ defmodule WraftDoc.Enterprise.Plan do
       :name,
       :description,
       :product_id,
-      :monthly_product_id,
-      :monthly_amount,
-      :yearly_product_id,
-      :yearly_amount,
+      :plan_id,
+      :plan_amount,
+      :billing_interval,
       :organisation_id,
-      :custom_price_id,
       :type,
       :features,
       :is_active?
@@ -50,8 +47,8 @@ defmodule WraftDoc.Enterprise.Plan do
     |> cast_embed(:custom)
     |> validate_required([:name, :description])
     |> unique_constraint(:name,
-      name: :plan_unique_index,
-      message: "A plan with the same name exists.!"
+      name: :plans_name_billing_interval_unique_index,
+      message: "A plan with the same name and billing interval already exists!"
     )
   end
 
@@ -61,39 +58,40 @@ defmodule WraftDoc.Enterprise.Plan do
       :name,
       :description,
       :product_id,
-      :monthly_product_id,
-      :monthly_amount,
+      :plan_id,
+      :plan_amount,
+      :billing_interval,
       :features,
       :type,
-      :yearly_product_id,
-      :yearly_amount,
       :is_active?
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
-    |> validate_required([:name, :description, :monthly_amount, :yearly_amount])
+    |> validate_required([:name, :description, :plan_amount])
     |> unique_constraint(:name,
-      name: :plan_unique_index,
-      message: "A plan with the same name exists.!"
+      name: :plans_name_billing_interval_unique_index,
+      message: "A plan with the same name and billing interval already exists!"
     )
   end
 
+  # TODO custom plan changeset
   def custom_plan_changeset(%Plan{} = plan, attrs \\ %{}) do
     plan
     |> cast(attrs, [
       :name,
       :description,
       :product_id,
+      :plan_id,
+      :billing_interval,
       :features,
       :type,
-      :organisation_id,
-      :custom_price_id
+      :organisation_id
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> cast_embed(:custom, with: &Custom.changeset/2, required: true)
     |> validate_required([:name, :description])
     |> unique_constraint(:name,
-      name: :plan_unique_index,
-      message: "A plan with the same name exists.!"
+      name: :plans_name_billing_interval_unique_index,
+      message: "A plan with the same name and billing interval already exists!"
     )
   end
 end

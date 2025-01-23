@@ -6,13 +6,14 @@ defmodule WraftDoc.Repo.Migrations.UpdatePlansTable do
   if DeploymentMode.saas?() do
     def change do
       alter table(:plan) do
-        modify(:yearly_amount, :string)
-        modify(:monthly_amount, :string)
+        remove(:yearly_amount, :string)
+        remove(:monthly_amount, :string)
 
         add(:product_id, :string)
-        add(:monthly_product_id, :string)
-        add(:yearly_product_id, :string)
-        add(:custom_price_id, :string)
+        add(:plan_id, :string)
+        add(:plan_amount, :string)
+        add(:billing_interval, :string)
+        add(:currency, :string)
         add(:features, {:array, :string})
         add(:is_active?, :boolean, default: true)
         add(:type, :string)
@@ -21,14 +22,19 @@ defmodule WraftDoc.Repo.Migrations.UpdatePlansTable do
         add(:custom, :map)
       end
 
+      create(
+        unique_index(:plan, [:name, :billing_interval],
+          name: :plans_name_billing_interval_unique_index
+        )
+      )
+
       execute("""
         UPDATE plan
         SET
           name = 'Free trial',
           description = 'Free trial Description',
           features = ARRAY['Feature1', 'Feature2'],
-          monthly_amount = '0',
-          yearly_amount = '0',
+          plan_amount = '0',
           "is_active?" = true,
           limits = '{"instance_create":"20", "content_type_create": 10, "organisation_create": 5, "organisation_invite": 15}',
           type = 'free',

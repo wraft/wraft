@@ -28,11 +28,10 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             name(:string, "Plan name")
             description(:string, "Plan description")
             features(:array, "Plan features")
-            monthly_product_id(:string, "Monthly price ID")
-            monthly_amount(:string, "Monthly amount of the plan")
-            yearly_product_id(:string, "Yearly price ID")
-            yearly_amount(:string, "Yearly amount of the plan")
+            plan_id(:string, "Paddle price ID")
+            plan_amount(:string, "Amount of the plan")
             product_id(:string, "Paddle product ID")
+            billing_interval(:string, "Billing interval")
             limits(:map, "Limits of the plan")
             inserted_at(:string, "When was the plan inserted", format: "ISO-8601")
             updated_at(:string, "When was the plan last updated", format: "ISO-8601")
@@ -43,11 +42,10 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             name: "Basic",
             description: "A basic plan",
             features: ["Feature 1", "Feature 2"],
-            monthly_product_id: "123456789",
-            yearly_product_id: "123456789",
-            yearly_amount: "10",
-            monthly_amount: "6",
+            plan_id: "123456789",
+            plan_amount: "6",
             product_id: "123456789",
+            billing_interval: "month",
             limits: %{
               instance_create: 25,
               content_type_create: 25,
@@ -68,7 +66,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             name(:string, "Plan name")
             description(:string, "Plan description")
             features(:array, "Plan features")
-            custom_price_id(:string, "Custom price ID")
+            plan_id(:string, "Custom price ID")
             limits(:map, "Limits of the plan")
             custom(:map, "Custom plan")
             inserted_at(:string, "When was the plan inserted", format: "ISO-8601")
@@ -80,6 +78,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             name: "Basic",
             description: "A basic plan",
             features: ["Feature 1", "Feature 2"],
+            plan_id: "123456789",
             limits: %{
               instance_create: 25,
               content_type_create: 25,
@@ -138,30 +137,6 @@ defmodule WraftDocWeb.Api.V1.PlanController do
     }
   end
 
-  swagger_path :create do
-    post("/plans")
-    summary("Create a plan")
-    description("Create a plan")
-    operation_id("create_plan")
-
-    parameters do
-      plan(:body, Schema.ref(:PlanRequest), "Plan to be created", required: true)
-    end
-
-    response(200, "Updated", Schema.ref(:Plan))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, params) do
-    current_user = conn.assigns.current_user
-
-    with {:ok, %Plan{} = plan} <- Enterprise.create_plan(current_user, params) do
-      render(conn, "plan.json", plan: plan)
-    end
-  end
-
   swagger_path :index do
     get("/plans")
     summary("Plan index")
@@ -212,55 +187,6 @@ defmodule WraftDocWeb.Api.V1.PlanController do
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => p_uuid}) do
     with %Plan{} = plan <- Enterprise.get_plan(p_uuid) do
-      render(conn, "plan.json", plan: plan)
-    end
-  end
-
-  swagger_path :update do
-    put("/plans/{id}")
-    summary("Update a plan")
-    description("Update a plan")
-    operation_id("update_plan")
-
-    parameters do
-      id(:path, :string, "ID of the plan to be updated")
-      plan(:body, Schema.ref(:PlanRequest), "Plan to be updated", required: true)
-    end
-
-    response(200, "Updated", Schema.ref(:PlanResponse))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => plan_uuid} = params) do
-    current_user = conn.assigns.current_user
-
-    with %Plan{} = plan <- Enterprise.get_plan(plan_uuid),
-         {:ok, %Plan{} = plan} <- Enterprise.update_plan(current_user, plan, params) do
-      render(conn, "plan.json", plan: plan)
-    end
-  end
-
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/plans/{id}")
-    summary("Delete a plan")
-    description("Delete a plan")
-    operation_id("delete_plan")
-
-    parameters do
-      id(:path, :string, "ID of the plan to be deleted")
-    end
-
-    response(200, "OK", Schema.ref(:PlanResponse))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => p_uuid}) do
-    with %Plan{} = plan <- Enterprise.get_plan(p_uuid),
-         {:ok, %Plan{} = plan} <- Enterprise.delete_plan(plan) do
       render(conn, "plan.json", plan: plan)
     end
   end

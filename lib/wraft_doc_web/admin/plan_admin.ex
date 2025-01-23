@@ -13,8 +13,8 @@ defmodule WraftDocWeb.PlanAdmin do
     [
       name: %{name: "Name", value: fn x -> x.name end},
       description: %{name: "Description", value: fn x -> x.description end},
-      yearly_amount: %{name: "Yearly amount", value: fn x -> x.yearly_amount end},
-      monthly_amount: %{name: "Monthly amount", value: fn x -> x.monthly_amount end}
+      billing_interval: %{name: "Billing interval", value: fn x -> x.billing_interval end},
+      plan_amount: %{name: "Plan amount", value: fn x -> x.plan_amount end}
     ]
   end
 
@@ -22,8 +22,17 @@ defmodule WraftDocWeb.PlanAdmin do
     [
       name: %{label: "Name"},
       description: %{label: "Description", type: :textarea},
-      yearly_amount: %{label: "Yearly amount", type: :string, required: true},
-      monthly_amount: %{label: "Monthly amount", type: :string, required: true},
+      plan_amount: %{label: "Plan amount"},
+      # TODO add currency type
+      currency: %{label: "Currency"},
+      billing_interval: %{
+        label: "Billing interval",
+        type: :choices,
+        choices: [
+          {"monthly", :month},
+          {"yearly", :year}
+        ]
+      },
       features: %{
         label: "Features"
       },
@@ -59,11 +68,9 @@ defmodule WraftDocWeb.PlanAdmin do
   end
 
   def insert(conn, changeset) do
-    current_user = conn.assigns[:admin_session]
-
     conn.params["plan"]
     |> Map.merge(%{"type" => :regular})
-    |> then(&Enterprise.create_plan(current_user, &1))
+    |> Enterprise.create_plan()
     |> case do
       {:ok, plan} ->
         {:ok, plan}
@@ -78,10 +85,9 @@ defmodule WraftDocWeb.PlanAdmin do
 
   def update(conn, changeset) do
     params = conn.params["plan"]
-    plan = changeset.data
 
-    conn.assigns[:admin_session]
-    |> Enterprise.update_plan(plan, params)
+    changeset.data
+    |> Enterprise.update_plan(params)
     |> case do
       {:ok, plan} ->
         {:ok, plan}
