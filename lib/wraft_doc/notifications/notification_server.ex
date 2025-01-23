@@ -23,7 +23,7 @@ defmodule WraftDoc.Notifications.NotificationServer do
   @doc """
   Subscribe the current process to user-specific notifications.
   """
-  def subscribe(user_id) when is_binary(user_id) or is_integer(user_id) do
+  def subscribe(user_id) when is_binary(user_id) do
     PubSub.subscribe(@pubsub, notification_topic(user_id))
   rescue
     error ->

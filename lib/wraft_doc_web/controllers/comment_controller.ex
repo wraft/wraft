@@ -139,6 +139,12 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     current_user = conn.assigns.current_user
 
     with %Comment{} = comment <- Document.create_comment(current_user, params) do
+      WraftDoc.Notifications.comment_notifcation(
+        current_user.id,
+        comment.organisation_id,
+        comment.master_id
+      )
+
       render(conn, "comment.json", comment: comment)
     end
   end

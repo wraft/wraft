@@ -245,6 +245,13 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     with %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
          %Role{} <- Account.get_role(current_user, role_id),
          {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id) do
+      WraftDoc.Notifications.create_notification(current_user, %{
+        type: :user_assigned_role_or_update,
+        organisation_id: current_user.current_org_id,
+        role_id: role_id,
+        user_id: current_user.id
+      })
+
       render(conn, "assign_role.json")
     end
   end

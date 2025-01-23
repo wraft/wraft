@@ -4,7 +4,8 @@ defmodule WraftDoc.Notifications.Notification do
   """
   use WraftDoc.Schema
 
-  @fields [:type, :message, :is_global, :action, :actor_id]
+  @derive {Jason.Encoder, only: [:type, :message, :actor_id]}
+  @fields [:type, :message, :action, :actor_id]
 
   schema "notification" do
     field(:type, WraftDoc.EctoType.AtomType)
