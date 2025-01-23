@@ -266,9 +266,24 @@ $if(blockquote)$
 \item\relax\color{greytext}\ignorespaces}{\unskip\unskip\endlist\end{blockquote}}
 $endif$
 
+% TODO: Remove this , added background image in initial phase.
+% $if(letterhead)$
+% \usepackage{wallpaper}
+% \ULCornerWallPaper{1}{$letterhead$}
+% $endif$
+
+% Add the background package and configure it for A4 background on Letter size
 $if(letterhead)$
-\usepackage{wallpaper}
-\ULCornerWallPaper{1}{$letterhead$}
+\usepackage{background}
+\backgroundsetup{
+    scale=1,
+    angle=0,
+    opacity=1,
+    contents={
+        \includegraphics[width=\paperwidth,height=\paperheight,keepaspectratio]{$letterhead$} % Replace with your A4 background image
+    },
+    position=current page.center % Center the background image
+}
 $endif$
 
 \begin{document}
