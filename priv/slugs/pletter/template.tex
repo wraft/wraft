@@ -273,6 +273,7 @@ $endif$
 % $endif$
 
 % Add the background package and configure it for A4 background on Letter size
+$if(letterhead)$
 \usepackage{background}
 \backgroundsetup{
     scale=1,
@@ -283,6 +284,7 @@ $endif$
     },
     position=current page.center % Center the background image
 }
+$endif$
 
 \begin{document}
 
