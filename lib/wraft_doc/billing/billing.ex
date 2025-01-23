@@ -17,10 +17,11 @@ defmodule WraftDoc.Billing do
   @doc """
   Get a subscription of a user's current organisation.
   """
+  @spec get_subscription(%User{}) :: {:ok, Subscription.t()} | nil
   def get_subscription(%User{current_org_id: current_org_id}) do
     Subscription
     |> Repo.get_by(organisation_id: current_org_id)
-    |> Repo.preload([:user, :organisation, :plan])
+    |> Repo.preload([:subscriber, :organisation, :plan])
     |> case do
       %Subscription{} = subscription -> {:ok, subscription}
       _ -> nil
@@ -43,12 +44,13 @@ defmodule WraftDoc.Billing do
   @doc """
   Get active subscription of a user's organisation.
   """
-  @spec active_subscription_for(Ecto.UUID.t()) :: {:ok, Subscription.t()} | {:error, atom()}
+  @spec active_subscription_for(Ecto.UUID.t()) ::
+          {:ok, Subscription.t()} | {:error, atom()} | {:error, atom(), any()}
   def active_subscription_for(<<_::288>> = organisation_id) do
     organisation_id
     |> active_subscription_query()
     |> Repo.one()
-    |> Repo.preload([:user, :organisation, :plan])
+    |> Repo.preload([:subscriber, :organisation, :plan])
     |> case do
       %Subscription{} = subscription ->
         {:ok, subscription}
@@ -88,8 +90,9 @@ defmodule WraftDoc.Billing do
 
     Subscription
     |> Repo.get_by(organisation_id: params.organisation_id)
+    |> Repo.preload(:plan)
     |> case do
-      %Subscription{type: :free} = subscription ->
+      %Subscription{plan: %{type: :free}} = subscription ->
         Multi.new()
         |> Multi.delete(:delete_existing_subscription, subscription)
         |> Multi.insert(:new_subscription, Subscription.changeset(%Subscription{}, params))
@@ -102,10 +105,10 @@ defmodule WraftDoc.Billing do
           SubscriptionHistory.changeset(%SubscriptionHistory{}, %{
             provider_subscription_id: subscription.provider_subscription_id,
             event_type: "plan updated",
-            current_subscription_start: subscription.current_period_start,
-            current_subscription_end: subscription.current_period_end,
+            current_subscription_start: subscription.start_date,
+            current_subscription_end: subscription.end_date,
             transaction_id: subscription.transaction_id,
-            user_id: subscription.user_id,
+            subscriber_id: subscription.subscriber_id,
             organisation_id: subscription.organisation_id,
             plan_id: subscription.plan_id
           })
@@ -171,7 +174,7 @@ defmodule WraftDoc.Billing do
     subscription =
       Subscription
       |> Repo.get_by(provider_subscription_id: params["id"])
-      |> Repo.preload(:user)
+      |> Repo.preload(:subscriber)
 
     Multi.new()
     |> Multi.insert(
@@ -179,10 +182,10 @@ defmodule WraftDoc.Billing do
       SubscriptionHistory.changeset(%SubscriptionHistory{}, %{
         provider_subscription_id: subscription.provider_subscription_id,
         event_type: "cancelled",
-        current_subscription_start: subscription.current_period_start,
-        current_subscription_end: subscription.current_period_end,
+        current_subscription_start: subscription.start_date,
+        current_subscription_end: subscription.end_date,
         transaction_id: subscription.transaction_id,
-        user_id: subscription.user_id,
+        subscriber_id: subscription.subscriber_id,
         organisation_id: subscription.organisation_id,
         plan_id: subscription.plan_id
       })
@@ -218,29 +221,29 @@ defmodule WraftDoc.Billing do
   @doc """
   Update subscription when plan changed.
   """
-  @spec change_plan(Subscription.t(), binary()) :: {:ok, Subscription.t()} | {:error, any()}
+  @spec change_plan(Subscription.t(), binary()) :: {:ok, map()} | {:error, any()}
 
   def change_plan(
-        %Subscription{type: :free},
+        %Subscription{plan: %{type: :free}},
         _
       ),
       do: {:error, "Can't change plan for free plan, create new subscription"}
 
   def change_plan(
         %Subscription{provider_plan_id: provider_plan_id},
-        paddle_price_id
+        provider_product_id
       )
-      when paddle_price_id == provider_plan_id,
+      when provider_product_id == provider_plan_id,
       do: {:error, "Already have same plan."}
 
   def change_plan(
         %Subscription{
           provider_subscription_id: provider_subscription_id
         },
-        paddle_price_id
+        provider_product_id
       ) do
     provider_subscription_id
-    |> PaddleApi.update_subscription(paddle_price_id)
+    |> PaddleApi.update_subscription(provider_product_id)
     |> case do
       {:ok, response} ->
         {:ok, response}
@@ -254,20 +257,20 @@ defmodule WraftDoc.Billing do
   Gets preview of a plan changes.
   """
   @spec change_plan_preview(Subscription.t(), binary()) :: {:ok, map()} | {:error, any()}
-  def change_plan_preview(%Subscription{type: :free}, _),
+  def change_plan_preview(%Subscription{plan: %{type: :free}}, _),
     do: {:error, "Preview not available for free plan."}
 
-  def change_plan_preview(%Subscription{provider_plan_id: provider_plan_id}, paddle_price_id)
-      when paddle_price_id == provider_plan_id,
+  def change_plan_preview(%Subscription{provider_plan_id: provider_plan_id}, provider_product_id)
+      when provider_product_id == provider_plan_id,
       do: {:error, "Already have same plan."}
 
   def change_plan_preview(
         %Subscription{provider_subscription_id: provider_subscription_id},
-        paddle_price_id
+        provider_product_id
       ) do
     case PaddleApi.update_subscription_preview(
            provider_subscription_id,
-           paddle_price_id
+           provider_product_id
          ) do
       {:ok, response} ->
         {:ok, response}
@@ -282,11 +285,11 @@ defmodule WraftDoc.Billing do
   """
   @spec cancel_subscription(Subscription.t()) :: {:ok, Subscription.t()} | {:error, any()}
 
-  def cancel_subscription(%Subscription{type: :free}),
+  def cancel_subscription(%Subscription{plan: %{type: :free}}),
     do: {:error, "Free subscription cannot be cancelled"}
 
-  def cancel_subscription(subscription) do
-    case PaddleApi.cancel_subscription(subscription.provider_subscription_id) do
+  def cancel_subscription(%Subscription{provider_subscription_id: provider_subscription_id}) do
+    case PaddleApi.cancel_subscription(provider_subscription_id) do
       {:ok, response} ->
         {:ok, response}
 
@@ -302,16 +305,15 @@ defmodule WraftDoc.Billing do
       %{
         provider_subscription_id: params["id"],
         provider_plan_id: price["id"],
-        provider: "paddle",
         status: params["status"],
-        current_period_start: get_in(params, ["current_billing_period", "starts_at"]),
-        current_period_end: get_in(params, ["current_billing_period", "ends_at"]),
+        start_date: get_in(params, ["current_billing_period", "starts_at"]),
+        end_date: get_in(params, ["current_billing_period", "ends_at"]),
         next_bill_amount: price["unit_price"]["amount"],
-        next_payment_date: params["next_billed_at"],
+        next_bill_date: params["next_billed_at"],
         currency: params["currency_code"],
         transaction_id: params["transaction_id"],
         plan_id: custom_data["plan_id"],
-        user_id: custom_data["user_id"],
+        subscriber_id: custom_data["user_id"],
         organisation_id: custom_data["organisation_id"]
       }
     else
@@ -368,10 +370,10 @@ defmodule WraftDoc.Billing do
         SubscriptionHistory.changeset(%SubscriptionHistory{}, %{
           provider_subscription_id: subscription.provider_subscription_id,
           event_type: "plan updated",
-          current_subscription_start: subscription.current_period_start,
-          current_subscription_end: subscription.current_period_end,
+          current_subscription_start: subscription.start_date,
+          current_subscription_end: subscription.end_date,
           transaction_id: subscription.transaction_id,
-          user_id: subscription.user_id,
+          subscriber_id: subscription.subscriber_id,
           organisation_id: subscription.organisation_id,
           plan_id: subscription.plan_id
         })
@@ -402,7 +404,7 @@ defmodule WraftDoc.Billing do
   #       current_period_start: params["last_payment"]["date"]
   #     })
   #     |> Repo.update()
-  #     |> Repo.preload(:user)
+  #     |> Repo.preload(:subscriber)
   #   end
   # end
 
@@ -414,7 +416,7 @@ defmodule WraftDoc.Billing do
     query =
       from(sh in SubscriptionHistory,
         where: sh.organisation_id == ^organisation_id,
-        preload: [:user, :organisation, :plan]
+        preload: [:subscriber, :organisation, :plan]
       )
 
     Repo.paginate(query, params)
@@ -428,7 +430,7 @@ defmodule WraftDoc.Billing do
     query =
       from(t in Transaction,
         where: t.organisation_id == ^organisation_id,
-        preload: [:organisation, :user, :plan]
+        preload: [:organisation, :subscriber, :plan]
       )
 
     Repo.paginate(query, params)
@@ -475,7 +477,7 @@ defmodule WraftDoc.Billing do
       payment_method: get_payment_method(params),
       payment_method_details: get_payment_method_details(params),
       organisation_id: params["custom_data"]["organisation_id"],
-      user_id: params["custom_data"]["user_id"],
+      subscriber_id: params["custom_data"]["user_id"],
       plan_id: params["custom_data"]["plan_id"]
     }
   end

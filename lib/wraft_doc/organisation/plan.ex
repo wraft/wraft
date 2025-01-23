@@ -13,10 +13,10 @@ defmodule WraftDoc.Enterprise.Plan do
     field(:name, :string)
     field(:description, :string)
     field(:features, WraftDocWeb.Kaffy.ArrayField)
-    field(:paddle_product_id, :string)
-    field(:monthly_price_id, :string)
+    field(:product_id, :string)
+    field(:monthly_product_id, :string)
     field(:monthly_amount, :string)
-    field(:yearly_price_id, :string)
+    field(:yearly_product_id, :string)
     field(:yearly_amount, :string)
     field(:type, Ecto.Enum, values: [:free, :regular, :enterprise])
     field(:is_active?, :boolean, default: true)
@@ -35,10 +35,10 @@ defmodule WraftDoc.Enterprise.Plan do
     |> cast(attrs, [
       :name,
       :description,
-      :paddle_product_id,
-      :monthly_price_id,
+      :product_id,
+      :monthly_product_id,
       :monthly_amount,
-      :yearly_price_id,
+      :yearly_product_id,
       :yearly_amount,
       :organisation_id,
       :custom_price_id,
@@ -60,12 +60,12 @@ defmodule WraftDoc.Enterprise.Plan do
     |> cast(attrs, [
       :name,
       :description,
-      :paddle_product_id,
-      :monthly_price_id,
+      :product_id,
+      :monthly_product_id,
       :monthly_amount,
       :features,
       :type,
-      :yearly_price_id,
+      :yearly_product_id,
       :yearly_amount,
       :is_active?
     ])
@@ -82,7 +82,7 @@ defmodule WraftDoc.Enterprise.Plan do
     |> cast(attrs, [
       :name,
       :description,
-      :paddle_product_id,
+      :product_id,
       :features,
       :type,
       :organisation_id,

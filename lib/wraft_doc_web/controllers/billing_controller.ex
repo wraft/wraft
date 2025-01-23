@@ -26,38 +26,31 @@ defmodule WraftDocWeb.Api.V1.BillingController do
             provider_plan_id(:string, "Provider's plan ID")
             provider(:string, "Subscription provider name")
             status(:string, "Current subscription status")
-            current_period_start(:string, "Format: ISO8601 datetime")
-            current_period_end(:string, "Format: ISO8601 datetime")
-            canceled_at(:string, "Cancellation date if applicable. Format: ISO8601 datetime")
-            next_payment_date(:string, "Next payment date. Format: ISO8601 datetime")
+            start_date(:string, "Format: ISO8601 datetime")
+            end_date(:string, "Format: ISO8601 datetime")
+            next_bill_date(:string, "Next billing date. Format: ISO8601 datetime")
             next_bill_amount(:number, "Amount of next bill")
             currency(:string, "Currency code")
             organisation_id(:string, "Organization ID")
-            user_id(:string, "User ID")
+            subscriber_id(:string, "User ID")
             plan_id(:string, "Plan ID")
-            update_url(:string, "URL to update subscription")
-            cancel_url(:string, "URL to cancel subscription")
           end
 
           example(%{
             id: "4296a052-e147-491b-84cf-9931e4776410",
             provider_subscription_id: "sub_01jj2hnvs63hsbhea7qw6k7m0z",
             provider_plan_id: "pri_01jj19s7ev25a4a1m3b6efbpgd",
-            provider: "paddle",
             status: "active",
             type: "regular",
-            current_period_start: "2025-01-20T19:18:01Z",
-            current_period_end: "2025-02-20T19:18:01Z",
-            canceled_at: nil,
+            start_date: "2025-01-20T19:18:01Z",
+            end_date: "2025-02-20T19:18:01Z",
             next_payment_date: "2025-02-20",
             next_bill_amount: 467,
             currency: "INR",
             organisation_id: "a19aadca-7655-40e7-9647-0a2bd49d20cc",
-            user_id: "b0c5cfc9-bdd4-4809-898f-d75e6b95e719",
+            subscriber_id: "b0c5cfc9-bdd4-4809-898f-d75e6b95e719",
             plan_id: "5932900c-8d9a-4493-95f9-96375032cabc",
-            transaction_id: "txn_01jj2jd17gg4n3j1k71zm6eatv",
-            update_url: nil,
-            cancel_url: nil
+            transaction_id: "txn_01jj2jd17gg4n3j1k71zm6eatv"
           })
         end,
       InvoiceUrl:
@@ -308,7 +301,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     current_user = conn.assigns.current_user
 
     with {:ok, %Subscription{} = subscription} <-
-           Billing.active_subscription_for(current_user.current_org_id),
+           Billing.get_subscription(current_user),
          {:ok, preview_info} <- Billing.change_plan_preview(subscription, plan_id) do
       render(conn, "change_plan_preview.json", preview_info: preview_info)
     end
@@ -356,7 +349,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     current_user = conn.assigns.current_user
 
     with {:ok, %Subscription{} = subscription} <-
-           Billing.active_subscription_for(current_user.current_org_id),
+           Billing.get_subscription(current_user),
          {:ok, _subscription} <- Billing.cancel_subscription(subscription) do
       render(conn, "cancel_subscription.json", subscription: subscription)
     end

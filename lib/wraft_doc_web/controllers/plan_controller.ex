@@ -28,11 +28,11 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             name(:string, "Plan name")
             description(:string, "Plan description")
             features(:array, "Plan features")
-            monthly_price_id(:string, "Monthly price ID")
+            monthly_product_id(:string, "Monthly price ID")
             monthly_amount(:string, "Monthly amount of the plan")
-            yearly_price_id(:string, "Yearly price ID")
+            yearly_product_id(:string, "Yearly price ID")
             yearly_amount(:string, "Yearly amount of the plan")
-            paddle_product_id(:string, "Paddle product ID")
+            product_id(:string, "Paddle product ID")
             limits(:map, "Limits of the plan")
             inserted_at(:string, "When was the plan inserted", format: "ISO-8601")
             updated_at(:string, "When was the plan last updated", format: "ISO-8601")
@@ -43,11 +43,11 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             name: "Basic",
             description: "A basic plan",
             features: ["Feature 1", "Feature 2"],
-            monthly_price_id: "123456789",
-            yearly_price_id: "123456789",
+            monthly_product_id: "123456789",
+            yearly_product_id: "123456789",
             yearly_amount: "10",
             monthly_amount: "6",
-            paddle_product_id: "123456789",
+            product_id: "123456789",
             limits: %{
               instance_create: 25,
               content_type_create: 25,

@@ -13,7 +13,7 @@ defmodule WraftDoc.Billing.SubscriptionHistory do
     field(:transaction_id, :string)
     field(:metadata, :map)
 
-    belongs_to(:user, WraftDoc.Account.User)
+    belongs_to(:subscriber, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:plan, WraftDoc.Enterprise.Plan)
 
@@ -29,7 +29,7 @@ defmodule WraftDoc.Billing.SubscriptionHistory do
       :event_type,
       :transaction_id,
       :metadata,
-      :user_id,
+      :subscriber_id,
       :organisation_id,
       :plan_id
     ])
@@ -41,7 +41,7 @@ defmodule WraftDoc.Billing.SubscriptionHistory do
       :organisation_id,
       :plan_id
     ])
-    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:subscriber_id)
     |> foreign_key_constraint(:organisation_id)
     |> foreign_key_constraint(:plan_id)
   end

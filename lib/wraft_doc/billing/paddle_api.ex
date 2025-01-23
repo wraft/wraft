@@ -228,7 +228,7 @@ defmodule WraftDoc.Billing.PaddleApi do
 
   defp is_valid_amount?(amount), do: amount not in [nil, ""]
 
-  defp maybe_add_product_id(params, %{"paddle_product_id" => product_id}),
+  defp maybe_add_product_id(params, %{"product_id" => product_id}),
     do: Map.put(params, :product_id, product_id)
 
   defp maybe_add_product_id(params, _), do: params
@@ -264,7 +264,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   Update paddle product entity.
   """
   @spec update_product(binary(), map()) :: {:ok, map()} | {:error, binary()} | {:error, map()}
-  def update_product(paddle_product_id, %{"name" => name, "description" => description}) do
+  def update_product(product_id, %{"name" => name, "description" => description}) do
     params = %{
       "name" => name,
       "description" => description,
@@ -273,7 +273,7 @@ defmodule WraftDoc.Billing.PaddleApi do
       "custom_data" => nil
     }
 
-    paddle_product_id
+    product_id
     |> update_product_url()
     |> patch(params)
     |> case do
@@ -292,12 +292,12 @@ defmodule WraftDoc.Billing.PaddleApi do
   Delete paddle product entity.
   """
   @spec delete_product(binary()) :: {:ok, map()} | {:error, binary()} | {:error, map()}
-  def delete_product(paddle_product_id) do
+  def delete_product(product_id) do
     params = %{
       "status" => "archived"
     }
 
-    paddle_product_id
+    product_id
     |> delete_product_url()
     |> patch(params)
     |> case do

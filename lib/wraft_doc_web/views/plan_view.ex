@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.PlanView do
         custom_period_frequency: custom.custom_period_frequency
       },
       limits: plan.limits,
-      product_id: plan.paddle_product_id,
+      product_id: plan.product_id,
       updated_at: plan.updated_at,
       inserted_at: plan.inserted_at
     }
@@ -29,12 +29,12 @@ defmodule WraftDocWeb.Api.V1.PlanView do
       name: plan.name,
       description: plan.description,
       features: plan.features,
-      yearly_price_id: plan.yearly_price_id,
+      yearly_product_id: plan.yearly_product_id,
       yearly_amount: plan.yearly_amount,
-      monthly_price_id: plan.monthly_price_id,
+      monthly_product_id: plan.monthly_product_id,
       monthly_amount: plan.monthly_amount,
       limits: plan.limits,
-      product_id: plan.paddle_product_id,
+      product_id: plan.product_id,
       updated_at: plan.updated_at,
       inserted_at: plan.inserted_at
     }

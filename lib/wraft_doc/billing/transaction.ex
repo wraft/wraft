@@ -22,7 +22,7 @@ defmodule WraftDoc.Billing.Transaction do
     field(:payment_method, :string)
     field(:payment_method_details, :map)
 
-    belongs_to(:user, WraftDoc.Account.User)
+    belongs_to(:subscriber, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:plan, WraftDoc.Enterprise.Plan)
 
@@ -46,7 +46,7 @@ defmodule WraftDoc.Billing.Transaction do
       :currency,
       :payment_method,
       :payment_method_details,
-      :user_id,
+      :subscriber_id,
       :organisation_id,
       :plan_id
     ])

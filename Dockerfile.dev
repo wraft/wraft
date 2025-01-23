@@ -26,6 +26,7 @@ COPY priv priv
 COPY assets assets
 
 ARG SECRET_KEY_BASE
+ARG DEPLOYEMENT_MODE
 
 # only for dev
 COPY ./entrypoint_dev.sh /app/
