@@ -35,6 +35,7 @@ services:
     depends_on:
       - db
       - minio
+      - typesense
     restart: always
 
   db:
@@ -79,6 +80,18 @@ services:
       /usr/bin/mc mb -p myminio/$${MINIO_BUCKET};
       /usr/bin/mc policy set public myminio/$${MINIO_BUCKET};
       exit 0;"
+
+  typesense:
+    image: typesense/typesense:27.1
+    ports:
+      - "8108:8108"
+    environment:
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
+    volumes:
+      - ./typesense-data:/data
+    command: >
+      --data-dir /data
+      --api-key= ${TYPESENSE_API_KEY}
 
 volumes:
   db:

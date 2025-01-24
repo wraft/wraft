@@ -1,6 +1,6 @@
 defmodule WraftDoc.Search.TypesenseServer do
   @moduledoc """
-  GenServer to handle Typesense operations for collections and documents.
+  GenServer to handle Typesense operations for collections and documents with error handling.
   """
   use GenServer
   require Logger
@@ -39,55 +39,92 @@ defmodule WraftDoc.Search.TypesenseServer do
 
   @impl true
   def handle_call({:create_collection, schema}, _from, state) do
-    Logger.debug("Creating collection with schema: #{inspect(schema)}")
-    Typesense.create_collection(schema)
-    result = {:ok, %{message: "Collection created", schema: schema}}
-    {:reply, result, state}
+    case Typesense.create_collection(schema) do
+      {:ok, _result} ->
+        {:reply, {:ok, %{message: "Collection created", schema: schema}}, state}
+
+      {:error, reason} ->
+        Logger.error("Failed to create collection: #{inspect(reason)}")
+        {:reply, {:error, reason}, state}
+    end
   end
 
   @impl true
   def handle_call({:create_document, document}, _from, state) do
-    Logger.debug("Creating document: #{inspect(document)}")
-    Typesense.create_document(document)
-    result = {:ok, %{message: "Document created", document: document}}
-    {:reply, result, state}
+    case Typesense.create_document(document) do
+      {:ok, _result} ->
+        {:reply, {:ok, %{message: "Document created", document: document}}, state}
+
+      {:error, reason} ->
+        Logger.error("Failed to create document: #{inspect(reason)}")
+        {:reply, {:error, reason}, state}
+    end
   end
 
   @impl true
   def handle_call({:get_document, id, collection_name}, _from, state) do
-    Logger.debug("Getting document #{id} from collection #{collection_name}")
-    Typesense.get_document(id, collection_name)
-    result = {:ok, %{id: id, collection: collection_name, data: %{}}}
-    {:reply, result, state}
+    case Typesense.get_document(id, collection_name) do
+      {:ok, document} ->
+        {:reply, {:ok, %{id: id, collection: collection_name, data: document}}, state}
+
+      {:error, reason} ->
+        Logger.error("Failed to get document #{id}: #{inspect(reason)}")
+        {:reply, {:error, reason}, state}
+    end
   end
 
   @impl true
   def handle_call({:update_document, document}, _from, state) do
-    Logger.debug("Updating document: #{inspect(document)}")
-    Typesense.update_document(document)
-    result = {:ok, %{message: "Document updated", document: document}}
-    {:reply, result, state}
+    case Typesense.update_document(document) do
+      {:ok, _result} ->
+        {:reply, {:ok, %{message: "Document updated", document: document}}, state}
+
+      {:error, reason} ->
+        Logger.error("Failed to update document: #{inspect(reason)}")
+        {:reply, {:error, reason}, state}
+    end
   end
 
   @impl true
   def handle_call({:delete_document, id, collection_name}, _from, state) do
-    Logger.debug("Deleting document #{id} from collection #{collection_name}")
-    Typesense.delete_document(id, collection_name)
-    result = {:ok, %{message: "Document deleted", id: id, collection: collection_name}}
-    {:reply, result, state}
+    case Typesense.delete_document(id, collection_name) do
+      {:ok, _result} ->
+        {:reply, {:ok, %{message: "Document deleted", id: id, collection: collection_name}},
+         state}
+
+      {:error, reason} ->
+        Logger.error("Failed to delete document #{id}: #{inspect(reason)}")
+        {:reply, {:error, reason}, state}
+    end
   end
 
   @impl true
   def handle_call(:initialize, _from, state) do
-    Logger.info("Initializing Typesense...")
-    Typesense.initialize()
-    result = {:ok, %{message: "Typesense initialized"}}
-    {:reply, result, state}
+    case Typesense.initialize() do
+      {:ok, _result} ->
+        {:reply, {:ok, %{message: "Typesense initialized"}}, state}
+
+      {:error, reason} ->
+        Logger.error("Failed to initialize Typesense: #{inspect(reason)}")
+        {:reply, {:error, reason}, state}
+    end
   end
 
   @impl true
   def handle_info({:error, reason}, state) do
     Logger.error("Error in TypesenseServer: #{inspect(reason)}")
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(msg, state) do
+    Logger.warning("Unexpected message received: #{inspect(msg)}")
+    {:noreply, state}
+  end
+
+  @impl true
+  def terminate(reason, _state) do
+    Logger.error("Typesense terminated: #{inspect(reason)}")
+    :ok
   end
 end
