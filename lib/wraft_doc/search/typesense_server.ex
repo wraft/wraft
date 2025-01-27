@@ -34,6 +34,7 @@ defmodule WraftDoc.Search.TypesenseServer do
   @impl true
   def init(state) do
     Logger.info("Starting TypesenseServer...")
+    Typesense.initialize()
     {:ok, state}
   end
 

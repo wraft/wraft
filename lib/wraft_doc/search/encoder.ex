@@ -2,6 +2,7 @@ defprotocol WraftDoc.Search.Encoder do
   @moduledoc """
   Protocol defining the interface for converting records to Typesense documents.
   """
+  alias WraftDoc.Repo
 
   @doc """
   Converts a struct to a map format.
@@ -32,7 +33,18 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.ContentType do
 end
 
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.DataTemplate do
+  alias WraftDoc.Repo
+
   def to_document(%WraftDoc.Document.DataTemplate{} = data_template) do
+    data_template =
+      Repo.preload(Repo.get!(WraftDoc.Document.DataTemplate, data_template.id), :content_type)
+
+    organisation_id =
+      case data_template.content_type do
+        %WraftDoc.Document.ContentType{organisation_id: org_id} -> org_id
+        _ -> nil
+      end
+
     %{
       id: to_string(data_template.id),
       collection_name: "data_template",
@@ -42,6 +54,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.DataTemplate do
       serialized: Jason.encode!(data_template.serialized),
       content_type_id: to_string(data_template.content_type_id),
       creator_id: to_string(data_template.creator_id),
+      organisation_id: to_string(organisation_id),
       inserted_at:
         data_template.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
       updated_at:

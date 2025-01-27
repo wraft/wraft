@@ -35,7 +35,8 @@ defmodule WraftDoc.Document.DataTemplate do
         %{name: "content_type_id", type: "string", facet: true},
         %{name: "creator_id", type: "string", facet: true},
         %{name: "inserted_at", type: "int64", facet: false},
-        %{name: "updated_at", type: "int64", facet: false}
+        %{name: "updated_at", type: "int64", facet: false},
+        %{name: "organisation_id", type: "string", facet: true}
       ]
     }
   end
