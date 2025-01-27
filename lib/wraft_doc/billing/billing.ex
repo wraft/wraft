@@ -4,6 +4,7 @@ defmodule WraftDoc.Billing do
   """
   import Ecto.Query
 
+  alias __MODULE__.Coupon
   alias __MODULE__.PaddleApi
   alias __MODULE__.Subscription
   alias __MODULE__.SubscriptionHistory
@@ -380,26 +381,38 @@ defmodule WraftDoc.Billing do
   @doc """
   Adds completed transaction to the database.
   """
-  @spec on_complete_transaction(map()) ::
-          {:ok, Transaction.t()} | {:error, Ecto.Changeset.t() | any()}
+  @spec on_complete_transaction(map()) :: {:ok, Transaction.t()} | {:error, Ecto.Changeset.t()}
   def on_complete_transaction(params) do
-    params
-    |> format_transaction_params()
-    |> then(&Transaction.changeset(%Transaction{}, &1))
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(
+      :transaction,
+      Transaction.changeset(%Transaction{}, format_transaction_params(params))
+    )
+    |> Multi.run(:update_subscription, fn _repo, %{transaction: transaction} ->
+      update_subscription_transaction(transaction)
+    end)
+    |> Multi.run(:increment_coupon_usage, fn _repo, _changes ->
+      increment_coupon_usage(params)
+    end)
+    |> Repo.transaction()
     |> case do
-      {:ok, transaction} ->
-        # Subscription update webhook response doesn't contain transaction_id
-        # updating subscription with latest transaction_id
-        Subscription
-        |> where(provider_subscription_id: ^transaction.provider_subscription_id)
-        |> Repo.update_all(set: [transaction_id: transaction.transaction_id])
-
-        {:ok, transaction}
-
-      {:error, error} ->
-        {:error, error}
+      {:ok, %{transaction: transaction}} -> {:ok, transaction}
+      {:error, _operation, error, _changes} -> {:error, error}
     end
+  end
+
+  defp update_subscription_transaction(%{provider_subscription_id: sub_id, transaction_id: txn_id}) do
+    Subscription
+    |> where(provider_subscription_id: ^sub_id)
+    |> Repo.update_all(set: [transaction_id: txn_id])
+    |> then(&{:ok, &1})
+  end
+
+  defp increment_coupon_usage(%{"discount_id" => discount_id}) do
+    Coupon
+    |> where(coupon_id: ^discount_id)
+    |> Repo.update_all(inc: [times_used: 1])
+    |> then(&{:ok, &1})
   end
 
   defp handle_on_update_subscription(params) do
@@ -495,35 +508,86 @@ defmodule WraftDoc.Billing do
     |> then(fn payment -> payment && payment["method_details"] end)
   end
 
-  # may need in future
-  # @doc """
-  # Update subscription when payment succeeded.
-  # """
-  # @spec subscription_payment_succeeded(map()) :: {:ok, Subscription.t()} | {:error, any()}
-  # def subscription_payment_succeeded(params) do
-  #   Repo.transaction(fn ->
-  #     handle_subscription_payment_succeeded(params)
-  #   end)
-  # end
+  def create_coupon(params) do
+    Multi.new()
+    |> Multi.insert(:coupon, fn _ ->
+      Coupon.changeset(%Coupon{}, params)
+    end)
+    |> Multi.run(:provider_coupon, fn _, %{} ->
+      PaddleApi.create_coupon(params)
+    end)
+    |> Multi.update(:update_coupon, fn %{
+                                         coupon: coupon,
+                                         provider_coupon: %{
+                                           "id" => coupon_id,
+                                           "status" => status,
+                                           "code" => coupon_code,
+                                           "usage_limit" => usage_limit
+                                         }
+                                       } ->
+      Coupon.changeset(coupon, %{
+        coupon_id: coupon_id,
+        status: status,
+        coupon_code: coupon_code,
+        usage_limit: usage_limit
+      })
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_coupon: coupon}} ->
+        {:ok, coupon}
 
-  # defp get_subscription_by_id(subscription_id) do
-  #   Repo.get_by(Subscription, provider_subscription_id: subscription_id)
-  # end
+      {:error, _, error, _} ->
+        {:error, error}
+    end
+  end
 
-  # defp handle_subscription_payment_succeeded(params) do
-  #   subscription =
-  #   params["subscription_id"]
-  #   |> get_subscription_by_id()
-  #   |> if do
+  def update_coupon(%{coupon_id: coupon_id} = coupon, params) do
+    Multi.new()
+    |> Multi.run(:provider_coupon, fn _, _ ->
+      PaddleApi.update_coupon(coupon_id, params)
+    end)
+    |> Multi.update(:update_coupon, fn %{
+                                         provider_coupon: %{
+                                           "id" => coupon_id,
+                                           "status" => status,
+                                           "code" => coupon_code,
+                                           "usage_limit" => usage_limit
+                                         }
+                                       } ->
+      Coupon.changeset(
+        coupon,
+        Map.merge(params, %{
+          coupon_id: coupon_id,
+          status: status,
+          coupon_code: coupon_code,
+          usage_limit: usage_limit
+        })
+      )
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_coupon: coupon}} ->
+        {:ok, coupon}
 
-  #     subscription
-  #     |> Subscription.changeset(%{
-  #       next_bill_amount: params["next_payment"]["amount"],
-  #       next_payment_date: params["next_payment"]["date"],
-  #       current_period_start: params["last_payment"]["date"]
-  #     })
-  #     |> Repo.update()
-  #     |> Repo.preload(:subscriber)
-  #   end
-  # end
+      {:error, _, error, _} ->
+        {:error, error}
+    end
+  end
+
+  def delete_coupon(%{coupon_id: coupon_id} = coupon) do
+    Multi.new()
+    |> Multi.delete(:delete_coupon, coupon)
+    |> Multi.run(:provider_coupon, fn _, _ ->
+      PaddleApi.delete_coupon(coupon_id)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{delete_coupon: coupon}} ->
+        {:ok, coupon}
+
+      {:error, _, error, _} ->
+        {:error, error}
+    end
+  end
 end

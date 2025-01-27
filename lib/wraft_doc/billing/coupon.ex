@@ -1,0 +1,58 @@
+defmodule WraftDoc.Billing.Coupon do
+  @moduledoc """
+  The coupon model.
+  """
+  use WraftDoc.Schema
+
+  schema "coupon" do
+    field(:name, :string)
+    field(:description, :string)
+    field(:coupon_id, :string)
+    field(:status, :string)
+    field(:type, Ecto.Enum, values: [:percentage, :flat])
+    field(:coupon_code, :string)
+    field(:amount, :string)
+    field(:currency, :string, default: "USD")
+    field(:recurring, :boolean, default: false)
+    field(:maximum_recurring_intervals, :integer, default: nil)
+    field(:expiry, :utc_datetime, default: nil)
+    field(:usage_limit, :integer, default: nil)
+    field(:times_used, :integer, default: 0)
+
+    timestamps()
+  end
+
+  def changeset(coupon, attrs) do
+    coupon
+    |> cast(attrs, [
+      :name,
+      :description,
+      :coupon_id,
+      :status,
+      :type,
+      :coupon_code,
+      :amount,
+      :currency,
+      :recurring,
+      :maximum_recurring_intervals,
+      :expiry,
+      :usage_limit,
+      :times_used
+    ])
+    |> validate_required([
+      :name,
+      :description,
+      :type,
+      :amount,
+      :currency
+    ])
+    |> unique_constraint(:name,
+      name: :coupon_name_index,
+      message: "A coupon with the same name exists!"
+    )
+    |> unique_constraint(:coupon_code,
+      name: :coupon_code_index,
+      message: "A coupon with the same coupon code exists!"
+    )
+  end
+end

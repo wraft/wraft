@@ -349,6 +349,55 @@ defmodule WraftDoc.Billing.PaddleApi do
     end
   end
 
+  def create_coupon(params) do
+    params = prepare_coupon_params(params)
+
+    create_coupon_url()
+    |> post(params)
+    |> get_response()
+  end
+
+  def update_coupon(coupon_id, params) do
+    params = prepare_coupon_params(params)
+
+    coupon_id
+    |> update_coupon_url()
+    |> patch(params)
+    |> get_response()
+  end
+
+  def delete_coupon(coupon_id) do
+    params = %{
+      "status" => "archived"
+    }
+
+    coupon_id
+    |> update_coupon_url()
+    |> patch(params)
+    |> get_response()
+  end
+
+  defp prepare_coupon_params(
+         %{
+           type: type,
+           description: description,
+           amount: amount
+         } = params
+       ) do
+    %{
+      "description" => description,
+      "type" => type,
+      "amount" => amount,
+      "currency_code" => Map.get(params, :currency, "USD"),
+      "code" => Map.get(params, :coupon_code),
+      "expires_at" => Map.get(params, :expiry),
+      "recur" => Map.get(params, :recurring, false),
+      "maximum_recurring_intervals" => Map.get(params, :maximum_recurring_intervals, nil),
+      "enabled_for_checkout" => true,
+      "usage_limit" => Map.get(params, :usage_limit, nil)
+    }
+  end
+
   defp create_price_url do
     Path.join(vendors_domain(), "/prices")
   end
@@ -395,6 +444,14 @@ defmodule WraftDoc.Billing.PaddleApi do
 
   defp get_invoice_pdf_url(transaction_id) do
     Path.join(vendors_domain(), "/transactions/#{transaction_id}/invoice")
+  end
+
+  defp create_coupon_url do
+    Path.join(vendors_domain(), "/discounts")
+  end
+
+  defp update_coupon_url(coupon_id) do
+    Path.join(vendors_domain(), "/discounts/#{coupon_id}")
   end
 
   defp vendors_domain, do: Application.get_env(:wraft_doc, :paddle)[:base_url]

@@ -18,10 +18,10 @@ defmodule WraftDoc.Repo.Migrations.UpdatePlansTable do
         add(:is_active?, :boolean, default: true)
         add(:type, :string)
         add(:pay_link, :string)
-        add(:organisation_id, references(:organisation, on_delete: :nothing, type: :uuid))
         add(:limits, :map)
         add(:custom, :map)
         add(:trial_period, :map)
+        add(:organisation_id, references(:organisation, on_delete: :nothing, type: :uuid))
       end
 
       create(

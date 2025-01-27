@@ -1018,6 +1018,7 @@ defmodule WraftDoc.Enterprise do
     Plan
     |> where([p], is_nil(p.custom))
     |> where([p], p.is_active? == true)
+    |> preload(:coupon)
     |> Repo.all()
   end
 

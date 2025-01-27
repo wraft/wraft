@@ -7,6 +7,7 @@ defmodule WraftDoc.Enterprise.Plan do
   alias __MODULE__
   alias __MODULE__.Custom
   alias __MODULE__.Limits
+  alias WraftDoc.Billing.Coupon
   alias WraftDoc.Enterprise.Organisation
 
   schema "plan" do
@@ -23,6 +24,7 @@ defmodule WraftDoc.Enterprise.Plan do
     field(:pay_link, :string)
 
     belongs_to(:organisation, Organisation)
+    belongs_to(:coupon, Coupon)
 
     embeds_one(:trial_period, TrialPeriod, on_replace: :delete)
     embeds_one(:limits, Limits, on_replace: :delete)
@@ -44,14 +46,15 @@ defmodule WraftDoc.Enterprise.Plan do
       :type,
       :features,
       :is_active?,
-      :pay_link
+      :pay_link,
+      :coupon_id
     ])
     |> validate_plan_amount()
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> cast_embed(:custom)
     |> cast_embed(:trial_period)
     |> validate_required([:name, :description])
-    |> unique_constraint(:name,
+    |> unique_constraint([:name, :billing_interval, :is_active?],
       name: :plans_name_billing_interval_active_unique_index,
       message: "A plan with the same name and billing interval already exists!"
     )
@@ -68,13 +71,14 @@ defmodule WraftDoc.Enterprise.Plan do
       :billing_interval,
       :features,
       :type,
-      :is_active?
+      :is_active?,
+      :coupon_id
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> cast_embed(:trial_period)
     |> validate_required([:name, :description, :plan_amount])
     |> validate_plan_amount()
-    |> unique_constraint(:name,
+    |> unique_constraint([:name, :billing_interval, :is_active?],
       name: :plans_name_billing_interval_active_unique_index,
       message: "A plan with the same name and billing interval already exists!"
     )
@@ -97,7 +101,7 @@ defmodule WraftDoc.Enterprise.Plan do
     |> cast_embed(:custom, with: &Custom.changeset/2, required: true)
     |> cast_embed(:trial_period)
     |> validate_required([:name, :description, :organisation_id])
-    |> unique_constraint(:name,
+    |> unique_constraint([:name, :billing_interval, :is_active?],
       name: :plans_name_billing_interval_active_unique_index,
       message: "A plan with the same name and billing interval already exists!"
     )

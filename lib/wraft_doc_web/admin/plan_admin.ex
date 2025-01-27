@@ -15,7 +15,17 @@ defmodule WraftDocWeb.PlanAdmin do
       description: %{name: "Description", value: fn x -> x.description end},
       billing_interval: %{name: "Billing interval", value: fn x -> x.billing_interval end},
       plan_amount: %{name: "Amount", value: fn x -> x.plan_amount end},
-      currency: %{name: "Currency"}
+      currency: %{name: "Currency"},
+      coupon_id: %{
+        name: "Coupon",
+        value: fn x ->
+          if x.coupon do
+            Map.get(x.coupon, :coupon_code)
+          else
+            "No coupon"
+          end
+        end
+      }
     ]
   end
 
@@ -37,6 +47,7 @@ defmodule WraftDocWeb.PlanAdmin do
           {"yearly", :year}
         ]
       },
+      coupon_id: nil,
       trial_period: %{
         label: "Trial period",
         help_text: "Define trial period with."
@@ -63,7 +74,8 @@ defmodule WraftDocWeb.PlanAdmin do
   def custom_index_query(_conn, _schema, _query) do
     from(p in Plan,
       where: is_nil(p.custom),
-      where: p.is_active? == true
+      where: p.is_active? == true,
+      preload: [:coupon]
     )
   end
 
@@ -79,16 +91,7 @@ defmodule WraftDocWeb.PlanAdmin do
     conn.params["plan"]
     |> Map.merge(%{"type" => :regular})
     |> Enterprise.create_plan()
-    |> case do
-      {:ok, plan} ->
-        {:ok, plan}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error, changeset}
-
-      {:error, error} ->
-        custom_error(changeset, error)
-    end
+    |> handle_repsonse(changeset)
   end
 
   def update(conn, changeset) do
@@ -96,7 +99,18 @@ defmodule WraftDocWeb.PlanAdmin do
 
     changeset.data
     |> Enterprise.update_plan(params)
-    |> case do
+    |> handle_repsonse(changeset)
+  end
+
+  def delete(_conn, changeset) do
+    changeset
+    |> Ecto.Changeset.change(%{is_active?: false})
+    |> Repo.update()
+    |> handle_repsonse(changeset)
+  end
+
+  defp handle_repsonse(response, changeset) do
+    case response do
       {:ok, plan} ->
         {:ok, plan}
 
@@ -104,24 +118,7 @@ defmodule WraftDocWeb.PlanAdmin do
         {:error, changeset}
 
       {:error, error} ->
-        custom_error(changeset, error)
+        {:error, {changeset, error}}
     end
-  end
-
-  def delete(_conn, changeset) do
-    changeset
-    |> Ecto.Changeset.change(%{is_active?: false})
-    |> Repo.update()
-    |> case do
-      {:ok, plan} ->
-        {:ok, plan}
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
-  end
-
-  defp custom_error(changeset, error) do
-    {:error, {changeset, error}}
   end
 end
