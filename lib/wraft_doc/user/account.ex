@@ -271,12 +271,18 @@ defmodule WraftDoc.Account do
   `current_org_id` key.
   """
   def get_role(%User{current_org_id: org_id}, <<_::288>> = id),
-    do: Repo.get_by(Role, id: id, organisation_id: org_id)
+    do: Repo.get(Repo.get_by(Role, id: id, organisation_id: org_id), :organisation)
 
   def get_role(%Organisation{id: org_id}, <<_::288>> = id),
     do: Repo.get_by(Role, id: id, organisation_id: org_id)
 
   def get_role(_, _), do: nil
+
+  def get_role_with_organisation(%User{current_org_id: org_id}, <<_::288>> = id) do
+    Role
+    |> Repo.get_by(id: id, organisation_id: org_id)
+    |> Repo.preload(:organisation)
+  end
 
   def create_role(%User{current_org_id: org_id}, params) do
     params = Map.put(params, "organisation_id", org_id)

@@ -7,7 +7,6 @@ defmodule WraftDocWeb.NotificationChannel do
   use Phoenix.Channel
   require Logger
 
-  alias WraftDoc.Notifications.NotificationServer
   @impl true
 
   def join("notification:" <> user, _payload, socket) do
@@ -80,11 +79,5 @@ defmodule WraftDocWeb.NotificationChannel do
     else
       {:error, :unauthorized}
     end
-  end
-
-  @impl true
-  def terminate(_reason, socket) do
-    NotificationServer.unsubscribe(socket.assigns.user_id)
-    :ok
   end
 end

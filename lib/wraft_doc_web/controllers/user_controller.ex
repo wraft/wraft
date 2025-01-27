@@ -15,6 +15,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise
+  alias WraftDoc.Notifications
   alias WraftDocWeb.Guardian
 
   action_fallback(WraftDocWeb.FallbackController)
@@ -923,6 +924,11 @@ defmodule WraftDocWeb.Api.V1.UserController do
 
     with {:ok, %{organisations: organisation}} <-
            Enterprise.join_org_by_invite(current_user, token) do
+      Notifications.create_notification(
+        current_user,
+        %{type: :join_organisation, organisation_name: organisation.name}
+      )
+
       render(conn, "join_org.json", organisation: organisation)
     end
   end
