@@ -428,6 +428,20 @@ defmodule WraftDoc.Billing do
     end
   end
 
+  defp update_subscription_transaction(%{provider_subscription_id: sub_id, transaction_id: txn_id}) do
+    Subscription
+    |> where(provider_subscription_id: ^sub_id)
+    |> Repo.update_all(set: [transaction_id: txn_id])
+    |> then(&{:ok, &1})
+  end
+
+  defp increment_coupon_usage(%{"discount_id" => discount_id}) do
+    Coupon
+    |> where(coupon_id: ^discount_id)
+    |> Repo.update_all(inc: [times_used: 1])
+    |> then(&{:ok, &1})
+  end
+
   defp handle_on_update_subscription(params) do
     subscription = Repo.get_by(Subscription, provider_subscription_id: params["id"])
     irrelevant? = params["old_status"] == "paused" && params["status"] == "past_due"
