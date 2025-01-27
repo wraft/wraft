@@ -93,6 +93,7 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   merged from default presets and request parameters.
   """
   def search(conn, params) do
+    org_id = conn.assigns[:current_user].current_org_id
     query = Map.get(params, "query", "")
     collection = Map.get(params, "collection")
 
@@ -101,6 +102,8 @@ defmodule WraftDocWeb.Api.V1.SearchController do
         param_value = Map.get(params, Atom.to_string(key))
         Map.put(acc, key, param_value || default_value)
       end)
+
+    opts = Map.put(opts, :org_id, org_id)
 
     case Typesense.search(query, collection, opts) do
       {:ok, results} ->
