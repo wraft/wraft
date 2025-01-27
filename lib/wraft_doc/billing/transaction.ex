@@ -52,8 +52,6 @@ defmodule WraftDoc.Billing.Transaction do
     ])
     |> validate_required([
       :transaction_id,
-      :invoice_number,
-      :invoice_id,
       :date,
       :provider_subscription_id,
       :provider_plan_id,

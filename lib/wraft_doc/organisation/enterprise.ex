@@ -43,9 +43,7 @@ defmodule WraftDoc.Enterprise do
     %{"state" => "Publish", "order" => 3, "approvers" => []}
   ]
 
-  # @trial_plan_name "Free plan"
-  # @trial_plan_description "A free plan"
-  # @trial_duration 14
+  @is_saas Application.compile_env(:wraft_doc, :deployement)[:is_saas]
 
   @superadmin_role "superadmin"
   @editor_role "editor"
@@ -949,12 +947,32 @@ defmodule WraftDoc.Enterprise do
         |> then(&Plan.changeset(plan, &1))
       end
     )
+    |> add_pay_link(params)
     |> Repo.transaction()
     |> case do
       {:ok, %{update_plan: plan}} -> {:ok, plan}
       {:error, _, changeset, _} -> {:error, changeset}
     end
   end
+
+  defp add_pay_link(multi, %{"type" => :enterprise}) do
+    multi
+    |> Multi.run(:pay_link, fn _, %{update_plan: plan} ->
+      case PaddleApi.create_checkout_url(plan) do
+        {:ok, url} ->
+          {:ok, url}
+
+        {:error, error} ->
+          {:error, error}
+      end
+    end)
+    |> Multi.update(:enterprise_plan, fn %{update_plan: plan, pay_link: pay_link} ->
+      schedule_plan_expiry_job(plan)
+      Plan.changeset(plan, %{pay_link: pay_link})
+    end)
+  end
+
+  defp add_pay_link(multi, _), do: multi
 
   @doc """
   Get a plan from its UUID.
@@ -975,7 +993,9 @@ defmodule WraftDoc.Enterprise do
   """
   @spec plan_index() :: [Plan.t()]
   def plan_index do
-    Repo.all(Plan)
+    Plan
+    |> where([p], is_nil(p.custom))
+    |> Repo.all()
   end
 
   @doc """
@@ -1036,6 +1056,12 @@ defmodule WraftDoc.Enterprise do
     %Subscription{}
     |> Subscription.free_subscription_changeset(params)
     |> Repo.insert()
+  end
+
+  defp schedule_plan_expiry_job(%Plan{id: id, custom: %{end_date: expiry_date}}) do
+    %{plan_id: id}
+    |> ScheduledWorker.new(scheduled_at: expiry_date)
+    |> Oban.insert!()
   end
 
   # Create free trial membership for the given organisation.
@@ -1635,4 +1661,10 @@ defmodule WraftDoc.Enterprise do
     |> CSV.decode()
     |> Enum.map(fn {:ok, [permission]} -> permission end)
   end
+
+  @doc """
+  Returns true if deployement mode is saas.
+  """
+  @spec saas? :: boolean()
+  def saas?, do: @is_saas
 end

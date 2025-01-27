@@ -66,6 +66,13 @@ defmodule WraftDocWeb.Api.V1.BillingView do
     }
   end
 
+  def render("activate_trial_subscription.json", %{subscription: subscription}) do
+    %{
+      message: "Trial subscription activated successfully",
+      subscription: render_one(subscription, __MODULE__, "subscription.json", as: :subscription)
+    }
+  end
+
   def render("invoice.json", %{invoice_url: invoice_url}) do
     %{
       invoice_url: invoice_url

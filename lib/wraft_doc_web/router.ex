@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Router do
   use WraftDocWeb, :router
   import Phoenix.LiveDashboard.Router
 
-  alias WraftDoc.DeploymentMode
+  alias WraftDoc.Enterprise
 
   pipeline :browser do
     plug(:accepts, ["html"])
@@ -71,10 +71,6 @@ defmodule WraftDocWeb.Router do
 
     # user
     scope "/v1", Api.V1, as: :v1 do
-      if DeploymentMode.saas?() do
-        post("/vendors/webhook", VendorsWebhookController, :webhook)
-      end
-
       resources("/users/signup/", RegistrationController, only: [:create])
       post("/users/signin", UserController, :signin)
       # Google Signin
@@ -91,9 +87,14 @@ defmodule WraftDocWeb.Router do
       post("/user/resend_email_token", UserController, :resend_email_token)
       # Verify Email Verification Token
       get("/user/verify_email_token/:token", UserController, :verify_email_token)
-      # Show and index plans
-      get("/plans/active_standard_plans", PlanController, :active_standard_plans)
-      resources("/plans", PlanController, only: [:show, :index])
+
+      if Enterprise.saas?() do
+        post("/vendors/webhook", VendorsWebhookController, :webhook)
+        # Show and index plans
+        get("/plans/active_standard_plans", PlanController, :active_standard_plans)
+        resources("/plans", PlanController, only: [:show, :index])
+      end
+
       # Verify invite token
       get(
         "/organisations/verify_invite_token/:token",
@@ -289,11 +290,18 @@ defmodule WraftDocWeb.Router do
       # put("/collection_fields/:id", CollectionFormFieldController, :update)
       # delete("/collection_fields/:id", CollectionFormFieldController, :delete)
 
-      if DeploymentMode.saas?() do
+      if Enterprise.saas?() do
         # Billing
         get("/billing/subscription/:transaction_id/invoice", BillingController, :get_invoice)
         get("/billing/subscription", BillingController, :get_subsctiption)
         get("/billing/subscription/active", BillingController, :get_active_subscription)
+        # TODO activate trail subscription
+        patch(
+          "/billing/subscription/activate_trial",
+          BillingController,
+          :activate_trial_subscription
+        )
+
         post("/billing/change-plan/:plan_id", BillingController, :change_plan)
         post("/billing/change-plan/preview/:plan_id", BillingController, :change_plan_preview)
         delete("/billing/subscription/cancel", BillingController, :cancel_subscription)
@@ -304,8 +312,6 @@ defmodule WraftDocWeb.Router do
           BillingController,
           :get_transactions
         )
-
-        # resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
 
         # Update membership plan
         put("/memberships/:id", MembershipController, :update)
@@ -398,7 +404,7 @@ defmodule WraftDocWeb.Router do
     end
   end
 
-  if DeploymentMode.saas?() do
+  if Enterprise.saas?() do
     use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin, :enterprise_plan_params]
   else
     use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin]

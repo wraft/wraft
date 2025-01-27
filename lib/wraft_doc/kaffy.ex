@@ -3,7 +3,7 @@ defmodule WraftDoc.Kaffy.Config do
   Config admin panel
   """
 
-  alias WraftDoc.DeploymentMode
+  alias WraftDoc.Enterprise
 
   def create_resources(_conn) do
     [
@@ -60,7 +60,7 @@ defmodule WraftDoc.Kaffy.Config do
       ]
     ]
 
-    case DeploymentMode.saas?() do
+    case Enterprise.saas?() do
       true ->
         resourses ++
           [

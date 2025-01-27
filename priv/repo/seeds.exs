@@ -13,8 +13,8 @@
 alias FunWithFlags
 alias WraftDoc.Account.Country
 alias WraftDoc.Document.Engine
-alias WraftDoc.Enterprise.Plan
 alias WraftDoc.Enterprise
+alias WraftDoc.Enterprise.Plan
 alias WraftDoc.Repo
 alias WraftDoc.Seed
 

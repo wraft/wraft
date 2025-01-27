@@ -149,9 +149,8 @@ defmodule WraftDocWeb.Api.V1.PlanController do
 
   @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
   def index(conn, _params) do
-    with plans <- Enterprise.plan_index() do
-      render(conn, "plans.json", plans: plans)
-    end
+    plans = Enterprise.plan_index()
+    render(conn, "plans.json", plans: plans)
   end
 
   swagger_path :active_standard_plans do

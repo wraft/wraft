@@ -6,9 +6,7 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheck do
   import Plug.Conn
 
   alias WraftDoc.Billing
-  alias WraftDoc.DeploymentMode
-  alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.Repo
+  alias WraftDoc.Enterprise
 
   def init(_params) do
   end
@@ -16,27 +14,17 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheck do
   def call(conn, _params) do
     user = conn.assigns[:current_user]
 
-    if DeploymentMode.saas?() do
-      case is_personal_org?(user) do
-        false -> has_valid_subscription?(conn, user)
-        true -> conn
-      end
+    if Enterprise.saas?() do
+      valid_subscription?(conn, user)
     else
       conn
     end
   end
 
-  defp has_valid_subscription?(conn, user) do
-    case Billing.has_active_subscription?(user.current_org_id) do
+  defp valid_subscription?(conn, user) do
+    case Billing.has_valid_subscription?(user.current_org_id) do
       true -> conn
       _ -> error_response(conn)
-    end
-  end
-
-  defp is_personal_org?(user) do
-    case Repo.get_by(Organisation, id: user.current_org_id, name: "Personal") do
-      %Organisation{} -> true
-      nil -> false
     end
   end
 

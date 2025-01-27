@@ -6,7 +6,6 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
   import Ecto.Query
   use Ecto.Schema
 
-  alias WraftDoc.Billing.PaddleApi
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
@@ -20,10 +19,8 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
     [
       name: %{name: "Name", value: fn x -> x.name end},
       description: %{name: "Description", value: fn x -> x.description end},
-      custom: %{
-        name: "amount",
-        value: fn x -> if x.custom != nil, do: x.custom.custom_amount end
-      },
+      plan_amount: %{name: "amount", value: fn x -> x.plan_amount end},
+      currency: %{name: "Currency"},
       custom_period: %{
         name: "duration",
         value: fn x ->
@@ -32,62 +29,43 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
         end
       },
       link_validity: %{
-        name: "link validity",
+        name: "pay link validity",
         value: fn x -> if x.custom != nil, do: x.custom.end_date end
       }
     ]
   end
 
-  def resource_actions(_conn) do
-    [
-      paylink: %{
-        name: "Copy pay link",
-        action: fn _conn, plan ->
-          plan
-          |> PaddleApi.create_checkout_url()
-          |> case do
-            {:ok, url} ->
-              copy_to_clipboard(url)
-              {:ok, plan}
-
-            {:error, error} ->
-              {:error, plan, "Failed to create pay link: #{error}"}
-          end
-        end
-      }
-    ]
-  end
-
-  def copy_to_clipboard(url) do
-    case :os.type() do
-      {:unix, :darwin} ->
-        System.cmd("sh", ["-c", "echo '#{url}' | pbcopy"])
-
-      {:unix, _} ->
-        System.cmd("sh", ["-c", "echo '#{url}' | xclip -selection clipboard"])
-
-      {:win32, _} ->
-        System.cmd("cmd", ["/c", "echo #{url} | clip"])
-    end
-  end
-
   def form_fields(_) do
     [
+      pay_link: %{name: "pay link", create: :hidden},
       name: %{
         label: "Name",
         required: true
       },
       description: %{label: "Description", required: true, type: :textarea},
       features: %{
-        label: "Features"
+        label: "Features",
+        required: true
       },
-      currency: %{label: "Currency"},
+      plan_amount: %{
+        label: "amount",
+        required: true
+      },
+      currency: %{
+        label: "Currency",
+        help_text:
+          "Specify the currency to be used. Available currency codes include USD, EUR, GBP, CAD, AUD, NZD, and others supported by Paddle."
+      },
       billing_interval: %{
         label: "Billing interval",
         type: :choices,
         choices: [
           {"custom", :custom}
         ]
+      },
+      trial_period: %{
+        label: "Trial period",
+        help_text: "Define trial period with."
       },
       limits: %{
         label: "Limits",
@@ -104,7 +82,7 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
         label: "Custom",
         help_text: """
           Define custom pricing for this plan.
-          Frequency of custom period. For example, if you select 'month' as the custom period and set the frequency to 3, the plan will be billed every 3 months.
+          Frequency of custom period. For example, if you select 'month' as the custom period and set the frequency to 3, the plan will be billed every 3 months. || End date : Date on which pay link will expire.
         """
       }
     ]
@@ -112,6 +90,10 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
 
   def ordering(_) do
     [desc: :inserted_at]
+  end
+
+  def default_actions(_schema) do
+    [:new, :delete]
   end
 
   defp get_organisations do

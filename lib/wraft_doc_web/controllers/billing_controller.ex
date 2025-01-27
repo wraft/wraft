@@ -235,6 +235,16 @@ defmodule WraftDocWeb.Api.V1.BillingController do
               "Subscription update date. Format: ISO8601 datetime"
             )
           end
+        end,
+      ActivateTrialSubscription:
+        swagger_schema do
+          title("Activate Trial Subscription")
+          description("Activate Trial Subscription")
+
+          properties do
+            message(:string, "message of activate trial subscription")
+            subscription(Schema.ref(:Subscription))
+          end
         end
     }
   end
@@ -286,8 +296,6 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     summary("Preview a plan change")
     description("Provides a preview of subscription changes when switching to a new plan.")
 
-    consumes("multipart/form-data")
-
     parameter(:plan_id, :path, :string, "Plan id")
 
     response(200, "Change plan preview retrieved successfully", Schema.ref(:ChangePlanPreview))
@@ -311,8 +319,6 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     post("/billing/change-plan/{plan_id}")
     summary("Change subscription plan")
     description("Applies a new plan to the user's current subscription.")
-
-    consumes("multipart/form-data")
 
     parameter(:plan_id, :path, :string, "Plan id")
 
@@ -352,6 +358,33 @@ defmodule WraftDocWeb.Api.V1.BillingController do
            Billing.get_subscription(current_user),
          {:ok, _subscription} <- Billing.cancel_subscription(subscription) do
       render(conn, "cancel_subscription.json", subscription: subscription)
+    end
+  end
+
+  swagger_path :activate_trial_subscription do
+    post("/billing/subscription/activate-trial")
+    summary("Activate trial subscription")
+    description("Activates the trial subscription for the current user.")
+
+    response(
+      200,
+      "Trial subscription activated successfully",
+      Schema.ref(:ActivateTrialSubscription)
+    )
+
+    response(400, "", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "not found")
+  end
+
+  @spec activate_trial_subscription(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  def activate_trial_subscription(conn, _params) do
+    current_user = conn.assigns.current_user
+
+    with {:ok, %Subscription{} = subscription} <-
+           Billing.get_subscription(current_user),
+         {:ok, subscription} <- Billing.activate_trial_subscription(subscription) do
+      render(conn, "activate_trial_subscription.json", subscription: subscription)
     end
   end
 

@@ -80,6 +80,10 @@ defmodule WraftDoc.Billing.Subscription do
       :plan_id
     ])
     |> unique_constraint(:provider_subscription_id)
+    |> foreign_key_constraint(:plan_id,
+      name: :subscriptions_plan_id_fkey,
+      message: "Cannot delete plan due to associated subscriptions."
+    )
   end
 
   def free_subscription_changeset(subscription, attrs) do

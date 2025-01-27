@@ -1,9 +1,9 @@
 defmodule WraftDoc.Repo.Migrations.UpdatePlansTable do
   use Ecto.Migration
 
-  alias WraftDoc.DeploymentMode
+  alias WraftDoc.Enterprise
 
-  if DeploymentMode.saas?() do
+  if Enterprise.saas?() do
     def change do
       alter table(:plan) do
         remove(:yearly_amount, :string)
@@ -17,14 +17,16 @@ defmodule WraftDoc.Repo.Migrations.UpdatePlansTable do
         add(:features, {:array, :string})
         add(:is_active?, :boolean, default: true)
         add(:type, :string)
+        add(:pay_link, :string)
         add(:organisation_id, references(:organisation, on_delete: :nothing, type: :uuid))
         add(:limits, :map)
         add(:custom, :map)
+        add(:trial_period, :map)
       end
 
       create(
-        unique_index(:plan, [:name, :billing_interval],
-          name: :plans_name_billing_interval_unique_index
+        unique_index(:plan, [:name, :billing_interval, :is_active?],
+          name: :plans_name_billing_interval_active_unique_index
         )
       )
 

@@ -8,25 +8,25 @@ defmodule WraftDocWeb.Api.V1.VendorsWebhookController do
 
   def webhook(conn, %{"event_type" => "subscription.created", "data" => params}) do
     params
-    |> Billing.subscription_created()
+    |> Billing.on_create_subscription()
     |> webhook_response(conn, params)
   end
 
   def webhook(conn, %{"event_type" => "subscription.updated", "data" => params}) do
     params
-    |> Billing.subscription_updated()
+    |> Billing.on_update_subscription()
     |> webhook_response(conn, params)
   end
 
   def webhook(conn, %{"event_type" => "subscription.canceled", "data" => params}) do
     params
-    |> Billing.subscription_cancelled()
+    |> Billing.on_cancel_subscription()
     |> webhook_response(conn, params)
   end
 
   def webhook(conn, %{"event_type" => "transaction.completed", "data" => params}) do
     params
-    |> Billing.transaction_completed()
+    |> Billing.on_complete_transaction()
     |> webhook_response(conn, params)
   end
 
@@ -39,7 +39,7 @@ defmodule WraftDocWeb.Api.V1.VendorsWebhookController do
   end
 
   defp webhook_response({:error, details}, conn, _params) do
-    Logger.error("Error processing Paddle webhook: #{inspect(details)}")
+    Logger.error("Error processing webhook: #{inspect(details)}")
 
     conn |> send_resp(400, "") |> halt
   end
@@ -68,8 +68,8 @@ defmodule WraftDocWeb.Api.V1.VendorsWebhookController do
     |> halt()
   end
 
-  defp parse_signature_header(conn) do
-    conn.req_headers
+  defp parse_signature_header(%Plug.Conn{req_headers: headers}) do
+    headers
     |> List.keyfind("paddle-signature", 0)
     |> case do
       nil ->
@@ -102,7 +102,5 @@ defmodule WraftDocWeb.Api.V1.VendorsWebhookController do
     |> then(&{:ok, &1})
   end
 
-  def webhook_secret_key do
-    Application.get_env(:wraft_doc, :paddle_webhook_secret)
-  end
+  defp webhook_secret_key, do: Application.get_env(:wraft_doc, :paddle)[:webhook_secret_key]
 end

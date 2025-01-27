@@ -2,12 +2,15 @@ defmodule WraftDocWeb.Plugs.KaffyAdminPlug do
   @moduledoc """
   Adds schema params under resource.
   """
+  @spec init(Keyword.t()) :: Keyword.t()
   def init(opts), do: opts
 
-  def call(conn, _opts) do
-    if conn.params["context"] == "enterprise" && conn.params["resource"] == "enterprise_plan" do
-      params = Map.put(conn.params, "enterprise_plan", conn.params["plan"])
-      %{conn | params: params}
+  @spec call(Plug.Conn.t(), Keyword.t()) :: Plug.Conn.t()
+  def call(%Plug.Conn{params: params} = conn, _opts) when is_map(params) do
+    if params["context"] == "enterprise" && params["resource"] == "enterprise_plan" do
+      params
+      |> Map.put("enterprise_plan", params["plan"])
+      |> then(&%{conn | params: &1})
     else
       conn
     end
