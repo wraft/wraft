@@ -29,6 +29,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Document.Layout
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Notifications
 
   alias WraftDocWeb.Api.V1.InstanceVersionView
 
@@ -868,15 +869,18 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   @spec approve(Plug.Conn.t(), map) :: Plug.Conn.t()
   def approve(conn, %{"id" => id}) do
-    current_user = conn.assigns.current_user
+    %{current_org_id: organisation_id} = current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Document.show_instance(id, current_user),
+    with %Instance{
+           content_type: %ContentType{organisation_id: ^organisation_id},
+           state: %State{state: state_name}
+         } = instance <- Document.show_instance(id, current_user),
          %Instance{} = instance <- Document.approve_instance(current_user, instance) do
-      WraftDoc.Notifications.create_notification(current_user, %{
-        type: :organisation_document_flow_pending,
-        organisation_id: current_user.last_signed_in_org,
-        document_id: instance.id,
-        state_id: instance.state_id,
+      Notifications.create_notification(current_user, %{
+        type: :pending_approvals,
+        organisation_name: Enterprise.get_organisation(organisation_id),
+        document_name: instance.serialized["title"],
+        state_name: state_name,
         user: current_user
       })
 

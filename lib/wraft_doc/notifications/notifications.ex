@@ -8,6 +8,7 @@ defmodule WraftDoc.Notifications do
   alias WraftDoc.Account
   alias WraftDoc.Account.User
   alias WraftDoc.Document
+  alias WraftDoc.Enterprise
   alias WraftDoc.Notifications.Notification
   alias WraftDoc.Notifications.NotificationMessages
   alias WraftDoc.Notifications.UserNotifications
@@ -77,15 +78,18 @@ defmodule WraftDoc.Notifications do
 
   def create_notification(_), do: nil
 
-  def comment_notifcation(user, organisation, document) do
-    Document.get_instance(document, %{current_org_id: organisation}).allowed_users
+  def comment_notifcation(user_id, organisation_id, document_id) do
+    document = Document.get_instance(document_id, %{current_org_id: organisation_id})
+    organisation = Enterprise.get_organisation(organisation_id)
+    user = Account.get_user(user_id)
+
+    Document.get_instance(document, %{current_org_id: organisation.name}).allowed_users
     |> List.delete(user)
     |> Enum.map(&Account.get_user/1)
     |> create_notification(%{
-      type: :comments_or_mentions_made,
-      organisation_id: organisation,
-      document_id: document,
-      creator_id: user
+      type: :assign_role,
+      organisation_name: organisation.name,
+      document_title: document.serialized["title"]
     })
   end
 
