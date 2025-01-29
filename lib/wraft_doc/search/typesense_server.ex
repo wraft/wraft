@@ -1,35 +1,67 @@
 defmodule WraftDoc.Search.TypesenseServer do
   @moduledoc """
-  GenServer to handle Typesense operations for collections and documents with error handling.
+  A GenServer that handles communication with Typesense for managing collections and documents.
+  It provides operations to create, update, retrieve, and delete documents asynchronously.
   """
+
   use GenServer
   require Logger
   alias WraftDoc.Search.Typesense
 
+  @timeout :timer.seconds(30)
+
+  # Public API
+
+  @doc """
+  Starts the TypesenseServer GenServer.
+  Accepts options where you can specify a custom name.
+  """
+  @spec start_link(Keyword.t()) :: {:ok, pid()} | {:error, term()}
   def start_link(opts \\ []) do
     name = Keyword.get(opts, :name, __MODULE__)
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
+  @doc """
+  Creates a new collection in Typesense using the provided schema.
+  """
+  @spec create_collection(module()) :: {:ok, map()} | {:error, term()}
   def create_collection(schema) do
-    GenServer.call(__MODULE__, {:create_collection, schema}, :timer.seconds(30))
+    GenServer.call(__MODULE__, {:create_collection, schema}, @timeout)
   end
 
+  @doc """
+  Creates a new document asynchronously.
+  """
+  @spec create_document(map()) :: :ok
   def create_document(document) do
     GenServer.call(__MODULE__, {:create_document, document})
   end
 
+  @doc """
+  Retrieves a document by ID from a specific collection.
+  """
+  @spec get_document(binary(), binary()) :: {:ok, map()} | {:error, term()}
   def get_document(id, collection_name) when is_binary(id) and is_binary(collection_name) do
-    GenServer.call(__MODULE__, {:get_document, id, collection_name})
+    GenServer.call(__MODULE__, {:get_document, id, collection_name}, @timeout)
   end
 
+  @doc """
+  Updates an existing document asynchronously.
+  """
+  @spec update_document(map()) :: :ok
   def update_document(document) do
     GenServer.call(__MODULE__, {:update_document, document})
   end
 
+  @doc """
+  Deletes a document by ID from a specific collection asynchronously.
+  """
   def delete_document(id, collection_name) when is_binary(id) and is_binary(collection_name) do
     GenServer.call(__MODULE__, {:delete_document, id, collection_name})
   end
+
+  # GenServer Callbacks
 
   @impl true
   def init(state) do

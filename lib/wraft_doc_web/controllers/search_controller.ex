@@ -103,7 +103,7 @@ defmodule WraftDocWeb.Api.V1.SearchController do
         Map.put(acc, key, param_value || default_value)
       end)
 
-    opts = Map.put(opts, :org_id, org_id)
+    opts = Map.put(opts, :filter_by, org_id)
 
     case Typesense.search(query, collection, opts) do
       {:ok, results} ->

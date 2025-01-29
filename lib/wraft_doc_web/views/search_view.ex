@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Api.V1.SearchView do
     }
   end
 
-  def extract_documents(%{"results" => results}) when is_list(results) do
+  defp extract_documents(%{"results" => results}) when is_list(results) do
     Enum.flat_map(results, fn
       %{"hits" => hits} when is_list(hits) ->
         Enum.map(hits, fn hit -> hit["document"] end)
@@ -17,5 +17,5 @@ defmodule WraftDocWeb.Api.V1.SearchView do
     end)
   end
 
-  def extract_documents(_), do: []
+  defp extract_documents(_), do: []
 end
