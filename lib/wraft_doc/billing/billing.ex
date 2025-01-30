@@ -31,7 +31,8 @@ defmodule WraftDoc.Billing do
   @doc """
   Get a subscription from its UUID.
   """
-  @spec get_subscription_by_id(Ecto.UUID.t()) :: Subscription.t() | nil
+  @spec get_subscription_by_id(Ecto.UUID.t()) ::
+          Subscription.t() | {:error, :invalid_id, String.t()}
   def get_subscription_by_id(<<_::288>> = subscription_id) do
     case Repo.get(Subscription, subscription_id) do
       %Subscription{} = subscription -> subscription
@@ -41,11 +42,7 @@ defmodule WraftDoc.Billing do
 
   def get_subscription_by_id(_), do: {:error, :invalid_id, "Subscription"}
 
-  @doc """
-  Get subscription by provider subscription id.
-  """
-  @spec get_subscription_by_provider_subscription_id(String.t()) :: Subscription.t() | nil
-  def get_subscription_by_provider_subscription_id(provider_subscription_id) do
+  defp get_subscription_by_provider_subscription_id(provider_subscription_id) do
     Subscription
     |> Repo.get_by(provider_subscription_id: provider_subscription_id)
     |> Repo.preload([:subscriber, :organisation, :plan])
@@ -55,7 +52,7 @@ defmodule WraftDoc.Billing do
   Get active subscription of a user's organisation.
   """
   @spec active_subscription_for(Ecto.UUID.t()) ::
-          {:ok, Subscription.t()} | {:error, atom()} | {:error, atom(), any()}
+          {:ok, Subscription.t()} | {:error, atom()}
   def active_subscription_for(<<_::288>> = organisation_id) do
     organisation_id
     |> active_subscription_query()
@@ -107,7 +104,7 @@ defmodule WraftDoc.Billing do
   @doc """
   Update subscription when plan changed.
   """
-  @spec change_plan(Subscription.t(), User.t(), Plan.t()) :: {:ok, map()} | {:error, any()}
+  @spec change_plan(Subscription.t(), User.t(), Plan.t()) :: {:ok, map()} | {:error, String.t()}
 
   def change_plan(
         %Subscription{plan: %{type: :free}},
@@ -145,7 +142,7 @@ defmodule WraftDoc.Billing do
   @doc """
   Gets preview of a plan changes.
   """
-  @spec change_plan_preview(Subscription.t(), Plan.t()) :: {:ok, map()} | {:error, any()}
+  @spec change_plan_preview(Subscription.t(), Plan.t()) :: {:ok, map()} | {:error, String.t()}
   def change_plan_preview(%Subscription{plan: %{type: :free}}, _),
     do: {:error, "Change plan preview not available for free plan."}
 
@@ -171,7 +168,7 @@ defmodule WraftDoc.Billing do
   @doc """
   Cancel subscription.
   """
-  @spec cancel_subscription(Subscription.t()) :: {:ok, Subscription.t()} | {:error, any()}
+  @spec cancel_subscription(Subscription.t()) :: {:ok, map()} | {:error, String.t()}
 
   def cancel_subscription(%Subscription{plan: %{type: :free}}),
     do: {:error, "Free subscription cannot be cancelled"}
@@ -235,7 +232,7 @@ defmodule WraftDoc.Billing do
   @doc """
   Retrieves transactions of an organisation.
   """
-  @spec get_transactions(Ecto.UUID.t(), map()) :: Scrivener.Page.t()
+  @spec get_transactions(Ecto.UUID.t(), map()) :: Scrivener.Page.t() | nil
   def get_transactions(<<_::288>> = organisation_id, params) do
     query =
       from(t in Transaction,
@@ -251,7 +248,8 @@ defmodule WraftDoc.Billing do
   @doc """
   Create subscription.
   """
-  @spec on_create_subscription(map()) :: {:ok, Subscription.t()} | {:error, any()}
+  @spec on_create_subscription(map()) ::
+          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | any()}
   def on_create_subscription(params) do
     params =
       params
@@ -321,7 +319,8 @@ defmodule WraftDoc.Billing do
   @doc """
   Update subscription.
   """
-  @spec on_update_subscription(map()) :: {:ok, Subscription.t()} | {:error, any()}
+  @spec on_update_subscription(map()) ::
+          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | any()}
   def on_update_subscription(%{"status" => status} = params) when status == "active" do
     params
     |> handle_on_update_subscription()
@@ -339,7 +338,8 @@ defmodule WraftDoc.Billing do
   @doc """
   Cancel subscription.
   """
-  @spec on_cancel_subscription(map()) :: {:ok, Subscription.t()} | {:error, any()}
+  @spec on_cancel_subscription(map()) ::
+          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | any()}
   def on_cancel_subscription(params) do
     subscription =
       Subscription
@@ -380,7 +380,8 @@ defmodule WraftDoc.Billing do
   @doc """
   Adds completed transaction to the database.
   """
-  @spec on_complete_transaction(map()) :: {:ok, Transaction.t()} | {:error, any()}
+  @spec on_complete_transaction(map()) ::
+          {:ok, Transaction.t()} | {:error, Ecto.Changeset.t() | any()}
   def on_complete_transaction(params) do
     params
     |> format_transaction_params()

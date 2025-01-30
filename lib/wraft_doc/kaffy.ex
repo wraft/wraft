@@ -60,8 +60,8 @@ defmodule WraftDoc.Kaffy.Config do
       ]
     ]
 
-    case Enterprise.saas?() do
-      true ->
+    case Enterprise.self_hosted?() do
+      false ->
         resourses ++
           [
             plan: [
@@ -74,7 +74,7 @@ defmodule WraftDoc.Kaffy.Config do
             ]
           ]
 
-      false ->
+      true ->
         resourses
     end
   end

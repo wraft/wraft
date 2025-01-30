@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.CreatePlansTable do
 
   alias WraftDoc.Enterprise
 
-  if Enterprise.saas?() do
+  unless Enterprise.self_hosted?() do
     def up do
       create table(:plan, primary_key: false) do
         add(:id, :uuid, primary_key: true)

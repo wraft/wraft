@@ -251,6 +251,9 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     }
   end
 
+  @doc """
+  Retrieve active subscription.
+  """
   swagger_path :get_active_subscription do
     get("/billing/subscription/active")
     summary("Retrieve active subscription")
@@ -272,6 +275,9 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     end
   end
 
+  @doc """
+  Retrieve subscription.
+  """
   swagger_path :get_subscription do
     get("/billing/subscription")
     summary("Get subscription")
@@ -293,6 +299,9 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     end
   end
 
+  @doc """
+  Preview subscription plan change.
+  """
   swagger_path :change_plan_preview do
     post("/billing/subscription/{plan_id}/preview")
     summary("Preview a plan change")
@@ -318,6 +327,9 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     end
   end
 
+  @doc """
+  Change subscription plan.
+  """
   swagger_path :change_plan do
     post("/billing/subscription/{plan_id}/change")
     summary("Change subscription plan")
@@ -343,6 +355,9 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     end
   end
 
+  @doc """
+  Activate trial subscription.
+  """
   swagger_path :activate_trial_subscription do
     post("/billing/subscription/activate-trial")
     summary("Activate trial subscription")
@@ -370,6 +385,9 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     end
   end
 
+  @doc """
+  Cancel subscription.
+  """
   swagger_path :cancel_subscription do
     delete("/billing/subscription/cancel")
     summary("Cancel subscription")
@@ -392,6 +410,9 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     end
   end
 
+  @doc """
+  Gets invoice url of given transaction id.
+  """
   swagger_path :get_invoice do
     get("/billing/subscription/{transaction_id}/invoice")
     summary("Generates invoice url of given transaction id")
@@ -413,6 +434,9 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     end
   end
 
+  @doc """
+  Returns all subscription history under an organisation.
+  """
   swagger_path :subscription_history_index do
     get("/billing/subscription/{organisation_id}/history")
     summary("Returns all subscription history under an organisation")
@@ -448,6 +472,9 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     end
   end
 
+  @doc """
+  Returns all transactions under an organisation.
+  """
   swagger_path :get_transactions do
     get("/billing/subscription/{organisation_id}/transactions")
     summary("Returns all transaction under an organisation")

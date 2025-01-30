@@ -88,7 +88,7 @@ defmodule WraftDocWeb.Router do
       # Verify Email Verification Token
       get("/user/verify_email_token/:token", UserController, :verify_email_token)
 
-      if Enterprise.saas?() do
+      unless Enterprise.self_hosted?() do
         post("/vendors/webhook", VendorsWebhookController, :webhook)
         # Show and index plans
         get("/plans/active_standard_plans", PlanController, :active_standard_plans)
@@ -290,7 +290,7 @@ defmodule WraftDocWeb.Router do
       # put("/collection_fields/:id", CollectionFormFieldController, :update)
       # delete("/collection_fields/:id", CollectionFormFieldController, :delete)
 
-      if Enterprise.saas?() do
+      unless Enterprise.self_hosted?() do
         # Billing
         scope "/billing/subscription" do
           get("/", BillingController, :get_subscription)
@@ -395,10 +395,10 @@ defmodule WraftDocWeb.Router do
     end
   end
 
-  if Enterprise.saas?() do
-    use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin, :enterprise_plan_params]
-  else
+  if Enterprise.self_hosted?() do
     use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin]
+  else
+    use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin, :enterprise_plan_params]
   end
 
   scope "/admin", WraftDocWeb do

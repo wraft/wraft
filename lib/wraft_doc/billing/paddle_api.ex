@@ -18,7 +18,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   @doc """
   Retrieves paddle subscription entity.
   """
-  @spec get_subscription(String.t()) :: {:ok, map()} | {:error, String.t()} | {:error, atom()}
+  @spec get_subscription(String.t()) :: {:ok, map()} | {:error, String.t() | atom()}
   def get_subscription(subscription_id) do
     subscription_id
     |> get_subscription_url()
@@ -30,7 +30,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   Previews plan change.
   """
   @spec update_subscription_preview(String.t(), String.t()) ::
-          {:ok, map()} | {:error, String.t()} | {:error, atom()}
+          {:ok, map()} | {:error, String.t() | atom()}
   def update_subscription_preview(paddle_subscription_id, %Plan{
         plan_id: provider_plan_id,
         trial_period: trial_period
@@ -62,7 +62,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   Update paddle subscription entity.
   """
   @spec update_subscription(String.t(), User.t(), Plan.t()) ::
-          {:ok, map()} | {:error, String.t()} | {:error, atom()}
+          {:ok, map()} | {:error, String.t() | atom()}
   def update_subscription(
         paddle_subscription_id,
         %User{id: user_id, current_org_id: organisation_id},
@@ -99,7 +99,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   @doc """
   Cancels paddle subscription entity
   """
-  @spec cancel_subscription(String.t()) :: {:ok, map()} | {:error, String.t()} | {:error, atom()}
+  @spec cancel_subscription(String.t()) :: {:ok, map()} | {:error, String.t() | atom()}
   def cancel_subscription(paddle_subscription_id) do
     params = %{
       effective_from: "immediately"
@@ -115,7 +115,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   Activate trailing subscription entity
   """
   @spec activate_trailing_subscription(String.t()) ::
-          {:ok, map()} | {:error, String.t()} | {:error, atom()}
+          {:ok, map()} | {:error, String.t() | atom()}
   def activate_trailing_subscription(paddle_subscription_id) do
     paddle_subscription_id
     |> activate_trail_subscription_url()
@@ -126,7 +126,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   @doc """
   Create paddle price entity.
   """
-  @spec create_price(map()) :: {:ok, map()} | {:error, String.t()} | {:error, atom()}
+  @spec create_price(map()) :: {:ok, map()} | {:error, String.t() | atom()}
   def create_price(params) do
     params = format_price_params(params)
 
@@ -138,7 +138,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   @doc """
   Update paddle price entity.
   """
-  @spec update_price(String.t(), map()) :: {:ok, map()} | {:error, String.t()} | {:error, atom()}
+  @spec update_price(String.t(), map()) :: {:ok, map()} | {:error, String.t() | atom()}
   def update_price(paddle_price_id, params) do
     params = format_price_params(params)
 
@@ -222,7 +222,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   @doc """
   Create paddle product entity.
   """
-  @spec create_product(map()) :: {:ok, map()} | {:error, String.t()} | {:error, atom()}
+  @spec create_product(map()) :: {:ok, map()} | {:error, String.t() | atom()}
   def create_product(%{"name" => name, "description" => description}) do
     params = %{
       "name" => name,
@@ -241,7 +241,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   Update paddle product entity.
   """
   @spec update_product(String.t(), map()) ::
-          {:ok, map()} | {:error, String.t()} | {:error, atom()}
+          {:ok, map()} | {:error, String.t() | atom()}
   def update_product(product_id, %{"name" => name, "description" => description}) do
     params = %{
       "name" => name,
@@ -260,7 +260,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   @doc """
   Delete paddle product entity.
   """
-  @spec delete_product(String.t()) :: {:ok, map()} | {:error, String.t()} | {:error, atom()}
+  @spec delete_product(String.t()) :: {:ok, map()} | {:error, String.t() | atom()}
   def delete_product(product_id) do
     params = %{
       "status" => "archived"
@@ -288,6 +288,10 @@ defmodule WraftDoc.Billing.PaddleApi do
     end
   end
 
+  @doc """
+  Create checkout url.
+  """
+  @spec create_checkout_url(Plan.t()) :: {:ok, String.t()} | {:error, String.t() | atom()}
   def create_checkout_url(plan) do
     params = %{
       items: [
@@ -327,6 +331,10 @@ defmodule WraftDoc.Billing.PaddleApi do
     end
   end
 
+  @doc """
+  Get invoice PDFs url.
+  """
+  @spec get_invoice_pdf(String.t()) :: {:ok, String.t()} | {:error, String.t()}
   def get_invoice_pdf(transaction_id) do
     transaction_id
     |> get_invoice_pdf_url()

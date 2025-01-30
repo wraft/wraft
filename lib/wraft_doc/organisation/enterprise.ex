@@ -43,7 +43,7 @@ defmodule WraftDoc.Enterprise do
     %{"state" => "Publish", "order" => 3, "approvers" => []}
   ]
 
-  @is_saas Application.compile_env(:wraft_doc, :deployement)[:is_saas]
+  @is_self_hosted Application.compile_env(:wraft_doc, :deployement)[:is_self_hosted]
 
   @superadmin_role "superadmin"
   @editor_role "editor"
@@ -921,7 +921,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Creates a plan.
   """
-  @spec create_plan(map()) :: {:ok, Plan.t()}
+  @spec create_plan(map()) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}
   def create_plan(params) do
     Multi.new()
     |> Multi.insert(:plan, Plan.changeset(%Plan{}, params))
@@ -977,7 +977,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Get a plan from its UUID.
   """
-  @spec get_plan(Ecto.UUID.t()) :: Plan.t() | nil
+  @spec get_plan(Ecto.UUID.t()) :: Plan.t() | {:error, :invalid_id, String.t()}
 
   def get_plan(<<_::288>> = plan_id) do
     case Repo.get(Plan, plan_id) do
@@ -1012,7 +1012,7 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Updates a plan.
   """
-  @spec update_plan(Plan.t(), map) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}
+  @spec update_plan(Plan.t(), map()) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()} | nil
   def update_plan(
         %Plan{
           product_id: product_id,
@@ -1042,6 +1042,11 @@ defmodule WraftDoc.Enterprise do
 
   def update_plan(_, _), do: nil
 
+  @doc """
+  Create free subscription for the given organisation.
+  """
+  @spec create_free_subscription(Ecto.UUID.t()) ::
+          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t()}
   def create_free_subscription(organisation_id) do
     plan = Repo.get_by(Plan, name: "Free trial")
 
@@ -1665,6 +1670,6 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Returns true if deployement mode is saas.
   """
-  @spec saas? :: boolean()
-  def saas?, do: @is_saas
+  @spec self_hosted? :: boolean()
+  def self_hosted?, do: @is_self_hosted
 end

@@ -14,10 +14,10 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheck do
   def call(conn, _params) do
     user = conn.assigns[:current_user]
 
-    if Enterprise.saas?() do
-      valid_subscription?(conn, user)
-    else
+    if Enterprise.self_hosted?() do
       conn
+    else
+      valid_subscription?(conn, user)
     end
   end
 

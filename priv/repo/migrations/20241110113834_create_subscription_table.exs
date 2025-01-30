@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.CreateSubscriptionTable do
 
   alias WraftDoc.Enterprise
 
-  if Enterprise.saas?() do
+  unless Enterprise.self_hosted?() do
     def change do
       create table(:subscriptions, primary_key: false) do
         add(:id, :uuid, primary_key: true)
