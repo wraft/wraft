@@ -20,8 +20,6 @@ defmodule WraftDoc.Document.Instance.ContractMeta do
   end
 
   def changeset(contract_meta, attrs \\ %{}) do
-    contract_meta
-    |> cast(attrs, @contract_fields)
-    |> validate_required(@contract_fields)
+    cast(contract_meta, attrs, @contract_fields)
   end
 end
