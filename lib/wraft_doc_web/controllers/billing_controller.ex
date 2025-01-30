@@ -9,6 +9,8 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   alias WraftDoc.Billing
   alias WraftDoc.Billing.PaddleApi
   alias WraftDoc.Billing.Subscription
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Plan
 
   # TODO add RBAC.
   # TODO add pause and resume subscription API.
@@ -270,7 +272,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     end
   end
 
-  swagger_path :get_subsctiption do
+  swagger_path :get_subscription do
     get("/billing/subscription")
     summary("Get subscription")
     description("Gets the current subscription of current organisation")
@@ -281,8 +283,8 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     response(404, "not found")
   end
 
-  @spec get_subsctiption(Plug.Conn.t(), any()) :: Plug.Conn.t()
-  def get_subsctiption(%Plug.Conn{} = conn, _params) do
+  @spec get_subscription(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  def get_subscription(conn, _params) do
     current_user = conn.assigns.current_user
 
     with {:ok, %Subscription{} = subscription} <-
@@ -292,7 +294,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
   end
 
   swagger_path :change_plan_preview do
-    post("/billing/change-plan/preview/{plan_id}")
+    post("/billing/subscription/{plan_id}/preview")
     summary("Preview a plan change")
     description("Provides a preview of subscription changes when switching to a new plan.")
 
@@ -310,13 +312,14 @@ defmodule WraftDocWeb.Api.V1.BillingController do
 
     with {:ok, %Subscription{} = subscription} <-
            Billing.get_subscription(current_user),
-         {:ok, preview_info} <- Billing.change_plan_preview(subscription, plan_id) do
+         %Plan{} = plan <- Enterprise.get_plan(plan_id),
+         {:ok, preview_info} <- Billing.change_plan_preview(subscription, plan) do
       render(conn, "change_plan_preview.json", preview_info: preview_info)
     end
   end
 
   swagger_path :change_plan do
-    post("/billing/change-plan/{plan_id}")
+    post("/billing/subscription/{plan_id}/change")
     summary("Change subscription plan")
     description("Applies a new plan to the user's current subscription.")
 
@@ -334,30 +337,9 @@ defmodule WraftDocWeb.Api.V1.BillingController do
 
     with {:ok, %Subscription{} = subscription} <-
            Billing.get_subscription(current_user),
-         {:ok, _subscription} <- Billing.change_plan(subscription, plan_id) do
+         %Plan{} = plan <- Enterprise.get_plan(plan_id),
+         {:ok, _subscription} <- Billing.change_plan(subscription, current_user, plan) do
       render(conn, "change_plan.json", subscription: subscription)
-    end
-  end
-
-  swagger_path :cancel_subscription do
-    delete("/billing/subscription/cancel")
-    summary("Cancel subscription")
-    description("Cancels the user's active subscription.")
-
-    response(200, "Subscription cancelled successfully", Schema.ref(:CancelSubscription))
-    response(400, "", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "not found")
-  end
-
-  @spec cancel_subscription(Plug.Conn.t(), any()) :: Plug.Conn.t()
-  def cancel_subscription(conn, _params) do
-    current_user = conn.assigns.current_user
-
-    with {:ok, %Subscription{} = subscription} <-
-           Billing.get_subscription(current_user),
-         {:ok, _subscription} <- Billing.cancel_subscription(subscription) do
-      render(conn, "cancel_subscription.json", subscription: subscription)
     end
   end
 
@@ -388,6 +370,28 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     end
   end
 
+  swagger_path :cancel_subscription do
+    delete("/billing/subscription/cancel")
+    summary("Cancel subscription")
+    description("Cancels the user's active subscription.")
+
+    response(200, "Subscription cancelled successfully", Schema.ref(:CancelSubscription))
+    response(400, "", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "not found")
+  end
+
+  @spec cancel_subscription(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  def cancel_subscription(conn, _params) do
+    current_user = conn.assigns.current_user
+
+    with {:ok, %Subscription{} = subscription} <-
+           Billing.get_subscription(current_user),
+         {:ok, _subscription} <- Billing.cancel_subscription(subscription) do
+      render(conn, "cancel_subscription.json", subscription: subscription)
+    end
+  end
+
   swagger_path :get_invoice do
     get("/billing/subscription/{transaction_id}/invoice")
     summary("Generates invoice url of given transaction id")
@@ -409,12 +413,13 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     end
   end
 
-  swagger_path :get_subscription_history do
-    get("/billing/subscription/history")
+  swagger_path :subscription_history_index do
+    get("/billing/subscription/{organisation_id}/history")
     summary("Returns all subscription history under an organisation")
     description("Returns all subscription history under an organisation")
 
-    parameter(:organisation_id, :formData, :string, "organisation id", required: true)
+    parameter(:organisation_id, :path, :string, "organisation id", required: true)
+    parameter(:page, :query, :string, "Page number")
 
     response(
       200,
@@ -427,15 +432,13 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     response(404, "not found")
   end
 
-  def subscription_history_index(conn, params) do
-    current_user = conn.assigns.current_user
-
+  def subscription_history_index(conn, %{"organisation_id" => organisation_id} = params) do
     with %{
            entries: subscription_histories,
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Billing.subscription_index(current_user, params) do
+         } <- Billing.subscription_index(organisation_id, params) do
       render(conn, "subscription_history_index.json",
         subscription_histories: subscription_histories,
         page_number: page_number,

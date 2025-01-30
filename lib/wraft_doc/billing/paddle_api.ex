@@ -4,7 +4,8 @@ defmodule WraftDoc.Billing.PaddleApi do
   """
   use Tesla
 
-  alias WraftDoc.Billing
+  alias WraftDoc.Account.User
+  alias WraftDoc.Enterprise.Plan
 
   plug Tesla.Middleware.Headers, [
     {"Authorization", "Bearer #{Application.get_env(:wraft_doc, :paddle)[:api_key]}"},
@@ -30,19 +31,22 @@ defmodule WraftDoc.Billing.PaddleApi do
   """
   @spec update_subscription_preview(String.t(), String.t()) ::
           {:ok, map()} | {:error, String.t()} | {:error, atom()}
-  def update_subscription_preview(paddle_subscription_id, paddle_price_id) do
+  def update_subscription_preview(paddle_subscription_id, %Plan{
+        plan_id: provider_plan_id,
+        trial_period: trial_period
+      }) do
     params = %{
       collection_mode: "automatic",
       items: [
         %{
-          price_id: paddle_price_id,
+          price_id: provider_plan_id,
           quantity: 1
         }
       ]
     }
 
     params =
-      if Billing.is_trailing_plan?(paddle_price_id) do
+      if trial_period != nil do
         Map.put(params, :proration_billing_mode, "do_not_bill")
       else
         Map.put(params, :proration_billing_mode, "prorated_immediately")
@@ -57,21 +61,30 @@ defmodule WraftDoc.Billing.PaddleApi do
   @doc """
   Update paddle subscription entity.
   """
-  @spec update_subscription(String.t(), String.t()) ::
+  @spec update_subscription(String.t(), User.t(), Plan.t()) ::
           {:ok, map()} | {:error, String.t()} | {:error, atom()}
-  def update_subscription(paddle_subscription_id, paddle_price_id) do
+  def update_subscription(
+        paddle_subscription_id,
+        %User{id: user_id, current_org_id: organisation_id},
+        %Plan{id: plan_id, plan_id: provider_plan_id, trial_period: trial_period}
+      ) do
     params = %{
       collection_mode: "automatic",
       items: [
         %{
-          price_id: paddle_price_id,
+          price_id: provider_plan_id,
           quantity: 1
         }
-      ]
+      ],
+      custom_data: %{
+        plan_id: plan_id,
+        user_id: user_id,
+        organisation_id: organisation_id
+      }
     }
 
     params =
-      if Billing.is_trailing_plan?(paddle_price_id) do
+      if trial_period != nil do
         Map.put(params, :proration_billing_mode, "do_not_bill")
       else
         Map.put(params, :proration_billing_mode, "prorated_immediately")
