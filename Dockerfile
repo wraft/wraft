@@ -24,6 +24,7 @@ RUN mix local.hex --force && \
 
 # set build ENV
 ARG SECRET_KEY_BASE
+ARG SELF_HOSTED
 ARG DATABASE_URL
 ENV MIX_ENV="prod"
 ENV RELEASE_NAME="wraft_doc"

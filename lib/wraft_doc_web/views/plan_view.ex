@@ -3,21 +3,33 @@ defmodule WraftDocWeb.Api.V1.PlanView do
   View module for Plan controller.
   """
   use WraftDocWeb, :view
-  alias __MODULE__
 
   def render("plan.json", %{plan: plan}) do
     %{
       id: plan.id,
       name: plan.name,
       description: plan.description,
-      yearly_amount: plan.yearly_amount,
-      monthly_amount: plan.monthly_amount,
+      features: plan.features,
+      limits: plan.limits,
+      plan_id: plan.plan_id,
+      plan_amount: plan.plan_amount,
+      billing_interval: plan.billing_interval,
+      product_id: plan.product_id,
+      currency: plan.currency,
       updated_at: plan.updated_at,
       inserted_at: plan.inserted_at
     }
   end
 
   def render("plans.json", %{plans: plans}) do
-    render_many(plans, PlanView, "plan.json", as: :plan)
+    %{
+      plans: render_many(plans, __MODULE__, "plan.json", as: :plan)
+    }
+  end
+
+  def render("active_standard_plan.json", %{plans: plans}) do
+    %{
+      plans: render_many(plans, __MODULE__, "plan.json", as: :plan)
+    }
   end
 end

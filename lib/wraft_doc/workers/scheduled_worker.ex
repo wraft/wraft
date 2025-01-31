@@ -12,6 +12,7 @@ defmodule WraftDoc.Workers.ScheduledWorker do
   alias WraftDoc.Document.LayoutAsset
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Membership
+  alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Repo
 
   @impl Oban.Worker
@@ -48,5 +49,12 @@ defmodule WraftDoc.Workers.ScheduledWorker do
       Logger.info("Job finished..!")
       :ok
     end
+  end
+
+  def perform(%Oban.Job{args: %{"plan_id" => plan_id}}) do
+    query = from(p in Plan, where: p.id == ^plan_id and p.is_active? == true)
+    Repo.update_all(query, set: [is_active?: false])
+
+    :ok
   end
 end

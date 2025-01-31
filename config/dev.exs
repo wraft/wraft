@@ -61,3 +61,5 @@ config :wraft_doc, WraftDoc.Repo,
   pool_size: 10,
   timeout: 300_000,
   show_sensitive_data_on_connetion_error: true
+
+config :wraft_doc, :paddle, url: "https://sandbox-api.paddle.com"

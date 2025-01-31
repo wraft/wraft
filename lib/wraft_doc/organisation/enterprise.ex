@@ -14,6 +14,8 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Account.UserRole
   alias WraftDoc.Authorization.Permission
   alias WraftDoc.AuthTokens
+  alias WraftDoc.Billing.PaddleApi
+  alias WraftDoc.Billing.Subscription
   alias WraftDoc.Client.Razorpay
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
@@ -41,8 +43,7 @@ defmodule WraftDoc.Enterprise do
     %{"state" => "Publish", "order" => 3, "approvers" => []}
   ]
 
-  @trial_plan_name "Free Trial"
-  @trial_duration 14
+  @is_self_hosted Application.compile_env(:wraft_doc, :deployement)[:is_self_hosted]
 
   @superadmin_role "superadmin"
   @editor_role "editor"
@@ -547,8 +548,14 @@ defmodule WraftDoc.Enterprise do
     |> Multi.insert(:user_organisation, fn %{organisation: org} ->
       UserOrganisation.changeset(%UserOrganisation{}, %{user_id: user.id, organisation_id: org.id})
     end)
-    |> Multi.run(:membership, fn _repo, %{organisation: organisation} ->
-      create_membership(organisation)
+    |> then(fn multi ->
+      if self_hosted?() do
+        multi
+      else
+        Multi.run(multi, :subscription, fn _repo, %{organisation: organisation} ->
+          create_free_subscription(organisation.id)
+        end)
+      end
     end)
     |> Repo.transaction()
     |> case do
@@ -569,8 +576,14 @@ defmodule WraftDoc.Enterprise do
       |> build_assoc(:owned_organisations)
       |> Organisation.personal_organisation_changeset(params)
     )
-    |> Multi.run(:membership, fn _repo, %{organisation: organisation} ->
-      create_membership(organisation)
+    |> then(fn multi ->
+      if self_hosted?() do
+        multi
+      else
+        Multi.run(multi, :subscription, fn _repo, %{organisation: organisation} ->
+          create_free_subscription(organisation.id)
+        end)
+      end
     end)
     |> Repo.transaction()
   end
@@ -920,18 +933,66 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Creates a plan.
   """
-  @spec create_plan(map) :: {:ok, Plan.t()}
+  @spec create_plan(map()) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}
   def create_plan(params) do
-    %Plan{} |> Plan.changeset(params) |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(:plan, Plan.changeset(%Plan{}, params))
+    |> Multi.run(:product, fn _, _ ->
+      PaddleApi.create_product(params)
+    end)
+    |> Multi.run(:create_plan, fn _, %{product: %{"id" => product_id}} ->
+      params
+      |> Map.merge(%{"product_id" => product_id})
+      |> PaddleApi.create_price()
+    end)
+    |> Multi.update(
+      :update_plan,
+      fn %{
+           plan: plan,
+           product: %{"id" => product_id}
+         } = result ->
+        params
+        |> Map.merge(%{
+          "product_id" => product_id,
+          "plan_id" => get_in(result, [:create_plan, "id"])
+        })
+        |> then(&Plan.changeset(plan, &1))
+      end
+    )
+    |> add_pay_link(params)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_plan: plan}} -> {:ok, plan}
+      {:error, _, changeset, _} -> {:error, changeset}
+    end
   end
+
+  defp add_pay_link(multi, %{"type" => :enterprise}) do
+    multi
+    |> Multi.run(:pay_link, fn _, %{update_plan: plan} ->
+      case PaddleApi.create_checkout_url(plan) do
+        {:ok, url} ->
+          {:ok, url}
+
+        {:error, error} ->
+          {:error, error}
+      end
+    end)
+    |> Multi.update(:enterprise_plan, fn %{update_plan: plan, pay_link: pay_link} ->
+      schedule_plan_expiry_job(plan)
+      Plan.changeset(plan, %{pay_link: pay_link})
+    end)
+  end
+
+  defp add_pay_link(multi, _), do: multi
 
   @doc """
   Get a plan from its UUID.
   """
-  @spec get_plan(Ecto.UUID.t()) :: Plan.t() | nil
+  @spec get_plan(Ecto.UUID.t()) :: Plan.t() | {:error, :invalid_id, String.t()}
 
-  def get_plan(<<_::288>> = p_id) do
-    case Repo.get(Plan, p_id) do
+  def get_plan(<<_::288>> = plan_id) do
+    case Repo.get(Plan, plan_id) do
       %Plan{} = plan -> plan
       _ -> {:error, :invalid_id, "Plan"}
     end
@@ -944,46 +1005,99 @@ defmodule WraftDoc.Enterprise do
   """
   @spec plan_index() :: [Plan.t()]
   def plan_index do
-    Repo.all(Plan)
+    Plan
+    |> where([p], is_nil(p.custom))
+    |> Repo.all()
+  end
+
+  @doc """
+  Retrieve all standard plans.
+  """
+  @spec active_standard_plans() :: [Plan.t()]
+  def active_standard_plans do
+    Plan
+    |> where([p], is_nil(p.custom))
+    |> where([p], p.is_active? == true)
+    |> Repo.all()
   end
 
   @doc """
   Updates a plan.
   """
-  @spec update_plan(Plan.t(), map) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()}
-  def update_plan(%Plan{} = plan, params) do
-    plan |> Plan.changeset(params) |> Repo.update()
+  @spec update_plan(Plan.t(), map()) :: {:ok, Plan.t()} | {:error, Ecto.Changeset.t()} | nil
+  def update_plan(
+        %Plan{
+          product_id: product_id,
+          plan_id: plan_id
+        } = plan,
+        params
+      ) do
+    Multi.new()
+    |> Multi.run(:product, fn _, _ ->
+      PaddleApi.update_product(product_id, params)
+    end)
+    |> Multi.run(:plan, fn _, _ ->
+      PaddleApi.update_price(plan_id, params)
+    end)
+    |> Multi.update(
+      :update_plan,
+      fn _ ->
+        Plan.changeset(plan, params)
+      end
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_plan: plan}} -> {:ok, plan}
+      {:error, _, changeset, _} -> {:error, changeset}
+    end
   end
 
   def update_plan(_, _), do: nil
 
   @doc """
-  Deletes a plan
+  Create free subscription for the given organisation.
   """
-  @spec delete_plan(Plan.t()) :: {:ok, Plan.t()} | nil
-  def delete_plan(%Plan{} = plan) do
-    Repo.delete(plan)
+  @spec create_free_subscription(Ecto.UUID.t()) ::
+          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t()}
+  def create_free_subscription(organisation_id) do
+    plan = Repo.get_by(Plan, name: "Free trial")
+
+    params = %{
+      plan_id: plan.id,
+      organisation_id: organisation_id,
+      currency: "USD",
+      status: "active",
+      next_bill_amount: "0"
+    }
+
+    %Subscription{}
+    |> Subscription.free_subscription_changeset(params)
+    |> Repo.insert()
   end
 
-  def delete_plan(_), do: nil
+  defp schedule_plan_expiry_job(%Plan{id: id, custom: %{end_date: expiry_date}}) do
+    %{plan_id: id}
+    |> ScheduledWorker.new(scheduled_at: expiry_date)
+    |> Oban.insert!()
+  end
 
   # Create free trial membership for the given organisation.
-  @spec create_membership(Organisation.t()) :: Membership.t()
-  defp create_membership(%Organisation{id: id} = _organisation) do
-    plan = Repo.get_by(Plan, name: @trial_plan_name)
-    start_date = Timex.now()
-    end_date = find_end_date(start_date, @trial_duration)
-    params = %{start_date: start_date, end_date: end_date, plan_duration: @trial_duration}
+  # @spec create_membership(Organisation.t()) :: Membership.t()
+  # defp create_membership(%Organisation{id: id} = _organisation) do
+  #   plan = Repo.get_by(Plan, name: @trial_plan_name)
+  #   start_date = Timex.now()
+  #   end_date = find_end_date(start_date, @trial_duration)
+  #   params = %{start_date: start_date, end_date: end_date, plan_duration: @trial_duration}
 
-    plan
-    |> build_assoc(:memberships, organisation_id: id)
-    |> Membership.changeset(params)
-    |> Repo.insert!()
-    |> case do
-      %Membership{} = membership -> {:ok, membership}
-      changeset -> {:error, changeset}
-    end
-  end
+  #   plan
+  #   |> build_assoc(:memberships, organisation_id: id)
+  #   |> Membership.changeset(params)
+  #   |> Repo.insert!()
+  #   |> case do
+  #     %Membership{} = membership -> {:ok, membership}
+  #     changeset -> {:error, changeset}
+  #   end
+  # end
 
   # Find the end date of a membership from the start date and duration of the
   # membership.
@@ -1142,8 +1256,8 @@ defmodule WraftDoc.Enterprise do
   # Gets the duration of selected plan based on the amount paid.
   @spec get_duration_from_plan_and_amount(Plan.t(), integer()) ::
           integer() | {:error, :wrong_amount}
-  defp get_duration_from_plan_and_amount(%Plan{yearly_amount: amount}, amount), do: 365
-  defp get_duration_from_plan_and_amount(%Plan{monthly_amount: amount}, amount), do: 30
+  defp get_duration_from_plan_and_amount(%Plan{plan_amount: amount}, amount), do: 365
+  defp get_duration_from_plan_and_amount(%Plan{plan_amount: amount}, amount), do: 30
   defp get_duration_from_plan_and_amount(_, _), do: {:error, :wrong_amount}
 
   # Gets the payment action comparing the old and new plans.
@@ -1154,10 +1268,10 @@ defmodule WraftDoc.Enterprise do
 
   defp get_payment_action(%Plan{} = old_plan, %Plan{} = new_plan) do
     cond do
-      old_plan.yearly_amount > new_plan.yearly_amount ->
+      old_plan.plan_amount > new_plan.plan_amount ->
         Payment.actions()[:downgrade]
 
-      old_plan.yearly_amount < new_plan.yearly_amount ->
+      old_plan.plan_amount < new_plan.plan_amount ->
         Payment.actions()[:upgrade]
     end
   end
@@ -1564,4 +1678,10 @@ defmodule WraftDoc.Enterprise do
     |> CSV.decode()
     |> Enum.map(fn {:ok, [permission]} -> permission end)
   end
+
+  @doc """
+  Returns true if deployement mode is saas.
+  """
+  @spec self_hosted? :: boolean()
+  def self_hosted?, do: @is_self_hosted
 end

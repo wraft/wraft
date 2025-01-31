@@ -16,6 +16,8 @@ config :wraft_doc, WraftDocWeb.Endpoint,
   pubsub_server: WraftDoc.PubSub,
   live_view: [signing_salt: "2B8BVDxqHCMKIa5cHoQ2lM0Ne7gUxvkb"]
 
+config :wraft_doc, :deployement, is_self_hosted: System.get_env("SELF_HOSTED", "true") == "true"
+
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.15.3",
@@ -113,6 +115,10 @@ config :ex_audit,
   ]
 
 config :wraft_doc, WraftDoc.Client.Razorpay, base_url: "https://api.razorpay.com/v1/payments"
+
+config :wraft_doc, :paddle,
+  api_key: System.get_env("PADDLE_API_KEY"),
+  webhook_secret_key: System.get_env("PADDLE_WEBHOOK_SECRET_KEY")
 
 config :pdf_generator,
   raise_on_missing_wkhtmltopdf_binary: false
