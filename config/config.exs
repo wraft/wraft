@@ -16,8 +16,7 @@ config :wraft_doc, WraftDocWeb.Endpoint,
   pubsub_server: WraftDoc.PubSub,
   live_view: [signing_salt: "2B8BVDxqHCMKIa5cHoQ2lM0Ne7gUxvkb"]
 
-config :wraft_doc, :deployement,
-  is_self_hosted: System.get_env("DEPLOYEMENT_MODE") == "self-hosted"
+config :wraft_doc, :deployement, is_self_hosted: System.get_env("SELF_HOSTED", "true") == "true"
 
 # Configure esbuild (the version is required)
 config :esbuild,

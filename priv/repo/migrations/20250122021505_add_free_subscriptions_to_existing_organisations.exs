@@ -8,7 +8,9 @@ defmodule WraftDoc.Repo.Migrations.AddFreeSubscriptionsToExistingOrganisations d
   alias WraftDoc.Repo
 
   def change do
-    execute_up()
+    unless Enterprise.self_hosted?() do
+      execute_up()
+    end
   end
 
   defp execute_up do

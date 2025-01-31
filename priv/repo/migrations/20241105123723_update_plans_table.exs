@@ -3,8 +3,8 @@ defmodule WraftDoc.Repo.Migrations.UpdatePlansTable do
 
   alias WraftDoc.Enterprise
 
-  unless Enterprise.self_hosted?() do
-    def change do
+  def change do
+    unless Enterprise.self_hosted?() do
       alter table(:plan) do
         remove(:yearly_amount, :string)
         remove(:monthly_amount, :string)

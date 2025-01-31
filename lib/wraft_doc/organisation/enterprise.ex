@@ -548,8 +548,14 @@ defmodule WraftDoc.Enterprise do
     |> Multi.insert(:user_organisation, fn %{organisation: org} ->
       UserOrganisation.changeset(%UserOrganisation{}, %{user_id: user.id, organisation_id: org.id})
     end)
-    |> Multi.run(:subscription, fn _repo, %{organisation: organisation} ->
-      create_free_subscription(organisation.id)
+    |> then(fn multi ->
+      if self_hosted?() do
+        multi
+      else
+        Multi.run(multi, :subscription, fn _repo, %{organisation: organisation} ->
+          create_free_subscription(organisation.id)
+        end)
+      end
     end)
     |> Repo.transaction()
     |> case do
@@ -570,8 +576,14 @@ defmodule WraftDoc.Enterprise do
       |> build_assoc(:owned_organisations)
       |> Organisation.personal_organisation_changeset(params)
     )
-    |> Multi.run(:subscription, fn _repo, %{organisation: organisation} ->
-      create_free_subscription(organisation.id)
+    |> then(fn multi ->
+      if self_hosted?() do
+        multi
+      else
+        Multi.run(multi, :subscription, fn _repo, %{organisation: organisation} ->
+          create_free_subscription(organisation.id)
+        end)
+      end
     end)
     |> Repo.transaction()
   end
