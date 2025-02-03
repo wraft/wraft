@@ -65,6 +65,7 @@ defmodule WraftDoc.Notifications do
     end)
     |> Repo.transaction()
 
+    # TODO improve email and other
     # |> case do
     #   {:ok, %{notification: notification, fetch_recipient: recipient}} ->
     #     with :ok <- schedule_email(notification, recipient) do
@@ -83,7 +84,7 @@ defmodule WraftDoc.Notifications do
     organisation = Enterprise.get_organisation(organisation_id)
     user = Account.get_user(user_id)
 
-    Document.get_instance(document, %{current_org_id: organisation.name}).allowed_users
+    document.allowed_users
     |> List.delete(user)
     |> Enum.map(&Account.get_user/1)
     |> create_notification(%{

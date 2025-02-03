@@ -23,7 +23,7 @@ defmodule WraftDocWeb.NotificationChannel do
     {:noreply, socket}
   end
 
-  def create_socket(%{id: user_id} = current_user) do
+  defp create_socket(%{id: user_id} = current_user) do
     socket = build_socket_params(user_id)
 
     %Phoenix.Socket{}
@@ -31,7 +31,7 @@ defmodule WraftDocWeb.NotificationChannel do
     |> Map.merge(socket)
   end
 
-  def create_socket(current_user) do
+  defp create_socket(current_user) do
     socket = %{
       channel: WraftDocWeb.NotificationChannel,
       endpoint: WraftDocWeb.Endpoint,
