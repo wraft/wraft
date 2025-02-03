@@ -21,8 +21,6 @@ defmodule WraftDoc.Notifications do
   Returns a list of successfully created notifications or an error.
   """
   def create_notification(users, params) do
-    users = if is_list(users), do: users, else: [users]
-
     users
     |> Enum.map(&build_notification_params(&1, params))
     |> Enum.map(&insert_notification/1)
