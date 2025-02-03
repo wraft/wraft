@@ -397,5 +397,5 @@ defmodule WraftDoc.Billing.PaddleApi do
     Path.join(vendors_domain(), "/transactions/#{transaction_id}/invoice")
   end
 
-  defp vendors_domain, do: Application.get_env(:wraft_doc, :paddle)[:url]
+  defp vendors_domain, do: Application.get_env(:wraft_doc, :paddle)[:base_url]
 end
