@@ -11,6 +11,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   alias WraftDoc.Document
   alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Enterprise
+  alias WraftDoc.Notifications
   alias WraftDoc.Repo
 
   @impl Oban.Worker
@@ -105,6 +106,7 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
+    Notifications.create_notification([trigger.creator_id], %{type: :form_mapping_not_complete})
     Logger.error("Form mapping not complete. Pipeline execution failed.")
     trigger
   end
@@ -122,6 +124,7 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
+    Notifications.create_notification([trigger.creator_id], %{type: :pipeline_not_found})
     Logger.error("Pipeline not found. Pipeline execution failed.")
     trigger
   end
@@ -139,6 +142,7 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
+    Notifications.create_notification([trigger.creator_id], %{type: :pipeline_instance_failed})
     Logger.error("Instance creation failed. Pipeline execution failed.")
     trigger
   end
@@ -156,6 +160,7 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
+    Notifications.create_notification([trigger.creator_id], %{type: :pipeline_downLoad_error})
     Logger.error("Instance creation failed. Pipeline execution failed.")
     trigger
   end
@@ -180,6 +185,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   defp handle_exceptions({:ok, %{trigger: trigger, failed_builds: [], zip_file: zip_file}}) do
     state = TriggerHistory.states()[:success]
     trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
+    Notifications.create_notification([trigger.creator_id], %{type: :pipeline_build_success})
     Logger.info("Pipeline completed succesfully.!")
     trigger
   end
@@ -197,6 +203,7 @@ defmodule WraftDoc.Workers.BulkWorker do
         zip_file: zip_file
       })
 
+    Notifications.create_notification([trigger.creator_id], %{type: :pipeline_build_failed})
     Logger.error("Pipeline partially completed.! Some builds failed.!")
     trigger
   end
