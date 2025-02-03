@@ -246,9 +246,9 @@ defmodule WraftDocWeb.Api.V1.RoleController do
 
     with %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
          %Role{organisation: %Organisation{name: organisation_name}} = role <-
-           Account.get_role(current_user, role_id),
+           Account.get_role_with_organisation(current_user, role_id),
          {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id) do
-      Notifications.create_notification(current_user, %{
+      Notifications.create_notification([current_user], %{
         type: :assign_role,
         role_name: role.name,
         organisation_name: organisation_name
@@ -275,7 +275,6 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   @doc """
     Unassign role from the given user
   """
-
   @spec unassign_role(Plug.Conn.t(), map) :: Plug.Conn.t()
   def unassign_role(conn, %{"user_id" => user_id, "role_id" => role_id} = _params) do
     current_user = conn.assigns[:current_user]
@@ -285,7 +284,7 @@ defmodule WraftDocWeb.Api.V1.RoleController do
          true <- Account.allowed_to_unassign_role?(current_user, user_id, role_name),
          %UserRole{} = user_role <- Account.get_user_role(current_user, user_id, role_id),
          {:ok, _} <- Account.delete_user_role(user_role) do
-      Notifications.create_notification(current_user, %{
+      Notifications.create_notification([current_user], %{
         type: :unassign_role,
         role_name: role_name,
         organisation_name: organisation_name

@@ -76,7 +76,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
                Account.authenticate(%{user: user, password: params["password"]}) do
           AuthTokens.create_token_and_send_email(params["email"])
 
-          Notifications.create_notification(user, %{
+          Notifications.create_notification([user], %{
             type: :user_joins_wraft,
             user_name: user.name
           })
