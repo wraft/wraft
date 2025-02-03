@@ -925,7 +925,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
     with {:ok, %{organisations: organisation}} <-
            Enterprise.join_org_by_invite(current_user, token) do
       Notifications.create_notification(
-        current_user,
+        [current_user],
         %{type: :join_organisation, organisation_name: organisation.name}
       )
 

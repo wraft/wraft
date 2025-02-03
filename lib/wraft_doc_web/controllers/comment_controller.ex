@@ -139,8 +139,8 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Comment{} = comment <- Document.create_comment(current_user, params) do
-      Notifications.comment_notifcation(
+    with %Comment{} = comment <- Document.create_comment([current_user], params) do
+      Notifications.comment_notification(
         current_user.id,
         comment.organisation_id,
         comment.master_id

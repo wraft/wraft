@@ -278,6 +278,8 @@ defmodule WraftDoc.Account do
 
   def get_role(_, _), do: nil
 
+  @spec get_role_with_organisation(%User{current_org_id: integer()}, <<_::288>>) ::
+          %Role{} | nil
   def get_role_with_organisation(%User{current_org_id: org_id}, <<_::288>> = id) do
     Role
     |> Repo.get_by(id: id, organisation_id: org_id)

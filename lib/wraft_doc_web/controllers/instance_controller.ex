@@ -873,14 +873,14 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{
            content_type: %ContentType{organisation_id: ^organisation_id},
-           state: %State{state: _state_name}
+           state: _state
          } = instance <- Document.show_instance(id, current_user),
          %Instance{} = instance <- Document.approve_instance(current_user, instance) do
-      # Notifications.create_notification(current_user, %{
+      # Notifications.create_notification([current_user], %{
       #   type: :pending_approvals,
       #   organisation_name: Enterprise.get_organisation(organisation_id),
       #   document_name: instance.serialized["title"],
-      #   state_name: state_name,
+      #   state: state,
       #   user: current_user
       # })
 
