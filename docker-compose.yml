@@ -91,7 +91,7 @@ services:
       - ./typesense-data:/data
     command: >
       --data-dir /data
-      --api-key= ${TYPESENSE_API_KEY}
+      --api-key=${TYPESENSE_API_KEY}
 
 volumes:
   db:
