@@ -8,10 +8,6 @@ defmodule WraftDoc.Search.TypesenseServer do
   require Logger
   alias WraftDoc.Search.Typesense
 
-  @timeout :timer.seconds(30)
-
-  # Public API
-
   @doc """
   Starts the TypesenseServer GenServer.
   Accepts options where you can specify a custom name.
@@ -23,11 +19,19 @@ defmodule WraftDoc.Search.TypesenseServer do
   end
 
   @doc """
-  Creates a new collection in Typesense using the provided schema.
+  Asynchronously initializes the Typesense connection.
   """
-  @spec create_collection(module()) :: {:ok, map()} | {:error, term()}
+  @spec initialize() :: :ok
+  def initialize do
+    GenServer.cast(__MODULE__, :initialize)
+  end
+
+  @doc """
+  Asynchronously creates a collection in Typesense with given schema.
+  """
+  @spec create_collection(module()) :: :ok
   def create_collection(schema) do
-    GenServer.call(__MODULE__, {:create_collection, schema}, @timeout)
+    GenServer.cast(__MODULE__, {:create_collection, schema})
   end
 
   @doc """
@@ -35,15 +39,7 @@ defmodule WraftDoc.Search.TypesenseServer do
   """
   @spec create_document(map()) :: :ok
   def create_document(document) do
-    GenServer.call(__MODULE__, {:create_document, document})
-  end
-
-  @doc """
-  Retrieves a document by ID from a specific collection.
-  """
-  @spec get_document(binary(), binary()) :: {:ok, map()} | {:error, term()}
-  def get_document(id, collection_name) when is_binary(id) and is_binary(collection_name) do
-    GenServer.call(__MODULE__, {:get_document, id, collection_name}, @timeout)
+    GenServer.cast(__MODULE__, {:create_document, document})
   end
 
   @doc """
@@ -51,96 +47,104 @@ defmodule WraftDoc.Search.TypesenseServer do
   """
   @spec update_document(map()) :: :ok
   def update_document(document) do
-    GenServer.call(__MODULE__, {:update_document, document})
+    GenServer.cast(__MODULE__, {:update_document, document})
   end
 
   @doc """
   Deletes a document by ID from a specific collection asynchronously.
   """
   def delete_document(id, collection_name) when is_binary(id) and is_binary(collection_name) do
-    GenServer.call(__MODULE__, {:delete_document, id, collection_name})
+    GenServer.cast(__MODULE__, {:delete_document, id, collection_name})
   end
 
   # GenServer Callbacks
-
   @impl true
   def init(state) do
-    Logger.info("Starting TypesenseServer...")
-    Typesense.initialize()
+    Logger.info("Starting TypesenseServer")
+    Task.start(fn -> handle_initialization() end)
     {:ok, state}
   end
 
-  @impl true
-  def handle_call({:create_collection, schema}, _from, state) do
-    case Typesense.create_collection(schema) do
-      {:ok, _result} ->
-        {:reply, {:ok, %{message: "Collection created", schema: schema}}, state}
-
-      {:error, reason} ->
-        Logger.error("Failed to create collection: #{inspect(reason)}")
-        {:reply, {:error, reason}, state}
+  defp handle_initialization do
+    case Typesense.initialize() do
+      :ok -> Logger.info("Typesense initialized successfully.")
+      {:ok, _} -> Logger.info("Typesense initialized successfully.")
+      {:error, reason} -> Logger.error("Failed to initialize Typesense: #{inspect(reason)}")
+      unexpected -> Logger.warning("Unexpected Typesense response: #{inspect(unexpected)}")
     end
+  rescue
+    exception -> Logger.error("Initialization exception: #{Exception.format(:error, exception)}")
+  catch
+    type, value -> Logger.error("Caught #{type}: #{inspect(value)}")
   end
 
   @impl true
-  def handle_call({:create_document, document}, _from, state) do
+  def handle_cast({:create_document, document}, state) do
     case Typesense.create_document(document) do
       {:ok, _result} ->
-        {:reply, {:ok, %{message: "Document created", document: document}}, state}
+        Logger.debug("Document created successfully")
 
       {:error, reason} ->
         Logger.error("Failed to create document: #{inspect(reason)}")
-        {:reply, {:error, reason}, state}
     end
+
+    {:noreply, state}
   end
 
   @impl true
-  def handle_call({:get_document, id, collection_name}, _from, state) do
-    case Typesense.get_document(id, collection_name) do
-      {:ok, document} ->
-        {:reply, {:ok, %{id: id, collection: collection_name, data: document}}, state}
-
-      {:error, reason} ->
-        Logger.error("Failed to get document #{id}: #{inspect(reason)}")
-        {:reply, {:error, reason}, state}
-    end
-  end
-
-  @impl true
-  def handle_call({:update_document, document}, _from, state) do
+  def handle_cast({:update_document, document}, state) do
     case Typesense.update_document(document) do
       {:ok, _result} ->
-        {:reply, {:ok, %{message: "Document updated", document: document}}, state}
+        Logger.debug("Document updated successfully")
 
       {:error, reason} ->
         Logger.error("Failed to update document: #{inspect(reason)}")
-        {:reply, {:error, reason}, state}
     end
+
+    {:noreply, state}
   end
 
   @impl true
-  def handle_call({:delete_document, id, collection_name}, _from, state) do
+  def handle_cast({:delete_document, id, collection_name}, state) do
     case Typesense.delete_document(id, collection_name) do
       {:ok, _result} ->
-        {:reply, {:ok, %{message: "Document deleted", id: id, collection: collection_name}},
-         state}
+        Logger.debug("Document deleted successfully")
 
       {:error, reason} ->
         Logger.error("Failed to delete document #{id}: #{inspect(reason)}")
-        {:reply, {:error, reason}, state}
     end
+
+    {:noreply, state}
   end
 
   @impl true
-  def handle_call(:initialize, _from, state) do
+  def handle_cast({:create_collection, schema}, state) do
+    case Typesense.create_collection(schema) do
+      {:ok, _result} ->
+        Logger.info("Collection created successfully.")
+
+      {:error, reason} ->
+        Logger.error("Failed to create collection: #{inspect(reason)}")
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast(:initialize, state) do
     case Typesense.initialize() do
       {:ok, _result} ->
-        {:reply, {:ok, %{message: "Typesense initialized"}}, state}
+        Logger.info("Typesense initialized successfully.")
+
+      # Handle when Typesense.initialize() returns :ok
+      :ok ->
+        Logger.info("Typesense initialized successfully (no extra data).")
 
       {:error, reason} ->
         Logger.error("Failed to initialize Typesense: #{inspect(reason)}")
-        {:reply, {:error, reason}, state}
     end
+
+    {:noreply, state}
   end
 
   @impl true

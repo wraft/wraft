@@ -117,18 +117,14 @@ defmodule WraftDoc.Search.Typesense do
         filter_by: opts[:filter_by],
         sort_by: opts[:sort_by],
         page: opts[:page],
-        per_page: opts[:per_page]
+        per_page: opts[:per_page],
+        prefix: Keyword.get(opts, :prefix, true)
       }
 
-      search_params =
-        if opts[:prefix] do
-          Map.put(search_params, :prefix, true)
-        else
-          search_params
-        end
-
       clean_search_params =
-        Enum.into(Enum.reject(search_params, fn {_k, v} -> is_nil(v) end), %{})
+        search_params
+        |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+        |> Map.new()
 
       ExTypesense.search(collection_name, clean_search_params)
     end
