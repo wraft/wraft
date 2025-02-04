@@ -34,6 +34,7 @@ services:
       SELF_HOSTED: ${SELF_HOSTED}
       PADDLE_API_KEY: ${PADDLE_API_KEY}
       PADDLE_WEBHOOK_SECRET_KEY: ${PADDLE_WEBHOOK_SECRET_KEY}
+      PADDLE_BASE_URL: ${PADDLE_BASE_URL}
     ports:
       - 4000:4000
     depends_on:
