@@ -7,7 +7,7 @@ defmodule WraftDoc.Notifications.NotificationMessages do
     "Welcome to Wraft, #{user_name}! We're excited to have you on board. Start creating, collaborating, and managing documents with ease!"
   end
 
-  def message(:joins_organisation, %{organisation_name: organisation_name}) do
+  def message(:join_organisation, %{organisation_name: organisation_name}) do
     "Welcome to #{organisation_name}...!!"
   end
 
