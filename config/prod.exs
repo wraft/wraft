@@ -56,8 +56,6 @@ config :wraft_doc,
   theme_folder: File.cwd!() <> "/app/priv/wraft_files/Roboto",
   layout_file: File.cwd!() <> "/app/priv/wraft_files/letterhead.pdf"
 
-config :wraft_doc, :paddle, url: "https://api.paddle.com"
-
 # ## SSL Support
 #
 # To get SSL working, you will need to add the `https` key
