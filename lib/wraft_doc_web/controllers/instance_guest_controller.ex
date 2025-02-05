@@ -49,11 +49,23 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
           description("Response for document invite token verification")
 
           properties do
-            info(:string, "Info")
+            token(:string, "Token")
+            role(:string, "Role")
+            user(Schema.ref(:User), "User")
           end
 
           example(%{
-            info: "Invite token verified successfully"
+            token: "1232148nb3478",
+            role: "suggestor",
+            user: %{
+              id: "6529b52b-071c-4b82-950c-539b73b8833e",
+              name: "John Doe",
+              email: "john@example.com",
+              is_guest: false,
+              email_verified: true,
+              inserted_at: "2023-04-23T10:00:00Z",
+              updated_at: "2023-04-23T10:00:00Z"
+            }
           })
         end,
       Collaborator:
@@ -209,7 +221,11 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
            Document.accept_document_access(content_collaboration),
          {:ok, %AuthToken{value: guest_access_token}} <-
            AuthTokens.create_guest_access_token(invited_user, state_id, email, role, document_id) do
-      render(conn, "verify_collaborator.json", user: invited_user, token: guest_access_token)
+      render(conn, "verify_collaborator.json",
+        user: invited_user,
+        token: guest_access_token,
+        role: role
+      )
     else
       _ ->
         conn

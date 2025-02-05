@@ -31,10 +31,11 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestView do
     }
   end
 
-  def render("verify_collaborator.json", %{user: user, token: token}) do
+  def render("verify_collaborator.json", %{user: user, token: token, role: role}) do
     %{
       user: render_one(user, UserView, "user.json", as: :user),
-      token: token
+      token: token,
+      role: role
     }
   end
 end
