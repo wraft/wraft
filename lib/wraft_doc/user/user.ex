@@ -11,6 +11,7 @@ defmodule WraftDoc.Account.User do
     field(:encrypted_password, :string)
     field(:password, :string, virtual: true)
     field(:email_verify, :boolean, default: false)
+    field(:removable, :boolean, virtual: true)
     field(:is_guest, :boolean, default: false)
     field(:deleted_at, :naive_datetime)
     field(:signed_in_at, :naive_datetime)

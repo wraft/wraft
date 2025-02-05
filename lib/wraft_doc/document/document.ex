@@ -4147,7 +4147,7 @@ defmodule WraftDoc.Document do
     end
   end
 
-  @spec has_access?(User.t(), Ecto.UUID.t(), String.t()) :: boolean() | {:error, String.t()}
+  @spec has_access?(User.t(), Ecto.UUID.t(), atom()) :: boolean() | {:error, String.t()}
   def has_access?(%User{id: user_id}, document_id, :editor) do
     ContentCollaboration
     |> where(

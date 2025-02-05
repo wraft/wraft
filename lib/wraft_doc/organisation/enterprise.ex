@@ -358,15 +358,19 @@ defmodule WraftDoc.Enterprise do
   """
   @spec fetch_flow_state_users(binary(), binary()) :: [User.t()]
   def fetch_flow_state_users(<<_::288>> = state_id, <<_::288>> = document_id) do
-    users_content_type_level =
-      User
-      |> join(:inner, [u], su in StateUser, on: u.id == su.user_id)
-      |> where([_u, su], su.state_id == ^state_id and su.content_id == ^document_id)
-
     users_document_level =
       User
       |> join(:inner, [u], su in StateUser, on: u.id == su.user_id)
+      |> where([_u, su], su.state_id == ^state_id and su.content_id == ^document_id)
+      # User is removable at document level.
+      |> select([u, _su], %{u | removable: true})
+
+    users_content_type_level =
+      User
+      |> join(:inner, [u], su in StateUser, on: u.id == su.user_id)
       |> where([_u, su], su.state_id == ^state_id and is_nil(su.content_id))
+      # User is not removable at document level.
+      |> select([u, _su], %{u | removable: false})
 
     users_content_type_level
     |> union(^users_document_level)

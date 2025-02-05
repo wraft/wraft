@@ -96,7 +96,8 @@ defmodule WraftDocWeb.Api.V1.UserView do
     %{
       id: user.id,
       name: user.name,
-      profile_pic: generate_url(user.profile)
+      profile_pic: generate_url(user.profile),
+      removable: user.removable
     }
   end
 

@@ -347,7 +347,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
   end
 
   @doc """
-    Add user to flow state at content level.
+    Add user to flow state at document level.
   """
   swagger_path :add_user_to_state do
     post("states/{state_id}/users/{user_id}")
@@ -358,10 +358,10 @@ defmodule WraftDocWeb.Api.V1.StateController do
       state_id(:path, :string, "State id", required: true)
       user_id(:path, :string, "User id", required: true)
 
-      state_user_document_level(
-        :body,
-        Schema.ref(:StateUserDocumentLevelRequest),
-        "State user document level",
+      document_id(
+        :query,
+        "string",
+        "Document id",
         required: true
       )
     end
@@ -399,10 +399,10 @@ defmodule WraftDocWeb.Api.V1.StateController do
       state_id(:path, :string, "State id", required: true)
       user_id(:path, :string, "User id", required: true)
 
-      state_user_document_level(
-        :body,
-        Schema.ref(:StateUserDocumentLevelRequest),
-        "State user document level",
+      document_id(
+        :query,
+        "string",
+        "Document id",
         required: true
       )
     end
