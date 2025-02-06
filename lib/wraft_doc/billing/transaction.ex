@@ -9,7 +9,41 @@ defmodule WraftDoc.Billing.Transaction do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
 
-  @type t :: %__MODULE__{}
+  @fields [
+    :transaction_id,
+    :invoice_number,
+    :invoice_id,
+    :date,
+    :provider_subscription_id,
+    :provider_plan_id,
+    :billing_period_start,
+    :billing_period_end,
+    :subtotal_amount,
+    :tax,
+    :discount_amount,
+    :total_amount,
+    :currency,
+    :payment_method,
+    :payment_method_details,
+    :subscriber_id,
+    :organisation_id,
+    :plan_id,
+    :coupon_id
+  ]
+  @required_fields [
+    :transaction_id,
+    :date,
+    :provider_subscription_id,
+    :provider_plan_id,
+    :billing_period_start,
+    :billing_period_end,
+    :subtotal_amount,
+    :tax,
+    :total_amount,
+    :currency,
+    :organisation_id,
+    :plan_id
+  ]
 
   schema "transaction" do
     field(:transaction_id, :string)
@@ -38,40 +72,7 @@ defmodule WraftDoc.Billing.Transaction do
 
   def changeset(transaction, attrs) do
     transaction
-    |> cast(attrs, [
-      :transaction_id,
-      :invoice_number,
-      :invoice_id,
-      :date,
-      :provider_subscription_id,
-      :provider_plan_id,
-      :billing_period_start,
-      :billing_period_end,
-      :subtotal_amount,
-      :tax,
-      :discount_amount,
-      :total_amount,
-      :currency,
-      :payment_method,
-      :payment_method_details,
-      :subscriber_id,
-      :organisation_id,
-      :plan_id,
-      :coupon_id
-    ])
-    |> validate_required([
-      :transaction_id,
-      :date,
-      :provider_subscription_id,
-      :provider_plan_id,
-      :billing_period_start,
-      :billing_period_end,
-      :subtotal_amount,
-      :tax,
-      :total_amount,
-      :currency,
-      :organisation_id,
-      :plan_id
-    ])
+    |> cast(attrs, @fields)
+    |> validate_required(@required_fields)
   end
 end

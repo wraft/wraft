@@ -28,6 +28,7 @@ defmodule WraftDoc.Repo.Migrations.AddCouponTable do
 
     alter table(:plan) do
       add(:coupon_id, references(:coupon, on_delete: :nothing, type: :uuid))
+      rename(:pay_link, to: :payment_link)
     end
 
     alter table(:subscriptions) do
@@ -58,6 +59,7 @@ defmodule WraftDoc.Repo.Migrations.AddCouponTable do
 
     alter table(:plan) do
       remove(:coupon_id)
+      rename(:payment_link, to: :pay_link)
     end
 
     drop(index(:coupon, [:coupon_id]))

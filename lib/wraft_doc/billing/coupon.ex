@@ -4,7 +4,30 @@ defmodule WraftDoc.Billing.Coupon do
   """
   use WraftDoc.Schema
 
-  @type t :: %__MODULE__{}
+  @fields [
+    :name,
+    :description,
+    :coupon_id,
+    :status,
+    :type,
+    :coupon_code,
+    :amount,
+    :currency,
+    :recurring,
+    :maximum_recurring_intervals,
+    :usage_limit,
+    :times_used,
+    :expiry_date,
+    :start_date
+  ]
+
+  @required_fields [
+    :name,
+    :description,
+    :type,
+    :amount,
+    :currency
+  ]
 
   schema "coupon" do
     field(:name, :string)
@@ -27,29 +50,8 @@ defmodule WraftDoc.Billing.Coupon do
 
   def changeset(coupon, attrs) do
     coupon
-    |> cast(attrs, [
-      :name,
-      :description,
-      :coupon_id,
-      :status,
-      :type,
-      :coupon_code,
-      :amount,
-      :currency,
-      :recurring,
-      :maximum_recurring_intervals,
-      :usage_limit,
-      :times_used,
-      :expiry_date,
-      :start_date
-    ])
-    |> validate_required([
-      :name,
-      :description,
-      :type,
-      :amount,
-      :currency
-    ])
+    |> cast(attrs, @fields)
+    |> validate_required(@required_fields)
     |> unique_constraint(:name,
       name: :coupon_name_index,
       message: "A coupon with the same name exists!"

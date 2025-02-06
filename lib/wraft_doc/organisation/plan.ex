@@ -22,7 +22,7 @@ defmodule WraftDoc.Enterprise.Plan do
     field(:type, Ecto.Enum, values: [:free, :regular, :enterprise])
     field(:is_active?, :boolean, default: true)
     field(:currency, :string, default: "USD")
-    field(:pay_link, :string)
+    field(:payment_link, :string)
 
     belongs_to(:organisation, Organisation)
     belongs_to(:coupon, Coupon)
@@ -47,7 +47,7 @@ defmodule WraftDoc.Enterprise.Plan do
       :type,
       :features,
       :is_active?,
-      :pay_link,
+      :payment_link,
       :coupon_id
     ])
     |> validate_plan_amount()
@@ -96,7 +96,7 @@ defmodule WraftDoc.Enterprise.Plan do
       :features,
       :type,
       :organisation_id,
-      :pay_link
+      :payment_link
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> cast_embed(:custom, with: &Custom.changeset/2, required: true)

@@ -5,6 +5,7 @@ defmodule WraftDocWeb.PlanAdmin do
   import Ecto.Query
   use Ecto.Schema
 
+  alias WraftDoc.Billing
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Repo
@@ -47,7 +48,6 @@ defmodule WraftDocWeb.PlanAdmin do
           {"yearly", :year}
         ]
       },
-      # TODO: Need to pass when coupon is expired or only pass with no expiry and limit should pass.
       coupon_id: nil,
       trial_period: %{
         label: "Trial period",
@@ -92,7 +92,7 @@ defmodule WraftDocWeb.PlanAdmin do
     conn.params["plan"]
     |> Map.merge(%{"type" => :regular})
     |> Enterprise.create_plan()
-    |> handle_repsonse(changeset)
+    |> Billing.handle_repsonse(changeset)
   end
 
   def update(conn, changeset) do
@@ -100,26 +100,13 @@ defmodule WraftDocWeb.PlanAdmin do
 
     changeset.data
     |> Enterprise.update_plan(params)
-    |> handle_repsonse(changeset)
+    |> Billing.handle_repsonse(changeset)
   end
 
   def delete(_conn, changeset) do
     changeset
     |> Ecto.Changeset.change(%{is_active?: false})
     |> Repo.update()
-    |> handle_repsonse(changeset)
-  end
-
-  defp handle_repsonse(response, changeset) do
-    case response do
-      {:ok, plan} ->
-        {:ok, plan}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error, changeset}
-
-      {:error, error} ->
-        {:error, {changeset, error}}
-    end
+    |> Billing.handle_repsonse(changeset)
   end
 end

@@ -96,7 +96,7 @@ defmodule WraftDocWeb.CouponAdmin do
 
     changeset.changes
     |> Billing.create_coupon()
-    |> handle_repsonse(changeset)
+    |> Billing.handle_repsonse(changeset)
   end
 
   def update(conn, changeset) do
@@ -104,25 +104,12 @@ defmodule WraftDocWeb.CouponAdmin do
 
     changeset.data
     |> Billing.update_coupon(formatted_changeset.changes)
-    |> handle_repsonse(changeset)
+    |> Billing.handle_repsonse(changeset)
   end
 
   def delete(_conn, changeset) do
     changeset.data
     |> Billing.delete_coupon()
-    |> handle_repsonse(changeset)
-  end
-
-  defp handle_repsonse(response, changeset) do
-    case response do
-      {:ok, plan} ->
-        {:ok, plan}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error, changeset}
-
-      {:error, error} ->
-        {:error, {changeset, error}}
-    end
+    |> Billing.handle_repsonse(changeset)
   end
 end
