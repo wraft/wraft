@@ -9,11 +9,12 @@ defmodule WraftDoc.Enterprise.Plan do
   alias __MODULE__.Limits
   alias WraftDoc.Billing.Coupon
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDocWeb.Kaffy.ArrayField
 
   schema "plan" do
     field(:name, :string)
     field(:description, :string)
-    field(:features, WraftDocWeb.Kaffy.ArrayField)
+    field(:features, ArrayField)
     field(:product_id, :string)
     field(:plan_id, :string)
     field(:plan_amount, :string)

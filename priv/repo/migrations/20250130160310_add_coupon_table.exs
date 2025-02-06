@@ -29,5 +29,17 @@ defmodule WraftDoc.Repo.Migrations.AddCouponTable do
     alter table(:plan) do
       add(:coupon_id, references(:coupon, on_delete: :nothing, type: :uuid))
     end
+
+    alter table(:subscriptions) do
+      remove(:type)
+      add(:coupon_id, references(:coupon, on_delete: :nothing, type: :uuid))
+      add(:coupon_start_date, :utc_datetime)
+      add(:coupon_end_date, :utc_datetime)
+    end
+
+    alter table(:transaction) do
+      add(:discount_amount, :string)
+      add(:coupon_id, references(:coupon, on_delete: :nothing, type: :uuid))
+    end
   end
 end

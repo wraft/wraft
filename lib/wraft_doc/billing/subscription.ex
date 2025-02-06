@@ -4,6 +4,11 @@ defmodule WraftDoc.Billing.Subscription do
   """
   use WraftDoc.Schema
 
+  alias WraftDoc.Account.User
+  alias WraftDoc.Billing.Coupon
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Enterprise.Plan
+
   @type t :: %__MODULE__{}
 
   @changeset_fields [
@@ -19,7 +24,10 @@ defmodule WraftDoc.Billing.Subscription do
     :subscriber_id,
     :organisation_id,
     :plan_id,
-    :transaction_id
+    :transaction_id,
+    :coupon_start_date,
+    :coupon_end_date,
+    :coupon_id
   ]
 
   schema "subscriptions" do
@@ -33,10 +41,13 @@ defmodule WraftDoc.Billing.Subscription do
     field(:currency, :string)
     field(:metadata, :map)
     field(:transaction_id, :string)
+    field(:coupon_start_date, :utc_datetime)
+    field(:coupon_end_date, :utc_datetime)
 
-    belongs_to(:subscriber, WraftDoc.Account.User)
-    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-    belongs_to(:plan, WraftDoc.Enterprise.Plan)
+    belongs_to(:coupon, Coupon)
+    belongs_to(:subscriber, User)
+    belongs_to(:organisation, Organisation)
+    belongs_to(:plan, Plan)
 
     timestamps()
   end

@@ -22,7 +22,7 @@ defmodule WraftDoc.Billing do
   def get_subscription(%User{current_org_id: current_org_id}) do
     Subscription
     |> Repo.get_by(organisation_id: current_org_id)
-    |> Repo.preload([:subscriber, :organisation, :plan])
+    |> Repo.preload([:subscriber, :organisation, [plan: :coupon], :coupon])
     |> case do
       %Subscription{} = subscription -> {:ok, subscription}
       _ -> nil
@@ -46,7 +46,7 @@ defmodule WraftDoc.Billing do
   defp get_subscription_by_provider_subscription_id(provider_subscription_id) do
     Subscription
     |> Repo.get_by(provider_subscription_id: provider_subscription_id)
-    |> Repo.preload([:subscriber, :organisation, :plan])
+    |> Repo.preload([:subscriber, :organisation, [plan: :coupon], :coupon])
   end
 
   @doc """
@@ -58,7 +58,7 @@ defmodule WraftDoc.Billing do
     organisation_id
     |> active_subscription_query()
     |> Repo.one()
-    |> Repo.preload([:subscriber, :organisation, :plan])
+    |> Repo.preload([:subscriber, :organisation, [plan: :coupon], :coupon])
     |> case do
       %Subscription{} = subscription ->
         {:ok, subscription}
@@ -222,7 +222,7 @@ defmodule WraftDoc.Billing do
     query =
       from(sh in SubscriptionHistory,
         where: sh.organisation_id == ^organisation_id,
-        preload: [:subscriber, :organisation, :plan]
+        preload: [:subscriber, :organisation, [plan: :coupon], :coupon]
       )
 
     Repo.paginate(query, params)
@@ -238,7 +238,7 @@ defmodule WraftDoc.Billing do
     query =
       from(t in Transaction,
         where: t.organisation_id == ^organisation_id,
-        preload: [:organisation, :subscriber, :plan]
+        preload: [:organisation, :subscriber, [plan: :coupon], :coupon]
       )
 
     Repo.paginate(query, params)
@@ -472,6 +472,9 @@ defmodule WraftDoc.Billing do
       next_bill_amount: price["unit_price"]["amount"],
       next_bill_date: params["next_billed_at"],
       currency: params["currency_code"],
+      coupon_id: get_coupon_id(params["discount"]["id"]),
+      coupon_start_date: params["discount"]["starts_at"],
+      coupon_end_date: params["discount"]["ends_at"],
       transaction_id: params["transaction_id"],
       plan_id: custom_data["plan_id"],
       subscriber_id: custom_data["user_id"],
@@ -491,14 +494,25 @@ defmodule WraftDoc.Billing do
       billing_period_end: parse_datetime(params["billing_period"]["ends_at"]),
       subtotal_amount: params["details"]["totals"]["subtotal"],
       tax: params["details"]["totals"]["tax"],
+      discount_amount: params["details"]["totals"]["discount"],
       total_amount: params["details"]["totals"]["total"],
       currency: params["currency_code"],
       payment_method: get_payment_method(params),
       payment_method_details: get_payment_method_details(params),
+      coupon_id: get_coupon_id(params["discount_id"]),
       organisation_id: params["custom_data"]["organisation_id"],
       subscriber_id: params["custom_data"]["user_id"],
       plan_id: params["custom_data"]["plan_id"]
     }
+  end
+
+  def get_coupon_id(nil), do: nil
+
+  def get_coupon_id(discount_id) do
+    Coupon
+    |> where([c], c.coupon_id == ^discount_id)
+    |> select([c], c.id)
+    |> Repo.one()
   end
 
   defp parse_datetime(nil), do: nil
@@ -591,10 +605,11 @@ defmodule WraftDoc.Billing do
 
   def delete_coupon(%{coupon_id: coupon_id} = coupon) do
     Multi.new()
-    |> Multi.delete(:delete_coupon, coupon)
     |> Multi.run(:provider_coupon, fn _, _ ->
       PaddleApi.delete_coupon(coupon_id)
     end)
+    # TODO Archieve coupon instead of delete
+    |> Multi.delete(:delete_coupon, coupon)
     |> Repo.transaction()
     |> case do
       {:ok, %{delete_coupon: coupon}} ->
