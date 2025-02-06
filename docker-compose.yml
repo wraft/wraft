@@ -30,6 +30,9 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       SENTRY_DSN: ${SENTRY_DSN}
       XELATEX_PATH: ${XELATEX_PATH}
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
+      TYPESENSE_HOST: typesense
+
     ports:
       - 4000:4000
     depends_on:

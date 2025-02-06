@@ -92,6 +92,7 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   Performs a search based on the provided query and collection, with options
   merged from default presets and request parameters.
   """
+  @spec search(conn :: Phoenix.Conn.t(), params :: map()) :: Phoenix.Conn.t()
   def search(conn, params) do
     org_id = conn.assigns[:current_user].current_org_id
     query = Map.get(params, "query", "")
