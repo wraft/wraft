@@ -437,9 +437,22 @@ defmodule WraftDoc.Billing do
 
   defp increment_coupon_usage(%{"discount_id" => discount_id}) do
     Coupon
-    |> where(coupon_id: ^discount_id)
-    |> Repo.update_all(inc: [times_used: 1])
-    |> then(&{:ok, &1})
+    |> where(coupon_id: ^coupon_id)
+    |> select([c], {c.times_used + 1, c.usage_limit})
+    |> Repo.one()
+    |> case do
+      {new_usage, limit} when new_usage >= limit ->
+        Coupon
+        |> where(coupon_id: ^coupon_id)
+        |> Repo.update_all(set: [status: "expired"], inc: [times_used: 1])
+        |> then(&{:ok, &1})
+
+      _ ->
+        Coupon
+        |> where(coupon_id: ^coupon_id)
+        |> Repo.update_all(inc: [times_used: 1])
+        |> then(&{:ok, &1})
+    end
   end
 
   defp handle_on_update_subscription(params) do
