@@ -2,6 +2,8 @@ defmodule WraftDoc.Document.Layout do
   @moduledoc """
   The layout model.
   """
+  @behaviour ExTypesense
+
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
   alias __MODULE__
@@ -79,5 +81,25 @@ defmodule WraftDoc.Document.Layout do
 
   def file_changeset(%Layout{} = layout, attrs \\ %{}) do
     cast_attachments(layout, attrs, [:screenshot])
+  end
+
+  @impl ExTypesense
+  def get_field_types do
+    %{
+      fields: [
+        %{name: "id", type: "string", facet: false},
+        %{name: "name", type: "string", facet: true},
+        %{name: "description", type: "string", facet: true},
+        %{name: "width", type: "float", facet: false},
+        %{name: "height", type: "float", facet: false},
+        %{name: "unit", type: "string", facet: true},
+        %{name: "slug", type: "string", facet: true},
+        %{name: "engine_id", type: "string", facet: true},
+        %{name: "creator_id", type: "string", facet: true},
+        %{name: "organisation_id", type: "string", facet: true},
+        %{name: "inserted_at", type: "int64", facet: false},
+        %{name: "updated_at", type: "int64", facet: false}
+      ]
+    }
   end
 end

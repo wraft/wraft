@@ -18,6 +18,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Layout
   alias WraftDoc.Document.LayoutAsset
+  alias WraftDoc.Search.TypesenseServer, as: Typesense
 
   def swagger_definitions do
     %{
@@ -299,6 +300,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     with %Engine{} = engine <- Document.get_engine(params["engine_id"]),
          %Layout{} = layout <- Document.create_layout(current_user, engine, params) do
+      Typesense.create_document(layout)
       render(conn, "create.json", doc_layout: layout)
     end
   end
@@ -417,6 +419,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     with %Layout{} = layout <- Document.get_layout(id, current_user),
          %Layout{} = layout <- Document.update_layout(layout, current_user, params) do
+      Typesense.update_document(layout)
       render(conn, "show.json", doc_layout: layout)
     end
   end
@@ -444,6 +447,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     with %Layout{} = layout <- Document.get_layout(id, current_user),
          {:ok, %Layout{}} <- Document.delete_layout(layout) do
+      Typesense.delete_document(layout.id, "layout")
       render(conn, "layout.json", doc_layout: layout)
     end
   end

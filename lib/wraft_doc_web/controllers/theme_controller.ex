@@ -15,6 +15,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
   alias WraftDoc.Document
   alias WraftDoc.Document.Theme
+  alias WraftDoc.Search.TypesenseServer, as: Typesense
 
   def swagger_definitions do
     %{
@@ -203,6 +204,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
     current_user = conn.assigns[:current_user]
 
     with %Theme{} = theme <- Document.create_theme(current_user, params) do
+      Typesense.create_document(theme)
       render(conn, "create.json", theme: theme)
     end
   end
@@ -304,6 +306,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     with %Theme{} = theme <- Document.get_theme(theme_uuid, current_user),
          %Theme{} = theme <- Document.update_theme(theme, current_user, params) do
+      Typesense.update_document(theme)
       render(conn, "create.json", theme: theme)
     end
   end
@@ -331,6 +334,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
     with %Theme{} = theme <- Document.get_theme(uuid, current_user),
          {:ok, %Theme{}} <- Document.delete_theme(theme) do
+      Typesense.delete_document(theme.id, "theme")
       render(conn, "create.json", theme: theme)
     end
   end

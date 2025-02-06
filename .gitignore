@@ -23,6 +23,8 @@
 /users
 /organisations
 /priv/static/swagger.json
+/typesense-data/
+
 
 # Ignore assets that are produced by build tools.
 /priv/static/assets/

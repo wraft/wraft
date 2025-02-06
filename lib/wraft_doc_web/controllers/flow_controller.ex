@@ -16,6 +16,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Search.TypesenseServer, as: Typesense
 
   def swagger_definitions do
     %{
@@ -301,6 +302,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
     with {:ok, %Flow{} = flow} <-
            Enterprise.create_flow(current_user, params) do
+      Typesense.create_document(flow)
       render(conn, "flow.json", flow: flow)
     end
   end
@@ -396,6 +398,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
     with %Flow{} = flow <- Enterprise.get_flow(id, current_user),
          %Flow{} = flow <- Enterprise.update_flow(flow, params) do
+      Typesense.update_document(flow)
       render(conn, "update.json", flow: flow)
     end
   end
@@ -450,6 +453,7 @@ defmodule WraftDocWeb.Api.V1.FlowController do
 
     with %Flow{} = flow <- Enterprise.get_flow(id, current_user),
          {:ok, %Flow{}} <- Enterprise.delete_flow(flow) do
+      Typesense.delete_document(flow.id, "flow")
       render(conn, "flow.json", flow: flow)
     end
   end
