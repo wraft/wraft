@@ -47,6 +47,7 @@ defmodule WraftDocWeb.PlanAdmin do
           {"yearly", :year}
         ]
       },
+      # TODO: Need to pass when coupon is expired or only pass with no expiry and limit should pass.
       coupon_id: nil,
       trial_period: %{
         label: "Trial period",

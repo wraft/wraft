@@ -390,7 +390,7 @@ defmodule WraftDoc.Billing.PaddleApi do
       "amount" => amount,
       "currency_code" => Map.get(params, :currency, "USD"),
       "code" => Map.get(params, :coupon_code),
-      "expires_at" => Map.get(params, :expiry),
+      "expires_at" => Map.get(params, :expiry_date),
       "recur" => Map.get(params, :recurring, false),
       "maximum_recurring_intervals" => Map.get(params, :maximum_recurring_intervals, nil),
       "enabled_for_checkout" => true,

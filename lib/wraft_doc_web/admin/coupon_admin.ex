@@ -32,13 +32,14 @@ defmodule WraftDocWeb.CouponAdmin do
           end
         end
       },
-      expiry: %{
+      start_date: nil,
+      expiry_date: %{
         name: "Expiry",
         value: fn x ->
-          if x.expiry == nil do
+          if x.expiry_date == nil do
             "Valid forever"
           else
-            x.expiry
+            x.expiry_date
           end
         end
       }
@@ -84,8 +85,8 @@ defmodule WraftDocWeb.CouponAdmin do
         type: :integer,
         help_text: "Keep empty for recur forever"
       },
-      expiry: %{label: "Expiry", help_text: "Nil, valid forever"},
-      times_used: %{label: "Times used", type: :integer},
+      expiry_date: %{label: "Expiry", help_text: "Nil, valid forever"},
+      times_used: %{label: "Times used", type: :integer, create: :readonly, update: :readonly},
       usage_limit: %{label: "Usage limit", type: :integer}
     ]
   end

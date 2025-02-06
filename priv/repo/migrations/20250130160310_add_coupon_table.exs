@@ -14,7 +14,8 @@ defmodule WraftDoc.Repo.Migrations.AddCouponTable do
       add(:status, :string)
       add(:recurring, :boolean)
       add(:maximum_recurring_intervals, :integer)
-      add(:expiry, :utc_datetime)
+      add(:start_date, :utc_datetime)
+      add(:expiry_date, :utc_datetime)
       add(:times_used, :integer)
       add(:usage_limit, :integer)
 

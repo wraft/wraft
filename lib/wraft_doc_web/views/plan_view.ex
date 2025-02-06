@@ -48,11 +48,9 @@ defmodule WraftDocWeb.Api.V1.PlanView do
       status: coupon.status,
       recurring: coupon.recurring,
       maximum_recurring_intervals: coupon.maximum_recurring_intervals,
-      expiry: coupon.expiry,
+      expiry_date: coupon.expiry_date,
       usage_limit: coupon.usage_limit,
-      times_used: coupon.times_used,
-      updated_at: coupon.updated_at,
-      inserted_at: coupon.inserted_at
+      times_used: coupon.times_used
     }
   end
 end

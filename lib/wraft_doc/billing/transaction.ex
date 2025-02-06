@@ -22,6 +22,7 @@ defmodule WraftDoc.Billing.Transaction do
     field(:payment_method, :string)
     field(:payment_method_details, :map)
     # TODO add dscount amount
+    # TODO coupon id
 
     belongs_to(:subscriber, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)

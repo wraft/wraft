@@ -8,14 +8,15 @@ defmodule WraftDoc.Billing.Coupon do
     field(:name, :string)
     field(:description, :string)
     field(:coupon_id, :string)
-    field(:status, :string)
+    field(:status, Ecto.Enum, values: [:active, :expired, :archieved])
     field(:type, Ecto.Enum, values: [:percentage, :flat])
     field(:coupon_code, :string)
     field(:amount, :string)
     field(:currency, :string, default: "USD")
     field(:recurring, :boolean, default: false)
     field(:maximum_recurring_intervals, :integer, default: nil)
-    field(:expiry, :utc_datetime, default: nil)
+    field(:start_date, :utc_datetime, default: nil)
+    field(:expiry_date, :utc_datetime, default: nil)
     field(:usage_limit, :integer, default: nil)
     field(:times_used, :integer, default: 0)
 
@@ -35,9 +36,10 @@ defmodule WraftDoc.Billing.Coupon do
       :currency,
       :recurring,
       :maximum_recurring_intervals,
-      :expiry,
       :usage_limit,
-      :times_used
+      :times_used,
+      :expiry_date,
+      :start_date
     ])
     |> validate_required([
       :name,
