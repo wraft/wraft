@@ -2,6 +2,8 @@ defmodule WraftDocWeb.Router do
   use WraftDocWeb, :router
   import Phoenix.LiveDashboard.Router
 
+  alias WraftDoc.Enterprise
+
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
@@ -43,6 +45,10 @@ defmodule WraftDocWeb.Router do
     plug(WraftDocWeb.Plug.CurrentAdmin)
   end
 
+  pipeline :enterprise_plan_params do
+    plug WraftDocWeb.Plugs.KaffyAdminPlug
+  end
+
   scope "/", WraftDocWeb do
     # Use the default browser stack
     pipe_through(:browser)
@@ -81,8 +87,14 @@ defmodule WraftDocWeb.Router do
       post("/user/resend_email_token", UserController, :resend_email_token)
       # Verify Email Verification Token
       get("/user/verify_email_token/:token", UserController, :verify_email_token)
-      # Show and index plans
-      resources("/plans", PlanController, only: [:show, :index])
+
+      unless Enterprise.self_hosted?() do
+        post("/vendors/webhook", VendorsWebhookController, :webhook)
+        # Show and index plans
+        get("/plans/active_standard_plans", PlanController, :active_standard_plans)
+        resources("/plans", PlanController, only: [:show, :index])
+      end
+
       # Verify invite token
       get(
         "/organisations/verify_invite_token/:token",
@@ -278,14 +290,28 @@ defmodule WraftDocWeb.Router do
       # put("/collection_fields/:id", CollectionFormFieldController, :update)
       # delete("/collection_fields/:id", CollectionFormFieldController, :delete)
 
-      resources("/vendors", VendorController, only: [:create, :update, :show, :index, :delete])
-      # Update membership plan
-      put("/memberships/:id", MembershipController, :update)
-      # Get memberhsip
-      get("/organisations/:id/memberships", MembershipController, :show)
+      unless Enterprise.self_hosted?() do
+        # Billing
+        scope "/billing/subscription" do
+          get("/", BillingController, :get_subscription)
+          get("/active", BillingController, :get_active_subscription)
+          post("/:plan_id/change/preview", BillingController, :change_plan_preview)
+          post("/:plan_id/change", BillingController, :change_plan)
+          patch("/activate_trial", BillingController, :activate_trial_subscription)
+          get("/:transaction_id/invoice", BillingController, :get_invoice)
+          get("/:organisation_id/transactions", BillingController, :get_transactions)
+          get("/:organisation_id/history", BillingController, :subscription_history_index)
+          delete("/cancel", BillingController, :cancel_subscription)
+        end
 
-      # Payments
-      resources("/payments", PaymentController, only: [:index, :show])
+        # Update membership plan
+        put("/memberships/:id", MembershipController, :update)
+        # Get memberhsip
+        get("/organisations/:id/memberships", MembershipController, :show)
+
+        # Payments
+        resources("/payments", PaymentController, only: [:index, :show])
+      end
 
       # Blocks
       resources("/blocks", BlockController, except: [:index])
@@ -374,15 +400,16 @@ defmodule WraftDocWeb.Router do
     pipe_through([:api, :api_auth, :ex_audit_track, :email_verify])
 
     scope "/v1", Api.V1, as: :v1 do
-      # Create, Update and delete plans
-      resources("/plans", PlanController, only: [:create, :update, :delete])
-
       # List all organisation details
       get("/organisations", OrganisationController, :index)
     end
   end
 
-  use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin]
+  if Enterprise.self_hosted?() do
+    use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin]
+  else
+    use Kaffy.Routes, scope: "/admin", pipe_through: [:current_admin, :enterprise_plan_params]
+  end
 
   scope "/admin", WraftDocWeb do
     pipe_through([:kaffy_browser, :current_admin])

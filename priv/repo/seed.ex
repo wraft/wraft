@@ -25,6 +25,7 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.Document.LayoutAsset
   alias WraftDoc.Document.Theme
   alias WraftDoc.Document.ThemeAsset
+  alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
@@ -53,6 +54,10 @@ defmodule WraftDoc.Seed do
         organisation =
           Repo.insert!(%Organisation{name: "Personal", email: user.email, creator_id: user.id})
 
+        unless Enterprise.self_hosted?() do
+          Enterprise.create_free_subscription(organisation.id)
+        end
+
         # Update the user with the last signed in organisation
         user =
           user
@@ -77,6 +82,10 @@ defmodule WraftDoc.Seed do
 
     organisation =
       Repo.insert!(%Organisation{name: "Personal", email: user.email, creator_id: user.id})
+
+    unless Enterprise.self_hosted?() do
+      Enterprise.create_free_subscription(organisation.id)
+    end
 
     # Update the user with the last signed in organisation
     user =

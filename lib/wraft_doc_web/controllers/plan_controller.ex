@@ -27,8 +27,12 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             id(:string, "Plan id")
             name(:string, "Plan name")
             description(:string, "Plan description")
-            yearly_amount(:integer, "Yearly amount of the plan")
-            monthly_amount(:integer, "Monthly amount of the plan")
+            features(:array, "Plan features")
+            plan_id(:string, "Paddle price ID")
+            plan_amount(:string, "Amount of the plan")
+            product_id(:string, "Paddle product ID")
+            billing_interval(:string, "Billing interval")
+            limits(:map, "Limits of the plan")
             inserted_at(:string, "When was the plan inserted", format: "ISO-8601")
             updated_at(:string, "When was the plan last updated", format: "ISO-8601")
           end
@@ -37,8 +41,56 @@ defmodule WraftDocWeb.Api.V1.PlanController do
             id: "c68b0988-790b-45e8-965c-c4aeb427e70d",
             name: "Basic",
             description: "A basic plan",
-            yearly_amount: 10,
-            monthly_amount: 6,
+            features: ["Feature 1", "Feature 2"],
+            plan_id: "123456789",
+            plan_amount: "6",
+            product_id: "123456789",
+            billing_interval: "month",
+            limits: %{
+              instance_create: 25,
+              content_type_create: 25,
+              organisation_create: 25,
+              organisation_invite: 25
+            },
+            updated_at: "2020-01-21T14:00:00Z",
+            inserted_at: "2020-02-21T14:00:00Z"
+          })
+        end,
+      EnterprisePlan:
+        swagger_schema do
+          title("Enterprise Plan")
+          description("A custom enterprise plan")
+
+          properties do
+            id(:string, "Plan id")
+            name(:string, "Plan name")
+            description(:string, "Plan description")
+            features(:array, "Plan features")
+            plan_id(:string, "Custom price ID")
+            limits(:map, "Limits of the plan")
+            custom(:map, "Custom plan")
+            inserted_at(:string, "When was the plan inserted", format: "ISO-8601")
+            updated_at(:string, "When was the plan last updated", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "c68b0988-790b-45e8-965c-c4aeb427e70d",
+            name: "Basic",
+            description: "A basic plan",
+            features: ["Feature 1", "Feature 2"],
+            plan_id: "123456789",
+            limits: %{
+              instance_create: 25,
+              content_type_create: 25,
+              organisation_create: 25,
+              organisation_invite: 25
+            },
+            custom: %{
+              custom_amount: "499",
+              custom_period: "month",
+              custom_period_frequency: 4
+            },
+            organisation_id: "c68b0988-790b-45e8-965c-c4aeb427e70d",
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -51,47 +103,38 @@ defmodule WraftDocWeb.Api.V1.PlanController do
           properties do
             name(:string, "Plan name", required: true)
             description(:string, "Plan description", required: true)
-            yearly_amount(:integer, "Yearly amount of the plan")
-            monthly_amount(:integer, "Monthly amount of the plan")
+            yearly_amount(:string, "Yearly amount of the plan")
+            monthly_amount(:string, "Monthly amount of the plan")
           end
 
           example(%{
             name: "Basic",
             description: "A basic plan",
-            yearly_amount: 10,
-            monthly_amount: 6
+            yearly_amount: "10",
+            monthly_amount: "6"
           })
+        end,
+      PlanResponse:
+        swagger_schema do
+          title("Plan Response")
+          description("Response containing either a regular plan or an enterprise plan")
+
+          properties do
+            plan(Schema.ref(:Plan), "Regular Plan")
+            enterprise_plan(Schema.ref(:EnterprisePlan), "Enterprise Plan")
+          end
         end,
       Plans:
         swagger_schema do
           title("All plans")
           description("All plans that have been created")
-          type(:array)
-          items(Schema.ref(:Plan))
+
+          properties do
+            plan(:array, "Regular plans", items: Schema.ref(:Plan))
+            enterprise_plans(:array, "Enterprise plans", items: Schema.ref(:EnterprisePlan))
+          end
         end
     }
-  end
-
-  swagger_path :create do
-    post("/plans")
-    summary("Create a plan")
-    description("Create a plan")
-    operation_id("create_plan")
-
-    parameters do
-      plan(:body, Schema.ref(:PlanRequest), "Plan to be created", required: true)
-    end
-
-    response(200, "Updated", Schema.ref(:Plan))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, params) do
-    with {:ok, %Plan{} = plan} <- Enterprise.create_plan(params) do
-      render(conn, "plan.json", plan: plan)
-    end
   end
 
   swagger_path :index do
@@ -110,6 +153,22 @@ defmodule WraftDocWeb.Api.V1.PlanController do
     render(conn, "plans.json", plans: plans)
   end
 
+  swagger_path :active_standard_plans do
+    get("/plans/active_standard_plans")
+    summary("Active Standard Plans")
+    description("List all active standard plans")
+    operation_id("active_standard_plans")
+
+    response(200, "OK", Schema.ref(:Plans))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  def active_standard_plans(conn, _params) do
+    with plans <- Enterprise.active_standard_plans() do
+      render(conn, "active_standard_plan.json", plans: plans)
+    end
+  end
+
   swagger_path :show do
     get("/plans/{id}")
     summary("Show Plan")
@@ -120,60 +179,13 @@ defmodule WraftDocWeb.Api.V1.PlanController do
       id(:path, :string, "ID of the plan")
     end
 
-    response(200, "OK", Schema.ref(:Plan))
+    response(200, "OK", Schema.ref(:PlanResponse))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show(conn, %{"id" => p_uuid}) do
     with %Plan{} = plan <- Enterprise.get_plan(p_uuid) do
-      render(conn, "plan.json", plan: plan)
-    end
-  end
-
-  swagger_path :update do
-    put("/plans/{id}")
-    summary("Update a plan")
-    description("Update a plan")
-    operation_id("update_plan")
-
-    parameters do
-      id(:path, :string, "ID of the plan to be updated")
-      plan(:body, Schema.ref(:PlanRequest), "Plan to be updated", required: true)
-    end
-
-    response(200, "Updated", Schema.ref(:Plan))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => p_uuid} = params) do
-    with %Plan{} = plan <- Enterprise.get_plan(p_uuid),
-         {:ok, %Plan{} = plan} <- Enterprise.update_plan(plan, params) do
-      render(conn, "plan.json", plan: plan)
-    end
-  end
-
-  swagger_path :delete do
-    PhoenixSwagger.Path.delete("/plans/{id}")
-    summary("Delete a plan")
-    description("Delete a plan")
-    operation_id("delete_plan")
-
-    parameters do
-      id(:path, :string, "ID of the plan to be deleted")
-    end
-
-    response(200, "OK", Schema.ref(:Plan))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def delete(conn, %{"id" => p_uuid}) do
-    with %Plan{} = plan <- Enterprise.get_plan(p_uuid),
-         {:ok, %Plan{} = plan} <- Enterprise.delete_plan(plan) do
       render(conn, "plan.json", plan: plan)
     end
   end

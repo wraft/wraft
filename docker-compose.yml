@@ -13,6 +13,7 @@ services:
       args:
         SECRET_KEY_BASE: ${SECRET_KEY_BASE}
         DATABASE_URL: ${DATABASE_URL}
+        SELF_HOSTED: ${SELF_HOSTED}
     environment:
       MIX_ENV: dev
       SECRET_KEY_BASE: ${SECRET_KEY_BASE}
@@ -32,7 +33,10 @@ services:
       XELATEX_PATH: ${XELATEX_PATH}
       TYPESENSE_API_KEY: ${TYPESENSE_API_KEY}
       TYPESENSE_HOST: typesense
-
+      SELF_HOSTED: ${SELF_HOSTED}
+      PADDLE_API_KEY: ${PADDLE_API_KEY}
+      PADDLE_WEBHOOK_SECRET_KEY: ${PADDLE_WEBHOOK_SECRET_KEY}
+      PADDLE_BASE_URL: ${PADDLE_BASE_URL}
     ports:
       - 4000:4000
     depends_on:

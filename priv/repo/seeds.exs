@@ -13,7 +13,7 @@
 alias FunWithFlags
 alias WraftDoc.Account.Country
 alias WraftDoc.Document.Engine
-alias WraftDoc.Enterprise.Plan
+alias WraftDoc.Enterprise
 alias WraftDoc.Repo
 alias WraftDoc.Seed
 
@@ -32,14 +32,13 @@ if !FunWithFlags.enabled?(:seeds_ran?) do
   Repo.delete_all(Engine)
   [_pdf, _latex, pandoc] = Seed.seed_engine()
 
-  plan = Repo.get_by(Plan, name: "Free Trial")
-
   for {user, organisation} <- List.zip([user_list, organisation_list]) do
     # Seed profiles with country
     Seed.seed_profile(user, country)
 
-    # Seed Membership
-    Seed.seed_membership(organisation, plan)
+    unless Enterprise.self_hosted?() do
+      Enterprise.create_free_subscription(organisation.id)
+    end
 
     # Seed Block and Block Template
     Seed.seed_block_and_block_template(user, organisation)

@@ -128,3 +128,8 @@ config :wraft_doc, sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"
 config :pdf_generator,
   wkhtml_path: System.get_env("WKHTMLTOPDF_PATH"),
   pdftk_path: System.get_env("PDFTK_PATH")
+
+config :wraft_doc, :paddle,
+  api_key: System.get_env("PADDLE_API_KEY"),
+  webhook_secret_key: System.get_env("PADDLE_WEBHOOK_SECRET_KEY"),
+  base_url: System.get_env("PADDLE_BASE_URL")
