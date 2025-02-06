@@ -56,7 +56,7 @@ defmodule WraftDocWeb.CouponAdmin do
         type: :choices,
         choices: [
           {"active", :active},
-          {"inactive", :inactive}
+          {"archived", :archived}
         ]
       },
       type: %{
@@ -107,7 +107,6 @@ defmodule WraftDocWeb.CouponAdmin do
     |> handle_repsonse(changeset)
   end
 
-  # TODO: Delete not ideal, provider keeps the coupon cant be reused.
   def delete(_conn, changeset) do
     changeset.data
     |> Billing.delete_coupon()

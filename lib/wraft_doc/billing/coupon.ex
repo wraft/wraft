@@ -8,7 +8,7 @@ defmodule WraftDoc.Billing.Coupon do
     field(:name, :string)
     field(:description, :string)
     field(:coupon_id, :string)
-    field(:status, Ecto.Enum, values: [:active, :expired, :archieved])
+    field(:status, Ecto.Enum, values: [:active, :expired, :archived])
     field(:type, Ecto.Enum, values: [:percentage, :flat])
     field(:coupon_code, :string)
     field(:amount, :string)

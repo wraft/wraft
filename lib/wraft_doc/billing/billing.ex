@@ -608,11 +608,12 @@ defmodule WraftDoc.Billing do
     |> Multi.run(:provider_coupon, fn _, _ ->
       PaddleApi.delete_coupon(coupon_id)
     end)
-    # TODO Archieve coupon instead of delete
-    |> Multi.delete(:delete_coupon, coupon)
+    |> Multi.update(:archive_coupon, fn _ ->
+      Coupon.changeset(coupon, %{status: "archived"})
+    end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{delete_coupon: coupon}} ->
+      {:ok, %{archive_coupon: coupon}} ->
         {:ok, coupon}
 
       {:error, _, error, _} ->
