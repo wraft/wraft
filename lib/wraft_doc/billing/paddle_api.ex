@@ -349,6 +349,10 @@ defmodule WraftDoc.Billing.PaddleApi do
     end
   end
 
+  @doc """
+  Creates coupon in provider.
+  """
+  @spec create_coupon(map()) :: {:ok, map()} | {:error, String.t() | atom()}
   def create_coupon(params) do
     params = prepare_coupon_params(params)
 
@@ -357,6 +361,10 @@ defmodule WraftDoc.Billing.PaddleApi do
     |> get_response()
   end
 
+  @doc """
+  Update coupon in provider.
+  """
+  @spec update_coupon(String.t(), map()) :: {:ok, map()} | {:error, String.t() | atom()}
   def update_coupon(coupon_id, params) do
     params = prepare_coupon_params(params)
 
@@ -366,6 +374,10 @@ defmodule WraftDoc.Billing.PaddleApi do
     |> get_response()
   end
 
+  @doc """
+  Delete coupon in provider.
+  """
+  @spec delete_coupon(String.t()) :: {:ok, map()} | {:error, String.t() | atom()}
   def delete_coupon(coupon_id) do
     params = %{
       "status" => "archived"

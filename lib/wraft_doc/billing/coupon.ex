@@ -4,6 +4,8 @@ defmodule WraftDoc.Billing.Coupon do
   """
   use WraftDoc.Schema
 
+  @type t :: %__MODULE__{}
+
   schema "coupon" do
     field(:name, :string)
     field(:description, :string)

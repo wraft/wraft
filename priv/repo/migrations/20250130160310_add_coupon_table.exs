@@ -1,7 +1,7 @@
 defmodule WraftDoc.Repo.Migrations.AddCouponTable do
   use Ecto.Migration
 
-  def change do
+  def up do
     create table(:coupon, primary_key: false) do
       add(:id, :uuid, primary_key: true)
       add(:name, :string)
@@ -41,5 +41,29 @@ defmodule WraftDoc.Repo.Migrations.AddCouponTable do
       add(:discount_amount, :string)
       add(:coupon_id, references(:coupon, on_delete: :nothing, type: :uuid))
     end
+  end
+
+  def down do
+    alter table(:transaction) do
+      remove(:discount_amount)
+      remove(:coupon_id)
+    end
+
+    alter table(:subscriptions) do
+      remove(:coupon_end_date)
+      remove(:coupon_start_date)
+      remove(:coupon_id)
+      add(:type, :string)
+    end
+
+    alter table(:plan) do
+      remove(:coupon_id)
+    end
+
+    drop(index(:coupon, [:coupon_id]))
+    drop(unique_index(:coupon, [:name], name: :coupon_name_index))
+    drop(unique_index(:coupon, [:coupon_code], name: :coupon_code_index))
+
+    drop(table(:coupon))
   end
 end

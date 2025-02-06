@@ -250,7 +250,7 @@ defmodule WraftDoc.Billing do
   Create subscription.
   """
   @spec on_create_subscription(map()) ::
-          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | any()}
+          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def on_create_subscription(params) do
     params =
       params
@@ -506,9 +506,9 @@ defmodule WraftDoc.Billing do
     }
   end
 
-  def get_coupon_id(nil), do: nil
+  defp get_coupon_id(nil), do: nil
 
-  def get_coupon_id(discount_id) do
+  defp get_coupon_id(discount_id) do
     Coupon
     |> where([c], c.coupon_id == ^discount_id)
     |> select([c], c.id)
@@ -535,6 +535,11 @@ defmodule WraftDoc.Billing do
     |> then(fn payment -> payment && payment["method_details"] end)
   end
 
+  @doc """
+  Creates a coupon.
+  """
+  @spec create_coupon(map()) ::
+          {:ok, Coupon.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
   def create_coupon(params) do
     Multi.new()
     |> Multi.insert(:coupon, fn _ ->
@@ -570,6 +575,11 @@ defmodule WraftDoc.Billing do
     end
   end
 
+  @doc """
+  Update coupon.
+  """
+  @spec update_coupon(Coupon.t(), map()) ::
+          {:ok, Coupon.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
   def update_coupon(%{coupon_id: coupon_id} = coupon, params) do
     Multi.new()
     |> Multi.run(:provider_coupon, fn _, _ ->
@@ -603,6 +613,11 @@ defmodule WraftDoc.Billing do
     end
   end
 
+  @doc """
+  Archives coupon in provider.
+  """
+  @spec delete_coupon(Coupon.t()) ::
+          {:ok, Coupon.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
   def delete_coupon(%{coupon_id: coupon_id} = coupon) do
     Multi.new()
     |> Multi.run(:provider_coupon, fn _, _ ->
