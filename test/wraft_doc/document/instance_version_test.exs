@@ -5,10 +5,14 @@ defmodule WraftDoc.Document.Instance.VersionTest do
   @moduletag :document
 
   @valid_attrs %{
-    version_number: 1,
+    version_number: "save:0,build:1",
+    type: :build,
+    naration: "sample naration",
     raw: "sample raw data",
-    serialized: %{body: "sample raw data"}
+    serialized: %{body: "sample raw data"},
+    content_id: "b1b67eb3-a8c7-4492-beb5-c8d6ad3abbef"
   }
+
   @invalid_attrs %{version_number: "v1"}
 
   test "changeset with valid attributes" do

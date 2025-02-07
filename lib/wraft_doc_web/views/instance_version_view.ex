@@ -5,8 +5,9 @@ defmodule WraftDocWeb.Api.V1.InstanceVersionView do
   def render("version.json", %{version: version}) do
     %{
       id: version.id,
-      version_number: version.version_number,
+      version_number: build_version(version.version_number),
       raw: version.raw,
+      type: version.type,
       serialised: version.serialized,
       naration: version.naration,
       author: render_one(version.author, UserView, "user.json", as: :user),
@@ -31,5 +32,10 @@ defmodule WraftDocWeb.Api.V1.InstanceVersionView do
 
   def render("line.json", %{line: line}) do
     line
+  end
+
+  defp build_version(version_string) do
+    [_, _, _, build_version] = String.split(version_string, ~r/[:,]/)
+    build_version
   end
 end

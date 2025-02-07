@@ -5,8 +5,11 @@ defmodule WraftDoc.Document.Instance.Version do
   use WraftDoc.Schema
   alias __MODULE__
 
+  @fields [:version_number, :raw, :serialized, :author_id, :type, :naration]
+
   schema "version" do
-    field(:version_number, :integer)
+    field(:version_number, :string, default: "save:1,build:1")
+    field(:type, Ecto.Enum, values: [:build, :save])
     field(:raw, :string)
     field(:serialized, :map, default: %{})
     field(:naration, :string)
@@ -17,7 +20,17 @@ defmodule WraftDoc.Document.Instance.Version do
 
   def changeset(%Version{} = version, attrs \\ %{}) do
     version
-    |> cast(attrs, [:version_number, :raw, :serialized, :content_id, :author_id])
-    |> validate_required([:version_number, :raw, :serialized, :author_id])
+    |> cast(attrs, @fields)
+    |> validate_required(@fields -- [:naration])
+    |> validate_version_number()
+  end
+
+  defp validate_version_number(changeset) do
+    version_number = get_field(changeset, :version_number)
+
+    case Regex.match?(~r/^save:\d+,build:\d+$/, version_number) do
+      true -> changeset
+      false -> add_error(changeset, :version_number, "Invalid version number format")
+    end
   end
 end

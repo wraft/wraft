@@ -26,6 +26,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.Instance
+  alias WraftDoc.Document.Instance.Version
   alias WraftDoc.Document.Layout
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
@@ -674,7 +675,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with true <- Document.has_access?(current_user, document_id, :editor),
          %Instance{} = instance <- Document.get_instance(document_id, current_user),
-         %Instance{} = instance <- Document.update_instance(instance, params) do
+         %Instance{} = instance <- Document.update_instance(instance, params),
+         {:ok, %Version{}} <- Document.create_version(current_user, instance, params, :save) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -683,7 +685,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Document.get_instance(id, current_user),
-         %Instance{} = instance <- Document.update_instance(instance, params) do
+         %Instance{} = instance <- Document.update_instance(instance, params),
+         {:ok, %Version{}} <- Document.create_version(current_user, instance, params, :save) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -801,7 +804,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     case exit_code do
       0 ->
         Task.start_link(fn ->
-          Document.create_version(conn.assigns.current_user, instance, params)
+          Document.create_version(conn.assigns.current_user, instance, params, :build)
         end)
 
         render(conn, "instance.json", instance: instance)

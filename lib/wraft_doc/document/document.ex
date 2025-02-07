@@ -583,13 +583,15 @@ defmodule WraftDoc.Document do
     :ok
   end
 
-  defp create_initial_version(%{id: author_id}, instance) do
+  defp create_initial_version(%{id: author_id}, %Instance{id: document_id} = instance) do
     params = %{
-      "version_number" => 1,
+      "version_number" => "save:1,build:1",
+      "type" => "save",
       "naration" => "Initial version",
       "raw" => instance.raw,
       "serialized" => instance.serialized,
-      "author_id" => author_id
+      "author_id" => author_id,
+      "content_id" => document_id
     }
 
     Logger.info("Creating initial version...")
@@ -1185,12 +1187,19 @@ defmodule WraftDoc.Document do
   @spec show_instance(binary, User.t()) ::
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
   def show_instance(instance_id, user) do
+    # Preload the build versions of the instance
+    versions_preload_query =
+      from(v in Version,
+        where: v.content_id == ^instance_id and v.type == :build,
+        preload: [:author]
+      )
+
     with %Instance{} = instance <- get_instance(instance_id, user) do
       instance
       |> Repo.preload([
         {:creator, :profile},
         {:content_type, :layout},
-        {:versions, :author},
+        {:versions, versions_preload_query},
         {:state, :approvers},
         {:instance_approval_systems, :approver},
         state: [
@@ -1216,7 +1225,7 @@ defmodule WraftDoc.Document do
           id: id,
           instance_id: instance_id,
           content_type: %ContentType{organisation_id: org_id},
-          versions: versions
+          versions: build_versions
         } = instance
       ) do
     query =
@@ -1237,7 +1246,7 @@ defmodule WraftDoc.Document do
         instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
 
         file_path =
-          Path.join(instance_dir_path, versioned_file_name(versions, instance_id, :current))
+          Path.join(instance_dir_path, versioned_file_name(build_versions, instance_id, :current))
 
         doc_url = Minio.generate_url(file_path)
 
@@ -1287,14 +1296,14 @@ defmodule WraftDoc.Document do
   # be in the content.
   # A new version is added only if there is any difference in either the
   # raw or serialized fields of the instances.
-  @spec create_version(User.t(), Instance.t(), map()) ::
+  @spec create_version(User.t(), Instance.t(), map(), atom()) ::
           {:ok, Version.t()} | {:error, Ecto.Changeset.t()}
-  def create_version(current_user, new_instance, params) do
-    old_instance = get_last_version(new_instance)
+  def create_version(current_user, new_instance, params, type) do
+    old_instance = get_last_version(new_instance, type)
 
     case instance_updated?(old_instance, new_instance) do
       true ->
-        params = create_version_params(new_instance, params)
+        params = create_version_params(new_instance, params, type)
 
         current_user
         |> build_assoc(:instance_versions, content: new_instance)
@@ -1306,18 +1315,19 @@ defmodule WraftDoc.Document do
     end
   end
 
-  defp get_last_version(%{id: id}) do
-    query = from(v in Version, where: v.content_id == ^id)
+  defp get_last_version(%{id: id}, type) do
+    query = from(v in Version, where: v.content_id == ^id and v.type == ^type)
 
     query
     |> last(:inserted_at)
     |> Repo.one()
   end
 
-  defp get_last_version(_), do: nil
+  defp get_last_version(_, _), do: nil
   # Create the params to create a new version.
   # @spec create_version_params(Instance.t(), map()) :: map
-  defp create_version_params(%Instance{id: id} = instance, params) do
+  defp create_version_params(%Instance{id: id} = instance, _params, type)
+       when type in [:save, :build] do
     query =
       from(v in Version,
         where: v.content_id == ^id,
@@ -1326,22 +1336,36 @@ defmodule WraftDoc.Document do
         select: v.version_number
       )
 
-    version =
+    incremented_version =
       query
       |> Repo.one()
       |> case do
         nil ->
           1
 
-        version ->
-          version + 1
+        version_string ->
+          version_string |> String.split(~r/[:,]/) |> increment_version(type)
       end
 
-    naration = params["naration"] || "Version-#{version / 10}"
-    instance |> Map.from_struct() |> Map.merge(%{version_number: version, naration: naration})
+    # TODO - add naration
+    # naration = params["naration"] || "Version-#{incremented_version / 10}"
+
+    instance
+    |> Map.from_struct()
+    |> Map.merge(%{version_number: incremented_version, type: type})
   end
 
-  defp create_version_params(_, params), do: params
+  defp create_version_params(_, params, _), do: params
+
+  # Increment the version number by one
+  defp increment_version([_, save_version, _, build_version], :save) do
+    "save:#{String.to_integer(save_version) + 1},build:#{build_version}"
+  end
+
+  defp increment_version([_, save_version, _, build_version], :build) do
+    # "build:#{build_version + 1}"
+    "save:#{save_version},build:#{String.to_integer(build_version) + 1}"
+  end
 
   # Checks whether the raw and serialzed of old and new instances are same or not.
   # If they are both the same, returns false, else returns true
@@ -1354,7 +1378,7 @@ defmodule WraftDoc.Document do
 
   defp instance_updated?(new_instance) do
     new_instance
-    |> get_last_version()
+    |> get_last_version(:build)
     |> instance_updated?(new_instance)
   end
 
@@ -1818,7 +1842,7 @@ defmodule WraftDoc.Document do
   # TODO - Dont need to pass layout as an argument, we can just preload it
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(
-        %Instance{instance_id: instance_id, content_type: content_type, versions: versions} =
+        %Instance{instance_id: instance_id, content_type: content_type, versions: build_versions} =
           instance,
         %Layout{organisation_id: org_id} = layout
       ) do
@@ -1842,7 +1866,7 @@ defmodule WraftDoc.Document do
 
     instance_updated? = instance_updated?(instance)
     # Move old builds to the history folder
-    current_instance_file = versioned_file_name(versions, instance_id, :current)
+    current_instance_file = versioned_file_name(build_versions, instance_id, :current)
 
     Task.start(fn ->
       move_old_builds(instance_dir_path, current_instance_file, instance_updated?)
@@ -1911,30 +1935,30 @@ defmodule WraftDoc.Document do
   end
 
   defp pdf_file_path(
-         %Instance{instance_id: instance_id, versions: versions},
+         %Instance{instance_id: instance_id, versions: build_versions},
          instance_dir_path,
          true
        ) do
-    versions
+    build_versions
     |> versioned_file_name(instance_id, :next)
     |> then(&Path.join(instance_dir_path, &1))
   end
 
   defp pdf_file_path(
-         %Instance{instance_id: instance_id, versions: versions},
+         %Instance{instance_id: instance_id, versions: build_versions},
          instance_dir_path,
          false
        ) do
-    versions
+    build_versions
     |> versioned_file_name(instance_id, :current)
     |> then(&Path.join(instance_dir_path, &1))
   end
 
-  defp versioned_file_name(versions, instance_id, :current),
-    do: instance_id <> "-v" <> to_string(length(versions)) <> ".pdf"
+  defp versioned_file_name(build_versions, instance_id, :current),
+    do: instance_id <> "-v" <> to_string(length(build_versions)) <> ".pdf"
 
-  defp versioned_file_name(versions, instance_id, :next),
-    do: instance_id <> "-v" <> to_string(length(versions) + 1) <> ".pdf"
+  defp versioned_file_name(build_versions, instance_id, :next),
+    do: instance_id <> "-v" <> to_string(length(build_versions) + 1) <> ".pdf"
 
   defp prepare_markdown(
          %{id: instance_id, creator: %User{name: name, email: email}} = instance,
@@ -3748,7 +3772,7 @@ defmodule WraftDoc.Document do
   @doc """
   Returns list of changes on a single version
   ## Parameters
-  * `instnace` - An instance struct
+  * `instance` - An instance struct
   * `version_uuid` - uuid of version
   """
   @spec version_changes(Instance.t(), <<_::288>>) :: map()
@@ -3811,12 +3835,21 @@ defmodule WraftDoc.Document do
 
   defp get_version(_, _), do: nil
 
-  defp get_previous_version(%{id: instance_id}, %{version_number: version_number}) do
-    version_number = version_number - 1
+  defp get_previous_version(%{id: instance_id}, %{version_number: version_number, type: type}) do
+    version_number = version_number |> String.split(~r/[:,]/) |> decrement_version(type)
     Repo.get_by(Version, version_number: version_number, content_id: instance_id)
   end
 
   defp get_previous_version(_, _), do: nil
+
+  # Decrement the version number by one
+  defp decrement_version([_, save_version, _, build_version], :save) do
+    "save:#{String.to_integer(save_version) - 1},build:#{build_version}"
+  end
+
+  defp decrement_version([_, save_version, _, build_version], :build) do
+    "save:#{save_version},build:#{String.to_integer(build_version) - 1}"
+  end
 
   def get_collection_form_field(%{current_org_id: org_id}, id) do
     query =
