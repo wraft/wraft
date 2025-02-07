@@ -4,7 +4,7 @@ defmodule WraftDoc.Repo.Migrations.AddTypeAndHybridVersioningToInstanceVersion d
   def up do
     alter table(:version) do
       add(:type, :string)
-      modify(:version_number, :string, null: false, from: :integer, null: false)
+      modify(:version_number, :string, from: :integer)
     end
 
     # Mark all existing records as "build"
@@ -20,7 +20,12 @@ defmodule WraftDoc.Repo.Migrations.AddTypeAndHybridVersioningToInstanceVersion d
     # Extract the numeric part from version_number
     execute("""
       UPDATE version
-      SET version_number = REGEXP_REPLACE(version_number, '^save:0,build:', '', 'g')
+      SET version_number = CASE
+        WHEN version_number ~ '^save:[0-9]+,build:' THEN
+          REGEXP_REPLACE(version_number, '^save:[0-9]+,build:', '', 'g')::INTEGER
+        ELSE
+          NULL
+      END
     """)
 
     # Ensure all version_number values are valid integers
