@@ -20,7 +20,7 @@ defmodule WraftDoc.Notifications do
   Creates notifications for a list of users based on given parameters.
   Returns a list of successfully created notifications or an error.
   """
-  def create_notification(users, params) do
+  def create_notification(users, params) when is_list(users) do
     users
     |> Enum.map(&build_notification_params(&1, params))
     |> Enum.map(&insert_notification/1)
@@ -30,50 +30,36 @@ defmodule WraftDoc.Notifications do
 
   def create_notification(_), do: nil
 
-  defp build_notification_params(%{id: actor_id} = _user, %{type: type} = params) do
+  defp build_notification_params(%{id: actor_id}, params) do
     params
     |> Map.put(:actor_id, actor_id)
-    |> Map.put(:message, NotificationMessages.message(type, params))
+    |> Map.put(:message, NotificationMessages.message(params.type, params))
   end
 
   defp insert_notification(notification_params) do
     Multi.new()
     |> Multi.insert(:notification, Notification.changeset(%Notification{}, notification_params))
-    |> Multi.run(:fetch_recipient, fn _repo, _changes ->
-      Account.get_user(notification_params.actor_id)
+    |> Multi.run(:fetch_recipient, &fetch_recipient/2)
+    |> Multi.insert(:user_notification, fn %{
+                                             notification: notification,
+                                             fetch_recipient: recipient
+                                           } ->
+      UserNotifications.changeset(%UserNotifications{}, %{
+        notification_id: notification.id,
+        actor_id: notification_params.actor_id,
+        recipient_id: recipient.id
+      })
     end)
-    |> Multi.insert(:user_notification, &build_user_notification/2)
-    |> Multi.run(:broadcast, &broadcast_notification_result/2)
+    |> Multi.run(:broadcast, fn _repo,
+                                %{notification: notification, fetch_recipient: recipient} ->
+      broadcast_notification(notification.message, recipient)
+      {:ok, :broadcast_success}
+    end)
     |> Repo.transaction()
     |> handle_transaction_result()
   end
 
-  defp build_user_notification(
-         %{notification: %{id: notification_id}, fetch_recipient: %{id: recipient_id}},
-         _changes
-       ) do
-    UserNotifications.changeset(%UserNotifications{}, %{
-      notification_id: notification_id,
-      actor_id: notification_id,
-      recipient_id: recipient_id
-    })
-  end
-
-  defp broadcast_notification_result(_repo, %{
-         notification: %{message: message},
-         fetch_recipient: recipient
-       }) do
-    broadcast_notification(message, recipient)
-    {:ok, :broadcast_success}
-  end
-
-  defp handle_transaction_result({:ok, %{notification: notification}}), do: {:ok, notification}
-  defp handle_transaction_result({:error, _, reason, _}), do: {:error, reason}
-
-  defp format_results({successes, []}), do: {:ok, Enum.map(successes, fn {:ok, n} -> n end)}
-  defp format_results({_, [{:error, reason} | _]}), do: {:error, reason}
-
-  defp broadcast_notification(notification, recipient) do
+  def broadcast_notification(notification, recipient) do
     %{
       user_name: recipient.name,
       notification_message: notification,
@@ -88,6 +74,19 @@ defmodule WraftDoc.Notifications do
     NotificationChannel.broad_cast(notification, recipient)
   end
 
+  defp handle_transaction_result({:ok, %{notification: notification}}), do: {:ok, notification}
+  defp handle_transaction_result({:error, _, reason, _}), do: {:error, reason}
+
+  defp format_results({successes, []}), do: {:ok, Enum.map(successes, fn {:ok, n} -> n end)}
+  defp format_results({_, [{:error, reason} | _]}), do: {:error, reason}
+
+  defp fetch_recipient(_repo, %{notification: %{actor_id: actor_id}}) do
+    case Account.get_user(actor_id) do
+      nil -> {:error, :user_not_found}
+      user -> {:ok, user}
+    end
+  end
+
   @doc """
   Sends a comment notification to users allowed to access a document, excluding the initiating user.
   """
@@ -95,13 +94,12 @@ defmodule WraftDoc.Notifications do
   def comment_notification(user_id, organisation_id, document_id) do
     document = Document.get_instance(document_id, %{current_org_id: organisation_id})
     organisation = Enterprise.get_organisation(organisation_id)
-    user = Account.get_user(user_id)
 
     document.allowed_users
-    |> List.delete(user)
+    |> List.delete(user_id)
     |> Enum.map(&Account.get_user/1)
     |> create_notification(%{
-      type: :assign_role,
+      type: :add_comment,
       organisation_name: organisation.name,
       document_title: document.serialized["title"]
     })

@@ -271,7 +271,7 @@ defmodule WraftDoc.Account do
   `current_org_id` key.
   """
   def get_role(%User{current_org_id: org_id}, <<_::288>> = id),
-    do: Repo.get(Repo.get_by(Role, id: id, organisation_id: org_id), :organisation)
+    do: Repo.get_by(Role, id: id, organisation_id: org_id)
 
   def get_role(%Organisation{id: org_id}, <<_::288>> = id),
     do: Repo.get_by(Role, id: id, organisation_id: org_id)

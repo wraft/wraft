@@ -11,7 +11,7 @@ defmodule WraftDoc.Notifications.NotificationMessages do
     "Welcome to #{organisation_name}...!!"
   end
 
-  def message(:assigned_role, %{
+  def message(:assign_role, %{
         role_name: role_name,
         organisation_name: organisation_name
       }) do
@@ -32,10 +32,9 @@ defmodule WraftDoc.Notifications.NotificationMessages do
 
   def message(:add_comment, %{
         organisation_name: organisation_name,
-        document_title: document_title,
-        user_name: user_name
+        document_title: document_title
       }) do
-    "#{user_name}You've been mentioned in a comment on #{document_title} in #{organisation_name}. Check it out!"
+    "You've been mentioned in a comment on #{document_title} in #{organisation_name}. Check it out!"
   end
 
   def message(:form_mapping_not_complete) do
