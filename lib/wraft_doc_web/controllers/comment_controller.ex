@@ -139,12 +139,18 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Comment{} = comment <- Document.create_comment([current_user], params) do
+    with %Comment{} = comment <- Document.create_comment(current_user, params) do
       Notifications.comment_notification(
         current_user.id,
         comment.organisation_id,
         comment.master_id
       )
+
+      # Oban.insert(NotificationWorker.new(%{
+      #   user_id: current_user.id,
+      #   organisation_id: comment.organisation_id,
+      #   document_id: comment.master_id
+      # }))
 
       render(conn, "comment.json", comment: comment)
     end
