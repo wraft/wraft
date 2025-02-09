@@ -147,24 +147,25 @@ defmodule WraftDocWeb.Api.V1.PlanController do
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
-  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, _params) do
     plans = Enterprise.plan_index()
     render(conn, "plans.json", plans: plans)
   end
 
-  swagger_path :active_standard_plans do
-    get("/plans/active_standard_plans")
+  swagger_path :active_plans do
+    get("/plans/active_plans")
     summary("Active Standard Plans")
     description("List all active standard plans")
-    operation_id("active_standard_plans")
+    operation_id("active_plans")
 
     response(200, "OK", Schema.ref(:Plans))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
-  def active_standard_plans(conn, _params) do
-    with plans <- Enterprise.active_standard_plans() do
+  @spec active_plans(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def active_plans(conn, _params) do
+    with plans <- Enterprise.active_plans() do
       render(conn, "active_standard_plan.json", plans: plans)
     end
   end
@@ -183,7 +184,7 @@ defmodule WraftDocWeb.Api.V1.PlanController do
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
-  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => p_uuid}) do
     with %Plan{} = plan <- Enterprise.get_plan(p_uuid) do
       render(conn, "plan.json", plan: plan)

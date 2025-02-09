@@ -33,7 +33,8 @@ defmodule WraftDoc.Billing.PaddleApi do
           {:ok, map()} | {:error, String.t() | atom()}
   def update_subscription_preview(paddle_subscription_id, %Plan{
         plan_id: provider_plan_id,
-        trial_period: trial_period
+        trial_period: trial_period,
+        coupon: coupon
       }) do
     params = %{
       collection_mode: "automatic",
@@ -46,11 +47,9 @@ defmodule WraftDoc.Billing.PaddleApi do
     }
 
     params =
-      if trial_period != nil do
-        Map.put(params, :proration_billing_mode, "do_not_bill")
-      else
-        Map.put(params, :proration_billing_mode, "prorated_immediately")
-      end
+      params
+      |> add_proration_mode(trial_period)
+      |> add_coupon(coupon)
 
     paddle_subscription_id
     |> preview_update_url()
@@ -66,7 +65,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   def update_subscription(
         paddle_subscription_id,
         %User{id: user_id, current_org_id: organisation_id},
-        %Plan{id: plan_id, plan_id: provider_plan_id, trial_period: trial_period}
+        %Plan{id: plan_id, plan_id: provider_plan_id, trial_period: trial_period, coupon: coupon}
       ) do
     params = %{
       collection_mode: "automatic",
@@ -84,17 +83,26 @@ defmodule WraftDoc.Billing.PaddleApi do
     }
 
     params =
-      if trial_period != nil do
-        Map.put(params, :proration_billing_mode, "do_not_bill")
-      else
-        Map.put(params, :proration_billing_mode, "prorated_immediately")
-      end
+      params
+      |> add_proration_mode(trial_period)
+      |> add_coupon(coupon)
 
     paddle_subscription_id
     |> update_subscription_url()
     |> patch(params)
     |> get_response()
   end
+
+  defp add_proration_mode(params, %{period: nil, frequency: nil}),
+    do: Map.put(params, :proration_billing_mode, "prorated_immediately")
+
+  defp add_proration_mode(params, _trial_period),
+    do: Map.put(params, :proration_billing_mode, "do_not_bill")
+
+  defp add_coupon(params, nil), do: params
+
+  defp add_coupon(params, coupon),
+    do: Map.put(params, :coupon, %{id: coupon.coupon_id, effective_from: "immediately"})
 
   @doc """
   Cancels paddle subscription entity

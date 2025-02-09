@@ -394,13 +394,14 @@ defmodule WraftDoc.Billing do
     |> Multi.run(:update_subscription, fn _repo, %{transaction: transaction} ->
       update_subscription_transaction(transaction)
     end)
-    |> Multi.run(:increment_coupon_usage, fn _repo, _changes ->
-      update_coupon_usage(params)
-    end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{transaction: transaction}} -> {:ok, transaction}
-      {:error, _operation, error, _changes} -> {:error, error}
+      {:ok, %{transaction: transaction}} ->
+        update_coupon_usage(params)
+        {:ok, transaction}
+
+      {:error, _operation, error, _changes} ->
+        {:error, error}
     end
   end
 
@@ -410,6 +411,8 @@ defmodule WraftDoc.Billing do
     |> Repo.update_all(set: [transaction_id: txn_id])
     |> then(&{:ok, &1})
   end
+
+  defp update_coupon_usage(%{"discount_id" => nil}), do: nil
 
   defp update_coupon_usage(%{"discount_id" => coupon_id}) do
     Coupon
@@ -460,29 +463,30 @@ defmodule WraftDoc.Billing do
     end
   end
 
-  defp format_subscription_params(%{
-         "id" => provider_subscription_id,
-         "items" => [
-           %{
-             "price" => %{
-               "id" => provider_plan_id,
-               "unit_price" => %{"amount" => next_bill_amount}
+  defp format_subscription_params(
+         %{
+           "id" => provider_subscription_id,
+           "items" => [
+             %{
+               "price" => %{
+                 "id" => provider_plan_id,
+                 "unit_price" => %{"amount" => next_bill_amount}
+               }
              }
+             | _
+           ],
+           "status" => status,
+           "current_billing_period" => %{"starts_at" => start_date, "ends_at" => end_date},
+           "next_billed_at" => next_bill_date,
+           "currency_code" => currency,
+           "discount" => discount,
+           "custom_data" => %{
+             "plan_id" => plan_id,
+             "user_id" => subscriber_id,
+             "organisation_id" => organisation_id
            }
-           | _
-         ],
-         "status" => status,
-         "current_billing_period" => %{"starts_at" => start_date, "ends_at" => end_date},
-         "next_billed_at" => next_bill_date,
-         "currency_code" => currency,
-         "discount" => discount,
-         "transaction_id" => transaction_id,
-         "custom_data" => %{
-           "plan_id" => plan_id,
-           "user_id" => subscriber_id,
-           "organisation_id" => organisation_id
-         }
-       }) do
+         } = params
+       ) do
     %{
       provider_subscription_id: provider_subscription_id,
       provider_plan_id: provider_plan_id,
@@ -495,7 +499,7 @@ defmodule WraftDoc.Billing do
       coupon_id: get_coupon_id(discount["id"]),
       coupon_start_date: discount["starts_at"],
       coupon_end_date: discount["ends_at"],
-      transaction_id: transaction_id,
+      transaction_id: Map.get(params, "transaction_id", nil),
       plan_id: plan_id,
       subscriber_id: subscriber_id,
       organisation_id: organisation_id

@@ -993,7 +993,7 @@ defmodule WraftDoc.Enterprise do
 
   def get_plan(<<_::288>> = plan_id) do
     case Repo.get(Plan, plan_id) do
-      %Plan{} = plan -> plan
+      %Plan{} = plan -> Repo.preload(plan, :coupon)
       _ -> {:error, :invalid_id, "Plan"}
     end
   end
@@ -1007,14 +1007,15 @@ defmodule WraftDoc.Enterprise do
   def plan_index do
     Plan
     |> where([p], is_nil(p.custom))
+    |> preload(:coupon)
     |> Repo.all()
   end
 
   @doc """
-  Retrieve all standard plans.
+  Retrieve all active standard plans.
   """
-  @spec active_standard_plans() :: [Plan.t()]
-  def active_standard_plans do
+  @spec active_plans() :: [Plan.t()]
+  def active_plans do
     Plan
     |> where([p], is_nil(p.custom))
     |> where([p], p.is_active? == true)

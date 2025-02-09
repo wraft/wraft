@@ -103,7 +103,7 @@ defmodule WraftDocWeb.CouponAdmin do
     formatted_changeset = Coupon.changeset(%Coupon{}, conn.params["coupon"])
 
     changeset.data
-    |> Billing.update_coupon(formatted_changeset.changes)
+    |> Billing.update_coupon(Map.merge(formatted_changeset.changes, changeset.changes))
     |> Billing.handle_repsonse(changeset)
   end
 
