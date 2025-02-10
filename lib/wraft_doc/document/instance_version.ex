@@ -5,7 +5,7 @@ defmodule WraftDoc.Document.Instance.Version do
   use WraftDoc.Schema
   alias __MODULE__
 
-  @fields [:version_number, :raw, :serialized, :author_id, :type, :naration]
+  @fields [:version_number, :raw, :serialized, :author_id, :type, :naration, :content_id]
 
   schema "version" do
     field(:version_number, :integer)
@@ -21,6 +21,6 @@ defmodule WraftDoc.Document.Instance.Version do
   def changeset(%Version{} = version, attrs \\ %{}) do
     version
     |> cast(attrs, @fields)
-    |> validate_required(@fields -- [:naration])
+    |> validate_required(@fields -- [:naration, :content_id])
   end
 end
