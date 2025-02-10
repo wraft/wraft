@@ -7,12 +7,14 @@ defmodule WraftDoc.Enterprise.Plan do
   alias __MODULE__
   alias __MODULE__.Custom
   alias __MODULE__.Limits
+  alias WraftDoc.Billing.Coupon
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDocWeb.Kaffy.ArrayField
 
   schema "plan" do
     field(:name, :string)
     field(:description, :string)
-    field(:features, WraftDocWeb.Kaffy.ArrayField)
+    field(:features, ArrayField)
     field(:product_id, :string)
     field(:plan_id, :string)
     field(:plan_amount, :string)
@@ -20,9 +22,10 @@ defmodule WraftDoc.Enterprise.Plan do
     field(:type, Ecto.Enum, values: [:free, :regular, :enterprise])
     field(:is_active?, :boolean, default: true)
     field(:currency, :string, default: "USD")
-    field(:pay_link, :string)
+    field(:payment_link, :string)
 
     belongs_to(:organisation, Organisation)
+    belongs_to(:coupon, Coupon)
 
     embeds_one(:trial_period, TrialPeriod, on_replace: :delete)
     embeds_one(:limits, Limits, on_replace: :delete)
@@ -44,14 +47,15 @@ defmodule WraftDoc.Enterprise.Plan do
       :type,
       :features,
       :is_active?,
-      :pay_link
+      :payment_link,
+      :coupon_id
     ])
     |> validate_plan_amount()
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> cast_embed(:custom)
     |> cast_embed(:trial_period)
     |> validate_required([:name, :description])
-    |> unique_constraint(:name,
+    |> unique_constraint([:name, :billing_interval, :is_active?],
       name: :plans_name_billing_interval_active_unique_index,
       message: "A plan with the same name and billing interval already exists!"
     )
@@ -68,13 +72,14 @@ defmodule WraftDoc.Enterprise.Plan do
       :billing_interval,
       :features,
       :type,
-      :is_active?
+      :is_active?,
+      :coupon_id
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> cast_embed(:trial_period)
     |> validate_required([:name, :description, :plan_amount])
     |> validate_plan_amount()
-    |> unique_constraint(:name,
+    |> unique_constraint([:name, :billing_interval, :is_active?],
       name: :plans_name_billing_interval_active_unique_index,
       message: "A plan with the same name and billing interval already exists!"
     )
@@ -91,13 +96,13 @@ defmodule WraftDoc.Enterprise.Plan do
       :features,
       :type,
       :organisation_id,
-      :pay_link
+      :payment_link
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> cast_embed(:custom, with: &Custom.changeset/2, required: true)
     |> cast_embed(:trial_period)
     |> validate_required([:name, :description, :organisation_id])
-    |> unique_constraint(:name,
+    |> unique_constraint([:name, :billing_interval, :is_active?],
       name: :plans_name_billing_interval_active_unique_index,
       message: "A plan with the same name and billing interval already exists!"
     )

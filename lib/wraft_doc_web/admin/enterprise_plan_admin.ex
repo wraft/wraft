@@ -6,6 +6,7 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
   import Ecto.Query
   use Ecto.Schema
 
+  alias WraftDoc.Billing
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
@@ -37,7 +38,7 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
 
   def form_fields(_) do
     [
-      pay_link: %{name: "pay link", create: :hidden},
+      payment_link: %{name: "pay link", create: :hidden, update: :readonly},
       name: %{
         label: "Name",
         required: true
@@ -93,7 +94,7 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
   end
 
   def default_actions(_schema) do
-    [:new, :delete]
+    [:new, :delete, :edit]
   end
 
   defp get_organisations do
@@ -124,16 +125,7 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
 
     params
     |> Enterprise.create_plan()
-    |> case do
-      {:ok, plan} ->
-        {:ok, plan}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error, changeset}
-
-      {:error, error} ->
-        {:error, {changeset, error}}
-    end
+    |> Billing.handle_repsonse(changeset)
   end
 
   def update(conn, changeset) do
@@ -141,31 +133,13 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
 
     changeset.data
     |> Enterprise.update_plan(params)
-    |> case do
-      {:ok, plan} ->
-        {:ok, plan}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error, changeset}
-
-      {:error, error} ->
-        {:error, {changeset, error}}
-    end
+    |> Billing.handle_repsonse(changeset)
   end
 
   def delete(_conn, changeset) do
     changeset
     |> Ecto.Changeset.change(%{is_active?: false})
     |> Repo.update()
-    |> case do
-      {:ok, plan} ->
-        {:ok, plan}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:error, changeset}
-
-      {:error, error} ->
-        {:error, {changeset, error}}
-    end
+    |> Billing.handle_repsonse(changeset)
   end
 end

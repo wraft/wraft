@@ -265,7 +265,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     response(404, "not found")
   end
 
-  @spec get_active_subscription(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  @spec get_active_subscription(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def get_active_subscription(conn, _params) do
     current_user = conn.assigns.current_user
 
@@ -289,7 +289,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     response(404, "not found")
   end
 
-  @spec get_subscription(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  @spec get_subscription(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def get_subscription(conn, _params) do
     current_user = conn.assigns.current_user
 
@@ -315,7 +315,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     response(404, "not found")
   end
 
-  @spec change_plan_preview(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  @spec change_plan_preview(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def change_plan_preview(conn, %{"plan_id" => plan_id}) do
     current_user = conn.assigns.current_user
 
@@ -343,7 +343,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     response(404, "not found", Schema.ref(:Error))
   end
 
-  @spec change_plan(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  @spec change_plan(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def change_plan(conn, %{"plan_id" => plan_id}) do
     current_user = conn.assigns.current_user
 
@@ -374,7 +374,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     response(404, "not found")
   end
 
-  @spec activate_trial_subscription(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  @spec activate_trial_subscription(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def activate_trial_subscription(conn, _params) do
     current_user = conn.assigns.current_user
 
@@ -399,7 +399,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     response(404, "not found")
   end
 
-  @spec cancel_subscription(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  @spec cancel_subscription(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def cancel_subscription(conn, _params) do
     current_user = conn.assigns.current_user
 
@@ -427,7 +427,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec get_invoice(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  @spec get_invoice(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def get_invoice(conn, params) do
     with {:ok, url} <- PaddleApi.get_invoice_pdf(params["transaction_id"]) do
       render(conn, "invoice.json", invoice_url: url)
@@ -489,7 +489,7 @@ defmodule WraftDocWeb.Api.V1.BillingController do
     response(400, "Failed to fetch transactions", Schema.ref(:Error))
   end
 
-  @spec get_transactions(Plug.Conn.t(), any()) :: Plug.Conn.t()
+  @spec get_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def get_transactions(conn, %{"organisation_id" => organisation_id} = params) do
     with %{
            entries: transactions,

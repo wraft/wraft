@@ -91,7 +91,7 @@ defmodule WraftDocWeb.Router do
       unless Enterprise.self_hosted?() do
         post("/vendors/webhook", VendorsWebhookController, :webhook)
         # Show and index plans
-        get("/plans/active_standard_plans", PlanController, :active_standard_plans)
+        get("/plans/active_plans", PlanController, :active_plans)
         resources("/plans", PlanController, only: [:show, :index])
       end
 

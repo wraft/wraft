@@ -71,6 +71,10 @@ defmodule WraftDoc.Kaffy.Config do
             enterprise_plan: [
               schema: WraftDoc.Enterprise.Plan,
               admin: WraftDocWeb.EnterprisePlanAdmin
+            ],
+            coupon: [
+              schema: WraftDoc.Billing.Coupon,
+              admin: WraftDocWeb.CouponAdmin
             ]
           ]
 

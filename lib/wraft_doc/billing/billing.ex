@@ -4,6 +4,7 @@ defmodule WraftDoc.Billing do
   """
   import Ecto.Query
 
+  alias __MODULE__.Coupon
   alias __MODULE__.PaddleApi
   alias __MODULE__.Subscription
   alias __MODULE__.SubscriptionHistory
@@ -21,7 +22,7 @@ defmodule WraftDoc.Billing do
   def get_subscription(%User{current_org_id: current_org_id}) do
     Subscription
     |> Repo.get_by(organisation_id: current_org_id)
-    |> Repo.preload([:subscriber, :organisation, :plan])
+    |> Repo.preload([:subscriber, :organisation, [plan: :coupon], :coupon])
     |> case do
       %Subscription{} = subscription -> {:ok, subscription}
       _ -> nil
@@ -45,7 +46,7 @@ defmodule WraftDoc.Billing do
   defp get_subscription_by_provider_subscription_id(provider_subscription_id) do
     Subscription
     |> Repo.get_by(provider_subscription_id: provider_subscription_id)
-    |> Repo.preload([:subscriber, :organisation, :plan])
+    |> Repo.preload([:subscriber, :organisation, [plan: :coupon], :coupon])
   end
 
   @doc """
@@ -57,7 +58,7 @@ defmodule WraftDoc.Billing do
     organisation_id
     |> active_subscription_query()
     |> Repo.one()
-    |> Repo.preload([:subscriber, :organisation, :plan])
+    |> Repo.preload([:subscriber, :organisation, [plan: :coupon], :coupon])
     |> case do
       %Subscription{} = subscription ->
         {:ok, subscription}
@@ -221,7 +222,7 @@ defmodule WraftDoc.Billing do
     query =
       from(sh in SubscriptionHistory,
         where: sh.organisation_id == ^organisation_id,
-        preload: [:subscriber, :organisation, :plan]
+        preload: [:subscriber, :organisation, [plan: :coupon], :coupon]
       )
 
     Repo.paginate(query, params)
@@ -237,7 +238,7 @@ defmodule WraftDoc.Billing do
     query =
       from(t in Transaction,
         where: t.organisation_id == ^organisation_id,
-        preload: [:organisation, :subscriber, :plan]
+        preload: [:organisation, :subscriber, [plan: :coupon], :coupon]
       )
 
     Repo.paginate(query, params)
@@ -249,7 +250,7 @@ defmodule WraftDoc.Billing do
   Create subscription.
   """
   @spec on_create_subscription(map()) ::
-          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | any()}
+          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def on_create_subscription(params) do
     params =
       params
@@ -320,7 +321,7 @@ defmodule WraftDoc.Billing do
   Update subscription.
   """
   @spec on_update_subscription(map()) ::
-          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | any()}
+          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def on_update_subscription(%{"status" => status} = params) when status == "active" do
     params
     |> handle_on_update_subscription()
@@ -339,11 +340,14 @@ defmodule WraftDoc.Billing do
   Cancel subscription.
   """
   @spec on_cancel_subscription(map()) ::
-          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | any()}
-  def on_cancel_subscription(params) do
+          {:ok, Subscription.t()} | {:error, Ecto.Changeset.t() | String.t()}
+  def on_cancel_subscription(%{
+        "id" => subscription_id,
+        "custom_data" => %{"organisation_id" => organisation_id}
+      }) do
     subscription =
       Subscription
-      |> Repo.get_by(provider_subscription_id: params["id"])
+      |> Repo.get_by(provider_subscription_id: subscription_id)
       |> Repo.preload(:subscriber)
 
     Multi.new()
@@ -364,7 +368,7 @@ defmodule WraftDoc.Billing do
     |> Multi.run(
       :create_free_plan,
       fn _repo, _changes ->
-        Enterprise.create_free_subscription(params["custom_data"]["organisation_id"])
+        Enterprise.create_free_subscription(organisation_id)
       end
     )
     |> Repo.transaction()
@@ -380,30 +384,58 @@ defmodule WraftDoc.Billing do
   @doc """
   Adds completed transaction to the database.
   """
-  @spec on_complete_transaction(map()) ::
-          {:ok, Transaction.t()} | {:error, Ecto.Changeset.t() | any()}
+  @spec on_complete_transaction(map()) :: {:ok, Transaction.t()} | {:error, Ecto.Changeset.t()}
   def on_complete_transaction(params) do
-    params
-    |> format_transaction_params()
-    |> then(&Transaction.changeset(%Transaction{}, &1))
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(
+      :transaction,
+      Transaction.changeset(%Transaction{}, format_transaction_params(params))
+    )
+    |> Multi.run(:update_subscription, fn _repo, %{transaction: transaction} ->
+      update_subscription_transaction(transaction)
+    end)
+    |> Repo.transaction()
     |> case do
-      {:ok, transaction} ->
-        # Subscription update webhook response doesn't contain transaction_id
-        # updating subscription with latest transaction_id
-        Subscription
-        |> where(provider_subscription_id: ^transaction.provider_subscription_id)
-        |> Repo.update_all(set: [transaction_id: transaction.transaction_id])
-
+      {:ok, %{transaction: transaction}} ->
+        update_coupon_usage(params)
         {:ok, transaction}
 
-      {:error, error} ->
+      {:error, _operation, error, _changes} ->
         {:error, error}
     end
   end
 
-  defp handle_on_update_subscription(params) do
-    subscription = Repo.get_by(Subscription, provider_subscription_id: params["id"])
+  defp update_subscription_transaction(%{provider_subscription_id: sub_id, transaction_id: txn_id}) do
+    Subscription
+    |> where(provider_subscription_id: ^sub_id)
+    |> Repo.update_all(set: [transaction_id: txn_id])
+    |> then(&{:ok, &1})
+  end
+
+  defp update_coupon_usage(%{"discount_id" => nil}), do: nil
+
+  defp update_coupon_usage(%{"discount_id" => coupon_id}) do
+    Coupon
+    |> where(coupon_id: ^coupon_id)
+    |> select([c], {c.times_used + 1, c.usage_limit})
+    |> Repo.one()
+    |> case do
+      {new_usage, limit} when new_usage >= limit ->
+        Coupon
+        |> where(coupon_id: ^coupon_id)
+        |> Repo.update_all(set: [status: "expired"], inc: [times_used: 1])
+        |> then(&{:ok, &1})
+
+      _ ->
+        Coupon
+        |> where(coupon_id: ^coupon_id)
+        |> Repo.update_all(inc: [times_used: 1])
+        |> then(&{:ok, &1})
+    end
+  end
+
+  defp handle_on_update_subscription(%{"id" => provider_subscription_id} = params) do
+    subscription = Repo.get_by(Subscription, provider_subscription_id: provider_subscription_id)
     irrelevant? = params["old_status"] == "paused" && params["status"] == "past_due"
 
     if subscription && not irrelevant? do
@@ -433,46 +465,106 @@ defmodule WraftDoc.Billing do
 
   defp format_subscription_params(
          %{
-           "items" => [%{"price" => price} | _],
-           "custom_data" => custom_data
+           "id" => provider_subscription_id,
+           "items" => [
+             %{
+               "price" => %{
+                 "id" => provider_plan_id,
+                 "unit_price" => %{"amount" => next_bill_amount}
+               }
+             }
+             | _
+           ],
+           "status" => status,
+           "current_billing_period" => %{"starts_at" => start_date, "ends_at" => end_date},
+           "next_billed_at" => next_bill_date,
+           "currency_code" => currency,
+           "discount" => discount,
+           "custom_data" => %{
+             "plan_id" => plan_id,
+             "user_id" => subscriber_id,
+             "organisation_id" => organisation_id
+           }
          } = params
        ) do
     %{
-      provider_subscription_id: params["id"],
-      provider_plan_id: price["id"],
-      status: params["status"],
-      start_date: get_in(params, ["current_billing_period", "starts_at"]),
-      end_date: get_in(params, ["current_billing_period", "ends_at"]),
-      next_bill_amount: price["unit_price"]["amount"],
-      next_bill_date: params["next_billed_at"],
-      currency: params["currency_code"],
-      transaction_id: params["transaction_id"],
-      plan_id: custom_data["plan_id"],
-      subscriber_id: custom_data["user_id"],
-      organisation_id: custom_data["organisation_id"]
+      provider_subscription_id: provider_subscription_id,
+      provider_plan_id: provider_plan_id,
+      status: status,
+      start_date: start_date,
+      end_date: end_date,
+      next_bill_amount: next_bill_amount,
+      next_bill_date: next_bill_date,
+      currency: currency,
+      coupon_id: get_coupon_id(discount["id"]),
+      coupon_start_date: discount["starts_at"],
+      coupon_end_date: discount["ends_at"],
+      transaction_id: Map.get(params, "transaction_id", nil),
+      plan_id: plan_id,
+      subscriber_id: subscriber_id,
+      organisation_id: organisation_id
     }
   end
 
-  defp format_transaction_params(params) do
+  defp format_transaction_params(
+         %{
+           "id" => transaction_id,
+           "invoice_number" => invoice_number,
+           "invoice_id" => invoice_id,
+           "billed_at" => billed_at,
+           "subscription_id" => subscription_id,
+           "discount_id" => discount_id,
+           "items" => [%{"price" => %{"id" => provider_plan_id}} | _],
+           "billing_period" => %{
+             "starts_at" => period_starts_at,
+             "ends_at" => period_ends_at
+           },
+           "details" => %{
+             "totals" => %{
+               "subtotal" => subtotal,
+               "tax" => tax,
+               "discount" => discount,
+               "total" => total
+             }
+           },
+           "currency_code" => currency,
+           "custom_data" => %{
+             "organisation_id" => org_id,
+             "user_id" => user_id,
+             "plan_id" => plan_id
+           }
+         } = params
+       ) do
     %{
-      transaction_id: params["id"],
-      invoice_number: params["invoice_number"],
-      invoice_id: params["invoice_id"],
-      date: parse_datetime(params["billed_at"]),
-      provider_subscription_id: params["subscription_id"],
-      provider_plan_id: get_in(params, ["items", Access.at(0), "price", "id"]),
-      billing_period_start: parse_datetime(params["billing_period"]["starts_at"]),
-      billing_period_end: parse_datetime(params["billing_period"]["ends_at"]),
-      subtotal_amount: params["details"]["totals"]["subtotal"],
-      tax: params["details"]["totals"]["tax"],
-      total_amount: params["details"]["totals"]["total"],
-      currency: params["currency_code"],
+      transaction_id: transaction_id,
+      invoice_number: invoice_number,
+      invoice_id: invoice_id,
+      date: parse_datetime(billed_at),
+      provider_subscription_id: subscription_id,
+      provider_plan_id: provider_plan_id,
+      billing_period_start: parse_datetime(period_starts_at),
+      billing_period_end: parse_datetime(period_ends_at),
+      subtotal_amount: subtotal,
+      tax: tax,
+      discount_amount: discount,
+      total_amount: total,
+      currency: currency,
       payment_method: get_payment_method(params),
       payment_method_details: get_payment_method_details(params),
-      organisation_id: params["custom_data"]["organisation_id"],
-      subscriber_id: params["custom_data"]["user_id"],
-      plan_id: params["custom_data"]["plan_id"]
+      coupon_id: get_coupon_id(discount_id),
+      organisation_id: org_id,
+      subscriber_id: user_id,
+      plan_id: plan_id
     }
+  end
+
+  defp get_coupon_id(nil), do: nil
+
+  defp get_coupon_id(discount_id) do
+    Coupon
+    |> where([c], c.coupon_id == ^discount_id)
+    |> select([c], c.id)
+    |> Repo.one()
   end
 
   defp parse_datetime(nil), do: nil
@@ -495,35 +587,122 @@ defmodule WraftDoc.Billing do
     |> then(fn payment -> payment && payment["method_details"] end)
   end
 
-  # may need in future
-  # @doc """
-  # Update subscription when payment succeeded.
-  # """
-  # @spec subscription_payment_succeeded(map()) :: {:ok, Subscription.t()} | {:error, any()}
-  # def subscription_payment_succeeded(params) do
-  #   Repo.transaction(fn ->
-  #     handle_subscription_payment_succeeded(params)
-  #   end)
-  # end
+  @doc """
+  Creates a coupon.
+  """
+  @spec create_coupon(map()) ::
+          {:ok, Coupon.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def create_coupon(params) do
+    Multi.new()
+    |> Multi.insert(:coupon, fn _ ->
+      Coupon.changeset(%Coupon{}, params)
+    end)
+    |> Multi.run(:provider_coupon, fn _, %{} ->
+      PaddleApi.create_coupon(params)
+    end)
+    |> Multi.update(:update_coupon, fn %{
+                                         coupon: coupon,
+                                         provider_coupon: %{
+                                           "id" => coupon_id,
+                                           "status" => status,
+                                           "code" => coupon_code,
+                                           "usage_limit" => usage_limit
+                                         }
+                                       } ->
+      Coupon.changeset(coupon, %{
+        coupon_id: coupon_id,
+        status: status,
+        coupon_code: coupon_code,
+        usage_limit: usage_limit,
+        start_date: DateTime.utc_now()
+      })
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_coupon: coupon}} ->
+        {:ok, coupon}
 
-  # defp get_subscription_by_id(subscription_id) do
-  #   Repo.get_by(Subscription, provider_subscription_id: subscription_id)
-  # end
+      {:error, _, error, _} ->
+        {:error, error}
+    end
+  end
 
-  # defp handle_subscription_payment_succeeded(params) do
-  #   subscription =
-  #   params["subscription_id"]
-  #   |> get_subscription_by_id()
-  #   |> if do
+  @doc """
+  Update coupon.
+  """
+  @spec update_coupon(Coupon.t(), map()) ::
+          {:ok, Coupon.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def update_coupon(%{coupon_id: coupon_id} = coupon, params) do
+    Multi.new()
+    |> Multi.run(:provider_coupon, fn _, _ ->
+      PaddleApi.update_coupon(coupon_id, params)
+    end)
+    |> Multi.update(:update_coupon, fn %{
+                                         provider_coupon: %{
+                                           "id" => coupon_id,
+                                           "status" => status,
+                                           "code" => coupon_code,
+                                           "usage_limit" => usage_limit
+                                         }
+                                       } ->
+      Coupon.changeset(
+        coupon,
+        Map.merge(params, %{
+          coupon_id: coupon_id,
+          status: status,
+          coupon_code: coupon_code,
+          usage_limit: usage_limit
+        })
+      )
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_coupon: coupon}} ->
+        {:ok, coupon}
 
-  #     subscription
-  #     |> Subscription.changeset(%{
-  #       next_bill_amount: params["next_payment"]["amount"],
-  #       next_payment_date: params["next_payment"]["date"],
-  #       current_period_start: params["last_payment"]["date"]
-  #     })
-  #     |> Repo.update()
-  #     |> Repo.preload(:subscriber)
-  #   end
-  # end
+      {:error, _, error, _} ->
+        {:error, error}
+    end
+  end
+
+  @doc """
+  Archives coupon in provider.
+  """
+  @spec delete_coupon(Coupon.t()) ::
+          {:ok, Coupon.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def delete_coupon(%{coupon_id: coupon_id} = coupon) do
+    Multi.new()
+    |> Multi.run(:provider_coupon, fn _, _ ->
+      PaddleApi.delete_coupon(coupon_id)
+    end)
+    |> Multi.update(:archive_coupon, fn _ ->
+      Coupon.changeset(coupon, %{status: "archived"})
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{archive_coupon: coupon}} ->
+        {:ok, coupon}
+
+      {:error, _, error, _} ->
+        {:error, error}
+    end
+  end
+
+  @doc """
+  Handles response for admin modules.
+  """
+  @spec handle_repsonse(map(), Ecto.Changeset.t()) ::
+          {:ok, map()} | {:error, Ecto.Changeset.t()} | {:error, {Ecto.Changeset.t(), String.t()}}
+  def handle_repsonse(response, changeset) do
+    case response do
+      {:ok, plan} ->
+        {:ok, plan}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, changeset}
+
+      {:error, error} ->
+        {:error, {changeset, error}}
+    end
+  end
 end

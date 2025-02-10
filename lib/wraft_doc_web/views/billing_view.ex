@@ -16,6 +16,10 @@ defmodule WraftDocWeb.Api.V1.BillingView do
       end_date: subscription.end_date,
       next_bill_date: subscription.next_bill_date,
       next_bill_amount: subscription.next_bill_amount,
+      coupon_id: subscription.coupon_id,
+      coupon: render_one(subscription.coupon, PlanView, "coupon.json", as: :coupon),
+      coupon_start_date: subscription.coupon_start_date,
+      coupon_end_date: subscription.coupon_end_date,
       currency: subscription.currency,
       subscriber_id: subscription.subscriber_id,
       subscriber: render_one(subscription.subscriber, UserView, "user.json", as: :user),
@@ -29,26 +33,45 @@ defmodule WraftDocWeb.Api.V1.BillingView do
     }
   end
 
-  def render("change_plan_preview.json", %{preview_info: preview_info}) do
+  def render("change_plan_preview.json", %{
+        preview_info: %{
+          "status" => status,
+          "currency_code" => currency_code,
+          "billing_cycle" => %{"frequency" => frequency, "interval" => interval},
+          "current_billing_period" => %{"starts_at" => starts_at, "ends_at" => ends_at},
+          "immediate_transaction" => %{
+            "details" => %{
+              "totals" => %{
+                "subtotal" => subtotal,
+                "tax" => tax,
+                "total" => total,
+                "discount" => discount
+              },
+              "line_items" => line_items
+            }
+          },
+          "next_billed_at" => next_billed_at
+        }
+      }) do
     %{
-      status: preview_info["status"],
-      currency_code: preview_info["currency_code"],
+      status: status,
+      currency_code: currency_code,
       billing_cycle: %{
-        frequency: preview_info["billing_cycle"]["frequency"],
-        interval: preview_info["billing_cycle"]["interval"]
+        frequency: frequency,
+        interval: interval
       },
       current_billing_period: %{
-        starts_at: preview_info["current_billing_period"]["starts_at"],
-        ends_at: preview_info["current_billing_period"]["ends_at"]
+        starts_at: starts_at,
+        ends_at: ends_at
       },
       recurring_transaction_totals: %{
-        subtotal: preview_info["recurring_transaction_details"]["totals"]["subtotal"],
-        tax: preview_info["recurring_transaction_details"]["totals"]["tax"],
-        total: preview_info["recurring_transaction_details"]["totals"]["total"]
+        subtotal: subtotal,
+        discount: discount,
+        tax: tax,
+        total: total
       },
-      next_billed_at: preview_info["next_billed_at"],
-      product_details:
-        product_details(preview_info["recurring_transaction_details"]["line_items"])
+      next_billed_at: next_billed_at,
+      plan_pricing: product_details(line_items)
     }
   end
 
@@ -129,11 +152,14 @@ defmodule WraftDocWeb.Api.V1.BillingView do
       billing_period_start: transaction.billing_period_start,
       billing_period_end: transaction.billing_period_end,
       subtotal_amount: transaction.subtotal_amount,
+      discount_amount: transaction.discount_amount,
       tax: transaction.tax,
       total_amount: transaction.total_amount,
       currency: transaction.currency,
       payment_method: transaction.payment_method,
       payment_method_details: transaction.payment_method_details,
+      coupon_id: transaction.coupon_id,
+      coupon: render_one(transaction.coupon, PlanView, "coupon.json", as: :coupon),
       subscriber_id: transaction.subscriber_id,
       subscriber: render_one(transaction.subscriber, UserView, "user.json", as: :user),
       organisation_id: transaction.organisation_id,
@@ -161,13 +187,22 @@ defmodule WraftDocWeb.Api.V1.BillingView do
   end
 
   defp product_details(items) do
-    Enum.map(items, fn item ->
+    Enum.map(items, fn %{
+                         "product" => %{"name" => name, "description" => description},
+                         "totals" => %{
+                           "subtotal" => subtotal,
+                           "tax" => tax,
+                           "total" => total,
+                           "discount" => discount
+                         }
+                       } ->
       %{
-        product_name: item["product"]["name"],
-        description: item["product"]["description"],
-        subtotal: item["totals"]["subtotal"],
-        tax: item["totals"]["tax"],
-        total: item["totals"]["total"]
+        product_name: name,
+        description: description,
+        subtotal: subtotal,
+        discount: discount,
+        tax: tax,
+        total: total
       }
     end)
   end

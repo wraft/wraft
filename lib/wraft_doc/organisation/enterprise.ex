@@ -959,7 +959,7 @@ defmodule WraftDoc.Enterprise do
         |> then(&Plan.changeset(plan, &1))
       end
     )
-    |> add_pay_link(params)
+    |> add_payment_link(params)
     |> Repo.transaction()
     |> case do
       {:ok, %{update_plan: plan}} -> {:ok, plan}
@@ -967,9 +967,9 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  defp add_pay_link(multi, %{"type" => :enterprise}) do
+  defp add_payment_link(multi, %{"type" => :enterprise}) do
     multi
-    |> Multi.run(:pay_link, fn _, %{update_plan: plan} ->
+    |> Multi.run(:payment_link, fn _, %{update_plan: plan} ->
       case PaddleApi.create_checkout_url(plan) do
         {:ok, url} ->
           {:ok, url}
@@ -978,13 +978,13 @@ defmodule WraftDoc.Enterprise do
           {:error, error}
       end
     end)
-    |> Multi.update(:enterprise_plan, fn %{update_plan: plan, pay_link: pay_link} ->
+    |> Multi.update(:enterprise_plan, fn %{update_plan: plan, payment_link: payment_link} ->
       schedule_plan_expiry_job(plan)
-      Plan.changeset(plan, %{pay_link: pay_link})
+      Plan.changeset(plan, %{payment_link: payment_link})
     end)
   end
 
-  defp add_pay_link(multi, _), do: multi
+  defp add_payment_link(multi, _), do: multi
 
   @doc """
   Get a plan from its UUID.
@@ -993,7 +993,7 @@ defmodule WraftDoc.Enterprise do
 
   def get_plan(<<_::288>> = plan_id) do
     case Repo.get(Plan, plan_id) do
-      %Plan{} = plan -> plan
+      %Plan{} = plan -> Repo.preload(plan, :coupon)
       _ -> {:error, :invalid_id, "Plan"}
     end
   end
@@ -1007,17 +1007,19 @@ defmodule WraftDoc.Enterprise do
   def plan_index do
     Plan
     |> where([p], is_nil(p.custom))
+    |> preload(:coupon)
     |> Repo.all()
   end
 
   @doc """
-  Retrieve all standard plans.
+  Retrieve all active standard plans.
   """
-  @spec active_standard_plans() :: [Plan.t()]
-  def active_standard_plans do
+  @spec active_plans() :: [Plan.t()]
+  def active_plans do
     Plan
     |> where([p], is_nil(p.custom))
     |> where([p], p.is_active? == true)
+    |> preload(:coupon)
     |> Repo.all()
   end
 

@@ -33,7 +33,8 @@ defmodule WraftDoc.Billing.PaddleApi do
           {:ok, map()} | {:error, String.t() | atom()}
   def update_subscription_preview(paddle_subscription_id, %Plan{
         plan_id: provider_plan_id,
-        trial_period: trial_period
+        trial_period: trial_period,
+        coupon: coupon
       }) do
     params = %{
       collection_mode: "automatic",
@@ -46,11 +47,9 @@ defmodule WraftDoc.Billing.PaddleApi do
     }
 
     params =
-      if trial_period != nil do
-        Map.put(params, :proration_billing_mode, "do_not_bill")
-      else
-        Map.put(params, :proration_billing_mode, "prorated_immediately")
-      end
+      params
+      |> add_proration_mode(trial_period)
+      |> add_coupon(coupon)
 
     paddle_subscription_id
     |> preview_update_url()
@@ -66,7 +65,7 @@ defmodule WraftDoc.Billing.PaddleApi do
   def update_subscription(
         paddle_subscription_id,
         %User{id: user_id, current_org_id: organisation_id},
-        %Plan{id: plan_id, plan_id: provider_plan_id, trial_period: trial_period}
+        %Plan{id: plan_id, plan_id: provider_plan_id, trial_period: trial_period, coupon: coupon}
       ) do
     params = %{
       collection_mode: "automatic",
@@ -84,17 +83,26 @@ defmodule WraftDoc.Billing.PaddleApi do
     }
 
     params =
-      if trial_period != nil do
-        Map.put(params, :proration_billing_mode, "do_not_bill")
-      else
-        Map.put(params, :proration_billing_mode, "prorated_immediately")
-      end
+      params
+      |> add_proration_mode(trial_period)
+      |> add_coupon(coupon)
 
     paddle_subscription_id
     |> update_subscription_url()
     |> patch(params)
     |> get_response()
   end
+
+  defp add_proration_mode(params, %{period: nil, frequency: nil}),
+    do: Map.put(params, :proration_billing_mode, "prorated_immediately")
+
+  defp add_proration_mode(params, _trial_period),
+    do: Map.put(params, :proration_billing_mode, "do_not_bill")
+
+  defp add_coupon(params, nil), do: params
+
+  defp add_coupon(params, coupon),
+    do: Map.put(params, :coupon, %{id: coupon.coupon_id, effective_from: "immediately"})
 
   @doc """
   Cancels paddle subscription entity
@@ -349,6 +357,67 @@ defmodule WraftDoc.Billing.PaddleApi do
     end
   end
 
+  @doc """
+  Creates coupon in provider.
+  """
+  @spec create_coupon(map()) :: {:ok, map()} | {:error, String.t() | atom()}
+  def create_coupon(params) do
+    params = prepare_coupon_params(params)
+
+    create_coupon_url()
+    |> post(params)
+    |> get_response()
+  end
+
+  @doc """
+  Update coupon in provider.
+  """
+  @spec update_coupon(String.t(), map()) :: {:ok, map()} | {:error, String.t() | atom()}
+  def update_coupon(coupon_id, params) do
+    params = prepare_coupon_params(params)
+
+    coupon_id
+    |> update_coupon_url()
+    |> patch(params)
+    |> get_response()
+  end
+
+  @doc """
+  Delete coupon in provider.
+  """
+  @spec delete_coupon(String.t()) :: {:ok, map()} | {:error, String.t() | atom()}
+  def delete_coupon(coupon_id) do
+    params = %{
+      "status" => "archived"
+    }
+
+    coupon_id
+    |> update_coupon_url()
+    |> patch(params)
+    |> get_response()
+  end
+
+  defp prepare_coupon_params(
+         %{
+           type: type,
+           description: description,
+           amount: amount
+         } = params
+       ) do
+    %{
+      "description" => description,
+      "type" => type,
+      "amount" => amount,
+      "currency_code" => Map.get(params, :currency, "USD"),
+      "code" => Map.get(params, :coupon_code),
+      "expires_at" => Map.get(params, :expiry_date),
+      "recur" => Map.get(params, :recurring, false),
+      "maximum_recurring_intervals" => Map.get(params, :maximum_recurring_intervals, nil),
+      "enabled_for_checkout" => true,
+      "usage_limit" => Map.get(params, :usage_limit, nil)
+    }
+  end
+
   defp create_price_url do
     Path.join(vendors_domain(), "/prices")
   end
@@ -395,6 +464,14 @@ defmodule WraftDoc.Billing.PaddleApi do
 
   defp get_invoice_pdf_url(transaction_id) do
     Path.join(vendors_domain(), "/transactions/#{transaction_id}/invoice")
+  end
+
+  defp create_coupon_url do
+    Path.join(vendors_domain(), "/discounts")
+  end
+
+  defp update_coupon_url(coupon_id) do
+    Path.join(vendors_domain(), "/discounts/#{coupon_id}")
   end
 
   defp vendors_domain, do: Application.get_env(:wraft_doc, :paddle)[:base_url]

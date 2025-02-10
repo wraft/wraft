@@ -4,7 +4,10 @@ defmodule WraftDoc.Billing.Subscription do
   """
   use WraftDoc.Schema
 
-  @type t :: %__MODULE__{}
+  alias WraftDoc.Account.User
+  alias WraftDoc.Billing.Coupon
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Enterprise.Plan
 
   @changeset_fields [
     :provider_subscription_id,
@@ -19,7 +22,23 @@ defmodule WraftDoc.Billing.Subscription do
     :subscriber_id,
     :organisation_id,
     :plan_id,
-    :transaction_id
+    :transaction_id,
+    :coupon_start_date,
+    :coupon_end_date,
+    :coupon_id
+  ]
+
+  @required_fields [
+    :provider_subscription_id,
+    :provider_plan_id,
+    :status,
+    :start_date,
+    :end_date,
+    :next_bill_amount,
+    :currency,
+    :subscriber_id,
+    :organisation_id,
+    :plan_id
   ]
 
   schema "subscriptions" do
@@ -33,10 +52,13 @@ defmodule WraftDoc.Billing.Subscription do
     field(:currency, :string)
     field(:metadata, :map)
     field(:transaction_id, :string)
+    field(:coupon_start_date, :utc_datetime)
+    field(:coupon_end_date, :utc_datetime)
 
-    belongs_to(:subscriber, WraftDoc.Account.User)
-    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-    belongs_to(:plan, WraftDoc.Enterprise.Plan)
+    belongs_to(:coupon, Coupon)
+    belongs_to(:subscriber, User)
+    belongs_to(:organisation, Organisation)
+    belongs_to(:plan, Plan)
 
     timestamps()
   end
@@ -44,19 +66,7 @@ defmodule WraftDoc.Billing.Subscription do
   def changeset(subscription, attrs \\ %{}) do
     subscription
     |> cast(attrs, @changeset_fields)
-    |> validate_required([
-      :provider_subscription_id,
-      :provider_plan_id,
-      :status,
-      :start_date,
-      :end_date,
-      :next_bill_amount,
-      :currency,
-      :transaction_id,
-      :organisation_id,
-      :plan_id,
-      :subscriber_id
-    ])
+    |> validate_required(@required_fields ++ [:transaction_id])
     |> unique_constraint(:provider_subscription_id)
     |> foreign_key_constraint(:plan_id,
       name: :subscriptions_plan_id_fkey,
@@ -67,18 +77,7 @@ defmodule WraftDoc.Billing.Subscription do
   def update_changeset(subscription, attrs \\ %{}) do
     subscription
     |> cast(attrs, @changeset_fields)
-    |> validate_required([
-      :provider_subscription_id,
-      :provider_plan_id,
-      :status,
-      :start_date,
-      :end_date,
-      :next_bill_amount,
-      :currency,
-      :subscriber_id,
-      :organisation_id,
-      :plan_id
-    ])
+    |> validate_required(@required_fields)
     |> unique_constraint(:provider_subscription_id)
     |> foreign_key_constraint(:plan_id,
       name: :subscriptions_plan_id_fkey,
