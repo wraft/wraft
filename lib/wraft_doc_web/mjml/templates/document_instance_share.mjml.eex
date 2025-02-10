@@ -20,7 +20,7 @@
           Document Link
         </mj-text>
         <mj-text>
-          Dear Sir,
+          Hi,
         </mj-text>
         <mj-text>
           You have been granted access to a document <%= @instance_id %> on Wraft. To view the document, please click the button below:
