@@ -12,6 +12,7 @@ defmodule WraftDoc.Document.ContentType do
   alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise.Flow
 
+  @document_type [:contract, :document]
   @derive {Jason.Encoder, only: [:id]}
 
   schema "content_type" do
@@ -19,6 +20,7 @@ defmodule WraftDoc.Document.ContentType do
     field(:description, :string)
     field(:color, :string)
     field(:prefix, :string)
+    field(:type, Ecto.Enum, values: @document_type, default: :document)
     belongs_to(:layout, Layout)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
@@ -43,6 +45,7 @@ defmodule WraftDoc.Document.ContentType do
       [
         :name,
         :description,
+        :type,
         :prefix,
         :color,
         :layout_id,
@@ -72,7 +75,7 @@ defmodule WraftDoc.Document.ContentType do
 
   def update_changeset(%ContentType{} = content_type, attrs \\ %{}) do
     content_type
-    |> cast(attrs, [:name, :description, :color, :layout_id, :flow_id, :prefix, :theme_id])
+    |> cast(attrs, [:name, :description, :type, :color, :layout_id, :flow_id, :prefix, :theme_id])
     |> validate_required([:name, :description, :layout_id, :flow_id, :prefix, :theme_id])
     |> unique_constraint(
       :name,

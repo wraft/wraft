@@ -16,10 +16,12 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
   alias WraftDoc.Document.Comment
+  alias WraftDoc.Document.ContentCollaboration
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.ContentTypeField
   alias WraftDoc.Document.ContentTypeRole
   alias WraftDoc.Document.Counter
+  alias WraftDoc.Document.CounterParties
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Field
@@ -48,6 +50,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.Workers.BulkWorker
+  alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Mailer
   alias WraftDocWeb.Mailer.Email
 
@@ -580,13 +583,15 @@ defmodule WraftDoc.Document do
     :ok
   end
 
-  defp create_initial_version(%{id: author_id}, instance) do
+  defp create_initial_version(%{id: author_id}, %Instance{id: document_id} = instance) do
     params = %{
       "version_number" => 1,
+      "type" => "save",
       "naration" => "Initial version",
       "raw" => instance.raw,
       "serialized" => instance.serialized,
-      "author_id" => author_id
+      "author_id" => author_id,
+      "content_id" => document_id
     }
 
     Logger.info("Creating initial version...")
@@ -604,7 +609,12 @@ defmodule WraftDoc.Document do
   @doc """
   Same as create_instance/4, to create instance and its approval system
   """
-  def create_instance(current_user, %{id: c_id, prefix: prefix} = content_type, _state, params) do
+  def create_instance(
+        current_user,
+        %{id: c_id, prefix: prefix, type: type} = content_type,
+        _state,
+        params
+      ) do
     instance_id = create_instance_id(c_id, prefix)
 
     params =
@@ -614,7 +624,7 @@ defmodule WraftDoc.Document do
     |> Multi.insert(
       :instance,
       content_type
-      |> build_assoc(:instances, creator: current_user)
+      |> build_assoc(:instances, creator: current_user, document_type: type)
       |> Instance.changeset(params)
     )
     |> Multi.run(:counter_increment, fn _, _ -> create_or_update_counter(content_type) end)
@@ -643,14 +653,14 @@ defmodule WraftDoc.Document do
   # @spec create_instance(ContentType.t(), State.t(), map) ::
   #         %Instance{content_type: ContentType.t(), state: State.t()}
   #         | {:error, Ecto.Changeset.t()}
-  def create_instance(%{id: c_id, prefix: prefix} = c_type, _state, params) do
+  def create_instance(%{id: c_id, prefix: prefix, type: type} = c_type, _state, params) do
     instance_id = create_instance_id(c_id, prefix)
 
     params =
       Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => [params["creator_id"]]})
 
     c_type
-    |> build_assoc(:instances)
+    |> build_assoc(:instances, document_type: type)
     |> Instance.changeset(params)
     |> Repo.insert()
     |> case do
@@ -670,7 +680,7 @@ defmodule WraftDoc.Document do
   @spec create_instance(User.t(), ContentType.t(), map) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
-  def create_instance(%User{} = current_user, content_type, params) do
+  def create_instance(%User{} = current_user, %ContentType{type: type} = content_type, params) do
     instance_id = create_instance_id(content_type.id, content_type.prefix)
 
     params =
@@ -683,7 +693,7 @@ defmodule WraftDoc.Document do
     |> Multi.insert(
       :instance,
       content_type
-      |> build_assoc(:instances, creator: current_user)
+      |> build_assoc(:instances, creator: current_user, document_type: type)
       |> Instance.changeset(params)
     )
     |> Multi.run(:counter_increment, fn _, _ -> create_or_update_counter(content_type) end)
@@ -707,6 +717,19 @@ defmodule WraftDoc.Document do
         Logger.error("Creation of instance failed", changeset: changeset)
         {:error, changeset}
     end
+  end
+
+  @doc """
+    Update document meta data.
+  """
+  @spec update_instance(Instance.t(), map) ::
+          {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
+  def update_meta(%Instance{meta: %{"type" => type} = meta} = instance, params) do
+    params
+    |> put_in(["meta"], Map.merge(meta, params["meta"]))
+    |> put_in(["meta", "type"], String.to_existing_atom(type))
+    |> then(&Instance.meta_changeset(instance, &1))
+    |> Repo.update()
   end
 
   @doc """
@@ -1135,7 +1158,11 @@ defmodule WraftDoc.Document do
   Get an instance from its UUID.
   """
   # TODO - improve tests
-  @spec get_instance(binary, User.t()) :: Instance.t()
+  @spec get_instance(binary, User.t()) :: Instance.t() | nil
+  def get_instance(<<_::288>> = document_id, %{current_org_id: nil}) do
+    Repo.get(Instance, document_id)
+  end
+
   def get_instance(<<_::288>> = id, %{current_org_id: org_id}) do
     query =
       from(i in Instance,
@@ -1160,12 +1187,19 @@ defmodule WraftDoc.Document do
   @spec show_instance(binary, User.t()) ::
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
   def show_instance(instance_id, user) do
+    # Preload the build versions of the instance
+    versions_preload_query =
+      from(v in Version,
+        where: v.content_id == ^instance_id and v.type == :build,
+        preload: [:author]
+      )
+
     with %Instance{} = instance <- get_instance(instance_id, user) do
       instance
       |> Repo.preload([
         {:creator, :profile},
         {:content_type, :layout},
-        {:versions, :author},
+        {:versions, versions_preload_query},
         {:state, :approvers},
         {:instance_approval_systems, :approver},
         state: [
@@ -1175,6 +1209,10 @@ defmodule WraftDoc.Document do
       ])
       |> get_built_document()
     end
+  end
+
+  def show_instance_guest(document_id) do
+    Repo.get(Instance, document_id)
   end
 
   @doc """
@@ -1187,7 +1225,7 @@ defmodule WraftDoc.Document do
           id: id,
           instance_id: instance_id,
           content_type: %ContentType{organisation_id: org_id},
-          versions: versions
+          versions: build_versions
         } = instance
       ) do
     query =
@@ -1208,7 +1246,7 @@ defmodule WraftDoc.Document do
         instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
 
         file_path =
-          Path.join(instance_dir_path, versioned_file_name(versions, instance_id, :current))
+          Path.join(instance_dir_path, versioned_file_name(build_versions, instance_id, :current))
 
         doc_url = Minio.generate_url(file_path)
 
@@ -1258,14 +1296,14 @@ defmodule WraftDoc.Document do
   # be in the content.
   # A new version is added only if there is any difference in either the
   # raw or serialized fields of the instances.
-  @spec create_version(User.t(), Instance.t(), map()) ::
+  @spec create_version(User.t(), Instance.t(), map(), atom()) ::
           {:ok, Version.t()} | {:error, Ecto.Changeset.t()}
-  def create_version(current_user, new_instance, params) do
-    old_instance = get_last_version(new_instance)
+  def create_version(current_user, new_instance, params, type) do
+    old_instance = get_last_version(new_instance, type)
 
     case instance_updated?(old_instance, new_instance) do
       true ->
-        params = create_version_params(new_instance, params)
+        params = create_version_params(new_instance, params, type)
 
         current_user
         |> build_assoc(:instance_versions, content: new_instance)
@@ -1277,42 +1315,47 @@ defmodule WraftDoc.Document do
     end
   end
 
-  defp get_last_version(%{id: id}) do
-    query = from(v in Version, where: v.content_id == ^id)
+  defp get_last_version(%{id: id}, type) do
+    query = from(v in Version, where: v.content_id == ^id and v.type == ^type)
 
     query
     |> last(:inserted_at)
     |> Repo.one()
   end
 
-  defp get_last_version(_), do: nil
+  defp get_last_version(_, _), do: nil
   # Create the params to create a new version.
   # @spec create_version_params(Instance.t(), map()) :: map
-  defp create_version_params(%Instance{id: id} = instance, params) do
+  defp create_version_params(%Instance{id: id} = instance, _params, type)
+       when type in [:save, :build] do
     query =
       from(v in Version,
-        where: v.content_id == ^id,
+        where: v.content_id == ^id and v.type == ^type,
         order_by: [desc: v.inserted_at],
         limit: 1,
         select: v.version_number
       )
 
-    version =
+    incremented_version =
       query
       |> Repo.one()
       |> case do
         nil ->
           1
 
-        version ->
-          version + 1
+        version_number ->
+          version_number + 1
       end
 
-    naration = params["naration"] || "Version-#{version / 10}"
-    instance |> Map.from_struct() |> Map.merge(%{version_number: version, naration: naration})
+    # TODO - add naration
+    # naration = params["naration"] || "Version-#{incremented_version / 10}"
+
+    instance
+    |> Map.from_struct()
+    |> Map.merge(%{version_number: incremented_version, type: type})
   end
 
-  defp create_version_params(_, params), do: params
+  defp create_version_params(_, params, _), do: params
 
   # Checks whether the raw and serialzed of old and new instances are same or not.
   # If they are both the same, returns false, else returns true
@@ -1325,7 +1368,7 @@ defmodule WraftDoc.Document do
 
   defp instance_updated?(new_instance) do
     new_instance
-    |> get_last_version()
+    |> get_last_version(:build)
     |> instance_updated?(new_instance)
   end
 
@@ -1789,7 +1832,7 @@ defmodule WraftDoc.Document do
   # TODO - Dont need to pass layout as an argument, we can just preload it
   @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
   def build_doc(
-        %Instance{instance_id: instance_id, content_type: content_type, versions: versions} =
+        %Instance{instance_id: instance_id, content_type: content_type, versions: build_versions} =
           instance,
         %Layout{organisation_id: org_id} = layout
       ) do
@@ -1813,7 +1856,7 @@ defmodule WraftDoc.Document do
 
     instance_updated? = instance_updated?(instance)
     # Move old builds to the history folder
-    current_instance_file = versioned_file_name(versions, instance_id, :current)
+    current_instance_file = versioned_file_name(build_versions, instance_id, :current)
 
     Task.start(fn ->
       move_old_builds(instance_dir_path, current_instance_file, instance_updated?)
@@ -1882,30 +1925,30 @@ defmodule WraftDoc.Document do
   end
 
   defp pdf_file_path(
-         %Instance{instance_id: instance_id, versions: versions},
+         %Instance{instance_id: instance_id, versions: build_versions},
          instance_dir_path,
          true
        ) do
-    versions
+    build_versions
     |> versioned_file_name(instance_id, :next)
     |> then(&Path.join(instance_dir_path, &1))
   end
 
   defp pdf_file_path(
-         %Instance{instance_id: instance_id, versions: versions},
+         %Instance{instance_id: instance_id, versions: build_versions},
          instance_dir_path,
          false
        ) do
-    versions
+    build_versions
     |> versioned_file_name(instance_id, :current)
     |> then(&Path.join(instance_dir_path, &1))
   end
 
-  defp versioned_file_name(versions, instance_id, :current),
-    do: instance_id <> "-v" <> to_string(length(versions)) <> ".pdf"
+  defp versioned_file_name(build_versions, instance_id, :current),
+    do: instance_id <> "-v" <> to_string(length(build_versions)) <> ".pdf"
 
-  defp versioned_file_name(versions, instance_id, :next),
-    do: instance_id <> "-v" <> to_string(length(versions) + 1) <> ".pdf"
+  defp versioned_file_name(build_versions, instance_id, :next),
+    do: instance_id <> "-v" <> to_string(length(build_versions) + 1) <> ".pdf"
 
   defp prepare_markdown(
          %{id: instance_id, creator: %User{name: name, email: email}} = instance,
@@ -2842,9 +2885,18 @@ defmodule WraftDoc.Document do
   Create a comment
   """
   # TODO - improve tests
-  def create_comment(%{current_org_id: org_id} = current_user, params) do
+  def create_comment(%{current_org_id: <<_::288>> = org_id} = current_user, params) do
     params = Map.put(params, "organisation_id", org_id)
+    insert_comment(current_user, params)
+  end
 
+  def create_comment(%{current_org_id: nil} = current_user, params),
+    do: insert_comment(current_user, params)
+
+  def create_comment(_, _), do: {:error, :fake}
+
+  # Private
+  defp insert_comment(current_user, params) do
     current_user
     |> build_assoc(:comments)
     |> Comment.changeset(params)
@@ -2857,8 +2909,6 @@ defmodule WraftDoc.Document do
         changeset
     end
   end
-
-  def create_comment(_, _), do: {:error, :fake}
 
   @doc """
   Get a comment by uuid.
@@ -3712,7 +3762,7 @@ defmodule WraftDoc.Document do
   @doc """
   Returns list of changes on a single version
   ## Parameters
-  * `instnace` - An instance struct
+  * `instance` - An instance struct
   * `version_uuid` - uuid of version
   """
   @spec version_changes(Instance.t(), <<_::288>>) :: map()
@@ -3775,9 +3825,9 @@ defmodule WraftDoc.Document do
 
   defp get_version(_, _), do: nil
 
-  defp get_previous_version(%{id: instance_id}, %{version_number: version_number}) do
+  defp get_previous_version(%{id: instance_id}, %{version_number: version_number, type: type}) do
     version_number = version_number - 1
-    Repo.get_by(Version, version_number: version_number, content_id: instance_id)
+    Repo.get_by(Version, version_number: version_number, content_id: instance_id, type: type)
   end
 
   defp get_previous_version(_, _), do: nil
@@ -3959,5 +4009,246 @@ defmodule WraftDoc.Document do
       instance_file_name
     )
     |> Mailer.deliver()
+  end
+
+  @doc """
+  Share document
+  """
+  @spec send_email(Instance.t(), User.t(), String.t()) :: Oban.Job.t()
+  def send_email(instance, user, token) do
+    %{
+      email: user.email,
+      token: token,
+      instance_id: instance.instance_id,
+      document_id: instance.id
+    }
+    |> EmailWorker.new(queue: "mailer", tags: ["document_instance_share"])
+    |> Oban.insert()
+  end
+
+  @doc """
+  Add Content Collaborator
+  """
+  @spec add_content_collaborator(User.t(), Instance.t(), User.t(), map()) ::
+          ContentCollaboration.t() | {:error, Ecto.Changeset.t()}
+  def add_content_collaborator(
+        %User{id: invited_by_id},
+        %Instance{id: content_id, state_id: state_id},
+        %User{id: user_id},
+        %{
+          "role" => role
+        }
+      ) do
+    %ContentCollaboration{}
+    |> ContentCollaboration.changeset(%{
+      content_id: content_id,
+      user_id: user_id,
+      invited_by_id: invited_by_id,
+      state_id: state_id,
+      role: role
+    })
+    |> Repo.insert()
+    |> case do
+      {:ok, content_collaboration} ->
+        Repo.preload(content_collaboration, [:user])
+
+      changeset =
+          {:error, %Ecto.Changeset{errors: [role: {"This email has already been invited.", _}]}} ->
+        content_id
+        |> get_content_collaboration(%User{id: user_id}, state_id)
+        |> handle_invite_again(changeset)
+
+      changeset = {:error, _} ->
+        changeset
+    end
+  end
+
+  def add_content_collaborator(_, _, _), do: {:error, "Invalid email"}
+
+  # Invite again after revoked
+  defp handle_invite_again(%ContentCollaboration{status: :revoked} = content_collaboration, _) do
+    content_collaboration
+    |> ContentCollaboration.status_update_changeset(%{status: "pending"})
+    |> Repo.update()
+    |> case do
+      {:ok, content_collaboration} ->
+        Repo.preload(content_collaboration, [:user])
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  defp handle_invite_again(_, changeset), do: changeset
+
+  @doc """
+    Get Content Collaboration
+  """
+  def get_content_collaboration(document_id, %User{id: user_id}, state_id) do
+    ContentCollaboration
+    |> where(
+      [cc],
+      cc.content_id == ^document_id and cc.user_id == ^user_id and cc.state_id == ^state_id
+    )
+    |> Repo.one()
+  end
+
+  def get_content_collaboration(content_collaboration_id),
+    do: Repo.get(ContentCollaboration, content_collaboration_id)
+
+  @doc """
+    Revoke Content Collaboration Access
+  """
+  @spec revoke_document_access(User.t(), ContentCollaboration.t()) ::
+          ContentCollaboration.t() | {:error, Ecto.Changeset.t()}
+  def revoke_document_access(
+        %User{id: revoked_by_id},
+        %ContentCollaboration{status: :accepted} = collaborator
+      ) do
+    collaborator
+    |> ContentCollaboration.status_update_changeset(%{
+      status: "revoked",
+      revoked_by_id: revoked_by_id,
+      revoked_at: DateTime.utc_now()
+    })
+    |> Repo.update()
+    |> case do
+      {:ok, collaborator} ->
+        Repo.preload(collaborator, [:user])
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  def revoke_document_access(_, %ContentCollaboration{status: :pending}),
+    do: {:error, "Collaborator not accepted"}
+
+  def revoke_document_access(_, %ContentCollaboration{status: :revoked}),
+    do: {:error, "Collaborator already revoked"}
+
+  @doc """
+  Accept Content Collaboration
+  """
+  @spec accept_document_access(ContentCollaboration.t()) ::
+          {:ok, ContentCollaboration.t()}
+  def accept_document_access(%{status: :pending} = content_collaboration) do
+    content_collaboration
+    |> ContentCollaboration.status_update_changeset(%{status: "accepted"})
+    |> Repo.update()
+  end
+
+  def accept_document_access(%{status: :accepted} = content_collaboration) do
+    {:ok, content_collaboration}
+  end
+
+  def accept_document_access(_), do: {:error, "Invalid status"}
+
+  @doc """
+    Check if user has access to a document
+  """
+  @spec has_access?(User.t(), Ecto.UUID.t()) :: boolean() | {:error, String.t()}
+  def has_access?(%User{id: user_id}, document_id) do
+    ContentCollaboration
+    |> where(
+      [cc],
+      cc.content_id == ^document_id and cc.user_id == ^user_id and cc.status == :accepted
+    )
+    |> Repo.exists?()
+    |> case do
+      true -> true
+      false -> {:error, "Collaborator does not have access to the document"}
+    end
+  end
+
+  @spec has_access?(User.t(), Ecto.UUID.t(), atom()) :: boolean() | {:error, String.t()}
+  def has_access?(%User{id: user_id}, document_id, :editor) do
+    ContentCollaboration
+    |> where(
+      [cc],
+      cc.content_id == ^document_id and cc.user_id == ^user_id and cc.status == :accepted and
+        cc.role == :editor
+    )
+    |> Repo.exists?()
+    |> case do
+      true -> true
+      false -> {:error, "Collaborator does not have access to the document"}
+    end
+  end
+
+  # TODO removed because user can be guest to wraft or internal but not within organisation
+  # def has_access?(%User{is_guest: false}, _), do: {:error, "Invalid user"}
+
+  @doc """
+    List collabortors for a document.
+  """
+  @spec list_collaborators(Instance.t()) :: [ContentCollaboration.t()] | []
+  def list_collaborators(%Instance{id: <<_::288>> = content_id, state_id: <<_::288>> = state_id}) do
+    ContentCollaboration
+    |> where([cc], cc.content_id == ^content_id and cc.state_id == ^state_id)
+    |> preload([cc], [:user])
+    |> Repo.all()
+  end
+
+  def list_collaborators(_), do: []
+
+  @doc """
+    Update Content Collaborator Role
+  """
+  @spec update_collaborator_role(ContentCollaboration.t(), map()) ::
+          ContentCollaboration.t() | {:error, Ecto.Changeset.t()}
+  def update_collaborator_role(content_collaboration, %{"role" => _role} = params) do
+    content_collaboration
+    |> ContentCollaboration.role_update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, content_collaboration} ->
+        Repo.preload(content_collaboration, [:user])
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  @doc """
+  Get counterparty for a contract document
+  """
+  @spec get_counterparty(String.t(), String.t()) :: CounterParties.t() | nil
+  def get_counterparty(document_id, counterparty_id) do
+    Repo.get_by(CounterParties, content_id: document_id, counterparty_id: counterparty_id)
+  end
+
+  @doc """
+   Add counterparty to content
+  """
+  def add_counterparty(%Instance{id: content_id}, %{
+        "guest_user_id" => guest_user_id,
+        "name" => name
+      }) do
+    CounterParties
+    |> CounterParties.changeset(%{
+      name: name,
+      content_id: content_id,
+      guest_user_id: guest_user_id
+    })
+    |> Repo.insert()
+    |> case do
+      {:ok, counter_party} ->
+        Repo.preload(counter_party, [:guest_user, :content])
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  def add_counterparty(_, _), do: nil
+
+  @doc """
+    Remove counterparty from content
+  """
+  @spec remove_counterparty(CounterParties.t()) ::
+          {:ok, CounterParties.t()} | {:error, Ecto.Changeset.t()}
+  def remove_counterparty(%CounterParties{} = counterparty) do
+    Repo.delete(counterparty)
   end
 end

@@ -11,6 +11,12 @@ defmodule WraftDocWeb.Plug.Authorized do
 
   def init(opts), do: opts
 
+  # If the user is a guest, we dont need to check for permissions
+  # like for the regular user. [RBAC]
+  def call(%Plug.Conn{path_info: ["api", "v1", "guest" | _]} = conn, _opts) do
+    conn
+  end
+
   def call(%Plug.Conn{private: %{phoenix_action: action}} = conn, opts) do
     case Keyword.get(opts, action) do
       nil ->

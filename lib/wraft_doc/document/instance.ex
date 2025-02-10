@@ -13,12 +13,16 @@ defmodule WraftDoc.Document.Instance do
   use WraftDoc.Schema
 
   alias __MODULE__
+  alias WraftDoc.EctoType.DocumentMetaType
+
   def types, do: [normal: 1, bulk_build: 2, pipeline_api: 3, pipeline_hook: 4]
 
   schema "content" do
     field(:instance_id, :string)
     field(:raw, :string)
     field(:serialized, :map, default: %{})
+    field(:document_type, :string, virtual: true)
+    field(:meta, DocumentMetaType)
     field(:type, :integer)
     field(:build, :string, virtual: true)
     field(:next_state, :string, virtual: true)
@@ -30,7 +34,11 @@ defmodule WraftDoc.Document.Instance do
     belongs_to(:content_type, WraftDoc.Document.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:vendor, WraftDoc.Enterprise.Vendor)
-    has_many(:content_collab, WraftDoc.Document.ContentCollab, foreign_key: :content_id)
+
+    has_many(:content_collaboration, WraftDoc.Document.ContentCollaboration,
+      foreign_key: :content_id
+    )
+
     has_many(:instance_approval_systems, WraftDoc.Document.InstanceApprovalSystem)
     has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :content_id)
     has_many(:versions, WraftDoc.Document.Instance.Version, foreign_key: :content_id)
@@ -43,6 +51,7 @@ defmodule WraftDoc.Document.Instance do
     |> cast(attrs, [
       :instance_id,
       :raw,
+      :document_type,
       :serialized,
       :content_type_id,
       :type,
@@ -50,11 +59,25 @@ defmodule WraftDoc.Document.Instance do
       :vendor_id,
       :allowed_users
     ])
-    |> validate_required([:instance_id, :raw, :serialized, :type, :content_type_id])
+    |> validate_required([
+      :instance_id,
+      :raw,
+      :document_type,
+      :serialized,
+      :type,
+      :content_type_id
+    ])
+    |> DocumentMetaType.cast_meta(attrs)
     |> unique_constraint(:instance_id,
       message: "Instance with the ID exists.!",
       name: :content_organisation_unique_index
     )
+  end
+
+  def meta_changeset(%Instance{} = instance, attrs \\ %{}) do
+    instance
+    |> cast(attrs, [])
+    |> DocumentMetaType.cast_meta(attrs)
   end
 
   def update_changeset(%Instance{} = instance, attrs \\ %{}) do
@@ -71,6 +94,12 @@ defmodule WraftDoc.Document.Instance do
     instance
     |> cast(attrs, [:state_id, :allowed_users, :approval_status])
     |> validate_required([:state_id])
+  end
+
+  def update_allowed_users_changeset(%Instance{} = instance, attrs \\ %{}) do
+    instance
+    |> cast(attrs, [:allowed_users])
+    |> validate_required([:allowed_users])
   end
 
   def lock_modify_changeset(instance, attrs \\ %{}) do

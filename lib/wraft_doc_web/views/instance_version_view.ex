@@ -7,6 +7,7 @@ defmodule WraftDocWeb.Api.V1.InstanceVersionView do
       id: version.id,
       version_number: version.version_number,
       raw: version.raw,
+      type: version.type,
       serialised: version.serialized,
       naration: version.naration,
       author: render_one(version.author, UserView, "user.json", as: :user),

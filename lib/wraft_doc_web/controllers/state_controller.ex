@@ -8,13 +8,19 @@ defmodule WraftDocWeb.Api.V1.StateController do
     create: "state:manage",
     index: "state:show",
     update: "state:manage",
-    delete: "state:delete"
+    delete: "state:delete",
+    add_user_to_state: "state:manage",
+    remove_user_from_state: "state:delete"
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  alias WraftDoc.Account.UserOrganisation
+  alias WraftDoc.Document
+  alias WraftDoc.Document.Instance
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
+  alias WraftDoc.Enterprise.StateUser
 
   def swagger_definitions do
     %{
@@ -172,6 +178,35 @@ defmodule WraftDocWeb.Api.V1.StateController do
               }
             ]
           })
+        end,
+      StateUserDocumentLevelRequest:
+        swagger_schema do
+          properties do
+            content_id(:string, "Document id", required: true)
+          end
+
+          example(%{
+            content_id: "f0b206b0-94e5-4bcb-a87b-1656166d9ebb"
+          })
+        end,
+      StateUserDocumentLevelResponse:
+        swagger_schema do
+          properties do
+            users(Schema.ref(:User))
+          end
+
+          example(%{
+            users: [
+              %{
+                id: "1232148nb3478",
+                name: "John Doe",
+                email: "email@xyz.com",
+                email_verify: true,
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              }
+            ]
+          })
         end
     }
   end
@@ -200,7 +235,7 @@ defmodule WraftDocWeb.Api.V1.StateController do
 
     with %Flow{} = flow <- Enterprise.get_flow(flow_id, current_user),
          %State{} = state <- Enterprise.create_state(current_user, flow, params) do
-      render(conn, "create_with_approvers.json", state: state)
+      render(conn, "state_with_approvers.json", state: state)
     end
   end
 
@@ -220,10 +255,34 @@ defmodule WraftDocWeb.Api.V1.StateController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, %{"flow_id" => flow_uuid} = _params) do
     with states <- Enterprise.state_index(flow_uuid) do
       render(conn, "index.json", states: states)
+    end
+  end
+
+  @doc """
+  List users in a state
+  """
+  swagger_path :list_users_in_state do
+    get("/states/{state_id}/users")
+    summary("List users in a state")
+    description("List users in a state")
+
+    parameters do
+      state_id(:path, :string, "state id", required: true)
+      document_id(:query, :string, "document id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:StateUserDocumentLevelResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec list_users_in_state(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def list_users_in_state(conn, %{"state_id" => state_id, "document_id" => document_id}) do
+    with users <- Enterprise.fetch_flow_state_users(state_id, document_id) do
+      render(conn, "list_users_in_state.json", users: users)
     end
   end
 
@@ -284,6 +343,89 @@ defmodule WraftDocWeb.Api.V1.StateController do
       Task.start(fn -> Enterprise.shuffle_order(state, -1) end)
 
       render(conn, "create.json", state: state)
+    end
+  end
+
+  @doc """
+    Add user to flow state at document level.
+  """
+  swagger_path :add_user_to_state do
+    post("states/{state_id}/users/{user_id}")
+    summary("Add user to state at document level")
+    description("Add user to flow state at document level")
+
+    parameters do
+      state_id(:path, :string, "State id", required: true)
+      user_id(:path, :string, "User id", required: true)
+
+      document_id(
+        :query,
+        "string",
+        "Document id",
+        required: true
+      )
+    end
+
+    response(200, "Ok", Schema.ref(:State))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec add_user_to_state(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def add_user_to_state(
+        conn,
+        %{"state_id" => state_id, "content_id" => document_id, "user_id" => user_id} = params
+      ) do
+    current_user = conn.assigns[:current_user]
+
+    with %State{} = state <- Enterprise.get_state(current_user, state_id),
+         %Instance{} = instance <- Document.get_instance(document_id, current_user),
+         %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
+         nil <- Enterprise.get_state_user(user_id, state_id),
+         %State{} = state <- Enterprise.add_user_to_state(instance, state, params) do
+      render(conn, "state_with_approvers.json", state: state)
+    end
+  end
+
+  @doc """
+  Remove user from a flow state at document level.
+  """
+  swagger_path :remove_user_from_state do
+    PhoenixSwagger.Path.delete("/states/{state_id}/users/{user_id}")
+    summary("Remove user from state at document level")
+    description("Remove user from flow state at document level")
+
+    parameters do
+      state_id(:path, :string, "State id", required: true)
+      user_id(:path, :string, "User id", required: true)
+
+      document_id(
+        :query,
+        "string",
+        "Document id",
+        required: true
+      )
+    end
+
+    response(200, "Ok", Schema.ref(:State))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec remove_user_from_state(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def remove_user_from_state(conn, %{
+        "state_id" => state_id,
+        "content_id" => document_id,
+        "user_id" => user_id
+      }) do
+    current_user = conn.assigns[:current_user]
+
+    with %State{} = state <- Enterprise.get_state(current_user, state_id),
+         %Instance{} = instance <- Document.get_instance(document_id, current_user),
+         %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
+         %StateUser{} = state_user <- Enterprise.get_state_user(user_id, state_id, document_id),
+         %State{} = state <- Enterprise.remove_user_from_state(instance, state, state_user) do
+      render(conn, "state_with_approvers.json", state: state)
     end
   end
 end

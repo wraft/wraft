@@ -52,6 +52,7 @@ defmodule WraftDocWeb.Api.V1.UserView do
       id: user.id,
       name: user.name,
       email: user.email,
+      is_guest: user.is_guest,
       email_verify: user.email_verify,
       inserted_at: user.inserted_at,
       updated_at: user.updated_at
@@ -95,7 +96,8 @@ defmodule WraftDocWeb.Api.V1.UserView do
     %{
       id: user.id,
       name: user.name,
-      profile_pic: generate_url(user.profile)
+      profile_pic: generate_url(user.profile),
+      removable: user.removable
     }
   end
 

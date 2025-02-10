@@ -3,11 +3,12 @@ defmodule WraftDocWeb.UserSocket do
   User socket module
   """
   use Phoenix.Socket
-  alias WraftDoc.{Account, Repo}
-  import Guardian.Phoenix.Socket
+  # alias WraftDoc.{Account, Repo}
+  # import Guardian.Phoenix.Socket
 
   ## Channels
   channel("notification:*", WraftDocWeb.NotificationChannel)
+  channel("doc_room:*", WraftDocWeb.DocumentChannel)
 
   # channel("room:*", WraftDocWeb.NotificationChannel)
 
@@ -27,18 +28,23 @@ defmodule WraftDocWeb.UserSocket do
   # end
   @impl true
 
-  def connect(%{"token" => token}, socket, _connect_info) do
-    case authenticate(socket, WraftDocWeb.Guardian, token) do
-      {:ok, authed_socket} ->
-        user = authed_socket |> current_resource() |> Account.get_user_by_email()
-        user = Repo.preload(user, [:profile, :roles])
-        role_names = Enum.map(user.roles, fn x -> x.name end)
-        user = Map.put(user, :role_names, role_names)
-        {:ok, assign(authed_socket, :current_user, user)}
+  # def connect(%{"token" => token}, socket, _connect_info) do
+  #   case authenticate(socket, WraftDocWeb.Guardian, token) do
+  #     {:ok, authed_socket} ->
+  #       user = authed_socket |> current_resource() |> Account.get_user_by_email()
+  #       user = Repo.preload(user, [:profile, :roles])
+  #       role_names = Enum.map(user.roles, fn x -> x.name end)
+  #       user = Map.put(user, :role_names, role_names)
+  #       {:ok, assign(authed_socket, :current_user, user)}
 
-      {:error, _} ->
-        :error
-    end
+  #     {:error, _} ->
+  #       :error
+  #   end
+  # end
+
+  # Temporary connect function
+  def connect(_params, socket, _connect_info) do
+    {:ok, socket}
   end
 
   # def connect(_params, socket, _conntection_info) do
@@ -47,10 +53,11 @@ defmodule WraftDocWeb.UserSocket do
   # end
 
   # This function will be called when there was no authentication information
-  @impl true
-  def connect(_params, _socket, _) do
-    :error
-  end
+  # Temporarily commented
+  # @impl true
+  # def connect(_params, _socket, _) do
+  #   :error
+  # end
 
   # def id(socket), do: socket.assigns[:current_user].id |> to_string()
   @impl true

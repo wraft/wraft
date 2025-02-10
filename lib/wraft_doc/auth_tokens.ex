@@ -13,6 +13,7 @@ defmodule WraftDoc.AuthTokens do
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Endpoint
+  alias WraftDocWeb.Guardian
 
   @base_googe_auth_url "https://www.googleapis.com/oauth2/v3/tokeninfo?id_token="
 
@@ -134,6 +135,53 @@ defmodule WraftDoc.AuthTokens do
   end
 
   @doc """
+   Create document invite token
+  """
+  @spec create_document_invite_token(Ecto.UUID.t(), map()) :: {:ok, AuthToken.t()}
+  def create_document_invite_token(
+        state_id,
+        %{"email" => email, "role" => role, "id" => document_id}
+      ) do
+    token =
+      WraftDoc.create_phx_token("document_invite", %{
+        email: email,
+        role: role,
+        document_id: document_id,
+        state_id: state_id
+      })
+
+    params = %{value: token, token_type: "document_invite"}
+
+    insert_auth_token!(params)
+  end
+
+  @doc """
+   Create guest access token.
+  """
+  @spec create_guest_access_token(User.t(), Ecto.UUID.t(), String.t(), String.t(), Ecto.UUID.t()) ::
+          {:ok, AuthToken.t()}
+  def create_guest_access_token(
+        %User{} = user,
+        <<_::288>> = state_id,
+        email,
+        role,
+        <<_::288>> = document_id
+      ) do
+    {:ok, token, _} =
+      Guardian.encode_and_sign(
+        user,
+        %{email: email, role: role, document_id: document_id, state_id: state_id},
+        token_type: "access",
+        ttl: {72, :hours}
+      )
+
+    params = %{value: token, token_type: "document_invite"}
+    auth_token = insert_auth_token!(user, params)
+
+    {:ok, auth_token}
+  end
+
+  @doc """
   Verify Delete Organisation Token
   """
   @spec verify_delete_token(User.t(), map()) ::
@@ -233,6 +281,25 @@ defmodule WraftDoc.AuthTokens do
 
       %AuthToken{value: token} ->
         case phoenix_token_verify(token, "email_verification", max_age: 7200) do
+          {:ok, payload} ->
+            {:ok, payload}
+
+          {:error, :expired} ->
+            {:error, :expired}
+
+          _ ->
+            {:error, :fake}
+        end
+    end
+  end
+
+  def check_token(token, token_type) when token_type == :document_invite do
+    case get_auth_token(token, token_type) do
+      nil ->
+        {:error, :fake}
+
+      %AuthToken{value: token} ->
+        case phoenix_token_verify(token, "document_invite", max_age: 864_000) do
           {:ok, payload} ->
             {:ok, payload}
 

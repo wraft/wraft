@@ -19,6 +19,8 @@ defmodule WraftDoc.Account do
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.BlockTemplate
+  alias WraftDoc.Document.ContentType
+  alias WraftDoc.Document.Instance
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
@@ -105,7 +107,10 @@ defmodule WraftDoc.Account do
 
   defp basic_registration_multi(multi, params) do
     multi
-    |> Multi.insert(:user, User.changeset(%User{}, params))
+    |> Multi.insert(:user, User.changeset(%User{}, params),
+      on_conflict: {:replace_all_except, [:email]},
+      conflict_target: :email
+    )
     |> Multi.insert(:profile, fn %{user: user} ->
       user |> build_assoc(:profile) |> Profile.changeset(params)
     end)
@@ -495,8 +500,19 @@ defmodule WraftDoc.Account do
   Get a user from its ID.
   """
   @spec get_user(String.t()) :: User.t() | nil
-  def get_user(id) do
-    Repo.get(User, id)
+  def get_user(id), do: Repo.get(User, id)
+
+  @doc """
+   Get the user from given email and organisation
+  """
+  @spec get_user_by_email_and_org(Ecto.UUID.t(), binary) :: User.t() | nil
+  def get_user_by_email_and_org(organisation_id, email) do
+    User
+    |> join(:inner, [u], uo in UserOrganisation,
+      on: uo.user_id == u.id and uo.organisation_id == ^organisation_id
+    )
+    |> where([u], u.email == ^email)
+    |> Repo.one()
   end
 
   # Get the user struct from given email
@@ -505,9 +521,7 @@ defmodule WraftDoc.Account do
     Repo.get_by(User, email: email)
   end
 
-  def get_user_by_email(_email) do
-    nil
-  end
+  def get_user_by_email(_email), do: nil
 
   @doc """
   Get the activity stream for current user.
@@ -803,6 +817,37 @@ defmodule WraftDoc.Account do
     |> case do
       {:ok, datetime} -> Timex.Timezone.convert(datetime, timezone)
       {:error, _} -> {:error, :invalid_datetime}
+    end
+  end
+
+  @doc """
+  Get or create guest user struct from given email
+  """
+  @spec get_or_create_guest_user(binary()) :: User.t() | {:error, Ecto.Changeset.t()}
+  def get_or_create_guest_user(%{"email" => email} = params) when is_binary(email) do
+    case Repo.get_by(User, email: email) do
+      nil ->
+        create_guest_user(params)
+
+      guest_user ->
+        guest_user
+    end
+  end
+
+  @doc """
+  Create a guest user.
+  """
+  @spec create_guest_user(map()) :: User.t() | Ecto.Changeset.t()
+  def create_guest_user(%{"email" => _email} = params) do
+    random_password = 8 |> :crypto.strong_rand_bytes() |> Base.encode16() |> binary_part(0, 8)
+    params = Map.merge(params, %{"password" => random_password, "is_guest" => true})
+
+    %User{}
+    |> User.guest_user_changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, guest_user} -> guest_user
+      {:error, _} = changeset -> changeset
     end
   end
 end

@@ -17,6 +17,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Billing.PaddleApi
   alias WraftDoc.Billing.Subscription
   alias WraftDoc.Client.Razorpay
+  alias WraftDoc.Document.Instance
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
@@ -229,9 +230,11 @@ defmodule WraftDoc.Enterprise do
   @spec show_flow(binary, User.t()) :: Flow.t() | nil
   def show_flow(flow_id, user) do
     with %Flow{} = flow <- get_flow(flow_id, user) do
+      approvers_preloader = fn state_ids -> fetch_approvers_by_state_ids(state_ids) end
+
       Repo.preload(flow, [
         :creator,
-        {:states, [approvers: [:profile]]},
+        {:states, approvers: {approvers_preloader, :profile}},
         approval_systems: [:pre_state, :post_state, :approver]
       ])
     end
@@ -330,17 +333,135 @@ defmodule WraftDoc.Enterprise do
   @doc """
   State index under a flow.
   """
-  @spec state_index(binary()) :: map
-  def state_index(<<_::288>> = flow_uuid) do
-    query =
-      from(s in State,
-        join: f in Flow,
-        on: f.id == ^flow_uuid and s.flow_id == f.id,
-        order_by: [desc: s.id],
-        preload: [:flow, :creator, approvers: [:profile]]
-      )
+  @spec state_index(binary()) :: map()
+  def state_index(flow_uuid) do
+    approvers_preloader = fn state_ids -> fetch_approvers_by_state_ids(state_ids) end
 
-    Repo.all(query)
+    State
+    |> join(:inner, [s], f in Flow, on: f.id == ^flow_uuid and s.flow_id == f.id)
+    |> order_by([s], desc: s.id)
+    |> preload([s], [:flow, :creator, approvers: ^{approvers_preloader, :profile}])
+    |> Repo.all()
+  end
+
+  # Private
+  defp fetch_approvers_by_state_ids(state_ids) do
+    User
+    |> join(:inner, [u], su in StateUser, on: u.id == su.user_id and is_nil(su.content_id))
+    |> where([_u, su], su.state_id in ^state_ids)
+    |> select([u, su], {su.state_id, u})
+    |> Repo.all()
+  end
+
+  @doc """
+    Fetch flow state users for a document
+  """
+  @spec fetch_flow_state_users(binary(), binary()) :: [User.t()]
+  def fetch_flow_state_users(<<_::288>> = state_id, <<_::288>> = document_id) do
+    users_document_level =
+      User
+      |> join(:inner, [u], su in StateUser, on: u.id == su.user_id)
+      |> where([_u, su], su.state_id == ^state_id and su.content_id == ^document_id)
+      # User is removable at document level.
+      |> select([u, _su], %{u | removable: true})
+
+    users_content_type_level =
+      User
+      |> join(:inner, [u], su in StateUser, on: u.id == su.user_id)
+      |> where([_u, su], su.state_id == ^state_id and is_nil(su.content_id))
+      # User is not removable at document level.
+      |> select([u, _su], %{u | removable: false})
+
+    users_content_type_level
+    |> union(^users_document_level)
+    |> preload([_u], [:profile])
+    |> Repo.all()
+  end
+
+  @doc """
+    Add user to flow state at document level.
+  """
+  @spec add_user_to_state(Instance.t(), State.t(), map()) ::
+          State.t() | {:error, Ecto.Changeset.t()}
+  def add_user_to_state(
+        %Instance{allowed_users: allowed_users} = instance,
+        %State{} = state,
+        %{"user_id" => user_id} = params
+      ) do
+    instance
+    |> maybe_update_allowed_users(user_id, allowed_users)
+    |> case do
+      {:ok, _instance} ->
+        %StateUser{}
+        |> StateUser.add_document_level_user_changeset(params)
+        |> Repo.insert()
+        |> case do
+          {:ok, _state_user} ->
+            state
+            |> Repo.reload()
+            |> Repo.preload(approvers: [:profile])
+
+          {:error, changeset} ->
+            {:error, changeset}
+        end
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  # Private
+  defp maybe_update_allowed_users(instance, user_id, allowed_users) do
+    if user_id in allowed_users do
+      {:ok, instance}
+    else
+      instance
+      |> Instance.update_allowed_users_changeset(%{
+        "allowed_users" => allowed_users ++ [user_id]
+      })
+      |> Repo.update()
+    end
+  end
+
+  @doc """
+    Remove user from a flow state at document level.
+  """
+  @spec remove_user_from_state(Instance.t(), State.t(), map()) ::
+          State.t() | {:error, Ecto.Changeset.t()}
+  def remove_user_from_state(
+        %Instance{allowed_users: allowed_users} = instance,
+        %State{} = state,
+        %StateUser{content_id: <<_::288>> = _document_id, user_id: user_id} = state_user
+      ) do
+    state_user
+    |> Repo.delete()
+    |> case do
+      {:ok, _state_user} ->
+        state
+        |> Repo.reload()
+        |> Repo.preload(approvers: [:profile])
+        |> maybe_remove_allowed_user(instance, user_id, allowed_users)
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  # Private
+  defp maybe_remove_allowed_user(state, instance, user_id, allowed_users) do
+    if user_id in allowed_users do
+      updated_users = List.delete(allowed_users, user_id)
+
+      instance
+      |> Instance.update_allowed_users_changeset(%{"allowed_users" => updated_users})
+      |> Repo.update()
+      |> case do
+        {:ok, _instance} -> state
+        {:error, _changeset} -> state
+      end
+    else
+      state
+    end
   end
 
   @doc """
@@ -379,11 +500,39 @@ defmodule WraftDoc.Enterprise do
   def update_state(_state, _params), do: {:error, :invalid_data}
 
   defp add_approvers(approvers, state) do
-    Enum.each(approvers, fn approver_id ->
-      Repo.insert(StateUser.changeset(%StateUser{}, %{state_id: state.id, user_id: approver_id}))
-    end)
+    Enum.each(approvers, fn approver_id -> add_state_user(approver_id, state.id) end)
 
     {:ok, :ok}
+  end
+
+  @doc """
+  Add user to state
+  """
+  @spec add_state_user(binary(), binary()) :: {:ok, StateUser.t()} | {:error, Ecto.Changeset.t()}
+  def add_state_user(user_id, state_id) do
+    Repo.insert(StateUser.changeset(%StateUser{}, %{state_id: state_id, user_id: user_id}))
+  end
+
+  @doc """
+    Get user for a given state
+  """
+  @spec get_state_user(binary(), binary()) :: {:error, String.t()} | nil
+  def get_state_user(user_id, state_id) do
+    StateUser
+    |> where([st], st.state_id == ^state_id and st.user_id == ^user_id and is_nil(st.content_id))
+    |> Repo.one()
+    |> case do
+      nil -> nil
+      _state_user -> {:error, "User already exists as an approver."}
+    end
+  end
+
+  @doc """
+  Get state user for given state along with document id.
+  """
+  @spec get_state_user(binary(), binary(), binary()) :: StateUser.t() | nil
+  def get_state_user(user_id, state_id, document_id) do
+    Repo.get_by(StateUser, state_id: state_id, user_id: user_id, content_id: document_id)
   end
 
   def remove_approvers(approvers_to_remove, state_id) do
@@ -405,7 +554,11 @@ defmodule WraftDoc.Enterprise do
   end
 
   def delete_approver(approver_id, state_id) do
-    query = from(st in StateUser, where: st.user_id == ^approver_id and st.state_id == ^state_id)
+    query =
+      from(st in StateUser,
+        where: st.user_id == ^approver_id and st.state_id == ^state_id and is_nil(st.content_id)
+      )
+
     approver = Repo.one(query)
 
     if approver do

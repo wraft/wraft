@@ -7,7 +7,7 @@ import Config
 # watchers to your application. For example, we use it
 # with esbuild to bundle .js and .css sources.
 config :wraft_doc, WraftDocWeb.Endpoint,
-  http: [ip: {0, 0, 0, 0}, port: 4000],
+  http: [ip: {0, 0, 0, 0}, port: System.get_env("PORT") || 4000],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,

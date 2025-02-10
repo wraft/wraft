@@ -95,6 +95,15 @@ defmodule WraftDocWeb.Router do
         resources("/plans", PlanController, only: [:show, :index])
       end
 
+      # Verify access to a document instance
+      get(
+        "/guest/contents/:id/verify_access/:token",
+        InstanceGuestController,
+        :verify_document_access
+      )
+
+      # Show and index plans
+      resources("/plans", PlanController, only: [:show, :index])
       # Verify invite token
       get(
         "/organisations/verify_invite_token/:token",
@@ -123,6 +132,16 @@ defmodule WraftDocWeb.Router do
         get("/", TemplateAssetController, :list_public_templates)
         get("/:file_name/download", TemplateAssetController, :download_public_template)
       end
+    end
+  end
+
+  # Scope which does not need authorization. (Guest User)
+  scope "/api", WraftDocWeb do
+    pipe_through([:api, :api_auth])
+
+    scope "/v1/guest", Api.V1, as: :v1 do
+      resources("/contents", InstanceController, only: [:show, :update])
+      resources("/comments", CommentController, only: [:create])
     end
   end
 
@@ -221,23 +240,57 @@ defmodule WraftDocWeb.Router do
         # Flows
         resources("/", FlowController, only: [:create, :index, :show, :update, :delete])
         # States
-        resources("/:flow_id/states", StateController, only: [:create, :index])
         put("/:id/align-states", FlowController, :align_states)
+        resources("/:flow_id/states", StateController, only: [:create, :index])
       end
 
       # State delete and update
       resources("/states", StateController, only: [:update, :delete])
+
+      # Add, remove or list user to state at document level
+      post("/states/:state_id/users/:user_id", StateController, :add_user_to_state)
+      delete("/states/:state_id/users/:user_id", StateController, :remove_user_from_state)
+      get("/states/:state_id/users", StateController, :list_users_in_state)
 
       # Data template show, delete and update
       resources("/data_templates", DataTemplateController, only: [:show, :update, :delete])
 
       # Instance show, update and delete
       resources("/contents", InstanceController, only: [:show, :update, :delete])
+      # Instance meta update
+      post("/contents/:id/meta", InstanceController, :update_meta)
       # Instance state update
       patch("/contents/:id/states", InstanceController, :state_update)
       patch("/contents/:id/lock-unlock", InstanceController, :lock_unlock)
       get("/contents/title/search", InstanceController, :search)
       get("/contents/:id/change/:v_id", InstanceController, :change)
+      # Share an instance
+      post("/contents/:id/invite", InstanceGuestController, :invite)
+      # Revoke document access
+      patch(
+        "/contents/:id/revoke_access/:collaborator_id",
+        InstanceGuestController,
+        :revoke_document_access
+      )
+
+      # List collaborators
+      get("/contents/:id/collaborators", InstanceGuestController, :list_collaborators)
+      # Update role for a collaborator
+      patch(
+        "/contents/:id/collaborators/:collaborator_id",
+        InstanceGuestController,
+        :update_collaborator_role
+      )
+
+      # Add a counterparty
+      post("/contents/:id/add_counterpart", InstanceGuestController, :add_counterparty)
+      # Delete counterpart
+      delete(
+        "/contents/:id/remove_counterparty/:counterparty_id",
+        InstanceGuestController,
+        :remove_counterpart
+      )
+
       # Approve a document
       put("/contents/:id/approve", InstanceController, :approve)
       put("/contents/:id/reject", InstanceController, :reject)
