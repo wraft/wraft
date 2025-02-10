@@ -111,11 +111,11 @@ defmodule WraftDoc.Notifications do
   * `current_user`- user struct
   """
   @spec list_unread_notifications(User.t(), map) :: map
-  def list_unread_notifications(%User{current_org_id: org_id} = user, params) do
+  def list_unread_notifications(%User{} = user, params) do
     UserNotifications
     |> where(
       [un],
-      un.recipient_id == ^user.id and un.organisation_id == ^org_id and un.status == :unread
+      un.recipient_id == ^user.id and un.status == :unread
     )
     |> order_by([un], desc: un.inserted_at)
     |> preload([{:notification, :actor}, :organisation, :recipient])
@@ -140,11 +140,11 @@ defmodule WraftDoc.Notifications do
   * `current_user`- user struct
   """
   @spec unread_notification_count(User.t()) :: integer
-  def unread_notification_count(%User{current_org_id: org_id} = user) do
+  def unread_notification_count(%User{} = user) do
     UserNotifications
     |> where(
       [un],
-      un.recipient_id == ^user.id and un.organisation_id == ^org_id and un.status == :unread
+      un.recipient_id == ^user.id and un.status == :unread
     )
     |> select([un], count(un.id))
     |> Repo.one()
@@ -156,11 +156,11 @@ defmodule WraftDoc.Notifications do
   * `current_user`- user struct
   """
   @spec read_all_notifications(User.t()) :: {integer(), nil}
-  def read_all_notifications(%User{current_org_id: org_id} = current_user) do
+  def read_all_notifications(%User{} = current_user) do
     UserNotifications
     |> where(
       [un],
-      un.recipient_id == ^current_user.id and un.organisation_id == ^org_id and
+      un.recipient_id == ^current_user.id and
         un.status == :unread
     )
     |> Repo.update_all(set: [seen_at: Timex.now(), status: "read"])
@@ -173,12 +173,12 @@ defmodule WraftDoc.Notifications do
   * `notification` - notification struct
   """
   @spec get_user_notification(User.t(), Ecto.UUID.t()) :: UserNotifications.t() | nil
-  def get_user_notification(%User{current_org_id: org_id} = current_user, notification_id) do
+  def get_user_notification(%User{} = current_user, notification_id) do
     UserNotifications
     |> where(
       [un],
       un.recipient_id == ^current_user.id and un.notification_id == ^notification_id and
-        un.organisation_id == ^org_id and un.status == :unread
+        un.status == :unread
     )
     |> Repo.one()
   end
