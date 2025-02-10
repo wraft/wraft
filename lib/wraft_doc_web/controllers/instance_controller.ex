@@ -29,7 +29,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Document.Layout
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
-  # alias WraftDoc.Notifications
 
   alias WraftDocWeb.Api.V1.InstanceVersionView
 
@@ -876,14 +875,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            state: _state
          } = instance <- Document.show_instance(id, current_user),
          %Instance{} = instance <- Document.approve_instance(current_user, instance) do
-      # Notifications.create_notification([current_user], %{
-      #   type: :pending_approvals,
-      #   organisation_name: Enterprise.get_organisation(organisation_id),
-      #   document_name: instance.serialized["title"],
-      #   state: state,
-      #   user: current_user
-      # })
-
+      # TODO: add notification
       render(conn, "approve_or_reject.json", %{instance: instance})
     end
   end
