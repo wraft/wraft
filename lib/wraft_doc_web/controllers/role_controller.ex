@@ -249,11 +249,13 @@ defmodule WraftDocWeb.Api.V1.RoleController do
            Account.get_role_with_organisation(current_user, role_id),
          {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id),
          user <- Account.get_user(user_id) do
-      Notifications.create_notification([user], %{
-        type: :assign_role,
-        role_name: role.name,
-        organisation_name: organisation_name
-      })
+      Task.start(fn ->
+        Notifications.create_notification([user], %{
+          type: :assign_role,
+          role_name: role.name,
+          organisation_name: organisation_name
+        })
+      end)
 
       render(conn, "assign_role.json")
     end
@@ -286,11 +288,13 @@ defmodule WraftDocWeb.Api.V1.RoleController do
          %UserRole{} = user_role <- Account.get_user_role(current_user, user_id, role_id),
          {:ok, _} <- Account.delete_user_role(user_role),
          user <- Account.get_user(user_id) do
-      Notifications.create_notification([user], %{
-        type: :unassign_role,
-        role_name: role_name,
-        organisation_name: organisation_name
-      })
+      Task.start(fn ->
+        Notifications.create_notification([user], %{
+          type: :unassign_role,
+          role_name: role_name,
+          organisation_name: organisation_name
+        })
+      end)
 
       render(conn, "unassign_role.json")
     end

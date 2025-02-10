@@ -8,7 +8,7 @@ defmodule WraftDoc.Notifications.NotificationMessages do
   end
 
   def message(:join_organisation, %{organisation_name: organisation_name}) do
-    "Welcome to #{organisation_name}...!!"
+    "Welcome to #{organisation_name}.!"
   end
 
   def message(:assign_role, %{
