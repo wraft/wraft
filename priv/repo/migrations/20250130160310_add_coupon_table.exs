@@ -1,6 +1,8 @@
 defmodule WraftDoc.Repo.Migrations.AddCouponTable do
   use Ecto.Migration
 
+  alias WraftDoc.Enterprise
+
   def up do
     unless Enterprise.self_hosted?() do
       create table(:coupon, primary_key: false) do
@@ -65,7 +67,7 @@ defmodule WraftDoc.Repo.Migrations.AddCouponTable do
         remove(:coupon_id)
       end
 
-      rename(table(:plan), :pay_link, to: :payment_link)
+      rename(table(:plan), :payment_link, to: :pay_link)
 
       drop(index(:coupon, [:coupon_id]))
       drop(unique_index(:coupon, [:name], name: :coupon_name_index))
