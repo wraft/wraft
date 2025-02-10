@@ -15,6 +15,8 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
   alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Notifications
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -243,8 +245,18 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     current_user = conn.assigns[:current_user]
 
     with %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
-         %Role{} <- Account.get_role(current_user, role_id),
-         {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id) do
+         %Role{organisation: %Organisation{name: organisation_name}} = role <-
+           Account.get_role_with_organisation(current_user, role_id),
+         {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id),
+         user <- Account.get_user(user_id) do
+      Task.start(fn ->
+        Notifications.create_notification([user], %{
+          type: :assign_role,
+          role_name: role.name,
+          organisation_name: organisation_name
+        })
+      end)
+
       render(conn, "assign_role.json")
     end
   end
@@ -270,10 +282,20 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   def unassign_role(conn, %{"user_id" => user_id, "role_id" => role_id} = _params) do
     current_user = conn.assigns[:current_user]
 
-    with %Role{name: role_name} <- Account.get_role(current_user, role_id),
+    with %Role{name: role_name, organisation: %Organisation{name: organisation_name}} = _role <-
+           Account.get_role_with_organisation(current_user, role_id),
          true <- Account.allowed_to_unassign_role?(current_user, user_id, role_name),
          %UserRole{} = user_role <- Account.get_user_role(current_user, user_id, role_id),
-         {:ok, _} <- Account.delete_user_role(user_role) do
+         {:ok, _} <- Account.delete_user_role(user_role),
+         user <- Account.get_user(user_id) do
+      Task.start(fn ->
+        Notifications.create_notification([user], %{
+          type: :unassign_role,
+          role_name: role_name,
+          organisation_name: organisation_name
+        })
+      end)
+
       render(conn, "unassign_role.json")
     end
   end

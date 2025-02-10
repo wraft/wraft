@@ -278,6 +278,18 @@ defmodule WraftDoc.Account do
 
   def get_role(_, _), do: nil
 
+  @doc """
+    Gets a role with its organisation from its ID and its user's ID.
+
+  """
+  @spec get_role_with_organisation(%User{current_org_id: integer()}, <<_::288>>) ::
+          %Role{} | nil
+  def get_role_with_organisation(%User{current_org_id: org_id}, <<_::288>> = id) do
+    Role
+    |> Repo.get_by(id: id, organisation_id: org_id)
+    |> Repo.preload(:organisation)
+  end
+
   def create_role(%User{current_org_id: org_id}, params) do
     params = Map.put(params, "organisation_id", org_id)
 

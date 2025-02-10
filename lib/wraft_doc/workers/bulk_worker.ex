@@ -11,6 +11,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   alias WraftDoc.Document
   alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Enterprise
+  alias WraftDoc.Notifications
   alias WraftDoc.Repo
 
   @impl Oban.Worker
@@ -105,8 +106,11 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
-    Logger.error("Form mapping not complete. Pipeline execution failed.")
-    trigger
+    Task.start(fn ->
+      Notifications.create_notification([trigger.creator_id], %{type: :form_mapping_not_complete})
+      Logger.error("Form mapping not complete. Pipeline execution failed.")
+      trigger
+    end)
   end
 
   defp handle_exceptions(
@@ -121,6 +125,10 @@ defmodule WraftDoc.Workers.BulkWorker do
           "The pipeline you're trying to run does not exist. Please double-check the pipeline name and try again.",
         stage: stage
       })
+
+    Task.start(fn ->
+      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_not_found})
+    end)
 
     Logger.error("Pipeline not found. Pipeline execution failed.")
     trigger
@@ -139,6 +147,10 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
+    Task.start(fn ->
+      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_instance_failed})
+    end)
+
     Logger.error("Instance creation failed. Pipeline execution failed.")
     trigger
   end
@@ -155,6 +167,10 @@ defmodule WraftDoc.Workers.BulkWorker do
         message: message,
         stage: stage
       })
+
+    Task.start(fn ->
+      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_downLoad_error})
+    end)
 
     Logger.error("Instance creation failed. Pipeline execution failed.")
     trigger
@@ -180,6 +196,11 @@ defmodule WraftDoc.Workers.BulkWorker do
   defp handle_exceptions({:ok, %{trigger: trigger, failed_builds: [], zip_file: zip_file}}) do
     state = TriggerHistory.states()[:success]
     trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
+
+    Task.start(fn ->
+      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_build_success})
+    end)
+
     Logger.info("Pipeline completed succesfully.!")
     trigger
   end
@@ -196,6 +217,10 @@ defmodule WraftDoc.Workers.BulkWorker do
         failed_builds: failed_builds,
         zip_file: zip_file
       })
+
+    Task.start(fn ->
+      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_build_failed})
+    end)
 
     Logger.error("Pipeline partially completed.! Some builds failed.!")
     trigger

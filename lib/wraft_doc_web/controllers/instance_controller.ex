@@ -868,10 +868,14 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   @spec approve(Plug.Conn.t(), map) :: Plug.Conn.t()
   def approve(conn, %{"id" => id}) do
-    current_user = conn.assigns.current_user
+    %{current_org_id: organisation_id} = current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Document.show_instance(id, current_user),
+    with %Instance{
+           content_type: %ContentType{organisation_id: ^organisation_id},
+           state: _state
+         } = instance <- Document.show_instance(id, current_user),
          %Instance{} = instance <- Document.approve_instance(current_user, instance) do
+      # TODO: add notification
       render(conn, "approve_or_reject.json", %{instance: instance})
     end
   end
