@@ -585,7 +585,7 @@ defmodule WraftDoc.Document do
 
   defp create_initial_version(%{id: author_id}, %Instance{id: document_id} = instance) do
     params = %{
-      "version_number" => "save:1,build:1",
+      "version_number" => 1,
       "type" => "save",
       "naration" => "Initial version",
       "raw" => instance.raw,
@@ -1330,7 +1330,7 @@ defmodule WraftDoc.Document do
        when type in [:save, :build] do
     query =
       from(v in Version,
-        where: v.content_id == ^id,
+        where: v.content_id == ^id and v.type == ^type,
         order_by: [desc: v.inserted_at],
         limit: 1,
         select: v.version_number
@@ -1343,8 +1343,8 @@ defmodule WraftDoc.Document do
         nil ->
           1
 
-        version_string ->
-          version_string |> String.split(~r/[:,]/) |> increment_version(type)
+        version_number ->
+          version_number + 1
       end
 
     # TODO - add naration
@@ -1356,16 +1356,6 @@ defmodule WraftDoc.Document do
   end
 
   defp create_version_params(_, params, _), do: params
-
-  # Increment the version number by one
-  defp increment_version([_, save_version, _, build_version], :save) do
-    "save:#{String.to_integer(save_version) + 1},build:#{build_version}"
-  end
-
-  defp increment_version([_, save_version, _, build_version], :build) do
-    # "build:#{build_version + 1}"
-    "save:#{save_version},build:#{String.to_integer(build_version) + 1}"
-  end
 
   # Checks whether the raw and serialzed of old and new instances are same or not.
   # If they are both the same, returns false, else returns true
@@ -3836,20 +3826,11 @@ defmodule WraftDoc.Document do
   defp get_version(_, _), do: nil
 
   defp get_previous_version(%{id: instance_id}, %{version_number: version_number, type: type}) do
-    version_number = version_number |> String.split(~r/[:,]/) |> decrement_version(type)
-    Repo.get_by(Version, version_number: version_number, content_id: instance_id)
+    version_number = version_number - 1
+    Repo.get_by(Version, version_number: version_number, content_id: instance_id, type: type)
   end
 
   defp get_previous_version(_, _), do: nil
-
-  # Decrement the version number by one
-  defp decrement_version([_, save_version, _, build_version], :save) do
-    "save:#{String.to_integer(save_version) - 1},build:#{build_version}"
-  end
-
-  defp decrement_version([_, save_version, _, build_version], :build) do
-    "save:#{save_version},build:#{String.to_integer(build_version) - 1}"
-  end
 
   def get_collection_form_field(%{current_org_id: org_id}, id) do
     query =

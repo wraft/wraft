@@ -5,7 +5,7 @@ defmodule WraftDoc.Document.Instance.VersionTest do
   @moduletag :document
 
   @valid_attrs %{
-    version_number: "save:0,build:1",
+    version_number: 1,
     type: :build,
     naration: "sample naration",
     raw: "sample raw data",
