@@ -129,7 +129,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
         name: organisation.name
       },
       email: email,
-      is_organisation_Member: is_organisation_member?(membership_status)
+      is_organisation_member: is_organisation_member?(membership_status)
     }
   end
 
