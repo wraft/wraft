@@ -22,5 +22,9 @@ defmodule WraftDoc.Document.Instance.Version do
     version
     |> cast(attrs, @fields)
     |> validate_required(@fields -- [:naration, :content_id])
+    |> unique_constraint(:version_number,
+      name: :version_unique_index,
+      message: "Version number already exists"
+    )
   end
 end

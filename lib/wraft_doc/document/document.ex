@@ -586,7 +586,6 @@ defmodule WraftDoc.Document do
   defp create_initial_version(%{id: author_id}, %Instance{id: document_id} = instance) do
     params = %{
       "version_number" => 1,
-      "type" => "save",
       "naration" => "Initial version",
       "raw" => instance.raw,
       "serialized" => instance.serialized,
@@ -596,15 +595,20 @@ defmodule WraftDoc.Document do
 
     Logger.info("Creating initial version...")
 
-    %Version{}
-    |> Version.changeset(params)
-    |> Repo.insert!()
+    insert_initial_version(Map.merge(params, %{"type" => "save"}))
+    insert_initial_version(Map.merge(params, %{"type" => "build"}))
 
     Logger.info("Initial version generated")
     {:ok, "ok"}
   end
 
   defp create_initial_version(_, _), do: {:error, :invalid}
+
+  defp insert_initial_version(params) do
+    %Version{}
+    |> Version.changeset(params)
+    |> Repo.insert!()
+  end
 
   @doc """
   Same as create_instance/4, to create instance and its approval system
