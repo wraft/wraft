@@ -118,13 +118,18 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
-  def render("verify_invite_token.json", %{organisation: organisation, email: email}) do
+  def render("verify_invite_token.json", %{
+        organisation: organisation,
+        email: email,
+        membership_status: membership_status
+      }) do
     %{
       organisation: %{
         id: organisation.id,
         name: organisation.name
       },
-      email: email
+      email: email,
+      is_organisation_Member: is_organisation_member?(membership_status)
     }
   end
 
@@ -140,6 +145,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       permissions: permissions
     }
   end
+
+  defp is_organisation_member?({:error, :already_member}), do: true
+  defp is_organisation_member?(:ok), do: false
 
   defp generate_url(%{logo: logo} = organisation) do
     WraftDocWeb.LogoUploader.url({logo, organisation}, signed: true)
