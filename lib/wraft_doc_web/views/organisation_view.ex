@@ -2,6 +2,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
   use WraftDocWeb, :view
 
   alias __MODULE__
+  alias WraftDoc.Account.User
   alias WraftDocWeb.Api.V1.UserView
 
   def render("create.json", %{organisation: organisation}) do
@@ -118,13 +119,20 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
-  def render("verify_invite_token.json", %{organisation: organisation, email: email}) do
+  def render("verify_invite_token.json", %{
+        organisation: organisation,
+        email: email,
+        is_organisation_member: is_organisation_member,
+        is_wraft_member: is_wraft_member
+      }) do
     %{
       organisation: %{
         id: organisation.id,
         name: organisation.name
       },
-      email: email
+      email: email,
+      is_organisation_member: is_organisation_member?(is_organisation_member),
+      is_wraft_member: is_wraft_member?(is_wraft_member)
     }
   end
 
@@ -140,6 +148,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
       permissions: permissions
     }
   end
+
+  defp is_organisation_member?({:error, :already_member}), do: true
+  defp is_organisation_member?(:ok), do: false
+
+  defp is_wraft_member?(%User{}), do: true
+  defp is_wraft_member?(nil), do: false
 
   defp generate_url(%{logo: logo} = organisation) do
     WraftDocWeb.LogoUploader.url({logo, organisation}, signed: true)
