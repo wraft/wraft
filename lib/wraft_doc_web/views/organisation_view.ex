@@ -122,8 +122,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
   def render("verify_invite_token.json", %{
         organisation: organisation,
         email: email,
-        organisation_membership_status: organisation_membership_status,
-        wraft_membership_status: wraft_membership_status
+        is_organisation_member: is_organisation_member,
+        is_wraft_member: is_wraft_member
       }) do
     %{
       organisation: %{
@@ -131,8 +131,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
         name: organisation.name
       },
       email: email,
-      is_organisation_member: is_organisation_member?(organisation_membership_status),
-      is_wraft_member: is_wraft_member?(wraft_membership_status)
+      is_organisation_member: is_organisation_member?(is_organisation_member),
+      is_wraft_member: is_wraft_member?(is_wraft_member)
     }
   end
 

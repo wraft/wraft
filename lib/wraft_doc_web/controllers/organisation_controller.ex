@@ -671,14 +671,14 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     with {:ok, %{organisation_id: organisation_id, email: email}} <-
            AuthTokens.check_token(token, :invite),
          %Organisation{} = organisation <- Enterprise.get_organisation(organisation_id) do
-      organisation_membership_status = Enterprise.already_member(organisation_id, email)
-      wraft_user_status = Account.get_user_by_email(email)
+      is_organisation_member = Enterprise.already_member(organisation_id, email)
+      is_wraft_member = Account.get_user_by_email(email)
 
       render(conn, "verify_invite_token.json",
         organisation: organisation,
         email: email,
-        organisation_membership_status: organisation_membership_status,
-        wraft_membership_status: wraft_user_status
+        is_organisation_member: is_organisation_member,
+        is_wraft_member: is_wraft_member
       )
     end
   end
