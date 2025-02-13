@@ -6,6 +6,7 @@ defmodule WraftDocWeb.UserAdmin do
   alias WraftDoc.Account
   alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens
+  alias WraftDoc.Enterprise
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Router.Helpers, as: Routes
@@ -100,5 +101,15 @@ defmodule WraftDocWeb.UserAdmin do
 
   defp convert_utc_time(datetime) do
     Account.convert_utc_time(datetime, "Asia/Calcutta")
+  end
+
+  def delete(_conn, %{data: user} = _changeset) do
+    %{user: user, organisation: personal_org} =
+      Enterprise.get_personal_organisation_and_role(user)
+
+    with {:ok, user} <- Repo.delete(user),
+         {:ok, _deleted_org} <- Repo.delete(personal_org) do
+      {:ok, user}
+    end
   end
 end
