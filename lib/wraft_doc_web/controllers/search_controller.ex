@@ -94,7 +94,7 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   """
   @spec search(conn :: Phoenix.Conn.t(), params :: map()) :: Phoenix.Conn.t()
   def search(conn, params) do
-    org_id = conn.assigns[:current_user].current_org_id
+    org_id = "organisation_id:=#{conn.assigns[:current_user].current_org_id}"
     query = Map.get(params, "query", "")
     collection = Map.get(params, "collection")
 
@@ -114,6 +114,26 @@ defmodule WraftDocWeb.Api.V1.SearchController do
         conn
         |> put_status(:bad_request)
         |> json(%{error: reason})
+    end
+  end
+
+  swagger_path :reindex do
+    get("/search/reindex")
+    summary("Typesense Reindex")
+    description("Reindexing Data from Typesense")
+    operation_id("reindexing")
+
+    response(200, "OK")
+    response(400, "Bad Request", Schema.ref(:Error))
+  end
+
+  @doc """
+  Recreate collections and reindex them in Typesense .
+  """
+
+  def reindex(conn, _params) do
+    with :ok <- Typesense.initialize() do
+      json(conn, %{status: "success", message: "Collections initialized and data reindexed"})
     end
   end
 end
