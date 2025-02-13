@@ -691,9 +691,9 @@ defmodule WraftDoc.Billing do
   @doc """
   Handles response for admin modules.
   """
-  @spec handle_repsonse(map(), Ecto.Changeset.t()) ::
+  @spec handle_response(map(), Ecto.Changeset.t()) ::
           {:ok, map()} | {:error, Ecto.Changeset.t()} | {:error, {Ecto.Changeset.t(), String.t()}}
-  def handle_repsonse(response, changeset) do
+  def handle_response(response, changeset) do
     case response do
       {:ok, plan} ->
         {:ok, plan}

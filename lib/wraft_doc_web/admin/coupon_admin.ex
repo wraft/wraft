@@ -96,7 +96,7 @@ defmodule WraftDocWeb.CouponAdmin do
 
     changeset.changes
     |> Billing.create_coupon()
-    |> Billing.handle_repsonse(changeset)
+    |> Billing.handle_response(changeset)
   end
 
   def update(conn, changeset) do
@@ -104,12 +104,12 @@ defmodule WraftDocWeb.CouponAdmin do
 
     changeset.data
     |> Billing.update_coupon(Map.merge(formatted_changeset.changes, changeset.changes))
-    |> Billing.handle_repsonse(changeset)
+    |> Billing.handle_response(changeset)
   end
 
   def delete(_conn, changeset) do
     changeset.data
     |> Billing.delete_coupon()
-    |> Billing.handle_repsonse(changeset)
+    |> Billing.handle_response(changeset)
   end
 end

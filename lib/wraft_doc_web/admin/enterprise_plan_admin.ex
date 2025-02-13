@@ -125,7 +125,7 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
 
     params
     |> Enterprise.create_plan()
-    |> Billing.handle_repsonse(changeset)
+    |> Billing.handle_response(changeset)
   end
 
   def update(conn, changeset) do
@@ -133,13 +133,13 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
 
     changeset.data
     |> Enterprise.update_plan(params)
-    |> Billing.handle_repsonse(changeset)
+    |> Billing.handle_response(changeset)
   end
 
   def delete(_conn, changeset) do
     changeset
     |> Ecto.Changeset.change(%{is_active?: false})
     |> Repo.update()
-    |> Billing.handle_repsonse(changeset)
+    |> Billing.handle_response(changeset)
   end
 end
