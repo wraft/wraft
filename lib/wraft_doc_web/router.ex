@@ -102,8 +102,6 @@ defmodule WraftDocWeb.Router do
         :verify_document_access
       )
 
-      # Show and index plans
-      resources("/plans", PlanController, only: [:show, :index])
       # Verify invite token
       get(
         "/organisations/verify_invite_token/:token",
