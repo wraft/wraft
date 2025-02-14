@@ -94,17 +94,18 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   """
   @spec search(conn :: Phoenix.Conn.t(), params :: map()) :: Phoenix.Conn.t()
   def search(%{assigns: %{current_user: %{current_org_id: org_id}}} = conn, params) do
-    org_id = "organisation_id:=#{org_id}"
-    query = Map.get(params, "query", "")
-    collection = Map.get(params, "collection")
+    org_filter = "organisation_id:=#{org_id}"
+
+    %{"query" => query, "collection" => collection} =
+      Map.merge(%{"query" => "", "collection" => nil}, params)
 
     opts =
-      Enum.reduce(Presets.default_search_opts(), %{}, fn {key, default_value}, acc ->
-        param_value = Map.get(params, Atom.to_string(key))
-        Map.put(acc, key, param_value || default_value)
+      Presets.default_search_opts()
+      |> Enum.map(fn {key, default} ->
+        {key, Map.get(params, Atom.to_string(key), default)}
       end)
-
-    opts = Map.put(opts, :filter_by, org_id)
+      |> Map.new()
+      |> Map.put(:filter_by, org_filter)
 
     case Typesense.search(query, collection, opts) do
       {:ok, results} ->
