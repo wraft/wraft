@@ -131,14 +131,3 @@ defmodule WraftDoc.Search.Typesense do
     end
   end
 end
-
-%{
-  prefix: true,
-  sort_by: nil,
-  q: "the",
-  page: 1,
-  filter_by: nil,
-  per_page: 10,
-  collection_name: "data_template",
-  query_by: "title"
-}
