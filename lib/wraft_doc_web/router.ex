@@ -413,6 +413,7 @@ defmodule WraftDocWeb.Router do
 
       # Search
       get("/search", SearchController, :search)
+      get("/reindex", SearchController, :reindex)
 
       # post("/approval_systems/:id/approve", ApprovalSystemController, :approve)
 

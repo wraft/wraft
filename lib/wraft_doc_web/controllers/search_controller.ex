@@ -118,7 +118,7 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   end
 
   swagger_path :reindex do
-    get("/search/reindex")
+    get("/reindex")
     summary("Typesense Reindex")
     description("Reindexing Data from Typesense")
     operation_id("reindexing")

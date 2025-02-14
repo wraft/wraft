@@ -95,34 +95,6 @@ defmodule WraftDoc.Search.Typesense do
 
   If no collection name is provided, the search is executed across predefined collections.
   """
-  def x_search(params, org_id \\ nil) do
-    # org_id = conn.assigns[:current_user].current_org_id
-    query = Map.get(params, "query", "")
-    collection = Map.get(params, "collection")
-
-    opts =
-      Enum.reduce(WraftDoc.Search.Presets.default_search_opts(), %{}, fn {key, default_value},
-                                                                         acc ->
-        param_value = Map.get(params, Atom.to_string(key))
-        Map.put(acc, key, param_value || default_value)
-      end)
-
-    opts = Map.put(opts, :filter_by, org_id)
-
-    case search(query, collection, opts) do
-      {:ok, results} ->
-        results
-
-      # render(conn, "search.json", results: results)
-
-      {:error, reason} ->
-        reason
-        # conn
-        # |> put_status(:bad_request)
-        # |> json(%{error: reason})
-    end
-  end
-
   @spec search(String.t(), String.t() | nil, keyword()) :: {:ok, map()} | {:error, any()}
   def search(query, collection_name \\ nil, opts \\ []) do
     collection_names = ["content_type", "theme", "layout", "flow", "data_template"]
