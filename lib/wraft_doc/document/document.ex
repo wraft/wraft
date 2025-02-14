@@ -4255,4 +4255,43 @@ defmodule WraftDoc.Document do
   def remove_counterparty(%CounterParties{} = counterparty) do
     Repo.delete(counterparty)
   end
+
+  @doc """
+    Add image to document
+  """
+  @spec add_image(User.t(), Instance.t(), Plug.Upload.t()) :: ExAws.Response.t()
+  def add_image(%User{current_org_id: org_id}, %Instance{instance_id: instance_id}, %Plug.Upload{
+        # content_type: "image/",  # Add  type validation
+        path: temp_path,
+        filename: image_file_name
+      }) do
+    instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}/images"
+    file_path = Path.join(instance_dir_path, image_file_name)
+    Minio.upload_file(file_path, temp_path)
+
+    %{
+      src: file_path,
+      presigned_url: Minio.generate_url(file_path),
+      expiry_date: WraftDoc.DocConversion.new_expiry_date()
+    }
+  end
+
+  @doc """
+    Delete image from document
+  """
+  @spec remove_image(Instance.t(), String.t()) :: ExAws.Response.t()
+  def remove_image(%Instance{}, image_file_path) do
+    # instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
+    # file_path = Path.join(instance_dir_path, image_filename)
+
+    image_file_path
+    |> Minio.delete_file()
+    |> case do
+      {:ok, _} ->
+        {:ok, "Image deleted"}
+
+      {:error, _} ->
+        {:error, "Image not found"}
+    end
+  end
 end
