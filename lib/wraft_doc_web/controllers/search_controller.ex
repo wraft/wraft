@@ -92,7 +92,7 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   Performs a search based on the provided query and collection, with options
   merged from default presets and request parameters.
   """
-  @spec search(conn :: Phoenix.Conn.t(), params :: map()) :: Phoenix.Conn.t()
+  @spec search(conn :: Plug.Conn.t(), params :: map()) :: Plug.Conn.t()
   def search(%{assigns: %{current_user: %{current_org_id: org_id}}} = conn, params) do
     org_filter = "organisation_id:=#{org_id}"
 
@@ -124,7 +124,7 @@ defmodule WraftDocWeb.Api.V1.SearchController do
     description("Reindexing Data from Typesense")
     operation_id("reindexing")
 
-    response(200, %{status: "success", message: "Collections initialized and data reindexed"})
+    response(200, "Ok", Schema.ref(:TypenseSearchResponse))
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
