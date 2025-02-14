@@ -93,8 +93,8 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   merged from default presets and request parameters.
   """
   @spec search(conn :: Phoenix.Conn.t(), params :: map()) :: Phoenix.Conn.t()
-  def search(conn, params) do
-    org_id = "organisation_id:=#{conn.assigns[:current_user].current_org_id}"
+  def search(%{assigns: %{current_user: %{current_org_id: org_id}}} = conn, params) do
+    org_id = "organisation_id:=#{org_id}"
     query = Map.get(params, "query", "")
     collection = Map.get(params, "collection")
 
@@ -123,17 +123,16 @@ defmodule WraftDocWeb.Api.V1.SearchController do
     description("Reindexing Data from Typesense")
     operation_id("reindexing")
 
-    response(200, "OK")
+    response(200, %{status: "success", message: "Collections initialized and data reindexed"})
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
   @doc """
   Recreate collections and reindex them in Typesense .
   """
-
+  @spec reindex(Plug.Conn.t(), map) :: Plug.Conn.t()
   def reindex(conn, _params) do
-    with :ok <- Typesense.initialize() do
-      json(conn, %{status: "success", message: "Collections initialized and data reindexed"})
-    end
+    Typesense.initialize()
+    json(conn, %{status: "success", message: "Collections initialized and data reindexed"})
   end
 end
