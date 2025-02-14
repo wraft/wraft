@@ -260,6 +260,11 @@ defmodule WraftDocWeb.Router do
       # Instance state update
       patch("/contents/:id/states", InstanceController, :state_update)
       patch("/contents/:id/lock-unlock", InstanceController, :lock_unlock)
+      # Document add/remove image
+      post("/contents/:id/image", InstanceController, :add_image)
+      delete("/contents/:id/image", InstanceController, :remove_image)
+      get("/contents/:id/image/presigned_url", InstanceController, :generate_presigned_url)
+
       get("/contents/title/search", InstanceController, :search)
       get("/contents/:id/change/:v_id", InstanceController, :change)
       # Share an instance
