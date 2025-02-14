@@ -48,7 +48,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.DataTemplate do
     %{
       id: to_string(data_template.id),
       collection_name: "data_template",
-      title: data_template.title,
+      name: data_template.title,
       title_template: data_template.title_template,
       data: data_template.data,
       serialized: Jason.encode!(data_template.serialized),
