@@ -4256,39 +4256,4 @@ defmodule WraftDoc.Document do
   def remove_counterparty(%CounterParties{} = counterparty) do
     Repo.delete(counterparty)
   end
-
-  @doc """
-    Add image to document
-  """
-  @spec add_image(User.t(), Instance.t(), Plug.Upload.t()) :: map() | {:error, Ecto.Changeset.t()}
-  def add_image(
-        %User{current_org_id: org_id} = current_user,
-        %Instance{id: document_id},
-        %Plug.Upload{filename: image_file_name} = image
-      ) do
-    params = %{
-      name: image_file_name,
-      type: "document",
-      organisation_id: org_id,
-      file: image
-    }
-
-    Multi.new()
-    |> Multi.insert(:asset, current_user |> build_assoc(:assets) |> Asset.changeset(params))
-    |> Multi.update(:asset_file_upload, &Asset.file_changeset(&1.asset, params))
-    |> Multi.insert(:document_asset, fn %{asset: asset} ->
-      DocumentAsset.changeset(%DocumentAsset{}, %{asset_id: asset.id, document_id: document_id})
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{asset_file_upload: asset}} ->
-        %{
-          asset_id: asset.id,
-          expiry_date: WraftDoc.DocConversion.new_expiry_date()
-        }
-
-      {:error, _, changeset, _} ->
-        {:error, changeset}
-    end
-  end
 end
