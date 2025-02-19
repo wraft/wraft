@@ -264,6 +264,7 @@ defmodule WraftDocWeb.Router do
       post("/contents/:id/image", InstanceController, :add_image)
       delete("/contents/:id/image", InstanceController, :remove_image)
       get("/contents/:id/image/presigned_url", InstanceController, :generate_presigned_url)
+      get("/contents/:id/image", InstanceController, :get_image)
 
       get("/contents/title/search", InstanceController, :search)
       get("/contents/:id/change/:v_id", InstanceController, :change)
