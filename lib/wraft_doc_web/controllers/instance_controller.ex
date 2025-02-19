@@ -22,6 +22,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   require Logger
 
+  alias WraftDoc.Client.Minio
   alias WraftDoc.Client.Minio.DownloadError
   alias WraftDoc.DocConversion
   alias WraftDoc.Document
@@ -1121,8 +1122,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  alias WraftDoc.Client.Minio
-
   @spec generate_presigned_url(Plug.Conn.t(), map) :: Plug.Conn.t()
   def generate_presigned_url(conn, %{"id" => id, "src" => image_file_path}) do
     current_user = conn.assigns.current_user
@@ -1136,5 +1135,25 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
       # render(conn, "generate_presigned_url.json", %{info: "Presigned url generated successfully"})
     end
+  end
+
+  swagger_path :get_image do
+    get("/contents/{id}/image")
+    summary("Get image")
+    description("Api to get image")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+      src(:query, :string, "File path of the image", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec get_image(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def get_image(conn, %{"id" => _id, "src" => image_file_path}) do
+    redirect(conn, external: Minio.generate_url(image_file_path))
   end
 end
