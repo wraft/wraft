@@ -87,6 +87,8 @@ defmodule WraftDocWeb.Router do
       post("/user/resend_email_token", UserController, :resend_email_token)
       # Verify Email Verification Token
       get("/user/verify_email_token/:token", UserController, :verify_email_token)
+      # get document image url
+      get("/contents/:id/image", InstanceController, :get_image)
 
       unless Enterprise.self_hosted?() do
         post("/vendors/webhook", VendorsWebhookController, :webhook)
@@ -264,7 +266,7 @@ defmodule WraftDocWeb.Router do
       post("/contents/:id/image", InstanceController, :add_image)
       delete("/contents/:id/image", InstanceController, :remove_image)
       get("/contents/:id/image/presigned_url", InstanceController, :generate_presigned_url)
-      get("/contents/:id/image", InstanceController, :get_image)
+      # get("/contents/:id/image", InstanceController, :get_image)
 
       get("/contents/title/search", InstanceController, :search)
       get("/contents/:id/change/:v_id", InstanceController, :change)
