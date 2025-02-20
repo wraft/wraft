@@ -1129,7 +1129,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       image_url = WraftDocWeb.AssetUploader.url({file, asset}, signed: true)
 
       json(conn, %{
-        presigned_url: image_url,
+        url: image_url,
         expiry_date: WraftDoc.DocConversion.new_expiry_date()
       })
 
