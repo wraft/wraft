@@ -30,6 +30,15 @@ defmodule WraftDocWeb.AssetUploader do
     end
   end
 
+  def validate({file, %Asset{type: "document"}}) do
+    file_extension = file.file_name |> Path.extname() |> String.downcase()
+
+    case Enum.member?(~w(.jpg .jpeg .gif .png), file_extension) do
+      true -> :ok
+      false -> {:error, "invalid file type"}
+    end
+  end
+
   def filename(_version, {file, _asset}) do
     file.file_name
     |> Path.rootname()

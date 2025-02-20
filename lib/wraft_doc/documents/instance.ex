@@ -13,6 +13,8 @@ defmodule WraftDoc.Documents.Instance do
   use WraftDoc.Schema
 
   alias __MODULE__
+  alias WraftDoc.Document.Asset
+  alias WraftDoc.Document.DocumentAsset
   alias WraftDoc.EctoType.DocumentMetaType
 
   def types, do: [normal: 1, bulk_build: 2, pipeline_api: 3, pipeline_hook: 4]

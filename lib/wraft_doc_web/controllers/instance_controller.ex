@@ -1058,15 +1058,14 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec add_image(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def add_image(conn, %{"id" => id, "image" => image}) do
+  def add_image(conn, %{"id" => document_id, "file" => image}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Document.show_instance(id, current_user),
-         %{src: src, presigned_url: presigned_url, expiry_date: expiry_date} <-
+    with %Instance{} = instance <- Document.show_instance(document_id, current_user),
+         %{asset_id: asset_id, expiry_date: expiry_date} <-
            Document.add_image(current_user, instance, image) do
       json(conn, %{
-        src: src,
-        presigned_url: presigned_url,
+        asset_id: asset_id,
         expiry_date: expiry_date
       })
 
@@ -1084,7 +1083,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     parameters do
       id(:path, :string, "Instance id", required: true)
-      src(:query, :string, "File path of the image", required: true)
+      asset_id(:query, :string, "Image asset id", required: true)
     end
 
     response(200, "Ok", Schema.ref(:Content))
@@ -1093,11 +1092,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec remove_image(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def remove_image(conn, %{"id" => id, "src" => image_file_path}) do
+  def remove_image(conn, %{"id" => id, "asset_id" => asset_id}) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Document.show_instance(id, current_user),
-         {:ok, _} <- Document.remove_image(instance, image_file_path) do
+         {:ok, _} <- Document.remove_image(instance, asset_id) do
       json(conn, %{info: "Image removed successfully"})
       # render(conn, "remove_image.json", %{info: "Image removed successfully"})
     end
@@ -1122,13 +1121,15 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec generate_presigned_url(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def generate_presigned_url(conn, %{"id" => id, "src" => image_file_path}) do
+  def generate_presigned_url(conn, %{"id" => id, "asset_id" => asset_id}) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = _instance <- Document.show_instance(id, current_user) do
+      %Asset{file: file} = asset = Repo.get(Asset, asset_id)
+      image_url = WraftDocWeb.AssetUploader.url({file, asset}, signed: true)
+
       json(conn, %{
-        src: image_file_path,
-        presigned_url: Minio.generate_url(image_file_path),
+        presigned_url: image_url,
         expiry_date: WraftDoc.DocConversion.new_expiry_date()
       })
 
@@ -1136,6 +1137,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
+  @doc """
+  Get image
+  """
   swagger_path :get_image do
     get("/contents/{id}/image")
     summary("Get image")
@@ -1152,7 +1156,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec get_image(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def get_image(conn, %{"id" => _id, "src" => image_file_path}) do
-    redirect(conn, external: Minio.generate_url(image_file_path))
+  def get_image(conn, %{"id" => _id, "asset_id" => asset_id}) do
+    %Asset{file: file} = asset = Repo.get(Asset, asset_id)
+    image_url = WraftDocWeb.AssetUploader.url({file, asset}, signed: true)
+    redirect(conn, external: image_url)
   end
 end
