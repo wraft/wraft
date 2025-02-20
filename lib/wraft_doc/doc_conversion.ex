@@ -1,8 +1,9 @@
 defmodule WraftDoc.DocConversion do
   @moduledoc false
 
-  alias WraftDoc.Client.Minio
+  alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Instance
+  alias WraftDoc.Repo
   alias WraftDocWeb.Funda
 
   @doc """
@@ -32,7 +33,7 @@ defmodule WraftDoc.DocConversion do
     # image = %{
     #   "type" => "image",
     #   "attrs" => %{
-    #     "src" => "organisations/653736e2-7c8f-4b57-bcad-ef3ed1056cc9/contents/NewVar0007/images/wallpaperflare.com_wallpaper.jpg",
+    #      "asset_id" => "1f0899ac-7cd7-4894-b140-ac1fe191fa72",
     #     "expiry_date" => "2024-01-01T00:00:00Z",
     #     "presigned_url" => "default"
     #   }
@@ -60,16 +61,19 @@ defmodule WraftDoc.DocConversion do
   end
 
   defp traverse_and_update(
-         %{"type" => "image", "attrs" => %{"expiry_date" => expiry_date, "src" => src} = _attrs} =
+         %{
+           "type" => "image",
+           "attrs" => %{"expiry_date" => expiry_date, "asset_id" => asset_id} = _attrs
+         } =
            image
        ) do
     if expired?(expiry_date) do
-      new_url = Minio.generate_url(src)
+      new_url = generate_image_url(asset_id)
 
       put_in(image, ["attrs"], %{
         "presigned_url" => new_url,
         "expiry_date" => new_expiry_date(),
-        "src" => src
+        "asset_id" => asset_id
       })
     else
       image
@@ -92,5 +96,10 @@ defmodule WraftDoc.DocConversion do
     DateTime.utc_now()
     |> DateTime.add(5, :minute)
     |> DateTime.to_iso8601()
+  end
+
+  defp generate_image_url(asset_id) do
+    %Asset{file: file} = asset = Repo.get(Asset, asset_id)
+    WraftDocWeb.AssetUploader.url({file, asset}, signed: true)
   end
 end

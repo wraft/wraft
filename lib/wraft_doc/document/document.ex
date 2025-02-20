@@ -23,6 +23,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Document.Counter
   alias WraftDoc.Document.CounterParties
   alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.Document.DocumentAsset
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType
@@ -4259,30 +4260,51 @@ defmodule WraftDoc.Document do
   @doc """
     Add image to document
   """
-  @spec add_image(User.t(), Instance.t(), Plug.Upload.t()) :: ExAws.Response.t()
-  def add_image(%User{current_org_id: org_id}, %Instance{instance_id: instance_id}, %Plug.Upload{
-        # content_type: "image/",  # Add  type validation
-        path: temp_path,
-        filename: image_file_name
-      }) do
-    instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}/images"
-    file_path = Path.join(instance_dir_path, image_file_name)
-    Minio.upload_file(file_path, temp_path)
-
-    %{
-      src: file_path,
-      presigned_url: Minio.generate_url(file_path),
-      expiry_date: WraftDoc.DocConversion.new_expiry_date()
+  @spec add_image(User.t(), Instance.t(), Plug.Upload.t()) :: map() | {:error, Ecto.Changeset.t()}
+  def add_image(
+        %User{current_org_id: org_id} = current_user,
+        %Instance{id: document_id},
+        %Plug.Upload{filename: image_file_name} = image
+      ) do
+    params = %{
+      name: image_file_name,
+      type: "document",
+      organisation_id: org_id,
+      file: image
     }
+
+    Multi.new()
+    |> Multi.insert(:asset, current_user |> build_assoc(:assets) |> Asset.changeset(params))
+    |> Multi.update(:asset_file_upload, &Asset.file_changeset(&1.asset, params))
+    |> Multi.insert(:document_asset, fn %{asset: asset} ->
+      DocumentAsset.changeset(%DocumentAsset{}, %{asset_id: asset.id, document_id: document_id})
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{asset_file_upload: asset}} ->
+        %{
+          asset_id: asset.id,
+          expiry_date: WraftDoc.DocConversion.new_expiry_date()
+        }
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
     Delete image from document
   """
-  @spec remove_image(Instance.t(), String.t()) :: ExAws.Response.t()
-  def remove_image(%Instance{}, image_file_path) do
-    # instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
-    # file_path = Path.join(instance_dir_path, image_filename)
+  @spec remove_image(Instance.t(), Ecto.UUID.t()) :: ExAws.Response.t()
+  def remove_image(%Instance{id: document_id}, <<_::288>> = asset_id) do
+    %Asset{organisation_id: org_id} = asset = Repo.get(Asset, asset_id)
+    image_file_path = "organisations/#{org_id}/assets/#{asset_id}"
+
+    DocumentAsset
+    |> Repo.get_by(document_id: document_id, asset_id: asset_id)
+    |> Repo.delete()
+
+    Repo.delete(asset)
 
     image_file_path
     |> Minio.delete_file()
