@@ -4291,29 +4291,4 @@ defmodule WraftDoc.Document do
         {:error, changeset}
     end
   end
-
-  @doc """
-    Delete image from document
-  """
-  @spec remove_image(Instance.t(), Ecto.UUID.t()) :: ExAws.Response.t()
-  def remove_image(%Instance{id: document_id}, <<_::288>> = asset_id) do
-    %Asset{organisation_id: org_id} = asset = Repo.get(Asset, asset_id)
-    image_file_path = "organisations/#{org_id}/assets/#{asset_id}"
-
-    DocumentAsset
-    |> Repo.get_by(document_id: document_id, asset_id: asset_id)
-    |> Repo.delete()
-
-    Repo.delete(asset)
-
-    image_file_path
-    |> Minio.delete_file()
-    |> case do
-      {:ok, _} ->
-        {:ok, "Image deleted"}
-
-      {:error, _} ->
-        {:error, "Image not found"}
-    end
-  end
 end
