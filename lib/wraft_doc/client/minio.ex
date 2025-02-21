@@ -32,13 +32,6 @@ defmodule WraftDoc.Client.Minio do
     |> @ex_aws_module.request()
   end
 
-  def upload_file(destination_path, local_path) do
-    local_path
-    |> S3.Upload.stream_file()
-    |> S3.upload(bucket(), destination_path)
-    |> @ex_aws_module.request()
-  end
-
   @doc """
   Streams all files in a given path/prefix and deletes them.
   """
