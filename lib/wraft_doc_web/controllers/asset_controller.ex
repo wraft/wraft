@@ -117,14 +117,28 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
     parameter(:name, :formData, :string, "Asset name", required: true)
     parameter(:file, :formData, :file, "Asset file to upload")
-    parameter(:type, :formData, :string, "The type of asset - theme or layout")
+    parameter(:type, :formData, :string, "The type of asset - theme or layout or document")
 
     response(200, "Ok", Schema.ref(:Asset))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  # Handles adding image to document.
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def create(conn, %{"document_id" => document_id, "file" => image}) do
+    current_user = conn.assigns[:current_user]
+
+    with %Instance{} = instance <- Document.show_instance(document_id, current_user),
+         %{asset_id: asset_id, expiry_date: expiry_date} <-
+           Document.add_image(current_user, instance, image) do
+      json(conn, %{
+        asset_id: asset_id,
+        expiry_date: expiry_date
+      })
+    end
+  end
+
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
@@ -189,6 +203,31 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     with %Asset{} = asset <- Assets.show_asset(asset_id, current_user) do
       render(conn, "show.json", asset: asset)
     end
+  end
+
+  @doc """
+  Get image
+  """
+  swagger_path :show_image do
+    get("asset/image/{id}")
+    summary("Get image")
+    description("Api to get image")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+      asset_id(:query, :string, "Image Asset ID", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec get_image(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def get_image(conn, %{"id" => asset_id}) do
+    %Asset{file: file} = asset = Repo.get(Asset, asset_id)
+    image_url = WraftDocWeb.AssetUploader.url({file, asset})
+    redirect(conn, external: image_url)
   end
 
   @doc """
