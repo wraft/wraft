@@ -124,21 +124,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  # Handles adding image to document.
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"document_id" => document_id, "file" => image}) do
-    current_user = conn.assigns[:current_user]
-
-    with %Instance{} = instance <- Document.show_instance(document_id, current_user),
-         %{asset_id: asset_id, expiry_date: expiry_date} <-
-           Document.add_image(current_user, instance, image) do
-      json(conn, %{
-        asset_id: asset_id,
-        expiry_date: expiry_date
-      })
-    end
-  end
-
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
@@ -223,11 +209,11 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec get_image(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def get_image(conn, %{"id" => asset_id}) do
-    %Asset{file: file} = asset = Repo.get(Asset, asset_id)
-    image_url = WraftDocWeb.AssetUploader.url({file, asset})
-    redirect(conn, external: image_url)
+  @spec show_image(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show_image(conn, %{"id" => asset_id}) do
+    with %Asset{} = asset <- Document.get_asset(asset_id) do
+      redirect(conn, external: Document.get_image_url(asset))
+    end
   end
 
   @doc """
