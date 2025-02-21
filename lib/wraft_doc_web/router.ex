@@ -65,15 +65,18 @@ defmodule WraftDocWeb.Router do
     end
   end
 
+  scope "/", WraftDocWeb.Api.V1 do
+    pipe_through(:api)
+    # Asset image redirect to minio url
+    get("/asset/image/:id", AssetController, :show_image)
+  end
+
   # Scope which does not need authorization.
   scope "/api", WraftDocWeb do
     pipe_through(:api)
 
     # user
     scope "/v1", Api.V1, as: :v1 do
-      # Asset image redirect to minio url
-      get("/asset/image/:id", AssetController, :show_image)
-
       resources("/users/signup/", RegistrationController, only: [:create])
       post("/users/signin", UserController, :signin)
       # Google Signin

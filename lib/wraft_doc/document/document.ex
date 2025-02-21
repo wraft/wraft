@@ -1824,34 +1824,38 @@ defmodule WraftDoc.Document do
     Get asset image url
   """
   @spec get_image_url(Asset.t()) :: String.t() | nil
-  def get_image_url(
-        %Asset{file: file, type: "document", url: image_url, expiry_date: expiry_date} = asset
-      ) do
+  def get_image_url(%Asset{type: "document", url: nil, expiry_date: nil} = asset),
+    do: update_expiry_date(asset)
+
+  def get_image_url(%Asset{type: "document", url: image_url, expiry_date: expiry_date} = asset) do
     if expired?(expiry_date) do
       image_url
     else
-      asset
-      |> Asset.update_expiry_date_changeset(%{
-        expiry_date: new_expiry_date(1, :hour),
-        url: WraftDocWeb.AssetUploader.url({file, asset})
-      })
-      |> Repo.update()
-      |> case do
-        {:ok, asset} -> asset.url
-        _ -> nil
-      end
+      update_expiry_date(asset)
     end
   end
 
   def get_image_url(_), do: nil
+
+  defp update_expiry_date(%Asset{file: file} = asset) do
+    asset
+    |> Asset.update_expiry_date_changeset(%{
+      expiry_date: new_expiry_date(1, :hour),
+      url: WraftDocWeb.AssetUploader.url({file, asset}, signed: true)
+    })
+    |> Repo.update()
+    |> case do
+      {:ok, asset} -> asset.url
+      _ -> nil
+    end
+  end
 
   @doc """
   Check if a date is expired.
   """
   @spec expired?(String.t()) :: boolean()
   def expired?(expiry_date) do
-    with {:ok, datetime, _offset} <- DateTime.from_iso8601(expiry_date),
-         do: DateTime.compare(datetime, DateTime.utc_now()) == :lt
+    DateTime.compare(expiry_date, DateTime.utc_now()) == :lt
   end
 
   @doc """
