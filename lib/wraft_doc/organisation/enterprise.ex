@@ -692,10 +692,12 @@ defmodule WraftDoc.Enterprise do
   """
   @spec create_organisation(User.t(), map) :: Organisation.t()
   def create_organisation(%User{} = user, params) do
+    updated_params = Map.put(params, "owner_id", user.id)
+
     Multi.new()
     |> Multi.insert(
       :organisation,
-      user |> build_assoc(:owned_organisations) |> Organisation.changeset(params)
+      user |> build_assoc(:owned_organisations) |> Organisation.changeset(updated_params)
     )
     |> Multi.update(:organisation_logo, &Organisation.logo_changeset(&1.organisation, params))
     |> Multi.insert(:user_organisation, fn %{organisation: org} ->
@@ -815,6 +817,19 @@ defmodule WraftDoc.Enterprise do
     |> EmailWorker.new(queue: "mailer", tags: ["organisation_delete_code"])
     |> Oban.insert()
   end
+
+  def transfer_ownership(
+        %Organisation{owner_id: owner_id} = organisation,
+        %User{id: owner_id} = _current_owner,
+        %User{id: new_owner_id} = _new_owner
+      ) do
+    organisation
+    |> Ecto.Changeset.change(owner_id: new_owner_id)
+    |> Repo.update()
+  end
+
+  def transfer_ownership(%Organisation{}, %User{}, %User{}),
+    do: {:error, "Only the current owner can transfer ownership"}
 
   @doc """
   Check if a user with the given Email ID is a member of the given organisation.
