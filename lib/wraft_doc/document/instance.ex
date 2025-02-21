@@ -13,8 +13,6 @@ defmodule WraftDoc.Document.Instance do
   use WraftDoc.Schema
 
   alias __MODULE__
-  alias WraftDoc.Document.Asset
-  alias WraftDoc.Document.DocumentAsset
   alias WraftDoc.EctoType.DocumentMetaType
 
   def types, do: [normal: 1, bulk_build: 2, pipeline_api: 3, pipeline_hook: 4]
@@ -44,7 +42,6 @@ defmodule WraftDoc.Document.Instance do
     has_many(:instance_approval_systems, WraftDoc.Document.InstanceApprovalSystem)
     has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :content_id)
     has_many(:versions, WraftDoc.Document.Instance.Version, foreign_key: :content_id)
-    many_to_many(:assets, Asset, join_through: DocumentAsset)
 
     timestamps()
   end

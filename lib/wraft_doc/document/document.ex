@@ -23,7 +23,6 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Document.Counter
   alias WraftDoc.Document.CounterParties
   alias WraftDoc.Document.DataTemplate
-  alias WraftDoc.Document.DocumentAsset
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType
@@ -1800,6 +1799,7 @@ defmodule WraftDoc.Document do
 
   def get_asset(<<_::288>>, _), do: {:error, :fake}
   def get_asset(_, %{current_org_id: _}), do: {:error, :invalid_id}
+  def get_asset(<<_::288>> = asset_id), do: Repo.get(Asset, asset_id)
 
   @doc """
   Update an asset.
@@ -1818,6 +1818,50 @@ defmodule WraftDoc.Document do
   def delete_asset(asset) do
     # Delete the uploaded file
     Repo.delete(asset)
+  end
+
+  @doc """
+    Get asset image url
+  """
+  @spec get_image_url(Asset.t()) :: String.t() | nil
+  def get_image_url(
+        %Asset{file: file, type: "document", url: image_url, expiry_date: expiry_date} = asset
+      ) do
+    if expired?(expiry_date) do
+      image_url
+    else
+      asset
+      |> Asset.update_expiry_date_changeset(%{
+        expiry_date: new_expiry_date(1, :hour),
+        url: WraftDocWeb.AssetUploader.url({file, asset})
+      })
+      |> Repo.update()
+      |> case do
+        {:ok, asset} -> asset.url
+        _ -> nil
+      end
+    end
+  end
+
+  def get_image_url(_), do: nil
+
+  @doc """
+  Check if a date is expired.
+  """
+  @spec expired?(String.t()) :: boolean()
+  def expired?(expiry_date) do
+    with {:ok, datetime, _offset} <- DateTime.from_iso8601(expiry_date),
+         do: DateTime.compare(datetime, DateTime.utc_now()) == :lt
+  end
+
+  @doc """
+  Generate a new expiry date
+  """
+  @spec new_expiry_date(integer(), atom()) :: String.t()
+  def new_expiry_date(amount, unit) do
+    DateTime.utc_now()
+    |> DateTime.add(amount, unit)
+    |> DateTime.to_iso8601()
   end
 
   @doc """

@@ -23,7 +23,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   require Logger
 
   alias WraftDoc.Client.Minio.DownloadError
-  alias WraftDoc.DocConversion
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.Instance
@@ -645,7 +644,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Document.show_instance(instance_id, current_user) do
-      render(conn, "show.json", instance: DocConversion.refresh_presigned_urls(instance))
+      render(conn, "show.json", instance: instance)
     end
   end
 
