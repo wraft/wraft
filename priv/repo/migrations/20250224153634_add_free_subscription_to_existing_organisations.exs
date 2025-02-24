@@ -1,4 +1,4 @@
-defmodule WraftDoc.Repo.Migrations.AddFreeSubscriptionsToExistingOrganisations do
+defmodule WraftDoc.Repo.Migrations.AddFreeSubscriptionToExistingOrganisations do
   use Ecto.Migration
   import Ecto.Query
 

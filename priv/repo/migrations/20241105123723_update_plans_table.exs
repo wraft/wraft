@@ -1,7 +1,7 @@
 defmodule WraftDoc.Repo.Migrations.UpdatePlansTable do
   use Ecto.Migration
 
-  def change do
+  def up do
     alter table(:plan) do
       remove(:yearly_amount, :string)
       remove(:monthly_amount, :string)
@@ -40,5 +40,32 @@ defmodule WraftDoc.Repo.Migrations.UpdatePlansTable do
         updated_at = NOW()
       WHERE name = 'Free Trial';
     """)
+  end
+
+  def down do
+    alter table(:plan) do
+      add(:yearly_amount, :string)
+      add(:monthly_amount, :string)
+
+      remove(:product_id)
+      remove(:plan_id)
+      remove(:plan_amount)
+      remove(:billing_interval)
+      remove(:currency)
+      remove(:features)
+      remove(:is_active?)
+      remove(:type)
+      remove(:pay_link)
+      remove(:limits)
+      remove(:custom)
+      remove(:trial_period)
+      remove(:organisation_id)
+    end
+
+    drop_if_exists(
+      unique_index(:plan, [:name, :billing_interval, :is_active?],
+        name: :plans_name_billing_interval_active_unique_index
+      )
+    )
   end
 end
