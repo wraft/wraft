@@ -635,6 +635,18 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  def organisation_transfer(conn, %{"id" => new_user_id}) do
+    current_user = conn.assigns[:current_user]
+
+    with %Organisation{} = organisation <-
+           Enterprise.get_organisation(current_user[:current_org]),
+         new_user <- Account.get_user(new_user_id),
+         {:ok, %Organisation{}} <-
+           Enterprise.transfer_ownership(organisation, current_user, new_user) do
+      render(conn, "create.json")
+    end
+  end
+
   @doc """
     Remove a user from the organisation
   """

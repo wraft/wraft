@@ -106,6 +106,33 @@ defmodule WraftDoc.Notifications do
   end
 
   @doc """
+  Notification for the Documet flow
+  """
+  def document_notification(current_user, instance, organisation, state) do
+    new_state = Document.next_state(state)
+
+    Multi.new()
+    |> Multi.run(:state_update_notification, fn _repo, _changes ->
+      create_notification(state.approvers, %{
+        type: :state_update,
+        document_title: instance.serialized["title"],
+        organisation_name: organisation.name,
+        state_name: state.state,
+        approver_name: current_user.name
+      })
+    end)
+    |> Multi.run(:pending_approvals_notification, fn _repo, _changes ->
+      create_notification(new_state.approvers, %{
+        type: :pending_approvals,
+        document_title: instance.serialized["title"],
+        organisation_name: organisation.name,
+        state_name: new_state.state
+      })
+    end)
+    |> Repo.transaction()
+  end
+
+  @doc """
   List unread notifications for an user
   ## Parameters
   * `current_user`- user struct

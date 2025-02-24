@@ -30,7 +30,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Document.Layout
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
-
+  alias WraftDoc.Notifications
   alias WraftDocWeb.Api.V1.InstanceVersionView
 
   def swagger_definitions do
@@ -973,11 +973,23 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     %{current_org_id: organisation_id} = current_user = conn.assigns.current_user
 
     with %Instance{
-           content_type: %ContentType{organisation_id: ^organisation_id},
-           state: _state
+           content_type: %ContentType{
+             organisation_id: ^organisation_id,
+             organisation: organisation
+           },
+           state: state
          } = instance <- Document.show_instance(id, current_user),
          %Instance{} = instance <- Document.approve_instance(current_user, instance) do
-      # TODO: add notification
+      # Task.start(fn ->
+      Notifications.document_notification(
+        current_user,
+        instance,
+        organisation,
+        state
+      )
+
+      # end)
+
       render(conn, "approve_or_reject.json", %{instance: instance})
     end
   end
