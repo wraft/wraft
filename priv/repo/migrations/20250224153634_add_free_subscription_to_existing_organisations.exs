@@ -1,4 +1,4 @@
-defmodule WraftDoc.Repo.Migrations.AddFreeSubscriptionsToExistingOrganisations do
+defmodule WraftDoc.Repo.Migrations.AddFreeSubscriptionToExistingOrganisations do
   use Ecto.Migration
   import Ecto.Query
 
@@ -8,9 +8,7 @@ defmodule WraftDoc.Repo.Migrations.AddFreeSubscriptionsToExistingOrganisations d
   alias WraftDoc.Repo
 
   def change do
-    unless Enterprise.self_hosted?() do
-      execute_up()
-    end
+    execute_up()
   end
 
   defp execute_up do

@@ -25,7 +25,10 @@ defmodule WraftDoc.Repo.Migrations.AlterUserReferencesInBasicProfile do
         null: false
       )
 
-      modify(:subscriber_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
+      modify(
+        :subscriber_id,
+        references(:user, type: :uuid, column: :id, on_delete: :nilify_all)
+      )
     end
   end
 

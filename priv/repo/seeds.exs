@@ -23,6 +23,10 @@ if !FunWithFlags.enabled?(:seeds_ran?) do
   user_list = for _ <- 1..2, do: Seed.generate_user()
   user_list = [user | user_list]
 
+  FunWithFlags.enable(:waiting_list_organisation_create_control,
+    for_actor: %{email: "wraftuser@gmail.com"}
+  )
+
   # Seed organisation and user organisation
   organisation_list = for user <- user_list, do: Seed.seed_user_organisation(user)
 
@@ -36,9 +40,7 @@ if !FunWithFlags.enabled?(:seeds_ran?) do
     # Seed profiles with country
     Seed.seed_profile(user, country)
 
-    unless Enterprise.self_hosted?() do
-      Enterprise.create_free_subscription(organisation.id)
-    end
+    Enterprise.create_free_subscription(organisation.id)
 
     # Seed Block and Block Template
     Seed.seed_block_and_block_template(user, organisation)
