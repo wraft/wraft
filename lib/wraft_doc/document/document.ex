@@ -1827,12 +1827,16 @@ defmodule WraftDoc.Document do
   def get_image_url(%Asset{type: "document", url: nil, expiry_date: nil} = asset),
     do: update_expiry_date(asset)
 
-  def get_image_url(%Asset{type: "document", url: image_url, expiry_date: expiry_date} = asset) do
-    if expired?(expiry_date) do
-      image_url
-    else
-      update_expiry_date(asset)
-    end
+  def get_image_url(
+        %Asset{type: "document", url: _image_url, expiry_date: _expiry_date, file: file} = asset
+      ) do
+    WraftDocWeb.AssetUploader.url({file, asset}, signed: true)
+    # TODO Handle the expiry date
+    # if expired?(expiry_date) do
+    #   image_url
+    # else
+    #   update_expiry_date(asset)
+    # end
   end
 
   def get_image_url(_), do: nil
@@ -2088,13 +2092,22 @@ defmodule WraftDoc.Document do
   end
 
   defp prepare_pandoc_cmds(pdf_file, base_content_dir) do
+    filters_base_path = Path.join(File.cwd!(), "priv/pandoc_filters")
+    filters = get_active_filters(Path.join(filters_base_path, "filters.yaml"))
+    filter_args = Enum.map(filters, &"--lua-filter=#{Path.join(filters_base_path, &1)}")
+
     [
       "#{base_content_dir}/content.md",
       "--template=#{base_content_dir}/template.tex",
-      "--pdf-engine=#{System.get_env("XELATEX_PATH")}",
-      "-o",
-      pdf_file
-    ]
+      "--pdf-engine=#{System.get_env("XELATEX_PATH")}"
+    ] ++ filter_args ++ ["-o", pdf_file]
+  end
+
+  defp get_active_filters(yaml_config_path) do
+    case YamlElixir.read_from_file(yaml_config_path) do
+      {:ok, %{"filters" => filters}} -> filters
+      _ -> []
+    end
   end
 
   defp upload_file_and_delete_local_copy(
