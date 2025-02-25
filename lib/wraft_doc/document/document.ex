@@ -849,8 +849,14 @@ defmodule WraftDoc.Document do
     Repo.one(query) || current_state.id
   end
 
-  def next_state(currrent_state) do
-    Repo.preload(Repo.get(State, next_state_id(currrent_state)), :approvers)
+  @doc """
+    gives next state of flow
+  """
+  @spec next_state(State.t()) :: State.t() | nil
+  def next_state(current_state) do
+    State
+    |> Repo.get(next_state_id(current_state))
+    |> Repo.preload(:approvers)
   end
 
   def reject_instance(

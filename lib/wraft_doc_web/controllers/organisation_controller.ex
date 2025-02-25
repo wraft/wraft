@@ -470,9 +470,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
   @spec request_deletion(Plug.Conn.t(), map) :: Plug.Conn.t()
   def request_deletion(conn, _params) do
-    %{current_org_id: organisation_id, email: email} = current_user = conn.assigns.current_user
+    %{current_org_id: organisation_id, email: email, owner_id: owner_id} =
+      current_user = conn.assigns.current_user
 
-    with {:error, :already_member} <- Enterprise.already_member(organisation_id, email),
+    with true <- owner_id == current_user.id,
+         {:error, :already_member} <- Enterprise.already_member(organisation_id, email),
          %Organisation{name: name} = organisation when name != "Personal" <-
            Enterprise.get_organisation(organisation_id),
          {:ok, %Oban.Job{}} <-
@@ -635,18 +637,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def organisation_transfer(conn, %{"id" => new_user_id}) do
-    current_user = conn.assigns[:current_user]
-
-    with %Organisation{} = organisation <-
-           Enterprise.get_organisation(current_user[:current_org]),
-         new_user <- Account.get_user(new_user_id),
-         {:ok, %Organisation{}} <-
-           Enterprise.transfer_ownership(organisation, current_user, new_user) do
-      render(conn, "create.json")
-    end
-  end
-
   @doc """
     Remove a user from the organisation
   """
@@ -658,6 +648,37 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
            Enterprise.get_user_organisation(current_user, user_id),
          {:ok, %UserOrganisation{}} <- Enterprise.remove_user(user_organisation) do
       render(conn, "remove_user.json")
+    end
+  end
+
+  swagger_path :transfer_ownership do
+    post("/organisations/transfer_ownership/{id}")
+    summary("Transfer organisation ownership")
+    description("Transfers organisation ownership to a specified user")
+
+    parameters do
+      id(:path, :string, "New owner's user ID", required: true)
+    end
+
+    response(200, "Success", Schema.ref(:Organisation))
+    response(422, "Unprocessable Entity", Schema.ref(:ValidationError))
+    response(404, "User or Organisation Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @doc """
+    Transfer Organisation into a new user
+  """
+  @spec transfer_ownership(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def transfer_ownership(conn, %{"id" => new_user_id}) do
+    %{current_org_id: _organisation_id, id: user_id} = current_user = conn.assigns[:current_user]
+
+    with %Organisation{owner_id: ^user_id} = organisation <-
+           Enterprise.get_organisation(current_user[:current_org]),
+         new_user <- Account.get_user(new_user_id),
+         {:ok, %Organisation{}} <-
+           Enterprise.transfer_ownership(organisation, current_user, new_user) do
+      render(conn, "create.json")
     end
   end
 

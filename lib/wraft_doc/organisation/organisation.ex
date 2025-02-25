@@ -61,6 +61,12 @@ defmodule WraftDoc.Enterprise.Organisation do
     )
   end
 
+  def update_owner_changeset(%Organisation{} = organisation, attrs \\ %{}) do
+    organisation
+    |> cast(attrs, [:owner_id])
+    |> validate_required([:owner_id])
+  end
+
   def update_changeset(%Organisation{} = organisation, attrs \\ %{}) do
     organisation
     |> cast(attrs, @fields -- [:creator_id])
