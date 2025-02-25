@@ -1463,7 +1463,7 @@ defmodule WraftDoc.Document do
       |> Theme.changeset(params)
     )
     |> Multi.run(:theme_assets, fn _repo, %{theme: theme} ->
-      case fetch_and_associcate_assets_with_theme(theme, current_user, params) do
+      case fetch_and_associate_assets_with_theme(theme, current_user, params) do
         {:ok, assets} ->
           theme_preview_file_upload(theme, params)
           {:ok, assets}
@@ -1482,14 +1482,14 @@ defmodule WraftDoc.Document do
     end
   end
 
-  defp fetch_and_associcate_assets_with_theme(
+  defp fetch_and_associate_assets_with_theme(
          theme,
          current_user,
          params,
          existing_asset_ids \\ []
        )
 
-  defp fetch_and_associcate_assets_with_theme(
+  defp fetch_and_associate_assets_with_theme(
          theme,
          current_user,
          %{"assets" => assets},
@@ -1512,7 +1512,7 @@ defmodule WraftDoc.Document do
     end
   end
 
-  defp fetch_and_associcate_assets_with_theme(
+  defp fetch_and_associate_assets_with_theme(
          _theme,
          _current_user,
          _params,
@@ -1625,7 +1625,7 @@ defmodule WraftDoc.Document do
     Multi.new()
     |> Multi.update(:theme, Theme.update_changeset(theme, params))
     |> Multi.run(:theme_assets, fn _repo, %{theme: theme} ->
-      case fetch_and_associcate_assets_with_theme(
+      case fetch_and_associate_assets_with_theme(
              theme,
              current_user,
              params,
