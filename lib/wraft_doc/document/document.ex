@@ -1450,36 +1450,92 @@ defmodule WraftDoc.Document do
   @doc """
   Create a theme.
   """
-  @spec create_theme(User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
+  @spec create_theme(User.t(), map()) ::
+          {:ok, Theme.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def create_theme(%{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
-    current_user
-    |> build_assoc(:themes)
-    |> Theme.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(
+      :theme,
+      current_user
+      |> build_assoc(:themes)
+      |> Theme.changeset(params)
+    )
+    |> Multi.run(:theme_assets, fn _repo, %{theme: theme} ->
+      case fetch_and_associcate_assets_with_theme(theme, current_user, params) do
+        {:ok, assets} ->
+          theme_preview_file_upload(theme, params)
+          {:ok, assets}
+
+        {:error, error} ->
+          {:error, error}
+      end
+    end)
+    |> Repo.transaction()
     |> case do
-      {:ok, theme} ->
-        theme_preview_file_upload(theme, params)
-        fetch_and_associcate_assets_with_theme(theme, current_user, params)
+      {:ok, %{theme: theme}} ->
+        {:ok, Repo.preload(theme, [:assets])}
 
-        Repo.preload(theme, [:assets])
-
-      {:error, _} = changeset ->
-        changeset
+      {:error, _step, error, _changes_so_far} ->
+        {:error, error}
     end
   end
 
-  # Get all the assets from their UUIDs and associate them with the given theme.
-  defp fetch_and_associcate_assets_with_theme(theme, current_user, %{"assets" => assets}) do
+  defp fetch_and_associcate_assets_with_theme(
+         theme,
+         current_user,
+         params,
+         existing_asset_ids \\ []
+       )
+
+  defp fetch_and_associcate_assets_with_theme(
+         theme,
+         current_user,
+         %{"assets" => assets},
+         existing_asset_ids
+       )
+       when is_binary(assets) do
     (assets || "")
     |> String.split(",")
-    |> Stream.map(fn asset -> get_asset(asset, current_user) end)
-    |> Stream.map(fn asset -> associate_theme_and_asset(theme, asset) end)
-    |> Enum.to_list()
+    |> Enum.map(&get_asset(&1, current_user))
+    |> validate_regular_asset(existing_asset_ids, current_user)
+    |> case do
+      {:ok, assets_list} ->
+        assets_list
+        |> Stream.map(&associate_theme_and_asset(theme, &1))
+        |> Enum.to_list()
+        |> then(&{:ok, &1})
+
+      {:error, _reason} = error ->
+        error
+    end
   end
 
-  defp fetch_and_associcate_assets_with_theme(_theme, _current_user, _params), do: []
+  defp fetch_and_associcate_assets_with_theme(
+         _theme,
+         _current_user,
+         _params,
+         _existing_asset_ids
+       ),
+       do: []
+
+  defp validate_regular_asset(assets_list, existing_asset_ids, current_user) do
+    existing_asset_ids
+    |> Enum.map(&get_asset(&1, current_user))
+    |> then(&(&1 ++ assets_list))
+    |> Enum.any?(&regular_asset?/1)
+    |> if do
+      {:ok, assets_list}
+    else
+      {:error, "Regular font files are missing"}
+    end
+  end
+
+  defp regular_asset?(%Asset{name: name}) when is_binary(name),
+    do: String.contains?(String.downcase(name), "regular")
+
+  defp regular_asset?(_), do: false
 
   # Associate the asset with the given theme, ie; insert a ThemeAsset entry.
   defp associate_theme_and_asset(theme, %Asset{} = asset) do
@@ -1564,22 +1620,37 @@ defmodule WraftDoc.Document do
   """
   # TODO - improve test
   @spec update_theme(Theme.t(), User.t(), map()) ::
-          {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
+          {:ok, Theme.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def update_theme(theme, current_user, params) do
-    theme
-    |> Theme.update_changeset(params)
-    |> Repo.update()
+    Multi.new()
+    |> Multi.update(:theme, Theme.update_changeset(theme, params))
+    |> Multi.run(:theme_assets, fn _repo, %{theme: theme} ->
+      case fetch_and_associcate_assets_with_theme(
+             theme,
+             current_user,
+             params,
+             get_theme_asset_ids(theme)
+           ) do
+        {:ok, assets} ->
+          theme_preview_file_upload(theme, params)
+          {:ok, assets}
+
+        {:error, error} ->
+          {:error, error}
+      end
+    end)
+    |> Repo.transaction()
     |> case do
-      {:ok, theme} ->
-        theme_preview_file_upload(theme, params)
-        fetch_and_associcate_assets_with_theme(theme, current_user, params)
+      {:ok, %{theme: theme}} ->
+        {:ok, Repo.preload(theme, [:assets])}
 
-        Repo.preload(theme, [:assets])
-
-      {:error, _} = changeset ->
-        changeset
+      {:error, _step, error, _changes_so_far} ->
+        {:error, error}
     end
   end
+
+  defp get_theme_asset_ids(%WraftDoc.Document.Theme{assets: assets}),
+    do: Enum.map(assets, & &1.id)
 
   @doc """
   Delete a theme.

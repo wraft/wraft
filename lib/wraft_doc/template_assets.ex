@@ -463,7 +463,7 @@ defmodule WraftDoc.TemplateAssets do
   defp prepare_theme(theme, current_user, downloaded_file, entries) do
     with asset_ids <- prepare_theme_assets(entries, downloaded_file, current_user),
          params <- prepare_theme_attrs(theme, asset_ids),
-         %Theme{} = theme <- Document.create_theme(current_user, params) do
+         {:ok, %Theme{} = theme} <- Document.create_theme(current_user, params) do
       {:ok, theme}
     end
   end

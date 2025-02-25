@@ -3100,7 +3100,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      theme =
+      {:ok, theme} =
         Document.create_theme(
           user,
           Map.merge(@valid_theme_attrs, %{"assets" => "#{asset1.id},#{asset2.id}"})
@@ -3324,7 +3324,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      theme =
+      {:ok, theme} =
         Document.update_theme(
           theme,
           user,
