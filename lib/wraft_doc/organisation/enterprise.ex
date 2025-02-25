@@ -691,7 +691,9 @@ defmodule WraftDoc.Enterprise do
   Create an Organisation
   """
   @spec create_organisation(User.t(), map) :: Organisation.t()
-  def create_organisation(%User{} = user, params) do
+  def create_organisation(%User{id: user_id} = user, params) do
+    params = Map.merge(params, %{"owner_id" => user_id})
+
     Multi.new()
     |> Multi.insert(
       :organisation,
@@ -814,6 +816,21 @@ defmodule WraftDoc.Enterprise do
     %{email: email, token: token, user_name: user_name, organisation_name: organisation_name}
     |> EmailWorker.new(queue: "mailer", tags: ["organisation_delete_code"])
     |> Oban.insert()
+  end
+
+  @doc """
+  Transfers the ownership of an organisation from the current owner to a new owner.
+  """
+  @spec transfer_ownership(Organisation.t(), User.t(), User.t()) ::
+          {:ok, Organisation.t()} | {:error, Ecto.Changeset.t()}
+  def transfer_ownership(
+        %Organisation{owner_id: owner_id} = organisation,
+        %User{id: owner_id} = _current_owner,
+        %User{id: new_owner_id} = _new_owner
+      ) do
+    organisation
+    |> Organisation.update_owner_changeset(%{owner_id: new_owner_id})
+    |> Repo.update()
   end
 
   @doc """
@@ -1777,6 +1794,11 @@ defmodule WraftDoc.Enterprise do
     |> UserOrganisation.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
     |> Repo.update()
   end
+
+  def can_remove_user?(%Organisation{owner_id: user_id}, user_id),
+    do: {:error, "Owner cannot be removed from the organisation"}
+
+  def can_remove_user?(_, _), do: :ok
 
   @doc """
    Gets the UserOrganisation for given user ID and organisation ID

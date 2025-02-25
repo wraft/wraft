@@ -8,7 +8,9 @@ defmodule WraftDoc.Notifications do
   alias WraftDoc.Account
   alias WraftDoc.Account.User
   alias WraftDoc.Document
+  alias WraftDoc.Document.Instance
   alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Notifications.Notification
   alias WraftDoc.Notifications.NotificationMessages
   alias WraftDoc.Notifications.UserNotifications
@@ -103,6 +105,38 @@ defmodule WraftDoc.Notifications do
       organisation_name: organisation.name,
       document_title: document.serialized["title"]
     })
+  end
+
+  @doc """
+  Notification for the Documet flow
+  """
+  def document_notification(
+        %User{name: approver_name} = _current_user,
+        %Instance{serialized: %{"title" => document_title}} = _instance,
+        %Organisation{name: organisation_name} = _organisation,
+        state
+      ) do
+    new_state = Document.next_state(state)
+
+    with {:ok, _} <-
+           create_notification(state.approvers, %{
+             type: :state_update,
+             document_title: document_title,
+             organisation_name: organisation_name,
+             state_name: state.state,
+             approver_name: approver_name
+           }),
+         {:ok, _} <-
+           create_notification(new_state.approvers, %{
+             type: :pending_approvals,
+             document_title: document_title,
+             organisation_name: organisation_name,
+             state_name: new_state.state
+           }) do
+      {:ok, :notifications_sent}
+    else
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @doc """

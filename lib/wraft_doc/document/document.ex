@@ -849,6 +849,16 @@ defmodule WraftDoc.Document do
     Repo.one(query) || current_state.id
   end
 
+  @doc """
+    gives next state of flow
+  """
+  @spec next_state(State.t()) :: State.t() | nil
+  def next_state(current_state) do
+    State
+    |> Repo.get(next_state_id(current_state))
+    |> Repo.preload(:approvers)
+  end
+
   def reject_instance(
         %User{id: current_approver_id},
         %Instance{
@@ -1202,11 +1212,12 @@ defmodule WraftDoc.Document do
       instance
       |> Repo.preload([
         {:creator, :profile},
-        {:content_type, :layout},
+        {:content_type, [:layout, :organisation]},
         {:versions, versions_preload_query},
         {:state, :approvers},
         {:instance_approval_systems, :approver},
         state: [
+          :approvers,
           approval_system: [:post_state, :approver],
           rejection_system: [:pre_state, :approver]
         ]

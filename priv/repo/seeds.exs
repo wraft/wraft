@@ -23,6 +23,10 @@ if !FunWithFlags.enabled?(:seeds_ran?) do
   user_list = for _ <- 1..2, do: Seed.generate_user()
   user_list = [user | user_list]
 
+  FunWithFlags.enable(:waiting_list_organisation_create_control,
+    for_actor: %{email: "wraftuser@gmail.com"}
+  )
+
   # Seed organisation and user organisation
   organisation_list = for user <- user_list, do: Seed.seed_user_organisation(user)
 
