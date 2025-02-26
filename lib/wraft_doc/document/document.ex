@@ -1827,16 +1827,12 @@ defmodule WraftDoc.Document do
   def get_image_url(%Asset{type: "document", url: nil, expiry_date: nil} = asset),
     do: update_expiry_date(asset)
 
-  def get_image_url(
-        %Asset{type: "document", url: _image_url, expiry_date: _expiry_date, file: file} = asset
-      ) do
-    WraftDocWeb.AssetUploader.url({file, asset}, signed: true)
-    # TODO Handle the expiry date
-    # if expired?(expiry_date) do
-    #   image_url
-    # else
-    #   update_expiry_date(asset)
-    # end
+  def get_image_url(%Asset{type: "document", url: image_url, expiry_date: expiry_date} = asset) do
+    if expired?(expiry_date) do
+      image_url
+    else
+      update_expiry_date(asset)
+    end
   end
 
   def get_image_url(_), do: nil
@@ -1845,7 +1841,7 @@ defmodule WraftDoc.Document do
     asset
     |> Asset.update_expiry_date_changeset(%{
       expiry_date: new_expiry_date(1, :hour),
-      url: WraftDocWeb.AssetUploader.url({file, asset}, signed: true)
+      url: WraftDocWeb.AssetUploader.url({file, asset}, signed: true, expires_in: 3600)
     })
     |> Repo.update()
     |> case do
