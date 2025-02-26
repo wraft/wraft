@@ -1829,9 +1829,9 @@ defmodule WraftDoc.Document do
 
   def get_image_url(%Asset{type: "document", url: image_url, expiry_date: expiry_date} = asset) do
     if expired?(expiry_date) do
-      image_url
-    else
       update_expiry_date(asset)
+    else
+      image_url
     end
   end
 
