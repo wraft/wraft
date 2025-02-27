@@ -821,12 +821,10 @@ defmodule WraftDoc.Enterprise do
   @doc """
   Transfers the ownership of an organisation from the current owner to a new owner.
   """
-  @spec transfer_ownership(Organisation.t(), User.t(), User.t()) ::
-          {:ok, Organisation.t()} | {:error, Ecto.Changeset.t()}
+  @spec transfer_ownership(Organisation.t(), Ecto.UUID.t()) :: Organisation.t()
   def transfer_ownership(
-        %Organisation{owner_id: owner_id} = organisation,
-        %User{id: owner_id} = _current_owner,
-        %User{id: new_owner_id} = _new_owner
+        %Organisation{owner_id: _owner_id} = organisation,
+        new_owner_id
       ) do
     organisation
     |> Organisation.update_owner_changeset(%{owner_id: new_owner_id})
@@ -1795,17 +1793,14 @@ defmodule WraftDoc.Enterprise do
     |> Repo.update()
   end
 
-  def can_remove_user?(%Organisation{owner_id: user_id}, user_id),
-    do: {:error, "Owner cannot be removed from the organisation"}
-
-  def can_remove_user?(_, _), do: :ok
-
   @doc """
    Gets the UserOrganisation for given user ID and organisation ID
   """
   @spec get_user_organisation(User.t(), Ecto.UUID.t()) :: UserOrganisation.t() | nil
   def get_user_organisation(%User{current_org_id: org_id}, user_id) do
-    Repo.get_by(UserOrganisation, organisation_id: org_id, user_id: user_id)
+    UserOrganisation
+    |> Repo.get_by(organisation_id: org_id, user_id: user_id)
+    |> Repo.preload(:organisation)
   end
 
   @doc """
