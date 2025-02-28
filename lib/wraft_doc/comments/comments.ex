@@ -5,7 +5,7 @@ defmodule WraftDoc.Comments do
   import Ecto
   import Ecto.Query
 
-  alias WraftDoc.Comment
+  alias WraftDoc.Comments.Comment
   alias WraftDoc.Repo
   alias WraftDoc.User
 

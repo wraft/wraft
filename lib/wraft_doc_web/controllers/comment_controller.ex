@@ -14,8 +14,8 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Comment
   alias WraftDoc.Comments
+  alias WraftDoc.Comments.Comment
   alias WraftDoc.Document
   alias WraftDoc.Notifications
 

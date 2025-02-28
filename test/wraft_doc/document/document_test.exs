@@ -6,8 +6,8 @@ defmodule WraftDoc.DocumentTest do
   @moduletag :document
 
   alias WraftDoc.Account.Role
-  alias WraftDoc.Comment
   alias WraftDoc.Comments
+  alias WraftDoc.Comments.Comment
   alias WraftDoc.Document
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
