@@ -12,7 +12,6 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Client.Minio
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
-  alias WraftDoc.Document.BlockTemplate
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
   alias WraftDoc.Document.ContentCollaboration
@@ -47,6 +46,7 @@ defmodule WraftDoc.Document do
   alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.Themes
+  alias WraftDoc.Utils.CSVHelper
   alias WraftDoc.Workers.BulkWorker
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Mailer
@@ -2184,7 +2184,7 @@ defmodule WraftDoc.Document do
     c_type = Repo.preload(c_type, [{:layout, :assets}])
 
     path
-    |> decode_csv(mapping_keys)
+    |> CSVHelper.decode_csv(mapping_keys)
     |> Enum.map(fn x ->
       create_instance_params_for_bulk_build(x, d_temp, current_user, c_type, state, mapping)
     end)
@@ -2216,7 +2216,7 @@ defmodule WraftDoc.Document do
     # values are actually the fields of the content type.
     # This updated serialzed is then reduced to get the raw data
     # by replacing the variables in the data template.
-    serialized = update_keys(serialized, mapping)
+    serialized = CSVHelper.update_keys(serialized, mapping)
     params = do_create_instance_params(serialized, d_temp)
     type = Instance.types()[:bulk_build]
     params = Map.merge(params, %{"type" => type, "state_id" => state.id})
@@ -2323,19 +2323,6 @@ defmodule WraftDoc.Document do
     {result, exit_code}
   end
 
-  # Change the Keys of the CSV decoded map to the values of the mapping.
-  @spec update_keys(map, map) :: map
-  defp update_keys(map, mapping) do
-    # new_map =
-    Enum.reduce(mapping, %{}, fn {k, v}, acc ->
-      value = Map.get(map, k)
-      Map.put(acc, v, value)
-    end)
-
-    # keys = mapping |> Map.keys()
-    # map |> Map.drop(keys) |> Map.merge(new_map)
-  end
-
   @doc """
   Creates data templates in bulk from the file given.
   """
@@ -2348,7 +2335,7 @@ defmodule WraftDoc.Document do
     mapping_keys = Map.keys(mapping)
 
     path
-    |> decode_csv(mapping_keys)
+    |> CSVHelper.decode_csv(mapping_keys)
     |> Stream.map(fn x -> bulk_d_temp_creation(x, current_user, c_type, mapping) end)
     |> Enum.to_list()
   end
@@ -2357,118 +2344,8 @@ defmodule WraftDoc.Document do
 
   @spec bulk_d_temp_creation(map, User.t(), ContentType.t(), map) :: {:ok, DataTemplate.t()}
   defp bulk_d_temp_creation(data, user, c_type, mapping) do
-    params = update_keys(data, mapping)
+    params = CSVHelper.update_keys(data, mapping)
     create_data_template(user, c_type, params)
-  end
-
-  @doc """
-  Creates block templates in bulk from the file given.
-  """
-  @spec block_template_bulk_insert(User.t(), map, String.t()) ::
-          [{:ok, BlockTemplate.t()}] | {:error, :not_found}
-  ## TODO - improve tests
-  def block_template_bulk_insert(%User{} = current_user, mapping, path) do
-    # TODO Map will be arranged in the ascending order
-    # of keys. This causes unexpected changes in decoded CSV
-    mapping_keys = Map.keys(mapping)
-
-    path
-    |> decode_csv(mapping_keys)
-    |> Stream.map(fn x -> bulk_b_temp_creation(x, current_user, mapping) end)
-    |> Enum.to_list()
-  end
-
-  def block_template_bulk_insert(_, _, _), do: {:error, :not_found}
-
-  # Decode the given CSV file using the headers values
-  # First argument is the path of the file
-  # Second argument is the headers.
-  @spec decode_csv(String.t(), list) :: list
-  defp decode_csv(path, mapping_keys) do
-    path
-    |> File.stream!()
-    |> Stream.drop(1)
-    |> CSV.decode!(headers: mapping_keys)
-    |> Enum.to_list()
-  end
-
-  @spec bulk_b_temp_creation(map, User.t(), map) :: BlockTemplate.t()
-  defp bulk_b_temp_creation(data, user, mapping) do
-    params = update_keys(data, mapping)
-    create_block_template(user, params)
-  end
-
-  @doc """
-  Create a block template
-  """
-  # TODO - improve tests
-  @spec create_block_template(User.t(), map) :: BlockTemplate.t()
-  def create_block_template(%{current_org_id: org_id} = current_user, params) do
-    current_user
-    |> build_assoc(:block_templates, organisation_id: org_id)
-    |> BlockTemplate.changeset(params)
-    |> Repo.insert()
-    |> case do
-      {:ok, block_template} ->
-        Repo.preload(block_template, [{:creator, :profile}])
-
-      {:error, _} = changeset ->
-        changeset
-    end
-  end
-
-  def create_block_template(_, _), do: {:error, :fake}
-
-  @doc """
-  Get a block template by its uuid
-  """
-  @spec get_block_template(Ecto.UUID.t(), BlockTemplate.t()) :: BlockTemplate.t()
-  def get_block_template(<<_::288>> = id, %{current_org_id: org_id}) do
-    case Repo.get_by(BlockTemplate, id: id, organisation_id: org_id) do
-      %BlockTemplate{} = block_template -> Repo.preload(block_template, [{:creator, :profile}])
-      _ -> {:error, :invalid_id, "BlockTemplate"}
-    end
-  end
-
-  def get_block_template(<<_::288>>, _), do: {:error, :invalid_id, "BlockTemplate"}
-  def get_block_template(_, %{current_org_id: _org_id}), do: {:error, :fake}
-  def get_block_template(_, _), do: {:error, :invalid_id, "BlockTemplate"}
-
-  @doc """
-  Updates a block template
-  """
-  @spec update_block_template(BlockTemplate.t(), map) :: BlockTemplate.t()
-  def update_block_template(block_template, params) do
-    block_template
-    |> BlockTemplate.update_changeset(params)
-    |> Repo.update()
-    |> case do
-      {:error, _} = changeset ->
-        changeset
-
-      {:ok, block_template} ->
-        Repo.preload(block_template, [{:creator, :profile}])
-    end
-  end
-
-  @doc """
-  Delete a block template
-  """
-  @spec delete_block_template(BlockTemplate.t()) :: {:ok, BlockTemplate.t()}
-  def delete_block_template(%BlockTemplate{} = block_template), do: Repo.delete(block_template)
-
-  def delete_block_template(_), do: {:error, :fake}
-
-  @doc """
-  Index of a block template by organisation
-  """
-  @spec block_template_index(User.t(), map) :: List.t()
-  def block_template_index(%{current_org_id: org_id}, params) do
-    BlockTemplate
-    |> where([bt], bt.organisation_id == ^org_id)
-    |> preload([bt], creator: [:profile])
-    |> order_by([bt], desc: bt.id)
-    |> Repo.paginate(params)
   end
 
   @doc """

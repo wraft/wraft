@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.BlockTemplate do
+defmodule WraftDoc.BlockTemplates.BlockTemplate do
   @moduledoc false
   use WraftDoc.Schema
 

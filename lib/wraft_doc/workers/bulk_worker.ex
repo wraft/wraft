@@ -7,6 +7,7 @@ defmodule WraftDoc.Workers.BulkWorker do
 
   alias Opus.PipelineError
   alias WraftDoc.Account
+  alias WraftDoc.BlockTemplates
   alias WraftDoc.Client.Minio.DownloadError
   alias WraftDoc.Document
   alias WraftDoc.Document.Pipeline.TriggerHistory
@@ -61,7 +62,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     Logger.info("Job starting for bulk block template insertion..")
     mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
-    Document.block_template_bulk_insert(current_user, mapping, path)
+    BlockTemplates.block_template_bulk_insert(current_user, mapping, path)
     Logger.info("Job end for bulk block template insertion.!")
     :ok
   end

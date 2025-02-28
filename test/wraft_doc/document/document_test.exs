@@ -6,12 +6,13 @@ defmodule WraftDoc.DocumentTest do
   @moduletag :document
 
   alias WraftDoc.Account.Role
+  alias WraftDoc.BlockTemplates
+  alias WraftDoc.BlockTemplates.BlockTemplate
   alias WraftDoc.Comments
   alias WraftDoc.Comments.Comment
   alias WraftDoc.Document
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
-  alias WraftDoc.Document.BlockTemplate
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
   alias WraftDoc.Document.ContentType
@@ -2727,7 +2728,7 @@ defmodule WraftDoc.DocumentTest do
 
       block_templates =
         user
-        |> Document.block_template_bulk_insert(mapping, path)
+        |> BlockTemplates.block_template_bulk_insert(mapping, path)
         |> Enum.map(fn x -> x.title end)
         |> List.to_string()
 
@@ -2747,7 +2748,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      response = Document.block_template_bulk_insert(nil, nil, nil)
+      response = BlockTemplates.block_template_bulk_insert(nil, nil, nil)
 
       assert count_before ==
                BlockTemplate
@@ -2773,7 +2774,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      block_template = Document.create_block_template(user, params)
+      block_template = BlockTemplates.create_block_template(user, params)
 
       assert count_before + 1 ==
                BlockTemplate
@@ -2787,7 +2788,7 @@ defmodule WraftDoc.DocumentTest do
 
     test "create_block_template/2, test does not create block template with invalid attrs" do
       user = insert(:user_with_organisation)
-      {:error, changeset} = Document.create_block_template(user, %{})
+      {:error, changeset} = BlockTemplates.create_block_template(user, %{})
 
       assert %{
                title: ["can't be blank"],
@@ -2801,7 +2802,7 @@ defmodule WraftDoc.DocumentTest do
     test "get_block_template/2, Create a block template" do
       user = insert(:user_with_organisation)
       block_template = insert(:block_template, organisation: List.first(user.owned_organisations))
-      get_block_template = Document.get_block_template(block_template.id, user)
+      get_block_template = BlockTemplates.get_block_template(block_template.id, user)
 
       assert block_template.id == get_block_template.id
       assert block_template.organisation_id == get_block_template.organisation_id
@@ -2812,7 +2813,7 @@ defmodule WraftDoc.DocumentTest do
     test "updates block template with valid attrs" do
       block_template = insert(:block_template)
       params = %{"title" => "new title", "body" => "new body"}
-      update_btemplate = Document.update_block_template(block_template, params)
+      update_btemplate = BlockTemplates.update_block_template(block_template, params)
 
       assert update_btemplate.title =~ "new title"
       assert update_btemplate.body =~ "new body"
@@ -2821,7 +2822,7 @@ defmodule WraftDoc.DocumentTest do
     test "returns error with invalid attrs" do
       block_template = insert(:block_template)
       params = %{"title" => nil, "body" => "new body"}
-      {:error, changeset} = Document.update_block_template(block_template, params)
+      {:error, changeset} = BlockTemplates.update_block_template(block_template, params)
 
       assert %{title: ["can't be blank"]} == errors_on(changeset)
     end
@@ -2830,17 +2831,17 @@ defmodule WraftDoc.DocumentTest do
   describe "delete_block_template" do
     test "deletes block_template with valid attrs" do
       block_template = insert(:block_template)
-      {:ok, _delete_btemp} = Document.delete_block_template(block_template)
+      {:ok, _delete_btemp} = BlockTemplates.delete_block_template(block_template)
       refute Repo.get(BlockTemplate, block_template.id)
     end
 
     test "returns error with invalid attrs" do
-      assert {:error, :fake} = Document.delete_block_template(nil)
+      assert {:error, :fake} = BlockTemplates.delete_block_template(nil)
     end
   end
 
   describe "get index of block_template" do
-    test "block_template_index/2, Index of a block template by organisation" do
+    test "index_block_template/2, Index of a block template by organisation" do
       user = insert(:user_with_organisation)
 
       b_temp =
@@ -2848,7 +2849,7 @@ defmodule WraftDoc.DocumentTest do
         |> insert()
         |> Map.from_struct()
 
-      bt_index = Document.block_template_index(user, b_temp)
+      bt_index = BlockTemplates.index_block_template(user, b_temp)
 
       assert Map.has_key?(bt_index, :entries)
       assert Map.has_key?(bt_index, :total_entries)

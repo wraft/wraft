@@ -1,7 +1,7 @@
 defmodule WraftDoc.Document.BlockTemplateTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.Document.BlockTemplate
+  alias WraftDoc.BlockTemplates.BlockTemplate
   @moduletag :document
   @valid_attrs %{
     title: "a sample title",
