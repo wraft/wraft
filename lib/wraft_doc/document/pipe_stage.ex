@@ -6,7 +6,7 @@ defmodule WraftDoc.Document.Pipeline.Stage do
   use WraftDoc.Schema
 
   schema "pipe_stage" do
-    belongs_to(:content_type, WraftDoc.Document.ContentType)
+    belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
     belongs_to(:pipeline, WraftDoc.Document.Pipeline)
     belongs_to(:data_template, WraftDoc.Document.DataTemplate)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)

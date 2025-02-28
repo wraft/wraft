@@ -17,9 +17,9 @@ defmodule WraftDoc.Account do
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.BlockTemplates.BlockTemplate
+  alias WraftDoc.ContentType.ContentType
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
-  alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.Instance
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow

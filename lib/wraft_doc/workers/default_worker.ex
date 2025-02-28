@@ -11,6 +11,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
   alias WraftDoc.Account.UserRole
+  alias WraftDoc.ContentTypes
   alias WraftDoc.Document
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.DataTemplate
@@ -220,7 +221,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
 
   defp create_wraft_variant(current_user, theme, layout, flow_id, params) do
     params = create_wraft_variant_params(current_user.id, params, theme.id, layout.id, flow_id)
-    Document.create_content_type(current_user, params)
+    ContentTypes.create_content_type(current_user, params)
   end
 
   defp create_wraft_variant_params(current_user_id, params, theme_id, layout_id, flow_id) do

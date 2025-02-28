@@ -10,8 +10,9 @@ defmodule WraftDoc.TemplateAssets do
 
   alias Ecto.Multi
   alias WraftDoc.Client.Minio
+  alias WraftDoc.ContentTypes
+  alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Document
-  alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.FieldType
@@ -450,7 +451,7 @@ defmodule WraftDoc.TemplateAssets do
 
   defp get_content_type_from_id(nil), do: {:error, "content type id not found"}
 
-  defp get_content_type_from_id(id), do: {:ok, Document.get_content_type_from_id(id)}
+  defp get_content_type_from_id(id), do: {:ok, ContentTypes.get_content_type_from_id(id)}
 
   defp get_engine(engine) do
     # TODO multiple engines selection
@@ -701,7 +702,7 @@ defmodule WraftDoc.TemplateAssets do
   defp prepare_content_type(variant, current_user, theme_id, layout_id, flow_id) do
     with params <-
            prepare_content_type_attrs(variant, current_user, theme_id, layout_id, flow_id),
-         %ContentType{} = content_type <- Document.create_content_type(current_user, params) do
+         %ContentType{} = content_type <- ContentTypes.create_content_type(current_user, params) do
       {:ok, content_type}
     end
   end

@@ -7,7 +7,7 @@ defmodule WraftDoc.Repo.Migrations.MigrateContentTypeFields do
      mix run priv/repo/data/migrations/migrate_content_type_fields.exs
   """
   require Logger
-  alias WraftDoc.Document.ContentTypeField
+  alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.Document.Field
   alias WraftDoc.Repo
 

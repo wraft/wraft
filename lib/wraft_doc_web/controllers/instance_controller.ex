@@ -23,8 +23,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   require Logger
 
   alias WraftDoc.Client.Minio.DownloadError
+  alias WraftDoc.ContentTypes
+  alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Document
-  alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.Instance
   alias WraftDoc.Document.Instance.Version
   alias WraftDoc.Enterprise
@@ -485,7 +486,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     type = Instance.types()[:normal]
     params = Map.put(params, "type", type)
 
-    with %ContentType{} = c_type <- Document.show_content_type(current_user, c_type_id),
+    with %ContentType{} = c_type <- ContentTypes.show_content_type(current_user, c_type_id),
          %Instance{} = content <-
            Document.create_instance(current_user, c_type, params) do
       Logger.info("Create content success")

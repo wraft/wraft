@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.ContentType do
+defmodule WraftDoc.ContentTypes.ContentType do
   @moduledoc """
     The content type model.
   """
@@ -7,7 +7,7 @@ defmodule WraftDoc.Document.ContentType do
   use WraftDoc.Schema
 
   alias __MODULE__
-  alias WraftDoc.Document.ContentType
+  alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Themes.Theme
@@ -28,11 +28,11 @@ defmodule WraftDoc.Document.ContentType do
     belongs_to(:theme, Theme)
 
     has_many(:instances, WraftDoc.Document.Instance)
-    has_many(:content_type_fields, WraftDoc.Document.ContentTypeField)
+    has_many(:content_type_fields, WraftDoc.ContentTypes.ContentTypeField)
     has_many(:fields, through: [:content_type_fields, :field])
     has_many(:stages, WraftDoc.Document.Pipeline.Stage)
     has_many(:pipelines, through: [:stages, :pipeline])
-    has_many(:content_type_roles, WraftDoc.Document.ContentTypeRole)
+    has_many(:content_type_roles, WraftDoc.ContentTypes.ContentTypeRole)
     has_many(:roles, through: [:content_type_roles, :role])
 
     timestamps()

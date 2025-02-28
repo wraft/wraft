@@ -5,8 +5,8 @@ defmodule WraftDoc.Minio.Utils do
   require Logger
   alias ExAws.S3
   alias WraftDoc.Account.Profile
+  alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Document.Asset
-  alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.Instance
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Layouts.Layout

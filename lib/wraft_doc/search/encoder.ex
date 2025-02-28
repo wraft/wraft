@@ -11,8 +11,8 @@ defprotocol WraftDoc.Search.Encoder do
   def to_document(struct)
 end
 
-defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.ContentType do
-  def to_document(%WraftDoc.Document.ContentType{} = content_type) do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.ContentTypes.ContentType do
+  def to_document(%WraftDoc.ContentTypes.ContentType{} = content_type) do
     %{
       id: to_string(content_type.id),
       collection_name: "content_type",
@@ -41,7 +41,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.DataTemplate do
 
     organisation_id =
       case data_template.content_type do
-        %WraftDoc.Document.ContentType{organisation_id: org_id} -> org_id
+        %WraftDoc.ContentTypes.ContentType{organisation_id: org_id} -> org_id
         _ -> nil
       end
 

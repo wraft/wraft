@@ -9,6 +9,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   alias WraftDoc.Account
   alias WraftDoc.BlockTemplates
   alias WraftDoc.Client.Minio.DownloadError
+  alias WraftDoc.ContentTypes
   alias WraftDoc.Document
   alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Enterprise
@@ -30,7 +31,7 @@ defmodule WraftDoc.Workers.BulkWorker do
 
     mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
-    c_type = Document.get_content_type(current_user, c_type_uuid)
+    c_type = ContentTypes.get_content_type(current_user, c_type_uuid)
     state = Enterprise.get_state(current_user, state_uuid)
     data_template = Document.get_d_template(current_user, d_temp_uuid)
     Document.bulk_doc_build(current_user, c_type, state, data_template, mapping, path)
@@ -49,7 +50,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     Logger.info("Job starting for bulk data template insertion..")
     mapping = convert_to_map(mapping)
     current_user = Account.get_user_by_uuid(user_uuid)
-    c_type = Document.get_content_type(current_user, c_type_uuid)
+    c_type = ContentTypes.get_content_type(current_user, c_type_uuid)
     Document.data_template_bulk_insert(current_user, c_type, mapping, path)
     Logger.info("Job end for bulk data template insertion.!")
     :ok

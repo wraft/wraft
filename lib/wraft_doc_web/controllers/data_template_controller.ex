@@ -15,8 +15,9 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  alias WraftDoc.ContentTypes
+  alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Document
-  alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Search.TypesenseServer, as: Typesense
 
@@ -209,7 +210,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   def create(conn, %{"c_type_id" => c_type_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_id),
+    with %ContentType{} = c_type <- ContentTypes.get_content_type(current_user, c_type_id),
          {:ok, %DataTemplate{} = d_template} <-
            Document.create_data_template(current_user, c_type, params) do
       Typesense.create_document(d_template)
@@ -402,7 +403,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
       ) do
     user = conn.assigns[:current_user]
 
-    with %ContentType{} <- Document.get_content_type(user, c_type_id),
+    with %ContentType{} <- ContentTypes.get_content_type(user, c_type_id),
          {:ok, %Oban.Job{}} <-
            Document.insert_data_template_bulk_import_work(
              user.id,

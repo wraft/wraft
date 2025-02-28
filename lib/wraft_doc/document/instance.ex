@@ -31,7 +31,7 @@ defmodule WraftDoc.Document.Instance do
     field(:allowed_users, {:array, :string}, default: [])
     field(:approval_status, :boolean, default: false)
     belongs_to(:creator, WraftDoc.Account.User)
-    belongs_to(:content_type, WraftDoc.Document.ContentType)
+    belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:vendor, WraftDoc.Enterprise.Vendor)
 

@@ -56,7 +56,7 @@ defmodule WraftDoc.Search.Typesense do
   @spec initialize() :: :ok
   def initialize do
     collections = [
-      {WraftDoc.Document.ContentType, "content_type"},
+      {WraftDoc.ContentTypes.ContentType, "content_type"},
       {WraftDoc.Document.DataTemplate, "data_template"},
       {WraftDoc.Enterprise.Flow, "flow"},
       {WraftDoc.Layouts.Layout, "layout"},

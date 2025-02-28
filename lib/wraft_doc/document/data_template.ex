@@ -10,7 +10,7 @@ defmodule WraftDoc.Document.DataTemplate do
     field(:title_template, :string)
     field(:data, :string)
     field(:serialized, :map, default: %{})
-    belongs_to(:content_type, WraftDoc.Document.ContentType)
+    belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
     belongs_to(:creator, WraftDoc.Account.User)
 
     timestamps()

@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.ContentTypeField do
+defmodule WraftDoc.ContentTypes.ContentTypeField do
   @moduledoc """
   The ContentType Field schema
   """
@@ -8,7 +8,7 @@ defmodule WraftDoc.Document.ContentTypeField do
   @fields [:content_type_id, :field_id]
 
   schema "content_type_field" do
-    belongs_to(:content_type, WraftDoc.Document.ContentType)
+    belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
     belongs_to(:field, WraftDoc.Document.Field)
 
     timestamps()

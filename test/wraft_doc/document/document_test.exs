@@ -10,13 +10,13 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.BlockTemplates.BlockTemplate
   alias WraftDoc.Comments
   alias WraftDoc.Comments.Comment
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.Document
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
-  alias WraftDoc.Document.ContentType
-  alias WraftDoc.Document.ContentTypeField
   alias WraftDoc.Document.Counter
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Field
@@ -762,7 +762,7 @@ defmodule WraftDoc.DocumentTest do
       c2 =
         insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
 
-      content_type_index = Document.content_type_index(user, %{page_number: 1})
+      content_type_index = ContentTypes.content_type_index(user, %{page_number: 1})
 
       assert content_type_index.entries
              |> Enum.map(fn x -> x.name end)
@@ -794,7 +794,7 @@ defmodule WraftDoc.DocumentTest do
           organisation: List.first(user.owned_organisations)
         )
 
-      content_type_index = Document.content_type_index(user, %{"name" => "A", page_number: 1})
+      content_type_index = ContentTypes.content_type_index(user, %{"name" => "A", page_number: 1})
 
       assert content_type_index.entries
              |> Enum.map(fn x -> x.name end)
@@ -827,7 +827,7 @@ defmodule WraftDoc.DocumentTest do
         )
 
       content_type_index =
-        Document.content_type_index(user, %{"name" => "does not exist", page_number: 1})
+        ContentTypes.content_type_index(user, %{"name" => "does not exist", page_number: 1})
 
       refute content_type_index.entries
              |> Enum.map(fn x -> x.name end)
@@ -859,7 +859,8 @@ defmodule WraftDoc.DocumentTest do
           organisation: List.first(user.owned_organisations)
         )
 
-      content_type_index = Document.content_type_index(user, %{"prefix" => "A", page_number: 1})
+      content_type_index =
+        ContentTypes.content_type_index(user, %{"prefix" => "A", page_number: 1})
 
       assert content_type_index.entries
              |> Enum.map(fn x -> x.name end)
@@ -892,7 +893,7 @@ defmodule WraftDoc.DocumentTest do
         )
 
       content_type_index =
-        Document.content_type_index(user, %{"prefix" => "does not exist", page_number: 1})
+        ContentTypes.content_type_index(user, %{"prefix" => "does not exist", page_number: 1})
 
       refute content_type_index.entries
              |> Enum.map(fn x -> x.name end)
@@ -924,7 +925,8 @@ defmodule WraftDoc.DocumentTest do
           organisation: List.first(user.owned_organisations)
         )
 
-      content_type_index = Document.content_type_index(user, %{"sort" => "name", page_number: 1})
+      content_type_index =
+        ContentTypes.content_type_index(user, %{"sort" => "name", page_number: 1})
 
       assert List.first(content_type_index.entries).name == c1.name
       assert List.last(content_type_index.entries).name == c2.name
@@ -950,7 +952,7 @@ defmodule WraftDoc.DocumentTest do
         )
 
       content_type_index =
-        Document.content_type_index(user, %{"sort" => "name_desc", page_number: 1})
+        ContentTypes.content_type_index(user, %{"sort" => "name_desc", page_number: 1})
 
       assert List.first(content_type_index.entries).name == c2.name
       assert List.last(content_type_index.entries).name == c1.name
@@ -976,7 +978,7 @@ defmodule WraftDoc.DocumentTest do
         )
 
       content_type_index =
-        Document.content_type_index(user, %{"sort" => "inserted_at", page_number: 1})
+        ContentTypes.content_type_index(user, %{"sort" => "inserted_at", page_number: 1})
 
       assert List.first(content_type_index.entries).name == c1.name
       assert List.last(content_type_index.entries).name == c2.name
@@ -1002,7 +1004,7 @@ defmodule WraftDoc.DocumentTest do
         )
 
       content_type_index =
-        Document.content_type_index(user, %{"sort" => "inserted_at_desc", page_number: 1})
+        ContentTypes.content_type_index(user, %{"sort" => "inserted_at_desc", page_number: 1})
 
       assert List.first(content_type_index.entries).name == c2.name
       assert List.last(content_type_index.entries).name == c1.name

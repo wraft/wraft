@@ -42,7 +42,7 @@ defmodule WraftDoc.Themes.Theme do
 
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-    has_many(:content_type, WraftDoc.Document.ContentType)
+    has_many(:content_type, WraftDoc.ContentTypes.ContentType)
     many_to_many(:assets, Asset, join_through: ThemeAsset)
 
     timestamps()

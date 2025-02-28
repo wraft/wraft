@@ -22,7 +22,7 @@ defmodule WraftDoc.Layouts.Layout do
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
-    has_many(:content_types, WraftDoc.Document.ContentType)
+    has_many(:content_types, WraftDoc.ContentTypes.ContentType)
     has_many(:layout_assets, WraftDoc.Layouts.LayoutAsset)
     has_many(:assets, through: [:layout_assets, :asset])
 

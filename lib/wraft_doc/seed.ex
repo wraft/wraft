@@ -9,11 +9,11 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
   alias WraftDoc.BlockTemplates.BlockTemplate
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.ContentTypes.ContentTypeField
+  alias WraftDoc.ContentTypes.ContentTypeRole
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
-  alias WraftDoc.Document.ContentType
-  alias WraftDoc.Document.ContentTypeField
-  alias WraftDoc.Document.ContentTypeRole
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Field

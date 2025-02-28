@@ -11,7 +11,7 @@ defmodule WraftDoc.Document.Field do
     field(:description, :string)
     has_many(:form_fields, WraftDoc.Forms.FormField)
     has_many(:forms, through: [:form_fields, :form])
-    has_many(:content_type_fields, WraftDoc.Document.ContentTypeField)
+    has_many(:content_type_fields, WraftDoc.ContentTypes.ContentTypeField)
     has_many(:content_types, through: [:content_type_fields, :content_type])
     belongs_to(:field_type, WraftDoc.Document.FieldType)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)

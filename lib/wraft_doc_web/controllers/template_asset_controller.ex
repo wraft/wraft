@@ -15,6 +15,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  alias WraftDoc.ContentTypes
   alias WraftDoc.Document
   alias WraftDoc.Layouts
   alias WraftDoc.TemplateAssets
@@ -619,8 +620,8 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
     with %WraftDoc.Document.DataTemplate{} = data_template <-
            Document.get_d_template(current_user, id),
-         %WraftDoc.Document.ContentType{} = c_type <-
-           Document.get_content_type(current_user, data_template.content_type_id),
+         %WraftDoc.ContentTypes.ContentType{} = c_type <-
+           ContentTypes.get_content_type(current_user, data_template.content_type_id),
          %WraftDoc.Layouts.Layout{} = layout <-
            Layouts.get_layout(c_type.layout_id, current_user),
          %WraftDoc.Themes.Theme{} = theme <-

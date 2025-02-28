@@ -1,10 +1,10 @@
-defmodule WraftDoc.Document.ContentTypeRole do
+defmodule WraftDoc.ContentTypes.ContentTypeRole do
   @moduledoc """
     This is the ContentTypeRole module
   """
   use WraftDoc.Schema
 
-  alias WraftDoc.{Account.Role, Document.ContentType}
+  alias WraftDoc.{Account.Role, ContentTypes.ContentType}
 
   schema "content_type_role" do
     belongs_to(:content_type, ContentType)
