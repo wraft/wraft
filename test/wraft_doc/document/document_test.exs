@@ -12,13 +12,13 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.Comments.Comment
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.ContentTypes.ContentTypeField
+  alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Document
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
   alias WraftDoc.Document.Counter
-  alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType
   alias WraftDoc.Document.Instance
@@ -2616,7 +2616,7 @@ defmodule WraftDoc.DocumentTest do
   end
 
   @tag :individual
-  describe "data_template_bulk_insert/4" do
+  describe "insert_data_template_bulk/4" do
     test "test bulk data template creation with valid data" do
       c_type = insert(:content_type)
       user = insert(:user)
@@ -2630,7 +2630,7 @@ defmodule WraftDoc.DocumentTest do
 
       data_templates =
         user
-        |> Document.data_template_bulk_insert(c_type, mapping, path)
+        |> DataTemplates.insert_data_template_bulk(c_type, mapping, path)
         |> Enum.map(fn {:ok, x} -> x.title end)
         |> List.to_string()
 
@@ -2650,7 +2650,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      response = Document.data_template_bulk_insert(nil, nil, nil, nil)
+      response = DataTemplates.insert_data_template_bulk(nil, nil, nil, nil)
 
       assert count_before ==
                DataTemplate
@@ -3635,7 +3635,7 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "get_d_template/2" do
+  describe "get_data_template/2" do
     test "get data_template returns the data_template data" do
       user = insert(:user_with_organisation)
 
@@ -3643,7 +3643,7 @@ defmodule WraftDoc.DocumentTest do
         insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
 
       data_template = insert(:data_template, creator: user, content_type: content_type)
-      d_data_template = Document.get_d_template(user, data_template.id)
+      d_data_template = Document.get_data_template(user, data_template.id)
       assert d_data_template.title == data_template.title
       assert d_data_template.title_template == data_template.title_template
       assert d_data_template.data == data_template.data
@@ -3651,7 +3651,7 @@ defmodule WraftDoc.DocumentTest do
     end
   end
 
-  describe "show_d_template/2" do
+  describe "show_data_template/2" do
     # TODO update test for preloading field and field type in content type
     test "show data_template returns the data_template data and preloads creator and content type" do
       user = insert(:user_with_organisation)
@@ -3660,7 +3660,7 @@ defmodule WraftDoc.DocumentTest do
         insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
 
       data_template = insert(:data_template, creator: user, content_type: content_type)
-      d_data_template = Document.show_d_template(user, data_template.id)
+      d_data_template = Document.show_data_template(user, data_template.id)
       assert d_data_template.title == data_template.title
       assert d_data_template.title_template == data_template.title_template
       assert d_data_template.data == data_template.data

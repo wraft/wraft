@@ -6,7 +6,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateControllerTest do
   @moduletag :controller
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.DataTemplate, Repo}
+  alias WraftDoc.DataTemplates.DataTemplate
+  alias WraftDoc.Repo
 
   @valid_attrs %{
     title: "Main template",

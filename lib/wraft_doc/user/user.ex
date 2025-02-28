@@ -35,7 +35,7 @@ defmodule WraftDoc.Account.User do
     has_many(:themes, WraftDoc.Themes.Theme, foreign_key: :creator_id)
     has_many(:flows, WraftDoc.Enterprise.Flow, foreign_key: :creator_id)
     has_many(:states, WraftDoc.Enterprise.Flow.State, foreign_key: :creator_id)
-    has_many(:data_templates, WraftDoc.Document.DataTemplate, foreign_key: :creator_id)
+    has_many(:data_templates, WraftDoc.DataTemplates.DataTemplate, foreign_key: :creator_id)
     has_many(:assets, WraftDoc.Document.Asset, foreign_key: :creator_id)
     has_many(:template_assets, WraftDoc.TemplateAssets.TemplateAsset, foreign_key: :creator_id)
     has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :creator_id)

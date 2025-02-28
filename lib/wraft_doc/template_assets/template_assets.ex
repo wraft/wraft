@@ -12,8 +12,11 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Client.Minio
   alias WraftDoc.ContentTypes
   alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.DataTemplates
+  alias WraftDoc.DataTemplates.DataTemplate
+  alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Document
-  alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.Document
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.FieldType
   alias WraftDoc.Document.Frame
@@ -751,7 +754,7 @@ defmodule WraftDoc.TemplateAssets do
     with params when is_map(params) <-
            prepare_data_template_attrs(template_map, downloaded_file, content_type.id),
          {:ok, %DataTemplate{} = data_template} <-
-           Document.create_data_template(current_user, content_type, params) do
+           DataTemplates.create_data_template(current_user, content_type, params) do
       {:ok, data_template}
     else
       {:error, error} ->

@@ -8,7 +8,7 @@ defmodule WraftDoc.Document.Pipeline.Stage do
   schema "pipe_stage" do
     belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
     belongs_to(:pipeline, WraftDoc.Document.Pipeline)
-    belongs_to(:data_template, WraftDoc.Document.DataTemplate)
+    belongs_to(:data_template, WraftDoc.DataTemplates.DataTemplate)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:creator, WraftDoc.Account.User)
     has_one(:form_mapping, WraftDoc.Forms.FormMapping, foreign_key: :pipe_stage_id)

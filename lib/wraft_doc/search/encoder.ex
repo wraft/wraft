@@ -32,12 +32,15 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.ContentTypes.ContentType do
   end
 end
 
-defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.DataTemplate do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.DataTemplates.DataTemplate do
   alias WraftDoc.Repo
 
-  def to_document(%WraftDoc.Document.DataTemplate{} = data_template) do
+  def to_document(%WraftDoc.DataTemplates.DataTemplate{} = data_template) do
     data_template =
-      Repo.preload(Repo.get!(WraftDoc.Document.DataTemplate, data_template.id), :content_type)
+      Repo.preload(
+        Repo.get!(WraftDoc.DataTemplates.DataTemplate, data_template.id),
+        :content_type
+      )
 
     organisation_id =
       case data_template.content_type do

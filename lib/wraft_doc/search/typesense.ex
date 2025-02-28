@@ -57,7 +57,7 @@ defmodule WraftDoc.Search.Typesense do
   def initialize do
     collections = [
       {WraftDoc.ContentTypes.ContentType, "content_type"},
-      {WraftDoc.Document.DataTemplate, "data_template"},
+      {WraftDoc.DataTemplates.DataTemplate, "data_template"},
       {WraftDoc.Enterprise.Flow, "flow"},
       {WraftDoc.Layouts.Layout, "layout"},
       {WraftDoc.Themes.Theme, "theme"}
