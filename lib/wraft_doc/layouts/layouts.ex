@@ -7,8 +7,8 @@ defmodule WraftDoc.Layouts do
   require Logger
 
   alias WraftDoc.Account.User
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Asset
+  alias WraftDoc.Assets
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Document.Engine
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
@@ -74,7 +74,7 @@ defmodule WraftDoc.Layouts do
   defp fetch_and_associcate_assets(layout, current_user, %{"assets" => assets}) do
     (assets || "")
     |> String.split(",")
-    |> Stream.map(fn x -> Document.get_asset(x, current_user) end)
+    |> Stream.map(fn x -> Assets.get_asset(x, current_user) end)
     |> Stream.map(fn x -> associate_layout_and_asset(layout, current_user, x) end)
     |> Enum.to_list()
   end

@@ -7,7 +7,7 @@ defmodule WraftDoc.Layouts.LayoutAsset do
 
   schema "layout_asset" do
     belongs_to(:layout, WraftDoc.Layouts.Layout)
-    belongs_to(:asset, WraftDoc.Document.Asset)
+    belongs_to(:asset, WraftDoc.Assets.Asset)
     belongs_to(:creator, WraftDoc.Account.User)
     timestamps()
   end

@@ -13,8 +13,8 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Asset
+  alias WraftDoc.Assets
+  alias WraftDoc.Assets.Asset
 
   def swagger_definitions do
     %{
@@ -128,7 +128,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, %Asset{} = asset} <- Document.create_asset(current_user, params) do
+    with {:ok, %Asset{} = asset} <- Assets.create_asset(current_user, params) do
       render(conn, :asset, asset: asset)
     end
   end
@@ -156,7 +156,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.asset_index(current_user, params) do
+         } <- Assets.asset_index(current_user, params) do
       render(conn, "index.json",
         assets: assets,
         page_number: page_number,
@@ -186,7 +186,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   def show(conn, %{"id" => asset_id}) do
     current_user = conn.assigns.current_user
 
-    with %Asset{} = asset <- Document.show_asset(asset_id, current_user) do
+    with %Asset{} = asset <- Assets.show_asset(asset_id, current_user) do
       render(conn, "show.json", asset: asset)
     end
   end
@@ -215,8 +215,8 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset{} = asset <- Document.get_asset(id, current_user),
-         {:ok, asset} <- Document.update_asset(asset, params) do
+    with %Asset{} = asset <- Assets.get_asset(id, current_user),
+         {:ok, asset} <- Assets.update_asset(asset, params) do
       render(conn, "asset.json", asset: asset)
     end
   end
@@ -243,8 +243,8 @@ defmodule WraftDocWeb.Api.V1.AssetController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset{} = asset <- Document.get_asset(id, current_user),
-         {:ok, %Asset{}} <- Document.delete_asset(asset) do
+    with %Asset{} = asset <- Assets.get_asset(id, current_user),
+         {:ok, %Asset{}} <- Assets.delete_asset(asset) do
       render(conn, "asset.json", asset: asset)
     end
   end

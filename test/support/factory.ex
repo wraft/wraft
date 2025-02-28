@@ -13,6 +13,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Account.User.Audience
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Authorization.Permission
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.BlockTemplates.BlockTemplate
@@ -20,7 +21,6 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.ContentTypes.ContentTypeRole
-  alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField

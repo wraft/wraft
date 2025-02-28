@@ -9,6 +9,7 @@ defmodule WraftDoc.TemplateAssets do
   require Logger
 
   alias Ecto.Multi
+  alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
   alias WraftDoc.ContentTypes
   alias WraftDoc.ContentTypes.ContentType
@@ -525,7 +526,7 @@ defmodule WraftDoc.TemplateAssets do
     with {:ok, content} <- extract_file_content(downloaded_zip_file, entry.file_name),
          {:ok, temp_file_path} <- write_temp_file(content),
          asset_params = prepare_theme_asset_params(entry, temp_file_path, current_user),
-         {:ok, asset} <- Document.create_asset(current_user, asset_params) do
+         {:ok, asset} <- Assets.create_asset(current_user, asset_params) do
       asset.id
     else
       error ->
@@ -612,7 +613,7 @@ defmodule WraftDoc.TemplateAssets do
     with {:ok, content} <- extract_file_content(downloaded_zip_file, entry.file_name),
          {:ok, temp_file_path} <- write_temp_file(content),
          asset_params <- prepare_layout_asset_params(entry, temp_file_path, current_user),
-         {:ok, asset} <- Document.create_asset(current_user, asset_params) do
+         {:ok, asset} <- Assets.create_asset(current_user, asset_params) do
       asset.id
     else
       error ->
@@ -1091,7 +1092,7 @@ defmodule WraftDoc.TemplateAssets do
          folder_name
        ) do
     file = Minio.download("organisations/#{org_id}/assets/#{asset_id}")
-    asset = Document.get_asset(asset_id, %{current_org_id: org_id})
+    asset = Assets.get_asset(asset_id, %{current_org_id: org_id})
     path = "#{file_path}/#{folder_name}/#{asset.name}.#{format}"
     File.mkdir_p(Path.dirname(path))
     File.write!(path, file)

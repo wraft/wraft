@@ -22,6 +22,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   require Logger
 
+  alias WraftDoc.Assets
   alias WraftDoc.Client.Minio.DownloadError
   alias WraftDoc.ContentTypes
   alias WraftDoc.ContentTypes.ContentType
@@ -775,7 +776,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     case Document.show_instance(instance_id, current_user) do
       %Instance{content_type: %{layout: layout}} = instance ->
-        with %Layout{} = layout <- Document.preload_asset(layout),
+        with %Layout{} = layout <- Assets.preload_asset(layout),
              {_, exit_code} <- Document.build_doc(instance, layout) do
           end_time = Timex.now()
 

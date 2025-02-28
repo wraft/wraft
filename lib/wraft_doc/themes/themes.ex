@@ -7,9 +7,10 @@ defmodule WraftDoc.Themes do
   require Logger
 
   alias WraftDoc.Account.User
+  alias WraftDoc.Assets
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
   alias WraftDoc.Document
-  alias WraftDoc.Document.Asset
   alias WraftDoc.Repo
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Themes.ThemeAsset
@@ -41,7 +42,7 @@ defmodule WraftDoc.Themes do
   defp fetch_and_associcate_assets_with_theme(theme, current_user, %{"assets" => assets}) do
     (assets || "")
     |> String.split(",")
-    |> Stream.map(fn asset -> Document.get_asset(asset, current_user) end)
+    |> Stream.map(fn asset -> Assets.get_asset(asset, current_user) end)
     |> Stream.map(fn asset -> associate_theme_and_asset(theme, asset) end)
     |> Enum.to_list()
   end

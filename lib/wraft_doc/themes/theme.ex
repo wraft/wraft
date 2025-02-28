@@ -17,7 +17,7 @@ defmodule WraftDoc.Themes.Theme do
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
   alias __MODULE__
-  alias WraftDoc.Document.Asset
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Themes.ThemeAsset
   @hex_code_warning_msg "hex-code must be in the format of `#RRGGBB`"
 

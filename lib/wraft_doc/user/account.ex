@@ -14,11 +14,11 @@ defmodule WraftDoc.Account do
   alias WraftDoc.Account.User.Audience
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.BlockTemplates.BlockTemplate
   alias WraftDoc.ContentType.ContentType
-  alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.Instance
   alias WraftDoc.Enterprise

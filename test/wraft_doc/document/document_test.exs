@@ -6,6 +6,8 @@ defmodule WraftDoc.DocumentTest do
   @moduletag :document
 
   alias WraftDoc.Account.Role
+  alias WraftDoc.Assets
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.BlockTemplates
   alias WraftDoc.BlockTemplates.BlockTemplate
   alias WraftDoc.Comments
@@ -13,7 +15,6 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.Document
-  alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
@@ -3712,7 +3713,7 @@ defmodule WraftDoc.DocumentTest do
       [organisation] = user.owned_organisations
       params = Map.put(@valid_asset_attrs, "organisation_id", organisation.id)
 
-      {:ok, asset} = Document.create_asset(user, params)
+      {:ok, asset} = Assets.create_asset(user, params)
 
       assert asset.id
       assert asset.name == params["name"]
@@ -3734,7 +3735,7 @@ defmodule WraftDoc.DocumentTest do
           }
         })
 
-      {:ok, asset} = Document.create_asset(user, params)
+      {:ok, asset} = Assets.create_asset(user, params)
 
       assert asset.id
       assert asset.name == params["name"]
@@ -3746,7 +3747,7 @@ defmodule WraftDoc.DocumentTest do
       [organisation] = user.owned_organisations
 
       params = Map.merge(@valid_asset_attrs, %{"organisation_id" => organisation.id})
-      assert {:ok, %Asset{id: <<_::288>>}} = Document.create_asset(user, params)
+      assert {:ok, %Asset{id: <<_::288>>}} = Assets.create_asset(user, params)
 
       uploader = %Plug.Upload{
         content_type: "image/png",
@@ -3757,7 +3758,7 @@ defmodule WraftDoc.DocumentTest do
       params = Map.merge(params, %{"file" => uploader})
 
       {:error, %Ecto.Changeset{errors: [file: {"invalid file type", _}]}} =
-        Document.create_asset(user, params)
+        Assets.create_asset(user, params)
     end
 
     test "only font files allowed for asset of theme type" do
@@ -3776,18 +3777,18 @@ defmodule WraftDoc.DocumentTest do
           %{"organisation_id" => organisation.id, "file" => uploader, "type" => "theme"}
         )
 
-      assert {:ok, %Asset{id: <<_::288>>}} = Document.create_asset(user, params)
+      assert {:ok, %Asset{id: <<_::288>>}} = Assets.create_asset(user, params)
 
       params =
         Map.merge(@valid_asset_attrs, %{"organisation_id" => organisation.id, "type" => "theme"})
 
       {:error, %Ecto.Changeset{errors: [file: {"invalid file type", _}]}} =
-        Document.create_asset(user, params)
+        Assets.create_asset(user, params)
     end
 
     test "returns error on invalid attrs" do
       user = insert(:user_with_organisation)
-      {:error, changeset} = Document.create_asset(user, @invalid_attrs)
+      {:error, changeset} = Assets.create_asset(user, @invalid_attrs)
 
       assert %{name: ["can't be blank"], type: ["can't be blank"]} == errors_on(changeset)
     end
@@ -3800,7 +3801,7 @@ defmodule WraftDoc.DocumentTest do
       a1 = insert(:asset, creator: user, organisation: organisation)
       a2 = insert(:asset, creator: user, organisation: organisation)
       params = %{page_number: 1}
-      asset_index = Document.asset_index(user, params)
+      asset_index = Assets.asset_index(user, params)
 
       assert asset_index.entries
              |> Enum.map(fn x -> x.name end)
@@ -3816,7 +3817,7 @@ defmodule WraftDoc.DocumentTest do
     test "get asset returns the asset data" do
       user = insert(:user_with_organisation)
       asset = insert(:asset, creator: user, organisation: List.first(user.owned_organisations))
-      a_asset = Document.get_asset(asset.id, user)
+      a_asset = Assets.get_asset(asset.id, user)
       assert a_asset.name == asset.name
     end
   end
@@ -3825,7 +3826,7 @@ defmodule WraftDoc.DocumentTest do
     test "show asset returns the asset data and preloads" do
       user = insert(:user_with_organisation)
       asset = insert(:asset, creator: user, organisation: List.first(user.owned_organisations))
-      a_asset = Document.show_asset(asset.id, user)
+      a_asset = Assets.show_asset(asset.id, user)
       assert a_asset.name == asset.name
       assert a_asset.creator.name == user.name
     end
@@ -3835,7 +3836,7 @@ defmodule WraftDoc.DocumentTest do
     test "update asset on valid attrs" do
       # file uploading is throwing errors
       asset = insert(:asset)
-      {:ok, asset} = Document.update_asset(asset, @valid_asset_attrs)
+      {:ok, asset} = Assets.update_asset(asset, @valid_asset_attrs)
 
       assert asset.name == @valid_asset_attrs["name"]
     end
@@ -3849,7 +3850,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      {:error, changeset} = Document.update_asset(asset, %{name: nil, file: nil})
+      {:error, changeset} = Assets.update_asset(asset, %{name: nil, file: nil})
 
       count_after =
         Asset
@@ -3864,7 +3865,7 @@ defmodule WraftDoc.DocumentTest do
   describe "delete_asset/1" do
     test "delete asset deletes the asset data" do
       asset = insert(:asset)
-      {:ok, _} = Document.delete_asset(asset)
+      {:ok, _} = Assets.delete_asset(asset)
 
       refute Repo.get(Asset, asset.id)
     end
@@ -3873,7 +3874,7 @@ defmodule WraftDoc.DocumentTest do
   describe "preload_asset/1" do
     test "preload_asset" do
       layout = insert(:layout)
-      preload_assets = Document.preload_asset(layout)
+      preload_assets = Assets.preload_asset(layout)
 
       assert is_list(layout.assets) == false
       assert is_list(preload_assets.assets) == true

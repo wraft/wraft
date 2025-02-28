@@ -8,7 +8,7 @@ defmodule WraftDoc.Workers.ScheduledWorker do
 
   import Ecto.Query
 
-  alias WraftDoc.Document.Asset
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Membership
   alias WraftDoc.Enterprise.Plan

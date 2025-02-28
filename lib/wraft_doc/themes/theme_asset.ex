@@ -6,7 +6,7 @@ defmodule WraftDoc.Themes.ThemeAsset do
   alias __MODULE__
 
   schema "theme_assets" do
-    belongs_to(:asset, WraftDoc.Document.Asset)
+    belongs_to(:asset, WraftDoc.Assets.Asset)
     belongs_to(:theme, WraftDoc.Themes.Theme)
 
     timestamps()
