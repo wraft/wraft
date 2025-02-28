@@ -14,6 +14,8 @@ defmodule WraftDoc.Forms do
   alias WraftDoc.Forms.FormField
   alias WraftDoc.Forms.FormMapping
   alias WraftDoc.Forms.FormPipeline
+  alias WraftDoc.Pipelines
+  alias WraftDoc.Pipelines.TriggerHistories
   alias WraftDoc.Repo
   alias WraftDoc.Validations.Validator
 
@@ -495,12 +497,14 @@ defmodule WraftDoc.Forms do
   @spec trigger_pipeline(User.t(), Ecto.UUID.t(), map(), integer()) :: :ok | {:error, String.t()}
   def trigger_pipeline(current_user, pipeline_id, data, scheduled_at_offset) do
     Multi.new()
-    |> Multi.run(:pipeline, fn _, _ -> {:ok, Document.get_pipeline(current_user, pipeline_id)} end)
+    |> Multi.run(:pipeline, fn _, _ ->
+      {:ok, Pipelines.get_pipeline(current_user, pipeline_id)}
+    end)
     |> Multi.run(:trigger_history, fn _, %{pipeline: pipeline} ->
-      Document.create_trigger_history(current_user, pipeline, data)
+      TriggerHistories.create_trigger_history(current_user, pipeline, data)
     end)
     |> Multi.run(:pipeline_job, fn _, %{trigger_history: trigger_history} ->
-      Document.create_pipeline_job(
+      TriggerHistories.create_pipeline_job(
         trigger_history,
         DateTime.add(DateTime.utc_now(), scheduled_at_offset, :second)
       )

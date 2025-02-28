@@ -10,11 +10,8 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Account.User
   alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
-  alias WraftDoc.ContentTypes
   alias WraftDoc.ContentTypes.ContentType
-  alias WraftDoc.DataTemplates
   alias WraftDoc.DataTemplates.DataTemplate
-
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
@@ -29,16 +26,12 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Document.InstanceApprovalSystem
   alias WraftDoc.Document.InstanceTransitionLog
   alias WraftDoc.Document.OrganisationField
-  alias WraftDoc.Document.Pipeline
-  alias WraftDoc.Document.Pipeline.Stage
-  alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.StateUser
-  alias WraftDoc.Forms
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
@@ -1497,26 +1490,18 @@ defmodule WraftDoc.Document do
   def insert_bulk_build_work(_, _, _, _, _, _), do: nil
 
   @doc """
-  Creates a background job to run a pipeline.
+  Create a bulk job.
   """
-  # TODO - improve tests
-  @spec create_pipeline_job(TriggerHistory.t(), DateTime.t()) ::
-          {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  def create_pipeline_job(%TriggerHistory{} = trigger_history, scheduled_at) do
-    create_bulk_job(trigger_history, scheduled_at, ["pipeline_job"])
-  end
-
-  def create_pipeline_job(%TriggerHistory{} = trigger_history) do
-    create_bulk_job(trigger_history, nil, ["pipeline_job"])
-  end
-
-  def create_pipeline_job(_), do: nil
-
   def create_bulk_job(args, scheduled_at \\ nil, tags \\ []) do
     args
     |> BulkWorker.new(tags: tags, scheduled_at: scheduled_at)
     |> Oban.insert()
   end
+
+  # def insert_block_template_bulk_import_work(_, _, %Plug.Upload{filename: _, path: _}),
+  #   do: {:error, :fake}
+
+  def insert_block_template_bulk_import_work(_, _, _), do: {:error, :invalid_data}
 
   @doc """
   Bulk build function.
@@ -1677,361 +1662,6 @@ defmodule WraftDoc.Document do
 
     {result, exit_code}
   end
-
-  @doc """
-  Create a pipeline.
-  """
-  @spec create_pipeline(User.t(), map) :: Pipeline.t() | {:error, Ecto.Changeset.t()}
-  def create_pipeline(%{current_org_id: org_id} = current_user, params) do
-    params = Map.put(params, "organisation_id", org_id)
-
-    current_user
-    |> build_assoc(:pipelines)
-    |> Pipeline.changeset(params)
-    |> Repo.insert()
-    |> case do
-      {:ok, pipeline} ->
-        create_pipe_stages(current_user, pipeline, params)
-
-        Repo.preload(pipeline,
-          stages: [
-            [content_type: [{:fields, :field_type}]],
-            :data_template,
-            :state,
-            :form_mapping
-          ]
-        )
-
-      {:error, _} = changeset ->
-        changeset
-    end
-  end
-
-  # Create pipe stages by iterating over the list of content type UUIDs
-  # given among the params.
-  @spec create_pipe_stages(User.t(), Pipeline.t(), map) :: list
-  defp create_pipe_stages(user, pipeline, %{"stages" => stage_data}) when is_list(stage_data) do
-    Enum.map(stage_data, fn stage_params -> create_pipe_stage(user, pipeline, stage_params) end)
-  end
-
-  defp create_pipe_stages(_, _, _), do: []
-
-  @doc """
-  Create a pipe stage.
-  """
-  # TOOD update the tests as state id is removed from the params.
-  @spec create_pipe_stage(User.t(), Pipeline.t(), map) ::
-          nil | {:error, Ecto.Changeset.t()} | {:ok, any}
-  def create_pipe_stage(
-        user,
-        pipeline,
-        %{
-          "content_type_id" => <<_::288>>,
-          "data_template_id" => <<_::288>>
-        } = params
-      ) do
-    params
-    |> get_pipe_stage_params(user)
-    |> do_create_pipe_stages(pipeline)
-  end
-
-  def create_pipe_stage(_, _, _), do: nil
-
-  # Get the values for pipe stage creation to create a pipe stage.
-  # TODO update tests as state id is removed from the params.
-  @spec get_pipe_stage_params(map, User.t()) ::
-          {ContentType.t(), DataTemplate.t(), State.t(), User.t()}
-  defp get_pipe_stage_params(
-         %{
-           "content_type_id" => c_type_uuid,
-           "data_template_id" => d_temp_uuid
-         },
-         user
-       ) do
-    c_type = ContentTypes.get_content_type(user, c_type_uuid)
-
-    d_temp = DataTemplates.get_data_template(user, d_temp_uuid)
-
-    {c_type, d_temp, user}
-  end
-
-  defp get_pipe_stage_params(_, _), do: nil
-
-  # Create pipe stages
-  # TODO update tests as state id is removed from the params.
-  @spec do_create_pipe_stages(
-          {ContentType.t(), DataTemplate.t(), User.t()} | nil,
-          Pipeline.t()
-        ) ::
-          {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
-  defp do_create_pipe_stages(
-         {%ContentType{id: c_id}, %DataTemplate{id: d_id}, %User{id: u_id}},
-         pipeline
-       ) do
-    pipeline
-    |> build_assoc(:stages,
-      content_type_id: c_id,
-      data_template_id: d_id,
-      creator_id: u_id
-    )
-    |> Stage.changeset()
-    |> Repo.insert()
-  end
-
-  defp do_create_pipe_stages(_, _), do: nil
-
-  @doc """
-  List of all pipelines in the user's organisation.
-  """
-  @spec pipeline_index(User.t(), map) :: map | nil
-  def pipeline_index(%User{current_org_id: org_id}, params) do
-    Pipeline
-    |> where([p], p.organisation_id == ^org_id)
-    |> where(^pipeline_filter_by_name(params))
-    |> order_by(^pipeline_sort(params))
-    |> join(:left, [p], ps in assoc(p, :stages))
-    |> select_merge([p, ps], %{stages_count: count(ps.id)})
-    |> group_by([p], p.id)
-    |> Repo.paginate(params)
-  end
-
-  def pipeline_index(_, _), do: nil
-
-  defp pipeline_filter_by_name(%{"name" => name} = _params),
-    do: dynamic([p], ilike(p.name, ^"%#{name}%"))
-
-  defp pipeline_filter_by_name(_), do: true
-
-  defp pipeline_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([p], p.name)]
-
-  defp pipeline_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([p], p.name)]
-
-  defp pipeline_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([p], p.inserted_at)]
-
-  defp pipeline_sort(%{"sort" => "inserted_at_desc"}),
-    do: [desc: dynamic([p], p.inserted_at)]
-
-  defp pipeline_sort(_), do: []
-
-  @doc """
-  Get a pipeline from its UUID and user's organisation.
-  """
-  @spec get_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
-  def get_pipeline(%User{current_org_id: org_id}, <<_::288>> = p_uuid) do
-    query = from(p in Pipeline, where: p.id == ^p_uuid, where: p.organisation_id == ^org_id)
-    Repo.one(query)
-  end
-
-  def get_pipeline(_, _), do: nil
-
-  @doc """
-  Get a pipeline and its details.
-  """
-  @spec show_pipeline(User.t(), Ecto.UUID.t()) :: Pipeline.t() | nil
-  def show_pipeline(current_user, p_uuid) do
-    current_user
-    |> get_pipeline(p_uuid)
-    |> Repo.preload([
-      :creator,
-      stages: [[content_type: [{:fields, :field_type}]], :data_template, :state, :form_mapping]
-    ])
-  end
-
-  @doc """
-  Updates a pipeline.
-  """
-  @spec pipeline_update(Pipeline.t(), User.t(), map) :: Pipeline.t()
-  def pipeline_update(%Pipeline{} = pipeline, %User{} = user, params) do
-    pipeline
-    |> Pipeline.update_changeset(params)
-    |> Repo.update()
-    |> case do
-      {:ok, pipeline} ->
-        create_pipe_stages(user, pipeline, params)
-
-        Repo.preload(pipeline, [
-          :creator,
-          stages: [
-            [content_type: [{:fields, :field_type}]],
-            :data_template,
-            :state,
-            :form_mapping
-          ]
-        ])
-
-      {:error, _} = changeset ->
-        changeset
-    end
-  end
-
-  def pipeline_update(_, _, _), do: nil
-
-  @doc """
-  Delete a pipeline.
-  """
-  @spec delete_pipeline(Pipeline.t()) :: {:ok, Pipeline.t()} | {:error, Ecto.Changeset.t()} | nil
-  def delete_pipeline(%Pipeline{} = pipeline) do
-    Forms.delete_form_pipeline(pipeline)
-    Repo.delete(pipeline)
-  end
-
-  def delete_pipeline(_), do: nil
-
-  @doc """
-  Get a pipeline stage from its UUID and user's organisation.
-  """
-  @spec get_pipe_stage(User.t(), Ecto.UUID.t()) :: Stage.t() | nil
-  def get_pipe_stage(%User{current_org_id: org_id}, <<_::288>> = s_uuid) do
-    query =
-      from(s in Stage,
-        join: p in Pipeline,
-        on: p.organisation_id == ^org_id and s.pipeline_id == p.id,
-        where: s.id == ^s_uuid
-      )
-
-    Repo.one(query)
-  end
-
-  def get_pipe_stage(_, _), do: nil
-
-  @doc """
-  Get all required fields and then update a stage.
-  """
-  @spec update_pipe_stage(User.t(), Stage.t(), map) ::
-          {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
-  def update_pipe_stage(%User{} = current_user, %Stage{} = stage, %{
-        "content_type_id" => c_uuid,
-        "data_template_id" => d_uuid
-      }) do
-    c_type = ContentTypes.get_content_type(current_user, c_uuid)
-
-    d_temp = DataTemplates.get_data_template(current_user, d_uuid)
-
-    do_update_pipe_stage(stage, c_type, d_temp)
-  end
-
-  def update_pipe_stage(_, _, _), do: nil
-
-  # Update a stage.
-  @spec do_update_pipe_stage(Stage.t(), ContentType.t(), DataTemplate.t()) ::
-          {:ok, Stage.t()} | {:error, Ecto.Changeset.t()} | nil
-  defp do_update_pipe_stage(stage, %ContentType{id: c_id}, %DataTemplate{id: d_id}) do
-    stage
-    |> Stage.update_changeset(%{content_type_id: c_id, data_template_id: d_id})
-    |> Repo.update()
-  end
-
-  defp do_update_pipe_stage(_, _, _), do: nil
-
-  @doc """
-  Deletes a pipe stage.
-  """
-  @spec delete_pipe_stage(Stage.t()) :: {:ok, Stage.t()} | nil
-  def delete_pipe_stage(%Stage{} = pipe_stage), do: Repo.delete(pipe_stage)
-
-  def delete_pipe_stage(_), do: nil
-
-  @doc """
-  Preload all datas of a pipe stage excluding pipeline.
-  """
-  @spec preload_stage_details(Stage.t()) :: Stage.t()
-  def preload_stage_details(stage) do
-    Repo.preload(stage, [
-      {:content_type, fields: [:field_type]},
-      :data_template,
-      :state,
-      :form_mapping
-    ])
-  end
-
-  @doc """
-  Creates a pipeline trigger history with a user association.
-
-  ## Example
-  iex> create_trigger_history(%User{}, %Pipeline{}, %{name: "John Doe"})
-  {:ok, %TriggerHistory{}}
-
-  iex> create_trigger_history(%User{}, %Pipeline{}, "meta")
-  {:error, Ecto.Changeset}
-
-  iex> create_trigger_history("user", "pipeline", "meta")
-  nil
-  """
-  @spec create_trigger_history(User.t(), Pipeline.t(), map) ::
-          {:ok, TriggerHistory.t()} | {:error, Ecto.Changeset.t()} | nil
-  def create_trigger_history(%User{id: u_id}, %Pipeline{} = pipeline, data) do
-    state = TriggerHistory.states()[:enqued]
-
-    pipeline
-    |> build_assoc(:trigger_histories, creator_id: u_id)
-    |> TriggerHistory.changeset(%{data: data, state: state})
-    |> Repo.insert()
-  end
-
-  def create_trigger_history(_, _, _), do: nil
-
-  @doc """
-  Get all the triggers under a pipeline.
-  """
-  @spec get_trigger_histories_of_a_pipeline(Pipeline.t(), map) :: Scrivener.Page.t()
-  def get_trigger_histories_of_a_pipeline(%Pipeline{id: id}, params) do
-    query =
-      from(t in TriggerHistory,
-        where: t.pipeline_id == ^id,
-        preload: [:creator],
-        order_by: [desc: t.inserted_at]
-      )
-
-    Repo.paginate(query, params)
-  end
-
-  def get_trigger_histories_of_a_pipeline(_, _), do: nil
-
-  @doc """
-   Get all the triggers under a organisation.
-  """
-  @spec trigger_history_index(User.t(), map) :: Scrivener.Page.t()
-  def trigger_history_index(%User{current_org_id: org_id} = _user, params) do
-    TriggerHistory
-    |> join(:inner, [t], p in Pipeline, on: t.pipeline_id == p.id, as: :pipeline)
-    |> where([pipeline: p], p.organisation_id == ^org_id)
-    |> where(^trigger_history_filter_by_pipeline_name(params))
-    |> where(^trigger_history_filter_by_status(params))
-    |> order_by(^trigger_history_sort(params))
-    |> preload([:creator])
-    |> Repo.paginate(params)
-  end
-
-  def trigger_history_index(_, _), do: nil
-
-  defp trigger_history_filter_by_pipeline_name(%{"pipeline_name" => pipeline_name} = _params),
-    do: dynamic([pipeline: p], ilike(p.name, ^"%#{pipeline_name}%"))
-
-  defp trigger_history_filter_by_pipeline_name(_), do: true
-
-  defp trigger_history_filter_by_status(%{"status" => status} = _params),
-    do: dynamic([t], t.state == ^status)
-
-  defp trigger_history_filter_by_status(_), do: true
-
-  defp trigger_history_sort(%{"sort" => "pipeline_name"} = _params),
-    do: [asc: dynamic([pipeline: p], p.name)]
-
-  defp trigger_history_sort(%{"sort" => "pipeline_name_desc"} = _params),
-    do: [desc: dynamic([pipeline: p], p.name)]
-
-  defp trigger_history_sort(%{"sort" => "status"} = _params), do: [asc: dynamic([t], t.state)]
-
-  defp trigger_history_sort(%{"sort" => "status_desc"} = _params),
-    do: [desc: dynamic([t], t.state)]
-
-  defp trigger_history_sort(%{"sort" => "inserted_at"} = _params),
-    do: [asc: dynamic([t], t.inserted_at)]
-
-  defp trigger_history_sort(%{"sort" => "inserted_at_desc"} = _params),
-    do: [desc: dynamic([t], t.inserted_at)]
-
-  defp trigger_history_sort(_), do: []
 
   @doc """
   Returns the list of organisation_field.

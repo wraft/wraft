@@ -30,7 +30,7 @@ defmodule WraftDoc.ContentTypes.ContentType do
     has_many(:instances, WraftDoc.Document.Instance)
     has_many(:content_type_fields, WraftDoc.ContentTypes.ContentTypeField)
     has_many(:fields, through: [:content_type_fields, :field])
-    has_many(:stages, WraftDoc.Document.Pipeline.Stage)
+    has_many(:stages, WraftDoc.Pipelines.Stages.Stage)
     has_many(:pipelines, through: [:stages, :pipeline])
     has_many(:content_type_roles, WraftDoc.ContentTypes.ContentTypeRole)
     has_many(:roles, through: [:content_type_roles, :role])

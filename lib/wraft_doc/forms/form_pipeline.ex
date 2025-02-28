@@ -5,7 +5,7 @@ defmodule WraftDoc.Forms.FormPipeline do
   alias __MODULE__
   use WraftDoc.Schema
 
-  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Pipelines.Pipeline
 
   @fields [:form_id, :pipeline_id]
 

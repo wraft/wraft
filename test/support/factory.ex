@@ -36,9 +36,6 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Document.Instance.Version
   alias WraftDoc.Document.InstanceApprovalSystem
   alias WraftDoc.Document.OrganisationField
-  alias WraftDoc.Document.Pipeline
-  alias WraftDoc.Document.Pipeline.Stage
-  alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
@@ -57,6 +54,9 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
+  alias WraftDoc.Pipelines.Pipeline
+  alias WraftDoc.Pipelines.Stages.Stage
+  alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Themes.ThemeAsset
   alias WraftDoc.WaitingLists.WaitingList

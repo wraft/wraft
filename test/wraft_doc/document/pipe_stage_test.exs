@@ -1,10 +1,10 @@
-defmodule WraftDoc.Document.Pipeline.StageTest do
+defmodule WraftDoc.Pipelines.Stages.StageTest do
   use WraftDoc.ModelCase
 
   import WraftDoc.Factory
   import Ecto
 
-  alias WraftDoc.Document.Pipeline.Stage
+  alias WraftDoc.Pipelines.Stages.Stage
 
   @moduletag :document
 

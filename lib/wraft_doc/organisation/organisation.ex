@@ -7,9 +7,9 @@ defmodule WraftDoc.Enterprise.Organisation do
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
-  alias WraftDoc.Document.Pipeline
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Pipelines.Pipeline
   alias WraftDoc.Themes.Theme
 
   @fields ~w(name legal_name email url address name_of_ceo name_of_cto gstin corporate_id phone creator_id)a

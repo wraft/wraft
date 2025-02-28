@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Pipeline do
+defmodule WraftDoc.Pipelines.Pipeline do
   @moduledoc """
   The pipeline model.
   """
@@ -14,8 +14,8 @@ defmodule WraftDoc.Document.Pipeline do
     field(:stages_count, :integer, virtual: true)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-    has_many(:stages, WraftDoc.Document.Pipeline.Stage)
-    has_many(:trigger_histories, WraftDoc.Document.Pipeline.TriggerHistory)
+    has_many(:stages, WraftDoc.Pipelines.Stages.Stage)
+    has_many(:trigger_histories, WraftDoc.Pipelines.TriggerHistories.TriggerHistory)
     has_many(:form_pipelines, WraftDoc.Forms.FormPipeline)
     has_many(:forms, through: [:form_pipelines, :form])
     timestamps()

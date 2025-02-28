@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Pipeline.TriggerHistory do
+defmodule WraftDoc.Pipelines.TriggerHistories.TriggerHistory do
   @moduledoc """
   The pipeline trigger history model.
   """
@@ -30,7 +30,7 @@ defmodule WraftDoc.Document.Pipeline.TriggerHistory do
     field(:end_time, :naive_datetime)
     field(:duration, :integer)
     field(:zip_file, :string)
-    belongs_to(:pipeline, WraftDoc.Document.Pipeline)
+    belongs_to(:pipeline, WraftDoc.Pipelines.Pipeline)
     belongs_to(:creator, WraftDoc.Account.User)
     timestamps()
   end

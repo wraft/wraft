@@ -26,11 +26,11 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.Document.Instance.History
   alias WraftDoc.Document.Instance.Version
   alias WraftDoc.Document.InstanceApprovalSystem
-  alias WraftDoc.Document.Pipeline
-  alias WraftDoc.Document.Pipeline.Stage
-  alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
+  alias WraftDoc.Pipelines.Pipeline
+  alias WraftDoc.Pipelines.Stages.Stage
+  alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDoc.Repo
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Themes.ThemeAsset
@@ -4365,7 +4365,7 @@ defmodule WraftDoc.DocumentTest do
         ]
       }
 
-      pipeline = Document.create_pipeline(user, attrs)
+      pipeline = Pipelines.create_pipeline(user, attrs)
 
       [%{content_type: content_type, data_template: data_template}] = pipeline.stages
 
@@ -4379,7 +4379,7 @@ defmodule WraftDoc.DocumentTest do
 
     test "returns error with invalid attrs" do
       user = insert(:user_with_organisation)
-      {:error, changeset} = Document.create_pipeline(user, %{})
+      {:error, changeset} = Pipelines.create_pipeline(user, %{})
       assert %{name: ["can't be blank"], api_route: ["can't be blank"]} == errors_on(changeset)
     end
   end
@@ -4402,7 +4402,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      {:ok, stage} = Document.create_pipe_stage(user, pipeline, attrs)
+      {:ok, stage} = Stages.create_pipe_stage(user, pipeline, attrs)
 
       count_after =
         Stage
@@ -4435,7 +4435,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      {:error, changeset} = Document.create_pipe_stage(user, pipeline, attrs)
+      {:error, changeset} = Stages.create_pipe_stage(user, pipeline, attrs)
 
       count_after =
         Stage
@@ -4461,7 +4461,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      stage = Document.create_pipe_stage(user, pipeline, attrs)
+      stage = Stages.create_pipe_stage(user, pipeline, attrs)
 
       count_after =
         Stage
@@ -4483,7 +4483,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      stage = Document.create_pipe_stage(user, pipeline, attrs)
+      stage = Stages.create_pipe_stage(user, pipeline, attrs)
 
       count_after =
         Stage
@@ -4505,7 +4505,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      stage = Document.create_pipe_stage(user, pipeline, attrs)
+      stage = Stages.create_pipe_stage(user, pipeline, attrs)
 
       count_after =
         Stage
@@ -4534,7 +4534,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      response = Document.create_pipe_stage(user, pipeline, attrs)
+      response = Stages.create_pipe_stage(user, pipeline, attrs)
 
       count_after =
         Stage
@@ -4551,7 +4551,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user_with_organisation)
       pipeline1 = insert(:pipeline, organisation: List.first(user.owned_organisations))
       pipeline2 = insert(:pipeline)
-      %{entries: pipelines} = Document.pipeline_index(user, %{})
+      %{entries: pipelines} = Pipelines.pipeline_index(user, %{})
 
       pipeline_names =
         pipelines
@@ -4563,7 +4563,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns nil with invalid attrs" do
-      response = Document.pipeline_index(nil, %{})
+      response = Pipelines.pipeline_index(nil, %{})
       assert response == nil
     end
 
@@ -4571,7 +4571,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user_with_organisation)
       pipeline1 = insert(:pipeline, organisation: List.first(user.owned_organisations))
       pipeline2 = insert(:pipeline, organisation: List.first(user.owned_organisations))
-      %{entries: pipelines} = Document.pipeline_index(user, %{})
+      %{entries: pipelines} = Pipelines.pipeline_index(user, %{})
 
       pipeline_names =
         pipelines
@@ -4599,7 +4599,7 @@ defmodule WraftDoc.DocumentTest do
           organisation: List.first(user.owned_organisations)
         )
 
-      %{entries: pipelines} = Document.pipeline_index(user, %{"name" => "First"})
+      %{entries: pipelines} = Pipelines.pipeline_index(user, %{"name" => "First"})
 
       pipeline_names =
         pipelines
@@ -4627,7 +4627,7 @@ defmodule WraftDoc.DocumentTest do
           organisation: List.first(user.owned_organisations)
         )
 
-      %{entries: pipelines} = Document.pipeline_index(user, %{"name" => "Does Not Exist"})
+      %{entries: pipelines} = Pipelines.pipeline_index(user, %{"name" => "Does Not Exist"})
 
       pipeline_names =
         pipelines
@@ -4655,7 +4655,7 @@ defmodule WraftDoc.DocumentTest do
           organisation: List.first(user.owned_organisations)
         )
 
-      %{entries: pipelines} = Document.pipeline_index(user, %{"sort" => "name"})
+      %{entries: pipelines} = Pipelines.pipeline_index(user, %{"sort" => "name"})
 
       assert List.first(pipelines).name == pipeline1.name
       assert List.last(pipelines).name == pipeline2.name
@@ -4678,7 +4678,7 @@ defmodule WraftDoc.DocumentTest do
           organisation: List.first(user.owned_organisations)
         )
 
-      %{entries: pipelines} = Document.pipeline_index(user, %{"sort" => "name_desc"})
+      %{entries: pipelines} = Pipelines.pipeline_index(user, %{"sort" => "name_desc"})
 
       assert List.first(pipelines).name == pipeline2.name
       assert List.last(pipelines).name == pipeline1.name
@@ -4701,7 +4701,7 @@ defmodule WraftDoc.DocumentTest do
           organisation: List.first(user.owned_organisations)
         )
 
-      %{entries: pipelines} = Document.pipeline_index(user, %{"sort" => "inserted_at"})
+      %{entries: pipelines} = Pipelines.pipeline_index(user, %{"sort" => "inserted_at"})
 
       assert List.first(pipelines).name == pipeline1.name
       assert List.last(pipelines).name == pipeline2.name
@@ -4724,17 +4724,18 @@ defmodule WraftDoc.DocumentTest do
           organisation: List.first(user.owned_organisations)
         )
 
-      %{entries: pipelines} = Document.pipeline_index(user, %{"sort" => "inserted_at_desc"})
+      %{entries: pipelines} = Pipelines.pipeline_index(user, %{"sort" => "inserted_at_desc"})
 
       assert List.first(pipelines).name == pipeline2.name
       assert List.last(pipelines).name == pipeline1.name
     end
   end
 
+  # MOVE
   describe "create_pipeline_job/1" do
     test "Creates a background job to run a pipeline" do
       trigger_history = insert(:trigger_history)
-      assert {:ok, _dd} = Document.create_pipeline_job(trigger_history)
+      assert {:ok, _dd} = TriggerHistories.create_pipeline_job(trigger_history)
     end
   end
 
@@ -4812,7 +4813,7 @@ defmodule WraftDoc.DocumentTest do
     test "returns the pipeline in the user's organisation with given id" do
       user = insert(:user_with_organisation)
       pipe = insert(:pipeline, organisation: List.first(user.owned_organisations))
-      pipeline = Document.get_pipeline(user, pipe.id)
+      pipeline = Pipelines.get_pipeline(user, pipe.id)
       assert pipeline.name == pipe.name
       assert pipeline.id == pipe.id
     end
@@ -4820,18 +4821,18 @@ defmodule WraftDoc.DocumentTest do
     test "returns nil when pipeline does not belong to the user's organisation" do
       user = insert(:user_with_organisation)
       pipeline = insert(:pipeline)
-      response = Document.get_pipeline(user, pipeline.id)
+      response = Pipelines.get_pipeline(user, pipeline.id)
       assert response == nil
     end
 
     test "returns nil for non existent pipeline" do
       user = insert(:user_with_organisation)
-      response = Document.get_pipeline(user, Ecto.UUID.generate())
+      response = Pipelines.get_pipeline(user, Ecto.UUID.generate())
       assert response == nil
     end
 
     test "returns nil for invalid data" do
-      response = Document.get_pipeline(nil, Ecto.UUID.generate())
+      response = Pipelines.get_pipeline(nil, Ecto.UUID.generate())
       assert response == nil
     end
   end
@@ -4840,7 +4841,7 @@ defmodule WraftDoc.DocumentTest do
     test "returns the pipeline in the user's organisation with given id" do
       user = insert(:user_with_organisation)
       pipe = insert(:pipeline, organisation: List.first(user.owned_organisations))
-      pipeline = Document.show_pipeline(user, pipe.id)
+      pipeline = Pipelines.show_pipeline(user, pipe.id)
       assert pipeline.name == pipe.name
       assert pipeline.id == pipe.id
     end
@@ -4848,18 +4849,18 @@ defmodule WraftDoc.DocumentTest do
     test "returns nil when pipeline does not belong to the user's organisation" do
       user = insert(:user_with_organisation)
       pipeline = insert(:pipeline)
-      response = Document.show_pipeline(user, pipeline.id)
+      response = Pipelines.show_pipeline(user, pipeline.id)
       assert response == nil
     end
 
     test "returns nil for non existent pipeline" do
       user = insert(:user_with_organisation)
-      response = Document.show_pipeline(user, Ecto.UUID.generate())
+      response = Pipelines.show_pipeline(user, Ecto.UUID.generate())
       assert response == nil
     end
 
     test "returns nil for invalid data" do
-      response = Document.show_pipeline(nil, Ecto.UUID.generate())
+      response = Pipelines.show_pipeline(nil, Ecto.UUID.generate())
       assert response == nil
     end
   end
@@ -4883,7 +4884,7 @@ defmodule WraftDoc.DocumentTest do
         ]
       }
 
-      pipeline = Document.pipeline_update(pipeline, user, attrs)
+      pipeline = Pipelines.pipeline_update(pipeline, user, attrs)
       [stage] = pipeline.stages
       assert pipeline.name == "pipeline"
       assert pipeline.api_route == "www.crm.com"
@@ -4894,12 +4895,12 @@ defmodule WraftDoc.DocumentTest do
     test "returns error with invalid attrs" do
       user = insert(:user)
       pipeline = insert(:pipeline)
-      {:error, changeset} = Document.pipeline_update(pipeline, user, %{name: ""})
+      {:error, changeset} = Pipelines.pipeline_update(pipeline, user, %{name: ""})
       assert %{name: ["can't be blank"]} == errors_on(changeset)
     end
 
     test "returns nil with wrong data" do
-      response = Document.pipeline_update(nil, nil, %{})
+      response = Pipelines.pipeline_update(nil, nil, %{})
       assert response == nil
     end
   end
@@ -4907,13 +4908,13 @@ defmodule WraftDoc.DocumentTest do
   describe "delete_pipeline/1" do
     test "deletes pipeline with correct data" do
       pipeline = insert(:pipeline)
-      {:ok, _pipeline} = Document.delete_pipeline(pipeline)
+      {:ok, _pipeline} = Pipelines.delete_pipeline(pipeline)
 
       refute Repo.get(Pipeline, pipeline.id)
     end
 
     test "returns nil with invalid data" do
-      assert nil == Document.delete_pipeline(nil)
+      assert nil == Pipelines.delete_pipeline(nil)
     end
   end
 
@@ -4922,7 +4923,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user_with_organisation)
       pipeline = insert(:pipeline, organisation: List.first(user.owned_organisations))
       stage = insert(:pipe_stage, pipeline: pipeline)
-      response = Document.get_pipe_stage(user, stage.id)
+      response = Stages.get_pipe_stage(user, stage.id)
       assert response.pipeline_id == pipeline.id
       assert response.id == stage.id
     end
@@ -4930,18 +4931,18 @@ defmodule WraftDoc.DocumentTest do
     test "returns nil when stage does not belong to user's organisation" do
       user = insert(:user_with_organisation)
       stage = insert(:pipe_stage)
-      response = Document.get_pipe_stage(user, stage.id)
+      response = Stages.get_pipe_stage(user, stage.id)
       assert response == nil
     end
 
     test "returns nil with non-existent IDs" do
       user = insert(:user_with_organisation)
-      response = Document.get_pipe_stage(user, Ecto.UUID.generate())
+      response = Stages.get_pipe_stage(user, Ecto.UUID.generate())
       assert response == nil
     end
 
     test "returns nil invalid data" do
-      response = Document.get_pipe_stage(nil, Ecto.UUID.generate())
+      response = Stages.get_pipe_stage(nil, Ecto.UUID.generate())
       assert response == nil
     end
   end
@@ -4960,7 +4961,7 @@ defmodule WraftDoc.DocumentTest do
         "data_template_id" => d_temp.id
       }
 
-      {:ok, updated_stage} = Document.update_pipe_stage(user, stage, attrs)
+      {:ok, updated_stage} = Stages.update_pipe_stage(user, stage, attrs)
 
       assert updated_stage.id == stage.id
       assert updated_stage.content_type_id == c_type.id
@@ -4982,7 +4983,7 @@ defmodule WraftDoc.DocumentTest do
         "data_template_id" => d_temp.id
       }
 
-      {:error, changeset} = Document.update_pipe_stage(user, stage, attrs)
+      {:error, changeset} = Stages.update_pipe_stage(user, stage, attrs)
 
       assert %{data_template_id: ["Already added.!"]} == errors_on(changeset)
     end
@@ -4997,7 +4998,7 @@ defmodule WraftDoc.DocumentTest do
         "data_template_id" => Ecto.UUID.generate()
       }
 
-      stage = Document.update_pipe_stage(user, stage, attrs)
+      stage = Stages.update_pipe_stage(user, stage, attrs)
 
       assert stage == nil
     end
@@ -5006,7 +5007,7 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       stage = insert(:pipe_stage)
       attrs = %{"state_id" => 1, "content_type_id" => 2, "data_template_id" => 3}
-      stage = Document.update_pipe_stage(user, stage, attrs)
+      stage = Stages.update_pipe_stage(user, stage, attrs)
 
       assert stage == nil
     end
@@ -5017,7 +5018,7 @@ defmodule WraftDoc.DocumentTest do
       state = insert(:state)
       attrs = %{"state_id" => state.id}
 
-      stage = Document.update_pipe_stage(user, stage, attrs)
+      stage = Stages.update_pipe_stage(user, stage, attrs)
 
       assert stage == nil
     end
@@ -5035,7 +5036,7 @@ defmodule WraftDoc.DocumentTest do
         "data_template_id" => d_temp.id
       }
 
-      response = Document.update_pipe_stage(user, stage, attrs)
+      response = Stages.update_pipe_stage(user, stage, attrs)
 
       assert response == nil
     end
@@ -5044,20 +5045,20 @@ defmodule WraftDoc.DocumentTest do
   describe "delete_pipe_stage/1" do
     test "deletes stage with correct data" do
       stage = insert(:pipe_stage)
-      {:ok, _stage} = Document.delete_pipe_stage(stage)
+      {:ok, _stage} = Stages.delete_pipe_stage(stage)
 
       refute Repo.get(Stage, stage.id)
     end
 
     test "returns nil with invalid data" do
-      assert nil == Document.delete_pipe_stage(nil)
+      assert nil == Stages.delete_pipe_stage(nil)
     end
   end
 
   describe "preload_stage_details/1" do
     test "preloads the details of a stage" do
       stage = insert(:pipe_stage)
-      preloaded_stage = Document.preload_stage_details(stage)
+      preloaded_stage = Stages.preload_stage_details(stage)
       assert preloaded_stage.content_type.name == stage.content_type.name
       assert preloaded_stage.pipeline.name == stage.pipeline.name
       assert preloaded_stage.state.state == stage.state.state
@@ -5077,7 +5078,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length
 
-      {:ok, trigger} = Document.create_trigger_history(user, pipeline, data)
+      {:ok, trigger} = TriggerHistories.create_trigger_history(user, pipeline, data)
 
       count_after =
         TriggerHistory
@@ -5101,7 +5102,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length
 
-      {:error, changeset} = Document.create_trigger_history(user, pipeline, data)
+      {:error, changeset} = TriggerHistories.create_trigger_history(user, pipeline, data)
 
       count_after =
         TriggerHistory
@@ -5113,7 +5114,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "retruns nil with wrong data" do
-      response = Document.create_trigger_history(nil, nil, %{})
+      response = TriggerHistories.create_trigger_history(nil, nil, %{})
       assert response == nil
     end
   end
@@ -5518,7 +5519,7 @@ defmodule WraftDoc.DocumentTest do
       trigger_history_2 = insert(:trigger_history, pipeline: pipeline)
 
       %{entries: trigger_history_index} =
-        Document.get_trigger_histories_of_a_pipeline(pipeline, %{page: 1})
+        TriggerHistories.get_trigger_histories_of_a_pipeline(pipeline, %{page: 1})
 
       trigger_history_ids =
         trigger_history_index
@@ -5531,7 +5532,7 @@ defmodule WraftDoc.DocumentTest do
 
     test "returns nil with invalid attrs" do
       trigger_history_index =
-        Document.get_trigger_histories_of_a_pipeline("invalid attrs", %{page: 1})
+        TriggerHistories.get_trigger_histories_of_a_pipeline("invalid attrs", %{page: 1})
 
       assert trigger_history_index == nil
     end
@@ -5544,7 +5545,7 @@ defmodule WraftDoc.DocumentTest do
       trigger_history_1 = insert(:trigger_history, pipeline: pipeline)
       trigger_history_2 = insert(:trigger_history, pipeline: pipeline)
 
-      %{entries: trigger_history_index} = Document.trigger_history_index(user, %{page: 1})
+      %{entries: trigger_history_index} = TriggerHistories.trigger_history_index(user, %{page: 1})
 
       trigger_history_ids =
         trigger_history_index
@@ -5556,7 +5557,7 @@ defmodule WraftDoc.DocumentTest do
     end
 
     test "returns nil with invalid attrs" do
-      trigger_history_index = Document.trigger_history_index("invalid attrs", %{page: 1})
+      trigger_history_index = TriggerHistories.trigger_history_index("invalid attrs", %{page: 1})
       assert trigger_history_index == nil
     end
 
@@ -5567,7 +5568,7 @@ defmodule WraftDoc.DocumentTest do
       trigger_history_1 = insert(:trigger_history, pipeline: pipeline_1)
       trigger_history_2 = insert(:trigger_history, pipeline: pipeline_2)
 
-      %{entries: trigger_history_index} = Document.trigger_history_index(user, %{page: 1})
+      %{entries: trigger_history_index} = TriggerHistories.trigger_history_index(user, %{page: 1})
 
       trigger_history_ids =
         trigger_history_index
@@ -5599,7 +5600,7 @@ defmodule WraftDoc.DocumentTest do
       trigger_history_2 = insert(:trigger_history, pipeline: pipeline_2)
 
       %{entries: trigger_history_index} =
-        Document.trigger_history_index(user, %{"pipeline_name" => "First", page: 1})
+        TriggerHistories.trigger_history_index(user, %{"pipeline_name" => "First", page: 1})
 
       trigger_history_ids =
         trigger_history_index
@@ -5631,7 +5632,10 @@ defmodule WraftDoc.DocumentTest do
       insert(:trigger_history, pipeline: pipeline_2)
 
       %{entries: trigger_history_index} =
-        Document.trigger_history_index(user, %{"pipeline_name" => "Does Not Exist", page: 1})
+        TriggerHistories.trigger_history_index(user, %{
+          "pipeline_name" => "Does Not Exist",
+          page: 1
+        })
 
       assert [] == trigger_history_index
     end
@@ -5643,7 +5647,7 @@ defmodule WraftDoc.DocumentTest do
       trigger_history_2 = insert(:trigger_history, state: 2, pipeline: pipeline)
 
       %{entries: trigger_history_index} =
-        Document.trigger_history_index(user, %{"status" => 1, page: 1})
+        TriggerHistories.trigger_history_index(user, %{"status" => 1, page: 1})
 
       trigger_history_ids =
         trigger_history_index
@@ -5661,7 +5665,7 @@ defmodule WraftDoc.DocumentTest do
       insert(:trigger_history, state: 2, pipeline: pipeline)
 
       %{entries: trigger_history_index} =
-        Document.trigger_history_index(user, %{"status" => 3, page: 1})
+        TriggerHistories.trigger_history_index(user, %{"status" => 3, page: 1})
 
       assert [] == trigger_history_index
     end
@@ -5687,7 +5691,7 @@ defmodule WraftDoc.DocumentTest do
       trigger_history_2 = insert(:trigger_history, pipeline: pipeline_2)
 
       %{entries: trigger_history_index} =
-        Document.trigger_history_index(user, %{"sort" => "pipeline_name", page: 1})
+        TriggerHistories.trigger_history_index(user, %{"sort" => "pipeline_name", page: 1})
 
       assert List.first(trigger_history_index).id == trigger_history_1.id
       assert List.last(trigger_history_index).id == trigger_history_2.id
@@ -5714,7 +5718,7 @@ defmodule WraftDoc.DocumentTest do
       trigger_history_2 = insert(:trigger_history, pipeline: pipeline_2)
 
       %{entries: trigger_history_index} =
-        Document.trigger_history_index(user, %{"sort" => "pipeline_name_desc", page: 1})
+        TriggerHistories.trigger_history_index(user, %{"sort" => "pipeline_name_desc", page: 1})
 
       assert List.first(trigger_history_index).id == trigger_history_2.id
       assert List.last(trigger_history_index).id == trigger_history_1.id
@@ -5727,7 +5731,7 @@ defmodule WraftDoc.DocumentTest do
       trigger_history_2 = insert(:trigger_history, state: 2, pipeline: pipeline)
 
       %{entries: trigger_history_index} =
-        Document.trigger_history_index(user, %{"sort" => "status", page: 1})
+        TriggerHistories.trigger_history_index(user, %{"sort" => "status", page: 1})
 
       assert List.first(trigger_history_index).id == trigger_history_1.id
       assert List.last(trigger_history_index).id == trigger_history_2.id
@@ -5740,7 +5744,7 @@ defmodule WraftDoc.DocumentTest do
       trigger_history_2 = insert(:trigger_history, state: 2, pipeline: pipeline)
 
       %{entries: trigger_history_index} =
-        Document.trigger_history_index(user, %{"sort" => "status_desc", page: 1})
+        TriggerHistories.trigger_history_index(user, %{"sort" => "status_desc", page: 1})
 
       assert List.first(trigger_history_index).id == trigger_history_2.id
       assert List.last(trigger_history_index).id == trigger_history_1.id
@@ -5757,7 +5761,7 @@ defmodule WraftDoc.DocumentTest do
         insert(:trigger_history, inserted_at: ~N[2023-04-18 11:57:34], pipeline: pipeline)
 
       %{entries: trigger_history_index} =
-        Document.trigger_history_index(user, %{"sort" => "inserted_at", page: 1})
+        TriggerHistories.trigger_history_index(user, %{"sort" => "inserted_at", page: 1})
 
       assert List.first(trigger_history_index).id == trigger_history_1.id
       assert List.last(trigger_history_index).id == trigger_history_2.id
@@ -5774,7 +5778,7 @@ defmodule WraftDoc.DocumentTest do
         insert(:trigger_history, inserted_at: ~N[2023-04-18 11:57:34], pipeline: pipeline)
 
       %{entries: trigger_history_index} =
-        Document.trigger_history_index(user, %{"sort" => "inserted_at_desc", page: 1})
+        TriggerHistories.trigger_history_index(user, %{"sort" => "inserted_at_desc", page: 1})
 
       assert List.first(trigger_history_index).id == trigger_history_2.id
       assert List.last(trigger_history_index).id == trigger_history_1.id

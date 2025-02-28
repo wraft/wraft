@@ -1,6 +1,6 @@
-defmodule WraftDoc.Document.PipelineTest do
+defmodule WraftDoc.Pipelines.PipelineTest do
   use WraftDoc.ModelCase
-  alias WraftDoc.Document.Pipeline
+  alias WraftDoc.Pipelines.Pipeline
   import WraftDoc.Factory
   @moduletag :document
   @valid_attrs %{

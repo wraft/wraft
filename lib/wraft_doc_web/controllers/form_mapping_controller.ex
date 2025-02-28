@@ -13,11 +13,11 @@ defmodule WraftDocWeb.Api.V1.FormMappingController do
   action_fallback(WraftDocWeb.FallbackController)
 
   require Logger
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Pipeline.Stage
   alias WraftDoc.Forms
   alias WraftDoc.Forms.Form
   alias WraftDoc.Forms.FormMapping
+  alias WraftDoc.Pipelines.Stages
+  alias WraftDoc.Pipelines.Stages.Stage
 
   def swagger_definitions do
     %{
@@ -117,7 +117,7 @@ defmodule WraftDocWeb.Api.V1.FormMappingController do
     current_user = conn.assigns.current_user
 
     with %Form{} = _form <- Forms.get_form(current_user, form_id),
-         %Stage{} <- Document.get_pipe_stage(current_user, params["pipe_stage_id"]),
+         %Stage{} <- Stages.get_pipe_stage(current_user, params["pipe_stage_id"]),
          {:ok, %FormMapping{} = form_mapping} <- Forms.create_form_mapping(params) do
       render(conn, "create.json", form_mapping: form_mapping)
     end

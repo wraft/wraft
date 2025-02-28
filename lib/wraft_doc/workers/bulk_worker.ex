@@ -12,9 +12,9 @@ defmodule WraftDoc.Workers.BulkWorker do
   alias WraftDoc.ContentTypes
   alias WraftDoc.DataTemplates
   alias WraftDoc.Document
-  alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Enterprise
   alias WraftDoc.Notifications
+  alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDoc.Repo
 
   @impl Oban.Worker

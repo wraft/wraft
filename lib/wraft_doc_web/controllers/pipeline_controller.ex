@@ -17,11 +17,11 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Pipeline
   alias WraftDoc.Forms
   alias WraftDoc.Forms.Form
   alias WraftDoc.Forms.FormPipeline
+  alias WraftDoc.Pipelines
+  alias WraftDoc.Pipelines.Pipeline
 
   def swagger_definitions do
     %{
@@ -231,7 +231,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %Pipeline{} = pipeline <- Document.create_pipeline(current_user, params),
+    with %Pipeline{} = pipeline <- Pipelines.create_pipeline(current_user, params),
          %Form{} = form <- Forms.get_form(current_user, pipeline.source_id),
          {:ok, %FormPipeline{}} <- Forms.create_form_pipeline(form, pipeline.id) do
       render(conn, "create.json", pipeline: pipeline)
@@ -270,7 +270,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.pipeline_index(current_user, params) do
+         } <- Pipelines.pipeline_index(current_user, params) do
       render(conn, "index.json",
         pipelines: pipelines,
         page_number: page_number,
@@ -302,8 +302,8 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
   def update(conn, %{"id" => p_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, p_uuid),
-         %Pipeline{} = pipeline <- Document.pipeline_update(pipeline, current_user, params) do
+    with %Pipeline{} = pipeline <- Pipelines.get_pipeline(current_user, p_uuid),
+         %Pipeline{} = pipeline <- Pipelines.pipeline_update(pipeline, current_user, params) do
       render(conn, "show.json", pipeline: pipeline)
     end
   end
@@ -329,7 +329,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
   def show(conn, %{"id" => p_uuid}) do
     current_user = conn.assigns[:current_user]
 
-    with %Pipeline{} = pipeline <- Document.show_pipeline(current_user, p_uuid) do
+    with %Pipeline{} = pipeline <- Pipelines.show_pipeline(current_user, p_uuid) do
       render(conn, "show.json", pipeline: pipeline)
     end
   end
@@ -356,8 +356,8 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
   def delete(conn, %{"id" => uuid}) do
     current_user = conn.assigns[:current_user]
 
-    with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, uuid),
-         {:ok, %Pipeline{}} <- Document.delete_pipeline(pipeline) do
+    with %Pipeline{} = pipeline <- Pipelines.get_pipeline(current_user, uuid),
+         {:ok, %Pipeline{}} <- Pipelines.delete_pipeline(pipeline) do
       render(conn, "pipeline.json", pipeline: pipeline)
     end
   end

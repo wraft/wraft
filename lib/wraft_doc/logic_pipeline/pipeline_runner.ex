@@ -9,10 +9,10 @@ defmodule WraftDoc.PipelineRunner do
   alias WraftDoc.Client.Minio
   alias WraftDoc.Document
   alias WraftDoc.Document.Instance
-  alias WraftDoc.Document.Pipeline
-  alias WraftDoc.Document.Pipeline.TriggerHistory
   alias WraftDoc.Enterprise
   alias WraftDoc.Forms
+  alias WraftDoc.Pipelines.Pipeline
+  alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDoc.Repo
 
   step(:preload_pipeline_and_stages)

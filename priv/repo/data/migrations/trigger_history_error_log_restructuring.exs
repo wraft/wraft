@@ -5,7 +5,7 @@ defmodule WraftDoc.Repo.Migrations.TriggerHistoryErrorLogRestructuring do
   """
 
   require Logger
-  alias WraftDoc.Document.Pipeline.TriggerHistory
+  alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDoc.Repo
 
   Logger.info("Restructuring trigger_history error log")
