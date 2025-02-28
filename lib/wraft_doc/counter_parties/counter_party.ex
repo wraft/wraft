@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.CounterParties do
+defmodule WraftDoc.CounterParties.CounterParty do
   @moduledoc """
     This is the Counter Parties module
   """
