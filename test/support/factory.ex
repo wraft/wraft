@@ -21,12 +21,13 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.ContentTypes.ContentTypeRole
+  alias WraftDoc.DataTemplates.DataTemplate
+  alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
   alias WraftDoc.Document.ContentCollaboration
   alias WraftDoc.Document.Counter
-  alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType

@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.DataTemplate do
+defmodule WraftDoc.DataTemplates.DataTemplate do
   @moduledoc false
   use WraftDoc.Schema
   @behaviour ExTypesense

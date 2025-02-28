@@ -1,6 +1,6 @@
 defmodule WraftDoc.Document.DataTemplateTest do
   use WraftDoc.ModelCase
-  alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.DataTemplates.DataTemplate
   import WraftDoc.Factory
   @moduletag :document
 

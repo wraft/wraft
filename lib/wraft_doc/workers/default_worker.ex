@@ -13,8 +13,8 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias WraftDoc.Account.UserRole
   alias WraftDoc.Assets.Asset
   alias WraftDoc.ContentTypes
+  alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Document
-  alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset

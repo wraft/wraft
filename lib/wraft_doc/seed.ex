@@ -2,6 +2,7 @@ defmodule WraftDoc.Seed do
   @moduledoc """
     Smaller functions to seed various tables.
   """
+
   alias Faker.Phone
   alias WraftDoc.Account.Profile
   alias WraftDoc.Account.Role
@@ -13,8 +14,8 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.ContentTypes.ContentTypeRole
+  alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Document.Block
-  alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType

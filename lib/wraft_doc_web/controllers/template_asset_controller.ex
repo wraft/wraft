@@ -16,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.ContentTypes
-  alias WraftDoc.Document
+  alias WraftDoc.DataTemplates
   alias WraftDoc.Layouts
   alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.TemplateAsset
@@ -618,8 +618,8 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   def template_export(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %WraftDoc.Document.DataTemplate{} = data_template <-
-           Document.get_d_template(current_user, id),
+    with %WraftDoc.DataTemplates.DataTemplate{} = data_template <-
+           DataTemplates.get_data_template(current_user, id),
          %WraftDoc.ContentTypes.ContentType{} = c_type <-
            ContentTypes.get_content_type(current_user, data_template.content_type_id),
          %WraftDoc.Layouts.Layout{} = layout <-
