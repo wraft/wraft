@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.ThemeAsset do
+defmodule WraftDoc.Themes.ThemeAsset do
   @moduledoc """
     The Theme-asset association model.
   """
@@ -7,7 +7,7 @@ defmodule WraftDoc.Document.ThemeAsset do
 
   schema "theme_assets" do
     belongs_to(:asset, WraftDoc.Document.Asset)
-    belongs_to(:theme, WraftDoc.Document.Theme)
+    belongs_to(:theme, WraftDoc.Themes.Theme)
 
     timestamps()
   end

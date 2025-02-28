@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.LayoutAsset do
+defmodule WraftDoc.Layouts.LayoutAsset do
   @moduledoc """
     The layout-asset association model.
   """
@@ -6,7 +6,7 @@ defmodule WraftDoc.Document.LayoutAsset do
   alias __MODULE__
 
   schema "layout_asset" do
-    belongs_to(:layout, WraftDoc.Document.Layout)
+    belongs_to(:layout, WraftDoc.Layouts.Layout)
     belongs_to(:asset, WraftDoc.Document.Asset)
     belongs_to(:creator, WraftDoc.Account.User)
     timestamps()

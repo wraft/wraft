@@ -9,7 +9,6 @@ alias WraftDoc.Document.CollectionFormField
 alias WraftDoc.Document.ContentType
 alias WraftDoc.Document.ContentTypeRole
 alias WraftDoc.Document.Instance
-alias WraftDoc.Document.Theme
 alias WraftDoc.Enterprise
 alias WraftDoc.Enterprise.ApprovalSystem
 alias WraftDoc.Enterprise.Flow
@@ -20,7 +19,13 @@ alias WraftDoc.Enterprise.Organisation
 alias WraftDoc.Enterprise.OrganisationRole
 alias WraftDoc.Enterprise.Plan
 alias WraftDoc.Enterprise.Vendor
+alias WraftDoc.Layouts
+alias WraftDoc.Layouts.Layout
 alias WraftDoc.InvitedUsers
 alias WraftDoc.InvitedUsers.InvitedUser
 alias WraftDoc.Notifications
 alias WraftDoc.Repo
+alias WraftDoc.Repo.RepoFolder
+alias WraftDoc.Search
+alias WraftDoc.Themes
+alias WraftDoc.Themes.Theme

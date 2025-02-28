@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Theme do
+defmodule WraftDoc.Themes.Theme do
   @moduledoc """
   The theme model.
   ### Fields
@@ -18,7 +18,7 @@ defmodule WraftDoc.Document.Theme do
   use Waffle.Ecto.Schema
   alias __MODULE__
   alias WraftDoc.Document.Asset
-  alias WraftDoc.Document.ThemeAsset
+  alias WraftDoc.Themes.ThemeAsset
   @hex_code_warning_msg "hex-code must be in the format of `#RRGGBB`"
 
   @fields [

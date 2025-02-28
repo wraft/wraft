@@ -21,10 +21,6 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.Document.Instance
   alias WraftDoc.Document.Instance.History
   alias WraftDoc.Document.Instance.Version
-  alias WraftDoc.Document.Layout
-  alias WraftDoc.Document.LayoutAsset
-  alias WraftDoc.Document.Theme
-  alias WraftDoc.Document.ThemeAsset
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
@@ -32,7 +28,11 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.Enterprise.Membership
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Layouts.Layout
+  alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Repo
+  alias WraftDoc.Themes.Theme
+  alias WraftDoc.Themes.ThemeAsset
 
   require Logger
 

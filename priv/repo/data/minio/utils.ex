@@ -8,8 +8,8 @@ defmodule WraftDoc.Minio.Utils do
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.Instance
-  alias WraftDoc.Document.Layout
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
 
   @ex_aws_module Application.compile_env(:wraft_doc, [:test_module, :minio], ExAws)

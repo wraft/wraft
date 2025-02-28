@@ -27,10 +27,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.Instance
   alias WraftDoc.Document.Instance.Version
-  alias WraftDoc.Document.Layout
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
-
+  alias WraftDoc.Layouts.Layout
   alias WraftDocWeb.Api.V1.InstanceVersionView
 
   def swagger_definitions do

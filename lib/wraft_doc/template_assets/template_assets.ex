@@ -17,14 +17,16 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Document.FieldType
   alias WraftDoc.Document.Frame
   alias WraftDoc.Document.Frames
-  alias WraftDoc.Document.Layout
-  alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Layouts
+  alias WraftDoc.Layouts.Layout
   alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
   alias WraftDoc.TemplateAssets.WraftJson
+  alias WraftDoc.Themes
+  alias WraftDoc.Themes.Theme
 
   @required_items ["layout", "theme", "flow", "variant", "frame"]
   @allowed_folders ["theme", "layout", "frame"]
@@ -463,7 +465,7 @@ defmodule WraftDoc.TemplateAssets do
   defp prepare_theme(theme, current_user, downloaded_file, entries) do
     with asset_ids <- prepare_theme_assets(entries, downloaded_file, current_user),
          params <- prepare_theme_attrs(theme, asset_ids),
-         %Theme{} = theme <- Document.create_theme(current_user, params) do
+         %Theme{} = theme <- Themes.create_theme(current_user, params) do
       {:ok, theme}
     end
   end
@@ -571,7 +573,7 @@ defmodule WraftDoc.TemplateAssets do
     with asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
          params <- prepare_layout_attrs(layouts, engine_id, asset_id, frame_id),
          %Engine{} = engine <- Document.get_engine(params["engine_id"]),
-         %Layout{} = layout <- Document.create_layout(current_user, engine, params) do
+         %Layout{} = layout <- Layouts.create_layout(current_user, engine, params) do
       {:ok, layout}
     end
   end

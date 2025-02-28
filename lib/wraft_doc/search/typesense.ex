@@ -56,11 +56,11 @@ defmodule WraftDoc.Search.Typesense do
   @spec initialize() :: :ok
   def initialize do
     collections = [
-      {WraftDoc.Document.Theme, "theme"},
       {WraftDoc.Document.ContentType, "content_type"},
       {WraftDoc.Document.DataTemplate, "data_template"},
-      {WraftDoc.Document.Layout, "layout"},
-      {WraftDoc.Enterprise.Flow, "flow"}
+      {WraftDoc.Enterprise.Flow, "flow"},
+      {WraftDoc.Layouts.Layout, "layout"},
+      {WraftDoc.Themes.Theme, "theme"}
     ]
 
     Enum.each(collections, fn {schema, collection_name} ->

@@ -8,9 +8,9 @@ defmodule WraftDoc.Document.ContentType do
 
   alias __MODULE__
   alias WraftDoc.Document.ContentType
-  alias WraftDoc.Document.Layout
-  alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Layouts.Layout
+  alias WraftDoc.Themes.Theme
 
   @document_type [:contract, :document]
   @derive {Jason.Encoder, only: [:id]}

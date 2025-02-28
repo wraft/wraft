@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.LayoutView do
   use WraftDocWeb, :view
-  alias WraftDoc.Document.Layout
+  alias WraftDoc.Layouts.Layout
   alias WraftDocWeb.Api.V1.AssetView
   alias WraftDocWeb.Api.V1.EngineView
   alias WraftDocWeb.Api.V1.FrameView

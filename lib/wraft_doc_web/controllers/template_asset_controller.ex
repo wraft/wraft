@@ -16,8 +16,10 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Document
+  alias WraftDoc.Layouts
   alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.TemplateAsset
+  alias WraftDoc.Themes
 
   @doc """
   Creates a new template asset.
@@ -619,10 +621,10 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
            Document.get_d_template(current_user, id),
          %WraftDoc.Document.ContentType{} = c_type <-
            Document.get_content_type(current_user, data_template.content_type_id),
-         %WraftDoc.Document.Layout{} = layout <-
-           Document.get_layout(c_type.layout_id, current_user),
-         %WraftDoc.Document.Theme{} = theme <-
-           Document.get_theme(c_type.theme_id, current_user),
+         %WraftDoc.Layouts.Layout{} = layout <-
+           Layouts.get_layout(c_type.layout_id, current_user),
+         %WraftDoc.Themes.Theme{} = theme <-
+           Themes.get_theme(c_type.theme_id, current_user),
          {:ok, zip_path} <-
            TemplateAssets.prepare_template_format(
              theme,

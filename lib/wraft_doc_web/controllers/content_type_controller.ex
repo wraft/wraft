@@ -14,13 +14,16 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     search: "content_type:show"
 
   action_fallback(WraftDocWeb.FallbackController)
+
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentType
-  alias WraftDoc.Document.Layout
-  alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Layouts
+  alias WraftDoc.Layouts.Layout
   alias WraftDoc.Search.TypesenseServer, as: Typesense
+  alias WraftDoc.Themes
+  alias WraftDoc.Themes.Theme
 
   def swagger_definitions do
     %{
@@ -594,9 +597,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
       ) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} <- Document.get_layout(layout_id, current_user),
+    with %Layout{} <- Layouts.get_layout(layout_id, current_user),
          %Flow{} <- Enterprise.get_flow(flow_id, current_user),
-         %Theme{} <- Document.get_theme(theme_id, current_user),
+         %Theme{} <- Themes.get_theme(theme_id, current_user),
          %ContentType{} = content_type <-
            Document.create_content_type(current_user, params) do
       Typesense.create_document(content_type)

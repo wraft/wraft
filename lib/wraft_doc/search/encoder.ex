@@ -63,8 +63,8 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.DataTemplate do
   end
 end
 
-defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.Layout do
-  def to_document(%WraftDoc.Document.Layout{} = layout) do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.Layouts.Layout do
+  def to_document(%WraftDoc.Layouts.Layout{} = layout) do
     %{
       id: to_string(layout.id),
       collection_name: "layout",
@@ -83,8 +83,8 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.Layout do
   end
 end
 
-defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.Theme do
-  def to_document(%WraftDoc.Document.Theme{} = theme) do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.Themes.Theme do
+  def to_document(%WraftDoc.Themes.Theme{} = theme) do
     %{
       id: to_string(theme.id),
       collection_name: "theme",

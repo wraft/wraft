@@ -31,14 +31,10 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Document.Instance.Version
   alias WraftDoc.Document.InstanceApprovalSystem
   alias WraftDoc.Document.InstanceTransitionLog
-  alias WraftDoc.Document.Layout
-  alias WraftDoc.Document.LayoutAsset
   alias WraftDoc.Document.OrganisationField
   alias WraftDoc.Document.Pipeline
   alias WraftDoc.Document.Pipeline.Stage
   alias WraftDoc.Document.Pipeline.TriggerHistory
-  alias WraftDoc.Document.Theme
-  alias WraftDoc.Document.ThemeAsset
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
@@ -46,89 +42,15 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Forms
+  alias WraftDoc.Layouts
+  alias WraftDoc.Layouts.Layout
   alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
+  alias WraftDoc.Themes
   alias WraftDoc.Workers.BulkWorker
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Mailer
   alias WraftDocWeb.Mailer.Email
-
-  @doc """
-  Create a layout.
-  """
-  # TODO - improve tests
-  @spec create_layout(User.t(), Engine.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
-  def create_layout(%{current_org_id: org_id} = current_user, engine, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id})
-
-    current_user
-    |> build_assoc(:layouts, engine: engine)
-    |> Layout.changeset(params)
-    |> Repo.insert()
-    |> case do
-      {:ok, layout} ->
-        layout = layout_files_upload(layout, params)
-        fetch_and_associcate_assets(layout, current_user, params)
-        Repo.preload(layout, [:engine, :creator, :assets, :frame])
-
-      changeset = {:error, _} ->
-        changeset
-    end
-  end
-
-  def create_layout(_, _, _), do: {:error, :fake}
-
-  @doc """
-  Upload layout slug/screenshot file.
-  """
-  @spec layout_files_upload(Layout.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
-  def layout_files_upload(layout, %{"slug_file" => _} = params) do
-    layout_update_files(layout, params)
-  end
-
-  def layout_files_upload(layout, %{"screenshot" => _} = params) do
-    layout_update_files(layout, params)
-  end
-
-  def layout_files_upload(layout, _params) do
-    Repo.preload(layout, [:engine, :creator])
-  end
-
-  # Update the layout on fileupload.
-  @spec layout_update_files(Layout.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
-  defp layout_update_files(layout, params) do
-    layout
-    |> Layout.file_changeset(params)
-    |> Repo.update()
-    |> case do
-      {:ok, layout} ->
-        layout
-
-      {:error, _} = changeset ->
-        changeset
-    end
-  end
-
-  # Get all the assets from their UUIDs and associate them with the given layout.
-  defp fetch_and_associcate_assets(layout, current_user, %{"assets" => assets}) do
-    (assets || "")
-    |> String.split(",")
-    |> Stream.map(fn x -> get_asset(x, current_user) end)
-    |> Stream.map(fn x -> associate_layout_and_asset(layout, current_user, x) end)
-    |> Enum.to_list()
-  end
-
-  defp fetch_and_associcate_assets(_layout, _current_user, _params), do: nil
-
-  # Associate the asset with the given layout, ie; insert a LayoutAsset entry.
-  defp associate_layout_and_asset(_layout, _current_user, nil), do: nil
-
-  defp associate_layout_and_asset(%Layout{} = layout, current_user, asset) do
-    layout
-    |> build_assoc(:layout_assets, asset_id: asset.id, creator: current_user)
-    |> LayoutAsset.changeset()
-    |> Repo.insert()
-  end
 
   @doc """
   Create a content type.
@@ -265,136 +187,6 @@ defmodule WraftDoc.Document do
   end
 
   @doc """
-  List all layouts.
-  """
-  # TODO - improve tests
-  @spec layout_index(User.t(), map) :: map
-  def layout_index(%{current_org_id: org_id}, params) do
-    query =
-      from(l in Layout,
-        where: l.organisation_id == ^org_id,
-        where: ^layout_index_filter_by_name(params),
-        order_by: ^layout_index_sort(params),
-        preload: [:engine, :assets, :frame]
-      )
-
-    Repo.paginate(query, params)
-  end
-
-  defp layout_index_filter_by_name(%{"name" => name} = _params),
-    do: dynamic([l], ilike(l.name, ^"%#{name}%"))
-
-  defp layout_index_filter_by_name(_), do: true
-
-  defp layout_index_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([l], l.name)]
-
-  defp layout_index_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([l], l.name)]
-
-  defp layout_index_sort(%{"sort" => "inserted_at"} = _params),
-    do: [asc: dynamic([l], l.inserted_at)]
-
-  defp layout_index_sort(%{"sort" => "inserted_at_desc"} = _params),
-    do: [desc: dynamic([l], l.inserted_at)]
-
-  defp layout_index_sort(_), do: []
-
-  @doc """
-  Show a layout.
-  """
-  @spec show_layout(binary, User.t()) :: %Layout{engine: Engine.t(), creator: User.t()}
-  def show_layout(id, user) do
-    with %Layout{} = layout <-
-           get_layout(id, user) do
-      Repo.preload(layout, [:engine, :creator, :assets, :frame])
-    end
-  end
-
-  @doc """
-  Get a layout from its UUID.
-  """
-  @spec get_layout(binary, User.t()) :: Layout.t()
-  def get_layout(<<_::288>> = id, %{current_org_id: org_id}) do
-    case Repo.get_by(Layout, id: id, organisation_id: org_id) do
-      %Layout{} = layout ->
-        layout
-
-      _ ->
-        {:error, :invalid_id, "Layout"}
-    end
-  end
-
-  def get_layout(_, %{current_org_id: _}), do: {:error, :invalid_id, "Layout"}
-  def get_layout(_, _), do: {:error, :fake}
-
-  @doc """
-  Get a layout asset from its layout's and asset's UUIDs.
-  """
-  # TODO - improve tests
-  @spec get_layout_asset(binary, binary) :: LayoutAsset.t()
-  def get_layout_asset(<<_::288>> = l_id, <<_::288>> = a_id) do
-    query =
-      from(la in LayoutAsset,
-        join: l in Layout,
-        on: la.layout_id == l.id,
-        join: a in Asset,
-        on: la.asset_id == a.id,
-        where: l.id == ^l_id and a.id == ^a_id
-      )
-
-    case Repo.one(query) do
-      %LayoutAsset{} = layout_asset -> layout_asset
-      _ -> {:error, :invalid_id}
-    end
-  end
-
-  def get_layout_asset(<<_::288>>, _), do: {:error, :invalid_id, Layout}
-  def get_layout_asset(_, <<_::288>>), do: {:error, :invalid_id, Asset}
-
-  @doc """
-  Update a layout.
-  """
-  # TODO - improve tests
-  @spec update_layout(Layout.t(), User.t(), map) :: %Layout{engine: Engine.t(), creator: User.t()}
-
-  def update_layout(layout, current_user, params) do
-    layout
-    |> Layout.update_changeset(params)
-    |> Repo.update()
-    |> case do
-      {:error, _} = changeset ->
-        changeset
-
-      {:ok, layout} ->
-        fetch_and_associcate_assets(layout, current_user, params)
-        Repo.preload(layout, [:engine, :creator, :assets, :frame])
-    end
-  end
-
-  @doc """
-  Delete a layout.
-  """
-  # TODO - improve tests
-  @spec delete_layout(Layout.t()) :: {:ok, Layout.t()} | {:error, Ecto.Changeset.t()}
-  def delete_layout(layout) do
-    layout
-    |> Ecto.Changeset.change()
-    |> Ecto.Changeset.no_assoc_constraint(
-      :content_types,
-      message:
-        "Cannot delete the layout. Some Content types depend on this layout. Update those content types and then try again.!"
-    )
-    |> Repo.delete()
-  end
-
-  @doc """
-  Delete a layout asset.
-  """
-  # TODO - improve tests
-  @spec delete_layout_asset(LayoutAsset.t()) ::
-          {:ok, LayoutAsset.t()} | {:error, Ecto.Changeset.t()}
-  def delete_layout_asset(layout_asset), do: Repo.delete(layout_asset)
-
-  @doc """
   List all content types.
   """
   @spec content_type_index(User.t(), map) :: map
@@ -526,7 +318,7 @@ defmodule WraftDoc.Document do
         user,
         %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
       ) do
-    %Layout{id: id} = get_layout(layout_uuid, user)
+    %Layout{id: id} = Layouts.get_layout(layout_uuid, user)
     %Flow{id: f_id} = Enterprise.get_flow(f_uuid, user)
     {_, params} = Map.pop(params, "layout_uuid")
     {_, params} = Map.pop(params, "flow_uuid")
@@ -1447,167 +1239,6 @@ defmodule WraftDoc.Document do
   def get_engine(_), do: {:error, :invalid_id, Engine}
 
   @doc """
-  Create a theme.
-  """
-  @spec create_theme(User.t(), map) :: {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
-  def create_theme(%{current_org_id: org_id} = current_user, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id})
-
-    current_user
-    |> build_assoc(:themes)
-    |> Theme.changeset(params)
-    |> Repo.insert()
-    |> case do
-      {:ok, theme} ->
-        theme_preview_file_upload(theme, params)
-        fetch_and_associcate_assets_with_theme(theme, current_user, params)
-
-        Repo.preload(theme, [:assets])
-
-      {:error, _} = changeset ->
-        changeset
-    end
-  end
-
-  # Get all the assets from their UUIDs and associate them with the given theme.
-  defp fetch_and_associcate_assets_with_theme(theme, current_user, %{"assets" => assets}) do
-    (assets || "")
-    |> String.split(",")
-    |> Stream.map(fn asset -> get_asset(asset, current_user) end)
-    |> Stream.map(fn asset -> associate_theme_and_asset(theme, asset) end)
-    |> Enum.to_list()
-  end
-
-  defp fetch_and_associcate_assets_with_theme(_theme, _current_user, _params), do: []
-
-  # Associate the asset with the given theme, ie; insert a ThemeAsset entry.
-  defp associate_theme_and_asset(theme, %Asset{} = asset) do
-    %ThemeAsset{}
-    |> ThemeAsset.changeset(%{theme_id: theme.id, asset_id: asset.id})
-    |> Repo.insert()
-  end
-
-  defp associate_theme_and_asset(_theme, _asset), do: nil
-
-  @doc """
-  Upload theme preview file.
-  """
-  @spec theme_preview_file_upload(Theme.t(), map) ::
-          {:ok, %Theme{}} | {:error, Ecto.Changeset.t()}
-  def theme_preview_file_upload(theme, %{"preview_file" => _} = params) do
-    theme |> Theme.file_changeset(params) |> Repo.update()
-  end
-
-  def theme_preview_file_upload(theme, _params) do
-    {:ok, theme}
-  end
-
-  @doc """
-  Index of themes inside current user's organisation.
-  """
-  @spec theme_index(User.t(), map) :: map
-  def theme_index(%User{current_org_id: org_id}, params) do
-    Theme
-    |> where([t], t.organisation_id == ^org_id)
-    |> where(^theme_filter_by_name(params))
-    |> order_by(^theme_sort(params))
-    |> preload(:assets)
-    |> Repo.paginate(params)
-  end
-
-  defp theme_filter_by_name(%{"name" => name} = _params),
-    do: dynamic([t], ilike(t.name, ^"%#{name}%"))
-
-  defp theme_filter_by_name(_), do: true
-
-  defp theme_sort(%{"sort" => "name_desc"} = _params), do: [desc: dynamic([t], t.name)]
-
-  defp theme_sort(%{"sort" => "name"} = _params), do: [asc: dynamic([t], t.name)]
-
-  defp theme_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([t], t.inserted_at)]
-
-  defp theme_sort(%{"sort" => "inserted_at_desc"}), do: [desc: dynamic([t], t.inserted_at)]
-
-  defp theme_sort(_), do: []
-
-  @doc """
-  Get a theme from its UUID.
-  """
-  # TODO - improve test
-  @spec get_theme(binary, User.t()) :: Theme.t() | nil
-  def get_theme(theme_uuid, %{current_org_id: org_id}) do
-    Theme
-    |> Repo.get_by(id: theme_uuid, organisation_id: org_id)
-    |> Repo.preload(:assets)
-  end
-
-  def get_theme(theme_id, org_id) do
-    Logger.info(
-      "Theme not found for theme_id #{inspect(theme_id)} - organisation_id #{inspect(org_id)}"
-    )
-
-    nil
-  end
-
-  @doc """
-  Show a theme.
-  """
-  # TODO - improve test
-  @spec show_theme(binary, User.t()) :: %Theme{creator: User.t()} | nil
-  def show_theme(theme_uuid, user) do
-    theme_uuid |> get_theme(user) |> Repo.preload([:creator])
-  end
-
-  @doc """
-  Update a theme.
-  """
-  # TODO - improve test
-  @spec update_theme(Theme.t(), User.t(), map()) ::
-          {:ok, Theme.t()} | {:error, Ecto.Changeset.t()}
-  def update_theme(theme, current_user, params) do
-    theme
-    |> Theme.update_changeset(params)
-    |> Repo.update()
-    |> case do
-      {:ok, theme} ->
-        theme_preview_file_upload(theme, params)
-        fetch_and_associcate_assets_with_theme(theme, current_user, params)
-
-        Repo.preload(theme, [:assets])
-
-      {:error, _} = changeset ->
-        changeset
-    end
-  end
-
-  @doc """
-  Delete a theme.
-  """
-  @spec delete_theme(Theme.t()) :: {:ok, Theme.t()}
-  def delete_theme(%{organisation_id: org_id} = theme) do
-    asset_query =
-      from(asset in Asset,
-        join: theme_asset in ThemeAsset,
-        on: asset.id == theme_asset.asset_id and theme_asset.theme_id == ^theme.id,
-        select: asset.id
-      )
-
-    theme_asset_query = from(ta in ThemeAsset, where: ta.theme_id == ^theme.id)
-
-    # Delete the theme preview file
-    Minio.delete_file("organisations/#{org_id}/theme/theme_preview/#{theme.id}")
-
-    # Deletes the asset files
-    asset_query
-    |> Repo.all()
-    |> Enum.each(&Minio.delete_file("organisations/#{org_id}/assets/#{&1}"))
-
-    Repo.delete_all(asset_query)
-    Repo.delete_all(theme_asset_query)
-    Repo.delete(theme)
-  end
-
-  @doc """
   Create a data template.
   """
   @spec create_data_template(User.t(), ContentType.t(), map) ::
@@ -1865,7 +1496,7 @@ defmodule WraftDoc.Document do
       move_old_builds(instance_dir_path, current_instance_file, instance_updated?)
     end)
 
-    theme = get_theme_details(theme, base_content_dir)
+    theme = Themes.get_theme_details(theme, base_content_dir)
 
     header =
       Enum.reduce(content_type.fields, "--- \n", fn x, acc ->
@@ -1980,7 +1611,7 @@ defmodule WraftDoc.Document do
       |> concat_strings("id: #{instance_id}\n")
       |> concat_strings("mainfont: #{theme.font_name}\n")
       |> concat_strings("mainfontoptions:\n")
-      |> font_option_header(theme.font_options)
+      |> Themes.font_option_header(theme.font_options)
       |> concat_strings("body_color: #{theme.body_color}\n")
       |> concat_strings("primary_color: #{theme.primary_color}\n")
       |> concat_strings("secondary_color: #{theme.secondary_color}\n")
@@ -1991,50 +1622,6 @@ defmodule WraftDoc.Document do
     #{header}
     #{instance.raw}
     """
-  end
-
-  @spec get_theme_details(Theme.t(), String.t()) :: map()
-  def get_theme_details(theme, mkdir) do
-    [%{file: %{file_name: file_name}} | _] = theme.assets
-    [font_name, _, file_type] = String.split(file_name, ~r/[-.]/)
-
-    %{
-      body_color: theme.body_color,
-      primary_color: theme.primary_color,
-      secondary_color: theme.secondary_color,
-      typescale: Jason.encode!(theme.typescale),
-      font_name: "#{font_name}-Regular.#{file_type}",
-      font_options: font_options(theme, mkdir)
-    }
-  end
-
-  defp font_options(%Theme{organisation_id: org_id} = theme, mkdir) do
-    theme.assets
-    |> Stream.map(fn asset ->
-      file_name = asset.file.file_name
-      binary = Minio.download("organisations/#{org_id}/assets/#{asset.id}/#{file_name}")
-
-      mkdir
-      |> Path.join("fonts")
-      |> File.mkdir_p!()
-
-      asset_file_path = Path.join(mkdir, "fonts/#{file_name}")
-      File.write!(asset_file_path, binary)
-
-      [_, font_type, _] = String.split(file_name, ~r/[-.]/)
-
-      case Enum.member?(["Bold", "Italic", "BoldItalic"], font_type) do
-        true -> "#{font_type}Font=#{file_name}"
-        false -> ""
-      end
-    end)
-    |> Enum.reject(&(&1 == ""))
-  end
-
-  defp font_option_header(header, font_options) do
-    Enum.reduce(font_options, header, fn font_option, acc ->
-      concat_strings(acc, "- #{font_option}\n")
-    end)
   end
 
   defp prepare_pandoc_cmds(pdf_file, base_content_dir) do
@@ -2119,7 +1706,7 @@ defmodule WraftDoc.Document do
 
   # Concat two strings.
   @spec concat_strings(String.t(), String.t()) :: String.t()
-  defp concat_strings(string1, string2) do
+  def concat_strings(string1, string2) do
     string1 <> string2
   end
 

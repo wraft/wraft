@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Layout do
+defmodule WraftDoc.Layouts.Layout do
   @moduledoc """
   The layout model.
   """
@@ -23,7 +23,7 @@ defmodule WraftDoc.Document.Layout do
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     has_many(:content_types, WraftDoc.Document.ContentType)
-    has_many(:layout_assets, WraftDoc.Document.LayoutAsset)
+    has_many(:layout_assets, WraftDoc.Layouts.LayoutAsset)
     has_many(:assets, through: [:layout_assets, :asset])
 
     timestamps()

@@ -15,11 +15,11 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.DataTemplate
   alias WraftDoc.Document.Engine
-  alias WraftDoc.Document.Layout
-  alias WraftDoc.Document.LayoutAsset
-  alias WraftDoc.Document.Theme
-  alias WraftDoc.Document.ThemeAsset
+  alias WraftDoc.Layouts.Layout
+  alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Repo
+  alias WraftDoc.Themes.Theme
+  alias WraftDoc.Themes.ThemeAsset
 
   @superadmin_role "superadmin"
 
