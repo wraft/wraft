@@ -21,9 +21,10 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.CounterParties
+  alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.Document
   alias WraftDoc.Document.ContentCollaboration
-  alias WraftDoc.Document.CounterParties
   alias WraftDoc.Document.Instance
 
   def swagger_definitions do
@@ -355,7 +356,7 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Document.show_instance(document_id, current_user),
-         %CounterParties{} = counterparty <- Document.add_counterparty(instance, params) do
+         %CounterParty{} = counterparty <- CounterParties.add_counterparty(instance, params) do
       render(conn, "counterparty.json", counterparty: counterparty)
     end
   end
@@ -384,9 +385,9 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
     current_user = conn.assigns.current_user
 
     with %Instance{} = _instance <- Document.show_instance(document_id, current_user),
-         %CounterParties{} = counterparty <-
-           Document.get_counterparty(document_id, counterparty_id),
-         %CounterParties{} = counterparty <- Document.remove_counterparty(counterparty) do
+         %CounterParty{} = counterparty <-
+           CounterParties.get_counterparty(document_id, counterparty_id),
+         %CounterParty{} = counterparty <- CounterParties.remove_counterparty(counterparty) do
       render(conn, "counterparty.json", counterparty: counterparty)
     end
   end

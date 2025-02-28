@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
 
   alias WraftDoc.BlockTemplates
   alias WraftDoc.BlockTemplates.BlockTemplate
-  alias WraftDoc.Document
+  alias WraftDoc.DataTemplates
 
   def swagger_definitions do
     %{
@@ -251,7 +251,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, %Oban.Job{}} <-
-           Document.insert_block_template_bulk_import_work(
+           DataTemplates.insert_block_template_bulk_import_work(
              current_user,
              params["mapping"],
              params["file"]

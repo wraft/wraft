@@ -2921,7 +2921,7 @@ defmodule WraftDoc.DocumentTest do
   #       |> length()
 
   #     {:ok, job} =
-  #       Document.insert_data_template_bulk_import_work(
+  #       DataTemplates.insert_data_template_bulk_import_work(
   #         user_id,
   #         c_type_id,
   #         mapping,
@@ -2945,7 +2945,7 @@ defmodule WraftDoc.DocumentTest do
   #   end
 
   #   test "does not create bulk import data template backgroung job with invalid attrs" do
-  #     response = Document.insert_data_template_bulk_import_work(nil, nil, nil, nil)
+  #     response = DataTemplates.insert_data_template_bulk_import_work(nil, nil, nil, nil)
   #     assert response == {:error, :invalid_data}
   #   end
   # end

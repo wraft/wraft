@@ -19,7 +19,6 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.DataTemplates
   alias WraftDoc.DataTemplates.DataTemplate
-  alias WraftDoc.Document
   alias WraftDoc.Search.TypesenseServer, as: Typesense
 
   def swagger_definitions do
@@ -407,7 +406,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
     with %ContentType{} <- ContentTypes.get_content_type(user, c_type_id),
          {:ok, %Oban.Job{}} <-
-           Document.insert_data_template_bulk_import_work(
+           DataTemplates.insert_data_template_bulk_import_work(
              user.id,
              c_type_id,
              params["mapping"],

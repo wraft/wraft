@@ -20,7 +20,6 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Document.CollectionFormField
   alias WraftDoc.Document.ContentCollaboration
   alias WraftDoc.Document.Counter
-  alias WraftDoc.Document.CounterParties
   alias WraftDoc.Document.Engine
   alias WraftDoc.Document.Field
   alias WraftDoc.Document.FieldType
@@ -1498,79 +1497,6 @@ defmodule WraftDoc.Document do
   def insert_bulk_build_work(_, _, _, _, _, _), do: nil
 
   @doc """
-  Create a background job for data template bulk import.
-  """
-  @spec insert_data_template_bulk_import_work(binary, binary, map, Plug.Uploap.t()) ::
-          {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  def insert_data_template_bulk_import_work(user_id, c_type_id, mapping \\ %{}, file)
-
-  def insert_data_template_bulk_import_work(
-        <<_::288>> = user_id,
-        <<_::288>> = c_type_id,
-        mapping,
-        %Plug.Upload{
-          filename: filename,
-          path: path
-        }
-      ) do
-    File.mkdir_p("temp/bulk_import_source/d_template")
-    dest_path = "temp/bulk_import_source/d_template/#{filename}"
-    System.cmd("cp", [path, dest_path])
-
-    data = %{
-      user_id: user_id,
-      c_type_uuid: c_type_id,
-      mapping: mapping,
-      file: dest_path
-    }
-
-    create_bulk_job(data, ["data template"])
-  end
-
-  def insert_data_template_bulk_import_work(_, <<_::288>>, _mapping, %Plug.Upload{
-        filename: _filename,
-        path: _path
-      }),
-      do: {:error, :fake}
-
-  def insert_data_template_bulk_import_work(<<_::288>>, _, _mapping, %Plug.Upload{
-        filename: _filename,
-        path: _path
-      }),
-      do: {:error, :invalid_id, "ContentType"}
-
-  def insert_data_template_bulk_import_work(_, _, _, _), do: {:error, :invalid_data}
-
-  @doc """
-  Creates a background job for block template bulk import.
-  """
-  @spec insert_block_template_bulk_import_work(User.t(), map, Plug.Uploap.t()) ::
-          {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  def insert_block_template_bulk_import_work(user, mapping \\ %{}, file)
-
-  def insert_block_template_bulk_import_work(%User{id: user_id}, mapping, %Plug.Upload{
-        filename: filename,
-        path: path
-      }) do
-    File.mkdir_p("temp/bulk_import_source/b_template")
-    dest_path = "temp/bulk_import_source/b_template/#{filename}"
-    System.cmd("cp", [path, dest_path])
-
-    data = %{
-      user_id: user_id,
-      mapping: mapping,
-      file: dest_path
-    }
-
-    create_bulk_job(data, ["block template"])
-  end
-
-  # def insert_block_template_bulk_import_work(_, _, %Plug.Upload{filename: _, path: _}),
-  #   do: {:error, :fake}
-
-  def insert_block_template_bulk_import_work(_, _, _), do: {:error, :invalid_data}
-
-  @doc """
   Creates a background job to run a pipeline.
   """
   # TODO - improve tests
@@ -1586,7 +1512,7 @@ defmodule WraftDoc.Document do
 
   def create_pipeline_job(_), do: nil
 
-  defp create_bulk_job(args, scheduled_at \\ nil, tags \\ []) do
+  def create_bulk_job(args, scheduled_at \\ nil, tags \\ []) do
     args
     |> BulkWorker.new(tags: tags, scheduled_at: scheduled_at)
     |> Oban.insert()
@@ -2829,47 +2755,5 @@ defmodule WraftDoc.Document do
       {:error, changeset} ->
         {:error, changeset}
     end
-  end
-
-  @doc """
-  Get counterparty for a contract document
-  """
-  @spec get_counterparty(String.t(), String.t()) :: CounterParties.t() | nil
-  def get_counterparty(document_id, counterparty_id) do
-    Repo.get_by(CounterParties, content_id: document_id, counterparty_id: counterparty_id)
-  end
-
-  @doc """
-   Add counterparty to content
-  """
-  def add_counterparty(%Instance{id: content_id}, %{
-        "guest_user_id" => guest_user_id,
-        "name" => name
-      }) do
-    CounterParties
-    |> CounterParties.changeset(%{
-      name: name,
-      content_id: content_id,
-      guest_user_id: guest_user_id
-    })
-    |> Repo.insert()
-    |> case do
-      {:ok, counter_party} ->
-        Repo.preload(counter_party, [:guest_user, :content])
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
-  end
-
-  def add_counterparty(_, _), do: nil
-
-  @doc """
-    Remove counterparty from content
-  """
-  @spec remove_counterparty(CounterParties.t()) ::
-          {:ok, CounterParties.t()} | {:error, Ecto.Changeset.t()}
-  def remove_counterparty(%CounterParties{} = counterparty) do
-    Repo.delete(counterparty)
   end
 end

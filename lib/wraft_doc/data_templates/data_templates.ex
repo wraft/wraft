@@ -13,6 +13,7 @@ defmodule WraftDoc.DataTemplates do
   alias WraftDoc.Account.User
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.DataTemplates.DataTemplate
+  alias WraftDoc.Document
   alias WraftDoc.Repo
   alias WraftDoc.Utils.CSVHelper
 
@@ -144,6 +145,79 @@ defmodule WraftDoc.DataTemplates do
   # TODO - imprvove tests
   @spec delete_data_template(DataTemplate.t()) :: {:ok, DataTemplate.t()}
   def delete_data_template(d_temp), do: Repo.delete(d_temp)
+
+  @doc """
+  Create a background job for data template bulk import.
+  """
+  @spec insert_data_template_bulk_import_work(binary, binary, map, Plug.Uploap.t()) ::
+          {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
+  def insert_data_template_bulk_import_work(user_id, c_type_id, mapping \\ %{}, file)
+
+  def insert_data_template_bulk_import_work(
+        <<_::288>> = user_id,
+        <<_::288>> = c_type_id,
+        mapping,
+        %Plug.Upload{
+          filename: filename,
+          path: path
+        }
+      ) do
+    File.mkdir_p("temp/bulk_import_source/d_template")
+    dest_path = "temp/bulk_import_source/d_template/#{filename}"
+    System.cmd("cp", [path, dest_path])
+
+    data = %{
+      user_id: user_id,
+      c_type_uuid: c_type_id,
+      mapping: mapping,
+      file: dest_path
+    }
+
+    Document.create_bulk_job(data, ["data template"])
+  end
+
+  def insert_data_template_bulk_import_work(_, <<_::288>>, _mapping, %Plug.Upload{
+        filename: _filename,
+        path: _path
+      }),
+      do: {:error, :fake}
+
+  def insert_data_template_bulk_import_work(<<_::288>>, _, _mapping, %Plug.Upload{
+        filename: _filename,
+        path: _path
+      }),
+      do: {:error, :invalid_id, "ContentType"}
+
+  def insert_data_template_bulk_import_work(_, _, _, _), do: {:error, :invalid_data}
+
+  @doc """
+  Creates a background job for block template bulk import.
+  """
+  @spec insert_block_template_bulk_import_work(User.t(), map, Plug.Uploap.t()) ::
+          {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
+  def insert_block_template_bulk_import_work(user, mapping \\ %{}, file)
+
+  def insert_block_template_bulk_import_work(%User{id: user_id}, mapping, %Plug.Upload{
+        filename: filename,
+        path: path
+      }) do
+    File.mkdir_p("temp/bulk_import_source/b_template")
+    dest_path = "temp/bulk_import_source/b_template/#{filename}"
+    System.cmd("cp", [path, dest_path])
+
+    data = %{
+      user_id: user_id,
+      mapping: mapping,
+      file: dest_path
+    }
+
+    Document.create_bulk_job(data, ["block template"])
+  end
+
+  # def insert_block_template_bulk_import_work(_, _, %Plug.Upload{filename: _, path: _}),
+  #   do: {:error, :fake}
+
+  def insert_block_template_bulk_import_work(_, _, _), do: {:error, :invalid_data}
 
   @spec bulk_d_temp_creation(map, User.t(), ContentType.t(), map) :: {:ok, DataTemplate.t()}
   defp bulk_d_temp_creation(data, user, c_type, mapping) do
