@@ -6,13 +6,14 @@ defmodule WraftDoc.DocumentTest do
   @moduletag :document
 
   alias WraftDoc.Account.Role
+  alias WraftDoc.Comment
+  alias WraftDoc.Comments
   alias WraftDoc.Document
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.BlockTemplate
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
-  alias WraftDoc.Document.Comment
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.ContentTypeField
   alias WraftDoc.Document.Counter
@@ -4163,7 +4164,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      comment = Document.create_comment(user, params)
+      comment = Comments.create_comment(user, params)
 
       assert count_before + 1 ==
                Comment
@@ -4185,7 +4186,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      {:error, changeset} = Document.create_comment(user, @invalid_attrs)
+      {:error, changeset} = Comments.create_comment(user, @invalid_attrs)
 
       count_after =
         Comment
@@ -4207,7 +4208,7 @@ defmodule WraftDoc.DocumentTest do
     test "get comment returns the comment data" do
       user = insert(:user_with_organisation)
       comment = insert(:comment, user: user, organisation: List.first(user.owned_organisations))
-      c_comment = Document.get_comment(comment.id, user)
+      c_comment = Comments.get_comment(comment.id, user)
       assert c_comment.comment == comment.comment
       assert c_comment.is_parent == comment.is_parent
       assert c_comment.master == comment.master
@@ -4219,7 +4220,7 @@ defmodule WraftDoc.DocumentTest do
     test "show comment returns the comment data and preloads user and profile" do
       user = insert(:user_with_organisation)
       comment = insert(:comment, user: user, organisation: List.first(user.owned_organisations))
-      c_comment = Document.show_comment(comment.id, user)
+      c_comment = Comments.show_comment(comment.id, user)
       assert c_comment.comment == comment.comment
       assert c_comment.is_parent == comment.is_parent
       assert c_comment.master == comment.master
@@ -4238,7 +4239,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      {:error, changeset} = Document.update_comment(comment, @invalid_comment_attrs)
+      {:error, changeset} = Comments.update_comment(comment, @invalid_comment_attrs)
 
       count_after =
         Comment
@@ -4277,7 +4278,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      comment = Document.update_comment(comment, params)
+      comment = Comments.update_comment(comment, params)
 
       count_after =
         Comment
@@ -4326,7 +4327,7 @@ defmodule WraftDoc.DocumentTest do
         |> Repo.all()
         |> length()
 
-      {:ok, c_comment} = Document.delete_comment(comment)
+      {:ok, c_comment} = Comments.delete_comment(comment)
 
       count_after =
         Comment

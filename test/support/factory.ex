@@ -15,12 +15,12 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Account.UserRole
   alias WraftDoc.Authorization.Permission
   alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.Comment
   alias WraftDoc.Document.Asset
   alias WraftDoc.Document.Block
   alias WraftDoc.Document.BlockTemplate
   alias WraftDoc.Document.CollectionForm
   alias WraftDoc.Document.CollectionFormField
-  alias WraftDoc.Document.Comment
   alias WraftDoc.Document.ContentCollaboration
   alias WraftDoc.Document.ContentType
   alias WraftDoc.Document.ContentTypeField

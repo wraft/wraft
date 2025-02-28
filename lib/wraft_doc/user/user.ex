@@ -52,7 +52,7 @@ defmodule WraftDoc.Account.User do
     has_many(:roles, through: [:user_roles, :role])
 
     has_many(:block_templates, WraftDoc.Document.BlockTemplate, foreign_key: :creator_id)
-    has_many(:comments, WraftDoc.Document.Comment)
+    has_many(:comments, WraftDoc.Comment)
     has_many(:approval_systems, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :creator_id)
 
     has_many(:instances_to_approve,

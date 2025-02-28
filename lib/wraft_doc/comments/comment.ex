@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Comment do
+defmodule WraftDoc.Comment do
   @moduledoc false
 
   use WraftDoc.Schema
@@ -10,7 +10,7 @@ defmodule WraftDoc.Document.Comment do
     field(:master_id, :string)
     field(:reply_count, :integer)
     field(:meta, :map)
-    belongs_to(:parent, WraftDoc.Document.Comment)
+    belongs_to(:parent, WraftDoc.Comment)
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     timestamps()
