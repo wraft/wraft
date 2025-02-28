@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.CommentControllerTest do
   @moduletag :controller
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Comment, Repo}
+  alias WraftDoc.{Comment, Repo}
 
   @valid_attrs %{
     comment: "a sample Comment",

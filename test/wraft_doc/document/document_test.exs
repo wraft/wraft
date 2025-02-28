@@ -4303,7 +4303,7 @@ defmodule WraftDoc.DocumentTest do
       c2 = insert(:comment, user: user, organisation: organisation, master_id: instance.id)
 
       comment_index =
-        Document.comment_index(user, %{"page_number" => 1, "master_id" => instance.id})
+        Comments.comment_index(user, %{"page_number" => 1, "master_id" => instance.id})
 
       assert comment_index.entries
              |> Enum.map(fn x -> x.comment end)

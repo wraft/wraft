@@ -183,7 +183,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.comment_index(current_user, params) do
+         } <- Comments.comment_index(current_user, params) do
       render(conn, "index.json",
         comments: comments,
         page_number: page_number,
@@ -215,7 +215,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.comment_replies(current_user, params) do
+         } <- Comments.comment_replies(current_user, params) do
       render(conn, "index.json",
         comments: comments,
         page_number: page_number,
