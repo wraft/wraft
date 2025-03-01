@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Frames do
+defmodule WraftDoc.Documents.Frames do
   @moduledoc """
   Module that handles frame related contexts.
   """
@@ -7,7 +7,7 @@ defmodule WraftDoc.Document.Frames do
 
   alias Ecto.Multi
   alias WraftDoc.Client.Minio
-  alias WraftDoc.Document.Frame
+  alias WraftDoc.Documents.Frame
   alias WraftDoc.Repo
 
   @doc """

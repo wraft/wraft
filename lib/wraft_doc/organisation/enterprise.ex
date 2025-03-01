@@ -17,7 +17,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Billing.PaddleApi
   alias WraftDoc.Billing.Subscription
   alias WraftDoc.Client.Razorpay
-  alias WraftDoc.Document.Instance
+  alias WraftDoc.Documents.Instance
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State

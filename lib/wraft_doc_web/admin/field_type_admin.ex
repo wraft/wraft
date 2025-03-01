@@ -3,7 +3,7 @@ defmodule WraftDocWeb.FieldTypeAdmin do
   Admin panel management for the FieldType module.
   """
   import Ecto.Query
-  alias WraftDoc.Document.FieldType
+  alias WraftDoc.Documents.FieldType
 
   def index(_) do
     [

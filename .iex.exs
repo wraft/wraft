@@ -5,10 +5,10 @@ alias WraftDoc.Account.UserOrganisation
 alias WraftDoc.Client.Minio
 alias WraftDoc.ContentTypes.ContentType
 alias WraftDoc.ContentTypes.ContentTypeRole
-alias WraftDoc.Document
-alias WraftDoc.Document.CollectionForm
-alias WraftDoc.Document.CollectionFormField
-alias WraftDoc.Document.Instance
+alias WraftDoc.Documents
+alias WraftDoc.Documents.CollectionForm
+alias WraftDoc.Documents.CollectionFormField
+alias WraftDoc.Documents.Instance
 alias WraftDoc.Enterprise
 alias WraftDoc.Enterprise.ApprovalSystem
 alias WraftDoc.Enterprise.Flow

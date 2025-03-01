@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.InstanceApprovalSystem do
+defmodule WraftDoc.Documents.InstanceApprovalSystem do
   @moduledoc """
   Schema module for instance approval system
   * Flag -  to denote wether it is approved or not
@@ -13,7 +13,7 @@ defmodule WraftDoc.Document.InstanceApprovalSystem do
     field(:flag, :boolean, default: false)
     field(:approved_at, :naive_datetime)
     field(:rejected_at, :naive_datetime)
-    belongs_to(:instance, WraftDoc.Document.Instance)
+    belongs_to(:instance, WraftDoc.Documents.Instance)
     belongs_to(:approval_system, WraftDoc.Enterprise.ApprovalSystem)
     has_one(:approver, through: [:approval_system, :approver])
     timestamps()

@@ -17,8 +17,8 @@ defmodule WraftDoc.Layouts.Layout do
     field(:slug, :string)
     field(:screenshot, WraftDocWeb.LayoutScreenShotUploader.Type)
 
-    belongs_to(:engine, WraftDoc.Document.Engine)
-    belongs_to(:frame, WraftDoc.Document.Frame)
+    belongs_to(:engine, WraftDoc.Documents.Engine)
+    belongs_to(:frame, WraftDoc.Documents.Frame)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 

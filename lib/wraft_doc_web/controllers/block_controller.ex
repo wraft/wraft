@@ -12,8 +12,8 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Block
+  alias WraftDoc.Documents
+  alias WraftDoc.Documents.Block
 
   def swagger_definitions do
     %{
@@ -173,15 +173,15 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    case Document.generate_chart(params) do
+    case Documents.generate_chart(params) do
       %{"url" => file_url} ->
         params =
           Map.merge(params, %{
             "file_url" => file_url,
-            "tex_chart" => Document.generate_tex_chart(params)
+            "tex_chart" => Documents.generate_tex_chart(params)
           })
 
-        with %Block{} = block <- Document.create_block(current_user, params) do
+        with %Block{} = block <- Documents.create_block(current_user, params) do
           conn
           |> put_status(:created)
           |> render("create.json", block: block)
@@ -215,15 +215,15 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
-    case Document.generate_chart(params) do
+    case Documents.generate_chart(params) do
       %{"url" => file_url} ->
         Map.merge(params, %{
           "file_url" => file_url,
-          "tex_chart" => Document.generate_tex_chart(params)
+          "tex_chart" => Documents.generate_tex_chart(params)
         })
 
-        with %Block{} = block <- Document.get_block(id, current_user),
-             %Block{} = block <- Document.update_block(block, params) do
+        with %Block{} = block <- Documents.get_block(id, current_user),
+             %Block{} = block <- Documents.update_block(block, params) do
           render(conn, "update.json", block: block)
         end
 
@@ -252,7 +252,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Block{} = block <- Document.get_block(id, current_user) do
+    with %Block{} = block <- Documents.get_block(id, current_user) do
       render(conn, "show.json", block: block)
     end
   end
@@ -275,8 +275,8 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Block{} = block <- Document.get_block(id, current_user),
-         {:ok, %Block{}} <- Document.delete_block(block) do
+    with %Block{} = block <- Documents.get_block(id, current_user),
+         {:ok, %Block{}} <- Documents.delete_block(block) do
       render(conn, "block.json", block: block)
     end
   end

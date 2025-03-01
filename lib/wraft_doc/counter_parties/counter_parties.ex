@@ -4,7 +4,7 @@ defmodule WraftDoc.CounterParties do
   """
 
   alias WraftDoc.CounterParties.CounterParty
-  alias WraftDoc.Document.Instance
+  alias WraftDoc.Documents.Instance
   alias WraftDoc.Repo
 
   @doc """

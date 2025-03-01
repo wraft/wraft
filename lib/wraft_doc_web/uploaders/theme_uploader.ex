@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.ThemeUploader do
   @moduledoc """
   This module provides a simple interface for uploading
-  font files to `WraftDoc.Document.Theme`
+  font files to `WraftDoc.Documents.Theme`
   """
 
   use Waffle.Definition

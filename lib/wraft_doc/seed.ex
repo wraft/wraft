@@ -15,13 +15,13 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.ContentTypes.ContentTypeRole
   alias WraftDoc.DataTemplates.DataTemplate
-  alias WraftDoc.Document.Block
-  alias WraftDoc.Document.Engine
-  alias WraftDoc.Document.Field
-  alias WraftDoc.Document.FieldType
-  alias WraftDoc.Document.Instance
-  alias WraftDoc.Document.Instance.History
-  alias WraftDoc.Document.Instance.Version
+  alias WraftDoc.Documents.Block
+  alias WraftDoc.Documents.Engine
+  alias WraftDoc.Documents.Field
+  alias WraftDoc.Documents.FieldType
+  alias WraftDoc.Documents.Instance
+  alias WraftDoc.Documents.Instance.History
+  alias WraftDoc.Documents.Instance.Version
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow

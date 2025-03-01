@@ -10,9 +10,9 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.CollectionForm
-  alias WraftDoc.Document.CollectionFormField
+  alias WraftDoc.Documents
+  alias WraftDoc.Documents.CollectionForm
+  alias WraftDoc.Documents.CollectionFormField
 
   def swagger_definitions do
     %{
@@ -71,7 +71,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
 
   def show(conn, %{"id" => collection_form_id}) do
     with %CollectionFormField{} = collection_form_field <-
-           Document.get_collection_form_field(conn.assigns.current_user, collection_form_id) do
+           Documents.get_collection_form_field(conn.assigns.current_user, collection_form_id) do
       render(conn, "show.json", collection_form_field: collection_form_field)
     end
   end
@@ -97,9 +97,9 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
   end
 
   def create(conn, %{"c_form_id" => c_form_id} = params) do
-    with %CollectionForm{} <- Document.get_collection_form(conn.assigns.current_user, c_form_id),
+    with %CollectionForm{} <- Documents.get_collection_form(conn.assigns.current_user, c_form_id),
          %CollectionFormField{} = collection_form_field <-
-           Document.create_collection_form_field(c_form_id, params) do
+           Documents.create_collection_form_field(c_form_id, params) do
       render(conn, "create.json", collection_form_field: collection_form_field)
     end
   end
@@ -128,9 +128,9 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
 
   def update(conn, %{"id" => id} = params) do
     with %CollectionFormField{} = collection_form_field <-
-           Document.get_collection_form_field(conn.assigns.current_user, id),
+           Documents.get_collection_form_field(conn.assigns.current_user, id),
          %CollectionFormField{} = collection_form_field <-
-           Document.update_collection_form_field(collection_form_field, params) do
+           Documents.update_collection_form_field(collection_form_field, params) do
       render(conn, "create.json", collection_form_field: collection_form_field)
     end
   end
@@ -152,9 +152,9 @@ defmodule WraftDocWeb.Api.V1.CollectionFormFieldController do
 
   def delete(conn, %{"id" => id}) do
     with %CollectionFormField{} = collection_form_field <-
-           Document.get_collection_form_field(conn.assigns.current_user, id),
+           Documents.get_collection_form_field(conn.assigns.current_user, id),
          {:ok, collection_form_field} <-
-           Document.delete_collection_form_field(collection_form_field) do
+           Documents.delete_collection_form_field(collection_form_field) do
       render(conn, "create.json", collection_form_field: collection_form_field)
     end
   end

@@ -1,9 +1,9 @@
-defmodule WraftDoc.Document.CollectionFormField do
+defmodule WraftDoc.Documents.CollectionFormField do
   @moduledoc """
   Generic collection form
   Example :-  Google form
   """
-  alias WraftDoc.Document.CollectionForm
+  alias WraftDoc.Documents.CollectionForm
 
   use WraftDoc.Schema
 
@@ -11,7 +11,7 @@ defmodule WraftDoc.Document.CollectionFormField do
     field(:name, :string)
     field(:description, :string)
     field(:meta, :map)
-    field(:field_type, WraftDoc.Document.FieldTypeEnum)
+    field(:field_type, WraftDoc.Documents.FieldTypeEnum)
     belongs_to(:collection_form, CollectionForm)
 
     timestamps()

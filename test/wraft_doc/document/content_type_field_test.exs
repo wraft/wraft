@@ -1,4 +1,4 @@
-defmodule WraftDocTest.Document.ContentTypeFieldTest do
+defmodule WraftDocTest.Documents.ContentTypeFieldTest do
   @moduledoc false
   use WraftDoc.ModelCase
   @moduletag :document

@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
 
   alias WraftDoc.ContentTypes
   alias WraftDoc.ContentTypes.ContentType
-  alias WraftDoc.Document
+  alias WraftDoc.Documents
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Layouts
@@ -769,7 +769,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, %Oban.Job{}} <-
-           Document.insert_bulk_build_work(
+           Documents.insert_bulk_build_work(
              current_user,
              c_type_id,
              state_id,

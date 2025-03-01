@@ -7,7 +7,7 @@ defmodule WraftDoc.CounterParties.CounterParty do
   # TODO need to improve
   schema "counter_parties" do
     field(:name, :string)
-    belongs_to(:content, WraftDoc.Document.Instance)
+    belongs_to(:content, WraftDoc.Documents.Instance)
     timestamps()
   end
 

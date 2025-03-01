@@ -6,7 +6,7 @@ defmodule WraftDoc.EctoType.DocumentMetaType do
   use Ecto.Type
   use Ecto.Schema
   import Ecto.Changeset
-  alias WraftDoc.Document.Instance
+  alias WraftDoc.Documents.Instance
 
   # List of supported document types
   @document_meta_types ~w(contract document)a

@@ -1,9 +1,9 @@
-defmodule WraftDoc.Document.OrganisationField do
+defmodule WraftDoc.Documents.OrganisationField do
   @moduledoc """
   Same as content type field for an organisation to collect data in dependant on content type
   """
   use WraftDoc.Schema
-  alias WraftDoc.Document.FieldType
+  alias WraftDoc.Documents.FieldType
 
   schema "organisation_field" do
     field(:name, :string)

@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.ContentCollaboration do
+defmodule WraftDoc.Documents.ContentCollaboration do
   @moduledoc """
   The Content Collaboration Model.
   """
@@ -12,7 +12,7 @@ defmodule WraftDoc.Document.ContentCollaboration do
     field(:role, Ecto.Enum, values: @roles)
     field(:status, Ecto.Enum, values: @statuses, default: :pending)
     field(:revoked_at, :utc_datetime)
-    belongs_to(:content, WraftDoc.Document.Instance)
+    belongs_to(:content, WraftDoc.Documents.Instance)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:invited_by, WraftDoc.Account.User, foreign_key: :invited_by_id)

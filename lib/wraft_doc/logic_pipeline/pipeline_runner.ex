@@ -7,8 +7,8 @@ defmodule WraftDoc.PipelineRunner do
 
   alias WraftDoc.Account
   alias WraftDoc.Client.Minio
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Instance
+  alias WraftDoc.Documents
+  alias WraftDoc.Documents.Instance
   alias WraftDoc.Enterprise
   alias WraftDoc.Forms
   alias WraftDoc.Pipelines.Pipeline
@@ -71,9 +71,14 @@ defmodule WraftDoc.PipelineRunner do
         transformed_data = Forms.transform_data_by_mapping(form_mapping, data)
 
         params =
-          transformed_data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
+          transformed_data |> Documents.do_create_instance_params(d_temp) |> Map.put("type", type)
 
-        Document.create_instance(user, c_type, Enterprise.get_final_state(c_type.flow_id), params)
+        Documents.create_instance(
+          user,
+          c_type,
+          Enterprise.get_final_state(c_type.flow_id),
+          params
+        )
       end)
 
     %{trigger: trigger, instances: instances, user: user}
@@ -91,9 +96,9 @@ defmodule WraftDoc.PipelineRunner do
         transformed_data = Forms.transform_data_by_mapping(form_mapping, data)
 
         params =
-          transformed_data |> Document.do_create_instance_params(d_temp) |> Map.put("type", type)
+          transformed_data |> Documents.do_create_instance_params(d_temp) |> Map.put("type", type)
 
-        Document.create_instance(c_type, Enterprise.get_final_state(c_type.flow_id), params)
+        Documents.create_instance(c_type, Enterprise.get_final_state(c_type.flow_id), params)
       end)
 
     %{trigger: trigger, instances: instances}
@@ -129,7 +134,7 @@ defmodule WraftDoc.PipelineRunner do
     builds =
       Enum.map(instances, fn instance ->
         instance = Repo.preload(instance, content_type: [{:layout, :assets}])
-        resp = Document.bulk_build(user, instance, instance.content_type.layout)
+        resp = Documents.bulk_build(user, instance, instance.content_type.layout)
         %{instance: instance, response: resp}
       end)
 
@@ -140,7 +145,7 @@ defmodule WraftDoc.PipelineRunner do
     builds =
       Enum.map(instances, fn instance ->
         instance = Repo.preload(instance, content_type: [{:layout, :assets}])
-        resp = Document.bulk_build(instance, instance.content_type.layout)
+        resp = Documents.bulk_build(instance, instance.content_type.layout)
         %{instance: instance, response: resp}
       end)
 
@@ -180,7 +185,7 @@ defmodule WraftDoc.PipelineRunner do
 
     builds =
       instances
-      |> Stream.map(fn x -> x |> Document.get_built_document() |> Map.get(:build) end)
+      |> Stream.map(fn x -> x |> Documents.get_built_document() |> Map.get(:build) end)
       |> Stream.filter(fn x -> x != nil end)
       |> Enum.map(&String.to_charlist/1)
 

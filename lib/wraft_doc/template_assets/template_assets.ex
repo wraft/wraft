@@ -16,12 +16,11 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.DataTemplates
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.DataTemplates.DataTemplate
-  alias WraftDoc.Document
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Engine
-  alias WraftDoc.Document.FieldType
-  alias WraftDoc.Document.Frame
-  alias WraftDoc.Document.Frames
+  alias WraftDoc.Documents
+  alias WraftDoc.Documents.Engine
+  alias WraftDoc.Documents.FieldType
+  alias WraftDoc.Documents.Frame
+  alias WraftDoc.Documents.Frames
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Layouts
@@ -577,7 +576,7 @@ defmodule WraftDoc.TemplateAssets do
 
     with asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
          params <- prepare_layout_attrs(layouts, engine_id, asset_id, frame_id),
-         %Engine{} = engine <- Document.get_engine(params["engine_id"]),
+         %Engine{} = engine <- Documents.get_engine(params["engine_id"]),
          %Layout{} = layout <- Layouts.create_layout(current_user, engine, params) do
       {:ok, layout}
     end

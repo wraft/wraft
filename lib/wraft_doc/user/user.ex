@@ -36,19 +36,19 @@ defmodule WraftDoc.Account.User do
     has_many(:flows, WraftDoc.Enterprise.Flow, foreign_key: :creator_id)
     has_many(:states, WraftDoc.Enterprise.Flow.State, foreign_key: :creator_id)
     has_many(:data_templates, WraftDoc.DataTemplates.DataTemplate, foreign_key: :creator_id)
-    has_many(:assets, WraftDoc.Document.Asset, foreign_key: :creator_id)
+    has_many(:assets, WraftDoc.Documents.Asset, foreign_key: :creator_id)
 
     has_many(:template_assets, WraftDoc.TemplateAssets.TemplateAsset, foreign_key: :creator_id)
-    has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :creator_id)
-    has_many(:content_collaboration, WraftDoc.Document.ContentCollaboration)
+    has_many(:build_histories, WraftDoc.Documents.Instance.History, foreign_key: :creator_id)
+    has_many(:content_collaboration, WraftDoc.Documents.ContentCollaboration)
 
-    has_many(:blocks, WraftDoc.Document.Block, foreign_key: :creator_id)
+    has_many(:blocks, WraftDoc.Documents.Block, foreign_key: :creator_id)
 
-    has_many(:field_types, WraftDoc.Document.FieldType, foreign_key: :creator_id)
+    has_many(:field_types, WraftDoc.Documents.FieldType, foreign_key: :creator_id)
 
     has_many(:auth_tokens, WraftDoc.AuthTokens.AuthToken, foreign_key: :user_id)
 
-    has_many(:instance_versions, WraftDoc.Document.Instance.Version, foreign_key: :author_id)
+    has_many(:instance_versions, WraftDoc.Documents.Instance.Version, foreign_key: :author_id)
     has_many(:user_roles, WraftDoc.Account.UserRole)
     has_many(:roles, through: [:user_roles, :role])
 
@@ -63,7 +63,7 @@ defmodule WraftDoc.Account.User do
     has_many(:pipelines, WraftDoc.Pipelines.Pipeline, foreign_key: :creator_id)
     has_many(:payments, WraftDoc.Enterprise.Membership.Payment, foreign_key: :creator_id)
     has_many(:vendors, WraftDoc.Enterprise.Vendor, foreign_key: :creator_id)
-    has_many(:organisation_fields, WraftDoc.Document.OrganisationField, foreign_key: :creator_id)
+    has_many(:organisation_fields, WraftDoc.Documents.OrganisationField, foreign_key: :creator_id)
     has_many(:owned_organisations, WraftDoc.Enterprise.Organisation, foreign_key: :creator_id)
     has_many(:forms, WraftDoc.Forms.Form, foreign_key: :creator_id)
     has_many(:form_entry, WraftDoc.Forms.FormEntry)

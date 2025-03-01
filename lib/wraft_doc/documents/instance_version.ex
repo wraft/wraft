@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Instance.Version do
+defmodule WraftDoc.Documents.Instance.Version do
   @moduledoc """
     The instance version model.
   """
@@ -13,7 +13,7 @@ defmodule WraftDoc.Document.Instance.Version do
     field(:raw, :string)
     field(:serialized, :map, default: %{})
     field(:naration, :string)
-    belongs_to(:content, WraftDoc.Document.Instance)
+    belongs_to(:content, WraftDoc.Documents.Instance)
     belongs_to(:author, WraftDoc.Account.User)
     timestamps()
   end

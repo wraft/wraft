@@ -1,10 +1,10 @@
-defmodule WraftDoc.Document.Approval do
+defmodule WraftDoc.Documents.Approval do
   @moduledoc """
   Module that handles the repo connections of the document Approval context.
   """
 
   import Ecto.Query
-  alias WraftDoc.Document.InstanceTransitionLog
+  alias WraftDoc.Documents.InstanceTransitionLog
   alias WraftDoc.Repo
 
   @doc """

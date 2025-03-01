@@ -1,6 +1,6 @@
-defmodule WraftDoc.Document.Instance.HistoryTest do
+defmodule WraftDoc.Documents.Instance.HistoryTest do
   use WraftDoc.ModelCase
-  alias WraftDoc.Document.Instance.History
+  alias WraftDoc.Documents.Instance.History
   @moduletag :document
   {:ok, start_time} = NaiveDateTime.new(2020, 03, 17, 20, 20, 20)
   {:ok, end_time} = NaiveDateTime.new(2020, 03, 17, 20, 21, 20)

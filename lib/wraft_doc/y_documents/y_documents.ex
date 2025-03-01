@@ -10,7 +10,7 @@ defmodule WraftDoc.YDocuments do
     field(:value, :binary)
     field(:version, Ecto.Enum, values: [:v1, :v1_sv])
     field(:content_id, :binary_id)
-    # belongs_to :content, WraftDoc.Document.Instance
+    # belongs_to :content, WraftDoc.Documents.Instance
 
     timestamps(type: :utc_datetime)
   end

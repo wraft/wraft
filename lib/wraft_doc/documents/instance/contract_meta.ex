@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Instance.ContractMeta do
+defmodule WraftDoc.Documents.Instance.ContractMeta do
   @moduledoc """
     The contract document metadata
   """

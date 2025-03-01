@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.DataTemplateTest do
+defmodule WraftDoc.Documents.DataTemplateTest do
   use WraftDoc.ModelCase
   alias WraftDoc.DataTemplates.DataTemplate
   import WraftDoc.Factory

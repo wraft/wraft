@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Field do
+defmodule WraftDoc.Documents.Field do
   @moduledoc """
   The field schema.
   """
@@ -13,7 +13,7 @@ defmodule WraftDoc.Document.Field do
     has_many(:forms, through: [:form_fields, :form])
     has_many(:content_type_fields, WraftDoc.ContentTypes.ContentTypeField)
     has_many(:content_types, through: [:content_type_fields, :content_type])
-    belongs_to(:field_type, WraftDoc.Document.FieldType)
+    belongs_to(:field_type, WraftDoc.Documents.FieldType)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     timestamps()
   end

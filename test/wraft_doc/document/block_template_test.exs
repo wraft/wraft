@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.BlockTemplateTest do
+defmodule WraftDoc.Documents.BlockTemplateTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
   alias WraftDoc.BlockTemplates.BlockTemplate

@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.InstanceTransitionLog do
+defmodule WraftDoc.Documents.InstanceTransitionLog do
   @moduledoc """
     Log to keep track state transition of Instance
   """
@@ -15,7 +15,7 @@ defmodule WraftDoc.Document.InstanceTransitionLog do
     belongs_to(:from_state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:to_state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:reviewer, WraftDoc.Account.User)
-    belongs_to(:instance, WraftDoc.Document.Instance)
+    belongs_to(:instance, WraftDoc.Documents.Instance)
 
     timestamps()
   end

@@ -6,7 +6,7 @@ defmodule WraftDoc.Pipelines.TriggerHistories do
   import Ecto.Query
 
   alias WraftDoc.Account.User
-  alias WraftDoc.Document
+  alias WraftDoc.Documents
   alias WraftDoc.Pipelines.Pipeline
   alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDoc.Repo
@@ -107,11 +107,11 @@ defmodule WraftDoc.Pipelines.TriggerHistories do
   @spec create_pipeline_job(TriggerHistory.t(), DateTime.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
   def create_pipeline_job(%TriggerHistory{} = trigger_history, scheduled_at) do
-    Document.create_bulk_job(trigger_history, scheduled_at, ["pipeline_job"])
+    Documents.create_bulk_job(trigger_history, scheduled_at, ["pipeline_job"])
   end
 
   def create_pipeline_job(%TriggerHistory{} = trigger_history) do
-    Document.create_bulk_job(trigger_history, nil, ["pipeline_job"])
+    Documents.create_bulk_job(trigger_history, nil, ["pipeline_job"])
   end
 
   def create_pipeline_job(_), do: nil

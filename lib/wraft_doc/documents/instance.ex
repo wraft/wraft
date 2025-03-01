@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Instance do
+defmodule WraftDoc.Documents.Instance do
   @moduledoc """
     The model for contents every documents build is based on datas on instance
     ## Fields
@@ -35,13 +35,13 @@ defmodule WraftDoc.Document.Instance do
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:vendor, WraftDoc.Enterprise.Vendor)
 
-    has_many(:content_collaboration, WraftDoc.Document.ContentCollaboration,
+    has_many(:content_collaboration, WraftDoc.Documents.ContentCollaboration,
       foreign_key: :content_id
     )
 
-    has_many(:instance_approval_systems, WraftDoc.Document.InstanceApprovalSystem)
-    has_many(:build_histories, WraftDoc.Document.Instance.History, foreign_key: :content_id)
-    has_many(:versions, WraftDoc.Document.Instance.Version, foreign_key: :content_id)
+    has_many(:instance_approval_systems, WraftDoc.Documents.InstanceApprovalSystem)
+    has_many(:build_histories, WraftDoc.Documents.Instance.History, foreign_key: :content_id)
+    has_many(:versions, WraftDoc.Documents.Instance.Version, foreign_key: :content_id)
 
     timestamps()
   end

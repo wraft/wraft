@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.FieldType do
+defmodule WraftDoc.Documents.FieldType do
   @moduledoc """
     The field type schema.
   """
@@ -13,8 +13,8 @@ defmodule WraftDoc.Document.FieldType do
     embeds_many(:validations, WraftDoc.Validations.Validation, on_replace: :delete)
     belongs_to(:creator, WraftDoc.Account.User)
 
-    has_many(:fields, WraftDoc.Document.Field)
-    has_many(:organisation_fields, WraftDoc.Document.OrganisationField)
+    has_many(:fields, WraftDoc.Documents.Field)
+    has_many(:organisation_fields, WraftDoc.Documents.OrganisationField)
     timestamps()
   end
 

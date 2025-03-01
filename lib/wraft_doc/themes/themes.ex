@@ -10,7 +10,7 @@ defmodule WraftDoc.Themes do
   alias WraftDoc.Assets
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
-  alias WraftDoc.Document
+  alias WraftDoc.Documents
   alias WraftDoc.Repo
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Themes.ThemeAsset
@@ -216,7 +216,7 @@ defmodule WraftDoc.Themes do
 
   def font_option_header(header, font_options) do
     Enum.reduce(font_options, header, fn font_option, acc ->
-      Document.concat_strings(acc, "- #{font_option}\n")
+      Documents.concat_strings(acc, "- #{font_option}\n")
     end)
   end
 end

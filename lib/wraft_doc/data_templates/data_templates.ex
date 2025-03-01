@@ -13,7 +13,7 @@ defmodule WraftDoc.DataTemplates do
   alias WraftDoc.Account.User
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.DataTemplates.DataTemplate
-  alias WraftDoc.Document
+  alias WraftDoc.Documents
   alias WraftDoc.Repo
   alias WraftDoc.Utils.CSVHelper
 
@@ -173,7 +173,7 @@ defmodule WraftDoc.DataTemplates do
       file: dest_path
     }
 
-    Document.create_bulk_job(data, ["data template"])
+    Documents.create_bulk_job(data, ["data template"])
   end
 
   def insert_data_template_bulk_import_work(_, <<_::288>>, _mapping, %Plug.Upload{
@@ -211,7 +211,7 @@ defmodule WraftDoc.DataTemplates do
       file: dest_path
     }
 
-    Document.create_bulk_job(data, ["block template"])
+    Documents.create_bulk_job(data, ["block template"])
   end
 
   # def insert_block_template_bulk_import_work(_, _, %Plug.Upload{filename: _, path: _}),

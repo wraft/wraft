@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document do
+defmodule WraftDoc.Documents do
   @moduledoc """
   Module that handles the repo connections of the document context.
   """
@@ -12,20 +12,20 @@ defmodule WraftDoc.Document do
   alias WraftDoc.Client.Minio
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.DataTemplates.DataTemplate
-  alias WraftDoc.Document.Block
-  alias WraftDoc.Document.CollectionForm
-  alias WraftDoc.Document.CollectionFormField
-  alias WraftDoc.Document.ContentCollaboration
-  alias WraftDoc.Document.Counter
-  alias WraftDoc.Document.Engine
-  alias WraftDoc.Document.Field
-  alias WraftDoc.Document.FieldType
-  alias WraftDoc.Document.Instance
-  alias WraftDoc.Document.Instance.History
-  alias WraftDoc.Document.Instance.Version
-  alias WraftDoc.Document.InstanceApprovalSystem
-  alias WraftDoc.Document.InstanceTransitionLog
-  alias WraftDoc.Document.OrganisationField
+  alias WraftDoc.Documents.Block
+  alias WraftDoc.Documents.CollectionForm
+  alias WraftDoc.Documents.CollectionFormField
+  alias WraftDoc.Documents.ContentCollaboration
+  alias WraftDoc.Documents.Counter
+  alias WraftDoc.Documents.Engine
+  alias WraftDoc.Documents.Field
+  alias WraftDoc.Documents.FieldType
+  alias WraftDoc.Documents.Instance
+  alias WraftDoc.Documents.Instance.History
+  alias WraftDoc.Documents.Instance.Version
+  alias WraftDoc.Documents.InstanceApprovalSystem
+  alias WraftDoc.Documents.InstanceTransitionLog
+  alias WraftDoc.Documents.OrganisationField
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow

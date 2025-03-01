@@ -5,7 +5,7 @@ defmodule WraftDoc.Repo.Migrations.AllowedUsersCorrectionForInstance do
    mix run priv/repo/data/migrations/allowed_users_correction_for_instance.exs
   """
   require Logger
-  alias WraftDoc.Document.Instance
+  alias WraftDoc.Documents.Instance
   alias WraftDoc.Repo
 
   Logger.info("Starting allowed users update for Instance records")

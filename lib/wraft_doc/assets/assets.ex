@@ -9,9 +9,9 @@ defmodule WraftDoc.Assets do
   alias Ecto.Multi
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Frame
-  alias WraftDoc.Document.Instance
+  alias WraftDoc.Documents
+  alias WraftDoc.Documents.Frame
+  alias WraftDoc.Documents.Instance
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
 
@@ -149,7 +149,7 @@ defmodule WraftDoc.Assets do
         true
       ) do
     build_versions
-    |> Document.versioned_file_name(instance_id, :next)
+    |> Documents.versioned_file_name(instance_id, :next)
     |> then(&Path.join(instance_dir_path, &1))
   end
 
@@ -159,7 +159,7 @@ defmodule WraftDoc.Assets do
         false
       ) do
     build_versions
-    |> Document.versioned_file_name(instance_id, :current)
+    |> Documents.versioned_file_name(instance_id, :current)
     |> then(&Path.join(instance_dir_path, &1))
   end
 
@@ -181,9 +181,9 @@ defmodule WraftDoc.Assets do
     File.write!(asset_file_path, binary)
 
     if frame != nil || slug == "pletter" do
-      Document.concat_strings(acc, "letterhead: #{asset_file_path} \n")
+      Documents.concat_strings(acc, "letterhead: #{asset_file_path} \n")
     else
-      Document.concat_strings(acc, "#{name}: #{asset_file_path} \n")
+      Documents.concat_strings(acc, "#{name}: #{asset_file_path} \n")
     end
   end
 end

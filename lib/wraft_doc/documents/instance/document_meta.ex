@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Instance.DocumentMeta do
+defmodule WraftDoc.Documents.Instance.DocumentMeta do
   @moduledoc """
     The default document metadata
   """

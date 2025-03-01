@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Instance.History do
+defmodule WraftDoc.Documents.Instance.History do
   @moduledoc """
     The instance build history model.
   """
@@ -12,7 +12,7 @@ defmodule WraftDoc.Document.Instance.History do
     field(:start_time, :naive_datetime)
     field(:end_time, :naive_datetime)
     field(:delay, :integer)
-    belongs_to(:content, WraftDoc.Document.Instance)
+    belongs_to(:content, WraftDoc.Documents.Instance)
     belongs_to(:creator, WraftDoc.Account.User)
     timestamps()
   end

@@ -1,10 +1,10 @@
-defmodule WraftDoc.Document.Engine do
+defmodule WraftDoc.Documents.Engine do
   @moduledoc """
     The engine model.
   """
   use WraftDoc.Schema
 
-  alias WraftDoc.Document.Engine
+  alias WraftDoc.Documents.Engine
 
   schema "engine" do
     field(:name, :string)

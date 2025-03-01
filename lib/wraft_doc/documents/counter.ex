@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.Counter do
+defmodule WraftDoc.Documents.Counter do
   @moduledoc """
   The Counter model.
   """

@@ -9,7 +9,7 @@ defmodule WraftDoc.Layouts do
   alias WraftDoc.Account.User
   alias WraftDoc.Assets
   alias WraftDoc.Assets.Asset
-  alias WraftDoc.Document.Engine
+  alias WraftDoc.Documents.Engine
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Repo

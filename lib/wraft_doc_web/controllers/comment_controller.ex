@@ -16,7 +16,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
   alias WraftDoc.Comments
   alias WraftDoc.Comments.Comment
-  alias WraftDoc.Document
+  alias WraftDoc.Documents
   alias WraftDoc.Notifications
 
   def swagger_definitions do
@@ -140,7 +140,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def create(conn, %{"master_id" => document_id, "type" => "guest"} = params) do
     current_user = conn.assigns.current_user
 
-    with true <- Document.has_access?(current_user, document_id),
+    with true <- Documents.has_access?(current_user, document_id),
          %Comment{} = comment <- Comments.create_comment(current_user, params) do
       render(conn, "comment.json", comment: comment)
     end

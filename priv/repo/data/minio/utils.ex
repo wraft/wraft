@@ -7,7 +7,7 @@ defmodule WraftDoc.Minio.Utils do
   alias WraftDoc.Account.Profile
   alias WraftDoc.Assets.Asset
   alias WraftDoc.ContentTypes.ContentType
-  alias WraftDoc.Document.Instance
+  alias WraftDoc.Documents.Instance
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo

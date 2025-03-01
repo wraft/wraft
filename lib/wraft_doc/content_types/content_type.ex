@@ -27,7 +27,7 @@ defmodule WraftDoc.ContentTypes.ContentType do
     belongs_to(:flow, Flow)
     belongs_to(:theme, Theme)
 
-    has_many(:instances, WraftDoc.Document.Instance)
+    has_many(:instances, WraftDoc.Documents.Instance)
     has_many(:content_type_fields, WraftDoc.ContentTypes.ContentTypeField)
     has_many(:fields, through: [:content_type_fields, :field])
     has_many(:stages, WraftDoc.Pipelines.Stages.Stage)

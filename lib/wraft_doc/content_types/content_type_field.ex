@@ -9,7 +9,7 @@ defmodule WraftDoc.ContentTypes.ContentTypeField do
 
   schema "content_type_field" do
     belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
-    belongs_to(:field, WraftDoc.Document.Field)
+    belongs_to(:field, WraftDoc.Documents.Field)
 
     timestamps()
   end

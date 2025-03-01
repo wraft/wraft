@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.ESignature do
+defmodule WraftDoc.Documents.ESignature do
   @moduledoc false
 
   use WraftDoc.Schema
@@ -9,7 +9,7 @@ defmodule WraftDoc.Document.ESignature do
     field(:header, :string)
     field(:file, :string)
     field(:signed_file, :string)
-    belongs_to(:instance, WraftDoc.Document.Instance)
+    belongs_to(:instance, WraftDoc.Documents.Instance)
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     timestamps()

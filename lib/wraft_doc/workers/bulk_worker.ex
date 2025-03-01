@@ -11,7 +11,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   alias WraftDoc.Client.Minio.DownloadError
   alias WraftDoc.ContentTypes
   alias WraftDoc.DataTemplates
-  alias WraftDoc.Document
+  alias WraftDoc.Documents
   alias WraftDoc.Enterprise
   alias WraftDoc.Notifications
   alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
@@ -35,7 +35,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     c_type = ContentTypes.get_content_type(current_user, c_type_uuid)
     state = Enterprise.get_state(current_user, state_uuid)
     data_template = DataTemplates.get_data_template(current_user, d_temp_uuid)
-    Document.bulk_doc_build(current_user, c_type, state, data_template, mapping, path)
+    Documents.bulk_doc_build(current_user, c_type, state, data_template, mapping, path)
     Logger.info("Job end for bulk doc build.!")
     :ok
   end

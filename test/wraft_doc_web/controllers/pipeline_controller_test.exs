@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Api.V1.PipelineControllerTest do
   @moduletag :controller
 
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Pipeline, Repo}
+  alias WraftDoc.{Documents.Pipeline, Repo}
 
   @valid_attrs %{
     name: "Official Letter",

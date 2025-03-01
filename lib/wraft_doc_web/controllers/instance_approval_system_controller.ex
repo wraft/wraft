@@ -9,7 +9,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemController do
     index: "instance_approval_system:show",
     instances_to_approve: "instance_approval_system:show"
 
-  alias WraftDoc.Document
+  alias WraftDoc.Documents
 
   def swagger_definitions do
     %{
@@ -204,7 +204,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.instance_approval_system_index(user_id, params) do
+         } <- Documents.instance_approval_system_index(user_id, params) do
       render(conn, "index.json", %{
         instance_approval_systems: instance_approval_systems,
         page_number: page_number,
@@ -236,7 +236,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalSystemController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.instance_approval_system_index(current_user, params) do
+         } <- Documents.instance_approval_system_index(current_user, params) do
       render(conn, "index.json", %{
         instance_approval_systems: instance_approval_systems,
         page_number: page_number,

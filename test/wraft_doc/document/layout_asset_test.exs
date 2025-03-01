@@ -1,7 +1,7 @@
-defmodule WraftDoc.Document.LayoutAssetTest do
+defmodule WraftDoc.Documents.LayoutAssetTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.Document.LayoutAsset
+  alias WraftDoc.Documents.LayoutAsset
   alias WraftDoc.Repo
   @moduletag :document
   @invalid_attrs %{layout_id: nil, asset_id: nil}

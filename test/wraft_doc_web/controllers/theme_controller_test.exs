@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   import WraftDoc.Factory
   import Mox
-  alias WraftDoc.Document.Theme
+  alias WraftDoc.Documents.Theme
   alias WraftDoc.Repo
 
   @valid_attrs %{

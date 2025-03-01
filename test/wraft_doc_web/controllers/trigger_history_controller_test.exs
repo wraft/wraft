@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Pipeline.TriggerHistory, Repo}
+  alias WraftDoc.{Documents.Pipeline.TriggerHistory, Repo}
 
   @valid_attrs %{
     data: %{name: "John Doe"}

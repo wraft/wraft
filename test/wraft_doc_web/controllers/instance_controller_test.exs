@@ -9,8 +9,8 @@ defmodule WraftDocWeb.Api.V1.InstanceControllerTest do
   import ExUnit.CaptureLog
   import Mox
 
-  alias WraftDoc.Document.Instance
-  alias WraftDoc.Document.InstanceApprovalSystem
+  alias WraftDoc.Documents.Instance
+  alias WraftDoc.Documents.InstanceApprovalSystem
   alias WraftDoc.Repo
 
   @valid_attrs %{
