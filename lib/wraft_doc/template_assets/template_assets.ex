@@ -19,10 +19,10 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Documents
   alias WraftDoc.Documents.Engine
   alias WraftDoc.Documents.FieldType
-  alias WraftDoc.Documents.Frame
-  alias WraftDoc.Documents.Frames
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Frames
+  alias WraftDoc.Frames.Frame
   alias WraftDoc.Layouts
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.ProsemirrorToMarkdown

@@ -10,8 +10,8 @@ defmodule WraftDoc.Assets do
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
   alias WraftDoc.Documents
-  alias WraftDoc.Documents.Frame
   alias WraftDoc.Documents.Instance
+  alias WraftDoc.Frames.Frame
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
 

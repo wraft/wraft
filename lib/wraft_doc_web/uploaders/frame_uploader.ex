@@ -4,7 +4,7 @@ defmodule WraftDocWeb.FrameUploader do
   use Waffle.Definition
   use Waffle.Ecto.Definition
 
-  alias WraftDoc.Documents.Frame
+  alias WraftDoc.Frames.Frame
 
   @versions [:original]
   @extension_whitelist ~w(.tex)

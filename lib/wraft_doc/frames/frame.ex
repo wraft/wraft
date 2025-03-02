@@ -1,4 +1,4 @@
-defmodule WraftDoc.Documents.Frame do
+defmodule WraftDoc.Frames.Frame do
   @moduledoc false
   use Waffle.Ecto.Schema
   use WraftDoc.Schema

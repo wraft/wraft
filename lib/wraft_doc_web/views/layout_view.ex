@@ -66,7 +66,7 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
   end
 
   # HACK: Handle nil case of frame, frame is optional.
-  defp render_frame(%Layout{frame: %WraftDoc.Documents.Frame{} = frame}),
+  defp render_frame(%Layout{frame: %WraftDoc.Frames.Frame{} = frame}),
     do: render_one(frame, FrameView, "create.json", as: :frame)
 
   defp render_frame(_), do: nil
