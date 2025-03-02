@@ -20,13 +20,13 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.Documents.CollectionForm
   alias WraftDoc.Documents.CollectionFormField
   alias WraftDoc.Documents.Counter
-  alias WraftDoc.Documents.FieldType
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Instance.History
   alias WraftDoc.Documents.Instance.Version
   alias WraftDoc.Documents.InstanceApprovalSystem
   alias WraftDoc.Fields
   alias WraftDoc.Fields.Field
+  alias WraftDoc.Fields.FieldType
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Pipelines.Pipeline

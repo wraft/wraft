@@ -13,7 +13,7 @@ defmodule WraftDoc.Fields.Field do
     has_many(:forms, through: [:form_fields, :form])
     has_many(:content_type_fields, WraftDoc.ContentTypes.ContentTypeField)
     has_many(:content_types, through: [:content_type_fields, :content_type])
-    belongs_to(:field_type, WraftDoc.Documents.FieldType)
+    belongs_to(:field_type, WraftDoc.Fields.FieldType)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     timestamps()
   end

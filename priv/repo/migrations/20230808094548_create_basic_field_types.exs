@@ -1,6 +1,6 @@
 defmodule WraftDoc.Repo.Migrations.CreateBasicFieldTypes do
   use Ecto.Migration
-  alias WraftDoc.Documents.FieldType
+  alias WraftDoc.Fields.FieldType
   alias WraftDoc.Repo
   alias WraftDoc.Validations.Validation
 

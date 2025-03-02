@@ -17,7 +17,6 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.ContentTypes.ContentTypeRole
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Documents.Engine
-  alias WraftDoc.Documents.FieldType
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Instance.History
   alias WraftDoc.Documents.Instance.Version
@@ -29,6 +28,7 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Fields.Field
+  alias WraftDoc.Fields.FieldType
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Repo

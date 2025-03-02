@@ -18,7 +18,6 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Documents
   alias WraftDoc.Documents.Engine
-  alias WraftDoc.Documents.FieldType
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Fields.FieldType

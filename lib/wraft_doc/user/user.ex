@@ -44,7 +44,7 @@ defmodule WraftDoc.Account.User do
 
     has_many(:blocks, WraftDoc.Blocks.Block, foreign_key: :creator_id)
 
-    has_many(:field_types, WraftDoc.Documents.FieldType, foreign_key: :creator_id)
+    has_many(:field_types, WraftDoc.Fields.FieldType, foreign_key: :creator_id)
 
     has_many(:auth_tokens, WraftDoc.AuthTokens.AuthToken, foreign_key: :user_id)
 
