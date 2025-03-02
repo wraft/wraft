@@ -42,7 +42,7 @@ defmodule WraftDoc.Account.User do
     has_many(:build_histories, WraftDoc.Documents.Instance.History, foreign_key: :creator_id)
     has_many(:content_collaboration, WraftDoc.Documents.ContentCollaboration)
 
-    has_many(:blocks, WraftDoc.Documents.Block, foreign_key: :creator_id)
+    has_many(:blocks, WraftDoc.Blocks.Block, foreign_key: :creator_id)
 
     has_many(:field_types, WraftDoc.Documents.FieldType, foreign_key: :creator_id)
 

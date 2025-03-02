@@ -12,8 +12,9 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  alias WraftDoc.Blocks
+  alias WraftDoc.Blocks.Block
   alias WraftDoc.Documents
-  alias WraftDoc.Documents.Block
 
   def swagger_definitions do
     %{
@@ -181,7 +182,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
             "tex_chart" => Documents.generate_tex_chart(params)
           })
 
-        with %Block{} = block <- Documents.create_block(current_user, params) do
+        with %Block{} = block <- Blocks.create_block(current_user, params) do
           conn
           |> put_status(:created)
           |> render("create.json", block: block)
@@ -222,8 +223,8 @@ defmodule WraftDocWeb.Api.V1.BlockController do
           "tex_chart" => Documents.generate_tex_chart(params)
         })
 
-        with %Block{} = block <- Documents.get_block(id, current_user),
-             %Block{} = block <- Documents.update_block(block, params) do
+        with %Block{} = block <- Blocks.get_block(id, current_user),
+             %Block{} = block <- Blocks.update_block(block, params) do
           render(conn, "update.json", block: block)
         end
 
@@ -252,7 +253,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Block{} = block <- Documents.get_block(id, current_user) do
+    with %Block{} = block <- Blocks.get_block(id, current_user) do
       render(conn, "show.json", block: block)
     end
   end
@@ -275,8 +276,8 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Block{} = block <- Documents.get_block(id, current_user),
-         {:ok, %Block{}} <- Documents.delete_block(block) do
+    with %Block{} = block <- Blocks.get_block(id, current_user),
+         {:ok, %Block{}} <- Blocks.delete_block(block) do
       render(conn, "block.json", block: block)
     end
   end

@@ -1,4 +1,4 @@
-defmodule WraftDoc.Documents.BlockTest do
+defmodule WraftDoc.Blocks.BlockTest do
   use WraftDoc.ModelCase
   @moduletag :document
   import WraftDoc.Factory

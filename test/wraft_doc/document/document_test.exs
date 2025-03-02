@@ -8,6 +8,7 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.Account.Role
   alias WraftDoc.Assets
   alias WraftDoc.Assets.Asset
+  alias WraftDoc.Blocks.Block
   alias WraftDoc.BlockTemplates
   alias WraftDoc.BlockTemplates.BlockTemplate
   alias WraftDoc.Comments
@@ -16,7 +17,6 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Documents
-  alias WraftDoc.Documents.Block
   alias WraftDoc.Documents.CollectionForm
   alias WraftDoc.Documents.CollectionFormField
   alias WraftDoc.Documents.Counter

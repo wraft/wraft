@@ -1,4 +1,4 @@
-defmodule WraftDoc.Documents.Block do
+defmodule WraftDoc.Blocks.Block do
   @moduledoc """
     The block model.
   """

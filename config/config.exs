@@ -92,7 +92,7 @@ config :ex_audit,
   tracked_schemas: [
     WraftDoc.Assets.Asset,
     WraftDoc.BlockTemplates.BlockTemplate,
-    WraftDoc.Documents.Block,
+    WraftDoc.Documents.Blocks.Block,
     WraftDoc.ContentTypes.ContentType,
     WraftDoc.DataTemplates.DataTemplate,
     WraftDoc.Fields.Field,
