@@ -13,6 +13,7 @@ defmodule WraftDoc.Documents.Instance do
   use WraftDoc.Schema
 
   alias __MODULE__
+  alias WraftDoc.Document.DocumentSettings
   alias WraftDoc.EctoType.DocumentMetaType
 
   def types, do: [normal: 1, bulk_build: 2, pipeline_api: 3, pipeline_hook: 4]
@@ -43,6 +44,8 @@ defmodule WraftDoc.Documents.Instance do
     has_many(:build_histories, WraftDoc.Documents.Instance.History, foreign_key: :content_id)
     has_many(:versions, WraftDoc.Documents.Instance.Version, foreign_key: :content_id)
 
+    embeds_one(:doc_settings, DocumentSettings)
+
     timestamps()
   end
 
@@ -59,6 +62,7 @@ defmodule WraftDoc.Documents.Instance do
       :vendor_id,
       :allowed_users
     ])
+    |> cast_embed(:doc_settings, with: &DocumentSettings.changeset/2)
     |> validate_required([
       :instance_id,
       :raw,
@@ -83,6 +87,7 @@ defmodule WraftDoc.Documents.Instance do
   def update_changeset(%Instance{} = instance, attrs \\ %{}) do
     instance
     |> cast(attrs, [:instance_id, :raw, :serialized])
+    |> cast_embed(:doc_settings, with: &DocumentSettings.changeset/2)
     |> validate_required([:instance_id, :raw, :serialized])
     |> unique_constraint(:instance_id,
       message: "Instance with the ID exists.!",
