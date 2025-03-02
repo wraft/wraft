@@ -21,6 +21,7 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Documents.FieldType
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Fields.FieldType
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Layouts

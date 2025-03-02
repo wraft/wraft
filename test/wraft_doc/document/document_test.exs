@@ -4070,14 +4070,14 @@ defmodule WraftDoc.DocumentTest do
       user = insert(:user)
       params = string_params_with_assocs(:field_type)
 
-      assert {:ok, _field_type} = Documents.create_field_type(user, params)
-      assert {:error, _error_msg} = Documents.create_field_type(user, params)
+      assert {:ok, _field_type} = Fields.create_field_type(user, params)
+      assert {:error, _error_msg} = Fields.create_field_type(user, params)
     end
   end
 
   describe "field_type_index/1" do
     test "Index of all field types." do
-      type_index = Repo.paginate(Documents.field_type_index())
+      type_index = Repo.paginate(Fields.field_type_index())
 
       refute is_nil(type_index)
       assert Map.has_key?(type_index, :entries)

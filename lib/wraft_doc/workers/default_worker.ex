@@ -14,8 +14,8 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias WraftDoc.Assets.Asset
   alias WraftDoc.ContentTypes
   alias WraftDoc.DataTemplates.DataTemplate
-  alias WraftDoc.Documents
   alias WraftDoc.Documents.Engine
+  alias WraftDoc.Fields
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Repo
@@ -230,7 +230,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
         field_type = String.capitalize(field["type"])
 
         %{
-          "field_type_id" => Documents.get_field_type_by_name(field_type).id,
+          "field_type_id" => Fields.get_field_type_by_name(field_type).id,
           "key" => field["name"],
           "name" => field["name"]
         }

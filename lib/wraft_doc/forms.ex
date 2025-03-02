@@ -6,10 +6,9 @@ defmodule WraftDoc.Forms do
 
   alias Ecto.Multi
   alias WraftDoc.Account.User
-  alias WraftDoc.Documents
-  alias WraftDoc.Documents.FieldType
   alias WraftDoc.Fields
   alias WraftDoc.Fields.Field
+  alias WraftDoc.Fields.FieldType
   alias WraftDoc.Forms.Form
   alias WraftDoc.Forms.FormEntry
   alias WraftDoc.Forms.FormField
@@ -179,7 +178,7 @@ defmodule WraftDoc.Forms do
 
   defp create_form_field(form, %{"field_type_id" => field_type_id} = params) do
     field_type_id
-    |> Documents.get_field_type()
+    |> Fields.get_field_type()
     |> case do
       %FieldType{meta: %{"allowed validations" => allowed_validations}} = field_type ->
         params =

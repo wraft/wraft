@@ -18,7 +18,6 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Documents.ContentCollaboration
   alias WraftDoc.Documents.Counter
   alias WraftDoc.Documents.Engine
-  alias WraftDoc.Documents.FieldType
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Instance.History
   alias WraftDoc.Documents.Instance.Version
@@ -1351,71 +1350,6 @@ defmodule WraftDoc.Documents do
   # defp tex_chart([], tex_chart) do
   #   tex_chart
   # end
-
-  @doc """
-  Create a field type
-  """
-  @spec create_field_type(User.t(), map) :: {:ok, FieldType.t()}
-  def create_field_type(%User{} = current_user, params) do
-    current_user
-    |> build_assoc(:field_types)
-    |> FieldType.changeset(params)
-    |> Repo.insert()
-  end
-
-  def create_field_type(_, _), do: {:error, :fake}
-
-  @doc """
-  Index of all field types.
-  """
-  @spec field_type_index() :: [FieldType.t()]
-  def field_type_index, do: Repo.all(FieldType, order_by: [desc: :id])
-
-  @doc """
-  Get a field type.
-  """
-  @spec get_field_type(binary) :: FieldType.t()
-  def get_field_type(<<_::288>> = field_type_id) do
-    case Repo.get(FieldType, field_type_id) do
-      %FieldType{} = field_type -> field_type
-      _ -> {:error, :invalid_id, "FieldType"}
-    end
-  end
-
-  def get_field_type(_), do: {:error, :fake}
-
-  @spec get_field_type_by_name(String.t()) :: FieldType.t() | nil
-  def get_field_type_by_name(field_type_name) do
-    case Repo.get_by(FieldType, name: field_type_name) do
-      %FieldType{} = field_type -> field_type
-      _ -> nil
-    end
-  end
-
-  @doc """
-  Update a field type
-  """
-  @spec update_field_type(FieldType.t(), map) :: FieldType.t() | {:error, Ecto.Changeset.t()}
-  def update_field_type(field_type, params) do
-    field_type
-    |> FieldType.changeset(params)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deleta a field type
-  """
-  @spec delete_field_type(FieldType.t()) :: {:ok, FieldType.t()} | {:error, Ecto.Changeset.t()}
-  def delete_field_type(field_type) do
-    field_type
-    |> Ecto.Changeset.change()
-    |> Ecto.Changeset.no_assoc_constraint(
-      :fields,
-      message:
-        "Cannot delete the field type. Some Content types depend on this field type. Update those content types and then try again.!"
-    )
-    |> Repo.delete()
-  end
 
   @doc """
   Create a background job for Bulk build.

@@ -12,11 +12,10 @@ defmodule WraftDoc.ContentTypes do
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.ContentTypes.ContentTypeRole
-  alias WraftDoc.Documents
-  alias WraftDoc.Documents.FieldType
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Fields
+  alias WraftDoc.Fields.FieldType
   alias WraftDoc.Layouts
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
@@ -68,7 +67,7 @@ defmodule WraftDoc.ContentTypes do
          %{"field_type_id" => field_type_id} = params
        ) do
     field_type_id
-    |> Documents.get_field_type()
+    |> Fields.get_field_type()
     |> case do
       %FieldType{} = field_type ->
         create_content_type_field(field_type, content_type, params)

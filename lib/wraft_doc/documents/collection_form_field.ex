@@ -11,7 +11,7 @@ defmodule WraftDoc.Documents.CollectionFormField do
     field(:name, :string)
     field(:description, :string)
     field(:meta, :map)
-    field(:field_type, WraftDoc.Documents.FieldTypeEnum)
+    field(:field_type, WraftDoc.Fields.FieldTypeEnum)
     belongs_to(:collection_form, CollectionForm)
 
     timestamps()
