@@ -8,7 +8,7 @@ defmodule WraftDoc.Repo.Migrations.MigrateContentTypeFields do
   """
   require Logger
   alias WraftDoc.ContentTypes.ContentTypeField
-  alias WraftDoc.Documents.Field
+  alias WraftDoc.Fields.Field
   alias WraftDoc.Repo
 
   fields = Repo.all(Field)

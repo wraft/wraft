@@ -29,7 +29,6 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Documents.ContentCollaboration
   alias WraftDoc.Documents.Counter
   alias WraftDoc.Documents.Engine
-  alias WraftDoc.Documents.Field
   alias WraftDoc.Documents.FieldType
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Instance.History
@@ -45,6 +44,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Fields.Field
   alias WraftDoc.Forms.Form
   alias WraftDoc.Forms.FormEntry
   alias WraftDoc.Forms.FormField

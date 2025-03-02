@@ -1,8 +1,8 @@
-defmodule WraftDoc.Documents.FieldTest do
+defmodule WraftDoc.Fields.FieldTest do
   @moduledoc false
   use WraftDoc.ModelCase
 
-  alias WraftDoc.Documents.Field
+  alias WraftDoc.Fields.Field
 
   @valid_attrs %{name: "employee", organisation_id: Faker.UUID.v4()}
   @invalid_attrs %{name: ""}

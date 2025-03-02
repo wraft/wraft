@@ -1,4 +1,4 @@
-defmodule WraftDoc.Documents.Field do
+defmodule WraftDoc.Fields.Field do
   @moduledoc """
   The field schema.
   """

@@ -20,12 +20,13 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.Documents.CollectionForm
   alias WraftDoc.Documents.CollectionFormField
   alias WraftDoc.Documents.Counter
-  alias WraftDoc.Documents.Field
   alias WraftDoc.Documents.FieldType
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Instance.History
   alias WraftDoc.Documents.Instance.Version
   alias WraftDoc.Documents.InstanceApprovalSystem
+  alias WraftDoc.Fields
+  alias WraftDoc.Fields.Field
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Pipelines.Pipeline
@@ -4051,7 +4052,7 @@ defmodule WraftDoc.DocumentTest do
 
       user = insert(:user)
 
-      assert {:ok, field_type} = Documents.create_field_type(user, params)
+      assert {:ok, field_type} = Fields.create_field_type(user, params)
       assert field_type.id
       assert field_type.name == params["name"]
       assert field_type.description == params["description"]
@@ -5798,7 +5799,7 @@ defmodule WraftDoc.DocumentTest do
       }
 
       assert {:ok, %Field{id: _, name: "employee_name"} = field} =
-               Documents.create_field(field_type, params)
+               Fields.create_field(field_type, params)
 
       assert field.description == params.description
       assert field.meta == params.meta
@@ -5806,7 +5807,7 @@ defmodule WraftDoc.DocumentTest do
 
     test "returns error changeset with invalid attrs" do
       field_type = insert(:field_type)
-      assert {:error, %Ecto.Changeset{}} = Documents.create_field(field_type, %{})
+      assert {:error, %Ecto.Changeset{}} = Fields.create_field(field_type, %{})
     end
   end
 end

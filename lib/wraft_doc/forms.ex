@@ -7,8 +7,9 @@ defmodule WraftDoc.Forms do
   alias Ecto.Multi
   alias WraftDoc.Account.User
   alias WraftDoc.Documents
-  alias WraftDoc.Documents.Field
   alias WraftDoc.Documents.FieldType
+  alias WraftDoc.Fields
+  alias WraftDoc.Fields.Field
   alias WraftDoc.Forms.Form
   alias WraftDoc.Forms.FormEntry
   alias WraftDoc.Forms.FormField
@@ -186,7 +187,7 @@ defmodule WraftDoc.Forms do
           |> Map.put("organisation_id", form.organisation_id)
           |> Map.put("validations", reject_unallowed_validations(params, allowed_validations))
 
-        case Map.has_key?(params, "field_id") && Documents.get_field(params["field_id"]) do
+        case Map.has_key?(params, "field_id") && Fields.get_field(params["field_id"]) do
           %Field{} = field -> update_form_field(form, field, params)
           false -> create_form_field(form, field_type, params)
           _ -> nil
@@ -199,7 +200,7 @@ defmodule WraftDoc.Forms do
 
   defp create_form_field(form, field_type, params) do
     Multi.new()
-    |> Multi.run(:field, fn _, _ -> Documents.create_field(field_type, params) end)
+    |> Multi.run(:field, fn _, _ -> Fields.create_field(field_type, params) end)
     |> Multi.insert(:form_field, fn %{field: field} ->
       FormField.changeset(%FormField{}, %{
         order: params["order"],
@@ -223,7 +224,7 @@ defmodule WraftDoc.Forms do
     case get_form_field(form, field) do
       %FormField{} = form_field ->
         Multi.new()
-        |> Multi.run(:field, fn _, _ -> Documents.update_field(field, params) end)
+        |> Multi.run(:field, fn _, _ -> Fields.update_field(field, params) end)
         |> Multi.update(:form_field, fn _ ->
           FormField.update_changeset(form_field, %{
             validations: params["validations"],

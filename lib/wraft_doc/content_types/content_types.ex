@@ -16,6 +16,7 @@ defmodule WraftDoc.ContentTypes do
   alias WraftDoc.Documents.FieldType
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Fields
   alias WraftDoc.Layouts
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
@@ -83,7 +84,7 @@ defmodule WraftDoc.ContentTypes do
     params = Map.merge(params, %{"organisation_id" => content_type.organisation_id})
 
     Multi.new()
-    |> Multi.run(:field, fn _, _ -> Documents.create_field(field_type, params) end)
+    |> Multi.run(:field, fn _, _ -> Fields.create_field(field_type, params) end)
     |> Multi.insert(:content_type_field, fn %{field: field} ->
       ContentTypeField.changeset(%ContentTypeField{}, %{
         content_type_id: content_type.id,
