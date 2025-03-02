@@ -959,7 +959,7 @@ defmodule WraftDoc.Documents do
       Enum.reduce(content_type.fields, "--- \n", fn x, acc ->
         find_header_values(x, instance.serialized, acc)
       end)
-
+IO.inspect("before markdown")
     content =
       prepare_markdown(
         instance,
@@ -1037,21 +1037,25 @@ defmodule WraftDoc.Documents do
          %{
            table_of_content?: is_toc?,
            table_of_content_depth: toc_depth,
-           qr: qr,
-           default_cover: default_cover
+           qr?: is_qr?,
+           default_cover?: is_default_cover?
          },
          slug
        ) do
+        IO.inspect("document settings")
     is_toc? = if "pletter" == slug, do: false, else: is_toc?
 
     header
     |> concat_strings("toc: #{is_toc?}\n")
     |> concat_strings("toc_depth: #{toc_depth}\n")
-    |> concat_strings("qr: #{qr}\n")
-    |> concat_strings("default_cover: #{default_cover}\n")
+    |> concat_strings("qr: #{is_qr?}\n")
+    |> concat_strings("default_cover: #{is_default_cover?}\n")
   end
 
-  defp document_option_header(header, _, _), do: header
+  defp document_option_header(header, _, _) do
+    IO.puts("No document settings found")
+    header
+  end
 
   defp prepare_pandoc_cmds(pdf_file, base_content_dir, %Layout{
          engine: %Engine{name: "Pandoc + Typst"}

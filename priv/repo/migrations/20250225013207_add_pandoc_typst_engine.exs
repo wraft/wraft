@@ -14,7 +14,7 @@ defmodule WraftDoc.Repo.Migrations.AddPandocTypstEngine do
 
     execute("""
       UPDATE content
-      SET doc_settings = '{"qr":true,"toc":true,"toc_depth":3,"background":false}'::jsonb
+      SET doc_settings = '{"qr?":true,"table_of_content?":true,"table_of_content_depth":3,"default_cover?":true}'::jsonb
       WHERE doc_settings IS NULL
     """)
   end
