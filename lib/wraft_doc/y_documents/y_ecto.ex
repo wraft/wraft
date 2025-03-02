@@ -1,4 +1,4 @@
-defmodule WraftDoc.YEcto do
+defmodule WraftDoc.YDocuments.YEcto do
   @moduledoc """
   Yex Ecto
   """
