@@ -1,11 +1,11 @@
-defmodule WraftDoc.Documents.CollectionForm do
+defmodule WraftDoc.CollectionForms.CollectionForm do
   @moduledoc """
   Generic collection form
   Example :-  Google form
   """
 
   use WraftDoc.Schema
-  alias WraftDoc.Documents.CollectionFormField
+  alias WraftDoc.CollectionForms.CollectionFormField
 
   schema "collection_form" do
     field(:title, :string)

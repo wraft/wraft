@@ -4,7 +4,7 @@ defmodule WraftDoc.Documents.CollectionFormFieldTest do
   @moduledoc """
   Test module
   """
-  alias WraftDoc.Documents.CollectionFormField
+  alias WraftDoc.CollectionForms.CollectionFormField
 
   @create_attrs %{name: "asset one", field_type: "string"}
   @invalid_attrs %{name: 23}

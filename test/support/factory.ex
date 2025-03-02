@@ -18,14 +18,14 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Blocks.Block
   alias WraftDoc.BlockTemplates.BlockTemplate
+  alias WraftDoc.CollectionForms.CollectionForm
+  alias WraftDoc.CollectionForms.CollectionFormField
   alias WraftDoc.Comments.Comment
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.ContentTypes.ContentTypeRole
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Documents.Asset
-  alias WraftDoc.Documents.CollectionForm
-  alias WraftDoc.Documents.CollectionFormField
   alias WraftDoc.Documents.ContentCollaboration
   alias WraftDoc.Documents.Counter
   alias WraftDoc.Documents.Engine

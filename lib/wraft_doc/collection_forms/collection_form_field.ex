@@ -1,9 +1,9 @@
-defmodule WraftDoc.Documents.CollectionFormField do
+defmodule WraftDoc.CollectionForms.CollectionFormField do
   @moduledoc """
   Generic collection form
   Example :-  Google form
   """
-  alias WraftDoc.Documents.CollectionForm
+  alias WraftDoc.CollectionForms.CollectionForm
 
   use WraftDoc.Schema
 

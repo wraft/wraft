@@ -11,14 +11,14 @@ defmodule WraftDoc.DocumentTest do
   alias WraftDoc.Blocks.Block
   alias WraftDoc.BlockTemplates
   alias WraftDoc.BlockTemplates.BlockTemplate
+  alias WraftDoc.CollectionForms.CollectionForm
+  alias WraftDoc.CollectionForms.CollectionFormField
   alias WraftDoc.Comments
   alias WraftDoc.Comments.Comment
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Documents
-  alias WraftDoc.Documents.CollectionForm
-  alias WraftDoc.Documents.CollectionFormField
   alias WraftDoc.Documents.Counter
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Instance.History
