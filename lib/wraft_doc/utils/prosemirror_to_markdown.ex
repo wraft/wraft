@@ -1,4 +1,4 @@
-defmodule WraftDoc.ProsemirrorToMarkdown do
+defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   @moduledoc """
   Prosemirror2Md is a library that converts ProseMirror Node JSON to Markdown.
   """

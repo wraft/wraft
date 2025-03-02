@@ -26,12 +26,12 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Layouts
   alias WraftDoc.Layouts.Layout
-  alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
   alias WraftDoc.TemplateAssets.WraftJson
   alias WraftDoc.Themes
   alias WraftDoc.Themes.Theme
+  alias WraftDoc.Utils.ProsemirrorToMarkdown
 
   @required_items ["layout", "theme", "flow", "variant", "frame"]
   @allowed_folders ["theme", "layout", "frame"]

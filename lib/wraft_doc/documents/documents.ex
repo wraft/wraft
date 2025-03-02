@@ -31,10 +31,10 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Fields.Field
   alias WraftDoc.Layouts.Layout
-  alias WraftDoc.ProsemirrorToMarkdown
   alias WraftDoc.Repo
   alias WraftDoc.Themes
   alias WraftDoc.Utils.CSVHelper
+  alias WraftDoc.Utils.ProsemirrorToMarkdown
   alias WraftDoc.Workers.BulkWorker
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Mailer
