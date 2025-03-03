@@ -69,6 +69,7 @@ defmodule WraftDoc.Search.Typesense do
   end
 
   defp collection(schema, collection_name) do
+    ExTypesense.Collection.drop_collection(collection_name)
     create_collection(schema)
     reindex_data(schema, collection_name)
   end
