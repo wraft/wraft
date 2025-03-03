@@ -1785,12 +1785,39 @@ defmodule WraftDoc.Enterprise do
   @doc """
     Removes the given user from the organisation
   """
-  @spec remove_user(UserOrganisation.t()) ::
-          {:ok, UserOrganisation.t()} | {:error, Ecto.Changeset.t()}
-  def remove_user(%UserOrganisation{} = user_organisation) do
-    user_organisation
-    |> UserOrganisation.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
-    |> Repo.update()
+  def remove_user(%UserOrganisation{user: user} = user_organisation, org_id) do
+    with :ok <- handle_last_signed_in_org(user, org_id) do
+      user_organisation
+      |> UserOrganisation.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
+      |> Repo.update()
+    end
+  end
+
+  def validate_owner_removal(user_id, owner_id) do
+    case user_id == owner_id do
+      true -> {:error, :cannot_remove_owner}
+      false -> :ok
+    end
+  end
+
+  def handle_last_signed_in_org(user, org_id) do
+    case user.last_signed_in_org == org_id do
+      true ->
+        personal_org = get_personal_organisation_and_role(user)
+
+        user
+        |> User.update_last_signed_in_org_changeset(%{
+          last_signed_in_org: personal_org.organisation.id
+        })
+        |> Repo.update()
+        |> case do
+          {:ok, _updated_user} -> :ok
+          error -> error
+        end
+
+      false ->
+        :ok
+    end
   end
 
   @doc """
@@ -1800,7 +1827,7 @@ defmodule WraftDoc.Enterprise do
   def get_user_organisation(%User{current_org_id: org_id}, user_id) do
     UserOrganisation
     |> Repo.get_by(organisation_id: org_id, user_id: user_id)
-    |> Repo.preload(:organisation)
+    |> Repo.preload([:organisation, :user])
   end
 
   @doc """

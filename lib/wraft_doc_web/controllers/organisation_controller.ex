@@ -643,11 +643,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   def remove_user(conn, %{"id" => user_id}) do
     current_user = conn.assigns[:current_user]
 
-    with %UserOrganisation{organisation: %Organisation{owner_id: ^user_id} = organisation} =
-           user_organisation <-
+    with %UserOrganisation{organisation: %Organisation{} = organisation} = user_organisation <-
            Enterprise.get_user_organisation(current_user, user_id),
-         true <- user_id != organisation.owner_id,
-         {:ok, %UserOrganisation{}} <- Enterprise.remove_user(user_organisation) do
+         :ok <- Enterprise.validate_owner_removal(user_id, organisation.owner_id),
+         {:ok, %UserOrganisation{}} <- Enterprise.remove_user(user_organisation, organisation.id) do
       render(conn, "remove_user.json")
     end
   end
