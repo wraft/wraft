@@ -62,8 +62,7 @@ npm-debug.log
 /lib/slugs/**/template.fdb_latexmk
 /lib/slugs/**/template.fls
 /lib/slugs/**/template.log
-# Ignore the slug files except few slugs.
-priv/slugs/*
+priv/slugs/organisation
 !priv/slugs/contract/**
 !priv/slugs/gantt_chart/**
 !priv/slugs/pletter/**
