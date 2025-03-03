@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.15.8-erlang-25.2.3-debian-bookworm-20240722
+FROM hexpm/elixir:1.15.8-erlang-25.2.3-debian-bookworm-20250224
 
 RUN apt-get update && \
     apt-get install -y \
@@ -13,9 +13,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     texlive-xetex \
     imagemagick
 
-RUN wget https://github.com/jgm/pandoc/releases/download/3.6.3/pandoc-3.6.3-1-arm64.deb \
-    && dpkg -i pandoc-3.6.3-1-arm64.deb \
-    && rm pandoc-3.6.3-1-arm64.deb
+RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates && \
+    wget https://github.com/jgm/pandoc/releases/download/3.6.3/pandoc-3.6.3-1-arm64.deb && \
+    dpkg -i pandoc-3.6.3-1-arm64.deb && \
+    rm pandoc-3.6.3-1-arm64.deb
 
 # Install Typst
 RUN wget -q https://github.com/typst/typst/releases/download/v0.13.0/typst-x86_64-unknown-linux-musl.tar.xz && \
