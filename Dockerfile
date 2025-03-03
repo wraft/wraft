@@ -6,14 +6,13 @@ ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-$
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 
-FROM ${BUILDER_IMAGE} as builder
+FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
 RUN apt-get update -y \
-  && apt-get install curl -y \
-  && apt-get install -y build-essential git \
+  && apt-get install -y curl build-essential git \
   && apt-get clean \
-  && rm -f /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/*
 
 # prepare build dir
 WORKDIR /app
@@ -69,8 +68,18 @@ RUN apt-get update && \
     apt-get install -y \
     postgresql-client inotify-tools
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    build-essential xorg libssl-dev libxrender-dev git wget vim gdebi xvfb gcc libstdc++6 \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    build-essential \
+    xorg \
+    libssl-dev \
+    libxrender-dev \
+    git \
+    wget \
+    vim \
+    gdebi \
+    xvfb \
+    gcc \
+    libstdc++6 \
     locales \
     wkhtmltopdf \
     texlive-fonts-recommended \
@@ -80,9 +89,11 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     imagemagick && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN wget https://github.com/jgm/pandoc/releases/download/3.6.3/pandoc-3.6.3-1-arm64.deb \
-    && dpkg -i pandoc-3.6.3-1-arm64.deb \
-    && rm pandoc-3.6.3-1-arm64.deb
+RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates && \
+    wget https://github.com/jgm/pandoc/releases/download/3.6.3/pandoc-3.6.3-1-arm64.deb && \
+    dpkg -i pandoc-3.6.3-1-arm64.deb && \
+    rm pandoc-3.6.3-1-arm64.deb
+
 
 # Install Typst
 RUN wget -q https://github.com/typst/typst/releases/download/v0.13.0/typst-x86_64-unknown-linux-musl.tar.xz && \
