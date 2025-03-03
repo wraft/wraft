@@ -25,7 +25,6 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.ContentTypes.ContentTypeRole
   alias WraftDoc.DataTemplates.DataTemplate
-  alias WraftDoc.Documents.Asset
   alias WraftDoc.Documents.ContentCollaboration
   alias WraftDoc.Documents.Counter
   alias WraftDoc.Documents.Engine
