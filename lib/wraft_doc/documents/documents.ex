@@ -976,7 +976,7 @@ IO.inspect("before markdown")
     pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir, layout)
 
     "pandoc"
-    |> System.cmd(pandoc_commands, stderr_to_stdout: true)
+    |> System.cmd(pandoc_commands, env: env, stderr_to_stdout: true)
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
   end
 
@@ -1042,7 +1042,6 @@ IO.inspect("before markdown")
          },
          slug
        ) do
-        IO.inspect("document settings")
     is_toc? = if "pletter" == slug, do: false, else: is_toc?
 
     header
@@ -1053,7 +1052,6 @@ IO.inspect("before markdown")
   end
 
   defp document_option_header(header, _, _) do
-    IO.puts("No document settings found")
     header
   end
 
