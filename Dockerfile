@@ -56,9 +56,6 @@ COPY config/runtime.exs config/
 COPY rel rel
 RUN mix release
 
-COPY priv ./priv
-COPY lib ./lib
-
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
@@ -83,7 +80,6 @@ RUN apt-get update && \
     libstdc++6 \
     locales \
     wkhtmltopdf \
-    pandoc \
     texlive-fonts-recommended \
     texlive-plain-generic \
     texlive-latex-extra \
@@ -94,7 +90,15 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN wget https://github.com/jgm/pandoc/releases/download/3.6.3/pandoc-3.6.3-1-arm64.deb \
+    && dpkg -i pandoc-3.6.3-1-arm64.deb \
+    && rm pandoc-3.6.3-1-arm64.deb
 
+# Install Typst
+RUN wget -q https://github.com/typst/typst/releases/download/v0.13.0/typst-x86_64-unknown-linux-musl.tar.xz && \
+    tar -xf typst-x86_64-unknown-linux-musl.tar.xz && \
+    mv typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst && \
+    rm -rf typst-x86_64-unknown-linux-musl typst-x86_64-unknown-linux-musl.tar.xz
 
 # Set the locale
 # RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
@@ -103,11 +107,9 @@ RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
+ENV MIX_ENV="prod"
 
 WORKDIR "/app"
-
-# set runner ENV
-ENV MIX_ENV="prod"
 
 RUN useradd -u 1000 -M -s /bin/sh -d /app wraftuser
 # Only copy the final release from the build stage
@@ -134,5 +136,6 @@ USER wraftuser
 WORKDIR /app
 ENV LISTEN_IP=0.0.0.0
 EXPOSE ${PORT}
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["run"]
