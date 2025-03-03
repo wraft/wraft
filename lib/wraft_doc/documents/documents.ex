@@ -938,10 +938,7 @@ defmodule WraftDoc.Documents do
     # Load all the assets corresponding with the given theme
     theme = Repo.preload(content_type.theme, [:assets])
 
-    file_path =
-      layout
-      |> Repo.preload([:frame])
-      |> Assets.download_slug_file()
+    file_path = Assets.download_slug_file(layout)
 
     System.cmd("cp", ["-a", file_path, base_content_dir])
 
@@ -976,10 +973,10 @@ defmodule WraftDoc.Documents do
     File.write("#{base_content_dir}/content.md", content)
     pdf_file = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
 
-    pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir)
+    {env, pandoc_commands} = prepare_pandoc_cmds(pdf_file, base_content_dir, layout)
 
     "pandoc"
-    |> System.cmd(pandoc_commands, stderr_to_stdout: true)
+    |> System.cmd(pandoc_commands, env: env, stderr_to_stdout: true)
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
   end
 
@@ -990,7 +987,11 @@ defmodule WraftDoc.Documents do
     do: instance_id <> "-v" <> to_string(length(build_versions) + 1) <> ".pdf"
 
   defp prepare_markdown(
-         %{id: instance_id, creator: %User{name: name, email: email}} = instance,
+         %{
+           id: instance_id,
+           doc_settings: document_settings,
+           creator: %User{name: name, email: email}
+         } = instance,
          %Layout{organisation: %Organisation{name: organisation_name}} = layout,
          header,
          mkdir,
@@ -1017,16 +1018,44 @@ defmodule WraftDoc.Documents do
       |> concat_strings("mainfont: #{theme.font_name}\n")
       |> concat_strings("mainfontoptions:\n")
       |> Themes.font_option_header(theme.font_options)
-      |> concat_strings("body_color: #{theme.body_color}\n")
-      |> concat_strings("primary_color: #{theme.primary_color}\n")
-      |> concat_strings("secondary_color: #{theme.secondary_color}\n")
+      |> concat_strings("body_color: \"#{theme.body_color}\"\n")
+      |> concat_strings("primary_color: \"#{theme.primary_color}\"\n")
+      |> concat_strings("secondary_color: \"#{theme.secondary_color}\"\n")
       |> concat_strings("typescale: #{theme.typescale}\n")
+      |> document_option_header(document_settings)
       |> concat_strings("--- \n")
 
     """
     #{header}
     #{instance.raw}
     """
+  end
+
+  defp document_option_header(header, %{
+         table_of_content: toc,
+         table_of_content_depth: toc_depth,
+         qr: qr,
+         default_cover: default_cover
+       }) do
+    header
+    |> concat_strings("toc: #{toc}\n")
+    |> concat_strings("toc_depth: #{toc_depth}\n")
+    |> concat_strings("qr: #{qr}\n")
+    |> concat_strings("default_cover: #{default_cover}\n")
+  end
+
+  defp prepare_pandoc_cmds(pdf_file, base_content_dir, %Layout{
+         engine: %Engine{name: "Pandoc + Typst"}
+       }) do
+    {%{"TYPST_FONT_PATHS" => "#{base_content_dir}/fonts"},
+     [
+       "-s",
+       "#{base_content_dir}/content.md",
+       "--template=#{base_content_dir}/default.typst",
+       "--pdf-engine=typst",
+       "-o",
+       pdf_file
+     ]}
   end
 
   defp prepare_pandoc_cmds(pdf_file, base_content_dir) do

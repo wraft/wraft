@@ -158,7 +158,6 @@ defmodule WraftDoc.Seed do
     # Insert Pandoc engine
     pandoc_engine = Repo.insert!(%Engine{name: "Pandoc", api_route: "/api/pandoc_engine"})
 
-    # TODO seed new engine
     pandoc_typst_engine =
       Repo.insert!(%Engine{name: "Pandoc + Typst", api_route: "/api/pandoc_typst_engine"})
 
