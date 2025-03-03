@@ -101,7 +101,6 @@ RUN ARCH=$(dpkg --print-architecture) && \
     dpkg -i ${PANDOC_DEB} && \
     rm -f ${PANDOC_DEB}
 
-
 # Install Typst
 RUN wget -q https://github.com/typst/typst/releases/download/v0.13.0/typst-x86_64-unknown-linux-musl.tar.xz && \
     tar -xf typst-x86_64-unknown-linux-musl.tar.xz && \
