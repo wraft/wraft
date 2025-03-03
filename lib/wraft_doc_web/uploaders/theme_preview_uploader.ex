@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.ThemePreviewUploader do
   @moduledoc """
   This module provides a simple interface for uploading
-  preview files to `WraftDoc.Document.Theme`
+  preview files to `WraftDoc.Themes.Theme`
   """
   use Waffle.Definition
   use Waffle.Ecto.Definition

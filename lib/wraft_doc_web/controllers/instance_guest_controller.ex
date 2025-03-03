@@ -21,10 +21,11 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
-  alias WraftDoc.Document
-  alias WraftDoc.Document.ContentCollaboration
-  alias WraftDoc.Document.CounterParties
-  alias WraftDoc.Document.Instance
+  alias WraftDoc.CounterParties
+  alias WraftDoc.CounterParties.CounterParty
+  alias WraftDoc.Documents
+  alias WraftDoc.Documents.ContentCollaboration
+  alias WraftDoc.Documents.Instance
 
   def swagger_definitions do
     %{
@@ -181,13 +182,13 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
     current_user = conn.assigns.current_user
 
     with %Instance{state_id: state_id} = instance <-
-           Document.show_instance(document_id, current_user),
+           Documents.show_instance(document_id, current_user),
          %User{} = invited_user <- Account.get_or_create_guest_user(params),
          %ContentCollaboration{} = collaborator <-
-           Document.add_content_collaborator(current_user, instance, invited_user, params),
+           Documents.add_content_collaborator(current_user, instance, invited_user, params),
          {:ok, %AuthToken{value: token}} <-
            AuthTokens.create_document_invite_token(state_id, params),
-         {:ok, %Oban.Job{}} <- Document.send_email(instance, invited_user, token) do
+         {:ok, %Oban.Job{}} <- Documents.send_email(instance, invited_user, token) do
       render(conn, "collaborator.json", collaborator: collaborator)
     end
   end
@@ -216,9 +217,9 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
            AuthTokens.check_token(invite_token, :document_invite),
          %User{} = invited_user <- Account.get_user_by_email(email),
          %ContentCollaboration{} = content_collaboration <-
-           Document.get_content_collaboration(document_id, invited_user, state_id),
+           Documents.get_content_collaboration(document_id, invited_user, state_id),
          {:ok, %ContentCollaboration{}} <-
-           Document.accept_document_access(content_collaboration),
+           Documents.accept_document_access(content_collaboration),
          {:ok, %AuthToken{value: guest_access_token}} <-
            AuthTokens.create_guest_access_token(invited_user, state_id, email, role, document_id) do
       render(conn, "verify_collaborator.json",
@@ -260,11 +261,11 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   def revoke_document_access(conn, %{"id" => document_id, "collaborator_id" => collaborator_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = _instance <- Document.show_instance(document_id, current_user),
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
          %ContentCollaboration{} = collaborator <-
-           Document.get_content_collaboration(collaborator_id),
+           Documents.get_content_collaboration(collaborator_id),
          %ContentCollaboration{} = collaborator <-
-           Document.revoke_document_access(current_user, collaborator) do
+           Documents.revoke_document_access(current_user, collaborator) do
       render(conn, "collaborator.json", collaborator: collaborator)
     end
   end
@@ -289,8 +290,8 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   def list_collaborators(conn, %{"id" => document_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Document.show_instance(document_id, current_user),
-         collaborators when is_list(collaborators) <- Document.list_collaborators(instance) do
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+         collaborators when is_list(collaborators) <- Documents.list_collaborators(instance) do
       render(conn, "collaborators.json", collaborators: collaborators)
     end
   end
@@ -322,11 +323,11 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
       ) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = _instance <- Document.show_instance(document_id, current_user),
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
          %ContentCollaboration{} = collaborator <-
-           Document.get_content_collaboration(collaborator_id),
+           Documents.get_content_collaboration(collaborator_id),
          %ContentCollaboration{} = collaborator <-
-           Document.update_collaborator_role(collaborator, params) do
+           Documents.update_collaborator_role(collaborator, params) do
       render(conn, "collaborator.json", collaborator: collaborator)
     end
   end
@@ -354,8 +355,8 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   def add_counterparty(conn, %{"id" => document_id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Document.show_instance(document_id, current_user),
-         %CounterParties{} = counterparty <- Document.add_counterparty(instance, params) do
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+         %CounterParty{} = counterparty <- CounterParties.add_counterparty(instance, params) do
       render(conn, "counterparty.json", counterparty: counterparty)
     end
   end
@@ -383,10 +384,10 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   def remove_counterparty(conn, %{"id" => document_id, "counterparty_id" => counterparty_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = _instance <- Document.show_instance(document_id, current_user),
-         %CounterParties{} = counterparty <-
-           Document.get_counterparty(document_id, counterparty_id),
-         %CounterParties{} = counterparty <- Document.remove_counterparty(counterparty) do
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
+         %CounterParty{} = counterparty <-
+           CounterParties.get_counterparty(document_id, counterparty_id),
+         %CounterParty{} = counterparty <- CounterParties.remove_counterparty(counterparty) do
       render(conn, "counterparty.json", counterparty: counterparty)
     end
   end

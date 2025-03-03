@@ -13,35 +13,26 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Account.User.Audience
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Authorization.Permission
   alias WraftDoc.AuthTokens.AuthToken
-  alias WraftDoc.Document.Asset
-  alias WraftDoc.Document.Block
-  alias WraftDoc.Document.BlockTemplate
-  alias WraftDoc.Document.CollectionForm
-  alias WraftDoc.Document.CollectionFormField
-  alias WraftDoc.Document.Comment
-  alias WraftDoc.Document.ContentCollaboration
-  alias WraftDoc.Document.ContentType
-  alias WraftDoc.Document.ContentTypeField
-  alias WraftDoc.Document.ContentTypeRole
-  alias WraftDoc.Document.Counter
-  alias WraftDoc.Document.DataTemplate
-  alias WraftDoc.Document.Engine
-  alias WraftDoc.Document.Field
-  alias WraftDoc.Document.FieldType
-  alias WraftDoc.Document.Instance
-  alias WraftDoc.Document.Instance.History
-  alias WraftDoc.Document.Instance.Version
-  alias WraftDoc.Document.InstanceApprovalSystem
-  alias WraftDoc.Document.Layout
-  alias WraftDoc.Document.LayoutAsset
-  alias WraftDoc.Document.OrganisationField
-  alias WraftDoc.Document.Pipeline
-  alias WraftDoc.Document.Pipeline.Stage
-  alias WraftDoc.Document.Pipeline.TriggerHistory
-  alias WraftDoc.Document.Theme
-  alias WraftDoc.Document.ThemeAsset
+  alias WraftDoc.Blocks.Block
+  alias WraftDoc.BlockTemplates.BlockTemplate
+  alias WraftDoc.CollectionForms.CollectionForm
+  alias WraftDoc.CollectionForms.CollectionFormField
+  alias WraftDoc.Comments.Comment
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.ContentTypes.ContentTypeField
+  alias WraftDoc.ContentTypes.ContentTypeRole
+  alias WraftDoc.DataTemplates.DataTemplate
+  alias WraftDoc.Documents.ContentCollaboration
+  alias WraftDoc.Documents.Counter
+  alias WraftDoc.Documents.Engine
+  alias WraftDoc.Documents.Instance
+  alias WraftDoc.Documents.Instance.History
+  alias WraftDoc.Documents.Instance.Version
+  alias WraftDoc.Documents.InstanceApprovalSystem
+  alias WraftDoc.Documents.OrganisationField
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
@@ -51,6 +42,8 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Fields.Field
+  alias WraftDoc.Fields.FieldType
   alias WraftDoc.Forms.Form
   alias WraftDoc.Forms.FormEntry
   alias WraftDoc.Forms.FormField
@@ -58,6 +51,13 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Forms.FormPipeline
   alias WraftDoc.InternalUsers.InternalUser
   alias WraftDoc.InvitedUsers.InvitedUser
+  alias WraftDoc.Layouts.Layout
+  alias WraftDoc.Layouts.LayoutAsset
+  alias WraftDoc.Pipelines.Pipeline
+  alias WraftDoc.Pipelines.Stages.Stage
+  alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
+  alias WraftDoc.Themes.Theme
+  alias WraftDoc.Themes.ThemeAsset
   alias WraftDoc.WaitingLists.WaitingList
 
   def user_factory do

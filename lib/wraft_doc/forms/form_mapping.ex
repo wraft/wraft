@@ -14,7 +14,7 @@ defmodule WraftDoc.Forms.FormMapping do
       field(:destination, :map)
     end
 
-    belongs_to(:pipe_stage, WraftDoc.Document.Pipeline.Stage)
+    belongs_to(:pipe_stage, WraftDoc.Pipelines.Stages.Stage)
     belongs_to(:form, WraftDoc.Forms.Form)
 
     timestamps()

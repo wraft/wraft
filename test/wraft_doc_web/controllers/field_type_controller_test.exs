@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Api.V1.FieldTypeControllerTest do
 
   import WraftDoc.Factory
 
-  alias WraftDoc.Document.FieldType
+  alias WraftDoc.Fields.FieldType
   alias WraftDoc.Repo
 
   @valid_attrs %{

@@ -3,8 +3,8 @@ defmodule WraftDocWeb.AssetUploader do
   use Waffle.Definition
   use Waffle.Ecto.Definition
 
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
-  alias WraftDoc.Document.Asset
 
   @versions [:original]
   @font_style_name ~w(Regular Italic Bold BoldItalic)

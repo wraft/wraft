@@ -8,8 +8,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.ContentTypeRole
+  alias WraftDoc.ContentTypes
+  alias WraftDoc.ContentTypes.ContentTypeRole
 
   def swagger_definitions do
     %{
@@ -50,7 +50,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
   end
 
   def create(conn, params) do
-    content_type_role = Document.create_content_type_role(params)
+    content_type_role = ContentTypes.create_content_type_role(params)
 
     render(conn, "create_content_type.json", content_type_role: content_type_role)
   end
@@ -70,9 +70,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
   end
 
   def delete(conn, %{"id" => id}) do
-    with %ContentTypeRole{} = content_type_role <- Document.get_content_type_and_role(id),
+    with %ContentTypeRole{} = content_type_role <- ContentTypes.get_content_type_and_role(id),
          %ContentTypeRole{} = content_type_role <-
-           Document.delete_content_type_role(content_type_role) do
+           ContentTypes.delete_content_type_role(content_type_role) do
       render(conn, "show_content_type.json", content_type_role: content_type_role)
     end
   end

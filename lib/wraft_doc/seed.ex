@@ -2,29 +2,24 @@ defmodule WraftDoc.Seed do
   @moduledoc """
     Smaller functions to seed various tables.
   """
+
   alias Faker.Phone
   alias WraftDoc.Account.Profile
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
-  alias WraftDoc.Document.Asset
-  alias WraftDoc.Document.Block
-  alias WraftDoc.Document.BlockTemplate
-  alias WraftDoc.Document.ContentType
-  alias WraftDoc.Document.ContentTypeField
-  alias WraftDoc.Document.ContentTypeRole
-  alias WraftDoc.Document.DataTemplate
-  alias WraftDoc.Document.Engine
-  alias WraftDoc.Document.Field
-  alias WraftDoc.Document.FieldType
-  alias WraftDoc.Document.Instance
-  alias WraftDoc.Document.Instance.History
-  alias WraftDoc.Document.Instance.Version
-  alias WraftDoc.Document.Layout
-  alias WraftDoc.Document.LayoutAsset
-  alias WraftDoc.Document.Theme
-  alias WraftDoc.Document.ThemeAsset
+  alias WraftDoc.Assets.Asset
+  alias WraftDoc.Blocks.Block
+  alias WraftDoc.BlockTemplates.BlockTemplate
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.ContentTypes.ContentTypeField
+  alias WraftDoc.ContentTypes.ContentTypeRole
+  alias WraftDoc.DataTemplates.DataTemplate
+  alias WraftDoc.Documents.Engine
+  alias WraftDoc.Documents.Instance
+  alias WraftDoc.Documents.Instance.History
+  alias WraftDoc.Documents.Instance.Version
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
@@ -32,7 +27,13 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.Enterprise.Membership
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Fields.Field
+  alias WraftDoc.Fields.FieldType
+  alias WraftDoc.Layouts.Layout
+  alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Repo
+  alias WraftDoc.Themes.Theme
+  alias WraftDoc.Themes.ThemeAsset
 
   require Logger
 

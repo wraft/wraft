@@ -12,7 +12,7 @@ defmodule WraftDoc.Account.Role do
 
     has_many(:user_roles, WraftDoc.Account.UserRole)
     has_many(:users, through: [:user_roles, :user])
-    has_many(:content_type_roles, WraftDoc.Document.ContentTypeRole)
+    has_many(:content_type_roles, WraftDoc.ContentTypes.ContentTypeRole)
     has_many(:content_types, through: [:content_type_roles, :content_type])
     timestamps()
   end

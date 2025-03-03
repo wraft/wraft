@@ -14,10 +14,11 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Engine
-  alias WraftDoc.Document.Layout
-  alias WraftDoc.Document.LayoutAsset
+  alias WraftDoc.Documents
+  alias WraftDoc.Documents.Engine
+  alias WraftDoc.Layouts
+  alias WraftDoc.Layouts.Layout
+  alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Search.TypesenseServer, as: Typesense
 
   def swagger_definitions do
@@ -298,8 +299,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %Engine{} = engine <- Document.get_engine(params["engine_id"]),
-         %Layout{} = layout <- Document.create_layout(current_user, engine, params) do
+    with %Engine{} = engine <- Documents.get_engine(params["engine_id"]),
+         %Layout{} = layout <- Layouts.create_layout(current_user, engine, params) do
       Typesense.create_document(layout)
       render(conn, "create.json", doc_layout: layout)
     end
@@ -336,7 +337,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.layout_index(current_user, params) do
+         } <- Layouts.layout_index(current_user, params) do
       render(conn, "index.json",
         doc_layouts: layouts,
         page_number: page_number,
@@ -366,7 +367,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Layout{} = layout <- Document.show_layout(id, current_user) do
+    with %Layout{} = layout <- Layouts.show_layout(id, current_user) do
       render(conn, "show.json", doc_layout: layout)
     end
   end
@@ -417,8 +418,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Document.get_layout(id, current_user),
-         %Layout{} = layout <- Document.update_layout(layout, current_user, params) do
+    with %Layout{} = layout <- Layouts.get_layout(id, current_user),
+         %Layout{} = layout <- Layouts.update_layout(layout, current_user, params) do
       Typesense.update_document(layout)
       render(conn, "show.json", doc_layout: layout)
     end
@@ -445,8 +446,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Document.get_layout(id, current_user),
-         {:ok, %Layout{}} <- Document.delete_layout(layout) do
+    with %Layout{} = layout <- Layouts.get_layout(id, current_user),
+         {:ok, %Layout{}} <- Layouts.delete_layout(layout) do
       Typesense.delete_document(layout.id, "layout")
       render(conn, "layout.json", doc_layout: layout)
     end
@@ -474,9 +475,9 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   def delete_layout_asset(conn, %{"id" => l_id, "a_id" => a_id}) do
     current_user = conn.assigns[:current_user]
 
-    with %LayoutAsset{} = layout_asset <- Document.get_layout_asset(l_id, a_id),
-         {:ok, %LayoutAsset{}} <- Document.delete_layout_asset(layout_asset),
-         %Layout{} = layout <- Document.show_layout(l_id, current_user) do
+    with %LayoutAsset{} = layout_asset <- Layouts.get_layout_asset(l_id, a_id),
+         {:ok, %LayoutAsset{}} <- Layouts.delete_layout_asset(layout_asset),
+         %Layout{} = layout <- Layouts.show_layout(l_id, current_user) do
       render(conn, "show.json", doc_layout: layout)
     end
   end

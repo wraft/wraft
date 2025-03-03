@@ -9,7 +9,7 @@ defmodule WraftDocWeb.Api.V1.DashboardController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
+  alias WraftDoc.Documents
 
   def swagger_definitions do
     %{
@@ -53,7 +53,7 @@ defmodule WraftDocWeb.Api.V1.DashboardController do
   def dashboard_stats(conn, _params) do
     current_user = conn.assigns.current_user
 
-    with stats <- Document.get_dashboard_stats(current_user) do
+    with stats <- Documents.get_dashboard_stats(current_user) do
       render(conn, "dashboard_stats.json", stats: stats)
     end
   end

@@ -11,8 +11,8 @@ defprotocol WraftDoc.Search.Encoder do
   def to_document(struct)
 end
 
-defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.ContentType do
-  def to_document(%WraftDoc.Document.ContentType{} = content_type) do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.ContentTypes.ContentType do
+  def to_document(%WraftDoc.ContentTypes.ContentType{} = content_type) do
     %{
       id: to_string(content_type.id),
       collection_name: "content_type",
@@ -32,16 +32,19 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.ContentType do
   end
 end
 
-defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.DataTemplate do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.DataTemplates.DataTemplate do
   alias WraftDoc.Repo
 
-  def to_document(%WraftDoc.Document.DataTemplate{} = data_template) do
+  def to_document(%WraftDoc.DataTemplates.DataTemplate{} = data_template) do
     data_template =
-      Repo.preload(Repo.get!(WraftDoc.Document.DataTemplate, data_template.id), :content_type)
+      Repo.preload(
+        Repo.get!(WraftDoc.DataTemplates.DataTemplate, data_template.id),
+        :content_type
+      )
 
     organisation_id =
       case data_template.content_type do
-        %WraftDoc.Document.ContentType{organisation_id: org_id} -> org_id
+        %WraftDoc.ContentTypes.ContentType{organisation_id: org_id} -> org_id
         _ -> nil
       end
 
@@ -63,8 +66,8 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.DataTemplate do
   end
 end
 
-defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.Layout do
-  def to_document(%WraftDoc.Document.Layout{} = layout) do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.Layouts.Layout do
+  def to_document(%WraftDoc.Layouts.Layout{} = layout) do
     %{
       id: to_string(layout.id),
       collection_name: "layout",
@@ -83,8 +86,8 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.Layout do
   end
 end
 
-defimpl WraftDoc.Search.Encoder, for: WraftDoc.Document.Theme do
-  def to_document(%WraftDoc.Document.Theme{} = theme) do
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.Themes.Theme do
+  def to_document(%WraftDoc.Themes.Theme{} = theme) do
     %{
       id: to_string(theme.id),
       collection_name: "theme",

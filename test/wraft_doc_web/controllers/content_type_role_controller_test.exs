@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleControllerTest do
   """
   use WraftDocWeb.ConnCase
   @moduletag :controller
-  alias WraftDoc.Document.ContentTypeRole
+  alias WraftDoc.ContentTypes.ContentTypeRole
   alias WraftDoc.Repo
 
   import WraftDoc.Factory

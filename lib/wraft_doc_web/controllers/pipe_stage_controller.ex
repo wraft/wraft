@@ -15,9 +15,10 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Pipeline
-  alias WraftDoc.Document.Pipeline.Stage
+  alias WraftDoc.Pipelines
+  alias WraftDoc.Pipelines.Pipeline
+  alias WraftDoc.Pipelines.Stages
+  alias WraftDoc.Pipelines.Stages.Stage
 
   def swagger_definitions do
     %{
@@ -138,9 +139,9 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
   def create(conn, %{"pipeline_id" => p_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, p_uuid),
-         {:ok, %Stage{} = stage} <- Document.create_pipe_stage(current_user, pipeline, params),
-         %Stage{} = stage <- Document.preload_stage_details(stage) do
+    with %Pipeline{} = pipeline <- Pipelines.get_pipeline(current_user, p_uuid),
+         {:ok, %Stage{} = stage} <- Stages.create_pipe_stage(current_user, pipeline, params),
+         %Stage{} = stage <- Stages.preload_stage_details(stage) do
       render(conn, "stage.json", stage: stage)
     end
   end
@@ -167,9 +168,9 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
   def update(conn, %{"id" => s_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Stage{} = stage <- Document.get_pipe_stage(current_user, s_uuid),
-         {:ok, %Stage{} = stage} <- Document.update_pipe_stage(current_user, stage, params),
-         %Stage{} = stage <- Document.preload_stage_details(stage) do
+    with %Stage{} = stage <- Stages.get_pipe_stage(current_user, s_uuid),
+         {:ok, %Stage{} = stage} <- Stages.update_pipe_stage(current_user, stage, params),
+         %Stage{} = stage <- Stages.preload_stage_details(stage) do
       render(conn, "stage.json", stage: stage)
     end
   end
@@ -195,8 +196,8 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
   def delete(conn, %{"id" => s_uuid}) do
     current_user = conn.assigns[:current_user]
 
-    with %Stage{} = stage <- Document.get_pipe_stage(current_user, s_uuid),
-         {:ok, %Stage{} = stage} <- Document.delete_pipe_stage(stage) do
+    with %Stage{} = stage <- Stages.get_pipe_stage(current_user, s_uuid),
+         {:ok, %Stage{} = stage} <- Stages.delete_pipe_stage(stage) do
       render(conn, "delete.json", stage: stage)
     end
   end

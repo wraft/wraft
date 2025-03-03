@@ -1,7 +1,7 @@
-defmodule WraftDoc.Document.CounterTest do
+defmodule WraftDoc.Documents.CounterTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.Document.Counter
+  alias WraftDoc.Documents.Counter
   @moduletag :document
 
   @valid_attrs %{subject: "Subject:1", count: 1}

@@ -1,7 +1,7 @@
-defmodule WraftDoc.Document.ThemeTest do
+defmodule WraftDoc.Documents.ThemeTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.Document.Theme
+  alias WraftDoc.Themes.Theme
   @moduletag :document
   @valid_attrs %{
     name: "Official Letter Theme",

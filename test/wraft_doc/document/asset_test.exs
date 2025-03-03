@@ -1,9 +1,9 @@
-defmodule WraftDoc.Document.AssetTest do
+defmodule WraftDoc.Assets.AssetTest do
   use WraftDoc.ModelCase, async: true
   @moduletag :document
   import WraftDoc.Factory
 
-  alias WraftDoc.Document.Asset
+  alias WraftDoc.Assets.Asset
 
   @valid_attrs %{name: "asset one", type: "layout", organisation_id: Faker.UUID.v4()}
 

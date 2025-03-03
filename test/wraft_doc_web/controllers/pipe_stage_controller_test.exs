@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.PipeStageControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
   import WraftDoc.Factory
-  alias WraftDoc.Document.Pipeline.Stage
+  alias WraftDoc.Pipelines.Stages.Stage
   alias WraftDoc.Repo
 
   describe "create" do

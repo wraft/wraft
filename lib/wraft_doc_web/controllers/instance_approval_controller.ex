@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.InstanceApprovalController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  alias WraftDoc.Document.Approval
+  alias WraftDoc.Documents.Approval
 
   action_fallback(WraftDocWeb.FallbackController)
 

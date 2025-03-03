@@ -1,8 +1,8 @@
-defmodule WraftDoc.Document.ContentTypeTest do
+defmodule WraftDoc.ContentTypes.ContentTypeTest do
   use WraftDoc.ModelCase, async: true
   import WraftDoc.Factory
   @moduletag :document
-  alias WraftDoc.Document.ContentType
+  alias WraftDoc.ContentTypes.ContentType
 
   @valid_attrs %{
     name: "Offer letter",

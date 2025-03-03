@@ -14,9 +14,10 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Pipeline
-  alias WraftDoc.Document.Pipeline.TriggerHistory
+  alias WraftDoc.Pipelines
+  alias WraftDoc.Pipelines.Pipeline
+  alias WraftDoc.Pipelines.TriggerHistories
+  alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
 
   def swagger_definitions do
     %{
@@ -154,10 +155,10 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   def create(conn, %{"pipeline_id" => p_uuid, "data" => data}) do
     current_user = conn.assigns[:current_user]
 
-    with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, p_uuid),
+    with %Pipeline{} = pipeline <- Pipelines.get_pipeline(current_user, p_uuid),
          {:ok, %TriggerHistory{} = trigger_history} <-
-           Document.create_trigger_history(current_user, pipeline, data),
-         {:ok, %Oban.Job{}} <- Document.create_pipeline_job(trigger_history) do
+           TriggerHistories.create_trigger_history(current_user, pipeline, data),
+         {:ok, %Oban.Job{}} <- TriggerHistories.create_pipeline_job(trigger_history) do
       render(conn, "create.json")
     end
   end
@@ -186,13 +187,13 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   def index_by_pipeline(conn, %{"pipeline_id" => p_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Pipeline{} = pipeline <- Document.get_pipeline(current_user, p_uuid),
+    with %Pipeline{} = pipeline <- Pipelines.get_pipeline(current_user, p_uuid),
          %{
            entries: triggers,
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.get_trigger_histories_of_a_pipeline(pipeline, params) do
+         } <- TriggerHistories.get_trigger_histories_of_a_pipeline(pipeline, params) do
       render(conn, "index.json",
         triggers: triggers,
         page_number: page_number,
@@ -243,7 +244,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.trigger_history_index(current_user, params) do
+         } <- TriggerHistories.trigger_history_index(current_user, params) do
       render(conn, "index.json",
         triggers: triggers,
         page_number: page_number,

@@ -9,7 +9,7 @@ defmodule WraftDoc.Enterprise.StateUser do
   schema "state_users" do
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
-    belongs_to(:content, WraftDoc.Document.Instance)
+    belongs_to(:content, WraftDoc.Documents.Instance)
     timestamps()
   end
 
