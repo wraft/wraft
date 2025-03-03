@@ -1,19 +1,18 @@
 ARG ELIXIR_VERSION=1.15.8
 ARG OTP_VERSION=25.2.3
-ARG DEBIAN_VERSION=bookworm-20240722
+ARG DEBIAN_VERSION=bookworm-20250224
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
 
 
-FROM ${BUILDER_IMAGE} as builder
+FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
 RUN apt-get update -y \
-  && apt-get install curl -y \
-  && apt-get install -y build-essential git \
+  && apt-get install -y curl build-essential git \
   && apt-get clean \
-  && rm -f /var/lib/apt/lists/*_*
+  && rm -rf /var/lib/apt/lists/*
 
 # prepare build dir
 WORKDIR /app
@@ -57,9 +56,6 @@ COPY config/runtime.exs config/
 COPY rel rel
 RUN mix release
 
-COPY priv ./priv
-COPY lib ./lib
-
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
@@ -72,15 +68,38 @@ RUN apt-get update && \
     apt-get install -y \
     postgresql-client inotify-tools
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    build-essential xorg libssl-dev libxrender-dev git wget vim gdebi xvfb gcc libstdc++6 \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    build-essential \
+    xorg \
+    libssl-dev \
+    libxrender-dev \
+    git \
+    wget \
+    vim \
+    gdebi \
+    xvfb \
+    gcc \
+    libstdc++6 \
     locales \
     wkhtmltopdf \
-    pandoc \
     texlive-fonts-recommended \
     texlive-plain-generic \
     texlive-latex-extra \
-    texlive-xetex
+    texlive-xetex \
+    imagemagick && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates && \
+    wget https://github.com/jgm/pandoc/releases/download/3.6.3/pandoc-3.6.3-1-arm64.deb && \
+    dpkg -i pandoc-3.6.3-1-arm64.deb && \
+    rm pandoc-3.6.3-1-arm64.deb
+
+
+# Install Typst
+RUN wget -q https://github.com/typst/typst/releases/download/v0.13.0/typst-x86_64-unknown-linux-musl.tar.xz && \
+    tar -xf typst-x86_64-unknown-linux-musl.tar.xz && \
+    mv typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst && \
+    rm -rf typst-x86_64-unknown-linux-musl typst-x86_64-unknown-linux-musl.tar.xz
 
 
 # Set the locale
@@ -90,11 +109,9 @@ RUN localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
+ENV MIX_ENV="prod"
 
 WORKDIR "/app"
-
-# set runner ENV
-ENV MIX_ENV="prod"
 
 RUN useradd -u 1000 -M -s /bin/sh -d /app wraftuser
 # Only copy the final release from the build stage
@@ -108,14 +125,15 @@ COPY ./entrypoint.sh /entrypoint.sh
 COPY rel/commands/migrate.sh /app/
 COPY rel/overlays/seeds.sh /app/
 
-RUN chmod a+x /entrypoint.sh
-RUN chmod a+x /app/migrate.sh
-RUN chmod a+x /app/seeds.sh
+RUN chmod +x /entrypoint.sh
+RUN chmod +x /app/migrate.sh
+RUN chmod +x /app/seeds.sh
 RUN chown -R wraftuser:wraftuser /app
 USER wraftuser
 
 WORKDIR /app
 ENV LISTEN_IP=0.0.0.0
 EXPOSE ${PORT}
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["run"]

@@ -34,7 +34,7 @@ if !FunWithFlags.enabled?(:seeds_ran?) do
 
   # Delete all engines and seed engines again to avoid unique constraint error
   Repo.delete_all(Engine)
-  [_pdf, _latex, pandoc] = Seed.seed_engine()
+  [_pdf, _latex, pandoc, _pandoc_typst] = Seed.seed_engine()
 
   for {user, organisation} <- List.zip([user_list, organisation_list]) do
     # Seed profiles with country
