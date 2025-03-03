@@ -1,7 +1,7 @@
-defmodule WraftDoc.Document.Pipeline.TriggerHistoryTest do
+defmodule WraftDoc.Pipelines.TriggerHistories.TriggerHistoryTest do
   use WraftDoc.ModelCase
   import WraftDoc.Factory
-  alias WraftDoc.Document.Pipeline.TriggerHistory
+  alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   @moduletag :document
 
   # import WraftDoc.Factory

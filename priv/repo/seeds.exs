@@ -12,7 +12,7 @@
 
 alias FunWithFlags
 alias WraftDoc.Account.Country
-alias WraftDoc.Document.Engine
+alias WraftDoc.Documents.Engine
 alias WraftDoc.Enterprise
 alias WraftDoc.Repo
 alias WraftDoc.Seed
@@ -40,9 +40,7 @@ if !FunWithFlags.enabled?(:seeds_ran?) do
     # Seed profiles with country
     Seed.seed_profile(user, country)
 
-    unless Enterprise.self_hosted?() do
-      Enterprise.create_free_subscription(organisation.id)
-    end
+    Enterprise.create_free_subscription(organisation.id)
 
     # Seed Block and Block Template
     Seed.seed_block_and_block_template(user, organisation)

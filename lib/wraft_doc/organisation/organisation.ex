@@ -7,10 +7,10 @@ defmodule WraftDoc.Enterprise.Organisation do
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
-  alias WraftDoc.Document.Pipeline
-  alias WraftDoc.Document.Theme
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Pipelines.Pipeline
+  alias WraftDoc.Themes.Theme
 
   @fields ~w(name legal_name email url address name_of_ceo name_of_cto gstin corporate_id phone creator_id owner_id)a
 
@@ -31,7 +31,7 @@ defmodule WraftDoc.Enterprise.Organisation do
     belongs_to(:owner, User)
     field(:logo, WraftDocWeb.LogoUploader.Type)
     has_many(:users_organisations, UserOrganisation)
-    has_many(:fields, WraftDoc.Document.Field)
+    has_many(:fields, WraftDoc.Fields.Field)
     has_many(:forms, WraftDoc.Forms.Form)
     many_to_many(:users, User, join_through: "users_organisations")
     has_many(:pipelines, Pipeline)

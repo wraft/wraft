@@ -11,8 +11,8 @@ defmodule WraftDocWeb.Api.V1.FrameController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document.Frame
-  alias WraftDoc.Document.Frames
+  alias WraftDoc.Frames
+  alias WraftDoc.Frames.Frame
 
   def swagger_definitions do
     %{

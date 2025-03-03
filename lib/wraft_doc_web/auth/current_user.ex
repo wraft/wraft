@@ -8,7 +8,7 @@ defmodule WraftDocWeb.CurrentUser do
   import Ecto.Query
 
   alias WraftDoc.Account.User
-  alias WraftDoc.Document.InstanceApprovalSystem
+  alias WraftDoc.Documents.InstanceApprovalSystem
   alias WraftDoc.Repo
 
   alias WraftDocWeb.Guardian.AuthErrorHandler

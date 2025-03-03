@@ -15,9 +15,10 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.ContentType
-  alias WraftDoc.Document.DataTemplate
+  alias WraftDoc.ContentTypes
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.DataTemplates
+  alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Search.TypesenseServer, as: Typesense
 
   def swagger_definitions do
@@ -209,9 +210,9 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   def create(conn, %{"c_type_id" => c_type_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = c_type <- Document.get_content_type(current_user, c_type_id),
+    with %ContentType{} = c_type <- ContentTypes.get_content_type(current_user, c_type_id),
          {:ok, %DataTemplate{} = d_template} <-
-           Document.create_data_template(current_user, c_type, params) do
+           DataTemplates.create_data_template(current_user, c_type, params) do
       Typesense.create_document(d_template)
       render(conn, "create.json", d_template: d_template)
     end
@@ -248,7 +249,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.data_template_index(c_type_id, params) do
+         } <- DataTemplates.data_template_index(c_type_id, params) do
       render(conn, "index.json",
         data_templates: data_templates,
         page_number: page_number,
@@ -280,7 +281,7 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.data_templates_index_of_an_organisation(current_user, params) do
+         } <- DataTemplates.data_templates_index_of_an_organisation(current_user, params) do
       render(conn, "index.json",
         data_templates: data_templates,
         page_number: page_number,
@@ -311,7 +312,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   def show(conn, %{"id" => d_temp_id}) do
     current_user = conn.assigns[:current_user]
 
-    with %DataTemplate{} = data_template <- Document.show_d_template(current_user, d_temp_id) do
+    with %DataTemplate{} = data_template <-
+           DataTemplates.show_data_template(current_user, d_temp_id) do
       render(conn, "show.json", d_template: data_template)
     end
   end
@@ -342,8 +344,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %DataTemplate{} = d_temp <- Document.get_d_template(current_user, id),
-         %DataTemplate{} = d_temp <- Document.update_data_template(d_temp, params) do
+    with %DataTemplate{} = d_temp <- DataTemplates.get_data_template(current_user, id),
+         %DataTemplate{} = d_temp <- DataTemplates.update_data_template(d_temp, params) do
       Typesense.update_document(d_temp)
       render(conn, "show.json", d_template: d_temp)
     end
@@ -371,8 +373,8 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %DataTemplate{} = d_temp <- Document.get_d_template(current_user, id),
-         {:ok, %DataTemplate{}} <- Document.delete_data_template(d_temp) do
+    with %DataTemplate{} = d_temp <- DataTemplates.get_data_template(current_user, id),
+         {:ok, %DataTemplate{}} <- DataTemplates.delete_data_template(d_temp) do
       Typesense.delete_document(d_temp.id, "data_template")
       render(conn, "create.json", d_template: d_temp)
     end
@@ -402,9 +404,9 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
       ) do
     user = conn.assigns[:current_user]
 
-    with %ContentType{} <- Document.get_content_type(user, c_type_id),
+    with %ContentType{} <- ContentTypes.get_content_type(user, c_type_id),
          {:ok, %Oban.Job{}} <-
-           Document.insert_data_template_bulk_import_work(
+           DataTemplates.insert_data_template_bulk_import_work(
              user.id,
              c_type_id,
              params["mapping"],

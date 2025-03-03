@@ -14,13 +14,17 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     search: "content_type:show"
 
   action_fallback(WraftDocWeb.FallbackController)
-  alias WraftDoc.Document
-  alias WraftDoc.Document.ContentType
-  alias WraftDoc.Document.Layout
-  alias WraftDoc.Document.Theme
+
+  alias WraftDoc.ContentTypes
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.Documents
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Layouts
+  alias WraftDoc.Layouts.Layout
   alias WraftDoc.Search.TypesenseServer, as: Typesense
+  alias WraftDoc.Themes
+  alias WraftDoc.Themes.Theme
 
   def swagger_definitions do
     %{
@@ -594,11 +598,11 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
       ) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} <- Document.get_layout(layout_id, current_user),
+    with %Layout{} <- Layouts.get_layout(layout_id, current_user),
          %Flow{} <- Enterprise.get_flow(flow_id, current_user),
-         %Theme{} <- Document.get_theme(theme_id, current_user),
+         %Theme{} <- Themes.get_theme(theme_id, current_user),
          %ContentType{} = content_type <-
-           Document.create_content_type(current_user, params) do
+           ContentTypes.create_content_type(current_user, params) do
       Typesense.create_document(content_type)
       render(conn, :create, content_type: content_type)
     end
@@ -635,7 +639,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.content_type_index(current_user, params) do
+         } <- ContentTypes.content_type_index(current_user, params) do
       render(conn, "index.json",
         content_types: content_types,
         page_number: page_number,
@@ -666,7 +670,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <- Document.show_content_type(current_user, id) do
+    with %ContentType{} = content_type <- ContentTypes.show_content_type(current_user, id) do
       render(conn, "show.json", content_type: content_type)
     end
   end
@@ -694,9 +698,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   def update(conn, %{"id" => uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <- Document.get_content_type(current_user, uuid),
+    with %ContentType{} = content_type <- ContentTypes.get_content_type(current_user, uuid),
          %ContentType{} = content_type <-
-           Document.update_content_type(content_type, current_user, params) do
+           ContentTypes.update_content_type(content_type, current_user, params) do
       Typesense.update_document(content_type)
       render(conn, "show.json", content_type: content_type)
     end
@@ -724,8 +728,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentType{} = content_type <- Document.get_content_type(current_user, id),
-         {:ok, %ContentType{}} <- Document.delete_content_type(content_type) do
+    with %ContentType{} = content_type <- ContentTypes.get_content_type(current_user, id),
+         {:ok, %ContentType{}} <- ContentTypes.delete_content_type(content_type) do
       Typesense.delete_document(content_type.id, "content_type")
       render(conn, "content_type.json", content_type: content_type)
     end
@@ -765,7 +769,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, %Oban.Job{}} <-
-           Document.insert_bulk_build_work(
+           Documents.insert_bulk_build_work(
              current_user,
              c_type_id,
              state_id,
@@ -792,7 +796,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   end
 
   def show_content_type_role(conn, %{"id" => id}) do
-    content_type = Document.get_content_type_roles(id)
+    content_type = ContentTypes.get_content_type_roles(id)
 
     render(conn, "role_content_types.json", content_type: content_type)
   end
@@ -823,7 +827,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.filter_content_type_title(key, params) do
+         } <- ContentTypes.filter_content_type_title(key, params) do
       render(conn, "index.json",
         content_types: content_types,
         page_number: page_number,

@@ -1,8 +1,8 @@
-defmodule WraftDocTest.Document.ContentTypeFieldTest do
+defmodule WraftDocTest.Documents.ContentTypeFieldTest do
   @moduledoc false
   use WraftDoc.ModelCase
   @moduletag :document
-  alias WraftDoc.Document.ContentTypeField
+  alias WraftDoc.ContentTypes.ContentTypeField
   import WraftDoc.Factory
 
   @invalid_attrs %{content_type_id: nil, field_id: nil}

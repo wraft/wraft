@@ -7,8 +7,8 @@ defmodule WraftDocWeb.Api.V1.ThemeControllerTest do
 
   import WraftDoc.Factory
   import Mox
-  alias WraftDoc.Document.Theme
   alias WraftDoc.Repo
+  alias WraftDoc.Themes.Theme
 
   @valid_attrs %{
     name: "Official Letter Theme",

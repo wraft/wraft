@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.CollectionFormControllerTest do
   """
   use WraftDocWeb.ConnCase
   @moduletag :controller
-  alias WraftDoc.{Document.CollectionForm, Document.CollectionFormField, Repo}
+  alias WraftDoc.{CollectionForms.CollectionForm, CollectionForms.CollectionFormField, Repo}
 
   import WraftDoc.Factory
 

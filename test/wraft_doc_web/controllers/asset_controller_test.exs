@@ -5,7 +5,8 @@ defmodule WraftDocWeb.Api.V1.AssetControllerTest do
   use WraftDocWeb.ConnCase, async: true
   @moduletag :controller
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Asset, Repo}
+  alias WraftDoc.Assets.Asset
+  alias WraftDoc.Repo
 
   @valid_attrs %{
     name: "letter head",

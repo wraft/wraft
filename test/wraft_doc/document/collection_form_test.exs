@@ -1,11 +1,11 @@
-defmodule WraftDoc.Document.CollectionFormTest do
+defmodule WraftDoc.Documents.CollectionFormTest do
   use WraftDoc.ModelCase
 
   @moduledoc """
   Test module
   """
 
-  alias WraftDoc.Document.CollectionForm
+  alias WraftDoc.CollectionForms.CollectionForm
 
   uuid = Ecto.UUID.bingenerate()
   @create_attrs %{title: "asset one", organisation_id: uuid, creator_id: uuid}

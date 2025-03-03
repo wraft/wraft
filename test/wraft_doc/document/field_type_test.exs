@@ -1,7 +1,7 @@
-defmodule WraftDoc.Document.FieldTypeTest do
+defmodule WraftDoc.Documents.FieldTypeTest do
   @moduledoc false
   use WraftDoc.ModelCase
-  alias WraftDoc.Document.FieldType
+  alias WraftDoc.Fields.FieldType
   @moduletag :document
 
   @valid_attrs %{

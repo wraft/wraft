@@ -5,11 +5,11 @@ defmodule WraftDoc.Minio.Utils do
   require Logger
   alias ExAws.S3
   alias WraftDoc.Account.Profile
-  alias WraftDoc.Document.Asset
-  alias WraftDoc.Document.ContentType
-  alias WraftDoc.Document.Instance
-  alias WraftDoc.Document.Layout
+  alias WraftDoc.Assets.Asset
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.Documents.Instance
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
 
   @ex_aws_module Application.compile_env(:wraft_doc, [:test_module, :minio], ExAws)

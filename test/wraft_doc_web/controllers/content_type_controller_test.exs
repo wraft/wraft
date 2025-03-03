@@ -5,8 +5,8 @@ defmodule WraftDocWeb.Api.V1.ContentTypeControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.Factory
-  alias WraftDoc.Document.ContentType
-  alias WraftDoc.Document.FieldType
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.Fields.FieldType
   alias WraftDoc.Repo
 
   @fields [

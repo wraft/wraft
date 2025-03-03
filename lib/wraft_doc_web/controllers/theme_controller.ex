@@ -13,9 +13,9 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Theme
   alias WraftDoc.Search.TypesenseServer, as: Typesense
+  alias WraftDoc.Themes
+  alias WraftDoc.Themes.Theme
 
   def swagger_definitions do
     %{
@@ -203,7 +203,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %Theme{} = theme <- Document.create_theme(current_user, params) do
+    with %Theme{} = theme <- Themes.create_theme(current_user, params) do
       Typesense.create_document(theme)
       render(conn, "create.json", theme: theme)
     end
@@ -240,7 +240,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.theme_index(current_user, params) do
+         } <- Themes.theme_index(current_user, params) do
       render(conn, "index.json",
         themes: themes,
         page_number: page_number,
@@ -270,7 +270,7 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
   def show(conn, %{"id" => theme_uuid}) do
     current_user = conn.assigns.current_user
 
-    with %Theme{} = theme <- Document.show_theme(theme_uuid, current_user) do
+    with %Theme{} = theme <- Themes.show_theme(theme_uuid, current_user) do
       render(conn, "show.json", theme: theme)
     end
   end
@@ -304,8 +304,8 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
   def update(conn, %{"id" => theme_uuid} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Theme{} = theme <- Document.get_theme(theme_uuid, current_user),
-         %Theme{} = theme <- Document.update_theme(theme, current_user, params) do
+    with %Theme{} = theme <- Themes.get_theme(theme_uuid, current_user),
+         %Theme{} = theme <- Themes.update_theme(theme, current_user, params) do
       Typesense.update_document(theme)
       render(conn, "create.json", theme: theme)
     end
@@ -332,8 +332,8 @@ defmodule WraftDocWeb.Api.V1.ThemeController do
   def delete(conn, %{"id" => uuid}) do
     current_user = conn.assigns[:current_user]
 
-    with %Theme{} = theme <- Document.get_theme(uuid, current_user),
-         {:ok, %Theme{}} <- Document.delete_theme(theme) do
+    with %Theme{} = theme <- Themes.get_theme(uuid, current_user),
+         {:ok, %Theme{}} <- Themes.delete_theme(theme) do
       Typesense.delete_document(theme.id, "theme")
       render(conn, "create.json", theme: theme)
     end

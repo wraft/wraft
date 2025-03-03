@@ -1,6 +1,6 @@
-defmodule WraftDoc.Document.Instance.VersionTest do
+defmodule WraftDoc.Documents.Instance.VersionTest do
   use WraftDoc.ModelCase
-  alias WraftDoc.Document.Instance.Version
+  alias WraftDoc.Documents.Instance.Version
   import WraftDoc.Factory
   @moduletag :document
 

@@ -13,8 +13,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.OrganisationField
+  alias WraftDoc.Documents
+  alias WraftDoc.Documents.OrganisationField
 
   def swagger_definitions do
     %{
@@ -93,7 +93,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.list_organisation_fields(current_user, params) do
+         } <- Documents.list_organisation_fields(current_user, params) do
       render(conn, "index.json",
         organisation_fields: organisation_fields,
         page_number: page_number,
@@ -129,7 +129,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
     current_user = conn.assigns[:current_user]
 
     with %OrganisationField{} = organisation_field <-
-           Document.create_organisation_field(current_user, params) do
+           Documents.create_organisation_field(current_user, params) do
       render(conn, "show.json", organisation_field: organisation_field)
     end
   end
@@ -155,7 +155,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
     current_user = conn.assigns[:current_user]
 
     with %OrganisationField{} = organisation_field <-
-           Document.get_organisation_field(id, current_user) do
+           Documents.get_organisation_field(id, current_user) do
       render(conn, "show.json", organisation_field: organisation_field)
     end
   end
@@ -186,9 +186,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
     current_user = conn.assigns[:current_user]
 
     with %OrganisationField{} = organisation_field <-
-           Document.get_organisation_field(id, current_user),
+           Documents.get_organisation_field(id, current_user),
          %OrganisationField{} = organisation_field <-
-           Document.update_organisation_field(
+           Documents.update_organisation_field(
              current_user,
              organisation_field,
              params
@@ -218,9 +218,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationFieldController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with organisation_field <- Document.show_organisation_field(id, current_user),
+    with organisation_field <- Documents.show_organisation_field(id, current_user),
          {:ok, %OrganisationField{}} <-
-           Document.delete_organisation_field(organisation_field) do
+           Documents.delete_organisation_field(organisation_field) do
       render(conn, "show.json", organisation_field: organisation_field)
     end
   end

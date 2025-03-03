@@ -7,8 +7,8 @@ defmodule WraftDoc.Notifications do
   alias Ecto.Multi
   alias WraftDoc.Account
   alias WraftDoc.Account.User
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Instance
+  alias WraftDoc.Documents
+  alias WraftDoc.Documents.Instance
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Notifications.Notification
@@ -94,7 +94,7 @@ defmodule WraftDoc.Notifications do
   """
   @spec comment_notification(integer(), integer(), integer()) :: list(%Notification{})
   def comment_notification(user_id, organisation_id, document_id) do
-    document = Document.get_instance(document_id, %{current_org_id: organisation_id})
+    document = Documents.get_instance(document_id, %{current_org_id: organisation_id})
     organisation = Enterprise.get_organisation(organisation_id)
 
     document.allowed_users
@@ -116,7 +116,7 @@ defmodule WraftDoc.Notifications do
         %Organisation{name: organisation_name} = _organisation,
         state
       ) do
-    new_state = Document.next_state(state)
+    new_state = Documents.next_state(state)
 
     with {:ok, _} <-
            create_notification(state.approvers, %{

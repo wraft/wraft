@@ -2,7 +2,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryView do
   use WraftDocWeb, :view
   alias __MODULE__
   alias WraftDoc.Client.Minio
-  alias WraftDoc.Document.Pipeline.TriggerHistory
+  alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDocWeb.Api.V1.UserView
 
   def render("create.json", %{}) do

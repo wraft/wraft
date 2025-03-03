@@ -13,8 +13,9 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.BlockTemplate
+  alias WraftDoc.BlockTemplates
+  alias WraftDoc.BlockTemplates.BlockTemplate
+  alias WraftDoc.DataTemplates
 
   def swagger_definitions do
     %{
@@ -114,7 +115,8 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %BlockTemplate{} = block_template <- Document.create_block_template(current_user, params) do
+    with %BlockTemplate{} = block_template <-
+           BlockTemplates.create_block_template(current_user, params) do
       render(conn, "block_template.json", block_template: block_template)
     end
   end
@@ -140,7 +142,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.block_template_index(current_user, params) do
+         } <- BlockTemplates.index_block_template(current_user, params) do
       render(conn, "index.json",
         block_templates: block_templates,
         page_number: page_number,
@@ -168,7 +170,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %BlockTemplate{} = block_template <- Document.get_block_template(id, current_user) do
+    with %BlockTemplate{} = block_template <- BlockTemplates.get_block_template(id, current_user) do
       render(conn, "block_template.json", block_template: block_template)
     end
   end
@@ -196,9 +198,9 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %BlockTemplate{} = block_template <- Document.get_block_template(id, current_user),
+    with %BlockTemplate{} = block_template <- BlockTemplates.get_block_template(id, current_user),
          %BlockTemplate{} = block_template <-
-           Document.update_block_template(block_template, params) do
+           BlockTemplates.update_block_template(block_template, params) do
       render(conn, "block_template.json", block_template: block_template)
     end
   end
@@ -222,8 +224,8 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %BlockTemplate{} = block_template <- Document.get_block_template(id, current_user),
-         {:ok, %BlockTemplate{}} <- Document.delete_block_template(block_template) do
+    with %BlockTemplate{} = block_template <- BlockTemplates.get_block_template(id, current_user),
+         {:ok, %BlockTemplate{}} <- BlockTemplates.delete_block_template(block_template) do
       render(conn, "block_template.json", block_template: block_template)
     end
   end
@@ -249,7 +251,7 @@ defmodule WraftDocWeb.Api.V1.BlockTemplateController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, %Oban.Job{}} <-
-           Document.insert_block_template_bulk_import_work(
+           DataTemplates.insert_block_template_bulk_import_work(
              current_user,
              params["mapping"],
              params["file"]

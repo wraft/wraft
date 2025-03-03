@@ -22,15 +22,17 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   require Logger
 
+  alias WraftDoc.Assets
   alias WraftDoc.Client.Minio.DownloadError
-  alias WraftDoc.Document
-  alias WraftDoc.Document.ContentType
-  alias WraftDoc.Document.Instance
-  alias WraftDoc.Document.Instance.Version
-  alias WraftDoc.Document.Layout
+  alias WraftDoc.ContentTypes
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.Documents
+  alias WraftDoc.Documents.Instance
+  alias WraftDoc.Documents.Instance.Version
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Layouts.Layout
   alias WraftDoc.Notifications
   alias WraftDocWeb.Api.V1.InstanceVersionView
 
@@ -487,9 +489,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     type = Instance.types()[:normal]
     params = Map.put(params, "type", type)
 
-    with %ContentType{} = c_type <- Document.show_content_type(current_user, c_type_id),
+    with %ContentType{} = c_type <- ContentTypes.show_content_type(current_user, c_type_id),
          %Instance{} = content <-
-           Document.create_instance(current_user, c_type, params) do
+           Documents.create_instance(current_user, c_type, params) do
       Logger.info("Create content success")
       render(conn, :create, content: content)
     else
@@ -531,7 +533,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.instance_index(c_type_id, params) do
+         } <- Documents.instance_index(c_type_id, params) do
       render(conn, "index.json",
         contents: contents,
         page_number: page_number,
@@ -558,7 +560,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.list_pending_approvals(current_user, params) do
+         } <- Documents.list_pending_approvals(current_user, params) do
       render(conn, "approvals_index.json",
         contents: contents,
         page_number: page_number,
@@ -604,7 +606,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.instance_index_of_an_organisation(current_user, params) do
+         } <- Documents.instance_index_of_an_organisation(current_user, params) do
       render(conn, "index.json",
         contents: contents,
         page_number: page_number,
@@ -635,8 +637,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def show(conn, %{"id" => document_id, "type" => "guest"} = _params) do
     current_user = conn.assigns.current_user
 
-    with true <- Document.has_access?(current_user, document_id),
-         %Instance{} = instance <- Document.show_instance(document_id, current_user) do
+    with true <- Documents.has_access?(current_user, document_id),
+         %Instance{} = instance <- Documents.show_instance(document_id, current_user) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -644,7 +646,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def show(conn, %{"id" => instance_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Document.show_instance(instance_id, current_user) do
+    with %Instance{} = instance <- Documents.show_instance(instance_id, current_user) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -674,10 +676,10 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def update(conn, %{"id" => document_id, "type" => "guest"} = params) do
     current_user = conn.assigns.current_user
 
-    with true <- Document.has_access?(current_user, document_id, :editor),
-         %Instance{} = instance <- Document.get_instance(document_id, current_user),
-         %Instance{} = instance <- Document.update_instance(instance, params),
-         {:ok, %Version{}} <- Document.create_version(current_user, instance, params, :save) do
+    with true <- Documents.has_access?(current_user, document_id, :editor),
+         %Instance{} = instance <- Documents.get_instance(document_id, current_user),
+         %Instance{} = instance <- Documents.update_instance(instance, params),
+         {:ok, %Version{}} <- Documents.create_version(current_user, instance, params, :save) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -685,9 +687,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Instance{} = instance <- Document.get_instance(id, current_user),
-         %Instance{} = instance <- Document.update_instance(instance, params),
-         {:ok, %Version{}} <- Document.create_version(current_user, instance, params, :save) do
+    with %Instance{} = instance <- Documents.get_instance(id, current_user),
+         %Instance{} = instance <- Documents.update_instance(instance, params),
+         {:ok, %Version{}} <- Documents.create_version(current_user, instance, params, :save) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -715,8 +717,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def update_meta(conn, %{"id" => id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Instance{} = instance <- Document.get_instance(id, current_user),
-         {:ok, %Instance{} = instance} <- Document.update_meta(instance, params) do
+    with %Instance{} = instance <- Documents.get_instance(id, current_user),
+         {:ok, %Instance{} = instance} <- Documents.update_meta(instance, params) do
       render(conn, "instance.json", instance: instance)
     end
   end
@@ -743,9 +745,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Instance{} = instance <- Document.get_instance(id, current_user),
-         _ <- Document.delete_uploaded_docs(current_user, instance),
-         {:ok, %Instance{}} <- Document.delete_instance(instance) do
+    with %Instance{} = instance <- Documents.get_instance(id, current_user),
+         _ <- Documents.delete_uploaded_docs(current_user, instance),
+         {:ok, %Instance{}} <- Documents.delete_instance(instance) do
       render(conn, "instance.json", instance: instance)
     end
   end
@@ -774,14 +776,14 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
     start_time = Timex.now()
 
-    case Document.show_instance(instance_id, current_user) do
+    case Documents.show_instance(instance_id, current_user) do
       %Instance{content_type: %{layout: layout}} = instance ->
-        with %Layout{} = layout <- Document.preload_asset(layout),
-             {_, exit_code} <- Document.build_doc(instance, layout) do
+        with %Layout{} = layout <- Assets.preload_asset(layout),
+             {_, exit_code} <- Documents.build_doc(instance, layout) do
           end_time = Timex.now()
 
           Task.start_link(fn ->
-            Document.add_build_history(current_user, instance, %{
+            Documents.add_build_history(current_user, instance, %{
               start_time: start_time,
               end_time: end_time,
               exit_code: exit_code
@@ -805,7 +807,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     case exit_code do
       0 ->
         Task.start_link(fn ->
-          Document.create_version(conn.assigns.current_user, instance, params, :build)
+          Documents.create_version(conn.assigns.current_user, instance, params, :build)
         end)
 
         render(conn, "instance.json", instance: instance)
@@ -843,9 +845,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def state_update(conn, %{"id" => instance_id, "state_id" => state_id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Instance{} = instance <- Document.get_instance(instance_id, current_user),
+    with %Instance{} = instance <- Documents.get_instance(instance_id, current_user),
          %State{} = state <- Enterprise.get_state(current_user, state_id),
-         %Instance{} = instance <- Document.update_instance_state(instance, state) do
+         %Instance{} = instance <- Documents.update_instance_state(instance, state) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -874,9 +876,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def lock_unlock(conn, %{"id" => instance_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Instance{} = instance <- Document.get_instance(instance_id, current_user),
+    with %Instance{} = instance <- Documents.get_instance(instance_id, current_user),
          %Instance{} = instance <-
-           Document.lock_unlock_instance(instance, params) do
+           Documents.lock_unlock_instance(instance, params) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -910,7 +912,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.instance_index(current_user, key, params) do
+         } <- Documents.instance_index(current_user, key, params) do
       render(conn, "index.json",
         contents: contents,
         page_number: page_number,
@@ -942,8 +944,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def change(conn, %{"id" => instance_id, "v_id" => version_id}) do
     current_user = conn.assigns[:current_user]
 
-    with %Instance{} = instance <- Document.get_instance(instance_id, current_user) do
-      change = Document.version_changes(instance, version_id)
+    with %Instance{} = instance <- Documents.get_instance(instance_id, current_user) do
+      change = Documents.version_changes(instance, version_id)
 
       conn
       |> put_view(InstanceVersionView)
@@ -978,8 +980,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
              organisation: %Organisation{id: ^organisation_id} = organisation
            },
            state: state
-         } = instance <- Document.show_instance(id, current_user),
-         %Instance{} = instance <- Document.approve_instance(current_user, instance) do
+         } = instance <- Documents.show_instance(id, current_user),
+         %Instance{} = instance <- Documents.approve_instance(current_user, instance) do
       Task.start(fn ->
         Notifications.document_notification(
           current_user,
@@ -1015,8 +1017,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def reject(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Document.show_instance(id, current_user),
-         %Instance{} = instance <- Document.reject_instance(current_user, instance) do
+    with %Instance{} = instance <- Documents.show_instance(id, current_user),
+         %Instance{} = instance <- Documents.reject_instance(current_user, instance) do
       render(conn, "approve_or_reject.json", %{instance: instance})
     end
   end
@@ -1043,8 +1045,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def send_email(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Document.show_instance(id, current_user),
-         {:ok, _} <- Document.send_document_email(instance, params) do
+    with %Instance{} = instance <- Documents.show_instance(id, current_user),
+         {:ok, _} <- Documents.send_document_email(instance, params) do
       render(conn, "email.json", %{info: "Email sent successfully"})
     end
   end

@@ -11,15 +11,16 @@ defmodule WraftDoc.Workers.DefaultWorker do
   alias WraftDoc.Account.Role
   alias WraftDoc.Account.User
   alias WraftDoc.Account.UserRole
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Asset
-  alias WraftDoc.Document.DataTemplate
-  alias WraftDoc.Document.Engine
-  alias WraftDoc.Document.Layout
-  alias WraftDoc.Document.LayoutAsset
-  alias WraftDoc.Document.Theme
-  alias WraftDoc.Document.ThemeAsset
+  alias WraftDoc.Assets.Asset
+  alias WraftDoc.ContentTypes
+  alias WraftDoc.DataTemplates.DataTemplate
+  alias WraftDoc.Documents.Engine
+  alias WraftDoc.Fields
+  alias WraftDoc.Layouts.Layout
+  alias WraftDoc.Layouts.LayoutAsset
   alias WraftDoc.Repo
+  alias WraftDoc.Themes.Theme
+  alias WraftDoc.Themes.ThemeAsset
 
   @superadmin_role "superadmin"
 
@@ -220,7 +221,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
 
   defp create_wraft_variant(current_user, theme, layout, flow_id, params) do
     params = create_wraft_variant_params(current_user.id, params, theme.id, layout.id, flow_id)
-    Document.create_content_type(current_user, params)
+    ContentTypes.create_content_type(current_user, params)
   end
 
   defp create_wraft_variant_params(current_user_id, params, theme_id, layout_id, flow_id) do
@@ -229,7 +230,7 @@ defmodule WraftDoc.Workers.DefaultWorker do
         field_type = String.capitalize(field["type"])
 
         %{
-          "field_type_id" => Document.get_field_type_by_name(field_type).id,
+          "field_type_id" => Fields.get_field_type_by_name(field_type).id,
           "key" => field["name"],
           "name" => field["name"]
         }

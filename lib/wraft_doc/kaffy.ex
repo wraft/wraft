@@ -40,7 +40,7 @@ defmodule WraftDoc.Kaffy.Config do
         name: "Custom",
         resources: [
           field_type: [
-            schema: WraftDoc.Document.FieldType,
+            schema: WraftDoc.Fields.FieldType,
             admin: WraftDocWeb.FieldTypeAdmin
           ],
           template_asset: [

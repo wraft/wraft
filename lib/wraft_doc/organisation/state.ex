@@ -19,8 +19,8 @@ defmodule WraftDoc.Enterprise.Flow.State do
     # TODO remove this field // old implementation
     has_one(:approval_system, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :pre_state_id)
     has_one(:rejection_system, WraftDoc.Enterprise.ApprovalSystem, foreign_key: :post_state_id)
-    has_many(:instances, WraftDoc.Document.Instance, foreign_key: :state_id)
-    has_many(:content_collab, WraftDoc.Document.ContentCollaboration, foreign_key: :state_id)
+    has_many(:instances, WraftDoc.Documents.Instance, foreign_key: :state_id)
+    has_many(:content_collab, WraftDoc.Documents.ContentCollaboration, foreign_key: :state_id)
     many_to_many(:approvers, WraftDoc.Account.User, join_through: "state_users")
     timestamps()
   end

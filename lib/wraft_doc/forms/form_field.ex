@@ -12,7 +12,7 @@ defmodule WraftDoc.Forms.FormField do
     field(:order, :integer)
     embeds_many(:validations, Validation, on_replace: :delete)
     belongs_to(:form, WraftDoc.Forms.Form)
-    belongs_to(:field, WraftDoc.Document.Field)
+    belongs_to(:field, WraftDoc.Fields.Field)
 
     timestamps()
   end

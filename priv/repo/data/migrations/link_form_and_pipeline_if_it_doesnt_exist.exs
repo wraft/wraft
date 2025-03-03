@@ -6,8 +6,8 @@ defmodule WraftDoc.Repo.Migrations.LinkFormAndPipelineIfItDoesntExist do
   """
   require Logger
   import Ecto.Query, warn: false
-  alias WraftDoc.Document.Pipeline
   alias WraftDoc.Forms.FormPipeline
+  alias WraftDoc.Pipelines.Pipeline
   alias WraftDoc.Repo
 
   Logger.info("Starting linking form and pipeline if it doesn't exist")

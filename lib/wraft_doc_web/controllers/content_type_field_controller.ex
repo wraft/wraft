@@ -7,9 +7,9 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.ContentType
-  alias WraftDoc.Document.ContentTypeField
+  alias WraftDoc.ContentTypes
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.ContentTypes.ContentTypeField
 
   @doc """
   Delete a Content Type Field.
@@ -34,9 +34,10 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldController do
   def delete(conn, %{"content_type_id" => content_type_id, "field_id" => _field_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %ContentTypeField{} = content_type_field <- Document.get_content_type_field(params),
-         :ok <- Document.delete_content_type_field(content_type_field),
-         %ContentType{} = content_type <- Document.get_content_type(current_user, content_type_id) do
+    with %ContentTypeField{} = content_type_field <- ContentTypes.get_content_type_field(params),
+         :ok <- ContentTypes.delete_content_type_field(content_type_field),
+         %ContentType{} = content_type <-
+           ContentTypes.get_content_type(current_user, content_type_id) do
       conn
       |> put_view(WraftDocWeb.Api.V1.ContentTypeView)
       |> render("show.json", content_type: content_type)

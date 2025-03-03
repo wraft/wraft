@@ -14,8 +14,9 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Document
-  alias WraftDoc.Document.Comment
+  alias WraftDoc.Comments
+  alias WraftDoc.Comments.Comment
+  alias WraftDoc.Documents
   alias WraftDoc.Notifications
 
   def swagger_definitions do
@@ -139,8 +140,8 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def create(conn, %{"master_id" => document_id, "type" => "guest"} = params) do
     current_user = conn.assigns.current_user
 
-    with true <- Document.has_access?(current_user, document_id),
-         %Comment{} = comment <- Document.create_comment(current_user, params) do
+    with true <- Documents.has_access?(current_user, document_id),
+         %Comment{} = comment <- Comments.create_comment(current_user, params) do
       render(conn, "comment.json", comment: comment)
     end
   end
@@ -148,7 +149,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Comment{} = comment <- Document.create_comment(current_user, params) do
+    with %Comment{} = comment <- Comments.create_comment(current_user, params) do
       Task.start(fn ->
         Notifications.comment_notification(
           current_user.id,
@@ -182,7 +183,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.comment_index(current_user, params) do
+         } <- Comments.comment_index(current_user, params) do
       render(conn, "index.json",
         comments: comments,
         page_number: page_number,
@@ -214,7 +215,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Document.comment_replies(current_user, params) do
+         } <- Comments.comment_replies(current_user, params) do
       render(conn, "index.json",
         comments: comments,
         page_number: page_number,
@@ -242,7 +243,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Comment{} = comment <- Document.show_comment(id, current_user) do
+    with %Comment{} = comment <- Comments.show_comment(id, current_user) do
       render(conn, "comment.json", comment: comment)
     end
   end
@@ -267,8 +268,8 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Comment{} = comment <- Document.get_comment(id, current_user),
-         %Comment{} = comment <- Document.update_comment(comment, params) do
+    with %Comment{} = comment <- Comments.get_comment(id, current_user),
+         %Comment{} = comment <- Comments.update_comment(comment, params) do
       render(conn, "comment.json", comment: comment)
     end
   end
@@ -292,8 +293,8 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Comment{} = comment <- Document.get_comment(id, current_user),
-         {:ok, %Comment{}} <- Document.delete_comment(comment) do
+    with %Comment{} = comment <- Comments.get_comment(id, current_user),
+         {:ok, %Comment{}} <- Comments.delete_comment(comment) do
       render(conn, "delete.json", comment: comment)
     end
   end

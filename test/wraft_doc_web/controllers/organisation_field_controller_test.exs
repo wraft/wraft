@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.OrganisationFieldControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
-  alias WraftDoc.{Document.OrganisationField, Repo}
+  alias WraftDoc.{Documents.OrganisationField, Repo}
   import WraftDoc.Factory
 
   @create_attrs %{

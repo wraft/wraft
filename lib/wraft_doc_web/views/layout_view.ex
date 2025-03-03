@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.LayoutView do
   use WraftDocWeb, :view
-  alias WraftDoc.Document.Layout
+  alias WraftDoc.Layouts.Layout
   alias WraftDocWeb.Api.V1.AssetView
   alias WraftDocWeb.Api.V1.EngineView
   alias WraftDocWeb.Api.V1.FrameView
@@ -66,7 +66,7 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
   end
 
   # HACK: Handle nil case of frame, frame is optional.
-  defp render_frame(%Layout{frame: %WraftDoc.Document.Frame{} = frame}),
+  defp render_frame(%Layout{frame: %WraftDoc.Frames.Frame{} = frame}),
     do: render_one(frame, FrameView, "create.json", as: :frame)
 
   defp render_frame(_), do: nil

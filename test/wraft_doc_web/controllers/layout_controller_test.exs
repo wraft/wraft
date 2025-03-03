@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.LayoutControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
   import WraftDoc.Factory
-  alias WraftDoc.{Document.Layout, Repo}
+  alias WraftDoc.{Documents.Layout, Repo}
 
   @valid_attrs %{
     name: "Official Letter",

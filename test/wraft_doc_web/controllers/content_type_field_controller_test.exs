@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldControllerTest do
   use WraftDocWeb.ConnCase
   @moduletag :controller
   import WraftDoc.Factory
-  alias WraftDoc.{Document.ContentTypeField, Repo}
+  alias WraftDoc.{ContentTypes.ContentTypeField, Repo}
 
   test "delete content type field by given id", %{conn: conn} do
     user = conn.assigns.current_user
