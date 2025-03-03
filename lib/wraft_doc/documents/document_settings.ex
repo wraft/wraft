@@ -1,4 +1,4 @@
-defmodule WraftDoc.Document.DocumentSettings do
+defmodule WraftDoc.Documents.DocumentSettings do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
