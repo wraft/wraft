@@ -40,6 +40,7 @@ Wraft is built on top of open formats, using markdown and JSON. This means your 
 - Postgres
 - Minio - S3 compatible object storage
 - Pandoc
+- ImageMagick
 - Latex
 
 `.tools_version` will have the exact versions defined in it.
@@ -144,7 +145,16 @@ where `$DEB` is the path to the downloaded deb.
 These instructions are taken from [Official Pandoc Documentations](https://pandoc.org/installing.html).
 You may refer if the official documentation if you have any doubts.
 
-### 6 - **Latex**
+### 6 - **Imagemagick**
+
+To use Imagemagick, install the ImageMagick distribution.
+
+```sh
+sudo apt update
+sudo apt install imagemagick
+```
+
+### 7 - **Latex**
 
 To use Latex in OSX, install the MacTex Distribution. You can download MacTex [here](https://www.tug.org/mactex/).
 Choose the correct version that supports your device, download and install. Latex editor comes with the distribution.
@@ -162,7 +172,7 @@ In case you need latex editor, type in:
 $ sudo apt-get install texmaker
 ```
 
-### 7 - Running Wraft
+### 8 - Running Wraft
 
 To start your Wraft app:
 
@@ -202,7 +212,7 @@ Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 To get the API documentation, go [here](http://localhost:4000/api/swagger/index.html#/).
 
-### 8 - Frontend
+### 9 - Frontend
 
 Clone the frontend repository separately.
 
@@ -214,7 +224,7 @@ $ cd wraft-frontend
 
 Refer the README.md in the frontend repository for the setup.
 
-### 9 - Default User
+### 10 - Default User
 
 The default username and password
 
