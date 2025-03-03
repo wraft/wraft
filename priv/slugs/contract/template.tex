@@ -155,9 +155,16 @@ $if(path)$
 $endif$
 
 % chapter: 0, section: 1, subsection: 2 etc
-\setcounter{secnumdepth}{3}
-\setcounter{tocdepth}{1}
-\tableofcontents
+$if(toc)$
+{
+    $if(colorlinks)$
+    \hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
+    $endif$
+    \setcounter{secnumdepth}{3}
+    \setcounter{tocdepth}{$toc_depth$}
+    \tableofcontents
+  }
+$endif$
 \newpage
 $body$
 % Add some vertical space before the QR code

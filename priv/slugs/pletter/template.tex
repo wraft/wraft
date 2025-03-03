@@ -292,15 +292,6 @@ $for(include-before)$
 $include-before$
 
 $endfor$
-$if(toc)$
-{
-    $if(colorlinks)$
-    \hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
-    $endif$
-    \setcounter{tocdepth}{$toc-depth$}
-    \tableofcontents
-  }
-$endif$
 
 \begin{letter}{$for(address)$$address$$sep$\\$endfor$$if(subject)$\\ ~ \\$subject$$endif$}
     \opening{$opening$}
