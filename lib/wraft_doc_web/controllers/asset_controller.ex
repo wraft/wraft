@@ -211,8 +211,8 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   @spec show_image(Plug.Conn.t(), map) :: Plug.Conn.t()
   def show_image(conn, %{"id" => asset_id}) do
-    with %Asset{} = asset <- Document.get_asset(asset_id) do
-      redirect(conn, external: Document.get_image_url(asset))
+    with %Asset{} = asset <- Assets.get_asset(asset_id) do
+      redirect(conn, external: Assets.get_image_url(asset))
     end
   end
 
