@@ -992,7 +992,7 @@ defmodule WraftDoc.Documents do
            doc_settings: document_settings,
            creator: %User{name: name, email: email}
          } = instance,
-         %Layout{organisation: %Organisation{name: organisation_name}} = layout,
+         %Layout{organisation: %Organisation{name: organisation_name}, slug: slug} = layout,
          header,
          mkdir,
          theme,
@@ -1022,7 +1022,7 @@ defmodule WraftDoc.Documents do
       |> concat_strings("primary_color: \"#{theme.primary_color}\"\n")
       |> concat_strings("secondary_color: \"#{theme.secondary_color}\"\n")
       |> concat_strings("typescale: #{theme.typescale}\n")
-      |> document_option_header(document_settings)
+      |> document_option_header(document_settings, slug)
       |> concat_strings("--- \n")
 
     """
@@ -1031,12 +1031,18 @@ defmodule WraftDoc.Documents do
     """
   end
 
-  defp document_option_header(header, %{
-         table_of_content: toc,
-         table_of_content_depth: toc_depth,
-         qr: qr,
-         default_cover: default_cover
-       }) do
+  defp document_option_header(
+         header,
+         %{
+           table_of_content: toc,
+           table_of_content_depth: toc_depth,
+           qr: qr,
+           default_cover: default_cover
+         },
+         slug
+       ) do
+    toc = if "pletter" == slug, do: false, else: toc
+
     header
     |> concat_strings("toc: #{toc}\n")
     |> concat_strings("toc_depth: #{toc_depth}\n")

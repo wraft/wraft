@@ -5,24 +5,26 @@
 
 $if(body_color)$
 #let body_color = rgb("$body_color$".slice(1))
+$else$
+#let body_color = rgb("fff")
 $endif$
 
 $if(primary_color)$
 #let primary_color = rgb("$primary_color$".slice(1))
+$else$
+#let primary_color = rgb("000")
 $endif$
 
 $if(secondary_color)$
 #let secondary_color = rgb("$secondary_color$".slice(1))
-$endif$
-
-$if(toc_depth)$
-#let toc_depth = $toc_depth$
 $else$
-#let toc_depth = 3
+#let secondary_color = rgb("000")
 $endif$
 
 #show figure: set block(breakable: true)
-
+#set page(
+  background: image("$letterhead$".split("/wraft/").last(), width: 100%, height: 100%, fit: "contain")
+)
 #show: conf.with(
   margin: (auto),
   paper: "$if(papersize)$$papersize$$else$us-letter$endif$",
@@ -72,44 +74,6 @@ $endif$
   set text(if it.level <= 0 { primary_color } else { secondary_color })
   it
 }
-
-$if(default_cover)$
-#align(center)[
-  #text(12pt)[$organisation_name$]
-  #v(0.1cm)
-  #text(12pt)[$id$]
-
-  #box(line(length: 100%, stroke: 1pt))
-  #v(0.4cm)
-
-  #text(20pt, weight: "bold", fill: primary_color)[$title$]
-  #v(0.4cm)
-  #box(line(length: 100%, stroke: 1pt))
-  #v(1.5cm)
-
-  #align(center)[
-    *Prepared By*
-    #v(0.2cm)
-    $author_name$
-    #v(0.2cm)
-    $author_email$
-  ]
-  #v(1cm)
-
-  #text(12pt)[#datetime.today().display("[month repr:long] [day], [year]")]
-  ]
-#pagebreak()
-$endif$
-
-$if(toc)$
-#outline(
-  title: auto,
-  depth: toc_depth
-);
-
-#pagebreak()
-$endif$
-
 
 $body$
 

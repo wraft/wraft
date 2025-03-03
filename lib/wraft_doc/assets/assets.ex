@@ -14,6 +14,7 @@ defmodule WraftDoc.Assets do
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
+  alias WraftDoc.Utils.PdfToImageConverter
 
   @doc """
   Create an asset.
@@ -217,7 +218,7 @@ defmodule WraftDoc.Assets do
   def find_asset_header_values(
         %Asset{name: name, file: file, organisation_id: org_id} = asset,
         acc,
-        %Layout{frame: frame, slug: slug},
+        %Layout{frame: frame, slug: slug, engine: engine},
         %Instance{
           instance_id: instance_id
         }
@@ -229,10 +230,18 @@ defmodule WraftDoc.Assets do
 
     File.write!(asset_file_path, binary)
 
+    asset_file_path = process_asset_for_engine(asset_file_path, engine)
+
     if frame != nil || slug == "pletter" do
       Documents.concat_strings(acc, "letterhead: #{asset_file_path} \n")
     else
       Documents.concat_strings(acc, "#{name}: #{asset_file_path} \n")
     end
   end
+
+  # TODO - Need to use converting into svg here.
+  defp process_asset_for_engine(path, %{name: "Pandoc + Typst"}),
+    do: PdfToImageConverter.convert_pdf_to_image(path)
+
+  defp process_asset_for_engine(path, _engine), do: path
 end
