@@ -145,10 +145,11 @@ where `$DEB` is the path to the downloaded deb.
 These instructions are taken from [Official Pandoc Documentations](https://pandoc.org/installing.html).
 You may refer if the official documentation if you have any doubts.
 
-### 6 - **Imagemagick**
+### 6 - **ImageMagick**
 
-To use Imagemagick, install the ImageMagick distribution.
+To use ImageMagick, install the ImageMagick distribution from [here](https://imagemagick.org/script/download.php) appropriate to your OS.
 
+For linux:
 ```sh
 sudo apt update
 sudo apt install imagemagick
