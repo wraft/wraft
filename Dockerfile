@@ -64,11 +64,12 @@ FROM ${RUNNER_IMAGE}
 # RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
 #   && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
-RUN apt-get update && \
-    apt-get install -y \
-    postgresql-client inotify-tools
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+# Install required system dependencies
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    postgresql-client \
+    inotify-tools \
     build-essential \
     xorg \
     libssl-dev \
@@ -86,7 +87,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     texlive-plain-generic \
     texlive-latex-extra \
     texlive-xetex \
-    imagemagick && \
+    imagemagick \
     ca-certificates && \
     update-ca-certificates && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
