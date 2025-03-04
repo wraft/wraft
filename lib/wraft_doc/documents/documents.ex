@@ -1033,7 +1033,9 @@ defmodule WraftDoc.Documents do
     [
       "#{base_content_dir}/content.md",
       "--template=#{base_content_dir}/template.tex",
-      "--pdf-engine=#{System.get_env("XELATEX_PATH")}"
+      "--pdf-engine=#{System.get_env("XELATEX_PATH")}",
+      "--metadata",
+      "base_url=#{WraftDocWeb.Endpoint.url()}"
     ] ++ filter_args ++ ["-o", pdf_file]
   end
 

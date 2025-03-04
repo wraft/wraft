@@ -152,7 +152,7 @@ config :wraft_doc,
   layout_file: "priv/wraft_files/letterhead.pdf",
   default_template_files: "priv/wraft_files/templates",
   sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}",
-  frontend_url: "#{System.get_env("WRAFT_URL")}"
+  frontend_url: "#{System.get_env("FRONTEND_URL")}"
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
