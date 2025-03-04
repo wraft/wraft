@@ -1,6 +1,6 @@
 ARG ELIXIR_VERSION=1.15.8
 ARG OTP_VERSION=25.2.3
-ARG DEBIAN_VERSION=bookworm-20240722
+ARG DEBIAN_VERSION=bookworm-20250224
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -64,11 +64,12 @@ FROM ${RUNNER_IMAGE}
 # RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
 #   && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
-RUN apt-get update && \
-    apt-get install -y \
-    postgresql-client inotify-tools
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+# Install required system dependencies
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    postgresql-client \
+    inotify-tools \
     build-essential \
     xorg \
     libssl-dev \
@@ -86,13 +87,21 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     texlive-plain-generic \
     texlive-latex-extra \
     texlive-xetex \
-    imagemagick && \
+    imagemagick \
+    ca-certificates && \
+    update-ca-certificates && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates && \
-    wget https://github.com/jgm/pandoc/releases/download/3.6.3/pandoc-3.6.3-1-arm64.deb && \
-    dpkg -i pandoc-3.6.3-1-arm64.deb && \
-    rm pandoc-3.6.3-1-arm64.deb
+# Install Pandoc
+RUN ARCH=$(dpkg --print-architecture) && \
+    case "$ARCH" in \
+        amd64) PANDOC_DEB=pandoc-3.6.3-1-amd64.deb ;; \
+        arm64) PANDOC_DEB=pandoc-3.6.3-1-arm64.deb ;; \
+        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    wget -q https://github.com/jgm/pandoc/releases/download/3.6.3/${PANDOC_DEB} && \
+    dpkg -i ${PANDOC_DEB} && \
+    rm -f ${PANDOC_DEB}
 
 
 # Install Typst
