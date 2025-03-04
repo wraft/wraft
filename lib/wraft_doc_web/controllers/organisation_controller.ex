@@ -474,8 +474,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
       current_user = conn.assigns.current_user
 
     with {:error, :already_member} <- Enterprise.already_member(organisation_id, email),
-         %Organisation{name: name, owner_id: ^user_id} = organisation when name != "Personal" <-
+         %Organisation{name: name, owner_id: owner_id} = organisation when name != "Personal" <-
            Enterprise.get_organisation(organisation_id),
+         true <- owner_id == user_id || {:error, :not_owner},
          {:ok, %Oban.Job{}} <-
            AuthTokens.generate_delete_token_and_send_email(current_user, organisation) do
       conn
@@ -485,6 +486,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
       %Organisation{name: "Personal"} ->
         body = Jason.encode!(%{errors: "Can't delete personal organisation"})
         conn |> put_resp_content_type("application/json") |> send_resp(422, body)
+
+      {:error, :not_owner} ->
+        body = Jason.encode!(%{errors: "Only organisation owner can request deletion"})
+        conn |> put_resp_content_type("application/json") |> send_resp(403, body)
 
       :ok ->
         conn
@@ -645,9 +650,16 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
     with %UserOrganisation{organisation: %Organisation{} = organisation} = user_organisation <-
            Enterprise.get_user_organisation(current_user, user_id),
-         :ok <- Enterprise.validate_owner_removal(user_id, organisation.owner_id),
          {:ok, %UserOrganisation{}} <- Enterprise.remove_user(user_organisation, organisation.id) do
       render(conn, "remove_user.json")
+    else
+      {:error, "Owner cannot be removed"} ->
+        conn
+        |> put_status(:forbidden_request)
+        |> json(%{error: "Owner of the Organisation cannot be removed"})
+
+      error ->
+        error
     end
   end
 
@@ -681,6 +693,14 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
          {:ok, %Organisation{}} <-
            Enterprise.transfer_ownership(organisation, new_user_id) do
       render(conn, "transfer_ownership.json")
+    else
+      %Organisation{} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "Only organisation owner can transfer ownership"})
+
+      error ->
+        error
     end
   end
 

@@ -1786,39 +1786,35 @@ defmodule WraftDoc.Enterprise do
     Removes the given user from the organisation
   """
   def remove_user(%UserOrganisation{user: user} = user_organisation, org_id) do
-    with :ok <- handle_last_signed_in_org(user, org_id) do
+    with :ok <- validate_owner_removal(user.id, org_id),
+         :ok <- handle_last_signed_in_org(user, org_id) do
       user_organisation
       |> UserOrganisation.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
       |> Repo.update()
     end
   end
 
-  def validate_owner_removal(user_id, owner_id) do
-    case user_id == owner_id do
-      true -> {:error, :cannot_remove_owner}
-      false -> :ok
+  defp validate_owner_removal(user_id, owner_id) when user_id == owner_id,
+    do: {:error, "Owner cannot be removed"}
+
+  defp validate_owner_removal(_, _), do: :ok
+
+  defp handle_last_signed_in_org(%User{last_signed_in_org: last_signed_in_org} = user, org_id)
+       when last_signed_in_org == org_id do
+    personal_org = get_personal_organisation_and_role(user)
+
+    user
+    |> User.update_last_signed_in_org_changeset(%{
+      last_signed_in_org: personal_org.organisation.id
+    })
+    |> Repo.update()
+    |> case do
+      {:ok, _updated_user} -> :ok
+      error -> error
     end
   end
 
-  def handle_last_signed_in_org(user, org_id) do
-    case user.last_signed_in_org == org_id do
-      true ->
-        personal_org = get_personal_organisation_and_role(user)
-
-        user
-        |> User.update_last_signed_in_org_changeset(%{
-          last_signed_in_org: personal_org.organisation.id
-        })
-        |> Repo.update()
-        |> case do
-          {:ok, _updated_user} -> :ok
-          error -> error
-        end
-
-      false ->
-        :ok
-    end
-  end
+  defp handle_last_signed_in_org(_, _), do: :ok
 
   @doc """
    Gets the UserOrganisation for given user ID and organisation ID

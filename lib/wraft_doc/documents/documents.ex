@@ -318,7 +318,7 @@ defmodule WraftDoc.Documents do
   end
 
   @doc """
-    gives next state of flow
+  Next state of the document flow.
   """
   @spec next_state(State.t()) :: State.t() | nil
   def next_state(current_state) do
