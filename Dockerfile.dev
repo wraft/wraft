@@ -1,22 +1,37 @@
 FROM hexpm/elixir:1.15.8-erlang-25.2.3-debian-bookworm-20250224
 
-RUN apt-get update && \
-    apt-get install -y \
-    postgresql-client inotify-tools
-
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    build-essential xorg libssl-dev libxrender-dev git wget gdebi xvfb \
+# Install dependencies
+RUN apt-get update && apt-get install -y --fix-missing \
+    postgresql-client \
+    inotify-tools \
+    build-essential \
+    xorg \
+    libssl-dev \
+    libxrender-dev \
+    git \
+    wget \
+    gdebi \
+    xvfb \
     wkhtmltopdf \
     texlive-fonts-recommended \
     texlive-plain-generic \
     texlive-latex-extra \
     texlive-xetex \
-    imagemagick
+    imagemagick \
+    ca-certificates && \
+    update-ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates && \
-    wget https://github.com/jgm/pandoc/releases/download/3.6.3/pandoc-3.6.3-1-arm64.deb && \
-    dpkg -i pandoc-3.6.3-1-arm64.deb && \
-    rm pandoc-3.6.3-1-arm64.deb
+# Install Pandoc
+RUN ARCH=$(dpkg --print-architecture) && \
+    case "$ARCH" in \
+        amd64) PANDOC_DEB=pandoc-3.6.3-1-amd64.deb ;; \
+        arm64) PANDOC_DEB=pandoc-3.6.3-1-arm64.deb ;; \
+        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    wget -q https://github.com/jgm/pandoc/releases/download/3.6.3/${PANDOC_DEB} && \
+    dpkg -i ${PANDOC_DEB} && \
+    rm -f ${PANDOC_DEB}
 
 # Install Typst
 RUN wget -q https://github.com/typst/typst/releases/download/v0.13.0/typst-x86_64-unknown-linux-musl.tar.xz && \
@@ -24,7 +39,9 @@ RUN wget -q https://github.com/typst/typst/releases/download/v0.13.0/typst-x86_6
     mv typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst && \
     rm -rf typst-x86_64-unknown-linux-musl typst-x86_64-unknown-linux-musl.tar.xz
 
-RUN echo "xvfb-run -a -s \"-screen 0 640x480x16\" wkhtmltopdf \"\$@\"" >/usr/local/bin/wkhtmltopdf-wrapper && chmod +x /usr/local/bin/wkhtmltopdf-wrapper
+# Create a wrapper for wkhtmltopdf to run in headless mode
+RUN echo "xvfb-run -a -s \"-screen 0 640x480x16\" wkhtmltopdf \"\$@\"" > /usr/local/bin/wkhtmltopdf-wrapper && \
+    chmod +x /usr/local/bin/wkhtmltopdf-wrapper
 
 
 WORKDIR /app
