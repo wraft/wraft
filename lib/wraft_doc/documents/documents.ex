@@ -1026,13 +1026,24 @@ defmodule WraftDoc.Documents do
   end
 
   defp prepare_pandoc_cmds(pdf_file, base_content_dir) do
+    filters_base_path = Path.join(File.cwd!(), "priv/pandoc_filters")
+    filters = get_active_filters(Path.join(filters_base_path, "filters.yaml"))
+    filter_args = Enum.map(filters, &"--lua-filter=#{Path.join(filters_base_path, &1)}")
+
     [
       "#{base_content_dir}/content.md",
       "--template=#{base_content_dir}/template.tex",
       "--pdf-engine=#{System.get_env("XELATEX_PATH")}",
-      "-o",
-      pdf_file
-    ]
+      "--metadata",
+      "base_url=#{WraftDocWeb.Endpoint.url()}"
+    ] ++ filter_args ++ ["-o", pdf_file]
+  end
+
+  defp get_active_filters(yaml_config_path) do
+    case YamlElixir.read_from_file(yaml_config_path) do
+      {:ok, %{"filters" => filters}} -> filters
+      _ -> []
+    end
   end
 
   defp upload_file_and_delete_local_copy(

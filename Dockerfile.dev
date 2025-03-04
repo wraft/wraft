@@ -11,7 +11,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     texlive-fonts-recommended \
     texlive-plain-generic \
     texlive-latex-extra \
-    texlive-xetex
+    texlive-xetex \
+    imagemagick
 
 RUN echo "xvfb-run -a -s \"-screen 0 640x480x16\" wkhtmltopdf \"\$@\"" >/usr/local/bin/wkhtmltopdf-wrapper && chmod +x /usr/local/bin/wkhtmltopdf-wrapper
 

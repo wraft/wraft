@@ -65,6 +65,12 @@ defmodule WraftDocWeb.Router do
     end
   end
 
+  scope "/", WraftDocWeb.Api.V1 do
+    pipe_through(:api)
+    # Asset image redirect to minio url
+    get("/asset/image/:id", AssetController, :show_image)
+  end
+
   # Scope which does not need authorization.
   scope "/api", WraftDocWeb do
     pipe_through(:api)

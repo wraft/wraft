@@ -6,12 +6,14 @@ defmodule WraftDoc.Assets.Asset do
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
 
-  @types ~w(layout theme)
+  @types ~w(layout theme document)
 
   schema "asset" do
     field(:name, :string)
     field(:file, WraftDocWeb.AssetUploader.Type)
     field(:type, :string)
+    field(:url, :string)
+    field(:expiry_date, :utc_datetime)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     timestamps()
@@ -19,7 +21,7 @@ defmodule WraftDoc.Assets.Asset do
 
   def changeset(%Asset{} = asset, attrs \\ %{}) do
     asset
-    |> cast(attrs, [:name, :type, :organisation_id])
+    |> cast(attrs, [:name, :type, :organisation_id, :expiry_date, :url])
     |> validate_required([:name, :type, :organisation_id])
     |> validate_inclusion(:type, @types)
   end
@@ -29,6 +31,12 @@ defmodule WraftDoc.Assets.Asset do
     |> cast(attrs, [:name])
     |> cast_attachments(attrs, [:file])
     |> validate_required([:name, :file])
+  end
+
+  def update_expiry_date_changeset(%Asset{} = asset, attrs \\ %{}) do
+    asset
+    |> cast(attrs, [:expiry_date, :url])
+    |> validate_required([:expiry_date, :url])
   end
 
   def file_changeset(asset, attrs \\ %{}) do

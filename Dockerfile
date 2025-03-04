@@ -80,7 +80,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     texlive-fonts-recommended \
     texlive-plain-generic \
     texlive-latex-extra \
-    texlive-xetex
+    texlive-xetex \
+    imagemagick
 
 
 # Set the locale

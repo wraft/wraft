@@ -3,6 +3,9 @@ defmodule WraftDoc.DocConversion do
 
   alias WraftDocWeb.Funda
 
+  @doc """
+  Converts a document from one format to another
+  """
   def doc_conversion(template_path, params) do
     # "/Users/sk/offerletter.md"
     content = File.read!(template_path)

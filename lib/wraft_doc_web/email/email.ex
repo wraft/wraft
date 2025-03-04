@@ -178,7 +178,7 @@ defmodule WraftDocWeb.Mailer.Email do
   end
 
   defp frontend_url do
-    System.get_env("WRAFT_URL")
+    System.get_env("FRONTEND_URL")
   end
 
   defp build_registration_url(token) do
