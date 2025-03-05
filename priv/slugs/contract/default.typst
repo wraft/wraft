@@ -1,4 +1,4 @@
-#import "$path$".split("/wraft/").last() + "/template.typst": conf
+#import "$path$" + "/template.typst": conf
 #import "@preview/tablex:0.0.9": tablex
 
 #let horizontalrule = line(start: (25%,0%), end: (75%,0%))
@@ -22,6 +22,7 @@ $else$
 $endif$
 
 #show figure: set block(breakable: true)
+#set page(fill: body_color)
 
 #show: conf.with(
   margin: (auto),
@@ -67,12 +68,6 @@ $endif$
   cell
 }
 
-// TOC heading color
-#show outline.entry: it => {
-  set text(if it.level <= 0 { primary_color } else { secondary_color })
-  it
-}
-
 $if(default_cover)$
 #align(center)[
   #text(12pt)[$organisation_name$]
@@ -116,7 +111,7 @@ $body$
 #align(center + bottom)[
   $if(qr)$
     $if(qrcode)$
-      #image("$qrcode$".split("/wraft/").last(), width: 2cm)
+      #image("$qrcode$", width: 2cm)
     $endif$
   $endif$
 ]

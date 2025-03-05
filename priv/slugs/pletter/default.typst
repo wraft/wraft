@@ -1,4 +1,4 @@
-#import "$path$".split("/wraft/").last() + "/template.typst": conf
+#import "$path$" + "/template.typst": conf
 #import "@preview/tablex:0.0.9": tablex
 #import "@preview/muchpdf:0.1.1": muchpdf
 
@@ -24,7 +24,7 @@ $endif$
 
 #show figure: set block(breakable: true)
 #set page(
-  background: muchpdf(read("$letterhead$".split("/wraft/").last(), encoding: none),
+  background: muchpdf(read("$letterhead$", encoding: none),
   width: 100%, height: 100%, fit: "contain")
 )
 
@@ -83,7 +83,7 @@ $body$
 #align(center + bottom)[
   $if(qr)$
     $if(qrcode)$
-      #image("$qrcode$".split("/wraft/").last(), width: 2cm)
+      #image("$qrcode$", width: 2cm)
     $endif$
   $endif$
 ]
