@@ -1,6 +1,6 @@
 ARG ELIXIR_VERSION=1.15.8
 ARG OTP_VERSION=25.2.3
-ARG DEBIAN_VERSION=bookworm-20240722
+ARG DEBIAN_VERSION=bookworm-20250224
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -10,10 +10,9 @@ FROM ${BUILDER_IMAGE} as builder
 
 # install build dependencies
 RUN apt-get update -y \
-  && apt-get install curl -y \
-  && apt-get install -y build-essential git \
+  && apt-get install -y curl build-essential git \
   && apt-get clean \
-  && rm -f /var/lib/apt/lists/*_*
+  && rm -rf /var/lib/apt/lists/*
 
 # prepare build dir
 WORKDIR /app
@@ -65,15 +64,23 @@ COPY lib ./lib
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
 
-# RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
-#   && apt-get clean && rm -f /var/lib/apt/lists/*_*
-
+# Install required system dependencies
 RUN apt-get update && \
-    apt-get install -y \
-    postgresql-client inotify-tools
-
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    build-essential xorg libssl-dev libxrender-dev git wget vim gdebi xvfb gcc libstdc++6 \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    postgresql-client \
+    inotify-tools \
+    build-essential \
+    xorg \
+    libssl-dev \
+    libxrender-dev \
+    lmodern \
+    git \
+    wget \
+    vim \
+    gdebi \
+    xvfb \
+    gcc \
+    libstdc++6 \
     locales \
     wkhtmltopdf \
     pandoc \
@@ -81,7 +88,12 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y \
     texlive-plain-generic \
     texlive-latex-extra \
     texlive-xetex \
-    imagemagick
+    imagemagick \
+    ca-certificates && \
+    update-ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 
 
 # Set the locale
