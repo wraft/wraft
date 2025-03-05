@@ -1,4 +1,13 @@
-#import "$path$".split("/wraft/").last() + "/template.typst": conf
+#let filter-path(path) = {
+  let parts = path.split("organisations/")
+  if parts.len() > 1 {
+    "organisations/" + parts.last()
+  } else {
+    path
+  }
+}
+
+#import filter-path("$path$") + "/template.typst": conf
 #import "@preview/tablex:0.0.9": tablex
 
 #let horizontalrule = line(start: (25%,0%), end: (75%,0%))
@@ -116,7 +125,7 @@ $body$
 #align(center + bottom)[
   $if(qr)$
     $if(qrcode)$
-      #image("$qrcode$".split("/wraft/").last(), width: 2cm)
+      #image(filter-path("$qrcode$"), width: 2cm)
     $endif$
   $endif$
 ]

@@ -1046,6 +1046,7 @@ defmodule WraftDoc.Documents do
     |> concat_strings("default_cover: #{default_cover}\n")
   end
 
+  # HACK: Need to improve path handling.
   defp prepare_pandoc_cmds(pdf_file, base_content_dir, %Layout{
          engine: %Engine{name: "Pandoc + Typst"}
        }) do
