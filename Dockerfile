@@ -61,10 +61,6 @@ RUN mix release
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
 
-# RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales \
-#   && apt-get clean && rm -f /var/lib/apt/lists/*_*
-
-
 # Install required system dependencies
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \

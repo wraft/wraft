@@ -976,7 +976,7 @@ IO.inspect("before markdown")
     pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir, layout)
 
     "pandoc"
-    |> System.cmd(pandoc_commands, env: env, stderr_to_stdout: true)
+    |> System.cmd(pandoc_commands, stderr_to_stdout: true)
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
   end
 
