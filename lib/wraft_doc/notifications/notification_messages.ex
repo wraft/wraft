@@ -22,12 +22,21 @@ defmodule WraftDoc.Notifications.NotificationMessages do
     "Your role of #{role_name} in #{organisation_name} has been revoked. Contact the #{organisation_name} administrator for further details."
   end
 
-  def message(:pending_approvals, %{
+  def message(:state_update, %{
+        document_title: document_title,
         organisation_name: organisation_name,
-        document_name: document_name,
+        state_name: state_name,
+        approver_name: approver_name
+      }) do
+    "The Document #{document_title} in #{organisation_name} had been approved for the #{state_name} State by #{approver_name}"
+  end
+
+  def message(:pending_approvals, %{
+        document_title: document_title,
+        organisation_name: organisation_name,
         state_name: state_name
       }) do
-    "Action Required: The #{state_name} for #{document_name} in #{organisation_name} is pending."
+    "The Document #{document_title} in #{organisation_name} has been pending for the #{state_name}"
   end
 
   def message(:add_comment, %{

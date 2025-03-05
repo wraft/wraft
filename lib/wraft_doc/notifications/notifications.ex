@@ -8,7 +8,9 @@ defmodule WraftDoc.Notifications do
   alias WraftDoc.Account
   alias WraftDoc.Account.User
   alias WraftDoc.Documents
+  alias WraftDoc.Documents.Instance
   alias WraftDoc.Enterprise
+  alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Notifications.Notification
   alias WraftDoc.Notifications.NotificationMessages
   alias WraftDoc.Notifications.UserNotifications
@@ -20,10 +22,11 @@ defmodule WraftDoc.Notifications do
   Creates notifications for a list of users based on given parameters.
   Returns a list of successfully created notifications or an error.
   """
+
   def create_notification(users, params) when is_list(users) do
     users
-    |> Enum.map(&build_notification_params(&1, params))
-    |> Enum.map(&insert_notification/1)
+    |> Stream.map(&build_notification_params(&1, params))
+    |> Stream.map(&insert_notification/1)
     |> Enum.split_with(&match?({:ok, _}, &1))
     |> format_results()
   end
@@ -31,9 +34,7 @@ defmodule WraftDoc.Notifications do
   def create_notification(_), do: nil
 
   defp build_notification_params(%{id: actor_id}, params) do
-    params
-    |> Map.put(:actor_id, actor_id)
-    |> Map.put(:message, NotificationMessages.message(params.type, params))
+    %{params | actor_id: actor_id, message: NotificationMessages.message(params.type, params)}
   end
 
   defp insert_notification(notification_params) do
@@ -103,6 +104,38 @@ defmodule WraftDoc.Notifications do
       organisation_name: organisation.name,
       document_title: document.serialized["title"]
     })
+  end
+
+  @doc """
+  Notification for the document flow.
+  """
+  def document_notification(
+        %User{name: approver_name} = _current_user,
+        %Instance{serialized: %{"title" => document_title}} = _instance,
+        %Organisation{name: organisation_name} = _organisation,
+        state
+      ) do
+    next_state = Documents.next_state(state)
+
+    with {:ok, _} <-
+           create_notification(state.approvers, %{
+             type: :state_update,
+             document_title: document_title,
+             organisation_name: organisation_name,
+             state_name: state.state,
+             approver_name: approver_name
+           }),
+         {:ok, _} <-
+           create_notification(next_state.approvers, %{
+             type: :pending_approvals,
+             document_title: document_title,
+             organisation_name: organisation_name,
+             state_name: next_state.state
+           }) do
+      {:ok, :notifications_sent}
+    else
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   @doc """
