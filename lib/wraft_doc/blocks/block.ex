@@ -3,6 +3,7 @@ defmodule WraftDoc.Blocks.Block do
     The block model.
   """
   use WraftDoc.Schema
+  @behaviour ExTypesense
 
   use Waffle.Ecto.Schema
   alias __MODULE__
@@ -63,5 +64,27 @@ defmodule WraftDoc.Blocks.Block do
 
   def block_input_changeset(%Block{} = block, attrs) do
     cast_attachments(block, attrs, [:input])
+  end
+
+  @impl ExTypesense
+  def get_field_types do
+    %{
+      fields: [
+        %{name: "id", type: "string", facet: false},
+        %{name: "name", type: "string", facet: true},
+        %{name: "description", type: "string", facet: false},
+        %{name: "btype", type: "string", facet: true},
+        %{name: "dataset", type: "string", facet: false},
+        %{name: "input", type: "string", facet: false},
+        %{name: "file_url", type: "string", facet: false},
+        %{name: "api_route", type: "string", facet: true},
+        %{name: "endpoint", type: "string", facet: true},
+        %{name: "tex_chart", type: "string", facet: false},
+        %{name: "creator_id", type: "string", facet: true},
+        %{name: "organisation_id", type: "string", facet: true},
+        %{name: "inserted_at", type: "int64", facet: false},
+        %{name: "updated_at", type: "int64", facet: false}
+      ]
+    }
   end
 end

@@ -11,6 +11,7 @@ defmodule WraftDoc.Documents.Instance do
     * Content type id - Id of content type
   """
   use WraftDoc.Schema
+  @behaviour ExTypesense
 
   alias __MODULE__
   alias WraftDoc.EctoType.DocumentMetaType
@@ -106,5 +107,29 @@ defmodule WraftDoc.Documents.Instance do
     instance
     |> cast(attrs, [:editable])
     |> validate_required([:editable])
+  end
+
+  @impl ExTypesense
+  def get_field_types do
+    %{
+      fields: [
+        %{name: "id", type: "string", facet: false},
+        %{name: "instance_id", type: "string", facet: true},
+        %{name: "raw", type: "string", facet: false},
+        %{name: "serialized", type: "string", facet: false},
+        %{name: "document_type", type: "string", facet: true},
+        %{name: "meta", type: "string", facet: false},
+        %{name: "type", type: "int32", facet: true},
+        %{name: "editable", type: "bool", facet: true},
+        %{name: "allowed_users", type: "string[]", facet: true},
+        %{name: "approval_status", type: "bool", facet: true},
+        %{name: "creator_id", type: "string", facet: true},
+        %{name: "content_type_id", type: "string", facet: true},
+        %{name: "state_id", type: "string", facet: true},
+        %{name: "vendor_id", type: "string", facet: true},
+        %{name: "inserted_at", type: "int64", facet: false},
+        %{name: "updated_at", type: "int64", facet: false}
+      ]
+    }
   end
 end
