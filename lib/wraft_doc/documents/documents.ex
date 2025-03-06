@@ -1027,8 +1027,6 @@ defmodule WraftDoc.Documents do
 
   defp prepare_pandoc_cmds(pdf_file, base_content_dir) do
     filters_base_path = Path.join(File.cwd!(), "priv/pandoc_filters")
-    # filters = get_active_filters(Path.join(filters_base_path, "filters.yaml"))
-    # filter_args = Enum.map(filters, &"--lua-filter=#{Path.join(filters_base_path, &1)}")
 
     filter_args = [
       "--lua-filter=#{Path.join(filters_base_path, "s3_image.lua")}"
@@ -1037,9 +1035,7 @@ defmodule WraftDoc.Documents do
     [
       "#{base_content_dir}/content.md",
       "--template=#{base_content_dir}/template.tex",
-      "--pdf-engine=#{System.get_env("XELATEX_PATH")}",
-      "--metadata",
-      "base_url=#{System.get_env("BACKEND_URL")}"
+      "--pdf-engine=#{System.get_env("XELATEX_PATH")}"
     ] ++ filter_args ++ ["-o", pdf_file]
   end
 
