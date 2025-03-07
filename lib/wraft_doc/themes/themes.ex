@@ -217,8 +217,8 @@ defmodule WraftDoc.Themes do
 
   defp get_base_font_name(font_name) do
     font_name
-    |> String.replace(~r/([A-Z]+)([A-Z][a-z])/, "\1 \2")
-    |> String.replace(~r/([a-z])([A-Z])/, "\1 \2")
+    |> String.replace(~r/([A-Z]+)([A-Z][a-z])/, "\\1 \\2")
+    |> String.replace(~r/([a-z])([A-Z])/, "\\1 \\2")
   end
 
   def font_option_header(header, font_options) do

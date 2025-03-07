@@ -1060,24 +1060,24 @@ defmodule WraftDoc.Documents do
       "--template=#{base_content_dir}/default.typst",
       "--pdf-engine-opt=--root=/",
       "--pdf-engine-opt=--font-path=#{base_content_dir}/fonts",
-      "--pdf-engine=typst",
-      "-o",
-      pdf_file
-    ]
+      "--pdf-engine=typst"
+    ] ++ get_pandoc_filter("md_to_image_typst.lua") ++ ["-o", pdf_file]
   end
 
   defp prepare_pandoc_cmds(pdf_file, base_content_dir, _) do
-    filters_base_path = Path.join(File.cwd!(), "priv/pandoc_filters")
-
-    filter_args = [
-      "--lua-filter=#{Path.join(filters_base_path, "s3_image.lua")}"
-    ]
-
     [
       "#{base_content_dir}/content.md",
       "--template=#{base_content_dir}/template.tex",
       "--pdf-engine=#{System.get_env("XELATEX_PATH")}"
-    ] ++ filter_args ++ ["-o", pdf_file]
+    ] ++ get_pandoc_filter("s3_image.lua") ++ ["-o", pdf_file]
+  end
+
+  def get_pandoc_filter(filter_name) do
+    filter = [File.cwd!(), "priv/pandoc_filters", filter_name]
+
+    [
+      "--lua-filter=#{Path.join(filter)}"
+    ]
   end
 
   defp upload_file_and_delete_local_copy(
