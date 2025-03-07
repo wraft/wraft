@@ -109,8 +109,16 @@ defmodule WraftDoc.Documents do
     |> Repo.transaction()
     |> case do
       {:ok, %{instance: content}} ->
+        versions_preload_query =
+          from(version in Version,
+            where: version.content_id == ^content.id and version.type == :build,
+            order_by: [desc: version.inserted_at],
+            preload: [:author]
+          )
+
         Repo.preload(content, [
           :content_type,
+          {:versions, versions_preload_query},
           :state,
           :vendor,
           :instance_approval_systems
@@ -661,8 +669,8 @@ defmodule WraftDoc.Documents do
   def show_instance(instance_id, user) do
     # Preload the build versions of the instance
     versions_preload_query =
-      from(v in Version,
-        where: v.content_id == ^instance_id and v.type == :build,
+      from(version in Version,
+        where: version.content_id == ^instance_id and version.type == :build,
         preload: [:author]
       )
 
@@ -681,10 +689,6 @@ defmodule WraftDoc.Documents do
       ])
       |> get_built_document()
     end
-  end
-
-  def show_instance_guest(document_id) do
-    Repo.get(Instance, document_id)
   end
 
   @doc """
@@ -1037,13 +1041,6 @@ defmodule WraftDoc.Documents do
       "--template=#{base_content_dir}/template.tex",
       "--pdf-engine=#{System.get_env("XELATEX_PATH")}"
     ] ++ filter_args ++ ["-o", pdf_file]
-  end
-
-  defp get_active_filters(yaml_config_path) do
-    case YamlElixir.read_from_file(yaml_config_path) do
-      {:ok, %{"filters" => filters}} -> filters
-      _ -> []
-    end
   end
 
   defp upload_file_and_delete_local_copy(

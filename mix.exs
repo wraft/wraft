@@ -157,10 +157,7 @@ defmodule WraftDoc.Mixfile do
 
       # live collaboration
       {:rustler, ">= 0.34.0"},
-      {:y_ex, "~> 0.6.5"},
-
-      # yaml parser
-      {:yaml_elixir, "~> 2.11.0"}
+      {:y_ex, "~> 0.6.5"}
     ]
   end
 
