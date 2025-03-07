@@ -110,9 +110,9 @@ defmodule WraftDoc.Documents do
     |> case do
       {:ok, %{instance: content}} ->
         versions_preload_query =
-          from(v in Version,
-            where: v.content_id == ^content.id and v.type == :build,
-            order_by: [desc: v.inserted_at],
+          from(version in Version,
+            where: version.content_id == ^content.id and version.type == :build,
+            order_by: [desc: version.inserted_at],
             preload: [:author]
           )
 
@@ -669,8 +669,8 @@ defmodule WraftDoc.Documents do
   def show_instance(instance_id, user) do
     # Preload the build versions of the instance
     versions_preload_query =
-      from(v in Version,
-        where: v.content_id == ^instance_id and v.type == :build,
+      from(version in Version,
+        where: version.content_id == ^instance_id and version.type == :build,
         preload: [:author]
       )
 
