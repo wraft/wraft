@@ -71,6 +71,14 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
     }
   end
 
+  # Convert HTML block
+  defp convert_block(%MDEx.HtmlBlock{literal: content}, _opts) do
+    %{
+      "type" => "paragraph",
+      "content" => [%{"type" => "text", "text" => content}]
+    }
+  end
+
   # Convert blockquote
   defp convert_block(%MDEx.BlockQuote{nodes: content}, opts) do
     %{
@@ -165,10 +173,10 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
     }
   end
 
-  # Convert linebreak
-  # defp convert_inline_node(%MDEx.HardBreak{}, _opts) do
-  #   %{"type" => "hardBreak"}
-  # end
+  # Convert line break
+  defp convert_inline_node(%MDEx.LineBreak{}, _opts) do
+    %{"type" => "hardBreak"}
+  end
 
   # Convert soft break
   defp convert_inline_node(%MDEx.SoftBreak{}, _opts) do

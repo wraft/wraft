@@ -3,6 +3,9 @@ defmodule WraftDoc.DocConversion do
 
   alias WraftDocWeb.Funda
 
+  @conversion_timeout 5000
+  @pandoc_executable System.find_executable("pandoc")
+
   @doc """
   Converts a document from one format to another
   """
@@ -24,15 +27,21 @@ defmodule WraftDoc.DocConversion do
   """
   @spec convert(String.t()) :: {:ok, String.t()} | {:error, String.t()}
   def convert(docx_path) do
-    port =
-      Port.open({:spawn_executable, "/usr/bin/pandoc"}, [
-        :binary,
-        :exit_status,
-        :stderr_to_stdout,
-        args: ["-f", "docx", "-t", "markdown", docx_path]
-      ])
+    case @pandoc_executable do
+      nil ->
+        {:error, "Pandoc executable not found in system PATH"}
 
-    receive_output(port, "")
+      pandoc_path ->
+        port =
+          Port.open({:spawn_executable, pandoc_path}, [
+            :binary,
+            :exit_status,
+            :stderr_to_stdout,
+            args: ["-f", "docx", "-t", "markdown", docx_path]
+          ])
+
+        receive_output(port, "")
+    end
   end
 
   defp receive_output(port, acc) do
@@ -46,7 +55,7 @@ defmodule WraftDoc.DocConversion do
       {^port, {:exit_status, status}} ->
         {:error, "Pandoc failed with exit code #{status}"}
     after
-      5000 ->
+      @conversion_timeout ->
         Port.close(port)
         {:error, "Timeout waiting for Pandoc response"}
     end
