@@ -18,4 +18,37 @@ defmodule WraftDoc.DocConversion do
   def replace_content(key, value, content) do
     String.replace(content, "[#{key}]", value)
   end
+
+  @doc """
+    Converts a docx file to markdown
+  """
+  @spec convert(String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  def convert(docx_path) do
+    port =
+      Port.open({:spawn_executable, "/usr/bin/pandoc"}, [
+        :binary,
+        :exit_status,
+        :stderr_to_stdout,
+        args: ["-f", "docx", "-t", "markdown", docx_path]
+      ])
+
+    receive_output(port, "")
+  end
+
+  defp receive_output(port, acc) do
+    receive do
+      {^port, {:data, data}} ->
+        receive_output(port, acc <> data)
+
+      {^port, {:exit_status, 0}} ->
+        {:ok, acc}
+
+      {^port, {:exit_status, status}} ->
+        {:error, "Pandoc failed with exit code #{status}"}
+    after
+      5000 ->
+        Port.close(port)
+        {:error, "Timeout waiting for Pandoc response"}
+    end
+  end
 end
