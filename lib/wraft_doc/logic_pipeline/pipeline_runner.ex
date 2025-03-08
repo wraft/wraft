@@ -6,6 +6,7 @@ defmodule WraftDoc.PipelineRunner do
   use Opus.Pipeline
 
   alias WraftDoc.Account
+  alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
   alias WraftDoc.Documents
   alias WraftDoc.Documents.Instance
@@ -129,12 +130,14 @@ defmodule WraftDoc.PipelineRunner do
   Build all stages.
   """
   # TODO - write tests - Tests commented to use mock
-  @spec build(map) :: map
+  @spec build(map()) :: map()
+  # def build(%{instances: instances, user: user}), do: IO.inspect(data, label: "build")
   def build(%{instances: instances, user: user} = input) do
     builds =
       Enum.map(instances, fn instance ->
         instance = Repo.preload(instance, content_type: [{:layout, :assets}])
-        resp = Documents.bulk_build(user, instance, instance.content_type.layout)
+        layout = Assets.preload_asset(instance.content_type.layout)
+        resp = Documents.bulk_build(user, instance, layout)
         %{instance: instance, response: resp}
       end)
 
@@ -145,7 +148,8 @@ defmodule WraftDoc.PipelineRunner do
     builds =
       Enum.map(instances, fn instance ->
         instance = Repo.preload(instance, content_type: [{:layout, :assets}])
-        resp = Documents.bulk_build(instance, instance.content_type.layout)
+        layout = Assets.preload_asset(instance.content_type.layout)
+        resp = Documents.bulk_build(instance, layout)
         %{instance: instance, response: resp}
       end)
 

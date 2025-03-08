@@ -152,7 +152,7 @@ defmodule WraftDoc.Assets do
   """
   @spec preload_asset(Layout.t()) :: Layout.t()
   def preload_asset(%Layout{} = layout) do
-    Repo.preload(layout, [:assets, :frame, :engine])
+    Repo.preload(layout, [:assets, :frame, :engine, :organisation])
   end
 
   def preload_asset(_), do: {:error, :not_sufficient}

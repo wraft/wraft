@@ -32,7 +32,7 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Utils.ProsemirrorToMarkdown
 
-  @required_items ["layout", "theme", "flow", "variant", "frame"]
+  @required_items ["layout", "theme", "flow", "variant"]
   @allowed_folders ["theme", "layout", "frame"]
   @allowed_files ["template.json", "wraft.json"]
   @font_style_name ~w(Regular Italic Bold BoldItalic)

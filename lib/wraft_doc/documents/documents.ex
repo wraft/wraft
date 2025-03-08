@@ -963,7 +963,7 @@ IO.inspect("before markdown")
     content =
       prepare_markdown(
         instance,
-        Repo.preload(layout, [:organisation, :frame]),
+        layout,
         header,
         base_content_dir,
         theme,
