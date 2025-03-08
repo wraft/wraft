@@ -5,7 +5,7 @@ defmodule WraftDoc.Documents.DocumentSettings do
 
   @primary_key false
   embedded_schema do
-    field(:table_of_content, :boolean, default: true)
+    field(:table_of_content?, :boolean, default: true)
     field(:table_of_content_depth, :integer, default: 3)
     field(:qr, :boolean, default: true)
     field(:default_cover, :boolean, default: true)

@@ -1035,21 +1035,23 @@ defmodule WraftDoc.Documents do
   defp document_option_header(
          header,
          %{
-           table_of_content: toc,
+           table_of_content?: is_toc?,
            table_of_content_depth: toc_depth,
            qr: qr,
            default_cover: default_cover
          },
          slug
        ) do
-    toc = if "pletter" == slug, do: false, else: toc
+    is_toc? = if "pletter" == slug, do: false, else: is_toc?
 
     header
-    |> concat_strings("toc: #{toc}\n")
+    |> concat_strings("toc: #{is_toc?}\n")
     |> concat_strings("toc_depth: #{toc_depth}\n")
     |> concat_strings("qr: #{qr}\n")
     |> concat_strings("default_cover: #{default_cover}\n")
   end
+
+  defp document_option_header(header, _, _), do: header
 
   defp prepare_pandoc_cmds(pdf_file, base_content_dir, %Layout{
          engine: %Engine{name: "Pandoc + Typst"}

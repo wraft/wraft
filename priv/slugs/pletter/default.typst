@@ -29,14 +29,12 @@ $endif$
 )
 
 #show: conf.with(
-  margin: (auto),
+  margin: (x: 1.35in),
   paper: "$if(papersize)$$papersize$$else$us-letter$endif$",
   cols: $if(columns)$$columns$$else$1$endif$,
   // Typography
   font: ("$if(mainfont_base)$$mainfont_base$$else$Mallory$endif$"),
   fontsize: $if(fontsize)$$fontsize$$else$12pt$endif$,
-  lang: "$if(lang)$$lang$$else$en$endif$",
-  region: "$if(region)$$region$$else$US$endif$"
 )
 
 #show heading.where(level: 1): it => {
@@ -77,6 +75,14 @@ $endif$
   set text(if it.level <= 0 { primary_color } else { secondary_color })
   it
 }
+
+#v(0.8in)
+
+#align(right)[
+  #datetime.today().display("[month repr:long] [day], [year]")
+]
+
+#v(1cm)
 
 $body$
 

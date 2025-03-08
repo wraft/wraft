@@ -66,7 +66,6 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     postgresql-client \
     inotify-tools \
-    apt-get install -y \
     build-essential \
     xorg \
     libssl-dev \
