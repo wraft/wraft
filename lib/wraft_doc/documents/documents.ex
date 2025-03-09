@@ -117,7 +117,7 @@ defmodule WraftDoc.Documents do
           )
 
         Repo.preload(content, [
-          :content_type,
+          {:content_type, [layout: [:assets, :frame, :engine, :organisation]]},
           {:versions, versions_preload_query},
           :state,
           :vendor,

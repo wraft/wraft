@@ -6,7 +6,6 @@ defmodule WraftDoc.PipelineRunner do
   use Opus.Pipeline
 
   alias WraftDoc.Account
-  alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
   alias WraftDoc.Documents
   alias WraftDoc.Documents.Instance
@@ -134,9 +133,7 @@ defmodule WraftDoc.PipelineRunner do
   def build(%{instances: instances, user: user} = input) do
     builds =
       Enum.map(instances, fn instance ->
-        instance = Repo.preload(instance, content_type: [{:layout, :assets}])
-        layout = Assets.preload_asset(instance.content_type.layout)
-        resp = Documents.bulk_build(user, instance, layout)
+        resp = Documents.bulk_build(user, instance, instance.content_type.layout)
         %{instance: instance, response: resp}
       end)
 
@@ -146,9 +143,7 @@ defmodule WraftDoc.PipelineRunner do
   def build(%{instances: instances} = input) do
     builds =
       Enum.map(instances, fn instance ->
-        instance = Repo.preload(instance, content_type: [{:layout, :assets}])
-        layout = Assets.preload_asset(instance.content_type.layout)
-        resp = Documents.bulk_build(instance, layout)
+        resp = Documents.bulk_build(instance, instance.content_type.layout)
         %{instance: instance, response: resp}
       end)
 
