@@ -4,7 +4,6 @@ defmodule WraftDocWeb.Api.V1.SearchView do
 
   def render("search.json", %{
         results: results,
-        collection_name: collection_name,
         current_org_id: org_id,
         current_user_id: user_id,
         role_names: role_names
@@ -12,8 +11,6 @@ defmodule WraftDocWeb.Api.V1.SearchView do
     formatted_results =
       Formatter.format_results(results, org_id, user_id, role_names)
 
-    %{
-      collection_name => formatted_results
-    }
+    formatted_results
   end
 end

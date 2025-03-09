@@ -23,17 +23,29 @@ defmodule WraftDoc.Search.Formatter do
       |> format_documents()
 
     %{
-      found: length(filtered_docs),
+      total: length(filtered_docs),
       documents: filtered_docs,
       page: results["page"]
     }
   end
 
   defp format_documents(hits) when is_list(hits) do
-    Enum.map(hits, fn %{"document" => doc, "highlight" => %{"name" => %{"snippet" => highlight}}} ->
-      doc
-      |> Map.put("highlight", highlight)
-      |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+    Enum.map(hits, fn
+      %{"document" => doc, "highlight" => %{"name" => %{"snippet" => highlight}}} ->
+        doc
+        |> Map.put("highlight", highlight)
+        |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+
+      %{"document" => %{"collection_name" => "flow"} = doc, "highlight" => _highlight} ->
+        doc
+        # Default empty highlight
+        |> Map.put("highlight", "")
+        |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+
+      %{"document" => doc, "highlight" => _highlight} ->
+        doc
+        |> Map.put("highlight", "")
+        |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
     end)
   end
 
