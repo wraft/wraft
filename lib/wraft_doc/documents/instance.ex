@@ -117,6 +117,7 @@ defmodule WraftDoc.Documents.Instance do
         %{name: "instance_id", type: "string", facet: true},
         %{name: "raw", type: "string", facet: false},
         %{name: "serialized", type: "string", facet: false},
+        %{name: "name", type: "string", facet: true},
         %{name: "document_type", type: "string", facet: true},
         %{name: "meta", type: "string", facet: false},
         %{name: "type", type: "int32", facet: true},
@@ -128,7 +129,8 @@ defmodule WraftDoc.Documents.Instance do
         %{name: "state_id", type: "string", facet: true},
         %{name: "vendor_id", type: "string", facet: true},
         %{name: "inserted_at", type: "int64", facet: false},
-        %{name: "updated_at", type: "int64", facet: false}
+        %{name: "updated_at", type: "int64", facet: false},
+        %{name: "organisation_id", type: "string", facet: true}
       ]
     }
   end

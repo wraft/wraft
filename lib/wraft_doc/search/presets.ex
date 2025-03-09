@@ -13,15 +13,4 @@ defmodule WraftDoc.Search.Presets do
       prefix: true
     }
   end
-
-  def content_search_opts(user_id) do
-    %{
-      query_by: "title,description,content",
-      filter_by: "contains(allowed_users, #{user_id})",
-      sort_by: nil,
-      page: 1,
-      per_page: 10,
-      prefix: true
-    }
-  end
 end

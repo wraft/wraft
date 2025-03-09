@@ -93,11 +93,11 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   merged from default presets and request parameters.
   """
   @spec search(conn :: Plug.Conn.t(), params :: map()) :: Plug.Conn.t()
-  def search(%{assigns: %{current_user: %{id: user_id, current_org_id: org_id}}} = conn, params) do
+  def search(
+        %{assigns: %{current_user: %{id: user_id, current_org_id: org_id}}} = conn,
+        %{"query" => query, "collection_name" => collection} = params
+      ) do
     org_filter = "organisation_id:=#{org_id}"
-
-    %{"query" => query, "collection" => collection} =
-      Map.merge(%{"query" => "", "collection" => nil}, params)
 
     opts =
       Presets.default_search_opts()
@@ -107,9 +107,14 @@ defmodule WraftDocWeb.Api.V1.SearchController do
       |> Map.new()
       |> Map.put(:filter_by, org_filter)
 
-    case Typesense.search(user_id, query, collection, opts) do
+    case Typesense.search(query, collection, opts) do
       {:ok, results} ->
-        render(conn, "search.json", results: results)
+        render(conn, "search.json",
+          results: results,
+          collection_name: collection,
+          current_org_id: org_id,
+          current_user_id: user_id
+        )
 
       {:error, reason} ->
         conn

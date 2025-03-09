@@ -6,7 +6,6 @@ defmodule WraftDoc.Search.Typesense do
 
   alias WraftDoc.Repo
   alias WraftDoc.Search.Encoder
-  alias WraftDoc.Search.Presets
 
   @doc """
   Creates a new collection in Typesense based on the provided schema.
@@ -101,66 +100,22 @@ defmodule WraftDoc.Search.Typesense do
   If no collection name is provided, the search is executed across predefined collections.
   """
   @spec search(String.t(), String.t() | nil, keyword()) :: {:ok, map()} | {:error, any()}
-  def search(user_id, query, collection_name \\ nil, opts \\ []) do
-    collection_names = [
-      "content_type",
-      "theme",
-      "layout",
-      "flow",
-      "data_template",
-      "block",
-      "form",
-      "pipeline"
-    ]
+  def search(query, collection_name \\ nil, opts \\ []) do
+    search_params = %{
+      collection: collection_name,
+      q: query,
+      query_by: opts[:query_by],
+      filter_by: opts[:filter_by],
+      sort_by: opts[:sort_by],
+      page: opts[:page],
+      per_page: opts[:per_page]
+    }
 
-    case collection_name do
-      nil ->
-        searches =
-          Enum.map(collection_names, fn col ->
-            %{
-              collection: col,
-              q: query,
-              query_by: opts[:query_by]
-            }
-          end)
+    clean_search_params =
+      search_params
+      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+      |> Map.new()
 
-        ExTypesense.multi_search(searches)
-
-      "content" ->
-        search_params =
-          Map.merge(
-            Presets.content_search_opts(user_id),
-            %{
-              collection: collection_name,
-              q: query
-            }
-          )
-
-        clean_search_params =
-          search_params
-          |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-          |> Map.new()
-
-        ExTypesense.search(collection_name, clean_search_params)
-
-      _ ->
-        search_params = %{
-          collection: collection_name,
-          q: query,
-          query_by: opts[:query_by],
-          filter_by: opts[:filter_by],
-          sort_by: opts[:sort_by],
-          page: opts[:page],
-          per_page: opts[:per_page],
-          prefix: Keyword.get(opts, :prefix, true)
-        }
-
-        clean_search_params =
-          search_params
-          |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-          |> Map.new()
-
-        ExTypesense.search(collection_name, clean_search_params)
-    end
+    ExTypesense.search(collection_name, clean_search_params)
   end
 end

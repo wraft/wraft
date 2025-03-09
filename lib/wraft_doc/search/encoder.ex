@@ -12,16 +12,22 @@ defprotocol WraftDoc.Search.Encoder do
 end
 
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.Documents.Instance do
+  alias WraftDoc.Repo
+
   def to_document(%WraftDoc.Documents.Instance{} = instance) do
+    instance = Repo.preload(instance, :content_type)
+
     %{
       id: to_string(instance.id),
       collection_name: "content",
       instance_id: instance.instance_id,
       raw: instance.raw,
+      name: instance.serialized["title"],
       serialized: Jason.encode!(instance.serialized),
       document_type: instance.document_type,
       meta: Jason.encode!(instance.meta),
       type: instance.type,
+      organisation_id: to_string(instance.content_type.organisation_id),
       editable: instance.editable,
       allowed_users: instance.allowed_users,
       approval_status: instance.approval_status,
