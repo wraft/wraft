@@ -60,7 +60,11 @@ defmodule WraftDoc.Search.Typesense do
       {WraftDoc.DataTemplates.DataTemplate, "data_template"},
       {WraftDoc.Enterprise.Flow, "flow"},
       {WraftDoc.Layouts.Layout, "layout"},
-      {WraftDoc.Themes.Theme, "theme"}
+      {WraftDoc.Themes.Theme, "theme"},
+      {WraftDoc.Blocks.Block, "block"},
+      {WraftDoc.Forms.Form, "forms"},
+      {WraftDoc.Documents.Instance, "content"},
+      {WraftDoc.Pipelines.Pipeline, "pipeline"}
     ]
 
     Enum.each(collections, fn {schema, collection_name} ->
@@ -97,37 +101,21 @@ defmodule WraftDoc.Search.Typesense do
   """
   @spec search(String.t(), String.t() | nil, keyword()) :: {:ok, map()} | {:error, any()}
   def search(query, collection_name \\ nil, opts \\ []) do
-    collection_names = ["content_type", "theme", "layout", "flow", "data_template"]
+    search_params = %{
+      collection: collection_name,
+      q: query,
+      query_by: opts[:query_by],
+      filter_by: opts[:filter_by],
+      sort_by: opts[:sort_by],
+      page: opts[:page],
+      per_page: opts[:per_page]
+    }
 
-    if is_nil(collection_name) do
-      searches =
-        Enum.map(collection_names, fn col ->
-          %{
-            collection: col,
-            q: query,
-            query_by: opts[:query_by]
-          }
-        end)
+    clean_search_params =
+      search_params
+      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+      |> Map.new()
 
-      ExTypesense.multi_search(searches)
-    else
-      search_params = %{
-        collection: collection_name,
-        q: query,
-        query_by: opts[:query_by],
-        filter_by: opts[:filter_by],
-        sort_by: opts[:sort_by],
-        page: opts[:page],
-        per_page: opts[:per_page],
-        prefix: Keyword.get(opts, :prefix, true)
-      }
-
-      clean_search_params =
-        search_params
-        |> Enum.reject(fn {_k, v} -> is_nil(v) end)
-        |> Map.new()
-
-      ExTypesense.search(collection_name, clean_search_params)
-    end
+    ExTypesense.search(collection_name, clean_search_params)
   end
 end

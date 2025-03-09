@@ -15,6 +15,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
   alias WraftDoc.Blocks
   alias WraftDoc.Blocks.Block
   alias WraftDoc.Documents
+  alias WraftDoc.Search.TypesenseServer, as: Typesense
 
   def swagger_definitions do
     %{
@@ -183,6 +184,8 @@ defmodule WraftDocWeb.Api.V1.BlockController do
           })
 
         with %Block{} = block <- Blocks.create_block(current_user, params) do
+          Typesense.create_document(block)
+
           conn
           |> put_status(:created)
           |> render("create.json", block: block)
@@ -225,6 +228,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
         with %Block{} = block <- Blocks.get_block(id, current_user),
              %Block{} = block <- Blocks.update_block(block, params) do
+          Typesense.update_document(block)
           render(conn, "update.json", block: block)
         end
 
@@ -278,6 +282,7 @@ defmodule WraftDocWeb.Api.V1.BlockController do
 
     with %Block{} = block <- Blocks.get_block(id, current_user),
          {:ok, %Block{}} <- Blocks.delete_block(block) do
+      Typesense.delete_document(block, "block")
       render(conn, "block.json", block: block)
     end
   end

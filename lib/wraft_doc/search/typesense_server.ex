@@ -136,7 +136,6 @@ defmodule WraftDoc.Search.TypesenseServer do
       {:ok, _result} ->
         Logger.info("Typesense initialized successfully.")
 
-      # Handle when Typesense.initialize() returns :ok
       :ok ->
         Logger.info("Typesense initialized successfully (no extra data).")
 
