@@ -85,6 +85,7 @@ RUN apt-get update && \
     texlive-latex-extra \
     texlive-xetex \
     imagemagick \
+    curl \
     ca-certificates && \
     update-ca-certificates && \
     apt-get clean && \

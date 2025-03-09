@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --fix-missing \
     texlive-plain-generic \
     texlive-latex-extra \
     texlive-xetex \
+    curl \
     imagemagick \
     ca-certificates && \
     update-ca-certificates && \

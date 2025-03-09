@@ -1,5 +1,5 @@
 local base_url = os.getenv("BACKEND_URL") or "http://localhost:4000"
-local image_folder = os.getenv("PWD") .. "organisations/images/"
+local image_folder = os.getenv("PWD") .. "/organisations/images/"
 local image_map = {}
 local document_path = ""
 
@@ -56,9 +56,6 @@ end
 
 -- Unified Image Processing Function
 function Image(img)
-  if not os.execute("test -d " .. image_folder) then
-    os.execute("mkdir -p " .. image_folder)
-  end
 
   if img.src:match("^/asset/image/") then
     local uuid = img.src:match("/asset/image/([^{}]+)")

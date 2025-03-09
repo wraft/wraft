@@ -934,6 +934,7 @@ defmodule WraftDoc.Documents do
     instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
     base_content_dir = Path.join(File.cwd!(), instance_dir_path)
     File.mkdir_p(base_content_dir)
+    File.mkdir_p(Path.join(File.cwd!(), "organisations/images/"))
 
     # Load all the assets corresponding with the given theme
     theme = Repo.preload(content_type.theme, [:assets])
@@ -1090,10 +1091,12 @@ defmodule WraftDoc.Documents do
     case Minio.upload_file(pdf_file) do
       {:ok, _} ->
         File.rm_rf(file_path)
+        File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
         pandoc_response
 
       _ ->
         File.rm(pdf_file)
+        File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
         Logger.error("File upload failed")
         {"", 222}
     end
