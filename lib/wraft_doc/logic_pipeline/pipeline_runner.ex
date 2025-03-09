@@ -131,7 +131,6 @@ defmodule WraftDoc.PipelineRunner do
   """
   # TODO - write tests - Tests commented to use mock
   @spec build(map()) :: map()
-  # def build(%{instances: instances, user: user}), do: IO.inspect(data, label: "build")
   def build(%{instances: instances, user: user} = input) do
     builds =
       Enum.map(instances, fn instance ->

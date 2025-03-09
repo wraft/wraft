@@ -959,7 +959,7 @@ defmodule WraftDoc.Documents do
       Enum.reduce(content_type.fields, "--- \n", fn x, acc ->
         find_header_values(x, instance.serialized, acc)
       end)
-IO.inspect("before markdown")
+
     content =
       prepare_markdown(
         instance,
@@ -1051,9 +1051,7 @@ IO.inspect("before markdown")
     |> concat_strings("default_cover: #{is_default_cover?}\n")
   end
 
-  defp document_option_header(header, _, _) do
-    header
-  end
+  defp document_option_header(header, _, _), do: header
 
   defp prepare_pandoc_cmds(pdf_file, base_content_dir, %Layout{
          engine: %Engine{name: "Pandoc + Typst"}
@@ -1065,7 +1063,7 @@ IO.inspect("before markdown")
       "--pdf-engine-opt=--root=/",
       "--pdf-engine-opt=--font-path=#{base_content_dir}/fonts",
       "--pdf-engine=typst"
-    ] ++ get_pandoc_filter("md_to_image_typst.lua") ++ ["-o", pdf_file]
+    ] ++ get_pandoc_filter("s3_image_typst.lua") ++ ["-o", pdf_file]
   end
 
   defp prepare_pandoc_cmds(pdf_file, base_content_dir, _) do

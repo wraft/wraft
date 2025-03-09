@@ -130,8 +130,8 @@ COPY ./entrypoint.sh /entrypoint.sh
 COPY rel/commands/migrate.sh /app/
 COPY rel/overlays/seeds.sh /app/
 
-COPY priv/pandoc_filters/s3_image.lua /app/priv/pandoc_filters/s3_image.lua
-RUN chmod a+x /app/priv/pandoc_filters/s3_image.lua
+COPY priv/pandoc_filters/*.lua /app/priv/pandoc_filters/
+RUN chmod a+x /app/priv/pandoc_filters/*.lua
 
 RUN chmod a+x /entrypoint.sh
 RUN chmod a+x /app/migrate.sh

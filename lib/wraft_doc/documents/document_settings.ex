@@ -12,6 +12,11 @@ defmodule WraftDoc.Documents.DocumentSettings do
   end
 
   def changeset(document_settings, attrs \\ %{}) do
-    cast(document_settings, attrs, [:table_of_content?, :table_of_content_depth, :qr?, :default_cover?])
+    cast(document_settings, attrs, [
+      :table_of_content?,
+      :table_of_content_depth,
+      :qr?,
+      :default_cover?
+    ])
   end
 end
