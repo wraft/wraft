@@ -24,7 +24,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Documents.Instance do
       raw: instance.raw,
       name: instance.serialized["title"],
       serialized: Jason.encode!(instance.serialized),
-      document_type: instance.document_type,
+      #  document_type: instance.document_type,
       meta: Jason.encode!(instance.meta),
       type: instance.type,
       organisation_id: to_string(instance.content_type.organisation_id),

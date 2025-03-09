@@ -10,11 +10,16 @@ defmodule WraftDoc.Search.Formatter do
   @doc """
   Formats raw search results into structured data with filtering
   """
-  @spec format_results(map(), org_id(), user_id()) :: search_results()
-  def format_results(results, org_id, user_id) do
+  @spec format_results(
+          search_results,
+          org_id :: String.t(),
+          user_id :: String.t(),
+          role_names :: list()
+        ) :: map()
+  def format_results(results, org_id, user_id, role_names) do
     filtered_docs =
       results["hits"]
-      |> apply_filters(org_id, user_id)
+      |> apply_filters(org_id, user_id, role_names)
       |> format_documents()
 
     %{
@@ -24,7 +29,6 @@ defmodule WraftDoc.Search.Formatter do
     }
   end
 
-  @spec format_documents(list()) :: list(map())
   defp format_documents(hits) when is_list(hits) do
     Enum.map(hits, fn %{"document" => doc, "highlight" => %{"name" => %{"snippet" => highlight}}} ->
       doc
@@ -33,22 +37,21 @@ defmodule WraftDoc.Search.Formatter do
     end)
   end
 
-  @spec apply_filters(list(), org_id(), user_id()) :: list()
-  defp apply_filters(hits, org_id, user_id) do
+  defp apply_filters(hits, org_id, user_id, role_names) do
     hits
     |> filter_by_org(org_id)
-    |> filter_by_user_access(user_id)
+    |> filter_by_user_access(user_id, role_names)
   end
 
-  @spec filter_by_org(list(), org_id()) :: list()
   defp filter_by_org(hits, org_id) do
     Enum.filter(hits, fn hit ->
       hit["document"]["organisation_id"] == org_id
     end)
   end
 
-  @spec filter_by_user_access(list(), user_id()) :: list()
-  defp filter_by_user_access(hits, user_id) do
+  defp filter_by_user_access(hits, _user_id, "superadmin"), do: hits
+
+  defp filter_by_user_access(hits, user_id, _role_name) do
     Enum.filter(hits, fn hit ->
       document = hit["document"]
 

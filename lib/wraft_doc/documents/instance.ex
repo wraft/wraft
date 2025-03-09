@@ -118,7 +118,7 @@ defmodule WraftDoc.Documents.Instance do
         %{name: "raw", type: "string", facet: false},
         %{name: "serialized", type: "string", facet: false},
         %{name: "name", type: "string", facet: true},
-        %{name: "document_type", type: "string", facet: true},
+        # %{name: "document_type", type: "string", facet: true},
         %{name: "meta", type: "string", facet: false},
         %{name: "type", type: "int32", facet: true},
         %{name: "editable", type: "bool", facet: true},

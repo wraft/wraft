@@ -22,6 +22,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
   alias WraftDoc.Forms.FormPipeline
   alias WraftDoc.Pipelines
   alias WraftDoc.Pipelines.Pipeline
+  alias WraftDoc.Search.TypesenseServer, as: Typesense
 
   def swagger_definitions do
     %{
@@ -234,6 +235,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
     with %Pipeline{} = pipeline <- Pipelines.create_pipeline(current_user, params),
          %Form{} = form <- Forms.get_form(current_user, pipeline.source_id),
          {:ok, %FormPipeline{}} <- Forms.create_form_pipeline(form, pipeline.id) do
+      Typesense.create_document(pipeline)
       render(conn, "create.json", pipeline: pipeline)
     end
   end
@@ -304,6 +306,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
 
     with %Pipeline{} = pipeline <- Pipelines.get_pipeline(current_user, p_uuid),
          %Pipeline{} = pipeline <- Pipelines.pipeline_update(pipeline, current_user, params) do
+      Typesense.update_document(pipeline)
       render(conn, "show.json", pipeline: pipeline)
     end
   end
@@ -358,6 +361,7 @@ defmodule WraftDocWeb.Api.V1.PipelineController do
 
     with %Pipeline{} = pipeline <- Pipelines.get_pipeline(current_user, uuid),
          {:ok, %Pipeline{}} <- Pipelines.delete_pipeline(pipeline) do
+      Typesense.update_document(pipeline)
       render(conn, "pipeline.json", pipeline: pipeline)
     end
   end

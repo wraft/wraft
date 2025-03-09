@@ -113,7 +113,8 @@ defmodule WraftDocWeb.Api.V1.SearchController do
           results: results,
           collection_name: collection,
           current_org_id: org_id,
-          current_user_id: user_id
+          current_user_id: user_id,
+          role_names: conn.assigns.current_user.role_names
         )
 
       {:error, reason} ->
