@@ -1785,19 +1785,18 @@ defmodule WraftDoc.Enterprise do
   @doc """
     Removes the given user from the organisation
   """
-  def remove_user(%UserOrganisation{user: user} = user_organisation, org_id) do
-    with :ok <- validate_owner_removal(user.id, org_id),
-         :ok <- handle_last_signed_in_org(user, org_id) do
+  @spec remove_user(UserOrganisation.t(), Ecto.UUID.t()) ::
+          {:ok, UserOrganisation.t()} | {:error, Ecto.Changeset.t()}
+  def remove_user(%UserOrganisation{user: user} = user_organisation, org_id, owner_id)
+      when user.id != owner_id do
+    with :ok <- handle_last_signed_in_org(user, org_id) do
       user_organisation
       |> UserOrganisation.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
       |> Repo.update()
     end
   end
 
-  defp validate_owner_removal(user_id, owner_id) when user_id == owner_id,
-    do: {:error, "Owner cannot be removed"}
-
-  defp validate_owner_removal(_, _), do: :ok
+  def remove_user(_, _), do: {:error, "Owner cant be Removed"}
 
   defp handle_last_signed_in_org(%User{last_signed_in_org: last_signed_in_org} = user, org_id)
        when last_signed_in_org == org_id do
