@@ -4,7 +4,13 @@ defmodule WraftDoc.DocConversion do
   alias WraftDocWeb.Funda
 
   @conversion_timeout 5000
-  @pandoc_executable System.find_executable("pandoc")
+
+  # 1. Check if a PANDOC_PATH environment variable is set
+  # 2. Use System.find_executable to search in PATH
+  # 3. Use common Docker installation paths as fallbacks
+  @pandoc_executable System.get_env("PANDOC_PATH") ||
+                       System.find_executable("pandoc") ||
+                       "/usr/bin/pandoc"
 
   @doc """
   Converts a document from one format to another
