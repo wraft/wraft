@@ -37,7 +37,7 @@ defmodule WraftDoc.DocConversion do
             :binary,
             :exit_status,
             :stderr_to_stdout,
-            args: ["-f", "docx", "-t", "markdown", docx_path]
+            args: ["-f", "docx", "-t", "gfm", "--wrap=none", docx_path]
           ])
 
         receive_output(port, "")
