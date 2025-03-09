@@ -129,11 +129,10 @@ defmodule WraftDoc.PipelineRunner do
   Build all stages.
   """
   # TODO - write tests - Tests commented to use mock
-  @spec build(map) :: map
+  @spec build(map()) :: map()
   def build(%{instances: instances, user: user} = input) do
     builds =
       Enum.map(instances, fn instance ->
-        instance = Repo.preload(instance, content_type: [{:layout, :assets}])
         resp = Documents.bulk_build(user, instance, instance.content_type.layout)
         %{instance: instance, response: resp}
       end)
@@ -144,7 +143,6 @@ defmodule WraftDoc.PipelineRunner do
   def build(%{instances: instances} = input) do
     builds =
       Enum.map(instances, fn instance ->
-        instance = Repo.preload(instance, content_type: [{:layout, :assets}])
         resp = Documents.bulk_build(instance, instance.content_type.layout)
         %{instance: instance, response: resp}
       end)

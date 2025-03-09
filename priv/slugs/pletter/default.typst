@@ -1,0 +1,99 @@
+#import "$path$" + "/template.typst": conf
+#import "@preview/tablex:0.0.9": tablex
+#import "@preview/muchpdf:0.1.1": muchpdf
+
+#let horizontalrule = line(start: (25%,0%), end: (75%,0%))
+
+$if(body_color)$
+#let body_color = rgb("$body_color$".slice(1))
+$else$
+#let body_color = rgb("fff")
+$endif$
+
+$if(primary_color)$
+#let primary_color = rgb("$primary_color$".slice(1))
+$else$
+#let primary_color = rgb("000")
+$endif$
+
+$if(secondary_color)$
+#let secondary_color = rgb("$secondary_color$".slice(1))
+$else$
+#let secondary_color = rgb("000")
+$endif$
+
+#show figure: set block(breakable: true)
+#set page(
+  background: muchpdf(read("$letterhead$", encoding: none),
+  width: 100%, height: 100%, fit: "contain")
+)
+
+#show: conf.with(
+  margin: (x: 1.35in),
+  paper: "$if(papersize)$$papersize$$else$us-letter$endif$",
+  cols: $if(columns)$$columns$$else$1$endif$,
+  // Typography
+  font: ("$if(mainfont_base)$$mainfont_base$$else$Mallory$endif$"),
+  fontsize: $if(fontsize)$$fontsize$$else$12pt$endif$,
+)
+
+#show heading.where(level: 1): it => {
+  set text(primary_color)
+  block(it)
+}
+
+#show table: table => {
+  let column_count = table.columns.len()
+
+  let equal_columns = (1fr,) * column_count
+
+  tablex(
+    columns: equal_columns,
+    auto-vlines: true,
+    auto-hlines: true,
+    stroke: 0.5pt,
+    inset: 6pt,
+    align: center + horizon,
+    map-rows: (row, cells) => cells.map(c =>
+     if row == 0 {
+      (..c, content: strong(c.content))
+    } else {
+      c
+    }
+  ),
+    ..table.children
+  )
+}
+
+#show table.cell: cell => {
+  set align(center)
+  cell
+}
+
+// TOC heading color
+#show outline.entry: it => {
+  set text(if it.level <= 0 { primary_color } else { secondary_color })
+  it
+}
+
+#v(0.8in)
+
+#align(right)[
+  #datetime.today().display("[month repr:long] [day], [year]")
+]
+
+#v(1cm)
+
+$body$
+
+#align(center + bottom)[
+  $if(qr)$
+    $if(qrcode)$
+      #image("$qrcode$", width: 2cm)
+    $endif$
+  $endif$
+]
+
+$if(bibliography)$
+#bibliography($for(bibliography)$$bibliography$$sep$,$endfor$)
+$endif$

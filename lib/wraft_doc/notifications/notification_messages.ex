@@ -37,28 +37,28 @@ defmodule WraftDoc.Notifications.NotificationMessages do
     "You've been mentioned in a comment on #{document_title} in #{organisation_name}. Check it out!"
   end
 
-  def message(:form_mapping_not_complete) do
+  def message(:form_mapping_not_complete, _) do
     "Please complete the form mapping for pipeline and try again."
   end
 
-  def message(:pipeline_not_found) do
+  def message(:pipeline_not_found, _) do
     "The pipeline you're trying to run does not exist.
     Please double-check the pipeline and try again."
   end
 
-  def message(:pipeline_instance_failed) do
+  def message(:pipeline_instance_failed, _) do
     "There was an error creating the document instance for pipeline, Please check the input data and try again."
   end
 
-  def message(:pipeline_download_error) do
+  def message(:pipeline_download_error, _) do
     "There was an error downloading the assets for the pipeline. Please try again."
   end
 
-  def message(:pipeline_build_success) do
+  def message(:pipeline_build_success, _) do
     "Pipeline build success"
   end
 
-  def message(:pipeline_build_failed) do
+  def message(:pipeline_build_failed, _) do
     "Some builds failed for the pipeline. Please check the logs for more information."
   end
 end

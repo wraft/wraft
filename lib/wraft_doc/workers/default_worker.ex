@@ -123,8 +123,10 @@ defmodule WraftDoc.Workers.DefaultWorker do
         })
       )
     )
-    |> Multi.run(:upload_layout_asset, fn _, %{layout: layout} ->
+    |> Multi.run(:upload_layout_asset, fn _,
+                                          %{layout: layout, contract_layout: contract_layout} ->
       create_wraft_layout_assets(layout, organisation_id)
+      create_wraft_layout_assets(contract_layout, organisation_id)
     end)
     |> Multi.run(:upload_theme_asset, fn _, %{theme: theme} ->
       create_wraft_theme_assets(theme, organisation_id)

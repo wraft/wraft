@@ -485,7 +485,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       ) do
     current_user = conn.assigns[:current_user]
     type = Instance.types()[:normal]
-    params = Map.put(params, "type", type)
+
+    params =
+      Map.merge(params, %{
+        "type" => type,
+        "doc_settings" => params["doc_settings"] || %{}
+      })
 
     with %ContentType{} = c_type <- ContentTypes.show_content_type(current_user, c_type_id),
          %Instance{} = content <-
