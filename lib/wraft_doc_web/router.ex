@@ -302,6 +302,8 @@ defmodule WraftDocWeb.Router do
       get("/contents/:id/approval_history", InstanceApprovalController, :approval_history)
       # Send document instance email
       post("/contents/:id/email", InstanceController, :send_email)
+      # Import docx
+      post("/import_docx", DocumentController, :import_docx)
 
       get("/users/list_pending_approvals", InstanceController, :list_pending_approvals)
 
