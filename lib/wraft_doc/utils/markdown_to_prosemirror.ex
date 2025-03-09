@@ -335,7 +335,7 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
 
   # Helper to extract language from code block attributes
   defp get_language_from_attrs(attrs) do
-    class = attrs |> Enum.find(fn {key, _} -> key == "class" end)
+    class = Enum.find(attrs, fn {key, _} -> key == "class" end)
 
     if class do
       {_, class_value} = class
@@ -360,23 +360,25 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
 
   # Convert table rows
   defp convert_table_rows(rows, opts) do
-    Enum.map(rows, fn
-      {"thead", _thead_attrs, thead_content, _thead_meta} ->
-        convert_table_rows(thead_content, opts)
+    rows_mapped =
+      Enum.map(rows, fn
+        {"thead", _thead_attrs, thead_content, _thead_meta} ->
+          convert_table_rows(thead_content, opts)
 
-      {"tbody", _tbody_attrs, tbody_content, _tbody_meta} ->
-        convert_table_rows(tbody_content, opts)
+        {"tbody", _tbody_attrs, tbody_content, _tbody_meta} ->
+          convert_table_rows(tbody_content, opts)
 
-      {"tr", _tr_attrs, tr_content, _tr_meta} ->
-        %{
-          "type" => "tableRow",
-          "content" => Enum.map(tr_content, &convert_table_cell(&1, opts))
-        }
+        {"tr", _tr_attrs, tr_content, _tr_meta} ->
+          %{
+            "type" => "tableRow",
+            "content" => Enum.map(tr_content, &convert_table_cell(&1, opts))
+          }
 
-      _ ->
-        []
-    end)
-    |> List.flatten()
+        _ ->
+          []
+      end)
+
+    List.flatten(rows_mapped)
   end
 
   # Convert table cells
@@ -414,11 +416,12 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
 
   # Convert MDEx.TableRow to ProseMirror tableRow
   defp convert_table_row(%MDEx.TableRow{nodes: cells}, alignments, opts) do
+    cells_with_index = Enum.with_index(cells)
+
     %{
       "type" => "tableRow",
       "content" =>
-        Enum.with_index(cells)
-        |> Enum.map(fn {cell, index} ->
+        Enum.map(cells_with_index, fn {cell, index} ->
           alignment = Enum.at(alignments, index, :none)
           convert_table_cell(cell, alignment, opts)
         end)
@@ -435,6 +438,9 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
         _ -> nil
       end
 
+    node_content = Enum.map(content, &convert_mdex_node(&1, opts))
+    wrapped_content = maybe_wrap_in_paragraph(node_content)
+
     %{
       "type" => "tableCell",
       "attrs" => %{
@@ -442,7 +448,7 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
         "rowspan" => 1,
         "alignment" => align_value
       },
-      "content" => content |> Enum.map(&convert_mdex_node(&1, opts)) |> maybe_wrap_in_paragraph()
+      "content" => wrapped_content
     }
   end
 
@@ -478,9 +484,8 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
       end
 
     # Extract rows
-    rows =
-      Regex.scan(tr_regex, table_content)
-      |> Enum.map(fn [_, row] -> parse_table_row(row, opts) end)
+    tr_matches = Regex.scan(tr_regex, table_content)
+    rows = Enum.map(tr_matches, fn [_, row] -> parse_table_row(row, opts) end)
 
     # Create ProseMirror table
     %{
@@ -501,13 +506,11 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
     td_regex = ~r/<td(?:\s+[^>]*)?>(.*?)<\/td>/s
 
     # Extract all th and td cells
-    th_cells =
-      Regex.scan(th_regex, row_html)
-      |> Enum.map(fn [_, content] -> parse_table_cell(content, opts, true) end)
+    th_matches = Regex.scan(th_regex, row_html)
+    th_cells = Enum.map(th_matches, fn [_, content] -> parse_table_cell(content, opts, true) end)
 
-    td_cells =
-      Regex.scan(td_regex, row_html)
-      |> Enum.map(fn [_, content] -> parse_table_cell(content, opts, false) end)
+    td_matches = Regex.scan(td_regex, row_html)
+    td_cells = Enum.map(td_matches, fn [_, content] -> parse_table_cell(content, opts, false) end)
 
     # Combine cells (th first, then td)
     cells = th_cells ++ td_cells
@@ -570,6 +573,7 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
     create_text_node(text)
   end
 
+  # Split the complex convert_mdex_node function into smaller, more focused functions
   defp convert_mdex_node(%MDEx.Strong{nodes: content}, _opts) do
     text = get_mdex_text_content(content)
     # Clean any HTML tags from the text content
@@ -643,75 +647,78 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
     %{"type" => "hardBreak"}
   end
 
-  defp convert_mdex_node(%MDEx.HtmlInline{literal: literal}, _opts) do
-    # Parse the HTML inline element and convert to appropriate mark
+  defp convert_mdex_node(%MDEx.HtmlInline{literal: literal}, opts) do
+    convert_html_inline(literal, opts)
+  end
+
+  # Fallback handler for unknown node types
+  defp convert_mdex_node(_node, _opts) do
+    # Fallback to space character instead of empty text node
+    %{"type" => "text", "text" => " "}
+  end
+
+  # Extract the HTML inline tag handling into a separate function to reduce complexity
+  defp convert_html_inline(literal, _opts) do
+    # Check for specific HTML tags and handle them
     cond do
-      # Skip <u> tags and just extract the text content without adding underline mark
-      String.starts_with?(literal, "<u>") && String.ends_with?(literal, "</u>") ->
-        # Extract text without applying underline mark
-        text = String.slice(literal, 3..-5)
-        text_content = if String.trim(text) == "", do: " ", else: text
+      is_underline_tag?(literal) ->
+        extract_tag_content(literal, 3, -5)
 
-        %{
-          "type" => "text",
-          "text" => text_content
-        }
+      is_subscript_tag?(literal) ->
+        content = extract_tag_content(literal, 5, -7)
+        add_mark_to_content(content, "subscript")
 
-      String.starts_with?(literal, "<sub>") && String.ends_with?(literal, "</sub>") ->
-        # Subscript mark
-        text = String.slice(literal, 5..-7)
-        text_content = if String.trim(text) == "", do: " ", else: text
+      is_superscript_tag?(literal) ->
+        content = extract_tag_content(literal, 5, -7)
+        add_mark_to_content(content, "superscript")
 
-        %{
-          "type" => "text",
-          "text" => text_content,
-          "marks" => [%{"type" => "subscript"}]
-        }
-
-      String.starts_with?(literal, "<sup>") && String.ends_with?(literal, "</sup>") ->
-        # Superscript mark
-        text = String.slice(literal, 5..-7)
-        text_content = if String.trim(text) == "", do: " ", else: text
-
-        %{
-          "type" => "text",
-          "text" => text_content,
-          "marks" => [%{"type" => "superscript"}]
-        }
-
-      String.starts_with?(literal, "<mark>") && String.ends_with?(literal, "</mark>") ->
-        # Highlight/mark
-        text = String.slice(literal, 6..-8)
-        text_content = if String.trim(text) == "", do: " ", else: text
-
-        %{
-          "type" => "text",
-          "text" => text_content,
-          "marks" => [%{"type" => "highlight"}]
-        }
+      is_highlight_tag?(literal) ->
+        content = extract_tag_content(literal, 6, -8)
+        add_mark_to_content(content, "highlight")
 
       true ->
         # Fallback - extract text from HTML without adding marks
         text = extract_text_from_html(literal)
-
-        %{
-          "type" => "text",
-          "text" => text
-        }
+        %{"type" => "text", "text" => text}
     end
   end
 
-  # Fallback handler for unknown node types
-  defp convert_mdex_node(node, _opts) do
-    # Fallback to space character instead of empty text node
-    IO.inspect(node, label: "Unhandled MDEx node type")
-    %{"type" => "text", "text" => " "}
+  # Helper functions to check for specific HTML tags
+  defp is_underline_tag?(literal) do
+    String.starts_with?(literal, "<u>") && String.ends_with?(literal, "</u>")
+  end
+
+  defp is_subscript_tag?(literal) do
+    String.starts_with?(literal, "<sub>") && String.ends_with?(literal, "</sub>")
+  end
+
+  defp is_superscript_tag?(literal) do
+    String.starts_with?(literal, "<sup>") && String.ends_with?(literal, "</sup>")
+  end
+
+  defp is_highlight_tag?(literal) do
+    String.starts_with?(literal, "<mark>") && String.ends_with?(literal, "</mark>")
+  end
+
+  # Extract content from an HTML tag
+  defp extract_tag_content(literal, start_offset, end_offset) do
+    text = String.slice(literal, start_offset..end_offset)
+    if String.trim(text) == "", do: " ", else: text
+  end
+
+  # Add a specific mark type to content
+  defp add_mark_to_content(content, mark_type) do
+    %{
+      "type" => "text",
+      "text" => content,
+      "marks" => [%{"type" => mark_type}]
+    }
   end
 
   # Convert inline nodes
   defp convert_inline(nodes, opts) when is_list(nodes) do
-    Enum.map(nodes, &convert_inline_node(&1, opts))
-    |> List.flatten()
+    nodes_mapped = Enum.map(nodes, &convert_inline_node(&1, opts))
+    List.flatten(nodes_mapped)
   end
 
   # Convert text node
@@ -723,7 +730,8 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
   # Convert strong/bold text
   defp convert_inline_node({"strong", _attrs, content, _meta}, _opts) do
     # Clean any HTML tags in the text content
-    text_content = content |> get_text_content() |> clean_html_tags()
+    text = get_text_content(content)
+    text_content = clean_html_tags(text)
 
     %{
       "type" => "text",
@@ -735,7 +743,8 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
   # Convert emphasis/italic
   defp convert_inline_node({"em", _attrs, content, _meta}, _opts) do
     # Clean any HTML tags in the text content
-    text_content = content |> get_text_content() |> clean_html_tags()
+    text = get_text_content(content)
+    text_content = clean_html_tags(text)
 
     %{
       "type" => "text",
@@ -755,8 +764,9 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
 
   # Convert link
   defp convert_inline_node({"a", attrs, content, _meta}, _opts) do
-    href = attrs |> Enum.find(fn {key, _} -> key == "href" end) |> elem(1)
-    title = attrs |> Enum.find(fn {key, _} -> key == "title" end)
+    href_tuple = Enum.find(attrs, fn {key, _} -> key == "href" end)
+    href = elem(href_tuple, 1)
+    title = Enum.find(attrs, fn {key, _} -> key == "title" end)
     title_value = if title, do: elem(title, 1), else: ""
 
     %{
@@ -773,10 +783,11 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
 
   # Convert image
   defp convert_inline_node({"img", attrs, _content, _meta}, _opts) do
-    src = attrs |> Enum.find(fn {key, _} -> key == "src" end) |> elem(1)
-    title = attrs |> Enum.find(fn {key, _} -> key == "title" end)
+    src_tuple = Enum.find(attrs, fn {key, _} -> key == "src" end)
+    src = elem(src_tuple, 1)
+    title = Enum.find(attrs, fn {key, _} -> key == "title" end)
     title_value = if title, do: elem(title, 1), else: ""
-    alt = attrs |> Enum.find(fn {key, _} -> key == "alt" end)
+    alt = Enum.find(attrs, fn {key, _} -> key == "alt" end)
     alt_value = if alt, do: elem(alt, 1), else: ""
 
     %{
@@ -828,13 +839,15 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
 
   # Helper to clean HTML tags from text
   defp clean_html_tags(text) when is_binary(text) do
-    text
-    # First, extract text from blockquotes
-    |> String.replace(~r/<blockquote>(.*?)<\/blockquote>/si, "\\1")
-    |> String.replace(~r/<[^>]*>/, "")
-    |> String.replace(~r/\s+/, " ")
-    |> String.trim()
-    |> then(fn cleaned -> if cleaned == "", do: " ", else: cleaned end)
+    clean_text =
+      text
+      # First, extract text from blockquotes
+      |> String.replace(~r/<blockquote>(.*?)<\/blockquote>/si, "\\1")
+      |> String.replace(~r/<[^>]*>/, "")
+      |> String.replace(~r/\s+/, " ")
+      |> String.trim()
+
+    if clean_text == "", do: " ", else: clean_text
   end
 
   # Helper to get text content from MDEx AST nodes
