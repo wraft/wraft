@@ -122,4 +122,25 @@ defmodule WraftDocWeb.Api.V1.SearchController do
         |> json(%{error: reason})
     end
   end
+
+  swagger_path :reindex do
+    get("/reindex")
+    summary("Typesense Reindex")
+    description("Reindexing Data from Typesense")
+    operation_id("reindexing")
+    tag("Search Admin")
+
+    response(200, "Ok", Schema.ref(:TypesenseSearchResponse))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(403, "Forbidden", Schema.ref(:Error))
+  end
+
+  @doc """
+  Recreate collections and reindex them in Typesense .
+  """
+  @spec reindex(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def reindex(conn, _params) do
+    Typesense.initialize()
+    json(conn, %{status: "success", message: "Collections initialized and data reindexed"})
+  end
 end
