@@ -6,6 +6,7 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
+  alias WraftDoc.Account.User
   alias WraftDoc.Search.Presets
   alias WraftDoc.Search.Typesense
   alias WraftDoc.Search.TypesenseServer
@@ -139,9 +140,16 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   """
   @spec reindex(Plug.Conn.t(), map) :: Plug.Conn.t()
   def reindex(conn, _params) do
-    with role_names <- conn.assigns.current_user.role_names,
-         :ok <- TypesenseServer.initialize(role_names) do
+    %User{role_names: role_names} = conn.assigns.current_user
+
+    if "superadmin" in role_names do
+      TypesenseServer.initialize()
       json(conn, %{status: "success", message: "Collections initialized and data reindexed"})
+    else
+      conn
+      |> put_status(:forbidden)
+      |> json(%{error: "Unauthorized access"})
+      |> halt()
     end
   end
 end
