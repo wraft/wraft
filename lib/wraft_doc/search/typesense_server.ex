@@ -21,7 +21,7 @@ defmodule WraftDoc.Search.TypesenseServer do
   @doc """
   Asynchronously initializes the Typesense connection.
   """
-  @spec initialize() :: :ok | {:error, :unauthorized}
+  @spec initialize() :: :ok
   def initialize do
     GenServer.cast(__MODULE__, :initialize)
   end
