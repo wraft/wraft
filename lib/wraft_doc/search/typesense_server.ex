@@ -22,12 +22,13 @@ defmodule WraftDoc.Search.TypesenseServer do
   @doc """
   Asynchronously initializes the Typesense connection.
   """
-  @spec initialize_as_admin(String.t()) :: :ok | {:error, :unauthorized}
-  def initialize_as_admin(user_role) when user_role in @authorized_roles do
+
+  @spec initialize(String.t()) :: :ok | {:error, :unauthorized}
+  def initialize(role_names) when role_names in @authorized_roles do
     GenServer.cast(__MODULE__, :initialize)
   end
 
-  def initialize_as_admin(_user_role) do
+  def initialize(_role_names) do
     Logger.warning("Unauthorized for initializing")
     {:error, :unauthorized}
   end

@@ -8,6 +8,7 @@ defmodule WraftDocWeb.Api.V1.SearchController do
 
   alias WraftDoc.Search.Presets
   alias WraftDoc.Search.Typesense
+  alias WraftDoc.Search.TypesenseServer
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -138,7 +139,8 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   """
   @spec reindex(Plug.Conn.t(), map) :: Plug.Conn.t()
   def reindex(conn, _params) do
-    with :ok <- Typesense.initialize() do
+    with role_names <- conn.assigns.current_user.role_names,
+         :ok <- TypesenseServer.initialize(role_names) do
       json(conn, %{status: "success", message: "Collections initialized and data reindexed"})
     end
   end
