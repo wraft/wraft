@@ -6,8 +6,10 @@ defmodule WraftDocWeb.Api.V1.SearchController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
+  alias WraftDoc.Account.User
   alias WraftDoc.Search.Presets
   alias WraftDoc.Search.Typesense
+  alias WraftDoc.Search.TypesenseServer
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -120,6 +122,34 @@ defmodule WraftDocWeb.Api.V1.SearchController do
         conn
         |> put_status(:bad_request)
         |> json(%{error: reason})
+    end
+  end
+
+  swagger_path :reindex do
+    get("/reindex")
+    summary("Typesense Reindex")
+    description("Reindexing Data from Typesense")
+    operation_id("reindexing")
+
+    response(200, "Ok", Schema.ref(:SearchResponse))
+    response(400, "Bad Request", Schema.ref(:Error))
+  end
+
+  @doc """
+  Recreate collections and reindex them in Typesense .
+  """
+  @spec reindex(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def reindex(conn, _params) do
+    %User{role_names: role_names} = conn.assigns.current_user
+
+    if "superadmin" in role_names do
+      TypesenseServer.initialize()
+      json(conn, %{status: "success", message: "Collections initialized and data reindexed"})
+    else
+      conn
+      |> put_status(:forbidden)
+      |> json(%{error: "Unauthorized access"})
+      |> halt()
     end
   end
 end
