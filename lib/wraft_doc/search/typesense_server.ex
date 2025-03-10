@@ -7,6 +7,7 @@ defmodule WraftDoc.Search.TypesenseServer do
   use GenServer
   require Logger
   alias WraftDoc.Search.Typesense
+  @authorized_roles ["superadmin"]
 
   @doc """
   Starts the TypesenseServer GenServer.
@@ -21,9 +22,14 @@ defmodule WraftDoc.Search.TypesenseServer do
   @doc """
   Asynchronously initializes the Typesense connection.
   """
-  @spec initialize() :: :ok
-  def initialize do
+  @spec initialize_as_admin(String.t()) :: :ok | {:error, :unauthorized}
+  def initialize_as_admin(user_role) when user_role in @authorized_roles do
     GenServer.cast(__MODULE__, :initialize)
+  end
+
+  def initialize_as_admin(_user_role) do
+    Logger.warning("Unauthorized for initializing")
+    {:error, :unauthorized}
   end
 
   @doc """
