@@ -380,6 +380,7 @@ defmodule WraftDoc.TemplateAssets do
   defp add_layout_step(multi, _template_map, _current_user, _downloaded_file, _entries, _opts),
     do: multi
 
+  # TODO: update frame
   defp add_frame_step(multi, %{"frame" => frame}, current_user, downloaded_file, entries) do
     Multi.run(multi, :frame, fn _repo, _changes ->
       frame

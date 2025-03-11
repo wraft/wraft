@@ -49,6 +49,16 @@ defmodule WraftDocWeb.AssetUploader do
     end
   end
 
+  def validate({file, %Asset{type: "frame"}}) do
+    file_extension = file.file_name |> Path.extname() |> String.downcase()
+
+    if ".zip" == file_extension && file_size(file) <= @max_file_size do
+      :ok
+    else
+      {:error, "invalid file type"}
+    end
+  end
+
   def filename(_version, {file, _asset}) do
     file.file_name
     |> Path.rootname()
