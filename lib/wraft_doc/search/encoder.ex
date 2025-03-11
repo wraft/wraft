@@ -27,7 +27,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Documents.Instance do
       #  document_type: instance.document_type,
       meta: Jason.encode!(instance.meta),
       type: instance.type,
-      organisation_id: to_string(instance.content_type.organisation_id),
+      organisation_id: to_string(instance.content_type.organisation_id) || "",
       editable: instance.editable,
       allowed_users: instance.allowed_users,
       approval_status: instance.approval_status,
@@ -53,7 +53,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.ContentTypes.ContentType do
       layout_id: to_string(content_type.layout_id),
       flow_id: to_string(content_type.flow_id),
       theme_id: to_string(content_type.theme_id),
-      organisation_id: to_string(content_type.organisation_id),
+      organisation_id: to_string(content_type.organisation_id) || "",
       creator_id: to_string(content_type.creator_id),
       inserted_at:
         content_type.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
@@ -75,7 +75,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.DataTemplates.DataTemplate do
     organisation_id =
       case data_template.content_type do
         %WraftDoc.ContentTypes.ContentType{organisation_id: org_id} -> org_id
-        _ -> nil
+        _ -> ""
       end
 
     %{
