@@ -13,6 +13,7 @@ defmodule WraftDoc.Frames do
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Frames.FrameAsset
   alias WraftDoc.Repo
+  alias WraftDoc.Utils.ZipHelper
 
   @doc """
   Lists all frames.
@@ -123,6 +124,7 @@ defmodule WraftDoc.Frames do
     |> String.split(",")
     |> Stream.map(fn asset_id -> Assets.get_asset(asset_id, current_user) end)
     |> Stream.map(fn asset -> associate_frame_and_asset(frame, current_user, asset) end)
+    |> Stream.map(fn frame -> add_frame_wraft_json(frame) end)
     |> Enum.to_list()
   end
 
@@ -133,9 +135,28 @@ defmodule WraftDoc.Frames do
     |> build_assoc(:frame_asset, asset_id: asset.id, creator: current_user)
     |> FrameAsset.changeset()
     |> Repo.insert()
+
+    Repo.preload(frame, [:assets])
   end
 
   defp associate_frame_and_asset(_frame, _current_user, nil), do: nil
+
+  def add_frame_wraft_json(
+        %Frame{
+          organisation_id: organisation_id,
+          assets: [%{id: asset_id, file: file} | _]
+        } = frame
+      ) do
+    binary =
+      Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file.file_name}")
+
+    # validated json so wraftjson wont be empty
+    {:ok, wraft_json} = ZipHelper.get_wraft_json(binary)
+
+    frame
+    |> Frame.update_changeset(%{"wraft_json" => wraft_json})
+    |> Repo.update()
+  end
 
   @doc """
   Upload frame preview file.
