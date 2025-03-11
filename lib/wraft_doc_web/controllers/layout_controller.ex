@@ -14,8 +14,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Documents
   alias WraftDoc.Documents.Engine
+  alias WraftDoc.Frames
   alias WraftDoc.Layouts
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
@@ -299,7 +299,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %Engine{} = engine <- Documents.get_engine(params["engine_id"]),
+    with %Engine{} = engine <- Frames.get_engine_by_frame_type(params),
          %Layout{} = layout <- Layouts.create_layout(current_user, engine, params) do
       Typesense.create_document(layout)
       render(conn, "create.json", doc_layout: layout)
@@ -419,6 +419,9 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     current_user = conn.assigns[:current_user]
 
     with %Layout{} = layout <- Layouts.get_layout(id, current_user),
+         %Engine{id: engine_id} = _engine <- Frames.get_engine_by_frame_type(params),
+         # TODO check update params always have engine_id
+         params <- Map.put(params, "engine_id", engine_id),
          %Layout{} = layout <- Layouts.update_layout(layout, current_user, params) do
       Typesense.update_document(layout)
       render(conn, "show.json", doc_layout: layout)

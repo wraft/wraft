@@ -14,6 +14,7 @@ defmodule WraftDoc.Assets do
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
+  alias WraftDoc.Utils.ZipHelper
 
   @doc """
   Create an asset.
@@ -152,44 +153,37 @@ defmodule WraftDoc.Assets do
   """
   @spec preload_asset(Layout.t()) :: Layout.t()
   def preload_asset(%Layout{} = layout) do
-    Repo.preload(layout, [:assets, :frame, :engine, :organisation])
+    Repo.preload(layout, [:assets, :organisation, :engine, frame: [:assets]])
   end
 
   def preload_asset(_), do: {:error, :not_sufficient}
 
-  def download_slug_file(%Layout{frame: nil, slug: slug}),
+  @doc """
+  Preload assets of a frame.
+  """
+  @spec download_slug_file(Layout.t(), String.t()) :: String.t()
+  def download_slug_file(%Layout{frame: nil, slug: slug}, _),
     do: :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
 
-  def download_slug_file(%Layout{
-        frame: %Frame{id: frame_id, name: name},
-        organisation_id: organisation_id
-      }) do
-    :wraft_doc
-    |> :code.priv_dir()
-    |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
-    |> File.exists?()
-    |> case do
-      true ->
-        :wraft_doc
-        |> :code.priv_dir()
-        |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
+  def download_slug_file(
+        %Layout{
+          frame: %Frame{
+            assets: [%{id: asset_id, file: file} | _]
+          },
+          organisation_id: organisation_id
+        },
+        instance_id
+      ) do
+    # TODO check a condition with typst or latex based on frame typ load engine
+    binary =
+      Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file.file_name}")
 
-      false ->
-        slugs_dir =
-          :wraft_doc
-          |> :code.priv_dir()
-          |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
+    asset_file_path =
+      Path.join(File.cwd!(), "organisations/#{organisation_id}/contents/#{instance_id}")
 
-        File.mkdir_p!(slugs_dir)
+    File.mkdir_p!(asset_file_path)
 
-        template_path = Path.join(slugs_dir, "template.tex")
-
-        "organisations/#{organisation_id}/frames/#{frame_id}"
-        |> Minio.download()
-        |> then(&File.write!(template_path, &1))
-
-        slugs_dir
-    end
+    ZipHelper.extract_zip(binary, asset_file_path)
   end
 
   def pdf_file_path(

@@ -6,7 +6,7 @@ defmodule WraftDoc.Assets.Asset do
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
 
-  @types ~w(layout theme document)
+  @types ~w(layout theme document frame)
 
   schema "asset" do
     field(:name, :string)

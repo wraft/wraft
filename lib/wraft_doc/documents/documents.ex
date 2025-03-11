@@ -930,6 +930,19 @@ defmodule WraftDoc.Documents do
   def get_engine(_), do: {:error, :invalid_id, Engine}
 
   @doc """
+  Get an engine from its name.
+  """
+  @spec get_engine_by_name(binary) :: Engine.t() | nil
+  def get_engine_by_name(engine_name) when is_binary(engine_name) do
+    case Repo.get_by(Engine, name: engine_name) do
+      %Engine{} = engine -> engine
+      _ -> {:error, :invalid_id, Engine}
+    end
+  end
+
+  def get_engine_by_name(_), do: {:error, :invalid_id, Engine}
+
+  @doc """
   Build a PDF document.
   """
   # TODO  - Write Test
@@ -949,7 +962,7 @@ defmodule WraftDoc.Documents do
     # Load all the assets corresponding with the given theme
     theme = Repo.preload(content_type.theme, [:assets])
 
-    file_path = Assets.download_slug_file(layout)
+    file_path = Assets.download_slug_file(layout, instance_id)
 
     System.cmd("cp", ["-a", file_path, base_content_dir])
 
