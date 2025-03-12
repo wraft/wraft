@@ -164,7 +164,7 @@ defmodule WraftDoc.ContentTypes do
     |> case do
       %ContentType{} = content_type ->
         Repo.preload(content_type, [
-          :layout,
+          [layout: [:assets, :frame]],
           :creator,
           {:theme, :assets},
           [{:flow, :states}, {:fields, :field_type}]
@@ -408,4 +408,23 @@ defmodule WraftDoc.ContentTypes do
   #       content_type_role
   #   end
   # end
+
+  @doc """
+  Create a content type field from wraft_json.
+  """
+  @spec create_field_params_from_wraft_json(list()) :: list()
+  def create_field_params_from_wraft_json(wraft_json_fields) do
+    field_types = Repo.all(from(ft in FieldType, select: {ft.name, ft.id}))
+    field_type_map = Map.new(field_types)
+
+    Enum.map(wraft_json_fields, fn field ->
+      field_type = String.capitalize(field["type"])
+
+      %{
+        "field_type_id" => Map.get(field_type_map, field_type),
+        "key" => field["name"],
+        "name" => field["name"]
+      }
+    end)
+  end
 end

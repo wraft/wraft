@@ -255,6 +255,7 @@ defmodule WraftDoc.TemplateAssets do
     error -> {:error, error.message}
   end
 
+  # TODO move to zip_helper
   defp template_asset_file_list(zip_binary) do
     case get_zip_entries(zip_binary) do
       {:ok, entries} ->
@@ -724,6 +725,7 @@ defmodule WraftDoc.TemplateAssets do
          layout_id,
          flow_id
        ) do
+    # TODO use this for common
     field_types = Repo.all(from(ft in FieldType, select: {ft.name, ft.id}))
     field_type_map = Map.new(field_types)
 
