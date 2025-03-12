@@ -20,6 +20,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   alias WraftDoc.Documents
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Frames
   alias WraftDoc.Layouts
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Search.TypesenseServer, as: Typesense
@@ -591,16 +592,17 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(
         conn,
         %{"layout_id" => layout_id, "flow_id" => flow_id, "theme_id" => theme_id} = params
       ) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} <- Layouts.get_layout(layout_id, current_user),
+    with %Layout{frame: frame} <- Layouts.get_layout(layout_id, current_user),
          %Flow{} <- Enterprise.get_flow(flow_id, current_user),
          %Theme{} <- Themes.get_theme(theme_id, current_user),
+         params <- Frames.add_frame_variant_fields(frame, params),
          %ContentType{} = content_type <-
            ContentTypes.create_content_type(current_user, params) do
       Typesense.create_document(content_type)
@@ -699,6 +701,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
     current_user = conn.assigns[:current_user]
 
     with %ContentType{} = content_type <- ContentTypes.get_content_type(current_user, uuid),
+         params <- Frames.update_frame_variant_fields(content_type, current_user, params),
          %ContentType{} = content_type <-
            ContentTypes.update_content_type(content_type, current_user, params) do
       Typesense.update_document(content_type)

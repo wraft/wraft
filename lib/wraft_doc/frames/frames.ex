@@ -9,9 +9,11 @@ defmodule WraftDoc.Frames do
   alias Ecto.Multi
   alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
+  alias WraftDoc.ContentTypes
   alias WraftDoc.Documents
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Frames.FrameAsset
+  alias WraftDoc.Layouts
   alias WraftDoc.Repo
   alias WraftDoc.Utils.ZipHelper
 
@@ -191,4 +193,71 @@ defmodule WraftDoc.Frames do
   end
 
   def get_engine_by_frame_type(%{"engine_id" => engine_id}), do: Documents.get_engine(engine_id)
+
+  def add_frame_variant_fields(
+        %Frame{wraft_json: %{"fields" => frame_fields}},
+        %{"fields" => fields} = params
+      ) do
+    frame_fields = ContentTypes.create_field_params_from_wraft_json(frame_fields)
+
+    Map.put(params, "fields", frame_fields ++ fields)
+  end
+
+  def add_frame_variant_fields(_, params), do: params
+
+  def update_frame_variant_fields(
+        %{layout: %{id: existing_layout_id, frame: existing_frame}} = content_type,
+        current_user,
+        %{"fields" => fields, "layout_id" => layout_id} = params
+      ) do
+    %{frame: new_frame} = _new_layout = Layouts.get_layout(layout_id, current_user)
+
+    cond do
+      existing_layout_id == layout_id ->
+        params
+
+      is_nil(existing_frame) and is_nil(new_frame) ->
+        params
+
+      is_nil(existing_frame) and not is_nil(new_frame) ->
+        %Frame{wraft_json: %{"fields" => json_frame_fields}} = new_frame
+
+        frame_fields = ContentTypes.create_field_params_from_wraft_json(json_frame_fields)
+        Map.put(params, "fields", frame_fields ++ fields)
+
+      not is_nil(existing_frame) and is_nil(new_frame) ->
+        delete_frame_fields(existing_frame, content_type)
+
+        params
+
+      true ->
+        delete_frame_fields(existing_frame, content_type)
+
+        %Frame{wraft_json: %{"fields" => frame_fields}} = new_frame
+
+        frame_fields
+        |> ContentTypes.create_field_params_from_wraft_json()
+        |> then(&Map.put(params, "fields", fields ++ &1))
+    end
+  end
+
+  defp delete_frame_fields(frame, content_type) do
+    %Frame{wraft_json: %{"fields" => frame_fields}} = frame
+
+    frame_field_names = Enum.map(frame_fields, fn field -> field["name"] end)
+
+    query =
+      from(ctf in WraftDoc.ContentTypes.ContentTypeField,
+        join: f in assoc(ctf, :field),
+        where: ctf.content_type_id == ^content_type.id,
+        where: f.name in ^frame_field_names,
+        preload: [field: f]
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.each(fn content_type_field ->
+      ContentTypes.delete_content_type_field(content_type_field)
+    end)
+  end
 end

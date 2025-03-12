@@ -995,6 +995,8 @@ defmodule WraftDoc.Documents do
       )
 
     File.write("#{base_content_dir}/content.md", content)
+    File.write("#{base_content_dir}/fields.json", instance.serialized["fields"])
+
     pdf_file = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
 
     pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir, layout)

@@ -132,7 +132,7 @@ defmodule WraftDoc.Layouts do
   def show_layout(id, user) do
     with %Layout{} = layout <-
            get_layout(id, user) do
-      Repo.preload(layout, [:engine, :creator, :assets, frame: [:assets]])
+      Assets.preload_asset(layout)
     end
   end
 
@@ -143,7 +143,7 @@ defmodule WraftDoc.Layouts do
   def get_layout(<<_::288>> = id, %{current_org_id: org_id}) do
     case Repo.get_by(Layout, id: id, organisation_id: org_id) do
       %Layout{} = layout ->
-        layout
+        Assets.preload_asset(layout)
 
       _ ->
         {:error, :invalid_id, "Layout"}
