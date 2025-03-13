@@ -28,6 +28,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Documents
   alias WraftDoc.Documents.Instance
+  alias WraftDoc.Documents.Instance.History
   alias WraftDoc.Documents.Instance.Version
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
@@ -781,29 +782,28 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec build(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def build(conn, %{"id" => instance_id} = params) do
+  def build(conn, %{"id" => document_id} = params) do
     current_user = conn.assigns[:current_user]
-    start_time = Timex.now()
 
-    case Documents.show_instance(instance_id, current_user) do
-      %Instance{content_type: %{layout: layout}} = instance ->
-        with %Layout{} = layout <- Assets.preload_asset(layout),
-             {_, exit_code} <- Documents.build_doc(instance, layout) do
-          end_time = Timex.now()
-
-          Task.start_link(fn ->
-            Documents.add_build_history(current_user, instance, %{
-              start_time: start_time,
-              end_time: end_time,
-              exit_code: exit_code
-            })
-          end)
-
-          handle_response(conn, exit_code, instance, params)
-        end
-
-      _ ->
-        {:error, :not_sufficient}
+    with %Instance{content_type: %{layout: layout}} = instance <-
+           Documents.show_instance(document_id, current_user),
+         %Layout{} = layout <- Assets.preload_asset(layout),
+         %History{} = build_history <-
+           Documents.create_initial_build_history(current_user, instance),
+         {:ok, %Oban.Job{}} <-
+           Documents.create_document_worker_job(
+             %{
+               "user" => current_user,
+               "instance" => instance,
+               "build_history" => build_history,
+               "layout" => layout,
+               "params" => params
+             },
+             "document_job"
+           ) do
+      conn
+      |> put_status(:accepted)
+      |> json(%{message: "Build started"})
     end
   rescue
     DownloadError ->
@@ -812,20 +812,37 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       |> json(%{error: "File not found"})
   end
 
-  defp handle_response(conn, exit_code, instance, params) do
-    case exit_code do
-      0 ->
-        Task.start_link(fn ->
-          Documents.create_version(conn.assigns.current_user, instance, params, :build)
-        end)
+  swagger_path :build_status do
+    get("/contents/{id}/build_status")
+    summary("Get build status")
+    description("API to get build status")
 
-        render(conn, "instance.json", instance: instance)
-
-      _ ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> render("build_fail.json", %{exit_code: exit_code})
+    parameters do
+      id(:path, :string, "instance id", required: true)
     end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec build_status(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def build_status(conn, %{"id" => document_id}) do
+    current_user = conn.assigns[:current_user]
+
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+         %History{status: "success"} <- Documents.get_build_history(instance) do
+      render(conn, "instance.json", instance: instance)
+    else
+      %History{status: status, exit_code: exit_code} ->
+        render(conn, "build_status.json", %{status: status, exit_code: exit_code})
+    end
+  rescue
+    DownloadError ->
+      conn
+      |> put_status(404)
+      |> json(%{error: "File not found"})
   end
 
   @doc """
