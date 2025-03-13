@@ -25,6 +25,6 @@ defmodule WraftDocWeb.InternalUserAdmin do
   end
 
   def update_changeset(%InternalUser{} = internal_user, attrs) do
-    InternalUser.deactivate_changeset(internal_user, attrs)
+    InternalUser.update_changeset(internal_user, attrs)
   end
 end

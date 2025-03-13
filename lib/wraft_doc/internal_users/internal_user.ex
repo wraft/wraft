@@ -23,9 +23,12 @@ defmodule WraftDoc.InternalUsers.InternalUser do
     |> generate_encrypted_password
   end
 
-  def deactivate_changeset(internal_user, attrs) do
+  def update_changeset(internal_user, attrs \\ %{}) do
     internal_user
-    |> cast(attrs, [:is_deactivated])
-    |> validate_required([:is_deactivated])
+    |> cast(attrs, [:email, :password, :is_deactivated])
+    |> validate_required([:email, :password, :is_deactivated])
+    |> validate_format(:email, ~r/^[^\s]+@[^\s]+\.[^\s]+$/, message: "has invalid format")
+    |> unique_constraint(:email, message: "Email already taken.! Try another email.")
+    |> generate_encrypted_password
   end
 end
