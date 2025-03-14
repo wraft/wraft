@@ -25,8 +25,8 @@ defmodule WraftDoc.Notifications do
 
   def create_notification(users, params) when is_list(users) do
     users
-    |> Stream.map(&build_notification_params(&1, params))
-    |> Stream.map(&insert_notification/1)
+    |> Enum.map(&build_notification_params(&1, params))
+    |> Enum.map(&insert_notification/1)
     |> Enum.split_with(&match?({:ok, _}, &1))
     |> format_results()
   end
@@ -34,7 +34,9 @@ defmodule WraftDoc.Notifications do
   def create_notification(_), do: nil
 
   defp build_notification_params(%{id: actor_id}, params) do
-    %{params | actor_id: actor_id, message: NotificationMessages.message(params.type, params)}
+    params
+    |> Map.put(:actor_id, actor_id)
+    |> Map.put(:message, NotificationMessages.message(params.type, params))
   end
 
   defp insert_notification(notification_params) do

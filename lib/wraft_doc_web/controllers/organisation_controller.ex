@@ -474,9 +474,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
       current_user = conn.assigns.current_user
 
     with {:error, :already_member} <- Enterprise.already_member(organisation_id, email),
-         %Organisation{name: name, owner_id: owner_id} = organisation when name != "Personal" <-
+         %Organisation{name: name, owner_id: owner_id} = organisation
+         when name != "Personal" and owner_id == user_id <-
            Enterprise.get_organisation(organisation_id),
-         true <- owner_id == user_id || {:error, :not_owner},
          {:ok, %Oban.Job{}} <-
            AuthTokens.generate_delete_token_and_send_email(current_user, organisation) do
       conn
@@ -487,7 +487,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
         body = Jason.encode!(%{errors: "Can't delete personal organisation"})
         conn |> put_resp_content_type("application/json") |> send_resp(422, body)
 
-      {:error, :not_owner} ->
+      %Organisation{} ->
         body = Jason.encode!(%{errors: "Only organisation owner can request deletion"})
         conn |> put_resp_content_type("application/json") |> send_resp(403, body)
 
@@ -648,15 +648,16 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   def remove_user(conn, %{"id" => user_id}) do
     current_user = conn.assigns[:current_user]
 
-    with %UserOrganisation{organisation: %Organisation{} = organisation} = user_organisation <-
+    with %UserOrganisation{organisation: %Organisation{owner_id: owner_id} = _organisation} =
+           user_organisation <-
            Enterprise.get_user_organisation(current_user, user_id),
-         {:ok, %UserOrganisation{}} <- Enterprise.remove_user(user_organisation, organisation.id) do
+         {:ok, %UserOrganisation{}} <- Enterprise.remove_user(user_organisation, owner_id) do
       render(conn, "remove_user.json")
     else
       {:error, "Owner cannot be removed"} ->
         conn
         |> put_status(:forbidden_request)
-        |> json(%{error: "Owner of the Organisation cannot be removed"})
+        |> json(%{error: "Owner of the organisation cannot be removed"})
 
       error ->
         error
@@ -683,10 +684,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   """
   @spec transfer_ownership(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transfer_ownership(conn, %{"id" => new_user_id}) do
-    %{id: user_id} = current_user = conn.assigns[:current_user]
+    %{id: user_id, current_org_id: current_org_id} = current_user = conn.assigns[:current_user]
 
     with %Organisation{owner_id: ^user_id} = organisation <-
-           Enterprise.get_organisation(current_user[:current_org]),
+           Enterprise.get_organisation(current_org_id),
          %User{email: email} <- Account.get_user(new_user_id),
          {:error, :already_member} <-
            Enterprise.already_member(current_user.current_org_id, email),

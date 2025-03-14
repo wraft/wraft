@@ -1787,7 +1787,10 @@ defmodule WraftDoc.Enterprise do
   """
   @spec remove_user(UserOrganisation.t(), Ecto.UUID.t()) ::
           {:ok, UserOrganisation.t()} | {:error, Ecto.Changeset.t()}
-  def remove_user(%UserOrganisation{user: user} = user_organisation, org_id, owner_id)
+  def remove_user(
+        %UserOrganisation{user: user, organisation_id: org_id} = user_organisation,
+        owner_id
+      )
       when user.id != owner_id do
     with :ok <- handle_last_signed_in_org(user, org_id) do
       user_organisation
@@ -1796,7 +1799,7 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  def remove_user(_, _), do: {:error, "Owner cant be Removed"}
+  def remove_user(_, _), do: {:error, "Owner can't be removed"}
 
   defp handle_last_signed_in_org(%User{last_signed_in_org: last_signed_in_org} = user, org_id)
        when last_signed_in_org == org_id do

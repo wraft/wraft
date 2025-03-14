@@ -680,7 +680,7 @@ defmodule WraftDoc.Documents do
       instance
       |> Repo.preload([
         {:creator, :profile},
-        {:content_type, :layout},
+        {:content_type, [:layout, :organisation]},
         {:versions, versions_preload_query},
         {:state, :approvers},
         {:instance_approval_systems, :approver},

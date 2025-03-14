@@ -973,11 +973,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   @spec approve(Plug.Conn.t(), map) :: Plug.Conn.t()
   def approve(conn, %{"id" => id}) do
-    %{current_org_id: organisation_id} = current_user = conn.assigns.current_user
+    current_user = conn.assigns.current_user
 
     with %Instance{
            content_type: %ContentType{
-             organisation: %Organisation{id: ^organisation_id} = organisation
+             organisation: %Organisation{} = organisation
            },
            state: state
          } = instance <- Documents.show_instance(id, current_user),
