@@ -962,7 +962,7 @@ defmodule WraftDoc.Documents do
     # Load all the assets corresponding with the given theme
     theme = Repo.preload(content_type.theme, [:assets])
 
-    file_path = Assets.download_slug_file(layout, instance_id)
+    file_path = Assets.download_slug_file(layout)
 
     System.cmd("cp", ["-a", file_path, base_content_dir])
 

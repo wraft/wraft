@@ -15,7 +15,7 @@ defmodule WraftDoc.Frames do
   alias WraftDoc.Frames.FrameAsset
   alias WraftDoc.Layouts
   alias WraftDoc.Repo
-  alias WraftDoc.Utils.ZipHelper
+  alias WraftDoc.Utils.FileHelper
 
   @doc """
   Lists all frames.
@@ -153,7 +153,7 @@ defmodule WraftDoc.Frames do
       Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file.file_name}")
 
     # validated json so wraftjson wont be empty
-    {:ok, wraft_json} = ZipHelper.get_wraft_json(binary)
+    {:ok, wraft_json} = FileHelper.get_wraft_json(binary)
 
     frame
     |> Frame.update_changeset(%{"wraft_json" => wraft_json})

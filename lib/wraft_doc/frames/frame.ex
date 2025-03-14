@@ -27,8 +27,6 @@ defmodule WraftDoc.Frames.Frame do
   def changeset(frame, attrs) do
     frame
     |> cast(attrs, [:name, :description, :type, :organisation_id, :creator_id, :wraft_json])
-    # TODO type required.
-    |> cast_attachments(attrs, [:thumbnail])
     |> validate_required([:name, :organisation_id, :creator_id])
     |> unique_constraint(:name,
       name: :frame_name_organisation_id_index,

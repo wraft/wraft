@@ -6,7 +6,7 @@ defmodule WraftDocWeb.AssetUploader do
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
 
-  alias WraftDoc.Utils.ZipHelper
+  alias WraftDoc.Utils.FileHelper
 
   @versions [:original]
   @font_style_name ~w(Regular Italic Bold BoldItalic)
@@ -57,7 +57,7 @@ defmodule WraftDocWeb.AssetUploader do
 
     if file_extension == ".zip" and file_size(file) <= @max_file_size do
       file_path
-      |> ZipHelper.validate_frame_zip()
+      |> FileHelper.validate_frame_file()
       |> case do
         :ok -> :ok
         {:error, error} -> {:error, error}

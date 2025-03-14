@@ -14,7 +14,7 @@ defmodule WraftDoc.Assets do
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
-  alias WraftDoc.Utils.ZipHelper
+  alias WraftDoc.Utils.FileHelper
 
   @doc """
   Create an asset.
@@ -165,25 +165,18 @@ defmodule WraftDoc.Assets do
   def download_slug_file(%Layout{frame: nil, slug: slug}, _),
     do: :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
 
-  def download_slug_file(
-        %Layout{
-          frame: %Frame{
-            assets: [%{id: asset_id, file: file} | _]
-          },
-          organisation_id: organisation_id
+  def download_slug_file(%Layout{
+        frame: %Frame{
+          assets: [%{id: asset_id, file: file} | _]
         },
-        instance_id
-      ) do
-    # TODO check a condition with typst or latex based on frame typ load engine
+        organisation_id: organisation_id
+      }) do
     binary =
       Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file.file_name}")
 
-    asset_file_path =
-      Path.join(File.cwd!(), "organisations/#{organisation_id}/contents/#{instance_id}")
+    asset_file_path = Briefly.create!(type: :directory)
 
-    File.mkdir_p!(asset_file_path)
-
-    ZipHelper.extract_zip(binary, asset_file_path)
+    FileHelper.extract_file(binary, asset_file_path)
   end
 
   def pdf_file_path(
