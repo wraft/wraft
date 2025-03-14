@@ -12,18 +12,17 @@ defprotocol WraftDoc.Search.Encoder do
 end
 
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.Documents.Instance do
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.Documents.Instance
   alias WraftDoc.Repo
 
-  def to_document(%WraftDoc.Documents.Instance{} = instance) do
-    instance =
-      Repo.preload(
-        Repo.get!(WraftDoc.Documents.Instance, instance.id),
-        :content_type
-      )
-
+  def to_document(%Instance{} = instance) do
     organisation_id =
-      case instance.content_type do
-        %WraftDoc.ContentTypes.ContentType{organisation_id: org_id} -> org_id
+      instance
+      |> Repo.preload(:content_type)
+      |> Map.get(:content_type, %{})
+      |> case do
+        %ContentType{organisation_id: org_id} -> org_id
         _ -> ""
       end
 
@@ -73,18 +72,17 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.ContentTypes.ContentType do
 end
 
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.DataTemplates.DataTemplate do
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Repo
 
-  def to_document(%WraftDoc.DataTemplates.DataTemplate{} = data_template) do
-    data_template =
-      Repo.preload(
-        Repo.get!(WraftDoc.DataTemplates.DataTemplate, data_template.id),
-        :content_type
-      )
-
+  def to_document(%DataTemplate{} = data_template) do
     organisation_id =
-      case data_template.content_type do
-        %WraftDoc.ContentTypes.ContentType{organisation_id: org_id} -> org_id
+      data_template
+      |> Repo.preload(:content_type)
+      |> Map.get(:content_type, %{})
+      |> case do
+        %ContentType{organisation_id: org_id} -> org_id
         _ -> ""
       end
 
