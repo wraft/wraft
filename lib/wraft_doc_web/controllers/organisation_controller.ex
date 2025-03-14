@@ -684,13 +684,13 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   """
   @spec transfer_ownership(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def transfer_ownership(conn, %{"id" => new_user_id}) do
-    %{id: user_id, current_org_id: current_org_id} = current_user = conn.assigns[:current_user]
+    %{id: user_id, current_org_id: current_org_id} = conn.assigns[:current_user]
 
     with %Organisation{owner_id: ^user_id} = organisation <-
            Enterprise.get_organisation(current_org_id),
          %User{email: email} <- Account.get_user(new_user_id),
          {:error, :already_member} <-
-           Enterprise.already_member(current_user.current_org_id, email),
+           Enterprise.already_member(current_org_id, email),
          {:ok, %Organisation{}} <-
            Enterprise.transfer_ownership(organisation, new_user_id) do
       render(conn, "transfer_ownership.json")

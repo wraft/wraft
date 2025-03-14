@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.AddOwnerToOrganisation do
 
   def change do
     alter table(:organisation) do
-      add(:owner_id, references(:user, type: :uuid))
+      add(:owner_id, references(:user, type: :uuid, on_delete: :nilify_all))
     end
 
     execute("UPDATE organisation SET owner_id = creator_id")
