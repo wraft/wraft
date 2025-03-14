@@ -1,6 +1,6 @@
-defmodule WraftDoc.Utils.ZipValidator do
+defmodule WraftDoc.Utils.FileValidator do
   @moduledoc """
-  Helper functions to validate zip files.
+  Helper functions to validate file.
   """
 
   @allowed_extensions [
@@ -15,21 +15,20 @@ defmodule WraftDoc.Utils.ZipValidator do
     ".otf",
     ".tex",
     ".json",
-    ".svg",
-    ""
+    ".svg"
   ]
   @max_file_size 5_000_000
   @max_total_size 20_000_000
 
   @doc """
-  Validate zip file.
+  Validate file.
   """
-  @spec validate_zip(String.t()) :: {:ok, list()} | {:error, String.t()}
-  def validate_zip(zip_path) do
-    charlisted_path = to_charlist(zip_path)
+  @spec validate_file(String.t()) :: {:ok, list()} | {:error, String.t()}
+  def validate_file(file_path) do
+    charlisted_path = to_charlist(file_path)
 
-    with {:ok, zip_info} <- :zip.list_dir(charlisted_path),
-         {:ok, file_entries} <- extract_file_info(zip_info),
+    with {:ok, file_info} <- :zip.list_dir(charlisted_path),
+         {:ok, file_entries} <- extract_file_info(file_info),
          :ok <- check_for_path_traversal(file_entries),
          :ok <- check_file_extensions(file_entries),
          :ok <- check_file_sizes(file_entries) do
@@ -37,18 +36,24 @@ defmodule WraftDoc.Utils.ZipValidator do
     end
   end
 
-  defp extract_file_info(zip_info) do
+  defp extract_file_info(file_info) do
     file_entries =
-      Enum.reduce(zip_info, [], fn
+      Enum.reduce(file_info, [], fn
         {:zip_file, path, file_info, _, _, _}, acc ->
-          [
-            %{
-              path: to_string(path),
-              size: file_info_size(file_info),
-              extension: path |> to_string() |> Path.extname() |> String.downcase()
-            }
-            | acc
-          ]
+          path_string = to_string(path)
+
+          if String.ends_with?(path_string, "/") do
+            acc
+          else
+            [
+              %{
+                path: path_string,
+                size: file_info_size(file_info),
+                extension: path_string |> Path.extname() |> String.downcase()
+              }
+              | acc
+            ]
+          end
 
         _other, acc ->
           acc
@@ -89,7 +94,7 @@ defmodule WraftDoc.Utils.ZipValidator do
         size > @max_file_size
       end)
 
-    # Check total zip size
+    # Check total file size
     total_size = Enum.reduce(file_entries, 0, fn %{size: size}, acc -> size + acc end)
 
     cond do
