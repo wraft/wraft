@@ -138,7 +138,7 @@ defmodule WraftDoc.TemplateAssets do
   @spec import_template(User.t(), binary(), list()) ::
           DataTemplate.t() | {:error, any()}
   def import_template(current_user, downloaded_zip_binary, opts \\ []) do
-    with {:ok, entries} <- get_zip_entries(downloaded_zip_binary),
+    with {:ok, entries} <- ZipHelper.get_zip_entries(downloaded_zip_binary),
          {:ok, template_map} <- ZipHelper.get_wraft_json(downloaded_zip_binary),
          contained_items <- has_items(template_map),
          :ok <- validate_required_items(contained_items, opts) do
@@ -257,7 +257,7 @@ defmodule WraftDoc.TemplateAssets do
 
   # TODO move to zip_helper
   defp template_asset_file_list(zip_binary) do
-    case get_zip_entries(zip_binary) do
+    case ZipHelper.get_zip_entries(zip_binary) do
       {:ok, entries} ->
         filter_entries(entries)
 
@@ -790,7 +790,7 @@ defmodule WraftDoc.TemplateAssets do
 
   # Not using now for future use
   # defp get_data_template_md(downloaded_file) do
-  #   case get_zip_entries(downloaded_file) do
+  #   case ZipHelper.get_zip_entries(downloaded_file) do
   #     {:ok, entries} ->
   #       template_md = Enum.find(entries, fn entry -> entry.file_name =~ ~r/^.*\.md$/i end)
   #       template_md.file_name
@@ -803,26 +803,6 @@ defmodule WraftDoc.TemplateAssets do
     with {:ok, template_json} <- ZipHelper.extract_file_content(downloaded_file, "template.json"),
          serialized_prosemirror <- Jason.decode!(template_json) do
       {:ok, serialized_prosemirror["data"]}
-    end
-  end
-
-  defp read_zip_contents(file_path) do
-    case File.read(file_path) do
-      {:ok, binary} ->
-        {:ok, binary}
-
-      _ ->
-        {:error, "Invalid ZIP file."}
-    end
-  end
-
-  defp get_zip_entries(zip_binary) do
-    with {:ok, unzip} <- Unzip.new(zip_binary),
-         entries <- Unzip.list_entries(unzip) do
-      {:ok, entries}
-    else
-      _ ->
-        {:error, "Invalid ZIP entries."}
     end
   end
 
@@ -959,7 +939,7 @@ defmodule WraftDoc.TemplateAssets do
   defp get_zip_binary(:file, %Plug.Upload{
          path: file_path
        }),
-       do: read_zip_contents(file_path)
+       do: ZipHelper.read_zip_contents(file_path)
 
   defp get_zip_binary(:url, url), do: get_zip_binary_from_url(url)
 
