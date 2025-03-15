@@ -2,8 +2,10 @@ defmodule WraftDoc.Pipelines.Pipeline do
   @moduledoc """
   The pipeline model.
   """
-  alias __MODULE__
   use WraftDoc.Schema
+  @behaviour ExTypesense
+
+  alias __MODULE__
 
   @derive {Jason.Encoder, only: [:id, :name, :api_route]}
   schema "pipeline" do
@@ -39,5 +41,23 @@ defmodule WraftDoc.Pipelines.Pipeline do
       message: "Pipeline with the same name already exists.!",
       name: "organisation_pipeline_unique_index"
     )
+  end
+
+  @impl ExTypesense
+  def get_field_types do
+    %{
+      fields: [
+        %{name: "id", type: "string", facet: false},
+        %{name: "name", type: "string", facet: true},
+        %{name: "api_route", type: "string", facet: true},
+        %{name: "source", type: "string", facet: true},
+        %{name: "source_id", type: "string", facet: true},
+        %{name: "stages_count", type: "int32", facet: true},
+        %{name: "creator_id", type: "string", facet: true},
+        %{name: "organisation_id", type: "string", facet: true},
+        %{name: "inserted_at", type: "int64", facet: false},
+        %{name: "updated_at", type: "int64", facet: false}
+      ]
+    }
   end
 end

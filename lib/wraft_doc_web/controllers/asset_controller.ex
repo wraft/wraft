@@ -117,7 +117,7 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
     parameter(:name, :formData, :string, "Asset name", required: true)
     parameter(:file, :formData, :file, "Asset file to upload")
-    parameter(:type, :formData, :string, "The type of asset - theme or layout")
+    parameter(:type, :formData, :string, "The type of asset - theme or layout or document")
 
     response(200, "Ok", Schema.ref(:Asset))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -188,6 +188,31 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
     with %Asset{} = asset <- Assets.show_asset(asset_id, current_user) do
       render(conn, "show.json", asset: asset)
+    end
+  end
+
+  @doc """
+  Get image
+  """
+  swagger_path :show_image do
+    get("asset/image/{id}")
+    summary("Get image")
+    description("Api to get image")
+
+    parameters do
+      id(:path, :string, "Instance id", required: true)
+      asset_id(:query, :string, "Image Asset ID", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec show_image(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def show_image(conn, %{"id" => asset_id}) do
+    with %Asset{} = asset <- Assets.get_asset(asset_id) do
+      redirect(conn, external: Assets.get_image_url(asset))
     end
   end
 

@@ -11,8 +11,10 @@ defmodule WraftDoc.Documents.Instance do
     * Content type id - Id of content type
   """
   use WraftDoc.Schema
+  @behaviour ExTypesense
 
   alias __MODULE__
+  alias WraftDoc.Documents.DocumentSettings
   alias WraftDoc.EctoType.DocumentMetaType
 
   def types, do: [normal: 1, bulk_build: 2, pipeline_api: 3, pipeline_hook: 4]
@@ -43,6 +45,8 @@ defmodule WraftDoc.Documents.Instance do
     has_many(:build_histories, WraftDoc.Documents.Instance.History, foreign_key: :content_id)
     has_many(:versions, WraftDoc.Documents.Instance.Version, foreign_key: :content_id)
 
+    embeds_one(:doc_settings, DocumentSettings)
+
     timestamps()
   end
 
@@ -59,6 +63,7 @@ defmodule WraftDoc.Documents.Instance do
       :vendor_id,
       :allowed_users
     ])
+    |> cast_embed(:doc_settings, with: &DocumentSettings.changeset/2)
     |> validate_required([
       :instance_id,
       :raw,
@@ -83,6 +88,7 @@ defmodule WraftDoc.Documents.Instance do
   def update_changeset(%Instance{} = instance, attrs \\ %{}) do
     instance
     |> cast(attrs, [:instance_id, :raw, :serialized])
+    |> cast_embed(:doc_settings, with: &DocumentSettings.changeset/2)
     |> validate_required([:instance_id, :raw, :serialized])
     |> unique_constraint(:instance_id,
       message: "Instance with the ID exists.!",
@@ -106,5 +112,31 @@ defmodule WraftDoc.Documents.Instance do
     instance
     |> cast(attrs, [:editable])
     |> validate_required([:editable])
+  end
+
+  @impl ExTypesense
+  def get_field_types do
+    %{
+      fields: [
+        %{name: "id", type: "string", facet: false},
+        %{name: "instance_id", type: "string", facet: true},
+        %{name: "raw", type: "string", facet: false},
+        %{name: "serialized", type: "string", facet: false},
+        %{name: "name", type: "string", facet: true},
+        # %{name: "document_type", type: "string", facet: true},
+        %{name: "meta", type: "string", facet: false},
+        %{name: "type", type: "int32", facet: true},
+        %{name: "editable", type: "bool", facet: true},
+        %{name: "allowed_users", type: "string[]", facet: true},
+        %{name: "approval_status", type: "bool", facet: true},
+        %{name: "creator_id", type: "string", facet: true},
+        %{name: "content_type_id", type: "string", facet: true},
+        %{name: "state_id", type: "string", facet: true},
+        %{name: "vendor_id", type: "string", facet: true},
+        %{name: "inserted_at", type: "int64", facet: false},
+        %{name: "updated_at", type: "int64", facet: false},
+        %{name: "organisation_id", type: "string", facet: true}
+      ]
+    }
   end
 end

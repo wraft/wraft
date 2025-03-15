@@ -17,6 +17,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
 
   alias WraftDoc.Forms
   alias WraftDoc.Forms.Form
+  alias WraftDoc.Search.TypesenseServer, as: Typesense
 
   def swagger_definitions do
     %{
@@ -450,6 +451,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
     current_user = conn.assigns.current_user
 
     with %Form{} = form <- Forms.create(current_user, params) do
+      Typesense.create_document(form)
       render(conn, "form.json", form: form)
     end
   end
@@ -551,6 +553,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
 
     with %Form{} = form <- Forms.get_form(current_user, form_id),
          %Form{} = form <- Forms.update_form(form, params) do
+      Typesense.update_document(form)
       render(conn, "form.json", form: form)
     end
   end
@@ -605,6 +608,7 @@ defmodule WraftDocWeb.Api.V1.FormController do
 
     with %Form{} = form <- Forms.show_form(current_user, form_id),
          %Form{} <- Forms.delete_form(form) do
+      Typesense.delete_document(form, "form")
       render(conn, "simple_form.json", form: form)
     end
   end

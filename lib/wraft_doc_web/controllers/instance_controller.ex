@@ -34,6 +34,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Notifications
+  alias WraftDoc.Search.TypesenseServer, as: Typesense
   alias WraftDocWeb.Api.V1.InstanceVersionView
 
   def swagger_definitions do
@@ -487,12 +488,18 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       ) do
     current_user = conn.assigns[:current_user]
     type = Instance.types()[:normal]
-    params = Map.put(params, "type", type)
+
+    params =
+      Map.merge(params, %{
+        "type" => type,
+        "doc_settings" => params["doc_settings"] || %{}
+      })
 
     with %ContentType{} = c_type <- ContentTypes.show_content_type(current_user, c_type_id),
          %Instance{} = content <-
            Documents.create_instance(current_user, c_type, params) do
       Logger.info("Create content success")
+      Typesense.create_document(content)
       render(conn, :create, content: content)
     else
       error ->
@@ -690,6 +697,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     with %Instance{} = instance <- Documents.get_instance(id, current_user),
          %Instance{} = instance <- Documents.update_instance(instance, params),
          {:ok, %Version{}} <- Documents.create_version(current_user, instance, params, :save) do
+      Typesense.update_document(instance)
       render(conn, "show.json", instance: instance)
     end
   end
@@ -748,6 +756,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     with %Instance{} = instance <- Documents.get_instance(id, current_user),
          _ <- Documents.delete_uploaded_docs(current_user, instance),
          {:ok, %Instance{}} <- Documents.delete_instance(instance) do
+      Typesense.delete_document(instance, "content")
       render(conn, "instance.json", instance: instance)
     end
   end

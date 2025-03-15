@@ -154,7 +154,7 @@ defmodule WraftDocWeb.Email.EmailTest do
   describe "send email on waiting list approval" do
     test "return email sent if mail delivered" do
       registration_url =
-        URI.encode("#{System.get_env("WRAFT_URL")}/users/login/set_password?token=#{@token}")
+        URI.encode("#{System.get_env("FRONTEND_URL")}/users/login/set_password?token=#{@token}")
 
       email = Email.waiting_list_approved(@test_email, @name, @token)
       Test.deliver(email, [])

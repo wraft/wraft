@@ -32,7 +32,7 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Utils.ProsemirrorToMarkdown
 
-  @required_items ["layout", "theme", "flow", "variant", "frame"]
+  @required_items ["layout", "theme", "flow", "variant"]
   @allowed_folders ["theme", "layout", "frame"]
   @allowed_files ["template.json", "wraft.json"]
   @font_style_name ~w(Regular Italic Bold BoldItalic)
@@ -481,7 +481,12 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp prepare_theme_attrs(%{"name" => name, "colors" => colors, "fonts" => fonts}, asset_ids) do
-    font_name = fonts |> List.first() |> Map.get("fontName", name)
+    font_name =
+      fonts
+      |> List.first()
+      |> Map.get("fontName", name)
+      |> Path.rootname()
+      |> String.replace(~r/[-\s]/, "")
 
     Map.merge(colors, %{
       "name" => name,
@@ -495,8 +500,8 @@ defmodule WraftDoc.TemplateAssets do
 
   defp get_theme_font_file_entries(entries) do
     Enum.filter(entries, fn entry ->
-      case Regex.run(~r/^theme\/.*-(?<style>\w+)\.otf$/i, entry.file_name) do
-        [_, style] when style in @font_style_name -> true
+      case Regex.run(~r/^theme\/.*-(?<style>\w+)\.(otf|ttf)$/i, entry.file_name) do
+        [_, style, _] when style in @font_style_name -> true
         _ -> false
       end
     end)

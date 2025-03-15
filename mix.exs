@@ -157,7 +157,10 @@ defmodule WraftDoc.Mixfile do
 
       # live collaboration
       {:rustler, ">= 0.34.0"},
-      {:y_ex, "~> 0.6.5"}
+      {:y_ex, "~> 0.6.5"},
+
+      # markdown
+      {:mdex, "~> 0.3.3"}
     ]
   end
 

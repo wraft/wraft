@@ -10,11 +10,14 @@ defmodule WraftDoc.Release do
 
     {:ok, _, _} =
       Ecto.Migrator.with_repo(WraftDoc.Repo, fn _repo ->
-        :wraft_doc |> :code.priv_dir() |> Path.join("repo/seed.ex") |> IEx.Helpers.c()
-
         path = :wraft_doc |> :code.priv_dir() |> Path.join("repo/seeds.exs")
-        Code.eval_file(path)
-        # /app/wraft_docs-0.0.1/priv/repo/seeds.ex
+
+        if File.exists?(path) do
+          IO.puts("Running seed file...")
+          Code.eval_file(path)
+        else
+          raise ArgumentError, "Could not find seed file at #{path}"
+        end
       end)
   end
 
@@ -57,6 +60,7 @@ defmodule WraftDoc.Release do
 
   defp ensure_started do
     Application.ensure_all_started(:ssl)
+    Application.ensure_all_started(:faker)
   end
 
   defp ensure_repo_created(repo) do

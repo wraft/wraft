@@ -2,8 +2,10 @@ defmodule WraftDoc.Forms.Form do
   @moduledoc """
     The form model.
   """
-  alias __MODULE__
   use WraftDoc.Schema
+  @behaviour ExTypesense
+
+  alias __MODULE__
 
   @fields [:description, :name, :prefix, :status, :organisation_id, :creator_id]
   @statuses [:active, :inactive]
@@ -42,5 +44,22 @@ defmodule WraftDoc.Forms.Form do
     |> cast(attrs, [:status])
     |> validate_required([:status])
     |> validate_inclusion(:status, @statuses)
+  end
+
+  @impl ExTypesense
+  def get_field_types do
+    %{
+      fields: [
+        %{name: "id", type: "string", facet: false},
+        %{name: "name", type: "string", facet: true},
+        %{name: "description", type: "string", facet: false},
+        %{name: "prefix", type: "string", facet: true},
+        %{name: "status", type: "string", facet: true},
+        %{name: "creator_id", type: "string", facet: true},
+        %{name: "organisation_id", type: "string", facet: true},
+        %{name: "inserted_at", type: "int64", facet: false},
+        %{name: "updated_at", type: "int64", facet: false}
+      ]
+    }
   end
 end

@@ -1,0 +1,121 @@
+#import "$path$" + "/template.typst": conf
+#import "@preview/tablex:0.0.9": tablex
+
+#let horizontalrule = line(start: (25%,0%), end: (75%,0%))
+
+$if(body_color)$
+#let body_color = rgb("$body_color$".slice(1))
+$endif$
+
+$if(primary_color)$
+#let primary_color = rgb("$primary_color$".slice(1))
+$endif$
+
+$if(secondary_color)$
+#let secondary_color = rgb("$secondary_color$".slice(1))
+$endif$
+
+$if(toc_depth)$
+#let toc_depth = $toc_depth$
+$else$
+#let toc_depth = 3
+$endif$
+
+#show figure: set block(breakable: true)
+#set page(fill: body_color)
+
+#show: conf.with(
+  margin: (auto),
+  paper: "$if(papersize)$$papersize$$else$us-letter$endif$",
+  cols: $if(columns)$$columns$$else$1$endif$,
+  // Typography
+  font: ("$if(mainfont_base)$$mainfont_base$$else$Mallory$endif$"),
+  fontsize: $if(fontsize)$$fontsize$$else$12pt$endif$,
+  lang: "$if(lang)$$lang$$else$en$endif$",
+  region: "$if(region)$$region$$else$US$endif$"
+)
+
+#show heading.where(level: 1): it => {
+  set text(primary_color)
+  block(it)
+}
+
+#show table: table => {
+  let column_count = table.columns.len()
+
+  let equal_columns = (1fr,) * column_count
+
+  tablex(
+    columns: equal_columns,
+    auto-vlines: true,
+    auto-hlines: true,
+    stroke: 0.5pt,
+    inset: 6pt,
+    align: center + horizon,
+    map-rows: (row, cells) => cells.map(c =>
+     if row == 0 {
+      (..c, content: strong(c.content))
+    } else {
+      c
+    }
+  ),
+    ..table.children
+  )
+}
+
+#show table.cell: cell => {
+  set align(center)
+  cell
+}
+
+$if(default_cover)$
+#align(center)[
+  #text(12pt)[$organisation_name$]
+  #v(0.1cm)
+  #text(12pt)[$id$]
+
+  #box(line(length: 100%, stroke: 1pt))
+  #v(0.4cm)
+
+  #text(20pt, weight: "bold", fill: primary_color)[$title$]
+  #v(0.4cm)
+  #box(line(length: 100%, stroke: 1pt))
+  #v(1.5cm)
+
+  #align(center)[
+    *Prepared By*
+    #v(0.2cm)
+    $author_name$
+    #v(0.2cm)
+    $author_email$
+  ]
+  #v(1cm)
+
+  #text(12pt)[#datetime.today().display("[month repr:long] [day], [year]")]
+  ]
+#pagebreak()
+$endif$
+
+$if(toc)$
+#outline(
+  title: auto,
+  depth: toc_depth
+);
+
+#pagebreak()
+$endif$
+
+
+$body$
+
+#align(center + bottom)[
+  $if(qr)$
+    $if(qrcode)$
+      #image("$qrcode$", width: 2cm)
+    $endif$
+  $endif$
+]
+
+$if(bibliography)$
+#bibliography($for(bibliography)$$bibliography$$sep$,$endfor$)
+$endif$

@@ -11,6 +11,45 @@ defprotocol WraftDoc.Search.Encoder do
   def to_document(struct)
 end
 
+defimpl WraftDoc.Search.Encoder, for: WraftDoc.Documents.Instance do
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.Documents.Instance
+  alias WraftDoc.Repo
+
+  def to_document(%Instance{} = instance) do
+    organisation_id =
+      instance
+      |> Repo.preload(:content_type)
+      |> Map.get(:content_type, %{})
+      |> case do
+        %ContentType{organisation_id: org_id} -> org_id
+        _ -> ""
+      end
+
+    %{
+      id: to_string(instance.id),
+      collection_name: "content",
+      instance_id: instance.instance_id,
+      raw: instance.raw,
+      name: instance.serialized["title"],
+      serialized: Jason.encode!(instance.serialized),
+      # document_type: instance.document_type,
+      meta: Jason.encode!(instance.meta),
+      type: instance.type,
+      organisation_id: to_string(organisation_id),
+      editable: instance.editable,
+      allowed_users: instance.allowed_users,
+      approval_status: instance.approval_status,
+      creator_id: to_string(instance.creator_id),
+      content_type_id: to_string(instance.content_type_id),
+      state_id: to_string(instance.state_id),
+      vendor_id: to_string(instance.vendor_id),
+      inserted_at: instance.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
+      updated_at: instance.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+    }
+  end
+end
+
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.ContentTypes.ContentType do
   def to_document(%WraftDoc.ContentTypes.ContentType{} = content_type) do
     %{
@@ -23,7 +62,7 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.ContentTypes.ContentType do
       layout_id: to_string(content_type.layout_id),
       flow_id: to_string(content_type.flow_id),
       theme_id: to_string(content_type.theme_id),
-      organisation_id: to_string(content_type.organisation_id),
+      organisation_id: to_string(content_type.organisation_id) || "",
       creator_id: to_string(content_type.creator_id),
       inserted_at:
         content_type.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
@@ -33,19 +72,18 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.ContentTypes.ContentType do
 end
 
 defimpl WraftDoc.Search.Encoder, for: WraftDoc.DataTemplates.DataTemplate do
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Repo
 
-  def to_document(%WraftDoc.DataTemplates.DataTemplate{} = data_template) do
-    data_template =
-      Repo.preload(
-        Repo.get!(WraftDoc.DataTemplates.DataTemplate, data_template.id),
-        :content_type
-      )
-
+  def to_document(%DataTemplate{} = data_template) do
     organisation_id =
-      case data_template.content_type do
-        %WraftDoc.ContentTypes.ContentType{organisation_id: org_id} -> org_id
-        _ -> nil
+      data_template
+      |> Repo.preload(:content_type)
+      |> Map.get(:content_type, %{})
+      |> case do
+        %ContentType{organisation_id: org_id} -> org_id
+        _ -> ""
       end
 
     %{
@@ -117,5 +155,63 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Enterprise.Flow do
       inserted_at: flow.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
       updated_at: flow.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
     }
+  end
+
+  defimpl WraftDoc.Search.Encoder, for: WraftDoc.Pipelines.Pipeline do
+    def to_document(%WraftDoc.Pipelines.Pipeline{} = pipeline) do
+      %{
+        id: to_string(pipeline.id),
+        collection_name: "pipeline",
+        name: pipeline.name,
+        api_route: pipeline.api_route,
+        source: pipeline.source,
+        source_id: pipeline.source_id,
+        stages_count: pipeline.stages_count,
+        creator_id: to_string(pipeline.creator_id),
+        organisation_id: to_string(pipeline.organisation_id),
+        inserted_at:
+          pipeline.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
+        updated_at: pipeline.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+      }
+    end
+  end
+
+  defimpl WraftDoc.Search.Encoder, for: WraftDoc.Blocks.Block do
+    def to_document(%WraftDoc.Blocks.Block{} = block) do
+      %{
+        id: to_string(block.id),
+        collection_name: "block",
+        name: block.name,
+        description: block.description,
+        btype: block.btype,
+        dataset: Jason.encode!(block.dataset),
+        input: block.input,
+        file_url: block.file_url,
+        api_route: block.api_route,
+        endpoint: block.endpoint,
+        tex_chart: block.tex_chart,
+        creator_id: to_string(block.creator_id),
+        organisation_id: to_string(block.organisation_id),
+        inserted_at: block.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
+        updated_at: block.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+      }
+    end
+  end
+
+  defimpl WraftDoc.Search.Encoder, for: WraftDoc.Forms.Form do
+    def to_document(%WraftDoc.Forms.Form{} = form) do
+      %{
+        id: to_string(form.id),
+        collection_name: "form",
+        name: form.name,
+        description: form.description,
+        prefix: form.prefix,
+        status: to_string(form.status),
+        creator_id: to_string(form.creator_id),
+        organisation_id: to_string(form.organisation_id),
+        inserted_at: form.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
+        updated_at: form.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
+      }
+    end
   end
 end

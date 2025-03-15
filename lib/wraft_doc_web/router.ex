@@ -65,6 +65,12 @@ defmodule WraftDocWeb.Router do
     end
   end
 
+  scope "/", WraftDocWeb.Api.V1 do
+    pipe_through(:api)
+    # Asset image redirect to minio url
+    get("/asset/image/:id", AssetController, :show_image)
+  end
+
   # Scope which does not need authorization.
   scope "/api", WraftDocWeb do
     pipe_through(:api)
@@ -296,6 +302,8 @@ defmodule WraftDocWeb.Router do
       get("/contents/:id/approval_history", InstanceApprovalController, :approval_history)
       # Send document instance email
       post("/contents/:id/email", InstanceController, :send_email)
+      # Import docx
+      post("/import_docx", DocumentController, :import_docx)
 
       get("/users/list_pending_approvals", InstanceController, :list_pending_approvals)
 
@@ -415,6 +423,7 @@ defmodule WraftDocWeb.Router do
 
       # Search
       get("/search", SearchController, :search)
+      get("/reindex", SearchController, :reindex)
 
       # post("/approval_systems/:id/approve", ApprovalSystemController, :approve)
 

@@ -33,7 +33,7 @@ defmodule WraftDoc.Notifications do
 
   def create_notification(_), do: nil
 
-  defp build_notification_params(%{id: actor_id}, params) do
+  defp build_notification_params(actor_id, params) do
     params
     |> Map.put(:actor_id, actor_id)
     |> Map.put(:message, NotificationMessages.message(params.type, params))

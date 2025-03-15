@@ -12,6 +12,16 @@ defmodule WraftDocWeb.AssetUploader do
   # Limit upload size to 1MB
   @max_file_size 2 * 1024 * 1024
 
+  # Add image processing for document type
+  def transform(:original, {file, %Asset{type: "document"}}) do
+    extension = file.file_name |> Path.extname() |> String.downcase()
+
+    case extension in ~w(.jpg .jpeg .gif .png) do
+      true -> {:convert, "-strip -resize 1024x1024 -quality 85"}
+      false -> :noaction
+    end
+  end
+
   # Whitelist file extensions:
   def validate({file, %Asset{type: "layout"}}) do
     file_extension = file.file_name |> Path.extname() |> String.downcase()
@@ -25,6 +35,15 @@ defmodule WraftDocWeb.AssetUploader do
     file_extension = file.file_name |> Path.extname() |> String.downcase()
 
     case Enum.member?(~w(.otf .ttf), file_extension) && check_file_naming(file.file_name) do
+      true -> :ok
+      false -> {:error, "invalid file type"}
+    end
+  end
+
+  def validate({file, %Asset{type: "document"}}) do
+    file_extension = file.file_name |> Path.extname() |> String.downcase()
+
+    case Enum.member?(~w(.jpg .jpeg .gif .png), file_extension) do
       true -> :ok
       false -> {:error, "invalid file type"}
     end

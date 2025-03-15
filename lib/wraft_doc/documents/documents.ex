@@ -109,8 +109,16 @@ defmodule WraftDoc.Documents do
     |> Repo.transaction()
     |> case do
       {:ok, %{instance: content}} ->
+        versions_preload_query =
+          from(version in Version,
+            where: version.content_id == ^content.id and version.type == :build,
+            order_by: [desc: version.inserted_at],
+            preload: [:author]
+          )
+
         Repo.preload(content, [
-          :content_type,
+          {:content_type, [layout: [:assets, :frame, :engine, :organisation]]},
+          {:versions, versions_preload_query},
           :state,
           :vendor,
           :instance_approval_systems
@@ -671,8 +679,8 @@ defmodule WraftDoc.Documents do
   def show_instance(instance_id, user) do
     # Preload the build versions of the instance
     versions_preload_query =
-      from(v in Version,
-        where: v.content_id == ^instance_id and v.type == :build,
+      from(version in Version,
+        where: version.content_id == ^instance_id and version.type == :build,
         preload: [:author]
       )
 
@@ -691,10 +699,6 @@ defmodule WraftDoc.Documents do
       ])
       |> get_built_document()
     end
-  end
-
-  def show_instance_guest(document_id) do
-    Repo.get(Instance, document_id)
   end
 
   @doc """
@@ -940,14 +944,12 @@ defmodule WraftDoc.Documents do
     instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
     base_content_dir = Path.join(File.cwd!(), instance_dir_path)
     File.mkdir_p(base_content_dir)
+    File.mkdir_p(Path.join(File.cwd!(), "organisations/images/"))
 
     # Load all the assets corresponding with the given theme
     theme = Repo.preload(content_type.theme, [:assets])
 
-    file_path =
-      layout
-      |> Repo.preload([:frame])
-      |> Assets.download_slug_file()
+    file_path = Assets.download_slug_file(layout)
 
     System.cmd("cp", ["-a", file_path, base_content_dir])
 
@@ -972,7 +974,7 @@ defmodule WraftDoc.Documents do
     content =
       prepare_markdown(
         instance,
-        Repo.preload(layout, [:organisation, :frame]),
+        layout,
         header,
         base_content_dir,
         theme,
@@ -982,7 +984,7 @@ defmodule WraftDoc.Documents do
     File.write("#{base_content_dir}/content.md", content)
     pdf_file = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
 
-    pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir)
+    pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir, layout)
 
     "pandoc"
     |> System.cmd(pandoc_commands, stderr_to_stdout: true)
@@ -996,16 +998,20 @@ defmodule WraftDoc.Documents do
     do: instance_id <> "-v" <> to_string(length(build_versions) + 1) <> ".pdf"
 
   defp prepare_markdown(
-         %{id: instance_id, creator: %User{name: name, email: email}} = instance,
-         %Layout{organisation: %Organisation{name: organisation_name}} = layout,
+         %{
+           id: instance_id,
+           doc_settings: document_settings,
+           creator: %User{name: name, email: email}
+         } = instance,
+         %Layout{organisation: %Organisation{name: organisation_name}, slug: slug} = layout,
          header,
          mkdir,
          theme,
          task
        ) do
     header =
-      Enum.reduce(layout.assets, header, fn x, acc ->
-        Assets.find_asset_header_values(x, acc, layout, instance)
+      Enum.reduce(layout.assets, header, fn asset, acc ->
+        Assets.find_asset_header_values(asset, acc, layout, instance)
       end)
 
     qr_code = Task.await(task)
@@ -1021,12 +1027,14 @@ defmodule WraftDoc.Documents do
       |> concat_strings("author_email: #{email}\n")
       |> concat_strings("id: #{instance_id}\n")
       |> concat_strings("mainfont: #{theme.font_name}\n")
+      |> concat_strings("mainfont_base: #{theme.base_font_name}\n")
       |> concat_strings("mainfontoptions:\n")
       |> Themes.font_option_header(theme.font_options)
-      |> concat_strings("body_color: #{theme.body_color}\n")
-      |> concat_strings("primary_color: #{theme.primary_color}\n")
-      |> concat_strings("secondary_color: #{theme.secondary_color}\n")
+      |> concat_strings("body_color: \"#{theme.body_color}\"\n")
+      |> concat_strings("primary_color: \"#{theme.primary_color}\"\n")
+      |> concat_strings("secondary_color: \"#{theme.secondary_color}\"\n")
       |> concat_strings("typescale: #{theme.typescale}\n")
+      |> document_option_header(document_settings, slug)
       |> concat_strings("--- \n")
 
     """
@@ -1035,13 +1043,53 @@ defmodule WraftDoc.Documents do
     """
   end
 
-  defp prepare_pandoc_cmds(pdf_file, base_content_dir) do
+  defp document_option_header(
+         header,
+         %{
+           table_of_content?: is_toc?,
+           table_of_content_depth: toc_depth,
+           qr?: is_qr?,
+           default_cover?: is_default_cover?
+         },
+         slug
+       ) do
+    is_toc? = if "pletter" == slug, do: false, else: is_toc?
+
+    header
+    |> concat_strings("toc: #{is_toc?}\n")
+    |> concat_strings("toc_depth: #{toc_depth}\n")
+    |> concat_strings("qr: #{is_qr?}\n")
+    |> concat_strings("default_cover: #{is_default_cover?}\n")
+  end
+
+  defp document_option_header(header, _, _), do: header
+
+  defp prepare_pandoc_cmds(pdf_file, base_content_dir, %Layout{
+         engine: %Engine{name: "Pandoc + Typst"}
+       }) do
+    [
+      "-s",
+      "#{base_content_dir}/content.md",
+      "--template=#{base_content_dir}/default.typst",
+      "--pdf-engine-opt=--root=/",
+      "--pdf-engine-opt=--font-path=#{base_content_dir}/fonts",
+      "--pdf-engine=typst"
+    ] ++ get_pandoc_filter("s3_image_typst.lua") ++ ["-o", pdf_file]
+  end
+
+  defp prepare_pandoc_cmds(pdf_file, base_content_dir, _) do
     [
       "#{base_content_dir}/content.md",
       "--template=#{base_content_dir}/template.tex",
-      "--pdf-engine=#{System.get_env("XELATEX_PATH")}",
-      "-o",
-      pdf_file
+      "--pdf-engine=#{System.get_env("XELATEX_PATH")}"
+    ] ++ get_pandoc_filter("s3_image.lua") ++ ["-o", pdf_file]
+  end
+
+  def get_pandoc_filter(filter_name) do
+    filter = [File.cwd!(), "priv/pandoc_filters", filter_name]
+
+    [
+      "--lua-filter=#{Path.join(filter)}"
     ]
   end
 
@@ -1053,10 +1101,12 @@ defmodule WraftDoc.Documents do
     case Minio.upload_file(pdf_file) do
       {:ok, _} ->
         File.rm_rf(file_path)
+        File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
         pandoc_response
 
       _ ->
         File.rm(pdf_file)
+        File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
         Logger.error("File upload failed")
         {"", 222}
     end
