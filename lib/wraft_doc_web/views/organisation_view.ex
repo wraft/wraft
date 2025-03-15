@@ -113,6 +113,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
+  def render("transfer_ownership.json", %{}) do
+    %{
+      info: "The Ownership of the Organisation has been successfully transferred."
+    }
+  end
+
   def render("invite.json", %{}) do
     %{
       info: "Invited successfully.!"

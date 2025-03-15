@@ -319,6 +319,8 @@ defmodule WraftDocWeb.Router do
         post("/remove_user/:id", OrganisationController, :remove_user)
         # permissions of user in organisation
         get("/users/permissions", OrganisationController, :permissions)
+        # Transfer ownership
+        post("/transfer_ownership", OrganisationController, :transfer_ownership)
       end
 
       # List Organisation by User

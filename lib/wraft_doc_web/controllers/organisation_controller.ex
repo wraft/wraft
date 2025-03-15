@@ -470,10 +470,12 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
   @spec request_deletion(Plug.Conn.t(), map) :: Plug.Conn.t()
   def request_deletion(conn, _params) do
-    %{current_org_id: organisation_id, email: email} = current_user = conn.assigns.current_user
+    %{current_org_id: organisation_id, email: email, id: user_id} =
+      current_user = conn.assigns.current_user
 
     with {:error, :already_member} <- Enterprise.already_member(organisation_id, email),
-         %Organisation{name: name} = organisation when name != "Personal" <-
+         %Organisation{name: name, owner_id: owner_id} = organisation
+         when name != "Personal" and owner_id == user_id <-
            Enterprise.get_organisation(organisation_id),
          {:ok, %Oban.Job{}} <-
            AuthTokens.generate_delete_token_and_send_email(current_user, organisation) do
@@ -484,6 +486,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
       %Organisation{name: "Personal"} ->
         body = Jason.encode!(%{errors: "Can't delete personal organisation"})
         conn |> put_resp_content_type("application/json") |> send_resp(422, body)
+
+      %Organisation{} ->
+        body = Jason.encode!(%{errors: "Only organisation owner can request deletion"})
+        conn |> put_resp_content_type("application/json") |> send_resp(403, body)
 
       :ok ->
         conn
@@ -642,10 +648,60 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   def remove_user(conn, %{"id" => user_id}) do
     current_user = conn.assigns[:current_user]
 
-    with %UserOrganisation{} = user_organisation <-
+    with %UserOrganisation{organisation: %Organisation{owner_id: owner_id} = _organisation} =
+           user_organisation <-
            Enterprise.get_user_organisation(current_user, user_id),
-         {:ok, %UserOrganisation{}} <- Enterprise.remove_user(user_organisation) do
+         {:ok, %UserOrganisation{}} <- Enterprise.remove_user(user_organisation, owner_id) do
       render(conn, "remove_user.json")
+    else
+      {:error, "Owner cannot be removed"} ->
+        conn
+        |> put_status(:forbidden_request)
+        |> json(%{error: "Owner of the organisation cannot be removed"})
+
+      error ->
+        error
+    end
+  end
+
+  swagger_path :transfer_ownership do
+    post("/organisations/transfer_ownership/{id}")
+    summary("Transfer organisation ownership")
+    description("Transfers organisation ownership to a specified user")
+
+    parameters do
+      id(:path, :string, "New owner's user ID", required: true)
+    end
+
+    response(200, "Success", Schema.ref(:Organisation))
+    response(422, "Unprocessable Entity", Schema.ref(:ValidationError))
+    response(404, "User or Organisation Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @doc """
+    Transfer Organisation into a new user
+  """
+  @spec transfer_ownership(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def transfer_ownership(conn, %{"id" => new_user_id}) do
+    %{id: user_id, current_org_id: current_org_id} = conn.assigns[:current_user]
+
+    with %Organisation{owner_id: ^user_id} = organisation <-
+           Enterprise.get_organisation(current_org_id),
+         %User{email: email} <- Account.get_user(new_user_id),
+         {:error, :already_member} <-
+           Enterprise.already_member(current_org_id, email),
+         {:ok, %Organisation{}} <-
+           Enterprise.transfer_ownership(organisation, new_user_id) do
+      render(conn, "transfer_ownership.json")
+    else
+      %Organisation{} ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{error: "Only organisation owner can transfer ownership"})
+
+      error ->
+        error
     end
   end
 
