@@ -733,18 +733,6 @@ defmodule WraftDoc.Documents do
   end
 
   @doc """
-  Get the build document of the given instance.
-  """
-  @spec get_build_history(Instance.t()) :: History.t() | nil
-  def get_build_history(%Instance{id: id}) do
-    History
-    |> where([h], h.exit_code == 0 and h.content_id == ^id)
-    |> order_by([h], desc: h.inserted_at)
-    |> limit(1)
-    |> Repo.one()
-  end
-
-  @doc """
   Update an instance and creates updated version
   the instance is only available to edit if its editable field is true
   ## Parameters
@@ -1215,6 +1203,28 @@ defmodule WraftDoc.Documents do
     |> History.status_update_changeset(%{status: "enqueued"})
     |> Repo.insert!()
   end
+
+  @doc """
+  Get the latest successful build document of the given instance.
+  """
+  @spec get_build_history(Instance.t()) :: History.t() | nil
+  def get_build_history(%Instance{id: id}) do
+    History
+    |> where([h], h.exit_code == 0 and h.content_id == ^id)
+    |> order_by([h], desc: h.inserted_at)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  @doc """
+  Get build status
+  """
+  @spec get_build_status(Ecto.UUID.t(), Ecto.UUID.t()) :: History.t() | nil
+  def get_build_status(<<_::288>> = build_history_id, <<_::288>> = document_id) do
+    Repo.get_by(History, id: build_history_id, content_id: document_id)
+  end
+
+  def get_build_status(_, _), do: nil
 
   @doc """
   Update build history

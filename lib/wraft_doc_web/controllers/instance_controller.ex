@@ -788,7 +788,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     with %Instance{content_type: %{layout: layout}} = instance <-
            Documents.show_instance(document_id, current_user),
          %Layout{} = layout <- Assets.preload_asset(layout),
-         %History{} = build_history <-
+         %History{id: build_history_id} = build_history <-
            Documents.create_initial_build_history(current_user, instance),
          {:ok, %Oban.Job{}} <-
            Documents.create_document_worker_job(
@@ -800,7 +800,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            ) do
       conn
       |> put_status(:accepted)
-      |> json(%{message: "Build started ..."})
+      |> json(%{message: "Build started ...", status_id: build_history_id})
     end
   rescue
     DownloadError ->
@@ -810,12 +810,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   swagger_path :build_status do
-    get("/contents/{id}/build_status")
+    get("/contents/{id}/build/{status_id}")
     summary("Get build status")
     description("API to get build status")
 
     parameters do
       id(:path, :string, "instance id", required: true)
+      build_id(:path, :string, "build status id", required: true)
     end
 
     response(200, "Ok", Schema.ref(:Content))
@@ -825,11 +826,11 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   end
 
   @spec build_status(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def build_status(conn, %{"id" => document_id}) do
+  def build_status(conn, %{"id" => document_id, "status_id" => build_history_id}) do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
-         %History{status: "success"} <- Documents.get_build_history(instance) do
+         %History{status: :success} <- Documents.get_build_status(build_history_id, document_id) do
       render(conn, "instance.json", instance: instance)
     else
       %History{status: status, exit_code: exit_code} ->

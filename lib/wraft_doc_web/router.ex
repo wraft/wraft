@@ -390,7 +390,7 @@ defmodule WraftDocWeb.Router do
       # build PDF from a content
       post("/contents/:id/build", InstanceController, :build)
       # build status
-      get("/contents/:id/build_status", InstanceController, :build_status)
+      get("/contents/:id/build/:status_id", InstanceController, :build_status)
 
       # All data in an organisation
       get("/data_templates", DataTemplateController, :all_templates)
