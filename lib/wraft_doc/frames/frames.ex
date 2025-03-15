@@ -7,13 +7,17 @@ defmodule WraftDoc.Frames do
   require Logger
 
   alias Ecto.Multi
+  alias WraftDoc.Account.User
   alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
   alias WraftDoc.ContentTypes
+  alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.Documents
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Frames.FrameAsset
   alias WraftDoc.Layouts
+  alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
   alias WraftDoc.Utils.FileHelper
 
@@ -21,15 +25,12 @@ defmodule WraftDoc.Frames do
   Lists all frames.
   """
   @spec list_frames(User.t(), map()) :: map()
-  def list_frames(%{current_org_id: organisation_id}, params) do
-    query =
-      from(s in Frame,
-        where: s.organisation_id == ^organisation_id,
-        order_by: [desc: s.inserted_at],
-        preload: [:assets]
-      )
-
-    Repo.paginate(query, params)
+  def list_frames(%User{current_org_id: organisation_id}, params) do
+    Frame
+    |> where([frame], frame.organisation_id == ^organisation_id)
+    |> order_by([frame], desc: frame.inserted_at)
+    |> preload([:assets])
+    |> Repo.paginate(params)
   end
 
   def list_frames(_, _), do: {:error, :fake}
@@ -38,7 +39,7 @@ defmodule WraftDoc.Frames do
   Retrieves a specific frame.
   """
   @spec get_frame(binary(), User.t()) :: Frame.t() | nil
-  def get_frame(<<_::288>> = id, %{current_org_id: organisation_id}) do
+  def get_frame(<<_::288>> = id, %User{current_org_id: organisation_id}) do
     Frame
     |> Repo.get_by(id: id, organisation_id: organisation_id)
     |> Repo.preload([:assets])
@@ -58,7 +59,7 @@ defmodule WraftDoc.Frames do
   Create a frame.
   """
   @spec create_frame(User.t(), map()) :: Frame.t() | {:error, Ecto.Changeset.t()}
-  def create_frame(%{id: user_id, current_org_id: organisation_id} = current_user, attrs) do
+  def create_frame(%User{id: user_id, current_org_id: organisation_id} = current_user, attrs) do
     params =
       Map.merge(attrs, %{
         "organisation_id" => organisation_id,
@@ -70,9 +71,8 @@ defmodule WraftDoc.Frames do
     |> Repo.transaction()
     |> case do
       {:ok, %{frame: frame}} ->
-        frame_thumbnail_upload(frame, params)
         fetch_and_associate_assets(frame, current_user, params)
-        {:ok, Repo.preload(frame, [:assets])}
+        frame_thumbnail_upload(frame, params)
 
       {:error, _, changeset, _} ->
         {:error, changeset}
@@ -85,7 +85,7 @@ defmodule WraftDoc.Frames do
   @spec update_frame(Frame.t(), User.t(), map()) :: Frame.t() | {:error, Ecto.Changeset.t()}
   def update_frame(
         %Frame{} = frame,
-        %{id: user_id, current_org_id: organisation_id} = current_user,
+        %User{id: user_id, current_org_id: organisation_id} = current_user,
         attrs
       ) do
     frame
@@ -98,9 +98,8 @@ defmodule WraftDoc.Frames do
     |> Repo.update()
     |> case do
       {:ok, frame} ->
-        frame_thumbnail_upload(frame, attrs)
         fetch_and_associate_assets(frame, current_user, attrs)
-        {:ok, Repo.preload(frame, [:assets])}
+        frame_thumbnail_upload(frame, attrs)
 
       {:error, _, changeset, _} ->
         {:error, changeset}
@@ -143,16 +142,15 @@ defmodule WraftDoc.Frames do
 
   defp associate_frame_and_asset(_frame, _current_user, nil), do: nil
 
-  def add_frame_wraft_json(
-        %Frame{
-          organisation_id: organisation_id,
-          assets: [%{id: asset_id, file: file} | _]
-        } = frame
-      ) do
+  defp add_frame_wraft_json(
+         %Frame{
+           organisation_id: organisation_id,
+           assets: [%{id: asset_id, file: file} | _]
+         } = frame
+       ) do
     binary =
       Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file.file_name}")
 
-    # validated json so wraftjson wont be empty
     {:ok, wraft_json} = FileHelper.get_wraft_json(binary)
 
     frame
@@ -166,95 +164,95 @@ defmodule WraftDoc.Frames do
   @spec frame_thumbnail_upload(Frame.t(), map()) ::
           {:ok, %Frame{}} | {:error, Ecto.Changeset.t()}
   def frame_thumbnail_upload(frame, %{"thumbnail" => _} = params) do
-    frame |> Frame.file_changeset(params) |> Repo.update()
+    frame
+    |> Frame.file_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, frame} -> {:ok, Repo.preload(frame, [:assets])}
+      _ -> {:ok, Repo.preload(frame, [:assets])}
+    end
   end
 
-  def frame_thumbnail_upload(frame, _params) do
-    {:ok, frame}
-  end
+  def frame_thumbnail_upload(frame, _params), do: {:ok, Repo.preload(frame, [:assets])}
 
   @doc """
   Retrieves the appropriate engine based on the given frame.
   """
   @spec get_engine_by_frame_type(map()) :: Engine.t() | {:error, :invalid_id, Frame}
-  def get_engine_by_frame_type(%{"frame_id" => frame_id}) when frame_id != nil do
+  def get_engine_by_frame_type(%{"frame_id" => <<_::288>> = frame_id}) do
     frame_id
     |> get_frame()
     |> case do
-      %{type: :typst} = _frame ->
-        Documents.get_engine_by_name("Pandoc + Typst")
-
-      %{type: :latex} = _frame ->
-        Documents.get_engine_by_name("Pandoc")
-
-      _ ->
-        {:error, :invalid_id, Frame}
+      %{type: :typst} = _frame -> Documents.get_engine_by_name("Pandoc + Typst")
+      %{type: :latex} = _frame -> Documents.get_engine_by_name("Pandoc")
+      _ -> {:error, :invalid_id, Frame}
     end
   end
 
   def get_engine_by_frame_type(%{"engine_id" => engine_id}), do: Documents.get_engine(engine_id)
 
+  @doc """
+  Add frame variant fields to the params.
+  """
+  @spec add_frame_variant_fields(Frame.t(), map()) :: map()
   def add_frame_variant_fields(
         %Frame{wraft_json: %{"fields" => frame_fields}},
         %{"fields" => fields} = params
-      ) do
-    frame_fields = ContentTypes.create_field_params_from_wraft_json(frame_fields)
-
-    Map.put(params, "fields", frame_fields ++ fields)
-  end
+      ),
+      do: create_variant_fields_params(params, fields, frame_fields)
 
   def add_frame_variant_fields(_, params), do: params
 
+  @doc """
+  Update frame variant fields.
+  """
+  @spec update_frame_variant_fields(
+          ContentType.t(),
+          User.t(),
+          map()
+        ) :: map()
   def update_frame_variant_fields(
-        %{layout: %{id: existing_layout_id, frame: existing_frame}} = content_type,
+        %ContentType{layout: %Layout{id: existing_layout_id, frame: existing_frame}} =
+          content_type,
         current_user,
         %{"fields" => fields, "layout_id" => layout_id} = params
       ) do
-    %{frame: new_frame} = _new_layout = Layouts.get_layout(layout_id, current_user)
+    %Layout{frame: new_frame} = Layouts.get_layout(layout_id, current_user)
 
-    cond do
-      existing_layout_id == layout_id ->
+    case {existing_layout_id == layout_id, existing_frame, new_frame} do
+      {true, _, _} ->
         params
 
-      is_nil(existing_frame) and is_nil(new_frame) ->
+      {false, nil, nil} ->
         params
 
-      is_nil(existing_frame) and not is_nil(new_frame) ->
-        %Frame{wraft_json: %{"fields" => json_frame_fields}} = new_frame
+      {false, nil, %Frame{wraft_json: %{"fields" => frame_fields}}} ->
+        create_variant_fields_params(params, fields, frame_fields)
 
-        frame_fields = ContentTypes.create_field_params_from_wraft_json(json_frame_fields)
-        Map.put(params, "fields", frame_fields ++ fields)
-
-      not is_nil(existing_frame) and is_nil(new_frame) ->
+      {false, %Frame{}, nil} ->
         delete_frame_fields(existing_frame, content_type)
-
         params
 
-      true ->
+      {false, %Frame{}, %Frame{wraft_json: %{"fields" => frame_fields}}} ->
         delete_frame_fields(existing_frame, content_type)
-
-        %Frame{wraft_json: %{"fields" => frame_fields}} = new_frame
-
-        frame_fields
-        |> ContentTypes.create_field_params_from_wraft_json()
-        |> then(&Map.put(params, "fields", fields ++ &1))
+        create_variant_fields_params(params, fields, frame_fields)
     end
   end
 
-  defp delete_frame_fields(frame, content_type) do
-    %Frame{wraft_json: %{"fields" => frame_fields}} = frame
+  defp create_variant_fields_params(params, fields, frame_fields) do
+    frame_fields
+    |> ContentTypes.create_field_params_from_wraft_json()
+    |> then(&Map.put(params, "fields", fields ++ &1))
+  end
 
+  defp delete_frame_fields(%Frame{wraft_json: %{"fields" => frame_fields}}, content_type) do
     frame_field_names = Enum.map(frame_fields, fn field -> field["name"] end)
 
-    query =
-      from(ctf in WraftDoc.ContentTypes.ContentTypeField,
-        join: f in assoc(ctf, :field),
-        where: ctf.content_type_id == ^content_type.id,
-        where: f.name in ^frame_field_names,
-        preload: [field: f]
-      )
-
-    query
+    ContentTypeField
+    |> join(:inner, [content_type_field], field in assoc(content_type_field, :field))
+    |> where([content_type_field, field], content_type_field.content_type_id == ^content_type.id)
+    |> where([content_type_field, field], field.name in ^frame_field_names)
+    |> preload([content_type_field, field], field: field)
     |> Repo.all()
     |> Enum.each(fn content_type_field ->
       ContentTypes.delete_content_type_field(content_type_field)

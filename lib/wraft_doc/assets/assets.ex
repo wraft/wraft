@@ -7,6 +7,7 @@ defmodule WraftDoc.Assets do
   require Logger
 
   alias Ecto.Multi
+  alias WraftDoc.Account.User
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
   alias WraftDoc.Documents
@@ -21,7 +22,7 @@ defmodule WraftDoc.Assets do
   """
   # TODO - imprvove tests
   @spec create_asset(User.t(), map) :: {:ok, Asset.t()}
-  def create_asset(%{current_org_id: org_id} = current_user, params) do
+  def create_asset(%User{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
     Multi.new()
@@ -159,9 +160,9 @@ defmodule WraftDoc.Assets do
   def preload_asset(_), do: {:error, :not_sufficient}
 
   @doc """
-  Preload assets of a frame.
+  Download slug / frame files.
   """
-  @spec download_slug_file(Layout.t(), String.t()) :: String.t()
+  @spec download_slug_file(Layout.t()) :: String.t()
   def download_slug_file(%Layout{frame: nil, slug: slug}, _),
     do: :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
 
@@ -179,6 +180,10 @@ defmodule WraftDoc.Assets do
     FileHelper.extract_file(binary, asset_file_path)
   end
 
+  @doc """
+  Return the path of PDF file.
+  """
+  @spec pdf_file_path(Instance.t(), String.t(), boolean()) :: String.t()
   def pdf_file_path(
         %Instance{instance_id: instance_id, versions: build_versions},
         instance_dir_path,
@@ -199,7 +204,9 @@ defmodule WraftDoc.Assets do
     |> then(&Path.join(instance_dir_path, &1))
   end
 
-  # Find the header values for the content.md file from the assets of the layout used.
+  @doc """
+  Find the header values for the content.md file from the assets of the layout used.
+  """
   @spec find_asset_header_values(Asset.t(), String.t(), String.t(), Instance.t()) :: String.t()
   def find_asset_header_values(
         %Asset{name: name, file: file, organisation_id: org_id} = asset,

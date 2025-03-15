@@ -48,91 +48,130 @@ defmodule WraftDoc.Frames.WraftJson do
     |> validate_required_files()
   end
 
-  defp validate_rootfile_exists(changeset) do
-    with %{valid?: true} <- changeset,
-         build_settings <- get_field(changeset, :buildSettings),
-         package_contents <- get_field(changeset, :packageContents),
-         %{rootFile: root_file} <- build_settings,
-         root_files <- Enum.map(package_contents.rootFiles, & &1.path) do
-      if root_file in root_files do
-        changeset
-      else
-        add_error(
-          changeset,
-          :buildSettings,
-          "rootFile must reference a file defined in packageContents.rootFiles"
-        )
-      end
+  defp validate_rootfile_exists(%{valid?: true} = changeset) do
+    %{rootFile: root_file} = get_field(changeset, :buildSettings)
+    %{rootFiles: root_files} = get_field(changeset, :packageContents)
+    root_file_paths = Enum.map(root_files, & &1.path)
+
+    if root_file in root_file_paths do
+      changeset
     else
-      _ -> changeset
+      add_error(
+        changeset,
+        :buildSettings,
+        "rootFile must reference a file defined in packageContents.rootFiles"
+      )
     end
   end
 
-  defp validate_file_extensions(changeset) do
-    with %{valid?: true} <- changeset,
-         metadata <- get_field(changeset, :metadata),
-         %{type: doc_type} <- metadata,
-         valid_extensions <- Map.get(@doc_types, doc_type, []),
-         package_contents <- get_field(changeset, :packageContents),
-         root_files <- package_contents.rootFiles do
-      invalid_files =
-        Enum.filter(root_files, fn file ->
-          path = file.path
-          not Enum.any?(valid_extensions, &String.ends_with?(path, &1))
-        end)
+  defp validate_rootfile_exists(changeset), do: changeset
 
-      if Enum.empty?(invalid_files) do
-        changeset
-      else
-        file_names = Enum.map_join(invalid_files, ", ", & &1.name)
+  defp validate_file_extensions(%{valid?: true} = changeset) do
+    %{type: doc_type} = get_field(changeset, :metadata)
+    %{rootFiles: root_files} = get_field(changeset, :packageContents)
+    valid_extensions = Map.get(@doc_types, doc_type, [])
 
-        add_error(
-          changeset,
-          :packageContents,
-          "Files (#{file_names}) must have one of these extensions: #{Enum.join(valid_extensions, ", ")}"
-        )
-      end
+    invalid_files =
+      Enum.filter(root_files, fn file ->
+        path = file.path
+        not Enum.any?(valid_extensions, &String.ends_with?(path, &1))
+      end)
+
+    if Enum.empty?(invalid_files) do
+      changeset
     else
-      _ -> changeset
+      file_names = Enum.map_join(invalid_files, ", ", & &1.name)
+
+      add_error(
+        changeset,
+        :packageContents,
+        "Files (#{file_names}) must have one of these extensions: #{Enum.join(valid_extensions, ", ")}"
+      )
     end
   end
 
-  defp validate_required_files(changeset) do
-    with %{valid?: true} <- changeset,
-         metadata <- get_field(changeset, :metadata),
-         %{type: doc_type} <- metadata,
-         required_files <- Map.get(@required_files, doc_type, []),
-         package_contents <- get_field(changeset, :packageContents),
-         root_files <- Enum.map(package_contents.rootFiles, & &1.path) do
-      missing_files =
-        Enum.filter(required_files, fn required_file ->
-          not Enum.any?(root_files, &String.ends_with?(&1, required_file))
-        end)
+  defp validate_file_extensions(changeset), do: changeset
 
-      if Enum.empty?(missing_files) do
-        changeset
-      else
-        add_error(
-          changeset,
-          :packageContents,
-          "Required files missing for #{doc_type}: #{Enum.join(missing_files, ", ")}"
-        )
-      end
+  defp validate_required_files(%{valid?: true} = changeset) do
+    %{type: doc_type} = get_field(changeset, :metadata)
+    %{rootFiles: root_files} = get_field(changeset, :packageContents)
+
+    required_files = Map.get(@required_files, doc_type, [])
+    root_file_paths = Enum.map(root_files, & &1.path)
+
+    missing_files =
+      Enum.filter(required_files, fn required_file ->
+        not Enum.any?(root_file_paths, &String.ends_with?(&1, required_file))
+      end)
+
+    if Enum.empty?(missing_files) do
+      changeset
     else
-      _ -> changeset
+      add_error(
+        changeset,
+        :packageContents,
+        "Required files missing for #{doc_type}: #{Enum.join(missing_files, ", ")}"
+      )
     end
   end
+
+  defp validate_required_files(changeset), do: changeset
 
   @doc """
   Creates a changeset from wraft.json data and validates it
   """
   def validate_json(json_data) do
-    changeset = changeset(%WraftJson{}, json_data)
-
-    case changeset.valid? do
-      true -> :ok
-      false -> {:error, "Invalid wraft_json"}
+    %WraftJson{}
+    |> changeset(json_data)
+    |> case do
+      %{valid?: true} -> :ok
+      changeset -> {:error, format_changeset_errors(changeset)}
     end
+  end
+
+  defp format_changeset_errors(changeset) do
+    changeset
+    |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
+      Enum.reduce(opts, msg, fn {key, value}, acc ->
+        String.replace(acc, "%{#{key}}", to_string(value))
+      end)
+    end)
+    |> format_error_message()
+  end
+
+  defp format_error_message(error_map) when is_map(error_map) do
+    error_map
+    |> Enum.map(fn {key, value} -> format_error_entry(key, value) end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join("; ")
+  end
+
+  defp format_error_entry(key, value) when is_map(value) do
+    nested_errors = format_error_message(value)
+    if nested_errors != "", do: "#{key}: #{nested_errors}", else: nil
+  end
+
+  defp format_error_entry(key, value) when is_list(value) and is_map(hd(value)) do
+    items_errors =
+      value
+      |> Enum.with_index()
+      |> Enum.map(fn {item, index} ->
+        item_errors = format_error_message(item)
+        if item_errors != "", do: "item #{index + 1}: #{item_errors}", else: nil
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join(", ")
+
+    if items_errors != "", do: "#{key}: [#{items_errors}]", else: nil
+  end
+
+  defp format_error_entry(key, [value]) when is_binary(value) do
+    "#{key} #{value}"
+  end
+
+  defp format_error_entry(key, values) when is_list(values) do
+    messages = Enum.join(values, ", ")
+    "#{key}: #{messages}"
   end
 end
 
@@ -260,8 +299,8 @@ defmodule WraftDoc.Frames.WraftJson.PackageContents do
     struct
     |> cast(params, [])
     |> cast_embed(:rootFiles, required: true)
-    |> cast_embed(:assets, required: false)
-    |> cast_embed(:fonts, required: false)
+    |> cast_embed(:assets)
+    |> cast_embed(:fonts)
     |> validate_root_files()
   end
 

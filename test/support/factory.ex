@@ -486,9 +486,7 @@ defmodule WraftDoc.Factory do
   def plan_factory do
     %Plan{
       name: sequence(:name, &"Plan-#{&1}"),
-      description: sequence(:description, &"Plan Description-#{&1}"),
-      yearly_amount: Enum.random(0..1000),
-      monthly_amount: Enum.random(0..500)
+      description: sequence(:description, &"Plan Description-#{&1}")
     }
   end
 
