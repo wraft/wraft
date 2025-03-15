@@ -26,6 +26,7 @@ defmodule WraftDoc.Frames.Frame do
   def changeset(frame, attrs) do
     frame
     |> cast(attrs, [:name, :description, :type, :organisation_id, :creator_id, :wraft_json])
+    |> cast_attachments(attrs, [:thumbnail])
     |> validate_required([:name, :description, :type, :organisation_id, :creator_id])
     |> unique_constraint(:name,
       name: :frame_name_organisation_id_index,
@@ -33,15 +34,10 @@ defmodule WraftDoc.Frames.Frame do
     )
   end
 
-  def file_changeset(frame, attrs) do
-    frame
-    |> cast_attachments(attrs, [:thumbnail])
-    |> validate_required([:thumbnail])
-  end
-
   def update_changeset(frame, attrs) do
     frame
     |> cast(attrs, [:name, :description, :type, :organisation_id, :creator_id, :wraft_json])
+    |> cast_attachments(attrs, [:thumbnail])
     |> validate_required([:name, :description, :type])
     |> unique_constraint(:name,
       name: :frame_name_organisation_id_index,
