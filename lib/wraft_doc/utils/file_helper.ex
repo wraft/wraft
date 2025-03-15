@@ -16,7 +16,7 @@ defmodule WraftDoc.Utils.FileHelper do
     {:ok, wraft_json} = get_wraft_json(file_binary)
 
     wraft_json
-    |> get_allowed_files_from_wraft()
+    |> get_allowed_files_from_wraft_json()
     |> case do
       allowed_files ->
         Enum.each(allowed_files, fn allowed_file ->
@@ -105,13 +105,9 @@ defmodule WraftDoc.Utils.FileHelper do
     end
   end
 
-  @doc """
-  Retrieves file path from wraft.json
-  """
-  @spec get_allowed_files_from_wraft(map()) :: list(String.t())
-  def get_allowed_files_from_wraft(%{
-        "packageContents" => %{"rootFiles" => root_files, "assets" => assets, "fonts" => fonts}
-      }) do
+  defp get_allowed_files_from_wraft_json(%{
+         "packageContents" => %{"rootFiles" => root_files, "assets" => assets, "fonts" => fonts}
+       }) do
     [root_files, assets, fonts]
     |> Enum.map(&get_paths_from_section/1)
     |> List.flatten()
@@ -134,7 +130,7 @@ defmodule WraftDoc.Utils.FileHelper do
          {:ok, file_binary} <- read_file_contents(file_path),
          {:ok, wraft_json} <- get_wraft_json(file_binary),
          :ok <- WraftJson.validate_json(wraft_json),
-         allowed_files <- get_allowed_files_from_wraft(wraft_json),
+         allowed_files <- get_allowed_files_from_wraft_json(wraft_json),
          {:ok, _} <- validate_missing_files(allowed_files, file_entries) do
       :ok
     end

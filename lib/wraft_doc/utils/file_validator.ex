@@ -65,20 +65,57 @@ defmodule WraftDoc.Utils.FileValidator do
   defp file_info_size({:file_info, size, _, _, _, _, _, _, _, _, _, _, _, _}), do: size
 
   defp check_for_path_traversal(file_entries) do
-    if Enum.any?(file_entries, fn %{path: path} ->
-         String.contains?(path, "../") || String.contains?(path, "..\\")
-       end) do
-      {:error, :path_traversal_attempt}
-    else
+    patterns = [
+      ~r"\.\.[\\/]",
+      ~r"\.\.%2[Ff]",
+      ~r"%2[Ee]%2[Ee]%2[Ff]",
+      ~r"\.\.%[Cc]0%[Aa][Ff]",
+      ~r"\.\.[\\/][\\/]",
+      ~r"[\\/]\.\."
+    ]
+
+    with {:ok, _safe} <- detect_traversal_pattern(file_entries, patterns),
+         {:ok, _safe} <- detect_encoded_dots(file_entries) do
       :ok
+    else
+      {:error, entry} ->
+        require Logger
+        {:error, "Path traversal attempt detected in path: #{inspect(entry.path)}"}
     end
   end
 
+  defp detect_traversal_pattern(file_entries, patterns) do
+    case Enum.find(file_entries, &path_matches_pattern?(&1, patterns)) do
+      nil -> {:ok, :safe}
+      entry -> {:error, entry}
+    end
+  end
+
+  defp path_matches_pattern?(%{path: path}, patterns) do
+    normalized_path =
+      path
+      |> String.replace(~r"[\\/]+", "/")
+      |> String.downcase()
+
+    Enum.any?(patterns, &Regex.match?(&1, normalized_path))
+  end
+
+  defp detect_encoded_dots(file_entries) do
+    case Enum.find(file_entries, &contains_encoded_dots?/1) do
+      nil -> {:ok, :safe}
+      entry -> {:error, entry}
+    end
+  end
+
+  defp contains_encoded_dots?(%{path: path}) do
+    path
+    |> String.downcase()
+    |> (&(String.contains?(&1, "%2f") ||
+            (String.contains?(&1, "..") && String.contains?(&1, "%2")))).()
+  end
+
   defp check_file_extensions(file_entries) do
-    invalid_files =
-      Enum.filter(file_entries, fn %{extension: ext} ->
-        ext not in @allowed_extensions
-      end)
+    invalid_files = Enum.filter(file_entries, &(&1.extension not in @allowed_extensions))
 
     if Enum.empty?(invalid_files) do
       :ok
@@ -89,18 +126,12 @@ defmodule WraftDoc.Utils.FileValidator do
   end
 
   defp check_file_sizes(file_entries) do
-    large_files =
-      Enum.filter(file_entries, fn %{size: size} ->
-        size > @max_file_size
-      end)
-
-    # Check total file size
-    total_size = Enum.reduce(file_entries, 0, fn %{size: size}, acc -> size + acc end)
+    large_files = Enum.filter(file_entries, &(&1.size > @max_file_size))
+    total_size = Enum.reduce(file_entries, 0, &(&1.size + &2))
 
     cond do
-      not Enum.empty?(large_files) ->
-        large_file_names = Enum.map(large_files, & &1.path)
-        {:error, {:files_too_large, large_file_names}}
+      Enum.any?(large_files) ->
+        {:error, {:files_too_large, Enum.map(large_files, & &1.path)}}
 
       total_size > @max_total_size ->
         {:error, {:total_size_too_large, total_size}}

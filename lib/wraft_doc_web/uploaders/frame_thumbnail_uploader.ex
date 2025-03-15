@@ -27,7 +27,7 @@ defmodule WraftDocWeb.FrameThumbnailUploader do
   end
 
   def filename(_version, {file, _template}) do
-    String.replace("frame_" <> file.file_name, ~r/\s+/, "-")
+    String.replace("frame_" <> Path.rootname(file.file_name), ~r/\s+/, "-")
   end
 
   def storage_dir(_version, {_file, %Frame{id: id, organisation_id: organisation_id}}) do

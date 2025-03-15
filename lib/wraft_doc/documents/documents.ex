@@ -932,7 +932,7 @@ defmodule WraftDoc.Documents do
   @doc """
   Get an engine from its name.
   """
-  @spec get_engine_by_name(binary) :: Engine.t() | nil
+  @spec get_engine_by_name(String.t()) :: Engine.t() | nil
   def get_engine_by_name(engine_name) when is_binary(engine_name) do
     case Repo.get_by(Engine, name: engine_name) do
       %Engine{} = engine -> engine
