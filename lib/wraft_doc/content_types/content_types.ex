@@ -16,7 +16,7 @@ defmodule WraftDoc.ContentTypes do
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Fields
   alias WraftDoc.Fields.FieldType
-  alias WraftDoc.Layouts
+  alias WraftDoc.Frames
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
 
@@ -222,7 +222,7 @@ defmodule WraftDoc.ContentTypes do
   @doc """
   Update a content type.
   """
-  @spec update_content_type(ContentType.t(), User.t(), map) ::
+  @spec update_content_type(ContentType.t(), Layout.t(), User.t(), map()) ::
           %ContentType{
             layout: Layout.t(),
             creator: User.t()
@@ -230,18 +230,20 @@ defmodule WraftDoc.ContentTypes do
           | {:error, Ecto.Changeset.t()}
   def update_content_type(
         content_type,
+        %Layout{id: id} = layout,
         user,
-        %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
+        %{"flow_uuid" => f_uuid} = params
       ) do
-    %Layout{id: id} = Layouts.get_layout(layout_uuid, user)
     %Flow{id: f_id} = Enterprise.get_flow(f_uuid, user)
     {_, params} = Map.pop(params, "layout_uuid")
     {_, params} = Map.pop(params, "flow_uuid")
     params = Map.merge(params, %{"layout_id" => id, "flow_id" => f_id})
-    update_content_type(content_type, user, params)
+    update_content_type(content_type, layout, user, params)
   end
 
-  def update_content_type(content_type, _user, params) do
+  def update_content_type(content_type, layout, _user, params) do
+    params = Frames.update_frame_variant_fields(content_type, layout, params)
+
     content_type
     |> ContentType.update_changeset(params)
     |> Repo.update()

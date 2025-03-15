@@ -16,7 +16,6 @@ defmodule WraftDoc.Frames do
   alias WraftDoc.Documents
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Frames.FrameAsset
-  alias WraftDoc.Layouts
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
   alias WraftDoc.Utils.FileHelper
@@ -72,7 +71,7 @@ defmodule WraftDoc.Frames do
     |> case do
       {:ok, %{frame: frame}} ->
         fetch_and_associate_assets(frame, current_user, params)
-        frame_thumbnail_upload(frame, params)
+        {:ok, Repo.preload(frame, [:assets])}
 
       {:error, _, changeset, _} ->
         {:error, changeset}
@@ -99,7 +98,7 @@ defmodule WraftDoc.Frames do
     |> case do
       {:ok, frame} ->
         fetch_and_associate_assets(frame, current_user, attrs)
-        frame_thumbnail_upload(frame, attrs)
+        {:ok, Repo.preload(frame, [:assets])}
 
       {:error, _, changeset, _} ->
         {:error, changeset}
@@ -159,23 +158,6 @@ defmodule WraftDoc.Frames do
   end
 
   @doc """
-  Upload frame preview file.
-  """
-  @spec frame_thumbnail_upload(Frame.t(), map()) ::
-          {:ok, %Frame{}} | {:error, Ecto.Changeset.t()}
-  def frame_thumbnail_upload(frame, %{"thumbnail" => _} = params) do
-    frame
-    |> Frame.file_changeset(params)
-    |> Repo.update()
-    |> case do
-      {:ok, frame} -> {:ok, Repo.preload(frame, [:assets])}
-      _ -> {:ok, Repo.preload(frame, [:assets])}
-    end
-  end
-
-  def frame_thumbnail_upload(frame, _params), do: {:ok, Repo.preload(frame, [:assets])}
-
-  @doc """
   Retrieves the appropriate engine based on the given frame.
   """
   @spec get_engine_by_frame_type(map()) :: Engine.t() | {:error, :invalid_id, Frame}
@@ -208,32 +190,36 @@ defmodule WraftDoc.Frames do
   """
   @spec update_frame_variant_fields(
           ContentType.t(),
-          User.t(),
+          Layout.t(),
           map()
         ) :: map()
+
   def update_frame_variant_fields(
-        %ContentType{layout: %Layout{id: existing_layout_id, frame: existing_frame}} =
+        %ContentType{layout: %Layout{id: existing_layout_id}},
+        _,
+        %{"layout_id" => layout_id} = params
+      )
+      when layout_id == existing_layout_id,
+      do: params
+
+  def update_frame_variant_fields(
+        %ContentType{layout: %Layout{frame: existing_frame}} =
           content_type,
-        current_user,
-        %{"fields" => fields, "layout_id" => layout_id} = params
+        %Layout{frame: new_frame},
+        %{"fields" => fields} = params
       ) do
-    %Layout{frame: new_frame} = Layouts.get_layout(layout_id, current_user)
-
-    case {existing_layout_id == layout_id, existing_frame, new_frame} do
-      {true, _, _} ->
+    case {existing_frame, new_frame} do
+      {nil, nil} ->
         params
 
-      {false, nil, nil} ->
-        params
-
-      {false, nil, %Frame{wraft_json: %{"fields" => frame_fields}}} ->
+      {nil, %Frame{wraft_json: %{"fields" => frame_fields}}} ->
         create_variant_fields_params(params, fields, frame_fields)
 
-      {false, %Frame{}, nil} ->
+      {%Frame{}, nil} ->
         delete_frame_fields(existing_frame, content_type)
         params
 
-      {false, %Frame{}, %Frame{wraft_json: %{"fields" => frame_fields}}} ->
+      {%Frame{}, %Frame{wraft_json: %{"fields" => frame_fields}}} ->
         delete_frame_fields(existing_frame, content_type)
         create_variant_fields_params(params, fields, frame_fields)
     end
@@ -250,8 +236,10 @@ defmodule WraftDoc.Frames do
 
     ContentTypeField
     |> join(:inner, [content_type_field], field in assoc(content_type_field, :field))
-    |> where([content_type_field, field], content_type_field.content_type_id == ^content_type.id)
-    |> where([content_type_field, field], field.name in ^frame_field_names)
+    |> where(
+      [content_type_field, field],
+      content_type_field.content_type_id == ^content_type.id and field.name in ^frame_field_names
+    )
     |> preload([content_type_field, field], field: field)
     |> Repo.all()
     |> Enum.each(fn content_type_field ->
