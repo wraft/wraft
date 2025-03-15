@@ -936,10 +936,28 @@ defmodule WraftDoc.Documents do
   @doc """
   Creates a document worker job
   """
-  @spec create_document_worker_job(map(), binary()) :: {:ok, Oban.Job.t()} | {:error, term()}
-  def create_document_worker_job(args, tag) do
-    args
-    |> DocumentWorker.new(tags: [tag])
+  @spec create_document_worker_job(User.t(), History.t(), Instance.t(), Layout.t(), map()) ::
+          {:ok, Oban.Job.t()} | {:error, term()}
+  def create_document_worker_job(
+        %User{} = current_user,
+        %History{} = build_history,
+        %Instance{} = instance,
+        %Layout{} = layout,
+        params
+      ) do
+    encoded_data =
+      %{
+        current_user: current_user,
+        build_history: build_history,
+        instance: instance,
+        layout: layout,
+        params: params
+      }
+      |> :erlang.term_to_binary()
+      |> Base.encode64()
+
+    %{encoded_data: encoded_data}
+    |> DocumentWorker.new(queue: "document", tags: ["document_job"])
     |> Oban.insert()
   end
 

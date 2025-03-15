@@ -2,22 +2,27 @@ defmodule WraftDoc.Workers.DocumentWorker do
   @moduledoc """
   Oban worker for building of docs.
   """
-  use Oban.Worker, queue: :events, max_attempts: 1
+  use Oban.Worker, queue: :document, max_attempts: 1
 
   alias WraftDoc.Documents
   require Logger
 
   @impl Oban.Worker
   def perform(%Job{
-        args: %{
-          "user" => user,
-          "build_history" => build_history,
-          "instance" => instance,
-          "layout" => layout,
-          "params" => params
-        },
+        args: %{"encoded_data" => encoded_data},
         tags: ["document_job"]
       }) do
+    %{
+      current_user: user,
+      build_history: build_history,
+      instance: instance,
+      layout: layout,
+      params: params
+    } =
+      encoded_data
+      |> Base.decode64!()
+      |> :erlang.binary_to_term([:safe])
+
     Logger.info("Job starting for running the document build...")
 
     start_time = Timex.now()

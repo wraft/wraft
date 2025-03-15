@@ -792,18 +792,15 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            Documents.create_initial_build_history(current_user, instance),
          {:ok, %Oban.Job{}} <-
            Documents.create_document_worker_job(
-             %{
-               "user" => current_user,
-               "instance" => instance,
-               "build_history" => build_history,
-               "layout" => layout,
-               "params" => params
-             },
-             "document_job"
+             current_user,
+             build_history,
+             instance,
+             layout,
+             params
            ) do
       conn
       |> put_status(:accepted)
-      |> json(%{message: "Build started"})
+      |> json(%{message: "Build started ..."})
     end
   rescue
     DownloadError ->
