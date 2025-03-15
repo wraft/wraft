@@ -691,7 +691,9 @@ defmodule WraftDoc.Enterprise do
   Create an Organisation
   """
   @spec create_organisation(User.t(), map) :: Organisation.t()
-  def create_organisation(%User{} = user, params) do
+  def create_organisation(%User{id: user_id} = user, params) do
+    params = Map.merge(params, %{"owner_id" => user_id})
+
     Multi.new()
     |> Multi.insert(
       :organisation,
@@ -814,6 +816,19 @@ defmodule WraftDoc.Enterprise do
     %{email: email, token: token, user_name: user_name, organisation_name: organisation_name}
     |> EmailWorker.new(queue: "mailer", tags: ["organisation_delete_code"])
     |> Oban.insert()
+  end
+
+  @doc """
+  Transfers the ownership of an organisation from the current owner to a new owner.
+  """
+  @spec transfer_ownership(Organisation.t(), Ecto.UUID.t()) :: Organisation.t()
+  def transfer_ownership(
+        %Organisation{owner_id: _owner_id} = organisation,
+        new_owner_id
+      ) do
+    organisation
+    |> Organisation.update_owner_changeset(%{owner_id: new_owner_id})
+    |> Repo.update()
   end
 
   @doc """
@@ -1770,20 +1785,47 @@ defmodule WraftDoc.Enterprise do
   @doc """
     Removes the given user from the organisation
   """
-  @spec remove_user(UserOrganisation.t()) ::
+  @spec remove_user(UserOrganisation.t(), Ecto.UUID.t()) ::
           {:ok, UserOrganisation.t()} | {:error, Ecto.Changeset.t()}
-  def remove_user(%UserOrganisation{} = user_organisation) do
-    user_organisation
-    |> UserOrganisation.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
-    |> Repo.update()
+  def remove_user(
+        %UserOrganisation{user: user, organisation_id: org_id} = user_organisation,
+        owner_id
+      )
+      when user.id != owner_id do
+    with :ok <- handle_last_signed_in_org(user, org_id) do
+      user_organisation
+      |> UserOrganisation.delete_changeset(%{deleted_at: NaiveDateTime.local_now()})
+      |> Repo.update()
+    end
   end
+
+  def remove_user(_, _), do: {:error, "Owner can't be removed"}
+
+  defp handle_last_signed_in_org(%User{last_signed_in_org: last_signed_in_org} = user, org_id)
+       when last_signed_in_org == org_id do
+    personal_org = get_personal_organisation_and_role(user)
+
+    user
+    |> User.update_last_signed_in_org_changeset(%{
+      last_signed_in_org: personal_org.organisation.id
+    })
+    |> Repo.update()
+    |> case do
+      {:ok, _updated_user} -> :ok
+      error -> error
+    end
+  end
+
+  defp handle_last_signed_in_org(_, _), do: :ok
 
   @doc """
    Gets the UserOrganisation for given user ID and organisation ID
   """
   @spec get_user_organisation(User.t(), Ecto.UUID.t()) :: UserOrganisation.t() | nil
   def get_user_organisation(%User{current_org_id: org_id}, user_id) do
-    Repo.get_by(UserOrganisation, organisation_id: org_id, user_id: user_id)
+    UserOrganisation
+    |> Repo.get_by(organisation_id: org_id, user_id: user_id)
+    |> Repo.preload([:organisation, :user])
   end
 
   @doc """
