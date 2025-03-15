@@ -930,6 +930,19 @@ defmodule WraftDoc.Documents do
   def get_engine(_), do: {:error, :invalid_id, Engine}
 
   @doc """
+  Get an engine from its name.
+  """
+  @spec get_engine_by_name(String.t()) :: Engine.t() | nil
+  def get_engine_by_name(engine_name) when is_binary(engine_name) do
+    case Repo.get_by(Engine, name: engine_name) do
+      %Engine{} = engine -> engine
+      _ -> {:error, :invalid_id, Engine}
+    end
+  end
+
+  def get_engine_by_name(_), do: {:error, :invalid_id, Engine}
+
+  @doc """
   Build a PDF document.
   """
   # TODO  - Write Test
@@ -982,6 +995,8 @@ defmodule WraftDoc.Documents do
       )
 
     File.write("#{base_content_dir}/content.md", content)
+    File.write("#{base_content_dir}/fields.json", instance.serialized["fields"])
+
     pdf_file = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
 
     pandoc_commands = prepare_pandoc_cmds(pdf_file, base_content_dir, layout)

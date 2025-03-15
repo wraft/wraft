@@ -19,8 +19,8 @@ defmodule WraftDoc.Layouts do
   """
   # TODO - improve tests
   @spec create_layout(User.t(), Engine.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
-  def create_layout(%{current_org_id: org_id} = current_user, engine, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id})
+  def create_layout(%{current_org_id: org_id} = current_user, %{id: engine_id} = engine, params) do
+    params = Map.merge(params, %{"organisation_id" => org_id, "engine_id" => engine_id})
 
     current_user
     |> build_assoc(:layouts, engine: engine)
@@ -30,7 +30,7 @@ defmodule WraftDoc.Layouts do
       {:ok, layout} ->
         layout = layout_files_upload(layout, params)
         fetch_and_associcate_assets(layout, current_user, params)
-        Repo.preload(layout, [:engine, :creator, :assets, :frame])
+        Repo.preload(layout, [:engine, :creator, :assets, frame: [:assets]])
 
       changeset = {:error, _} ->
         changeset
@@ -102,7 +102,7 @@ defmodule WraftDoc.Layouts do
         where: l.organisation_id == ^org_id,
         where: ^layout_index_filter_by_name(params),
         order_by: ^layout_index_sort(params),
-        preload: [:engine, :assets, :frame]
+        preload: [:engine, :assets, frame: [:assets]]
       )
 
     Repo.paginate(query, params)
@@ -132,7 +132,7 @@ defmodule WraftDoc.Layouts do
   def show_layout(id, user) do
     with %Layout{} = layout <-
            get_layout(id, user) do
-      Repo.preload(layout, [:engine, :creator, :assets, :frame])
+      Assets.preload_asset(layout)
     end
   end
 
@@ -143,7 +143,7 @@ defmodule WraftDoc.Layouts do
   def get_layout(<<_::288>> = id, %{current_org_id: org_id}) do
     case Repo.get_by(Layout, id: id, organisation_id: org_id) do
       %Layout{} = layout ->
-        layout
+        Assets.preload_asset(layout)
 
       _ ->
         {:error, :invalid_id, "Layout"}
@@ -193,7 +193,7 @@ defmodule WraftDoc.Layouts do
 
       {:ok, layout} ->
         fetch_and_associcate_assets(layout, current_user, params)
-        Repo.preload(layout, [:engine, :creator, :assets, :frame])
+        Repo.preload(layout, [:engine, :creator, :assets, frame: [:assets]])
     end
   end
 

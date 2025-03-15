@@ -1139,7 +1139,7 @@ defmodule WraftDoc.DocumentTest do
           }
         )
 
-      content_type = Documents.update_content_type(content_type, user, params)
+      content_type = Documents.update_content_type(content_type, layout, user, params)
 
       assert content_type.name == @valid_content_type_attrs["name"]
       assert content_type.description == @valid_content_type_attrs["description"]
@@ -1161,10 +1161,11 @@ defmodule WraftDoc.DocumentTest do
 
     test "update content_type on invalid attrs" do
       user = insert(:user)
+      layout = insert(:layout, creator: user)
       content_type = insert(:content_type, creator: user)
 
       params = Map.merge(@invalid_attrs, %{name: "", description: "", prefix: "", theme_id: nil})
-      {:error, changeset} = Documents.update_content_type(content_type, user, params)
+      {:error, changeset} = Documents.update_content_type(content_type, layout, user, params)
 
       assert %{
                name: ["can't be blank"],

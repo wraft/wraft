@@ -3,37 +3,42 @@ defmodule WraftDoc.Frames.Frame do
   use Waffle.Ecto.Schema
   use WraftDoc.Schema
 
+  alias WraftDoc.Account.User
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Frames.FrameAsset
+
   schema "frame" do
     field(:name, :string)
-    field(:frame_file, WraftDocWeb.FrameUploader.Type)
+    field(:description, :string)
+    field(:type, Ecto.Enum, values: [:latex, :typst])
+    field(:wraft_json, :map)
+    field(:thumbnail, WraftDocWeb.FrameThumbnailUploader.Type)
 
-    belongs_to(:creator, WraftDoc.Account.User)
-    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+    belongs_to(:creator, User)
+    belongs_to(:organisation, Organisation)
+
+    has_many(:frame_asset, FrameAsset)
+    has_many(:assets, through: [:frame_asset, :asset])
 
     timestamps()
   end
 
   def changeset(frame, attrs) do
     frame
-    |> cast(attrs, [:name, :organisation_id, :creator_id])
-    |> validate_required([:name, :organisation_id, :creator_id])
+    |> cast(attrs, [:name, :description, :type, :organisation_id, :creator_id, :wraft_json])
+    |> cast_attachments(attrs, [:thumbnail])
+    |> validate_required([:name, :description, :type, :organisation_id, :creator_id])
     |> unique_constraint(:name,
       name: :frame_name_organisation_id_index,
       message: "Frame with the same name  under your organisation exists.!"
     )
   end
 
-  def file_changeset(frame, attrs) do
-    frame
-    |> cast_attachments(attrs, [:frame_file])
-    |> validate_required([:frame_file])
-  end
-
   def update_changeset(frame, attrs) do
     frame
-    |> cast(attrs, [:name, :organisation_id, :creator_id])
-    |> cast_attachments(attrs, [:frame_file])
-    |> validate_required([:name, :frame_file])
+    |> cast(attrs, [:name, :description, :type, :organisation_id, :creator_id, :wraft_json])
+    |> cast_attachments(attrs, [:thumbnail])
+    |> validate_required([:name, :description, :type])
     |> unique_constraint(:name,
       name: :frame_name_organisation_id_index,
       message: "Frame with the same name  under your organisation exists.!"
