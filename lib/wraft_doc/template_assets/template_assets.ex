@@ -30,6 +30,7 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.TemplateAssets.WraftJson
   alias WraftDoc.Themes
   alias WraftDoc.Themes.Theme
+  alias WraftDoc.Utils.FileHelper
   alias WraftDoc.Utils.ProsemirrorToMarkdown
 
   @required_items ["layout", "theme", "flow", "variant"]
@@ -137,8 +138,8 @@ defmodule WraftDoc.TemplateAssets do
   @spec import_template(User.t(), binary(), list()) ::
           DataTemplate.t() | {:error, any()}
   def import_template(current_user, downloaded_zip_binary, opts \\ []) do
-    with {:ok, entries} <- get_zip_entries(downloaded_zip_binary),
-         {:ok, template_map} <- get_wraft_json(downloaded_zip_binary),
+    with {:ok, entries} <- FileHelper.get_file_entries(downloaded_zip_binary),
+         {:ok, template_map} <- FileHelper.get_wraft_json(downloaded_zip_binary),
          contained_items <- has_items(template_map),
          :ok <- validate_required_items(contained_items, opts) do
       prepare_template(
@@ -206,7 +207,7 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec pre_import_template(binary()) :: {:ok, map()} | {:error, any()}
   def pre_import_template(downloaded_zip_binary) do
-    {:ok, template_map} = get_wraft_json(downloaded_zip_binary)
+    {:ok, template_map} = FileHelper.get_wraft_json(downloaded_zip_binary)
 
     existing_items =
       %{
@@ -254,13 +255,9 @@ defmodule WraftDoc.TemplateAssets do
     error -> {:error, error.message}
   end
 
-  defp get_wraft_json(downloaded_zip_binary) do
-    {:ok, wraft_json} = extract_file_content(downloaded_zip_binary, "wraft.json")
-    Jason.decode(wraft_json)
-  end
-
+  # TODO move to zip_helper
   defp template_asset_file_list(zip_binary) do
-    case get_zip_entries(zip_binary) do
+    case FileHelper.get_file_entries(zip_binary) do
       {:ok, entries} ->
         filter_entries(entries)
 
@@ -380,6 +377,7 @@ defmodule WraftDoc.TemplateAssets do
   defp add_layout_step(multi, _template_map, _current_user, _downloaded_file, _entries, _opts),
     do: multi
 
+  # TODO: update frame
   defp add_frame_step(multi, %{"frame" => frame}, current_user, downloaded_file, entries) do
     Multi.run(multi, :frame, fn _repo, _changes ->
       frame
@@ -530,7 +528,7 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp create_theme_asset(entry, downloaded_zip_file, current_user) do
-    with {:ok, content} <- extract_file_content(downloaded_zip_file, entry.file_name),
+    with {:ok, content} <- FileHelper.extract_file_content(downloaded_zip_file, entry.file_name),
          {:ok, temp_file_path} <- write_temp_file(content),
          asset_params = prepare_theme_asset_params(entry, temp_file_path, current_user),
          {:ok, asset} <- Assets.create_asset(current_user, asset_params) do
@@ -617,7 +615,7 @@ defmodule WraftDoc.TemplateAssets do
   defp extract_and_prepare_layout_asset(entries, downloaded_zip_file, current_user) do
     entry = List.first(entries)
 
-    with {:ok, content} <- extract_file_content(downloaded_zip_file, entry.file_name),
+    with {:ok, content} <- FileHelper.extract_file_content(downloaded_zip_file, entry.file_name),
          {:ok, temp_file_path} <- write_temp_file(content),
          asset_params <- prepare_layout_asset_params(entry, temp_file_path, current_user),
          {:ok, asset} <- Assets.create_asset(current_user, asset_params) do
@@ -659,7 +657,7 @@ defmodule WraftDoc.TemplateAssets do
 
   defp prepare_frame_attrs(frame, _current_user, downloaded_file, entries) do
     with {:ok, entry} <- get_frame_file_entry(entries),
-         {:ok, content} <- extract_file_content(downloaded_file, entry.file_name),
+         {:ok, content} <- FileHelper.extract_file_content(downloaded_file, entry.file_name),
          {:ok, temp_file_path} <- write_temp_file(content) do
       frame
       |> Map.merge(%{
@@ -727,6 +725,7 @@ defmodule WraftDoc.TemplateAssets do
          layout_id,
          flow_id
        ) do
+    # TODO use this for common
     field_types = Repo.all(from(ft in FieldType, select: {ft.name, ft.id}))
     field_type_map = Map.new(field_types)
 
@@ -791,7 +790,7 @@ defmodule WraftDoc.TemplateAssets do
 
   # Not using now for future use
   # defp get_data_template_md(downloaded_file) do
-  #   case get_zip_entries(downloaded_file) do
+  #   case FileHelper.get_file_entries(downloaded_file) do
   #     {:ok, entries} ->
   #       template_md = Enum.find(entries, fn entry -> entry.file_name =~ ~r/^.*\.md$/i end)
   #       template_md.file_name
@@ -801,51 +800,16 @@ defmodule WraftDoc.TemplateAssets do
   # end
 
   defp get_data_template_prosemirror(downloaded_file) do
-    with {:ok, template_json} <- extract_file_content(downloaded_file, "template.json"),
+    with {:ok, template_json} <-
+           FileHelper.extract_file_content(downloaded_file, "template.json"),
          serialized_prosemirror <- Jason.decode!(template_json) do
       {:ok, serialized_prosemirror["data"]}
     end
   end
 
-  defp read_zip_contents(file_path) do
-    case File.read(file_path) do
-      {:ok, binary} ->
-        {:ok, binary}
-
-      _ ->
-        {:error, "Invalid ZIP file."}
-    end
-  end
-
-  defp extract_file_content(zip_file_binary, file_name) do
-    {:ok, unzip} = Unzip.new(zip_file_binary)
-    unzip_stream = Unzip.file_stream!(unzip, file_name)
-
-    file_content =
-      unzip_stream
-      |> Enum.into([], fn chunk -> chunk end)
-      |> IO.iodata_to_binary()
-      |> String.trim()
-
-    case file_content do
-      "" -> {:error, "File content is empty"}
-      _ -> {:ok, file_content}
-    end
-  end
-
-  defp get_zip_entries(zip_binary) do
-    with {:ok, unzip} <- Unzip.new(zip_binary),
-         entries <- Unzip.list_entries(unzip) do
-      {:ok, entries}
-    else
-      _ ->
-        {:error, "Invalid ZIP entries."}
-    end
-  end
-
   defp template_zip_validator(zip_binary, file_entries_in_zip) do
-    with true <- validate_zip_entries(file_entries_in_zip),
-         {:ok, wraft_json} <- get_wraft_json(zip_binary),
+    with true <- validate_file_entries(file_entries_in_zip),
+         {:ok, wraft_json} <- FileHelper.get_wraft_json(zip_binary),
          true <- validate_wraft_json(wraft_json),
          :ok <- validate_wraft_json_folders(file_entries_in_zip, wraft_json) do
       :ok
@@ -855,7 +819,7 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp validate_zip_entries(entries) do
+  defp validate_file_entries(entries) do
     files_in_zip = extract_files(entries)
     missing_files = @allowed_files -- files_in_zip
 
@@ -930,7 +894,7 @@ defmodule WraftDoc.TemplateAssets do
     with {:ok, zip_binary} <- get_zip_binary(source_type, source_value),
          file_entries_in_zip <- template_asset_file_list(zip_binary),
          :ok <- template_zip_validator(zip_binary, file_entries_in_zip),
-         {:ok, wraft_json} <- get_wraft_json(zip_binary) do
+         {:ok, wraft_json} <- FileHelper.get_wraft_json(zip_binary) do
       params
       |> Map.merge(%{
         "wraft_json" => wraft_json,
@@ -976,7 +940,7 @@ defmodule WraftDoc.TemplateAssets do
   defp get_zip_binary(:file, %Plug.Upload{
          path: file_path
        }),
-       do: read_zip_contents(file_path)
+       do: FileHelper.read_file_contents(file_path)
 
   defp get_zip_binary(:url, url), do: get_zip_binary_from_url(url)
 

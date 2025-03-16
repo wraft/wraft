@@ -11,6 +11,8 @@ defmodule WraftDocWeb.Api.V1.FrameController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  alias WraftDoc.Assets
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
 
@@ -24,27 +26,17 @@ defmodule WraftDocWeb.Api.V1.FrameController do
           properties do
             id(:string, "Unique identifier for the frame", required: true)
             name(:string, "Name of the frame", required: true)
+            type(:string, "Type of the frame", required: true)
+            description(:string, "Description of the frame")
             inserted_at(:string, "Timestamp of frame creation", format: "ISO-8601")
             updated_at(:string, "Timestamp of last frame update", format: "ISO-8601")
-
-            frame(
-              :object,
-              "Frame details containing the uploaded file's metadata",
-              required: true,
-              properties: %{
-                file_name: :string,
-                updated_at: :string
-              }
-            )
           end
 
           example(%{
             id: "123e4567-e89b-12d3-a456-426614174000",
             name: "my-document-frame",
-            frame: %{
-              file_name: "template.tex",
-              updated_at: "2024-11-29T12:56:47"
-            },
+            description: "My document frame",
+            type: "typst",
             inserted_at: "2024-01-15T10:30:00Z",
             updated_at: "2024-01-15T10:30:00Z"
           })
@@ -56,30 +48,20 @@ defmodule WraftDocWeb.Api.V1.FrameController do
 
           properties do
             id(:string, "Unique identifier for the frame", required: true)
-            name(:string, "Updated name of the frame")
-            inserted_at(:string, "Original creation timestamp", format: "ISO-8601")
-            updated_at(:string, "Updated timestamp", format: "ISO-8601")
-
-            frame(
-              :object,
-              "Frame details containing the uploaded file's metadata",
-              required: true,
-              properties: %{
-                file_name: :string,
-                updated_at: :string
-              }
-            )
+            name(:string, "Name of the frame", required: true)
+            type(:string, "Type of the frame", required: true)
+            description(:string, "Description of the frame")
+            inserted_at(:string, "Timestamp of frame creation", format: "ISO-8601")
+            updated_at(:string, "Timestamp of last frame update", format: "ISO-8601")
           end
 
           example(%{
             id: "123e4567-e89b-12d3-a456-426614174000",
-            name: "updated-document-frame",
-            frame: %{
-              file_name: "template.tex",
-              updated_at: "2024-11-29T12:56:47"
-            },
+            name: "my-document-frame",
+            description: "My document frame",
+            type: "typst",
             inserted_at: "2024-01-15T10:30:00Z",
-            updated_at: "2024-01-16T15:45:00Z"
+            updated_at: "2024-01-15T10:30:00Z"
           })
         end,
       Frames:
@@ -100,16 +82,12 @@ defmodule WraftDocWeb.Api.V1.FrameController do
           end
 
           example(%{
-            frame: %{
-              id: "123e4567-e89b-12d3-a456-426614174000",
-              name: "my-document-frame",
-              frame: %{
-                file_name: "template.tex",
-                updated_at: "2024-11-29T12:56:47"
-              },
-              inserted_at: "2024-01-15T10:30:00Z",
-              updated_at: "2024-01-15T10:30:00Z"
-            }
+            id: "123e4567-e89b-12d3-a456-426614174000",
+            name: "my-document-frame",
+            description: "My document frame",
+            type: "typst",
+            inserted_at: "2024-01-15T10:30:00Z",
+            updated_at: "2024-01-15T10:30:00Z"
           })
         end,
       FrameIndex:
@@ -126,10 +104,8 @@ defmodule WraftDocWeb.Api.V1.FrameController do
               %{
                 id: "123e4567-e89b-12d3-a456-426614174000",
                 name: "my-document-frame",
-                frame: %{
-                  file_name: "template.tex",
-                  updated_at: "2024-11-29T12:56:47"
-                },
+                description: "My document frame",
+                type: "typst",
                 inserted_at: "2024-01-15T10:30:00Z",
                 updated_at: "2024-01-15T10:30:00Z"
               }
@@ -193,7 +169,10 @@ defmodule WraftDocWeb.Api.V1.FrameController do
 
     parameters do
       name(:formData, :string, "Frame name", required: true)
-      frame(:formData, :file, "Frame file to upload", required: true)
+      description(:formData, :string, "Description", required: true)
+      assets(:formData, :string, "Asset id", required: true)
+      type(:formData, :string, "Type", required: true)
+      thumbnail(:formData, :file, "Frame thumbnail to upload")
     end
 
     response(200, "Created", Schema.ref(:Frame))
@@ -201,10 +180,11 @@ defmodule WraftDocWeb.Api.V1.FrameController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def create(conn, params) do
+  def create(conn, %{"assets" => assets} = params) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, %Frame{} = frame} <- Frames.create_frame(current_user, params) do
+    with %Asset{} <- Assets.get_asset(assets, current_user),
+         {:ok, %Frame{} = frame} <- Frames.create_frame(current_user, params) do
       render(conn, "create.json", frame: frame)
     end
   end
@@ -243,9 +223,15 @@ defmodule WraftDocWeb.Api.V1.FrameController do
     description("Update a frame API")
     consumes("multipart/form-data")
 
-    parameter(:id, :path, :string, "frame id", required: true)
-    parameter(:name, :formData, :string, "Frame's name")
-    parameter(:frame, :formData, :file, "Frame file to upload")
+    parameters do
+      id(:path, :string, "frame id", required: true)
+
+      name(:formData, :string, "Frame name", required: true)
+      description(:formData, :string, "Description", required: true)
+      assets(:formData, :string, "Asset id", required: true)
+      type(:formData, :string, "Type", required: true)
+      thumbnail(:formData, :file, "Frame thumbnail to upload")
+    end
 
     response(200, "Ok", Schema.ref(:UpdateFrame))
     response(404, "Not found", Schema.ref(:Error))
@@ -253,10 +239,11 @@ defmodule WraftDocWeb.Api.V1.FrameController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def update(conn, %{"id" => frame_uuid} = params) do
+  def update(conn, %{"id" => frame_uuid, "assets" => assets} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Frame{} = frame <- Frames.get_frame(frame_uuid, current_user),
+    with %Asset{} <- Assets.get_asset(assets, current_user),
+         %Frame{} = frame <- Frames.get_frame(frame_uuid, current_user),
          {:ok, %Frame{} = frame} <-
            Frames.update_frame(frame, current_user, params) do
       render(conn, "create.json", frame: frame)

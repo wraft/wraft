@@ -203,9 +203,11 @@ defmodule WraftDoc.TemplateAssets.Frame do
   import Ecto.Changeset
 
   @required_fields [:name]
-
+  # TODO include required fields
   embedded_schema do
     field(:name, :string)
+    field(:description, :string)
+    field(:type, :string)
   end
 
   def changeset(struct, params) do

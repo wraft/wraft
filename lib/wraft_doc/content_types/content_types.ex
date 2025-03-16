@@ -16,7 +16,7 @@ defmodule WraftDoc.ContentTypes do
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Fields
   alias WraftDoc.Fields.FieldType
-  alias WraftDoc.Layouts
+  alias WraftDoc.Frames
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
 
@@ -164,7 +164,7 @@ defmodule WraftDoc.ContentTypes do
     |> case do
       %ContentType{} = content_type ->
         Repo.preload(content_type, [
-          :layout,
+          [layout: [:assets, :frame]],
           :creator,
           {:theme, :assets},
           [{:flow, :states}, {:fields, :field_type}]
@@ -222,7 +222,7 @@ defmodule WraftDoc.ContentTypes do
   @doc """
   Update a content type.
   """
-  @spec update_content_type(ContentType.t(), User.t(), map) ::
+  @spec update_content_type(ContentType.t(), Layout.t(), User.t(), map()) ::
           %ContentType{
             layout: Layout.t(),
             creator: User.t()
@@ -230,18 +230,20 @@ defmodule WraftDoc.ContentTypes do
           | {:error, Ecto.Changeset.t()}
   def update_content_type(
         content_type,
+        %Layout{id: id} = layout,
         user,
-        %{"layout_uuid" => layout_uuid, "flow_uuid" => f_uuid} = params
+        %{"flow_uuid" => f_uuid} = params
       ) do
-    %Layout{id: id} = Layouts.get_layout(layout_uuid, user)
     %Flow{id: f_id} = Enterprise.get_flow(f_uuid, user)
     {_, params} = Map.pop(params, "layout_uuid")
     {_, params} = Map.pop(params, "flow_uuid")
     params = Map.merge(params, %{"layout_id" => id, "flow_id" => f_id})
-    update_content_type(content_type, user, params)
+    update_content_type(content_type, layout, user, params)
   end
 
-  def update_content_type(content_type, _user, params) do
+  def update_content_type(content_type, layout, _user, params) do
+    params = Frames.update_frame_variant_fields(content_type, layout, params)
+
     content_type
     |> ContentType.update_changeset(params)
     |> Repo.update()
@@ -408,4 +410,23 @@ defmodule WraftDoc.ContentTypes do
   #       content_type_role
   #   end
   # end
+
+  @doc """
+  Create a content type field from wraft_json.
+  """
+  @spec create_field_params_from_wraft_json(list()) :: list()
+  def create_field_params_from_wraft_json(wraft_json_fields) do
+    field_types = Repo.all(from(ft in FieldType, select: {ft.name, ft.id}))
+    field_type_map = Map.new(field_types)
+
+    Enum.map(wraft_json_fields, fn field ->
+      field_type = String.capitalize(field["type"])
+
+      %{
+        "field_type_id" => Map.get(field_type_map, field_type),
+        "key" => field["name"],
+        "name" => field["name"]
+      }
+    end)
+  end
 end
