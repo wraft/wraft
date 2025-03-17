@@ -57,14 +57,19 @@ defmodule WraftDoc.Frames do
   @doc """
   Create a frame.
   """
-  @spec create_frame(User.t(), map()) :: Frame.t() | {:error, Ecto.Changeset.t()}
-  def create_frame(%User{id: user_id, current_org_id: organisation_id} = current_user, attrs) do
-    params =
-      Map.merge(attrs, %{
-        "organisation_id" => organisation_id,
-        "creator_id" => user_id
-      })
+  @spec create_frame(User.t() | nil, map()) :: Frame.t() | {:error, Ecto.Changeset.t()}
+  def create_frame(%User{id: user_id, current_org_id: organisation_id} = current_user, params) do
+    params
+    |> Map.merge(%{
+      "organisation_id" => organisation_id,
+      "creator_id" => user_id
+    })
+    |> then(&create_frame_with_params(current_user, &1))
+  end
 
+  def create_frame(nil, params), do: create_frame_with_params(nil, params)
+
+  defp create_frame_with_params(current_user, params) do
     Multi.new()
     |> Multi.insert(:frame, Frame.changeset(%Frame{}, params))
     |> Repo.transaction()
@@ -81,26 +86,34 @@ defmodule WraftDoc.Frames do
   @doc """
   Update a frame.
   """
-  @spec update_frame(Frame.t(), User.t(), map()) :: Frame.t() | {:error, Ecto.Changeset.t()}
+  @spec update_frame(Frame.t(), User.t() | nil, map()) ::
+          {:ok, Frame.t()} | {:error, Ecto.Changeset.t()}
   def update_frame(
         %Frame{} = frame,
         %User{id: user_id, current_org_id: organisation_id} = current_user,
-        attrs
+        params
       ) do
+    params
+    |> Map.merge(%{
+      "organisation_id" => organisation_id,
+      "creator_id" => user_id
+    })
+    |> then(&update_frame_with_params(frame, current_user, &1))
+  end
+
+  def update_frame(%Frame{} = frame, nil, params),
+    do: update_frame_with_params(frame, nil, params)
+
+  defp update_frame_with_params(frame, current_user, params) do
     frame
-    |> Frame.update_changeset(
-      Map.merge(attrs, %{
-        "organisation_id" => organisation_id,
-        "creator_id" => user_id
-      })
-    )
+    |> Frame.update_changeset(params)
     |> Repo.update()
     |> case do
       {:ok, frame} ->
-        fetch_and_associate_assets(frame, current_user, attrs)
+        fetch_and_associate_assets(frame, current_user, params)
         {:ok, Repo.preload(frame, [:assets])}
 
-      {:error, _, changeset, _} ->
+      {:error, changeset} ->
         {:error, changeset}
     end
   end
@@ -150,10 +163,12 @@ defmodule WraftDoc.Frames do
     binary =
       Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file.file_name}")
 
+    file_size = FileHelper.file_size(binary)
+
     {:ok, wraft_json} = FileHelper.get_wraft_json(binary)
 
     frame
-    |> Frame.update_changeset(%{"wraft_json" => wraft_json})
+    |> Frame.update_changeset(%{"wraft_json" => wraft_json, "file_size" => file_size})
     |> Repo.update()
   end
 
