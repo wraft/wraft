@@ -7,6 +7,7 @@ defmodule WraftDoc.Assets do
   require Logger
 
   alias Ecto.Multi
+  alias WraftDoc.Account.User
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
   alias WraftDoc.Documents
@@ -14,13 +15,14 @@ defmodule WraftDoc.Assets do
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
+  alias WraftDoc.Utils.FileHelper
 
   @doc """
   Create an asset.
   """
   # TODO - imprvove tests
   @spec create_asset(User.t(), map) :: {:ok, Asset.t()}
-  def create_asset(%{current_org_id: org_id} = current_user, params) do
+  def create_asset(%User{current_org_id: org_id} = current_user, params) do
     params = Map.merge(params, %{"organisation_id" => org_id})
 
     Multi.new()
@@ -152,46 +154,36 @@ defmodule WraftDoc.Assets do
   """
   @spec preload_asset(Layout.t()) :: Layout.t()
   def preload_asset(%Layout{} = layout) do
-    Repo.preload(layout, [:assets, :frame, :engine, :organisation])
+    Repo.preload(layout, [:assets, :creator, :organisation, :engine, frame: [:assets]])
   end
 
   def preload_asset(_), do: {:error, :not_sufficient}
 
+  @doc """
+  Download slug / frame files.
+  """
+  @spec download_slug_file(Layout.t()) :: String.t()
   def download_slug_file(%Layout{frame: nil, slug: slug}),
     do: :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
 
   def download_slug_file(%Layout{
-        frame: %Frame{id: frame_id, name: name},
+        frame: %Frame{
+          assets: [%{id: asset_id, file: file} | _]
+        },
         organisation_id: organisation_id
       }) do
-    :wraft_doc
-    |> :code.priv_dir()
-    |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
-    |> File.exists?()
-    |> case do
-      true ->
-        :wraft_doc
-        |> :code.priv_dir()
-        |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
+    binary =
+      Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file.file_name}")
 
-      false ->
-        slugs_dir =
-          :wraft_doc
-          |> :code.priv_dir()
-          |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
+    asset_file_path = Briefly.create!(type: :directory)
 
-        File.mkdir_p!(slugs_dir)
-
-        template_path = Path.join(slugs_dir, "template.tex")
-
-        "organisations/#{organisation_id}/frames/#{frame_id}"
-        |> Minio.download()
-        |> then(&File.write!(template_path, &1))
-
-        slugs_dir
-    end
+    FileHelper.extract_file(binary, asset_file_path)
   end
 
+  @doc """
+  Return the path of PDF file.
+  """
+  @spec pdf_file_path(Instance.t(), String.t(), boolean()) :: String.t()
   def pdf_file_path(
         %Instance{instance_id: instance_id, versions: build_versions},
         instance_dir_path,
@@ -212,7 +204,9 @@ defmodule WraftDoc.Assets do
     |> then(&Path.join(instance_dir_path, &1))
   end
 
-  # Find the header values for the content.md file from the assets of the layout used.
+  @doc """
+  Find the header values for the content.md file from the assets of the layout used.
+  """
   @spec find_asset_header_values(Asset.t(), String.t(), String.t(), Instance.t()) :: String.t()
   def find_asset_header_values(
         %Asset{name: name, file: file, organisation_id: org_id} = asset,

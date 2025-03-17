@@ -1,4 +1,4 @@
-defmodule WraftDocWeb.FrameUploader do
+defmodule WraftDocWeb.FrameThumbnailUploader do
   @moduledoc false
 
   use Waffle.Definition
@@ -7,7 +7,7 @@ defmodule WraftDocWeb.FrameUploader do
   alias WraftDoc.Frames.Frame
 
   @versions [:original]
-  @extension_whitelist ~w(.tex)
+  @extension_whitelist ~w(.jpg .jpeg .png)
 
   def validate({file, _}) do
     file_extension =
@@ -22,12 +22,12 @@ defmodule WraftDocWeb.FrameUploader do
         :ok
 
       false ->
-        {:error, "Invalid tex file."}
+        {:error, "Invalid file."}
     end
   end
 
   def filename(_version, {file, _template}) do
-    String.replace("frame_" <> Path.rootname(file.file_name, ".tex"), ~r/\s+/, "-")
+    String.replace("frame_" <> Path.rootname(file.file_name), ~r/\s+/, "-")
   end
 
   def storage_dir(_version, {_file, %Frame{id: id, organisation_id: organisation_id}}) do

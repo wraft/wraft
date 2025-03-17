@@ -6,11 +6,14 @@ defmodule WraftDocWeb.AssetUploader do
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
 
+  alias WraftDoc.Utils.FileHelper
+
   @versions [:original]
   @font_style_name ~w(Regular Italic Bold BoldItalic)
 
   # Limit upload size to 1MB
-  @max_file_size 2 * 1024 * 1024
+
+  @max_file_size 1 * 1024 * 1024
 
   # Add image processing for document type
   def transform(:original, {file, %Asset{type: "document"}}) do
@@ -46,6 +49,21 @@ defmodule WraftDocWeb.AssetUploader do
     case Enum.member?(~w(.jpg .jpeg .gif .png), file_extension) do
       true -> :ok
       false -> {:error, "invalid file type"}
+    end
+  end
+
+  def validate({%{file_name: file_name, path: file_path} = file, %Asset{type: "frame"}}) do
+    file_extension = file_name |> Path.extname() |> String.downcase()
+
+    if file_extension == ".zip" and file_size(file) <= @max_file_size do
+      file_path
+      |> FileHelper.validate_frame_file()
+      |> case do
+        :ok -> :ok
+        {:error, error} -> {:error, error}
+      end
+    else
+      {:error, "Invalid file type or file size exceeds limit"}
     end
   end
 

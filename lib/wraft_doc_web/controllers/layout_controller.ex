@@ -14,8 +14,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Documents
   alias WraftDoc.Documents.Engine
+  alias WraftDoc.Frames
   alias WraftDoc.Layouts
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
@@ -23,31 +23,6 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   def swagger_definitions do
     %{
-      # LayoutRequest:
-      #   swagger_schema do
-      #     title("Layout Request")
-      #     description("Create layout request.")
-
-      #     properties do
-      #       name(:string, "Layout's name", required: true)
-      #       description(:string, "Layout's description")
-      #       width(:float, "Width of the layout")
-      #       height(:float, "Height of the layout")
-      #       unit(:string, "Unit of dimensions")
-      #       slug(:string, "Name of the slug to be used for the layout")
-      #       engine_id(:string, "ID of the engine selected")
-      #     end
-
-      #     example(%{
-      #       name: "Official Letter",
-      #       description: "An official letter",
-      #       width: 40.0,
-      #       height: 20.0,
-      #       unit: "cm",
-      #       slug: "Pandoc",
-      #       engine_id: "1232148nb3478"
-      #     })
-      #   end,
       Layout:
         swagger_schema do
           title("Layout")
@@ -264,10 +239,6 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     summary("Create layout")
     description("Create layout API")
 
-    # parameters do
-    #   layout(:body, Schema.ref(:LayoutRequest), "Layout to be created", required: true)
-    # end
-
     consumes("multipart/form-data")
 
     parameter(:name, :formData, :string, "Layout's name", required: true)
@@ -299,7 +270,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %Engine{} = engine <- Documents.get_engine(params["engine_id"]),
+    with %Engine{} = engine <- Frames.get_engine_by_frame_type(params),
          %Layout{} = layout <- Layouts.create_layout(current_user, engine, params) do
       Typesense.create_document(layout)
       render(conn, "create.json", doc_layout: layout)
@@ -380,11 +351,6 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     summary("Update a Layout")
     description("API to update a layout")
 
-    # parameters do
-    #   id(:path, :string, "layout id", required: true)
-    #   layout(:body, Schema.ref(:LayoutRequest), "Layout to be updated", required: true)
-    # end
-
     consumes("multipart/form-data")
 
     parameter(:id, :path, :string, "layout id", required: true)
@@ -419,7 +385,13 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     current_user = conn.assigns[:current_user]
 
     with %Layout{} = layout <- Layouts.get_layout(id, current_user),
-         %Layout{} = layout <- Layouts.update_layout(layout, current_user, params) do
+         %Engine{id: engine_id} = _engine <- Frames.get_engine_by_frame_type(params),
+         %Layout{} = layout <-
+           Layouts.update_layout(
+             layout,
+             current_user,
+             Map.merge(params, %{"engine_id" => engine_id})
+           ) do
       Typesense.update_document(layout)
       render(conn, "show.json", doc_layout: layout)
     end
