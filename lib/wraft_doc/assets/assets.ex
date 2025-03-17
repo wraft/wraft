@@ -23,10 +23,19 @@ defmodule WraftDoc.Assets do
   # TODO - imprvove tests
   @spec create_asset(User.t(), map) :: {:ok, Asset.t()}
   def create_asset(%User{current_org_id: org_id} = current_user, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id})
+    params
+    |> Map.merge(%{"organisation_id" => org_id})
+    |> then(&create_asset_with_params(current_user, &1))
+  end
 
+  def create_asset(nil, params), do: create_asset_with_params(%User{}, params)
+
+  defp create_asset_with_params(current_user, params) do
     Multi.new()
-    |> Multi.insert(:asset, current_user |> build_assoc(:assets) |> Asset.changeset(params))
+    |> Multi.insert(
+      :asset,
+      current_user |> build_assoc(:assets) |> Asset.changeset(params)
+    )
     |> Multi.update(:asset_file_upload, &Asset.file_changeset(&1.asset, params))
     |> Repo.transaction()
     |> case do
@@ -34,8 +43,6 @@ defmodule WraftDoc.Assets do
       {:error, _, changeset, _} -> {:error, changeset}
     end
   end
-
-  def create_asset(_, _), do: {:error, :fake}
 
   @doc """
   Index of all assets in an organisation.
@@ -78,6 +85,7 @@ defmodule WraftDoc.Assets do
     end
   end
 
+  def get_asset(<<_::288>> = asset_id, nil), do: Repo.get(Asset, asset_id)
   def get_asset(<<_::288>>, _), do: {:error, :fake}
   def get_asset(_, %{current_org_id: _}), do: {:error, :invalid_id}
   def get_asset(<<_::288>> = asset_id), do: Repo.get(Asset, asset_id)
