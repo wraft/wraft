@@ -163,7 +163,7 @@ defmodule WraftDoc.Assets do
   Download slug / frame files.
   """
   @spec download_slug_file(Layout.t()) :: String.t()
-  def download_slug_file(%Layout{frame: nil, slug: slug}, _),
+  def download_slug_file(%Layout{frame: nil, slug: slug}),
     do: :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
 
   def download_slug_file(%Layout{
