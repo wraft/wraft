@@ -661,6 +661,28 @@ defmodule WraftDoc.Documents do
   def get_instance(_, _), do: {:error, :fake}
 
   @doc """
+  Get an instance by ID without user validation
+  """
+  @spec get_instance(binary) :: Instance.t() | nil
+  def get_instance(instance_id) when is_binary(instance_id) do
+    Repo.get(Instance, instance_id)
+  end
+
+  @doc """
+  Get collaborator IDs for a specific instance
+  """
+  @spec get_collaborator_ids(binary) :: [binary]
+  def get_collaborator_ids(instance_id) when is_binary(instance_id) do
+    query =
+      from(c in ContentCollaboration,
+        where: c.content_id == ^instance_id and c.status == :accepted,
+        select: c.user_id
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
   Show an instance.
   """
   # TODO - improve tests

@@ -160,7 +160,10 @@ defmodule WraftDoc.Mixfile do
       {:y_ex, "~> 0.6.5"},
 
       # markdown
-      {:mdex, "~> 0.3.3"}
+      {:mdex, "~> 0.3.3"},
+
+      # Redis client for connecting to Valkey (Redis compatible)
+      {:redix, "~> 1.2"}
     ]
   end
 

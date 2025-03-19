@@ -422,6 +422,11 @@ defmodule WraftDocWeb.Router do
       # Search
       get("/search", SearchController, :search)
 
+      # Contract Reminders
+      scope "/contents/:instance_id" do
+        resources "/reminders", ContractReminderController
+      end
+
       # post("/approval_systems/:id/approve", ApprovalSystemController, :approve)
 
       scope "/pipelines" do

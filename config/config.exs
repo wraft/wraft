@@ -60,19 +60,28 @@ config :wraft_doc, :phoenix_swagger,
 # Cron jobs Overview https://github.com/sorentwo/oban#periodic-jobs
 config :wraft_doc, Oban,
   repo: WraftDoc.Repo,
-  queues: [default: 10, events: 50, media: 20, mailer: 20],
+  queues: [default: 10, events: 50, media: 20, mailer: 20, scheduled: 5],
   plugins: [
     Oban.Plugins.Pruner,
     {Oban.Plugins.Cron,
      crontab: [
        {"0 0 * * MON", WraftDoc.Workers.ScheduledWorker,
-        queue: :scheduled, tags: ["unused_assets"]}
+        queue: :scheduled, tags: ["unused_assets"]},
+       {"0 9 * * *", WraftDoc.Workers.ContractReminderWorker,
+        queue: :scheduled, tags: ["contract_reminders"]}
      ]}
   ]
 
 # File Upload config
 config :waffle,
   storage: Waffle.Storage.S3
+
+# Valkey (Redis-compatible) configuration
+config :wraft_doc, :valkey,
+  host: System.get_env("VALKEY_HOST", "localhost"),
+  port: String.to_integer(System.get_env("VALKEY_PORT", "6379")),
+  password: System.get_env("VALKEY_PASSWORD"),
+  database: 0
 
 config :ex_aws,
   json_codec: Jason,
