@@ -63,7 +63,7 @@ defmodule WraftDoc.Mixfile do
       {:phoenix_html, "~> 3.3.1", override: true},
       {:phoenix_live_reload, "~> 1.4.0", only: :dev},
       # Live dashboard
-      {:phoenix_live_dashboard, "~> 0.7.2", override: true},
+      {:phoenix_live_dashboard, "~> 0.8.6", override: true},
       {:esbuild, "~> 0.5", runtime: Mix.env() == :dev},
       {:gettext, "~> 0.20.0"},
       {:plug_cowboy, "~> 2.7.0"},
@@ -111,7 +111,8 @@ defmodule WraftDoc.Mixfile do
       # QR code generation
       {:eqrcode, "~> 0.1.10"},
       # Background jobs
-      {:oban, "~> 2.18.2"},
+      {:oban, "~> 2.19.2"},
+      {:oban_web, "~> 2.11"},
       # Email client
       {:swoosh, "~> 1.8.3"},
       {:httpoison, "~> 1.8.2"},

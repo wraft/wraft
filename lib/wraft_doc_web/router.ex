@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Router do
   use WraftDocWeb, :router
+  import Oban.Web.Router
   import Phoenix.LiveDashboard.Router
 
   alias WraftDoc.Enterprise
@@ -63,6 +64,12 @@ defmodule WraftDocWeb.Router do
       get("/signin", SessionController, :new)
       post("/signin", SessionController, :create)
     end
+  end
+
+  # Separate scope for Oban dashboard with admin authentication
+  scope "/", WraftDocWeb do
+    pipe_through([:browser, :current_admin])
+    oban_dashboard("/oban")
   end
 
   scope "/", WraftDocWeb.Api.V1 do
