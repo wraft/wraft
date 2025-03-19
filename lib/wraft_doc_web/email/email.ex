@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
   import Swoosh.Email
   alias Swoosh.Attachment
+  alias WraftDoc.Documents.Instance
   alias WraftDocWeb.MJML
 
   def invite_email(org_name, user_name, email, token) do
@@ -169,13 +170,75 @@ defmodule WraftDocWeb.Mailer.Email do
         document_pdf_binary,
         instance_file_name
       ) do
+    body = %{
+      message: message
+    }
+
     new()
     |> to(email)
     |> maybe_add_cc(cc_list)
     |> from({"Wraft", sender_email()})
     |> subject(subject)
-    |> html_body(message)
+    |> html_body(MJML.DocumentMail.render(body))
     |> add_attachment(document_pdf_binary, instance_file_name)
+  end
+
+  @doc """
+  Email to request signature from a counterparty
+  """
+  def signature_request_email(
+        to_email,
+        %Instance{instance_id: instance_id} = _instance,
+        signature_url,
+        name
+      ) do
+    body = %{
+      instance_id: instance_id,
+      signature_url: signature_url,
+      name: name
+    }
+
+    new()
+    |> to(to_email)
+    |> from({"Wraft", sender_email()})
+    |> subject("Signature Request: Document #{instance_id}")
+    |> html_body(MJML.SignatureRequest.render(body))
+  end
+
+  @doc """
+  Email to notify document owner when a signature is completed
+  """
+  def signature_completed_email(
+        to_email,
+        %Instance{instance_id: instance_id} = _instance,
+        signer_name
+      ) do
+    body = %{
+      instance_id: instance_id,
+      signer_name: signer_name
+    }
+
+    new()
+    |> to(to_email)
+    |> from({"Wraft", sender_email()})
+    |> subject("Signature Completed: Document #{instance_id}")
+    |> html_body(MJML.SignatureCompleted.render(body))
+  end
+
+  @doc """
+  Email to notify all parties when a document is fully signed
+  """
+  def document_fully_signed_email(to_email, %Instance{instance_id: instance_id} = _instance, name) do
+    body = %{
+      instance_id: instance_id,
+      name: name
+    }
+
+    new()
+    |> to(to_email)
+    |> from({"Wraft", sender_email()})
+    |> subject("Document Fully Signed: #{instance_id}")
+    |> html_body(MJML.DocumentFullySigned.render(body))
   end
 
   defp maybe_add_cc(email, nil), do: email

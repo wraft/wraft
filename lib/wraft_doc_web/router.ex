@@ -102,6 +102,10 @@ defmodule WraftDocWeb.Router do
       # Verify Email Verification Token
       get("/user/verify_email_token/:token", UserController, :verify_email_token)
 
+      # Digital Signature public routes
+      post("/documents/sign/:token", SignatureController, :sign_document)
+      get("/signatures/verify/:token", SignatureController, :verify_signature)
+
       unless Enterprise.self_hosted?() do
         post("/vendors/webhook", VendorsWebhookController, :webhook)
         # Show and index plans
@@ -473,6 +477,16 @@ defmodule WraftDocWeb.Router do
         "/field_types",
         FieldTypeController,
         only: [:create, :index, :show, :update, :delete]
+      )
+
+      # Signature routes
+      post("/documents/:id/signatures/request", SignatureController, :request_signature)
+      get("/documents/:id/signatures", SignatureController, :get_document_signatures)
+
+      delete(
+        "/documents/:document_id/signatures/:signature_id",
+        SignatureController,
+        :revoke_signature
       )
     end
   end

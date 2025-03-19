@@ -1,7 +1,16 @@
 defmodule WraftDoc.Documents.ESignature do
-  @moduledoc false
-
+  @moduledoc """
+  Schema for managing electronic signatures for documents
+  """
   use WraftDoc.Schema
+
+  alias WraftDoc.Account.User
+  alias WraftDoc.CounterParties.CounterParty
+  alias WraftDoc.Documents.Instance
+  alias WraftDoc.Enterprise.Organisation
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  @foreign_key_type :binary_id
 
   schema "e_signature" do
     field(:api_url, :string)
@@ -9,15 +18,66 @@ defmodule WraftDoc.Documents.ESignature do
     field(:header, :string)
     field(:file, :string)
     field(:signed_file, :string)
-    belongs_to(:instance, WraftDoc.Documents.Instance)
-    belongs_to(:user, WraftDoc.Account.User)
-    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+
+    field(:signature_type, Ecto.Enum,
+      values: [:digital, :electronic, :handwritten],
+      default: :digital
+    )
+
+    field(:signature_data, :map)
+    field(:signature_position, :map)
+    field(:ip_address, :string)
+    field(:signature_date, :utc_datetime)
+    field(:is_valid, :boolean, default: false)
+    field(:verification_token, :string)
+
+    belongs_to(:instance, Instance)
+    belongs_to(:user, User)
+    belongs_to(:organisation, Organisation)
+    belongs_to(:counter_party, CounterParty)
+
     timestamps()
   end
 
   def changeset(e_signature, attrs \\ %{}) do
     e_signature
-    |> cast(attrs, [:api_url, :body, :header, :file, :signed_file])
+    |> cast(attrs, [
+      :api_url,
+      :body,
+      :header,
+      :file,
+      :signed_file,
+      :signature_type,
+      :signature_data,
+      :signature_position,
+      :ip_address,
+      :signature_date,
+      :is_valid,
+      :verification_token,
+      :instance_id,
+      :user_id,
+      :organisation_id,
+      :counter_party_id
+    ])
     |> validate_required([:api_url, :body])
+  end
+
+  def signature_changeset(e_signature, attrs \\ %{}) do
+    e_signature
+    |> cast(attrs, [
+      :signature_data,
+      :signature_position,
+      :ip_address,
+      :signature_date,
+      :is_valid,
+      :signed_file
+    ])
+    |> validate_required([:signature_data, :signature_date, :ip_address])
+  end
+
+  def verification_changeset(e_signature, attrs \\ %{}) do
+    e_signature
+    |> cast(attrs, [:is_valid, :verification_token])
+    |> validate_required([:is_valid])
   end
 end
