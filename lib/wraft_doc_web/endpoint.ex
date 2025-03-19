@@ -71,13 +71,7 @@ defmodule WraftDocWeb.Endpoint do
   # The session will be stored in the cookie and signed,
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
-  plug(
-    Plug.Session,
-    store: :cookie,
-    key: "_wraft_doc_key",
-    signing_salt: "OZYS2y3c"
-  )
-
+  plug(Plug.Session, @session_options)
   plug(CORSPlug)
   plug(WraftDocWeb.Router)
 end

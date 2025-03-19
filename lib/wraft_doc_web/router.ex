@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Router do
   use WraftDocWeb, :router
+  import Oban.Web.Router
   import Phoenix.LiveDashboard.Router
 
   alias WraftDoc.Enterprise
@@ -63,6 +64,13 @@ defmodule WraftDocWeb.Router do
       get("/signin", SessionController, :new)
       post("/signin", SessionController, :create)
     end
+  end
+
+  # Separate scope with admin authentication
+  scope "/", WraftDocWeb do
+    pipe_through([:browser, :current_admin])
+    oban_dashboard("/oban")
+    live_dashboard("/dashboard")
   end
 
   scope "/", WraftDocWeb.Api.V1 do
@@ -482,14 +490,6 @@ defmodule WraftDocWeb.Router do
     pipe_through(:flags)
     forward("/", FunWithFlags.UI.Router, namespace: "flags")
   end
-
-  # coveralls-ignore-start
-  scope "/" do
-    pipe_through([:browser, :api_auth])
-    live_dashboard("/dashboard")
-  end
-
-  # coveralls-ignore-stop
 
   scope "/api/swagger" do
     forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :wraft_doc, swagger_file: "swagger.json")
