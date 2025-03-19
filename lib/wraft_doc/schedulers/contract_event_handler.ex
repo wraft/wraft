@@ -5,28 +5,49 @@ defmodule WraftDoc.Schedulers.ContractEventHandler do
   """
 
   use GenServer
+  require Logger
 
+  @channel "__keyevent@0__:expired"
+
+  @spec start_link(any) :: {:ok, pid()} | {:error, term()}
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  @spec init(term) :: {:ok, term}
   def init(_) do
-    Redix.command!(:redix, ["PING"])
-    {:ok, "Done"}
+    Logger.info("Initializing ContractEventHandler...")
+
+    Redix.command!(:redix, ["CONFIG", "SET", "notify-keyspace-events", "Ex"])
+
+    {:ok, pubsub} = Redix.PubSub.start_link()
+    {:ok, ref} = Redix.PubSub.subscribe(pubsub, @channel, self())
+
+    {:ok, %{pubsub: pubsub, ref: ref}}
   end
 
-  def handle_info({:redix_pubsub, _pid, _ref, :subscribed, %{channel: _channel}}, state) do
-    IO.puts("Successfully subscribed to Redis Pub/Sub channel.")
+  def handle_info({:redix_pubsub, _pid, _ref, :subscribed, %{channel: channel}}, state) do
+    Logger.info("Subscribed to Redis channel: #{channel}")
     {:noreply, state}
   end
 
   def handle_info(
-        {:redix_pubsub, _pid, _ref, :message, %{channel: "contract:expired", payload: payload}},
+        {:redix_pubsub, _pid, _ref, :message,
+         %{channel: @channel, payload: "contract:expiry:" <> contract_id}},
         state
       ) do
-    IO.puts("Received contract expiry notification: #{payload}")
+    Logger.info("Contract Expired: #{contract_id}")
+    # Handle contract expiration (e.g., notify users, update DB)
+    {:noreply, state}
+  end
 
-    # Here, you can trigger email notifications, update the DB, etc.
+  def handle_info(
+        {:redix_pubsub, _pid, _ref, :message,
+         %{channel: @channel, payload: "contract:reminder:" <> contract_id}},
+        state
+      ) do
+    Logger.info("Contract Reminder: #{contract_id}")
+    # Handle contract reminder
     {:noreply, state}
   end
 end
