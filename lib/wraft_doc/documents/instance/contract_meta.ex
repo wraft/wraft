@@ -16,7 +16,6 @@ defmodule WraftDoc.Documents.Instance.ContractMeta do
     field(:expiry_date, :date)
     field(:contract_value, :decimal)
     field(:counter_parties, {:array, :string}, default: [])
-    field(:reminder, {:array, :map}, default: [])
   end
 
   def changeset(contract_meta, attrs \\ %{}) do

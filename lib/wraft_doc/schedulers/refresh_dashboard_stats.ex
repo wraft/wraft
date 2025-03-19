@@ -1,4 +1,4 @@
-defmodule WraftDoc.Tasks.RefreshDashboardStats do
+defmodule WraftDoc.Schedulers.RefreshDashboardStats do
   @moduledoc """
   Refreshes the dashboard stats
   """
