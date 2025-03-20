@@ -16,7 +16,6 @@ defmodule WraftDoc.ContentTypes do
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Fields
   alias WraftDoc.Fields.FieldType
-  alias WraftDoc.Frames
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
 
@@ -38,7 +37,7 @@ defmodule WraftDoc.ContentTypes do
 
         Repo.preload(content_type, [
           :creator,
-          :layout,
+          [layout: [:assets, frame: [:assets, fields: [:field_type]]]],
           :flow,
           {:theme, :assets},
           {:fields, :field_type},
@@ -111,7 +110,13 @@ defmodule WraftDoc.ContentTypes do
     |> where(^content_type_filter_by_name(params))
     |> where(^content_type_filter_by_prefix(params))
     |> order_by([ct], ^content_type_sort(params))
-    |> preload([:layout, :flow, {:theme, :assets}, {:fields, :field_type}, creator: [:profile]])
+    |> preload([
+      [layout: [:assets, frame: [:assets, fields: [:field_type]]]],
+      :flow,
+      {:theme, :assets},
+      {:fields, :field_type},
+      creator: [:profile]
+    ])
     |> Repo.paginate(params)
   end
 
@@ -145,7 +150,7 @@ defmodule WraftDoc.ContentTypes do
   def show_content_type(user, id) do
     with %ContentType{} = content_type <- get_content_type(user, id) do
       Repo.preload(content_type, [
-        :layout,
+        {:layout, [frame: [:assets, fields: [:field_type]]]},
         :creator,
         {:theme, :assets},
         [{:fields, :field_type}, {:flow, :states}]
@@ -164,7 +169,7 @@ defmodule WraftDoc.ContentTypes do
     |> case do
       %ContentType{} = content_type ->
         Repo.preload(content_type, [
-          [layout: [:assets, :frame]],
+          [layout: [:assets, frame: [:assets, fields: [:field_type]]]],
           :creator,
           {:theme, :assets},
           [{:flow, :states}, {:fields, :field_type}]
@@ -188,7 +193,11 @@ defmodule WraftDoc.ContentTypes do
   def get_content_type_from_id(id) do
     ContentType
     |> Repo.get(id)
-    |> Repo.preload([:layout, :creator, [{:flow, :states}, {:fields, :field_type}]])
+    |> Repo.preload([
+      [layout: [:assets, frame: [:assets, fields: [:field_type]]]],
+      :creator,
+      [{:flow, :states}, {:fields, :field_type}]
+    ])
   end
 
   @doc """
@@ -241,9 +250,7 @@ defmodule WraftDoc.ContentTypes do
     update_content_type(content_type, layout, user, params)
   end
 
-  def update_content_type(content_type, layout, _user, params) do
-    params = Frames.update_frame_variant_fields(content_type, layout, params)
-
+  def update_content_type(content_type, _layout, _user, params) do
     content_type
     |> ContentType.update_changeset(params)
     |> Repo.update()
@@ -255,7 +262,7 @@ defmodule WraftDoc.ContentTypes do
         fetch_and_associate_fields(content_type, params)
 
         Repo.preload(content_type, [
-          :layout,
+          [layout: [:assets, frame: [:assets, fields: [:field_type]]]],
           :creator,
           {:theme, :assets},
           [{:flow, :states}, {:fields, :field_type}]
@@ -335,7 +342,7 @@ defmodule WraftDoc.ContentTypes do
     query =
       from(ct in ContentType,
         where: ilike(ct.name, ^"%#{name}%"),
-        preload: [:fields, :layout, :flow]
+        preload: [:fields, [layout: [:assets, frame: [:assets, fields: [:field_type]]]], :flow]
       )
 
     Repo.paginate(query, params)
@@ -410,23 +417,4 @@ defmodule WraftDoc.ContentTypes do
   #       content_type_role
   #   end
   # end
-
-  @doc """
-  Create a content type field from wraft_json.
-  """
-  @spec create_field_params_from_wraft_json(list()) :: list()
-  def create_field_params_from_wraft_json(wraft_json_fields) do
-    field_types = Repo.all(from(ft in FieldType, select: {ft.name, ft.id}))
-    field_type_map = Map.new(field_types)
-
-    Enum.map(wraft_json_fields, fn field ->
-      field_type = String.capitalize(field["type"])
-
-      %{
-        "field_type_id" => Map.get(field_type_map, field_type),
-        "key" => field["name"],
-        "name" => field["name"]
-      }
-    end)
-  end
 end

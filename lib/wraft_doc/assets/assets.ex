@@ -162,7 +162,13 @@ defmodule WraftDoc.Assets do
   """
   @spec preload_asset(Layout.t()) :: Layout.t()
   def preload_asset(%Layout{} = layout) do
-    Repo.preload(layout, [:assets, :creator, :organisation, :engine, frame: [:assets]])
+    Repo.preload(layout, [
+      :assets,
+      :creator,
+      :organisation,
+      :engine,
+      frame: [:assets, fields: [:field_type]]
+    ])
   end
 
   def preload_asset(_), do: {:error, :not_sufficient}

@@ -30,7 +30,8 @@ defmodule WraftDoc.Layouts do
       {:ok, layout} ->
         layout = layout_files_upload(layout, params)
         fetch_and_associcate_assets(layout, current_user, params)
-        Repo.preload(layout, [:engine, :creator, :assets, frame: [:assets]])
+
+        Repo.preload(layout, [:engine, :creator, :assets, frame: [:assets, fields: [:field_type]]])
 
       changeset = {:error, _} ->
         changeset
@@ -102,7 +103,7 @@ defmodule WraftDoc.Layouts do
         where: l.organisation_id == ^org_id,
         where: ^layout_index_filter_by_name(params),
         order_by: ^layout_index_sort(params),
-        preload: [:engine, :assets, frame: [:assets]]
+        preload: [:engine, :assets, frame: [:assets, fields: [:field_type]]]
       )
 
     Repo.paginate(query, params)
@@ -193,7 +194,8 @@ defmodule WraftDoc.Layouts do
 
       {:ok, layout} ->
         fetch_and_associcate_assets(layout, current_user, params)
-        Repo.preload(layout, [:engine, :creator, :assets, frame: [:assets]])
+
+        Repo.preload(layout, [:engine, :creator, :assets, frame: [:assets, fields: [:field_type]]])
     end
   end
 
