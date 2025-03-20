@@ -34,6 +34,7 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Utils.CSVHelper
   alias WraftDoc.Utils.ProsemirrorToMarkdown
   alias WraftDoc.Workers.BulkWorker
+  alias WraftDoc.Workers.DocumentWorker
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Mailer
   alias WraftDocWeb.Mailer.Email
@@ -708,22 +709,13 @@ defmodule WraftDoc.Documents do
   @spec get_built_document(Instance.t()) :: Instance.t() | nil
   def get_built_document(
         %{
-          id: id,
           instance_id: instance_id,
           content_type: %ContentType{organisation_id: org_id},
           versions: build_versions
         } = instance
       ) do
-    query =
-      from(h in History,
-        where: h.exit_code == 0,
-        where: h.content_id == ^id,
-        order_by: [desc: h.inserted_at],
-        limit: 1
-      )
-
-    query
-    |> Repo.one()
+    instance
+    |> get_build_history()
     |> case do
       nil ->
         instance
@@ -928,6 +920,34 @@ defmodule WraftDoc.Documents do
   end
 
   def get_engine(_), do: {:error, :invalid_id, Engine}
+
+  @doc """
+  Creates a document worker job
+  """
+  @spec create_document_worker_job(User.t(), History.t(), Instance.t(), Layout.t(), map()) ::
+          {:ok, Oban.Job.t()} | {:error, term()}
+  def create_document_worker_job(
+        %User{} = current_user,
+        %History{} = build_history,
+        %Instance{} = instance,
+        %Layout{} = layout,
+        params
+      ) do
+    encoded_data =
+      %{
+        current_user: current_user,
+        build_history: build_history,
+        instance: instance,
+        layout: layout,
+        params: params
+      }
+      |> :erlang.term_to_binary()
+      |> Base.encode64()
+
+    %{encoded_data: encoded_data}
+    |> DocumentWorker.new(queue: "document", tags: ["document_job"])
+    |> Oban.insert()
+  end
 
   @doc """
   Get an engine from its name.
@@ -1172,6 +1192,55 @@ defmodule WraftDoc.Documents do
   end
 
   defp move_old_builds(_, _, false), do: nil
+
+  @doc """
+    Create build history
+  """
+  @spec create_initial_build_history(User.t(), Instance.t()) :: History.t() | nil
+  def create_initial_build_history(%User{} = current_user, %Instance{} = instance) do
+    current_user
+    |> build_assoc(:build_histories, content: instance)
+    |> History.status_update_changeset(%{status: "enqueued"})
+    |> Repo.insert!()
+  end
+
+  @doc """
+  Get the latest successful build document of the given instance.
+  """
+  @spec get_build_history(Instance.t()) :: History.t() | nil
+  def get_build_history(%Instance{id: id}) do
+    History
+    |> where([h], h.exit_code == 0 and h.content_id == ^id)
+    |> order_by([h], desc: h.inserted_at)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  @doc """
+  Get build status
+  """
+  @spec get_build_status(Ecto.UUID.t(), Ecto.UUID.t()) :: History.t() | nil
+  def get_build_status(<<_::288>> = build_history_id, <<_::288>> = document_id) do
+    Repo.get_by(History, id: build_history_id, content_id: document_id)
+  end
+
+  def get_build_status(_, _), do: nil
+
+  @doc """
+  Update build history
+  """
+  @spec update_build_history(History.t(), map()) :: History.t() | nil
+  def update_build_history(%History{} = build_history, %{status: "executing"} = params) do
+    build_history
+    |> History.status_update_changeset(params)
+    |> Repo.update!()
+  end
+
+  def update_build_history(%History{} = build_history, params) do
+    build_history
+    |> History.final_update_changeset(params)
+    |> Repo.update!()
+  end
 
   @doc """
   Insert the build history of the given instance.
