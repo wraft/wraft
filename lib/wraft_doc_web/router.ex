@@ -303,6 +303,11 @@ defmodule WraftDocWeb.Router do
         :remove_counterpart
       )
 
+      # Document reminders
+      scope "/contents/:content_id" do
+        resources("/reminders", ReminderController)
+      end
+
       # Approve a document
       put("/contents/:id/approve", InstanceController, :approve)
       put("/contents/:id/reject", InstanceController, :reject)

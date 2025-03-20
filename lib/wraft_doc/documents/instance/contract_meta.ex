@@ -5,7 +5,7 @@ defmodule WraftDoc.Documents.Instance.ContractMeta do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @contract_fields ~w(type status start_date expiry_date contract_value counter_parties reminder)a
+  @contract_fields ~w(type status start_date expiry_date contract_value counter_parties)a
   @contract_status ~w(draft review active expired)a
 
   @primary_key false

@@ -5,20 +5,42 @@ defmodule WraftDoc.Documents.Reminder do
 
   use WraftDoc.Schema
 
-  @status ~w(pending completed)a
+  @status ~w(pending sent cancelled)a
+  @notification_types ~w(email in_app both)a
+  @fields ~w(reminder_date status notification_type message recipients manual_date sent_at)a
 
   schema "reminders" do
-    field(:due_date, :utc_datetime)
+    field(:reminder_date, :date)
     field(:status, Ecto.Enum, values: @status, default: :pending)
+    field(:notification_type, Ecto.Enum, values: @notification_types, default: :both)
+    field(:message, :string)
+    field(:recipients, {:array, :string}, default: [])
+    field(:manual_date, :boolean, default: false)
+    field(:sent_at, :utc_datetime)
     belongs_to(:content, WraftDoc.Documents.Instance)
     belongs_to(:creator, WraftDoc.Account.User)
 
     timestamps()
   end
 
+  @doc """
+  Changeset for creating a new document reminder.
+  """
   def changeset(reminder, attrs) do
     reminder
-    |> cast(attrs, [:due_date, :content_id, :creator_id])
-    |> validate_required([:due_date, :content_id, :creator_id])
+    |> cast(attrs, @fields)
+    |> validate_required([:reminder_date, :message])
+    |> validate_date()
+  end
+
+  # Validates that the reminder date is in the future.
+  defp validate_date(%Ecto.Changeset{valid?: true, changes: %{reminder_date: date}} = changeset) do
+    today = Date.utc_today()
+
+    if Date.compare(date, today) == :lt do
+      add_error(changeset, :reminder_date, "must be in the future")
+    else
+      changeset
+    end
   end
 end
