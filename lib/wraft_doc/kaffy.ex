@@ -46,6 +46,10 @@ defmodule WraftDoc.Kaffy.Config do
           template_asset: [
             schema: WraftDoc.TemplateAssets.TemplateAsset,
             admin: WraftDocWeb.TemplateAssets.TemplateAssetAdmin
+          ],
+          frame: [
+            schema: WraftDoc.Frames.Frame,
+            admin: WraftDocWeb.Frames.FrameAdmin
           ]
         ]
       ]
