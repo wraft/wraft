@@ -162,4 +162,6 @@ defmodule WraftDoc.Utils.FileHelper do
       files -> {:error, "Files are missing in zip: #{Enum.join(files, ", ")}"}
     end
   end
+
+  def file_size(file_binary), do: file_binary |> byte_size() |> Sizeable.filesize()
 end

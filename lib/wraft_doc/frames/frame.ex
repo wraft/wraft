@@ -11,6 +11,7 @@ defmodule WraftDoc.Frames.Frame do
     field(:name, :string)
     field(:description, :string)
     field(:type, Ecto.Enum, values: [:latex, :typst])
+    field(:file_size, :string)
     field(:wraft_json, :map)
     field(:thumbnail, WraftDocWeb.FrameThumbnailUploader.Type)
 
@@ -25,9 +26,36 @@ defmodule WraftDoc.Frames.Frame do
 
   def changeset(frame, attrs) do
     frame
-    |> cast(attrs, [:name, :description, :type, :organisation_id, :creator_id, :wraft_json])
+    |> cast(attrs, [
+      :name,
+      :description,
+      :type,
+      :organisation_id,
+      :creator_id,
+      :wraft_json,
+      :file_size
+    ])
     |> cast_attachments(attrs, [:thumbnail])
-    |> validate_required([:name, :description, :type, :organisation_id, :creator_id])
+    |> validate_required([:name, :description, :type, :organisation_id])
+    |> unique_constraint(:name,
+      name: :frame_name_organisation_id_index,
+      message: "Frame with the same name  under your organisation exists.!"
+    )
+  end
+
+  def admin_changeset(frame, attrs) do
+    frame
+    |> cast(attrs, [
+      :name,
+      :description,
+      :type,
+      :organisation_id,
+      :creator_id,
+      :wraft_json,
+      :file_size
+    ])
+    |> cast_attachments(attrs, [:thumbnail])
+    |> validate_required([:name, :description, :type, :organisation_id])
     |> unique_constraint(:name,
       name: :frame_name_organisation_id_index,
       message: "Frame with the same name  under your organisation exists.!"
@@ -36,7 +64,15 @@ defmodule WraftDoc.Frames.Frame do
 
   def update_changeset(frame, attrs) do
     frame
-    |> cast(attrs, [:name, :description, :type, :organisation_id, :creator_id, :wraft_json])
+    |> cast(attrs, [
+      :name,
+      :description,
+      :type,
+      :organisation_id,
+      :creator_id,
+      :wraft_json,
+      :file_size
+    ])
     |> cast_attachments(attrs, [:thumbnail])
     |> validate_required([:name, :description, :type])
     |> unique_constraint(:name,
