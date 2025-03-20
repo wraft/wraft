@@ -10,13 +10,12 @@ defmodule WraftDoc.Frames do
   alias WraftDoc.Account.User
   alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
-  alias WraftDoc.ContentTypes
-  alias WraftDoc.ContentTypes.ContentType
-  alias WraftDoc.ContentTypes.ContentTypeField
   alias WraftDoc.Documents
+  alias WraftDoc.Fields
+  alias WraftDoc.Fields.FieldType
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Frames.FrameAsset
-  alias WraftDoc.Layouts.Layout
+  alias WraftDoc.Frames.FrameField
   alias WraftDoc.Repo
   alias WraftDoc.Utils.FileHelper
 
@@ -28,7 +27,7 @@ defmodule WraftDoc.Frames do
     Frame
     |> where([frame], frame.organisation_id == ^organisation_id)
     |> order_by([frame], desc: frame.inserted_at)
-    |> preload([:assets])
+    |> preload([:assets, fields: [:field_type]])
     |> Repo.paginate(params)
   end
 
@@ -41,7 +40,7 @@ defmodule WraftDoc.Frames do
   def get_frame(<<_::288>> = id, %User{current_org_id: organisation_id}) do
     Frame
     |> Repo.get_by(id: id, organisation_id: organisation_id)
-    |> Repo.preload([:assets])
+    |> Repo.preload([:assets, fields: [:field_type]])
   end
 
   def get_frame(_, _), do: nil
@@ -49,7 +48,7 @@ defmodule WraftDoc.Frames do
   def get_frame(<<_::288>> = id) do
     Frame
     |> Repo.get_by(id: id)
-    |> Repo.preload([:assets])
+    |> Repo.preload([:assets, fields: [:field_type]])
   end
 
   def get_frame(_), do: nil
@@ -72,14 +71,79 @@ defmodule WraftDoc.Frames do
   defp create_frame_with_params(current_user, params) do
     Multi.new()
     |> Multi.insert(:frame, Frame.changeset(%Frame{}, params))
+    |> Multi.run(:frame_assets, fn _repo, %{frame: frame} ->
+      fetch_and_associate_assets(frame, current_user, params)
+
+      {:ok, frame}
+    end)
+    |> Multi.run(:frame_json, fn _repo, %{frame: frame} ->
+      frame
+      |> Repo.preload([:assets])
+      |> add_frame_wraft_json()
+    end)
+    |> Multi.run(:frame_field, fn _repo,
+                                  %{
+                                    frame_json:
+                                      %Frame{wraft_json: %{"fields" => frame_fields}} = frame
+                                  } ->
+      fields = create_field_params_from_wraft_json(frame_fields)
+      fetch_and_associate_fields(frame, %{"fields" => fields})
+      {:ok, frame}
+    end)
     |> Repo.transaction()
     |> case do
       {:ok, %{frame: frame}} ->
-        fetch_and_associate_assets(frame, current_user, params)
-        {:ok, Repo.preload(frame, [:assets])}
+        {:ok, Repo.preload(frame, [:assets, fields: [:field_type]])}
 
       {:error, _, changeset, _} ->
         {:error, changeset}
+    end
+  end
+
+  defp fetch_and_associate_fields(frame, %{"fields" => fields}) do
+    fields
+    |> Stream.map(fn x -> create_field_for_frame(frame, x) end)
+    |> Enum.to_list()
+  end
+
+  defp fetch_and_associate_fields(_frame, _params), do: nil
+
+  defp create_field_for_frame(
+         frame,
+         %{"field_type_id" => field_type_id} = params
+       ) do
+    field_type_id
+    |> Fields.get_field_type()
+    |> case do
+      %FieldType{} = field_type ->
+        create_frame_field(field_type, frame, params)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp create_field_for_frame(_frame, _field), do: nil
+
+  defp create_frame_field(field_type, frame, params) do
+    params = Map.merge(params, %{"organisation_id" => frame.organisation_id})
+
+    Multi.new()
+    |> Multi.run(:field, fn _, _ -> Fields.create_field(field_type, params) end)
+    |> Multi.insert(:frame_field, fn %{field: field} ->
+      FrameField.changeset(%FrameField{}, %{
+        frame_id: frame.id,
+        field_id: field.id
+      })
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} ->
+        :ok
+
+      {:error, step, error, _} ->
+        Logger.error("Frame field creation failed in step #{inspect(step)}", error: error)
+        :error
     end
   end
 
@@ -105,15 +169,40 @@ defmodule WraftDoc.Frames do
     do: update_frame_with_params(frame, nil, params)
 
   defp update_frame_with_params(frame, current_user, params) do
-    frame
-    |> Frame.update_changeset(params)
-    |> Repo.update()
-    |> case do
-      {:ok, frame} ->
-        fetch_and_associate_assets(frame, current_user, params)
-        {:ok, Repo.preload(frame, [:assets])}
+    Multi.new()
+    |> Multi.update(:frame, Frame.update_changeset(%Frame{} = frame, params))
+    |> Multi.run(:frame_asset, fn _repo,
+                                  %{
+                                    frame: frame
+                                  } ->
+      delete_frame_assets(frame)
+      fetch_and_associate_assets(frame, current_user, params)
+      {:ok, frame}
+    end)
+    |> Multi.run(:frame_json, fn _repo, %{frame_asset: frame} ->
+      frame
+      |> Repo.preload([:assets])
+      |> add_frame_wraft_json()
+    end)
+    |> Multi.run(:frame_field, fn _repo,
+                                  %{
+                                    frame_json:
+                                      %Frame{wraft_json: %{"fields" => frame_fields}} = frame
+                                  } ->
+      delete_frame_fields(frame)
 
-      {:error, changeset} ->
+      frame_fields
+      |> create_field_params_from_wraft_json()
+      |> then(&fetch_and_associate_fields(frame, %{"fields" => &1}))
+
+      {:ok, frame}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{frame_field: frame}} ->
+        {:ok, Repo.preload(frame, [:assets, fields: [:field_type]])}
+
+      {:error, _, changeset, _} ->
         {:error, changeset}
     end
   end
@@ -122,8 +211,13 @@ defmodule WraftDoc.Frames do
   Delete a frame.
   """
   @spec delete_frame(Frame.t()) :: {:ok, Frame.t()} | {:error, Ecto.Changeset.t()}
-  def delete_frame(%Frame{id: frame_id, organisation_id: organisation_id} = frame) do
-    case Minio.delete_file("organisations/#{organisation_id}/frames/#{frame_id}") do
+  def delete_frame(
+        %Frame{
+          organisation_id: organisation_id,
+          assets: [%{id: asset_id, file: %{file_name: file_name}} | _]
+        } = frame
+      ) do
+    case Minio.delete_file("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}") do
       {:ok, _} ->
         Repo.delete(frame)
 
@@ -137,7 +231,6 @@ defmodule WraftDoc.Frames do
     |> String.split(",")
     |> Stream.map(fn asset_id -> Assets.get_asset(asset_id, current_user) end)
     |> Stream.map(fn asset -> associate_frame_and_asset(frame, current_user, asset) end)
-    |> Stream.map(fn frame -> add_frame_wraft_json(frame) end)
     |> Enum.to_list()
   end
 
@@ -149,7 +242,7 @@ defmodule WraftDoc.Frames do
     |> FrameAsset.changeset()
     |> Repo.insert()
 
-    Repo.preload(frame, [:assets])
+    Repo.preload(frame, [:assets, fields: [:field_type]])
   end
 
   defp associate_frame_and_asset(_frame, _current_user, nil), do: nil
@@ -170,6 +263,8 @@ defmodule WraftDoc.Frames do
     frame
     |> Frame.update_changeset(%{"wraft_json" => wraft_json, "file_size" => file_size})
     |> Repo.update()
+  rescue
+    error -> {:error, error.message}
   end
 
   @doc """
@@ -189,76 +284,51 @@ defmodule WraftDoc.Frames do
   def get_engine_by_frame_type(%{"engine_id" => engine_id}), do: Documents.get_engine(engine_id)
 
   @doc """
-  Add frame variant fields to the params.
+  Create a content type field from wraft_json.
   """
-  @spec add_frame_variant_fields(Frame.t(), map()) :: map()
-  def add_frame_variant_fields(
-        %Frame{wraft_json: %{"fields" => frame_fields}},
-        %{"fields" => fields} = params
-      ),
-      do: create_variant_fields_params(params, fields, frame_fields)
+  @spec create_field_params_from_wraft_json(list()) :: list()
+  def create_field_params_from_wraft_json(wraft_json_fields) do
+    field_types = Repo.all(from(ft in FieldType, select: {ft.name, ft.id}))
+    field_type_map = Map.new(field_types)
 
-  def add_frame_variant_fields(_, params), do: params
+    Enum.map(wraft_json_fields, fn field ->
+      field_type = String.capitalize(field["type"])
 
-  @doc """
-  Update frame variant fields.
-  """
-  @spec update_frame_variant_fields(
-          ContentType.t(),
-          Layout.t(),
-          map()
-        ) :: map()
-
-  def update_frame_variant_fields(
-        %ContentType{layout: %Layout{id: existing_layout_id}},
-        _,
-        %{"layout_id" => layout_id} = params
-      )
-      when layout_id == existing_layout_id,
-      do: params
-
-  def update_frame_variant_fields(
-        %ContentType{layout: %Layout{frame: existing_frame}} =
-          content_type,
-        %Layout{frame: new_frame},
-        %{"fields" => fields} = params
-      ) do
-    case {existing_frame, new_frame} do
-      {nil, nil} ->
-        params
-
-      {nil, %Frame{wraft_json: %{"fields" => frame_fields}}} ->
-        create_variant_fields_params(params, fields, frame_fields)
-
-      {%Frame{}, nil} ->
-        delete_frame_fields(existing_frame, content_type)
-        params
-
-      {%Frame{}, %Frame{wraft_json: %{"fields" => frame_fields}}} ->
-        delete_frame_fields(existing_frame, content_type)
-        create_variant_fields_params(params, fields, frame_fields)
-    end
+      %{
+        "field_type_id" => Map.get(field_type_map, field_type),
+        "key" => field["name"],
+        "name" => field["name"]
+      }
+    end)
   end
 
-  defp create_variant_fields_params(params, fields, frame_fields) do
-    frame_fields
-    |> ContentTypes.create_field_params_from_wraft_json()
-    |> then(&Map.put(params, "fields", fields ++ &1))
-  end
-
-  defp delete_frame_fields(%Frame{wraft_json: %{"fields" => frame_fields}}, content_type) do
-    frame_field_names = Enum.map(frame_fields, fn field -> field["name"] end)
-
-    ContentTypeField
-    |> join(:inner, [content_type_field], field in assoc(content_type_field, :field))
-    |> where(
-      [content_type_field, field],
-      content_type_field.content_type_id == ^content_type.id and field.name in ^frame_field_names
-    )
-    |> preload([content_type_field, field], field: field)
+  defp delete_frame_fields(%Frame{id: frame_id}) do
+    FrameField
+    |> where([frame_field], frame_field.frame_id == ^frame_id)
+    |> preload([:field])
     |> Repo.all()
-    |> Enum.each(fn content_type_field ->
-      ContentTypes.delete_content_type_field(content_type_field)
+    |> Enum.each(fn frame_field ->
+      delete_frame_field(frame_field)
+    end)
+  end
+
+  defp delete_frame_field(frame_field) do
+    %FrameField{field: field} = Repo.preload(frame_field, :field)
+    Repo.delete(field)
+    Repo.delete(frame_field)
+    :ok
+  end
+
+  defp delete_frame_assets(%Frame{id: frame_id}) do
+    frame_assets =
+      FrameAsset
+      |> where([frame_asset], frame_asset.frame_id == ^frame_id)
+      |> preload([:asset])
+      |> Repo.all()
+
+    Enum.each(frame_assets, fn frame_asset ->
+      Repo.delete(frame_asset)
+      Repo.delete(frame_asset.asset)
     end)
   end
 end
