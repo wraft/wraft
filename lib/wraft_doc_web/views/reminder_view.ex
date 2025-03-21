@@ -4,6 +4,8 @@ defmodule WraftDocWeb.Api.V1.ReminderView do
   """
   use WraftDocWeb, :view
 
+  alias WraftDocWeb.Api.V1.InstanceView
+
   @doc """
   Renders a list of reminders
   """
@@ -14,14 +16,16 @@ defmodule WraftDocWeb.Api.V1.ReminderView do
   @doc """
   Renders a single reminder
   """
-  def render("show.json", %{reminder: reminder}) do
-    render_one(reminder, __MODULE__, "reminder.json", as: :reminder)
+  def render("create.json", %{reminder: reminder}) do
+    %{
+      reminder: render_one(reminder, __MODULE__, "reminder.json", as: :reminder),
+      content: render_one(reminder.content, InstanceView, "instance.json", as: :instance)
+    }
   end
 
   def render("reminder.json", %{reminder: reminder}) do
     %{
       id: reminder.id,
-      instance_id: reminder.instance_id,
       reminder_date: reminder.reminder_date,
       status: reminder.status,
       message: reminder.message,
@@ -29,6 +33,7 @@ defmodule WraftDocWeb.Api.V1.ReminderView do
       recipients: reminder.recipients,
       manual_date: reminder.manual_date,
       sent_at: reminder.sent_at,
+      creator_id: reminder.creator_id,
       inserted_at: reminder.inserted_at,
       updated_at: reminder.updated_at
     }

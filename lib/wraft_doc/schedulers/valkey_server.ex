@@ -7,7 +7,6 @@ defmodule WraftDoc.Schedulers.ValkeyServer do
   use GenServer
   require Logger
 
-  @valkey_pool_size 10
   @valkey_timeout 5000
 
   def start_link(_) do
@@ -16,7 +15,9 @@ defmodule WraftDoc.Schedulers.ValkeyServer do
 
   @impl true
   def init(_) do
-    Application.get_env(:wraft_doc, :valkey, %{})
+    Application.get_env(:wraft_doc, :valkey, [])
+    # Convert keyword list to map
+    |> Enum.into(%{})
     |> start_connection()
     |> case do
       {:ok, conn} -> {:ok, %{conn: conn}}
@@ -114,8 +115,7 @@ defmodule WraftDoc.Schedulers.ValkeyServer do
       host: host,
       port: port,
       database: database,
-      timeout: @valkey_timeout,
-      pool_size: @valkey_pool_size
+      timeout: @valkey_timeout
     ]
     |> maybe_add_password(password)
     |> then(&{host, port, &1})

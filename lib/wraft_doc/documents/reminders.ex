@@ -73,19 +73,7 @@ defmodule WraftDoc.Documents.Reminders do
     # Calculate TTL in seconds until the reminder date
     ttl = calculate_ttl_for_reminder(reminder)
     # Store in Valkey
-    ValkeyServer.set(key, Jason.encode!(reminder), ex: ttl)
-  end
-
-  @doc """
-    Update reminder in Valkey
-  """
-  def update_reminder_in_valkey(%Instance{id: document_id}, %Reminder{id: reminder_id} = reminder) do
-    # Store the reminder in Valkey with TTL based on the reminder date
-    key = "reminder:#{document_id}:#{reminder_id}"
-    # Calculate TTL in seconds until the reminder date
-    ttl = calculate_ttl_for_reminder(reminder)
-    # Store in Valkey
-    ValkeyServer.set(key, Jason.encode!(reminder), ex: ttl)
+    ValkeyServer.set(key, "reminder", ex: ttl)
   end
 
   @doc """

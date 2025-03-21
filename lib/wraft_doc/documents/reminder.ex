@@ -52,4 +52,6 @@ defmodule WraftDoc.Documents.Reminder do
       changeset
     end
   end
+
+  defp validate_date(changeset), do: changeset
 end
