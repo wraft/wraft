@@ -66,9 +66,17 @@ config :wraft_doc, Oban,
     {Oban.Plugins.Cron,
      crontab: [
        {"0 0 * * MON", WraftDoc.Workers.ScheduledWorker,
-        queue: :scheduled, tags: ["unused_assets"]}
+        queue: :scheduled, tags: ["unused_assets"]},
+       {"0 9 * * *", WraftDoc.Workers.ReminderWorker, queue: :scheduled, tags: ["reminders"]}
      ]}
   ]
+
+# Valkey (Redis-compatible) configuration
+config :wraft_doc, :valkey,
+  host: System.get_env("VALKEY_HOST", "localhost"),
+  port: String.to_integer(System.get_env("VALKEY_PORT", "6379")),
+  password: System.get_env("VALKEY_PASSWORD"),
+  database: 0
 
 # File Upload config
 config :waffle,

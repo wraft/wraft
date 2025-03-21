@@ -58,7 +58,7 @@ defmodule WraftDocWeb.Api.V1.ReminderController do
 
           properties do
             id(:string, "Reminder UUID", format: "uuid")
-            instance_id(:string, "Contract instance UUID", format: "uuid")
+            content_id(:string, "Document ID", format: "uuid")
             reminder_date(:string, "Date when reminder should be triggered", format: "date")
             status(:string, "Current status of the reminder: 'pending' or 'sent'")
             message(:string, "Reminder message content")
@@ -77,7 +77,7 @@ defmodule WraftDocWeb.Api.V1.ReminderController do
 
           example(%{
             id: "2a4d5c6f-8e9f-4a1b-8c5d-9e7f4a3b2c1d",
-            instance_id: "3b2a1d4c-5e6f-7a8b-9c1d-2e3f4a5b6c7d",
+            content_id: "3b2a1d4c-5e6f-7a8b-9c1d-2e3f4a5b6c7d",
             reminder_date: "2023-12-31",
             status: "pending",
             message: "Contract renewal due soon",

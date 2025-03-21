@@ -33,6 +33,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Documents.Instance.Version
   alias WraftDoc.Documents.InstanceApprovalSystem
   alias WraftDoc.Documents.OrganisationField
+  alias WraftDoc.Documents.Reminder
   alias WraftDoc.Enterprise.ApprovalSystem
   alias WraftDoc.Enterprise.Flow
   alias WraftDoc.Enterprise.Flow.State
@@ -486,7 +487,9 @@ defmodule WraftDoc.Factory do
   def plan_factory do
     %Plan{
       name: sequence(:name, &"Plan-#{&1}"),
-      description: sequence(:description, &"Plan Description-#{&1}")
+      description: sequence(:description, &"Plan Description-#{&1}"),
+      currency: "INR",
+      is_active?: true
     }
   end
 
@@ -501,6 +504,20 @@ defmodule WraftDoc.Factory do
       end_date: end_date,
       plan_duration: Enum.random([14, 30, 365]),
       is_expired: false
+    }
+  end
+
+  def reminder_factory do
+    %Reminder{
+      reminder_date: Timex.shift(Timex.now(), days: Enum.random(1..30)),
+      status: Enum.random([:pending, :sent, :failed]),
+      notification_type: Enum.random([:email, :sms, :both]),
+      message: sequence(:message, &"Reminder message #{&1}"),
+      recipients: ["user1@example.com", "user2@example.com"],
+      manual_date: false,
+      sent_at: nil,
+      content: build(:instance),
+      creator: build(:user)
     }
   end
 

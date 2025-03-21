@@ -33,6 +33,15 @@ defmodule WraftDoc.Documents.Reminder do
     |> validate_date()
   end
 
+  @doc """
+  Changeset for marking a reminder as sent.
+  """
+  def sent_changeset(reminder) do
+    DateTime.utc_now()
+    |> DateTime.truncate(:second)
+    |> then(&change(reminder, status: :sent, sent_at: &1))
+  end
+
   # Validates that the reminder date is in the future.
   defp validate_date(%Ecto.Changeset{valid?: true, changes: %{reminder_date: date}} = changeset) do
     today = Date.utc_today()

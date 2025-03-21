@@ -28,9 +28,10 @@ defmodule WraftDoc.Application do
       #   ["content_type_changes", [name: WraftDoc.Notifications.Listener]],
       #   restart: :permanent
       # )
-      {Redix, {Application.get_env(:wraft_doc, :redis_url), [name: :redix]}},
-      WraftDoc.Schedulers.RefreshDashboardStats,
-      WraftDoc.Schedulers.ContractEventHandler
+      # {Redix, {Application.get_env(:wraft_doc, :redis_url), [name: :redix]}},
+      WraftDoc.Schedulers.ValkeyServer,
+      WraftDoc.Schedulers.RefreshDashboardStats
+      # WraftDoc.Schedulers.ContractEventHandler
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
