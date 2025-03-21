@@ -81,6 +81,8 @@ defmodule WraftDoc.Schedulers.ValkeyServer do
     |> reply_with_state(state)
   end
 
+  defp reply_with_state(result, state), do: {:reply, result, state}
+
   defp maybe_add_expiry(command, options) do
     case Keyword.get(options, :ex) do
       nil -> command
@@ -94,10 +96,6 @@ defmodule WraftDoc.Schedulers.ValkeyServer do
     e ->
       Logger.error("Failed to execute Valkey command: #{inspect(e)}")
       {:error, :valkey_error}
-  end
-
-  defp reply_with_state(result, state) do
-    {:reply, result, state}
   end
 
   defp start_connection(config) do

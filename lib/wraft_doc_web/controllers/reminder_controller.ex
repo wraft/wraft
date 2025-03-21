@@ -175,7 +175,7 @@ defmodule WraftDocWeb.Api.V1.ReminderController do
 
     with %Instance{} = instance <- Documents.get_instance(document_id, current_user),
          {:ok, %Reminder{} = reminder} <- Reminders.add_reminder(current_user, instance, params) do
-      # updated_in_valkey <-  Reminders.set_reminder_in_valkey(instance, reminder) do
+      Reminders.set_reminder_in_valkey(instance, reminder)
       render(conn, "show.json", reminder: reminder)
     end
   end
@@ -209,7 +209,7 @@ defmodule WraftDocWeb.Api.V1.ReminderController do
     with %Instance{} = instance <- Documents.get_instance(document_id, current_user),
          {:ok, %Reminder{} = reminder} <- Reminders.get_reminder(instance, reminder_id),
          {:ok, %Reminder{} = updated_reminder} <- Reminders.update_reminder(reminder, params) do
-      # updated_in_valkey <-  Reminders.update_reminder_in_valkey(instance, reminder) do
+      Reminders.update_reminder_in_valkey(instance, reminder)
       render(conn, "show.json", reminder: updated_reminder)
     end
   end
@@ -239,7 +239,7 @@ defmodule WraftDocWeb.Api.V1.ReminderController do
     with %Instance{} = instance <- Documents.get_instance(document_id, current_user),
          {:ok, %Reminder{} = reminder} <- Reminders.get_reminder(instance, reminder_id),
          {:ok, reminder} <- Reminders.delete_reminder(reminder) do
-      # remove_from_valkey(contract_instance_id, reminder_id)
+      Reminders.delete_reminder_in_valkey(instance, reminder)
       render(conn, "show.json", reminder: reminder)
     end
   end
