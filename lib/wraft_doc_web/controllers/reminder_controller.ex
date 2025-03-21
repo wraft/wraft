@@ -236,6 +236,7 @@ defmodule WraftDocWeb.Api.V1.ReminderController do
     response(404, "Not Found", Schema.ref(:Error))
   end
 
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"content_id" => document_id, "id" => reminder_id}) do
     current_user = conn.assigns.current_user
 
