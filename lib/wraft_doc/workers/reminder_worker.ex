@@ -10,11 +10,11 @@ defmodule WraftDoc.Workers.ReminderWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{}) do
-    Logger.info("Contract reminder job started")
+    Logger.info("Document reminder job started")
 
     Reminders.process_scheduled_reminders()
 
-    Logger.info("Contract reminder job completed")
+    Logger.info("Document reminder job completed")
     :ok
   end
 end

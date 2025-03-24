@@ -70,4 +70,12 @@ defmodule WraftDoc.Notifications.NotificationMessages do
   def message(:pipeline_build_failed, _) do
     "Some builds failed for the pipeline. Please check the logs for more information."
   end
+
+  def message(:document_reminder, %{
+        message: message,
+        document_title: document_title,
+        document_id: document_id
+      }) do
+    "Reminder: #{message} for document with title: #{document_title} (Document ID: #{document_id})"
+  end
 end
