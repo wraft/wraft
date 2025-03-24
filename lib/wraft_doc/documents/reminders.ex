@@ -164,7 +164,10 @@ defmodule WraftDoc.Documents.Reminders do
   end
 
   defp send_in_app_notification(
-         %Reminder{message: message, content: %Instance{id: document_id, serialized: serialized}} =
+         %Reminder{
+           message: message,
+           content: %Instance{instance_id: instance_id, serialized: serialized}
+         } =
            reminder
        ) do
     reminder
@@ -173,7 +176,7 @@ defmodule WraftDoc.Documents.Reminders do
     |> Notifications.create_notification(%{
       type: :document_reminder,
       message: message,
-      document_id: document_id,
+      instance_id: instance_id,
       document_title: serialized["title"]
     })
 

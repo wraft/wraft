@@ -74,8 +74,8 @@ defmodule WraftDoc.Notifications.NotificationMessages do
   def message(:document_reminder, %{
         message: message,
         document_title: document_title,
-        document_id: document_id
+        instance_id: instance_id
       }) do
-    "Reminder: #{message} for document with title: #{document_title} (Document ID: #{document_id})"
+    "Reminder: #{message} for document with title: #{document_title} (Document ID: #{instance_id})"
   end
 end
