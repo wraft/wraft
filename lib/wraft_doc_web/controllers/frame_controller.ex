@@ -2,13 +2,6 @@ defmodule WraftDocWeb.Api.V1.FrameController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  plug WraftDocWeb.Plug.Authorized,
-    create: "frame:manage",
-    index: "frame:show",
-    show: "frame:show",
-    update: "frame:manage",
-    delete: "frame:delete"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Assets
@@ -275,4 +268,30 @@ defmodule WraftDocWeb.Api.V1.FrameController do
       render(conn, "create.json", frame: frame)
     end
   end
+
+  @doc """
+  Preview frame files and fields
+  """
+  swagger_path :preview_frame do
+    post("/frames/{id}")
+    summary("Preview frame files and fields")
+    description("API to preview frame files and fields")
+
+    parameters do
+      id(:path, :string, "frame id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Frame))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  # TODO : Preview frame files and fields
+  # def preview_frame(conn, params) do
+  #   current_user = conn.assigns[:current_user]
+
+  #   with %Frame{} = frame <- Frames.preview_frame(params) do
+  #     render(conn, "preview.json", frame: frame)
+  #   end
+  # end
 end

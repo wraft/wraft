@@ -10,12 +10,15 @@ defmodule WraftDoc.Frames do
   alias WraftDoc.Account.User
   alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
+  alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Documents
   alias WraftDoc.Fields
   alias WraftDoc.Fields.FieldType
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Frames.FrameAsset
   alias WraftDoc.Frames.FrameField
+  alias WraftDoc.Frames.FrameMapping
+  alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
   alias WraftDoc.Utils.FileHelper
 
@@ -27,7 +30,7 @@ defmodule WraftDoc.Frames do
     Frame
     |> where([frame], frame.organisation_id == ^organisation_id)
     |> order_by([frame], desc: frame.inserted_at)
-    |> preload([:assets, fields: [:field_type]])
+    |> preload([:assets, :frame_mappings, fields: [:field_type]])
     |> Repo.paginate(params)
   end
 
@@ -40,7 +43,7 @@ defmodule WraftDoc.Frames do
   def get_frame(<<_::288>> = id, %User{current_org_id: organisation_id}) do
     Frame
     |> Repo.get_by(id: id, organisation_id: organisation_id)
-    |> Repo.preload([:assets, fields: [:field_type]])
+    |> Repo.preload([:assets, :frame_mappings, fields: [:field_type]])
   end
 
   def get_frame(_, _), do: nil
@@ -48,7 +51,7 @@ defmodule WraftDoc.Frames do
   def get_frame(<<_::288>> = id) do
     Frame
     |> Repo.get_by(id: id)
-    |> Repo.preload([:assets, fields: [:field_type]])
+    |> Repo.preload([:assets, :frame_mappings, fields: [:field_type]])
   end
 
   def get_frame(_), do: nil
@@ -93,7 +96,7 @@ defmodule WraftDoc.Frames do
     |> Repo.transaction()
     |> case do
       {:ok, %{frame: frame}} ->
-        {:ok, Repo.preload(frame, [:assets, fields: [:field_type]])}
+        {:ok, Repo.preload(frame, [:assets, :frame_mappings, fields: [:field_type]])}
 
       {:error, _, changeset, _} ->
         {:error, changeset}
@@ -330,5 +333,217 @@ defmodule WraftDoc.Frames do
       Repo.delete(frame_asset)
       Repo.delete(frame_asset.asset)
     end)
+  end
+
+  @doc """
+    Create frame mapping
+  """
+  @spec create_frame_mapping(map()) :: {:ok, FrameMapping.t()} | {:error, Ecto.Changeset.t()}
+  def create_frame_mapping(params) do
+    %FrameMapping{}
+    |> FrameMapping.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, frame_mapping} ->
+        {:ok, frame_mapping}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  @doc """
+  Get frame mapping
+  """
+  @spec get_frame_mapping(User.t(), map()) :: FrameMapping.t() | nil
+  def get_frame_mapping(
+        %User{current_org_id: org_id},
+        %{"mapping_id" => mapping_id, "frame_id" => frame_id} = _params
+      ) do
+    FrameMapping
+    |> join(:inner, [fp], f in Frame, on: f.id == fp.frame_id and f.organisation_id == ^org_id)
+    |> where([fp], fp.id == ^mapping_id and fp.frame_id == ^frame_id)
+    |> Repo.one()
+  end
+
+  def get_frame_mapping(_, _), do: nil
+
+  @doc """
+    Update frame mapping
+  """
+  @spec update_frame_mapping(FrameMapping.t(), map()) ::
+          {:ok, FrameMapping.t()} | {:error, Ecto.Changeset.t()}
+  def update_frame_mapping(frame_mapping, params) do
+    frame_mapping
+    |> FrameMapping.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, frame_mapping} ->
+        {:ok, frame_mapping}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  @doc """
+    Transform data by frame mapping
+  """
+  @spec transform_data_by_mapping(FrameMapping.t(), map()) :: map() | {:error, String.t()}
+  def transform_data_by_mapping(%FrameMapping{mapping: mappings} = _frame_mapping, data) do
+    mappings
+    |> transform_mappings
+    |> transform_data(data)
+  end
+
+  def transform_data_by_mapping(nil, _data), do: {:error, "No mappings found"}
+
+  defp transform_mappings(mappings) do
+    Enum.reduce(mappings, %{}, fn %{
+                                    destination: %{"name" => destination_name},
+                                    source: %{"name" => source_name}
+                                  },
+                                  acc ->
+      Map.put(acc, destination_name, source_name)
+    end)
+  end
+
+  defp transform_data(mappings, data) do
+    data = Jason.decode!(data)
+
+    Enum.reduce(mappings, %{}, fn {frame_field_name, variant_field_name}, acc ->
+      frame_field_name =
+        frame_field_name
+        |> String.downcase()
+        |> String.replace(" ", "_")
+
+      case Map.get(data, String.downcase(variant_field_name)) do
+        nil -> acc
+        value -> Map.put(acc, frame_field_name, value)
+      end
+    end)
+  end
+
+  @spec check_frame_mapping(ContentType.t()) :: :ok | {:error, map() | String.t()}
+  def check_frame_mapping(%ContentType{layout: %Layout{frame: nil}} = _content_type), do: :ok
+
+  def check_frame_mapping(%ContentType{
+        layout: %Layout{frame: %Frame{frame_mappings: nil}}
+      }),
+      do: {:error, "Frame mappings are missing"}
+
+  def check_frame_mapping(%ContentType{
+        fields: content_type_fields,
+        layout: %Layout{
+          frame: %Frame{
+            frame_fields: frame_fields,
+            frame_mappings: %{mapping: mappings}
+          }
+        }
+      })
+      when is_list(mappings) do
+    frame_field_map =
+      frame_fields
+      |> Enum.map(fn %{
+                       field_id: field_id,
+                       field: %{name: name}
+                     } ->
+        {field_id, name}
+      end)
+      |> Map.new()
+
+    content_type_field_map =
+      content_type_fields
+      |> Enum.map(fn %{id: id, name: name} ->
+        {id, name}
+      end)
+      |> Map.new()
+
+    mapping_source_ids =
+      mappings
+      |> Enum.map(fn
+        %{source: %{"id" => source_id}} -> source_id
+        _ -> nil
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    mapping_destination_ids =
+      mappings
+      |> Enum.map(fn
+        %{destination: %{"id" => destination_id}} ->
+          destination_id
+
+        _ ->
+          nil
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    missing_content_type_field_names =
+      mappings
+      |> Enum.reduce([], fn %{
+                              source: %{"id" => source_id, "name" => name}
+                            },
+                            acc ->
+        if source_id in Map.keys(content_type_field_map) do
+          acc
+        else
+          [name | acc]
+        end
+      end)
+      |> Enum.uniq()
+
+    missing_frame_field_names =
+      mappings
+      |> Enum.reduce([], fn %{
+                              destination: %{"id" => destination_id, "name" => name}
+                            },
+                            acc ->
+        if destination_id in Map.keys(frame_field_map) do
+          acc
+        else
+          [name | acc]
+        end
+      end)
+      |> Enum.uniq()
+
+    missing_source_ids = Map.keys(content_type_field_map) -- mapping_source_ids
+    missing_destination_ids = Map.keys(frame_field_map) -- mapping_destination_ids
+
+    missing_source_names = Enum.map(missing_source_ids, &content_type_field_map[&1])
+    missing_destination_names = Enum.map(missing_destination_ids, &frame_field_map[&1])
+
+    build_error_response(
+      missing_source_names,
+      missing_destination_names,
+      missing_content_type_field_names,
+      missing_frame_field_names
+    )
+  end
+
+  defp build_error_response([], [], [], []), do: :ok
+
+  defp build_error_response(
+         missing_source_names,
+         missing_destination_names,
+         missing_content_type_field_names,
+         missing_frame_field_names
+       ) do
+    {:error,
+     Enum.reduce(
+       %{
+         missing_source_fields: missing_source_names,
+         missing_destination_fields: missing_destination_names,
+         missing_content_type_fields: missing_content_type_field_names,
+         missing_frame_fields: missing_frame_field_names
+       },
+       %{},
+       fn {key, value}, acc ->
+         if value != [] do
+           Map.put(acc, key, value)
+         else
+           acc
+         end
+       end
+     )}
   end
 end
