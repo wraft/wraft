@@ -128,18 +128,19 @@ defmodule WraftDocWeb.Mailer.Email do
   @doc """
     Document Reminder
   """
-  def document_reminder(recipient_email, recipient_name, document_title, instance_id) do
+  def document_reminder(recipient_email, recipient_name, document_title, instance_id, document_id) do
     body = %{
       document_title: document_title,
       instance_id: instance_id,
       recipient_name: recipient_name,
-      recipient_email: recipient_email
+      recipient_email: recipient_email,
+      document_url: build_document_instance_url(document_id)
     }
 
     new()
     |> to(recipient_email)
     |> from({"Wraft", sender_email()})
-    |> subject("Wraft - Document Reminder")
+    |> subject("Wraft - Document Reminder: Action Required")
     |> html_body(MJML.DocumentReminder.render(body))
   end
 
@@ -217,6 +218,10 @@ defmodule WraftDocWeb.Mailer.Email do
 
   defp build_document_instance_url(token, document_id) do
     URI.encode("#{frontend_url()}/documents/#{document_id}?type=invite&token=#{token}")
+  end
+
+  defp build_document_instance_url(document_id) do
+    URI.encode("#{frontend_url()}/documents/#{document_id}")
   end
 
   defp build_join_url(org_name, email, token) do

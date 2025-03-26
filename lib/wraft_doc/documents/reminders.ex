@@ -262,7 +262,9 @@ defmodule WraftDoc.Documents.Reminders do
     do: Logger.warning("Unknown notification type", type: type)
 
   defp send_email_notification(
-         %Reminder{content: %Instance{instance_id: instance_id, serialized: serialized}} =
+         %Reminder{
+           content: %Instance{instance_id: instance_id, serialized: serialized, id: document_id}
+         } =
            reminder
        ) do
     reminder
@@ -272,7 +274,8 @@ defmodule WraftDoc.Documents.Reminders do
         user_name: recipient.name,
         email: recipient.email,
         instance_id: instance_id,
-        document_title: serialized["title"]
+        document_title: serialized["title"],
+        document_id: document_id
       }
       |> EmailWorker.new(tags: ["document_reminder"])
       |> Oban.insert()

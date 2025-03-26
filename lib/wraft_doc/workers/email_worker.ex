@@ -163,14 +163,15 @@ defmodule WraftDoc.Workers.EmailWorker do
           "user_name" => name,
           "email" => email,
           "document_title" => document_title,
-          "instance_id" => instance_id
+          "instance_id" => instance_id,
+          "document_id" => document_id
         },
         tags: ["document_reminder"]
       }) do
     Logger.info("Document reminder mailer job started.")
 
     email
-    |> Email.document_reminder(name, document_title, instance_id)
+    |> Email.document_reminder(name, document_title, instance_id, document_id)
     |> Mailer.deliver()
 
     Logger.info("Document reminder mailer job end.")
