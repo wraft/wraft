@@ -99,13 +99,24 @@ defmodule WraftDocWeb.Api.V1.ReminderController do
   Get all reminders for a document
   """
   swagger_path :index do
-    get("/contents/{content_id}/reminders")
-    summary("List all reminders for a document")
-    description("Returns all reminders associated with the specified document")
+    get("/reminders")
+    summary("List all reminders")
+    description("Returns all reminders")
     operation_id("list_document_reminders")
 
     parameters do
-      content_id(:path, :string, "Document ID", required: true)
+      instance_id(:query, :string, "Instance ID")
+      status(:query, :string, "Reminder status, eg: pending, sent")
+      upcoming(:query, :boolean, "Upcoming reminders")
+      start_date(:query, :string, "Start date for upcoming reminders")
+      end_date(:query, :string, "End date for upcoming reminders")
+      page(:query, :string, "Page number")
+
+      sort(
+        :query,
+        :string,
+        "sort keys => inserted_at, inserted_at_desc, reminder_date, reminder_date_desc"
+      )
     end
 
     response(200, "OK", Schema.array(:Reminder))
@@ -114,12 +125,21 @@ defmodule WraftDocWeb.Api.V1.ReminderController do
   end
 
   @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index(conn, %{"content_id" => document_id}) do
+  def index(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Instance{} = instance <- Documents.get_instance(document_id, current_user),
-         reminders <- Reminders.list_reminders(instance) do
-      render(conn, "index.json", reminders: reminders)
+    with %{
+           entries: reminders,
+           page_number: page_number,
+           total_pages: total_pages,
+           total_entries: total_entries
+         } <- Reminders.reminders_index(current_user, params) do
+      render(conn, "index.json",
+        reminders: reminders,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      )
     end
   end
 

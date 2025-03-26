@@ -9,8 +9,19 @@ defmodule WraftDocWeb.Api.V1.ReminderView do
   @doc """
   Renders a list of reminders
   """
-  def render("index.json", %{reminders: reminders}) do
-    render_many(reminders, __MODULE__, "reminder.json", as: :reminder)
+
+  def render("index.json", %{
+        reminders: reminders,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      reminders: render_many(reminders, __MODULE__, "create.json", as: :reminder),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
   end
 
   @doc """

@@ -6,7 +6,7 @@ defmodule WraftDoc.Documents.Reminder do
   use WraftDoc.Schema
   alias __MODULE__
 
-  @status ~w(pending sent cancelled)a
+  @status ~w(pending sent)a
   @notification_types ~w(email in_app both)a
   @fields ~w(reminder_date status notification_type message recipients manual_date sent_at)a
 
@@ -48,9 +48,7 @@ defmodule WraftDoc.Documents.Reminder do
          %Ecto.Changeset{valid?: true, changes: %{reminder_date: reminder_date}} = changeset,
          reminder
        ) do
-    today = Date.utc_today()
-
-    with :ok <- check_future_date(reminder_date, today),
+    with :ok <- check_future_date(reminder_date, Date.utc_today()),
          :ok <- check_before_expiry_date(reminder_date, reminder) do
       changeset
     else

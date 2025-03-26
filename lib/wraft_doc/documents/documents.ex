@@ -46,7 +46,7 @@ defmodule WraftDoc.Documents do
     iex> engines_list(%{})
     list of available engines
   """
-  @spec engines_list(map) :: map
+  @spec engines_list(map()) :: map()
   def engines_list(params) do
     Repo.paginate(Engine, params)
   end
@@ -157,7 +157,7 @@ defmodule WraftDoc.Documents do
   @doc """
   Create a new instance.
   """
-  @spec create_instance(User.t(), ContentType.t(), map) ::
+  @spec create_instance(User.t(), ContentType.t(), map()) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
   def create_instance(%User{} = current_user, %ContentType{type: type} = content_type, params) do
@@ -496,7 +496,7 @@ defmodule WraftDoc.Documents do
   @doc """
   List all instances under an organisation.
   """
-  @spec instance_index_of_an_organisation(User.t(), map) :: map
+  @spec instance_index_of_an_organisation(User.t(), map()) :: map()
   def instance_index_of_an_organisation(
         %{current_org_id: org_id, role_names: role_names} = current_user,
         params
@@ -539,7 +539,7 @@ defmodule WraftDoc.Documents do
   @doc """
   List all instances under a content types.
   """
-  @spec instance_index(binary, map) :: map
+  @spec instance_index(binary(), map()) :: map()
   def instance_index(<<_::288>> = c_type_id, params) do
     Instance
     |> join(:inner, [i], ct in ContentType, on: ct.id == ^c_type_id, as: :content_type)
@@ -608,7 +608,7 @@ defmodule WraftDoc.Documents do
   Search and list all by key
   """
 
-  @spec instance_index(map(), map()) :: map
+  @spec instance_index(map(), map()) :: map()
   def instance_index(%{current_org_id: org_id}, key, params) do
     query =
       from(i in Instance,
@@ -648,7 +648,7 @@ defmodule WraftDoc.Documents do
   Get an instance from its UUID.
   """
   # TODO - improve tests
-  @spec get_instance(binary, User.t()) :: Instance.t() | nil
+  @spec get_instance(binary(), User.t()) :: Instance.t() | nil
   def get_instance(<<_::288>> = document_id, %{current_org_id: nil}) do
     Repo.get(Instance, document_id)
   end
@@ -674,7 +674,7 @@ defmodule WraftDoc.Documents do
   Show an instance.
   """
   # TODO - improve tests
-  @spec show_instance(binary, User.t()) ::
+  @spec show_instance(binary(), User.t()) ::
           %Instance{creator: User.t(), content_type: ContentType.t(), state: State.t()} | nil
   def show_instance(instance_id, user) do
     # Preload the build versions of the instance
@@ -749,7 +749,7 @@ defmodule WraftDoc.Documents do
   * `params` - Map contains attributes
   """
   # TODO - improve tests
-  @spec update_instance(Instance.t(), map) ::
+  @spec update_instance(Instance.t(), map()) ::
           %Instance{content_type: ContentType.t(), state: State.t(), creator: Creator.t()}
           | {:error, Ecto.Changeset.t()}
   def update_instance(%Instance{editable: true} = old_instance, params) do

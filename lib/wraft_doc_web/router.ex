@@ -305,8 +305,11 @@ defmodule WraftDocWeb.Router do
 
       # Document reminders
       scope "/contents/:content_id" do
-        resources("/reminders", ReminderController)
+        resources("/reminders", ReminderController, except: [:index])
       end
+
+      # List all reminders
+      get("/reminders", ReminderController, :index)
 
       # Approve a document
       put("/contents/:id/approve", InstanceController, :approve)

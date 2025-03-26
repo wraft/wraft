@@ -9,6 +9,7 @@ defmodule WraftDoc.Documents.Reminders do
 
   alias WraftDoc.Account
   alias WraftDoc.Account.User
+  alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Reminder
   alias WraftDoc.Notifications
@@ -18,13 +19,63 @@ defmodule WraftDoc.Documents.Reminders do
   @doc """
   List all reminders for a contract
   """
-  @spec list_reminders(Instance.t()) :: [Reminder.t()] | []
-  def list_reminders(%Instance{id: content_id}) do
+  @spec reminders_index(User.t(), map()) :: map()
+  def reminders_index(%User{current_org_id: org_id}, params) do
     Reminder
-    |> where([r], r.content_id == ^content_id)
-    |> order_by([r], asc: r.reminder_date)
-    |> Repo.all()
+    |> join(:inner, [reminder], instance in Instance, on: reminder.content_id == instance.id)
+    |> join(:inner, [reminder, instance], content_type in ContentType,
+      on: instance.content_type_id == content_type.id and content_type.organisation_id == ^org_id
+    )
+    |> where(^reminder_filter_by_instance_id(params))
+    |> where(^reminder_filter_upcoming(params))
+    |> where(^reminder_filter_between(params))
+    |> where(^reminder_filter_by_status(params))
+    |> order_by(^reminder_index_sort(params))
+    |> preload([reminder], [:content])
+    |> Repo.paginate(params)
   end
+
+  defp reminder_filter_upcoming(%{"upcoming" => "true"}),
+    do:
+      dynamic(
+        [reminder],
+        reminder.reminder_date >= ^Date.utc_today() and reminder.status == :pending
+      )
+
+  defp reminder_filter_upcoming(_), do: true
+
+  def reminder_filter_between(%{"start_date" => start_date, "end_date" => end_date}),
+    do:
+      dynamic(
+        [reminder],
+        reminder.reminder_date >= ^start_date and reminder.reminder_date <= ^end_date
+      )
+
+  def reminder_filter_between(_), do: true
+
+  defp reminder_filter_by_instance_id(%{"instance_id" => instance_id}),
+    do: dynamic([reminder, instance], instance.instance_id == ^instance_id)
+
+  defp reminder_filter_by_instance_id(_), do: true
+
+  defp reminder_filter_by_status(%{"status" => status}) when status in ["pending", "sent"],
+    do: dynamic([reminder], reminder.status == ^status)
+
+  defp reminder_filter_by_status(_), do: true
+
+  defp reminder_index_sort(%{"sort" => "reminder_date_desc"}),
+    do: [desc: dynamic([reminder], reminder.reminder_date)]
+
+  defp reminder_index_sort(%{"sort" => "reminder_date"}),
+    do: [asc: dynamic([reminder], reminder.reminder_date)]
+
+  defp reminder_index_sort(%{"sort" => "inserted_at_desc"}),
+    do: [desc: dynamic([reminder], reminder.inserted_at)]
+
+  defp reminder_index_sort(%{"sort" => "inserted_at"}),
+    do: [asc: dynamic([reminder], reminder.inserted_at)]
+
+  defp reminder_index_sort(_), do: [asc: dynamic([reminder], reminder.reminder_date)]
 
   @doc """
   Get a specific reminder
