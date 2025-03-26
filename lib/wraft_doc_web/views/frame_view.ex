@@ -13,7 +13,7 @@ defmodule WraftDocWeb.Api.V1.FrameView do
       description: frame.description,
       type: frame.type,
       thumbnail: generate_thumbnail_url(frame),
-      assets: render_many(frame.assets, AssetView, "asset.json", as: :asset),
+      assets: render_one(frame.assets, AssetView, "asset.json", as: :asset),
       fields: render_many(frame.fields, __MODULE__, "field.json", as: :field),
       mappings:
         render_one(frame.frame_mappings, FrameMappingView, "frame_mapping.json",

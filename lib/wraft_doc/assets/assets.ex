@@ -21,14 +21,30 @@ defmodule WraftDoc.Assets do
   Create an asset.
   """
   # TODO - imprvove tests
-  @spec create_asset(User.t(), map) :: {:ok, Asset.t()}
+  @spec create_asset(User.t(), map()) ::
+          {:ok, Asset.t()} | {:error, Ecto.Changset.t() | String.t()}
   def create_asset(%User{current_org_id: org_id} = current_user, params) do
-    params
-    |> Map.merge(%{"organisation_id" => org_id})
-    |> then(&create_asset_with_params(current_user, &1))
+    with {:ok, params} <- update_asset_params(Map.put(params, "organisation_id", org_id)),
+         {:ok, %Asset{} = asset} <- create_asset_with_params(current_user, params) do
+      {:ok, asset}
+    end
   end
 
   def create_asset(nil, params), do: create_asset_with_params(%User{}, params)
+
+  def update_asset_params(%{"type" => "zip", "file" => file} = params) do
+    file
+    |> FileHelper.get_file_type()
+    |> case do
+      {:ok, metadata} ->
+        {:ok, Map.merge(params, metadata)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def update_asset_params(params), do: {:ok, params}
 
   defp create_asset_with_params(current_user, params) do
     Multi.new()
@@ -182,7 +198,7 @@ defmodule WraftDoc.Assets do
 
   def download_slug_file(%Layout{
         frame: %Frame{
-          assets: [%{id: asset_id, file: file} | _]
+          assets: %{id: asset_id, file: file}
         },
         organisation_id: organisation_id
       }) do
@@ -241,6 +257,20 @@ defmodule WraftDoc.Assets do
       Documents.concat_strings(acc, "letterhead: #{asset_file_path} \n")
     else
       Documents.concat_strings(acc, "#{name}: #{asset_file_path} \n")
+    end
+  end
+
+  # TODO update preview.
+  @doc """
+  Preview asset.
+  """
+  @spec preview_asset(String.t()) :: {:ok, map()} | {:error, String.t()}
+  def preview_asset(file_path) do
+    with {:ok, file_binary} <- FileHelper.read_file_contents(file_path),
+         {:ok, wraft_json} <- FileHelper.get_wraft_json(file_binary) do
+      {:ok, wraft_json}
+    else
+      {:error, reason} -> {:error, reason}
     end
   end
 end

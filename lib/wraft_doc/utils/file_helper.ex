@@ -164,4 +164,18 @@ defmodule WraftDoc.Utils.FileHelper do
   end
 
   def file_size(file_binary), do: file_binary |> byte_size() |> Sizeable.filesize()
+
+  @doc """
+  Get file type.
+  """
+  @spec get_file_type(Plug.Upload.t()) :: {:ok | :error, String.t()}
+  def get_file_type(%Plug.Upload{path: file_path}) do
+    with {:ok, file_binary} <- read_file_contents(file_path),
+         {:ok, %{"metadata" => metadata}} <- get_wraft_json(file_binary) do
+      {:ok, metadata}
+    else
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, "Invalid JSON structure"}
+    end
+  end
 end
