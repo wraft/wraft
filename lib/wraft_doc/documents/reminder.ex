@@ -4,6 +4,7 @@ defmodule WraftDoc.Documents.Reminder do
   """
 
   use WraftDoc.Schema
+  alias __MODULE__
 
   @status ~w(pending sent cancelled)a
   @notification_types ~w(email in_app both)a
@@ -30,7 +31,7 @@ defmodule WraftDoc.Documents.Reminder do
     reminder
     |> cast(attrs, @fields)
     |> validate_required([:reminder_date])
-    |> validate_date()
+    |> validate_date(reminder)
   end
 
   @doc """
@@ -42,16 +43,41 @@ defmodule WraftDoc.Documents.Reminder do
     |> then(&change(reminder, status: :sent, sent_at: &1))
   end
 
-  # Validates that the reminder date is in the future.
-  defp validate_date(%Ecto.Changeset{valid?: true, changes: %{reminder_date: date}} = changeset) do
+  # Validates that the reminder date
+  defp validate_date(
+         %Ecto.Changeset{valid?: true, changes: %{reminder_date: reminder_date}} = changeset,
+         reminder
+       ) do
     today = Date.utc_today()
 
-    if Date.compare(date, today) == :lt do
-      add_error(changeset, :reminder_date, "must be in the future")
-    else
+    with :ok <- check_future_date(reminder_date, today),
+         :ok <- check_before_expiry_date(reminder_date, reminder) do
       changeset
+    else
+      {:error, message} ->
+        add_error(changeset, :reminder_date, message)
     end
   end
 
-  defp validate_date(changeset), do: changeset
+  defp validate_date(changeset, _), do: changeset
+
+  defp check_future_date(reminder_date, today) do
+    if Date.compare(reminder_date, today) == :lt do
+      {:error, "must be in the future"}
+    else
+      :ok
+    end
+  end
+
+  defp check_before_expiry_date(reminder_date, %Reminder{
+         content: %{meta: %{"type" => "contract", "expiry_date" => expiry_date}}
+       }) do
+    if Date.compare(reminder_date, Date.from_iso8601!(expiry_date)) == :gt do
+      {:error, "must be before expiry date #{expiry_date}"}
+    else
+      :ok
+    end
+  end
+
+  defp check_before_expiry_date(_, _), do: :ok
 end
