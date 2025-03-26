@@ -161,10 +161,7 @@ defmodule WraftDoc.Mixfile do
       {:y_ex, "~> 0.6.5"},
 
       # markdown
-      {:mdex, "~> 0.3.3"},
-
-      # redix
-      {:redix, "~> 1.5.2"}
+      {:mdex, "~> 0.3.3"}
     ]
   end
 

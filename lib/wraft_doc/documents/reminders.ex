@@ -115,8 +115,6 @@ defmodule WraftDoc.Documents.Reminders do
     - 1 week before expiry
     - 3 days before expiry
     - 1 day before expiry
-
-  Any reminder dates that fall in the past are filtered out automatically.
   """
   @spec calculate_reminders(Date.t(), Integer.t()) :: [Date.t()]
   def calculate_reminders(expiry_date, duration) when duration > 365,
