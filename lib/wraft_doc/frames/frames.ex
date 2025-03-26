@@ -60,13 +60,23 @@ defmodule WraftDoc.Frames do
   Create a frame.
   """
   @spec create_frame(User.t() | nil, map()) :: Frame.t() | {:error, Ecto.Changeset.t()}
-  def create_frame(%User{id: user_id, current_org_id: organisation_id} = current_user, params) do
-    params
-    |> Map.merge(%{
-      "organisation_id" => organisation_id,
-      "creator_id" => user_id
-    })
-    |> then(&create_frame_with_params(current_user, &1))
+  def create_frame(
+        %User{id: user_id, current_org_id: organisation_id} = current_user,
+        asset,
+        params
+      ) do
+    with {:ok, params} <-
+           params
+           |> Map.merge(%{
+             "organisation_id" => organisation_id,
+             "creator_id" => user_id
+           })
+           |> get_frame_params(asset),
+         {:ok, frame} <- create_frame_with_params(current_user, params) do
+      {:ok, frame}
+    else
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   def create_frame(nil, params), do: create_frame_with_params(nil, params)
@@ -79,15 +89,9 @@ defmodule WraftDoc.Frames do
 
       {:ok, frame}
     end)
-    |> Multi.run(:frame_json, fn _repo, %{frame: frame} ->
-      frame
-      |> Repo.preload([:assets])
-      |> add_frame_wraft_json()
-    end)
     |> Multi.run(:frame_field, fn _repo,
                                   %{
-                                    frame_json:
-                                      %Frame{wraft_json: %{"fields" => frame_fields}} = frame
+                                    frame: %Frame{wraft_json: %{"fields" => frame_fields}} = frame
                                   } ->
       fields = create_field_params_from_wraft_json(frame_fields)
       fetch_and_associate_fields(frame, %{"fields" => fields})
@@ -157,15 +161,22 @@ defmodule WraftDoc.Frames do
           {:ok, Frame.t()} | {:error, Ecto.Changeset.t()}
   def update_frame(
         %Frame{} = frame,
+        asset,
         %User{id: user_id, current_org_id: organisation_id} = current_user,
         params
       ) do
-    params
-    |> Map.merge(%{
-      "organisation_id" => organisation_id,
-      "creator_id" => user_id
-    })
-    |> then(&update_frame_with_params(frame, current_user, &1))
+    with {:ok, params} <-
+           params
+           |> Map.merge(%{
+             "organisation_id" => organisation_id,
+             "creator_id" => user_id
+           })
+           |> get_frame_params(asset),
+         {:ok, frame} <- update_frame_with_params(frame, current_user, params) do
+      {:ok, frame}
+    else
+      {:error, reason} -> {:error, reason}
+    end
   end
 
   def update_frame(%Frame{} = frame, nil, params),
@@ -182,15 +193,9 @@ defmodule WraftDoc.Frames do
       fetch_and_associate_assets(frame, current_user, params)
       {:ok, frame}
     end)
-    |> Multi.run(:frame_json, fn _repo, %{frame_asset: frame} ->
-      frame
-      |> Repo.preload([:assets])
-      |> add_frame_wraft_json()
-    end)
     |> Multi.run(:frame_field, fn _repo,
                                   %{
-                                    frame_json:
-                                      %Frame{wraft_json: %{"fields" => frame_fields}} = frame
+                                    frame: %Frame{wraft_json: %{"fields" => frame_fields}} = frame
                                   } ->
       delete_frame_fields(frame)
 
@@ -229,12 +234,10 @@ defmodule WraftDoc.Frames do
     end
   end
 
-  defp fetch_and_associate_assets(frame, current_user, %{"assets" => assets}) do
-    (assets || "")
-    |> String.split(",")
-    |> Stream.map(fn asset_id -> Assets.get_asset(asset_id, current_user) end)
-    |> Stream.map(fn asset -> associate_frame_and_asset(frame, current_user, asset) end)
-    |> Enum.to_list()
+  defp fetch_and_associate_assets(frame, current_user, %{"assets" => asset_id}) do
+    asset_id
+    |> Assets.get_asset(current_user)
+    |> then(&associate_frame_and_asset(frame, current_user, &1))
   end
 
   defp fetch_and_associate_assets(_frame, _current_user, _params), do: nil
@@ -250,22 +253,24 @@ defmodule WraftDoc.Frames do
 
   defp associate_frame_and_asset(_frame, _current_user, nil), do: nil
 
-  defp add_frame_wraft_json(
-         %Frame{
-           organisation_id: organisation_id,
-           assets: [%{id: asset_id, file: file} | _]
-         } = frame
+  defp get_frame_params(
+         params,
+         %{id: asset_id, organisation_id: organisation_id, file: file}
        ) do
     binary =
       Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file.file_name}")
 
     file_size = FileHelper.file_size(binary)
 
-    {:ok, wraft_json} = FileHelper.get_wraft_json(binary)
+    {:ok, %{"metadata" => %{"frameType" => type} = metadata} = wraft_json} =
+      FileHelper.get_wraft_json(binary)
 
-    frame
-    |> Frame.update_changeset(%{"wraft_json" => wraft_json, "file_size" => file_size})
-    |> Repo.update()
+    params =
+      params
+      |> Map.merge(metadata)
+      |> Map.merge(%{"wraft_json" => wraft_json, "file_size" => file_size, "type" => type})
+
+    {:ok, params}
   rescue
     error -> {:error, error.message}
   end

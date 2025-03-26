@@ -176,8 +176,8 @@ defmodule WraftDocWeb.Api.V1.FrameController do
   def create(conn, %{"assets" => assets} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset{} <- Assets.get_asset(assets, current_user),
-         {:ok, %Frame{} = frame} <- Frames.create_frame(current_user, params) do
+    with %Asset{} = asset <- Assets.get_asset(assets, current_user),
+         {:ok, %Frame{} = frame} <- Frames.create_frame(current_user, asset, params) do
       render(conn, "create.json", frame: frame)
     end
   end
@@ -232,13 +232,13 @@ defmodule WraftDocWeb.Api.V1.FrameController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def update(conn, %{"id" => frame_id, "assets" => assets} = params) do
+  def update(conn, %{"id" => frame_id, "assets" => asset_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset{} <- Assets.get_asset(assets, current_user),
-         %Frame{} = frame <- Frames.get_frame(frame_id, current_user),
+    with %Frame{} = frame <- Frames.get_frame(frame_id, current_user),
+         %Asset{} = asset <- Assets.get_asset(asset_id, current_user),
          {:ok, %Frame{} = frame} <-
-           Frames.update_frame(frame, current_user, params) do
+           Frames.update_frame(frame, asset, current_user, params) do
       render(conn, "create.json", frame: frame)
     end
   end

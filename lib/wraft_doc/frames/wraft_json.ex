@@ -67,7 +67,7 @@ defmodule WraftDoc.Frames.WraftJson do
   defp validate_rootfile_exists(changeset), do: changeset
 
   defp validate_file_extensions(%{valid?: true} = changeset) do
-    %{type: doc_type} = get_field(changeset, :metadata)
+    %{frameType: doc_type} = get_field(changeset, :metadata)
     %{rootFiles: root_files} = get_field(changeset, :packageContents)
     valid_extensions = Map.get(@doc_types, doc_type, [])
 
@@ -93,7 +93,7 @@ defmodule WraftDoc.Frames.WraftJson do
   defp validate_file_extensions(changeset), do: changeset
 
   defp validate_required_files(%{valid?: true} = changeset) do
-    %{type: doc_type} = get_field(changeset, :metadata)
+    %{frameType: doc_type} = get_field(changeset, :metadata)
     %{rootFiles: root_files} = get_field(changeset, :packageContents)
 
     required_files = Map.get(@required_files, doc_type, [])
@@ -188,15 +188,15 @@ defmodule WraftDoc.Frames.WraftJson.Metadata do
   embedded_schema do
     field(:name, :string)
     field(:description, :string)
-    field(:type, :string)
+    field(:frameType, :string)
     field(:lastUpdated, :string)
   end
 
   def changeset(struct, params) do
     struct
-    |> cast(params, [:name, :description, :type, :lastUpdated])
-    |> validate_required([:name, :type])
-    |> validate_inclusion(:type, Map.keys(WraftJson.doc_types()),
+    |> cast(params, [:name, :description, :frameType, :lastUpdated])
+    |> validate_required([:name, :frameType])
+    |> validate_inclusion(:frameType, Map.keys(WraftJson.doc_types()),
       message:
         "must be one of: #{Enum.join(Map.keys(WraftDoc.Frames.WraftJson.doc_types()), ", ")}"
     )

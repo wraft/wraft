@@ -20,8 +20,8 @@ defmodule WraftDoc.Frames.Frame do
     belongs_to(:creator, User)
     belongs_to(:organisation, Organisation)
 
-    has_many(:frame_asset, FrameAsset)
-    has_many(:assets, through: [:frame_asset, :asset])
+    has_one(:frame_asset, FrameAsset)
+    has_one(:assets, through: [:frame_asset, :asset])
 
     has_many(:frame_fields, FrameField)
     has_many(:fields, through: [:frame_fields, :field])
