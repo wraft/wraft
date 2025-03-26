@@ -13,7 +13,6 @@ defmodule WraftDoc.Documents.Reminders do
   alias WraftDoc.Documents.Reminder
   alias WraftDoc.Notifications
   alias WraftDoc.Repo
-  alias WraftDoc.Schedulers.ValkeyServer
   alias WraftDoc.Workers.EmailWorker
 
   @doc """
@@ -65,33 +64,6 @@ defmodule WraftDoc.Documents.Reminders do
   def delete_reminder(reminder), do: Repo.delete(reminder)
 
   @doc """
-    Add reminder to Valkey
-  """
-  def set_reminder_in_valkey(%Instance{id: document_id}, %Reminder{id: reminder_id} = reminder) do
-    # Store the reminder in Valkey with TTL based on the reminder date
-    key = "reminder:#{document_id}:#{reminder_id}"
-    # Calculate TTL in seconds until the reminder date
-    ttl = calculate_ttl_for_reminder(reminder)
-    # Store in Valkey
-    ValkeyServer.set(key, "reminder", ex: ttl)
-  end
-
-  @doc """
-  Delete reminder from Valkey
-  """
-  def delete_reminder_in_valkey(%Instance{id: document_id}, reminder) do
-    key = "reminder:#{document_id}:#{reminder.id}"
-    ValkeyServer.del(key)
-  end
-
-  defp calculate_ttl_for_reminder(%Reminder{reminder_date: reminder_date}) do
-    reminder_date
-    |> Date.diff(Date.utc_today())
-    # Convert days to seconds
-    |> Kernel.*(24 * 60 * 60)
-  end
-
-  @doc """
   Process scheduled reminders that are due
   This function is called by a scheduled job
   """
@@ -118,9 +90,6 @@ defmodule WraftDoc.Documents.Reminders do
       {:ok, updated_reminder} ->
         # Send notifications
         send_reminder_notifications(updated_reminder)
-
-        # Remove from Valkey if it was stored there
-        # remove_from_valkey(updated_reminder.instance_id, updated_reminder.id)
 
         {:ok, updated_reminder}
 

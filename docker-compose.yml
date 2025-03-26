@@ -100,16 +100,6 @@ services:
       --data-dir /data
       --api-key=${TYPESENSE_API_KEY}
 
-  valkey:
-    image: valkey/valkey:latest
-    ports:
-      - "6379:6379"
-    volumes:
-      - valkey-data:/data
-    command: valkey-server /etc/valkey/valkey.conf
-    restart: always
-
 volumes:
   db:
   miniodata:
-  valkey-data:
