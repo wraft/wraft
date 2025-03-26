@@ -29,6 +29,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Documents
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Instance.Version
+  alias WraftDoc.Documents.Reminders
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.Organisation
@@ -991,6 +992,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            state: state
          } = instance <- Documents.show_instance(id, current_user),
          %Instance{} = instance <- Documents.approve_instance(current_user, instance) do
+      Task.start(fn -> Reminders.maybe_create_auto_reminders(current_user, instance) end)
+
       Task.start(fn ->
         Notifications.document_notification(
           current_user,

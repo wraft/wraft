@@ -6,7 +6,7 @@ defmodule WraftDoc.Repo.Migrations.CreateDocumentReminder do
       add(:id, :uuid, primary_key: true)
       add(:reminder_date, :date, null: false)
       add(:status, :string, default: "pending", null: false)
-      add(:message, :text, null: false)
+      add(:message, :text)
       add(:notification_type, :string, default: "both", null: false)
       add(:recipients, {:array, :string}, default: [])
       add(:manual_date, :boolean, default: false)

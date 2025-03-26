@@ -29,7 +29,7 @@ defmodule WraftDoc.Documents.Reminder do
   def changeset(reminder, attrs) do
     reminder
     |> cast(attrs, @fields)
-    |> validate_required([:reminder_date, :message])
+    |> validate_required([:reminder_date])
     |> validate_date()
   end
 
