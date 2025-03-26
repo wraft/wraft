@@ -157,4 +157,22 @@ defmodule WraftDoc.Workers.EmailWorker do
 
     Logger.info("Waiting list join mailer job end.")
   end
+
+  def perform(%Job{
+        args: %{
+          "user_name" => name,
+          "email" => email,
+          "document_title" => document_title,
+          "instance_id" => instance_id
+        },
+        tags: ["document_reminder"]
+      }) do
+    Logger.info("Document reminder mailer job started.")
+
+    email
+    |> Email.document_reminder(name, document_title, instance_id)
+    |> Mailer.deliver()
+
+    Logger.info("Document reminder mailer job end.")
+  end
 end

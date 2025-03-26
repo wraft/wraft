@@ -114,16 +114,20 @@ defmodule WraftDoc.Documents.Reminders do
   defp send_reminder_notifications(%{notification_type: type} = _reminder),
     do: Logger.warning("Unknown notification type", type: type)
 
-  defp send_email_notification(reminder) do
+  defp send_email_notification(
+         %Reminder{content: %Instance{instance_id: instance_id, serialized: serialized}} =
+           reminder
+       ) do
     reminder
     |> get_recipients()
     |> Enum.each(fn recipient ->
       %{
         user_name: recipient.name,
-        notification_message: reminder.message,
-        email: recipient.email
+        email: recipient.email,
+        instance_id: instance_id,
+        document_title: serialized["title"]
       }
-      |> EmailWorker.new()
+      |> EmailWorker.new(tags: ["document_reminder"])
       |> Oban.insert()
     end)
 
@@ -133,10 +137,7 @@ defmodule WraftDoc.Documents.Reminders do
   end
 
   defp send_in_app_notification(
-         %Reminder{
-           message: message,
-           content: %Instance{instance_id: instance_id, serialized: serialized}
-         } =
+         %Reminder{content: %Instance{instance_id: instance_id, serialized: serialized}} =
            reminder
        ) do
     reminder
@@ -144,7 +145,6 @@ defmodule WraftDoc.Documents.Reminders do
     |> Enum.map(& &1.id)
     |> Notifications.create_notification(%{
       type: :document_reminder,
-      message: message,
       instance_id: instance_id,
       document_title: serialized["title"]
     })
@@ -160,11 +160,4 @@ defmodule WraftDoc.Documents.Reminders do
     |> Enum.map(&Account.get_user/1)
     |> Enum.reject(&is_nil/1)
   end
-
-  # defp get_recipients(%{instance: %{user_id: user_id}, instance_id: instance_id}) do
-  #   [user_id | Documents.get_collaborator_ids(instance_id)]
-  #   |> Enum.uniq()
-  #   |> Enum.map(&Account.get_user/1)
-  #   |> Enum.reject(&is_nil/1)
-  # end
 end

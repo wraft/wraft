@@ -126,6 +126,24 @@ defmodule WraftDocWeb.Mailer.Email do
   end
 
   @doc """
+    Document Reminder
+  """
+  def document_reminder(recipient_email, recipient_name, document_title, instance_id) do
+    body = %{
+      document_title: document_title,
+      instance_id: instance_id,
+      recipient_name: recipient_name,
+      recipient_email: recipient_email
+    }
+
+    new()
+    |> to(recipient_email)
+    |> from({"Wraft", sender_email()})
+    |> subject("Wraft - Document Reminder")
+    |> html_body(MJML.DocumentReminder.render(body))
+  end
+
+  @doc """
     Document Instance Mail
   """
   def document_instance_share(email, token, instance_id, document_id) do

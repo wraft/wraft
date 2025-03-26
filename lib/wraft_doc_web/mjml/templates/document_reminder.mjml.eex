@@ -1,0 +1,32 @@
+<mjml>
+  <mj-head>
+    <mj-title>Document Reminder</mj-title>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#ffffff" padding="20px">
+      <mj-column>
+        <mj-text font-size="24px" color="#333333">
+          Reminder: <%= @document_title %> – Action Required
+        </mj-text>
+
+        <mj-text font-size="16px" color="#333333" line-height="1.5">
+          Dear <%= @recipient_name %>,
+        </mj-text>
+
+        <mj-text font-size="16px" color="#333333" line-height="1.5">
+          Your document "<%= @document_title %>" (ID: <%= @instance_id %>) is approaching its expiry. Please take the necessary action before the deadline.
+        </mj-text>
+
+        <mj-divider border-color="#e0e0e0" padding="20px 0" />
+
+        <mj-text font-size="16px" color="#333333" line-height="1.5">
+          Best regards,<br/>
+          <%= @sender_name %><br/>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

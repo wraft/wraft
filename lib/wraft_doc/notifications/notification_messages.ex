@@ -72,10 +72,9 @@ defmodule WraftDoc.Notifications.NotificationMessages do
   end
 
   def message(:document_reminder, %{
-        message: message,
         document_title: document_title,
         instance_id: instance_id
       }) do
-    "Reminder: #{message} for document with title: #{document_title} (Document ID: #{instance_id})"
+    "Your document #{document_title} (ID: #{instance_id}) is approaching its expiry. Please take the necessary action before the deadline."
   end
 end
