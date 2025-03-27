@@ -797,7 +797,7 @@ defmodule WraftDoc.Documents do
         |> Repo.insert()
 
       false ->
-        nil
+        {:ok, nil}
     end
   end
 

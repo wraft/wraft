@@ -28,7 +28,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Documents
   alias WraftDoc.Documents.Instance
-  alias WraftDoc.Documents.Instance.Version
   alias WraftDoc.Documents.Reminders
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
@@ -687,7 +686,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     with true <- Documents.has_access?(current_user, document_id, :editor),
          %Instance{} = instance <- Documents.get_instance(document_id, current_user),
          %Instance{} = instance <- Documents.update_instance(instance, params),
-         {:ok, %Version{}} <- Documents.create_version(current_user, instance, params, :save) do
+         {:ok, _version} <- Documents.create_version(current_user, instance, params, :save) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -697,7 +696,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Documents.get_instance(id, current_user),
          %Instance{} = instance <- Documents.update_instance(instance, params),
-         {:ok, %Version{}} <- Documents.create_version(current_user, instance, params, :save) do
+         {:ok, _version} <- Documents.create_version(current_user, instance, params, :save) do
       Typesense.update_document(instance)
       render(conn, "show.json", instance: instance)
     end
