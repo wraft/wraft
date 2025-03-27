@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
   Imports a global file.
   """
   @spec import_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def import_global_file(conn, %{"assets" => asset_id} = params) do
+  def import_global_file(conn, %{"asset" => asset_id} = params) do
     current_user = conn.assigns.current_user
 
     with %Asset{} = asset <- Assets.get_asset(asset_id, current_user),

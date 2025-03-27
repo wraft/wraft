@@ -7,6 +7,10 @@ defmodule WraftDoc.GlobalFile do
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
+  alias WraftDoc.TemplateAssets
+  alias WraftDoc.TemplateAssets.TemplateAsset
+  alias WraftDocWeb.Api.V1.FrameView
+  alias WraftDocWeb.Api.V1.TemplateAssetView
 
   @doc """
   Import zip asset by pattern matching asset type.
@@ -15,8 +19,23 @@ defmodule WraftDoc.GlobalFile do
           {:ok, %{view: module(), template: String.t(), assigns: map()}} | {:error, String.t()}
   def import_global_asset(current_user, %{type: "frame"} = asset, params) do
     with {:ok, %Frame{} = frame} <- Frames.create_frame(current_user, asset, params) do
+      {:ok, %{view: FrameView, template: "create.json", assigns: %{frame: frame}}}
+    end
+  end
+
+  def import_global_asset(current_user, %{type: "template_asset"} = asset, params) do
+    with {:ok, params, _} <-
+           TemplateAssets.process_template_asset(params, :file, asset),
+         {:ok, %TemplateAsset{} = template_asset} <-
+           TemplateAssets.create_template_asset(current_user, params) do
       {:ok,
-       %{view: WraftDocWeb.Api.V1.FrameView, template: "create.json", assigns: %{frame: frame}}}
+       %{
+         view: TemplateAssetView,
+         template: "template_asset.json",
+         assigns: %{template_asset: template_asset}
+       }}
+    else
+      {:error, reason} -> {:error, reason}
     end
   end
 

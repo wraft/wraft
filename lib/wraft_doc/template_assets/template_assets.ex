@@ -947,8 +947,9 @@ defmodule WraftDoc.TemplateAssets do
     with {:ok, zip_binary} <- get_zip_binary(source_type, source_value),
          file_entries_in_zip <- template_asset_file_list(zip_binary),
          :ok <- template_zip_validator(zip_binary, file_entries_in_zip),
-         {:ok, wraft_json} <- FileHelper.get_wraft_json(zip_binary) do
+         {:ok, %{"metadata" => metadata} = wraft_json} <- FileHelper.get_wraft_json(zip_binary) do
       params
+      |> Map.merge(metadata)
       |> Map.merge(%{
         "wraft_json" => wraft_json,
         "file_entries" => file_entries_in_zip
