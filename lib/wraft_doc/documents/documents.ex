@@ -509,6 +509,8 @@ defmodule WraftDoc.Documents do
     |> superadmin_check("superadmin" in role_names, current_user)
     |> where(^instance_index_filter_by_instance_id(params))
     |> where(^instance_index_filter_by_content_type_name(params))
+    |> where(^instance_index_filter_by_document_type(params))
+    |> where(^instance_index_filter_by_status(params))
     |> where(^instance_index_filter_by_instance_title(params))
     |> instance_index_filter_by_state(params, org_id)
     |> where(^instance_index_filter_by_creator(params))
@@ -591,11 +593,32 @@ defmodule WraftDoc.Documents do
 
   defp instance_index_filter_by_content_type_name(_), do: true
 
+  defp instance_index_filter_by_document_type(%{"type" => document_type}),
+    do: dynamic([i], i.meta["type"] == ^document_type)
+
+  defp instance_index_filter_by_document_type(_), do: true
+
+  defp instance_index_filter_by_status(%{"status" => "upcoming", "type" => "contract"}) do
+    dynamic([i], i.meta["expiry_date"] > ^Date.utc_today())
+  end
+
+  defp instance_index_filter_by_status(%{"status" => "expired", "type" => "contract"}) do
+    dynamic([i], i.meta["expiry_date"] <= ^Date.utc_today())
+  end
+
+  defp instance_index_filter_by_status(_), do: true
+
   defp instance_index_sort(%{"sort" => "instance_id_desc"} = _params),
     do: [desc: dynamic([i], i.instance_id)]
 
   defp instance_index_sort(%{"sort" => "instance_id"} = _params),
     do: [asc: dynamic([i], i.instance_id)]
+
+  defp instance_index_sort(%{"sort" => "expiry_date", "type" => "contract"}),
+    do: [asc: dynamic([i], i.meta["expiry_date"])]
+
+  defp instance_index_sort(%{"sort" => "expiry_date_desc", "type" => "contract"}),
+    do: [desc: dynamic([i], i.meta["expiry_date"])]
 
   defp instance_index_sort(%{"sort" => "inserted_at"}), do: [asc: dynamic([i], i.inserted_at)]
 

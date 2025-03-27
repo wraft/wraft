@@ -590,11 +590,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       creator_id(:query, :string, "Creator ID")
       state(:query, :string, "State, eg: published, draft, review")
       document_instance_title(:query, :string, "Document instance title")
+      status(:query, :string, "Status, eg: expired, upcoming")
+      type(:query, :string, "Type, eg: contract, document")
 
       sort(
         :query,
         :string,
-        "sort keys => instance_id, instance_id_desc, inserted_at, inserted_at_desc"
+        "sort keys => instance_id, instance_id_desc, inserted_at, inserted_at_desc, expiry_date, expiry_date_desc"
       )
     end
 
