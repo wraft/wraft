@@ -449,15 +449,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           end
 
           example(%{
-            "meta" => %{
-              "type" => "contract",
-              "status" => "draft",
-              "expiry_date" => "2020-02-21",
-              "contract_value" => 100_000.0,
-              "counter_parties" => ["Vos Services"],
-              "clauses" => [],
-              "reminder" => []
-            }
+            "type" => "contract",
+            "status" => "draft",
+            "expiry_date" => "2020-02-21",
+            "contract_value" => 100_000.0,
+            "counter_parties" => ["Vos Services"],
+            "clauses" => [],
+            "reminder" => []
           })
         end
     }
@@ -726,8 +724,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Documents.get_instance(id, current_user),
-         {:ok, %Instance{} = instance} <- Documents.update_meta(instance, params) do
-      render(conn, "instance.json", instance: instance)
+         {:ok, %Instance{meta: meta}} <- Documents.update_meta(instance, params) do
+      render(conn, "meta.json", meta: meta)
     end
   end
 
