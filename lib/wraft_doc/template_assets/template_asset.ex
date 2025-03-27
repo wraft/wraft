@@ -6,6 +6,9 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
   use Waffle.Ecto.Schema
 
   alias __MODULE__
+  alias WraftDoc.Account.User
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.TemplateAssets.TempAsset
 
   schema "template_asset" do
     field(:name, :string)
@@ -17,8 +20,11 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
     field(:file_entries, {:array, :string})
     field(:is_imported, :boolean, default: true)
 
-    belongs_to(:creator, WraftDoc.Account.User)
-    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+    has_one(:temp_asset, TempAsset)
+    has_one(:asset, through: [:temp_asset, :asset])
+
+    belongs_to(:creator, User)
+    belongs_to(:organisation, Organisation)
 
     timestamps()
   end
@@ -40,14 +46,13 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
     template_asset
     |> cast(attrs, [:name, :description, :wraft_json, :file_entries, :zip_file_size])
     |> cast_attachments(attrs, [:zip_file, :thumbnail])
-    |> validate_required([:name, :zip_file])
+    |> validate_required([:name])
     |> add_zip_file_size(attrs)
   end
 
   def file_changeset(template_asset, attrs \\ %{}) do
     template_asset
     |> cast_attachments(attrs, [:zip_file, :thumbnail])
-    |> validate_required([:zip_file])
     |> add_zip_file_size(attrs)
   end
 

@@ -255,10 +255,10 @@ defmodule WraftDoc.Frames do
 
   defp get_frame_params(
          params,
-         %{id: asset_id, organisation_id: organisation_id, file: file}
+         %{id: asset_id, organisation_id: organisation_id, file: %{file_name: file_name}}
        ) do
     binary =
-      Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file.file_name}")
+      Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}")
 
     file_size = FileHelper.file_size(binary)
 
