@@ -599,11 +599,11 @@ defmodule WraftDoc.Documents do
   defp instance_index_filter_by_document_type(_), do: true
 
   defp instance_index_filter_by_status(%{"status" => "upcoming", "type" => "contract"}) do
-    dynamic([i], i.meta["expiry_date"] > ^Date.utc_today())
+    dynamic([i], i.meta["expiry_date"] > ^Date.utc_today() and i.approval_status)
   end
 
   defp instance_index_filter_by_status(%{"status" => "expired", "type" => "contract"}) do
-    dynamic([i], i.meta["expiry_date"] <= ^Date.utc_today())
+    dynamic([i], i.meta["expiry_date"] <= ^Date.utc_today() and i.approval_status)
   end
 
   defp instance_index_filter_by_status(_), do: true
