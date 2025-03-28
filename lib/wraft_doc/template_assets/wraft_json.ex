@@ -136,6 +136,7 @@ defmodule WraftDoc.TemplateAssets.Layout do
   import Ecto.Changeset
 
   @required_fields [:name, :slug, :slug_file, :description, :engine]
+  @valid_engines ["pandoc/latex", "pandoc/typst"]
 
   embedded_schema do
     field(:name, :string)
@@ -149,6 +150,9 @@ defmodule WraftDoc.TemplateAssets.Layout do
     struct
     |> cast(params, [:name, :slug, :slug_file, :description, :engine])
     |> validate_required(@required_fields)
+    |> validate_inclusion(:engine, @valid_engines,
+      message: "must be one of: pandoc/latex, pandoc/typst"
+    )
   end
 end
 

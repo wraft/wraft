@@ -18,6 +18,7 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.DataTemplates
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.DataTemplates.DataTemplate
+  alias WraftDoc.Documents
   alias WraftDoc.Documents.Engine
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
@@ -73,22 +74,24 @@ defmodule WraftDoc.TemplateAssets do
 
   def create_template_asset(_, _), do: {:error, :fake}
 
-  defp fetch_and_associate_assets(template_asset, current_user, %{"asset" => asset_id}) do
+  defp fetch_and_associate_assets(template_asset, current_user, %{"asset_id" => asset_id}) do
     asset_id
     |> Assets.get_asset(current_user)
-    |> then(&associate_frame_and_asset(template_asset, current_user, &1))
+    |> then(&associate_template_and_asset(template_asset, current_user, &1))
   end
 
-  defp fetch_and_associate_assets(_frame, _current_user, _params), do: nil
+  defp fetch_and_associate_assets(_template_asset, _current_user, _params), do: nil
 
-  defp associate_frame_and_asset(%TemplateAsset{} = template_asset, current_user, %{id: asset_id}) do
+  defp associate_template_and_asset(%TemplateAsset{} = template_asset, current_user, %{
+         id: asset_id
+       }) do
     template_asset
     |> build_assoc(:temp_asset, asset_id: asset_id, creator: current_user)
     |> TempAsset.changeset()
     |> Repo.insert()
   end
 
-  defp associate_frame_and_asset(_frame, _current_user, nil), do: nil
+  defp associate_template_and_asset(_template_asset, _current_user, nil), do: nil
 
   @doc """
   Index of all template assets in an organisation.
@@ -163,7 +166,7 @@ defmodule WraftDoc.TemplateAssets do
               )
             )
 
-            fetch_and_associate_assets(template_asset, current_user, %{"asset" => asset_id})
+            fetch_and_associate_assets(template_asset, current_user, %{"asset_id" => asset_id})
             {:ok, template_asset}
         end
 
@@ -317,7 +320,6 @@ defmodule WraftDoc.TemplateAssets do
     error -> {:error, error.message}
   end
 
-  # TODO move to zip_helper
   defp template_asset_file_list(zip_binary) do
     case FileHelper.get_file_entries(zip_binary) do
       {:ok, entries} ->
@@ -458,11 +460,8 @@ defmodule WraftDoc.TemplateAssets do
          {:ok, %{"metadata" => %{"name" => frame_name}} = _wraft_json} <-
            get_frame_wraft_json(downloaded_file, frame_json_path),
          {:ok, asset} <- create_asset_from_zip(file_path, current_user),
-         {:ok, frame} <- create_or_get_frame(current_user, asset, %{}, frame_name) do
+         {:ok, %Frame{} = frame} <- create_or_get_frame(current_user, asset, %{}, frame_name) do
       {:ok, frame}
-    else
-      {:error, reason} ->
-        {:error, reason}
     end
   end
 
@@ -619,12 +618,9 @@ defmodule WraftDoc.TemplateAssets do
   defp get_content_type_from_id(id), do: {:ok, ContentTypes.get_content_type_from_id(id)}
 
   defp get_engine(engine) do
-    # TODO multiple engines selection
-    [engine1, _engine2] = String.split(engine, "/")
-
-    case Repo.get_by(Engine, name: String.capitalize(engine1)) do
-      nil -> Logger.warning("No engine found with the name #{engine1}")
-      engine -> engine.id
+    case engine do
+      "pandoc/latex" -> Documents.get_engine_by_name("Pandoc")
+      "pandoc/typst" -> Documents.get_engine_by_name("Pandoc + Typst")
     end
   end
 
@@ -738,10 +734,8 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp prepare_layout(layouts, downloaded_file, current_user, entries, frame_id) do
-    # filter engine name
-    engine_id = get_engine(layouts["engine"])
-
-    with asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
+    with %Engine{id: engine_id} <- get_engine(layouts["engine"]),
+         asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
          params <- prepare_layout_attrs(layouts, engine_id, asset_id, frame_id),
          %Engine{} = engine <- Frames.get_engine_by_frame_type(params),
          %Layout{} = layout <- Layouts.create_layout(current_user, engine, params) do
@@ -862,9 +856,6 @@ defmodule WraftDoc.TemplateAssets do
          {:ok, %DataTemplate{} = data_template} <-
            DataTemplates.create_data_template(current_user, content_type, params) do
       {:ok, data_template}
-    else
-      {:error, error} ->
-        {:error, error}
     end
   end
 
@@ -1023,10 +1014,9 @@ defmodule WraftDoc.TemplateAssets do
       path: file_path
     }
 
-    # Create the asset
     case Assets.create_asset(current_user, %{"type" => "template_asset", "file" => file}) do
       {:ok, %Asset{id: asset_id}} ->
-        fetch_and_associate_assets(template_asset, current_user, %{"asset" => asset_id})
+        fetch_and_associate_assets(template_asset, current_user, %{"asset_id" => asset_id})
 
       {:error, reason} ->
         {:error, reason}

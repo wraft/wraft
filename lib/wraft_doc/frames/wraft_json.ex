@@ -197,8 +197,7 @@ defmodule WraftDoc.Frames.WraftJson.Metadata do
     |> cast(params, [:name, :description, :frameType, :lastUpdated])
     |> validate_required([:name, :frameType])
     |> validate_inclusion(:frameType, Map.keys(WraftJson.doc_types()),
-      message:
-        "must be one of: #{Enum.join(Map.keys(WraftDoc.Frames.WraftJson.doc_types()), ", ")}"
+      message: "must be one of: #{Enum.join(Map.keys(WraftJson.doc_types()), ", ")}"
     )
   end
 end
