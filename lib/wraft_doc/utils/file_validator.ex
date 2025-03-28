@@ -17,6 +17,7 @@ defmodule WraftDoc.Utils.FileValidator do
     ".json",
     ".svg"
   ]
+  @plain_text_extensions [".json", ".typ", ".typst", ".tex", ".svg"]
   @max_file_size 5_000_000
   @max_total_size 20_000_000
 
@@ -30,8 +31,9 @@ defmodule WraftDoc.Utils.FileValidator do
     with {:ok, file_info} <- :zip.list_dir(charlisted_path),
          {:ok, file_entries} <- extract_file_info(file_info),
          :ok <- check_for_path_traversal(file_entries),
+         :ok <- check_file_sizes(file_entries),
          :ok <- check_file_extensions(file_entries),
-         :ok <- check_file_sizes(file_entries) do
+         :ok <- check_file_signature(file_path) do
       {:ok, file_entries}
     end
   end
@@ -123,6 +125,51 @@ defmodule WraftDoc.Utils.FileValidator do
       invalid_exts = invalid_files |> Enum.map(& &1.extension) |> Enum.uniq()
       {:error, {:invalid_file_types, invalid_exts}}
     end
+  end
+
+  defp check_file_signature(file_path) do
+    temp_path = Briefly.create!(directory: true)
+
+    with {:ok, files} <- :zip.extract(to_charlist(file_path), [:memory]),
+         [] <- Enum.reduce(files, [], &process_file(&1, &2, temp_path)) do
+    else
+      mismatched_files when is_list(mismatched_files) ->
+        {:error, format_mismatched_files(mismatched_files)}
+
+      {:error, _reason} ->
+        {:error, ""}
+    end
+  end
+
+  defp process_file({path, binary}, acc, temp_path) do
+    path_string = List.to_string(path)
+    ext = path_string |> Path.extname() |> String.downcase()
+
+    if ext in @allowed_extensions and ext not in @plain_text_extensions do
+      file_path = Path.join(temp_path, path_string)
+      File.mkdir_p!(Path.dirname(file_path))
+      File.write!(file_path, binary)
+
+      case FileType.from_path(file_path) do
+        {:ok, {detected_ext, _mime_type}} ->
+          if ".#{detected_ext}" != ext do
+            [{path_string, ext, detected_ext} | acc]
+          else
+            acc
+          end
+
+        {:error, _reason} ->
+          [{path_string, ext, "unknown"} | acc]
+      end
+    else
+      acc
+    end
+  end
+
+  defp format_mismatched_files(mismatched_files) do
+    Enum.map_join(mismatched_files, ", ", fn {path, ext, detected_ext} ->
+      "#{path}: expected #{ext}, detected #{detected_ext}"
+    end)
   end
 
   defp check_file_sizes(file_entries) do
