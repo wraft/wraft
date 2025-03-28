@@ -60,13 +60,15 @@ config :wraft_doc, :phoenix_swagger,
 # Cron jobs Overview https://github.com/sorentwo/oban#periodic-jobs
 config :wraft_doc, Oban,
   repo: WraftDoc.Repo,
-  queues: [default: 10, events: 50, media: 20, mailer: 20],
+  queues: [default: 10, events: 50, media: 20, mailer: 20, scheduled: 10],
   plugins: [
     Oban.Plugins.Pruner,
+    {Oban.Plugins.Lifeline, rescue_after: :timer.minutes(5)},
     {Oban.Plugins.Cron,
      crontab: [
-       {"0 0 * * MON", WraftDoc.Workers.ScheduledWorker,
-        queue: :scheduled, tags: ["unused_assets"]}
+       #  {"0 0 * * MON", WraftDoc.Workers.ScheduledWorker,
+       #   queue: :scheduled, tags: ["unused_assets"]},
+       {"0 0 * * *", WraftDoc.Workers.ReminderWorker, queue: :scheduled, tags: ["reminders"]}
      ]}
   ]
 

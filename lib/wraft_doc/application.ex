@@ -28,7 +28,7 @@ defmodule WraftDoc.Application do
       #   ["content_type_changes", [name: WraftDoc.Notifications.Listener]],
       #   restart: :permanent
       # )
-      WraftDoc.Tasks.RefreshDashboardStats
+      WraftDoc.Schedulers.RefreshDashboardStats
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -674,7 +674,6 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     end
 
     response(200, "Success", Schema.ref(:Organisation))
-    response(422, "Unprocessable Entity", Schema.ref(:ValidationError))
     response(404, "User or Organisation Not Found", Schema.ref(:Error))
     response(401, "Unauthorized", Schema.ref(:Error))
   end

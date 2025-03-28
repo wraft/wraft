@@ -28,7 +28,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Documents
   alias WraftDoc.Documents.Instance
-  alias WraftDoc.Documents.Instance.Version
+  alias WraftDoc.Documents.Reminders
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.Organisation
@@ -449,15 +449,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
           end
 
           example(%{
-            "meta" => %{
-              "type" => "contract",
-              "status" => "draft",
-              "expiry_date" => "2020-02-21",
-              "contract_value" => 100_000.0,
-              "counter_parties" => ["Vos Services"],
-              "clauses" => [],
-              "reminder" => []
-            }
+            "type" => "contract",
+            "status" => "draft",
+            "expiry_date" => "2020-02-21",
+            "contract_value" => 100_000.0,
+            "counter_parties" => ["Vos Services"],
+            "clauses" => [],
+            "reminder" => []
           })
         end
     }
@@ -592,11 +590,13 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       creator_id(:query, :string, "Creator ID")
       state(:query, :string, "State, eg: published, draft, review")
       document_instance_title(:query, :string, "Document instance title")
+      status(:query, :string, "Status, eg: expired, upcoming")
+      type(:query, :string, "Type, eg: contract, document")
 
       sort(
         :query,
         :string,
-        "sort keys => instance_id, instance_id_desc, inserted_at, inserted_at_desc"
+        "sort keys => instance_id, instance_id_desc, inserted_at, inserted_at_desc, expiry_date, expiry_date_desc"
       )
     end
 
@@ -686,7 +686,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     with true <- Documents.has_access?(current_user, document_id, :editor),
          %Instance{} = instance <- Documents.get_instance(document_id, current_user),
          %Instance{} = instance <- Documents.update_instance(instance, params),
-         {:ok, %Version{}} <- Documents.create_version(current_user, instance, params, :save) do
+         {:ok, _version} <- Documents.create_version(current_user, instance, params, :save) do
       render(conn, "show.json", instance: instance)
     end
   end
@@ -696,7 +696,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     with %Instance{} = instance <- Documents.get_instance(id, current_user),
          %Instance{} = instance <- Documents.update_instance(instance, params),
-         {:ok, %Version{}} <- Documents.create_version(current_user, instance, params, :save) do
+         {:ok, _version} <- Documents.create_version(current_user, instance, params, :save) do
       Typesense.update_document(instance)
       render(conn, "show.json", instance: instance)
     end
@@ -726,8 +726,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     current_user = conn.assigns[:current_user]
 
     with %Instance{} = instance <- Documents.get_instance(id, current_user),
-         {:ok, %Instance{} = instance} <- Documents.update_meta(instance, params) do
-      render(conn, "instance.json", instance: instance)
+         {:ok, %Instance{meta: meta}} <- Documents.update_meta(instance, params) do
+      render(conn, "meta.json", meta: meta)
     end
   end
 
@@ -991,6 +991,8 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            state: state
          } = instance <- Documents.show_instance(id, current_user),
          %Instance{} = instance <- Documents.approve_instance(current_user, instance) do
+      Task.start(fn -> Reminders.maybe_create_auto_reminders(current_user, instance) end)
+
       Task.start(fn ->
         Notifications.document_notification(
           current_user,

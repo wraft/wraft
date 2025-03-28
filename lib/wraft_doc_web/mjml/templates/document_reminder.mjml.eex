@@ -1,0 +1,80 @@
+<mjml>
+  <mj-head>
+    <mj-title>Document Reminder - Wraft</mj-title>
+    <mj-font name="Arial" href="https://fonts.googleapis.com/css?family=Arial" />
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" color="#555555" line-height="1.5" />
+      <mj-button background-color="#004A0F" color="white" />
+    </mj-attributes>
+  </mj-head>
+
+  <mj-body background-color="#f4f4f4">
+    <!-- Header Section with Logo -->
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column width="100%">
+        <mj-image src="https://dev.wraft.co/logo.png" alt="Wraft Logo" align="center" width="120px" />
+      </mj-column>
+    </mj-section>
+
+    <!-- Main Content Section -->
+    <mj-section background-color="#ffffff" padding="20px 30px">
+      <mj-column width="100%">
+        <!-- Title -->
+        <mj-text font-size="24px" color="#333333" font-weight="bold">
+          Document Reminder: Action Required
+        </mj-text>
+
+        <!-- Greeting -->
+        <mj-text>
+          Dear <%= String.capitalize(@recipient_name) %>,
+        </mj-text>
+
+        <!-- Main Message -->
+        <mj-text>
+          This is a reminder regarding your document "<strong><%= @document_title %></strong>" (Document ID: <%= @instance_id %>).
+        </mj-text>
+
+        <mj-text>
+          The document is approaching its expiry date. To ensure continued access and compliance, please take the necessary action before the deadline.
+        </mj-text>
+
+        <!-- Action Button -->
+        <mj-button background-color="#004A0F" href="<%= @document_url %>" padding="20px 0">
+          View Document
+        </mj-button>
+
+        <!-- Additional Information -->
+        <mj-text>
+          If you're having trouble accessing the document, you can copy and paste the URL below into your web browser:
+        </mj-text>
+
+        <mj-text font-size="14px" color="#888888" word-break="break-all">
+          <%= @document_url %>
+        </mj-text>
+
+        <!-- Closing -->
+        <mj-text padding-top="20px">
+          If you have any questions or need assistance, please don't hesitate to contact our support team.
+        </mj-text>
+
+        <mj-text>
+          Best regards,<br/>
+          Wraft Team
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer Section -->
+    <mj-section background-color="#f4f4f4" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-text font-size="14px" color="#888888" align="center">
+          © 2024 Wraft. All rights reserved.
+        </mj-text>
+        <mj-text font-size="14px" color="#888888" align="center">
+          This is an automated reminder. Please do not reply to this email.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
