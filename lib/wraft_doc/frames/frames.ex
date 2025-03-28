@@ -268,7 +268,11 @@ defmodule WraftDoc.Frames do
     params =
       params
       |> Map.merge(metadata)
-      |> Map.merge(%{"wraft_json" => wraft_json, "file_size" => file_size, "type" => type})
+      |> Map.merge(%{
+        "wraft_json" => wraft_json,
+        "file_size" => file_size,
+        "type" => type
+      })
 
     {:ok, params}
   rescue
