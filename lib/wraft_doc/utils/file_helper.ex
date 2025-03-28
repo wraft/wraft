@@ -82,7 +82,9 @@ defmodule WraftDoc.Utils.FileHelper do
   """
   @spec read_file_contents(String.t()) :: {:ok, binary()} | {:error, String.t()}
   def read_file_contents(file_path) do
-    case File.read(file_path) do
+    file_path
+    |> File.read()
+    |> case do
       {:ok, binary} ->
         {:ok, binary}
 
@@ -114,9 +116,8 @@ defmodule WraftDoc.Utils.FileHelper do
     |> then(&(&1 ++ ["wraft.json"]))
   end
 
-  defp get_paths_from_section(section) when is_list(section) do
-    Enum.map(section, fn item -> item["path"] end)
-  end
+  defp get_paths_from_section(section) when is_list(section),
+    do: Enum.map(section, fn item -> item["path"] end)
 
   defp get_paths_from_section(_), do: []
 
@@ -164,4 +165,15 @@ defmodule WraftDoc.Utils.FileHelper do
   end
 
   def file_size(file_binary), do: file_binary |> byte_size() |> Sizeable.filesize()
+
+  @doc """
+  Get file type.
+  """
+  @spec get_file_type(Plug.Upload.t()) :: {:ok | :error, String.t()}
+  def get_file_type(%Plug.Upload{path: file_path}) do
+    with {:ok, file_binary} <- read_file_contents(file_path),
+         {:ok, %{"metadata" => metadata}} <- get_wraft_json(file_binary) do
+      {:ok, metadata}
+    end
+  end
 end
