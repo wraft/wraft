@@ -9,6 +9,7 @@ defmodule WraftDoc.TemplateAssets do
   require Logger
 
   alias Ecto.Multi
+  alias WraftDoc.Account.User
   alias WraftDoc.Assets
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
@@ -17,7 +18,6 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.DataTemplates
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.DataTemplates.DataTemplate
-  alias WraftDoc.Documents
   alias WraftDoc.Documents.Engine
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow
@@ -177,13 +177,22 @@ defmodule WraftDoc.TemplateAssets do
   """
   # TODO - Write tests
   @spec delete_template_asset(TemplateAsset.t()) ::
-          {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
+          {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t() | String.t()}
   def delete_template_asset(
-        %TemplateAsset{id: id, organisation_id: organisation_id} = template_asset
+        %TemplateAsset{
+          organisation_id: organisation_id,
+          asset: %Asset{id: asset_id, file: %{file_name: file_name}}
+        } = template_asset
       ) do
-    Minio.delete_file("organisations/#{organisation_id}/template_assets/#{id}")
+    "organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}"
+    |> Minio.delete_file()
+    |> case do
+      {:ok, _} ->
+        Repo.delete(template_asset)
 
-    Repo.delete(template_asset)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -430,16 +439,118 @@ defmodule WraftDoc.TemplateAssets do
   defp add_layout_step(multi, _template_map, _current_user, _downloaded_file, _entries, _opts),
     do: multi
 
-  # TODO: update frame
-  defp add_frame_step(multi, %{"frame" => frame}, current_user, downloaded_file, entries) do
+  defp add_frame_step(
+         multi,
+         %{"frame" => frame_json_path},
+         current_user,
+         downloaded_file,
+         entries
+       ) do
     Multi.run(multi, :frame, fn _repo, _changes ->
-      frame
-      |> update_conflicting_name(Frame, current_user)
-      |> prepare_frame(downloaded_file, current_user, entries)
+      prepare_frame(current_user, downloaded_file, entries, frame_json_path)
     end)
   end
 
   defp add_frame_step(multi, _template_map, _current_user, _downloaded_file, _entries), do: multi
+
+  defp prepare_frame(current_user, downloaded_file, entries, frame_json_path) do
+    with {:ok, file_path} <- extract_frame_files(downloaded_file, entries),
+         {:ok, %{"metadata" => %{"name" => frame_name}} = _wraft_json} <-
+           get_frame_wraft_json(downloaded_file, frame_json_path),
+         {:ok, asset} <- create_asset_from_zip(file_path, current_user),
+         {:ok, frame} <- create_or_get_frame(current_user, asset, %{}, frame_name) do
+      {:ok, frame}
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp get_frame_wraft_json(downloaded_file, frame_json_path) do
+    downloaded_file
+    |> FileHelper.extract_file_content(frame_json_path)
+    |> case do
+      {:ok, wraft_json} ->
+        Jason.decode(wraft_json)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp create_or_get_frame(
+         %User{current_org_id: organisation_id} = current_user,
+         asset,
+         %{},
+         frame_name
+       ) do
+    case Repo.get_by(Frame, name: frame_name, organisation_id: organisation_id) do
+      nil ->
+        Frames.create_frame(current_user, asset, %{})
+
+      frame ->
+        {:ok, frame}
+    end
+  end
+
+  defp create_asset_from_zip(file_path, current_user) do
+    params = %{
+      "file" => %Plug.Upload{
+        filename: Path.basename(file_path),
+        content_type: "application/zip",
+        path: file_path
+      },
+      "type" => "zip"
+    }
+
+    Assets.create_asset(current_user, params)
+  end
+
+  def extract_frame_files(file_binary, entries) do
+    {:ok, temp_dir} = Briefly.create(directory: true)
+
+    entries
+    |> Enum.filter(fn entry -> String.starts_with?(entry.file_name, "frame/") end)
+    |> Enum.each(fn %{file_name: file_name} ->
+      full_path = Path.join(temp_dir, String.replace_prefix(file_name, "frame/", ""))
+
+      if String.ends_with?(file_name, "/") do
+        File.mkdir_p!(full_path)
+      else
+        File.mkdir_p!(Path.dirname(full_path))
+
+        {:ok, content} = FileHelper.extract_file_content(file_binary, file_name)
+        File.write!(full_path, content)
+      end
+    end)
+
+    create_zip_of_extracted_files(temp_dir)
+  end
+
+  defp create_zip_of_extracted_files(temp_dir) do
+    zip_path = Path.join(temp_dir, "frame_files.zip")
+
+    with file_list when file_list != [] <- file_list(temp_dir),
+         {:ok, _} <-
+           :zip.create(
+             String.to_charlist(zip_path),
+             Enum.map(file_list, &String.to_charlist/1),
+             cwd: String.to_charlist(temp_dir)
+           ) do
+      {:ok, zip_path}
+    else
+      [] -> {:error, "No files to zip"}
+      {:error, reason} -> {:error, "Failed to create zip: #{inspect(reason)}"}
+    end
+  end
+
+  defp file_list(dir) do
+    dir
+    |> Path.join("**")
+    |> Path.wildcard()
+    |> Enum.filter(&File.regular?/1)
+    |> Enum.map(&Path.relative_to(&1, dir))
+  end
 
   defp add_variant_step(multi, %{"variant" => variant}, current_user, opts) do
     theme_id = Keyword.get(opts, :theme_id, nil)
@@ -632,7 +743,7 @@ defmodule WraftDoc.TemplateAssets do
 
     with asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
          params <- prepare_layout_attrs(layouts, engine_id, asset_id, frame_id),
-         %Engine{} = engine <- Documents.get_engine(params["engine_id"]),
+         %Engine{} = engine <- Frames.get_engine_by_frame_type(params),
          %Layout{} = layout <- Layouts.create_layout(current_user, engine, params) do
       {:ok, layout}
     end
@@ -694,68 +805,6 @@ defmodule WraftDoc.TemplateAssets do
       },
       "creator_id" => current_user.id
     }
-  end
-
-  defp prepare_frame(frame, downloaded_file, current_user, entries) do
-    with {:ok, attrs, content} <-
-           prepare_frame_attrs(frame, current_user, downloaded_file, entries),
-         {:ok, frame} <- Frames.create_frame(current_user, attrs) do
-      frame
-      |> local_frame_path()
-      |> File.write!(content)
-
-      {:ok, frame}
-    end
-  end
-
-  defp prepare_frame_attrs(frame, _current_user, downloaded_file, entries) do
-    with {:ok, entry} <- get_frame_file_entry(entries),
-         {:ok, content} <- FileHelper.extract_file_content(downloaded_file, entry.file_name),
-         {:ok, temp_file_path} <- write_temp_file(content) do
-      frame
-      |> Map.merge(%{
-        "frame_file" => %Plug.Upload{
-          filename: Path.basename(entry.file_name),
-          content_type: get_file_type(entry.file_name),
-          path: temp_file_path
-        }
-      })
-      |> then(&{:ok, &1, content})
-    end
-  end
-
-  defp get_frame_file_entry(entries) do
-    entries
-    |> Enum.filter(fn entry ->
-      entry.file_name =~ ~r/^frame\/.*\.tex$/i
-    end)
-    |> List.first()
-    |> case do
-      nil -> {:error, "frame file entries not found"}
-      entry -> {:ok, entry}
-    end
-  end
-
-  defp local_frame_path(%Frame{name: name, organisation_id: organisation_id}) do
-    :wraft_doc
-    |> :code.priv_dir()
-    |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
-    |> File.exists?()
-    |> case do
-      true ->
-        :wraft_doc
-        |> :code.priv_dir()
-        |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
-
-      false ->
-        slugs_dir =
-          :wraft_doc
-          |> :code.priv_dir()
-          |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
-
-        File.mkdir_p!(slugs_dir)
-        Path.join(slugs_dir, "template.tex")
-    end
   end
 
   defp prepare_content_type(variant, current_user, theme_id, layout_id, flow_id) do

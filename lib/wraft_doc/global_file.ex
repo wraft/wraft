@@ -34,8 +34,6 @@ defmodule WraftDoc.GlobalFile do
          template: "template_asset.json",
          assigns: %{template_asset: template_asset}
        }}
-    else
-      {:error, reason} -> {:error, reason}
     end
   end
 
