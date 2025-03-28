@@ -4,13 +4,6 @@ defmodule WraftDocWeb.Api.V1.ReminderController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  plug WraftDocWeb.Plug.Authorized,
-    show: "reminder:show",
-    index: "reminder:show",
-    create: "reminder:manage",
-    update: "reminder:manage",
-    delete: "reminder:delete"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Documents

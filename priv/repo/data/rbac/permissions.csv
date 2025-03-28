@@ -100,7 +100,4 @@ frame:delete,Frame,Delete
 instance_guest:show,Instance Guest,Show
 instance_guest:manage,Instance Guest,Manage
 instance_guest:delete,Instance Guest,Delete
-document:manage,Document,Manage,
-reminder:manage,Reminder,Manage,
-reminder:show,Reminder,Show,
-reminder:delete,Reminder,Delete
+document:manage,Document,Manage
