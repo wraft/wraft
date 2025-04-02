@@ -270,7 +270,7 @@ defmodule WraftDocWeb.Router do
       # Instance show, update and delete
       resources("/contents", InstanceController, only: [:show, :update, :delete])
       # Instance meta update
-      post("/contents/:id/meta", InstanceController, :update_meta)
+      put("/contents/:id/meta", InstanceController, :update_meta)
       # Instance state update
       patch("/contents/:id/states", InstanceController, :state_update)
       patch("/contents/:id/lock-unlock", InstanceController, :lock_unlock)
@@ -302,6 +302,14 @@ defmodule WraftDocWeb.Router do
         InstanceGuestController,
         :remove_counterpart
       )
+
+      # Document reminders
+      scope "/contents/:content_id" do
+        resources("/reminders", ReminderController, except: [:index])
+      end
+
+      # List all reminders
+      get("/reminders", ReminderController, :index)
 
       # Approve a document
       put("/contents/:id/approve", InstanceController, :approve)

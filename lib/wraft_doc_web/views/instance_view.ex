@@ -99,6 +99,8 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
+  def render("meta.json", %{meta: meta}), do: %{meta: meta}
+
   def render("show.json", %{instance: instance}) do
     %{
       content: render_one(instance, InstanceView, "instance.json", as: :instance),
