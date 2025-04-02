@@ -71,10 +71,17 @@ defmodule WraftDoc.Utils.FileHelper do
   @doc """
   Extract wraft_json from file.
   """
-  @spec get_wraft_json(binary()) :: {:ok, map()}
+  @spec get_wraft_json(binary()) :: {:ok, map()} | {:error, String.t()}
   def get_wraft_json(file_binary) do
-    {:ok, wraft_json} = extract_file_content(file_binary, "wraft.json")
-    Jason.decode(wraft_json)
+    file_binary
+    |> extract_file_content("wraft.json")
+    |> case do
+      {:ok, wraft_json} ->
+        Jason.decode(wraft_json)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """

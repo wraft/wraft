@@ -72,10 +72,8 @@ defmodule WraftDoc.Frames do
              "creator_id" => user_id
            })
            |> get_frame_params(asset),
-         {:ok, frame} <- create_frame_with_params(current_user, params) do
+         {:ok, %Frame{} = frame} <- create_frame_with_params(current_user, params) do
       {:ok, frame}
-    else
-      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -172,10 +170,8 @@ defmodule WraftDoc.Frames do
              "creator_id" => user_id
            })
            |> get_frame_params(asset),
-         {:ok, frame} <- update_frame_with_params(frame, current_user, params) do
+         {:ok, %Frame{} = frame} <- update_frame_with_params(frame, current_user, params) do
       {:ok, frame}
-    else
-      {:error, reason} -> {:error, reason}
     end
   end
 

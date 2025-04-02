@@ -266,11 +266,14 @@ defmodule WraftDoc.Assets do
   """
   @spec preview_asset(String.t()) :: {:ok, map()} | {:error, String.t()}
   def preview_asset(file_path) do
-    with {:ok, file_binary} <- FileHelper.read_file_contents(file_path),
-         {:ok, wraft_json} <- FileHelper.get_wraft_json(file_binary) do
-      {:ok, wraft_json}
-    else
-      {:error, reason} -> {:error, reason}
+    file_path
+    |> FileHelper.read_file_contents()
+    |> case do
+      {:ok, file_binary} ->
+        FileHelper.get_wraft_json(file_binary)
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 end

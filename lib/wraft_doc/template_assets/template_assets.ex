@@ -321,7 +321,9 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp template_asset_file_list(zip_binary) do
-    case FileHelper.get_file_entries(zip_binary) do
+    zip_binary
+    |> FileHelper.get_file_entries()
+    |> case do
       {:ok, entries} ->
         filter_entries(entries)
 
@@ -483,7 +485,9 @@ defmodule WraftDoc.TemplateAssets do
          %{},
          frame_name
        ) do
-    case Repo.get_by(Frame, name: frame_name, organisation_id: organisation_id) do
+    Frame
+    |> Repo.get_by(name: frame_name, organisation_id: organisation_id)
+    |> case do
       nil ->
         Frames.create_frame(current_user, asset, %{})
 

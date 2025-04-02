@@ -7,7 +7,6 @@ defmodule WraftDoc.Utils.FileValidator do
     ".jpg",
     ".png",
     ".pdf",
-    ".txt",
     ".jpeg",
     ".typ",
     ".typst",

@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
   plug WraftDocWeb.Plug.AddActionLog
 
   plug WraftDocWeb.Plug.Authorized,
-    import_global_file: "file:manage"
+    import_global_file: "global_import:manage"
 
   action_fallback(WraftDocWeb.FallbackController)
 
