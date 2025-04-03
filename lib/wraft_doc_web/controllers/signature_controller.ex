@@ -208,7 +208,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
 
     with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
          %ESignature{} = signature <- Signatures.get_signature(signature_id),
-         {:ok, %ESignature{}} = deleted_signature <- Repo.delete(signature) do
+         {:ok, %ESignature{} = deleted_signature} <- Repo.delete(signature) do
       render(conn, "signature.json", signature: deleted_signature)
     end
   end
