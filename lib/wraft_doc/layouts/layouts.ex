@@ -35,7 +35,7 @@ defmodule WraftDoc.Layouts do
           :engine,
           :creator,
           :assets,
-          frame: [:assets, :frame_mappings, fields: [:field_type]]
+          frame: [:assets, fields: [:field_type]]
         ])
 
       changeset = {:error, _} ->
@@ -108,7 +108,7 @@ defmodule WraftDoc.Layouts do
         where: l.organisation_id == ^org_id,
         where: ^layout_index_filter_by_name(params),
         order_by: ^layout_index_sort(params),
-        preload: [:engine, :assets, frame: [:assets, :frame_mappings, fields: [:field_type]]]
+        preload: [:engine, :assets, frame: [:assets, fields: [:field_type]]]
       )
 
     Repo.paginate(query, params)
@@ -204,7 +204,7 @@ defmodule WraftDoc.Layouts do
           :engine,
           :creator,
           :assets,
-          frame: [:assets, :frame_mappings, fields: [:field_type]]
+          frame: [:assets, fields: [:field_type]]
         ])
     end
   end

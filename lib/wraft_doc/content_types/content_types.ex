@@ -37,8 +37,9 @@ defmodule WraftDoc.ContentTypes do
 
         Repo.preload(content_type, [
           :creator,
-          [layout: [:assets, frame: [:assets, :frame_mappings, fields: [:field_type]]]],
+          [layout: [:assets, frame: [:assets, fields: [:field_type]]]],
           :flow,
+          :frame_mappings,
           {:theme, :assets},
           {:fields, :field_type},
           creator: [:profile]
@@ -111,8 +112,9 @@ defmodule WraftDoc.ContentTypes do
     |> where(^content_type_filter_by_prefix(params))
     |> order_by([ct], ^content_type_sort(params))
     |> preload([
-      [layout: [:assets, frame: [:assets, :frame_mappings, fields: [:field_type]]]],
+      [layout: [:assets, frame: [:assets, fields: [:field_type]]]],
       :flow,
+      :frame_mappings,
       {:theme, :assets},
       {:fields, :field_type},
       creator: [:profile]
@@ -150,8 +152,9 @@ defmodule WraftDoc.ContentTypes do
   def show_content_type(user, id) do
     with %ContentType{} = content_type <- get_content_type(user, id) do
       Repo.preload(content_type, [
-        {:layout, [frame: [:assets, :frame_mappings, fields: [:field_type]]]},
+        {:layout, [frame: [:assets, fields: [:field_type]]]},
         :creator,
+        :frame_mappings,
         {:theme, :assets},
         [{:fields, :field_type}, {:flow, :states}]
       ])
@@ -169,8 +172,9 @@ defmodule WraftDoc.ContentTypes do
     |> case do
       %ContentType{} = content_type ->
         Repo.preload(content_type, [
-          [layout: [:assets, frame: [:assets, :frame_mappings, fields: [:field_type]]]],
+          [layout: [:assets, frame: [:assets, fields: [:field_type]]]],
           :creator,
+          :frame_mappings,
           {:theme, :assets},
           [{:flow, :states}, {:fields, :field_type}]
         ])
@@ -194,8 +198,9 @@ defmodule WraftDoc.ContentTypes do
     ContentType
     |> Repo.get(id)
     |> Repo.preload([
-      [layout: [:assets, frame: [:assets, :frame_mappings, fields: [:field_type]]]],
+      [layout: [:assets, frame: [:assets, fields: [:field_type]]]],
       :creator,
+      :frame_mappings,
       [{:flow, :states}, {:fields, :field_type}]
     ])
   end
@@ -262,8 +267,9 @@ defmodule WraftDoc.ContentTypes do
         fetch_and_associate_fields(content_type, params)
 
         Repo.preload(content_type, [
-          [layout: [:assets, frame: [:assets, :frame_mappings, fields: [:field_type]]]],
+          [layout: [:assets, frame: [:assets, fields: [:field_type]]]],
           :creator,
+          :frame_mappings,
           {:theme, :assets},
           [{:flow, :states}, {:fields, :field_type}]
         ])
@@ -344,7 +350,8 @@ defmodule WraftDoc.ContentTypes do
         where: ilike(ct.name, ^"%#{name}%"),
         preload: [
           :fields,
-          [layout: [:assets, frame: [:assets, :frame_mappings, fields: [:field_type]]]],
+          :frame_mappings,
+          [layout: [:assets, frame: [:assets, fields: [:field_type]]]],
           :flow
         ]
       )

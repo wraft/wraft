@@ -30,7 +30,7 @@ defmodule WraftDoc.Frames do
     Frame
     |> where([frame], frame.organisation_id == ^organisation_id)
     |> order_by([frame], desc: frame.inserted_at)
-    |> preload([:assets, :frame_mappings, fields: [:field_type]])
+    |> preload([:assets, fields: [:field_type]])
     |> Repo.paginate(params)
   end
 
@@ -43,7 +43,7 @@ defmodule WraftDoc.Frames do
   def get_frame(<<_::288>> = id, %User{current_org_id: organisation_id}) do
     Frame
     |> Repo.get_by(id: id, organisation_id: organisation_id)
-    |> Repo.preload([:assets, :frame_mappings, fields: [:field_type]])
+    |> Repo.preload([:assets, fields: [:field_type]])
   end
 
   def get_frame(_, _), do: nil
@@ -51,7 +51,7 @@ defmodule WraftDoc.Frames do
   def get_frame(<<_::288>> = id) do
     Frame
     |> Repo.get_by(id: id)
-    |> Repo.preload([:assets, :frame_mappings, fields: [:field_type]])
+    |> Repo.preload([:assets, fields: [:field_type]])
   end
 
   def get_frame(_), do: nil
@@ -98,7 +98,7 @@ defmodule WraftDoc.Frames do
     |> Repo.transaction()
     |> case do
       {:ok, %{frame: frame}} ->
-        {:ok, Repo.preload(frame, [:assets, :frame_mappings, fields: [:field_type]])}
+        {:ok, Repo.preload(frame, [:assets, fields: [:field_type]])}
 
       {:error, _, changeset, _} ->
         {:error, changeset}
@@ -433,16 +433,17 @@ defmodule WraftDoc.Frames do
   def check_frame_mapping(%ContentType{layout: %Layout{frame: nil}} = _content_type), do: :ok
 
   def check_frame_mapping(%ContentType{
-        layout: %Layout{frame: %Frame{frame_mappings: nil}}
+        layout: %Layout{frame: %Frame{}},
+        frame_mappings: nil
       }),
       do: {:error, "Frame mappings are missing"}
 
   def check_frame_mapping(%ContentType{
         fields: content_type_fields,
+        frame_mappings: %{mapping: mappings},
         layout: %Layout{
           frame: %Frame{
-            frame_fields: frame_fields,
-            frame_mappings: %{mapping: mappings}
+            frame_fields: frame_fields
           }
         }
       })

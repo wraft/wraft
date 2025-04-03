@@ -131,6 +131,7 @@ defmodule WraftDoc.Utils.FileValidator do
 
     with {:ok, files} <- :zip.extract(to_charlist(file_path), [:memory]),
          [] <- Enum.reduce(files, [], &process_file(&1, &2, temp_path)) do
+      :ok
     else
       mismatched_files when is_list(mismatched_files) ->
         {:error, format_mismatched_files(mismatched_files)}

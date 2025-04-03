@@ -7,7 +7,6 @@ defmodule WraftDoc.Frames.Frame do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Frames.FrameAsset
   alias WraftDoc.Frames.FrameField
-  alias WraftDoc.Frames.FrameMapping
 
   schema "frame" do
     field(:name, :string)
@@ -25,8 +24,6 @@ defmodule WraftDoc.Frames.Frame do
 
     has_many(:frame_fields, FrameField)
     has_many(:fields, through: [:frame_fields, :field])
-
-    has_one(:frame_mappings, FrameMapping)
 
     timestamps()
   end

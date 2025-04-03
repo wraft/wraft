@@ -716,9 +716,10 @@ defmodule WraftDoc.Documents do
         {:creator, :profile},
         {:content_type,
          [
+           :frame_mappings,
            :organisation,
            :fields,
-           layout: [frame: [:assets, :frame_mappings, fields: [:field_type]]]
+           layout: [frame: [:assets, fields: [:field_type]]]
          ]},
         {:versions, versions_preload_query},
         {:state, :approvers},
@@ -1039,17 +1040,16 @@ defmodule WraftDoc.Documents do
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
   end
 
-  # TODO move to different context module.
-  def generate_field_json(_, %Layout{frame: nil}, _), do: nil
+  defp generate_field_json(_, %Layout{frame: nil}, _), do: nil
 
-  def generate_field_json(
-        %Instance{
-          serialized: %{"fields" => fields},
-          content_type: %ContentType{id: content_type_id}
-        },
-        %Layout{frame: %Frame{id: frame_id}},
-        base_content_dir
-      ) do
+  defp generate_field_json(
+         %Instance{
+           serialized: %{"fields" => fields},
+           content_type: %ContentType{id: content_type_id}
+         },
+         %Layout{frame: %Frame{id: frame_id}},
+         base_content_dir
+       ) do
     FrameMapping
     |> Repo.get_by(frame_id: frame_id, content_type_id: content_type_id)
     |> Frames.transform_data_by_mapping(fields)
