@@ -76,7 +76,7 @@ defmodule WraftDoc.Documents.Signatures do
       header: Jason.encode!(%{content_type: "application/json"}),
       signature_type: Map.get(params, "signature_type", "digital"),
       verification_token: verification_token,
-      instance_id: instance_id,
+      content_id: instance_id,
       user_id: user_id,
       organisation_id: org_id,
       counter_party_id: counter_party_id
@@ -85,6 +85,13 @@ defmodule WraftDoc.Documents.Signatures do
     %ESignature{}
     |> ESignature.changeset(signature_params)
     |> Repo.insert()
+    |> case do
+      {:ok, signature} ->
+        {:ok, Repo.preload(signature, [:counter_party, :content, :user])}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -102,8 +109,8 @@ defmodule WraftDoc.Documents.Signatures do
   """
   def get_document_signatures(document_id) do
     ESignature
-    |> where([s], s.instance_id == ^document_id)
-    |> preload([:instance, :user, :organisation, :counter_party])
+    |> where([s], s.content_id == ^document_id)
+    |> preload([:content, :user, :organisation, :counter_party])
     |> Repo.all()
   end
 
@@ -132,7 +139,7 @@ defmodule WraftDoc.Documents.Signatures do
       |> where([s], s.counter_party_id == ^counter_party_id)
       |> limit(1)
       |> Repo.one()
-      |> Repo.preload([:instance, :user, :counter_party])
+      |> Repo.preload([:user, :counter_party, content: [:creator]])
 
     if signature do
       # Update the signature with the provided data
@@ -150,7 +157,7 @@ defmodule WraftDoc.Documents.Signatures do
       case {counterparty_result, signature_result} do
         {{:ok, updated_counterparty}, {:ok, updated_signature}} ->
           # Check if all signatures are complete and handle document finalization
-          check_document_signature_status(updated_signature.instance_id)
+          check_document_signature_status(updated_signature.content_id)
 
           # Notify document owner about the signature
           notify_document_owner(updated_signature)
@@ -205,7 +212,7 @@ defmodule WraftDoc.Documents.Signatures do
     |> where([s], s.verification_token == ^token)
     |> limit(1)
     |> Repo.one()
-    |> Repo.preload([:instance, :counter_party, :user])
+    |> Repo.preload([:content, :counter_party, :user])
     |> case do
       %ESignature{} = signature -> {:ok, signature}
       nil -> {:error, :invalid_token}
@@ -214,13 +221,12 @@ defmodule WraftDoc.Documents.Signatures do
 
   # Send signature request email
   defp send_signature_request_email(
-         %ESignature{counter_party: counterparty, instance: instance, verification_token: token} =
+         %ESignature{counter_party: counterparty, content: instance, verification_token: token} =
            _signature
        ) do
     # Code to send email with signature link
     # Create a URL with the verification token
     signature_url = "#{Application.get_env(:wraft_doc, :base_url)}/sign/#{token}"
-
     # Send the email
     Mailer.deliver(
       SignatureEmail.signature_request_email(
@@ -234,7 +240,7 @@ defmodule WraftDoc.Documents.Signatures do
 
   # Notify document owner about signature
   defp notify_document_owner(
-         %ESignature{instance: %Instance{creator: owner} = instance, counter_party: counterparty} =
+         %ESignature{content: %Instance{creator: owner} = instance, counter_party: counterparty} =
            _signature
        ) do
     # Code to notify document owner about the signature

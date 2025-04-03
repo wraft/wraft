@@ -103,8 +103,8 @@ defmodule WraftDocWeb.Router do
       get("/user/verify_email_token/:token", UserController, :verify_email_token)
 
       # Digital Signature public routes
-      post("/documents/sign/:token", SignatureController, :sign_document)
-      get("/signatures/verify/:token", SignatureController, :verify_signature)
+      post("/guest/documents/sign/:token", SignatureController, :sign_document)
+      get("/guest/signatures/verify/:token", SignatureController, :verify_signature)
 
       unless Enterprise.self_hosted?() do
         post("/vendors/webhook", VendorsWebhookController, :webhook)
