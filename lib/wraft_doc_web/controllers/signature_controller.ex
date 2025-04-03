@@ -102,7 +102,6 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
             )
 
             signature_position(:map, "Position in the document")
-            ip_address(:string, "IP address of the signer", required: true)
           end
         end
     }
@@ -127,6 +126,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
+  @spec request_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def request_signature(conn, %{"id" => document_id} = params) do
     current_user = conn.assigns.current_user
 
@@ -153,6 +153,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
+  @spec get_document_signatures(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def get_document_signatures(conn, %{"id" => document_id}) do
     current_user = conn.assigns.current_user
 
@@ -181,6 +182,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
+  @spec sign_document(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def sign_document(conn, %{"token" => token} = params) do
     ip_address = conn.remote_ip |> :inet_parse.ntoa() |> to_string()
 
@@ -212,6 +214,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
+  @spec verify_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def verify_signature(conn, %{"token" => token}) do
     with {:ok, signature} <- Signatures.verify_signature_by_token(token) do
       render(conn, "signature.json", signature: signature)
@@ -236,6 +239,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
+  @spec revoke_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def revoke_signature(conn, %{"document_id" => document_id, "signature_id" => signature_id}) do
     current_user = conn.assigns.current_user
 
