@@ -22,7 +22,7 @@ defmodule WraftDoc.Documents.Signatures do
   def get_signature(id) do
     ESignature
     |> Repo.get(id)
-    |> Repo.preload([:instance, :user, :organisation, :counter_party])
+    |> Repo.preload([:content, :user, :organisation, :counter_party])
   end
 
   @doc """
