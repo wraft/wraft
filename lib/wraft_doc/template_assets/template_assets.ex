@@ -47,24 +47,21 @@ defmodule WraftDoc.TemplateAssets do
   # TODO - write test
   @spec create_template_asset(User.t(), map()) ::
           {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
-  def create_template_asset(%{current_org_id: org_id} = current_user, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id})
+  def create_template_asset(%User{} = current_user, params) do
+    params =
+      case current_user do
+        %{current_org_id: org_id} -> Map.merge(params, %{"organisation_id" => org_id})
+        _ -> params
+      end
 
     Multi.new()
-    |> Multi.insert(
-      :template_asset,
-      current_user |> build_assoc(:template_assets) |> TemplateAsset.changeset(params)
-    )
-    |> Multi.update(
-      :template_asset_file_upload,
-      &TemplateAsset.file_changeset(&1.template_asset, params)
-    )
-    |> Multi.run(:template_asset_fetch, fn _, %{template_asset_file_upload: template_asset} ->
+    |> public_template_asset_multi(current_user, params)
+    |> Multi.run(:template_asset_fetch, fn _, %{template_asset: template_asset} ->
       fetch_and_associate_assets(template_asset, current_user, params)
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{template_asset_file_upload: template_asset}} ->
+      {:ok, %{template_asset: template_asset}} ->
         {:ok, Repo.preload(template_asset, [:asset])}
 
       {:error, _, changeset, _} ->
@@ -73,6 +70,28 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   def create_template_asset(_, _), do: {:error, :fake}
+
+  defp public_template_asset_multi(multi, nil, params) do
+    Multi.insert(
+      multi,
+      :template_asset,
+      TemplateAsset.changeset(%TemplateAsset{}, params)
+    )
+  end
+
+  defp public_template_asset_multi(multi, current_user, params) do
+    Multi.insert(
+      multi,
+      :template_asset,
+      current_user |> build_assoc(:template_assets) |> TemplateAsset.changeset(params)
+    )
+  end
+
+  defp fetch_and_associate_assets(template_asset, nil, %{"asset_id" => asset_id}) do
+    asset_id
+    |> Assets.get_asset()
+    |> then(&associate_template_and_asset(template_asset, nil, &1))
+  end
 
   defp fetch_and_associate_assets(template_asset, current_user, %{"asset_id" => asset_id}) do
     asset_id
@@ -295,25 +314,27 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Download zip file from storage as binary.
   """
-  @spec download_zip_from_storage(TemplateAsset.t()) :: {:error, String.t()} | {:ok, binary()}
-  def download_zip_from_storage(%{
-        id: asset_id,
-        organisation_id: organisation_id,
-        file: %{file_name: file_name}
-      }) do
+  @spec download_zip_from_storage(TemplateAsset.t() | Asset.t()) ::
+          {:error, String.t()} | {:ok, binary()}
+
+  def download_zip_from_storage(%TemplateAsset{asset: %{file: %{file_name: file_name}}}) do
+    file_name = get_rootname(file_name)
+
     downloaded_zip_binary =
-      Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}")
+      Minio.get_object("public/templates/#{file_name}/#{file_name}.zip")
 
     {:ok, downloaded_zip_binary}
   rescue
     error -> {:error, error.message}
   end
 
-  def download_zip_from_storage(%TemplateAsset{zip_file: %{file_name: file_name}}) do
-    file_name = get_rootname(file_name)
-
+  def download_zip_from_storage(%Asset{
+        id: asset_id,
+        organisation_id: organisation_id,
+        file: %{file_name: file_name}
+      }) do
     downloaded_zip_binary =
-      Minio.get_object("public/templates/#{file_name}/#{file_name}.zip")
+      Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}")
 
     {:ok, downloaded_zip_binary}
   rescue
@@ -992,11 +1013,17 @@ defmodule WraftDoc.TemplateAssets do
          file_entries_in_zip <- template_asset_file_list(zip_binary),
          :ok <- template_zip_validator(zip_binary, file_entries_in_zip),
          {:ok, %{"metadata" => metadata} = wraft_json} <- FileHelper.get_wraft_json(zip_binary) do
+      file_size =
+        zip_binary
+        |> :erlang.byte_size()
+        |> Sizeable.filesize()
+
       params
       |> Map.merge(metadata)
       |> Map.merge(%{
         "wraft_json" => wraft_json,
-        "file_entries" => file_entries_in_zip
+        "file_entries" => file_entries_in_zip,
+        "zip_file_size" => file_size
       })
       |> then(&{:ok, &1, zip_binary})
     end
@@ -1044,6 +1071,15 @@ defmodule WraftDoc.TemplateAssets do
     do: download_zip_from_storage(asset)
 
   defp get_zip_binary(:url, url), do: get_zip_binary_from_url(url)
+
+  defp get_zip_binary(:raw_file, %{path: file_path}) do
+    file_path
+    |> File.read()
+    |> case do
+      {:ok, binary} -> {:ok, binary}
+      {:error, reason} -> {:error, "Failed to read file: #{reason}"}
+    end
+  end
 
   @doc """
   Prepare all the nessecary files and format for zip export.

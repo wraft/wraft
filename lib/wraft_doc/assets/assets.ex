@@ -30,7 +30,7 @@ defmodule WraftDoc.Assets do
     end
   end
 
-  def create_asset(nil, params), do: create_asset_with_params(%User{}, params)
+  def create_asset(nil, params), do: create_asset_with_params(nil, params)
 
   def update_asset_params(%{"type" => "zip", "file" => file} = params) do
     file
@@ -48,16 +48,29 @@ defmodule WraftDoc.Assets do
 
   defp create_asset_with_params(current_user, params) do
     Multi.new()
-    |> Multi.insert(
-      :asset,
-      current_user |> build_assoc(:assets) |> Asset.changeset(params)
-    )
+    |> public_asset_multi(current_user, params)
     |> Multi.update(:asset_file_upload, &Asset.file_changeset(&1.asset, params))
     |> Repo.transaction()
     |> case do
       {:ok, %{asset_file_upload: asset}} -> {:ok, asset}
       {:error, _, changeset, _} -> {:error, changeset}
     end
+  end
+
+  defp public_asset_multi(multi, nil, params) do
+    Multi.insert(
+      multi,
+      :asset,
+      Asset.public_changeset(%Asset{}, params)
+    )
+  end
+
+  defp public_asset_multi(multi, %User{} = current_user, params) do
+    Multi.insert(
+      multi,
+      :asset,
+      current_user |> build_assoc(:assets) |> Asset.changeset(params)
+    )
   end
 
   @doc """

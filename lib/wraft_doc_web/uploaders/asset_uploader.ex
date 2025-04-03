@@ -94,6 +94,15 @@ defmodule WraftDocWeb.AssetUploader do
     end
   end
 
+  def storage_dir(
+        _version,
+        {%{file_name: file_name}, %{type: "template_asset", organisation_id: nil}}
+      ) do
+    file_name
+    |> Path.rootname()
+    |> then(&"public/templates/#{&1}/")
+  end
+
   # Override the storage directory:
   def storage_dir(_version, {_file, asset}) do
     "organisations/#{asset.organisation_id}/assets/#{asset.id}"

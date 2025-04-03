@@ -333,15 +333,13 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     - Uploading a ZIP file
     - Providing a URL to a ZIP file
 
-    Only one of `zip_file` or `zip_url` should be provided.
+    Only one of `asset_id` with type template_asset or `zip_url` should be provided.
     """)
 
     operation_id("create_asset")
     consumes("multipart/form-data")
 
-    parameter(:name, :formData, :string, "Template Asset name")
-    parameter(:zip_file, :formData, :file, "Template Asset ZIP file to upload")
-    parameter(:zip_url, :formData, :string, "URL to the Template Asset ZIP file")
+    parameter(:asset_id, :formData, :string, "Asset id")
 
     response(200, "OK", Schema.ref(:TemplateAsset))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -349,7 +347,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"asset" => asset_id} = params) do
+  def create(conn, %{"asset_id" => asset_id} = params) do
     current_user = conn.assigns.current_user
 
     with %Asset{} = asset <- Assets.get_asset(asset_id, current_user),
@@ -710,8 +708,10 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   def import_public_template(conn, %{"id" => template_asset_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, downloaded_zip_binary} <-
-           TemplateAssets.download_zip_from_storage(template_asset_id),
+    with %TemplateAsset{} = template_asset <-
+           TemplateAssets.get_template_asset(template_asset_id),
+         {:ok, downloaded_zip_binary} <-
+           TemplateAssets.download_zip_from_storage(template_asset),
          options <- TemplateAssets.format_opts(params),
          {:ok, result} <-
            TemplateAssets.import_template(current_user, downloaded_zip_binary, options) do
