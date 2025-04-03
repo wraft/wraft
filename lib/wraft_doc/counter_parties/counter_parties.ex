@@ -32,7 +32,7 @@ defmodule WraftDoc.CounterParties do
    Add counterparty to content
   """
   def add_counterparty(
-        %Instance{id: content_id},
+        %Instance{id: document_id},
         %{
           "email" => email,
           "name" => name
@@ -42,7 +42,7 @@ defmodule WraftDoc.CounterParties do
     |> CounterParty.changeset(%{
       name: name,
       email: email,
-      content_id: content_id,
+      content_id: document_id,
       guest_user_id: Map.get(params, "guest_user_id")
     })
     |> Repo.insert()

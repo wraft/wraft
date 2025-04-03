@@ -4,9 +4,6 @@ defmodule WraftDoc.CounterParties.CounterParty do
   """
   use WraftDoc.Schema
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-
   schema "counter_parties" do
     field(:name, :string)
     field(:email, :string)
@@ -15,6 +12,7 @@ defmodule WraftDoc.CounterParties.CounterParty do
     field(:signature_ip, :string)
     belongs_to(:content, WraftDoc.Documents.Instance)
     belongs_to(:guest_user, WraftDoc.Account.User, foreign_key: :guest_user_id)
+
     timestamps()
   end
 

@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
       signature_date: signature.signature_date,
       is_valid: signature.is_valid,
       verification_token: signature.verification_token,
-      instance: render_one(signature.instance, InstanceView, "instance.json", as: :content),
+      instance: render_one(signature.content, InstanceView, "instance.json", as: :instance),
       counter_party:
         render_one(signature.counter_party, __MODULE__, "counterparty.json", as: :counterparty),
       user: render_one(signature.user, UserView, "user.json", as: :user),

@@ -149,9 +149,15 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   def sign_document(conn, %{"token" => token} = params) do
+    ip_address = conn.remote_ip |> :inet_parse.ntoa() |> to_string()
+
     with {:ok, %ESignature{counter_party: counterparty}} <-
            Signatures.verify_signature_by_token(token),
-         {:ok, %{signature: signature}} <- Signatures.process_signature(counterparty, params) do
+         {:ok, %{signature: signature}} <-
+           Signatures.process_signature(
+             counterparty,
+             Map.merge(params, %{"ip_address" => ip_address})
+           ) do
       render(conn, "signature.json", signature: signature)
     end
   end

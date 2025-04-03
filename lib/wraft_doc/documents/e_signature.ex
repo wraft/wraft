@@ -9,8 +9,7 @@ defmodule WraftDoc.Documents.ESignature do
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Enterprise.Organisation
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
+  @signature_types [:digital, :electronic, :handwritten]
 
   schema "e_signature" do
     field(:api_url, :string)
@@ -18,20 +17,14 @@ defmodule WraftDoc.Documents.ESignature do
     field(:header, :string)
     field(:file, :string)
     field(:signed_file, :string)
-
-    field(:signature_type, Ecto.Enum,
-      values: [:digital, :electronic, :handwritten],
-      default: :digital
-    )
-
+    field(:signature_type, Ecto.Enum, values: @signature_types, default: :digital)
     field(:signature_data, :map)
     field(:signature_position, :map)
     field(:ip_address, :string)
     field(:signature_date, :utc_datetime)
     field(:is_valid, :boolean, default: false)
     field(:verification_token, :string)
-
-    belongs_to(:instance, Instance)
+    belongs_to(:content, Instance)
     belongs_to(:user, User)
     belongs_to(:organisation, Organisation)
     belongs_to(:counter_party, CounterParty)
@@ -54,7 +47,7 @@ defmodule WraftDoc.Documents.ESignature do
       :signature_date,
       :is_valid,
       :verification_token,
-      :instance_id,
+      :content_id,
       :user_id,
       :organisation_id,
       :counter_party_id
