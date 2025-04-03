@@ -58,6 +58,39 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
             counterparty(:map, "Counterparty information")
           end
         end,
+      Signatures:
+        swagger_schema do
+          title("Signatures")
+          description("List of signatures")
+
+          properties do
+            data(
+              Schema.array(:object),
+              "List of signatures",
+              items: Schema.ref(:Signature)
+            )
+          end
+
+          example(%{
+            signatures: [
+              %{
+                id: "123e4567-e89b-12d3-a456-426614174000",
+                signature_type: "digital",
+                signature_date: "2023-01-01T00:00:00Z",
+                is_valid: true,
+                verification_token: "abc123",
+                instance: %{
+                  id: "123e4567-e89b-12d3-a456-426614174000",
+                  title: "Document Title"
+                },
+                counter_party: %{
+                  name: "John Doe",
+                  email: "john.doe@example.com"
+                }
+              }
+            ]
+          })
+        end,
       SignatureProcess:
         swagger_schema do
           title("Process Signature")
