@@ -28,8 +28,8 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Layouts
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
-  alias WraftDoc.TemplateAssets.TempAsset
   alias WraftDoc.TemplateAssets.TemplateAsset
+  alias WraftDoc.TemplateAssets.TemplateAssetAsset
   alias WraftDoc.TemplateAssets.WraftJson
   alias WraftDoc.Themes
   alias WraftDoc.Themes.Theme
@@ -45,15 +45,9 @@ defmodule WraftDoc.TemplateAssets do
   Create a template asset.
   """
   # TODO - write test
-  @spec create_template_asset(User.t(), map()) ::
+  @spec create_template_asset(User.t() | nil, map()) ::
           {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
-  def create_template_asset(%User{} = current_user, params) do
-    params =
-      case current_user do
-        %{current_org_id: org_id} -> Map.merge(params, %{"organisation_id" => org_id})
-        _ -> params
-      end
-
+  def create_template_asset(current_user, params) do
     Multi.new()
     |> public_template_asset_multi(current_user, params)
     |> Multi.run(:template_asset_fetch, fn _, %{template_asset: template_asset} ->
@@ -69,8 +63,6 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  def create_template_asset(_, _), do: {:error, :fake}
-
   defp public_template_asset_multi(multi, nil, params) do
     Multi.insert(
       multi,
@@ -79,11 +71,17 @@ defmodule WraftDoc.TemplateAssets do
     )
   end
 
-  defp public_template_asset_multi(multi, current_user, params) do
+  defp public_template_asset_multi(
+         multi,
+         %{current_org_id: organisation_id} = current_user,
+         params
+       ) do
     Multi.insert(
       multi,
       :template_asset,
-      current_user |> build_assoc(:template_assets) |> TemplateAsset.changeset(params)
+      current_user
+      |> build_assoc(:template_assets)
+      |> TemplateAsset.changeset(Map.merge(params, %{"organisation_id" => organisation_id}))
     )
   end
 
@@ -105,8 +103,8 @@ defmodule WraftDoc.TemplateAssets do
          id: asset_id
        }) do
     template_asset
-    |> build_assoc(:temp_asset, asset_id: asset_id, creator: current_user)
-    |> TempAsset.changeset()
+    |> build_assoc(:template_asset_asset, asset_id: asset_id, creator: current_user)
+    |> TemplateAssetAsset.changeset()
     |> Repo.insert()
   end
 
@@ -160,7 +158,7 @@ defmodule WraftDoc.TemplateAssets do
     |> Repo.preload(:asset)
   end
 
-  def get_template_asset(_), do: {:error, :fake}
+  def get_template_asset(_), do: nil
 
   @doc """
   Update a template asset.
@@ -180,8 +178,8 @@ defmodule WraftDoc.TemplateAssets do
 
           asset_id ->
             Repo.delete_all(
-              from(temp_asset in TempAsset,
-                where: temp_asset.template_asset_id == ^template_asset.id
+              from(template_asset_asset in TemplateAssetAsset,
+                where: template_asset_asset.template_asset_id == ^template_asset.id
               )
             )
 
@@ -1033,7 +1031,7 @@ defmodule WraftDoc.TemplateAssets do
   Adds a ZIP file to the params map as a `Plug.Upload` struct.
   """
   @spec add_asset(TemplateAsset.t(), binary(), String.t(), User.t()) ::
-          {:ok, TempAsset.t()} | {:error, String.t()}
+          {:ok, TemplateAssetAsset.t()} | {:error, String.t()}
   def add_asset(template_asset, zip_binary, zip_url, current_user) do
     file_path = Briefly.create!()
     File.write!(file_path, zip_binary)
@@ -1265,13 +1263,14 @@ defmodule WraftDoc.TemplateAssets do
     query =
       from(t in TemplateAsset,
         where: is_nil(t.organisation_id) and is_nil(t.creator_id),
-        order_by: [desc: t.inserted_at]
+        order_by: [desc: t.inserted_at],
+        preload: [:asset]
       )
 
     query
     |> Repo.all()
     |> Enum.map(fn template_asset ->
-      rootname = get_rootname(template_asset.zip_file.file_name)
+      rootname = get_rootname(template_asset.asset.file.file_name)
 
       %{
         id: template_asset.id,

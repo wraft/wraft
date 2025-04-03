@@ -47,8 +47,6 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
 
   def form_fields(_) do
     [
-      name: %{type: :text, required: true},
-      description: %{type: :text},
       file: %{
         type: :file,
         required: true

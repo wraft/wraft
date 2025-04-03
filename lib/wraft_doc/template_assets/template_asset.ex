@@ -8,7 +8,7 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
   alias __MODULE__
   alias WraftDoc.Account.User
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.TemplateAssets.TempAsset
+  alias WraftDoc.TemplateAssets.TemplateAssetAsset
 
   schema "template_asset" do
     field(:name, :string)
@@ -20,8 +20,8 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
     field(:file_entries, {:array, :string})
     field(:is_imported, :boolean, default: true)
 
-    has_one(:temp_asset, TempAsset)
-    has_one(:asset, through: [:temp_asset, :asset])
+    has_one(:template_asset_asset, TemplateAssetAsset)
+    has_one(:asset, through: [:template_asset_asset, :asset])
 
     belongs_to(:creator, User)
     belongs_to(:organisation, Organisation)

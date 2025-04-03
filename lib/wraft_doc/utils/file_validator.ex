@@ -21,7 +21,27 @@ defmodule WraftDoc.Utils.FileValidator do
   @max_total_size 20_000_000
 
   @doc """
-  Validate file.
+  Validates a ZIP file by performing a series of checks to ensure its integrity, security, and compliance with the application's requirements.
+
+
+  The `validate_file/1` function is the entry point for validating files. It processes a file and performs the following checks:
+
+  1. **File Metadata Extraction**:
+     - Extracts metadata (e.g., file paths, sizes, extensions) from the ZIP archive.
+
+  2. **Security Checks**:
+     - Detects and prevents path traversal attacks by validating file paths.
+     - Identifies encoded malicious patterns in file paths.
+
+  3. **Validation**:
+     - Ensures that all files have allowed extensions.
+     - Verifies that individual file sizes and the total size of all files are within acceptable limits.
+     - Checks file signatures to detect mismatches or unknown formats.
+
+  4. **Error Handling**:
+     - Returns descriptive error messages for invalid files or failed checks.
+
+  If all checks pass, the function returns `{:ok, file_entries}`. If any check fails, it returns `{:error, reason}`.
   """
   @spec validate_file(String.t()) :: {:ok, list()} | {:error, String.t()}
   def validate_file(file_path) do

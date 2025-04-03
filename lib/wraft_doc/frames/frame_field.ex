@@ -23,9 +23,5 @@ defmodule WraftDoc.Frames.FrameField do
     |> validate_required(@fields)
     |> foreign_key_constraint(:frame_id, message: "Please enter an existing content type")
     |> foreign_key_constraint(:field_id, message: "Please enter a valid field")
-    |> unique_constraint(@fields,
-      name: :field_frame_unique_index,
-      message: "already exist"
-    )
   end
 end
