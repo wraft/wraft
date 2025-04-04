@@ -9,9 +9,9 @@ defmodule WraftDocWeb.Api.V1.PipeStageController do
   plug WraftDocWeb.Plug.AddActionLog
 
   plug WraftDocWeb.Plug.Authorized,
-    create: "pipe_stage:manage",
-    update: "pipe_stage:manage",
-    delete: "pipe_stage:delete"
+    create: "pipeline:manage",
+    update: "pipeline:manage",
+    delete: "pipeline:delete"
 
   action_fallback(WraftDocWeb.FallbackController)
 

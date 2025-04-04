@@ -5,7 +5,7 @@ defmodule WraftDocWeb.Api.V1.DocumentController do
   plug WraftDocWeb.Plug.AddActionLog
 
   plug WraftDocWeb.Plug.Authorized,
-    import_docx: "document:manage"
+    import_docx: "variant:manage"
 
   action_fallback(WraftDocWeb.FallbackController)
 

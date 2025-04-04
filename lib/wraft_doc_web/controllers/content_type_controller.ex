@@ -5,13 +5,13 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
   plug WraftDocWeb.Plug.AddActionLog
 
   plug WraftDocWeb.Plug.Authorized,
-    create: "content_type:manage",
-    index: "content_type:show",
-    show: "content_type:show",
-    update: "content_type:manage",
-    delete: "content_type:delete",
-    show_content_type_role: "content_type:show",
-    search: "content_type:show"
+    create: "variant:manage",
+    index: "variant:show",
+    show: "variant:show",
+    update: "variant:manage",
+    delete: "variant:delete",
+    show_content_type_role: "variant:show",
+    search: "variant:show"
 
   action_fallback(WraftDocWeb.FallbackController)
 

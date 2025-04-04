@@ -9,7 +9,7 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
     show: "organisation:show",
     delete: "organisation:delete",
     invite: "members:manage",
-    members: "organisation:members",
+    members: "members:show",
     index: "organisation:show",
     remove_user: "members:manage"
 

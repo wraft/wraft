@@ -4,9 +4,6 @@ defmodule WraftDocWeb.Api.V1.DashboardController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  plug WraftDocWeb.Plug.Authorized,
-    dashboard_stats: "dashboard:show"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Documents
