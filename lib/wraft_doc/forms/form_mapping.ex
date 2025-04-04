@@ -9,7 +9,7 @@ defmodule WraftDoc.Forms.FormMapping do
   @mapping_fields [:source, :destination]
 
   schema "form_mapping" do
-    embeds_many :mapping, Mapping, on_replace: :delete do
+    embeds_many :mapping, Mapping, primary_key: false, on_replace: :delete do
       field(:source, :map)
       field(:destination, :map)
     end
