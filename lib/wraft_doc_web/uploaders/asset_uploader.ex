@@ -6,8 +6,6 @@ defmodule WraftDocWeb.AssetUploader do
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
 
-  alias WraftDoc.Utils.FileHelper
-
   @versions [:original]
   @font_style_name ~w(Regular Italic Bold BoldItalic)
 
@@ -52,16 +50,11 @@ defmodule WraftDocWeb.AssetUploader do
     end
   end
 
-  def validate({%{file_name: file_name, path: file_path} = file, %Asset{type: "frame"}}) do
+  def validate({%{file_name: file_name} = file, %Asset{type: "frame"}}) do
     file_extension = file_name |> Path.extname() |> String.downcase()
 
     if file_extension == ".zip" and file_size(file) <= @max_file_size do
-      file_path
-      |> FileHelper.validate_frame_file()
-      |> case do
-        :ok -> :ok
-        {:error, error} -> {:error, error}
-      end
+      :ok
     else
       {:error, "Invalid file type or file size exceeds limit"}
     end

@@ -9,6 +9,7 @@ defmodule WraftDoc.Frames do
   alias Ecto.Multi
   alias WraftDoc.Account.User
   alias WraftDoc.Assets
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Documents
@@ -218,7 +219,7 @@ defmodule WraftDoc.Frames do
   def delete_frame(
         %Frame{
           organisation_id: organisation_id,
-          assets: [%{id: asset_id, file: %{file_name: file_name}} | _]
+          assets: %{id: asset_id, file: %{file_name: file_name}}
         } = frame
       ) do
     case Minio.delete_file("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}") do
@@ -233,7 +234,16 @@ defmodule WraftDoc.Frames do
   defp fetch_and_associate_assets(frame, current_user, %{"assets" => asset_id}) do
     asset_id
     |> Assets.get_asset(current_user)
-    |> then(&associate_frame_and_asset(frame, current_user, &1))
+    |> case do
+      %Asset{} = asset ->
+        associate_frame_and_asset(frame, current_user, asset)
+
+      nil ->
+        {:error, "Asset not found"}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   defp fetch_and_associate_assets(_frame, _current_user, _params), do: nil
@@ -256,23 +266,29 @@ defmodule WraftDoc.Frames do
     binary =
       Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}")
 
+    process_frame_params(binary, params)
+  rescue
+    error -> {:error, error.message}
+  end
+
+  @doc """
+  Process the frame binary and update the frame params.
+  """
+  @spec process_frame_params(binary(), map()) :: {:ok, map()} | {:error, String.t()}
+  def process_frame_params(binary, params) do
     file_size = FileHelper.file_size(binary)
 
     {:ok, %{"metadata" => %{"frameType" => type} = metadata} = wraft_json} =
       FileHelper.get_wraft_json(binary)
 
-    params =
-      params
-      |> Map.merge(metadata)
-      |> Map.merge(%{
-        "wraft_json" => wraft_json,
-        "file_size" => file_size,
-        "type" => type
-      })
-
-    {:ok, params}
-  rescue
-    error -> {:error, error.message}
+    params
+    |> Map.merge(metadata)
+    |> Map.merge(%{
+      "wraft_json" => wraft_json,
+      "file_size" => file_size,
+      "type" => type
+    })
+    |> then(&{:ok, &1})
   end
 
   @doc """
