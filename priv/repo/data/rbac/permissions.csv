@@ -7,12 +7,12 @@ block:delete,Block,Delete
 block_template:show,Block Template,Show
 block_template:manage,Block Template,Manage
 block_template:delete,Block Template,Delete
-variant:show,Content Type,Show
-variant:manage,Content Type,Manage
-variant:delete,Content Type,Delete
-template:show,Data Template,Show
-template:manage,Data Template,Manage
-template:delete,Data Template,Delete
+variant:show,Variant,Show
+variant:manage,Variant,Manage
+variant:delete,Variant,Delete
+template:show,Template,Show
+template:manage,Template,Manage
+template:delete,Template,Delete
 flow:show,Flow,Show
 flow:manage,Flow,Manage
 flow:delete,Flow,Delete
@@ -49,6 +49,6 @@ form_entry:delete,Form Entry,Delete
 frame:show,Frame,Show
 frame:manage,Frame,Manage
 frame:delete,Frame,Delete
-document_guest:show,Document  Guest,Show
+document_guest:show,Document Guest,Show
 document_guest:manage,Document Guest,Manage
-document_guest:delete,ocument  Guest,Delete
+document_guest:delete,Document Guest,Delete
