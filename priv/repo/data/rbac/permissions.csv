@@ -1,6 +1,3 @@
-approval_system:show,Approval System,Show
-approval_system:manage,Approval System,Manage
-approval_system:delete,Approval System,Delete
 block:show,Block,Show
 block:manage,Block,Manage
 block:delete,Block,Delete
@@ -26,9 +23,9 @@ layout:manage,Layout,Manage
 layout:delete,Layout,Delete
 members:members,Members,Show
 members:manage,Members,Manage
-organisation:update,Organisation,Update
-organisation:delete,Organisation,Delete
-organisation:invite,Organisation,Invite
+organisation:update,Workspace,Update
+organisation:delete,Workspace,Delete
+organisation:invite,Workspace,Invite
 payment:show,Payment,Show
 pipeline:show,Pipeline,Show
 pipeline:manage,Pipeline,Manage
@@ -46,9 +43,6 @@ form:delete,Form,Delete
 form_entry:show,Form Entry,Show
 form_entry:manage,Form Entry,Manage
 form_entry:delete,Form Entry,Delete
-frame:show,Frame,Show
-frame:manage,Frame,Manage
-frame:delete,Frame,Delete
 document_guest:show,Document Guest,Show
 document_guest:manage,Document Guest,Manage
 document_guest:delete,Document Guest,Delete

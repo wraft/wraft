@@ -5,13 +5,13 @@ defmodule WraftDocWeb.Api.V1.DataTemplateController do
   plug WraftDocWeb.Plug.AddActionLog
 
   plug WraftDocWeb.Plug.Authorized,
-    create: "data_template:manage",
-    index: "data_template:show",
-    all_templates: "data_template:show",
-    show: "data_template:show",
-    update: "data_template:manage",
-    delete: "data_template:delete",
-    bulk_import: "data_template:manage"
+    create: "template:manage",
+    index: "template:show",
+    all_templates: "template:show",
+    show: "template:show",
+    update: "template:manage",
+    delete: "template:delete",
+    bulk_import: "template:manage"
 
   action_fallback(WraftDocWeb.FallbackController)
 
