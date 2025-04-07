@@ -2,18 +2,18 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
   use WraftDocWeb, :view
 
   alias __MODULE__
+  alias WraftDocWeb.Api.V1.AssetView
   alias WraftDocWeb.Api.V1.UserView
   alias WraftDocWeb.TemplateAssetThumbnailUploader
-  alias WraftDocWeb.TemplateAssetUploader
 
   def render("template_asset.json", %{template_asset: template_asset}) do
     %{
       id: template_asset.id,
       name: template_asset.name,
       description: template_asset.description,
-      file: generate_zip_url(template_asset),
       file_size: template_asset.zip_file_size,
       thumbnail: generate_thumbnail_url(template_asset),
+      asset: render_one(template_asset.asset, AssetView, "asset.json", as: :asset),
       file_entries: template_asset.file_entries,
       meta: template_asset.wraft_json,
       inserted_at: template_asset.inserted_at,
@@ -82,13 +82,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetView do
     }
   end
 
-  defp generate_zip_url(%{zip_file: zip_file} = template_asset) do
-    template_asset = Map.put(template_asset, :zip_file_name, zip_file.file_name)
-    TemplateAssetUploader.url({zip_file, template_asset}, signed: true)
-  end
-
-  defp generate_thumbnail_url(%{thumbnail: thumbnail, zip_file: zip_file} = template_asset) do
-    template_asset = Map.put(template_asset, :zip_file_name, zip_file.file_name)
+  defp generate_thumbnail_url(%{thumbnail: thumbnail} = template_asset) do
     TemplateAssetThumbnailUploader.url({thumbnail, template_asset}, signed: true)
   end
 end

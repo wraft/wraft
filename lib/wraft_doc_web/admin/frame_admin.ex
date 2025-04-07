@@ -5,12 +5,14 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
   use Ecto.Schema
   import Ecto.Query
 
+  alias Ecto.Multi
   alias WraftDoc.Assets
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Repo
+  alias WraftDoc.Utils.FileHelper
 
   def index(_) do
     [
@@ -25,17 +27,6 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
 
   def form_fields(_) do
     [
-      name: %{type: :text, required: true},
-      description: %{type: :text},
-      type: %{
-        label: "Type",
-        type: :choices,
-        choices: [
-          {"Typst", "typst"},
-          {"Latex", "latex"}
-        ],
-        required: true
-      },
       file: %{
         type: :file,
         required: true
@@ -54,6 +45,13 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
     ]
   end
 
+  def default_actions(_schema),
+    do: [
+      :new,
+      :show,
+      :delete
+    ]
+
   def custom_index_query(_conn, _schema, query),
     do: from(r in query, preload: [:organisation, :assets])
 
@@ -63,44 +61,41 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
 
   def update_changeset(schema, attrs), do: Frame.admin_changeset(schema, attrs)
 
-  def insert(conn, _changeset) do
-    params = conn.params["frame"]
+  def insert(conn, changeset) do
+    %{"file" => %{path: file_path}} = params = conn.params["frame"]
 
-    params
-    |> Map.merge(%{"type" => "frame"})
-    |> then(&Assets.create_asset(nil, &1))
+    with :ok <- FileHelper.validate_frame_file(file_path),
+         {:ok, params} <- process_file_and_params(params),
+         {:ok, %Frame{} = frame} <- insert_multi(params) do
+      {:ok, frame}
+    else
+      {:error, %Ecto.Changeset{} = changeset} -> {:error, changeset}
+      {:error, reason} -> {:error, {changeset, reason}}
+    end
+  end
+
+  defp insert_multi(params) do
+    Multi.new()
+    |> Multi.run(:create_asset, fn _, _ ->
+      Assets.create_asset(nil, Map.merge(params, %{"type" => "frame"}))
+    end)
+    |> Multi.run(:create_template_asset, fn _, %{create_asset: %Asset{id: asset_id}} ->
+      Frames.create_frame(nil, Map.merge(params, %{"assets" => asset_id}))
+    end)
+    |> Repo.transaction()
     |> case do
-      {:ok, %Asset{id: asset_id}} ->
-        params
-        |> Map.merge(%{"assets" => asset_id})
-        |> then(&Frames.create_frame(nil, &1))
-        |> case do
-          {:ok, frame} -> {:ok, frame}
-          {:error, changeset} -> {:error, changeset}
-        end
+      {:ok, %{create_template_asset: template_asset}} ->
+        {:ok, template_asset}
 
-      {:error, changeset} ->
+      {:error, _, changeset, _} ->
         {:error, changeset}
     end
   end
 
-  def update(conn, %Ecto.Changeset{data: %{assets: [asset | _]} = data}) do
-    params = conn.params["frame"]
-
-    asset
-    |> Assets.update_asset(Map.merge(params, %{"type" => "frame"}))
-    |> case do
-      {:ok, %Asset{id: asset_id}} ->
-        data
-        |> Frames.update_frame(nil, Map.merge(params, %{"assets" => asset_id}))
-        |> case do
-          {:ok, frame} -> {:ok, frame}
-          {:error, changeset} -> {:error, changeset}
-        end
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
+  defp process_file_and_params(%{"file" => %{path: file_path}} = params) do
+    file_path
+    |> File.read!()
+    |> Frames.process_frame_params(params)
   end
 
   defp get_organisations do

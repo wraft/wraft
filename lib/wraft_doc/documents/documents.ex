@@ -28,6 +28,9 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Fields.Field
+  alias WraftDoc.Frames
+  alias WraftDoc.Frames.Frame
+  alias WraftDoc.Frames.FrameMapping
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
   alias WraftDoc.Themes
@@ -711,7 +714,13 @@ defmodule WraftDoc.Documents do
       instance
       |> Repo.preload([
         {:creator, :profile},
-        {:content_type, [:layout, :organisation]},
+        {:content_type,
+         [
+           :frame_mappings,
+           :organisation,
+           :fields,
+           layout: [frame: [:assets, fields: [:field_type]]]
+         ]},
         {:versions, versions_preload_query},
         {:state, :approvers},
         {:instance_approval_systems, :approver},
@@ -1018,7 +1027,9 @@ defmodule WraftDoc.Documents do
       )
 
     File.write("#{base_content_dir}/content.md", content)
-    File.write("#{base_content_dir}/fields.json", instance.serialized["fields"])
+
+    # need to call function to get frame mapping then write into json
+    generate_field_json(instance, layout, base_content_dir)
 
     pdf_file = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
 
@@ -1027,6 +1038,23 @@ defmodule WraftDoc.Documents do
     "pandoc"
     |> System.cmd(pandoc_commands, stderr_to_stdout: true)
     |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
+  end
+
+  defp generate_field_json(_, %Layout{frame: nil}, _), do: nil
+
+  defp generate_field_json(
+         %Instance{
+           serialized: %{"fields" => fields},
+           content_type: %ContentType{id: content_type_id}
+         },
+         %Layout{frame: %Frame{id: frame_id}},
+         base_content_dir
+       ) do
+    FrameMapping
+    |> Repo.get_by(frame_id: frame_id, content_type_id: content_type_id)
+    |> Frames.transform_data_by_mapping(fields)
+    |> Jason.encode!()
+    |> then(&File.write("#{base_content_dir}/fields.json", &1))
   end
 
   def versioned_file_name(build_versions, instance_id, :current),

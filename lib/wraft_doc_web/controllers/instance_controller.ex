@@ -32,6 +32,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Frames
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Notifications
   alias WraftDoc.Search.TypesenseServer, as: Typesense
@@ -786,8 +787,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     start_time = Timex.now()
 
     case Documents.show_instance(instance_id, current_user) do
-      %Instance{content_type: %{layout: layout}} = instance ->
+      %Instance{content_type: %{layout: layout} = content_type} = instance ->
         with %Layout{} = layout <- Assets.preload_asset(layout),
+             :ok <- Frames.check_frame_mapping(content_type),
              {_, exit_code} <- Documents.build_doc(instance, layout) do
           end_time = Timex.now()
 

@@ -21,27 +21,56 @@ defmodule WraftDoc.Assets do
   Create an asset.
   """
   # TODO - imprvove tests
-  @spec create_asset(User.t(), map) :: {:ok, Asset.t()}
+  @spec create_asset(User.t(), map()) ::
+          {:ok, Asset.t()} | {:error, Ecto.Changset.t() | String.t()}
   def create_asset(%User{current_org_id: org_id} = current_user, params) do
-    params
-    |> Map.merge(%{"organisation_id" => org_id})
-    |> then(&create_asset_with_params(current_user, &1))
+    with {:ok, params} <- update_asset_params(Map.put(params, "organisation_id", org_id)),
+         {:ok, %Asset{} = asset} <- create_asset_with_params(current_user, params) do
+      {:ok, asset}
+    end
   end
 
-  def create_asset(nil, params), do: create_asset_with_params(%User{}, params)
+  def create_asset(nil, params), do: create_asset_with_params(nil, params)
+
+  def update_asset_params(%{"type" => "zip", "file" => file} = params) do
+    file
+    |> FileHelper.get_file_metadata()
+    |> case do
+      {:ok, metadata} ->
+        {:ok, Map.merge(params, metadata)}
+
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def update_asset_params(params), do: {:ok, params}
 
   defp create_asset_with_params(current_user, params) do
     Multi.new()
-    |> Multi.insert(
-      :asset,
-      current_user |> build_assoc(:assets) |> Asset.changeset(params)
-    )
+    |> public_asset_multi(current_user, params)
     |> Multi.update(:asset_file_upload, &Asset.file_changeset(&1.asset, params))
     |> Repo.transaction()
     |> case do
       {:ok, %{asset_file_upload: asset}} -> {:ok, asset}
       {:error, _, changeset, _} -> {:error, changeset}
     end
+  end
+
+  defp public_asset_multi(multi, nil, params) do
+    Multi.insert(
+      multi,
+      :asset,
+      Asset.public_changeset(%Asset{}, params)
+    )
+  end
+
+  defp public_asset_multi(multi, %User{} = current_user, params) do
+    Multi.insert(
+      multi,
+      :asset,
+      current_user |> build_assoc(:assets) |> Asset.changeset(params)
+    )
   end
 
   @doc """
@@ -162,7 +191,13 @@ defmodule WraftDoc.Assets do
   """
   @spec preload_asset(Layout.t()) :: Layout.t()
   def preload_asset(%Layout{} = layout) do
-    Repo.preload(layout, [:assets, :creator, :organisation, :engine, frame: [:assets]])
+    Repo.preload(layout, [
+      :assets,
+      :creator,
+      :organisation,
+      :engine,
+      frame: [:assets, fields: [:field_type]]
+    ])
   end
 
   def preload_asset(_), do: {:error, :not_sufficient}
@@ -176,7 +211,7 @@ defmodule WraftDoc.Assets do
 
   def download_slug_file(%Layout{
         frame: %Frame{
-          assets: [%{id: asset_id, file: file} | _]
+          assets: %{id: asset_id, file: file}
         },
         organisation_id: organisation_id
       }) do
@@ -235,6 +270,23 @@ defmodule WraftDoc.Assets do
       Documents.concat_strings(acc, "letterhead: #{asset_file_path} \n")
     else
       Documents.concat_strings(acc, "#{name}: #{asset_file_path} \n")
+    end
+  end
+
+  # TODO update preview.
+  @doc """
+  Preview asset.
+  """
+  @spec preview_asset(String.t()) :: {:ok, map()} | {:error, String.t()}
+  def preview_asset(file_path) do
+    file_path
+    |> FileHelper.read_file_contents()
+    |> case do
+      {:ok, file_binary} ->
+        FileHelper.get_wraft_json(file_binary)
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 end

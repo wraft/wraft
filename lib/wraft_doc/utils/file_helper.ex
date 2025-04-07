@@ -4,6 +4,8 @@ defmodule WraftDoc.Utils.FileHelper do
   """
 
   alias WraftDoc.Frames.WraftJson
+  alias WraftDoc.Frames.WraftJson.Metadata, as: FrameMetadata
+  alias WraftDoc.TemplateAssets.Metadata, as: TemplateAssetMetadata
   alias WraftDoc.Utils.FileValidator
 
   @required_files ["wraft.json", "template.typst", "default.typst"]
@@ -71,10 +73,17 @@ defmodule WraftDoc.Utils.FileHelper do
   @doc """
   Extract wraft_json from file.
   """
-  @spec get_wraft_json(binary()) :: {:ok, map()}
+  @spec get_wraft_json(binary()) :: {:ok, map()} | {:error, String.t()}
   def get_wraft_json(file_binary) do
-    {:ok, wraft_json} = extract_file_content(file_binary, "wraft.json")
-    Jason.decode(wraft_json)
+    file_binary
+    |> extract_file_content("wraft.json")
+    |> case do
+      {:ok, wraft_json} ->
+        Jason.decode(wraft_json)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -82,7 +91,9 @@ defmodule WraftDoc.Utils.FileHelper do
   """
   @spec read_file_contents(String.t()) :: {:ok, binary()} | {:error, String.t()}
   def read_file_contents(file_path) do
-    case File.read(file_path) do
+    file_path
+    |> File.read()
+    |> case do
       {:ok, binary} ->
         {:ok, binary}
 
@@ -114,9 +125,8 @@ defmodule WraftDoc.Utils.FileHelper do
     |> then(&(&1 ++ ["wraft.json"]))
   end
 
-  defp get_paths_from_section(section) when is_list(section) do
-    Enum.map(section, fn item -> item["path"] end)
-  end
+  defp get_paths_from_section(section) when is_list(section),
+    do: Enum.map(section, fn item -> item["path"] end)
 
   defp get_paths_from_section(_), do: []
 
@@ -164,4 +174,37 @@ defmodule WraftDoc.Utils.FileHelper do
   end
 
   def file_size(file_binary), do: file_binary |> byte_size() |> Sizeable.filesize()
+
+  @doc """
+  Get file metadata.
+  """
+  @spec get_file_metadata(Plug.Upload.t()) ::
+          {:ok, String.t()} | {:error, String.t() | Ecto.Changeset.t()}
+  def get_file_metadata(%Plug.Upload{path: file_path}) do
+    with {:ok, file_binary} <- read_file_contents(file_path),
+         {:ok, %{"metadata" => metadata}} <- get_wraft_json(file_binary),
+         :ok <- validate_metadata(metadata) do
+      {:ok, metadata}
+    end
+  end
+
+  defp validate_metadata(metadata) do
+    metadata
+    |> Map.get("type")
+    |> case do
+      "frame" -> validate_with_schema(FrameMetadata, metadata)
+      "template_asset" -> validate_with_schema(TemplateAssetMetadata, metadata)
+      nil -> {:error, "Type is missing"}
+      _unsupported_type -> {:error, "Unsupported metadata type"}
+    end
+  end
+
+  defp validate_with_schema(schema_module, metadata) do
+    metadata
+    |> schema_module.changeset()
+    |> case do
+      %Ecto.Changeset{valid?: true} -> :ok
+      changeset -> {:error, changeset}
+    end
+  end
 end

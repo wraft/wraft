@@ -27,10 +27,11 @@ defmodule WraftDocWeb.TemplateAssetThumbnailUploader do
     "thumbnail"
   end
 
+  # TODO not getting scope completely fix this.
   def storage_dir(_version, {_file, scope}) do
     case scope.organisation_id do
       nil ->
-        scope.zip_file_name
+        scope.asset.file.file_name
         |> Path.rootname()
         |> then(&"public/templates/#{&1}/")
 

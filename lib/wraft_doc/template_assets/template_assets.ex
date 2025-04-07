@@ -9,7 +9,9 @@ defmodule WraftDoc.TemplateAssets do
   require Logger
 
   alias Ecto.Multi
+  alias WraftDoc.Account.User
   alias WraftDoc.Assets
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
   alias WraftDoc.ContentTypes
   alias WraftDoc.ContentTypes.ContentType
@@ -27,10 +29,12 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
+  alias WraftDoc.TemplateAssets.TemplateAssetAsset
   alias WraftDoc.TemplateAssets.WraftJson
   alias WraftDoc.Themes
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Utils.FileHelper
+  alias WraftDoc.Utils.FileValidator
   alias WraftDoc.Utils.ProsemirrorToMarkdown
 
   @required_items ["layout", "theme", "flow", "variant"]
@@ -42,28 +46,70 @@ defmodule WraftDoc.TemplateAssets do
   Create a template asset.
   """
   # TODO - write test
-  @spec create_template_asset(User.t(), map()) ::
+  @spec create_template_asset(User.t() | nil, map()) ::
           {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
-  def create_template_asset(%{current_org_id: org_id} = current_user, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id})
-
+  def create_template_asset(current_user, params) do
     Multi.new()
-    |> Multi.insert(
-      :template_asset,
-      current_user |> build_assoc(:template_assets) |> TemplateAsset.changeset(params)
-    )
-    |> Multi.update(
-      :template_asset_file_upload,
-      &TemplateAsset.file_changeset(&1.template_asset, params)
-    )
+    |> public_template_asset_multi(current_user, params)
+    |> Multi.run(:template_asset_fetch, fn _, %{template_asset: template_asset} ->
+      fetch_and_associate_assets(template_asset, current_user, params)
+    end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{template_asset_file_upload: template_asset}} -> {:ok, template_asset}
-      {:error, _, changeset, _} -> {:error, changeset}
+      {:ok, %{template_asset: template_asset}} ->
+        {:ok, Repo.preload(template_asset, [:asset])}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
     end
   end
 
-  def create_template_asset(_, _), do: {:error, :fake}
+  defp public_template_asset_multi(multi, nil, params) do
+    Multi.insert(
+      multi,
+      :template_asset,
+      TemplateAsset.changeset(%TemplateAsset{}, params)
+    )
+  end
+
+  defp public_template_asset_multi(
+         multi,
+         %{current_org_id: organisation_id} = current_user,
+         params
+       ) do
+    Multi.insert(
+      multi,
+      :template_asset,
+      current_user
+      |> build_assoc(:template_assets)
+      |> TemplateAsset.changeset(Map.merge(params, %{"organisation_id" => organisation_id}))
+    )
+  end
+
+  defp fetch_and_associate_assets(template_asset, nil, %{"asset_id" => asset_id}) do
+    asset_id
+    |> Assets.get_asset()
+    |> then(&associate_template_and_asset(template_asset, nil, &1))
+  end
+
+  defp fetch_and_associate_assets(template_asset, current_user, %{"asset_id" => asset_id}) do
+    asset_id
+    |> Assets.get_asset(current_user)
+    |> then(&associate_template_and_asset(template_asset, current_user, &1))
+  end
+
+  defp fetch_and_associate_assets(_template_asset, _current_user, _params), do: nil
+
+  defp associate_template_and_asset(%TemplateAsset{} = template_asset, current_user, %{
+         id: asset_id
+       }) do
+    template_asset
+    |> build_assoc(:template_asset_asset, asset_id: asset_id, creator: current_user)
+    |> TemplateAssetAsset.changeset()
+    |> Repo.insert()
+  end
+
+  defp associate_template_and_asset(_template_asset, _current_user, nil), do: nil
 
   @doc """
   Index of all template assets in an organisation.
@@ -74,7 +120,8 @@ defmodule WraftDoc.TemplateAssets do
     query =
       from(a in TemplateAsset,
         where: a.organisation_id == ^organisation_id,
-        order_by: [desc: a.inserted_at]
+        order_by: [desc: a.inserted_at],
+        preload: [:asset]
       )
 
     Repo.paginate(query, params)
@@ -86,36 +133,65 @@ defmodule WraftDoc.TemplateAssets do
   Show a template asset.
   """
   # TODO - write tests
-  @spec show_template_asset(binary(), User.t()) :: TemplateAsset.t() | {:error, atom()}
+  @spec show_template_asset(Ecto.UUID.t(), User.t()) :: TemplateAsset.t() | nil
   def show_template_asset(<<_::288>> = template_asset_id, user) do
     template_asset_id
     |> get_template_asset(user)
-    |> Repo.preload([:creator])
+    |> Repo.preload([:creator, :asset])
   end
 
   @doc """
   Get a template asset from its UUID.
   """
   # TODO - Write tests
-  @spec get_template_asset(binary(), User.t()) :: TemplateAsset.t() | {:error, atom()}
-  def get_template_asset(<<_::288>> = id, %{current_org_id: org_id}),
-    do: Repo.get_by(TemplateAsset, id: id, organisation_id: org_id)
+  @spec get_template_asset(Ecto.UUID.t(), User.t()) :: TemplateAsset.t() | nil
+  def get_template_asset(<<_::288>> = id, %{current_org_id: org_id}) do
+    TemplateAsset
+    |> Repo.get_by(id: id, organisation_id: org_id)
+    |> Repo.preload(:asset)
+  end
 
-  def get_template_asset(_, _), do: {:error, :fake}
+  def get_template_asset(_, _), do: nil
 
-  def get_template_asset(<<_::288>> = id),
-    do: Repo.get_by(TemplateAsset, id: id)
+  def get_template_asset(<<_::288>> = id) do
+    TemplateAsset
+    |> Repo.get(id)
+    |> Repo.preload(:asset)
+  end
 
-  def get_template_asset(_), do: {:error, :fake}
+  def get_template_asset(_), do: nil
 
   @doc """
   Update a template asset.
   """
   # TODO - Write tests
-  @spec update_template_asset(TemplateAsset.t(), map()) ::
+  @spec update_template_asset(TemplateAsset.t(), User.t(), map()) ::
           {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
-  def update_template_asset(template_asset, params) do
-    template_asset |> TemplateAsset.update_changeset(params) |> Repo.update()
+  def update_template_asset(template_asset, current_user, params) do
+    template_asset
+    |> TemplateAsset.update_changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, template_asset} ->
+        case Map.get(params, "asset_id") do
+          nil ->
+            {:ok, template_asset}
+
+          asset_id ->
+            TemplateAssetAsset
+            |> where(
+              [template_asset_asset],
+              template_asset_asset.template_asset_id == ^template_asset.id
+            )
+            |> Repo.delete_all()
+
+            fetch_and_associate_assets(template_asset, current_user, %{"asset_id" => asset_id})
+            {:ok, template_asset}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -123,13 +199,22 @@ defmodule WraftDoc.TemplateAssets do
   """
   # TODO - Write tests
   @spec delete_template_asset(TemplateAsset.t()) ::
-          {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
+          {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t() | String.t()}
   def delete_template_asset(
-        %TemplateAsset{id: id, organisation_id: organisation_id} = template_asset
+        %TemplateAsset{
+          organisation_id: organisation_id,
+          asset: %Asset{id: asset_id, file: %{file_name: file_name}}
+        } = template_asset
       ) do
-    Minio.delete_file("organisations/#{organisation_id}/template_assets/#{id}")
+    "organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}"
+    |> Minio.delete_file()
+    |> case do
+      {:ok, _} ->
+        Repo.delete(template_asset)
 
-    Repo.delete(template_asset)
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -137,15 +222,15 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec import_template(User.t(), binary(), list()) ::
           DataTemplate.t() | {:error, any()}
-  def import_template(current_user, downloaded_zip_binary, opts \\ []) do
-    with {:ok, entries} <- FileHelper.get_file_entries(downloaded_zip_binary),
-         {:ok, template_map} <- FileHelper.get_wraft_json(downloaded_zip_binary),
+  def import_template(current_user, downloaded_file_binary, opts \\ []) do
+    with {:ok, entries} <- FileHelper.get_file_entries(downloaded_file_binary),
+         {:ok, template_map} <- FileHelper.get_wraft_json(downloaded_file_binary),
          contained_items <- has_items(template_map),
          :ok <- validate_required_items(contained_items, opts) do
       prepare_template(
         template_map,
         current_user,
-        downloaded_zip_binary,
+        downloaded_file_binary,
         entries,
         opts
       )
@@ -206,8 +291,8 @@ defmodule WraftDoc.TemplateAssets do
   Pre-import template asset returns existing and missing items.
   """
   @spec pre_import_template(binary()) :: {:ok, map()} | {:error, any()}
-  def pre_import_template(downloaded_zip_binary) do
-    {:ok, template_map} = FileHelper.get_wraft_json(downloaded_zip_binary)
+  def pre_import_template(downloaded_file_binary) do
+    {:ok, template_map} = FileHelper.get_wraft_json(downloaded_file_binary)
 
     existing_items =
       %{
@@ -229,35 +314,39 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Download zip file from storage as binary.
   """
-  @spec download_zip_from_storage(User.t(), Ecto.UUID.t()) :: {:error, any()} | {:ok, binary()}
-  def download_zip_from_storage(current_user, template_asset_id) do
-    with %TemplateAsset{zip_file: zip_file} <-
-           get_template_asset(template_asset_id, current_user),
-         downloaded_zip_binary <-
-           Minio.get_object(
-             "organisations/#{current_user.current_org_id}/template_assets/#{template_asset_id}/template_#{zip_file.file_name}"
-           ) do
-      {:ok, downloaded_zip_binary}
-    end
+  @spec download_zip_from_storage(TemplateAsset.t() | Asset.t()) ::
+          {:error, String.t()} | {:ok, binary()}
+
+  def download_zip_from_storage(%TemplateAsset{asset: %{file: %{file_name: file_name}}}) do
+    file_name = get_rootname(file_name)
+
+    downloaded_file_binary =
+      Minio.get_object("public/templates/#{file_name}/#{file_name}.zip")
+
+    {:ok, downloaded_file_binary}
   rescue
     error -> {:error, error.message}
   end
 
-  def download_zip_from_storage(template_asset_id) do
-    with %TemplateAsset{zip_file: zip_file} <-
-           get_template_asset(template_asset_id),
-         file_name <- get_rootname(zip_file.file_name),
-         downloaded_zip_binary <-
-           Minio.get_object("public/templates/#{file_name}/#{file_name}.zip") do
-      {:ok, downloaded_zip_binary}
-    end
+  def download_zip_from_storage(%Asset{
+        id: asset_id,
+        organisation_id: organisation_id,
+        file: %{file_name: file_name}
+      }) do
+    downloaded_file_binary =
+      Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}")
+
+    {:ok, downloaded_file_binary}
   rescue
     error -> {:error, error.message}
   end
 
-  # TODO move to zip_helper
-  defp template_asset_file_list(zip_binary) do
-    case FileHelper.get_file_entries(zip_binary) do
+  @spec template_asset_file_list(binary()) ::
+          {:ok, list()} | {:error, String.t()}
+  def template_asset_file_list(file_binary) do
+    file_binary
+    |> FileHelper.get_file_entries()
+    |> case do
       {:ok, entries} ->
         filter_entries(entries)
 
@@ -267,7 +356,8 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp filter_entries(entries) do
-    Enum.reduce(entries, [], fn %{file_name: file_name}, acc ->
+    entries
+    |> Enum.reduce([], fn %{file_name: file_name}, acc ->
       if Enum.any?(@allowed_folders, &String.starts_with?(file_name, "#{&1}/")) ||
            file_name in @allowed_files do
         [file_name | acc]
@@ -275,6 +365,7 @@ defmodule WraftDoc.TemplateAssets do
         acc
       end
     end)
+    |> then(&{:ok, &1})
   end
 
   defp prepare_template(
@@ -377,16 +468,118 @@ defmodule WraftDoc.TemplateAssets do
   defp add_layout_step(multi, _template_map, _current_user, _downloaded_file, _entries, _opts),
     do: multi
 
-  # TODO: update frame
-  defp add_frame_step(multi, %{"frame" => frame}, current_user, downloaded_file, entries) do
+  defp add_frame_step(
+         multi,
+         %{"frame" => frame_json_path},
+         current_user,
+         downloaded_file,
+         entries
+       ) do
     Multi.run(multi, :frame, fn _repo, _changes ->
-      frame
-      |> update_conflicting_name(Frame, current_user)
-      |> prepare_frame(downloaded_file, current_user, entries)
+      prepare_frame(current_user, downloaded_file, entries, frame_json_path)
     end)
   end
 
   defp add_frame_step(multi, _template_map, _current_user, _downloaded_file, _entries), do: multi
+
+  defp prepare_frame(current_user, downloaded_file, entries, frame_json_path) do
+    with {:ok, file_path} <- extract_frame_files(downloaded_file, entries),
+         {:ok, %{"metadata" => %{"name" => frame_name}} = _wraft_json} <-
+           get_frame_wraft_json(downloaded_file, frame_json_path),
+         {:ok, %Asset{id: asset_id} = asset} <- create_asset_from_zip(file_path, current_user),
+         {:ok, %Frame{} = frame} <-
+           create_or_get_frame(current_user, asset, %{"asset_id" => asset_id}, frame_name) do
+      {:ok, frame}
+    end
+  end
+
+  defp get_frame_wraft_json(downloaded_file, frame_json_path) do
+    downloaded_file
+    |> FileHelper.extract_file_content(frame_json_path)
+    |> case do
+      {:ok, wraft_json} ->
+        Jason.decode(wraft_json)
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp create_or_get_frame(
+         %User{current_org_id: organisation_id} = current_user,
+         asset,
+         params,
+         frame_name
+       ) do
+    Frame
+    |> Repo.get_by(name: frame_name, organisation_id: organisation_id)
+    |> case do
+      nil ->
+        Frames.create_frame(current_user, asset, params)
+
+      frame ->
+        {:ok, frame}
+    end
+  end
+
+  defp create_asset_from_zip(file_path, current_user) do
+    params = %{
+      "file" => %Plug.Upload{
+        filename: Path.basename(file_path),
+        content_type: "application/zip",
+        path: file_path
+      },
+      "type" => "zip"
+    }
+
+    Assets.create_asset(current_user, params)
+  end
+
+  def extract_frame_files(file_binary, entries) do
+    {:ok, temp_dir} = Briefly.create(directory: true)
+
+    entries
+    |> Enum.filter(fn entry -> String.starts_with?(entry.file_name, "frame/") end)
+    |> Enum.each(fn %{file_name: file_name} ->
+      full_path = Path.join(temp_dir, String.replace_prefix(file_name, "frame/", ""))
+
+      if String.ends_with?(file_name, "/") do
+        File.mkdir_p!(full_path)
+      else
+        File.mkdir_p!(Path.dirname(full_path))
+
+        {:ok, content} = FileHelper.extract_file_content(file_binary, file_name)
+        File.write!(full_path, content)
+      end
+    end)
+
+    create_zip_of_extracted_files(temp_dir)
+  end
+
+  defp create_zip_of_extracted_files(temp_dir) do
+    zip_path = Path.join(temp_dir, "frame_files.zip")
+
+    with file_list when file_list != [] <- file_list(temp_dir),
+         {:ok, _} <-
+           :zip.create(
+             String.to_charlist(zip_path),
+             Enum.map(file_list, &String.to_charlist/1),
+             cwd: String.to_charlist(temp_dir)
+           ) do
+      {:ok, zip_path}
+    else
+      [] -> {:error, "No files to zip"}
+      {:error, reason} -> {:error, "Failed to create zip: #{inspect(reason)}"}
+    end
+  end
+
+  defp file_list(dir) do
+    dir
+    |> Path.join("**")
+    |> Path.wildcard()
+    |> Enum.filter(&File.regular?/1)
+    |> Enum.map(&Path.relative_to(&1, dir))
+  end
 
   defp add_variant_step(multi, %{"variant" => variant}, current_user, opts) do
     theme_id = Keyword.get(opts, :theme_id, nil)
@@ -455,12 +648,9 @@ defmodule WraftDoc.TemplateAssets do
   defp get_content_type_from_id(id), do: {:ok, ContentTypes.get_content_type_from_id(id)}
 
   defp get_engine(engine) do
-    # TODO multiple engines selection
-    [engine1, _engine2] = String.split(engine, "/")
-
-    case Repo.get_by(Engine, name: String.capitalize(engine1)) do
-      nil -> Logger.warning("No engine found with the name #{engine1}")
-      engine -> engine.id
+    case engine do
+      "pandoc/latex" -> Documents.get_engine_by_name("Pandoc")
+      "pandoc/typst" -> Documents.get_engine_by_name("Pandoc + Typst")
     end
   end
 
@@ -574,12 +764,10 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp prepare_layout(layouts, downloaded_file, current_user, entries, frame_id) do
-    # filter engine name
-    engine_id = get_engine(layouts["engine"])
-
-    with asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
+    with %Engine{id: engine_id} <- get_engine(layouts["engine"]),
+         asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
          params <- prepare_layout_attrs(layouts, engine_id, asset_id, frame_id),
-         %Engine{} = engine <- Documents.get_engine(params["engine_id"]),
+         %Engine{} = engine <- Frames.get_engine_by_frame_type(params),
          %Layout{} = layout <- Layouts.create_layout(current_user, engine, params) do
       {:ok, layout}
     end
@@ -643,68 +831,6 @@ defmodule WraftDoc.TemplateAssets do
     }
   end
 
-  defp prepare_frame(frame, downloaded_file, current_user, entries) do
-    with {:ok, attrs, content} <-
-           prepare_frame_attrs(frame, current_user, downloaded_file, entries),
-         {:ok, frame} <- Frames.create_frame(current_user, attrs) do
-      frame
-      |> local_frame_path()
-      |> File.write!(content)
-
-      {:ok, frame}
-    end
-  end
-
-  defp prepare_frame_attrs(frame, _current_user, downloaded_file, entries) do
-    with {:ok, entry} <- get_frame_file_entry(entries),
-         {:ok, content} <- FileHelper.extract_file_content(downloaded_file, entry.file_name),
-         {:ok, temp_file_path} <- write_temp_file(content) do
-      frame
-      |> Map.merge(%{
-        "frame_file" => %Plug.Upload{
-          filename: Path.basename(entry.file_name),
-          content_type: get_file_type(entry.file_name),
-          path: temp_file_path
-        }
-      })
-      |> then(&{:ok, &1, content})
-    end
-  end
-
-  defp get_frame_file_entry(entries) do
-    entries
-    |> Enum.filter(fn entry ->
-      entry.file_name =~ ~r/^frame\/.*\.tex$/i
-    end)
-    |> List.first()
-    |> case do
-      nil -> {:error, "frame file entries not found"}
-      entry -> {:ok, entry}
-    end
-  end
-
-  defp local_frame_path(%Frame{name: name, organisation_id: organisation_id}) do
-    :wraft_doc
-    |> :code.priv_dir()
-    |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
-    |> File.exists?()
-    |> case do
-      true ->
-        :wraft_doc
-        |> :code.priv_dir()
-        |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
-
-      false ->
-        slugs_dir =
-          :wraft_doc
-          |> :code.priv_dir()
-          |> Path.join("slugs/organisation/#{organisation_id}/#{name}/.")
-
-        File.mkdir_p!(slugs_dir)
-        Path.join(slugs_dir, "template.tex")
-    end
-  end
-
   defp prepare_content_type(variant, current_user, theme_id, layout_id, flow_id) do
     with params <-
            prepare_content_type_attrs(variant, current_user, theme_id, layout_id, flow_id),
@@ -760,9 +886,6 @@ defmodule WraftDoc.TemplateAssets do
          {:ok, %DataTemplate{} = data_template} <-
            DataTemplates.create_data_template(current_user, content_type, params) do
       {:ok, data_template}
-    else
-      {:error, error} ->
-        {:error, error}
     end
   end
 
@@ -807,15 +930,16 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp template_zip_validator(zip_binary, file_entries_in_zip) do
+  @doc """
+  Validates the contents of a ZIP file containing a template asset.
+  """
+  @spec template_zip_validator(binary(), list()) :: {:ok, String.t()} | {:error, String.t()}
+  def template_zip_validator(file_binary, file_entries_in_zip) do
     with true <- validate_file_entries(file_entries_in_zip),
-         {:ok, wraft_json} <- FileHelper.get_wraft_json(zip_binary),
+         {:ok, wraft_json} <- FileHelper.get_wraft_json(file_binary),
          true <- validate_wraft_json(wraft_json),
          :ok <- validate_wraft_json_folders(file_entries_in_zip, wraft_json) do
-      :ok
-    else
-      {:error, error} ->
-        {:error, error}
+      {:ok, "Template file is valid"}
     end
   end
 
@@ -891,26 +1015,46 @@ defmodule WraftDoc.TemplateAssets do
   @spec process_template_asset(map(), :file | :url, Plug.Upload.t() | String.t()) ::
           {:ok, map(), binary()} | {:error, any()}
   def process_template_asset(params, source_type, source_value) do
-    with {:ok, zip_binary} <- get_zip_binary(source_type, source_value),
-         file_entries_in_zip <- template_asset_file_list(zip_binary),
-         :ok <- template_zip_validator(zip_binary, file_entries_in_zip),
-         {:ok, wraft_json} <- FileHelper.get_wraft_json(zip_binary) do
+    with {:ok, file_binary} <- get_file_binary(source_type, source_value),
+         {:ok, file_entries_in_zip} <- template_asset_file_list(file_binary),
+         {:ok, %{"metadata" => metadata} = wraft_json} <- FileHelper.get_wraft_json(file_binary) do
+      file_size =
+        file_binary
+        |> :erlang.byte_size()
+        |> Sizeable.filesize()
+
       params
+      |> Map.merge(metadata)
       |> Map.merge(%{
         "wraft_json" => wraft_json,
-        "file_entries" => file_entries_in_zip
+        "file_entries" => file_entries_in_zip,
+        "zip_file_size" => file_size
       })
-      |> then(&{:ok, &1, zip_binary})
+      |> then(&{:ok, &1, file_binary})
+    end
+  end
+
+  @doc """
+  Validates a template asset file by validating the file's contents and the ZIP file it contains.
+  """
+  @spec validate_template_asset_file(Plug.Upload.t()) :: :ok | {:error, String.t()}
+  def validate_template_asset_file(%{path: file_path} = file) do
+    with {:ok, _} <- FileValidator.validate_file(file_path),
+         {:ok, file_binary} <- get_file_binary(:file, file),
+         {:ok, file_entries_in_zip} <- template_asset_file_list(file_binary),
+         {:ok, _} <- template_zip_validator(file_binary, file_entries_in_zip) do
+      :ok
     end
   end
 
   @doc """
   Adds a ZIP file to the params map as a `Plug.Upload` struct.
   """
-  @spec add_file_to_params(map(), binary(), String.t()) :: {:ok, map()}
-  def add_file_to_params(params, zip_binary, zip_url) do
+  @spec add_asset(TemplateAsset.t(), binary(), String.t(), User.t()) ::
+          {:ok, TemplateAssetAsset.t()} | {:error, String.t()}
+  def add_asset(template_asset, file_binary, zip_url, current_user) do
     file_path = Briefly.create!()
-    File.write!(file_path, zip_binary)
+    File.write!(file_path, file_binary)
     file_name = zip_url |> URI.parse() |> Map.get(:path) |> Path.basename()
 
     file = %Plug.Upload{
@@ -919,12 +1063,16 @@ defmodule WraftDoc.TemplateAssets do
       path: file_path
     }
 
-    params
-    |> Map.put("zip_file", file)
-    |> then(&{:ok, &1})
+    case Assets.create_asset(current_user, %{"type" => "template_asset", "file" => file}) do
+      {:ok, %Asset{id: asset_id}} ->
+        fetch_and_associate_assets(template_asset, current_user, %{"asset_id" => asset_id})
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
-  defp get_zip_binary_from_url(url) do
+  defp get_file_binary_from_url(url) do
     case HTTPoison.get(url, [], follow_redirect: true) do
       {:ok, %{status_code: 200, body: binary}} ->
         {:ok, binary}
@@ -937,12 +1085,24 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp get_zip_binary(:file, %Plug.Upload{
-         path: file_path
-       }),
-       do: FileHelper.read_file_contents(file_path)
+  @doc """
+  Get binary of a file.
+  """
+  @spec get_file_binary(:file | :asset | :url, map() | String.t() | Asset.t()) ::
+          {:ok, binary()} | {:error, String.t()}
+  def get_file_binary(:asset, asset),
+    do: download_zip_from_storage(asset)
 
-  defp get_zip_binary(:url, url), do: get_zip_binary_from_url(url)
+  def get_file_binary(:url, url), do: get_file_binary_from_url(url)
+
+  def get_file_binary(:file, %{path: file_path}) do
+    file_path
+    |> File.read()
+    |> case do
+      {:ok, binary} -> {:ok, binary}
+      {:error, reason} -> {:error, "Failed to read file: #{reason}"}
+    end
+  end
 
   @doc """
   Prepare all the nessecary files and format for zip export.
@@ -1128,13 +1288,14 @@ defmodule WraftDoc.TemplateAssets do
     query =
       from(t in TemplateAsset,
         where: is_nil(t.organisation_id) and is_nil(t.creator_id),
-        order_by: [desc: t.inserted_at]
+        order_by: [desc: t.inserted_at],
+        preload: [:asset]
       )
 
     query
     |> Repo.all()
     |> Enum.map(fn template_asset ->
-      rootname = get_rootname(template_asset.zip_file.file_name)
+      rootname = get_rootname(template_asset.asset.file.file_name)
 
       %{
         id: template_asset.id,

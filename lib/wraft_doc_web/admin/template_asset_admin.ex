@@ -7,33 +7,55 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
 
   import Ecto.Query
 
+  alias Ecto.Multi
+  alias WraftDoc.Assets
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.TemplateAsset
+  alias WraftDocWeb.AssetUploader
   alias WraftDocWeb.TemplateAssetThumbnailUploader
-  alias WraftDocWeb.TemplateAssetUploader
 
   def index(_) do
     [
       name: %{label: "Name", type: :string},
       description: %{label: "Description", type: :string},
       zip_file_size: %{name: "Zip size", type: :string},
+      file: %{
+        name: "File",
+        type: :string,
+        value: fn x ->
+          x.file_name
+        end
+      },
       inserted_at: %{name: "Created At", type: :datetime},
       updated_at: %{label: "Updated At", type: :datetime}
     ]
   end
 
+  def default_actions(_schema),
+    do: [
+      :new,
+      :show,
+      :delete
+    ]
+
   def custom_index_query(_conn, _resource, query) do
     from(t in query,
-      where: is_nil(t.organisation_id) and is_nil(t.creator_id)
+      where: is_nil(t.organisation_id) and is_nil(t.creator_id),
+      preload: [:asset]
+    )
+  end
+
+  def custom_show_query(_conn, _resource, query) do
+    from(t in query,
+      preload: [:asset]
     )
   end
 
   def form_fields(_) do
     [
-      name: %{type: :text, required: true},
-      description: %{type: :text},
-      zip_file: %{
+      file: %{
         type: :file,
         required: true
       },
@@ -44,77 +66,73 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
     ]
   end
 
-  defp admin_changeset(%{"zip_file" => %{filename: zip_file_name}} = params) do
-    %TemplateAsset{}
-    |> Map.merge(%{:zip_file_name => zip_file_name})
-    |> TemplateAsset.changeset(params)
-    |> TemplateAsset.add_zip_file_size(params)
-    |> then(&{:ok, &1})
-  end
-
-  def before_insert(conn, changeset) do
-    params = conn.params["template_asset"]
+  def insert(
+        %{params: %{"template_asset" => %{"file" => %{filename: file_name} = file} = params}},
+        changeset
+      ) do
+    params =
+      Map.put(params, "type", "zip")
 
     with :ok <- check_zip_exists(params),
+         :ok <- TemplateAssets.validate_template_asset_file(file),
          {:ok, params, _} <-
-           TemplateAssets.process_template_asset(params, :file, params["zip_file"]),
-         {:ok, changeset} <- admin_changeset(params) do
-      {:ok, changeset}
+           TemplateAssets.process_template_asset(params, :file, file),
+         {:ok, %TemplateAsset{} = template_asset} <-
+           insert_multi(params, file_name) do
+      {:ok, template_asset}
     else
-      {:error, error_message} ->
-        custom_error(changeset, error_message)
+      {:error, %Ecto.Changeset{} = changeset} -> {:error, changeset}
+      {:error, reason} -> {:error, {changeset, reason}}
     end
   end
 
-  def admin_file_changeset(schema, params) do
-    cast_attachments(schema, params, [:zip_file, :thumbnail])
+  defp insert_multi(params, file_name) do
+    Multi.new()
+    |> Multi.run(:create_asset, fn _, _ ->
+      Assets.create_asset(nil, params)
+    end)
+    |> Multi.run(:create_template_asset, fn _, %{create_asset: %Asset{id: asset_id}} ->
+      TemplateAssets.create_template_asset(
+        nil,
+        Map.merge(params, %{"asset_id" => asset_id, "file_name" => file_name})
+      )
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{create_template_asset: template_asset}} ->
+        {:ok, template_asset}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
   end
 
-  defp custom_error(changeset, error_message) do
-    changeset
-    |> Ecto.Changeset.add_error(:zip_file, error_message)
-    |> then(&{:error, &1})
-  end
-
-  defp check_zip_exists(%{"zip_file" => %Plug.Upload{filename: filename}}) do
+  defp check_zip_exists(%{"file" => %Plug.Upload{filename: filename}}) do
     if Path.extname(filename) == ".zip" do
       :ok
     else
-      {:error, "is not valid"}
+      {:error, "File is invalid"}
     end
   end
 
-  defp check_zip_exists(_params) do
-    {:error, "not provided."}
-  end
+  defp check_zip_exists(_params), do: {:error, "File not provided."}
 
-  def after_insert(conn, template_asset) do
-    params = conn.params["template_asset"]
+  def before_delete(_conn, changeset) do
+    %{asset: %{file: file} = asset} =
+      template_asset = Repo.preload(changeset.data, [:asset])
 
-    template_asset
-    |> admin_file_changeset(params)
-    |> Repo.update()
-    |> case do
-      {:ok, updated_template_asset} ->
-        {:ok, updated_template_asset}
-
-      {:error, error_changeset} ->
-        {:error, error_changeset}
+    with {:ok, _} <- Assets.delete_asset(asset),
+         :ok <- delete_thumbnail(template_asset),
+         :ok <- AssetUploader.delete({file, asset}) do
+      {:ok, changeset}
+    else
+      {:error, %Ecto.Changeset{} = changeset} -> {:error, changeset}
+      {:error, reason} -> {:error, {changeset, reason}}
     end
   end
 
-  def after_delete(_conn, %{zip_file: zip_file, thumbnail: nil} = template_asset) do
-    with template_asset <- Map.put(template_asset, :zip_file_name, zip_file.file_name),
-         :ok <- TemplateAssetUploader.delete({zip_file, template_asset}) do
-      {:ok, template_asset}
-    end
-  end
+  defp delete_thumbnail(%{thumbnail: thumbnail} = template_asset) when thumbnail != nil,
+    do: TemplateAssetThumbnailUploader.delete({thumbnail, template_asset})
 
-  def after_delete(_conn, %{zip_file: zip_file, thumbnail: thumbnail} = template_asset) do
-    with template_asset <- Map.put(template_asset, :zip_file_name, zip_file.file_name),
-         :ok <- TemplateAssetUploader.delete({zip_file, template_asset}),
-         :ok <- TemplateAssetThumbnailUploader.delete({thumbnail, template_asset}) do
-      {:ok, template_asset}
-    end
-  end
+  defp delete_thumbnail(_), do: :ok
 end

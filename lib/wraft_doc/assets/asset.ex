@@ -6,7 +6,9 @@ defmodule WraftDoc.Assets.Asset do
   use WraftDoc.Schema
   use Waffle.Ecto.Schema
 
-  @types ~w(layout theme document frame)
+  @types ~w(layout theme document frame template_asset)
+  @fields [:name, :type, :organisation_id, :expiry_date, :url]
+  @required_fields [:name, :type, :organisation_id]
 
   schema "asset" do
     field(:name, :string)
@@ -21,8 +23,15 @@ defmodule WraftDoc.Assets.Asset do
 
   def changeset(%Asset{} = asset, attrs \\ %{}) do
     asset
-    |> cast(attrs, [:name, :type, :organisation_id, :expiry_date, :url])
-    |> validate_required([:name, :type, :organisation_id])
+    |> cast(attrs, @fields)
+    |> validate_required(@required_fields)
+    |> validate_inclusion(:type, @types)
+  end
+
+  def public_changeset(%Asset{} = asset, attrs \\ %{}) do
+    asset
+    |> cast(attrs, @fields)
+    |> validate_required(@required_fields -- [:organisation_id])
     |> validate_inclusion(:type, @types)
   end
 
