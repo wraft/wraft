@@ -33,7 +33,6 @@ pipeline:delete,Pipeline,Delete
 role:show,Role,Show
 role:manage,Role,Manage
 role:delete,Role,Delete
-role:assign,Role,Assign
 theme:show,Theme,Show
 theme:manage,Theme,Manage
 theme:delete,Theme,Delete

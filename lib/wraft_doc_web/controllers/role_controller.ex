@@ -8,7 +8,7 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     delete: "role:delete",
     index: "role:show",
     update: "role:manage",
-    assign_role: "role:assign"
+    assign_role: "role:manage"
 
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
