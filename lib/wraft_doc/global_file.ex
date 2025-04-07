@@ -25,7 +25,7 @@ defmodule WraftDoc.GlobalFile do
 
   def import_global_asset(current_user, %{type: "template_asset"} = asset, params) do
     with {:ok, params, _} <-
-           TemplateAssets.process_template_asset(params, :file, asset),
+           TemplateAssets.process_template_asset(params, :asset, asset),
          {:ok, %TemplateAsset{} = template_asset} <-
            TemplateAssets.create_template_asset(current_user, params) do
       {:ok,

@@ -34,13 +34,13 @@ defmodule WraftDoc.Assets do
 
   def update_asset_params(%{"type" => "zip", "file" => file} = params) do
     file
-    |> FileHelper.get_file_type()
+    |> FileHelper.get_file_metadata()
     |> case do
       {:ok, metadata} ->
         {:ok, Map.merge(params, metadata)}
 
-      {:error, reason} ->
-        {:error, reason}
+      {:error, error} ->
+        {:error, error}
     end
   end
 

@@ -7,6 +7,7 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
 
   import Ecto.Query
 
+  alias Ecto.Multi
   alias WraftDoc.Assets
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Repo
@@ -31,6 +32,13 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
       updated_at: %{label: "Updated At", type: :datetime}
     ]
   end
+
+  def default_actions(_schema),
+    do: [
+      :new,
+      :show,
+      :delete
+    ]
 
   def custom_index_query(_conn, _resource, query) do
     from(t in query,
@@ -58,19 +66,44 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
     ]
   end
 
-  def insert(conn, _changeset) do
+  def insert(
+        %{params: %{"template_asset" => %{"file" => %{filename: file_name} = file} = params}},
+        changeset
+      ) do
     params =
-      Map.put(conn.params["template_asset"], "type", "template_asset")
+      Map.put(params, "type", "zip")
 
     with :ok <- check_zip_exists(params),
+         :ok <- TemplateAssets.validate_template_asset_file(file),
          {:ok, params, _} <-
-           TemplateAssets.process_template_asset(params, :raw_file, params["file"]),
-         {:ok, %Asset{id: asset_id}} <- Assets.create_asset(nil, params),
+           TemplateAssets.process_template_asset(params, :file, file),
          {:ok, %TemplateAsset{} = template_asset} <-
-           TemplateAssets.create_template_asset(nil, Map.merge(params, %{"asset_id" => asset_id})) do
+           insert_multi(params, file_name) do
       {:ok, template_asset}
     else
-      {:error, error} -> {:error, error}
+      {:error, %Ecto.Changeset{} = changeset} -> {:error, changeset}
+      {:error, reason} -> {:error, {changeset, reason}}
+    end
+  end
+
+  defp insert_multi(params, file_name) do
+    Multi.new()
+    |> Multi.run(:create_asset, fn _, _ ->
+      Assets.create_asset(nil, params)
+    end)
+    |> Multi.run(:create_template_asset, fn _, %{create_asset: %Asset{id: asset_id}} ->
+      TemplateAssets.create_template_asset(
+        nil,
+        Map.merge(params, %{"asset_id" => asset_id, "file_name" => file_name})
+      )
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{create_template_asset: template_asset}} ->
+        {:ok, template_asset}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
     end
   end
 
@@ -92,6 +125,9 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
          :ok <- delete_thumbnail(template_asset),
          :ok <- AssetUploader.delete({file, asset}) do
       {:ok, changeset}
+    else
+      {:error, %Ecto.Changeset{} = changeset} -> {:error, changeset}
+      {:error, reason} -> {:error, {changeset, reason}}
     end
   end
 

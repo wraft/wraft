@@ -182,20 +182,23 @@ defmodule WraftDoc.Frames.WraftJson.Metadata do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias __MODULE__
   alias WraftDoc.Frames.WraftJson
 
   @primary_key false
   embedded_schema do
     field(:name, :string)
     field(:description, :string)
+    field(:type, :string)
     field(:frameType, :string)
-    field(:lastUpdated, :string)
+    field(:updated_at, :string)
   end
 
-  def changeset(struct, params) do
+  def changeset(struct \\ %Metadata{}, params) do
     struct
-    |> cast(params, [:name, :description, :frameType, :lastUpdated])
-    |> validate_required([:name, :frameType])
+    |> cast(params, [:name, :description, :type, :frameType, :updated_at])
+    |> validate_required([:name, :frameType, :type])
+    |> validate_inclusion(:type, ["frame"])
     |> validate_inclusion(:frameType, Map.keys(WraftJson.doc_types()),
       message: "must be one of: #{Enum.join(Map.keys(WraftJson.doc_types()), ", ")}"
     )

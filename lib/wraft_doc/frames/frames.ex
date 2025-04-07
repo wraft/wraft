@@ -231,7 +231,7 @@ defmodule WraftDoc.Frames do
     end
   end
 
-  defp fetch_and_associate_assets(frame, current_user, %{"assets" => asset_id}) do
+  defp fetch_and_associate_assets(frame, current_user, %{"asset_id" => asset_id}) do
     asset_id
     |> Assets.get_asset(current_user)
     |> case do
@@ -248,9 +248,9 @@ defmodule WraftDoc.Frames do
 
   defp fetch_and_associate_assets(_frame, _current_user, _params), do: nil
 
-  defp associate_frame_and_asset(%Frame{} = frame, current_user, asset) do
+  defp associate_frame_and_asset(%Frame{} = frame, current_user, %Asset{id: asset_id}) do
     frame
-    |> build_assoc(:frame_asset, asset_id: asset.id, creator: current_user)
+    |> build_assoc(:frame_asset, asset_id: asset_id, creator: current_user)
     |> FrameAsset.changeset()
     |> Repo.insert()
 

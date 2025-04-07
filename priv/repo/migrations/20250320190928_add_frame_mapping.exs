@@ -16,9 +16,25 @@ defmodule WraftDoc.Repo.Migrations.AddFrameMapping do
         name: :frame_content_type_unique_index
       )
     )
+
+    drop(constraint(:frame_asset, :frame_asset_frame_id_fkey))
+    drop(constraint(:frame_asset, :frame_asset_asset_id_fkey))
+
+    alter table(:frame_asset) do
+      modify(:frame_id, references(:frame, type: :uuid, on_delete: :delete_all))
+      modify(:asset_id, references(:asset, type: :uuid, on_delete: :delete_all))
+    end
   end
 
   def down do
+    drop(constraint(:frame_asset, :frame_asset_frame_id_fkey))
+    drop(constraint(:frame_asset, :frame_asset_asset_id_fkey))
+
+    alter table(:frame_asset) do
+      modify(:frame_id, references(:frame, type: :uuid, on_delete: :nilify_all))
+      modify(:asset_id, references(:asset, type: :uuid, on_delete: :nilify_all))
+    end
+
     drop(table(:frame_mapping))
   end
 end

@@ -4,6 +4,8 @@ defmodule WraftDoc.Utils.FileHelper do
   """
 
   alias WraftDoc.Frames.WraftJson
+  alias WraftDoc.Frames.WraftJson.Metadata, as: FrameMetadata
+  alias WraftDoc.TemplateAssets.Metadata, as: TemplateAssetMetadata
   alias WraftDoc.Utils.FileValidator
 
   @required_files ["wraft.json", "template.typst", "default.typst"]
@@ -174,13 +176,35 @@ defmodule WraftDoc.Utils.FileHelper do
   def file_size(file_binary), do: file_binary |> byte_size() |> Sizeable.filesize()
 
   @doc """
-  Get file type.
+  Get file metadata.
   """
-  @spec get_file_type(Plug.Upload.t()) :: {:ok | :error, String.t()}
-  def get_file_type(%Plug.Upload{path: file_path}) do
+  @spec get_file_metadata(Plug.Upload.t()) ::
+          {:ok, String.t()} | {:error, String.t() | Ecto.Changeset.t()}
+  def get_file_metadata(%Plug.Upload{path: file_path}) do
     with {:ok, file_binary} <- read_file_contents(file_path),
-         {:ok, %{"metadata" => metadata}} <- get_wraft_json(file_binary) do
+         {:ok, %{"metadata" => metadata}} <- get_wraft_json(file_binary),
+         :ok <- validate_metadata(metadata) do
       {:ok, metadata}
+    end
+  end
+
+  defp validate_metadata(metadata) do
+    metadata
+    |> Map.get("type")
+    |> case do
+      "frame" -> validate_with_schema(FrameMetadata, metadata)
+      "template_asset" -> validate_with_schema(TemplateAssetMetadata, metadata)
+      nil -> {:error, "Type is missing"}
+      _unsupported_type -> {:error, "Unsupported metadata type"}
+    end
+  end
+
+  defp validate_with_schema(schema_module, metadata) do
+    metadata
+    |> schema_module.changeset()
+    |> case do
+      %Ecto.Changeset{valid?: true} -> :ok
+      changeset -> {:error, changeset}
     end
   end
 end

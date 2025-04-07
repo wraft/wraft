@@ -5,6 +5,7 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
   use Ecto.Schema
   import Ecto.Query
 
+  alias Ecto.Multi
   alias WraftDoc.Assets
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Enterprise.Organisation
@@ -44,6 +45,13 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
     ]
   end
 
+  def default_actions(_schema),
+    do: [
+      :new,
+      :show,
+      :delete
+    ]
+
   def custom_index_query(_conn, _schema, query),
     do: from(r in query, preload: [:organisation, :assets])
 
@@ -58,9 +66,7 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
 
     with :ok <- FileHelper.validate_frame_file(file_path),
          {:ok, params} <- process_file_and_params(params),
-         {:ok, %Asset{id: asset_id}} <-
-           Assets.create_asset(nil, Map.merge(params, %{"type" => "frame"})),
-         {:ok, frame} <- Frames.create_frame(nil, Map.merge(params, %{"assets" => asset_id})) do
+         {:ok, %Frame{} = frame} <- insert_multi(params) do
       {:ok, frame}
     else
       {:error, %Ecto.Changeset{} = changeset} -> {:error, changeset}
@@ -68,19 +74,21 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
     end
   end
 
-  def update(conn, %Ecto.Changeset{data: %{assets: asset} = data} = changeset) do
-    %{"file" => %{path: file_path}} = params = conn.params["frame"]
+  defp insert_multi(params) do
+    Multi.new()
+    |> Multi.run(:create_asset, fn _, _ ->
+      Assets.create_asset(nil, Map.merge(params, %{"type" => "frame"}))
+    end)
+    |> Multi.run(:create_template_asset, fn _, %{create_asset: %Asset{id: asset_id}} ->
+      Frames.create_frame(nil, Map.merge(params, %{"assets" => asset_id}))
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{create_template_asset: template_asset}} ->
+        {:ok, template_asset}
 
-    with :ok <- FileHelper.validate_frame_file(file_path),
-         {:ok, params} <- process_file_and_params(params),
-         {:ok, %Asset{id: asset_id}} <-
-           Assets.update_asset(asset, Map.merge(params, %{"type" => "frame"})),
-         {:ok, frame} <-
-           Frames.update_frame(data, nil, Map.merge(params, %{"assets" => asset_id})) do
-      {:ok, frame}
-    else
-      {:error, %Ecto.Changeset{} = changeset} -> {:error, changeset}
-      {:error, reason} -> {:error, {changeset, reason}}
+      {:error, _, changeset, _} ->
+        {:error, changeset}
     end
   end
 

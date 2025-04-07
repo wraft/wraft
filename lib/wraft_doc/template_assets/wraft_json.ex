@@ -44,6 +44,8 @@ defmodule WraftDoc.TemplateAssets.Metadata do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias __MODULE__
+
   @primary_key false
   embedded_schema do
     field(:name, :string)
@@ -52,7 +54,7 @@ defmodule WraftDoc.TemplateAssets.Metadata do
     field(:updated_at, :string)
   end
 
-  def changeset(struct, params) do
+  def changeset(struct \\ %Metadata{}, params) do
     struct
     |> cast(params, [:name, :description, :type, :updated_at])
     |> validate_required([:name, :description, :type])

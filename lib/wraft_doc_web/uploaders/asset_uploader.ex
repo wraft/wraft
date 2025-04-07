@@ -5,6 +5,8 @@ defmodule WraftDocWeb.AssetUploader do
 
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Client.Minio
+  alias WraftDoc.TemplateAssets
+  alias WraftDoc.Utils.FileHelper
 
   @versions [:original]
   @font_style_name ~w(Regular Italic Bold BoldItalic)
@@ -50,23 +52,21 @@ defmodule WraftDocWeb.AssetUploader do
     end
   end
 
-  def validate({%{file_name: file_name} = file, %Asset{type: "frame"}}) do
-    file_extension = file_name |> Path.extname() |> String.downcase()
-
-    if file_extension == ".zip" and file_size(file) <= @max_file_size do
-      :ok
-    else
-      {:error, "Invalid file type or file size exceeds limit"}
+  def validate({%{path: file_path} = file, %Asset{type: "frame"}}) do
+    file
+    |> validate_file_extension(".zip")
+    |> case do
+      :ok -> FileHelper.validate_frame_file(file_path)
+      {:error, error} -> {:error, error}
     end
   end
 
-  def validate({%{file_name: file_name} = file, %Asset{type: "template_asset"}}) do
-    file_extension = file_name |> Path.extname() |> String.downcase()
-
-    if file_extension == ".zip" and file_size(file) <= @max_file_size do
-      :ok
-    else
-      {:error, "Invalid file type or file size exceeds limit"}
+  def validate({file, %Asset{type: "template_asset"}}) do
+    file
+    |> validate_file_extension(".zip")
+    |> case do
+      :ok -> TemplateAssets.validate_template_asset_file(file)
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -105,4 +105,14 @@ defmodule WraftDocWeb.AssetUploader do
   def default_url(_version, _scope), do: Minio.generate_url("public/images/avatar.png")
 
   defp file_size(%Waffle.File{} = file), do: file.path |> File.stat!() |> Map.get(:size)
+
+  defp validate_file_extension(%{file_name: file_name} = file, expected_extension) do
+    file_extension = file_name |> Path.extname() |> String.downcase()
+
+    if file_extension == expected_extension and file_size(file) <= @max_file_size do
+      :ok
+    else
+      {:error, "Invalid file type or file size exceeds limit"}
+    end
+  end
 end

@@ -29,7 +29,7 @@ defmodule WraftDocWeb.Api.V1.FrameController do
             id: "123e4567-e89b-12d3-a456-426614174000",
             name: "my-document-frame",
             description: "My document frame",
-            type: "typst",
+            type: "zip",
             inserted_at: "2024-01-15T10:30:00Z",
             updated_at: "2024-01-15T10:30:00Z"
           })
@@ -52,7 +52,7 @@ defmodule WraftDocWeb.Api.V1.FrameController do
             id: "123e4567-e89b-12d3-a456-426614174000",
             name: "my-document-frame",
             description: "My document frame",
-            type: "typst",
+            type: "zip",
             inserted_at: "2024-01-15T10:30:00Z",
             updated_at: "2024-01-15T10:30:00Z"
           })
@@ -176,9 +176,11 @@ defmodule WraftDocWeb.Api.V1.FrameController do
   def create(conn, %{"assets" => assets} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset{} = asset <- Assets.get_asset(assets, current_user),
+    with %Asset{type: "frame"} = asset <- Assets.get_asset(assets, current_user),
          {:ok, %Frame{} = frame} <- Frames.create_frame(current_user, asset, params) do
       render(conn, "create.json", frame: frame)
+    else
+      %Asset{type: _} -> {:error, "Invalid asset type"}
     end
   end
 

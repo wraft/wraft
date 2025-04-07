@@ -14,9 +14,10 @@ defmodule WraftDoc.Utils.FileValidator do
     ".otf",
     ".tex",
     ".json",
-    ".svg"
+    ".svg",
+    ".md"
   ]
-  @plain_text_extensions [".json", ".typ", ".typst", ".tex", ".svg"]
+  @plain_text_extensions [".json", ".typ", ".typst", ".tex", ".svg", ".md"]
   @max_file_size 5_000_000
   @max_total_size 20_000_000
 
@@ -38,10 +39,6 @@ defmodule WraftDoc.Utils.FileValidator do
      - Verifies that individual file sizes and the total size of all files are within acceptable limits.
      - Checks file signatures to detect mismatches or unknown formats.
 
-  4. **Error Handling**:
-     - Returns descriptive error messages for invalid files or failed checks.
-
-  If all checks pass, the function returns `{:ok, file_entries}`. If any check fails, it returns `{:error, reason}`.
   """
   @spec validate_file(String.t()) :: {:ok, list()} | {:error, String.t()}
   def validate_file(file_path) do

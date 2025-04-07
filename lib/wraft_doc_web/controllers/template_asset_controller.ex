@@ -350,12 +350,14 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   def create(conn, %{"asset_id" => asset_id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Asset{} = asset <- Assets.get_asset(asset_id, current_user),
+    with %Asset{type: "template_asset"} = asset <- Assets.get_asset(asset_id, current_user),
          {:ok, params, _} <-
-           TemplateAssets.process_template_asset(params, :file, asset),
+           TemplateAssets.process_template_asset(params, :asset, asset),
          {:ok, %TemplateAsset{} = template_asset} <-
            TemplateAssets.create_template_asset(current_user, params) do
       render(conn, "template_asset.json", template_asset: template_asset)
+    else
+      %Asset{type: _} -> {:error, "Invalid asset type"}
     end
   end
 
@@ -363,12 +365,12 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   def create(conn, %{"zip_url" => zip_url} = params) do
     current_user = conn.assigns.current_user
 
-    with {:ok, params, zip_binary} <-
+    with {:ok, params, file_binary} <-
            TemplateAssets.process_template_asset(params, :url, zip_url),
          {:ok, %TemplateAsset{} = template_asset} <-
            TemplateAssets.create_template_asset(current_user, params),
          {:ok, _} <-
-           TemplateAssets.add_asset(template_asset, zip_binary, zip_url, current_user) do
+           TemplateAssets.add_asset(template_asset, file_binary, zip_url, current_user) do
       render(conn, "template_asset.json", template_asset: template_asset)
     end
   end
@@ -459,12 +461,12 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     current_user = conn.assigns[:current_user]
 
     with %TemplateAsset{} = template_asset <- TemplateAssets.get_template_asset(id, current_user),
-         {:ok, params, zip_binary} <-
+         {:ok, params, file_binary} <-
            TemplateAssets.process_template_asset(params, :url, zip_url),
          {:ok, template_asset} <-
            TemplateAssets.update_template_asset(template_asset, current_user, params),
          {:ok, _} <-
-           TemplateAssets.add_asset(template_asset, zip_binary, zip_url, current_user) do
+           TemplateAssets.add_asset(template_asset, file_binary, zip_url, current_user) do
       render(conn, "template_asset.json", template_asset: template_asset)
     end
   end
@@ -476,7 +478,7 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     with %Asset{} = asset <- Assets.get_asset(asset_id, current_user),
          %TemplateAsset{} = template_asset <- TemplateAssets.get_template_asset(id, current_user),
          {:ok, params, _} <-
-           TemplateAssets.process_template_asset(params, :file, asset),
+           TemplateAssets.process_template_asset(params, :asset, asset),
          {:ok, template_asset} <-
            TemplateAssets.update_template_asset(template_asset, current_user, params) do
       render(conn, "template_asset.json", template_asset: template_asset)
@@ -546,11 +548,11 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
     with %TemplateAsset{asset: asset} <-
            TemplateAssets.get_template_asset(template_asset_id, current_user),
-         {:ok, downloaded_zip_binary} <-
+         {:ok, downloaded_file_binary} <-
            TemplateAssets.download_zip_from_storage(asset),
          options <- TemplateAssets.format_opts(params),
          {:ok, result} <-
-           TemplateAssets.import_template(current_user, downloaded_zip_binary, options) do
+           TemplateAssets.import_template(current_user, downloaded_file_binary, options) do
       render(conn, "show_template.json", result: result)
     end
   end
@@ -584,10 +586,10 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
     with %TemplateAsset{asset: asset} <-
            TemplateAssets.get_template_asset(template_asset_id, current_user),
-         {:ok, downloaded_zip_binary} <-
+         {:ok, downloaded_file_binary} <-
            TemplateAssets.download_zip_from_storage(asset),
          {:ok, result} <-
-           TemplateAssets.pre_import_template(downloaded_zip_binary) do
+           TemplateAssets.pre_import_template(downloaded_file_binary) do
       render(conn, "template_pre_import.json", result: result)
     end
   end
@@ -710,11 +712,11 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
     with %TemplateAsset{} = template_asset <-
            TemplateAssets.get_template_asset(template_asset_id),
-         {:ok, downloaded_zip_binary} <-
+         {:ok, downloaded_file_binary} <-
            TemplateAssets.download_zip_from_storage(template_asset),
          options <- TemplateAssets.format_opts(params),
          {:ok, result} <-
-           TemplateAssets.import_template(current_user, downloaded_zip_binary, options) do
+           TemplateAssets.import_template(current_user, downloaded_file_binary, options) do
       render(conn, "show_template.json", result: result)
     end
   end
