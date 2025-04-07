@@ -38,7 +38,7 @@ services:
       PADDLE_WEBHOOK_SECRET_KEY: ${PADDLE_WEBHOOK_SECRET_KEY}
       PADDLE_BASE_URL: ${PADDLE_BASE_URL}
     ports:
-      - 4001:4001
+      - 40004000
     depends_on:
       - db
       - minio

@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeFieldController do
   use PhoenixSwagger
 
   plug WraftDocWeb.Plug.AddActionLog
-  plug WraftDocWeb.Plug.Authorized, delete: "content_type:delete"
+  plug WraftDocWeb.Plug.Authorized, delete: "variant:delete"
 
   action_fallback(WraftDocWeb.FallbackController)
 
