@@ -43,6 +43,3 @@ form:delete,Form,Delete
 form_entry:show,Form Entry,Show
 form_entry:manage,Form Entry,Manage
 form_entry:delete,Form Entry,Delete
-document_guest:show,Document Guest,Show
-document_guest:manage,Document Guest,Manage
-document_guest:delete,Document Guest,Delete

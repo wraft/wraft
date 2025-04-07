@@ -4,15 +4,6 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  plug WraftDocWeb.Plug.Authorized,
-    invite: "instance_guest:show",
-    verify_document_access: "instance_guest:show",
-    revoke_document_access: "instance_guest:manage",
-    list_collaborators: "instance_guest:show",
-    update_collaborator_role: "instance_guest:manage",
-    add_counterparty: "instance_guest:show",
-    remove_counterparty: "instance_guest:delete"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   require Logger
