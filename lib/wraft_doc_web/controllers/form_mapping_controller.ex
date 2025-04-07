@@ -4,12 +4,6 @@ defmodule WraftDocWeb.Api.V1.FormMappingController do
 
   plug(WraftDocWeb.Plug.AddActionLog)
 
-  plug(WraftDocWeb.Plug.Authorized,
-    create: "form_mapping:manage",
-    show: "form_mapping:show",
-    update: "form_mapping:manage"
-  )
-
   action_fallback(WraftDocWeb.FallbackController)
 
   require Logger

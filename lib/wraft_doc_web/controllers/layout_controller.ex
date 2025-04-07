@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   plug WraftDocWeb.Plug.Authorized,
     create: "layout:create",
-    index: "layout:index",
+    index: "layout:show",
     show: "layout:show",
     update: "layout:manage",
     delete: "layout:delete",

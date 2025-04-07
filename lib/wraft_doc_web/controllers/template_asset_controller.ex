@@ -4,15 +4,6 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  plug WraftDocWeb.Plug.Authorized,
-    create: "template_asset:manage",
-    index: "template_asset:show",
-    show: "template_asset:show",
-    update: "template_asset:manage",
-    delete: "template_asset:delete",
-    template_import: "template_asset:manage",
-    template_export: "template_asset:manage"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.ContentTypes

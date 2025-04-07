@@ -4,14 +4,6 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  plug WraftDocWeb.Plug.Authorized,
-    create: "comment:manage",
-    index: "comment:show",
-    reply: "comment:manage",
-    show: "comment:show",
-    update: "comment:manage",
-    delete: "comment:delete"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Comments

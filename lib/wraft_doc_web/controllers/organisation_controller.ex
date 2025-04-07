@@ -6,11 +6,9 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
 
   plug WraftDocWeb.Plug.Authorized,
     update: "organisation:update",
-    show: "organisation:show",
     delete: "organisation:delete",
     invite: "members:manage",
-    members: "organisation:members",
-    index: "organisation:show",
+    members: "members:members",
     remove_user: "members:manage"
 
   action_fallback(WraftDocWeb.FallbackController)

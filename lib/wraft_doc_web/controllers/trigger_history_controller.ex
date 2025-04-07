@@ -9,8 +9,8 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
   plug WraftDocWeb.Plug.AddActionLog
 
   plug WraftDocWeb.Plug.Authorized,
-    create: "trigger_history:create",
-    index: "trigger_history:index"
+    create: "pipeline:manage",
+    index: "pipeline:show"
 
   action_fallback(WraftDocWeb.FallbackController)
 

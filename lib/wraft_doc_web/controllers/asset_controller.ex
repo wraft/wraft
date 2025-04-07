@@ -4,13 +4,6 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  plug WraftDocWeb.Plug.Authorized,
-    create: "asset:manage",
-    index: "asset:show",
-    show: "asset:show",
-    update: "asset:manage",
-    delete: "asset:delete"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Assets

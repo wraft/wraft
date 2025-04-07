@@ -4,11 +4,6 @@ defmodule WraftDocWeb.Api.V1.PlanController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  plug WraftDocWeb.Plug.Authorized,
-    create: "plan:manage",
-    update: "plan:manage",
-    delete: "plan:delete"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   import Ecto.Query, warn: false
