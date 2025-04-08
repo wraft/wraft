@@ -4,8 +4,6 @@ defmodule WraftDocWeb.Api.V1.EngineController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  plug WraftDocWeb.Plug.Authorized, index: "engine:show"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Documents

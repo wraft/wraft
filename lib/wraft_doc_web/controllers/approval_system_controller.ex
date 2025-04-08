@@ -3,13 +3,6 @@ defmodule WraftDocWeb.Api.V1.ApprovalSystemController do
   use PhoenixSwagger
   plug WraftDocWeb.Plug.AddActionLog
 
-  plug WraftDocWeb.Plug.Authorized,
-    create: "approval_system:manage",
-    show: "approval_system:show",
-    update: "approval_system:manage",
-    delete: "approval_system:delete",
-    index: "approval_system:show"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Enterprise

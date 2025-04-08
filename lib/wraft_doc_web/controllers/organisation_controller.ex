@@ -5,10 +5,10 @@ defmodule WraftDocWeb.Api.V1.OrganisationController do
   plug WraftDocWeb.Plug.AddActionLog
 
   plug WraftDocWeb.Plug.Authorized,
-    update: "organisation:update",
-    delete: "organisation:delete",
+    update: "workspace:update",
+    delete: "workspace:delete",
     invite: "members:manage",
-    members: "members:members",
+    members: "members:show",
     remove_user: "members:manage"
 
   action_fallback(WraftDocWeb.FallbackController)

@@ -2,10 +2,6 @@ defmodule WraftDocWeb.Api.V1.ContentTypeRoleController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  plug WraftDocWeb.Plug.Authorized,
-    create: "content_type_role:manage",
-    delete: "content_type_role:delete"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.ContentTypes
