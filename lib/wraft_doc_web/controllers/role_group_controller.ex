@@ -4,13 +4,6 @@ defmodule WraftDocWeb.Api.V1.RoleGroupController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  plug WraftDocWeb.Plug.Authorized,
-    create: "role_group:manage",
-    show: "role_group:show",
-    udpate: "role_group:manage",
-    delete: "role_group:delete",
-    index: "role_group:show"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Account
