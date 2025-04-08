@@ -3,7 +3,6 @@ defmodule WraftDocWeb.Api.V1.PaymentController do
   use PhoenixSwagger
 
   plug WraftDocWeb.Plug.AddActionLog
-  plug WraftDocWeb.Plug.Authorized, index: "payment:show", show: "payment:show"
 
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Membership.Payment

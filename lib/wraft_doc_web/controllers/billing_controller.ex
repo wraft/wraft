@@ -4,6 +4,16 @@ defmodule WraftDocWeb.Api.V1.BillingController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
+  plug WraftDocWeb.Plug.Authorized,
+    get_subscription: "payment:show",
+    change_plan_preview: "payment:show",
+    change_plan: "payment:show",
+    activate_trial_subscription: "payment:show",
+    cancel_subscription: "payment:show",
+    get_invoice: "payment:show",
+    subscription_history_index: "payment:show",
+    get_transactions: "payment:show"
+
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Billing

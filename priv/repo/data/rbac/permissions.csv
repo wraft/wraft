@@ -13,19 +13,19 @@ template:delete,Template,Delete
 flow:show,Flow,Show
 flow:manage,Flow,Manage
 flow:delete,Flow,Delete
-document:show,Document ,Show
-document:delete,Document ,Delete
-document:manage,Document ,Manage
-document:lock,Document ,Lock
-document:review,Document ,Review
+document:show,Document,Show
+document:delete,Document,Delete
+document:manage,Document,Manage
+document:lock,Document,Lock
+document:review,Document,Review
 layout:show,Layout,Show
 layout:manage,Layout,Manage
 layout:delete,Layout,Delete
-members:members,Members,Show
+members:show,Members,Show
 members:manage,Members,Manage
-organisation:update,Workspace,Update
-organisation:delete,Workspace,Delete
-organisation:invite,Workspace,Invite
+worksapce:update,Workspace,Update
+worksapce:delete,Workspace,Delete
+worksapce:invite,Workspace,Invite
 payment:show,Payment,Show
 pipeline:show,Pipeline,Show
 pipeline:manage,Pipeline,Manage

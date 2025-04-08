@@ -3,7 +3,6 @@ defmodule WraftDocWeb.Api.V1.MembershipController do
   use PhoenixSwagger
 
   plug(WraftDocWeb.Plug.AddActionLog)
-  plug WraftDocWeb.Plug.Authorized, show: "membership:show", update: "membership:manage"
 
   import Ecto.Query, warn: false
 

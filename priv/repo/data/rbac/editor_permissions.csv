@@ -22,7 +22,6 @@ document:review
 layout:show
 layout:manage
 layout:delete
-organisation:show
 pipeline:show
 pipeline:manage
 pipeline:delete
