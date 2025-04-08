@@ -58,19 +58,12 @@ defmodule WraftDoc.Repo.Migrations.UpdatedPermissions do
       |> Enum.reject(&(&1 == ""))
       |> Enum.uniq()
 
-    if editor_permissions == [] do
-      Logger.warn(":warning: No editor permissions found in file: #{editor_permissions_file}")
-    else
-      sql = "UPDATE role SET permissions = $1 WHERE name = 'editor'"
-      SQL.query!(Repo, sql, [editor_permissions])
-      Logger.info(":pencil: Set specific editor permissions from CSV")
-    end
+    sql = "UPDATE role SET permissions = $1  WHERE name NOT IN ('superadmin')"
+    SQL.query!(Repo, sql, [editor_permissions])
+    Logger.info(":pencil: Set specific editor permissions from CSV")
 
     sql_superadmin = "UPDATE role SET permissions = '{}' WHERE name = 'superadmin'"
     SQL.query!(Repo, sql_superadmin)
-
-    sql_others = "UPDATE role SET permissions = '{}' WHERE name NOT IN ('superadmin', 'editor')"
-    SQL.query!(Repo, sql_others)
 
     Logger.info(":no_entry_sign: Cleared permissions for all roles except superadmin and editor")
   end
