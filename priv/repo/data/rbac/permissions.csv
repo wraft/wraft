@@ -23,9 +23,9 @@ layout:manage,Layout,Manage
 layout:delete,Layout,Delete
 members:show,Members,Show
 members:manage,Members,Manage
-worksapce:update,Workspace,Update
-worksapce:delete,Workspace,Delete
-worksapce:invite,Workspace,Invite
+workspace:update,Workspace,Update
+workspace:delete,Workspace,Delete
+workspace:invite,Workspace,Invite
 payment:show,Payment,Show
 pipeline:show,Pipeline,Show
 pipeline:manage,Pipeline,Manage
