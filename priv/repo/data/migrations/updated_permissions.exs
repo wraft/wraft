@@ -7,6 +7,7 @@ defmodule WraftDoc.Repo.Migrations.UpdatedPermissions do
   """
 
   require Logger
+  alias Ecto.Adapters.SQL, as: SQL
   alias WraftDoc.Authorization.Permission
   alias WraftDoc.Repo
 
@@ -45,16 +46,33 @@ defmodule WraftDoc.Repo.Migrations.UpdatedPermissions do
   end
 
   defp update_roles_with_all_permissions do
-    sql = """
-    UPDATE role
-    SET permissions = (
-      SELECT ARRAY_AGG(name ORDER BY name)
-      FROM permission
-    );
-    """
+    Logger.info(":repeat: Updating roles with specific permissions")
 
-    Ecto.Adapters.SQL.query!(Repo, sql)
-    Logger.info("🔁 Updated all roles to include all current permissions")
+    editor_permissions_file =
+      Path.join(:code.priv_dir(:wraft_doc), "repo/data/rbac/editor_permissions.csv")
+
+    editor_permissions =
+      editor_permissions_file
+      |> File.stream!()
+      |> Stream.map(&String.trim/1)
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.uniq()
+
+    if editor_permissions == [] do
+      Logger.warn(":warning: No editor permissions found in file: #{editor_permissions_file}")
+    else
+      sql = "UPDATE role SET permissions = $1 WHERE name = 'editor'"
+      SQL.query!(Repo, sql, [editor_permissions])
+      Logger.info(":pencil: Set specific editor permissions from CSV")
+    end
+
+    sql_superadmin = "UPDATE role SET permissions = '{}' WHERE name = 'superadmin'"
+    SQL.query!(Repo, sql_superadmin)
+
+    sql_others = "UPDATE role SET permissions = '{}' WHERE name NOT IN ('superadmin', 'editor')"
+    SQL.query!(Repo, sql_others)
+
+    Logger.info(":no_entry_sign: Cleared permissions for all roles except superadmin and editor")
   end
 end
 
