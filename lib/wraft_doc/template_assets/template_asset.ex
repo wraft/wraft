@@ -6,19 +6,25 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
   use Waffle.Ecto.Schema
 
   alias __MODULE__
+  alias WraftDoc.Account.User
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.TemplateAssets.TemplateAssetAsset
 
   schema "template_asset" do
     field(:name, :string)
     field(:description, :string)
-    field(:zip_file, WraftDocWeb.TemplateAssetUploader.Type)
     field(:zip_file_size, :string)
+    field(:file_name, :string)
     field(:thumbnail, WraftDocWeb.TemplateAssetThumbnailUploader.Type)
     field(:wraft_json, :map)
     field(:file_entries, {:array, :string})
     field(:is_imported, :boolean, default: true)
 
-    belongs_to(:creator, WraftDoc.Account.User)
-    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+    has_one(:template_asset_asset, TemplateAssetAsset)
+    has_one(:asset, through: [:template_asset_asset, :asset])
+
+    belongs_to(:creator, User)
+    belongs_to(:organisation, Organisation)
 
     timestamps()
   end
@@ -31,33 +37,25 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
       :organisation_id,
       :wraft_json,
       :file_entries,
-      :zip_file_size
+      :zip_file_size,
+      :file_name
     ])
+    |> cast_attachments(attrs, [:thumbnail])
     |> validate_required([:name])
+    |> unique_constraint(:file_name,
+      name: :unique_public_template_file_name,
+      message: "Template asset already added"
+    )
   end
 
   def update_changeset(%TemplateAsset{} = template_asset, attrs \\ %{}) do
     template_asset
-    |> cast(attrs, [:name, :description, :wraft_json, :file_entries, :zip_file_size])
-    |> cast_attachments(attrs, [:zip_file, :thumbnail])
-    |> validate_required([:name, :zip_file])
-    |> add_zip_file_size(attrs)
+    |> cast(attrs, [:name, :description, :wraft_json, :file_entries, :zip_file_size, :file_name])
+    |> cast_attachments(attrs, [:thumbnail])
+    |> validate_required([:name])
+    |> unique_constraint(:file_name,
+      name: :unique_public_template_file_name,
+      message: "Template asset already added"
+    )
   end
-
-  def file_changeset(template_asset, attrs \\ %{}) do
-    template_asset
-    |> cast_attachments(attrs, [:zip_file, :thumbnail])
-    |> validate_required([:zip_file])
-    |> add_zip_file_size(attrs)
-  end
-
-  def add_zip_file_size(changeset, %{"zip_file" => file}) do
-    file.path
-    |> File.stat!()
-    |> Map.get(:size)
-    |> Sizeable.filesize()
-    |> then(&put_change(changeset, :zip_file_size, &1))
-  end
-
-  def add_zip_file_size(changeset, _), do: changeset
 end

@@ -5,12 +5,12 @@ defmodule WraftDocWeb.Api.V1.StateController do
   plug WraftDocWeb.Plug.AddActionLog
 
   plug WraftDocWeb.Plug.Authorized,
-    create: "state:manage",
-    index: "state:show",
-    update: "state:manage",
-    delete: "state:delete",
-    add_user_to_state: "state:manage",
-    remove_user_from_state: "state:delete"
+    create: "flow:manage",
+    index: "flow:show",
+    update: "flow:manage",
+    delete: "flow:delete",
+    add_user_to_state: "flow:manage",
+    remove_user_from_state: "flow:delete"
 
   action_fallback(WraftDocWeb.FallbackController)
 

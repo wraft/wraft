@@ -2,13 +2,6 @@ defmodule WraftDocWeb.Api.V1.CollectionFormController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  plug WraftDocWeb.Plug.Authorized,
-    show: "collection_form:show",
-    create: "collection_form:manage",
-    update: "collection_form:manage",
-    delete: "collection_form:delete",
-    index: "collection_form:show"
-
   alias WraftDoc.CollectionForms
   alias WraftDoc.CollectionForms.CollectionForm
 

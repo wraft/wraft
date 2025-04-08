@@ -4,6 +4,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
   alias __MODULE__
   alias WraftDocWeb.Api.V1.FieldTypeView
   alias WraftDocWeb.Api.V1.FlowView
+  alias WraftDocWeb.Api.V1.FrameMappingView
   alias WraftDocWeb.Api.V1.LayoutView
   alias WraftDocWeb.Api.V1.ThemeView
   alias WraftDocWeb.Api.V1.UserView
@@ -22,7 +23,11 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
       theme: render_one(c_type.theme, ThemeView, "create.json", as: :theme),
       layout: render_one(c_type.layout, LayoutView, "layout.json", as: :doc_layout),
       flow: render_one(c_type.flow, FlowView, "flow.json", as: :flow),
-      creator: render_one(c_type.creator, UserView, "user_id_and_name.json", as: :user)
+      creator: render_one(c_type.creator, UserView, "user_id_and_name.json", as: :user),
+      mappings:
+        render_one(c_type.frame_mappings, FrameMappingView, "frame_mapping.json",
+          as: :frame_mapping
+        )
     }
   end
 

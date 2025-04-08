@@ -9,6 +9,7 @@ defmodule WraftDoc.ContentTypes.ContentType do
   alias __MODULE__
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Enterprise.Flow
+  alias WraftDoc.Frames.FrameMapping
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Themes.Theme
 
@@ -34,6 +35,7 @@ defmodule WraftDoc.ContentTypes.ContentType do
     has_many(:pipelines, through: [:stages, :pipeline])
     has_many(:content_type_roles, WraftDoc.ContentTypes.ContentTypeRole)
     has_many(:roles, through: [:content_type_roles, :role])
+    has_one(:frame_mappings, FrameMapping)
 
     timestamps()
   end
@@ -75,7 +77,16 @@ defmodule WraftDoc.ContentTypes.ContentType do
 
   def update_changeset(%ContentType{} = content_type, attrs \\ %{}) do
     content_type
-    |> cast(attrs, [:name, :description, :type, :color, :layout_id, :flow_id, :prefix, :theme_id])
+    |> cast(attrs, [
+      :name,
+      :description,
+      :type,
+      :color,
+      :layout_id,
+      :flow_id,
+      :prefix,
+      :theme_id
+    ])
     |> validate_required([:name, :description, :layout_id, :flow_id, :prefix, :theme_id])
     |> unique_constraint(
       :name,

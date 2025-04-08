@@ -5,18 +5,18 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   plug WraftDocWeb.Plug.AddActionLog
 
   plug WraftDocWeb.Plug.Authorized,
-    index: "instance:show",
-    all_contents: "instance:show",
-    show: "instance:show",
-    update: "instance:manage",
-    delete: "instance:delete",
-    build: "instance:manage",
-    state_update: "instance:manage",
-    lock_unlock: "instance:lock",
-    search: "instance:show",
-    change: "instance:show",
-    approve: "instance:review",
-    reject: "instance:review"
+    index: "document:show",
+    all_contents: "document:show",
+    show: "document:show",
+    update: "document:manage",
+    delete: "document:delete",
+    build: "document:manage",
+    state_update: "document:manage",
+    lock_unlock: "document:lock",
+    search: "document:show",
+    change: "document:show",
+    approve: "document:review",
+    reject: "document:review"
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -32,6 +32,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Frames
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Notifications
   alias WraftDoc.Search.TypesenseServer, as: Typesense
@@ -786,8 +787,9 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     start_time = Timex.now()
 
     case Documents.show_instance(instance_id, current_user) do
-      %Instance{content_type: %{layout: layout}} = instance ->
+      %Instance{content_type: %{layout: layout} = content_type} = instance ->
         with %Layout{} = layout <- Assets.preload_asset(layout),
+             :ok <- Frames.check_frame_mapping(content_type),
              {_, exit_code} <- Documents.build_doc(instance, layout) do
           end_time = Timex.now()
 

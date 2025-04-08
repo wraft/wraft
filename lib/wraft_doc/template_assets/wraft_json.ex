@@ -8,15 +8,18 @@ defmodule WraftDoc.TemplateAssets.WraftJson do
 
   alias WraftDoc.TemplateAssets.DataTemplate
   alias WraftDoc.TemplateAssets.Flow
-  alias WraftDoc.TemplateAssets.Frame
   alias WraftDoc.TemplateAssets.Layout
+  alias WraftDoc.TemplateAssets.Metadata
   alias WraftDoc.TemplateAssets.Theme
   alias WraftDoc.TemplateAssets.Variant
 
   schema "wraft_json" do
+    field(:version, :string)
+    field(:frame, :string)
+
+    embeds_one(:metadata, Metadata)
     embeds_one(:theme, Theme)
     embeds_one(:layout, Layout)
-    embeds_one(:frame, Frame)
     embeds_one(:flow, Flow)
     embeds_one(:variant, Variant)
     embeds_one(:data_template, DataTemplate)
@@ -24,13 +27,38 @@ defmodule WraftDoc.TemplateAssets.WraftJson do
 
   def changeset(struct, params) do
     struct
-    |> cast(params, [])
+    |> cast(params, [:version, :frame])
+    |> cast_embed(:metadata, required: true)
     |> cast_embed(:theme, with: &Theme.changeset/2, required: false)
     |> cast_embed(:layout, with: &Layout.changeset/2, required: false)
-    |> cast_embed(:frame, with: &Frame.changeset/2, required: false)
     |> cast_embed(:flow, with: &Flow.changeset/2, required: false)
     |> cast_embed(:variant, with: &Variant.changeset/2, required: false)
     |> cast_embed(:data_template, with: &DataTemplate.changeset/2, required: false)
+  end
+end
+
+defmodule WraftDoc.TemplateAssets.Metadata do
+  @moduledoc """
+  Schema for validating wraft.json metadata
+  """
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias __MODULE__
+
+  @primary_key false
+  embedded_schema do
+    field(:name, :string)
+    field(:description, :string)
+    field(:type, :string)
+    field(:updated_at, :string)
+  end
+
+  def changeset(struct \\ %Metadata{}, params) do
+    struct
+    |> cast(params, [:name, :description, :type, :updated_at])
+    |> validate_required([:name, :description, :type])
+    |> validate_inclusion(:type, ["template_asset"])
   end
 end
 
@@ -110,6 +138,7 @@ defmodule WraftDoc.TemplateAssets.Layout do
   import Ecto.Changeset
 
   @required_fields [:name, :slug, :slug_file, :description, :engine]
+  @valid_engines ["pandoc/latex", "pandoc/typst"]
 
   embedded_schema do
     field(:name, :string)
@@ -123,6 +152,9 @@ defmodule WraftDoc.TemplateAssets.Layout do
     struct
     |> cast(params, [:name, :slug, :slug_file, :description, :engine])
     |> validate_required(@required_fields)
+    |> validate_inclusion(:engine, @valid_engines,
+      message: "must be one of: pandoc/latex, pandoc/typst"
+    )
   end
 end
 
@@ -185,29 +217,6 @@ defmodule WraftDoc.TemplateAssets.Flow do
 
   embedded_schema do
     field(:name, :string)
-  end
-
-  def changeset(struct, params) do
-    struct
-    |> cast(params, @required_fields)
-    |> validate_required(@required_fields)
-  end
-end
-
-defmodule WraftDoc.TemplateAssets.Frame do
-  @moduledoc """
-  Schema for frame in wraft_json
-  """
-
-  use Ecto.Schema
-  import Ecto.Changeset
-
-  @required_fields [:name]
-  # TODO include required fields
-  embedded_schema do
-    field(:name, :string)
-    field(:description, :string)
-    field(:type, :string)
   end
 
   def changeset(struct, params) do

@@ -35,11 +35,15 @@ defmodule WraftDocWeb.Api.V1.AssetView do
     }
   end
 
-  defp generate_url(%{file: file, type: "document"} = asset) do
-    WraftDocWeb.AssetUploader.url({file, asset}, signed: true, expires_in: 3600)
+  def render("preview.json", %{wraft_json: wraft_json}) do
+    %{
+      meta: wraft_json
+    }
   end
 
-  defp generate_url(%{file: file} = asset) do
-    WraftDocWeb.AssetUploader.url({file, asset}, signed: true)
-  end
+  defp generate_url(%{file: file, type: "document"} = asset),
+    do: WraftDocWeb.AssetUploader.url({file, asset}, signed: true, expires_in: 3600)
+
+  defp generate_url(%{file: file} = asset),
+    do: WraftDocWeb.AssetUploader.url({file, asset}, signed: true)
 end

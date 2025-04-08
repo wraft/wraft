@@ -4,17 +4,11 @@ defmodule WraftDocWeb.Api.V1.AssetController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  plug WraftDocWeb.Plug.Authorized,
-    create: "asset:manage",
-    index: "asset:show",
-    show: "asset:show",
-    update: "asset:manage",
-    delete: "asset:delete"
-
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Assets
   alias WraftDoc.Assets.Asset
+  alias WraftDoc.Utils.FileValidator
 
   def swagger_definitions do
     %{
@@ -271,6 +265,33 @@ defmodule WraftDocWeb.Api.V1.AssetController do
     with %Asset{} = asset <- Assets.get_asset(id, current_user),
          {:ok, %Asset{}} <- Assets.delete_asset(asset) do
       render(conn, "asset.json", asset: asset)
+    end
+  end
+
+  @doc """
+  Preview an asset and returns the wraft json.
+  """
+  swagger_path :preview do
+    post("/assets/preview")
+    summary("Preview an asset")
+    description("API to preview an asset")
+
+    parameter(:file, :formData, :file, "Asset file to upload", required: true)
+
+    response(200, "Ok", Schema.ref(:WraftJson))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec preview(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def preview(conn, %{
+        "file" => %Plug.Upload{
+          path: file_path
+        }
+      }) do
+    with {:ok, _} <- FileValidator.validate_file(file_path),
+         {:ok, wraft_json} <- Assets.preview_asset(file_path) do
+      render(conn, "preview.json", wraft_json: wraft_json)
     end
   end
 end

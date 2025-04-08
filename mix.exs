@@ -161,7 +161,8 @@ defmodule WraftDoc.Mixfile do
       {:y_ex, "~> 0.6.5"},
 
       # markdown
-      {:mdex, "~> 0.3.3"}
+      {:mdex, "~> 0.3.3"},
+      {:file_type, "~> 0.1.0"}
     ]
   end
 

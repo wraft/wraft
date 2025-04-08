@@ -7,7 +7,6 @@ defmodule WraftDoc.Utils.FileValidator do
     ".jpg",
     ".png",
     ".pdf",
-    ".txt",
     ".jpeg",
     ".typ",
     ".typst",
@@ -15,13 +14,31 @@ defmodule WraftDoc.Utils.FileValidator do
     ".otf",
     ".tex",
     ".json",
-    ".svg"
+    ".svg",
+    ".md"
   ]
+  @plain_text_extensions [".json", ".typ", ".typst", ".tex", ".svg", ".md"]
   @max_file_size 5_000_000
   @max_total_size 20_000_000
 
   @doc """
-  Validate file.
+  Validates a ZIP file by performing a series of checks to ensure its integrity, security, and compliance with the application's requirements.
+
+
+  The `validate_file/1` function is the entry point for validating files. It processes a file and performs the following checks:
+
+  1. **File Metadata Extraction**:
+     - Extracts metadata (e.g., file paths, sizes, extensions) from the ZIP archive.
+
+  2. **Security Checks**:
+     - Detects and prevents path traversal attacks by validating file paths.
+     - Identifies encoded malicious patterns in file paths.
+
+  3. **Validation**:
+     - Ensures that all files have allowed extensions.
+     - Verifies that individual file sizes and the total size of all files are within acceptable limits.
+     - Checks file signatures to detect mismatches or unknown formats.
+
   """
   @spec validate_file(String.t()) :: {:ok, list()} | {:error, String.t()}
   def validate_file(file_path) do
@@ -30,8 +47,9 @@ defmodule WraftDoc.Utils.FileValidator do
     with {:ok, file_info} <- :zip.list_dir(charlisted_path),
          {:ok, file_entries} <- extract_file_info(file_info),
          :ok <- check_for_path_traversal(file_entries),
+         :ok <- check_file_sizes(file_entries),
          :ok <- check_file_extensions(file_entries),
-         :ok <- check_file_sizes(file_entries) do
+         :ok <- check_file_signature(file_path) do
       {:ok, file_entries}
     end
   end
@@ -123,6 +141,52 @@ defmodule WraftDoc.Utils.FileValidator do
       invalid_exts = invalid_files |> Enum.map(& &1.extension) |> Enum.uniq()
       {:error, {:invalid_file_types, invalid_exts}}
     end
+  end
+
+  defp check_file_signature(file_path) do
+    temp_path = Briefly.create!(directory: true)
+
+    with {:ok, files} <- :zip.extract(to_charlist(file_path), [:memory]),
+         [] <- Enum.reduce(files, [], &process_file(&1, &2, temp_path)) do
+      :ok
+    else
+      mismatched_files when is_list(mismatched_files) ->
+        {:error, format_mismatched_files(mismatched_files)}
+
+      {:error, _reason} ->
+        {:error, ""}
+    end
+  end
+
+  defp process_file({path, binary}, acc, temp_path) do
+    path_string = List.to_string(path)
+    ext = path_string |> Path.extname() |> String.downcase()
+
+    if ext in @allowed_extensions and ext not in @plain_text_extensions do
+      file_path = Path.join(temp_path, path_string)
+      File.mkdir_p!(Path.dirname(file_path))
+      File.write!(file_path, binary)
+
+      case FileType.from_path(file_path) do
+        {:ok, {detected_ext, _mime_type}} ->
+          if ".#{detected_ext}" != ext do
+            [{path_string, ext, detected_ext} | acc]
+          else
+            acc
+          end
+
+        {:error, _reason} ->
+          [{path_string, ext, "unknown"} | acc]
+      end
+    else
+      acc
+    end
+  end
+
+  defp format_mismatched_files(mismatched_files) do
+    Enum.map_join(mismatched_files, ", ", fn {path, ext, detected_ext} ->
+      "#{path}: expected #{ext}, detected #{detected_ext}"
+    end)
   end
 
   defp check_file_sizes(file_entries) do
