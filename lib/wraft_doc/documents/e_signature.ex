@@ -23,7 +23,6 @@ defmodule WraftDoc.Documents.ESignature do
     field(:ip_address, :string)
     field(:signature_date, :utc_datetime)
     field(:is_valid, :boolean, default: false)
-    field(:verification_token, :string)
     belongs_to(:content, Instance)
     belongs_to(:user, User)
     belongs_to(:organisation, Organisation)

@@ -4,14 +4,17 @@ defmodule WraftDoc.CounterParties.CounterParty do
   """
   use WraftDoc.Schema
 
+  @signature_status [:pending, :accepted, :signed, :rejected]
+
   schema "counter_parties" do
     field(:name, :string)
     field(:email, :string)
-    field(:signature_status, Ecto.Enum, values: [:pending, :signed, :rejected], default: :pending)
+    field(:signature_status, Ecto.Enum, values: @signature_status, default: :pending)
     field(:signature_date, :utc_datetime)
     field(:signature_ip, :string)
+    has_one(:e_signature, WraftDoc.Documents.ESignature)
     belongs_to(:content, WraftDoc.Documents.Instance)
-    belongs_to(:guest_user, WraftDoc.Account.User, foreign_key: :guest_user_id)
+    belongs_to(:user, WraftDoc.Account.User)
 
     timestamps()
   end
@@ -22,13 +25,19 @@ defmodule WraftDoc.CounterParties.CounterParty do
       :name,
       :email,
       :content_id,
-      :guest_user_id,
+      :user_id,
       :signature_status,
       :signature_date,
       :signature_ip
     ])
     |> validate_required([:name, :content_id])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
+  end
+
+  def update_status_changeset(counter_parties, attrs) do
+    counter_parties
+    |> cast(attrs, [:signature_status])
+    |> validate_required([:signature_status])
   end
 
   def sign_changeset(counter_parties, attrs) do

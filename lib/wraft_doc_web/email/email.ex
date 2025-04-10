@@ -186,12 +186,9 @@ defmodule WraftDocWeb.Mailer.Email do
   @doc """
   Email to request signature from a counterparty
   """
-  def signature_request_email(
-        to_email,
-        %Instance{instance_id: instance_id} = _instance,
-        signature_url,
-        name
-      ) do
+  def signature_request_email(email, name, instance_id, token) do
+    signature_url = build_document_signature_request_url(token)
+
     body = %{
       instance_id: instance_id,
       signature_url: signature_url,
@@ -199,7 +196,7 @@ defmodule WraftDocWeb.Mailer.Email do
     }
 
     new()
-    |> to(to_email)
+    |> to(email)
     |> from({"Wraft", sender_email()})
     |> subject("Signature Request: Document #{instance_id}")
     |> html_body(MJML.SignatureRequest.render(body))
@@ -291,5 +288,9 @@ defmodule WraftDocWeb.Mailer.Email do
     URI.encode(
       "#{frontend_url()}/users/join_invite?token=#{token}&organisation=#{org_name}&email=#{email}"
     )
+  end
+
+  defp build_document_signature_request_url(token) do
+    "#{frontend_url()}/sign/#{token}"
   end
 end

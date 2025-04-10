@@ -7,12 +7,11 @@ defmodule WraftDoc.Documents.Signatures do
   require Logger
 
   alias WraftDoc.Account.User
-  alias WraftDoc.CounterParties
   alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.Documents.ESignature
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Repo
-  alias WraftDoc.Utils.TokenGenerator
+  alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.Mailer
   alias WraftDocWeb.Mailer.SignatureEmail
 
@@ -28,54 +27,16 @@ defmodule WraftDoc.Documents.Signatures do
   @doc """
   Create a new signature request for a document
   """
-  def create_signature_request(
-        %Instance{id: _instance_id} = instance,
-        %User{id: _user_id} = user,
-        %{"counterparty" => counterparty_params} = params
+  @spec create_signature(Instance.t(), User.t(), CounterParty.t(), map()) ::
+          {:ok, ESignature.t()} | {:error, Ecto.Changeset.t()}
+  def create_signature(
+        %Instance{id: instance_id} = _instance,
+        %User{id: user_id, current_org_id: org_id} = _user,
+        %CounterParty{id: counter_party_id} = _counterparty,
+        %{"signature_type" => signature_type}
       ) do
-    # First create or get the counterparty
-    with {:ok, %CounterParty{id: _counter_party_id} = counterparty} <-
-           ensure_counterparty(instance, counterparty_params),
-         {:ok, signature} <- create_signature(instance, user, counterparty, params) do
-      # Send signature request email
-      send_signature_request_email(signature)
-
-      {:ok, signature}
-    else
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  # Ensure a counterparty exists for the document
-  defp ensure_counterparty(
-         %Instance{id: instance_id} = instance,
-         %{"email" => email, "name" => _name} = params
-       ) do
-    case CounterParties.get_counterparty_by_email(instance_id, email) do
-      %CounterParty{} = existing_counterparty ->
-        {:ok, existing_counterparty}
-
-      nil ->
-        CounterParties.add_counterparty(instance, params)
-    end
-  end
-
-  # Create a signature record
-  defp create_signature(
-         %Instance{id: instance_id} = _instance,
-         %User{id: user_id, current_org_id: org_id} = _user,
-         %CounterParty{id: counter_party_id} = _counterparty,
-         params
-       ) do
-    # Generate verification token
-    verification_token = TokenGenerator.generate(32)
-
     signature_params = %{
-      api_url: Map.get(params, "api_url", "/api/v1/signatures"),
-      body: Jason.encode!(%{document_id: instance_id, counterparty_id: counter_party_id}),
-      header: Jason.encode!(%{content_type: "application/json"}),
-      signature_type: Map.get(params, "signature_type", "digital"),
-      verification_token: verification_token,
+      signature_type: signature_type,
       content_id: instance_id,
       user_id: user_id,
       organisation_id: org_id,
@@ -100,7 +61,7 @@ defmodule WraftDoc.Documents.Signatures do
   def get_document_pending_signatures(document_id) do
     CounterParty
     |> where([cp], cp.content_id == ^document_id and cp.signature_status == :pending)
-    |> preload([:content, :guest_user])
+    |> preload([:content, :user])
     |> Repo.all()
   end
 
@@ -219,23 +180,24 @@ defmodule WraftDoc.Documents.Signatures do
     end
   end
 
-  # Send signature request email
-  defp send_signature_request_email(
-         %ESignature{counter_party: counterparty, content: instance, verification_token: token} =
-           _signature
-       ) do
-    # Code to send email with signature link
-    # Create a URL with the verification token
-    signature_url = "#{Application.get_env(:wraft_doc, :base_url)}/sign/#{token}"
-    # Send the email
-    Mailer.deliver(
-      SignatureEmail.signature_request_email(
-        counterparty.email,
-        instance,
-        signature_url,
-        counterparty.name
-      )
-    )
+  @doc """
+   Send a signature request email to the counterparty
+  """
+  @spec signature_request_email(%Instance{}, %CounterParty{}, String.t()) ::
+          {:ok, Oban.Job.t()} | {:error, Oban.Job.changeset() | term()}
+  def signature_request_email(
+        %Instance{instance_id: instance_id},
+        %CounterParty{name: name, email: email},
+        token
+      ) do
+    %{
+      email: email,
+      name: name,
+      token: token,
+      instance_id: instance_id
+    }
+    |> EmailWorker.new(queue: "mailer", tags: ["document_signature_request"])
+    |> Oban.insert()
   end
 
   # Notify document owner about signature

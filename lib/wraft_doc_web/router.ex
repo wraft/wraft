@@ -488,7 +488,7 @@ defmodule WraftDocWeb.Router do
       )
 
       # Signature routes
-      post("/documents/:id/signatures/request", SignatureController, :request_signature)
+      post("/documents/:id/signature_request", SignatureController, :request_signature)
       get("/documents/:id/signatures", SignatureController, :get_document_signatures)
 
       delete(

@@ -4,15 +4,14 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
-  plug WraftDocWeb.Plug.Authorized,
-    request_signature: "document:signature:request",
-    sign_document: "document:signature:sign",
-    get_document_signatures: "document:signature:show",
-    revoke_signature: "document:signature:revoke",
-    verify_signature: "document:signature:verify"
-
   action_fallback(WraftDocWeb.FallbackController)
 
+  alias WraftDoc.Account
+  alias WraftDoc.Account.User
+  alias WraftDoc.AuthTokens
+  alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.CounterParties
+  alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.Documents
   alias WraftDoc.Documents.ESignature
   alias WraftDoc.Documents.Instance
@@ -36,10 +35,8 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
           end
 
           example(%{
-            counterparty: %{
-              name: "John Doe",
-              email: "john.doe@example.com"
-            },
+            name: "John Doe",
+            email: "john.doe@example.com",
             signature_type: "digital"
           })
         end,
@@ -111,7 +108,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   Request a signature for a document from a counterparty
   """
   swagger_path :request_signature do
-    post("/documents/{id}/signatures/request")
+    post("/documents/{id}/signature_request")
     summary("Request document signature")
     description("API to request a signature for a document from a counterparty")
 
@@ -127,11 +124,18 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec request_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def request_signature(conn, %{"id" => document_id} = params) do
+  def request_signature(conn, %{"id" => document_id, "email" => email} = params) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
-         {:ok, signature} <- Signatures.create_signature_request(instance, current_user, params) do
+         %User{} = invited_signatory <- Account.get_or_create_guest_user(params),
+         %CounterParty{} = counter_party <-
+           CounterParties.get_or_create_counter_party(instance, params, invited_signatory),
+         {:ok, %AuthToken{value: token}} <-
+           AuthTokens.create_signer_invite_token(instance, email),
+         {:ok, signature} <-
+           Signatures.create_signature(instance, current_user, counter_party, params),
+         {:ok, %Oban.Job{}} <- Signatures.signature_request_email(instance, counter_party, token) do
       render(conn, "signature.json", signature: signature)
     end
   end
@@ -201,11 +205,12 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   Verify a signature
   """
   swagger_path :verify_signature do
-    get("/signatures/verify/{token}")
+    get("/contents/{id}/verify_signatory/{token}")
     summary("Verify a signature")
     description("API to verify a signature by token")
 
     parameters do
+      id(:path, :string, "Document ID", required: true)
       token(:path, :string, "Signature verification token", required: true)
     end
 
@@ -215,9 +220,26 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec verify_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def verify_signature(conn, %{"token" => token}) do
-    with {:ok, signature} <- Signatures.verify_signature_by_token(token) do
-      render(conn, "signature.json", signature: signature)
+  def verify_signature(conn, %{"token" => invite_token, "id" => document_id}) do
+    with {:ok, %{email: email, document_id: ^document_id}} <-
+           AuthTokens.check_token(invite_token, :signer_invite),
+         %User{} = invited_signatory <- Account.get_user_by_email(email),
+         %CounterParty{} = counter_party <- CounterParties.get_counterparty(document_id, email),
+         %CounterParty{} = counter_party <- CounterParties.approve_document_access(counter_party),
+         {:ok, guest_access_token, _} <-
+           AuthTokens.create_guest_access_token(invited_signatory, %{
+             email: email,
+             document_id: document_id
+           }) do
+      render(conn, "verify_signer.json", counter_party: counter_party, token: guest_access_token)
+    else
+      _ ->
+        conn
+        |> put_resp_header("content-type", "application/json")
+        |> send_resp(
+          401,
+          Jason.encode!(%{errors: "Document id does not match the invite token."})
+        )
     end
   end
 
