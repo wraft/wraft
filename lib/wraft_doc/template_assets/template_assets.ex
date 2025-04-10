@@ -486,9 +486,9 @@ defmodule WraftDoc.TemplateAssets do
     with {:ok, file_path} <- extract_frame_files(downloaded_file, entries),
          {:ok, %{"metadata" => %{"name" => frame_name}} = _wraft_json} <-
            get_frame_wraft_json(downloaded_file, frame_json_path),
-         {:ok, %Asset{id: asset_id} = asset} <- create_asset_from_zip(file_path, current_user),
+         params <- create_asset_from_zip(file_path),
          {:ok, %Frame{} = frame} <-
-           create_or_get_frame(current_user, asset, %{"asset_id" => asset_id}, frame_name) do
+           create_or_get_frame(current_user, params, frame_name) do
       {:ok, frame}
     end
   end
@@ -507,7 +507,6 @@ defmodule WraftDoc.TemplateAssets do
 
   defp create_or_get_frame(
          %User{current_org_id: organisation_id} = current_user,
-         asset,
          params,
          frame_name
        ) do
@@ -515,24 +514,22 @@ defmodule WraftDoc.TemplateAssets do
     |> Repo.get_by(name: frame_name, organisation_id: organisation_id)
     |> case do
       nil ->
-        Frames.create_frame(current_user, asset, params)
+        Frames.create_frame(current_user, params)
 
       frame ->
         {:ok, frame}
     end
   end
 
-  defp create_asset_from_zip(file_path, current_user) do
-    params = %{
+  defp create_asset_from_zip(file_path) do
+    %{
       "file" => %Plug.Upload{
         filename: Path.basename(file_path),
         content_type: "application/zip",
         path: file_path
       },
-      "type" => "zip"
+      "type" => "template_asset"
     }
-
-    Assets.create_asset(current_user, params)
   end
 
   def extract_frame_files(file_binary, entries) do

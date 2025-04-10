@@ -53,9 +53,9 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
     ]
 
   def custom_index_query(_conn, _schema, query),
-    do: from(r in query, preload: [:organisation, :assets])
+    do: from(r in query, preload: [:organisation, :asset])
 
-  def custom_show_query(_conn, _schema, query), do: from(r in query, preload: [:assets])
+  def custom_show_query(_conn, _schema, query), do: from(r in query, preload: [:asset])
 
   def create_changeset(schema, attrs), do: Frame.admin_changeset(schema, attrs)
 
@@ -65,7 +65,7 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
     %{"file" => %{path: file_path}} = params = conn.params["frame"]
 
     with :ok <- FileHelper.validate_frame_file(file_path),
-         {:ok, params} <- process_file_and_params(params),
+         {:ok, params} <- Frames.process_frame_params(params),
          {:ok, %Frame{} = frame} <- insert_multi(params) do
       {:ok, frame}
     else
@@ -90,12 +90,6 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
       {:error, _, changeset, _} ->
         {:error, changeset}
     end
-  end
-
-  defp process_file_and_params(%{"file" => %{path: file_path}} = params) do
-    file_path
-    |> File.read!()
-    |> Frames.process_frame_params(params)
   end
 
   defp get_organisations do

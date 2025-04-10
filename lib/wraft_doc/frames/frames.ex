@@ -2,7 +2,7 @@ defmodule WraftDoc.Frames do
   @moduledoc """
   Module that handles frame related contexts.
   """
-  import Ecto
+
   import Ecto.Query
   require Logger
 
@@ -16,7 +16,6 @@ defmodule WraftDoc.Frames do
   alias WraftDoc.Fields
   alias WraftDoc.Fields.FieldType
   alias WraftDoc.Frames.Frame
-  alias WraftDoc.Frames.FrameAsset
   alias WraftDoc.Frames.FrameField
   alias WraftDoc.Frames.FrameMapping
   alias WraftDoc.Layouts.Layout
@@ -31,7 +30,7 @@ defmodule WraftDoc.Frames do
     Frame
     |> where([frame], frame.organisation_id == ^organisation_id)
     |> order_by([frame], desc: frame.inserted_at)
-    |> preload([:assets, fields: [:field_type]])
+    |> preload([:asset, fields: [:field_type]])
     |> Repo.paginate(params)
   end
 
@@ -44,7 +43,7 @@ defmodule WraftDoc.Frames do
   def get_frame(<<_::288>> = id, %User{current_org_id: organisation_id}) do
     Frame
     |> Repo.get_by(id: id, organisation_id: organisation_id)
-    |> Repo.preload([:assets, fields: [:field_type]])
+    |> Repo.preload([:asset, fields: [:field_type]])
   end
 
   def get_frame(_, _), do: nil
@@ -52,7 +51,7 @@ defmodule WraftDoc.Frames do
   def get_frame(<<_::288>> = id) do
     Frame
     |> Repo.get_by(id: id)
-    |> Repo.preload([:assets, fields: [:field_type]])
+    |> Repo.preload([:asset, fields: [:field_type]])
   end
 
   def get_frame(_), do: nil
@@ -63,31 +62,36 @@ defmodule WraftDoc.Frames do
   @spec create_frame(User.t() | nil, map()) :: Frame.t() | {:error, Ecto.Changeset.t()}
   def create_frame(
         %User{id: user_id, current_org_id: organisation_id} = current_user,
-        asset,
         params
       ) do
-    with {:ok, params} <-
-           params
-           |> Map.merge(%{
-             "organisation_id" => organisation_id,
-             "creator_id" => user_id
-           })
-           |> get_frame_params(asset),
-         {:ok, %Frame{} = frame} <- create_frame_with_params(current_user, params) do
+    with {:ok, params} <- process_frame_params(params),
+         {:ok, %Frame{} = frame} <-
+           create_frame_multi(
+             current_user,
+             Map.merge(params, %{
+               "organisation_id" => organisation_id,
+               "creator_id" => user_id
+             })
+           ) do
       {:ok, frame}
     end
   end
 
-  def create_frame(nil, params), do: create_frame_with_params(nil, params)
+  def create_frame(nil, params), do: create_frame_multi(nil, params)
 
-  defp create_frame_with_params(current_user, params) do
+  defp create_frame_multi(current_user, params) do
     Multi.new()
-    |> Multi.insert(:frame, Frame.changeset(%Frame{}, params))
-    |> Multi.run(:frame_assets, fn _repo, %{frame: frame} ->
-      fetch_and_associate_assets(frame, current_user, params)
-
-      {:ok, frame}
+    |> Multi.run(:asset, fn _, _ ->
+      Assets.create_asset(current_user, Map.merge(params, %{"type" => "frame"}))
     end)
+    |> Multi.insert(:frame, fn %{asset: %Asset{id: asset_id}} ->
+      Frame.changeset(%Frame{}, Map.put(params, "asset_id", asset_id))
+    end)
+    # |> Multi.run(:frame_assets, fn _repo, %{frame: frame, asset: %Asset{id: asset_id}} ->
+    #   fetch_and_associate_assets(frame, current_user, Map.put(params, "asset_id", asset_id))
+
+    #   {:ok, frame}
+    # end)
     |> Multi.run(:frame_field, fn _repo,
                                   %{
                                     frame: %Frame{wraft_json: %{"fields" => frame_fields}} = frame
@@ -99,7 +103,7 @@ defmodule WraftDoc.Frames do
     |> Repo.transaction()
     |> case do
       {:ok, %{frame: frame}} ->
-        {:ok, Repo.preload(frame, [:assets, fields: [:field_type]])}
+        {:ok, Repo.preload(frame, [:asset, fields: [:field_type]])}
 
       {:error, _, changeset, _} ->
         {:error, changeset}
@@ -154,76 +158,18 @@ defmodule WraftDoc.Frames do
   end
 
   @doc """
-  Update a frame.
-  """
-  @spec update_frame(Frame.t(), User.t() | nil, map()) ::
-          {:ok, Frame.t()} | {:error, Ecto.Changeset.t()}
-  def update_frame(
-        %Frame{} = frame,
-        asset,
-        %User{id: user_id, current_org_id: organisation_id} = current_user,
-        params
-      ) do
-    with {:ok, params} <-
-           params
-           |> Map.merge(%{
-             "organisation_id" => organisation_id,
-             "creator_id" => user_id
-           })
-           |> get_frame_params(asset),
-         {:ok, %Frame{} = frame} <- update_frame_with_params(frame, current_user, params) do
-      {:ok, frame}
-    end
-  end
-
-  def update_frame(%Frame{} = frame, nil, params),
-    do: update_frame_with_params(frame, nil, params)
-
-  defp update_frame_with_params(frame, current_user, params) do
-    Multi.new()
-    |> Multi.update(:frame, Frame.update_changeset(%Frame{} = frame, params))
-    |> Multi.run(:frame_asset, fn _repo,
-                                  %{
-                                    frame: frame
-                                  } ->
-      delete_frame_assets(frame)
-      fetch_and_associate_assets(frame, current_user, params)
-      {:ok, frame}
-    end)
-    |> Multi.run(:frame_field, fn _repo,
-                                  %{
-                                    frame: %Frame{wraft_json: %{"fields" => frame_fields}} = frame
-                                  } ->
-      delete_frame_fields(frame)
-
-      frame_fields
-      |> create_field_params_from_wraft_json()
-      |> then(&fetch_and_associate_fields(frame, %{"fields" => &1}))
-
-      {:ok, frame}
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{frame_field: frame}} ->
-        {:ok, Repo.preload(frame, [:assets, fields: [:field_type]])}
-
-      {:error, _, changeset, _} ->
-        {:error, changeset}
-    end
-  end
-
-  @doc """
   Delete a frame.
   """
   @spec delete_frame(Frame.t()) :: {:ok, Frame.t()} | {:error, Ecto.Changeset.t()}
   def delete_frame(
         %Frame{
           organisation_id: organisation_id,
-          assets: %{id: asset_id, file: %{file_name: file_name}}
+          asset: %{id: asset_id, file: %{file_name: file_name}}
         } = frame
       ) do
     case Minio.delete_file("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}") do
       {:ok, _} ->
+        delete_frame_fields(frame)
         Repo.delete(frame)
 
       {:error, reason} ->
@@ -231,55 +177,28 @@ defmodule WraftDoc.Frames do
     end
   end
 
-  defp fetch_and_associate_assets(frame, current_user, %{"asset_id" => asset_id}) do
-    asset_id
-    |> Assets.get_asset(current_user)
-    |> case do
-      %Asset{} = asset ->
-        associate_frame_and_asset(frame, current_user, asset)
+  # defp get_frame_params(
+  #        params,
+  #        %{id: asset_id, organisation_id: organisation_id, file: %{file_name: file_name}}
+  #      ) do
+  #   binary =
+  #     Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}")
 
-      nil ->
-        {:error, "Asset not found"}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  defp fetch_and_associate_assets(_frame, _current_user, _params), do: nil
-
-  defp associate_frame_and_asset(%Frame{} = frame, current_user, %Asset{id: asset_id}) do
-    frame
-    |> build_assoc(:frame_asset, asset_id: asset_id, creator: current_user)
-    |> FrameAsset.changeset()
-    |> Repo.insert()
-
-    Repo.preload(frame, [:assets, fields: [:field_type]])
-  end
-
-  defp associate_frame_and_asset(_frame, _current_user, nil), do: nil
-
-  defp get_frame_params(
-         params,
-         %{id: asset_id, organisation_id: organisation_id, file: %{file_name: file_name}}
-       ) do
-    binary =
-      Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}")
-
-    process_frame_params(binary, params)
-  rescue
-    error -> {:error, error.message}
-  end
+  #   process_frame_params(binary, params)
+  # rescue
+  #   error -> {:error, error.message}
+  # end
 
   @doc """
   Process the frame binary and update the frame params.
   """
-  @spec process_frame_params(binary(), map()) :: {:ok, map()} | {:error, String.t()}
-  def process_frame_params(binary, params) do
-    file_size = FileHelper.file_size(binary)
+  @spec process_frame_params(map()) :: {:ok, map()}
+  def process_frame_params(%{"file" => %{path: file_path}} = params) do
+    file_binary = File.read!(file_path)
+    file_size = FileHelper.file_size(file_binary)
 
     {:ok, %{"metadata" => %{"frameType" => type} = metadata} = wraft_json} =
-      FileHelper.get_wraft_json(binary)
+      FileHelper.get_wraft_json(file_binary)
 
     params
     |> Map.merge(metadata)
@@ -341,19 +260,6 @@ defmodule WraftDoc.Frames do
     Repo.delete(field)
     Repo.delete(frame_field)
     :ok
-  end
-
-  defp delete_frame_assets(%Frame{id: frame_id}) do
-    frame_assets =
-      FrameAsset
-      |> where([frame_asset], frame_asset.frame_id == ^frame_id)
-      |> preload([:asset])
-      |> Repo.all()
-
-    Enum.each(frame_assets, fn frame_asset ->
-      Repo.delete(frame_asset)
-      Repo.delete(frame_asset.asset)
-    end)
   end
 
   @doc """
@@ -433,16 +339,17 @@ defmodule WraftDoc.Frames do
     data = Jason.decode!(data)
 
     Enum.reduce(mappings, %{}, fn {frame_field_name, variant_field_name}, acc ->
-      frame_field_name =
-        frame_field_name
-        |> String.downcase()
-        |> String.replace(" ", "_")
-
-      case Map.get(data, String.downcase(variant_field_name)) do
+      case Map.get(data, replace_spaces(variant_field_name)) do
         nil -> acc
-        value -> Map.put(acc, frame_field_name, value)
+        value -> Map.put(acc, replace_spaces(frame_field_name), value)
       end
     end)
+  end
+
+  defp replace_spaces(string) do
+    string
+    |> String.downcase()
+    |> String.replace(" ", "_")
   end
 
   @spec check_frame_mapping(ContentType.t()) :: :ok | {:error, map() | String.t()}

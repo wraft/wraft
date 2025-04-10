@@ -4,8 +4,6 @@ defmodule WraftDocWeb.Api.V1.FrameController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Assets
-  alias WraftDoc.Assets.Asset
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
 
@@ -161,10 +159,7 @@ defmodule WraftDocWeb.Api.V1.FrameController do
     consumes("multipart/form-data")
 
     parameters do
-      name(:formData, :string, "Frame name", required: true)
-      description(:formData, :string, "Description", required: true)
-      assets(:formData, :string, "Asset id", required: true)
-      type(:formData, :string, "Type", required: true)
+      file(:formData, :file, "Frame file to upload")
       thumbnail(:formData, :file, "Frame thumbnail to upload")
     end
 
@@ -173,14 +168,11 @@ defmodule WraftDocWeb.Api.V1.FrameController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  def create(conn, %{"assets" => assets} = params) do
+  def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
-    with %Asset{type: "frame"} = asset <- Assets.get_asset(assets, current_user),
-         {:ok, %Frame{} = frame} <- Frames.create_frame(current_user, asset, params) do
+    with {:ok, %Frame{} = frame} <- Frames.create_frame(current_user, params) do
       render(conn, "create.json", frame: frame)
-    else
-      %Asset{type: _} -> {:error, "Invalid asset type"}
     end
   end
 
@@ -206,42 +198,6 @@ defmodule WraftDocWeb.Api.V1.FrameController do
 
     with %Frame{} = frame <- Frames.get_frame(id, current_user) do
       render(conn, "show.json", frame: frame)
-    end
-  end
-
-  @doc """
-  Update a frame
-  """
-  swagger_path :update do
-    put("/frames/{id}")
-    summary("Update a frame")
-    description("Update a frame API")
-    consumes("multipart/form-data")
-
-    parameters do
-      id(:path, :string, "frame id", required: true)
-
-      name(:formData, :string, "Frame name", required: true)
-      description(:formData, :string, "Description", required: true)
-      assets(:formData, :string, "Asset id", required: true)
-      type(:formData, :string, "Type", required: true)
-      thumbnail(:formData, :file, "Frame thumbnail to upload")
-    end
-
-    response(200, "Ok", Schema.ref(:UpdateFrame))
-    response(404, "Not found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  def update(conn, %{"id" => frame_id, "assets" => asset_id} = params) do
-    current_user = conn.assigns[:current_user]
-
-    with %Frame{} = frame <- Frames.get_frame(frame_id, current_user),
-         %Asset{} = asset <- Assets.get_asset(asset_id, current_user),
-         {:ok, %Frame{} = frame} <-
-           Frames.update_frame(frame, asset, current_user, params) do
-      render(conn, "create.json", frame: frame)
     end
   end
 

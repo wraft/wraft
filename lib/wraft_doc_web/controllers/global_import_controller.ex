@@ -9,9 +9,8 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Assets
-  alias WraftDoc.Assets.Asset
   alias WraftDoc.GlobalFile
+  alias WraftDoc.Utils.FileHelper
 
   def swagger_definitions do
     %{
@@ -37,7 +36,7 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
     description("Imports a global file using the provided asset ID and additional parameters.")
 
     parameters do
-      asset_id(:path, :string, "The ID of the asset to import", required: true)
+      file(:formData, :file, "The ID of the asset to import", required: true)
     end
 
     response(200, "File imported successfully", Schema.ref(:GlobalImportResponse))
@@ -47,12 +46,12 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
   end
 
   @spec import_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def import_global_file(conn, %{"asset_id" => asset_id} = params) do
+  def import_global_file(conn, %{"file" => file} = params) do
     current_user = conn.assigns.current_user
 
-    with %Asset{} = asset <- Assets.get_asset(asset_id, current_user),
+    with {:ok, metadata} <- FileHelper.get_file_metadata(file),
          {:ok, %{view: view, template: template, assigns: assigns}} <-
-           GlobalFile.import_global_asset(current_user, asset, params) do
+           GlobalFile.import_global_asset(current_user, Map.merge(params, metadata)) do
       conn
       |> put_view(view)
       |> render(template, assigns)
