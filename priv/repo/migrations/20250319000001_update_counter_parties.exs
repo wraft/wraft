@@ -14,7 +14,6 @@ defmodule WraftDoc.Repo.Migrations.UpdateCounterParties do
       timestamps()
     end
 
-    create(index(:counter_parties, [:guest_user_id]))
     create(index(:counter_parties, [:signature_status]))
     create(index(:counter_parties, [:content_id]))
     create(index(:counter_parties, [:email]))
@@ -28,7 +27,6 @@ defmodule WraftDoc.Repo.Migrations.UpdateCounterParties do
       remove(:signature_ip)
     end
 
-    drop_if_exists(index(:counter_parties, [:guest_user_id]))
     drop_if_exists(index(:counter_parties, [:signature_status]))
     drop_if_exists(index(:counter_parties, [:content_id]))
     drop_if_exists(index(:counter_parties, [:email]))

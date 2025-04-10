@@ -10,13 +10,19 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
       signature_type: signature.signature_type,
       signature_date: signature.signature_date,
       is_valid: signature.is_valid,
-      verification_token: signature.verification_token,
       instance: render_one(signature.content, InstanceView, "instance.json", as: :instance),
       counter_party:
         render_one(signature.counter_party, __MODULE__, "counterparty.json", as: :counterparty),
       user: render_one(signature.user, UserView, "user.json", as: :user),
       created_at: signature.inserted_at,
       updated_at: signature.updated_at
+    }
+  end
+
+  def render("verify_signer.json", %{counter_party: counter_party, token: token}) do
+    %{
+      counterparty: render_one(counter_party, __MODULE__, "counterparty.json", as: :counterparty),
+      token: token
     }
   end
 
@@ -32,7 +38,13 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
       name: counterparty.name,
       email: counterparty.email,
       signature_status: counterparty.signature_status,
-      signature_date: counterparty.signature_date
+      signature_date: counterparty.signature_date,
+      instance: render_one(counterparty.content, InstanceView, "instance.json", as: :instance),
+      user: render_one(counterparty.user, UserView, "user.json", as: :user),
+      signature:
+        render_one(counterparty.e_signature, __MODULE__, "signature.json", as: :signature),
+      created_at: counterparty.inserted_at,
+      updated_at: counterparty.updated_at
     }
   end
 

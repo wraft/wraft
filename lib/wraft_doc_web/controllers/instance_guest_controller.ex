@@ -211,8 +211,13 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
            Documents.get_content_collaboration(document_id, invited_user, state_id),
          {:ok, %ContentCollaboration{}} <-
            Documents.accept_document_access(content_collaboration),
-         {:ok, %AuthToken{value: guest_access_token}} <-
-           AuthTokens.create_guest_access_token(invited_user, state_id, email, role, document_id) do
+         {:ok, guest_access_token, _} <-
+           AuthTokens.create_guest_access_token(invited_user, %{
+             email: email,
+             role: role,
+             document_id: document_id,
+             state_id: state_id
+           }) do
       render(conn, "verify_collaborator.json",
         user: invited_user,
         token: guest_access_token,

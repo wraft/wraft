@@ -176,4 +176,22 @@ defmodule WraftDoc.Workers.EmailWorker do
 
     Logger.info("Document reminder mailer job end.")
   end
+
+  def perform(%Job{
+        args: %{
+          "name" => name,
+          "email" => email,
+          "token" => token,
+          "instance_id" => instance_id
+        },
+        tags: ["document_signature_request"]
+      }) do
+    Logger.info("Document signature request mailer job started.")
+
+    email
+    |> Email.signature_request_email(name, instance_id, token)
+    |> Mailer.deliver()
+
+    Logger.info("Document signature request mailer job end.")
+  end
 end

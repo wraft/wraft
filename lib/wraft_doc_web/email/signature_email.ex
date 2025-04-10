@@ -8,28 +8,6 @@ defmodule WraftDocWeb.Mailer.SignatureEmail do
   alias WraftDocWeb.MJML
 
   @doc """
-  Email to request signature from a counterparty
-  """
-  def signature_request_email(
-        to_email,
-        %Instance{instance_id: instance_id} = _instance,
-        signature_url,
-        name
-      ) do
-    body = %{
-      instance_id: instance_id,
-      signature_url: signature_url,
-      name: name
-    }
-
-    new()
-    |> to(to_email)
-    |> from({"Wraft", sender_email()})
-    |> subject("Signature Request: Document #{instance_id}")
-    |> html_body(MJML.SignatureRequest.render(body))
-  end
-
-  @doc """
   Email to notify document owner when a signature is completed
   """
   def signature_completed_email(
