@@ -171,7 +171,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   Process a signature for a document
   """
   swagger_path :sign_document do
-    post("/documents/sign/{token}")
+    post("/contents/{id}/sign")
     summary("Sign a document")
     description("API to process a signature for a document")
 
