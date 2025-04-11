@@ -13,6 +13,7 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.TemplateAsset
+  alias WraftDoc.Utils.FileValidator
   alias WraftDocWeb.AssetUploader
   alias WraftDocWeb.TemplateAssetThumbnailUploader
 
@@ -67,13 +68,19 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
   end
 
   def insert(
-        %{params: %{"template_asset" => %{"file" => %{filename: file_name} = file} = params}},
+        %{
+          params: %{
+            "template_asset" =>
+              %{"file" => %{filename: file_name, path: file_path} = file} = params
+          }
+        },
         changeset
       ) do
     params =
       Map.put(params, "type", "zip")
 
     with :ok <- check_zip_exists(params),
+         {:ok, _} <- FileValidator.validate_file(file_path),
          :ok <- TemplateAssets.validate_template_asset_file(file),
          {:ok, params, _} <-
            TemplateAssets.process_template_asset(params, :file, file),

@@ -719,7 +719,7 @@ defmodule WraftDoc.Documents do
            :frame_mappings,
            :organisation,
            :fields,
-           layout: [frame: [:assets, fields: [:field_type]]]
+           layout: [frame: [:asset, fields: [:field_type]]]
          ]},
         {:versions, versions_preload_query},
         {:state, :approvers},
