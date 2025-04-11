@@ -21,6 +21,7 @@ defmodule WraftDoc.Frames do
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
   alias WraftDoc.Utils.FileHelper
+  alias WraftDoc.Utils.FileValidator
 
   @doc """
   Lists all frames.
@@ -62,9 +63,11 @@ defmodule WraftDoc.Frames do
   @spec create_frame(User.t() | nil, map()) :: Frame.t() | {:error, Ecto.Changeset.t()}
   def create_frame(
         %User{id: user_id, current_org_id: organisation_id} = current_user,
-        params
+        %{"file" => %{path: file_path} = file} = params
       ) do
-    with {:ok, params} <- process_frame_params(params),
+    with {:ok, _} <- FileValidator.validate_file(file_path),
+         :ok <- FileHelper.validate_frame_file(file),
+         {:ok, params} <- process_frame_params(params),
          {:ok, %Frame{} = frame} <-
            create_frame_multi(
              current_user,
@@ -87,11 +90,6 @@ defmodule WraftDoc.Frames do
     |> Multi.insert(:frame, fn %{asset: %Asset{id: asset_id}} ->
       Frame.changeset(%Frame{}, Map.put(params, "asset_id", asset_id))
     end)
-    # |> Multi.run(:frame_assets, fn _repo, %{frame: frame, asset: %Asset{id: asset_id}} ->
-    #   fetch_and_associate_assets(frame, current_user, Map.put(params, "asset_id", asset_id))
-
-    #   {:ok, frame}
-    # end)
     |> Multi.run(:frame_field, fn _repo,
                                   %{
                                     frame: %Frame{wraft_json: %{"fields" => frame_fields}} = frame
@@ -176,18 +174,6 @@ defmodule WraftDoc.Frames do
         {:error, reason}
     end
   end
-
-  # defp get_frame_params(
-  #        params,
-  #        %{id: asset_id, organisation_id: organisation_id, file: %{file_name: file_name}}
-  #      ) do
-  #   binary =
-  #     Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}")
-
-  #   process_frame_params(binary, params)
-  # rescue
-  #   error -> {:error, error.message}
-  # end
 
   @doc """
   Process the frame binary and update the frame params.

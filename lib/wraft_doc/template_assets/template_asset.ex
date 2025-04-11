@@ -7,8 +7,8 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
 
   alias __MODULE__
   alias WraftDoc.Account.User
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.TemplateAssets.TemplateAssetAsset
 
   schema "template_asset" do
     field(:name, :string)
@@ -20,9 +20,7 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
     field(:file_entries, {:array, :string})
     field(:is_imported, :boolean, default: true)
 
-    has_one(:template_asset_asset, TemplateAssetAsset)
-    has_one(:asset, through: [:template_asset_asset, :asset])
-
+    belongs_to(:asset, Asset)
     belongs_to(:creator, User)
     belongs_to(:organisation, Organisation)
 
@@ -38,7 +36,8 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
       :wraft_json,
       :file_entries,
       :zip_file_size,
-      :file_name
+      :file_name,
+      :asset_id
     ])
     |> cast_attachments(attrs, [:thumbnail])
     |> validate_required([:name])
@@ -50,7 +49,15 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
 
   def update_changeset(%TemplateAsset{} = template_asset, attrs \\ %{}) do
     template_asset
-    |> cast(attrs, [:name, :description, :wraft_json, :file_entries, :zip_file_size, :file_name])
+    |> cast(attrs, [
+      :name,
+      :description,
+      :asset_id,
+      :wraft_json,
+      :file_entries,
+      :zip_file_size,
+      :file_name
+    ])
     |> cast_attachments(attrs, [:thumbnail])
     |> validate_required([:name])
     |> unique_constraint(:file_name,

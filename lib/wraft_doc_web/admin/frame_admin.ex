@@ -62,9 +62,9 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
   def update_changeset(schema, attrs), do: Frame.admin_changeset(schema, attrs)
 
   def insert(conn, changeset) do
-    %{"file" => %{path: file_path}} = params = conn.params["frame"]
+    %{"file" => file} = params = conn.params["frame"]
 
-    with :ok <- FileHelper.validate_frame_file(file_path),
+    with :ok <- FileHelper.validate_frame_file(file),
          {:ok, params} <- Frames.process_frame_params(params),
          {:ok, %Frame{} = frame} <- insert_multi(params) do
       {:ok, frame}

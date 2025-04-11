@@ -11,6 +11,7 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
 
   alias WraftDoc.GlobalFile
   alias WraftDoc.Utils.FileHelper
+  alias WraftDoc.Utils.FileValidator
 
   def swagger_definitions do
     %{
@@ -46,10 +47,11 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
   end
 
   @spec import_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def import_global_file(conn, %{"file" => file} = params) do
+  def import_global_file(conn, %{"file" => %{path: file_path} = file} = params) do
     current_user = conn.assigns.current_user
 
-    with {:ok, metadata} <- FileHelper.get_file_metadata(file),
+    with {:ok, _} <- FileValidator.validate_file(file_path),
+         {:ok, metadata} <- FileHelper.get_file_metadata(file),
          {:ok, %{view: view, template: template, assigns: assigns}} <-
            GlobalFile.import_global_asset(current_user, Map.merge(params, metadata)) do
       conn

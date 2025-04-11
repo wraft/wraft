@@ -29,12 +29,10 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
-  alias WraftDoc.TemplateAssets.TemplateAssetAsset
   alias WraftDoc.TemplateAssets.WraftJson
   alias WraftDoc.Themes
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Utils.FileHelper
-  alias WraftDoc.Utils.FileValidator
   alias WraftDoc.Utils.ProsemirrorToMarkdown
 
   @required_items ["layout", "theme", "flow", "variant"]
@@ -50,10 +48,10 @@ defmodule WraftDoc.TemplateAssets do
           {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
   def create_template_asset(current_user, params) do
     Multi.new()
-    |> public_template_asset_multi(current_user, params)
-    |> Multi.run(:template_asset_fetch, fn _, %{template_asset: template_asset} ->
-      fetch_and_associate_assets(template_asset, current_user, params)
+    |> Multi.run(:asset, fn _, _ ->
+      Assets.create_asset(current_user, Map.merge(params, %{"type" => "template_asset"}))
     end)
+    |> public_template_asset_multi(current_user, params)
     |> Repo.transaction()
     |> case do
       {:ok, %{template_asset: template_asset}} ->
@@ -68,7 +66,9 @@ defmodule WraftDoc.TemplateAssets do
     Multi.insert(
       multi,
       :template_asset,
-      TemplateAsset.changeset(%TemplateAsset{}, params)
+      fn %{asset: %Asset{id: asset_id}} ->
+        TemplateAsset.changeset(%TemplateAsset{}, Map.put(params, "asset_id", asset_id))
+      end
     )
   end
 
@@ -80,36 +80,15 @@ defmodule WraftDoc.TemplateAssets do
     Multi.insert(
       multi,
       :template_asset,
-      current_user
-      |> build_assoc(:template_assets)
-      |> TemplateAsset.changeset(Map.merge(params, %{"organisation_id" => organisation_id}))
+      fn %{asset: %Asset{id: asset_id}} ->
+        current_user
+        |> build_assoc(:template_assets)
+        |> TemplateAsset.changeset(
+          Map.merge(params, %{"organisation_id" => organisation_id, "asset_id" => asset_id})
+        )
+      end
     )
   end
-
-  defp fetch_and_associate_assets(template_asset, nil, %{"asset_id" => asset_id}) do
-    asset_id
-    |> Assets.get_asset()
-    |> then(&associate_template_and_asset(template_asset, nil, &1))
-  end
-
-  defp fetch_and_associate_assets(template_asset, current_user, %{"asset_id" => asset_id}) do
-    asset_id
-    |> Assets.get_asset(current_user)
-    |> then(&associate_template_and_asset(template_asset, current_user, &1))
-  end
-
-  defp fetch_and_associate_assets(_template_asset, _current_user, _params), do: nil
-
-  defp associate_template_and_asset(%TemplateAsset{} = template_asset, current_user, %{
-         id: asset_id
-       }) do
-    template_asset
-    |> build_assoc(:template_asset_asset, asset_id: asset_id, creator: current_user)
-    |> TemplateAssetAsset.changeset()
-    |> Repo.insert()
-  end
-
-  defp associate_template_and_asset(_template_asset, _current_user, nil), do: nil
 
   @doc """
   Index of all template assets in an organisation.
@@ -162,39 +141,6 @@ defmodule WraftDoc.TemplateAssets do
   def get_template_asset(_), do: nil
 
   @doc """
-  Update a template asset.
-  """
-  # TODO - Write tests
-  @spec update_template_asset(TemplateAsset.t(), User.t(), map()) ::
-          {:ok, TemplateAsset.t()} | {:error, Ecto.Changset.t()}
-  def update_template_asset(template_asset, current_user, params) do
-    template_asset
-    |> TemplateAsset.update_changeset(params)
-    |> Repo.update()
-    |> case do
-      {:ok, template_asset} ->
-        case Map.get(params, "asset_id") do
-          nil ->
-            {:ok, template_asset}
-
-          asset_id ->
-            TemplateAssetAsset
-            |> where(
-              [template_asset_asset],
-              template_asset_asset.template_asset_id == ^template_asset.id
-            )
-            |> Repo.delete_all()
-
-            fetch_and_associate_assets(template_asset, current_user, %{"asset_id" => asset_id})
-            {:ok, template_asset}
-        end
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
-  @doc """
   Delete a template asset.
   """
   # TODO - Write tests
@@ -203,13 +149,14 @@ defmodule WraftDoc.TemplateAssets do
   def delete_template_asset(
         %TemplateAsset{
           organisation_id: organisation_id,
-          asset: %Asset{id: asset_id, file: %{file_name: file_name}}
+          asset: %Asset{id: asset_id, file: %{file_name: file_name} = asset}
         } = template_asset
       ) do
     "organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}"
     |> Minio.delete_file()
     |> case do
       {:ok, _} ->
+        Repo.delete(asset)
         Repo.delete(template_asset)
 
       {:error, reason} ->
@@ -1035,8 +982,8 @@ defmodule WraftDoc.TemplateAssets do
   Validates a template asset file by validating the file's contents and the ZIP file it contains.
   """
   @spec validate_template_asset_file(Plug.Upload.t()) :: :ok | {:error, String.t()}
-  def validate_template_asset_file(%{path: file_path} = file) do
-    with {:ok, _} <- FileValidator.validate_file(file_path),
+  def validate_template_asset_file(file) do
+    with true <- is_template_asset_file?(file),
          {:ok, file_binary} <- get_file_binary(:file, file),
          {:ok, file_entries_in_zip} <- template_asset_file_list(file_binary),
          {:ok, _} <- template_zip_validator(file_binary, file_entries_in_zip) do
@@ -1044,30 +991,41 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  @doc """
-  Adds a ZIP file to the params map as a `Plug.Upload` struct.
-  """
-  @spec add_asset(TemplateAsset.t(), binary(), String.t(), User.t()) ::
-          {:ok, TemplateAssetAsset.t()} | {:error, String.t()}
-  def add_asset(template_asset, file_binary, zip_url, current_user) do
-    file_path = Briefly.create!()
-    File.write!(file_path, file_binary)
-    file_name = zip_url |> URI.parse() |> Map.get(:path) |> Path.basename()
-
-    file = %Plug.Upload{
-      filename: file_name,
-      content_type: "application/zip",
-      path: file_path
-    }
-
-    case Assets.create_asset(current_user, %{"type" => "template_asset", "file" => file}) do
-      {:ok, %Asset{id: asset_id}} ->
-        fetch_and_associate_assets(template_asset, current_user, %{"asset_id" => asset_id})
-
-      {:error, reason} ->
-        {:error, reason}
+  defp is_template_asset_file?(file) do
+    file
+    |> FileHelper.get_global_file_type()
+    |> case do
+      {:ok, "template_asset"} -> true
+      {:ok, _} -> {:error, "File is not a template asset."}
+      {:error, reason} -> {:error, reason}
     end
   end
+
+  # This function is currently not in use but is retained for potential future implementation.
+  # @doc """
+  # Adds a ZIP file to the params map as a `Plug.Upload` struct.
+  # """
+  # @spec add_asset(TemplateAsset.t(), binary(), String.t(), User.t()) ::
+  #         {:ok, Asset.t()} | {:error, String.t()}
+  # def add_asset(template_asset, file_binary, zip_url, current_user) do
+  #   file_path = Briefly.create!()
+  #   File.write!(file_path, file_binary)
+  #   file_name = zip_url |> URI.parse() |> Map.get(:path) |> Path.basename()
+
+  #   file = %Plug.Upload{
+  #     filename: file_name,
+  #     content_type: "application/zip",
+  #     path: file_path
+  #   }
+
+  #   case Assets.create_asset(current_user, %{"type" => "template_asset", "file" => file}) do
+  #     {:ok, %Asset{} = asset} ->
+  #       {:ok, asset}
+
+  #     {:error, reason} ->
+  #       {:error, reason}
+  #   end
+  # end
 
   defp get_file_binary_from_url(url) do
     case HTTPoison.get(url, [], follow_redirect: true) do
@@ -1085,10 +1043,8 @@ defmodule WraftDoc.TemplateAssets do
   @doc """
   Get binary of a file.
   """
-  @spec get_file_binary(:file | :asset | :url, map() | String.t() | Asset.t()) ::
+  @spec get_file_binary(:file | :url, map() | String.t()) ::
           {:ok, binary()} | {:error, String.t()}
-  def get_file_binary(:asset, asset),
-    do: download_zip_from_storage(asset)
 
   def get_file_binary(:url, url), do: get_file_binary_from_url(url)
 

@@ -8,6 +8,7 @@ defmodule WraftDoc.GlobalFile do
   alias WraftDoc.Frames.Frame
   alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.TemplateAsset
+  alias WraftDoc.Utils.FileHelper
   alias WraftDocWeb.Api.V1.FrameView
   alias WraftDocWeb.Api.V1.TemplateAssetView
 
@@ -16,8 +17,9 @@ defmodule WraftDoc.GlobalFile do
   """
   @spec import_global_asset(User.t(), map()) ::
           {:ok, %{view: module(), template: String.t(), assigns: map()}} | {:error, String.t()}
-  def import_global_asset(current_user, %{"type" => "frame"} = params) do
-    with {:ok, %Frame{} = frame} <- Frames.create_frame(current_user, params) do
+  def import_global_asset(current_user, %{"file" => file, "type" => "frame"} = params) do
+    with :ok <- FileHelper.validate_frame_file(file),
+         {:ok, %Frame{} = frame} <- Frames.create_frame(current_user, params) do
       {:ok, %{view: FrameView, template: "create.json", assigns: %{frame: frame}}}
     end
   end
@@ -37,5 +39,5 @@ defmodule WraftDoc.GlobalFile do
     end
   end
 
-  def import_global_asset(_, _, _), do: {:error, "Unsupported asset type"}
+  def import_global_asset(_, _), do: {:error, "Unsupported asset type"}
 end

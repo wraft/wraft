@@ -42,15 +42,25 @@ defmodule WraftDoc.Utils.FileValidator do
   """
   @spec validate_file(String.t()) :: {:ok, list()} | {:error, String.t()}
   def validate_file(file_path) do
-    charlisted_path = to_charlist(file_path)
-
-    with {:ok, file_info} <- :zip.list_dir(charlisted_path),
-         {:ok, file_entries} <- extract_file_info(file_info),
+    with {:ok, file_entries} <- get_file_entries(file_path),
          :ok <- check_for_path_traversal(file_entries),
          :ok <- check_file_sizes(file_entries),
          :ok <- check_file_extensions(file_entries),
          :ok <- check_file_signature(file_path) do
       {:ok, file_entries}
+    end
+  end
+
+  def get_file_entries(file_path) do
+    file_path
+    |> to_charlist()
+    |> :zip.list_dir()
+    |> case do
+      {:ok, file_info} ->
+        extract_file_info(file_info)
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

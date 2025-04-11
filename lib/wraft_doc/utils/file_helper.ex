@@ -134,8 +134,9 @@ defmodule WraftDoc.Utils.FileHelper do
   Validate frame.
   """
   @spec validate_frame_file(String.t()) :: :ok | {:error, String.t()}
-  def validate_frame_file(file_path) do
-    with {:ok, file_entries} <- FileValidator.validate_file(file_path),
+  def validate_frame_file(%{path: file_path} = file) do
+    with true <- is_frame_file?(file),
+         {:ok, file_entries} <- FileValidator.get_file_entries(file_path),
          {:ok, _file_entries} <- validate_required_files(file_entries),
          {:ok, file_binary} <- read_file_contents(file_path),
          {:ok, wraft_json} <- get_wraft_json(file_binary),
@@ -143,6 +144,16 @@ defmodule WraftDoc.Utils.FileHelper do
          allowed_files <- get_allowed_files_from_wraft_json(wraft_json),
          {:ok, _} <- validate_missing_files(allowed_files, file_entries) do
       :ok
+    end
+  end
+
+  defp is_frame_file?(file) do
+    file
+    |> get_global_file_type()
+    |> case do
+      {:ok, "frame"} -> true
+      {:ok, _} -> {:error, "File is not a template asset."}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -205,6 +216,25 @@ defmodule WraftDoc.Utils.FileHelper do
     |> case do
       %Ecto.Changeset{valid?: true} -> :ok
       changeset -> {:error, changeset}
+    end
+  end
+
+  @doc """
+  Determines the global file type of the given file.
+  """
+  @spec get_global_file_type(Plug.Upload.t()) :: {:ok | :error, String.t()}
+  def get_global_file_type(file) do
+    file
+    |> get_file_metadata()
+    |> case do
+      {:ok, %{"type" => type}} when type in ["frame", "template_asset"] ->
+        {:ok, type}
+
+      {:ok, %{"type" => _unsupported_type}} ->
+        {:error, "Invalid global file type"}
+
+      {:error, _reason} ->
+        {:error, "Invalid file"}
     end
   end
 end

@@ -6,8 +6,6 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Assets
-  alias WraftDoc.Assets.Asset
   alias WraftDoc.ContentTypes
   alias WraftDoc.DataTemplates
   alias WraftDoc.Layouts
@@ -336,10 +334,9 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     Only one of `asset_id` with type template_asset or `zip_url` should be provided.
     """)
 
-    operation_id("create_asset")
     consumes("multipart/form-data")
 
-    parameter(:asset_id, :formData, :string, "Asset id")
+    parameter(:file, :formData, :file, "Asset id")
 
     response(200, "OK", Schema.ref(:TemplateAsset))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -347,33 +344,33 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
   end
 
   @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"asset_id" => asset_id} = params) do
+  def create(conn, %{"file" => file} = params) do
     current_user = conn.assigns.current_user
 
-    with %Asset{type: "template_asset"} = asset <- Assets.get_asset(asset_id, current_user),
+    with :ok <- TemplateAssets.validate_template_asset_file(file),
          {:ok, params, _} <-
-           TemplateAssets.process_template_asset(params, :asset, asset),
+           TemplateAssets.process_template_asset(params, :file, file),
          {:ok, %TemplateAsset{} = template_asset} <-
            TemplateAssets.create_template_asset(current_user, params) do
       render(conn, "template_asset.json", template_asset: template_asset)
-    else
-      %Asset{type: _} -> {:error, "Invalid asset type"}
     end
   end
 
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"zip_url" => zip_url} = params) do
-    current_user = conn.assigns.current_user
+  # This function is currently not in use but is retained for potential future implementation.
+  # @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  # def create(conn, %{"zip_url" => zip_url} = params) do
+  #   current_user = conn.assigns.current_user
 
-    with {:ok, params, file_binary} <-
-           TemplateAssets.process_template_asset(params, :url, zip_url),
-         {:ok, %TemplateAsset{} = template_asset} <-
-           TemplateAssets.create_template_asset(current_user, params),
-         {:ok, _} <-
-           TemplateAssets.add_asset(template_asset, file_binary, zip_url, current_user) do
-      render(conn, "template_asset.json", template_asset: template_asset)
-    end
-  end
+  #   with :ok <- TemplateAssets.validate_template_asset_file(file),
+  #   {:ok, params, file_binary} <-
+  #          TemplateAssets.process_template_asset(params, :url, zip_url),
+  #        {:ok, %TemplateAsset{} = template_asset} <-
+  #          TemplateAssets.create_template_asset(current_user, params),
+  #        {:ok, _} <-
+  #          TemplateAssets.add_asset(template_asset, file_binary, zip_url, current_user) do
+  #     render(conn, "template_asset.json", template_asset: template_asset)
+  #   end
+  # end
 
   @doc """
   Template Asset index.
@@ -432,56 +429,6 @@ defmodule WraftDocWeb.Api.V1.TemplateAssetController do
     with %TemplateAsset{} = template_asset <-
            TemplateAssets.show_template_asset(template_asset_id, current_user) do
       render(conn, "show.json", template_asset: template_asset)
-    end
-  end
-
-  @doc """
-  Update a template asset.
-  """
-  swagger_path :update do
-    put("/template_assets/{id}")
-    summary("Update a template asset")
-    description("API to update a template asset")
-
-    consumes("multipart/form-data")
-
-    parameter(:id, :path, :string, "template asset id", required: true)
-    parameter(:name, :formData, :string, "Template Asset name", required: true)
-    parameter(:zip_file, :formData, :file, "Template Asset file to upload")
-    parameter(:zip_url, :formData, :string, "URL to the Template Asset ZIP file")
-
-    response(200, "Ok", Schema.ref(:TemplateAsset))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-  end
-
-  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => id, "zip_url" => zip_url} = params) do
-    current_user = conn.assigns[:current_user]
-
-    with %TemplateAsset{} = template_asset <- TemplateAssets.get_template_asset(id, current_user),
-         {:ok, params, file_binary} <-
-           TemplateAssets.process_template_asset(params, :url, zip_url),
-         {:ok, template_asset} <-
-           TemplateAssets.update_template_asset(template_asset, current_user, params),
-         {:ok, _} <-
-           TemplateAssets.add_asset(template_asset, file_binary, zip_url, current_user) do
-      render(conn, "template_asset.json", template_asset: template_asset)
-    end
-  end
-
-  # TODO refactor update.
-  def update(conn, %{"id" => id, "asset" => asset_id} = params) do
-    current_user = conn.assigns[:current_user]
-
-    with %Asset{} = asset <- Assets.get_asset(asset_id, current_user),
-         %TemplateAsset{} = template_asset <- TemplateAssets.get_template_asset(id, current_user),
-         {:ok, params, _} <-
-           TemplateAssets.process_template_asset(params, :asset, asset),
-         {:ok, template_asset} <-
-           TemplateAssets.update_template_asset(template_asset, current_user, params) do
-      render(conn, "template_asset.json", template_asset: template_asset)
     end
   end
 
