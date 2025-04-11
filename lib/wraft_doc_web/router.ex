@@ -103,7 +103,6 @@ defmodule WraftDocWeb.Router do
       get("/user/verify_email_token/:token", UserController, :verify_email_token)
 
       # Digital Signature public routes
-      post("/guest/documents/sign/:token", SignatureController, :sign_document)
       get("/guest/signatures/verify/:token", SignatureController, :verify_signature)
 
       unless Enterprise.self_hosted?() do
@@ -158,6 +157,7 @@ defmodule WraftDocWeb.Router do
     scope "/v1/guest", Api.V1, as: :v1 do
       resources("/contents", InstanceController, only: [:show, :update])
       resources("/comments", CommentController, only: [:create])
+      post("/contents/:id/sign", SignatureController, :sign_document)
     end
   end
 
