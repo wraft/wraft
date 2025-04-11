@@ -24,7 +24,7 @@ defmodule WraftDocWeb.PropicUploader do
 
   # Change Filename
   def filename(_version, {_file, user}) do
-    "profilepic_" <> String.replace(user.name, ~r/\s+/, "-")
+    "profilepic_" <> String.replace(user.id, ~r/\s+/, "-")
   end
 
   # Storage Directory
