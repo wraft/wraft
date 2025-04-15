@@ -39,7 +39,6 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
       :file_name,
       :asset_id
     ])
-    |> cast_attachments(attrs, [:thumbnail])
     |> validate_required([:name])
     |> unique_constraint(:file_name,
       name: :unique_public_template_file_name,
@@ -47,22 +46,6 @@ defmodule WraftDoc.TemplateAssets.TemplateAsset do
     )
   end
 
-  def update_changeset(%TemplateAsset{} = template_asset, attrs \\ %{}) do
-    template_asset
-    |> cast(attrs, [
-      :name,
-      :description,
-      :asset_id,
-      :wraft_json,
-      :file_entries,
-      :zip_file_size,
-      :file_name
-    ])
-    |> cast_attachments(attrs, [:thumbnail])
-    |> validate_required([:name])
-    |> unique_constraint(:file_name,
-      name: :unique_public_template_file_name,
-      message: "Template asset already added"
-    )
-  end
+  def thumbnail_changeset(%TemplateAsset{} = template_asset, attrs \\ %{}),
+    do: cast_attachments(template_asset, attrs, [:thumbnail])
 end

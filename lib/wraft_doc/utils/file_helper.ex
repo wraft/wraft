@@ -18,15 +18,12 @@ defmodule WraftDoc.Utils.FileHelper do
     {:ok, wraft_json} = get_wraft_json(file_binary)
 
     wraft_json
-    |> get_allowed_files_from_wraft_json()
-    |> case do
-      allowed_files ->
-        Enum.each(allowed_files, fn allowed_file ->
-          write_file(file_binary, allowed_file, output_path)
-        end)
+    |> get_allowed_frame_files_from_wraft_json()
+    |> Enum.each(fn allowed_file ->
+      write_file(file_binary, allowed_file, output_path)
+    end)
 
-        Path.join(output_path, ".")
-    end
+    Path.join(output_path, ".")
   end
 
   defp write_file(file_binary, allowed_file, output_path) do
@@ -87,7 +84,7 @@ defmodule WraftDoc.Utils.FileHelper do
   end
 
   @doc """
-    Read file binary..
+  Read file binary.
   """
   @spec read_file_contents(String.t()) :: {:ok, binary()} | {:error, String.t()}
   def read_file_contents(file_path) do
@@ -116,7 +113,9 @@ defmodule WraftDoc.Utils.FileHelper do
     end
   end
 
-  defp get_allowed_files_from_wraft_json(%{
+  # TODO get allowed files from template asset, frame before validation
+  # match with type from metadata
+  defp get_allowed_frame_files_from_wraft_json(%{
          "packageContents" => %{"rootFiles" => root_files, "assets" => assets, "fonts" => fonts}
        }) do
     [root_files, assets, fonts]
@@ -141,7 +140,7 @@ defmodule WraftDoc.Utils.FileHelper do
          {:ok, file_binary} <- read_file_contents(file_path),
          {:ok, wraft_json} <- get_wraft_json(file_binary),
          :ok <- WraftJson.validate_json(wraft_json),
-         allowed_files <- get_allowed_files_from_wraft_json(wraft_json),
+         allowed_files <- get_allowed_frame_files_from_wraft_json(wraft_json),
          {:ok, _} <- validate_missing_files(allowed_files, file_entries) do
       :ok
     end

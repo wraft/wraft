@@ -52,6 +52,12 @@ defmodule WraftDoc.TemplateAssets do
       Assets.create_asset(current_user, Map.merge(params, %{"type" => "template_asset"}))
     end)
     |> public_template_asset_multi(current_user, params)
+    |> Multi.update(
+      :template_asset_thumbnail,
+      fn %{template_asset: template_asset} ->
+        TemplateAsset.thumbnail_changeset(template_asset, params)
+      end
+    )
     |> Repo.transaction()
     |> case do
       {:ok, %{template_asset: template_asset}} ->

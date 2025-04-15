@@ -51,6 +51,7 @@ defmodule WraftDoc.Utils.FileValidator do
     end
   end
 
+  # TODO filter out unwanted files.
   def get_file_entries(file_path) do
     file_path
     |> to_charlist()
@@ -143,7 +144,12 @@ defmodule WraftDoc.Utils.FileValidator do
   end
 
   defp check_file_extensions(file_entries) do
-    invalid_files = Enum.filter(file_entries, &(&1.extension not in @allowed_extensions))
+    invalid_files =
+      file_entries
+      |> Enum.reject(fn entry ->
+        String.match?(entry.path, ~r/^__MACOSX\//)
+      end)
+      |> Enum.filter(&(&1.extension not in @allowed_extensions))
 
     if Enum.empty?(invalid_files) do
       :ok
