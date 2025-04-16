@@ -9,7 +9,6 @@ defmodule WraftDoc.Repo.Migrations.UpdateESignature do
       add(:signature_type, :string, default: "digital")
       add(:signature_data, :map)
       add(:signature_position, :map)
-      add(:ip_address, :string)
       add(:signature_date, :utc_datetime)
       add(:is_valid, :boolean, default: false)
       add(:verification_token, :string)

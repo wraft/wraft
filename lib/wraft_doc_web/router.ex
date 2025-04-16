@@ -102,15 +102,15 @@ defmodule WraftDocWeb.Router do
       # Verify Email Verification Token
       get("/user/verify_email_token/:token", UserController, :verify_email_token)
 
-      # Digital Signature public routes
-      get("/guest/signatures/verify/:token", SignatureController, :verify_signature)
-
       unless Enterprise.self_hosted?() do
         post("/vendors/webhook", VendorsWebhookController, :webhook)
         # Show and index plans
         get("/plans/active_plans", PlanController, :active_plans)
         resources("/plans", PlanController, only: [:show, :index])
       end
+
+      # Verify digitial signature
+      get("/content/:id/verify_signatory/:token", SignatureController, :verify_signature)
 
       # Verify access to a document instance
       get(
