@@ -45,7 +45,7 @@ defmodule WraftDoc.Utils.FileValidator do
     with {:ok, file_entries} <- get_file_entries(file_path),
          :ok <- check_for_path_traversal(file_entries),
          :ok <- check_file_sizes(file_entries),
-         :ok <- check_file_extensions(file_entries),
+         #  :ok <- check_file_extensions(file_entries),
          :ok <- check_file_signature(file_path) do
       {:ok, file_entries}
     end
@@ -71,7 +71,7 @@ defmodule WraftDoc.Utils.FileValidator do
         {:zip_file, path, file_info, _, _, _}, acc ->
           path_string = to_string(path)
 
-          if String.ends_with?(path_string, "/") do
+          if String.match?(path_string, ~r/^__MACOSX\//) or String.ends_with?(path_string, "/") do
             acc
           else
             [
@@ -143,47 +143,51 @@ defmodule WraftDoc.Utils.FileValidator do
             (String.contains?(&1, "..") && String.contains?(&1, "%2")))).()
   end
 
-  defp check_file_extensions(file_entries) do
-    invalid_files =
-      file_entries
-      |> Enum.reject(fn entry ->
-        String.match?(entry.path, ~r/^__MACOSX\//)
-      end)
-      |> Enum.filter(&(&1.extension not in @allowed_extensions))
+  # defp check_file_extensions(file_entries) do
+  #   invalid_files =
+  #     file_entries
+  #     |> Enum.reject(fn entry ->
+  #       String.match?(entry.path, ~r/^__MACOSX\//)
+  #     end)
+  #     |> Enum.filter(&(&1.extension not in @allowed_extensions))
 
-    if Enum.empty?(invalid_files) do
-      :ok
-    else
-      invalid_exts = invalid_files |> Enum.map(& &1.extension) |> Enum.uniq()
-      {:error, {:invalid_file_types, invalid_exts}}
-    end
-  end
+  #   if Enum.empty?(invalid_files) do
+  #     :ok
+  #   else
+  #     invalid_exts = invalid_files |> Enum.map(& &1.extension) |> Enum.uniq()
+  #     {:error, Enum.join(invalid_exts, ", ")}
+  #   end
+  # end
 
   defp check_file_signature(file_path) do
     temp_path = Briefly.create!(directory: true)
 
     with {:ok, files} <- :zip.extract(to_charlist(file_path), [:memory]),
-         [] <- Enum.reduce(files, [], &process_file(&1, &2, temp_path)) do
+         [] <- Enum.reduce(files, [], &verify_signature(&1, &2, temp_path)) do
       :ok
     else
       mismatched_files when is_list(mismatched_files) ->
         {:error, format_mismatched_files(mismatched_files)}
-
-      {:error, _reason} ->
-        {:error, ""}
     end
   end
 
-  defp process_file({path, binary}, acc, temp_path) do
+  defp verify_signature({path, binary}, acc, temp_path) do
     path_string = List.to_string(path)
     ext = path_string |> Path.extname() |> String.downcase()
 
-    if ext in @allowed_extensions and ext not in @plain_text_extensions do
+    if not String.match?(path_string, ~r/^__MACOSX\//) and ext in @allowed_extensions and
+         ext not in @plain_text_extensions do
       file_path = Path.join(temp_path, path_string)
-      File.mkdir_p!(Path.dirname(file_path))
+
+      file_path
+      |> Path.dirname()
+      |> File.mkdir_p!()
+
       File.write!(file_path, binary)
 
-      case FileType.from_path(file_path) do
+      file_path
+      |> FileType.from_path()
+      |> case do
         {:ok, {detected_ext, _mime_type}} ->
           if ".#{detected_ext}" != ext do
             [{path_string, ext, detected_ext} | acc]

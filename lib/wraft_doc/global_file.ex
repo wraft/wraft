@@ -24,6 +24,7 @@ defmodule WraftDoc.GlobalFile do
     end
   end
 
+  # TODO import data template here instead of creating template asset
   def import_global_asset(current_user, %{"file" => file, "type" => "template_asset"} = params) do
     with :ok <- TemplateAssets.validate_template_asset_file(file),
          {:ok, params, _} <-
@@ -40,4 +41,12 @@ defmodule WraftDoc.GlobalFile do
   end
 
   def import_global_asset(_, _), do: {:error, "Unsupported asset type"}
+
+  def global_file_preview(%{path: file_path} = file) do
+    with {:ok, file_binary} <- File.read(file_path),
+         {:ok, wraft_json} <- FileHelper.get_wraft_json(file_binary),
+         file_details <- FileHelper.get_global_file_info(file) do
+      {:ok, %{meta: wraft_json, file_details: file_details}}
+    end
+  end
 end

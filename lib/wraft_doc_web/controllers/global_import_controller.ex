@@ -59,4 +59,27 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
       |> render(template, assigns)
     end
   end
+
+  def preview_global_file(conn, %{"file" => %{path: file_path} = file}) do
+    with {:ok, _} <- FileValidator.validate_file(file_path),
+         # TODO add wraft_json validation
+         {:ok, global_file_preview} <- GlobalFile.global_file_preview(file) do
+      render(conn, "global_file_preview.json", %{
+        global_file_preview: global_file_preview
+      })
+    end
+  end
+
+  # def validate_global_file(conn, %{"file" => %{path: file_path} = file} = params) do
+  #   current_user = conn.assigns.current_user
+
+  #   with {:ok, _} <- FileValidator.validate_file(file_path),
+  #        {:ok, metadata} <- FileHelper.get_file_metadata(file),
+  #        {:ok, %{view: view, template: template, assigns: assigns}} <-
+  #          GlobalFile.validate_global_asset(current_user, Map.merge(params, metadata)) do
+  #     conn
+  #     |> put_view(view)
+  #     |> render(template, assigns)
+  #   end
+  # end
 end

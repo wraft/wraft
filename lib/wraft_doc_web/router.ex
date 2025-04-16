@@ -423,8 +423,9 @@ defmodule WraftDocWeb.Router do
 
       # Assets
       resources("/assets", AssetController)
-      post("/assets/preview", AssetController, :preview)
 
+      post("/global_asset/preview", GlobalImportController, :preview_global_file)
+      post("/global_asset/validate", GlobalImportController, :validate_global_file)
       post("/global_asset/import", GlobalImportController, :import_global_file)
 
       # Template Assets

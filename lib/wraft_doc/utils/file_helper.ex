@@ -183,6 +183,10 @@ defmodule WraftDoc.Utils.FileHelper do
     end
   end
 
+  @doc """
+  Get file size
+  """
+  @spec file_size(binary()) :: String.t()
   def file_size(file_binary), do: file_binary |> byte_size() |> Sizeable.filesize()
 
   @doc """
@@ -236,4 +240,69 @@ defmodule WraftDoc.Utils.FileHelper do
         {:error, "Invalid file"}
     end
   end
+
+  @doc """
+  Get file information.
+  """
+  @spec get_global_file_info(Plug.Upload.t()) :: map()
+  def get_global_file_info(
+        %{filename: filename, content_type: content_type, path: file_path} = file
+      ) do
+    with {:ok, files} <- get_files(file_path),
+         allowed_files <- get_allowed_files(file) do
+      %{
+        name: filename,
+        type: content_type,
+        size: file_path |> File.read!() |> file_size(),
+        files: files,
+        excluded_files: files -- allowed_files,
+        missing_files: []
+      }
+    end
+  end
+
+  defp get_files(file_path) do
+    file_path
+    |> File.read!()
+    |> get_file_entries()
+    |> case do
+      {:ok, file_entries} ->
+        file_entries
+        |> Enum.filter(fn entry ->
+          !String.ends_with?(entry.file_name, "/") and
+            not String.match?(entry.file_name, ~r/^__MACOSX\//)
+        end)
+        |> Enum.map(fn entry ->
+          entry.file_name
+        end)
+        |> then(&{:ok, &1})
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp get_allowed_files(%{path: file_path} = file) do
+    file
+    |> get_global_file_type()
+    |> case do
+      {:ok, "frame"} ->
+        with {:ok, file_binary} <- read_file_contents(file_path),
+             {:ok, wraft_json} <- get_wraft_json(file_binary) do
+          get_allowed_frame_files_from_wraft_json(wraft_json)
+        end
+
+      # TODO get template_asset allowed files
+      # {:ok, "template_asset"} ->
+      # TemplateAssets.template_asset_file_list(file_binary)
+      # {:ok, @template_asset_files}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  # TODO missing files in global file
+  # defp get_missing_files() do
+  # end
 end

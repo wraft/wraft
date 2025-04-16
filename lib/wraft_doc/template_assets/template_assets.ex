@@ -35,6 +35,7 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Utils.FileHelper
   alias WraftDoc.Utils.ProsemirrorToMarkdown
 
+  # TODO restructure allowed files.
   @required_items ["layout", "theme", "flow", "variant"]
   @allowed_folders ["theme", "layout", "frame"]
   @allowed_files ["template.json", "wraft.json"]
