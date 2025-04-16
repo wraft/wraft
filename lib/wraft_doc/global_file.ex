@@ -7,7 +7,6 @@ defmodule WraftDoc.GlobalFile do
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
   alias WraftDoc.TemplateAssets
-  alias WraftDoc.TemplateAssets.TemplateAsset
   alias WraftDoc.Utils.FileHelper
   alias WraftDocWeb.Api.V1.FrameView
   alias WraftDocWeb.Api.V1.TemplateAssetView
@@ -27,15 +26,16 @@ defmodule WraftDoc.GlobalFile do
   # TODO import data template here instead of creating template asset
   def import_global_asset(current_user, %{"file" => file, "type" => "template_asset"} = params) do
     with :ok <- TemplateAssets.validate_template_asset_file(file),
-         {:ok, params, _} <-
+         {:ok, params, file_binary} <-
            TemplateAssets.process_template_asset(params, :file, file),
-         {:ok, %TemplateAsset{} = template_asset} <-
-           TemplateAssets.create_template_asset(current_user, params) do
+         options <- TemplateAssets.format_opts(params),
+         {:ok, result} <-
+           TemplateAssets.import_template(current_user, file_binary, options) do
       {:ok,
        %{
          view: TemplateAssetView,
-         template: "template_asset.json",
-         assigns: %{template_asset: template_asset}
+         template: "show_template.json",
+         assigns: %{result: result}
        }}
     end
   end
