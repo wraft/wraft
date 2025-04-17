@@ -5,9 +5,12 @@ defmodule WraftDoc.CounterParties do
 
   import Ecto.Query
 
+  alias Ecto.Multi
   alias WraftDoc.Account.User
   alias WraftDoc.CounterParties.CounterParty
+  alias WraftDoc.Documents.ESignature
   alias WraftDoc.Documents.Instance
+  alias WraftDoc.Documents.Signatures
   alias WraftDoc.Repo
 
   @doc """
@@ -49,7 +52,7 @@ defmodule WraftDoc.CounterParties do
   """
   @spec approve_document_access(CounterParty.t()) ::
           {:ok, CounterParty.t()} | {:error, Ecto.Changeset.t()}
-  def approve_document_access(%CounterParty{} = counterparty) do
+  def approve_document_access(%CounterParty{signature_status: :pending} = counterparty) do
     counterparty
     |> CounterParty.update_status_changeset(%{signature_status: :accepted})
     |> Repo.update()
@@ -61,6 +64,8 @@ defmodule WraftDoc.CounterParties do
         {:error, changeset}
     end
   end
+
+  def approve_document_access(%CounterParty{} = counterparty), do: counterparty
 
   @doc """
    Add counterparty to content
@@ -110,12 +115,45 @@ defmodule WraftDoc.CounterParties do
   end
 
   @doc """
-    Update counterparty status to signed
+    Sign document for a counterparty
   """
-  @spec sign_document(CounterParty.t(), map()) ::
-          {:ok, CounterParty.t()} | {:error, Ecto.Changeset.t()}
-  def sign_document(%CounterParty{} = counterparty, %{"ip_address" => ip_address}) do
-    counterparty
+  @spec sign_document(CounterParty.t(), ESignature.t(), map()) ::
+          {:ok, CounterParty.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def sign_document(
+        %CounterParty{signature_status: :accepted} = counterparty,
+        %ESignature{} = signature,
+        params
+      ) do
+    Multi.new()
+    |> Multi.run(:sign_document, fn _repo, _changes ->
+      counter_party_sign(counterparty, params)
+    end)
+    |> Multi.run(:update_signature, fn _repo, _changes ->
+      Signatures.update_e_signature(signature, params)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_signature: updated_signature}} ->
+        Repo.preload(updated_signature, [:user, :counter_party, content: [:creator]])
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  def sign_document(%CounterParty{signature_status: :pending} = _counterparty, _, _),
+    do: {:error, "Signatory has not accepted the document"}
+
+  def sign_document(%CounterParty{signature_status: :signed} = _counterparty, _, _),
+    do: {:error, "Document already signed"}
+
+  @doc """
+  Update counterparty status to signed
+  """
+  @spec counter_party_sign(CounterParty.t(), map()) ::
+          {:ok, CounterParty.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def counter_party_sign(counter_party, %{"ip_address" => ip_address}) do
+    counter_party
     |> CounterParty.sign_changeset(%{
       signature_status: :signed,
       signature_date: DateTime.utc_now(),
@@ -123,4 +161,12 @@ defmodule WraftDoc.CounterParties do
     })
     |> Repo.update()
   end
+
+  def counter_party_sign(_, _), do: {:error, :invalid_data}
+
+  def sign_document(%CounterParty{signature_status: :pending}, _),
+    do: {:error, "Signatory has not accepted the document"}
+
+  def sign_document(%CounterParty{signature_status: :signed}, _),
+    do: {:error, "Document already signed"}
 end

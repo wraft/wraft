@@ -98,7 +98,26 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
             )
 
             signature_position(:map, "Position in the document")
+            file(:string, "URL of the uploaded file")
+            token(:string, "Verification token", required: true)
+
+            signature_type(:string, "Type of signature",
+              required: true,
+              enum: ["digital", "electronic", "handwritten"]
+            )
           end
+
+          example(%{
+            file: "/signature.pdf",
+            signature_type: "digital",
+            is_valid: true,
+            verification_token: "abc123",
+            signature_data: %{},
+            signature_position: %{
+              "x" => 100,
+              "y" => 200
+            }
+          })
         end
     }
   end
@@ -192,23 +211,21 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     params = Map.merge(params, %{"ip_address" => ip_address})
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
-         %ESignature{counter_party: counterparty} <-
+         %ESignature{counter_party: counter_party} <-
            Signatures.verify_signature_by_token(instance, current_user, token),
-         {:ok, %CounterParty{} = counter_party} =
-           CounterParties.sign_document(counterparty, params),
          %ESignature{} = signature <- Signatures.get_signature_by_counterparty(counter_party),
-         {:ok, %ESignature{} = updated_signature} <-
-           Signatures.update_e_signature(signature, params) do
+         %ESignature{} = updated_signature <-
+           CounterParties.sign_document(counter_party, signature, params) do
       Signatures.check_document_signature_status(instance)
       Signatures.notify_document_owner_email(updated_signature)
-      render(conn, "signature.json", signature: signature)
+      render(conn, "signature.json", signature: updated_signature)
     end
   end
 
   @doc """
   Validate a signature for a document
   """
-  swagger_path :verify_signature do
+  swagger_path :validate_signature do
     post("/contents/{id}/validate_signature/{token}")
     summary("Validate a document signature")
     description("API to validate a document signature")
@@ -223,8 +240,8 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
-  @spec verify_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def verify_signature(conn, %{"token" => token, "id" => document_id}) do
+  @spec validate_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def validate_signature(conn, %{"token" => token, "id" => document_id}) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),

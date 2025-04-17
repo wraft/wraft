@@ -16,6 +16,7 @@ defmodule WraftDoc.Repo.Migrations.UpdateESignature do
       add(:counter_party_id, references(:counter_parties, type: :binary_id, on_delete: :nothing))
     end
 
+    create(unique_index(:e_signature, [:content_id, :counter_party_id]))
     create(unique_index(:e_signature, [:verification_token]))
     create(index(:e_signature, [:counter_party_id]))
     create(index(:e_signature, [:signature_date]))
@@ -23,6 +24,7 @@ defmodule WraftDoc.Repo.Migrations.UpdateESignature do
   end
 
   def down do
+    drop_if_exists(unique_index(:e_signature, [:content_id, :counter_party_id]))
     drop_if_exists(unique_index(:e_signature, [:verification_token]))
     drop_if_exists(index(:e_signature, [:is_valid]))
     drop_if_exists(index(:e_signature, [:signature_date]))

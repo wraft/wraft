@@ -124,18 +124,14 @@ defmodule WraftDoc.Documents.Signatures do
   """
   @spec update_e_signature(ESignature.t(), String.t()) ::
           {:ok, ESignature.t()} | {:error, Ecto.Changeset.t()}
-  def update_e_signature(
-        signature,
-        %{"signature_data" => signature_data, "ip_address" => ip_address} = params
-      ) do
+  def update_e_signature(%ESignature{} = signature, params) do
     signature
-    |> ESignature.signature_changeset(%{
-      signature_data: signature_data,
-      signature_position: Map.get(params, "signature_position", %{}),
-      ip_address: ip_address,
-      signature_date: DateTime.utc_now(),
-      is_valid: true
-    })
+    |> ESignature.signature_changeset(
+      Map.merge(params, %{
+        "is_valid" => true,
+        "signature_date" => DateTime.utc_now()
+      })
+    )
     |> Repo.update()
   end
 
@@ -145,15 +141,14 @@ defmodule WraftDoc.Documents.Signatures do
   @spec verify_signature_by_token(Instance.t(), User.t(), String.t()) :: ESignature.t() | nil
   def verify_signature_by_token(
         %Instance{id: document_id},
-        %User{id: user_id, current_org_id: org_id},
+        %User{id: user_id},
         token
       )
       when is_binary(token) do
     ESignature
     |> where(
       [s],
-      s.verification_token == ^token and s.content_id == ^document_id and
-        s.organisation_id == ^org_id
+      s.verification_token == ^token and s.content_id == ^document_id
     )
     |> join(:inner, [s], cp in CounterParty,
       on: s.counter_party_id == cp.id and s.content_id == cp.content_id
