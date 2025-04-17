@@ -6,6 +6,7 @@ defmodule WraftDoc.GlobalFile do
   alias WraftDoc.Account.User
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
+  alias WraftDoc.Frames.WraftJson, as: FrameWraftJson
   alias WraftDoc.TemplateAssets
   alias WraftDoc.Utils.FileHelper
   alias WraftDocWeb.Api.V1.FrameView
@@ -23,7 +24,6 @@ defmodule WraftDoc.GlobalFile do
     end
   end
 
-  # TODO import data template here instead of creating template asset
   def import_global_asset(current_user, %{"file" => file, "type" => "template_asset"} = params) do
     with :ok <- TemplateAssets.validate_template_asset_file(file),
          {:ok, params, file_binary} <-
@@ -42,11 +42,38 @@ defmodule WraftDoc.GlobalFile do
 
   def import_global_asset(_, _), do: {:error, "Unsupported asset type"}
 
+  @doc """
+  Previews a global file by extracting its metadata and file details.
+  """
+  @spec global_file_preview(Plug.Upload.t()) ::
+          {:ok, map()} | {:error, String.t()}
   def global_file_preview(%{path: file_path} = file) do
-    with {:ok, file_binary} <- File.read(file_path),
+    with {:ok, _metadata} <- FileHelper.get_file_metadata(file),
+         {:ok, file_binary} <- File.read(file_path),
          {:ok, wraft_json} <- FileHelper.get_wraft_json(file_binary),
+         :ok <- validate_global_file_wraft_json(wraft_json),
          file_details <- FileHelper.get_global_file_info(file) do
       {:ok, %{meta: wraft_json, file_details: file_details}}
+    end
+  end
+
+  def validate_global_file_wraft_json(%{"metadata" => %{"type" => "frame"}} = wraft_json),
+    do: FrameWraftJson.validate_json(wraft_json)
+
+  def validate_global_file_wraft_json(
+        %{"metadata" => %{"type" => "template_asset"}} = wraft_json
+      ),
+      do: TemplateAssets.validate_wraft_json(wraft_json)
+
+  def validate_global_asset(%{"file" => file, "type" => "frame"}),
+    do: FileHelper.validate_frame_file(file)
+
+  def validate_global_asset(%{"file" => %{path: file_path} = file, "type" => "template_asset"}) do
+    with :ok <- TemplateAssets.validate_template_asset_file(file),
+         {:ok, file_binary} <- File.read(file_path),
+         {:ok, %{existing_items: _existing_items, missing_items: _missing_items} = result} <-
+           TemplateAssets.pre_import_template(file_binary) do
+      {:ok, result}
     end
   end
 end

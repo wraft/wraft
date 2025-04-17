@@ -888,7 +888,7 @@ defmodule WraftDoc.TemplateAssets do
   def template_zip_validator(file_binary, file_entries_in_zip) do
     with true <- validate_file_entries(file_entries_in_zip),
          {:ok, wraft_json} <- FileHelper.get_wraft_json(file_binary),
-         true <- validate_wraft_json(wraft_json),
+         :ok <- validate_wraft_json(wraft_json),
          :ok <- validate_wraft_json_folders(file_entries_in_zip, wraft_json) do
       {:ok, "Template file is valid"}
     end
@@ -907,11 +907,15 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp validate_wraft_json(wraft_json) do
+  @doc """
+  Validates template asset wraft_json.
+  """
+  @spec validate_wraft_json(map()) :: :ok | {:error, String.t()}
+  def validate_wraft_json(wraft_json) do
     %WraftJson{}
     |> WraftJson.changeset(wraft_json)
     |> case do
-      %{valid?: true} -> true
+      %{valid?: true} -> :ok
       %{valid?: false} = changeset -> {:error, "wraft.json: #{extract_errors(changeset)}"}
     end
   end

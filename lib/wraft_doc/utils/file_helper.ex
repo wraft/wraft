@@ -5,6 +5,7 @@ defmodule WraftDoc.Utils.FileHelper do
 
   alias WraftDoc.Frames.WraftJson
   alias WraftDoc.Frames.WraftJson.Metadata, as: FrameMetadata
+  alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.Metadata, as: TemplateAssetMetadata
   alias WraftDoc.Utils.FileValidator
 
@@ -76,11 +77,16 @@ defmodule WraftDoc.Utils.FileHelper do
     |> extract_file_content("wraft.json")
     |> case do
       {:ok, wraft_json} ->
-        Jason.decode(wraft_json)
+        wraft_json
+        |> Jason.decode!()
+        |> then(&{:ok, &1})
 
       {:error, reason} ->
         {:error, reason}
     end
+  rescue
+    e in Jason.DecodeError ->
+      {:error, "Failed to decode wraft.json: #{Exception.message(e)}"}
   end
 
   @doc """
@@ -151,7 +157,7 @@ defmodule WraftDoc.Utils.FileHelper do
     |> get_global_file_type()
     |> case do
       {:ok, "frame"} -> true
-      {:ok, _} -> {:error, "File is not a template asset."}
+      {:ok, _} -> {:error, "File is not a frame file."}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -196,9 +202,16 @@ defmodule WraftDoc.Utils.FileHelper do
           {:ok, String.t()} | {:error, String.t() | Ecto.Changeset.t()}
   def get_file_metadata(%Plug.Upload{path: file_path}) do
     with {:ok, file_binary} <- read_file_contents(file_path),
-         {:ok, %{"metadata" => metadata}} <- get_wraft_json(file_binary),
+         {:ok, wraft_json} <- get_wraft_json(file_binary),
+         metadata when is_map(metadata) <- Map.get(wraft_json, "metadata"),
          :ok <- validate_metadata(metadata) do
       {:ok, metadata}
+    else
+      nil ->
+        {:error, "Metadata is missing"}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -249,14 +262,14 @@ defmodule WraftDoc.Utils.FileHelper do
         %{filename: filename, content_type: content_type, path: file_path} = file
       ) do
     with {:ok, files} <- get_files(file_path),
-         allowed_files <- get_allowed_files(file) do
+         _allowed_files <- get_allowed_files(file) do
       %{
         name: filename,
         type: content_type,
         size: file_path |> File.read!() |> file_size(),
-        files: files,
-        excluded_files: files -- allowed_files,
-        missing_files: []
+        files: files
+        # excluded_files: files -- allowed_files,
+        # missing_files: []
       }
     end
   end
@@ -283,22 +296,21 @@ defmodule WraftDoc.Utils.FileHelper do
   end
 
   defp get_allowed_files(%{path: file_path} = file) do
-    file
-    |> get_global_file_type()
-    |> case do
-      {:ok, "frame"} ->
-        with {:ok, file_binary} <- read_file_contents(file_path),
-             {:ok, wraft_json} <- get_wraft_json(file_binary) do
+    with {:ok, file_binary} <- read_file_contents(file_path),
+         {:ok, wraft_json} <- get_wraft_json(file_binary) do
+      file
+      |> get_global_file_type()
+      |> case do
+        {:ok, "frame"} ->
           get_allowed_frame_files_from_wraft_json(wraft_json)
-        end
 
-      # TODO get template_asset allowed files
-      # {:ok, "template_asset"} ->
-      # TemplateAssets.template_asset_file_list(file_binary)
-      # {:ok, @template_asset_files}
+        {:ok, "template_asset"} ->
+          {_, files} = TemplateAssets.template_asset_file_list(file_binary)
+          Enum.filter(files, fn file -> !String.ends_with?(file, "/") end)
 
-      {:error, reason} ->
-        {:error, reason}
+        {:error, reason} ->
+          {:error, reason}
+      end
     end
   end
 
