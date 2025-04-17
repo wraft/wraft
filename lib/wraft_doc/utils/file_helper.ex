@@ -5,7 +5,6 @@ defmodule WraftDoc.Utils.FileHelper do
 
   alias WraftDoc.Frames.WraftJson
   alias WraftDoc.Frames.WraftJson.Metadata, as: FrameMetadata
-  alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.Metadata, as: TemplateAssetMetadata
   alias WraftDoc.Utils.FileValidator
 
@@ -230,9 +229,57 @@ defmodule WraftDoc.Utils.FileHelper do
     metadata
     |> schema_module.changeset()
     |> case do
-      %Ecto.Changeset{valid?: true} -> :ok
-      changeset -> {:error, changeset}
+      %Ecto.Changeset{valid?: true} ->
+        :ok
+
+      changeset ->
+        {:error, format_changeset_errors(changeset)}
     end
+  end
+
+  defp format_changeset_errors(changeset) do
+    changeset
+    |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
+      Enum.reduce(opts, msg, fn {key, value}, acc ->
+        String.replace(acc, "%{#{key}}", to_string(value))
+      end)
+    end)
+    |> format_error_message()
+  end
+
+  defp format_error_message(error_map) when is_map(error_map) do
+    error_map
+    |> Enum.map(fn {key, value} -> format_error_entry(key, value) end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.join("; ")
+  end
+
+  defp format_error_entry(key, value) when is_map(value) do
+    nested_errors = format_error_message(value)
+    if nested_errors != "", do: "#{key}: #{nested_errors}", else: nil
+  end
+
+  defp format_error_entry(key, value) when is_list(value) and is_map(hd(value)) do
+    items_errors =
+      value
+      |> Enum.with_index()
+      |> Enum.map(fn {item, index} ->
+        item_errors = format_error_message(item)
+        if item_errors != "", do: "item #{index + 1}: #{item_errors}", else: nil
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.join(", ")
+
+    if items_errors != "", do: "#{key}: [#{items_errors}]", else: nil
+  end
+
+  defp format_error_entry(key, [value]) when is_binary(value) do
+    "#{key} #{value}"
+  end
+
+  defp format_error_entry(key, values) when is_list(values) do
+    messages = Enum.join(values, ", ")
+    "#{key}: #{messages}"
   end
 
   @doc """
@@ -258,19 +305,20 @@ defmodule WraftDoc.Utils.FileHelper do
   Get file information.
   """
   @spec get_global_file_info(Plug.Upload.t()) :: map()
-  def get_global_file_info(
-        %{filename: filename, content_type: content_type, path: file_path} = file
-      ) do
-    with {:ok, files} <- get_files(file_path),
-         _allowed_files <- get_allowed_files(file) do
-      %{
-        name: filename,
-        type: content_type,
-        size: file_path |> File.read!() |> file_size(),
-        files: files
-        # excluded_files: files -- allowed_files,
-        # missing_files: []
-      }
+  def get_global_file_info(%{filename: filename, content_type: content_type, path: file_path}) do
+    file_path
+    |> get_files()
+    |> case do
+      {:ok, files} ->
+        %{
+          name: filename,
+          type: content_type,
+          size: file_path |> File.read!() |> file_size(),
+          files: files
+        }
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -295,24 +343,25 @@ defmodule WraftDoc.Utils.FileHelper do
     end
   end
 
-  defp get_allowed_files(%{path: file_path} = file) do
-    with {:ok, file_binary} <- read_file_contents(file_path),
-         {:ok, wraft_json} <- get_wraft_json(file_binary) do
-      file
-      |> get_global_file_type()
-      |> case do
-        {:ok, "frame"} ->
-          get_allowed_frame_files_from_wraft_json(wraft_json)
+  # will use use in future
+  # defp get_allowed_files(%{path: file_path} = file) do
+  #   with {:ok, file_binary} <- read_file_contents(file_path),
+  #        {:ok, wraft_json} <- get_wraft_json(file_binary) do
+  #     file
+  #     |> get_global_file_type()
+  #     |> case do
+  #       {:ok, "frame"} ->
+  #         get_allowed_frame_files_from_wraft_json(wraft_json)
 
-        {:ok, "template_asset"} ->
-          {_, files} = TemplateAssets.template_asset_file_list(file_binary)
-          Enum.filter(files, fn file -> !String.ends_with?(file, "/") end)
+  #       {:ok, "template_asset"} ->
+  #         {_, files} = TemplateAssets.template_asset_file_list(file_binary)
+  #         Enum.filter(files, fn file -> !String.ends_with?(file, "/") end)
 
-        {:error, reason} ->
-          {:error, reason}
-      end
-    end
-  end
+  #       {:error, reason} ->
+  #         {:error, reason}
+  #     end
+  #   end
+  # end
 
   # TODO missing files in global file
   # defp get_missing_files() do

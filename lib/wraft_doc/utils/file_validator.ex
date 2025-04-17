@@ -45,6 +45,7 @@ defmodule WraftDoc.Utils.FileValidator do
     with {:ok, file_entries} <- get_file_entries(file_path),
          :ok <- check_for_path_traversal(file_entries),
          :ok <- check_file_sizes(file_entries),
+         # TODO need to refactor.
          #  :ok <- check_file_extensions(file_entries),
          :ok <- check_file_signature(file_path) do
       {:ok, file_entries}
@@ -167,7 +168,7 @@ defmodule WraftDoc.Utils.FileValidator do
       :ok
     else
       mismatched_files when is_list(mismatched_files) ->
-        {:error, format_mismatched_files(mismatched_files)}
+        {:error, mismatched_files}
     end
   end
 
@@ -190,23 +191,17 @@ defmodule WraftDoc.Utils.FileValidator do
       |> case do
         {:ok, {detected_ext, _mime_type}} ->
           if ".#{detected_ext}" != ext do
-            [{path_string, ext, detected_ext} | acc]
+            [path_string | acc]
           else
             acc
           end
 
         {:error, _reason} ->
-          [{path_string, ext, "unknown"} | acc]
+          [path_string | acc]
       end
     else
       acc
     end
-  end
-
-  defp format_mismatched_files(mismatched_files) do
-    Enum.map_join(mismatched_files, ", ", fn {path, ext, detected_ext} ->
-      "#{path}: expected #{ext}, detected #{detected_ext}"
-    end)
   end
 
   defp check_file_sizes(file_entries) do

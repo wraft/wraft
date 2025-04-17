@@ -1,12 +1,15 @@
 defmodule WraftDocWeb.Api.V1.GlobalImportView do
   use WraftDocWeb, :view
 
-  def render("global_file_preview.json", %{
-        global_file_preview: %{meta: meta, file_details: file_details}
+  def render("pre_import_global_file.json", %{
+        response: %{wraft_json: meta, file_details: file_details, errors: errors}
       }) do
     %{
-      meta: meta,
-      file_details: file_details
+      data: %{
+        meta: meta,
+        file_details: file_details
+      },
+      errors: errors
     }
   end
 
