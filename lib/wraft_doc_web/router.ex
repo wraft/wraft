@@ -110,7 +110,7 @@ defmodule WraftDocWeb.Router do
       end
 
       # Verify digitial signature
-      get("/content/:id/verify_signatory/:token", SignatureController, :verify_signature)
+      get("/contents/:id/verify_signatory/:token", SignatureController, :verify_signature)
 
       # Verify access to a document instance
       get(
@@ -158,6 +158,7 @@ defmodule WraftDocWeb.Router do
       resources("/contents", InstanceController, only: [:show, :update])
       resources("/comments", CommentController, only: [:create])
       post("/contents/:id/sign", SignatureController, :sign_document)
+      get("/contents/:id/validate_signature", SignatureController, :validate_signature)
     end
   end
 
@@ -480,11 +481,11 @@ defmodule WraftDocWeb.Router do
       )
 
       # Signature routes
-      post("/documents/:id/signature_request", SignatureController, :request_signature)
-      get("/documents/:id/signatures", SignatureController, :get_document_signatures)
+      post("/contents/:id/signature_request", SignatureController, :request_signature)
+      get("/contents/:id/signatures", SignatureController, :get_document_signatures)
 
       delete(
-        "/documents/:document_id/signatures/:signature_id",
+        "/contents/:id/signatures/:counter_party_id",
         SignatureController,
         :revoke_signature
       )

@@ -10,10 +10,10 @@ defmodule WraftDoc.Repo.Migrations.UpdateCounterParties do
       add(:signature_status, :string, default: "pending")
       add(:signature_date, :utc_datetime)
       add(:signature_ip, :string)
-
-      timestamps()
+      add(:user_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
     end
 
+    create(unique_index(:counter_parties, [:user_id, :content_id]))
     create(index(:counter_parties, [:signature_status]))
     create(index(:counter_parties, [:content_id]))
     create(index(:counter_parties, [:email]))
@@ -25,8 +25,10 @@ defmodule WraftDoc.Repo.Migrations.UpdateCounterParties do
       remove(:signature_status)
       remove(:signature_date)
       remove(:signature_ip)
+      remove(:user_id)
     end
 
+    drop_if_exists(unique_index(:counter_parties, [:user_id, :content_id]))
     drop_if_exists(index(:counter_parties, [:signature_status]))
     drop_if_exists(index(:counter_parties, [:content_id]))
     drop_if_exists(index(:counter_parties, [:email]))

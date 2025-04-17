@@ -21,6 +21,7 @@ defmodule WraftDoc.Documents.ESignature do
     field(:signature_data, :map)
     field(:signature_position, :map)
     field(:signature_date, :utc_datetime)
+    field(:verification_token, :string)
     field(:is_valid, :boolean, default: false)
     belongs_to(:content, Instance)
     belongs_to(:user, User)
@@ -41,7 +42,6 @@ defmodule WraftDoc.Documents.ESignature do
       :signature_type,
       :signature_data,
       :signature_position,
-      :ip_address,
       :signature_date,
       :is_valid,
       :verification_token,
@@ -50,7 +50,7 @@ defmodule WraftDoc.Documents.ESignature do
       :organisation_id,
       :counter_party_id
     ])
-    |> validate_required([:api_url, :body])
+    |> validate_required([:content_id, :user_id, :organisation_id])
   end
 
   def signature_changeset(e_signature, attrs \\ %{}) do

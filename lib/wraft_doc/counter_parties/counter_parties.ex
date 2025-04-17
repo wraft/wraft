@@ -108,4 +108,19 @@ defmodule WraftDoc.CounterParties do
     |> preload([:content, :user])
     |> Repo.all()
   end
+
+  @doc """
+    Update counterparty status to signed
+  """
+  @spec sign_document(CounterParty.t(), map()) ::
+          {:ok, CounterParty.t()} | {:error, Ecto.Changeset.t()}
+  def sign_document(%CounterParty{} = counterparty, %{"ip_address" => ip_address}) do
+    counterparty
+    |> CounterParty.sign_changeset(%{
+      signature_status: :signed,
+      signature_date: DateTime.utc_now(),
+      signature_ip: ip_address
+    })
+    |> Repo.update()
+  end
 end
