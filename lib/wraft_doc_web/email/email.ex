@@ -183,6 +183,20 @@ defmodule WraftDocWeb.Mailer.Email do
     |> add_attachment(document_pdf_binary, instance_file_name)
   end
 
+  defp maybe_add_cc(email, nil), do: email
+
+  defp add_attachment(email, document_pdf_binary, instance_file_name) do
+    attachment(
+      email,
+      Attachment.new(
+        {:data, document_pdf_binary},
+        filename: instance_file_name,
+        content_type: "application/pdf",
+        type: :inline
+      )
+    )
+  end
+
   @doc """
   Email to request signature from a counterparty
   """
@@ -229,20 +243,6 @@ defmodule WraftDocWeb.Mailer.Email do
     |> from({"Wraft", sender_email()})
     |> subject("Document Fully Signed: #{instance_id}")
     |> html_body(MJML.DocumentFullySigned.render(body))
-  end
-
-  defp maybe_add_cc(email, nil), do: email
-
-  defp add_attachment(email, document_pdf_binary, instance_file_name) do
-    attachment(
-      email,
-      Attachment.new(
-        {:data, document_pdf_binary},
-        filename: instance_file_name,
-        content_type: "application/pdf",
-        type: :inline
-      )
-    )
   end
 
   defp sender_email do

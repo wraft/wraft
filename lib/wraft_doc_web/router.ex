@@ -110,7 +110,7 @@ defmodule WraftDocWeb.Router do
       end
 
       # Verify digitial signature
-      get("/contents/:id/verify_signatory/:token", SignatureController, :verify_signature)
+      get("/guest/contents/:id/verify_signatory/:token", SignatureController, :verify_signatory)
 
       # Verify access to a document instance
       get(
