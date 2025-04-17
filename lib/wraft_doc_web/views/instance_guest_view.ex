@@ -25,8 +25,11 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestView do
     %{
       id: counterparty.id,
       name: counterparty.name,
-      content: render_one(counterparty.content, InstanceView, "instance.json", as: :content),
-      guest_user: render_one(counterparty.user, UserView, "guest_user.json", as: :guest_user)
+      email: counterparty.email,
+      signature_status: counterparty.signature_status,
+      signature_date: counterparty.signature_date,
+      created_at: counterparty.inserted_at,
+      updated_at: counterparty.updated_at
     }
   end
 

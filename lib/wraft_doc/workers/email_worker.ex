@@ -77,6 +77,41 @@ defmodule WraftDoc.Workers.EmailWorker do
 
   def perform(%Job{
         args: %{
+          "email" => email,
+          "instance_id" => instance_id,
+          "signer_name" => signer_name
+        },
+        tags: ["notify_document_owner_signature_complete"]
+      }) do
+    Logger.info("Notify document owner signature complete mailer job started.")
+
+    email
+    |> Email.signature_completed_email(instance_id, signer_name)
+    |> Mailer.deliver()
+
+    Logger.info("Notify document owner signature complete mailer job end.")
+  end
+
+  def perform(%Job{
+        args: %{
+          "name" => name,
+          "email" => email,
+          "token" => token,
+          "instance_id" => instance_id
+        },
+        tags: ["document_signature_request"]
+      }) do
+    Logger.info("Document signature request mailer job started.")
+
+    email
+    |> Email.signature_request_email(name, instance_id, token)
+    |> Mailer.deliver()
+
+    Logger.info("Document signature request mailer job end.")
+  end
+
+  def perform(%Job{
+        args: %{
           "name" => name,
           "email" => email,
           "token" => token
@@ -175,23 +210,5 @@ defmodule WraftDoc.Workers.EmailWorker do
     |> Mailer.deliver()
 
     Logger.info("Document reminder mailer job end.")
-  end
-
-  def perform(%Job{
-        args: %{
-          "name" => name,
-          "email" => email,
-          "token" => token,
-          "instance_id" => instance_id
-        },
-        tags: ["document_signature_request"]
-      }) do
-    Logger.info("Document signature request mailer job started.")
-
-    email
-    |> Email.signature_request_email(name, instance_id, token)
-    |> Mailer.deliver()
-
-    Logger.info("Document signature request mailer job end.")
   end
 end

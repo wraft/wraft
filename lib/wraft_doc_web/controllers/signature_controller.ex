@@ -16,7 +16,6 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   alias WraftDoc.Documents.ESignature
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Signatures
-  alias WraftDoc.Repo
 
   def swagger_definitions do
     %{
@@ -108,7 +107,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   Request a signature for a document from a counterparty
   """
   swagger_path :request_signature do
-    post("/documents/{id}/signature_request")
+    post("/contents/{id}/signature_request")
     summary("Request document signature")
     description("API to request a signature for a document from a counterparty")
 
@@ -133,7 +132,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
            CounterParties.get_or_create_counter_party(instance, params, invited_signatory),
          {:ok, %AuthToken{value: token}} <-
            AuthTokens.create_signer_invite_token(instance, email),
-         {:ok, signature} <-
+         %ESignature{} = signature <-
            Signatures.create_signature(instance, current_user, counter_party, params),
          {:ok, %Oban.Job{}} <- Signatures.signature_request_email(instance, counter_party, token) do
       render(conn, "signature.json", signature: signature)
@@ -144,7 +143,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   Get all signatures for a document
   """
   swagger_path :get_document_signatures do
-    get("/documents/{id}/signatures")
+    get("/contents/{id}/signatures")
     summary("Get document signatures")
     description("API to get all signatures for a document")
 
@@ -187,27 +186,32 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec sign_document(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def sign_document(conn, %{"token" => token} = params) do
+  def sign_document(conn, %{"token" => token, "id" => document_id} = params) do
+    current_user = conn.assigns.current_user
     ip_address = conn.remote_ip |> :inet_parse.ntoa() |> to_string()
+    params = Map.merge(params, %{"ip_address" => ip_address})
 
-    with {:ok, %ESignature{counter_party: counterparty}} <-
-           Signatures.verify_signature_by_token(token),
-         {:ok, %{signature: signature}} <-
-           Signatures.process_signature(
-             counterparty,
-             Map.merge(params, %{"ip_address" => ip_address})
-           ) do
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+         %ESignature{counter_party: counterparty} <-
+           Signatures.verify_signature_by_token(instance, current_user, token),
+         {:ok, %CounterParty{} = counter_party} =
+           CounterParties.sign_document(counterparty, params),
+         %ESignature{} = signature <- Signatures.get_signature_by_counterparty(counter_party),
+         {:ok, %ESignature{} = updated_signature} <-
+           Signatures.update_e_signature(signature, params) do
+      Signatures.check_document_signature_status(instance)
+      Signatures.notify_document_owner_email(updated_signature)
       render(conn, "signature.json", signature: signature)
     end
   end
 
   @doc """
-  Verify a signature
+  Validate a signature for a document
   """
   swagger_path :verify_signature do
-    get("/contents/{id}/verify_signatory/{token}")
-    summary("Verify a signature")
-    description("API to verify a signature by token")
+    post("/contents/{id}/validate_signature/{token}")
+    summary("Validate a document signature")
+    description("API to validate a document signature")
 
     parameters do
       id(:path, :string, "Document ID", required: true)
@@ -220,7 +224,36 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec verify_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def verify_signature(conn, %{"token" => invite_token, "id" => document_id}) do
+  def verify_signature(conn, %{"token" => token, "id" => document_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+         %ESignature{} = signature <-
+           Signatures.verify_signature_by_token(instance, current_user, token) do
+      render(conn, "signature.json", signature: signature)
+    end
+  end
+
+  @doc """
+  Verify a signatory
+  """
+  swagger_path :verify_signatory do
+    get("/contents/{id}/verify_signatory/{token}")
+    summary("Verify a signature")
+    description("API to verify a signatory by token")
+
+    parameters do
+      id(:path, :string, "Document ID", required: true)
+      token(:path, :string, "Signatory verification token", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Signature))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec verify_signatory(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def verify_signatory(conn, %{"token" => invite_token, "id" => document_id}) do
     with {:ok, %{email: email, document_id: ^document_id}} <-
            AuthTokens.check_token(invite_token, :signer_invite),
          %User{} = invited_signatory <- Account.get_user_by_email(email),
@@ -247,13 +280,13 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   Revoke a signature request
   """
   swagger_path :revoke_signature do
-    delete("/documents/{document_id}/signatures/{signature_id}")
+    delete("/contents/{id}/signatures/{counter_party_id}")
     summary("Revoke a signature request")
     description("API to revoke a signature request")
 
     parameters do
-      document_id(:path, :string, "Document ID", required: true)
-      signature_id(:path, :string, "Signature ID", required: true)
+      id(:path, :string, "Document ID", required: true)
+      counter_party_id(:path, :string, "Counter Party ID", required: true)
     end
 
     response(200, "Ok", Schema.ref(:Signature))
@@ -262,12 +295,14 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec revoke_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def revoke_signature(conn, %{"document_id" => document_id, "signature_id" => signature_id}) do
+  def revoke_signature(conn, %{"id" => document_id, "counter_party_id" => counter_party_id}) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
-         %ESignature{} = signature <- Signatures.get_signature(signature_id),
-         {:ok, %ESignature{} = deleted_signature} <- Repo.delete(signature) do
+         %CounterParty{} = counter_party <-
+           CounterParties.get_counterparty(document_id, counter_party_id),
+         %ESignature{} = signature <- Signatures.get_signature_by_counterparty(counter_party),
+         {:ok, %ESignature{} = deleted_signature} <- Signatures.delete_signature(signature) do
       render(conn, "signature.json", signature: deleted_signature)
     end
   end
