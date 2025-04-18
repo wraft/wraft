@@ -11,6 +11,8 @@ defmodule WraftDoc.Repo.Migrations.UpdateCounterParties do
       add(:signature_date, :utc_datetime)
       add(:signature_ip, :string)
       add(:user_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
+
+      timestamps()
     end
 
     create(unique_index(:counter_parties, [:user_id, :content_id]))
