@@ -135,7 +135,7 @@ defmodule WraftDoc.CounterParties do
     |> Repo.transaction()
     |> case do
       {:ok, %{update_signature: updated_signature}} ->
-        Repo.preload(updated_signature, [:user, :counter_party, content: [:creator]])
+        %{updated_signature | counter_party: Repo.reload(updated_signature.counter_party)}
 
       {:error, _, changeset, _} ->
         {:error, changeset}
