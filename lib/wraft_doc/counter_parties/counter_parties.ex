@@ -105,39 +105,6 @@ defmodule WraftDoc.CounterParties do
   def remove_counterparty(%CounterParty{} = counterparty), do: Repo.delete(counterparty)
 
   @doc """
-  Update counterparty mail send status
-  """
-  @spec update_mailed(CounterParty.t()) :: {:ok, CounterParty.t()} | {:error, Ecto.Changeset.t()}
-  def update_mailed(%CounterParty{mail_send_status: false} = counterparty) do
-    counterparty
-    |> CounterParty.update_mail_send_status(%{mail_send_status: true})
-    |> Repo.update()
-  end
-
-  def update_mailed(%CounterParty{mail_send_status: true}), do: nil
-
-  @doc """
-  Get all counterparties for a document for which request mail is not send
-  """
-  @spec get_document_counterparties_pending_mail(Ecto.UUID.t()) ::
-          [CounterParty.t()] | {:error, atom()} | {:error, String.t()}
-  def get_document_counterparties_pending_mail(<<_::288>> = document_id) do
-    CounterParty
-    |> where([cp], cp.content_id == ^document_id and cp.mail_send_status == false)
-    |> preload([:content, :user])
-    |> Repo.all()
-    |> case do
-      [] ->
-        {:error, "no pending mail"}
-
-      pending_mail ->
-        pending_mail
-    end
-  end
-
-  def get_document_counterparties_pending_mail(_document_id), do: {:error, :invalid_id}
-
-  @doc """
   Get all counterparties for a document
   """
   @spec get_document_counterparties(Ecto.UUID.t()) :: [CounterParty.t()] | {:error, atom()}

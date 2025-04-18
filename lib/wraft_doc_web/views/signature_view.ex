@@ -50,6 +50,7 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
   end
 
   def render("email.json", %{info: info}), do: %{info: info}
+  def render("error.json", %{error: error}), do: %{error: error}
 
   def generate_url(%{file: file} = signature) do
     WraftDocWeb.SignatureUploader.url({file, signature}, signed: true)
