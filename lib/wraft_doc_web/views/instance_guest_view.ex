@@ -40,4 +40,12 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestView do
       role: role
     }
   end
+
+  def render("verify_signer.json", %{counter_party: counter_party, token: token}) do
+    %{
+      counterparty:
+        render_one(counter_party, InstanceGuestView, "counterparty.json", as: :counterparty),
+      token: token
+    }
+  end
 end

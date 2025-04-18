@@ -109,9 +109,6 @@ defmodule WraftDocWeb.Router do
         resources("/plans", PlanController, only: [:show, :index])
       end
 
-      # Verify digitial signature
-      get("/guest/contents/:id/verify_signatory/:token", SignatureController, :verify_signatory)
-
       # Verify access to a document instance
       get(
         "/guest/contents/:id/verify_access/:token",
