@@ -6,6 +6,9 @@ defmodule WraftDoc.Repo.Migrations.UpdateESignature do
 
   def up do
     alter table(:e_signature) do
+      remove(:api_url, :string)
+      remove(:body, :string)
+      remove(:header, :string)
       add(:signature_type, :string, default: "digital")
       add(:signature_data, :map)
       add(:signature_position, :map)
@@ -31,6 +34,9 @@ defmodule WraftDoc.Repo.Migrations.UpdateESignature do
     drop_if_exists(index(:e_signature, [:counter_party_id]))
 
     alter table(:e_signature) do
+      add(:api_url, :string)
+      add(:body, :string)
+      add(:header, :string)
       remove(:counter_party_id)
       remove(:verification_token)
       remove(:is_valid)
