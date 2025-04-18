@@ -21,18 +21,6 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestView do
     }
   end
 
-  def render("counterparty.json", %{counterparty: counterparty}) do
-    %{
-      id: counterparty.id,
-      name: counterparty.name,
-      email: counterparty.email,
-      signature_status: counterparty.signature_status,
-      signature_date: counterparty.signature_date,
-      created_at: counterparty.inserted_at,
-      updated_at: counterparty.updated_at
-    }
-  end
-
   def render("verify_collaborator.json", %{user: user, token: token, role: role}) do
     %{
       user: render_one(user, UserView, "user.json", as: :user),
@@ -47,7 +35,8 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestView do
         verification_token: signature_verification_token
       }) do
     %{
-      counterparty: render_one(counter_party, __MODULE__, "counterparty.json", as: :counterparty),
+      counterparty:
+        render_one(counter_party, SignatureView, "counterparty.json", as: :counterparty),
       token: session_token,
       verification_token: signature_verification_token
     }

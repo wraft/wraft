@@ -17,8 +17,8 @@ defmodule WraftDoc.CounterParties do
   Get counterparty for a contract document
   """
   @spec get_counterparty(String.t(), String.t()) :: CounterParty.t() | nil
-  def get_counterparty(document_id, <<_::288>> = counterparty_id) do
-    Repo.get_by(CounterParty, content_id: document_id, counterparty_id: counterparty_id)
+  def get_counterparty(<<_::288>> = document_id, <<_::288>> = counterparty_id) do
+    Repo.get_by(CounterParty, content_id: document_id, id: counterparty_id)
   end
 
   def get_counterparty(document_id, email) when is_binary(email),
@@ -32,13 +32,13 @@ defmodule WraftDoc.CounterParties do
   def get_or_create_counter_party(
         %Instance{id: document_id} = instance,
         %{"name" => _name, "email" => email} = params,
-        %User{} = signer
+        %User{} = user
       ) do
     document_id
     |> get_counterparty(email)
     |> case do
       nil ->
-        add_counterparty(instance, params, signer)
+        add_counterparty(instance, params, user)
 
       %CounterParty{} = counter_party ->
         counter_party
@@ -76,14 +76,14 @@ defmodule WraftDoc.CounterParties do
   def add_counterparty(
         %Instance{id: document_id},
         %{"email" => email, "name" => name},
-        %User{id: signer_id} = _signer
+        %User{id: user_id} = _user
       ) do
     %CounterParty{}
     |> CounterParty.changeset(%{
       name: name,
       email: email,
       content_id: document_id,
-      user_id: signer_id
+      user_id: user_id
     })
     |> Repo.insert()
     |> case do
@@ -105,15 +105,50 @@ defmodule WraftDoc.CounterParties do
   def remove_counterparty(%CounterParty{} = counterparty), do: Repo.delete(counterparty)
 
   @doc """
+  Update counterparty mail send status
+  """
+  @spec update_mailed(CounterParty.t()) :: {:ok, CounterParty.t()} | {:error, Ecto.Changeset.t()}
+  def update_mailed(%CounterParty{mail_send_status: false} = counterparty) do
+    counterparty
+    |> CounterParty.update_mail_send_status(%{mail_send_status: true})
+    |> Repo.update()
+  end
+
+  def update_mailed(%CounterParty{mail_send_status: true}), do: nil
+
+  @doc """
+  Get all counterparties for a document for which request mail is not send
+  """
+  @spec get_document_counterparties_pending_mail(Ecto.UUID.t()) ::
+          [CounterParty.t()] | {:error, atom()} | {:error, String.t()}
+  def get_document_counterparties_pending_mail(<<_::288>> = document_id) do
+    CounterParty
+    |> where([cp], cp.content_id == ^document_id and cp.mail_send_status == false)
+    |> preload([:content, :user])
+    |> Repo.all()
+    |> case do
+      [] ->
+        {:error, "no pending mail"}
+
+      pending_mail ->
+        pending_mail
+    end
+  end
+
+  def get_document_counterparties_pending_mail(_document_id), do: {:error, :invalid_id}
+
+  @doc """
   Get all counterparties for a document
   """
-  @spec get_document_counterparties(String.t()) :: [CounterParty.t()]
-  def get_document_counterparties(document_id) when is_binary(document_id) do
+  @spec get_document_counterparties(Ecto.UUID.t()) :: [CounterParty.t()] | {:error, atom()}
+  def get_document_counterparties(<<_::288>> = document_id) do
     CounterParty
     |> where([cp], cp.content_id == ^document_id)
     |> preload([:content, :user])
     |> Repo.all()
   end
+
+  def get_document_counterparties(_document_id), do: {:error, :invalid_id}
 
   @doc """
     Sign document for a counterparty

@@ -97,6 +97,7 @@ defmodule WraftDoc.Workers.EmailWorker do
           "name" => name,
           "email" => email,
           "token" => token,
+          "document_id" => document_id,
           "instance_id" => instance_id
         },
         tags: ["document_signature_request"]
@@ -104,7 +105,7 @@ defmodule WraftDoc.Workers.EmailWorker do
     Logger.info("Document signature request mailer job started.")
 
     email
-    |> Email.signature_request_email(name, instance_id, token)
+    |> Email.signature_request_email(name, instance_id, document_id, token)
     |> Mailer.deliver()
 
     Logger.info("Document signature request mailer job end.")

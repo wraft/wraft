@@ -8,6 +8,9 @@ defmodule WraftDoc.Documents.Signatures do
 
   alias WraftDoc
   alias WraftDoc.Account.User
+  alias WraftDoc.AuthTokens
+  alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.CounterParties
   alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.Documents.ESignature
   alias WraftDoc.Documents.Instance
@@ -17,8 +20,7 @@ defmodule WraftDoc.Documents.Signatures do
   @doc """
   Get a signature by counterparty ID
   """
-  @spec get_signature_by_counterparty(CounterParty.t()) ::
-          ESignature.t() | nil
+  @spec get_signature_by_counterparty(CounterParty.t()) :: ESignature.t() | nil
   def get_signature_by_counterparty(%CounterParty{id: counter_party_id}) do
     ESignature
     |> where([s], s.counter_party_id == ^counter_party_id)
@@ -31,34 +33,41 @@ defmodule WraftDoc.Documents.Signatures do
   @doc """
   Create a new signature request for a document
   """
-  @spec create_signature(Instance.t(), User.t(), CounterParty.t(), map()) ::
+  @spec create_signature(Instance.t(), User.t(), CounterParty.t() | [CounterParty.t()]) ::
           {:ok, ESignature.t()} | {:error, Ecto.Changeset.t()}
   def create_signature(
         %Instance{id: document_id} = _instance,
         %User{id: user_id, current_org_id: org_id} = _user,
-        %CounterParty{id: counter_party_id} = _counterparty,
-        %{"signature_type" => signature_type}
+        %CounterParty{id: counter_party_id} = counterparty
       ) do
-    signature_params = %{
-      signature_type: signature_type,
-      content_id: document_id,
-      user_id: user_id,
-      organisation_id: org_id,
-      counter_party_id: counter_party_id,
-      verification_token: WraftDoc.generate_token(32)
-    }
+    case get_signature_by_counterparty(counterparty) do
+      nil ->
+        signature_params = %{
+          content_id: document_id,
+          user_id: user_id,
+          organisation_id: org_id,
+          counter_party_id: counter_party_id,
+          verification_token: WraftDoc.generate_token(32)
+        }
 
-    %ESignature{}
-    |> ESignature.changeset(signature_params)
-    |> Repo.insert()
-    |> case do
-      {:ok, signature} ->
-        Repo.preload(signature, [:counter_party, :user, :content])
+        %ESignature{}
+        |> ESignature.changeset(signature_params)
+        |> Repo.insert()
+        |> case do
+          {:ok, signature} ->
+            Repo.preload(signature, [:counter_party, :user, :content])
 
-      {:error, changeset} ->
-        {:error, changeset}
+          {:error, changeset} ->
+            {:error, changeset}
+        end
+
+      %ESignature{} = signature ->
+        signature
     end
   end
+
+  def create_signature(instance, user, counterparty_list),
+    do: Enum.each(counterparty_list, &create_signature(instance, user, &1))
 
   @doc """
   Get pending signatures for a document
@@ -164,7 +173,7 @@ defmodule WraftDoc.Documents.Signatures do
   @spec signature_request_email(%Instance{}, %CounterParty{}, String.t()) ::
           {:ok, Oban.Job.t()} | {:error, Oban.Job.changeset() | term()}
   def signature_request_email(
-        %Instance{instance_id: instance_id},
+        %Instance{instance_id: instance_id, id: document_id},
         %CounterParty{name: name, email: email},
         token
       ) do
@@ -172,10 +181,23 @@ defmodule WraftDoc.Documents.Signatures do
       email: email,
       name: name,
       token: token,
+      document_id: document_id,
       instance_id: instance_id
     }
     |> EmailWorker.new(queue: "mailer", tags: ["document_signature_request"])
     |> Oban.insert()
+  end
+
+  @doc """
+  Send signature request emails to all counterparties for a document
+  """
+  @spec signature_request_email(%Instance{}, [CounterParty.t()]) :: :ok
+  def signature_request_email(instance, counterparties) do
+    Enum.each(counterparties, fn %CounterParty{email: email} = counterparty ->
+      {:ok, %AuthToken{value: token}} = AuthTokens.create_signer_invite_token(instance, email)
+      signature_request_email(instance, counterparty, token)
+      CounterParties.update_mailed(counterparty)
+    end)
   end
 
   @doc """

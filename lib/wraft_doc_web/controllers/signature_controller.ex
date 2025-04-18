@@ -19,25 +19,19 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
 
   def swagger_definitions do
     %{
-      SignatureRequest:
+      CounterPartyRequest:
         swagger_schema do
-          title("Signature Request")
-          description("Request for digital signature")
+          title("Counter Party Request")
+          description("Request for a counter party to sign a document")
 
           properties do
             name(:string, "Name of the signatory", required: true)
             email(:string, "Email of the signatory", required: true)
-
-            signature_type(:string, "Type of signature",
-              required: true,
-              enum: ["digital", "electronic", "handwritten"]
-            )
           end
 
           example(%{
             name: "John Doe",
-            email: "john.doe@example.com",
-            signature_type: "digital"
+            email: "john.doe@example.com"
           })
         end,
       Signature:
@@ -133,7 +127,10 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
 
     parameters do
       id(:path, :string, "Document ID", required: true)
-      request(:body, Schema.ref(:SignatureRequest), "Signature request details", required: true)
+
+      request(:body, Schema.ref(:CounterPartyRequest), "Signature request details",
+        required: true
+      )
     end
 
     response(200, "Ok", Schema.ref(:Signature))
@@ -143,19 +140,72 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec add_counterparty(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def add_counterparty(conn, %{"id" => document_id, "email" => email} = params) do
+  def add_counterparty(conn, %{"id" => document_id, "email" => _email} = params) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
-         %User{} = invited_signatory <- Account.get_or_create_guest_user(params),
-         %CounterParty{} = counter_party <-
-           CounterParties.get_or_create_counter_party(instance, params, invited_signatory),
+         %User{} = invited_user <- Account.get_or_create_guest_user(params),
+         %CounterParty{} = counterparty <-
+           CounterParties.get_or_create_counter_party(instance, params, invited_user) do
+      render(conn, "counterparty.json", counterparty: counterparty)
+    end
+  end
+
+  @doc """
+  Request a signature for a document from a counterparty
+  """
+  swagger_path :request_signature do
+    post("/contents/{id}/request_signature")
+    summary("Request document signature from counterparty by email")
+    description("API to request a signature for a document from a counterparty by email")
+
+    parameters do
+      id(:path, :string, "Document ID", required: true)
+
+      counterparty_id(
+        :query,
+        :string,
+        "Counter Party ID (optional). If not provided, sends to all pending counterparties."
+      )
+    end
+
+    response(200, "Ok", Schema.ref(:Signature))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec request_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def request_signature(
+        conn,
+        %{"id" => document_id, "counterparty_id" => counter_party_id} = _params
+      ) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+         %CounterParty{email: email} = counter_party <-
+           CounterParties.get_counterparty(document_id, counter_party_id),
          {:ok, %AuthToken{value: token}} <-
            AuthTokens.create_signer_invite_token(instance, email),
-         %ESignature{} = signature <-
-           Signatures.create_signature(instance, current_user, counter_party, params),
+         %ESignature{} <- Signatures.create_signature(instance, current_user, counter_party),
          {:ok, %Oban.Job{}} <- Signatures.signature_request_email(instance, counter_party, token) do
-      render(conn, "signature.json", signature: signature)
+      CounterParties.update_mailed(counter_party)
+      render(conn, "email.json", info: "Signature request email sent to #{counter_party.email}")
+    end
+  end
+
+  def request_signature(conn, %{"id" => document_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+         counter_parties when is_list(counter_parties) <-
+           CounterParties.get_document_counterparties_pending_mail(document_id),
+         :ok <- Signatures.create_signature(instance, current_user, counter_parties) do
+      Signatures.signature_request_email(instance, counter_parties)
+
+      render(conn, "email.json",
+        info: "Signature request email sent to #{length(counter_parties)} counterparties"
+      )
     end
   end
 
