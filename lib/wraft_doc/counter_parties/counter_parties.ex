@@ -65,7 +65,8 @@ defmodule WraftDoc.CounterParties do
     end
   end
 
-  def approve_document_access(%CounterParty{} = counterparty), do: counterparty
+  def approve_document_access(%CounterParty{} = counterparty),
+    do: Repo.preload(counterparty, [:content, :user, :e_signature])
 
   @doc """
    Add counterparty to content
