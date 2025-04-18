@@ -40,12 +40,6 @@ defmodule WraftDoc.CounterParties.CounterParty do
     |> validate_required([:signature_status])
   end
 
-  def update_mail_send_status(counter_parties, attrs) do
-    counter_parties
-    |> cast(attrs, [:mail_send_status])
-    |> validate_required([:mail_send_status])
-  end
-
   def sign_changeset(counter_parties, attrs) do
     counter_parties
     |> cast(attrs, [:signature_status, :signature_date, :signature_ip])
