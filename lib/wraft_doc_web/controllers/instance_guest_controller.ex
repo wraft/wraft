@@ -195,7 +195,6 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
     parameters do
       id(:path, :string, "Instance id", required: true)
       token(:path, :string, "Invite token", required: true)
-      type(:query, :string, "Type", required: true, enum: ["collab", "sign"])
     end
 
     response(200, "Ok", Schema.ref(:VerifyDocumentInviteTokenResponse))
@@ -207,8 +206,31 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   def verify_document_access(conn, %{
         "token" => invite_token,
         "id" => document_id,
-        "type" => "collab"
+        "type" => "sign"
       }) do
+    with {:ok, %{email: email, document_id: ^document_id}} <-
+           AuthTokens.check_token(invite_token, :signer_invite),
+         %User{} = invited_signatory <- Account.get_user_by_email(email),
+         %CounterParty{} = counter_party <- CounterParties.get_counterparty(document_id, email),
+         %CounterParty{} = counter_party <- CounterParties.approve_document_access(counter_party),
+         {:ok, guest_access_token, _} <-
+           AuthTokens.create_guest_access_token(invited_signatory, %{
+             email: email,
+             document_id: document_id
+           }) do
+      render(conn, "verify_signer.json", counter_party: counter_party, token: guest_access_token)
+    else
+      _ ->
+        conn
+        |> put_resp_header("content-type", "application/json")
+        |> send_resp(
+          401,
+          Jason.encode!(%{errors: "Document id does not match the invite token."})
+        )
+    end
+  end
+
+  def verify_document_access(conn, %{"token" => invite_token, "id" => document_id}) do
     with {:ok, %{email: email, document_id: ^document_id, state_id: state_id, role: role}} <-
            AuthTokens.check_token(invite_token, :document_invite),
          %User{} = invited_user <- Account.get_user_by_email(email),
@@ -228,33 +250,6 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
         token: guest_access_token,
         role: role
       )
-    else
-      _ ->
-        conn
-        |> put_resp_header("content-type", "application/json")
-        |> send_resp(
-          401,
-          Jason.encode!(%{errors: "Document id does not match the invite token."})
-        )
-    end
-  end
-
-  def verify_document_access(conn, %{
-        "token" => invite_token,
-        "id" => document_id,
-        "type" => "sign"
-      }) do
-    with {:ok, %{email: email, document_id: ^document_id}} <-
-           AuthTokens.check_token(invite_token, :signer_invite),
-         %User{} = invited_signatory <- Account.get_user_by_email(email),
-         %CounterParty{} = counter_party <- CounterParties.get_counterparty(document_id, email),
-         %CounterParty{} = counter_party <- CounterParties.approve_document_access(counter_party),
-         {:ok, guest_access_token, _} <-
-           AuthTokens.create_guest_access_token(invited_signatory, %{
-             email: email,
-             document_id: document_id
-           }) do
-      render(conn, "verify_signer.json", counter_party: counter_party, token: guest_access_token)
     else
       _ ->
         conn
