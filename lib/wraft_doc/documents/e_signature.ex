@@ -13,9 +13,6 @@ defmodule WraftDoc.Documents.ESignature do
   @signature_types [:digital, :electronic, :handwritten]
 
   schema "e_signature" do
-    field(:api_url, :string)
-    field(:body, :string)
-    field(:header, :string)
     field(:file, WraftDocWeb.SignatureUploader.Type)
     field(:signed_file, :string)
     field(:signature_type, Ecto.Enum, values: @signature_types, default: :digital)
@@ -36,9 +33,6 @@ defmodule WraftDoc.Documents.ESignature do
   def changeset(e_signature, attrs \\ %{}) do
     e_signature
     |> cast(attrs, [
-      :api_url,
-      :body,
-      :header,
       :file,
       :signed_file,
       :signature_type,
