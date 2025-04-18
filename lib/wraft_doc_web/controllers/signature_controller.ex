@@ -183,23 +183,25 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
-         %CounterParty{email: email} = counter_party <-
+         %CounterParty{email: email, signature_status: :pending} = counter_party <-
            CounterParties.get_counterparty(document_id, counter_party_id),
          {:ok, %AuthToken{value: token}} <-
            AuthTokens.create_signer_invite_token(instance, email),
          %ESignature{} <- Signatures.create_signature(instance, current_user, counter_party),
          {:ok, %Oban.Job{}} <- Signatures.signature_request_email(instance, counter_party, token) do
-      CounterParties.update_mailed(counter_party)
       render(conn, "email.json", info: "Signature request email sent to #{counter_party.email}")
+    else
+      %CounterParty{} ->
+        render(conn, "error.json", error: "Counterparty already accepted the document access")
     end
   end
 
+  @spec request_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def request_signature(conn, %{"id" => document_id}) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
-         counter_parties when is_list(counter_parties) <-
-           CounterParties.get_document_counterparties_pending_mail(document_id),
+         counter_parties <- Signatures.get_document_pending_signatures(document_id),
          :ok <- Signatures.create_signature(instance, current_user, counter_parties) do
       Signatures.signature_request_email(instance, counter_parties)
 

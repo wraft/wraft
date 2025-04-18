@@ -10,7 +10,6 @@ defmodule WraftDoc.Documents.Signatures do
   alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
-  alias WraftDoc.CounterParties
   alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.Documents.ESignature
   alias WraftDoc.Documents.Instance
@@ -72,7 +71,7 @@ defmodule WraftDoc.Documents.Signatures do
   @doc """
   Get pending signatures for a document
   """
-  def get_document_pending_signatures(document_id) do
+  def get_document_pending_signatures(<<_::288>> = document_id) do
     CounterParty
     |> where([cp], cp.content_id == ^document_id and cp.signature_status == :pending)
     |> preload([:content, :user])
@@ -196,7 +195,6 @@ defmodule WraftDoc.Documents.Signatures do
     Enum.each(counterparties, fn %CounterParty{email: email} = counterparty ->
       {:ok, %AuthToken{value: token}} = AuthTokens.create_signer_invite_token(instance, email)
       signature_request_email(instance, counterparty, token)
-      CounterParties.update_mailed(counterparty)
     end)
   end
 

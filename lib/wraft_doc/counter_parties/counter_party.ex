@@ -9,7 +9,6 @@ defmodule WraftDoc.CounterParties.CounterParty do
   schema "counter_parties" do
     field(:name, :string)
     field(:email, :string)
-    field(:mail_send_status, :boolean, default: false)
     field(:signature_status, Ecto.Enum, values: @signature_status, default: :pending)
     field(:signature_date, :utc_datetime)
     field(:signature_ip, :string)
