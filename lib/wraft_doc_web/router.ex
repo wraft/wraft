@@ -299,8 +299,6 @@ defmodule WraftDocWeb.Router do
         :update_collaborator_role
       )
 
-      # Add a counterparty
-      post("/contents/:id/add_counterpart", InstanceGuestController, :add_counterparty)
       # Delete counterpart
       delete(
         "/contents/:id/remove_counterparty/:counterparty_id",
@@ -481,7 +479,7 @@ defmodule WraftDocWeb.Router do
       )
 
       # Signature routes
-      post("/contents/:id/signature_request", SignatureController, :request_signature)
+      post("/contents/:id/add_counterparty", SignatureController, :add_counterparty)
       get("/contents/:id/signatures", SignatureController, :get_document_signatures)
 
       delete(

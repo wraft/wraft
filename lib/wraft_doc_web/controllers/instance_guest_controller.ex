@@ -329,35 +329,6 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   end
 
   @doc """
-  Add counterpart to a contract document
-  """
-  swagger_path :add_counterparty do
-    post("/contents/{id}/add_counterparty")
-    summary("Add counterparty to a document")
-    description("Api to add counterpart to a document")
-
-    parameters do
-      id(:path, :string, "Instance id", required: true)
-      # counterparty(:body, Schema.ref(:CounterPartyRequest), "CounterParty", required: true)
-    end
-
-    # response(200, "Ok", Schema.ref(:CounterPartyResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
-
-  @spec add_counterparty(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def add_counterparty(conn, %{"id" => document_id} = params) do
-    current_user = conn.assigns.current_user
-
-    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
-         %CounterParty{} = counterparty <- CounterParties.add_counterparty(instance, params) do
-      render(conn, "counterparty.json", counterparty: counterparty)
-    end
-  end
-
-  @doc """
   Remove counterparty from a contract document
   """
   swagger_path :remove_counterparty do

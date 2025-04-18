@@ -25,7 +25,8 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
           description("Request for digital signature")
 
           properties do
-            counterparty(:map, "Counterparty information", required: true)
+            name(:string, "Name of the signatory", required: true)
+            email(:string, "Email of the signatory", required: true)
 
             signature_type(:string, "Type of signature",
               required: true,
@@ -125,9 +126,9 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @doc """
   Request a signature for a document from a counterparty
   """
-  swagger_path :request_signature do
-    post("/contents/{id}/signature_request")
-    summary("Request document signature")
+  swagger_path :add_counterparty do
+    post("/contents/{id}/add_counterparty")
+    summary("Request document signature from counterparty")
     description("API to request a signature for a document from a counterparty")
 
     parameters do
@@ -141,8 +142,8 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
-  @spec request_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def request_signature(conn, %{"id" => document_id, "email" => email} = params) do
+  @spec add_counterparty(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def add_counterparty(conn, %{"id" => document_id, "email" => email} = params) do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
