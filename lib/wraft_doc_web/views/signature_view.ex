@@ -1,7 +1,6 @@
 defmodule WraftDocWeb.Api.V1.SignatureView do
   use WraftDocWeb, :view
 
-  alias WraftDocWeb.Api.V1.InstanceGuestView
   alias WraftDocWeb.Api.V1.InstanceView
   alias WraftDocWeb.Api.V1.UserView
 
@@ -17,9 +16,7 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
       is_valid: signature.is_valid,
       content: render_one(signature.content, InstanceView, "instance.json", as: :instance),
       counter_party:
-        render_one(signature.counter_party, InstanceGuestView, "counterparty.json",
-          as: :counterparty
-        ),
+        render_one(signature.counter_party, __MODULE__, "counterparty.json", as: :counterparty),
       user: render_one(signature.user, UserView, "user.json", as: :user),
       signature_url: generate_url(signature),
       created_at: signature.inserted_at,
@@ -33,12 +30,26 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
     }
   end
 
+  def render("counterparty.json", %{counterparty: counterparty}) do
+    %{
+      id: counterparty.id,
+      name: counterparty.name,
+      email: counterparty.email,
+      signature_status: counterparty.signature_status,
+      signature_date: counterparty.signature_date,
+      created_at: counterparty.inserted_at,
+      updated_at: counterparty.updated_at
+    }
+  end
+
   def render("counterparties.json", %{counterparties: counterparties}) do
     %{
       counterparties:
-        render_many(counterparties, InstanceGuestView, "counterparty.json", as: :counterparty)
+        render_many(counterparties, __MODULE__, "counterparty.json", as: :counterparty)
     }
   end
+
+  def render("email.json", %{info: info}), do: %{info: info}
 
   def generate_url(%{file: file} = signature) do
     WraftDocWeb.SignatureUploader.url({file, signature}, signed: true)

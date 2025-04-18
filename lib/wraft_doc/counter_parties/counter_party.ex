@@ -9,6 +9,7 @@ defmodule WraftDoc.CounterParties.CounterParty do
   schema "counter_parties" do
     field(:name, :string)
     field(:email, :string)
+    field(:mail_send_status, :boolean, default: false)
     field(:signature_status, Ecto.Enum, values: @signature_status, default: :pending)
     field(:signature_date, :utc_datetime)
     field(:signature_ip, :string)
@@ -38,6 +39,12 @@ defmodule WraftDoc.CounterParties.CounterParty do
     counter_parties
     |> cast(attrs, [:signature_status])
     |> validate_required([:signature_status])
+  end
+
+  def update_mail_send_status(counter_parties, attrs) do
+    counter_parties
+    |> cast(attrs, [:mail_send_status])
+    |> validate_required([:mail_send_status])
   end
 
   def sign_changeset(counter_parties, attrs) do
