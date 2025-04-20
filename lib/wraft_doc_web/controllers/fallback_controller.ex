@@ -112,21 +112,26 @@ defmodule WraftDocWeb.FallbackController do
     conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
+  def call(conn, {:error, :engine_not_found}) do
+    body = Jason.encode!(%{errors: "Engine not found."})
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
+  end
+
   def call(conn, {:error, {:http_error, status, %{body: body}}}) do
     body = Jason.encode!(body)
     conn |> put_resp_content_type("application/json") |> send_resp(status, body)
   end
 
-  def call(conn, {status, response_body})
-      when is_integer(status) and is_map(response_body) and status >= 100 and status < 600 do
-    body = Jason.encode!(response_body)
-    conn |> put_resp_content_type("application/json") |> send_resp(status, body)
+  def call(conn, {:error, {_operation, %Ecto.Changeset{} = changeset}}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(WraftDocWeb.ChangesetView)
+    |> render("error.json", changeset: changeset)
   end
 
-  def call(conn, {:error, {status, response_body}})
-      when is_integer(status) and is_map(response_body) do
-    body = Jason.encode!(response_body)
-    conn |> put_resp_content_type("application/json") |> send_resp(status, body)
+  def call(conn, {:error, {_operation, reason}}) do
+    body = Jason.encode!(%{errors: inspect(reason)})
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
   def call(conn, {:error, message}) when is_binary(message) do
