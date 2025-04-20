@@ -110,9 +110,26 @@ defmodule WraftDocWeb.FallbackController do
     conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
+  def call(conn, {:error, :engine_not_found}) do
+    body = Jason.encode!(%{errors: "Engine not found."})
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
+  end
+
   def call(conn, {:error, {:http_error, status, %{body: body}}}) do
     body = Jason.encode!(body)
     conn |> put_resp_content_type("application/json") |> send_resp(status, body)
+  end
+
+  def call(conn, {:error, {_operation, %Ecto.Changeset{} = changeset}}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(WraftDocWeb.ChangesetView)
+    |> render("error.json", changeset: changeset)
+  end
+
+  def call(conn, {:error, {_operation, reason}}) do
+    body = Jason.encode!(%{errors: inspect(reason)})
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
   def call(conn, {:error, message}) do
