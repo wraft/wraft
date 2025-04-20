@@ -14,6 +14,8 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  alias WraftDoc.Assets
+  alias WraftDoc.Assets.Asset
   alias WraftDoc.Documents.Engine
   alias WraftDoc.Frames
   alias WraftDoc.Layouts
@@ -293,12 +295,33 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   """
   swagger_path :create do
     post("/layouts")
-    summary("Create layout")
-    description("Create layout API")
+    summary("Create Layout")
+    description("Creates a new asset and uses it to create a layout")
 
     consumes("application/json")
 
-    parameter(:body, :body, Schema.ref(:LayoutCreate), "Layout create payload", required: true)
+    parameter(:asset_name, :formData, :string, "Name of the asset", required: true)
+
+    parameter(:file, :formData, :file, "Asset file to upload", required: true)
+
+    parameter(:type, :formData, :string, "Type of the asset", required: true)
+
+    parameter(:layout_name, :formData, :string, "Layout's name", required: true)
+
+    parameter(:description, :formData, :string, "Layout description", required: true)
+
+    parameter(:width, :formData, :string, "Layout width", required: true)
+
+    parameter(:height, :formData, :string, "Layout height", required: true)
+
+    parameter(:unit, :formData, :string, "Layout dimension unit", required: true)
+
+    parameter(:slug, :formData, :string, "Name of slug to be used")
+    parameter(:frame_id, :formData, :string, "ID of the frame")
+
+    parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
+
+    parameter(:engine_id, :formData, :string, "ID of layout's engine", required: true)
 
     response(200, "Ok", Schema.ref(:LayoutAndEngine))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
@@ -310,7 +333,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     current_user = conn.assigns[:current_user]
 
     with %Engine{} = engine <- Frames.get_engine_by_frame_type(params),
-         %Layout{} = layout <- Layouts.create_layout(current_user, engine, params) do
+         {:ok, %{layout: layout}} <- Layouts.create_layout(current_user, engine, params) do
       Typesense.create_document(layout)
       render(conn, "create.json", doc_layout: layout)
     end
@@ -394,7 +417,15 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:id, :path, :string, "layout id", required: true)
 
-    parameter(:name, :formData, :string, "Layout's name", required: true)
+    parameter(:asset_id, :path, :string, "asset id", required: true)
+
+    parameter(:asset_name, :formData, :string, "Name of the asset", required: true)
+
+    parameter(:file, :formData, :file, "Asset file to upload", required: true)
+
+    parameter(:type, :formData, :string, "Type of the asset", required: true)
+
+    parameter(:layout_name, :formData, :string, "Layout's name", required: true)
 
     parameter(:description, :formData, :string, "Layout description", required: true)
 
@@ -405,12 +436,9 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     parameter(:unit, :formData, :string, "Layout dimension unit", required: true)
 
     parameter(:slug, :formData, :string, "Name of slug to be used")
-
-    parameter(:frame_id, :formData, :string, "Slug file to upload")
+    parameter(:frame_id, :formData, :string, "ID of the frame")
 
     parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
-
-    parameter(:assets, :formData, :list, "IDs of assets of the layout")
 
     parameter(:engine_id, :formData, :string, "ID of layout's engine", required: true)
 
@@ -420,11 +448,13 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
   end
 
   @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => id} = params) do
+  def update(conn, %{"id" => layout_id, "asset_id" => asset_id} = params) do
     current_user = conn.assigns[:current_user]
 
-    with %Layout{} = layout <- Layouts.get_layout(id, current_user),
+    with %Layout{} = layout <- Layouts.get_layout(layout_id, current_user),
          %Engine{id: engine_id} = _engine <- Frames.get_engine_by_frame_type(params),
+         %Asset{} = asset <- Assets.get_asset(asset_id, current_user),
+         {:ok, _asset} <- Assets.update_asset(asset, params),
          %Layout{} = layout <-
            Layouts.update_layout(
              layout,
