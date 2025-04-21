@@ -24,7 +24,6 @@ defmodule WraftDoc.Utils.FileValidator do
   @doc """
   Validates a ZIP file by performing a series of checks to ensure its integrity, security, and compliance with the application's requirements.
 
-
   The `validate_file/1` function is the entry point for validating files. It processes a file and performs the following checks:
 
   1. **File Metadata Extraction**:
@@ -204,16 +203,17 @@ defmodule WraftDoc.Utils.FileValidator do
     end
   end
 
+  # TODO refactor this function.
   defp check_file_sizes(file_entries) do
     large_files = Enum.filter(file_entries, &(&1.size > @max_file_size))
     total_size = Enum.reduce(file_entries, 0, &(&1.size + &2))
 
     cond do
       Enum.any?(large_files) ->
-        {:error, {:files_too_large, Enum.map(large_files, & &1.path)}}
+        {:error, Enum.map(large_files, & &1.path)}
 
       total_size > @max_total_size ->
-        {:error, {:total_size_too_large, total_size}}
+        {:error, total_size}
 
       true ->
         :ok

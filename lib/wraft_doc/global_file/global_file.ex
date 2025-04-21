@@ -83,14 +83,18 @@ defmodule WraftDoc.GlobalFile do
   end
 
   defp process_file_metadata(result, file) do
-    case FileHelper.get_file_metadata(file) do
+    file
+    |> FileHelper.get_file_metadata()
+    |> case do
       {:ok, _metadata} -> result
       {:error, reason} -> add_error(result, "metadata_error", reason)
     end
   end
 
   defp process_wraft_json(result, file_binary) do
-    case FileHelper.get_wraft_json(file_binary) do
+    file_binary
+    |> FileHelper.get_wraft_json()
+    |> case do
       {:ok, wraft_json} ->
         validated_result = validate_wraft_json(result, wraft_json)
         Map.put(validated_result, :wraft_json, wraft_json)
@@ -101,7 +105,9 @@ defmodule WraftDoc.GlobalFile do
   end
 
   defp validate_wraft_json(result, wraft_json) do
-    case validate_global_file_wraft_json(wraft_json) do
+    wraft_json
+    |> validate_global_file_wraft_json()
+    |> case do
       :ok -> result
       {:error, reason} -> add_error(result, "validation_error", reason)
     end

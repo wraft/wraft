@@ -107,6 +107,7 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
     response(400, "Bad request", Schema.ref(:Error))
   end
 
+  @spec pre_import_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def pre_import_global_file(conn, %{"file" => file}) do
     with {:ok, response} <- GlobalFile.pre_import_global_file(file) do
       render(conn, "pre_import_global_file.json", %{
@@ -117,6 +118,24 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
 
   def pre_import_global_file(_, _), do: {:error, "File not found"}
 
+  # @doc """
+  # Validates a global file.
+  # """
+  # # TODO update swagger
+  # swagger_path :validate_global_file do
+  #   post("/global_asset/validate")
+  #   summary("Validate a global file")
+
+  #   description("Validates a global file using the provided asset ID and additional parameters.")
+
+  #   parameters do
+  #     file(:formData, :file, "The ID of the asset to import", required: true)
+  #   end
+
+  #   response(200, "ok", Schema.ref(:GlobalPreImportResponse))
+  #   response(400, "Bad request", Schema.ref(:Error))
+  # end
+  # @spec validate_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
   # def validate_global_file(conn, %{"file" => %{path: file_path} = file} = params) do
   #   with {:ok, _} <- FileValidator.validate_file(file_path),
   #        {:ok, metadata} <- FileHelper.get_file_metadata(file),
