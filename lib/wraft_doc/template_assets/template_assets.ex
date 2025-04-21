@@ -29,7 +29,7 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets.TemplateAsset
-  alias WraftDoc.TemplateAssets.WraftJson
+  alias WraftDoc.TemplateAssets.WraftJsonSchema
   alias WraftDoc.Themes
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Utils.FileHelper
@@ -907,43 +907,37 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
+  defp extract_files(entries), do: Enum.filter(entries, &(!String.ends_with?(&1, "/")))
+
   @doc """
   Validates template asset wraft_json.
   """
-  @spec validate_wraft_json(map()) :: :ok | {:error, String.t()}
+  @spec validate_wraft_json(map()) :: :ok | {:error, list(String.t())}
   def validate_wraft_json(wraft_json) do
-    %WraftJson{}
-    |> WraftJson.changeset(wraft_json)
+    WraftJsonSchema.schema()
+    |> ExJsonSchema.Validator.validate(wraft_json)
     |> case do
-      %{valid?: true} -> :ok
-      %{valid?: false} = changeset -> {:error, "wraft.json: #{extract_errors(changeset)}"}
+      :ok ->
+        :ok
+
+      {:error, error} ->
+        format_errors(error)
     end
   end
 
-  defp extract_errors(changeset) do
-    changeset
-    |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
-      Enum.reduce(opts, msg, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
-      end)
+  defp format_errors(error) do
+    error
+    |> Enum.map(fn {message, path} ->
+      path
+      |> String.trim_leading("#/")
+      |> String.replace("/", ".")
+      |> case do
+        "" -> "root"
+        value -> value
+      end
+      |> then(&"#{&1}: #{message}")
     end)
-    |> format_errors()
-  end
-
-  defp format_errors(errors, prefix \\ "") do
-    Enum.map_join(errors, "; ", fn
-      {field, sub_errors} when is_map(sub_errors) ->
-        new_prefix = if prefix == "", do: to_string(field), else: "#{prefix}.#{field}"
-        format_errors(sub_errors, new_prefix)
-
-      {field, messages} ->
-        field_name = if prefix == "", do: to_string(field), else: "#{prefix}.#{field}"
-        "#{field_name}: #{Enum.join(messages, ", ")}"
-    end)
-  end
-
-  defp extract_files(entries) do
-    Enum.filter(entries, &(!String.ends_with?(&1, "/")))
+    |> then(&{:error, &1})
   end
 
   defp validate_wraft_json_folders(file_entries, wraft_json) do
@@ -1011,32 +1005,6 @@ defmodule WraftDoc.TemplateAssets do
       {:error, reason} -> {:error, reason}
     end
   end
-
-  # This function is currently not in use but is retained for potential future implementation.
-  # @doc """
-  # Adds a ZIP file to the params map as a `Plug.Upload` struct.
-  # """
-  # @spec add_asset(TemplateAsset.t(), binary(), String.t(), User.t()) ::
-  #         {:ok, Asset.t()} | {:error, String.t()}
-  # def add_asset(template_asset, file_binary, zip_url, current_user) do
-  #   file_path = Briefly.create!()
-  #   File.write!(file_path, file_binary)
-  #   file_name = zip_url |> URI.parse() |> Map.get(:path) |> Path.basename()
-
-  #   file = %Plug.Upload{
-  #     filename: file_name,
-  #     content_type: "application/zip",
-  #     path: file_path
-  #   }
-
-  #   case Assets.create_asset(current_user, %{"type" => "template_asset", "file" => file}) do
-  #     {:ok, %Asset{} = asset} ->
-  #       {:ok, asset}
-
-  #     {:error, reason} ->
-  #       {:error, reason}
-  #   end
-  # end
 
   defp get_file_binary_from_url(url) do
     case HTTPoison.get(url, [], follow_redirect: true) do

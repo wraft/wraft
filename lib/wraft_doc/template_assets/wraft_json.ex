@@ -37,31 +37,6 @@ defmodule WraftDoc.TemplateAssets.WraftJson do
   end
 end
 
-defmodule WraftDoc.TemplateAssets.Metadata do
-  @moduledoc """
-  Schema for validating wraft.json metadata
-  """
-  use Ecto.Schema
-  import Ecto.Changeset
-
-  alias __MODULE__
-
-  @primary_key false
-  embedded_schema do
-    field(:name, :string)
-    field(:description, :string)
-    field(:type, :string)
-    field(:updated_at, :string)
-  end
-
-  def changeset(struct \\ %Metadata{}, params) do
-    struct
-    |> cast(params, [:name, :description, :type, :updated_at])
-    |> validate_required([:name, :description, :type])
-    |> validate_inclusion(:type, ["template_asset"])
-  end
-end
-
 defmodule WraftDoc.TemplateAssets.Theme do
   @moduledoc """
   Schema for Theme in wraft_json
