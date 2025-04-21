@@ -8,7 +8,7 @@ defmodule WraftDoc.Utils.FileHelper do
   alias WraftDoc.TemplateAssets.Metadata, as: TemplateAssetMetadata
   alias WraftDoc.Utils.FileValidator
 
-  @required_files ["wraft.json", "template.typst", "default.typst"]
+  @required_frame_files ["wraft.json", "template.typst", "default.typst"]
 
   @doc """
   Extract file into path.
@@ -18,7 +18,7 @@ defmodule WraftDoc.Utils.FileHelper do
     {:ok, wraft_json} = get_wraft_json(file_binary)
 
     wraft_json
-    |> get_allowed_frame_files_from_wraft_json()
+    |> get_allowed_files_from_wraft_json()
     |> Enum.each(fn allowed_file ->
       write_file(file_binary, allowed_file, output_path)
     end)
@@ -118,15 +118,16 @@ defmodule WraftDoc.Utils.FileHelper do
     end
   end
 
-  # TODO get allowed files from template asset, frame before validation
-  # match with type from metadata
-  defp get_allowed_frame_files_from_wraft_json(%{
-         "packageContents" => %{"rootFiles" => root_files, "assets" => assets, "fonts" => fonts}
-       }) do
+  @doc """
+  Get allowed files from wraft
+  """
+  @spec get_allowed_files_from_wraft_json(map()) :: list(String.t())
+  def get_allowed_files_from_wraft_json(%{
+        "packageContents" => %{"rootFiles" => root_files, "assets" => assets, "fonts" => fonts}
+      }) do
     [root_files, assets, fonts]
     |> Enum.map(&get_paths_from_section/1)
     |> List.flatten()
-    |> then(&(&1 ++ ["wraft.json"]))
   end
 
   defp get_paths_from_section(section) when is_list(section),
@@ -145,7 +146,7 @@ defmodule WraftDoc.Utils.FileHelper do
          {:ok, file_binary} <- read_file_contents(file_path),
          {:ok, wraft_json} <- get_wraft_json(file_binary),
          :ok <- WraftJson.validate_json(wraft_json),
-         allowed_files <- get_allowed_frame_files_from_wraft_json(wraft_json),
+         allowed_files <- get_allowed_files_from_wraft_json(wraft_json),
          {:ok, _} <- validate_missing_files(allowed_files, file_entries) do
       :ok
     end
@@ -163,7 +164,7 @@ defmodule WraftDoc.Utils.FileHelper do
 
   defp validate_required_files(file_entries) do
     missing_files =
-      Enum.filter(@required_files, fn req_file ->
+      Enum.filter(@required_frame_files, fn req_file ->
         not Enum.any?(file_entries, fn entry -> entry.path == req_file end)
       end)
 
@@ -343,23 +344,10 @@ defmodule WraftDoc.Utils.FileHelper do
     end
   end
 
-  # will use use in future
-  # defp get_allowed_files(%{path: file_path} = file) do
+  # defp get_allowed_files(%{path: file_path}) do
   #   with {:ok, file_binary} <- read_file_contents(file_path),
   #        {:ok, wraft_json} <- get_wraft_json(file_binary) do
-  #     file
-  #     |> get_global_file_type()
-  #     |> case do
-  #       {:ok, "frame"} ->
-  #         get_allowed_frame_files_from_wraft_json(wraft_json)
-
-  #       {:ok, "template_asset"} ->
-  #         {_, files} = TemplateAssets.template_asset_file_list(file_binary)
-  #         Enum.filter(files, fn file -> !String.ends_with?(file, "/") end)
-
-  #       {:error, reason} ->
-  #         {:error, reason}
-  #     end
+  #     get_allowed_files_from_wraft_json(wraft_json)
   #   end
   # end
 

@@ -36,8 +36,8 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Utils.ProsemirrorToMarkdown
 
   # TODO restructure allowed files.
-  @required_items ["layout", "theme", "flow", "variant"]
-  @allowed_folders ["theme", "layout", "frame"]
+  @required_items ["layout", "theme", "flow", "variant", "data_template", "frame"]
+  @allowed_folders ["fonts", "assets", "frame"]
   @allowed_files ["template.json", "wraft.json"]
   @font_style_name ~w(Regular Italic Bold BoldItalic)
 
@@ -191,9 +191,9 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp has_items(template_map) do
+  defp has_items(%{"items" => items}) do
     Enum.filter(@required_items, fn key ->
-      Map.has_key?(template_map, key)
+      Map.has_key?(items, key)
     end)
   end
 
@@ -206,7 +206,7 @@ defmodule WraftDoc.TemplateAssets do
       Keyword.get(opts, :frame_id)
     ]
 
-    @required_items
+    (@required_items -- ["frame"])
     |> Enum.filter(fn key ->
       key not in contained_items &&
         is_nil(Enum.at(optional_ids, Enum.find_index(@required_items, &(&1 == key))))
@@ -246,7 +246,7 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec pre_import_template(binary()) :: {:ok, map()} | {:error, any()}
   def pre_import_template(downloaded_file_binary) do
-    {:ok, template_map} = FileHelper.get_wraft_json(downloaded_file_binary)
+    {:ok, %{"items" => template_map}} = FileHelper.get_wraft_json(downloaded_file_binary)
 
     existing_items =
       %{
@@ -302,7 +302,11 @@ defmodule WraftDoc.TemplateAssets do
     |> FileHelper.get_file_entries()
     |> case do
       {:ok, entries} ->
-        filter_entries(entries)
+        entries
+        |> filter_entries()
+        |> Enum.split_with(fn entry ->
+          String.ends_with?(entry, "/")
+        end)
 
       {:error, error} ->
         {:error, error}
@@ -310,8 +314,7 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp filter_entries(entries) do
-    entries
-    |> Enum.reduce([], fn %{file_name: file_name}, acc ->
+    Enum.reduce(entries, [], fn %{file_name: file_name}, acc ->
       if Enum.any?(@allowed_folders, &String.starts_with?(file_name, "#{&1}/")) ||
            file_name in @allowed_files do
         [file_name | acc]
@@ -319,7 +322,6 @@ defmodule WraftDoc.TemplateAssets do
         acc
       end
     end)
-    |> then(&{:ok, &1})
   end
 
   defp prepare_template(
@@ -376,17 +378,28 @@ defmodule WraftDoc.TemplateAssets do
 
   defp build_multi, do: Multi.new()
 
-  defp add_theme_step(multi, %{"theme" => theme}, current_user, downloaded_file, entries) do
+  defp add_theme_step(
+         multi,
+         %{"items" => %{"theme" => theme}, "packageContents" => %{"fonts" => fonts}},
+         current_user,
+         downloaded_file,
+         entries
+       ) do
     Multi.run(multi, :theme, fn _repo, _changes ->
       theme
       |> update_conflicting_name(Theme, current_user)
+      |> Map.merge(%{"fonts" => fonts})
       |> prepare_theme(current_user, downloaded_file, entries)
     end)
   end
 
   defp add_theme_step(multi, _template_map, _current_user, _downloaded_file, _entries), do: multi
 
-  defp add_flow_step(multi, %{"flow" => flow}, %{current_org_id: org_id} = current_user) do
+  defp add_flow_step(
+         multi,
+         %{"items" => %{"flow" => flow}},
+         %{current_org_id: org_id} = current_user
+       ) do
     flow =
       flow
       |> Map.merge(%{"organisation_id" => org_id})
@@ -408,13 +421,24 @@ defmodule WraftDoc.TemplateAssets do
 
   defp add_flow_step(multi, _template_map, _current_user), do: multi
 
-  defp add_layout_step(multi, %{"layout" => layout}, current_user, downloaded_file, entries, opts) do
+  defp add_layout_step(
+         multi,
+         %{
+           "items" => %{"layout" => layout},
+           "packageContents" => %{"assets" => assets}
+         },
+         current_user,
+         downloaded_file,
+         entries,
+         opts
+       ) do
     Multi.run(multi, :layout, fn _repo, changes ->
       frame_id = Keyword.get(opts, :frame_id, nil)
       frame = Map.get(changes, :frame, nil)
 
       layout
       |> update_conflicting_name(Layout, current_user)
+      |> Map.merge(%{"file_path" => get_pdf_asset_path(assets, "layout")})
       |> prepare_layout(downloaded_file, current_user, entries, frame_id || (frame && frame.id))
     end)
   end
@@ -424,7 +448,7 @@ defmodule WraftDoc.TemplateAssets do
 
   defp add_frame_step(
          multi,
-         %{"frame" => frame_json_path},
+         %{"items" => %{"frame" => frame_json_path}},
          current_user,
          downloaded_file,
          entries
@@ -532,7 +556,7 @@ defmodule WraftDoc.TemplateAssets do
     |> Enum.map(&Path.relative_to(&1, dir))
   end
 
-  defp add_variant_step(multi, %{"variant" => variant}, current_user, opts) do
+  defp add_variant_step(multi, %{"items" => %{"variant" => variant}}, current_user, opts) do
     theme_id = Keyword.get(opts, :theme_id, nil)
     layout_id = Keyword.get(opts, :layout_id, nil)
     flow_id = Keyword.get(opts, :flow_id, nil)
@@ -557,7 +581,7 @@ defmodule WraftDoc.TemplateAssets do
 
   defp add_data_template_step(
          multi,
-         %{"data_template" => data_template},
+         %{"items" => %{"data_template" => data_template}},
          current_user,
          downloaded_file,
          opts
@@ -714,9 +738,15 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp prepare_layout(layouts, downloaded_file, current_user, entries, frame_id) do
-    with %Engine{id: engine_id} <- get_engine(layouts["engine"]),
-         asset_id <- prepare_layout_assets(entries, downloaded_file, current_user),
+  defp prepare_layout(
+         %{"engine" => engine, "file_path" => file_path} = layouts,
+         downloaded_file,
+         current_user,
+         entries,
+         frame_id
+       ) do
+    with %Engine{id: engine_id} <- get_engine(engine),
+         asset_id <- prepare_layout_assets(entries, file_path, downloaded_file, current_user),
          params <- prepare_layout_attrs(layouts, engine_id, asset_id, frame_id),
          %Engine{} = engine <- Frames.get_engine_by_frame_type(params),
          %Layout{} = layout <- Layouts.create_layout(current_user, engine, params) do
@@ -724,10 +754,16 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp prepare_layout_assets(entries, downloaded_file, current_user) do
+  defp prepare_layout_assets(entries, file_path, downloaded_file, current_user) do
     entries
-    |> get_layout_file_entries()
+    |> get_layout_file_entry(file_path)
     |> extract_and_prepare_layout_asset(downloaded_file, current_user)
+  end
+
+  defp get_pdf_asset_path(assets, type) do
+    Enum.find(assets, fn asset ->
+      asset["type"] == type and String.ends_with?(asset["path"], ".pdf")
+    end)["path"]
   end
 
   defp prepare_layout_attrs(layout, engine_id, asset_id, frame_id) do
@@ -745,15 +781,13 @@ defmodule WraftDoc.TemplateAssets do
     }
   end
 
-  defp get_layout_file_entries(entries) do
-    Enum.filter(entries, fn entry ->
-      entry.file_name =~ ~r/^layout\/.*\.pdf$/i
+  defp get_layout_file_entry(entries, file_path) do
+    Enum.find(entries, fn entry ->
+      entry.file_name == file_path
     end)
   end
 
-  defp extract_and_prepare_layout_asset(entries, downloaded_zip_file, current_user) do
-    entry = List.first(entries)
-
+  defp extract_and_prepare_layout_asset(entry, downloaded_zip_file, current_user) do
     with {:ok, content} <- FileHelper.extract_file_content(downloaded_zip_file, entry.file_name),
          {:ok, temp_file_path} <- write_temp_file(content),
          asset_params <- prepare_layout_asset_params(entry, temp_file_path, current_user),
@@ -802,7 +836,6 @@ defmodule WraftDoc.TemplateAssets do
          layout_id,
          flow_id
        ) do
-    # TODO use this for common
     field_types = Repo.all(from(ft in FieldType, select: {ft.name, ft.id}))
     field_type_map = Map.new(field_types)
 
@@ -886,28 +919,134 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec template_zip_validator(binary(), list()) :: {:ok, String.t()} | {:error, String.t()}
   def template_zip_validator(file_binary, file_entries_in_zip) do
-    with true <- validate_file_entries(file_entries_in_zip),
-         {:ok, wraft_json} <- FileHelper.get_wraft_json(file_binary),
+    with {:ok, wraft_json} <- FileHelper.get_wraft_json(file_binary),
          :ok <- validate_wraft_json(wraft_json),
-         :ok <- validate_wraft_json_folders(file_entries_in_zip, wraft_json) do
+         :ok <- validate_file_entries(wraft_json, file_entries_in_zip),
+         :ok <- check_allowed_files_exists(wraft_json, file_entries_in_zip) do
       {:ok, "Template file is valid"}
     end
   end
 
-  defp validate_file_entries(entries) do
-    files_in_zip = extract_files(entries)
-    missing_files = @allowed_files -- files_in_zip
+  defp validate_file_entries(wraft_json, entries) do
+    items = has_items(wraft_json)
 
-    case missing_files do
-      [] ->
-        true
+    {folders, files} =
+      Enum.split_with(entries, fn entry ->
+        String.ends_with?(entry, "/")
+      end)
 
-      _ ->
-        {:error, "Required items not found in this zip file: #{Enum.join(missing_files, ", ")}"}
+    []
+    |> collect_missing_files(files)
+    |> collect_missing_folders(folders, items)
+    |> validate_layout(files, items)
+    |> validate_theme(files, items)
+    |> validate_data_template(files, items)
+    |> validate_frame(files, items)
+    |> case do
+      [] -> :ok
+      errors -> {:error, errors}
     end
   end
 
-  defp extract_files(entries), do: Enum.filter(entries, &(!String.ends_with?(&1, "/")))
+  defp collect_missing_files(errors, files) do
+    missing_files =
+      @allowed_files
+      |> Enum.filter(&(&1 not in files))
+      |> Enum.map(&%{type: "file", message: "Missing required file: #{&1}"})
+
+    errors ++ missing_files
+  end
+
+  defp collect_missing_folders(errors, folders, items) do
+    missing_folders =
+      items
+      |> Enum.flat_map(fn
+        "theme" -> ["fonts/"]
+        "layout" -> ["assets/"]
+        "frame" -> ["frame/"]
+        _ -> []
+      end)
+      |> Enum.filter(fn folder ->
+        not Enum.any?(folders, &String.starts_with?(&1, folder))
+      end)
+      |> Enum.map(&%{type: "folder", message: "Missing required folder: #{&1}"})
+
+    errors ++ missing_folders
+  end
+
+  defp validate_layout(errors, files, items) do
+    if "layout" in items do
+      files
+      |> Enum.any?(fn file ->
+        String.starts_with?(file, "assets/") and String.ends_with?(file, ".pdf")
+      end)
+      |> case do
+        true -> errors
+        false -> [%{type: "layout", message: "Missing PDF file in assets"} | errors]
+      end
+    else
+      errors
+    end
+  end
+
+  defp validate_theme(errors, files, items) do
+    if "theme" in items do
+      regular_font_missing =
+        not Enum.any?(files, fn file ->
+          String.starts_with?(file, "fonts/") and String.contains?(file, "Regular")
+        end)
+
+      if regular_font_missing do
+        [%{type: "theme", message: "Missing Regular font file in fonts"} | errors]
+      else
+        errors
+      end
+    else
+      errors
+    end
+  end
+
+  defp validate_data_template(errors, files, items) do
+    if "data_template" in items do
+      template_json_missing = not Enum.any?(files, fn file -> file == "template.json" end)
+
+      if template_json_missing do
+        [%{type: "data_template", message: "Missing template.json file"} | errors]
+      else
+        errors
+      end
+    else
+      errors
+    end
+  end
+
+  defp validate_frame(errors, files, items) do
+    if "frame" in items do
+      missing_frame_files =
+        ["frame/template.typst", "frame/default.typst"]
+        |> Enum.filter(&(&1 not in files))
+        |> Enum.map(&%{type: "frame", message: "Missing required file in frame/: #{&1}"})
+
+      errors ++ missing_frame_files
+    else
+      errors
+    end
+  end
+
+  defp check_allowed_files_exists(wraft_json, entries) do
+    wraft_json
+    |> FileHelper.get_allowed_files_from_wraft_json()
+    |> Kernel.--(entries)
+    |> case do
+      [] ->
+        :ok
+
+      missing_files ->
+        missing_files
+        |> Enum.map(&%{type: "file", message: "Missing file mentioned in wraft_json: #{&1}"})
+        |> then(&{:error, &1})
+    end
+  end
 
   @doc """
   Validates template asset wraft_json.
@@ -940,23 +1079,6 @@ defmodule WraftDoc.TemplateAssets do
     |> then(&{:error, &1})
   end
 
-  defp validate_wraft_json_folders(file_entries, wraft_json) do
-    @required_items
-    |> Enum.filter(fn item ->
-      Map.get(wraft_json, item) != nil and item in @allowed_folders
-    end)
-    |> Enum.reject(fn folder ->
-      Enum.any?(file_entries, &String.starts_with?(&1, "#{folder}/"))
-    end)
-    |> case do
-      [] ->
-        :ok
-
-      missing_folders ->
-        {:error, "Missing required folders for: #{Enum.join(missing_folders, ", ")}"}
-    end
-  end
-
   @doc """
   Processes a template asset by extracting and validating the contents of a ZIP file or URL, returning
   a modified parameters map with extracted data, the binary content of the ZIP, and a list of file entries.
@@ -965,7 +1087,7 @@ defmodule WraftDoc.TemplateAssets do
           {:ok, map(), binary()} | {:error, any()}
   def process_template_asset(params, source_type, source_value) do
     with {:ok, file_binary} <- get_file_binary(source_type, source_value),
-         {:ok, file_entries_in_zip} <- template_asset_file_list(file_binary),
+         {_, file_entries_in_zip} <- template_asset_file_list(file_binary),
          {:ok, %{"metadata" => metadata} = wraft_json} <- FileHelper.get_wraft_json(file_binary) do
       file_size =
         file_binary
@@ -990,8 +1112,8 @@ defmodule WraftDoc.TemplateAssets do
   def validate_template_asset_file(file) do
     with true <- is_template_asset_file?(file),
          {:ok, file_binary} <- get_file_binary(:file, file),
-         {:ok, file_entries_in_zip} <- template_asset_file_list(file_binary),
-         {:ok, _} <- template_zip_validator(file_binary, file_entries_in_zip) do
+         {folders, file_entries_in_zip} <- template_asset_file_list(file_binary),
+         {:ok, _} <- template_zip_validator(file_binary, file_entries_in_zip ++ folders) do
       :ok
     end
   end
