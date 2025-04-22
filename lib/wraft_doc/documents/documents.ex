@@ -11,6 +11,7 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
   alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Documents.ContentCollaboration
   alias WraftDoc.Documents.Counter
@@ -2182,6 +2183,20 @@ defmodule WraftDoc.Documents do
     |> case do
       true -> true
       false -> {:error, "Collaborator does not have access to the document"}
+    end
+  end
+
+  @spec has_access?(User.t(), Ecto.UUID.t(), map()) :: boolean() | {:error, String.t()}
+  def has_access?(%User{id: user_id}, document_id, :counterparty) do
+    CounterParty
+    |> where(
+      [cc],
+      cc.content_id == ^document_id and cc.user_id == ^user_id and cc.signature_status != :pending
+    )
+    |> Repo.exists?()
+    |> case do
+      true -> true
+      false -> {:error, "Counterparty does not have access to the document"}
     end
   end
 

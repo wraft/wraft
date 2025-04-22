@@ -218,7 +218,8 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
          {:ok, guest_access_token, _} <-
            AuthTokens.create_guest_access_token(invited_signatory, %{
              email: email,
-             document_id: document_id
+             document_id: document_id,
+             type: "sign"
            }) do
       render(conn, "verify_signer.json",
         counter_party: counter_party,
@@ -249,7 +250,8 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
              email: email,
              role: role,
              document_id: document_id,
-             state_id: state_id
+             state_id: state_id,
+             type: "guest"
            }) do
       render(conn, "verify_collaborator.json",
         user: invited_user,
