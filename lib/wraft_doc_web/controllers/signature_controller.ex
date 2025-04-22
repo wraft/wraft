@@ -152,6 +152,33 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @doc """
+  List counterparties for a document
+  """
+  swagger_path :list_counterparties do
+    get("/contents/{id}/counterparties")
+    summary("List document counterparties")
+    description("API to list all counterparties for a document")
+
+    parameters do
+      id(:path, :string, "Document ID", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:CounterPartiesList))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec list_counterparties(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def list_counterparties(conn, %{"id" => document_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
+         counterparties <- CounterParties.get_document_counterparties(document_id) do
+      render(conn, "counterparties.json", counterparties: counterparties)
+    end
+  end
+
+  @doc """
   Request a signature for a document from a counterparty
   """
   swagger_path :request_signature do
