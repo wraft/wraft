@@ -1,6 +1,7 @@
 defmodule WraftDocWeb.Api.V1.InstanceGuestView do
   use WraftDocWeb, :view
 
+  alias WraftDocWeb.Api.V1.SignatureView
   alias WraftDocWeb.Api.V1.UserView
 
   def render("collaborator.json", %{collaborator: collaborator}) do
