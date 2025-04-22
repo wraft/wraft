@@ -16,18 +16,37 @@ defmodule WraftDocWeb.CurrentUser do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    current_user_email = current_resource(conn)
+    conn
+    |> maybe_add_auth_type()
+    |> add_current_user()
+  end
 
-    case Repo.get_by(User, email: current_user_email) do
-      nil ->
-        AuthErrorHandler.auth_error(conn, {:error, :no_user})
+  defp maybe_add_auth_type(%{params: params} = conn) do
+    conn
+    |> current_claims()
+    |> add_type_to_params(conn, params)
+  end
 
-      user ->
-        instances_to_approve = from(ias in InstanceApprovalSystem, where: ias.flag == false)
+  defp add_type_to_params(%{"type" => type}, conn, params),
+    do: %{conn | params: Map.put(params, "auth_type", type)}
 
-        user = Repo.preload(user, [:profile, instances_to_approve: instances_to_approve])
+  defp add_type_to_params(_claims, conn, _params),
+    do: conn
 
-        assign(conn, :current_user, user)
+  defp add_current_user(conn) do
+    conn
+    |> current_resource()
+    |> get_user()
+    |> case do
+      nil -> AuthErrorHandler.auth_error(conn, {:error, :no_user})
+      user -> assign(conn, :current_user, preload_user_data(user))
     end
+  end
+
+  defp get_user(email), do: Repo.get_by(User, email: email)
+
+  defp preload_user_data(user) do
+    instances_to_approve = from(ias in InstanceApprovalSystem, where: ias.flag == false)
+    Repo.preload(user, [:profile, instances_to_approve: instances_to_approve])
   end
 end
