@@ -76,8 +76,11 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
   def import_global_file(conn, %{"file" => %{path: file_path} = file} = params) do
     current_user = conn.assigns.current_user
 
-    with {:ok, _} <- FileValidator.validate_file(file_path),
+    with :ok <- GlobalFile.validate_global_file(file),
+         {:ok, _} <- FileValidator.validate_file(file_path),
          {:ok, metadata} <- FileHelper.get_file_metadata(file),
+         metadata <-
+           Map.merge(metadata, Map.take(params, ["name", "description"])),
          {:ok, %{view: view, template: template, assigns: assigns}} <-
            GlobalFile.import_global_asset(current_user, Map.merge(params, metadata)) do
       conn
@@ -86,7 +89,7 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
     end
   end
 
-  def import_global_file(_, _), do: {:error, "File not found"}
+  def import_global_file(_, _), do: {:error, "No file provided. Please upload a file."}
 
   @doc """
   Pre-imports global file.
@@ -116,43 +119,40 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
     end
   end
 
-  def pre_import_global_file(_, _), do: {:error, "File not found"}
+  def pre_import_global_file(_, _), do: {:error, "No file provided. Please upload a file."}
 
-  # @doc """
-  # Validates a global file.
-  # """
-  # # TODO update swagger
-  # swagger_path :validate_global_file do
-  #   post("/global_asset/validate")
-  #   summary("Validate a global file")
+  @doc """
+  Validates a global file.
+  """
+  # TODO update swagger
+  swagger_path :validate_global_file do
+    post("/global_asset/validate")
+    summary("Validate a global file")
 
-  #   description("Validates a global file using the provided asset ID and additional parameters.")
+    description("Validates a global file using the provided asset ID and additional parameters.")
 
-  #   parameters do
-  #     file(:formData, :file, "The ID of the asset to import", required: true)
-  #   end
+    parameters do
+      file(:formData, :file, "The ID of the asset to import", required: true)
+    end
 
-  #   response(200, "ok", Schema.ref(:GlobalPreImportResponse))
-  #   response(400, "Bad request", Schema.ref(:Error))
-  # end
-  # @spec validate_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  # def validate_global_file(conn, %{"file" => %{path: file_path} = file} = params) do
-  #   with {:ok, _} <- FileValidator.validate_file(file_path),
-  #        {:ok, metadata} <- FileHelper.get_file_metadata(file),
-  #        :ok <-
-  #          GlobalFile.validate_global_asset(Map.merge(params, metadata)) do
-  #     render(conn, "global_file_validation.json", %{
-  #       message: "Validation completed successfully"
-  #     })
-  #   else
-  #     {:ok, result} ->
-  #       render(conn, "global_file_validation.json", %{
-  #         message: "Validation completed successfully",
-  #         result: result
-  #       })
+    response(200, "ok", Schema.ref(:GlobalPreImportResponse))
+    response(400, "Bad request", Schema.ref(:Error))
+  end
 
-  #     {:error, reason} ->
-  #       {:error, reason}
-  #   end
-  # end
+  @spec re_validate_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def re_validate_global_file(conn, %{"file" => %{path: file_path} = file} = params) do
+    with :ok <- GlobalFile.validate_global_file(file),
+         {:ok, _} <- FileValidator.validate_file(file_path),
+         {:ok, metadata} <- FileHelper.get_file_metadata(file),
+         metadata <-
+           Map.merge(metadata, Map.take(params, ["name", "description"])),
+         :ok <-
+           GlobalFile.re_validate_global_asset(Map.merge(params, metadata)) do
+      render(conn, "global_file_validation.json", %{
+        message: "Validation completed successfully"
+      })
+    end
+  end
+
+  def re_validate_global_file(_, _), do: {:error, "No file provided. Please upload a file."}
 end

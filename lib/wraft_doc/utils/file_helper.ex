@@ -142,13 +142,13 @@ defmodule WraftDoc.Utils.FileHelper do
   def validate_frame_file(%{path: file_path} = file) do
     with true <- is_frame_file?(file),
          {:ok, file_entries} <- FileValidator.get_file_entries(file_path),
-         {:ok, _file_entries} <- validate_required_files(file_entries),
+         :ok <- validate_required_files(file_entries),
          {:ok, file_binary} <- read_file_contents(file_path),
          {:ok, wraft_json} <- get_wraft_json(file_binary),
-         :ok <- WraftJson.validate_json(wraft_json),
-         allowed_files <- get_allowed_files_from_wraft_json(wraft_json),
-         {:ok, _} <- validate_missing_files(allowed_files, file_entries) do
-      :ok
+         :ok <- WraftJson.validate_json(wraft_json) do
+      wraft_json
+      |> get_allowed_files_from_wraft_json()
+      |> validate_missing_files(file_entries)
     end
   end
 
@@ -163,29 +163,46 @@ defmodule WraftDoc.Utils.FileHelper do
   end
 
   defp validate_required_files(file_entries) do
-    missing_files =
-      Enum.filter(@required_frame_files, fn req_file ->
-        not Enum.any?(file_entries, fn entry -> entry.path == req_file end)
-      end)
+    @required_frame_files
+    |> Enum.filter(fn req_file ->
+      not Enum.any?(file_entries, fn entry -> entry.path == req_file end)
+    end)
+    |> case do
+      [] ->
+        :ok
 
-    if missing_files == [] do
-      {:ok, file_entries}
-    else
-      {:error, "Required files are missing: #{Enum.join(missing_files, ",")}"}
+      missing_files ->
+        missing_files
+        |> Enum.map(fn file ->
+          %{
+            type: "file_validation_error",
+            message: "Required files are missing: #{file}"
+          }
+        end)
+        |> then(&{:error, &1})
     end
   end
 
   defp validate_missing_files(allowed_files, file_entries) do
     entry_paths = Enum.map(file_entries, &Map.get(&1, :path))
 
-    missing_files =
-      Enum.filter(allowed_files, fn allowed_file ->
-        !Enum.any?(entry_paths, fn entry_path -> entry_path == allowed_file end)
-      end)
+    allowed_files
+    |> Enum.filter(fn allowed_file ->
+      !Enum.any?(entry_paths, fn entry_path -> entry_path == allowed_file end)
+    end)
+    |> case do
+      [] ->
+        :ok
 
-    case missing_files do
-      [] -> {:ok, file_entries}
-      files -> {:error, "Files are missing in zip: #{Enum.join(files, ", ")}"}
+      files ->
+        files
+        |> Enum.map(fn file ->
+          %{
+            type: "file_validation_error",
+            message: "Missing file in zip: #{file}"
+          }
+        end)
+        |> then(&{:error, &1})
     end
   end
 
@@ -245,42 +262,12 @@ defmodule WraftDoc.Utils.FileHelper do
         String.replace(acc, "%{#{key}}", to_string(value))
       end)
     end)
-    |> format_error_message()
-  end
-
-  defp format_error_message(error_map) when is_map(error_map) do
-    error_map
-    |> Enum.map(fn {key, value} -> format_error_entry(key, value) end)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.join("; ")
-  end
-
-  defp format_error_entry(key, value) when is_map(value) do
-    nested_errors = format_error_message(value)
-    if nested_errors != "", do: "#{key}: #{nested_errors}", else: nil
-  end
-
-  defp format_error_entry(key, value) when is_list(value) and is_map(hd(value)) do
-    items_errors =
-      value
-      |> Enum.with_index()
-      |> Enum.map(fn {item, index} ->
-        item_errors = format_error_message(item)
-        if item_errors != "", do: "item #{index + 1}: #{item_errors}", else: nil
-      end)
-      |> Enum.reject(&is_nil/1)
-      |> Enum.join(", ")
-
-    if items_errors != "", do: "#{key}: [#{items_errors}]", else: nil
-  end
-
-  defp format_error_entry(key, [value]) when is_binary(value) do
-    "#{key} #{value}"
-  end
-
-  defp format_error_entry(key, values) when is_list(values) do
-    messages = Enum.join(values, ", ")
-    "#{key}: #{messages}"
+    |> Enum.map(fn {field, messages} ->
+      %{
+        type: "metadata_validation_error",
+        message: "#{field}: #{Enum.join(messages, ", ")}"
+      }
+    end)
   end
 
   @doc """
@@ -297,8 +284,8 @@ defmodule WraftDoc.Utils.FileHelper do
       {:ok, %{"type" => _unsupported_type}} ->
         {:error, "Invalid global file type"}
 
-      {:error, _reason} ->
-        {:error, "Invalid file"}
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

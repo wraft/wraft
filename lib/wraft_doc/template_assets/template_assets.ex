@@ -35,7 +35,6 @@ defmodule WraftDoc.TemplateAssets do
   alias WraftDoc.Utils.FileHelper
   alias WraftDoc.Utils.ProsemirrorToMarkdown
 
-  # TODO restructure allowed files.
   @required_items ["layout", "theme", "flow", "variant", "data_template", "frame"]
   @allowed_folders ["fonts", "assets", "frame"]
   @allowed_files ["template.json", "wraft.json"]
@@ -191,13 +190,21 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp has_items(%{"items" => items}) do
+  @doc """
+  Returns items from wraft_json.
+  """
+  @spec has_items(map()) :: list()
+  def has_items(%{"items" => items}) do
     Enum.filter(@required_items, fn key ->
       Map.has_key?(items, key)
     end)
   end
 
-  defp validate_required_items(contained_items, opts) do
+  @doc """
+  Validates required items.
+  """
+  @spec validate_required_items(list(), list()) :: :ok | list()
+  def validate_required_items(contained_items, opts) do
     optional_ids = [
       Keyword.get(opts, :layout_id),
       Keyword.get(opts, :theme_id),
@@ -952,7 +959,7 @@ defmodule WraftDoc.TemplateAssets do
     missing_files =
       @allowed_files
       |> Enum.filter(&(&1 not in files))
-      |> Enum.map(&%{type: "file", message: "Missing required file: #{&1}"})
+      |> Enum.map(&%{type: "file_validation_error", message: "Missing required file: #{&1}"})
 
     errors ++ missing_files
   end
@@ -969,7 +976,7 @@ defmodule WraftDoc.TemplateAssets do
       |> Enum.filter(fn folder ->
         not Enum.any?(folders, &String.starts_with?(&1, folder))
       end)
-      |> Enum.map(&%{type: "folder", message: "Missing required folder: #{&1}"})
+      |> Enum.map(&%{type: "folder_error", message: "Missing required folder: #{&1}"})
 
     errors ++ missing_folders
   end
@@ -982,7 +989,7 @@ defmodule WraftDoc.TemplateAssets do
       end)
       |> case do
         true -> errors
-        false -> [%{type: "layout", message: "Missing PDF file in assets"} | errors]
+        false -> [%{type: "layout_error", message: "Missing PDF file in assets"} | errors]
       end
     else
       errors
@@ -997,7 +1004,7 @@ defmodule WraftDoc.TemplateAssets do
         end)
 
       if regular_font_missing do
-        [%{type: "theme", message: "Missing Regular font file in fonts"} | errors]
+        [%{type: "theme_error", message: "Missing Regular font file in fonts"} | errors]
       else
         errors
       end
@@ -1011,7 +1018,7 @@ defmodule WraftDoc.TemplateAssets do
       template_json_missing = not Enum.any?(files, fn file -> file == "template.json" end)
 
       if template_json_missing do
-        [%{type: "data_template", message: "Missing template.json file"} | errors]
+        [%{type: "data_template_error", message: "Missing template.json file"} | errors]
       else
         errors
       end
@@ -1025,7 +1032,7 @@ defmodule WraftDoc.TemplateAssets do
       missing_frame_files =
         ["frame/template.typst", "frame/default.typst"]
         |> Enum.filter(&(&1 not in files))
-        |> Enum.map(&%{type: "frame", message: "Missing required file in frame/: #{&1}"})
+        |> Enum.map(&%{type: "frame_error", message: "Missing required file in frame/: #{&1}"})
 
       errors ++ missing_frame_files
     else
@@ -1043,7 +1050,12 @@ defmodule WraftDoc.TemplateAssets do
 
       missing_files ->
         missing_files
-        |> Enum.map(&%{type: "file", message: "Missing file mentioned in wraft_json: #{&1}"})
+        |> Enum.map(
+          &%{
+            type: "file_validation_error",
+            message: "Missing file mentioned in wraft_json: #{&1}"
+          }
+        )
         |> then(&{:error, &1})
     end
   end
@@ -1054,6 +1066,7 @@ defmodule WraftDoc.TemplateAssets do
   @spec validate_wraft_json(map()) :: :ok | {:error, list(String.t())}
   def validate_wraft_json(wraft_json) do
     WraftJsonSchema.schema()
+    |> ExJsonSchema.Schema.resolve()
     |> ExJsonSchema.Validator.validate(wraft_json)
     |> case do
       :ok ->
@@ -1074,7 +1087,12 @@ defmodule WraftDoc.TemplateAssets do
         "" -> "root"
         value -> value
       end
-      |> then(&"#{&1}: #{message}")
+      |> then(
+        &%{
+          type: "wraft_json_validation_error",
+          message: "#{&1}: #{message}"
+        }
+      )
     end)
     |> then(&{:error, &1})
   end
@@ -1123,7 +1141,6 @@ defmodule WraftDoc.TemplateAssets do
     |> FileHelper.get_global_file_type()
     |> case do
       {:ok, "template_asset"} -> true
-      {:ok, _} -> {:error, "File is not a template asset."}
       {:error, reason} -> {:error, reason}
     end
   end

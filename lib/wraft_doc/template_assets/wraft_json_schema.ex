@@ -5,174 +5,142 @@ defmodule WraftDoc.TemplateAssets.WraftJsonSchema do
 
   def schema do
     %{
+      "$schema" => "http://json-schema.org/draft-07/schema#",
+      "type" => "object",
+      "required" => ["metadata", "packageContents", "items"],
       "properties" => %{
-        "data_template" => %{
-          "additionalProperties" => false,
+        "metadata" => %{
+          "type" => "object",
+          "required" => ["name", "description", "type", "updated_at"],
           "properties" => %{
-            "title" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
-            },
-            "title_template" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
-            }
-          },
-          "required" => ["title", "title_template"],
-          "type" => "object"
+            "name" => %{"type" => "string"},
+            "description" => %{"type" => "string"},
+            "type" => %{"type" => "string"},
+            "updated_at" => %{"type" => "string", "format" => "date"}
+          }
         },
-        "flow" => %{
-          "additionalProperties" => false,
+        "packageContents" => %{
+          "type" => "object",
+          "required" => ["rootFiles", "assets", "fonts"],
           "properties" => %{
-            "name" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
-            }
-          },
-          "required" => ["name"],
-          "type" => "object"
-        },
-        "layout" => %{
-          "additionalProperties" => false,
-          "properties" => %{
-            "description" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
-            },
-            "engine" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
-            },
-            "meta" => %{
-              "additionalProperties" => false,
-              "properties" => %{
-                "margin" => %{
-                  "minLength" => 0,
-                  "pattern" => "^.*$",
-                  "type" => "string"
-                },
-                "standard_size" => %{
-                  "minLength" => 0,
-                  "pattern" => "^.*$",
-                  "type" => "string"
-                }
-              },
-              "required" => ["margin", "standard_size"],
-              "type" => "object"
-            },
-            "name" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
-            },
-            "slug" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
-            },
-            "slug_file" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
-            }
-          },
-          "required" => ["description", "engine", "meta", "name", "slug", "slug_file"],
-          "type" => "object"
-        },
-        "theme" => %{
-          "additionalProperties" => false,
-          "properties" => %{
-            "colors" => %{
-              "additionalProperties" => false,
-              "properties" => %{
-                "bodyColor" => %{
-                  "minLength" => 0,
-                  "pattern" => "^.*$",
-                  "type" => "string"
-                },
-                "primaryColor" => %{
-                  "minLength" => 0,
-                  "pattern" => "^.*$",
-                  "type" => "string"
-                },
-                "secondaryColor" => %{
-                  "minLength" => 0,
-                  "pattern" => "^.*$",
-                  "type" => "string"
-                }
-              },
-              "required" => ["bodyColor", "primaryColor", "secondaryColor"],
-              "type" => "object"
-            },
-            "name" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
-            }
-          },
-          "required" => ["colors", "name"],
-          "type" => "object"
-        },
-        "variant" => %{
-          "additionalProperties" => true,
-          "properties" => %{
-            "color" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
-            },
-            "description" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
-            },
-            "fields" => %{
+            "rootFiles" => %{
+              "type" => "array",
               "items" => %{
-                "additionalProperties" => true,
+                "type" => "object",
+                "required" => ["name", "path"],
                 "properties" => %{
-                  "description" => %{
-                    "minLength" => 0,
-                    "pattern" => "^.*$",
-                    "type" => "string"
-                  },
-                  "name" => %{
-                    "minLength" => 0,
-                    "pattern" => "^.*$",
-                    "type" => "string"
-                  },
-                  "required" => %{"type" => "boolean"},
-                  "type" => %{
-                    "minLength" => 0,
-                    "pattern" => "^.*$",
-                    "type" => "string"
+                  "name" => %{"type" => "string"},
+                  "path" => %{"type" => "string"}
+                }
+              }
+            },
+            "assets" => %{
+              "type" => "array",
+              "items" => %{
+                "type" => "object",
+                "required" => ["name", "path", "type", "description"],
+                "properties" => %{
+                  "name" => %{"type" => "string"},
+                  "path" => %{"type" => "string"},
+                  "type" => %{"type" => "string"},
+                  "description" => %{"type" => "string"}
+                }
+              }
+            },
+            "fonts" => %{
+              "type" => "array",
+              "items" => %{
+                "type" => "object",
+                "required" => ["fontName", "fontWeight", "path"],
+                "properties" => %{
+                  "fontName" => %{"type" => "string"},
+                  "fontWeight" => %{"type" => "string"},
+                  "path" => %{"type" => "string"},
+                  "required" => %{"type" => "boolean"}
+                }
+              }
+            }
+          }
+        },
+        "items" => %{
+          "type" => "object",
+          "properties" => %{
+            "theme" => %{
+              "type" => "object",
+              "required" => ["name", "colors"],
+              "properties" => %{
+                "name" => %{"type" => "string"},
+                "colors" => %{
+                  "type" => "object",
+                  "required" => ["primaryColor", "secondaryColor", "bodyColor"],
+                  "properties" => %{
+                    "primaryColor" => %{"type" => "string", "pattern" => "^#[0-9A-Fa-f]{6}$"},
+                    "secondaryColor" => %{"type" => "string", "pattern" => "^#[0-9A-Fa-f]{6}$"},
+                    "bodyColor" => %{"type" => "string", "pattern" => "^#[0-9A-Fa-f]{6}$"}
+                  }
+                }
+              }
+            },
+            "layout" => %{
+              "type" => "object",
+              "required" => ["slug", "meta", "name", "description", "engine"],
+              "properties" => %{
+                "slug" => %{"type" => "string"},
+                "meta" => %{
+                  "type" => "object",
+                  "required" => ["standard_size", "margin"],
+                  "properties" => %{
+                    "standard_size" => %{"type" => "string"},
+                    "margin" => %{"type" => "string"}
                   }
                 },
-                "required" => ["description", "name", "required", "type"],
-                "type" => "object"
-              },
-              "type" => "array"
+                "description" => %{"type" => "string"},
+                "engine" => %{"type" => "string"}
+              }
             },
-            "name" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
+            "flow" => %{
+              "type" => "object",
+              "required" => ["name"],
+              "properties" => %{
+                "name" => %{"type" => "string"}
+              }
             },
-            "prefix" => %{
-              "minLength" => 0,
-              "pattern" => "^.*$",
-              "type" => "string"
+            "variant" => %{
+              "type" => "object",
+              "required" => ["color", "name", "description", "fields"],
+              "properties" => %{
+                "color" => %{"type" => "string", "pattern" => "^#[0-9A-Fa-f]{3,6}$"},
+                "name" => %{"type" => "string"},
+                "description" => %{"type" => "string"},
+                "fields" => %{
+                  "type" => "array",
+                  "items" => %{
+                    "type" => "object",
+                    "required" => ["type", "name", "description"],
+                    "properties" => %{
+                      "type" => %{
+                        "type" => "string",
+                        "enum" => ["string", "date", "number", "boolean"]
+                      },
+                      "name" => %{"type" => "string"},
+                      "description" => %{"type" => "string"},
+                      "required" => %{"type" => "boolean"}
+                    }
+                  }
+                }
+              }
+            },
+            "data_template" => %{
+              "type" => "object",
+              "required" => ["title", "title_template"],
+              "properties" => %{
+                "title" => %{"type" => "string"},
+                "title_template" => %{"type" => "string"}
+              }
             }
-          },
-          "required" => ["color", "description", "fields", "name", "prefix"],
-          "type" => "object"
+          }
         }
-      },
-      "type" => "object"
+      }
     }
   end
 end

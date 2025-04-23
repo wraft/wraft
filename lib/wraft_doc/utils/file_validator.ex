@@ -44,8 +44,6 @@ defmodule WraftDoc.Utils.FileValidator do
     with {:ok, file_entries} <- get_file_entries(file_path),
          :ok <- check_for_path_traversal(file_entries),
          :ok <- check_file_sizes(file_entries),
-         # TODO need to refactor.
-         #  :ok <- check_file_extensions(file_entries),
          :ok <- check_file_signature(file_path) do
       {:ok, file_entries}
     end
@@ -143,22 +141,6 @@ defmodule WraftDoc.Utils.FileValidator do
             (String.contains?(&1, "..") && String.contains?(&1, "%2")))).()
   end
 
-  # defp check_file_extensions(file_entries) do
-  #   invalid_files =
-  #     file_entries
-  #     |> Enum.reject(fn entry ->
-  #       String.match?(entry.path, ~r/^__MACOSX\//)
-  #     end)
-  #     |> Enum.filter(&(&1.extension not in @allowed_extensions))
-
-  #   if Enum.empty?(invalid_files) do
-  #     :ok
-  #   else
-  #     invalid_exts = invalid_files |> Enum.map(& &1.extension) |> Enum.uniq()
-  #     {:error, Enum.join(invalid_exts, ", ")}
-  #   end
-  # end
-
   defp check_file_signature(file_path) do
     temp_path = Briefly.create!(directory: true)
 
@@ -166,8 +148,15 @@ defmodule WraftDoc.Utils.FileValidator do
          [] <- Enum.reduce(files, [], &verify_signature(&1, &2, temp_path)) do
       :ok
     else
-      mismatched_files when is_list(mismatched_files) ->
-        {:error, mismatched_files}
+      mismatched_files ->
+        mismatched_files
+        |> Enum.map(fn path ->
+          %{
+            type: "file_validation_error",
+            message: "file signature mismatch: #{path}"
+          }
+        end)
+        |> then(&{:error, &1})
     end
   end
 

@@ -58,6 +58,12 @@ defmodule WraftDoc.Frames do
   def get_frame(_), do: nil
 
   @doc """
+  Checks if a frame name already exists
+  """
+  @spec frame_name_exists?(String.t()) :: boolean()
+  def frame_name_exists?(name), do: Repo.exists?(from(f in Frame, where: f.name == ^name))
+
+  @doc """
   Create a frame.
   """
   @spec create_frame(User.t() | nil, map()) :: Frame.t() | {:error, Ecto.Changeset.t()}
@@ -183,11 +189,10 @@ defmodule WraftDoc.Frames do
     file_binary = File.read!(file_path)
     file_size = FileHelper.file_size(file_binary)
 
-    {:ok, %{"metadata" => %{"frameType" => type} = metadata} = wraft_json} =
+    {:ok, %{"metadata" => %{"frameType" => type}} = wraft_json} =
       FileHelper.get_wraft_json(file_binary)
 
     params
-    |> Map.merge(metadata)
     |> Map.merge(%{
       "wraft_json" => wraft_json,
       "file_size" => file_size,

@@ -41,15 +41,19 @@ defmodule WraftDoc.GlobalFile do
     end
   end
 
-  def import_global_asset(_, _), do: {:error, "Unsupported asset type"}
+  def import_global_asset(_, _), do: {:error, "Unsupported global file type"}
 
-  defp validate_global_file(%{filename: file_name}) do
+  @doc """
+  Check if global file is valid.
+  """
+  @spec validate_global_file(Plug.Upload.t()) :: :ok | {:error, String.t()}
+  def validate_global_file(%{filename: file_name}) do
     file_extension = file_name |> Path.extname() |> String.downcase()
 
     if file_extension == ".zip" do
       :ok
     else
-      {:error, "Invalid file type or file size exceeds limit"}
+      {:error, "Invalid file type"}
     end
   end
 
@@ -86,8 +90,18 @@ defmodule WraftDoc.GlobalFile do
     file
     |> FileHelper.get_file_metadata()
     |> case do
-      {:ok, _metadata} -> result
-      {:error, reason} -> add_error(result, "metadata_error", reason)
+      {:ok, %{"name" => name, "type" => "frame"}} ->
+        if Frames.frame_name_exists?(name) do
+          add_error(result, "metadata_error", "A frame with the name '#{name}' already exists")
+        else
+          result
+        end
+
+      {:ok, _metadata} ->
+        result
+
+      {:error, reason} ->
+        add_error(result, "metadata_error", reason)
     end
   end
 
@@ -142,26 +156,39 @@ defmodule WraftDoc.GlobalFile do
     update_in(result, [:errors], &[error | &1])
   end
 
-  def validate_global_file_wraft_json(%{"metadata" => %{"type" => "frame"}} = wraft_json),
+  defp validate_global_file_wraft_json(%{"metadata" => %{"type" => "frame"}} = wraft_json),
     do: FrameWraftJson.validate_json(wraft_json)
 
-  def validate_global_file_wraft_json(
-        %{"metadata" => %{"type" => "template_asset"}} = wraft_json
-      ),
-      do: TemplateAssets.validate_wraft_json(wraft_json)
+  defp validate_global_file_wraft_json(
+         %{"metadata" => %{"type" => "template_asset"}} = wraft_json
+       ),
+       do: TemplateAssets.validate_wraft_json(wraft_json)
 
-  def validate_global_file_wraft_json(%{"metadata" => %{"type" => _}}),
+  defp validate_global_file_wraft_json(%{"metadata" => %{"type" => _}}),
     do: {:error, "Unsupported metadata type"}
 
-  # def validate_global_asset(%{"file" => file, "type" => "frame"}),
-  # do: FileHelper.validate_frame_file(file)
-  #
-  # def validate_global_asset(%{"file" => %{path: file_path} = file, "type" => "template_asset"}) do
-  # with :ok <- TemplateAssets.validate_template_asset_file(file),
-  #  {:ok, file_binary} <- File.read(file_path),
-  #  {:ok, %{existing_items: _existing_items, missing_items: _missing_items} = result} <-
-  #  TemplateAssets.pre_import_template(file_binary) do
-  # {:ok, result}
-  # end
-  # end
+  @doc """
+  Re-validate global file.
+  """
+  @spec re_validate_global_asset(map()) :: :ok | {:error, String.t(), list(map())}
+  def re_validate_global_asset(%{"file" => file, "type" => "frame", "name" => name}) do
+    if Frames.frame_name_exists?(name) do
+      {:error, "A frame with the name '#{name}' already exists"}
+    else
+      FileHelper.validate_frame_file(file)
+    end
+  end
+
+  def re_validate_global_asset(
+        %{"file" => %{path: file_path} = file, "type" => "template_asset"} = params
+      ) do
+    with :ok <- TemplateAssets.validate_template_asset_file(file),
+         {:ok, file_binary} <- File.read(file_path),
+         options <- TemplateAssets.format_opts(params),
+         {:ok, template_map} <- FileHelper.get_wraft_json(file_binary) do
+      template_map
+      |> TemplateAssets.has_items()
+      |> TemplateAssets.validate_required_items(options)
+    end
+  end
 end
