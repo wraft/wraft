@@ -3,7 +3,6 @@ defmodule WraftDoc.Utils.FileHelper do
     Helper functions to files.
   """
 
-  alias WraftDoc.Frames.WraftJson
   alias WraftDoc.Frames.WraftJson.Metadata, as: FrameMetadata
   alias WraftDoc.TemplateAssets.Metadata, as: TemplateAssetMetadata
   alias WraftDoc.Utils.FileValidator
@@ -145,7 +144,7 @@ defmodule WraftDoc.Utils.FileHelper do
          :ok <- validate_required_files(file_entries),
          {:ok, file_binary} <- read_file_contents(file_path),
          {:ok, wraft_json} <- get_wraft_json(file_binary),
-         :ok <- WraftJson.validate_json(wraft_json) do
+         :ok <- WraftDoc.Frames.WraftJsonSchema.validate(wraft_json) do
       wraft_json
       |> get_allowed_files_from_wraft_json()
       |> validate_missing_files(file_entries)
@@ -330,15 +329,4 @@ defmodule WraftDoc.Utils.FileHelper do
         {:error, reason}
     end
   end
-
-  # defp get_allowed_files(%{path: file_path}) do
-  #   with {:ok, file_binary} <- read_file_contents(file_path),
-  #        {:ok, wraft_json} <- get_wraft_json(file_binary) do
-  #     get_allowed_files_from_wraft_json(wraft_json)
-  #   end
-  # end
-
-  # TODO missing files in global file
-  # defp get_missing_files() do
-  # end
 end

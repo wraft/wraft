@@ -6,7 +6,7 @@ defmodule WraftDoc.GlobalFile do
   alias WraftDoc.Account.User
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
-  alias WraftDoc.Frames.WraftJson, as: FrameWraftJson
+  alias WraftDoc.Frames.WraftJsonSchema
   alias WraftDoc.TemplateAssets
   alias WraftDoc.Utils.FileHelper
   alias WraftDoc.Utils.FileValidator
@@ -123,7 +123,7 @@ defmodule WraftDoc.GlobalFile do
     |> validate_global_file_wraft_json()
     |> case do
       :ok -> result
-      {:error, reason} -> add_error(result, "validation_error", reason)
+      {:error, reason} -> add_error(result, "wraft_json_validation_error", reason)
     end
   end
 
@@ -157,7 +157,7 @@ defmodule WraftDoc.GlobalFile do
   end
 
   defp validate_global_file_wraft_json(%{"metadata" => %{"type" => "frame"}} = wraft_json),
-    do: FrameWraftJson.validate_json(wraft_json)
+    do: WraftJsonSchema.validate(wraft_json)
 
   defp validate_global_file_wraft_json(
          %{"metadata" => %{"type" => "template_asset"}} = wraft_json

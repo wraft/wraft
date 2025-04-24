@@ -927,7 +927,7 @@ defmodule WraftDoc.TemplateAssets do
   @spec template_zip_validator(binary(), list()) :: {:ok, String.t()} | {:error, String.t()}
   def template_zip_validator(file_binary, file_entries_in_zip) do
     with {:ok, wraft_json} <- FileHelper.get_wraft_json(file_binary),
-         :ok <- validate_wraft_json(wraft_json),
+         #  :ok <- validate_wraft_json(wraft_json),
          :ok <- validate_file_entries(wraft_json, file_entries_in_zip),
          :ok <- check_allowed_files_exists(wraft_json, file_entries_in_zip) do
       {:ok, "Template file is valid"}
@@ -1084,15 +1084,9 @@ defmodule WraftDoc.TemplateAssets do
       |> String.trim_leading("#/")
       |> String.replace("/", ".")
       |> case do
-        "" -> "root"
-        value -> value
+        "" -> "root: #{message}"
+        value -> "#{value}: #{message}"
       end
-      |> then(
-        &%{
-          type: "wraft_json_validation_error",
-          message: "#{&1}: #{message}"
-        }
-      )
     end)
     |> then(&{:error, &1})
   end
