@@ -30,38 +30,43 @@ defmodule WraftDoc.Documents.Signatures do
   def get_signature_by_counterparty(_), do: nil
 
   @doc """
+  Get a signature by Signature ID & Document ID
+  """
+  @spec get_signature(ESignature.t()) :: ESignature.t() | nil
+  def get_signature(<<_::288>> = signature_id, <<_::288>> = document_id) do
+    ESignature
+    |> where([s], s.id == ^signature_id and s.content_id == ^document_id)
+    |> preload([:user, :counter_party, content: [:creator]])
+    |> Repo.one()
+  end
+
+  def get_signature(_), do: nil
+
+  @doc """
   Create a new signature request for a document
   """
   @spec create_signature(Instance.t(), User.t(), CounterParty.t() | [CounterParty.t()]) ::
           {:ok, ESignature.t()} | {:error, Ecto.Changeset.t()}
   def create_signature(
         %Instance{id: document_id} = _instance,
-        %User{id: user_id, current_org_id: org_id} = _user,
-        %CounterParty{id: counter_party_id} = counterparty
+        %User{id: user_id, current_org_id: org_id} = _user
       ) do
-    case get_signature_by_counterparty(counterparty) do
-      nil ->
-        signature_params = %{
-          content_id: document_id,
-          user_id: user_id,
-          organisation_id: org_id,
-          counter_party_id: counter_party_id,
-          verification_token: WraftDoc.generate_token(32)
-        }
+    signature_params = %{
+      content_id: document_id,
+      user_id: user_id,
+      organisation_id: org_id,
+      verification_token: WraftDoc.generate_token(32)
+    }
 
-        %ESignature{}
-        |> ESignature.changeset(signature_params)
-        |> Repo.insert()
-        |> case do
-          {:ok, signature} ->
-            Repo.preload(signature, [:counter_party, :user, :content])
+    %ESignature{}
+    |> ESignature.changeset(signature_params)
+    |> Repo.insert()
+    |> case do
+      {:ok, signature} ->
+        Repo.preload(signature, [:counter_party, :user, :content])
 
-          {:error, changeset} ->
-            {:error, changeset}
-        end
-
-      %ESignature{} = signature ->
-        signature
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 
