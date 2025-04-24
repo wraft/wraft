@@ -214,7 +214,6 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
            CounterParties.get_counterparty(document_id, counter_party_id),
          {:ok, %AuthToken{value: token}} <-
            AuthTokens.create_signer_invite_token(instance, email),
-         %ESignature{} <- Signatures.create_signature(instance, current_user, counter_party),
          {:ok, %Oban.Job{}} <- Signatures.signature_request_email(instance, counter_party, token) do
       render(conn, "email.json", info: "Signature request email sent to #{counter_party.email}")
     else
@@ -228,13 +227,75 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     current_user = conn.assigns.current_user
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
-         counter_parties <- Signatures.get_document_pending_signatures(document_id),
-         :ok <- Signatures.create_signature(instance, current_user, counter_parties) do
+         counter_parties <- Signatures.get_document_pending_signatures(document_id) do
       Signatures.signature_request_email(instance, counter_parties)
 
       render(conn, "email.json",
         info: "Signature request email sent to #{length(counter_parties)} counterparties"
       )
+    end
+  end
+
+  @doc """
+  Get a specific signature for a document
+  """
+  swagger_path :get_signature do
+    get("/contents/{id}/signatures/{signature_id}")
+    summary("Get specific document signature")
+    description("API to get a specific signature by its ID for a document")
+
+    parameters do
+      id(:path, :string, "Document ID", required: true)
+      signature_id(:path, :string, "Signature ID", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Signature))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @spec get_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def get_signature(conn, %{"id" => document_id, "signature_id" => signature_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
+         %ESignature{} = signature <- Signatures.get_signature(signature_id, document_id) do
+      render(conn, "signature.json", signature: signature)
+    end
+  end
+
+  @doc """
+  Create a signature record for an existing counterparty
+  """
+  swagger_path :create_signature do
+    post("/contents/{id}/signatures")
+    summary("Create signature record")
+
+    description(
+      "API to create a signature record for an existing counterparty on a document. This generates the verification token but does not send the email (use request_signature for that)."
+    )
+
+    parameters do
+      id(:path, :string, "Document ID", required: true)
+
+      signature_request(:body, Schema.ref(:CreateSignatureRequest), "Signature creation details",
+        required: true
+      )
+    end
+
+    response(200, "Ok", Schema.ref(:Signature))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec create_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def create_signature(conn, %{"id" => document_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+         %ESignature{} = signature <- Signatures.create_signature(instance, current_user) do
+      render(conn, "signature.json", signature: signature)
     end
   end
 
