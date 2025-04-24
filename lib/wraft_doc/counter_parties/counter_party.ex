@@ -32,6 +32,10 @@ defmodule WraftDoc.CounterParties.CounterParty do
     ])
     |> validate_required([:name, :content_id])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
+    |> unique_constraint(:user_id,
+      name: :counter_parties_user_id_content_id_index,
+      message: "Counterparty already exists for this document"
+    )
   end
 
   def update_status_changeset(counter_parties, attrs) do

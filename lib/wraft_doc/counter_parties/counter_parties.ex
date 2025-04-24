@@ -25,29 +25,6 @@ defmodule WraftDoc.CounterParties do
     do: Repo.get_by(CounterParty, content_id: document_id, email: email)
 
   @doc """
-  Get or create a counterparty for a document
-  """
-  @spec get_or_create_counter_party(Instance.t(), map(), User.t()) ::
-          CounterParty.t() | {:error, Ecto.Changeset.t()}
-  def get_or_create_counter_party(
-        %Instance{id: document_id} = instance,
-        %{"name" => _name, "email" => email} = params,
-        %User{} = user
-      ) do
-    document_id
-    |> get_counterparty(email)
-    |> case do
-      nil ->
-        add_counterparty(instance, params, user)
-
-      %CounterParty{} = counter_party ->
-        counter_party
-    end
-  end
-
-  def get_or_create_counter_party(_, _, _), do: {:error, :invalid_data}
-
-  @doc """
     Accept counterparty access to document
   """
   @spec approve_document_access(CounterParty.t()) ::

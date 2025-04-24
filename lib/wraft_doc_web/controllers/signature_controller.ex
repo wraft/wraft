@@ -146,7 +146,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
          %User{} = invited_user <- Account.get_or_create_guest_user(params),
          %CounterParty{} = counterparty <-
-           CounterParties.get_or_create_counter_party(instance, params, invited_user) do
+           CounterParties.add_counterparty(instance, params, invited_user) do
       render(conn, "counterparty.json", counterparty: counterparty)
     end
   end
