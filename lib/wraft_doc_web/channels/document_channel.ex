@@ -5,11 +5,12 @@ defmodule WraftDocWeb.DocumentChannel do
   require Logger
 
   use Phoenix.Channel
+  alias WraftDoc.Documents
   alias Yex.Sync.SharedDoc
 
   @impl true
-  def join("doc_room:" <> content_id, payload, socket) do
-    if authorized?(payload) do
+  def join("doc_room:" <> content_id, _payload, socket) do
+    if authorized?(content_id, socket.assigns.current_user) do
       case start_shared_doc(content_id) do
         {:ok, docpid} ->
           Process.monitor(docpid)
@@ -79,8 +80,17 @@ defmodule WraftDocWeb.DocumentChannel do
     end
   end
 
-  # Add authorization logic here as required.
-  defp authorized?(_payload) do
-    true
+  defp authorized?(content_id, current_user) do
+    cache_key = {:doc_access, current_user.id, content_id}
+
+    case WraftDoc.SessionCache.get(cache_key) do
+      {:ok, access} when is_boolean(access) ->
+        access
+
+      _ ->
+        access_result = Documents.has_access?(current_user, content_id)
+        WraftDoc.SessionCache.put(cache_key, access_result, 15 * 60 * 1000)
+        access_result
+    end
   end
 end
