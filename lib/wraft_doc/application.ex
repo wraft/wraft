@@ -13,6 +13,7 @@ defmodule WraftDoc.Application do
       WraftDoc.Repo,
       # Start the endpoint when the application starts
       WraftDocWeb.Endpoint,
+      WraftDoc.SessionCache,
       # PubSub added here after updated to phoenix 1.6.4
       {Phoenix.PubSub, [name: WraftDoc.PubSub, adapter: Phoenix.PubSub.PG2]},
       WraftDoc.Search.TypesenseServer,
