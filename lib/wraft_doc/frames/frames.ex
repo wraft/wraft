@@ -60,8 +60,12 @@ defmodule WraftDoc.Frames do
   @doc """
   Checks if a frame name already exists
   """
-  @spec frame_name_exists?(String.t()) :: boolean()
-  def frame_name_exists?(name), do: Repo.exists?(from(f in Frame, where: f.name == ^name))
+  @spec frame_name_exists?(String.t(), User.t()) :: boolean()
+  def frame_name_exists?(name, %User{current_org_id: organisation_id}),
+    do:
+      Repo.exists?(
+        from(f in Frame, where: f.name == ^name and f.organisation_id == ^organisation_id)
+      )
 
   @doc """
   Create a frame.

@@ -5,7 +5,9 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
   plug WraftDocWeb.Plug.AddActionLog
 
   plug WraftDocWeb.Plug.Authorized,
-    import_global_file: "global_import:manage"
+    import_global_file: "global_import:manage",
+    pre_import_global_file: "global_import:manage",
+    validate_global_file: "global_import:manage"
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -112,7 +114,9 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
 
   @spec pre_import_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def pre_import_global_file(conn, %{"file" => file}) do
-    with {:ok, response} <- GlobalFile.pre_import_global_file(file) do
+    current_user = conn.assigns.current_user
+
+    with {:ok, response} <- GlobalFile.pre_import_global_file(current_user, file) do
       render(conn, "pre_import_global_file.json", %{
         response: response
       })
@@ -124,7 +128,6 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
   @doc """
   Validates a global file.
   """
-  # TODO update swagger
   swagger_path :validate_global_file do
     post("/global_asset/validate")
     summary("Validate a global file")
@@ -141,13 +144,15 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
 
   @spec re_validate_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def re_validate_global_file(conn, %{"file" => %{path: file_path} = file} = params) do
+    current_user = conn.assigns.current_user
+
     with :ok <- GlobalFile.validate_global_file(file),
          {:ok, _} <- FileValidator.validate_file(file_path),
          {:ok, metadata} <- FileHelper.get_file_metadata(file),
          metadata <-
            Map.merge(metadata, Map.take(params, ["name", "description"])),
          :ok <-
-           GlobalFile.re_validate_global_asset(Map.merge(params, metadata)) do
+           GlobalFile.re_validate_global_asset(current_user, Map.merge(params, metadata)) do
       render(conn, "global_file_validation.json", %{
         message: "Validation completed successfully"
       })

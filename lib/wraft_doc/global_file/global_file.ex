@@ -60,14 +60,14 @@ defmodule WraftDoc.GlobalFile do
   @doc """
   Pre import global file returns metadata, file details and errors.
   """
-  @spec pre_import_global_file(Plug.Upload.t()) :: {:ok, map()} | {:error, String.t()}
-  def pre_import_global_file(%{path: file_path} = file) do
+  @spec pre_import_global_file(User.t(), Plug.Upload.t()) :: {:ok, map()} | {:error, String.t()}
+  def pre_import_global_file(current_user, %{path: file_path} = file) do
     with :ok <- validate_global_file(file),
          {:ok, file_binary} <- FileHelper.read_file_contents(file_path),
          {:ok, _} <- FileHelper.get_file_metadata(file) do
       %{wraft_json: nil, file_details: nil, errors: []}
       |> process_file_validation(file_path)
-      |> process_file_metadata(file)
+      |> process_file_metadata(file, current_user)
       |> process_wraft_json(file_binary)
       |> add_file_details(file)
       |> finalize_result()
@@ -86,12 +86,12 @@ defmodule WraftDoc.GlobalFile do
     end
   end
 
-  defp process_file_metadata(result, file) do
+  defp process_file_metadata(result, file, current_user) do
     file
     |> FileHelper.get_file_metadata()
     |> case do
       {:ok, %{"name" => name, "type" => "frame"}} ->
-        if Frames.frame_name_exists?(name) do
+        if Frames.frame_name_exists?(name, current_user) do
           add_error(result, "metadata_error", "A frame with the name '#{name}' already exists")
         else
           result
@@ -170,9 +170,9 @@ defmodule WraftDoc.GlobalFile do
   @doc """
   Re-validate global file.
   """
-  @spec re_validate_global_asset(map()) :: :ok | {:error, String.t(), list(map())}
-  def re_validate_global_asset(%{"file" => file, "type" => "frame", "name" => name}) do
-    if Frames.frame_name_exists?(name) do
+  @spec re_validate_global_asset(User.t(), map()) :: :ok | {:error, String.t(), list(map())}
+  def re_validate_global_asset(current_user, %{"file" => file, "type" => "frame", "name" => name}) do
+    if Frames.frame_name_exists?(name, current_user) do
       {:error, "A frame with the name '#{name}' already exists"}
     else
       FileHelper.validate_frame_file(file)
@@ -180,6 +180,7 @@ defmodule WraftDoc.GlobalFile do
   end
 
   def re_validate_global_asset(
+        _,
         %{"file" => %{path: file_path} = file, "type" => "template_asset"} = params
       ) do
     with :ok <- TemplateAssets.validate_template_asset_file(file),
