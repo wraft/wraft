@@ -139,7 +139,7 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
   @doc """
   Validates a global file.
   """
-  swagger_path :validate_global_file do
+  swagger_path :re_validate_global_file do
     post("/global_asset/validate")
     summary("Validate a global file")
 

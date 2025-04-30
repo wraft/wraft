@@ -67,14 +67,12 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             theme_id: "123ki3491n49",
             prefix: "OFFLET",
             color: "#fff",
-            frame_mapping: %{
-              mapping: [
-                %{"source" => "Proposal_type", "destination" => "Title"},
-                %{"source" => "Project_name", "destination" => "Project"},
-                %{"source" => "Ref_no", "destination" => "Quotation Ref No"},
-                %{"source" => "Client_name", "destination" => "Proposed to"}
-              ]
-            }
+            frame_mapping: [
+              %{"source" => "Proposal_type", "destination" => "Title"},
+              %{"source" => "Project_name", "destination" => "Project"},
+              %{"source" => "Ref_no", "destination" => "Quotation Ref No"},
+              %{"source" => "Client_name", "destination" => "Proposed to"}
+            ]
           })
         end,
       ContentTypeFieldRequest:
