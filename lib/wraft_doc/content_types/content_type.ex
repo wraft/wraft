@@ -21,7 +21,7 @@ defmodule WraftDoc.ContentTypes.ContentType do
     field(:color, :string)
     field(:prefix, :string)
     field(:type, Ecto.Enum, values: @document_type, default: :document)
-    field(:frame_mapping, :map)
+    field(:frame_mapping, {:array, :map})
 
     belongs_to(:layout, Layout)
     belongs_to(:creator, WraftDoc.Account.User)

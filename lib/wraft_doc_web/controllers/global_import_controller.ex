@@ -65,13 +65,18 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
     summary("Import a global file")
     description("Imports a global file using the provided asset ID and additional parameters.")
 
+    consumes("multipart/form-data")
+
     parameters do
-      file(:formData, :file, "The ID of the asset to import", required: true)
+      name(:formData, :string, "Name of the global file")
+      description(:formData, :string, "Description of the global file")
+
+      file(:formData, :file, "The ID of the asset to import")
     end
 
     response(200, "File imported successfully", Schema.ref(:GlobalImportResponse))
-
     response(400, "Bad Request")
+    response(401, "Unauthorized")
   end
 
   @spec import_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -104,12 +109,18 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
       "Pre-imports and validates global file using the provided asset ID and additional parameters."
     )
 
+    consumes("multipart/form-data")
+
     parameters do
+      name(:formData, :string, "Name of the global file")
+      description(:formData, :string, "Description of the global file")
+
       file(:formData, :file, "The ID of the asset to import", required: true)
     end
 
     response(200, "ok", Schema.ref(:GlobalPreImportResponse))
     response(400, "Bad request", Schema.ref(:Error))
+    response(401, "Unauthorized")
   end
 
   @spec pre_import_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()
@@ -135,11 +146,14 @@ defmodule WraftDocWeb.Api.V1.GlobalImportController do
     description("Validates a global file using the provided asset ID and additional parameters.")
 
     parameters do
+      name(:formData, :string, "Name of the global file")
+      description(:formData, :string, "Description of the global file")
       file(:formData, :file, "The ID of the asset to import", required: true)
     end
 
     response(200, "ok", Schema.ref(:GlobalPreImportResponse))
     response(400, "Bad request", Schema.ref(:Error))
+    response(401, "Unauthorized")
   end
 
   @spec re_validate_global_file(Plug.Conn.t(), map()) :: Plug.Conn.t()

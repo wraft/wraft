@@ -165,14 +165,15 @@ defmodule WraftDoc.Frames do
   @doc """
     Transform data by frame mapping
   """
-  @spec transform_data_by_mapping(map(), map()) :: map() | {:error, String.t()}
-  def transform_data_by_mapping(%{"mapping" => mappings}, data) do
+  @spec transform_data_by_mapping(list(), map()) :: map() | {:error, String.t()}
+
+  def transform_data_by_mapping(nil, _data), do: {:error, "No mappings found"}
+
+  def transform_data_by_mapping(mappings, data) do
     mappings
     |> transform_mappings
     |> transform_data(data)
   end
-
-  def transform_data_by_mapping(nil, _data), do: {:error, "No mappings found"}
 
   defp transform_mappings(mappings) do
     Enum.reduce(mappings, %{}, fn %{
@@ -212,7 +213,7 @@ defmodule WraftDoc.Frames do
 
   def check_frame_mapping(%ContentType{
         fields: content_type_fields,
-        frame_mapping: %{"mapping" => mappings},
+        frame_mapping: mappings,
         layout: %Layout{
           frame: %Frame{
             fields: frame_fields

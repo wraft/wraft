@@ -3,7 +3,7 @@ defmodule WraftDoc.Repo.Migrations.AddFrameMappingToContentType do
 
   def up do
     alter table(:content_type) do
-      add(:frame_mapping, :jsonb)
+      add(:frame_mapping, {:array, :map})
     end
   end
 
