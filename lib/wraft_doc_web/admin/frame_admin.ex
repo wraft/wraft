@@ -80,7 +80,7 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
       Assets.create_asset(nil, Map.merge(params, %{"type" => "frame"}))
     end)
     |> Multi.run(:create_template_asset, fn _, %{create_asset: %Asset{id: asset_id}} ->
-      Frames.create_frame(nil, Map.merge(params, %{"assets" => asset_id}))
+      Frames.create_frame(nil, Map.merge(params, %{"assets" => asset_id, "type" => "typst"}))
     end)
     |> Repo.transaction()
     |> case do

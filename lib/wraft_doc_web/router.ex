@@ -204,15 +204,6 @@ defmodule WraftDocWeb.Router do
           # Data template
           resources("/data_templates", DataTemplateController, only: [:create, :index])
           post("/data_templates/bulk_import", DataTemplateController, :bulk_import)
-
-          get("/check_frame_mapping", FrameMappingController, :check_frame_mapping)
-
-          # Frame Fields mapping
-          scope "/frames/:frame_id" do
-            post("/mapping", FrameMappingController, :create)
-            get("/mapping/:mapping_id", FrameMappingController, :show)
-            put("/mapping/:mapping_id", FrameMappingController, :update)
-          end
         end
       end
 

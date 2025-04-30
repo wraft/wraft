@@ -9,7 +9,6 @@ defmodule WraftDoc.ContentTypes.ContentType do
   alias __MODULE__
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Enterprise.Flow
-  alias WraftDoc.Frames.FrameMapping
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Themes.Theme
 
@@ -22,6 +21,8 @@ defmodule WraftDoc.ContentTypes.ContentType do
     field(:color, :string)
     field(:prefix, :string)
     field(:type, Ecto.Enum, values: @document_type, default: :document)
+    field(:frame_mapping, :map)
+
     belongs_to(:layout, Layout)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
@@ -35,7 +36,6 @@ defmodule WraftDoc.ContentTypes.ContentType do
     has_many(:pipelines, through: [:stages, :pipeline])
     has_many(:content_type_roles, WraftDoc.ContentTypes.ContentTypeRole)
     has_many(:roles, through: [:content_type_roles, :role])
-    has_one(:frame_mappings, FrameMapping)
 
     timestamps()
   end
@@ -50,6 +50,7 @@ defmodule WraftDoc.ContentTypes.ContentType do
         :type,
         :prefix,
         :color,
+        :frame_mapping,
         :layout_id,
         :flow_id,
         :theme_id,
@@ -82,6 +83,7 @@ defmodule WraftDoc.ContentTypes.ContentType do
       :description,
       :type,
       :color,
+      :frame_mapping,
       :layout_id,
       :flow_id,
       :prefix,

@@ -196,7 +196,7 @@ defmodule WraftDoc.Assets do
       :creator,
       :organisation,
       :engine,
-      frame: [:asset, fields: [:field_type]]
+      frame: [:asset]
     ])
   end
 

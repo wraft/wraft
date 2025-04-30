@@ -6,7 +6,6 @@ defmodule WraftDoc.Frames.Frame do
   alias WraftDoc.Account.User
   alias WraftDoc.Assets.Asset
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.Frames.FrameField
 
   schema "frame" do
     field(:name, :string)
@@ -15,13 +14,11 @@ defmodule WraftDoc.Frames.Frame do
     field(:file_size, :string)
     field(:wraft_json, :map)
     field(:thumbnail, WraftDocWeb.FrameThumbnailUploader.Type)
+    field(:fields, {:array, :map}, default: [])
 
     belongs_to(:asset, Asset)
     belongs_to(:creator, User)
     belongs_to(:organisation, Organisation)
-
-    has_many(:frame_fields, FrameField)
-    has_many(:fields, through: [:frame_fields, :field])
 
     timestamps()
   end
@@ -32,6 +29,7 @@ defmodule WraftDoc.Frames.Frame do
       :name,
       :description,
       :type,
+      :fields,
       :asset_id,
       :organisation_id,
       :creator_id,
@@ -53,6 +51,7 @@ defmodule WraftDoc.Frames.Frame do
       :description,
       :type,
       :asset_id,
+      :fields,
       :organisation_id,
       :creator_id,
       :wraft_json,
@@ -73,6 +72,7 @@ defmodule WraftDoc.Frames.Frame do
       :description,
       :type,
       :asset_id,
+      :fields,
       :organisation_id,
       :creator_id,
       :wraft_json,

@@ -2,10 +2,9 @@ defmodule WraftDocWeb.Api.V1.FrameView do
   use WraftDocWeb, :view
 
   alias WraftDocWeb.Api.V1.AssetView
-  alias WraftDocWeb.Api.V1.FieldTypeView
   alias WraftDocWeb.FrameThumbnailUploader
 
-  def render("create.json", %{frame: frame}) do
+  def render("create.json", %{frame: %{wraft_json: wraft_json} = frame}) do
     %{
       id: frame.id,
       name: frame.name,
@@ -13,8 +12,8 @@ defmodule WraftDocWeb.Api.V1.FrameView do
       type: frame.type,
       thumbnail: generate_thumbnail_url(frame),
       asset: render_one(frame.asset, AssetView, "asset.json", as: :asset),
-      fields: render_many(frame.fields, __MODULE__, "field.json", as: :field),
-      meta: frame.wraft_json,
+      fields: frame.fields,
+      meta: wraft_json,
       updated_at: frame.updated_at,
       inserted_at: frame.inserted_at
     }
@@ -37,16 +36,6 @@ defmodule WraftDocWeb.Api.V1.FrameView do
   def render("show.json", %{frame: frame}) do
     %{
       frame: render_one(frame, __MODULE__, "create.json", as: :frame)
-    }
-  end
-
-  def render("field.json", %{field: field}) do
-    %{
-      id: field.id,
-      name: field.name,
-      meta: field.meta,
-      description: field.description,
-      field_type: render_one(field.field_type, FieldTypeView, "field_type.json", as: :field_type)
     }
   end
 

@@ -42,6 +42,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             flow_id(:string, "ID of the flow selected", required: true)
             theme_id(:string, "ID of the flow selected", required: true)
             color(:string, "Hex code of color")
+            frame_mapping(Schema.ref(:ContentTypeFrameMapping))
 
             prefix(:string, "Prefix to be used for generating Unique ID for contents",
               required: true
@@ -65,7 +66,15 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
             flow_id: "234okjnskjb8234",
             theme_id: "123ki3491n49",
             prefix: "OFFLET",
-            color: "#fff"
+            color: "#fff",
+            frame_mapping: %{
+              mapping: [
+                %{"source" => "Proposal_type", "destination" => "Title"},
+                %{"source" => "Project_name", "destination" => "Project"},
+                %{"source" => "Ref_no", "destination" => "Quotation Ref No"},
+                %{"source" => "Client_name", "destination" => "Proposed to"}
+              ]
+            }
           })
         end,
       ContentTypeFieldRequest:
@@ -119,6 +128,26 @@ defmodule WraftDocWeb.Api.V1.ContentTypeController do
           description("List of data to be send to add fields to content type.")
           type(:array)
           items(Schema.ref(:ContentTypeFieldRequest))
+        end,
+      ContentTypeFrameMapping:
+        swagger_schema do
+          title("Frame Mapping")
+          description("Mapping of fields between source and destination")
+
+          properties do
+            mapping(:array, "List of frame field mappings", required: true)
+          end
+
+          example(%{
+            mapping: [
+              %{"source" => "Proposal_type", "destination" => "Title"},
+              %{"source" => "Sub Title", "destination" => "Sub title"},
+              %{"source" => "Project_name", "destination" => "Project"},
+              %{"source" => "Ref_no", "destination" => "Quotation Ref No"},
+              %{"source" => "Client_name", "destination" => "Proposed to"},
+              %{"source" => "Date", "destination" => "Date"}
+            ]
+          })
         end,
       ContentTypeWithFields:
         swagger_schema do
