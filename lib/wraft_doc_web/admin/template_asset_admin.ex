@@ -88,9 +88,23 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
            insert_multi(params, file_name) do
       {:ok, template_asset}
     else
-      {:error, %Ecto.Changeset{} = changeset} -> {:error, changeset}
-      {:error, reason} -> {:error, {changeset, reason}}
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, changeset}
+
+      {:error, reason} when is_list(reason) ->
+        changeset
+        |> attach_errors_to_changeset(reason)
+        |> then(&{:error, &1})
+
+      {:error, reason} ->
+        {:error, {changeset, reason}}
     end
+  end
+
+  defp attach_errors_to_changeset(changeset, errors) do
+    Enum.reduce(errors, changeset, fn %{message: message, type: type}, acc_changeset ->
+      Ecto.Changeset.add_error(acc_changeset, :file, "#{type}: #{message}")
+    end)
   end
 
   defp insert_multi(params, file_name) do

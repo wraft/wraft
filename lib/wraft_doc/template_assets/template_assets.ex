@@ -1136,6 +1136,7 @@ defmodule WraftDoc.TemplateAssets do
     |> case do
       {:ok, "template_asset"} -> true
       {:error, reason} -> {:error, reason}
+      _ -> {:error, "Invalid file type. Expected a template asset file."}
     end
   end
 

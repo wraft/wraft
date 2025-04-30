@@ -65,22 +65,37 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
     %{"file" => file} = params = conn.params["frame"]
 
     with :ok <- FileHelper.validate_frame_file(file),
-         {:ok, params} <- Frames.process_frame_params(params),
+         {:ok, metadata} <- FileHelper.get_file_metadata(file),
+         {:ok, params} <- Frames.process_frame_params(Map.merge(params, metadata)),
          {:ok, %Frame{} = frame} <- insert_multi(params) do
       {:ok, frame}
     else
-      {:error, %Ecto.Changeset{} = changeset} -> {:error, changeset}
-      {:error, reason} -> {:error, {changeset, reason}}
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, changeset}
+
+      {:error, reason} when is_list(reason) ->
+        changeset
+        |> attach_errors_to_changeset(reason)
+        |> then(&{:error, &1})
+
+      {:error, reason} ->
+        {:error, {changeset, reason}}
     end
   end
 
-  defp insert_multi(params) do
+  defp attach_errors_to_changeset(changeset, errors) do
+    Enum.reduce(errors, changeset, fn %{message: message, type: type}, acc_changeset ->
+      Ecto.Changeset.add_error(acc_changeset, :file, "#{type}: #{message}")
+    end)
+  end
+
+  defp insert_multi(%{"frameType" => frame_type} = params) do
     Multi.new()
     |> Multi.run(:create_asset, fn _, _ ->
       Assets.create_asset(nil, Map.merge(params, %{"type" => "frame"}))
     end)
     |> Multi.run(:create_template_asset, fn _, %{create_asset: %Asset{id: asset_id}} ->
-      Frames.create_frame(nil, Map.merge(params, %{"assets" => asset_id, "type" => "typst"}))
+      Frames.create_frame(nil, Map.merge(params, %{"assets" => asset_id, "type" => frame_type}))
     end)
     |> Repo.transaction()
     |> case do

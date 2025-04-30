@@ -72,8 +72,9 @@ defmodule WraftDoc.Frames do
         %{"file" => %{path: file_path} = file} = params
       ) do
     with {:ok, _} <- FileValidator.validate_file(file_path),
+         {:ok, metadata} <- FileHelper.get_file_metadata(file),
          :ok <- FileHelper.validate_frame_file(file),
-         {:ok, params} <- process_frame_params(params),
+         {:ok, params} <- process_frame_params(Map.merge(params, metadata)),
          {:ok, %Frame{} = frame} <-
            create_frame_multi(
              current_user,
