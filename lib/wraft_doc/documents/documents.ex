@@ -1099,9 +1099,12 @@ defmodule WraftDoc.Documents do
       |> document_option_header(document_settings, slug)
       |> concat_strings("--- \n")
 
+    raw =
+      instance.serialized["serialized"] |> Jason.decode!() |> ProsemirrorToMarkdown.convert()
+
     """
     #{header}
-    #{instance.raw}
+    #{raw}
     """
   end
 
@@ -1534,7 +1537,6 @@ defmodule WraftDoc.Documents do
       |> Map.put("serialized", Jason.encode!(updated_content))
 
     raw = ProsemirrorToMarkdown.convert(updated_content)
-
     %{"raw" => raw, "serialized" => serialized}
   end
 
