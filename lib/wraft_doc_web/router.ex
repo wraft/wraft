@@ -232,6 +232,11 @@ defmodule WraftDocWeb.Router do
       resources("/engines", EngineController, only: [:index])
       resources("/frames", FrameController)
 
+      # drive authentication
+      get("/oauth/authorize", CloudServiceController, :authorize)
+      get("/oauth/callback", CloudServiceController, :callback)
+      get("/oauth/files", CloudServiceController, :list_files)
+
       scope "/forms" do
         # Forms
         resources("/", FormController, except: [:new, :edit])

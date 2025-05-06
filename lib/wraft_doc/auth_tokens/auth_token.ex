@@ -12,13 +12,16 @@ defmodule WraftDoc.AuthTokens.AuthToken do
     :email_verify,
     :set_password,
     :delete_organisation,
-    :document_invite
+    :document_invite,
+    :google_oauth
   ]
 
   schema "auth_token" do
     field(:value, :string)
     field(:token_type, Ecto.Enum, values: @token_types)
     field(:expiry_datetime, :naive_datetime)
+    field(:meta_data, :map, default: %{})
+
     belongs_to(:user, WraftDoc.Account.User)
 
     timestamps()

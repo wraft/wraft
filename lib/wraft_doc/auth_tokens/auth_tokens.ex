@@ -388,6 +388,28 @@ defmodule WraftDoc.AuthTokens do
     end
   end
 
+  @spec insert_google_oauth_token(User.t(), String.t(), map()) :: AuthToken.t()
+  def insert_google_oauth_token(%User{id: user_id} = user, access_token, %{
+        "refresh_token" => refresh_token,
+        "expires_at" => expires_at
+      }) do
+    # Delete old Google tokens if any
+    delete_auth_token(user_id, "google_oauth")
+
+    expiry_dt = DateTime.to_naive(DateTime.from_unix!(expires_at))
+
+    params = %{
+      value: access_token,
+      token_type: :google_oauth,
+      expiry_datetime: expiry_dt,
+      metadata: %{
+        "refresh_token" => refresh_token
+      }
+    }
+
+    insert_auth_token!(user, params)
+  end
+
   @doc """
     Create set password token
   """
@@ -396,5 +418,13 @@ defmodule WraftDoc.AuthTokens do
     token = WraftDoc.create_phx_token("set_password", user.email, max_age: :infinity)
     params = %{value: token, token_type: "set_password"}
     insert_auth_token!(user, params)
+  end
+
+  def get_auth_token_by_type(user_id, token_type) do
+    AuthToken
+    |> where([t], t.user_id == ^user_id and t.token_type == ^token_type)
+    |> order_by([t], desc: t.inserted_at)
+    |> limit(1)
+    |> Repo.one()
   end
 end

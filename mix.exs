@@ -162,7 +162,10 @@ defmodule WraftDoc.Mixfile do
 
       # markdown
       {:mdex, "~> 0.3.3"},
-      {:file_type, "~> 0.1.0"}
+      {:file_type, "~> 0.1.0"},
+
+      # cloud authentication
+      {:oauth2, "~> 2.0"}
     ]
   end
 
