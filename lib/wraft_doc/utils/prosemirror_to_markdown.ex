@@ -124,26 +124,32 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     Enum.map_join(String.split(text, "\n"), "\n", &(prefix <> &1))
   end
 
-  defp convert_list_item(%{"type" => "listItem", "content" => content}, kind, opts, level) do
-    prefix =
-      case kind do
-        "bullet" -> String.duplicate("  ", level) <> "- "
-        "ordered" -> String.duplicate("  ", level) <> "1. "
-        _ -> String.duplicate("  ", level) <> "- "
-      end
+  defp convert_list_item(%{"type" => "listItem", "content" => content}, "bullet", opts, level) do
+    prefix = String.duplicate("  ", level) <> "- "
+    process_list_item_content(content, prefix, opts)
+  end
 
-    Enum.map_join(content, "\n", fn node ->
-      case node["type"] do
-        "paragraph" ->
-          paragraph_content = Enum.map_join(node["content"], "", &convert_node(&1, opts))
-          prefix <> paragraph_content
+  defp convert_list_item(%{"type" => "listItem", "content" => content}, "ordered", opts, level) do
+    prefix = String.duplicate("  ", level) <> "1. "
+    process_list_item_content(content, prefix, opts)
+  end
 
-        "list" ->
-          convert_node(node, opts)
+  defp convert_list_item(%{"type" => "listItem", "content" => content}, _kind, opts, level) do
+    prefix = String.duplicate("  ", level) <> "- "
+    process_list_item_content(content, prefix, opts)
+  end
 
-        _ ->
-          raise(InvalidJsonError, "Invalid list item content type: #{node["type"]}")
-      end
+  defp process_list_item_content(content, prefix, opts) do
+    Enum.map_join(content, "\n", fn
+      %{"type" => "paragraph", "content" => paragraph_content} ->
+        paragraph_text = Enum.map_join(paragraph_content, "", &convert_node(&1, opts))
+        prefix <> paragraph_text
+
+      %{"type" => "list"} = list_node ->
+        convert_node(list_node, opts)
+
+      %{"type" => invalid_type} ->
+        raise(InvalidJsonError, "Invalid list item content type: #{invalid_type}")
     end)
   end
 
@@ -266,23 +272,27 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     end)
   end
 
-  defp calculate_content_width(cell) do
-    cell.content
+  defp calculate_content_width(%{content: content} = _cell) do
+    content
     |> String.split("\n", trim: false)
     |> Enum.map(&String.length/1)
     |> Enum.max(fn -> 0 end)
   end
 
-  defp update_spanned_columns(cell, acc_widths, content_width) do
-    span_widths = Enum.slice(acc_widths, cell.col_start, cell.colspan)
+  defp update_spanned_columns(
+         %{col_start: col_start, colspan: colspan} = _cell,
+         acc_widths,
+         content_width
+       ) do
+    span_widths = Enum.slice(acc_widths, col_start, colspan)
     span_total = Enum.sum(span_widths)
 
-    if content_width > span_total - (cell.colspan - 1) * 3 do
-      required_width = content_width + (cell.colspan - 1) * 3
-      width_per_col = required_width / cell.colspan
+    if content_width > span_total - (colspan - 1) * 3 do
+      required_width = content_width + (colspan - 1) * 3
+      width_per_col = required_width / colspan
 
       Enum.with_index(acc_widths, fn width, idx ->
-        if idx >= cell.col_start && idx < cell.col_start + cell.colspan do
+        if idx >= col_start && idx < col_start + colspan do
           max(width, ceil(width_per_col))
         else
           width
@@ -293,8 +303,8 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     end
   end
 
-  defp update_single_column(cell, acc_widths, content_width) do
-    List.update_at(acc_widths, cell.col_start, fn width ->
+  defp update_single_column(%{col_start: col_start} = _cell, acc_widths, content_width) do
+    List.update_at(acc_widths, col_start, fn width ->
       max(width, content_width)
     end)
   end
