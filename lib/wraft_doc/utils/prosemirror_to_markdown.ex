@@ -11,7 +11,8 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
       iex> WraftDoc.ProsemirrorToMarkdown.convert(%{"type" => "invalid"})
       ** (WraftDoc.ProsemirrorToMarkdown.InvalidJsonError) Invalid ProseMirror JSON format.
   """
-  @default_min_col_width 100
+
+  @default_min_col_width 50
 
   def convert(%{"type" => "doc", "content" => content}, opts \\ []) do
     Enum.map_join(content, "\n\n", &convert_node(&1, opts))
@@ -72,10 +73,9 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   defp convert_node(%{"type" => "holder"}, _opts),
     do: raise(InvalidJsonError, "Invalid holder format.")
 
-  defp convert_node(%{"type" => "table", "content" => rows}, opts) when is_list(rows) do
+  defp convert_node(%{"type" => "table", "content" => rows} = _table, opts) when is_list(rows) do
     table_data = process_table_structure(rows)
     col_widths = calculate_column_widths(table_data)
-
     border = create_table_line(col_widths)
 
     formatted_rows = format_table_rows(table_data, col_widths, opts)
@@ -169,7 +169,7 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp process_row_cells(cells, span_tracker, col_index) do
     {row_cells, updated_tracker, next_col} =
-      handle_spanning_cells(span_tracker, col_index, [])
+      handle_rowspans(span_tracker, col_index, [])
 
     Enum.reduce(cells, {row_cells, updated_tracker, next_col}, fn cell,
                                                                   {acc_cells, curr_tracker,
@@ -196,7 +196,12 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
             spans =
               Enum.reduce(0..(colspan - 1), spans_for_row, fn col_offset, spans ->
-                Map.put(spans, curr_col + col_offset, true)
+                Map.put(spans, curr_col + col_offset, %{
+                  content: cell_content,
+                  colspan: colspan,
+                  col_start: curr_col,
+                  primary_col: col_offset == 0
+                })
               end)
 
             Map.put(tracker, row_offset, spans)
@@ -209,24 +214,42 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     end)
   end
 
-  defp handle_spanning_cells(span_tracker, col_index, acc_cells) do
+  defp handle_rowspans(span_tracker, col_index, acc_cells) do
     spans = Map.get(span_tracker, 0, %{})
 
     cond do
       map_size(spans) == 0 ->
         {acc_cells, Map.delete(span_tracker, 0), col_index}
 
-      Map.get(spans, col_index) ->
-        new_tracker = update_span_tracker(span_tracker, spans, col_index)
-        handle_spanning_cells(new_tracker, col_index + 1, acc_cells)
+      Map.has_key?(spans, col_index) ->
+        span_data = Map.get(spans, col_index)
+
+        if span_data.primary_col do
+          cell_info = %{
+            content: span_data.content,
+            colspan: span_data.colspan,
+            rowspan: 1,
+            col_start: col_index
+          }
+
+          new_cells = acc_cells ++ [cell_info]
+          new_tracker = update_span_tracker(span_tracker, spans, col_index, span_data.colspan)
+          handle_rowspans(new_tracker, col_index + span_data.colspan, new_cells)
+        else
+          new_tracker = update_span_tracker(span_tracker, spans, col_index, 1)
+          handle_rowspans(new_tracker, col_index + 1, acc_cells)
+        end
 
       true ->
         {acc_cells, span_tracker, col_index}
     end
   end
 
-  defp update_span_tracker(span_tracker, spans, col_index) do
-    new_spans = Map.delete(spans, col_index)
+  defp update_span_tracker(span_tracker, spans, col_index, colspan) do
+    new_spans =
+      Enum.reduce(0..(colspan - 1), spans, fn offset, acc ->
+        Map.delete(acc, col_index + offset)
+      end)
 
     if map_size(new_spans) > 0 do
       Map.put(span_tracker, 0, new_spans)
@@ -310,38 +333,273 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   end
 
   defp format_table_rows(table_data, col_widths, opts) do
-    {header_rows, body_rows} =
-      case table_data do
-        [first_row | rest] -> {[first_row], rest}
-        [] -> {[], []}
-      end
+    {header_rows, body_rows} = split_table_rows(table_data)
 
-    header_content = format_rows(header_rows, col_widths, opts)
+    header_content = format_header_content(header_rows, col_widths, opts)
+    header_separator = generate_header_separator(header_rows, col_widths)
+    header_has_rowspan_to_body = check_header_rowspan_to_body(header_rows, body_rows)
 
-    body_content = format_rows(body_rows, col_widths, opts)
+    body_content =
+      format_body_content(
+        header_rows,
+        body_rows,
+        col_widths,
+        opts,
+        header_content,
+        header_has_rowspan_to_body
+      )
 
-    header_separator = create_table_line(col_widths, "=")
+    combine_header_and_body(
+      header_content,
+      header_separator,
+      body_content,
+      header_has_rowspan_to_body
+    )
+  end
 
-    case {header_content, body_content} do
-      {"", ""} -> ""
-      {"", body} -> body
-      {header, ""} -> header
-      {header, body} -> header <> "\n" <> header_separator <> "\n" <> body
+  defp split_table_rows([first_row | rest]), do: {[first_row], rest}
+  defp split_table_rows([]), do: {[], []}
+
+  defp format_header_content(header_rows, col_widths, opts) do
+    Enum.map_join(header_rows, "\n", &format_row(&1, col_widths, opts))
+  end
+
+  defp generate_header_separator(header_rows, col_widths) do
+    if Enum.any?(header_rows) do
+      create_header_separator_line(header_rows, col_widths)
+    else
+      create_table_line(col_widths, "=")
     end
   end
 
-  defp format_rows(rows, col_widths, opts) do
-    row_separator = create_table_line(col_widths)
+  defp check_header_rowspan_to_body(header_rows, body_rows) do
+    Enum.any?(header_rows) && Enum.any?(body_rows) &&
+      Enum.any?(List.last(header_rows), fn cell ->
+        cell.rowspan > 1 && cell.rowspan > length(header_rows)
+      end)
+  end
 
-    rows
-    |> Enum.map(fn row -> format_row(row, col_widths, opts) end)
-    |> Enum.intersperse(row_separator)
+  defp format_body_content(
+         header_rows,
+         body_rows,
+         col_widths,
+         opts,
+         header_content,
+         header_has_rowspan_to_body
+       ) do
+    if Enum.any?(body_rows) do
+      all_rows = if header_has_rowspan_to_body, do: header_rows ++ body_rows, else: body_rows
+
+      if header_has_rowspan_to_body do
+        all_content = format_rows_with_rowspans(all_rows, col_widths, opts)
+
+        header_lines = String.split(header_content, "\n")
+        all_lines = String.split(all_content, "\n")
+
+        body_lines = Enum.drop(all_lines, length(header_lines))
+        Enum.join(body_lines, "\n")
+      else
+        format_rows_with_rowspans(body_rows, col_widths, opts)
+      end
+    else
+      ""
+    end
+  end
+
+  defp combine_header_and_body(
+         header_content,
+         header_separator,
+         body_content,
+         header_has_rowspan_to_body
+       ) do
+    case {header_content, body_content} do
+      {"", ""} ->
+        ""
+
+      {"", body} ->
+        body
+
+      {header, ""} ->
+        header
+
+      {header, body} ->
+        if header_has_rowspan_to_body do
+          header <> "\n" <> body
+        else
+          header <> "\n" <> header_separator <> "\n" <> body
+        end
+    end
+  end
+
+  defp format_rows_with_rowspans(rows, col_widths, opts) do
+    rowspan_matrix = create_rowspan_matrix(rows, length(col_widths))
+
+    0..(length(rows) - 1)
+    |> Enum.reduce([], fn row_idx, acc ->
+      formatted_row = format_row(Enum.at(rows, row_idx), col_widths, opts)
+
+      if row_idx == 0 do
+        [formatted_row | acc]
+      else
+        row_separator =
+          create_row_separator_with_rowspans(row_idx - 1, rows, rowspan_matrix, col_widths)
+
+        [formatted_row, row_separator | acc]
+      end
+    end)
+    |> Enum.reverse()
     |> Enum.join("\n")
   end
 
-  defp format_row(row_cells, col_widths, _opts) do
-    cell_content_map = build_cell_content_map(row_cells)
+  defp create_rowspan_matrix(rows, col_count) do
+    empty_matrix =
+      Enum.map(0..(length(rows) - 1), fn _ -> List.duplicate(:normal, col_count) end)
 
+    rows
+    |> Enum.with_index()
+    |> Enum.reduce(empty_matrix, &process_row_for_matrix/2)
+  end
+
+  defp process_row_for_matrix({row, row_idx}, matrix) do
+    Enum.reduce(row, matrix, fn cell, acc_matrix ->
+      case cell do
+        %{rowspan: rowspan} when rowspan > 1 ->
+          update_matrix_for_rowspan(
+            acc_matrix,
+            row_idx,
+            cell.col_start,
+            cell.colspan,
+            rowspan
+          )
+
+        _ ->
+          acc_matrix
+      end
+    end)
+  end
+
+  defp update_matrix_for_rowspan(matrix, row_idx, col_start, colspan, rowspan) do
+    matrix =
+      Enum.reduce(0..(colspan - 1), matrix, fn col_offset, acc_matrix ->
+        update_in(acc_matrix, [Access.at(row_idx), Access.at(col_start + col_offset)], fn _ ->
+          {:rowspan_start, rowspan}
+        end)
+      end)
+
+    Enum.reduce(1..(rowspan - 1), matrix, fn row_offset, acc_matrix ->
+      if row_idx + row_offset < length(acc_matrix) do
+        Enum.reduce(0..(colspan - 1), acc_matrix, fn col_offset, inner_acc ->
+          if col_start + col_offset < length(Enum.at(inner_acc, row_idx + row_offset)) do
+            update_in(
+              inner_acc,
+              [Access.at(row_idx + row_offset), Access.at(col_start + col_offset)],
+              fn _ ->
+                :rowspan_continue
+              end
+            )
+          else
+            inner_acc
+          end
+        end)
+      else
+        acc_matrix
+      end
+    end)
+  end
+
+  defp create_row_separator_with_rowspans(row_idx, rows, rowspan_matrix, col_widths) do
+    if row_idx >= length(rows) - 1 do
+      ""
+    else
+      next_row_spans = Enum.at(rowspan_matrix, row_idx + 1)
+
+      {separator_parts, _} =
+        Enum.reduce(0..(length(col_widths) - 1), {[], nil}, fn col_idx, {parts, prev_state} ->
+          cell_state = Enum.at(next_row_spans, col_idx)
+          width = Enum.at(col_widths, col_idx)
+
+          part =
+            case {prev_state, cell_state} do
+              {_, :rowspan_continue} ->
+                "+" <> String.duplicate(" ", width + 2)
+
+              {nil, _} ->
+                "+" <> String.duplicate("-", width + 2)
+
+              {_, _} ->
+                "+" <> String.duplicate("-", width + 2)
+            end
+
+          {parts ++ [part], cell_state}
+        end)
+
+      raw_separator = Enum.join(separator_parts) <> "+"
+
+      next_row_spans
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.with_index(fn [a, b], idx ->
+        if a == :rowspan_continue && b == :rowspan_continue do
+          pos = (idx + 1) * (Enum.at(col_widths, idx) + 3) + idx
+          {pos, " "}
+        else
+          {-1, ""}
+        end
+      end)
+      |> Enum.filter(fn {pos, _} -> pos >= 0 end)
+      |> Enum.sort_by(fn {pos, _} -> -pos end)
+      |> Enum.reduce(raw_separator, fn {pos, replacement}, acc ->
+        String.slice(acc, 0, pos) <>
+          replacement <> String.slice(acc, pos + 1, String.length(acc))
+      end)
+    end
+  end
+
+  defp create_header_separator_line(header_rows, col_widths) do
+    last_header_row = List.last(header_rows)
+
+    rowspan_matrix = create_rowspan_matrix([last_header_row], length(col_widths))
+    matrix_row = List.first(rowspan_matrix)
+
+    separator_parts =
+      Enum.with_index(col_widths, fn width, col_idx ->
+        cell_state = Enum.at(matrix_row, col_idx, :normal)
+
+        case cell_state do
+          :rowspan_continue ->
+            "+" <> String.duplicate(" ", width + 2)
+
+          _ ->
+            "+" <> String.duplicate("=", width + 2)
+        end
+      end)
+
+    raw_separator = Enum.join(separator_parts) <> "+"
+
+    matrix_row
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.with_index(fn [a, b], idx ->
+      if a == :rowspan_continue && b == :rowspan_continue do
+        pos = (idx + 1) * (Enum.at(col_widths, idx) + 3) + idx
+        {pos, " "}
+      else
+        {-1, ""}
+      end
+    end)
+    |> Enum.filter(fn {pos, _} -> pos >= 0 end)
+    |> Enum.sort_by(fn {pos, _} -> -pos end)
+    |> Enum.reduce(raw_separator, fn {pos, replacement}, acc ->
+      String.slice(acc, 0, pos) <> replacement <> String.slice(acc, pos + 1, String.length(acc))
+    end)
+  end
+
+  defp create_table_line(col_widths, char \\ "-") do
+    col_widths
+    |> Enum.map_join("+", fn width -> String.duplicate(char, width + 2) end)
+    |> (&"+#{&1}+").()
+  end
+
+  defp format_row(row_cells, col_widths, _opts) do
+    cell_content_map = build_cell_content_map(row_cells, col_widths)
     max_height = calculate_max_height(cell_content_map)
 
     0..(max_height - 1)
@@ -349,21 +607,42 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     |> Enum.map_join("\n", &format_line(&1, col_widths))
   end
 
-  defp build_cell_content_map(row_cells) do
-    Enum.reduce(row_cells, %{}, fn cell, acc ->
-      lines = String.split(cell.content, "\n", trim: false)
+  defp build_cell_content_map(row_cells, _col_widths) do
+    primary_map =
+      Enum.reduce(row_cells, %{}, fn cell, acc ->
+        lines = String.split(cell.content, "\n", trim: false)
+        colspan = cell.colspan
+        col_start = cell.col_start
 
-      Map.put(acc, cell.col_start, %{
-        lines: lines,
-        colspan: cell.colspan,
-        height: length(lines)
-      })
+        cell_map = %{
+          lines: lines,
+          colspan: colspan,
+          rowspan: cell.rowspan,
+          height: length(lines),
+          is_colspan_start: true
+        }
+
+        Map.put(acc, col_start, cell_map)
+      end)
+
+    Enum.reduce(row_cells, primary_map, fn cell, acc ->
+      col_start = cell.col_start
+      colspan = cell.colspan
+
+      if colspan > 1 do
+        Enum.reduce(1..(colspan - 1), acc, fn offset, acc_map ->
+          Map.put(acc_map, col_start + offset, %{parent_col: col_start})
+        end)
+      else
+        acc
+      end
     end)
   end
 
   defp calculate_max_height(cell_content_map) do
     cell_content_map
     |> Map.values()
+    |> Enum.filter(&Map.has_key?(&1, :height))
     |> Enum.map(& &1.height)
     |> Enum.max(fn -> 1 end)
   end
@@ -377,47 +656,64 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   defp build_cell_content(row_idx, col_idx, cell_content_map) do
     case Map.get(cell_content_map, col_idx) do
       nil ->
-        nil
+        {nil, 1, :empty}
+
+      %{parent_col: parent_col} ->
+        {nil, 1, {:covered_by, parent_col}}
 
       %{lines: lines, colspan: colspan} ->
         content = if row_idx < length(lines), do: Enum.at(lines, row_idx), else: ""
-        {content, colspan}
+        {content, colspan, :content}
     end
   end
 
   defp format_line(line_cells, col_widths) do
-    {formatted_line, _} =
-      Enum.reduce(0..(length(col_widths) - 1), {"", 0}, fn col_idx, {line, skip} ->
-        if skip > 0 do
-          {line, skip - 1}
+    {line_str, _processed_cols} =
+      Enum.reduce(0..(length(line_cells) - 1), {"", MapSet.new()}, fn col_idx,
+                                                                      {line, processed} ->
+        if MapSet.member?(processed, col_idx) do
+          {line, processed}
         else
-          case Enum.at(line_cells, col_idx) do
-            nil ->
+          cell_info = Enum.at(line_cells, col_idx)
+
+          case cell_info do
+            {nil, _, :empty} ->
               width = Enum.at(col_widths, col_idx, @default_min_col_width)
-              cell_content = String.pad_trailing("", width)
-              {line <> "| " <> cell_content <> " ", 0}
+              {line <> "| " <> String.pad_trailing("", width) <> " ", processed}
 
-            {content, colspan} ->
-              spanned_width =
-                col_widths
-                |> Enum.slice(col_idx, colspan)
-                |> Enum.sum()
+            {_, _, {:covered_by, _}} ->
+              {line, processed}
 
-              total_width = spanned_width + (colspan - 1) * 3
+            {content, colspan, :content} when colspan > 1 ->
+              total_width = calculate_total_colspan_width(col_idx, colspan, col_widths)
 
-              cell_content = String.pad_trailing(content, total_width)
-              {line <> "| " <> cell_content <> " ", colspan - 1}
+              new_processed =
+                Enum.reduce(1..(colspan - 1), processed, fn offset, acc ->
+                  MapSet.put(acc, col_idx + offset)
+                end)
+
+              {line <> "| " <> String.pad_trailing(content || "", total_width) <> " ",
+               new_processed}
+
+            {content, 1, :content} ->
+              width = Enum.at(col_widths, col_idx, @default_min_col_width)
+              {line <> "| " <> String.pad_trailing(content || "", width) <> " ", processed}
+
+            _ ->
+              width = Enum.at(col_widths, col_idx, @default_min_col_width)
+              {line <> "| " <> String.pad_trailing("", width) <> " ", processed}
           end
         end
       end)
 
-    formatted_line <> "|"
+    line_str <> "|"
   end
 
-  defp create_table_line(col_widths, char \\ "-") do
-    col_widths
-    |> Enum.map_join("+", fn width -> String.duplicate(char, width + 2) end)
-    |> (&"+#{&1}+").()
+  defp calculate_total_colspan_width(start_col, colspan, col_widths) do
+    span_widths = Enum.slice(col_widths, start_col, colspan)
+    col_width_sum = Enum.sum(span_widths)
+
+    col_width_sum + (colspan - 1) * 3
   end
 
   defp convert_pandoc_table_cell(%{"type" => _cell_type, "content" => content}, opts)
