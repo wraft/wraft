@@ -204,15 +204,6 @@ defmodule WraftDocWeb.Router do
           # Data template
           resources("/data_templates", DataTemplateController, only: [:create, :index])
           post("/data_templates/bulk_import", DataTemplateController, :bulk_import)
-
-          get("/check_frame_mapping", FrameMappingController, :check_frame_mapping)
-
-          # Frame Fields mapping
-          scope "/frames/:frame_id" do
-            post("/mapping", FrameMappingController, :create)
-            get("/mapping/:mapping_id", FrameMappingController, :show)
-            put("/mapping/:mapping_id", FrameMappingController, :update)
-          end
         end
       end
 
@@ -230,7 +221,7 @@ defmodule WraftDocWeb.Router do
 
       # Enginebody
       resources("/engines", EngineController, only: [:index])
-      resources("/frames", FrameController)
+      resources("/frames", FrameController, only: [:index, :show, :create, :delete])
 
       scope "/forms" do
         # Forms
@@ -423,8 +414,9 @@ defmodule WraftDocWeb.Router do
 
       # Assets
       resources("/assets", AssetController)
-      post("/assets/preview", AssetController, :preview)
 
+      post("/global_asset/pre_import", GlobalImportController, :pre_import_global_file)
+      post("/global_asset/re_validate", GlobalImportController, :re_validate_global_file)
       post("/global_asset/import", GlobalImportController, :import_global_file)
 
       # Template Assets

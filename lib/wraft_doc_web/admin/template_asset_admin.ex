@@ -13,6 +13,7 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
   alias WraftDoc.Repo
   alias WraftDoc.TemplateAssets
   alias WraftDoc.TemplateAssets.TemplateAsset
+  alias WraftDoc.Utils.FileValidator
   alias WraftDocWeb.AssetUploader
   alias WraftDocWeb.TemplateAssetThumbnailUploader
 
@@ -67,13 +68,19 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
   end
 
   def insert(
-        %{params: %{"template_asset" => %{"file" => %{filename: file_name} = file} = params}},
+        %{
+          params: %{
+            "template_asset" =>
+              %{"file" => %{filename: file_name, path: file_path} = file} = params
+          }
+        },
         changeset
       ) do
     params =
       Map.put(params, "type", "zip")
 
     with :ok <- check_zip_exists(params),
+         {:ok, _} <- FileValidator.validate_file(file_path),
          :ok <- TemplateAssets.validate_template_asset_file(file),
          {:ok, params, _} <-
            TemplateAssets.process_template_asset(params, :file, file),
@@ -81,9 +88,23 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
            insert_multi(params, file_name) do
       {:ok, template_asset}
     else
-      {:error, %Ecto.Changeset{} = changeset} -> {:error, changeset}
-      {:error, reason} -> {:error, {changeset, reason}}
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, changeset}
+
+      {:error, reason} when is_list(reason) ->
+        changeset
+        |> attach_errors_to_changeset(reason)
+        |> then(&{:error, &1})
+
+      {:error, reason} ->
+        {:error, {changeset, reason}}
     end
+  end
+
+  defp attach_errors_to_changeset(changeset, errors) do
+    Enum.reduce(errors, changeset, fn %{message: message, type: type}, acc_changeset ->
+      Ecto.Changeset.add_error(acc_changeset, :file, "#{type}: #{message}")
+    end)
   end
 
   defp insert_multi(params, file_name) do

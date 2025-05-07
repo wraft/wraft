@@ -4,7 +4,6 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
   alias __MODULE__
   alias WraftDocWeb.Api.V1.FieldTypeView
   alias WraftDocWeb.Api.V1.FlowView
-  alias WraftDocWeb.Api.V1.FrameMappingView
   alias WraftDocWeb.Api.V1.LayoutView
   alias WraftDocWeb.Api.V1.ThemeView
   alias WraftDocWeb.Api.V1.UserView
@@ -18,16 +17,13 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
       fields: render_many(c_type.fields, ContentTypeView, "field.json", as: :field),
       color: c_type.color,
       prefix: c_type.prefix,
+      frame_mapping: c_type.frame_mapping,
       inserted_at: c_type.inserted_at,
       updated_at: c_type.updated_at,
       theme: render_one(c_type.theme, ThemeView, "create.json", as: :theme),
       layout: render_one(c_type.layout, LayoutView, "layout.json", as: :doc_layout),
       flow: render_one(c_type.flow, FlowView, "flow.json", as: :flow),
-      creator: render_one(c_type.creator, UserView, "user_id_and_name.json", as: :user),
-      mappings:
-        render_one(c_type.frame_mappings, FrameMappingView, "frame_mapping.json",
-          as: :frame_mapping
-        )
+      creator: render_one(c_type.creator, UserView, "user_id_and_name.json", as: :user)
     }
   end
 
@@ -142,6 +138,7 @@ defmodule WraftDocWeb.Api.V1.ContentTypeView do
       fields: render_many(c_type.fields, ContentTypeView, "field.json", as: :field),
       color: c_type.color,
       prefix: c_type.prefix,
+      frame_mapping: c_type.frame_mapping,
       inserted_at: c_type.inserted_at,
       updated_at: c_type.updated_at,
       theme: render_one(c_type.theme, ThemeView, "create.json", as: :theme),

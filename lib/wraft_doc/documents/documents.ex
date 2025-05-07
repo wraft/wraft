@@ -30,7 +30,6 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Fields.Field
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
-  alias WraftDoc.Frames.FrameMapping
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Repo
   alias WraftDoc.Themes
@@ -716,10 +715,9 @@ defmodule WraftDoc.Documents do
         {:creator, :profile},
         {:content_type,
          [
-           :frame_mappings,
            :organisation,
            :fields,
-           layout: [frame: [:assets, fields: [:field_type]]]
+           layout: [frame: [:asset]]
          ]},
         {:versions, versions_preload_query},
         {:state, :approvers},
@@ -1028,7 +1026,6 @@ defmodule WraftDoc.Documents do
 
     File.write("#{base_content_dir}/content.md", content)
 
-    # need to call function to get frame mapping then write into json
     generate_field_json(instance, layout, base_content_dir)
 
     pdf_file = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
@@ -1045,13 +1042,12 @@ defmodule WraftDoc.Documents do
   defp generate_field_json(
          %Instance{
            serialized: %{"fields" => fields},
-           content_type: %ContentType{id: content_type_id}
+           content_type: %ContentType{frame_mapping: frame_mapping}
          },
-         %Layout{frame: %Frame{id: frame_id}},
+         %Layout{frame: %Frame{}},
          base_content_dir
        ) do
-    FrameMapping
-    |> Repo.get_by(frame_id: frame_id, content_type_id: content_type_id)
+    frame_mapping
     |> Frames.transform_data_by_mapping(fields)
     |> Jason.encode!()
     |> then(&File.write("#{base_content_dir}/fields.json", &1))
@@ -1103,9 +1099,12 @@ defmodule WraftDoc.Documents do
       |> document_option_header(document_settings, slug)
       |> concat_strings("--- \n")
 
+    raw =
+      instance.serialized["serialized"] |> Jason.decode!() |> ProsemirrorToMarkdown.convert()
+
     """
     #{header}
-    #{instance.raw}
+    #{raw}
     """
   end
 
@@ -1538,7 +1537,6 @@ defmodule WraftDoc.Documents do
       |> Map.put("serialized", Jason.encode!(updated_content))
 
     raw = ProsemirrorToMarkdown.convert(updated_content)
-
     %{"raw" => raw, "serialized" => serialized}
   end
 

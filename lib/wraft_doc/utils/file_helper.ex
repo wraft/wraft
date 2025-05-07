@@ -3,12 +3,11 @@ defmodule WraftDoc.Utils.FileHelper do
     Helper functions to files.
   """
 
-  alias WraftDoc.Frames.WraftJson
   alias WraftDoc.Frames.WraftJson.Metadata, as: FrameMetadata
   alias WraftDoc.TemplateAssets.Metadata, as: TemplateAssetMetadata
   alias WraftDoc.Utils.FileValidator
 
-  @required_files ["wraft.json", "template.typst", "default.typst"]
+  @required_frame_files ["wraft.json", "template.typst", "default.typst"]
 
   @doc """
   Extract file into path.
@@ -19,14 +18,11 @@ defmodule WraftDoc.Utils.FileHelper do
 
     wraft_json
     |> get_allowed_files_from_wraft_json()
-    |> case do
-      allowed_files ->
-        Enum.each(allowed_files, fn allowed_file ->
-          write_file(file_binary, allowed_file, output_path)
-        end)
+    |> Enum.each(fn allowed_file ->
+      write_file(file_binary, allowed_file, output_path)
+    end)
 
-        Path.join(output_path, ".")
-    end
+    Path.join(output_path, ".")
   end
 
   defp write_file(file_binary, allowed_file, output_path) do
@@ -79,15 +75,20 @@ defmodule WraftDoc.Utils.FileHelper do
     |> extract_file_content("wraft.json")
     |> case do
       {:ok, wraft_json} ->
-        Jason.decode(wraft_json)
+        wraft_json
+        |> Jason.decode!()
+        |> then(&{:ok, &1})
 
       {:error, reason} ->
         {:error, reason}
     end
+  rescue
+    e in Jason.DecodeError ->
+      {:error, "Failed to decode wraft.json: #{Exception.message(e)}"}
   end
 
   @doc """
-    Read file binary..
+  Read file binary.
   """
   @spec read_file_contents(String.t()) :: {:ok, binary()} | {:error, String.t()}
   def read_file_contents(file_path) do
@@ -116,13 +117,16 @@ defmodule WraftDoc.Utils.FileHelper do
     end
   end
 
-  defp get_allowed_files_from_wraft_json(%{
-         "packageContents" => %{"rootFiles" => root_files, "assets" => assets, "fonts" => fonts}
-       }) do
+  @doc """
+  Get allowed files from wraft
+  """
+  @spec get_allowed_files_from_wraft_json(map()) :: list(String.t())
+  def get_allowed_files_from_wraft_json(%{
+        "packageContents" => %{"rootFiles" => root_files, "assets" => assets, "fonts" => fonts}
+      }) do
     [root_files, assets, fonts]
     |> Enum.map(&get_paths_from_section/1)
     |> List.flatten()
-    |> then(&(&1 ++ ["wraft.json"]))
   end
 
   defp get_paths_from_section(section) when is_list(section),
@@ -134,45 +138,77 @@ defmodule WraftDoc.Utils.FileHelper do
   Validate frame.
   """
   @spec validate_frame_file(String.t()) :: :ok | {:error, String.t()}
-  def validate_frame_file(file_path) do
-    with {:ok, file_entries} <- FileValidator.validate_file(file_path),
-         {:ok, _file_entries} <- validate_required_files(file_entries),
+  def validate_frame_file(%{path: file_path} = file) do
+    with true <- is_frame_file?(file),
+         {:ok, file_entries} <- FileValidator.get_file_entries(file_path),
+         :ok <- validate_required_files(file_entries),
          {:ok, file_binary} <- read_file_contents(file_path),
          {:ok, wraft_json} <- get_wraft_json(file_binary),
-         :ok <- WraftJson.validate_json(wraft_json),
-         allowed_files <- get_allowed_files_from_wraft_json(wraft_json),
-         {:ok, _} <- validate_missing_files(allowed_files, file_entries) do
-      :ok
+         :ok <- WraftDoc.Frames.WraftJsonSchema.validate(wraft_json) do
+      wraft_json
+      |> get_allowed_files_from_wraft_json()
+      |> validate_missing_files(file_entries)
+    end
+  end
+
+  defp is_frame_file?(file) do
+    file
+    |> get_global_file_type()
+    |> case do
+      {:ok, "frame"} -> true
+      {:ok, _} -> {:error, "File is not a frame file."}
+      {:error, reason} -> {:error, reason}
     end
   end
 
   defp validate_required_files(file_entries) do
-    missing_files =
-      Enum.filter(@required_files, fn req_file ->
-        not Enum.any?(file_entries, fn entry -> entry.path == req_file end)
-      end)
+    @required_frame_files
+    |> Enum.filter(fn req_file ->
+      not Enum.any?(file_entries, fn entry -> entry.path == req_file end)
+    end)
+    |> case do
+      [] ->
+        :ok
 
-    if missing_files == [] do
-      {:ok, file_entries}
-    else
-      {:error, "Required files are missing: #{Enum.join(missing_files, ",")}"}
+      missing_files ->
+        missing_files
+        |> Enum.map(fn file ->
+          %{
+            type: "file_validation_error",
+            message: "Required files are missing: #{file}"
+          }
+        end)
+        |> then(&{:error, &1})
     end
   end
 
   defp validate_missing_files(allowed_files, file_entries) do
     entry_paths = Enum.map(file_entries, &Map.get(&1, :path))
 
-    missing_files =
-      Enum.filter(allowed_files, fn allowed_file ->
-        !Enum.any?(entry_paths, fn entry_path -> entry_path == allowed_file end)
-      end)
+    allowed_files
+    |> Enum.filter(fn allowed_file ->
+      !Enum.any?(entry_paths, fn entry_path -> entry_path == allowed_file end)
+    end)
+    |> case do
+      [] ->
+        :ok
 
-    case missing_files do
-      [] -> {:ok, file_entries}
-      files -> {:error, "Files are missing in zip: #{Enum.join(files, ", ")}"}
+      files ->
+        files
+        |> Enum.map(fn file ->
+          %{
+            type: "file_validation_error",
+            message: "Missing file in zip: #{file}"
+          }
+        end)
+        |> then(&{:error, &1})
     end
   end
 
+  @doc """
+  Get file size
+  """
+  @spec file_size(binary()) :: String.t()
   def file_size(file_binary), do: file_binary |> byte_size() |> Sizeable.filesize()
 
   @doc """
@@ -182,9 +218,16 @@ defmodule WraftDoc.Utils.FileHelper do
           {:ok, String.t()} | {:error, String.t() | Ecto.Changeset.t()}
   def get_file_metadata(%Plug.Upload{path: file_path}) do
     with {:ok, file_binary} <- read_file_contents(file_path),
-         {:ok, %{"metadata" => metadata}} <- get_wraft_json(file_binary),
+         {:ok, wraft_json} <- get_wraft_json(file_binary),
+         metadata when is_map(metadata) <- Map.get(wraft_json, "metadata"),
          :ok <- validate_metadata(metadata) do
       {:ok, metadata}
+    else
+      nil ->
+        {:error, "Metadata is missing"}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -203,8 +246,87 @@ defmodule WraftDoc.Utils.FileHelper do
     metadata
     |> schema_module.changeset()
     |> case do
-      %Ecto.Changeset{valid?: true} -> :ok
-      changeset -> {:error, changeset}
+      %Ecto.Changeset{valid?: true} ->
+        :ok
+
+      changeset ->
+        {:error, format_changeset_errors(changeset)}
+    end
+  end
+
+  defp format_changeset_errors(changeset) do
+    changeset
+    |> Ecto.Changeset.traverse_errors(fn {msg, opts} ->
+      Enum.reduce(opts, msg, fn {key, value}, acc ->
+        String.replace(acc, "%{#{key}}", to_string(value))
+      end)
+    end)
+    |> Enum.map(fn {field, messages} ->
+      %{
+        type: "metadata_validation_error",
+        message: "#{field}: #{Enum.join(messages, ", ")}"
+      }
+    end)
+  end
+
+  @doc """
+  Determines the global file type of the given file.
+  """
+  @spec get_global_file_type(Plug.Upload.t()) :: {:ok | :error, String.t()}
+  def get_global_file_type(file) do
+    file
+    |> get_file_metadata()
+    |> case do
+      {:ok, %{"type" => type}} when type in ["frame", "template_asset"] ->
+        {:ok, type}
+
+      {:ok, %{"type" => _unsupported_type}} ->
+        {:error, "Invalid global file type"}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Get file information.
+  """
+  @spec get_global_file_info(Plug.Upload.t()) :: map()
+  def get_global_file_info(%{filename: filename, content_type: content_type, path: file_path}) do
+    file_path
+    |> get_files()
+    |> case do
+      {:ok, files} ->
+        %{
+          name: filename,
+          type: content_type,
+          size: file_path |> File.read!() |> file_size(),
+          files: files
+        }
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp get_files(file_path) do
+    file_path
+    |> File.read!()
+    |> get_file_entries()
+    |> case do
+      {:ok, file_entries} ->
+        file_entries
+        |> Enum.filter(fn entry ->
+          !String.ends_with?(entry.file_name, "/") and
+            not String.match?(entry.file_name, ~r/^__MACOSX\//)
+        end)
+        |> Enum.map(fn entry ->
+          entry.file_name
+        end)
+        |> then(&{:ok, &1})
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 end

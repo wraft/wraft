@@ -32,7 +32,7 @@ defmodule WraftDoc.Assets do
 
   def create_asset(nil, params), do: create_asset_with_params(nil, params)
 
-  def update_asset_params(%{"type" => "zip", "file" => file} = params) do
+  def update_asset_params(%{"type" => "global_file", "file" => file} = params) do
     file
     |> FileHelper.get_file_metadata()
     |> case do
@@ -196,7 +196,7 @@ defmodule WraftDoc.Assets do
       :creator,
       :organisation,
       :engine,
-      frame: [:assets, fields: [:field_type]]
+      frame: [:asset]
     ])
   end
 
@@ -211,7 +211,7 @@ defmodule WraftDoc.Assets do
 
   def download_slug_file(%Layout{
         frame: %Frame{
-          assets: %{id: asset_id, file: file}
+          asset: %{id: asset_id, file: file}
         },
         organisation_id: organisation_id
       }) do
