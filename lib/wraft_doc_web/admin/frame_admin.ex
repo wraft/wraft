@@ -45,13 +45,6 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
     ]
   end
 
-  def default_actions(_schema),
-    do: [
-      :new,
-      :show,
-      :delete
-    ]
-
   def custom_index_query(_conn, _schema, query),
     do: from(r in query, preload: [:organisation, :asset])
 
@@ -101,6 +94,34 @@ defmodule WraftDocWeb.Frames.FrameAdmin do
     |> case do
       {:ok, %{create_template_asset: template_asset}} ->
         {:ok, template_asset}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  def update(conn, %Ecto.Changeset{data: %{asset: asset} = frame} = changeset) do
+    params = conn.params["frame"]
+
+    Multi.new()
+    |> Multi.run(:update_asset, fn _, _ ->
+      Assets.update_asset(asset, Map.merge(params, %{"type" => "frame"}))
+    end)
+    |> Multi.run(:update_frame, fn _, %{update_asset: %Asset{id: asset_id}} ->
+      Frames.update_frame(frame, Map.merge(params, %{"asset_id" => asset_id}))
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{update_frame: updated_frame}} ->
+        {:ok, updated_frame}
+
+      {:error, _, error, _} when is_binary(error) ->
+        {:error, {changeset, error}}
+
+      {:error, _, error, _} when is_list(error) ->
+        changeset
+        |> attach_errors_to_changeset(error)
+        |> then(&{:error, &1})
 
       {:error, _, changeset, _} ->
         {:error, changeset}

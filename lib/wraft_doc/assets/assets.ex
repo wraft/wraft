@@ -124,7 +124,7 @@ defmodule WraftDoc.Assets do
   """
   # TODO - improve tests
   # file uploading is throwing errors, in tests
-  @spec update_asset(Asset.t(), map) :: {:ok, Asset.t()} | {:error, Ecto.Changset.t()}
+  @spec update_asset(Asset.t(), map()) :: {:ok, Asset.t()} | {:error, Ecto.Changset.t()}
   def update_asset(asset, params) do
     asset |> Asset.update_changeset(params) |> Repo.update()
   end

@@ -108,6 +108,51 @@ defmodule WraftDoc.Frames do
   end
 
   @doc """
+  Update a frame.
+  """
+  @spec update_frame(Frame.t(), map()) ::
+          {:ok, Frame.t()} | {:error, Ecto.Changeset.t() | String.t()}
+  def update_frame(
+        %Frame{fields: existing_fields} = frame,
+        %{"file" => %{path: file_path} = file} = params
+      ) do
+    with {:ok, _} <- FileValidator.validate_file(file_path),
+         {:ok, metadata} <- FileHelper.get_file_metadata(file),
+         :ok <- FileHelper.validate_frame_file(file),
+         {:ok, %{"fields" => fields} = params} <-
+           process_frame_params(Map.merge(params, metadata)),
+         :ok <- validate_fields(existing_fields, fields),
+         {:ok, %Frame{} = frame} <- update_frame_multi(frame, params) do
+      {:ok, frame}
+    end
+  end
+
+  defp update_frame_multi(%{asset: asset} = frame, params) do
+    Multi.new()
+    |> Multi.run(:frame_asset, fn _repo, _ ->
+      Assets.update_asset(asset, params)
+      {:ok, frame}
+    end)
+    |> Multi.update(:frame, Frame.update_changeset(%Frame{} = frame, params))
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{frame: frame}} ->
+        {:ok, frame}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
+  end
+
+  defp validate_fields(existing_fields, incoming_fields) do
+    if Enum.sort(existing_fields) == Enum.sort(incoming_fields) do
+      :ok
+    else
+      {:error, "Frame can't be updated, detected changes in fields."}
+    end
+  end
+
+  @doc """
   Delete a frame.
   """
   @spec delete_frame(Frame.t()) :: {:ok, Frame.t()} | {:error, Ecto.Changeset.t()}
