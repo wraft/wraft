@@ -111,7 +111,7 @@ defmodule WraftDoc.Frames do
   Update a frame.
   """
   @spec update_frame(Frame.t(), map()) ::
-          {:ok, Frame.t()} | {:error, Ecto.Changeset.t()}
+          {:ok, Frame.t()} | {:error, Ecto.Changeset.t() | String.t()}
   def update_frame(
         %Frame{fields: existing_fields} = frame,
         %{"file" => %{path: file_path} = file} = params
