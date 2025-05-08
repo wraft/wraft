@@ -1,5 +1,4 @@
 #import "$path$" + "/template.typst": conf
-#import "@preview/tablex:0.0.9": tablex
 #import "@preview/muchpdf:0.1.1": muchpdf
 
 #let horizontalrule = line(start: (25%,0%), end: (75%,0%))
@@ -42,28 +41,10 @@ $endif$
   block(it)
 }
 
-#show table: table => {
-  let column_count = table.columns.len()
-
-  let equal_columns = (1fr,) * column_count
-
-  tablex(
-    columns: equal_columns,
-    auto-vlines: true,
-    auto-hlines: true,
-    stroke: 0.5pt,
-    inset: 6pt,
-    align: center + horizon,
-    map-rows: (row, cells) => cells.map(c =>
-     if row == 0 {
-      (..c, content: strong(c.content))
-    } else {
-      c
-    }
-  ),
-    ..table.children
-  )
-}
+#set table(
+  stroke: (thickness: 1pt, dash: "solid"),
+  inset: (x: 5pt, y: 10pt),
+)
 
 #show table.cell: cell => {
   set align(center)

@@ -12,7 +12,7 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
       ** (WraftDoc.ProsemirrorToMarkdown.InvalidJsonError) Invalid ProseMirror JSON format.
   """
 
-  @default_min_col_width 50
+  @default_min_col_width 55
 
   def convert(%{"type" => "doc", "content" => content}, opts \\ []) do
     Enum.map_join(content, "\n\n", &convert_node(&1, opts))
@@ -44,8 +44,31 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp convert_node(%{"type" => "text", "text" => text}, _opts), do: text
 
+  defp convert_node(
+         %{
+           "type" => "bulletList",
+           "attrs" => %{"kind" => "ordered"} = attrs,
+           "content" => content
+         },
+         opts
+       ) do
+    start_index = attrs["order"] || 1
+
+    content
+    |> Enum.with_index(start_index)
+    |> Enum.map_join("\n", fn {node, index} ->
+      "#{index}. " <> convert_node(node, opts)
+    end)
+  end
+
   defp convert_node(%{"type" => "bulletList", "content" => content}, opts) do
-    Enum.map_join(content, "\n", &convert_node(&1, opts))
+    Enum.map_join(content, "\n", fn item ->
+      "- " <> convert_node(item, opts)
+    end)
+  end
+
+  defp convert_node(%{"type" => "listItem", "content" => content}, opts) do
+    Enum.map_join(content, "", &convert_node(&1, opts))
   end
 
   defp convert_node(
@@ -83,12 +106,6 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     Enum.join([border, formatted_rows, border], "\n")
   end
 
-  defp convert_node(%{"type" => "list", "attrs" => %{"kind" => kind}, "content" => items}, opts) do
-    Enum.map_join(items, "\n", fn item ->
-      convert_list_item(item, kind, opts, 0)
-    end)
-  end
-
   defp convert_node(%{"type" => "blockquote", "content" => content}, opts) do
     content
     |> Enum.map_join("\n", &convert_node(&1, opts))
@@ -122,35 +139,6 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp wrap_lines(text, prefix) do
     Enum.map_join(String.split(text, "\n"), "\n", &(prefix <> &1))
-  end
-
-  defp convert_list_item(%{"type" => "listItem", "content" => content}, "bullet", opts, level) do
-    prefix = String.duplicate("  ", level) <> "- "
-    process_list_item_content(content, prefix, opts)
-  end
-
-  defp convert_list_item(%{"type" => "listItem", "content" => content}, "ordered", opts, level) do
-    prefix = String.duplicate("  ", level) <> "1. "
-    process_list_item_content(content, prefix, opts)
-  end
-
-  defp convert_list_item(%{"type" => "listItem", "content" => content}, _kind, opts, level) do
-    prefix = String.duplicate("  ", level) <> "- "
-    process_list_item_content(content, prefix, opts)
-  end
-
-  defp process_list_item_content(content, prefix, opts) do
-    Enum.map_join(content, "\n", fn
-      %{"type" => "paragraph", "content" => paragraph_content} ->
-        paragraph_text = Enum.map_join(paragraph_content, "", &convert_node(&1, opts))
-        prefix <> paragraph_text
-
-      %{"type" => "list"} = list_node ->
-        convert_node(list_node, opts)
-
-      %{"type" => invalid_type} ->
-        raise(InvalidJsonError, "Invalid list item content type: #{invalid_type}")
-    end)
   end
 
   defp process_table_structure(rows) do
