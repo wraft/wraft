@@ -273,7 +273,7 @@ defmodule WraftDoc.Frames do
     content_type_field_names =
       Enum.map(content_type_fields, &format_name(&1.name))
 
-    mapping_source_names = Enum.map(mappings, &format_name(&1["source"]))
+    mapping_source_names = mappings |> Enum.map(&format_name(&1["source"])) |> Enum.uniq()
     mapping_destination_names = Enum.map(mappings, & &1["destination"])
 
     missing_content_type_fields = mapping_source_names -- content_type_field_names
