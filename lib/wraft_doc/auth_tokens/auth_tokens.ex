@@ -9,6 +9,7 @@ defmodule WraftDoc.AuthTokens do
   alias WraftDoc.Account
   alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.Documents.Instance
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
@@ -156,29 +157,33 @@ defmodule WraftDoc.AuthTokens do
   end
 
   @doc """
+   Create signer invite token
+  """
+  @spec create_signer_invite_token(Instance.t(), String.t()) :: {:ok, AuthToken.t()}
+  def create_signer_invite_token(%Instance{id: document_id}, email) do
+    token =
+      WraftDoc.create_phx_token("signer_invite", %{
+        email: email,
+        document_id: document_id
+      })
+
+    params = %{value: token, token_type: "signer_invite"}
+
+    insert_auth_token!(params)
+  end
+
+  @doc """
    Create guest access token.
   """
-  @spec create_guest_access_token(User.t(), Ecto.UUID.t(), String.t(), String.t(), Ecto.UUID.t()) ::
-          {:ok, AuthToken.t()}
-  def create_guest_access_token(
-        %User{} = user,
-        <<_::288>> = state_id,
-        email,
-        role,
-        <<_::288>> = document_id
-      ) do
-    {:ok, token, _} =
-      Guardian.encode_and_sign(
-        user,
-        %{email: email, role: role, document_id: document_id, state_id: state_id},
-        token_type: "access",
-        ttl: {72, :hours}
-      )
-
-    params = %{value: token, token_type: "document_invite"}
-    auth_token = insert_auth_token!(user, params)
-
-    {:ok, auth_token}
+  @spec create_guest_access_token(User.t(), map()) ::
+          {:ok, Guardian.Token.token(), Guardian.Token.claims()}
+  def create_guest_access_token(%User{} = user, params) do
+    Guardian.encode_and_sign(
+      user,
+      params,
+      token_type: "access",
+      ttl: {72, :hours}
+    )
   end
 
   @doc """
@@ -300,6 +305,25 @@ defmodule WraftDoc.AuthTokens do
 
       %AuthToken{value: token} ->
         case phoenix_token_verify(token, "document_invite", max_age: 864_000) do
+          {:ok, payload} ->
+            {:ok, payload}
+
+          {:error, :expired} ->
+            {:error, :expired}
+
+          _ ->
+            {:error, :fake}
+        end
+    end
+  end
+
+  def check_token(token, token_type) when token_type == :signer_invite do
+    case get_auth_token(token, token_type) do
+      nil ->
+        {:error, :fake}
+
+      %AuthToken{value: token} ->
+        case phoenix_token_verify(token, "signer_invite", max_age: 864_000) do
           {:ok, payload} ->
             {:ok, payload}
 

@@ -19,6 +19,19 @@ defmodule WraftDoc.Schema do
     end
   end
 
+  # Helper function to decode JSON values
+  def decode_json_value(val) when is_binary(val), do: Jason.decode!(val)
+
+  def decode_json_value(val), do: val
+
+  defmacro decode_json_fields(attrs_ast, fields) do
+    quote do
+      Enum.reduce(unquote(fields), unquote(attrs_ast), fn field, acc ->
+        Map.update(acc, to_string(field), nil, &WraftDoc.Schema.decode_json_value(&1))
+      end)
+    end
+  end
+
   def generate_encrypted_password(current_changeset) do
     case current_changeset do
       %Ecto.Changeset{valid?: true, changes: %{password: password}} ->
