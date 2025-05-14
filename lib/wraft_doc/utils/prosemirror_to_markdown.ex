@@ -784,11 +784,27 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   defp process_cell_content_item(%{"type" => "paragraph", "content" => para_content}, opts)
        when is_list(para_content) do
     text = Enum.map_join(para_content, "", fn item -> process_paragraph_item(item, opts) end)
-
     if String.trim(text) == "", do: "", else: text <> "\n"
   end
 
   defp process_cell_content_item(%{"type" => "paragraph"}, _opts), do: "\n"
+
+  defp process_cell_content_item(
+         %{"type" => "bulletList", "content" => content, "attrs" => attrs},
+         opts
+       ) do
+    prefix =
+      case attrs do
+        %{"kind" => "ordered"} -> "1. "
+        _ -> "- "
+      end
+
+    content
+    |> Enum.map_join("\n", fn item ->
+      prefix <> convert_node(item, opts)
+    end)
+    |> then(&(&1 <> "\n"))
+  end
 
   defp process_cell_content_item(%{"type" => "hardBreak"}, _opts), do: "\n"
 
