@@ -264,63 +264,52 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     table_data
     |> Enum.any?()
     |> if do
-      first_row = List.first(table_data)
-
-      widths = List.duplicate(@default_min_col_width, max_col_index)
-
-      Enum.reduce(first_row, widths, fn cell, acc ->
-        if Map.has_key?(cell, :attrs) && cell[:attrs]["colwidth"] do
-          col_start = cell.col_start
-          colspan = cell.colspan
-          width = extract_width_value(cell[:attrs]["colwidth"])
-
-          width_per_col = if colspan > 1, do: div(width, colspan), else: width
-
-          Enum.reduce(0..(colspan - 1), acc, fn offset, w_acc ->
-            if col_start + offset < length(w_acc) do
-              List.replace_at(w_acc, col_start + offset, width_per_col)
-            else
-              w_acc
-            end
-          end)
-        else
-          acc
-        end
-      end)
+      process_table_widths(table_data, max_col_index)
     else
       List.duplicate(@default_min_col_width, max_col_index)
     end
-    |> Enum.map(fn w -> max(w, 3) end)
   end
 
-  defp extract_width_value(colwidth) do
-    cond do
-      is_integer(colwidth) ->
-        colwidth
+  defp process_table_widths([first_row | _], max_col_index) do
+    widths = List.duplicate(@default_min_col_width, max_col_index)
 
-      is_binary(colwidth) ->
-        case Integer.parse(to_string(colwidth)) do
-          {num, _} ->
-            num
-
-          :error ->
-            @default_min_col_width
-        end
-
-      is_list(colwidth) && length(colwidth) > 0 ->
-        colwidth
-        |> List.first()
-        |> extract_width_value()
-
-      true ->
-        @default_min_col_width
-    end
+    Enum.reduce(first_row, widths, fn cell, acc ->
+      process_cell_width(cell, acc)
+    end)
   end
+
+  defp process_cell_width(
+         %{
+           col_start: col_start,
+           colspan: colspan,
+           attrs: %{"colwidth" => colwidth}
+         },
+         widths
+       ) do
+    width = get_width_size(colwidth)
+    width_per_col = if colspan > 1, do: div(width, colspan), else: width
+    update_column_widths(widths, col_start, colspan, width_per_col)
+  end
+
+  defp update_column_widths(widths, col_start, colspan, width_per_col) do
+    Enum.reduce(0..(colspan - 1), widths, fn offset, acc ->
+      col_index = col_start + offset
+
+      if col_index < length(acc) do
+        List.replace_at(acc, col_index, width_per_col)
+      else
+        acc
+      end
+    end)
+  end
+
+  defp get_width_size([colwidth]), do: colwidth
+  defp get_width_size(_), do: @default_min_col_width
 
   defp calculate_max_col_index(table_data) do
     Enum.reduce(table_data, 0, fn row, max_col ->
-      Enum.reduce(row, max_col, fn cell, row_max ->
-        max(row_max, cell.col_start + cell.colspan)
+      Enum.reduce(row, max_col, fn %{col_start: col_start, colspan: colspan}, row_max ->
+        max(row_max, col_start + colspan)
       end)
     end)
   end
