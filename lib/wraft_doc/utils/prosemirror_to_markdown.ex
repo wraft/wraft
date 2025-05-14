@@ -174,7 +174,8 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
         content: cell_content,
         colspan: colspan,
         rowspan: rowspan,
-        col_start: curr_col
+        col_start: curr_col,
+        attrs: attrs
       }
 
       new_tracker =
@@ -188,7 +189,8 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
                   content: cell_content,
                   colspan: colspan,
                   col_start: curr_col,
-                  primary_col: col_offset == 0
+                  primary_col: col_offset == 0,
+                  attrs: attrs
                 })
               end)
 
@@ -258,9 +260,61 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp calculate_column_widths(table_data) do
     max_col_index = calculate_max_col_index(table_data)
-    initial_widths = List.duplicate(@default_min_col_width, max_col_index)
 
-    Enum.reduce(table_data, initial_widths, &update_column_widths/2)
+    table_data
+    |> Enum.any?()
+    |> if do
+      first_row = List.first(table_data)
+
+      widths = List.duplicate(@default_min_col_width, max_col_index)
+
+      Enum.reduce(first_row, widths, fn cell, acc ->
+        if Map.has_key?(cell, :attrs) && cell[:attrs]["colwidth"] do
+          col_start = cell.col_start
+          colspan = cell.colspan
+          width = extract_width_value(cell[:attrs]["colwidth"])
+
+          width_per_col = if colspan > 1, do: div(width, colspan), else: width
+
+          Enum.reduce(0..(colspan - 1), acc, fn offset, w_acc ->
+            if col_start + offset < length(w_acc) do
+              List.replace_at(w_acc, col_start + offset, width_per_col)
+            else
+              w_acc
+            end
+          end)
+        else
+          acc
+        end
+      end)
+    else
+      List.duplicate(@default_min_col_width, max_col_index)
+    end
+    |> Enum.map(fn w -> max(w, 3) end)
+  end
+
+  defp extract_width_value(colwidth) do
+    cond do
+      is_integer(colwidth) ->
+        colwidth
+
+      is_binary(colwidth) ->
+        case Integer.parse(to_string(colwidth)) do
+          {num, _} ->
+            num
+
+          :error ->
+            @default_min_col_width
+        end
+
+      is_list(colwidth) && length(colwidth) > 0 ->
+        colwidth
+        |> List.first()
+        |> extract_width_value()
+
+      true ->
+        @default_min_col_width
+    end
   end
 
   defp calculate_max_col_index(table_data) do
@@ -268,55 +322,6 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
       Enum.reduce(row, max_col, fn cell, row_max ->
         max(row_max, cell.col_start + cell.colspan)
       end)
-    end)
-  end
-
-  defp update_column_widths(row, widths) do
-    Enum.reduce(row, widths, fn cell, acc_widths ->
-      content_width = calculate_content_width(cell)
-
-      if cell.colspan > 1 do
-        update_spanned_columns(cell, acc_widths, content_width)
-      else
-        update_single_column(cell, acc_widths, content_width)
-      end
-    end)
-  end
-
-  defp calculate_content_width(%{content: content} = _cell) do
-    content
-    |> String.split("\n", trim: false)
-    |> Enum.map(&String.length/1)
-    |> Enum.max(fn -> 0 end)
-  end
-
-  defp update_spanned_columns(
-         %{col_start: col_start, colspan: colspan} = _cell,
-         acc_widths,
-         content_width
-       ) do
-    span_widths = Enum.slice(acc_widths, col_start, colspan)
-    span_total = Enum.sum(span_widths)
-
-    if content_width > span_total - (colspan - 1) * 3 do
-      required_width = content_width + (colspan - 1) * 3
-      width_per_col = required_width / colspan
-
-      Enum.with_index(acc_widths, fn width, idx ->
-        if idx >= col_start && idx < col_start + colspan do
-          max(width, ceil(width_per_col))
-        else
-          width
-        end
-      end)
-    else
-      acc_widths
-    end
-  end
-
-  defp update_single_column(%{col_start: col_start} = _cell, acc_widths, content_width) do
-    List.update_at(acc_widths, col_start, fn width ->
-      max(width, content_width)
     end)
   end
 
@@ -543,13 +548,15 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   end
 
   defp create_header_separator_line(header_rows, col_widths) do
-    last_header_row = List.last(header_rows)
+    matrix_row =
+      header_rows
+      |> List.last()
+      |> then(&create_rowspan_matrix([&1], length(col_widths)))
+      |> List.first()
 
-    rowspan_matrix = create_rowspan_matrix([last_header_row], length(col_widths))
-    matrix_row = List.first(rowspan_matrix)
-
-    separator_parts =
-      Enum.with_index(col_widths, fn width, col_idx ->
+    raw_separator =
+      col_widths
+      |> Enum.with_index(fn width, col_idx ->
         cell_state = Enum.at(matrix_row, col_idx, :normal)
 
         case cell_state do
@@ -560,8 +567,8 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
             "+" <> String.duplicate("=", width + 2)
         end
       end)
-
-    raw_separator = Enum.join(separator_parts) <> "+"
+      |> Enum.join()
+      |> then(&(&1 <> "+"))
 
     matrix_row
     |> Enum.chunk_every(2, 1, :discard)
@@ -595,36 +602,97 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     |> Enum.map_join("\n", &format_line(&1, col_widths))
   end
 
-  defp build_cell_content_map(row_cells, _col_widths) do
-    primary_map =
-      Enum.reduce(row_cells, %{}, fn cell, acc ->
-        lines = String.split(cell.content, "\n", trim: false)
-        colspan = cell.colspan
-        col_start = cell.col_start
+  defp build_cell_content_map(row_cells, col_widths) do
+    row_cells
+    |> create_primary_content_map(col_widths)
+    |> then(&add_colspan_relationships(row_cells, &1))
+  end
 
-        cell_map = %{
-          lines: lines,
-          colspan: colspan,
-          rowspan: cell.rowspan,
-          height: length(lines),
-          is_colspan_start: true
-        }
+  defp create_primary_content_map(row_cells, col_widths) do
+    Enum.reduce(row_cells, %{}, fn %{
+                                     col_start: col_start,
+                                     colspan: colspan,
+                                     rowspan: rowspan,
+                                     content: content
+                                   } = _cell,
+                                   acc ->
+      lines =
+        col_start
+        |> calculate_total_colspan_width(colspan, col_widths)
+        |> Kernel.-(colspan * 2)
+        |> then(&process_cell_lines(content, &1))
 
-        Map.put(acc, col_start, cell_map)
-      end)
+      cell_map = %{
+        lines: lines,
+        colspan: colspan,
+        rowspan: rowspan,
+        height: length(lines),
+        is_colspan_start: true
+      }
 
+      Map.put(acc, col_start, cell_map)
+    end)
+  end
+
+  defp process_cell_lines(content, max_width) do
+    content
+    |> String.split("\n", trim: false)
+    |> Enum.flat_map(fn line ->
+      if String.length(line) > max_width do
+        wrap_text(line, max_width)
+      else
+        [line]
+      end
+    end)
+  end
+
+  defp add_colspan_relationships(row_cells, primary_map) do
     Enum.reduce(row_cells, primary_map, fn cell, acc ->
       col_start = cell.col_start
       colspan = cell.colspan
 
       if colspan > 1 do
-        Enum.reduce(1..(colspan - 1), acc, fn offset, acc_map ->
-          Map.put(acc_map, col_start + offset, %{parent_col: col_start})
-        end)
+        add_colspan_references(col_start, colspan, acc)
       else
         acc
       end
     end)
+  end
+
+  defp add_colspan_references(col_start, colspan, acc_map) do
+    Enum.reduce(1..(colspan - 1), acc_map, fn offset, acc ->
+      Map.put(acc, col_start + offset, %{parent_col: col_start})
+    end)
+  end
+
+  defp wrap_text(text, max_width) do
+    if String.length(text) <= max_width do
+      [text]
+    else
+      break_at = find_break_point(text, max_width)
+      first_line = String.slice(text, 0, break_at)
+      rest = String.slice(text, break_at, String.length(text))
+
+      [first_line | wrap_text(rest, max_width)]
+    end
+  end
+
+  defp find_break_point(text, max_width) do
+    if String.length(text) <= max_width do
+      String.length(text)
+    else
+      last_space =
+        text
+        |> String.slice(0, max_width)
+        |> String.reverse()
+        |> :binary.match(" ")
+        |> case do
+          {pos, _} -> max_width - pos
+          :nomatch -> max_width
+        end
+
+      if last_space < max_width * 0.5, do: max_width, else: last_space
+    end
   end
 
   defp calculate_max_height(cell_content_map) do
