@@ -157,12 +157,12 @@ defmodule WraftDoc.Mixfile do
       {:ex_typesense, "~> 0.6"},
 
       # live collaboration
-      {:rustler, ">= 0.34.0"},
       {:y_ex, "~> 0.6.5"},
 
       # markdown
       {:mdex, "~> 0.3.3"},
-      {:file_type, "~> 0.1.0"}
+      {:file_type, "~> 0.1.0"},
+      {:rustler, "~> 0.32.0", runtime: true}
     ]
   end
 

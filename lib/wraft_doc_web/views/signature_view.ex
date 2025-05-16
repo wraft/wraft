@@ -49,6 +49,22 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
     }
   end
 
+  # Temp
+  def render("sign_detect.json", %{output: output}) do
+    %{
+      total_pages: output["total_pages"],
+      total_signature_boxes: output["total_rectangles"],
+      signature_boxes:
+        Enum.map(output["rectangles"], fn rect ->
+          %{
+            dimensions: rect["dimensions"],
+            coordinates: rect["corners"],
+            page: rect["page"]
+          }
+        end)
+    }
+  end
+
   def render("email.json", %{info: info}), do: %{info: info}
   def render("error.json", %{error: error}), do: %{error: error}
 

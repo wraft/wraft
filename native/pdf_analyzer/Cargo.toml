@@ -1,0 +1,18 @@
+[package]
+name = "pdf_analyzer"
+version = "0.1.0"
+authors = ["Your Name <your.email@example.com>"]
+edition = "2021"
+
+[lib]
+name = "pdf_analyzer"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "0.32.0"
+lopdf = "0.31.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = "0.4"
+flate2 = "1.0"
