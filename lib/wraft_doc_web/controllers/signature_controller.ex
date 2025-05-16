@@ -422,4 +422,34 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
       render(conn, "signature.json", signature: deleted_signature)
     end
   end
+
+  @doc """
+  Generate  a signature
+  """
+  swagger_path :generate_signature do
+    post("/contents/{id}/generate_signature")
+    summary("Generate a signature")
+    description("API to generate a signature")
+
+    parameters do
+      id(:path, :string, "Document ID", required: true)
+      signature(:body, Schema.ref(:SignatureProcess), "Signature process details", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Signature))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  alias WraftDoc.Documents.Signatures
+
+  @spec generate_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def generate_signature(conn, %{"id" => document_id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+         {:ok, output} <- Signatures.generate_signature(instance, params) do
+      render(conn, "sign_detect.json", output: Jason.decode!(output))
+    end
+  end
 end

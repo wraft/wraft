@@ -877,13 +877,13 @@ defmodule WraftDoc.Documents do
   # Checks whether the raw and serialzed of old and new instances are same or not.
   # If they are both the same, returns false, else returns true
   # @spec instance_updated?(Instance.t(), Instance.t()) :: boolean
-  defp instance_updated?(%{raw: o_raw, serialized: o_map}, %{raw: n_raw, serialized: n_map}) do
+  def instance_updated?(%{raw: o_raw, serialized: o_map}, %{raw: n_raw, serialized: n_map}) do
     !(o_raw === n_raw && o_map === n_map)
   end
 
-  defp instance_updated?(_old_instance, _new_instance), do: true
+  def instance_updated?(_old_instance, _new_instance), do: true
 
-  defp instance_updated?(new_instance) do
+  def instance_updated?(new_instance) do
     new_instance
     |> get_last_version(:build)
     |> instance_updated?(new_instance)
@@ -1140,7 +1140,8 @@ defmodule WraftDoc.Documents do
     ] ++
       get_pandoc_filter("s3_image_typst.lua") ++
       get_pandoc_filter("table-cell-list-formatter.lua") ++
-      get_pandoc_filter("pagebreak_typst.lua") ++
+      get_pandoc_filter("signature.lua") ++
+
       ["-o", pdf_file]
   end
 
@@ -1149,7 +1150,10 @@ defmodule WraftDoc.Documents do
       "#{base_content_dir}/content.md",
       "--template=#{base_content_dir}/template.tex",
       "--pdf-engine=#{System.get_env("XELATEX_PATH")}"
-    ] ++ get_pandoc_filter("s3_image.lua") ++ ["-o", pdf_file]
+    ] ++
+      get_pandoc_filter("s3_image.lua") ++
+      get_pandoc_filter("signature.lua") ++
+      ["-o", pdf_file]
   end
 
   def get_pandoc_filter(filter_name) do
@@ -1162,13 +1166,14 @@ defmodule WraftDoc.Documents do
 
   defp upload_file_and_delete_local_copy(
          {_, 0} = pandoc_response,
-         file_path,
+         _file_path,
          pdf_file
        ) do
     case Minio.upload_file(pdf_file) do
       {:ok, _} ->
-        File.rm_rf(file_path)
-        File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
+        # #TODO Need to rewrite this logic to be done after the signature coordinates detection
+        # File.rm_rf(file_path)
+        # File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
         pandoc_response
 
       {:error, error, error_code} ->

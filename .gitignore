@@ -25,6 +25,9 @@
 /priv/static/swagger.json
 /typesense-data/
 
+# Rust build artifacts
+/native/*/target/
+/priv/native/*.so
 
 # Ignore assets that are produced by build tools.
 /priv/static/assets/

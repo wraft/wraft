@@ -8,11 +8,15 @@ defmodule WraftDoc.Documents.Signatures do
 
   alias WraftDoc
   alias WraftDoc.Account.User
+  alias WraftDoc.Assets
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.CounterParties.CounterParty
+  alias WraftDoc.Documents
   alias WraftDoc.Documents.ESignature
   alias WraftDoc.Documents.Instance
+  alias WraftDoc.Layouts.Layout
+  alias WraftDoc.PdfAnalyzer
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
 
@@ -221,4 +225,42 @@ defmodule WraftDoc.Documents.Signatures do
     |> EmailWorker.new(queue: "mailer", tags: ["notify_document_owner_signature_complete"])
     |> Oban.insert()
   end
+
+  @doc """
+  Generate a PDF with the signature
+  """
+  def generate_signature(
+        %Instance{
+          instance_id: instance_id,
+          content_type: %{layout: %Layout{organisation_id: org_id} = layout} = _content_type
+        } = instance,
+        _params
+      ) do
+    # Preload the layout with its engine association
+    layout = Assets.preload_asset(layout)
+
+    case Documents.build_doc(instance, layout) do
+      {_, 0} ->
+        instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
+        instance_updated? = Documents.instance_updated?(instance)
+        pdf_path = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
+
+        # Determine the engine type based on the layout's engine
+        engine_type =
+          case layout.engine do
+            %{name: "Pandoc + Typst"} -> "typst"
+            %{name: "Pandoc"} -> "latex"
+          end
+
+        # Pass the engine type from the layout to the PDF analyzer
+        PdfAnalyzer.analyze_pdf(pdf_path, engine_type)
+
+      _ ->
+        Logger.error("Failed to generate PDF for instance #{instance_id}")
+        {:error, "Failed to generate PDF"}
+    end
+  end
 end
+
+# "organisations/653736e2-7c8f-4b57-bcad-ef3ed1056cc9/contents/DOCT0006/DOCT0006-v2.pdf"
+# "latex"

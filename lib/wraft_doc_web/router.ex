@@ -483,6 +483,8 @@ defmodule WraftDocWeb.Router do
       post("/contents/:id/request_signature", SignatureController, :request_signature)
       get("/contents/:id/signatures", SignatureController, :get_document_signatures)
       delete("/contents/:id/signatures/:counter_party_id", SignatureController, :revoke_signature)
+      # Temporary route
+      post("/contents/:id/generate_signature", SignatureController, :generate_signature)
     end
   end
 
