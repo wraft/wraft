@@ -234,7 +234,7 @@ defmodule WraftDoc.Documents.Signatures do
           instance_id: instance_id,
           content_type: %{layout: %Layout{organisation_id: org_id} = layout} = _content_type
         } = instance,
-        _params
+        current_user
       ) do
     # Preload the layout with its engine association
     layout = Assets.preload_asset(layout)
@@ -253,14 +253,66 @@ defmodule WraftDoc.Documents.Signatures do
           end
 
         # Pass the engine type from the layout to the PDF analyzer
-        PdfAnalyzer.analyze_pdf(pdf_path, engine_type)
+        case PdfAnalyzer.analyze_pdf(pdf_path, engine_type) do
+          {:ok, json_result} ->
+            # Parse the JSON result to extract rectangle coordinates
+            analysis_result = PdfAnalyzer.parse_result(json_result)
+
+            # Process the rectangles to find signature fields
+            signature_fields = extract_signature_fields(analysis_result["rectangles"])
+
+            # Create new e_signature entries with the signature fields
+            create_signature_entries(signature_fields, instance.id, current_user.id, org_id)
+
+            {:ok, signature_fields}
+
+          {:error, reason} ->
+            Logger.error("Failed to analyze PDF for signatures: #{reason}")
+            {:error, "Failed to analyze PDF for signatures"}
+        end
 
       _ ->
         Logger.error("Failed to generate PDF for instance #{instance_id}")
         {:error, "Failed to generate PDF"}
     end
   end
-end
 
-# "organisations/653736e2-7c8f-4b57-bcad-ef3ed1056cc9/contents/DOCT0006/DOCT0006-v2.pdf"
-# "latex"
+  # Helper function to create signature entries
+  # This reduces nesting depth in the main function
+  defp create_signature_entries(signature_fields, content_id, user_id, org_id) do
+    Enum.each(signature_fields, fn field ->
+      changeset =
+        ESignature.changeset(%ESignature{}, %{
+          content_id: content_id,
+          signature_data: field,
+          signature_position: field.coordinates,
+          signature_type: :handwritten,
+          user_id: user_id,
+          organisation_id: org_id,
+          counter_party_id: nil
+        })
+
+      Repo.insert(changeset)
+    end)
+  end
+
+  # Helper function to extract signature fields from rectangle data
+  # This reduces nesting depth in the main function
+  defp extract_signature_fields(rectangles) do
+    Enum.map(rectangles, fn rect ->
+      %{
+        page: rect["page"],
+        dimensions: %{
+          width: rect["dimensions"]["width"],
+          height: rect["dimensions"]["height"]
+        },
+        coordinates: %{
+          x1: rect["corners"]["x1"],
+          y1: rect["corners"]["y1"],
+          x2: rect["corners"]["x2"],
+          y2: rect["corners"]["y2"]
+        }
+      }
+    end)
+  end
+end

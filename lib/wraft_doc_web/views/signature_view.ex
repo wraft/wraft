@@ -54,14 +54,7 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
     %{
       total_pages: output["total_pages"],
       total_signature_boxes: output["total_rectangles"],
-      signature_boxes:
-        Enum.map(output["rectangles"], fn rect ->
-          %{
-            dimensions: rect["dimensions"],
-            coordinates: rect["corners"],
-            page: rect["page"]
-          }
-        end)
+      signature_boxes: output["rectangles"]
     }
   end
 
