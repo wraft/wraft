@@ -12,7 +12,8 @@ defmodule WraftDoc.AuthTokens.AuthToken do
     :email_verify,
     :set_password,
     :delete_organisation,
-    :document_invite
+    :document_invite,
+    :signer_invite
   ]
 
   schema "auth_token" do

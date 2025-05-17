@@ -1,0 +1,44 @@
+<mjml>
+  <mj-head>
+    <mj-title>Signature Completed: Document <%= @instance_id %></mj-title>
+    <mj-font name="Arial" href="https://fonts.googleapis.com/css?family=Arial" />
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" color="#555555" line-height="1.5" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column width="100%">
+        <mj-image src="https://dev.wraft.co/logo.png" alt="Wraft Logo" align="center" width="120px" />
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-text font-size="24px" color="#333333" font-weight="bold">
+          Signature Completed
+        </mj-text>
+        <mj-text>
+          Hello,
+        </mj-text>
+        <mj-text>
+          <%= @signer_name %> has signed the document: <strong><%= @instance_id %></strong>.
+        </mj-text>
+        <mj-text>
+          You can view the signed document in your dashboard.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-divider border-color="#cccccc" border-width="1px" />
+        <mj-text font-size="14px" color="#888888" align="center">
+          Thank you,<br>Wraft Document Team
+        </mj-text>
+        <mj-text font-size="14px" color="#888888" align="center">
+          If you need assistance, please contact our support team at support@wraft.co
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml> 

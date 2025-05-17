@@ -11,6 +11,7 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
   alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Documents.ContentCollaboration
   alias WraftDoc.Documents.Counter
@@ -876,13 +877,13 @@ defmodule WraftDoc.Documents do
   # Checks whether the raw and serialzed of old and new instances are same or not.
   # If they are both the same, returns false, else returns true
   # @spec instance_updated?(Instance.t(), Instance.t()) :: boolean
-  defp instance_updated?(%{raw: o_raw, serialized: o_map}, %{raw: n_raw, serialized: n_map}) do
+  def instance_updated?(%{raw: o_raw, serialized: o_map}, %{raw: n_raw, serialized: n_map}) do
     !(o_raw === n_raw && o_map === n_map)
   end
 
-  defp instance_updated?(_old_instance, _new_instance), do: true
+  def instance_updated?(_old_instance, _new_instance), do: true
 
-  defp instance_updated?(new_instance) do
+  def instance_updated?(new_instance) do
     new_instance
     |> get_last_version(:build)
     |> instance_updated?(new_instance)
@@ -1139,7 +1140,10 @@ defmodule WraftDoc.Documents do
       "--pdf-engine-opt=--root=/",
       "--pdf-engine-opt=--font-path=#{base_content_dir}/fonts",
       "--pdf-engine=typst"
-    ] ++ get_pandoc_filter("s3_image_typst.lua") ++ ["-o", pdf_file]
+    ] ++
+      get_pandoc_filter("s3_image_typst.lua") ++
+      get_pandoc_filter("signature.lua") ++
+      ["-o", pdf_file]
   end
 
   defp prepare_pandoc_cmds(pdf_file, base_content_dir, _) do
@@ -1147,7 +1151,10 @@ defmodule WraftDoc.Documents do
       "#{base_content_dir}/content.md",
       "--template=#{base_content_dir}/template.tex",
       "--pdf-engine=#{System.get_env("XELATEX_PATH")}"
-    ] ++ get_pandoc_filter("s3_image.lua") ++ ["-o", pdf_file]
+    ] ++
+      get_pandoc_filter("s3_image.lua") ++
+      get_pandoc_filter("signature.lua") ++
+      ["-o", pdf_file]
   end
 
   def get_pandoc_filter(filter_name) do
@@ -1160,13 +1167,14 @@ defmodule WraftDoc.Documents do
 
   defp upload_file_and_delete_local_copy(
          {_, 0} = pandoc_response,
-         file_path,
+         _file_path,
          pdf_file
        ) do
     case Minio.upload_file(pdf_file) do
       {:ok, _} ->
-        File.rm_rf(file_path)
-        File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
+        # #TODO Need to rewrite this logic to be done after the signature coordinates detection
+        # File.rm_rf(file_path)
+        # File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
         pandoc_response
 
       _ ->
@@ -2181,6 +2189,20 @@ defmodule WraftDoc.Documents do
     |> case do
       true -> true
       false -> {:error, "Collaborator does not have access to the document"}
+    end
+  end
+
+  @spec has_access?(User.t(), Ecto.UUID.t(), map()) :: boolean() | {:error, String.t()}
+  def has_access?(%User{id: user_id}, document_id, :counterparty) do
+    CounterParty
+    |> where(
+      [cc],
+      cc.content_id == ^document_id and cc.user_id == ^user_id and cc.signature_status != :pending
+    )
+    |> Repo.exists?()
+    |> case do
+      true -> true
+      false -> {:error, "Counterparty does not have access to the document"}
     end
   end
 
