@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.SignatureView do
   use WraftDocWeb, :view
 
-  alias WraftDocWeb.Api.V1.InstanceView
+  # alias WraftDocWeb.Api.V1.InstanceView
   alias WraftDocWeb.Api.V1.UserView
 
   def render("signature.json", %{signature: signature}) do
@@ -14,7 +14,7 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
       signature_position: signature.signature_position,
       ip_address: signature.ip_address,
       is_valid: signature.is_valid,
-      content: render_one(signature.content, InstanceView, "instance.json", as: :instance),
+      # content: render_one(signature.content, InstanceView, "instance.json", as: :instance),
       counter_party:
         render_one(signature.counter_party, __MODULE__, "counterparty.json", as: :counterparty),
       user: render_one(signature.user, UserView, "user.json", as: :user),
@@ -24,8 +24,9 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
     }
   end
 
-  def render("signatures.json", %{signatures: signatures}) do
+  def render("signatures.json", %{signatures: signatures, document_url: document_url}) do
     %{
+      document_url: document_url,
       signatures: render_many(signatures, __MODULE__, "signature.json", as: :signature)
     }
   end
