@@ -111,7 +111,8 @@ $highlighting-macros$
 
 % Avoid problems with \sout in headers with hyperref:
 \pdfstringdefDisableCommands{\renewcommand{\sout}{}}
-
+\newcommand{\st}[1]{\sout{#1}}
+\newcommand{\ul}[1]{\underline{#1}}
 
 % No paragraph indentation
 % and set space between paragraphs
@@ -157,13 +158,13 @@ $endif$
 % chapter: 0, section: 1, subsection: 2 etc
 $if(toc)$
 {
-    $if(colorlinks)$
-    \hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
-    $endif$
-    \setcounter{secnumdepth}{3}
-    \setcounter{tocdepth}{$toc_depth$}
-    \tableofcontents
-  }
+		$if(colorlinks)$
+		\hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
+		$endif$
+		\setcounter{secnumdepth}{3}
+		\setcounter{tocdepth}{$toc_depth$}
+		\tableofcontents
+	}
 $endif$
 \newpage
 $body$
@@ -171,6 +172,6 @@ $body$
 \vspace{10mm}
 
 $if(qrcode)$
-  \includegraphics[scale=20.25]{$qrcode$}
+\includegraphics[scale=20.25]{$qrcode$}
 $endif$
 \end{document}

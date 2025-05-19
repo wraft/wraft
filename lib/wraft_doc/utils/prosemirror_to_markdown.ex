@@ -119,6 +119,7 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp convert_node(%{"type" => "hardBreak"}, _opts), do: "  \n"
   defp convert_node(%{"type" => "horizontalRule"}, _opts), do: "---"
+  defp convert_node(%{"type" => "pageBreak"}, _opts), do: "\\pagebreak"
 
   defp convert_node(%{"type" => type}, _opts),
     do: raise(InvalidJsonError, "Invalid node type: #{type}")
@@ -133,6 +134,8 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     do: "[#{text}](#{href})"
 
   defp convert_mark(text, %{"type" => "strike"}, _opts), do: "~~#{text}~~"
+
+  defp convert_mark(text, %{"type" => "underline"}, _opts), do: "[#{text}]{.underline}"
 
   defp convert_mark(_text, %{"type" => type}, _opts),
     do: raise(InvalidJsonError, "Invalid mark type: #{type}")

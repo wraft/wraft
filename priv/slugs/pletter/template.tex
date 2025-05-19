@@ -166,11 +166,17 @@ $if(links-as-notes)$
 % Make links footnotes instead of hotlinks:
 \DeclareRobustCommand{\href}[2]{#2\footnote{\url{#1}}}
 $endif$
-$if(strikeout)$
+
 \usepackage[normalem]{ulem}
+
+$if(strikeout)$
 % avoid problems with \sout in headers with hyperref:
 \pdfstringdefDisableCommands{\renewcommand{\sout}{}}
+\newcommand{\st}[1]{\sout{#1}}
 $endif$
+
+\newcommand{\ul}[1]{\underline{#1}}
+
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
@@ -294,39 +300,39 @@ $include-before$
 $endfor$
 $if(toc)$
 {
-    $if(colorlinks)$
-    \hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
-    $endif$
-    \setcounter{tocdepth}{$toc-depth$}
-    \tableofcontents
-  }
+		$if(colorlinks)$
+		\hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
+		$endif$
+		\setcounter{tocdepth}{$toc-depth$}
+		\tableofcontents
+	}
 $endif$
 
 \begin{letter}{$for(address)$$address$$sep$\\$endfor$$if(subject)$\\ ~ \\$subject$$endif$}
-    \opening{$opening$}
+		\opening{$opening$}
 
-  $body$
-  % Add some vertical space before the QR code
-  \vspace{10mm}
+	$body$
+		% Add some vertical space before the QR code
+		\vspace{10mm}
 
-  $if(qrcode)$
-    \includegraphics[scale=0.25]{$qrcode$}
-  $endif$
-  $if(closing)$
-  $if(closing-indentation)$
-    \longindentation=$closing-indentation$
-  $endif$
-    \closing{$closing$}
-  $endif$
-  $if(encl)$
-    \encl{$for(encl)$$encl$$sep$\\$endfor$}
-  $endif$
-  $if(cc)$
-    \cc{$for(cc)$$cc$$sep$\\$endfor$}
-  $endif$
-  $if(ps)$
-    \ps{$ps$}
-  $endif$
+	$if(qrcode)$
+		\includegraphics[scale=0.25]{$qrcode$}
+	$endif$
+	$if(closing)$
+	$if(closing-indentation)$
+		\longindentation=$closing-indentation$
+	$endif$
+		\closing{$closing$}
+	$endif$
+	$if(encl)$
+		\encl{$for(encl)$$encl$$sep$\\$endfor$}
+	$endif$
+	$if(cc)$
+		\cc{$for(cc)$$cc$$sep$\\$endfor$}
+	$endif$
+	$if(ps)$
+		\ps{$ps$}
+	$endif$
 
 \end{letter}
 
