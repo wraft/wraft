@@ -157,6 +157,56 @@ defmodule WraftDocWeb.Router do
     end
   end
 
+  scope "/api", WraftDocWeb do
+    pipe_through(:browser)
+
+    get("/auth/google", CloudServiceController, :login_url)
+    get("/auth/google/callback", CloudServiceController, :callback)
+
+    scope "/google_drive" do
+      pipe_through([WraftDocWeb.GoogleTokenPlug])
+
+      get("/files", CloudServiceController, :list_files)
+
+      # Get file metadata
+      get("/file/:file_id", CloudServiceController, :get_file)
+
+      # Download file
+      get("/download/:file_id", CloudServiceController, :download_file)
+
+      # Export file
+
+      get("/export/:file_id", CloudServiceController, :export_file)
+      get("/export/:file_id/:mime_type", CloudServiceController, :export_file)
+
+      # Search for files
+      get("/search", CloudServiceController, :search_files)
+
+      get("/search-folders", CloudServiceController, :search_folders)
+
+      # list folder
+      get("/list_folders", CloudServiceController, :list_folders)
+
+      # list files in a  folder
+      get("/folder/:folder_id/files", CloudServiceController, :list_files_in_folder)
+
+      # Show root folder
+      get("/explorer", CloudServiceController, :explorer)
+
+      # show folder
+      get("/explorer/:folder_id", CloudServiceController, :explorer)
+
+      #      # get file path
+      get("/folder-path/:folder_id", CloudServiceController, :folder_path)
+
+      # list all folders
+      get("/folders", CloudServiceController, :list_all_folders)
+
+      # list all pdfs
+      get("/pdfs", CloudServiceController, :list_all_pdfs)
+    end
+  end
+
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
     pipe_through([:api, :api_auth, :valid_membership, :ex_audit_track, :email_verify])
@@ -231,11 +281,6 @@ defmodule WraftDocWeb.Router do
       # Enginebody
       resources("/engines", EngineController, only: [:index])
       resources("/frames", FrameController)
-
-      # drive authentication
-      get("/oauth/authorize", CloudServiceController, :authorize)
-      get("/oauth/callback", CloudServiceController, :callback)
-      get("/oauth/files", CloudServiceController, :list_files)
 
       scope "/forms" do
         # Forms

@@ -121,6 +121,11 @@ config :ex_typesense,
   scheme: System.get_env("TYPESENSE_SCHEME") || "http",
   options: %{}
 
+config :wraft_doc, GoogleDrive,
+  client_id: System.get_env("GOOGLE_CLIENT_ID"),
+  client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
+  redirect_uri: System.get_env("GOOGLE_REDIRECT_URI")
+
 config :wraft_doc, WraftDocWeb.Mailer, api_key: System.get_env("SENDGRID_API_KEY")
 
 config :wraft_doc, sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"

@@ -427,4 +427,33 @@ defmodule WraftDoc.AuthTokens do
     |> limit(1)
     |> Repo.one()
   end
+
+  def create_token(attrs) do
+    %AuthToken{}
+    |> AuthToken.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def get_token_by_value(value) when is_binary(value) do
+    Repo.get_by(AuthToken, value: value)
+  end
+
+  def get_latest_token(type) do
+    AuthToken
+    |> where([t], t.token_type == ^type)
+    |> order_by([t], desc: t.inserted_at)
+    |> limit(1)
+    |> select([t], t.value)
+    |> Repo.one()
+  end
+
+  def delete_token(%AuthToken{} = token) do
+    Repo.delete(token)
+  end
+
+  def expired?(%AuthToken{expiry_datetime: nil}), do: false
+
+  def expired?(%AuthToken{expiry_datetime: expiry}) do
+    NaiveDateTime.compare(expiry, NaiveDateTime.utc_now()) == :lt
+  end
 end
