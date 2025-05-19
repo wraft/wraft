@@ -2,22 +2,20 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
   use WraftDocWeb, :view
 
   # alias WraftDocWeb.Api.V1.InstanceView
-  alias WraftDocWeb.Api.V1.UserView
+  # alias WraftDocWeb.Api.V1.UserView
 
   def render("signature.json", %{signature: signature}) do
     %{
       id: signature.id,
       signature_type: signature.signature_type,
-      verification_token: signature.verification_token,
       signature_date: signature.signature_date,
       signature_data: signature.signature_data,
       signature_position: signature.signature_position,
-      ip_address: signature.ip_address,
       is_valid: signature.is_valid,
       # content: render_one(signature.content, InstanceView, "instance.json", as: :instance),
       counter_party:
         render_one(signature.counter_party, __MODULE__, "counterparty.json", as: :counterparty),
-      user: render_one(signature.user, UserView, "user.json", as: :user),
+      # user: render_one(signature.user, UserView, "user.json", as: :user),
       signature_url: generate_url(signature),
       created_at: signature.inserted_at,
       updated_at: signature.updated_at
@@ -47,15 +45,6 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
     %{
       counterparties:
         render_many(counterparties, __MODULE__, "counterparty.json", as: :counterparty)
-    }
-  end
-
-  # Temp
-  def render("sign_detect.json", %{output: output}) do
-    %{
-      total_pages: output["total_pages"],
-      total_signature_boxes: output["total_rectangles"],
-      signature_boxes: output["rectangles"]
     }
   end
 
