@@ -40,7 +40,7 @@ defmodule WraftDoc.Documents.Signatures do
   def get_signature(<<_::288>> = signature_id, <<_::288>> = document_id) do
     ESignature
     |> where([s], s.id == ^signature_id and s.content_id == ^document_id)
-    |> preload([:user, :counter_party, content: [:creator]])
+    |> preload([:counter_party])
     |> Repo.one()
   end
 
@@ -67,7 +67,7 @@ defmodule WraftDoc.Documents.Signatures do
     |> Repo.insert()
     |> case do
       {:ok, signature} ->
-        Repo.preload(signature, [:counter_party, :user, :content])
+        Repo.preload(signature, [:counter_party])
 
       {:error, changeset} ->
         {:error, changeset}
@@ -232,12 +232,21 @@ defmodule WraftDoc.Documents.Signatures do
   def generate_signature(
         %Instance{
           instance_id: instance_id,
+          id: document_id,
           content_type: %{layout: %Layout{organisation_id: org_id} = layout} = _content_type
         } = instance,
         current_user
       ) do
     # Preload the layout with its engine association
     layout = Assets.preload_asset(layout)
+
+    # Delete existing signatures for the instance
+    Repo.delete_all(
+      from(
+        s in ESignature,
+        where: s.content_id == ^document_id and s.organisation_id == ^org_id
+      )
+    )
 
     case Documents.build_doc(instance, layout) do
       {_, 0} ->
@@ -264,8 +273,6 @@ defmodule WraftDoc.Documents.Signatures do
             # Create new e_signature entries with the signature fields
             create_signature_entries(signature_fields, instance.id, current_user.id, org_id)
 
-            {:ok, signature_fields}
-
           {:error, reason} ->
             Logger.error("Failed to analyze PDF for signatures: #{reason}")
             {:error, "Failed to analyze PDF for signatures"}
@@ -280,19 +287,28 @@ defmodule WraftDoc.Documents.Signatures do
   # Helper function to create signature entries
   # This reduces nesting depth in the main function
   defp create_signature_entries(signature_fields, content_id, user_id, org_id) do
-    Enum.each(signature_fields, fn field ->
+    Enum.map(signature_fields, fn field ->
       changeset =
         ESignature.changeset(%ESignature{}, %{
           content_id: content_id,
           signature_data: field,
           signature_position: field.coordinates,
-          signature_type: :handwritten,
+          signature_type: :electronic,
           user_id: user_id,
           organisation_id: org_id,
           counter_party_id: nil
         })
 
-      Repo.insert(changeset)
+      changeset
+      |> Repo.insert()
+      |> case do
+        {:ok, signature} ->
+          Repo.preload(signature, [:counter_party])
+
+        {:error, changeset} ->
+          Logger.error("Failed to create signature entry: #{inspect(changeset)}")
+          {:error, changeset}
+      end
     end)
   end
 
