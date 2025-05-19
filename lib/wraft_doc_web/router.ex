@@ -154,6 +154,8 @@ defmodule WraftDocWeb.Router do
     scope "/v1/guest", Api.V1, as: :v1 do
       resources("/contents", InstanceController, only: [:show, :update])
       resources("/comments", CommentController, only: [:create])
+      post("/contents/:id/sign", SignatureController, :sign_document)
+      get("/contents/:id/validate_signature", SignatureController, :validate_signature)
     end
   end
 
@@ -294,8 +296,6 @@ defmodule WraftDocWeb.Router do
         :update_collaborator_role
       )
 
-      # Add a counterparty
-      post("/contents/:id/add_counterpart", InstanceGuestController, :add_counterparty)
       # Delete counterpart
       delete(
         "/contents/:id/remove_counterparty/:counterparty_id",
@@ -474,6 +474,17 @@ defmodule WraftDocWeb.Router do
         FieldTypeController,
         only: [:create, :index, :show, :update, :delete]
       )
+
+      # Signature routes
+      post("/contents/:id/add_counterparty", SignatureController, :add_counterparty)
+      post("/contents/:id/signatures", SignatureController, :create_signature)
+      get("/contents/:id/signatures/:signature_id", SignatureController, :get_signature)
+      get("/contents/:id/counterparties", SignatureController, :list_counterparties)
+      post("/contents/:id/request_signature", SignatureController, :request_signature)
+      get("/contents/:id/signatures", SignatureController, :get_document_signatures)
+      delete("/contents/:id/signatures/:counter_party_id", SignatureController, :revoke_signature)
+      # Temporary route
+      post("/contents/:id/generate_signature", SignatureController, :generate_signature)
     end
   end
 
