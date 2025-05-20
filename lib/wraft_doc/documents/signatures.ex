@@ -20,6 +20,97 @@ defmodule WraftDoc.Documents.Signatures do
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
 
+  # Path to the visual signer JAR file
+  @visual_signer_jar Application.compile_env(
+                       :wraft_doc,
+                       :visual_signer_jar,
+                       Path.join(
+                         :code.priv_dir(:wraft_doc),
+                         "visual-signer-v2-1.0-SNAPSHOT-jar-with-dependencies.jar"
+                       )
+                     )
+
+  @doc """
+  Apply a visual signature to a PDF document
+
+  ## Parameters
+
+  - `pdf_path`: Path to the input PDF file
+  - `signature_image_path`: Path to the signature image file
+  - `output_pdf_path`: Path where the signed PDF will be saved
+  - `page`: Page number where the signature should be applied (0-based)
+  - `coordinates`: Map containing x1, y1, x2, y2 coordinates for signature placement
+
+  ## Returns
+
+  - `{:ok, output_path}`: If successful
+  - `{:error, reason}`: If the operation fails
+  """
+  @spec apply_visual_signature(String.t(), String.t(), String.t(), integer(), map()) ::
+          {:ok, String.t()} | {:error, String.t()}
+  def apply_visual_signature(pdf_path, signature_image_path, output_pdf_path, page, coordinates) do
+    %{x1: x1, y1: y1, x2: x2, y2: y2} = coordinates
+
+    args = [
+      "-cp",
+      @visual_signer_jar,
+      "com.example.VisualSignerApp",
+      pdf_path,
+      signature_image_path,
+      output_pdf_path,
+      "#{page}",
+      "#{x1}",
+      "#{y1}",
+      "#{x2}",
+      "#{y2}"
+    ]
+
+    Logger.info("Executing visual signer with args: #{inspect(args)}")
+
+    case System.cmd("java", args, stderr_to_stdout: true) do
+      {output, 0} ->
+        Logger.info("Visual signature applied successfully: #{output}")
+        {:ok, output_pdf_path}
+
+      {error, code} ->
+        Logger.error("Failed to apply visual signature. Exit code: #{code}, Error: #{error}")
+        {:error, "Failed to apply visual signature: #{error}"}
+    end
+  end
+
+  # @doc """
+  # Apply a signature to a document using the visual signer
+  # """
+  # @spec apply_signature_to_document(ESignature.t(), String.t()) ::
+  #         {:ok, ESignature.t()} | {:error, String.t()}
+  # def apply_signature_to_document(%ESignature{} = signature, signature_image_path) do
+  #   with %Instance{} = instance <- Repo.preload(signature.content, []),
+  #        instance_dir_path <- "organisations/#{signature.organisation_id}/contents/#{instance.instance_id}",
+  #        instance_updated? <- Documents.instance_updated?(instance),
+  #        pdf_path <- Assets.pdf_file_path(instance, instance_dir_path, instance_updated?),
+  #        temp_dir <- System.tmp_dir!(),
+  #        output_filename <- "signed_#{Path.basename(pdf_path)}",
+  #        output_path <- Path.join(temp_dir, output_filename),
+  #        page <- Map.get(signature.signature_data, "page", 0),
+  #        {:ok, signed_pdf_path} <- apply_visual_signature(
+  #          pdf_path,
+  #          signature_image_path,
+  #          output_path,
+  #          page,
+  #          signature.signature_position
+  #        ),
+  #        {:ok, _} <- update_e_signature(signature, %{
+  #          signed_file: signed_pdf_path,
+  #          is_valid: true,
+  #          signature_date: DateTime.utc_now()
+  #        }) do
+  #     {:ok, Repo.reload(signature)}
+  #   else
+  #     nil -> {:error, "Document or signature not found"}
+  #     {:error, reason} -> {:error, reason}
+  #   end
+  # end
+
   @doc """
   Get a signature by counterparty ID
   """
