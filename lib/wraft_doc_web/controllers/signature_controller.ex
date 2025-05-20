@@ -10,6 +10,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.Client.Minio
   alias WraftDoc.CounterParties
   alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.Documents
@@ -112,6 +113,21 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
               "x" => 100,
               "y" => 200
             }
+          })
+        end,
+      SignedPdfResponse:
+        swagger_schema do
+          title("Signed PDF Response")
+          description("Response with URL to the signed PDF")
+
+          properties do
+            signed_pdf_url(:string, "URL to the signed PDF", required: true)
+            message(:string, "Success message")
+          end
+
+          example(%{
+            signed_pdf_url: "https://example.com/signed_document.pdf",
+            message: "Visual signature applied successfully"
           })
         end
     }
@@ -530,6 +546,41 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
          {:ok, %ESignature{} = updated_signature} <-
            Signatures.assign_counter_party(signature, counter_party) do
       render(conn, "signature.json", signature: updated_signature)
+    end
+  end
+
+  @doc """
+  Apply a visual signature to a PDF document
+  """
+  swagger_path :apply_visual_signature do
+    post("/contents/{id}/signatures/{signature_id}/append_signature")
+    summary("Apply visual signature to PDF")
+    description("API to apply a visual signature to a PDF document")
+
+    parameters do
+      id(:path, :string, "Document ID", required: true)
+      signature_id(:path, :string, "Signature ID", required: true)
+      signature_image(:body, :file, "Signature image file", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:SignedPdfResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec apply_visual_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def apply_visual_signature(
+        conn,
+        %{"id" => document_id, "signature_id" => signature_id} = params
+      ) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+         %ESignature{} = signature <- Signatures.get_signature(signature_id, document_id),
+         {:ok, %ESignature{signed_file: signed_pdf_path}} <-
+           Signatures.apply_signature_to_document(signature, instance, params) do
+      render(conn, "signed_pdf.json", url: Minio.generate_url(signed_pdf_path))
     end
   end
 end

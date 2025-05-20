@@ -488,6 +488,12 @@ defmodule WraftDocWeb.Router do
       put("/contents/:id/signatures/:signature_id", SignatureController, :update_signature)
 
       post(
+        "/contents/:id/signatures/:signature_id/append_signature",
+        SignatureController,
+        :apply_visual_signature
+      )
+
+      post(
         "/contents/:id/signatures/:signature_id/assign",
         SignatureController,
         :assign_counter_party
