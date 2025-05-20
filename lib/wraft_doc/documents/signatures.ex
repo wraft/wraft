@@ -129,7 +129,7 @@ defmodule WraftDoc.Documents.Signatures do
             {updated_signature, output_pdf_path}
 
           {:error, reason} ->
-            IO.warn("Failed to apply signature: #{inspect(reason)}")
+            Logger.error("Failed to apply signature: #{inspect(reason)}")
             {signature, current_pdf}
         end
       end)
