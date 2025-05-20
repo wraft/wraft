@@ -59,7 +59,7 @@ defmodule WraftDoc.Documents.Signatures do
     args = [
       "-cp",
       @visual_signer_jar,
-      "com.example.VisualSignerApp",
+      "com.wraft.VisualSignerApp",
       pdf_path,
       signature_image_path,
       output_pdf_path,
