@@ -47,6 +47,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       raw: instance.raw,
       serialized: instance.serialized,
       build: instance.build,
+      signed_doc_url: instance.signed_doc_url,
       editable: instance.editable,
       inserted_at: instance.inserted_at,
       updated_at: instance.updated_at
