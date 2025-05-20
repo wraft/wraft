@@ -767,7 +767,13 @@ defmodule WraftDoc.Documents do
 
         doc_url = Minio.generate_url(file_path)
 
-        Map.put(instance, :build, doc_url)
+        output_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
+        signed_doc_url = Minio.generate_url(output_pdf_path)
+
+        Map.merge(instance, %{
+          build: doc_url,
+          signed_doc_url: signed_doc_url
+        })
     end
   end
 
