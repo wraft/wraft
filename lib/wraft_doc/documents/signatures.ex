@@ -375,6 +375,15 @@ defmodule WraftDoc.Documents.Signatures do
       )
     )
 
+    # When ESignature are removed. Also put the associated counterparty to pending
+    Repo.update_all(
+      from(
+        cp in CounterParty,
+        where: cp.content_id == ^document_id
+      ),
+      set: [signature_status: :pending]
+    )
+
     case Documents.build_doc(instance, layout) do
       {_, 0} ->
         instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
