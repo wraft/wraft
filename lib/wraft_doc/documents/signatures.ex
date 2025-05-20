@@ -11,6 +11,7 @@ defmodule WraftDoc.Documents.Signatures do
   alias WraftDoc.Assets
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
+  alias WraftDoc.Client.Minio
   alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.Documents
   alias WraftDoc.Documents.ESignature
@@ -48,9 +49,13 @@ defmodule WraftDoc.Documents.Signatures do
   """
   @spec apply_visual_signature(String.t(), String.t(), String.t(), integer(), map()) ::
           {:ok, String.t()} | {:error, String.t()}
-  def apply_visual_signature(pdf_path, signature_image_path, output_pdf_path, page, coordinates) do
-    %{x1: x1, y1: y1, x2: x2, y2: y2} = coordinates
-
+  def apply_visual_signature(
+        pdf_path,
+        signature_image_path,
+        output_pdf_path,
+        page,
+        %{"x1" => x1, "y1" => y1, "x2" => x2, "y2" => y2} = _coordinates
+      ) do
     args = [
       "-cp",
       @visual_signer_jar,
@@ -78,38 +83,45 @@ defmodule WraftDoc.Documents.Signatures do
     end
   end
 
-  # @doc """
-  # Apply a signature to a document using the visual signer
-  # """
-  # @spec apply_signature_to_document(ESignature.t(), String.t()) ::
-  #         {:ok, ESignature.t()} | {:error, String.t()}
-  # def apply_signature_to_document(%ESignature{} = signature, signature_image_path) do
-  #   with %Instance{} = instance <- Repo.preload(signature.content, []),
-  #        instance_dir_path <- "organisations/#{signature.organisation_id}/contents/#{instance.instance_id}",
-  #        instance_updated? <- Documents.instance_updated?(instance),
-  #        pdf_path <- Assets.pdf_file_path(instance, instance_dir_path, instance_updated?),
-  #        temp_dir <- System.tmp_dir!(),
-  #        output_filename <- "signed_#{Path.basename(pdf_path)}",
-  #        output_path <- Path.join(temp_dir, output_filename),
-  #        page <- Map.get(signature.signature_data, "page", 0),
-  #        {:ok, signed_pdf_path} <- apply_visual_signature(
-  #          pdf_path,
-  #          signature_image_path,
-  #          output_path,
-  #          page,
-  #          signature.signature_position
-  #        ),
-  #        {:ok, _} <- update_e_signature(signature, %{
-  #          signed_file: signed_pdf_path,
-  #          is_valid: true,
-  #          signature_date: DateTime.utc_now()
-  #        }) do
-  #     {:ok, Repo.reload(signature)}
-  #   else
-  #     nil -> {:error, "Document or signature not found"}
-  #     {:error, reason} -> {:error, reason}
-  #   end
-  # end
+  @doc """
+  Apply a signature to a document using the visual signer
+  """
+  @spec apply_signature_to_document(ESignature.t(), Instance.t(), map()) ::
+          {:ok, ESignature.t()} | {:error, String.t()}
+  def apply_signature_to_document(
+        %ESignature{signature_data: %{"coordinates" => coordinates, "page" => page}} = signature,
+        %Instance{
+          instance_id: instance_id,
+          content_type: %{layout: %Layout{organisation_id: org_id} = _layout} = _content_type
+        } = instance,
+        %{"signature_image" => %Plug.Upload{path: signature_image_path}}
+      ) do
+    # Download the pdf from the minio
+    instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
+    instance_updated? = Documents.instance_updated?(instance)
+    pdf_path = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
+    Minio.download(pdf_path)
+
+    output_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
+
+    # Apply the visual signature
+    case apply_visual_signature(
+           pdf_path,
+           signature_image_path,
+           output_pdf_path,
+           page,
+           coordinates
+         ) do
+      {:ok, _output_path} ->
+        # Update the signature with the signed file path
+        Minio.upload_file(output_pdf_path)
+        # Update the signature with the signed file path
+        update_e_signature(signature, %{signed_file: output_pdf_path})
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
   @doc """
   Get a signature by counterparty ID
