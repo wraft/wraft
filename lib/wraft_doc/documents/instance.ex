@@ -27,6 +27,7 @@ defmodule WraftDoc.Documents.Instance do
     field(:meta, DocumentMetaType)
     field(:type, :integer)
     field(:build, :string, virtual: true)
+    field(:signed_doc_url, :string, virtual: true)
     field(:next_state, :string, virtual: true)
     field(:previous_state, :string, virtual: true)
     field(:editable, :boolean, default: true)
