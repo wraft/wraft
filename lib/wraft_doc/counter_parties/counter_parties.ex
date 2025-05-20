@@ -25,6 +25,17 @@ defmodule WraftDoc.CounterParties do
     do: Repo.get_by(CounterParty, content_id: document_id, email: email)
 
   @doc """
+   Get counterparty with signatures preloaded
+  """
+  @spec get_counterparty_with_signatures(String.t(), String.t()) :: CounterParty.t() | nil
+  def get_counterparty_with_signatures(<<_::288>> = document_id, <<_::288>> = counterparty_id) do
+    CounterParty
+    |> where([cp], cp.content_id == ^document_id and cp.id == ^counterparty_id)
+    |> preload([:e_signature])
+    |> Repo.one()
+  end
+
+  @doc """
     Accept counterparty access to document
   """
   @spec approve_document_access(CounterParty.t()) ::

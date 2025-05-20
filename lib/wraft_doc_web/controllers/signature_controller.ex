@@ -553,7 +553,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   Apply a visual signature to a PDF document
   """
   swagger_path :apply_visual_signature do
-    post("/contents/{id}/signatures/{signature_id}/append_signature")
+    post("/contents/{id}/signatures/{counter_party_id}/append_signature")
     summary("Apply visual signature to PDF")
     description("API to apply a visual signature to a PDF document")
 
@@ -572,14 +572,19 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @spec apply_visual_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def apply_visual_signature(
         conn,
-        %{"id" => document_id, "signature_id" => signature_id} = params
+        %{"id" => document_id, "counter_party_id" => counter_party_id} = params
       ) do
     current_user = conn.assigns.current_user
+    ip_address = conn.remote_ip |> :inet_parse.ntoa() |> to_string()
+    params = Map.merge(params, %{"ip_address" => ip_address})
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
-         %ESignature{} = signature <- Signatures.get_signature(signature_id, document_id),
-         {:ok, %ESignature{signed_file: signed_pdf_path}} <-
-           Signatures.apply_signature_to_document(signature, instance, params) do
+         %CounterParty{} = counter_party <-
+           CounterParties.get_counterparty_with_signatures(document_id, counter_party_id),
+         {:ok, %{counterparty: _, signed_pdf_path: signed_pdf_path}} <-
+           Signatures.apply_signature_to_document(counter_party, instance, params),
+         {:ok, %CounterParty{} = _counter_party} <-
+           CounterParties.counter_party_sign(counter_party, params) do
       render(conn, "signed_pdf.json", url: Minio.generate_url(signed_pdf_path))
     end
   end
