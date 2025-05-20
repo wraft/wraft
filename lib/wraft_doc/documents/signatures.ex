@@ -137,19 +137,22 @@ defmodule WraftDoc.Documents.Signatures do
   end
 
   @doc """
-  Update ESignature with signature data
+  Update a signature
   """
-  @spec update_e_signature(ESignature.t(), String.t()) ::
+  @spec update_e_signature(ESignature.t(), map()) ::
           {:ok, ESignature.t()} | {:error, Ecto.Changeset.t()}
   def update_e_signature(%ESignature{} = signature, params) do
+    # Make sure to include signed_file in the allowed params
     signature
-    |> ESignature.signature_changeset(
-      Map.merge(params, %{
-        "is_valid" => true,
-        "signature_date" => DateTime.utc_now()
-      })
-    )
+    |> ESignature.changeset(params)
     |> Repo.update()
+    |> case do
+      {:ok, updated_signature} ->
+        {:ok, Repo.preload(updated_signature, [:counter_party])}
+
+      error ->
+        error
+    end
   end
 
   @doc """
@@ -330,5 +333,26 @@ defmodule WraftDoc.Documents.Signatures do
         }
       }
     end)
+  end
+
+  @doc """
+  Assign a counter party to a signature
+  """
+  @spec assign_counter_party(ESignature.t(), CounterParty.t()) ::
+          {:ok, ESignature.t()} | {:error, Ecto.Changeset.t()}
+  def assign_counter_party(
+        %ESignature{} = signature,
+        %CounterParty{id: counter_party_id} = counter_party
+      ) do
+    signature
+    |> ESignature.changeset(%{counter_party_id: counter_party_id})
+    |> Repo.update()
+    |> case do
+      {:ok, updated_signature} ->
+        {:ok, %{updated_signature | counter_party: counter_party}}
+
+      error ->
+        error
+    end
   end
 end

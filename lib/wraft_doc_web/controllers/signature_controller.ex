@@ -462,4 +462,74 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
       render(conn, "signatures.json", signatures: signatures, document_url: document_url)
     end
   end
+
+  @doc """
+  Update a signature
+  """
+  swagger_path :update_signature do
+    put("/contents/{id}/signatures/{signature_id}")
+    summary("Update a signature")
+    description("API to update a signature's details")
+
+    parameters do
+      id(:path, :string, "Document ID", required: true)
+      signature_id(:path, :string, "Signature ID", required: true)
+      signature(:body, Schema.ref(:SignatureProcess), "Updated signature details", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Signature))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec update_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update_signature(conn, %{"id" => document_id, "signature_id" => signature_id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
+         %ESignature{} = signature <- Signatures.get_signature(signature_id, document_id),
+         {:ok, %ESignature{} = updated_signature} <-
+           Signatures.update_e_signature(signature, params) do
+      render(conn, "signature.json", signature: updated_signature)
+    end
+  end
+
+  @doc """
+  Assign a counter party to a signature
+  """
+  swagger_path :assign_counter_party do
+    post("/contents/{id}/signatures/{signature_id}/assign")
+    summary("Assign counter party to signature")
+    description("API to assign a counter party to an existing signature")
+
+    parameters do
+      id(:path, :string, "Document ID", required: true)
+      signature_id(:path, :string, "Signature ID", required: true)
+      counterparty_id(:body, :string, "Counter Party ID", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Signature))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec assign_counter_party(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def assign_counter_party(conn, %{
+        "id" => document_id,
+        "signature_id" => signature_id,
+        "counterparty_id" => counter_party_id
+      }) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
+         %ESignature{} = signature <- Signatures.get_signature(signature_id, document_id),
+         %CounterParty{} = counter_party <-
+           CounterParties.get_counterparty(document_id, counter_party_id),
+         {:ok, %ESignature{} = updated_signature} <-
+           Signatures.assign_counter_party(signature, counter_party) do
+      render(conn, "signature.json", signature: updated_signature)
+    end
+  end
 end
