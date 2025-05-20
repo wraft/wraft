@@ -89,38 +89,58 @@ defmodule WraftDoc.Documents.Signatures do
   @spec apply_signature_to_document(ESignature.t(), Instance.t(), map()) ::
           {:ok, ESignature.t()} | {:error, String.t()}
   def apply_signature_to_document(
-        %ESignature{signature_data: %{"coordinates" => coordinates, "page" => page}} = signature,
+        %CounterParty{e_signature: signatures} = counterparty,
         %Instance{
           instance_id: instance_id,
           content_type: %{layout: %Layout{organisation_id: org_id} = _layout} = _content_type
         } = instance,
         %{"signature_image" => %Plug.Upload{path: signature_image_path}}
       ) do
-    # Download the pdf from the minio
     instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
-    instance_updated? = Documents.instance_updated?(instance)
-    pdf_path = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
+
+    pdf_path =
+      instance
+      |> Documents.instance_updated?()
+      |> then(&Assets.pdf_file_path(instance, instance_dir_path, &1))
+
     Minio.download(pdf_path)
 
     output_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
 
-    # Apply the visual signature
-    case apply_visual_signature(
-           pdf_path,
-           signature_image_path,
-           output_pdf_path,
-           page,
-           coordinates
-         ) do
-      {:ok, _output_path} ->
-        # Update the signature with the signed file path
-        Minio.upload_file(output_pdf_path)
-        # Update the signature with the signed file path
-        update_e_signature(signature, %{signed_file: output_pdf_path})
+    {updated_signatures, _} =
+      Enum.map_reduce(signatures, pdf_path, fn %ESignature{
+                                                 signature_data: %{
+                                                   "page" => page,
+                                                   "coordinates" => coordinates
+                                                 }
+                                               } = signature,
+                                               current_pdf ->
+        case apply_visual_signature(
+               current_pdf,
+               signature_image_path,
+               output_pdf_path,
+               page,
+               coordinates
+             ) do
+          {:ok, _output_path} ->
+            {:ok, updated_signature} =
+              update_e_signature(signature, %{signed_file: output_pdf_path})
 
-      {:error, reason} ->
-        {:error, reason}
-    end
+            {updated_signature, output_pdf_path}
+
+          {:error, reason} ->
+            IO.warn("Failed to apply signature: #{inspect(reason)}")
+            {signature, current_pdf}
+        end
+      end)
+
+    Minio.upload_file(output_pdf_path)
+
+    {:ok,
+     %{
+       counterparty: %{counterparty | e_signature: updated_signatures},
+       signed_pdf_path: output_pdf_path
+     }}
   end
 
   @doc """
@@ -251,10 +271,11 @@ defmodule WraftDoc.Documents.Signatures do
     |> Repo.update()
     |> case do
       {:ok, updated_signature} ->
-        {:ok, Repo.preload(updated_signature, [:counter_party])}
+        Repo.preload(updated_signature, [:counter_party])
+        {:ok, updated_signature}
 
-      error ->
-        error
+      {:error, changeset} ->
+        {:error, changeset}
     end
   end
 

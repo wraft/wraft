@@ -12,7 +12,7 @@ defmodule WraftDoc.CounterParties.CounterParty do
     field(:signature_status, Ecto.Enum, values: @signature_status, default: :pending)
     field(:signature_date, :utc_datetime)
     field(:signature_ip, :string)
-    has_one(:e_signature, WraftDoc.Documents.ESignature)
+    has_many(:e_signature, WraftDoc.Documents.ESignature)
     belongs_to(:content, WraftDoc.Documents.Instance)
     belongs_to(:user, WraftDoc.Account.User)
 
