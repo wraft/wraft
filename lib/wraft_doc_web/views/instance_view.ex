@@ -133,9 +133,10 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
-  def render("build_fail.json", %{exit_code: exit_code}) do
+  def render("build_fail.json", %{exit_code: exit_code, error: error}) do
     %{
       info: "Build failed",
+      error: error,
       exit_code: exit_code
     }
   end
