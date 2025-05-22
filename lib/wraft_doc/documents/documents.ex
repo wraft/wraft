@@ -984,16 +984,13 @@ defmodule WraftDoc.Documents do
         %Layout{organisation_id: org_id} = layout
       ) do
     content_type = Repo.preload(content_type, [:fields, :theme])
-    instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
+    theme = Repo.preload(content_type.theme, [:assets])
+    file_path = Assets.download_slug_file(layout)
+
+    instance_dir_path = Path.join(["organisations", "#{org_id}", "contents", "#{instance_id}"])
     base_content_dir = Path.join(File.cwd!(), instance_dir_path)
     File.mkdir_p(base_content_dir)
     File.mkdir_p(Path.join(File.cwd!(), "organisations/images/"))
-
-    # Load all the assets corresponding with the given theme
-    theme = Repo.preload(content_type.theme, [:assets])
-
-    file_path = Assets.download_slug_file(layout)
-
     System.cmd("cp", ["-a", file_path, base_content_dir])
 
     # Generate QR code for the file

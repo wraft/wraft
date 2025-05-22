@@ -790,7 +790,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       %Instance{content_type: %{layout: layout} = content_type} = instance ->
         with %Layout{} = layout <- Assets.preload_asset(layout),
              :ok <- Frames.check_frame_mapping(content_type),
-             {_, exit_code} <- Documents.build_doc(instance, layout) do
+             {_error, exit_code} = build_response <- Documents.build_doc(instance, layout) do
           end_time = Timex.now()
 
           Task.start_link(fn ->
@@ -801,7 +801,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             })
           end)
 
-          handle_response(conn, exit_code, instance, params)
+          handle_response(conn, build_response, instance, params)
         end
 
       _ ->
@@ -814,19 +814,19 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       |> json(%{error: "File not found"})
   end
 
-  defp handle_response(conn, exit_code, instance, params) do
-    case exit_code do
-      0 ->
+  defp handle_response(conn, build_response, instance, params) do
+    case build_response do
+      {_, 0} ->
         Task.start_link(fn ->
           Documents.create_version(conn.assigns.current_user, instance, params, :build)
         end)
 
         render(conn, "instance.json", instance: instance)
 
-      _ ->
+      {error, exit_code} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render("build_fail.json", %{exit_code: exit_code})
+        |> render("build_fail.json", %{exit_code: exit_code, error: error})
     end
   end
 
