@@ -16,7 +16,6 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.Documents
   alias WraftDoc.Documents.ContentCollaboration
-  alias WraftDoc.Documents.ESignature
   alias WraftDoc.Documents.Instance
 
   def swagger_definitions do
@@ -213,8 +212,7 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
            AuthTokens.check_token(invite_token, :signer_invite),
          %User{} = invited_signatory <- Account.get_user_by_email(email),
          %CounterParty{} = counter_party <- CounterParties.get_counterparty(document_id, email),
-         %CounterParty{e_signature: %ESignature{verification_token: verification_token}} =
-           counter_party <- CounterParties.approve_document_access(counter_party),
+         %CounterParty{} = counter_party <- CounterParties.approve_document_access(counter_party),
          {:ok, guest_access_token, _} <-
            AuthTokens.create_guest_access_token(invited_signatory, %{
              email: email,
@@ -223,8 +221,7 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
            }) do
       render(conn, "verify_signer.json",
         counter_party: counter_party,
-        token: guest_access_token,
-        verification_token: verification_token
+        token: guest_access_token
       )
     else
       _ ->

@@ -151,5 +151,19 @@ defmodule WraftDoc.Client.Minio do
     end
   end
 
+  @doc """
+  Check if a file exists in MinIO.
+  """
+  @spec file_exists?(binary()) :: boolean()
+  def file_exists?(file_path) do
+    bucket()
+    |> S3.head_object(file_path)
+    |> @ex_aws_module.request()
+    |> case do
+      {:ok, _} -> true
+      _ -> false
+    end
+  end
+
   defp bucket, do: System.get_env("MINIO_BUCKET")
 end
