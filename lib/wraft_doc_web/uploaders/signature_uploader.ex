@@ -29,13 +29,13 @@ defmodule WraftDocWeb.SignatureUploader do
   end
 
   # Change Filename to include timestamp for uniqueness
-  def filename(_version, {_file, signature}) do
-    "signature_#{signature.counter_party_id}"
+  def filename(_version, {_file, _counterparty}) do
+    "signature"
   end
 
   # Storage Directory
-  def storage_dir(_version, {_file, signature}) do
-    "organisations/#{signature.organisation_id}/signatures"
+  def storage_dir(_version, {_file, counterparty}) do
+    "users/#{counterparty.user_id}/signatures"
   end
 
   defp file_size(%Waffle.File{} = file), do: file.path |> File.stat!() |> Map.get(:size)

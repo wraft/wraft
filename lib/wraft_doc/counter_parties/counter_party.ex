@@ -2,6 +2,7 @@ defmodule WraftDoc.CounterParties.CounterParty do
   @moduledoc """
     This is the Counter Parties module for managing document signatories
   """
+  use Waffle.Ecto.Schema
   use WraftDoc.Schema
 
   @signature_status [:pending, :accepted, :signed, :rejected]
@@ -12,7 +13,7 @@ defmodule WraftDoc.CounterParties.CounterParty do
     field(:signature_status, Ecto.Enum, values: @signature_status, default: :pending)
     field(:signature_date, :utc_datetime)
     field(:signature_ip, :string)
-    field(:signature_image, :string)
+    field(:signature_image, WraftDocWeb.SignatureUploader.Type)
     field(:color_rgb, :map)
     has_many(:e_signature, WraftDoc.Documents.ESignature)
     belongs_to(:content, WraftDoc.Documents.Instance)
@@ -31,9 +32,9 @@ defmodule WraftDoc.CounterParties.CounterParty do
       :signature_status,
       :signature_date,
       :signature_ip,
-      :signature_image,
       :color_rgb
     ])
+    |> cast_attachments(attrs, [:signature_image])
     |> validate_required([:name, :content_id])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
     |> unique_constraint(:user_id,
@@ -56,23 +57,22 @@ defmodule WraftDoc.CounterParties.CounterParty do
   end
 
   defp validate_color_rgb(changeset) do
-    case get_field(changeset, :color_rgb) do
-      nil ->
-        changeset
+    changeset
+    |> get_field(:color_rgb)
+    |> validate_color_rgb_values(changeset)
+  end
 
-      color_rgb ->
-        case color_rgb do
-          # Range should be from 200 to 255
-          %{"r" => r, "g" => g, "b" => b} when r in 200..255 and g in 200..255 and b in 200..255 ->
-            changeset
+  defp validate_color_rgb_values(nil, changeset), do: changeset
 
-          _ ->
-            add_error(
-              changeset,
-              :color_rgb,
-              "must be a map with keys r, g, b and values between 200 and 255"
-            )
-        end
-    end
+  defp validate_color_rgb_values(%{"r" => r, "g" => g, "b" => b} = _color_rgb, changeset)
+       when r in 200..255 and g in 200..255 and b in 200..255,
+       do: changeset
+
+  defp validate_color_rgb_values(_invalid_color_rgb, changeset) do
+    add_error(
+      changeset,
+      :color_rgb,
+      "must be a map with keys r, g, b and values between 200 and 255"
+    )
   end
 end
