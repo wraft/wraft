@@ -467,14 +467,6 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     with %Instance{build: document_url} = instance <-
            Documents.show_instance(document_id, current_user),
          signatures <- Signatures.generate_signature(instance, current_user) do
-      # Create a structure that matches what the view expects
-      # output = %{
-      #   # This will be updated if available in signature_fields
-      #   "total_pages" => 0,
-      #   "total_rectangles" => length(signature_fields),
-      #   "rectangles" => signature_fields
-      # }
-
       render(conn, "signatures.json", signatures: signatures, document_url: document_url)
     end
   end
