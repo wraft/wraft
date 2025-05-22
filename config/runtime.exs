@@ -133,3 +133,19 @@ config :wraft_doc, :paddle,
   api_key: System.get_env("PADDLE_API_KEY"),
   webhook_secret_key: System.get_env("PADDLE_WEBHOOK_SECRET_KEY"),
   base_url: System.get_env("PADDLE_BASE_URL")
+
+# Configure Sentry
+config :sentry,
+  dsn: System.get_env("SENTRY_DSN"),
+  environment_name: :prod,
+  enable_source_code_context: true,
+  root_source_code_path: File.cwd!(),
+  tags: %{
+    env: "production"
+  },
+  included_environments: [:prod]
+
+# Do not print debug messages in production
+config :logger,
+  level: :info,
+  backends: [:console, Sentry.LoggerBackend]
