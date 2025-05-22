@@ -34,6 +34,8 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
       id: counterparty.id,
       name: counterparty.name,
       email: counterparty.email,
+      color_rgb: counterparty.color_rgb,
+      signature_image: counterparty.signature_image,
       signature_status: counterparty.signature_status,
       signature_date: counterparty.signature_date,
       created_at: counterparty.inserted_at,

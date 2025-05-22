@@ -28,11 +28,21 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
           properties do
             name(:string, "Name of the signatory", required: true)
             email(:string, "Email of the signatory", required: true)
+            signature_image(:string, "Base64 encoded signature image")
+
+            signature_type(:string, "Type of signature",
+              enum: ["digital", "electronic", "handwritten"]
+            )
+
+            color_rgb(:map, "Color of the signature", required: true)
           end
 
           example(%{
             name: "John Doe",
-            email: "john.doe@example.com"
+            email: "john.doe@example.com",
+            signature_image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...",
+            signature_type: "handwritten",
+            color_rgb: %{"r" => 255, "g" => 255, "b" => 255}
           })
         end,
       Signature:
