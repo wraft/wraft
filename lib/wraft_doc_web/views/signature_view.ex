@@ -35,7 +35,7 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
       name: counterparty.name,
       email: counterparty.email,
       color_rgb: counterparty.color_rgb,
-      signature_image: counterparty.signature_image,
+      signature_image: generate_url(counterparty),
       signature_status: counterparty.signature_status,
       signature_date: counterparty.signature_date,
       created_at: counterparty.inserted_at,
@@ -60,7 +60,7 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
     }
   end
 
-  def generate_url(%{file: file} = signature) do
+  def generate_url(%{signature_image: file} = signature) do
     WraftDocWeb.SignatureUploader.url({file, signature}, signed: true)
   end
 end
