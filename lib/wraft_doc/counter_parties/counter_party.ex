@@ -51,8 +51,9 @@ defmodule WraftDoc.CounterParties.CounterParty do
 
   def sign_changeset(counter_parties, attrs) do
     counter_parties
-    |> cast(attrs, [:signature_status, :signature_date, :signature_ip, :signature_image])
-    |> validate_required([:signature_status, :signature_date])
+    |> cast(attrs, [:signature_status, :signature_date, :signature_ip])
+    |> cast_attachments(attrs, [:signature_image])
+    |> validate_required([:signature_status, :signature_date, :signature_image])
   end
 
   defp validate_color_rgb(changeset) do
