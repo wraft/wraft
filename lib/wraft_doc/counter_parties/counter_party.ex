@@ -34,7 +34,6 @@ defmodule WraftDoc.CounterParties.CounterParty do
       :signature_ip,
       :color_rgb
     ])
-    |> cast_attachments(attrs, [:signature_image])
     |> validate_required([:name, :content_id])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
     |> unique_constraint(:user_id,

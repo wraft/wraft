@@ -66,7 +66,6 @@ defmodule WraftDoc.CounterParties do
         %{
           "email" => email,
           "name" => name,
-          "signature_image" => signature_image,
           "color_rgb" => color_rgb
         },
         %User{id: user_id} = _user
@@ -77,7 +76,6 @@ defmodule WraftDoc.CounterParties do
       email: email,
       content_id: document_id,
       user_id: user_id,
-      signature_image: signature_image,
       color_rgb: Jason.decode!(color_rgb)
     })
     |> Repo.insert()
