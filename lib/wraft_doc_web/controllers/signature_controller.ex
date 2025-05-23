@@ -574,13 +574,15 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @spec apply_visual_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def apply_visual_signature(
         conn,
-        %{"id" => document_id, "counter_party_id" => counter_party_id} = params
+        %{"id" => document_id, "counter_party_id" => counter_party_id, "auth_type" => "sign"} =
+          params
       ) do
     current_user = conn.assigns.current_user
     ip_address = conn.remote_ip |> :inet_parse.ntoa() |> to_string()
     params = Map.merge(params, %{"ip_address" => ip_address})
 
-    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+    with true <- Documents.has_access?(current_user, document_id, :counterparty),
+         %Instance{} = instance <- Documents.show_instance(document_id, current_user),
          %CounterParty{} = counter_party <-
            CounterParties.get_counterparty_with_signatures(document_id, counter_party_id),
          {:ok, %{counterparty: _, signed_pdf_path: signed_pdf_path}} <-
