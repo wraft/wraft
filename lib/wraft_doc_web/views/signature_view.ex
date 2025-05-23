@@ -16,7 +16,6 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
       counter_party:
         render_one(signature.counter_party, __MODULE__, "counterparty.json", as: :counterparty),
       # user: render_one(signature.user, UserView, "user.json", as: :user),
-      signature_url: generate_url(signature),
       created_at: signature.inserted_at,
       updated_at: signature.updated_at
     }
