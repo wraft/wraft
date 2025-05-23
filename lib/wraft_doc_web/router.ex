@@ -156,6 +156,12 @@ defmodule WraftDocWeb.Router do
       resources("/comments", CommentController, only: [:create])
       post("/contents/:id/sign", SignatureController, :sign_document)
       get("/contents/:id/validate_signature", SignatureController, :validate_signature)
+
+      post(
+        "/contents/:id/signatures/:counter_party_id/append_signature",
+        SignatureController,
+        :apply_visual_signature
+      )
     end
   end
 

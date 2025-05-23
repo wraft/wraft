@@ -89,6 +89,13 @@ defmodule WraftDoc.Documents.Signatures do
   @spec apply_signature_to_document(ESignature.t(), Instance.t(), map()) ::
           {:ok, ESignature.t()} | {:error, String.t()}
   def apply_signature_to_document(
+        %CounterParty{e_signature: []},
+        _instance,
+        _params
+      ),
+      do: {:error, "Counterparty has no signatures"}
+
+  def apply_signature_to_document(
         %CounterParty{e_signature: signatures} = counterparty,
         %Instance{
           instance_id: instance_id,
