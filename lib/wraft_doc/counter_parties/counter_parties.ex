@@ -76,7 +76,7 @@ defmodule WraftDoc.CounterParties do
       email: email,
       content_id: document_id,
       user_id: user_id,
-      color_rgb: Jason.decode!(color_rgb)
+      color_rgb: color_rgb
     })
     |> Repo.insert()
     |> case do
