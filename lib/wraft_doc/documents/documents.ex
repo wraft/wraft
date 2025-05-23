@@ -1168,11 +1168,11 @@ defmodule WraftDoc.Documents do
         File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
         pandoc_response
 
-      _ ->
+      {:error, error, error_code} ->
         File.rm(pdf_file)
         File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
-        Logger.error("File upload failed")
-        {"", 222}
+        Logger.error(error)
+        {error, error_code}
     end
   end
 

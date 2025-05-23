@@ -30,7 +30,15 @@ defmodule WraftDoc.Client.Minio do
     |> S3.Upload.stream_file()
     |> S3.upload(bucket(), file_path)
     |> @ex_aws_module.request()
+    |> handle_upload_response()
   end
+
+  defp handle_upload_response({:ok, result}), do: {:ok, result}
+
+  defp handle_upload_response({:error, {:http_error, 413, _}}),
+    do: {:error, "File too large for upload", 413}
+
+  defp handle_upload_response({:error, _}), do: {:error, "File upload failed", 222}
 
   @doc """
   Streams all files in a given path/prefix and deletes them.

@@ -15,6 +15,7 @@ local document_path = ""
 --   return meta
 -- end
 
+-- TODO Improve this filter
 local function detect_file_type(data)
     if not data or #data < 8 then
         return "png"
@@ -22,10 +23,10 @@ local function detect_file_type(data)
 
     local image_signatures = {
         { pattern = { 137, 80, 78, 71 }, ext = "png" },
-        { pattern = { 255, 216, 255 }, ext = "jpg" },
-        { pattern = { 71, 73, 70, 56 }, ext = "gif" },
-        { pattern = { 82, 73, 70, 70 }, ext = "webp" },
-        { pattern = { 66, 77 },        ext = "bmp" }
+        { pattern = { 255, 216, 255 },   ext = "jpg" },
+        { pattern = { 71, 73, 70, 56 },  ext = "gif" },
+        { pattern = { 82, 73, 70, 70 },  ext = "webp" },
+        { pattern = { 66, 77 },          ext = "bmp" }
     }
 
     -- Check each image signature pattern
@@ -41,11 +42,6 @@ local function detect_file_type(data)
             return sig.ext
         end
     end
-
-    if data:match("^%s*<%?xml") or data:match("^%s*<svg") then
-        return "svg"
-    end
-
     return "png"
 end
 
