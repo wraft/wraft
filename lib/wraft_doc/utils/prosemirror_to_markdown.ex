@@ -121,6 +121,14 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   defp convert_node(%{"type" => "horizontalRule"}, _opts), do: "---"
   defp convert_node(%{"type" => "pageBreak"}, _opts), do: "\\pagebreak"
 
+  defp convert_node(
+         %{"type" => "signature", "attrs" => %{"width" => width, "height" => height}} = _node,
+         _opts
+       ) do
+    # Placeholder for signature field, as the actual rendering of signatures
+    "[SIGNATURE_FIELD_PLACEHOLDER width:#{width} height:#{height}]"
+  end
+
   defp convert_node(%{"type" => type}, _opts),
     do: raise(InvalidJsonError, "Invalid node type: #{type}")
 
