@@ -1138,7 +1138,9 @@ defmodule WraftDoc.Documents do
       "--pdf-engine=typst"
     ] ++
       get_pandoc_filter("s3_image_typst.lua") ++
-      get_pandoc_filter("pagebreak_typst.lua") ++ ["-o", pdf_file]
+      get_pandoc_filter("table-cell-list-formatter.lua") ++
+      get_pandoc_filter("pagebreak_typst.lua") ++
+      ["-o", pdf_file]
   end
 
   defp prepare_pandoc_cmds(pdf_file, base_content_dir, _) do
