@@ -32,6 +32,7 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestView do
 
   def render("verify_signer.json", %{
         counter_party: counter_party,
+        user: user,
         token: session_token,
         role: role
       }) do
@@ -39,6 +40,7 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestView do
       counterparty:
         render_one(counter_party, SignatureView, "counterparty.json", as: :counterparty),
       token: session_token,
+      user: render_one(user, UserView, "user.json", as: :user),
       role: role
     }
   end

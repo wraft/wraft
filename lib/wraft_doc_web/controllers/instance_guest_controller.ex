@@ -221,6 +221,7 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
            }) do
       render(conn, "verify_signer.json",
         counter_party: counter_party,
+        user: invited_signatory,
         token: guest_access_token,
         role: "sign"
       )
