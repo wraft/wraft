@@ -96,7 +96,14 @@ defmodule WraftDoc.Documents.Signatures do
       do: {:error, "Counterparty has no signatures"}
 
   def apply_signature_to_document(
-        %CounterParty{e_signature: signatures, id: counterparty_id, signature_status: :accepted} =
+        %CounterParty{signature_status: :signed} = _counterparty,
+        _instance,
+        _params
+      ),
+      do: {:error, "Counterparty has already signed the document"}
+
+  def apply_signature_to_document(
+        %CounterParty{e_signature: signatures, id: counterparty_id} =
           counterparty,
         %Instance{
           instance_id: instance_id,
@@ -150,20 +157,6 @@ defmodule WraftDoc.Documents.Signatures do
        signed_pdf_path: output_pdf_path
      }}
   end
-
-  def apply_signature_to_document(
-        %CounterParty{signature_status: :pending} = _counterparty,
-        _instance,
-        _params
-      ),
-      do: {:error, "Counterparty has not accepted the document"}
-
-  def apply_signature_to_document(
-        %CounterParty{signature_status: :signed} = _counterparty,
-        _instance,
-        _params
-      ),
-      do: {:error, "Counterparty has already signed the document"}
 
   @doc """
   Get a signature by counterparty ID
