@@ -4,6 +4,9 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
 
   plug WraftDocWeb.Plug.AddActionLog
 
+  # This plug ensures the guest user has access to the document
+  plug WraftDocWeb.Plug.Authorized, only: [:list_counterparties, :get_document_signatures]
+
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Account

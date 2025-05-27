@@ -148,22 +148,17 @@ defmodule WraftDocWeb.Router do
   end
 
   # Scope which does not need authorization. (Guest User)
-  scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth])
+  # #TODO remove them because we are moving the guest user to be captured via token
+  # scope "/api", WraftDocWeb do
+  #   pipe_through([:api, :api_auth])
 
-    scope "/v1/guest", Api.V1, as: :v1 do
-      resources("/contents", InstanceController, only: [:show, :update])
-      resources("/comments", CommentController, only: [:create])
-      post("/contents/:id/sign", SignatureController, :sign_document)
-      get("/contents/:id/validate_signature", SignatureController, :validate_signature)
-
-      post(
-        "/contents/:id/signatures/:counter_party_id/append_signature",
-        SignatureController,
-        :apply_visual_signature
-      )
-    end
-  end
+  #   # scope "/v1/guest", Api.V1, as: :v1 do
+  #   #   resources("/contents", InstanceController, only: [:show, :update])
+  #   #   resources("/comments", CommentController, only: [:create])
+  #   #   post("/contents/:id/sign", SignatureController, :sign_document)
+  #   #   get("/contents/:id/validate_signature", SignatureController, :validate_signature)
+  #   # end
+  # end
 
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
