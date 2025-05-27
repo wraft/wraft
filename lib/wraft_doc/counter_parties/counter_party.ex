@@ -14,6 +14,7 @@ defmodule WraftDoc.CounterParties.CounterParty do
     field(:signature_date, :utc_datetime)
     field(:signature_ip, :string)
     field(:signature_image, WraftDocWeb.SignatureUploader.Type)
+    field(:signed_file, :string)
     field(:color_rgb, :map)
     has_many(:e_signature, WraftDoc.Documents.ESignature)
     belongs_to(:content, WraftDoc.Documents.Instance)
@@ -51,9 +52,9 @@ defmodule WraftDoc.CounterParties.CounterParty do
 
   def sign_changeset(counter_parties, attrs) do
     counter_parties
-    |> cast(attrs, [:signature_status, :signature_date, :signature_ip])
+    |> cast(attrs, [:signature_status, :signature_date, :signature_ip, :signed_file])
     |> cast_attachments(attrs, [:signature_image])
-    |> validate_required([:signature_status, :signature_date, :signature_image])
+    |> validate_required([:signature_status, :signature_date, :signature_image, :signed_file])
   end
 
   defp validate_color_rgb(changeset) do

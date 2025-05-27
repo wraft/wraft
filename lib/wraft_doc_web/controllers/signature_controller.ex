@@ -588,7 +588,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
          {:ok, %{counterparty: _, signed_pdf_path: signed_pdf_path}} <-
            Signatures.apply_signature_to_document(counter_party, instance, params),
          {:ok, %CounterParty{} = _counter_party} <-
-           CounterParties.counter_party_sign(counter_party, params) do
+           CounterParties.counter_party_sign(counter_party, params, signed_pdf_path) do
       render(conn, "signed_pdf.json", url: Minio.generate_url(signed_pdf_path))
     end
   end

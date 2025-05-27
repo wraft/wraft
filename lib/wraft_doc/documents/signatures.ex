@@ -96,7 +96,7 @@ defmodule WraftDoc.Documents.Signatures do
       do: {:error, "Counterparty has no signatures"}
 
   def apply_signature_to_document(
-        %CounterParty{e_signature: signatures} = counterparty,
+        %CounterParty{e_signature: signatures, id: counterparty_id} = counterparty,
         %Instance{
           instance_id: instance_id,
           content_type: %{layout: %Layout{organisation_id: org_id} = _layout} = _content_type
@@ -112,7 +112,7 @@ defmodule WraftDoc.Documents.Signatures do
 
     Minio.download(pdf_path)
 
-    output_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
+    output_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}_#{counterparty_id}.pdf")
 
     {updated_signatures, _} =
       Enum.map_reduce(signatures, pdf_path, fn %ESignature{

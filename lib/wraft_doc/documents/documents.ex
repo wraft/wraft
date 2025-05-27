@@ -1153,7 +1153,6 @@ defmodule WraftDoc.Documents do
       get_pandoc_filter("s3_image_typst.lua") ++
       get_pandoc_filter("table-cell-list-formatter.lua") ++
       get_pandoc_filter("signature.lua") ++
-
       ["-o", pdf_file]
   end
 

@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
 
   # alias WraftDocWeb.Api.V1.InstanceView
   # alias WraftDocWeb.Api.V1.UserView
+  alias WraftDoc.Client.Minio
 
   def render("signature.json", %{signature: signature}) do
     %{
@@ -36,6 +37,7 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
       color_rgb: counterparty.color_rgb,
       signature_image: generate_url(counterparty),
       signature_status: counterparty.signature_status,
+      signed_file: Minio.generate_url(counterparty.signed_file),
       signature_date: counterparty.signature_date,
       created_at: counterparty.inserted_at,
       updated_at: counterparty.updated_at
