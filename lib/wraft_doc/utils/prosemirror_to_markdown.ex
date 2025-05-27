@@ -764,8 +764,7 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     col_width_sum + (colspan - 1) * 3
   end
 
-  defp convert_pandoc_table_cell(%{"type" => _cell_type, "content" => content}, opts)
-       when is_list(content) do
+  defp convert_pandoc_table_cell(%{"type" => _cell_type, "content" => content}, opts) do
     content
     |> Enum.map_join("", fn item -> process_cell_content_item(item, opts) end)
     |> String.trim_trailing()
@@ -773,8 +772,7 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
 
   defp convert_pandoc_table_cell(%{"type" => _}, _opts), do: ""
 
-  defp process_cell_content_item(%{"type" => "paragraph", "content" => para_content}, opts)
-       when is_list(para_content) do
+  defp process_cell_content_item(%{"type" => "paragraph", "content" => para_content}, opts) do
     text = Enum.map_join(para_content, "", fn item -> process_paragraph_item(item, opts) end)
     if String.trim(text) == "", do: "", else: text <> "\n"
   end
