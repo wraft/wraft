@@ -826,7 +826,13 @@ defmodule WraftDoc.Account do
   @spec create_guest_user(map()) :: User.t() | Ecto.Changeset.t()
   def create_guest_user(%{"email" => _email} = params) do
     random_password = 8 |> :crypto.strong_rand_bytes() |> Base.encode16() |> binary_part(0, 8)
-    params = Map.merge(params, %{"password" => random_password, "is_guest" => true})
+
+    params =
+      Map.merge(params, %{
+        "password" => random_password,
+        "is_guest" => true,
+        "email_verify" => true
+      })
 
     %User{}
     |> User.guest_user_changeset(params)

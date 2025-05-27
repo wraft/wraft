@@ -137,8 +137,8 @@ defmodule WraftDoc.Account.User do
 
   def guest_user_changeset(guest_user, attrs \\ %{}) do
     guest_user
-    |> cast(attrs, [:email, :is_guest, :name, :password])
-    |> validate_required([:email, :is_guest, :name, :password])
+    |> cast(attrs, [:email, :is_guest, :name, :password, :email_verify])
+    |> validate_required([:email, :is_guest, :name, :password, :email_verify])
     |> validate_length(:name, min: 2)
     |> validate_format(:name, ~r/^[A-z ]+$/)
     |> validate_format(:email, ~r/@/)
