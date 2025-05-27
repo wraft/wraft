@@ -32,7 +32,7 @@ defmodule WraftDocWeb.Plug.Authorized do
         conn
 
       {:error, error} ->
-        body = Jason.encode!(%{error: error})
+        body = Jason.encode!(%{errors: error})
 
         conn
         |> put_resp_content_type("application/json")
