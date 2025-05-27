@@ -31,8 +31,8 @@ defmodule WraftDocWeb.Plug.Authorized do
       true ->
         conn
 
-      _ ->
-        body = Jason.encode!(%{errors: "Unauthorized access.!"})
+      {:error, error} ->
+        body = Jason.encode!(%{error: error})
 
         conn
         |> put_resp_content_type("application/json")

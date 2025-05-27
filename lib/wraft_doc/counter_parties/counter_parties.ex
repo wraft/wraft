@@ -27,10 +27,10 @@ defmodule WraftDoc.CounterParties do
   @doc """
    Get counterparty with signatures preloaded
   """
-  @spec get_counterparty_with_signatures(String.t(), String.t()) :: CounterParty.t() | nil
-  def get_counterparty_with_signatures(<<_::288>> = document_id, <<_::288>> = counterparty_id) do
+  @spec get_counterparty_with_signatures(User.t(), Ecto.UUID.t()) :: CounterParty.t() | nil
+  def get_counterparty_with_signatures(%User{id: user_id}, <<_::288>> = document_id) do
     CounterParty
-    |> where([cp], cp.content_id == ^document_id and cp.id == ^counterparty_id)
+    |> where([cp], cp.content_id == ^document_id and cp.user_id == ^user_id)
     |> preload([:e_signature])
     |> Repo.one()
   end

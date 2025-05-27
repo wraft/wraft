@@ -5,7 +5,8 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   plug WraftDocWeb.Plug.AddActionLog
 
   # This plug ensures the guest user has access to the document
-  plug WraftDocWeb.Plug.Authorized, only: [:list_counterparties, :get_document_signatures]
+  plug WraftDocWeb.Plug.Authorized,
+    only: [:list_counterparties, :get_document_signatures, :apply_visual_signature]
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -558,7 +559,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   Apply a visual signature to a PDF document
   """
   swagger_path :apply_visual_signature do
-    post("/contents/{id}/signatures/{counter_party_id}/append_signature")
+    post("/contents/{id}/append_signature")
     summary("Apply visual signature to PDF")
     description("API to apply a visual signature to a PDF document")
 
@@ -575,19 +576,14 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   end
 
   @spec apply_visual_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def apply_visual_signature(
-        conn,
-        %{"id" => document_id, "counter_party_id" => counter_party_id, "auth_type" => "sign"} =
-          params
-      ) do
+  def apply_visual_signature(conn, %{"id" => document_id} = params) do
     current_user = conn.assigns.current_user
     ip_address = conn.remote_ip |> :inet_parse.ntoa() |> to_string()
     params = Map.merge(params, %{"ip_address" => ip_address})
 
-    with true <- Documents.has_access?(current_user, document_id, :counterparty),
-         %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
          %CounterParty{} = counter_party <-
-           CounterParties.get_counterparty_with_signatures(document_id, counter_party_id),
+           CounterParties.get_counterparty_with_signatures(current_user, document_id),
          {:ok, %{counterparty: _, signed_pdf_path: signed_pdf_path}} <-
            Signatures.apply_signature_to_document(counter_party, instance, params),
          {:ok, %CounterParty{} = _counter_party} <-

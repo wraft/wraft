@@ -651,15 +651,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
     end
   end
 
-  def show(conn, %{"id" => document_id, "auth_type" => "sign"} = _params) do
-    current_user = conn.assigns.current_user
-
-    with true <- Documents.has_access?(current_user, document_id, :counterparty),
-         %Instance{} = instance <- Documents.show_instance(document_id, current_user) do
-      render(conn, "show.json", instance: instance)
-    end
-  end
-
   def show(conn, %{"id" => instance_id}) do
     current_user = conn.assigns.current_user
 
