@@ -13,6 +13,9 @@ defmodule WraftDoc.Comments.Comment do
     belongs_to(:parent, WraftDoc.Comments.Comment)
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+    field(:state, Ecto.Enum, values: [:active, :archive], default: :active)
+    field(:doc_version_id, :string, default: "0.0")
+    # belongs_to(:doc_version, WraftDoc.Documents.Instance.Version, type: :binary_id)
     timestamps()
   end
 
@@ -25,7 +28,9 @@ defmodule WraftDoc.Comments.Comment do
       :master_id,
       :parent_id,
       :user_id,
-      :organisation_id
+      :organisation_id,
+      :meta,
+      :state
     ])
     |> validate_required([
       :comment,
