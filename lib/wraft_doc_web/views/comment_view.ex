@@ -15,7 +15,9 @@ defmodule WraftDocWeb.Api.V1.CommentView do
       user: render_one(comment.user, UserView, "user.json", as: :user),
       profile: render_one(comment.user.profile, ProfileView, "base_profile.json", as: :profile),
       inserted_at: comment.inserted_at,
-      updated_at: comment.updated_at
+      updated_at: comment.updated_at,
+      meta: comment.meta
+      # doc_version: comment.doc_version,
     }
   end
 
