@@ -19,13 +19,18 @@ RUN apt-get update && apt-get install -y --fix-missing \
     texlive-xetex \
     curl \
     imagemagick \
-    ca-certificates && \
+    ca-certificates \
+    openjdk-17-jdk && \
     update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Rust toolchain for Rustler
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Set Java environment
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="$JAVA_HOME/bin:$PATH"
 
 # Install Pandoc
 RUN ARCH=$(dpkg --print-architecture) && \
