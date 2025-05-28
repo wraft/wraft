@@ -93,16 +93,16 @@ defmodule WraftDoc.Notifications do
   @doc """
   Sends a comment notification to users allowed to access a document, excluding the initiating user.
   """
-  @spec comment_notification(integer(), integer(), integer()) :: list(%Notification{})
+  @spec comment_notification(integer, integer, integer) :: {:ok, Notification.t()} | {:error, any}
   def comment_notification(user_id, organisation_id, document_id) do
     document = Documents.get_instance(document_id, %{current_org_id: organisation_id})
     organisation = Enterprise.get_organisation(organisation_id)
 
     document.allowed_users
     |> List.delete(user_id)
-    |> Enum.map(&Account.get_user/1)
     |> create_notification(%{
       type: :add_comment,
+      actor_id: user_id,
       organisation_name: organisation.name,
       document_title: document.serialized["title"]
     })

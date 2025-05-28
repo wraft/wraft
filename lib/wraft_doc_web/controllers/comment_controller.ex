@@ -134,6 +134,14 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
     with true <- Documents.has_access?(current_user, document_id),
          %Comment{} = comment <- Comments.create_comment(current_user, params) do
+      Task.start(fn ->
+        Notifications.comment_notification(
+          current_user.id,
+          comment.organisation_id,
+          comment.master_id
+        )
+      end)
+
       render(conn, "comment.json", comment: comment)
     end
   end
