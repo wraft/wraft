@@ -6,6 +6,24 @@ defmodule WraftDoc.Documents.Signatures do
   import Ecto.Query
   require Logger
 
+  # Path to the visual signer JAR file
+  @visual_signer_jar Application.compile_env(
+                       :wraft_doc,
+                       :visual_signer_jar,
+                       Path.join(
+                         :code.priv_dir(:wraft_doc),
+                         "visual-signer-v2-1.0-SNAPSHOT-jar-with-dependencies.jar"
+                       )
+                     )
+
+  # Digital signature keystore configuration
+  @keystore_file System.get_env("SIGNING_LOCAL_FILE_PATH") ||
+                   Path.join(:code.priv_dir(:wraft_doc), "keystore/signing_keystore.p12")
+  @keystore_password System.get_env("SIGNING_LOCAL_PASSWORD") || "changeit"
+  @key_alias System.get_env("SIGNING_KEY_ALIAS") || "signkey"
+  @signature_reason "Officially Approved"
+  @signature_location "Document Processing Center"
+
   alias WraftDoc
   alias WraftDoc.Account.User
   alias WraftDoc.Assets
@@ -20,16 +38,6 @@ defmodule WraftDoc.Documents.Signatures do
   alias WraftDoc.PdfAnalyzer
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
-
-  # Path to the visual signer JAR file
-  @visual_signer_jar Application.compile_env(
-                       :wraft_doc,
-                       :visual_signer_jar,
-                       Path.join(
-                         :code.priv_dir(:wraft_doc),
-                         "visual-signer-v2-1.0-SNAPSHOT-jar-with-dependencies.jar"
-                       )
-                     )
 
   @doc """
   Apply a visual signature to a PDF document
@@ -60,14 +68,32 @@ defmodule WraftDoc.Documents.Signatures do
       "-cp",
       @visual_signer_jar,
       "com.wraft.VisualSignerApp",
+      "--input",
       pdf_path,
+      "--signature",
       signature_image_path,
+      "--output",
       output_pdf_path,
+      "--page",
       "#{page}",
+      "--x1",
       "#{x1}",
+      "--y1",
       "#{y1}",
+      "--x2",
       "#{x2}",
-      "#{y2}"
+      "--y2",
+      "#{y2}",
+      "--keystore",
+      @keystore_file,
+      "--keystore-password",
+      @keystore_password,
+      "--key-alias",
+      @key_alias,
+      "--reason",
+      @signature_reason,
+      "--location",
+      @signature_location
     ]
 
     Logger.info("Executing visual signer with args: #{inspect(args)}")

@@ -472,8 +472,6 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     response(404, "Not found", Schema.ref(:Error))
   end
 
-  alias WraftDoc.Documents.Signatures
-
   @spec generate_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def generate_signature(conn, %{"id" => document_id} = _params) do
     current_user = conn.assigns.current_user
