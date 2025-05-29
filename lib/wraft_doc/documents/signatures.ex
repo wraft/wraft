@@ -18,9 +18,10 @@ defmodule WraftDoc.Documents.Signatures do
 
   # Digital signature keystore configuration
   @keystore_file System.get_env("SIGNING_LOCAL_FILE_PATH") ||
-                   Path.join(:code.priv_dir(:wraft_doc), "keystore/signing_keystore.p12")
-  @keystore_password System.get_env("SIGNING_LOCAL_PASSWORD") || "changeit"
-  @key_alias System.get_env("SIGNING_KEY_ALIAS") || "signkey"
+                   Path.join(:code.priv_dir(:wraft_doc), "keystore/doc_signer.p12")
+  @keystore_password System.get_env("SIGNING_LOCAL_PASSWORD") ||
+                       "EnsHmeoOx+r8mbqOmqT55kLjdmSncMesyRDpQqs1AdA="
+  @key_alias System.get_env("SIGNING_KEY_ALIAS") || "1"
   @signature_reason "Officially Approved"
   @signature_location "Document Processing Center"
 
@@ -138,15 +139,20 @@ defmodule WraftDoc.Documents.Signatures do
         %{"signature_image" => %Plug.Upload{path: signature_image_path}}
       ) do
     instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
+    base_local_dir_path = Path.join(File.cwd!(), instance_dir_path)
+    File.mkdir_p!(base_local_dir_path)
 
     pdf_path =
       instance
       |> Documents.instance_updated?()
       |> then(&Assets.pdf_file_path(instance, instance_dir_path, &1))
 
-    Minio.download(pdf_path)
+    base_local_file_path = Path.join(File.cwd!(), pdf_path)
+    binary = Minio.download(pdf_path)
+    File.write!(base_local_file_path, binary)
 
-    output_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}_#{counterparty_id}.pdf")
+    output_pdf_path =
+      Path.join(base_local_dir_path, "signed_#{instance_id}_#{counterparty_id}.pdf")
 
     {updated_signatures, _} =
       Enum.map_reduce(signatures, pdf_path, fn %ESignature{
@@ -176,6 +182,9 @@ defmodule WraftDoc.Documents.Signatures do
       end)
 
     Minio.upload_file(output_pdf_path)
+
+    # Clean up
+    File.rm_rf(Path.join(File.cwd!(), instance_dir_path))
 
     {:ok,
      %{
@@ -425,7 +434,7 @@ defmodule WraftDoc.Documents.Signatures do
       set: [signature_status: :pending]
     )
 
-    case Documents.build_doc(instance, layout) do
+    case Documents.build_doc(instance, layout, sign: true) do
       {_, 0} ->
         instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
         instance_updated? = Documents.instance_updated?(instance)
@@ -447,6 +456,10 @@ defmodule WraftDoc.Documents.Signatures do
             # Process the rectangles to find signature fields
             signature_fields = extract_signature_fields(analysis_result["rectangles"])
 
+            # Clean up
+            File.rm_rf(Path.join(File.cwd!(), instance_dir_path))
+            File.rm_rf(Path.join(File.cwd!(), "/organisations/images/"))
+
             # Create new e_signature entries with the signature fields
             create_signature_entries(signature_fields, instance.id, current_user.id, org_id)
 
@@ -462,7 +475,6 @@ defmodule WraftDoc.Documents.Signatures do
   end
 
   # Helper function to create signature entries
-  # This reduces nesting depth in the main function
   defp create_signature_entries(signature_fields, content_id, user_id, org_id) do
     Enum.map(signature_fields, fn field ->
       changeset =
