@@ -19,11 +19,11 @@ defmodule WraftDoc.Documents.Signatures do
   # Digital signature keystore configuration
   @keystore_file System.get_env("SIGNING_LOCAL_FILE_PATH") ||
                    Path.join(:code.priv_dir(:wraft_doc), "keystore/doc_signer.p12")
-  @keystore_password System.get_env("SIGNING_LOCAL_PASSWORD") ||
+  @keystore_password System.get_env("SIGNING_LOCAL_PASSPHRASE") ||
                        "EnsHmeoOx+r8mbqOmqT55kLjdmSncMesyRDpQqs1AdA="
   @key_alias System.get_env("SIGNING_KEY_ALIAS") || "1"
-  @signature_reason "Officially Approved"
-  @signature_location "Document Processing Center"
+  @signature_reason "I hereby certify that I have signed this document"
+  @signature_location "Digital Signature"
 
   alias WraftDoc
   alias WraftDoc.Account.User
