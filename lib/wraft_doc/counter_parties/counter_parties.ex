@@ -5,12 +5,9 @@ defmodule WraftDoc.CounterParties do
 
   import Ecto.Query
 
-  alias Ecto.Multi
   alias WraftDoc.Account.User
   alias WraftDoc.CounterParties.CounterParty
-  alias WraftDoc.Documents.ESignature
   alias WraftDoc.Documents.Instance
-  alias WraftDoc.Documents.Signatures
   alias WraftDoc.Repo
 
   @doc """
@@ -109,39 +106,6 @@ defmodule WraftDoc.CounterParties do
   end
 
   def get_document_counterparties(_document_id), do: {:error, :invalid_id}
-
-  @doc """
-    Sign document for a counterparty
-  """
-  @spec sign_document(CounterParty.t(), ESignature.t(), map()) ::
-          {:ok, CounterParty.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
-  def sign_document(
-        %CounterParty{signature_status: :accepted} = counterparty,
-        %ESignature{} = signature,
-        params
-      ) do
-    Multi.new()
-    |> Multi.run(:sign_document, fn _repo, _changes ->
-      counter_party_sign(counterparty, params)
-    end)
-    |> Multi.run(:update_signature, fn _repo, _changes ->
-      Signatures.update_e_signature(signature, params)
-    end)
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{update_signature: updated_signature}} ->
-        %{updated_signature | counter_party: Repo.reload(updated_signature.counter_party)}
-
-      {:error, _, changeset, _} ->
-        {:error, changeset}
-    end
-  end
-
-  def sign_document(%CounterParty{signature_status: :pending} = _counterparty, _, _),
-    do: {:error, "Signatory has not accepted the document"}
-
-  def sign_document(%CounterParty{signature_status: :signed} = _counterparty, _, _),
-    do: {:error, "Document already signed"}
 
   @doc """
   Update counterparty status to signed

@@ -5,7 +5,7 @@ defmodule WraftDoc.CounterParties.CounterParty do
   use Waffle.Ecto.Schema
   use WraftDoc.Schema
 
-  @signature_status [:pending, :accepted, :signed, :rejected]
+  @signature_status [:pending, :accepted, :signed]
 
   schema "counter_parties" do
     field(:name, :string)

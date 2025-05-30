@@ -50,6 +50,12 @@ defmodule WraftDoc.Documents.Signatures do
   - `output_pdf_path`: Path where the signed PDF will be saved
   - `page`: Page number where the signature should be applied (0-based)
   - `coordinates`: Map containing x1, y1, x2, y2 coordinates for signature placement
+  - `keystore_file`: Path to the keystore file (optional, defaults to `@keystore_file`)
+  - `keystore_password`: Password for the keystore (optional, defaults to `@keystore_password`)
+  - `key_alias`: Alias for the key in the keystore (optional, defaults to `@key_alias`)
+  - `signature_reason`: Reason for the signature (optional, defaults to `@signature_reason`)
+  - `signature_location`: Location of the signature (optional, defaults to `@signature_location`)
+
 
   ## Returns
 
@@ -130,8 +136,7 @@ defmodule WraftDoc.Documents.Signatures do
       do: {:error, "Counterparty has already signed the document"}
 
   def apply_signature_to_document(
-        %CounterParty{e_signature: signatures, id: counterparty_id} =
-          counterparty,
+        %CounterParty{e_signature: signatures} = counterparty,
         %Instance{
           instance_id: instance_id,
           content_type: %{layout: %Layout{organisation_id: org_id} = _layout} = _content_type
@@ -151,8 +156,7 @@ defmodule WraftDoc.Documents.Signatures do
     binary = Minio.download(pdf_path)
     File.write!(base_local_file_path, binary)
 
-    output_pdf_path =
-      Path.join(base_local_dir_path, "signed_#{instance_id}_#{counterparty_id}.pdf")
+    output_pdf_path = Path.join(base_local_dir_path, "signed_#{instance_id}.pdf")
 
     {updated_signatures, _} =
       Enum.map_reduce(signatures, pdf_path, fn %ESignature{
@@ -231,8 +235,7 @@ defmodule WraftDoc.Documents.Signatures do
     signature_params = %{
       content_id: document_id,
       user_id: user_id,
-      organisation_id: org_id,
-      verification_token: WraftDoc.generate_token(32)
+      organisation_id: org_id
     }
 
     %ESignature{}
@@ -276,6 +279,7 @@ defmodule WraftDoc.Documents.Signatures do
   @spec delete_signature(ESignature.t()) :: {:ok, ESignature.t()} | {:error, Ecto.Changeset.t()}
   def delete_signature(%ESignature{} = signature), do: Repo.delete(signature)
 
+  # TODO need to implement this function
   @doc """
   Check if all signatures for a document are complete
   """
@@ -330,29 +334,6 @@ defmodule WraftDoc.Documents.Signatures do
   end
 
   @doc """
-  Verify a signature by token
-  """
-  @spec verify_signature_by_token(Instance.t(), User.t(), String.t()) :: ESignature.t() | nil
-  def verify_signature_by_token(
-        %Instance{id: document_id},
-        %User{id: user_id},
-        token
-      )
-      when is_binary(token) do
-    ESignature
-    |> where(
-      [s],
-      s.verification_token == ^token and s.content_id == ^document_id
-    )
-    |> join(:inner, [s], cp in CounterParty,
-      on: s.counter_party_id == cp.id and s.content_id == cp.content_id
-    )
-    |> where([s, cp], cp.user_id == ^user_id)
-    |> preload([s, cp], [:content, :counter_party, :user])
-    |> Repo.one()
-  end
-
-  @doc """
    Send a signature request email to the counterparty
   """
   @spec signature_request_email(%Instance{}, %CounterParty{}, String.t()) ::
@@ -384,6 +365,7 @@ defmodule WraftDoc.Documents.Signatures do
     end)
   end
 
+  # TODO : Function need to be implemented
   @doc """
   Notify the document owner when a signature is completed
   """

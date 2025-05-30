@@ -155,8 +155,6 @@ defmodule WraftDocWeb.Router do
   #   # scope "/v1/guest", Api.V1, as: :v1 do
   #   #   resources("/contents", InstanceController, only: [:show, :update])
   #   #   resources("/comments", CommentController, only: [:create])
-  #   #   post("/contents/:id/sign", SignatureController, :sign_document)
-  #   #   get("/contents/:id/validate_signature", SignatureController, :validate_signature)
   #   # end
   # end
 

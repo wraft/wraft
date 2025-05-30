@@ -17,16 +17,4 @@ defmodule WraftDoc do
     |> Phoenix.Token.sign(secret, payload, opts)
     |> Base.url_encode64()
   end
-
-  @doc """
-  Generate a random token of specified length.
-  Default length is 32 characters.
-  """
-  @spec generate_token(integer) :: String.t()
-  def generate_token(length \\ 32) do
-    length
-    |> :crypto.strong_rand_bytes()
-    |> Base.url_encode64(padding: false)
-    |> binary_part(0, length)
-  end
 end

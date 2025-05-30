@@ -22,7 +22,7 @@ defmodule WraftDoc.PdfAnalyzer do
   ## Parameters
 
   - `path`: Path to the PDF file
-  - `engine`: Optional engine type ("latex" or "typst"), defaults to "typst"
+  - `engine`: Engine type ("latex" or "typst")
 
   ## Returns
 
@@ -32,8 +32,6 @@ defmodule WraftDoc.PdfAnalyzer do
   @spec analyze_pdf(String.t(), String.t() | nil) ::
           {:ok, String.t()} | {:error, String.t()}
   def analyze_pdf(path, engine) do
-    # We still pass nil for the color parameters to maintain compatibility
-    # but these values are ignored in the Rust code
     analyze_pdf_nif(path, nil, nil, engine)
   end
 

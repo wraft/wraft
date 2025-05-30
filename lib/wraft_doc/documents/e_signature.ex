@@ -54,25 +54,4 @@ defmodule WraftDoc.Documents.ESignature do
       message: "Verification token already exists"
     )
   end
-
-  def signature_changeset(e_signature, attrs \\ %{}) do
-    attrs = decode_json_fields(attrs, [:signature_data, :signature_position])
-
-    e_signature
-    |> cast(attrs, [
-      :signature_data,
-      :signature_position,
-      :ip_address,
-      :signature_date,
-      :is_valid,
-      :signed_file
-    ])
-    |> validate_required([:signature_data, :signature_date, :ip_address])
-  end
-
-  def verification_changeset(e_signature, attrs \\ %{}) do
-    e_signature
-    |> cast(attrs, [:is_valid, :verification_token])
-    |> validate_required([:is_valid])
-  end
 end
