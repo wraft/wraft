@@ -89,7 +89,7 @@ defmodule WraftDoc.Billing do
   @doc """
   Returns true user has a valid subscription.
   """
-  @spec has_valid_subscription?(Ecto.UUID.t()) :: boolean()
+  @spec has_valid_subscription?(Ecto.UUID.t()) :: boolean() | nil
   def has_valid_subscription?(<<_::288>> = organisation_id) do
     organisation_id |> valid_subscription_query() |> Repo.exists?()
   end

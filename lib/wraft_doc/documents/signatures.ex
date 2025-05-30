@@ -423,11 +423,7 @@ defmodule WraftDoc.Documents.Signatures do
         pdf_path = Assets.pdf_file_path(instance, instance_dir_path, instance_updated?)
 
         # Determine the engine type based on the layout's engine
-        engine_type =
-          case layout.engine do
-            %{name: "Pandoc + Typst"} -> "typst"
-            %{name: "Pandoc"} -> "latex"
-          end
+        engine_type = determine_engine_type(layout.engine)
 
         # Pass the engine type from the layout to the PDF analyzer
         case PdfAnalyzer.analyze_pdf(pdf_path, engine_type) do
@@ -455,6 +451,10 @@ defmodule WraftDoc.Documents.Signatures do
         {:error, "Failed to generate PDF"}
     end
   end
+
+  # Helper function to check for engine type
+  defp determine_engine_type(%{name: "Pandoc + Typst"}), do: "typst"
+  defp determine_engine_type(%{name: "Pandoc"}), do: "latex"
 
   # Helper function to create signature entries
   defp create_signature_entries(signature_fields, content_id, user_id, org_id) do

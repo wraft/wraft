@@ -31,7 +31,7 @@ defmodule WraftDoc.AuthTokens do
 
   def insert_auth_token!(_, _), do: raise("Unexpected arguments passed.")
 
-  @spec insert_auth_token!(map) :: AuthToken.t()
+  @spec insert_auth_token!(map) :: {:ok, AuthToken.t()} | {:error, Ecto.Changeset.t()}
   def insert_auth_token!(params) do
     %AuthToken{}
     |> AuthToken.changeset(params)
@@ -159,7 +159,8 @@ defmodule WraftDoc.AuthTokens do
   @doc """
    Create signer invite token
   """
-  @spec create_signer_invite_token(Instance.t(), String.t()) :: {:ok, AuthToken.t()}
+  @spec create_signer_invite_token(Instance.t(), String.t()) ::
+          {:ok, AuthToken.t()} | {:error, Ecto.Changeset.t()}
   def create_signer_invite_token(%Instance{id: document_id}, email) do
     token =
       WraftDoc.create_phx_token("signer_invite", %{
