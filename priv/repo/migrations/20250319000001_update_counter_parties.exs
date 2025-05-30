@@ -17,7 +17,6 @@ defmodule WraftDoc.Repo.Migrations.UpdateCounterParties do
 
     create(unique_index(:counter_parties, [:user_id, :content_id]))
     create(index(:counter_parties, [:signature_status]))
-    create(index(:counter_parties, [:content_id]))
     create(index(:counter_parties, [:email]))
   end
 
@@ -32,7 +31,6 @@ defmodule WraftDoc.Repo.Migrations.UpdateCounterParties do
 
     drop_if_exists(unique_index(:counter_parties, [:user_id, :content_id]))
     drop_if_exists(index(:counter_parties, [:signature_status]))
-    drop_if_exists(index(:counter_parties, [:content_id]))
     drop_if_exists(index(:counter_parties, [:email]))
   end
 end
