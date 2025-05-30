@@ -15,6 +15,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Client.Minio
+  alias WraftDoc.Client.Minio.DownloadError
   alias WraftDoc.CounterParties
   alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.Documents
@@ -415,6 +416,11 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
          signatures <- Signatures.generate_signature(instance, current_user) do
       render(conn, "signatures.json", signatures: signatures, document_url: document_url)
     end
+  rescue
+    DownloadError ->
+      conn
+      |> put_status(404)
+      |> json(%{error: "File not found"})
   end
 
   @doc """
