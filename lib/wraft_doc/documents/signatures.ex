@@ -156,7 +156,7 @@ defmodule WraftDoc.Documents.Signatures do
     binary = Minio.download(pdf_path)
     File.write!(base_local_file_path, binary)
 
-    output_pdf_path = Path.join(base_local_dir_path, "signed_#{instance_id}.pdf")
+    output_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
 
     {updated_signatures, _} =
       Enum.map_reduce(signatures, pdf_path, fn %ESignature{
@@ -189,6 +189,7 @@ defmodule WraftDoc.Documents.Signatures do
 
     # Clean up
     File.rm_rf(Path.join(File.cwd!(), instance_dir_path))
+    File.rm_rf(output_pdf_path)
 
     {:ok,
      %{
