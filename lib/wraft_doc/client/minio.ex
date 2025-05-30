@@ -104,7 +104,9 @@ defmodule WraftDoc.Client.Minio do
   @doc """
   Generate the presigned URL for a file.
   """
-  @spec generate_url(binary()) :: binary()
+  @spec generate_url(binary()) :: binary() | nil
+  def generate_url(nil), do: nil
+
   def generate_url(file_path, opts \\ []) do
     opts = put_in(opts[:expires_in], Keyword.get(opts, :expires_in, @default_expiry_time))
     config = Config.new(:s3, Application.get_all_env(:ex_aws))
@@ -148,6 +150,20 @@ defmodule WraftDoc.Client.Minio do
 
       _ ->
         raise DownloadError
+    end
+  end
+
+  @doc """
+  Check if a file exists in MinIO.
+  """
+  @spec file_exists?(binary()) :: boolean()
+  def file_exists?(file_path) do
+    bucket()
+    |> S3.head_object(file_path)
+    |> @ex_aws_module.request()
+    |> case do
+      {:ok, _} -> true
+      _ -> false
     end
   end
 

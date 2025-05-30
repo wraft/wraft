@@ -11,6 +11,7 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
   alias WraftDoc.ContentTypes.ContentType
+  alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.DataTemplates.DataTemplate
   alias WraftDoc.Documents.ContentCollaboration
   alias WraftDoc.Documents.Counter
@@ -766,7 +767,19 @@ defmodule WraftDoc.Documents do
 
         doc_url = Minio.generate_url(file_path)
 
-        Map.put(instance, :build, doc_url)
+        output_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
+
+        signed_doc_url =
+          if Minio.file_exists?(output_pdf_path) do
+            Minio.generate_url(output_pdf_path)
+          else
+            doc_url
+          end
+
+        Map.merge(instance, %{
+          build: doc_url,
+          signed_doc_url: signed_doc_url
+        })
     end
   end
 
@@ -876,13 +889,13 @@ defmodule WraftDoc.Documents do
   # Checks whether the raw and serialzed of old and new instances are same or not.
   # If they are both the same, returns false, else returns true
   # @spec instance_updated?(Instance.t(), Instance.t()) :: boolean
-  defp instance_updated?(%{raw: o_raw, serialized: o_map}, %{raw: n_raw, serialized: n_map}) do
+  def instance_updated?(%{raw: o_raw, serialized: o_map}, %{raw: n_raw, serialized: n_map}) do
     !(o_raw === n_raw && o_map === n_map)
   end
 
-  defp instance_updated?(_old_instance, _new_instance), do: true
+  def instance_updated?(_old_instance, _new_instance), do: true
 
-  defp instance_updated?(new_instance) do
+  def instance_updated?(new_instance) do
     new_instance
     |> get_last_version(:build)
     |> instance_updated?(new_instance)
@@ -977,11 +990,12 @@ defmodule WraftDoc.Documents do
   """
   # TODO  - Write Test
   # TODO - Dont need to pass layout as an argument, we can just preload it
-  @spec build_doc(Instance.t(), Layout.t()) :: {any, integer}
+  @spec build_doc(Instance.t(), Layout.t(), Keyword.t()) :: {any, integer}
   def build_doc(
         %Instance{instance_id: instance_id, content_type: content_type, versions: build_versions} =
           instance,
-        %Layout{organisation_id: org_id} = layout
+        %Layout{organisation_id: org_id} = layout,
+        opts \\ []
       ) do
     content_type = Repo.preload(content_type, [:fields, :theme])
     theme = Repo.preload(content_type.theme, [:assets])
@@ -1031,7 +1045,7 @@ defmodule WraftDoc.Documents do
 
     "pandoc"
     |> System.cmd(pandoc_commands, stderr_to_stdout: true)
-    |> upload_file_and_delete_local_copy(base_content_dir, pdf_file)
+    |> upload_file_and_delete_local_copy(base_content_dir, pdf_file, opts)
   end
 
   defp generate_field_json(_, %Layout{frame: nil}, _), do: nil
@@ -1139,7 +1153,7 @@ defmodule WraftDoc.Documents do
     ] ++
       get_pandoc_filter("s3_image_typst.lua") ++
       get_pandoc_filter("table-cell-list-formatter.lua") ++
-      get_pandoc_filter("pagebreak_typst.lua") ++
+      get_pandoc_filter("signature.lua") ++
       ["-o", pdf_file]
   end
 
@@ -1148,7 +1162,10 @@ defmodule WraftDoc.Documents do
       "#{base_content_dir}/content.md",
       "--template=#{base_content_dir}/template.tex",
       "--pdf-engine=#{System.get_env("XELATEX_PATH")}"
-    ] ++ get_pandoc_filter("s3_image.lua") ++ ["-o", pdf_file]
+    ] ++
+      get_pandoc_filter("s3_image.lua") ++
+      get_pandoc_filter("signature.lua") ++
+      ["-o", pdf_file]
   end
 
   def get_pandoc_filter(filter_name) do
@@ -1162,23 +1179,44 @@ defmodule WraftDoc.Documents do
   defp upload_file_and_delete_local_copy(
          {_, 0} = pandoc_response,
          file_path,
-         pdf_file
+         pdf_file,
+         opts
        ) do
-    case Minio.upload_file(pdf_file) do
-      {:ok, _} ->
-        File.rm_rf(file_path)
-        File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
-        pandoc_response
-
-      {:error, error, error_code} ->
-        File.rm(pdf_file)
-        File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
-        Logger.error(error)
-        {error, error_code}
-    end
+    pdf_file
+    |> Minio.upload_file()
+    |> handle_upload_result(pandoc_response, file_path, pdf_file, opts)
   end
 
-  defp upload_file_and_delete_local_copy(pandoc_response, _, _), do: pandoc_response
+  defp upload_file_and_delete_local_copy(pandoc_response, _, _, _), do: pandoc_response
+
+  defp handle_upload_result({:ok, _}, pandoc_response, file_path, _pdf_file, opts) do
+    maybe_cleanup(opts, file_path)
+    pandoc_response
+  end
+
+  defp handle_upload_result(
+         {:error, error, error_code},
+         _pandoc_response,
+         _file_path,
+         pdf_file,
+         _opts
+       ),
+       do: cleanup_error_case(pdf_file, error, error_code)
+
+  defp maybe_cleanup([], file_path) do
+    File.rm_rf(file_path)
+    File.rm_rf(Path.join(File.cwd!(), "/organisations/images/"))
+  end
+
+  # If opts is not empty, do not cleanup the files
+  defp maybe_cleanup(_, _), do: nil
+
+  defp cleanup_error_case(pdf_file, error, error_code) do
+    File.rm(pdf_file)
+    File.rm_rf(Path.join(File.cwd!(), "organisations/images/"))
+    Logger.error(error)
+    {error, error_code}
+  end
 
   # Find the header values for the content.md file from the serialized data of an instance.
   @spec find_header_values(Field.t(), map, String.t()) :: String.t()
@@ -2182,6 +2220,20 @@ defmodule WraftDoc.Documents do
     |> case do
       true -> true
       false -> {:error, "Collaborator does not have access to the document"}
+    end
+  end
+
+  @spec has_access?(User.t(), Ecto.UUID.t(), map()) :: boolean() | {:error, String.t()}
+  def has_access?(%User{id: user_id}, document_id, :counterparty) do
+    CounterParty
+    |> where(
+      [cc],
+      cc.content_id == ^document_id and cc.user_id == ^user_id and cc.signature_status != :pending
+    )
+    |> Repo.exists?()
+    |> case do
+      true -> true
+      false -> {:error, "Counterparty does not have access to the document"}
     end
   end
 

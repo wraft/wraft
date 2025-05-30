@@ -17,7 +17,7 @@ defmodule WraftDocWeb.CurrentOrganisation do
   def init(opts), do: opts
 
   def call(
-        %Plug.Conn{query_params: %{"type" => "guest"}, assigns: %{current_user: current_user}} =
+        %Plug.Conn{params: %{"auth_type" => _}, assigns: %{current_user: current_user}} =
           conn,
         _opts
       ) do

@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
   import Swoosh.Email
   alias Swoosh.Attachment
+  alias WraftDoc.Documents.Instance
   alias WraftDocWeb.MJML
 
   def invite_email(org_name, user_name, email, token) do
@@ -169,12 +170,16 @@ defmodule WraftDocWeb.Mailer.Email do
         document_pdf_binary,
         instance_file_name
       ) do
+    body = %{
+      message: message
+    }
+
     new()
     |> to(email)
     |> maybe_add_cc(cc_list)
     |> from({"Wraft", sender_email()})
     |> subject(subject)
-    |> html_body(message)
+    |> html_body(MJML.DocumentMail.render(body))
     |> add_attachment(document_pdf_binary, instance_file_name)
   end
 
@@ -190,6 +195,54 @@ defmodule WraftDocWeb.Mailer.Email do
         type: :inline
       )
     )
+  end
+
+  @doc """
+  Email to request signature from a counterparty
+  """
+  def signature_request_email(email, name, instance_id, document_id, token) do
+    signature_url = build_document_signature_request_url(token, document_id)
+
+    body = %{
+      instance_id: instance_id,
+      signature_url: signature_url,
+      name: name
+    }
+
+    new()
+    |> to(email)
+    |> from({"Wraft", sender_email()})
+    |> subject("Signature Request: Document #{instance_id}")
+    |> html_body(MJML.SignatureRequest.render(body))
+  end
+
+  @doc """
+  Email to notify document owner when a signature is completed
+  """
+  def signature_completed_email(email, instance_id, signer_name) do
+    body = %{instance_id: instance_id, signer_name: signer_name}
+
+    new()
+    |> to(email)
+    |> from({"Wraft", sender_email()})
+    |> subject("Signature Completed: Document #{instance_id}")
+    |> html_body(MJML.SignatureCompleted.render(body))
+  end
+
+  @doc """
+  Email to notify all parties when a document is fully signed
+  """
+  def document_fully_signed_email(to_email, %Instance{instance_id: instance_id} = _instance, name) do
+    body = %{
+      instance_id: instance_id,
+      name: name
+    }
+
+    new()
+    |> to(to_email)
+    |> from({"Wraft", sender_email()})
+    |> subject("Document Fully Signed: #{instance_id}")
+    |> html_body(MJML.DocumentFullySigned.render(body))
   end
 
   defp sender_email do
@@ -218,6 +271,10 @@ defmodule WraftDocWeb.Mailer.Email do
 
   defp build_document_instance_url(token, document_id) do
     URI.encode("#{frontend_url()}/documents/#{document_id}?type=invite&token=#{token}")
+  end
+
+  defp build_document_signature_request_url(token, document_id) do
+    URI.encode("#{frontend_url()}/documents/#{document_id}?type=sign&token=#{token}")
   end
 
   defp build_document_instance_url(document_id) do

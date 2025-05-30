@@ -1,6 +1,6 @@
 ARG ELIXIR_VERSION=1.15.8
 ARG OTP_VERSION=25.2.3
-ARG DEBIAN_VERSION=bookworm-20250224
+ARG DEBIAN_VERSION=bookworm-20250520
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -10,9 +10,17 @@ FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
 RUN apt-get update -y \
-  && apt-get install -y curl build-essential git \
+  && apt-get install -y curl build-essential git openjdk-17-jdk \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
+
+# Install Rust toolchain for Rustler
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Set Java environment
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="$JAVA_HOME/bin:$PATH"
 
 # prepare build dir
 WORKDIR /app
@@ -43,6 +51,7 @@ RUN mix deps.compile
 COPY priv priv
 COPY lib lib
 COPY assets assets
+COPY native native
 
 # compile assets
 RUN mix assets.deploy
@@ -86,7 +95,8 @@ RUN apt-get update && \
     texlive-xetex \
     imagemagick \
     curl \
-    ca-certificates && \
+    ca-certificates \
+    openjdk-17-jdk && \
     update-ca-certificates && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -117,14 +127,22 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 ENV MIX_ENV="prod"
 
+# Set Java environment
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="$JAVA_HOME/bin:$PATH"
+
 WORKDIR "/app"
 
 RUN useradd -u 1000 -M -s /bin/sh -d /app wraftuser
 # Only copy the final release from the build stage
 COPY --from=builder /app/_build/${MIX_ENV}/rel/wraft_doc ./
 
-COPY priv ./app/priv
+# Copy priv directory with JAR file
+COPY priv ./priv
 
+# Verify Java installation and JAR file
+RUN java -version
+RUN test -f priv/visual-signer-v2-1.0-SNAPSHOT-jar-with-dependencies.jar && echo "JAR file found" || echo "JAR file not found"
 
 COPY ./entrypoint.sh /entrypoint.sh
 

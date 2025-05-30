@@ -7,14 +7,59 @@ defmodule WraftDocWeb.Plug.Authorized do
   """
   import Plug.Conn
   alias WraftDoc.Account.User
+  alias WraftDoc.Documents
   @superadmin_role "superadmin"
 
   def init(opts), do: opts
 
   # If the user is a guest, we dont need to check for permissions
   # like for the regular user. [RBAC]
+  # TODO need to remove since we are passing the guest access type within the token
+  # for all /guest/ paths
   def call(%Plug.Conn{path_info: ["api", "v1", "guest" | _]} = conn, _opts) do
     conn
+  end
+
+  def call(
+        %Plug.Conn{
+          params: %{"auth_type" => "sign", "id" => document_id},
+          assigns: %{current_user: current_user}
+        } = conn,
+        _opts
+      ) do
+    case Documents.has_access?(current_user, document_id, :counterparty) do
+      true ->
+        conn
+
+      {:error, error} ->
+        body = Jason.encode!(%{errors: error})
+
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(401, body)
+        |> halt()
+    end
+  end
+
+  def call(
+        %Plug.Conn{
+          params: %{"auth_type" => "guest", "id" => document_id},
+          assigns: %{current_user: current_user}
+        } = conn,
+        _opts
+      ) do
+    case Documents.has_access?(current_user, document_id) do
+      true ->
+        conn
+
+      _ ->
+        body = Jason.encode!(%{errors: "Unauthorized access.!"})
+
+        conn
+        |> put_resp_content_type("application/json")
+        |> send_resp(401, body)
+        |> halt()
+    end
   end
 
   def call(%Plug.Conn{private: %{phoenix_action: action}} = conn, opts) do

@@ -11,6 +11,8 @@ defmodule WraftDocWeb.Plug.ValidMembershipCheck do
   def init(_params) do
   end
 
+  def call(%Plug.Conn{params: %{"auth_type" => _}} = conn, _opts), do: conn
+
   def call(conn, _params) do
     user = conn.assigns[:current_user]
 

@@ -203,6 +203,39 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
   end
 
   @spec verify_document_access(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def verify_document_access(conn, %{
+        "token" => invite_token,
+        "id" => document_id,
+        "type" => "sign"
+      }) do
+    with {:ok, %{email: email, document_id: ^document_id}} <-
+           AuthTokens.check_token(invite_token, :signer_invite),
+         %User{} = invited_signatory <- Account.get_user_by_email(email),
+         %CounterParty{} = counter_party <- CounterParties.get_counterparty(document_id, email),
+         %CounterParty{} = counter_party <- CounterParties.approve_document_access(counter_party),
+         {:ok, guest_access_token, _} <-
+           AuthTokens.create_guest_access_token(invited_signatory, %{
+             email: email,
+             document_id: document_id,
+             type: "sign"
+           }) do
+      render(conn, "verify_signer.json",
+        counter_party: counter_party,
+        user: invited_signatory,
+        token: guest_access_token,
+        role: "sign"
+      )
+    else
+      _ ->
+        conn
+        |> put_resp_header("content-type", "application/json")
+        |> send_resp(
+          401,
+          Jason.encode!(%{errors: "Document id does not match the invite token."})
+        )
+    end
+  end
+
   def verify_document_access(conn, %{"token" => invite_token, "id" => document_id}) do
     with {:ok, %{email: email, document_id: ^document_id, state_id: state_id, role: role}} <-
            AuthTokens.check_token(invite_token, :document_invite),
@@ -211,8 +244,14 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
            Documents.get_content_collaboration(document_id, invited_user, state_id),
          {:ok, %ContentCollaboration{}} <-
            Documents.accept_document_access(content_collaboration),
-         {:ok, %AuthToken{value: guest_access_token}} <-
-           AuthTokens.create_guest_access_token(invited_user, state_id, email, role, document_id) do
+         {:ok, guest_access_token, _} <-
+           AuthTokens.create_guest_access_token(invited_user, %{
+             email: email,
+             role: role,
+             document_id: document_id,
+             state_id: state_id,
+             type: "guest"
+           }) do
       render(conn, "verify_collaborator.json",
         user: invited_user,
         token: guest_access_token,
@@ -320,35 +359,6 @@ defmodule WraftDocWeb.Api.V1.InstanceGuestController do
          %ContentCollaboration{} = collaborator <-
            Documents.update_collaborator_role(collaborator, params) do
       render(conn, "collaborator.json", collaborator: collaborator)
-    end
-  end
-
-  @doc """
-  Add counterpart to a contract document
-  """
-  swagger_path :add_counterparty do
-    post("/contents/{id}/add_counterparty")
-    summary("Add counterparty to a document")
-    description("Api to add counterpart to a document")
-
-    parameters do
-      id(:path, :string, "Instance id", required: true)
-      # counterparty(:body, Schema.ref(:CounterPartyRequest), "CounterParty", required: true)
-    end
-
-    # response(200, "Ok", Schema.ref(:CounterPartyResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
-
-  @spec add_counterparty(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def add_counterparty(conn, %{"id" => document_id} = params) do
-    current_user = conn.assigns.current_user
-
-    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
-         %CounterParty{} = counterparty <- CounterParties.add_counterparty(instance, params) do
-      render(conn, "counterparty.json", counterparty: counterparty)
     end
   end
 

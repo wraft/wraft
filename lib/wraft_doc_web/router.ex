@@ -148,14 +148,15 @@ defmodule WraftDocWeb.Router do
   end
 
   # Scope which does not need authorization. (Guest User)
-  scope "/api", WraftDocWeb do
-    pipe_through([:api, :api_auth])
+  # #TODO remove them because we are moving the guest user to be captured via token
+  # scope "/api", WraftDocWeb do
+  #   pipe_through([:api, :api_auth])
 
-    scope "/v1/guest", Api.V1, as: :v1 do
-      resources("/contents", InstanceController, only: [:show, :update])
-      resources("/comments", CommentController, only: [:create])
-    end
-  end
+  #   # scope "/v1/guest", Api.V1, as: :v1 do
+  #   #   resources("/contents", InstanceController, only: [:show, :update])
+  #   #   resources("/comments", CommentController, only: [:create])
+  #   # end
+  # end
 
   # Scope which requires authorization.
   scope "/api", WraftDocWeb do
@@ -294,8 +295,6 @@ defmodule WraftDocWeb.Router do
         :update_collaborator_role
       )
 
-      # Add a counterparty
-      post("/contents/:id/add_counterpart", InstanceGuestController, :add_counterparty)
       # Delete counterpart
       delete(
         "/contents/:id/remove_counterparty/:counterparty_id",
@@ -473,6 +472,26 @@ defmodule WraftDocWeb.Router do
         "/field_types",
         FieldTypeController,
         only: [:create, :index, :show, :update, :delete]
+      )
+
+      # Signature routes
+      post("/contents/:id/add_counterparty", SignatureController, :add_counterparty)
+      post("/contents/:id/signatures", SignatureController, :create_signature)
+      get("/contents/:id/signatures/:signature_id", SignatureController, :get_signature)
+      get("/contents/:id/counterparties", SignatureController, :list_counterparties)
+      post("/contents/:id/request_signature", SignatureController, :request_signature)
+      get("/contents/:id/signatures", SignatureController, :get_document_signatures)
+      delete("/contents/:id/signatures/:counter_party_id", SignatureController, :revoke_signature)
+      # Temporary route
+      post("/contents/:id/generate_signature", SignatureController, :generate_signature)
+      put("/contents/:id/signatures/:signature_id", SignatureController, :update_signature)
+
+      post("/contents/:id/append_signature", SignatureController, :apply_visual_signature)
+
+      post(
+        "/contents/:id/signatures/:signature_id/assign",
+        SignatureController,
+        :assign_counter_party
       )
     end
   end

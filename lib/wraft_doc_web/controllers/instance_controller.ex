@@ -642,7 +642,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
   @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
   # Guest user
-  def show(conn, %{"id" => document_id, "type" => "guest"} = _params) do
+  def show(conn, %{"id" => document_id, "auth_type" => "guest"} = _params) do
     current_user = conn.assigns.current_user
 
     with true <- Documents.has_access?(current_user, document_id),

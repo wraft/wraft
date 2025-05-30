@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.15.8-erlang-25.2.3-debian-bookworm-20250224
+FROM hexpm/elixir:1.15.8-erlang-25.2.3-debian-bookworm-20250520
 
 # Install dependencies
 RUN apt-get update && apt-get install -y --fix-missing \
@@ -19,9 +19,18 @@ RUN apt-get update && apt-get install -y --fix-missing \
     texlive-xetex \
     curl \
     imagemagick \
-    ca-certificates && \
+    ca-certificates \
+    openjdk-17-jdk && \
     update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Rust toolchain for Rustler
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Set Java environment
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="$JAVA_HOME/bin:$PATH"
 
 # Install Pandoc
 RUN ARCH=$(dpkg --print-architecture) && \
@@ -48,6 +57,7 @@ RUN echo "xvfb-run -a -s \"-screen 0 640x480x16\" wkhtmltopdf \"\$@\"" > /usr/lo
 WORKDIR /app
 COPY config /app/config
 COPY lib /app/lib
+COPY native /app/native
 COPY mix.exs mix.lock /app/
 COPY priv priv
 COPY assets assets
