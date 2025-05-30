@@ -12,7 +12,7 @@ defmodule WraftDoc.Documents.Signatures do
                        :visual_signer_jar,
                        Path.join(
                          :code.priv_dir(:wraft_doc),
-                         "visual-signer-v2-1.0-SNAPSHOT-jar-with-dependencies.jar"
+                         "pdf-signer.jar"
                        )
                      )
 
