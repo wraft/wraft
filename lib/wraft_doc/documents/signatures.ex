@@ -6,16 +6,8 @@ defmodule WraftDoc.Documents.Signatures do
   import Ecto.Query
   require Logger
 
-  # Path to the visual signer JAR file
-  @visual_signer_jar Application.compile_env(
-                       :wraft_doc,
-                       :visual_signer_jar,
-                       Path.join(
-                         :code.priv_dir(:wraft_doc),
-                         "pdf-signer.jar"
-                       )
-                     )
-
+  # Path to the pdf signer JAR file
+  @visual_signer_jar Application.compile_env!(:wraft_doc, [:signature_jar_file])
   # Digital signature keystore configuration
   @keystore_file System.get_env("SIGNING_LOCAL_FILE_PATH") ||
                    Path.join(:code.priv_dir(:wraft_doc), "keystore/doc_signer.p12")
@@ -102,6 +94,8 @@ defmodule WraftDoc.Documents.Signatures do
       "--location",
       @signature_location
     ]
+
+    Logger.info("Applying visual signature with args: #{inspect(args)}")
 
     case System.cmd("java", args, stderr_to_stdout: true) do
       {output, 0} ->
