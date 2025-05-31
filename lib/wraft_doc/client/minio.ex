@@ -9,6 +9,10 @@ defmodule WraftDoc.Client.Minio do
     defexception message: "MinIO download error. File not found."
   end
 
+  defmodule UploadError do
+    defexception message: "MinIO upload error. File not found."
+  end
+
   alias ExAws.Config
   alias ExAws.S3
   alias WraftDoc.Client.Minio.DownloadError
@@ -26,11 +30,15 @@ defmodule WraftDoc.Client.Minio do
   """
   @spec upload_file(String.t()) :: ex_aws_response()
   def upload_file(file_path) do
-    file_path
-    |> S3.Upload.stream_file()
-    |> S3.upload(bucket(), file_path)
-    |> @ex_aws_module.request()
-    |> handle_upload_response()
+    if File.exists?(file_path) do
+      file_path
+      |> S3.Upload.stream_file()
+      |> S3.upload(bucket(), file_path)
+      |> @ex_aws_module.request()
+      |> handle_upload_response()
+    else
+      raise UploadError
+    end
   end
 
   defp handle_upload_response({:ok, result}), do: {:ok, result}

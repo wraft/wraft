@@ -16,6 +16,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Client.Minio
   alias WraftDoc.Client.Minio.DownloadError
+  alias WraftDoc.Client.Minio.UploadError
   alias WraftDoc.CounterParties
   alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.Documents
@@ -528,5 +529,10 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
            CounterParties.counter_party_sign(counter_party, params, signed_pdf_path) do
       render(conn, "signed_pdf.json", url: Minio.generate_url(signed_pdf_path))
     end
+  rescue
+    UploadError ->
+      conn
+      |> put_status(404)
+      |> json(%{error: "File not found"})
   end
 end
