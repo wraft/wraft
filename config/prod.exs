@@ -57,10 +57,10 @@ config :wraft_doc,
   theme_folder: File.cwd!() <> "/app/priv/wraft_files/Roboto",
   layout_file: File.cwd!() <> "/app/priv/wraft_files/letterhead.pdf",
   default_template_files: File.cwd!() <> "/app/priv/wraft_files/templates",
-  signature_jar_file: File.cwd!() <> "/app/priv/pdf-signer.jar",
+  signature_jar_file: File.cwd!() <> "/priv/pdf-signer.jar",
   keystore_file:
     System.get_env("SIGNING_LOCAL_FILE_PATH") ||
-      File.cwd!() <> "/app/priv/keystore/doc_signer.p12"
+      File.cwd!() <> "/priv/keystore/doc_signer.p12"
 
 # ## SSL Support
 #
