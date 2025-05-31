@@ -94,8 +94,6 @@ defmodule WraftDoc.Documents.Signatures do
       @signature_location
     ]
 
-    Logger.info("Executing visual signer with args: #{inspect(args)}")
-
     case System.cmd("java", args, stderr_to_stdout: true) do
       {output, 0} ->
         Logger.info("Visual signature applied successfully: #{output}")
