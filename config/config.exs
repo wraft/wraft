@@ -154,6 +154,7 @@ config :wraft_doc,
   layout_file: "priv/wraft_files/letterhead.pdf",
   default_template_files: "priv/wraft_files/templates",
   signature_jar_file: "priv/pdf-signer.jar",
+  keystore_file: System.get_env("SIGNING_LOCAL_FILE_PATH") || "priv/keystore/doc_signer.p12",
   sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}",
   frontend_url: "#{System.get_env("FRONTEND_URL")}",
   backend_url: "#{System.get_env("BACKEND_URL")}"

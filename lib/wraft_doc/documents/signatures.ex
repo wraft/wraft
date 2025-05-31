@@ -9,8 +9,7 @@ defmodule WraftDoc.Documents.Signatures do
   # Path to the pdf signer JAR file
   @visual_signer_jar Application.compile_env!(:wraft_doc, [:signature_jar_file])
   # Digital signature keystore configuration
-  @keystore_file System.get_env("SIGNING_LOCAL_FILE_PATH") ||
-                   Path.join(:code.priv_dir(:wraft_doc), "keystore/doc_signer.p12")
+  @keystore_file Application.compile_env!(:wraft_doc, [:keystore_file])
   @keystore_password System.get_env("SIGNING_LOCAL_PASSPHRASE") ||
                        "EnsHmeoOx+r8mbqOmqT55kLjdmSncMesyRDpQqs1AdA="
   @key_alias System.get_env("SIGNING_KEY_ALIAS") || "1"
@@ -94,6 +93,8 @@ defmodule WraftDoc.Documents.Signatures do
       "--location",
       @signature_location
     ]
+
+    Logger.info("Executing visual signer with args: #{inspect(args)}")
 
     case System.cmd("java", args, stderr_to_stdout: true) do
       {output, 0} ->

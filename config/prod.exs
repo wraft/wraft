@@ -56,7 +56,11 @@ config :wraft_doc,
   permissions_file: "repo/data/rbac/permissions.csv",
   theme_folder: File.cwd!() <> "/app/priv/wraft_files/Roboto",
   layout_file: File.cwd!() <> "/app/priv/wraft_files/letterhead.pdf",
-  default_template_files: File.cwd!() <> "/app/priv/wraft_files/templates"
+  default_template_files: File.cwd!() <> "/app/priv/wraft_files/templates",
+  signature_jar_file: File.cwd!() <> "/app/priv/pdf-signer.jar",
+  keystore_file:
+    System.get_env("SIGNING_LOCAL_FILE_PATH") ||
+      File.cwd!() <> "/app/priv/keystore/doc_signer.p12"
 
 # ## SSL Support
 #
