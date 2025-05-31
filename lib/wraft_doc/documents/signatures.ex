@@ -133,16 +133,8 @@ defmodule WraftDoc.Documents.Signatures do
     base_local_dir_path = Path.join(File.cwd!(), instance_dir_path)
     File.mkdir_p!(base_local_dir_path)
 
-    pdf_path =
-      instance
-      |> Documents.instance_updated?()
-      |> then(&Assets.pdf_file_path(instance, instance_dir_path, &1))
-
-    base_local_file_path = Path.join(File.cwd!(), pdf_path)
-    binary = Minio.download(pdf_path)
-    File.write!(base_local_file_path, binary)
-
     output_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
+    pdf_path = get_or_download_pdf(output_pdf_path, instance, instance_dir_path)
 
     {updated_signatures, _} =
       Enum.map_reduce(signatures, pdf_path, fn %ESignature{
@@ -182,6 +174,32 @@ defmodule WraftDoc.Documents.Signatures do
        counterparty: %{counterparty | e_signature: updated_signatures},
        signed_pdf_path: output_pdf_path
      }}
+  end
+
+  defp get_or_download_pdf(output_pdf_path, instance, instance_dir_path) do
+    if Minio.file_exists?(output_pdf_path) do
+      download_existing_signed_pdf(output_pdf_path)
+    else
+      download_original_pdf(instance, instance_dir_path)
+    end
+  end
+
+  defp download_existing_signed_pdf(output_pdf_path) do
+    binary = Minio.download(output_pdf_path)
+    File.write!(output_pdf_path, binary)
+    output_pdf_path
+  end
+
+  defp download_original_pdf(instance, instance_dir_path) do
+    pdf_path =
+      instance
+      |> Documents.instance_updated?()
+      |> then(&Assets.pdf_file_path(instance, instance_dir_path, &1))
+
+    base_local_file_path = Path.join(File.cwd!(), pdf_path)
+    binary = Minio.download(pdf_path)
+    File.write!(base_local_file_path, binary)
+    pdf_path
   end
 
   @doc """
