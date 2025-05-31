@@ -10,8 +10,7 @@ defmodule WraftDoc.Documents.Signatures do
   @visual_signer_jar Application.compile_env!(:wraft_doc, [:signature_jar_file])
   # Digital signature keystore configuration
   @keystore_file Application.compile_env!(:wraft_doc, [:keystore_file])
-  @keystore_password System.get_env("SIGNING_LOCAL_PASSPHRASE") ||
-                       "EnsHmeoOx+r8mbqOmqT55kLjdmSncMesyRDpQqs1AdA="
+  @keystore_password System.get_env("SIGNING_LOCAL_PASSPHRASE")
   @key_alias System.get_env("SIGNING_KEY_ALIAS") || "1"
   @signature_reason "I hereby certify that I have signed this document"
   @signature_location "Digital Signature"
