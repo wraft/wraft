@@ -136,6 +136,9 @@ defmodule WraftDocWeb.Router do
       resources("/waiting_list", WaitingListController, only: [:create])
       # Set Password for first time
       post("/users/set_password", UserController, :set_password)
+
+      # health
+      get("/health", HealthController, :check_health)
     end
 
     # templates
