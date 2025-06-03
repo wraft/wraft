@@ -2,6 +2,7 @@ defmodule WraftDocWeb.CouponAdmin do
   @moduledoc """
   Admin panel for coupon module
   """
+  import Ecto.Query
   use Ecto.Schema
 
   alias WraftDoc.Billing
@@ -40,6 +41,16 @@ defmodule WraftDocWeb.CouponAdmin do
             "Valid forever"
           else
             x.expiry_date
+          end
+        end
+      },
+      creator: %{
+        name: "Creator",
+        value: fn x ->
+          if x.creator do
+            Map.get(x.creator, :email)
+          else
+            "Nil"
           end
         end
       }
@@ -91,16 +102,25 @@ defmodule WraftDocWeb.CouponAdmin do
     ]
   end
 
-  def insert(conn, _changeset) do
-    changeset = Coupon.changeset(%Coupon{}, conn.params["coupon"])
+  def custom_index_query(_conn, _schema, _query) do
+    from(c in Coupon,
+      preload: [:creator]
+    )
+  end
+
+  def insert(
+        %{assigns: %{admin_session: %{id: internal_user_id}}, params: %{"coupon" => params}},
+        _changeset
+      ) do
+    changeset = Coupon.changeset(%Coupon{}, Map.put(params, "creator_id", internal_user_id))
 
     changeset.changes
     |> Billing.create_coupon()
     |> Billing.handle_response(changeset)
   end
 
-  def update(conn, changeset) do
-    formatted_changeset = Coupon.changeset(%Coupon{}, conn.params["coupon"])
+  def update(%{params: %{"coupon" => params}}, changeset) do
+    formatted_changeset = Coupon.changeset(%Coupon{}, params)
 
     changeset.data
     |> Billing.update_coupon(Map.merge(formatted_changeset.changes, changeset.changes))

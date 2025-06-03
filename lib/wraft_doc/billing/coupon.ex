@@ -4,6 +4,8 @@ defmodule WraftDoc.Billing.Coupon do
   """
   use WraftDoc.Schema
 
+  alias WraftDoc.InternalUsers.InternalUser
+
   @fields [
     :name,
     :description,
@@ -18,7 +20,8 @@ defmodule WraftDoc.Billing.Coupon do
     :usage_limit,
     :times_used,
     :expiry_date,
-    :start_date
+    :start_date,
+    :creator_id
   ]
 
   @required_fields [
@@ -44,6 +47,8 @@ defmodule WraftDoc.Billing.Coupon do
     field(:expiry_date, :utc_datetime, default: nil)
     field(:usage_limit, :integer, default: nil)
     field(:times_used, :integer, default: 0)
+
+    belongs_to(:creator, InternalUser)
 
     timestamps()
   end

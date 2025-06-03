@@ -26,6 +26,16 @@ defmodule WraftDocWeb.PlanAdmin do
             "No coupon"
           end
         end
+      },
+      creator: %{
+        name: "Creator",
+        value: fn x ->
+          if x.creator do
+            Map.get(x.creator, :email)
+          else
+            "Nil"
+          end
+        end
       }
     ]
   end
@@ -76,7 +86,7 @@ defmodule WraftDocWeb.PlanAdmin do
     from(p in Plan,
       where: is_nil(p.custom),
       where: p.is_active? == true,
-      preload: [:coupon]
+      preload: [:coupon, :creator]
     )
   end
 

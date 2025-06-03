@@ -32,6 +32,16 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
       link_validity: %{
         name: "pay link validity",
         value: fn x -> if x.custom != nil, do: x.custom.end_date end
+      },
+      creator: %{
+        name: "Creator",
+        value: fn x ->
+          if x.creator do
+            Map.get(x.creator, :email)
+          else
+            "Nil"
+          end
+        end
       }
     ]
   end
@@ -108,7 +118,8 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
   def custom_index_query(_conn, _schema, _query) do
     from(p in Plan,
       where: not is_nil(p.custom),
-      where: p.is_active? == true
+      where: p.is_active? == true,
+      preload: [:coupon, :creator]
     )
   end
 
