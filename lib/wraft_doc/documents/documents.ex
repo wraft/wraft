@@ -1570,12 +1570,16 @@ defmodule WraftDoc.Documents do
       }) do
     updated_content = replace_content_holder(Jason.decode!(serialized_data), field_with_values)
 
-    serialized =
-      field_with_values
-      |> Map.put("title", replace_content_title(field_with_values, title_temp))
-      |> Map.put("serialized", Jason.encode!(updated_content))
-
     raw = ProsemirrorToMarkdown.convert(updated_content)
+
+    serialized =
+      %{
+        "title" => replace_content_title(field_with_values, title_temp),
+        "serialized" => Jason.encode!(updated_content),
+        "body" => raw,
+        "fields" => Jason.encode!(field_with_values)
+      }
+
     %{"raw" => raw, "serialized" => serialized}
   end
 

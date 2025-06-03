@@ -56,7 +56,7 @@ defmodule WraftDoc.PipelineRunner do
   @doc """
   Creates instances for all the stages of the pipeline.
   """
-  @spec create_instances(TriggerHistory.t()) :: map
+  @spec create_instances(TriggerHistory.t()) :: map()
   def create_instances(%{data: data, creator_id: u_id, pipeline: %{stages: stages}} = trigger)
       when is_nil(u_id) == false do
     user = Account.get_user(u_id)
@@ -71,7 +71,9 @@ defmodule WraftDoc.PipelineRunner do
         transformed_data = Forms.transform_data_by_mapping(form_mapping, data)
 
         params =
-          transformed_data |> Documents.do_create_instance_params(d_temp) |> Map.put("type", type)
+          transformed_data
+          |> Documents.do_create_instance_params(d_temp)
+          |> Map.merge(%{"type" => type, "doc_settings" => %{}})
 
         Documents.create_instance(
           user,
@@ -96,7 +98,9 @@ defmodule WraftDoc.PipelineRunner do
         transformed_data = Forms.transform_data_by_mapping(form_mapping, data)
 
         params =
-          transformed_data |> Documents.do_create_instance_params(d_temp) |> Map.put("type", type)
+          transformed_data
+          |> Documents.do_create_instance_params(d_temp)
+          |> Map.merge(%{"type" => type, "doc_settings" => %{}})
 
         Documents.create_instance(c_type, Enterprise.get_final_state(c_type.flow_id), params)
       end)
@@ -109,7 +113,7 @@ defmodule WraftDoc.PipelineRunner do
   @doc """
   Check if all the instances were successfully created or not.
   """
-  @spec instances_created?(map) :: boolean
+  @spec instances_created?(map()) :: boolean()
   def instances_created?(%{instances: instances}) do
     instances
     |> Enum.find(fn
@@ -153,7 +157,7 @@ defmodule WraftDoc.PipelineRunner do
   @doc """
   Check if all the builds were successfull or not
   """
-  @spec build_failed?(map) :: map
+  @spec build_failed?(map()) :: map()
   def build_failed?(%{builds: builds} = input) do
     failed_builds =
       builds
@@ -177,7 +181,7 @@ defmodule WraftDoc.PipelineRunner do
   @doc """
   Zip all the builds.
   """
-  @spec zip_builds(map) :: map
+  @spec zip_builds(map()) :: map()
   def zip_builds(%{instances: instances} = input) do
     org_id = List.first(instances).content_type.organisation_id
 
