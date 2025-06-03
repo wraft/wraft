@@ -9,6 +9,7 @@ defmodule WraftDoc.Enterprise.Plan do
   alias __MODULE__.Limits
   alias WraftDoc.Billing.Coupon
   alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.InternalUsers.InternalUser
   alias WraftDocWeb.Kaffy.ArrayField
 
   schema "plan" do
@@ -26,6 +27,7 @@ defmodule WraftDoc.Enterprise.Plan do
 
     belongs_to(:organisation, Organisation)
     belongs_to(:coupon, Coupon)
+    belongs_to(:creator, InternalUser)
 
     embeds_one(:trial_period, TrialPeriod, on_replace: :delete)
     embeds_one(:limits, Limits, on_replace: :delete)
@@ -48,7 +50,8 @@ defmodule WraftDoc.Enterprise.Plan do
       :features,
       :is_active?,
       :payment_link,
-      :coupon_id
+      :coupon_id,
+      :creator_id
     ])
     |> validate_plan_amount()
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
@@ -73,7 +76,8 @@ defmodule WraftDoc.Enterprise.Plan do
       :features,
       :type,
       :is_active?,
-      :coupon_id
+      :coupon_id,
+      :creator_id
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> cast_embed(:trial_period)
@@ -96,7 +100,8 @@ defmodule WraftDoc.Enterprise.Plan do
       :features,
       :type,
       :organisation_id,
-      :payment_link
+      :payment_link,
+      :creator_id
     ])
     |> cast_embed(:limits, with: &Limits.changeset/2, required: true)
     |> cast_embed(:custom, with: &Custom.changeset/2, required: true)

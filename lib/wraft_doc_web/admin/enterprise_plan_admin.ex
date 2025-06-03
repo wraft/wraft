@@ -120,10 +120,12 @@ defmodule WraftDocWeb.EnterprisePlanAdmin do
     Plan.custom_plan_changeset(schema, attrs)
   end
 
-  def insert(conn, changeset) do
-    params = Map.merge(conn.params["plan"], %{"type" => :enterprise})
-
+  def insert(
+        %{assigns: %{admin_session: %{id: internal_user_id}}, params: %{"plan" => params}},
+        changeset
+      ) do
     params
+    |> Map.merge(%{"type" => :enterprise, "creator_id" => internal_user_id})
     |> Enterprise.create_plan()
     |> Billing.handle_response(changeset)
   end
