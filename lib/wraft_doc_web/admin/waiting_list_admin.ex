@@ -6,6 +6,7 @@ defmodule WraftDocWeb.WaitingListAdmin do
   alias WraftDoc.Account
   alias WraftDoc.AuthTokens
   alias WraftDoc.Kaffy.CustomDataAdmin
+  alias WraftDoc.WaitingLists
   alias WraftDoc.WaitingLists.WaitingList
   alias WraftDoc.Workers.EmailWorker
 
@@ -55,6 +56,16 @@ defmodule WraftDocWeb.WaitingListAdmin do
   def ordering(_schema) do
     # order by created_at
     [desc: :inserted_at]
+  end
+
+  def update(
+        %{assigns: %{admin_session: %{id: internal_user_id}}, params: %{"waiting_list" => params}} =
+          _conn,
+        %{data: waiting_list} = _changeset
+      ) do
+    params
+    |> Map.put("modified_by_id", internal_user_id)
+    |> then(&WaitingLists.update_waiting_list(waiting_list, &1))
   end
 
   def after_update(
