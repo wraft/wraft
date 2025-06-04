@@ -73,7 +73,7 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
             "template_asset" =>
               %{"file" => %{filename: file_name, path: file_path} = file} = params
           }
-        },
+        } = _conn,
         changeset
       ) do
     params =

@@ -10,6 +10,7 @@ defmodule WraftDoc.WaitingLists.WaitingList do
   """
   use WraftDoc.Schema
   alias __MODULE__
+  alias WraftDoc.InternalUsers.InternalUser
 
   schema "waiting_list" do
     field(:first_name, :string)
@@ -17,12 +18,14 @@ defmodule WraftDoc.WaitingLists.WaitingList do
     field(:email, :string)
     field(:status, Ecto.Enum, values: [:approved, :rejected, :pending], default: :pending)
 
+    belongs_to(:modified_by, InternalUser)
+
     timestamps()
   end
 
   def changeset(%WaitingList{} = waiting_list, attrs \\ %{}) do
     waiting_list
-    |> cast(attrs, [:first_name, :last_name, :email, :status])
+    |> cast(attrs, [:first_name, :last_name, :email, :status, :modified_by_id])
     |> validate_required([:first_name, :last_name, :email, :status])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+\.[^\s]+$/, message: "invalid email")
     |> unique_constraint(:email,

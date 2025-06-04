@@ -26,6 +26,16 @@ defmodule WraftDocWeb.PlanAdmin do
             "No coupon"
           end
         end
+      },
+      creator: %{
+        name: "Creator",
+        value: fn x ->
+          if x.creator do
+            Map.get(x.creator, :email)
+          else
+            "Nil"
+          end
+        end
       }
     ]
   end
@@ -76,21 +86,20 @@ defmodule WraftDocWeb.PlanAdmin do
     from(p in Plan,
       where: is_nil(p.custom),
       where: p.is_active? == true,
-      preload: [:coupon]
+      preload: [:coupon, :creator]
     )
   end
 
-  def create_changeset(schema, attrs) do
-    Plan.plan_changeset(schema, attrs)
-  end
+  def create_changeset(schema, attrs), do: Plan.plan_changeset(schema, attrs)
 
-  def update_changeset(schema, attrs) do
-    Plan.plan_changeset(schema, attrs)
-  end
+  def update_changeset(schema, attrs), do: Plan.plan_changeset(schema, attrs)
 
-  def insert(conn, changeset) do
-    conn.params["plan"]
-    |> Map.merge(%{"type" => :regular})
+  def insert(
+        %{assigns: %{admin_session: %{id: internal_user_id}}, params: %{"plan" => params}},
+        changeset
+      ) do
+    params
+    |> Map.merge(%{"type" => :regular, "creator_id" => internal_user_id})
     |> Enterprise.create_plan()
     |> Billing.handle_response(changeset)
   end

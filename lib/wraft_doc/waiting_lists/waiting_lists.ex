@@ -17,6 +17,17 @@ defmodule WraftDoc.WaitingLists do
     |> Repo.insert()
   end
 
+  @doc """
+   Update waiting list
+  """
+  @spec update_waiting_list(WaitingList.t(), map()) ::
+          {:ok, WaitingList.t()} | {:error, Ecto.Changeset.t()}
+  def update_waiting_list(waiting_list \\ %WaitingList{}, params) do
+    waiting_list
+    |> WaitingList.changeset(params)
+    |> Repo.update()
+  end
+
   # TODO move all mail related functions to a different module
   @doc """
     Waiting list confirmation email
