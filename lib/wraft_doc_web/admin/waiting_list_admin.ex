@@ -2,6 +2,7 @@ defmodule WraftDocWeb.WaitingListAdmin do
   @moduledoc """
   Admin  Panel for waiting list.
   """
+  import Ecto.Query
 
   alias WraftDoc.Account
   alias WraftDoc.AuthTokens
@@ -39,6 +40,14 @@ defmodule WraftDocWeb.WaitingListAdmin do
       last_name: %{name: "Last Name", value: fn x -> x.last_name end},
       email: %{name: "Email", value: fn x -> x.email end},
       status: %{name: "Status", value: fn x -> x.status end},
+      modified_by: %{
+        name: "modified_by",
+        value: fn x ->
+          if x.modified_by do
+            x.modified_by.email
+          end
+        end
+      },
       inserted_at: %{name: "Created At", value: fn x -> x.inserted_at end},
       updated_at: %{name: "Approved At", value: fn x -> x.updated_at end}
     ]
@@ -49,7 +58,8 @@ defmodule WraftDocWeb.WaitingListAdmin do
       first_name: %{label: "First Name"},
       last_name: %{label: "Last Name"},
       email: %{label: "Email"},
-      status: %{label: "Status"}
+      status: %{label: "Status"},
+      modified_by_id: %{label: "Modified_by", create: :readonly, update: :readonly}
     ]
   end
 
@@ -57,6 +67,9 @@ defmodule WraftDocWeb.WaitingListAdmin do
     # order by created_at
     [desc: :inserted_at]
   end
+
+  def custom_index_query(_, _, _), do: from(wl in WaitingList, preload: [:modified_by])
+  def custom_show_query(_, _, _), do: from(wl in WaitingList, preload: [:modified_by])
 
   def update(
         %{assigns: %{admin_session: %{id: internal_user_id}}, params: %{"waiting_list" => params}} =
