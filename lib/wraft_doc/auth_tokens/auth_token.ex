@@ -13,7 +13,9 @@ defmodule WraftDoc.AuthTokens.AuthToken do
     :set_password,
     :delete_organisation,
     :document_invite,
-    :google_oauth
+    :google_oauth,
+    :dropbox_oauth,
+    :onedrive_oauth
   ]
 
   schema "auth_token" do

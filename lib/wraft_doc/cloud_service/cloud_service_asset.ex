@@ -7,9 +7,10 @@ defmodule WraftDoc.CloudService.CloudServiceAsset do
 
   @derive {Jason.Encoder,
            only: [
-             :google_drive_id,
+             :id,
              :name,
-             :mime_type,
+             :cloud_service,
+             :file_type,
              :size,
              :created_time,
              :modified_time,
@@ -17,9 +18,9 @@ defmodule WraftDoc.CloudService.CloudServiceAsset do
              :file_extension
            ]}
   schema "cloud_service_assets" do
-    field(:google_drive_id, :string)
     field(:name, :string)
-    field(:mime_type, :string)
+    field(:cloud_service, :string)
+    field(:file_type, :string)
     field(:size, :integer)
     field(:description, :string)
     field(:created_time, :utc_datetime)
@@ -34,9 +35,9 @@ defmodule WraftDoc.CloudService.CloudServiceAsset do
   def changeset(file, attrs) do
     file
     |> cast(attrs, [
-      :google_drive_id,
       :name,
-      :mime_type,
+      :cloud_service,
+      :file_type,
       :description,
       :size,
       :created_time,
@@ -45,7 +46,6 @@ defmodule WraftDoc.CloudService.CloudServiceAsset do
       :parents,
       :file_extension
     ])
-    |> validate_required([:google_drive_id, :name])
-    |> unique_constraint(:google_drive_id)
+    |> validate_required([:name])
   end
 end

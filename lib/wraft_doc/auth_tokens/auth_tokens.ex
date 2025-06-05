@@ -410,6 +410,37 @@ defmodule WraftDoc.AuthTokens do
     insert_auth_token!(user, params)
   end
 
+  def save_cloud_service_token(%User{id: user_id} = user, token_data, service) do
+    token_type = get_token_type(service)
+
+    params = %{
+      value: token_data.access_token,
+      token_type: token_type,
+      user_id: user_id,
+      expiry_datetime: calculate_expiry(token_data.expires_in),
+      meta_data: %{
+        "scope" => token_data.scope,
+        "refresh_token" => token_data.refresh_token || token_data["refresh_token"],
+        "token_type" => token_data.token_type,
+        "service" => Atom.to_string(service)
+      }
+    }
+
+    {:ok, insert_auth_token!(user, params)}
+  end
+
+  defp get_token_type(:google_drive), do: :google_oauth
+  defp get_token_type(:dropbox), do: :dropbox_oauth
+  defp get_token_type(:onedrive), do: :onedrive_oauth
+
+  defp calculate_expiry(nil), do: NaiveDateTime.add(NaiveDateTime.utc_now(), 3600)
+
+  defp calculate_expiry(expires_in) when is_integer(expires_in) do
+    NaiveDateTime.add(NaiveDateTime.utc_now(), expires_in)
+  end
+
+  defp calculate_expiry(_), do: NaiveDateTime.add(NaiveDateTime.utc_now(), 3600)
+
   @doc """
     Create set password token
   """

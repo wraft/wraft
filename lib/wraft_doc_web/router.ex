@@ -10,7 +10,7 @@ defmodule WraftDocWeb.Router do
     plug(:fetch_session)
     plug(:fetch_flash)
     plug(:fetch_live_flash)
-    plug(:protect_from_forgery)
+    plug :protect_from_forgery
     plug(:put_secure_browser_headers)
   end
 
@@ -160,50 +160,40 @@ defmodule WraftDocWeb.Router do
   scope "/api", WraftDocWeb do
     pipe_through(:browser)
 
-    get("/auth/google", CloudServiceController, :login_url)
-    get("/auth/google/callback", CloudServiceController, :callback)
+    get("/auth/:service", CloudServiceAuthController, :login_url)
+    get("/googledrive/callback", CloudServiceAuthController, :google_callback)
+    get("/dropbox/callback", CloudServiceAuthController, :dropbox_callback)
+    get("/onedrive/callback", CloudServiceAuthController, :onedrive_callback)
 
-    scope "/google_drive" do
+    scope "/clouds/google" do
       pipe_through([WraftDocWeb.GoogleTokenPlug])
+      get("/files", CloudServiceController, :list_gdrive_files)
+      get("/file/:file_id", CloudServiceController, :get_gdrive_file)
+      post("/download", CloudServiceController, :download_gdrive_file)
+      get("/search", CloudServiceController, :search_gdrive_files)
+      get("/pdfs", CloudServiceController, :list_all_gdrive_pdfs)
+      post("/sync_files", CloudServiceController, :sync_gdrive_files)
+    end
 
-      get("/files", CloudServiceController, :list_files)
+    scope "/clouds/dropbox" do
+      pipe_through([WraftDocWeb.DropboxTokenPlug])
 
-      # Get file metadata
-      get("/file/:file_id", CloudServiceController, :get_file)
+      get("/files", CloudServiceController, :list_dropbox_files)
+      get("/file/:file_id", CloudServiceController, :get_dropbox_file)
+      post("/download", CloudServiceController, :download_dropbox_file)
+      get("/search", CloudServiceController, :search_dropbox_files)
+      get("/pdfs", CloudServiceController, :list_all_dropbox_pdfs)
+      post("/sync_files", CloudServiceController, :sync_dropbox_files)
+    end
 
-      # Download file
-      get("/download/:file_id", CloudServiceController, :download_file)
-
-      # Export file
-
-      get("/export/:file_id", CloudServiceController, :export_file)
-      get("/export/:file_id/:mime_type", CloudServiceController, :export_file)
-
-      # Search for files
-      get("/search", CloudServiceController, :search_files)
-
-      get("/search-folders", CloudServiceController, :search_folders)
-
-      # list folder
-      get("/list_folders", CloudServiceController, :list_folders)
-
-      # list files in a  folder
-      get("/folder/:folder_id/files", CloudServiceController, :list_files_in_folder)
-
-      # Show root folder
-      get("/explorer", CloudServiceController, :explorer)
-
-      # show folder
-      get("/explorer/:folder_id", CloudServiceController, :explorer)
-
-      #      # get file path
-      get("/folder-path/:folder_id", CloudServiceController, :folder_path)
-
-      # list all folders
-      get("/folders", CloudServiceController, :list_all_folders)
-
-      # list all pdfs
-      get("/pdfs", CloudServiceController, :list_all_pdfs)
+    scope "/clouds/onedrive" do
+      pipe_through([WraftDocWeb.OnedriveTokenPlug])
+      get("/files", CloudServiceController, :list_onedrive_files)
+      get("/file/:file_id", CloudServiceController, :get_onedrive_file)
+      post("/download", CloudServiceController, :download_onedrive_file)
+      get("/search", CloudServiceController, :search_onedrive_files)
+      get("/pdfs", CloudServiceController, :list_all_onedrive_pdfs)
+      post("/sync_files", CloudServiceController, :sync_onedrive_files)
     end
   end
 
@@ -280,7 +270,7 @@ defmodule WraftDocWeb.Router do
 
       # Enginebody
       resources("/engines", EngineController, only: [:index])
-      resources("/frames", FrameController)
+      resources("/frames", FrameController, only: [:index, :show, :create, :delete])
 
       scope "/forms" do
         # Forms
@@ -473,8 +463,9 @@ defmodule WraftDocWeb.Router do
 
       # Assets
       resources("/assets", AssetController)
-      post("/assets/preview", AssetController, :preview)
 
+      post("/global_asset/pre_import", GlobalImportController, :pre_import_global_file)
+      post("/global_asset/re_validate", GlobalImportController, :re_validate_global_file)
       post("/global_asset/import", GlobalImportController, :import_global_file)
 
       # Template Assets
