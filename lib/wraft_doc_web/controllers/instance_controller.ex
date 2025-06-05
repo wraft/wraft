@@ -1063,4 +1063,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       render(conn, "email.json", %{info: "Email sent successfully"})
     end
   end
+
+  def contract_chart(conn, params) do
+    current_user = conn.assigns.current_user
+
+    with {:ok, contract_list} <- Documents.get_contract_chart(current_user, params) do
+      render(conn, "contract_chart.json", contract_list: contract_list)
+    end
+  end
 end
