@@ -45,19 +45,6 @@ defmodule WraftDocWeb.Api.V1.SearchController do
               collection: "documents"
             }
           })
-        end,
-      Error:
-        swagger_schema do
-          title("Error")
-          description("Error response")
-
-          properties do
-            error(:string, "Error message", required: true)
-          end
-
-          example(%{
-            error: "Invalid search parameters"
-          })
         end
     }
   end

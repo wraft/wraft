@@ -458,6 +458,63 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
             "clauses" => [],
             "reminder" => []
           })
+        end,
+      ContractChart:
+        swagger_schema do
+          title("Contract Chart Response")
+          description("Contract analytics data grouped by time intervals")
+          type(:object)
+
+          properties do
+            contract_list(:array, "List of contract metrics by time interval",
+              items: Schema.ref(:ContractMetrics)
+            )
+          end
+
+          example(%{
+            contract_list: [
+              %{
+                datetime: "2024-04-01T00:00:00Z",
+                total: 25,
+                confirmed: 18,
+                pending: 7
+              },
+              %{
+                datetime: "2024-04-08T00:00:00Z",
+                total: 32,
+                confirmed: 24,
+                pending: 8
+              }
+            ]
+          })
+        end,
+      ContractMetrics:
+        swagger_schema do
+          title("Contract Metrics")
+          description("Contract metrics for a specific time interval")
+          type(:object)
+
+          properties do
+            datetime(:string, "ISO8601 datetime representing the start of the interval",
+              format: "date-time",
+              example: "2024-04-01T00:00:00Z"
+            )
+
+            total(:integer, "Total number of contracts in this interval",
+              minimum: 0,
+              example: 25
+            )
+
+            confirmed(:integer, "Number of confirmed contracts (approval_status: true)",
+              minimum: 0,
+              example: 18
+            )
+
+            pending(:integer, "Number of pending contracts (total - confirmed)",
+              minimum: 0,
+              example: 7
+            )
+          end
         end
     }
   end
@@ -1062,6 +1119,84 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
          {:ok, _} <- Documents.send_document_email(instance, params) do
       render(conn, "email.json", %{info: "Email sent successfully"})
     end
+  end
+
+  @doc """
+  Contract Chart Analytics
+
+  Returns analytics data for contracts grouped by specified time intervals.
+  Supports flexible period-based filtering with strict validation rules.
+  """
+  swagger_path :contract_chart do
+    get("/contracts/chart")
+    summary("Get contract chart analytics")
+
+    description("""
+    Retrieve contract analytics data grouped by time intervals with flexible period filtering.
+
+    ## Business Logic:
+    - **total**: Total count of contracts in the time interval
+    - **confirmed**: Contracts with approval_status: true in meta field
+    - **pending**: total - confirmed (remaining contracts that aren't confirmed)
+
+    ## Period-Interval Validation Rules:
+    - **today** → interval must be: "hour" or "day"
+    - **7days** → interval can be: "hour" or "day"
+    - **month** → interval can be: "day" or "week"
+    - **year** → interval can be: "day", "week", or "month"
+    - **alltime** → interval can be: "week", "month", or "year"
+    - **custom** → interval can be: "hour", "day", "week", "month", or "year"
+
+    ## Custom Period Additional Validation:
+    - **Hour interval**: Not recommended for date ranges > 31 days
+    - **Day interval**: Not recommended for date ranges > 365 days
+    - **Week interval**: Requires at least 7 days between from and to dates
+    - **Month interval**: Requires at least 31 days between from and to dates
+    """)
+
+    parameters do
+      period(:query, :string, "Time period for filtering contracts",
+        enum: ["today", "7days", "month", "year", "alltime", "custom"],
+        default: "month",
+        example: "month"
+      )
+
+      interval(:query, :string, "Time interval for grouping results",
+        enum: ["hour", "day", "week", "month", "year"],
+        default: "week",
+        example: "week"
+      )
+
+      select_by(:query, :string, "Field to filter contracts by",
+        enum: ["insert", "update"],
+        default: "insert",
+        example: "insert"
+      )
+
+      from(:query, :string, "Start datetime for custom period (ISO8601 format)",
+        format: "date-time",
+        example: "2024-04-01T00:00:00Z",
+        description: "Required when period=custom. Must be in ISO8601 format with timezone."
+      )
+
+      to(:query, :string, "End datetime for custom period (ISO8601 format)",
+        format: "date-time",
+        example: "2024-04-30T23:59:59Z",
+        description: "Required when period=custom. Must be in ISO8601 format with timezone."
+      )
+    end
+
+    response(200, "Contract chart data retrieved successfully", Schema.ref(:ContractChart))
+
+    response(
+      400,
+      "Bad Request - Invalid parameters or period-interval combination",
+      Schema.ref(:Error)
+    )
+
+    response(401, "Unauthorized - Authentication required")
+    response(422, "Unprocessable Entity - Validation errors", Schema.ref(:Error))
+    response(500, "Internal Server Error", Schema.ref(:Error))
   end
 
   def contract_chart(conn, params) do
