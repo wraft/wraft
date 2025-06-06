@@ -154,6 +154,8 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
+  def render("contract_chart.json", %{contract_list: contract_list}), do: contract_list
+
   def generate_url(%{profile_pic: pic} = profile) do
     WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
   end

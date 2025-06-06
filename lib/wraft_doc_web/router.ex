@@ -280,6 +280,10 @@ defmodule WraftDocWeb.Router do
       patch("/contents/:id/lock-unlock", InstanceController, :lock_unlock)
       get("/contents/title/search", InstanceController, :search)
       get("/contents/:id/change/:v_id", InstanceController, :change)
+
+      # Contract chart
+      get("/contracts/chart", InstanceController, :contract_chart)
+
       # Share an instance
       post("/contents/:id/invite", InstanceGuestController, :invite)
       # Revoke document access
