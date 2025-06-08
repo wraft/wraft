@@ -91,7 +91,7 @@ defmodule WraftDoc.PipelineRunner do
 
     instances =
       Enum.map(stages, fn %{
-                            content_type: c_type,
+                            content_type: %{organisation_id: organisation_id} = c_type,
                             data_template: d_temp,
                             form_mapping: form_mapping
                           } ->
@@ -100,7 +100,11 @@ defmodule WraftDoc.PipelineRunner do
         params =
           transformed_data
           |> Documents.do_create_instance_params(d_temp)
-          |> Map.merge(%{"type" => type, "doc_settings" => %{}})
+          |> Map.merge(%{
+            "type" => type,
+            "doc_settings" => %{},
+            "organisation_id" => organisation_id
+          })
 
         Documents.create_instance(c_type, Enterprise.get_final_state(c_type.flow_id), params)
       end)

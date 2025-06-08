@@ -85,7 +85,7 @@ defmodule WraftDoc.Documents do
   Same as create_instance/4, to create instance and its approval system
   """
   def create_instance(
-        current_user,
+        %User{id: user_id, current_org_id: org_id} = current_user,
         %{id: c_id, prefix: prefix, type: type} = content_type,
         _state,
         params
@@ -93,7 +93,11 @@ defmodule WraftDoc.Documents do
     instance_id = create_instance_id(c_id, prefix)
 
     params =
-      Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => [current_user.id]})
+      Map.merge(params, %{
+        "instance_id" => instance_id,
+        "allowed_users" => [user_id],
+        "organisation_id" => org_id
+      })
 
     Multi.new()
     |> Multi.insert(
@@ -136,11 +140,19 @@ defmodule WraftDoc.Documents do
   # @spec create_instance(ContentType.t(), State.t(), map) ::
   #         %Instance{content_type: ContentType.t(), state: State.t()}
   #         | {:error, Ecto.Changeset.t()}
-  def create_instance(%{id: c_id, prefix: prefix, type: type} = c_type, _state, params) do
+  def create_instance(
+        %{id: c_id, prefix: prefix, type: type, organisation_id: organisation_id} = c_type,
+        _state,
+        params
+      ) do
     instance_id = create_instance_id(c_id, prefix)
 
     params =
-      Map.merge(params, %{"instance_id" => instance_id, "allowed_users" => [params["creator_id"]]})
+      Map.merge(params, %{
+        "instance_id" => instance_id,
+        "allowed_users" => [params["creator_id"]],
+        "organisation_id" => organisation_id
+      })
 
     c_type
     |> build_assoc(:instances, document_type: type)
@@ -163,13 +175,18 @@ defmodule WraftDoc.Documents do
   @spec create_instance(User.t(), ContentType.t(), map()) ::
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
-  def create_instance(%User{} = current_user, %ContentType{type: type} = content_type, params) do
+  def create_instance(
+        %User{id: user_id, current_org_id: org_id} = current_user,
+        %ContentType{type: type} = content_type,
+        params
+      ) do
     instance_id = create_instance_id(content_type.id, content_type.prefix)
 
     params =
       Map.merge(params, %{
         "instance_id" => instance_id,
-        "allowed_users" => [current_user.id]
+        "allowed_users" => [user_id],
+        "organisation_id" => org_id
       })
 
     Multi.new()
@@ -505,10 +522,7 @@ defmodule WraftDoc.Documents do
         params
       ) do
     Instance
-    |> join(:inner, [i], ct in ContentType,
-      on: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
-      as: :content_type
-    )
+    |> where([i], i.organisation_id == ^org_id)
     |> superadmin_check("superadmin" in role_names, current_user)
     |> where(^instance_index_filter_by_instance_id(params))
     |> where(^instance_index_filter_by_content_type_name(params))
@@ -547,8 +561,7 @@ defmodule WraftDoc.Documents do
   @spec instance_index(binary(), map()) :: map()
   def instance_index(<<_::288>> = c_type_id, params) do
     Instance
-    |> join(:inner, [i], ct in ContentType, on: ct.id == ^c_type_id, as: :content_type)
-    |> where([i, content_type: ct], i.content_type_id == ct.id)
+    |> where([i], i.content_type_id == ^c_type_id)
     |> where(^instance_index_filter_by_instance_id(params))
     |> where(^instance_index_filter_by_creator(params))
     |> order_by(^instance_index_sort(params))
@@ -638,9 +651,7 @@ defmodule WraftDoc.Documents do
   def instance_index(%{current_org_id: org_id}, key, params) do
     query =
       from(i in Instance,
-        join: ct in ContentType,
-        on: i.content_type_id == ct.id,
-        where: ct.organisation_id == ^org_id,
+        where: i.organisation_id == ^org_id,
         order_by: [desc: i.id],
         preload: [
           :content_type,
@@ -675,16 +686,13 @@ defmodule WraftDoc.Documents do
   """
   # TODO - improve tests
   @spec get_instance(binary(), User.t()) :: Instance.t() | nil
-  def get_instance(<<_::288>> = document_id, %{current_org_id: nil}) do
-    Repo.get(Instance, document_id)
-  end
+  def get_instance(<<_::288>> = document_id, %{current_org_id: nil}),
+    do: Repo.get(Instance, document_id)
 
   def get_instance(<<_::288>> = id, %{current_org_id: org_id}) do
     query =
       from(i in Instance,
-        where: i.id == ^id,
-        join: c in ContentType,
-        on: c.id == i.content_type_id and c.organisation_id == ^org_id
+        where: i.id == ^id and i.organisation_id == ^org_id
       )
 
     case Repo.one(query) do
@@ -1840,9 +1848,7 @@ defmodule WraftDoc.Documents do
   # def instance_index(%{current_org_id: org_id}, key, params) do
   #   query =
   #     from(i in Instance,
-  #       join: ct in ContentType,
-  #       on: i.content_type_id == ct.id,
-  #       where: ct.organisation_id == ^org_id,
+  #       where: i.organisation_id == ^org_id,
   #       order_by: [desc: i.id],
   #       preload: [
   #         :content_type,
@@ -2473,8 +2479,7 @@ defmodule WraftDoc.Documents do
     # TODO: Add organisation_id in instance and remove join query.
     base_query =
       from(i in Instance,
-        join: ct in ContentType,
-        on: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
+        where: i.organisation_id == ^org_id,
         where: fragment("?->>'type' = 'contract'", i.meta)
       )
 
