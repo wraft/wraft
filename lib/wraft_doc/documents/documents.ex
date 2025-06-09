@@ -85,8 +85,8 @@ defmodule WraftDoc.Documents do
   Same as create_instance/4, to create instance and its approval system
   """
   def create_instance(
-        %User{id: user_id, current_org_id: org_id} = current_user,
-        %{id: c_id, prefix: prefix, type: type} = content_type,
+        %User{id: user_id} = current_user,
+        %{id: c_id, prefix: prefix, type: type, organisation_id: organisation_id} = content_type,
         _state,
         params
       ) do
@@ -96,7 +96,7 @@ defmodule WraftDoc.Documents do
       Map.merge(params, %{
         "instance_id" => instance_id,
         "allowed_users" => [user_id],
-        "organisation_id" => org_id
+        "organisation_id" => organisation_id
       })
 
     Multi.new()
@@ -176,8 +176,8 @@ defmodule WraftDoc.Documents do
           %Instance{content_type: ContentType.t(), state: State.t()}
           | {:error, Ecto.Changeset.t()}
   def create_instance(
-        %User{id: user_id, current_org_id: org_id} = current_user,
-        %ContentType{type: type} = content_type,
+        %User{id: user_id} = current_user,
+        %ContentType{type: type, organisation_id: organisation_id} = content_type,
         params
       ) do
     instance_id = create_instance_id(content_type.id, content_type.prefix)
@@ -186,7 +186,7 @@ defmodule WraftDoc.Documents do
       Map.merge(params, %{
         "instance_id" => instance_id,
         "allowed_users" => [user_id],
-        "organisation_id" => org_id
+        "organisation_id" => organisation_id
       })
 
     Multi.new()
@@ -522,7 +522,10 @@ defmodule WraftDoc.Documents do
         params
       ) do
     Instance
-    |> where([i], i.organisation_id == ^org_id)
+    |> join(:inner, [i], ct in ContentType,
+      on: ct.organisation_id == ^org_id and i.content_type_id == ct.id,
+      as: :content_type
+    )
     |> superadmin_check("superadmin" in role_names, current_user)
     |> where(^instance_index_filter_by_instance_id(params))
     |> where(^instance_index_filter_by_content_type_name(params))
