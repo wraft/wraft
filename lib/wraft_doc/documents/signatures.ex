@@ -19,6 +19,7 @@ defmodule WraftDoc.Documents.Signatures do
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Client.Minio
+  alias WraftDoc.CounterParties
   alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.Documents
   alias WraftDoc.Documents.ESignature
@@ -309,12 +310,15 @@ defmodule WraftDoc.Documents.Signatures do
   defp finalize_signed_document(instance) do
     # Logic to finalize the document after all signatures
     # This could include:
+    # - Generating a final signed PDF , digitally signing, Visual signing already done, wholesome digital signing.
     # - Marking the document as fully signed
-    # - Generating a final signed PDF
-    # - Updating the document status
-    # - Sending notifications to all parties
+    instance
+    |> Instance.update_signature_status_changeset(%{signature_status: true})
+    |> Repo.update()
 
-    # Future implementation details would go here
+    # - Sending notifications to all parties
+    notify_document_fully_signed(instance)
+
     {:ok, instance}
   end
 
@@ -388,6 +392,32 @@ defmodule WraftDoc.Documents.Signatures do
     }
     |> EmailWorker.new(queue: "mailer", tags: ["notify_document_owner_signature_complete"])
     |> Oban.insert()
+  end
+
+  @doc """
+  Notify all parties when a document is fully signed
+  """
+  @spec notify_document_fully_signed(%Instance{}) :: :ok
+  def notify_document_fully_signed(%Instance{
+        id: instance_id,
+        content_type: %{layout: %Layout{organisation_id: org_id} = _layout} = _content_type
+      }) do
+    counterparties = CounterParties.get_document_counterparties(instance_id)
+
+    document_pdf_binary =
+      Minio.download("organisations/#{org_id}/contents/#{instance_id}/signed_#{instance_id}.pdf")
+
+    Enum.each(counterparties, fn %CounterParty{email: email} = counterparty ->
+      %{
+        email: email,
+        instance_id: instance_id,
+        signer_name: counterparty.name,
+        signed_document: document_pdf_binary,
+        document_name: "signed_#{instance_id}.pdf"
+      }
+      |> EmailWorker.new(queue: "mailer", tags: ["document_fully_signed"])
+      |> Oban.insert()
+    end)
   end
 
   @doc """
