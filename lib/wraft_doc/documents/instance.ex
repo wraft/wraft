@@ -37,6 +37,7 @@ defmodule WraftDoc.Documents.Instance do
     belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:vendor, WraftDoc.Enterprise.Vendor)
+    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     has_many(:content_collaboration, WraftDoc.Documents.ContentCollaboration,
       foreign_key: :content_id
@@ -62,7 +63,8 @@ defmodule WraftDoc.Documents.Instance do
       :type,
       :creator_id,
       :vendor_id,
-      :allowed_users
+      :allowed_users,
+      :organisation_id
     ])
     |> cast_embed(:doc_settings, with: &DocumentSettings.changeset/2)
     |> validate_required([
@@ -71,7 +73,8 @@ defmodule WraftDoc.Documents.Instance do
       :document_type,
       :serialized,
       :type,
-      :content_type_id
+      :content_type_id,
+      :organisation_id
     ])
     |> DocumentMetaType.cast_meta(attrs)
     |> unique_constraint(:instance_id,

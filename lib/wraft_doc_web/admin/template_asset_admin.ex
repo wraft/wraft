@@ -34,13 +34,6 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
     ]
   end
 
-  def default_actions(_schema),
-    do: [
-      :new,
-      :show,
-      :delete
-    ]
-
   def custom_index_query(_conn, _resource, query) do
     from(t in query,
       where: is_nil(t.organisation_id) and is_nil(t.creator_id),
@@ -138,7 +131,7 @@ defmodule WraftDocWeb.TemplateAssets.TemplateAssetAdmin do
 
   defp check_zip_exists(_params), do: {:error, "File not provided."}
 
-  def before_delete(_conn, changeset) do
+  def delete(_conn, changeset) do
     %{asset: %{file: file} = asset} =
       template_asset = Repo.preload(changeset.data, [:asset])
 

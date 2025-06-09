@@ -100,7 +100,10 @@ defmodule WraftDoc.PipelineRunner do
         params =
           transformed_data
           |> Documents.do_create_instance_params(d_temp)
-          |> Map.merge(%{"type" => type, "doc_settings" => %{}})
+          |> Map.merge(%{
+            "type" => type,
+            "doc_settings" => %{}
+          })
 
         Documents.create_instance(c_type, Enterprise.get_final_state(c_type.flow_id), params)
       end)
