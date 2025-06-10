@@ -16,6 +16,7 @@ defmodule WraftDoc.Application do
       # PubSub added here after updated to phoenix 1.6.4
       {Phoenix.PubSub, [name: WraftDoc.PubSub, adapter: Phoenix.PubSub.PG2]},
       WraftDoc.Search.TypesenseServer,
+      WraftDoc.CloudImport.StateStore,
       # Start your own worker by calling: WraftDoc.Worker.start_link(arg1, arg2, arg3)
       # worker(WraftDoc.Worker, [arg1, arg2, arg3]),
       {Oban, oban_config()},
