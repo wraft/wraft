@@ -500,6 +500,29 @@ defmodule WraftDocWeb.Router do
         SignatureController,
         :assign_counter_party
       )
+
+      # Repositories
+      resources "/repositories", RepositoryController, except: [:new, :edit]
+
+      scope "/storage" do
+        resources "/items", StorageItemController, except: [:new, :edit]
+        # list_storage_items
+        get "/items/:id/breadcrumbs", StorageItemController, :breadcrumbs
+        get "/items/navigation", StorageItemController, :navigation
+
+        # Storage assets with file upload
+        resources "/assets", StorageAssetController, except: [:new, :edit]
+        post "/assets/upload", StorageAssetController, :upload
+        post "/folder", StorageItemController, :create_folder
+
+        resources "/sync_jobs", SyncJobController, except: [:new, :edit]
+        resources "/access_logs", AccessLogController, except: [:new, :edit]
+
+        # Storage items routes
+        resources "/items", StorageItemController, only: [:index, :show, :create, :update, :delete] do
+          post "/rename", StorageItemController, :rename
+        end
+      end
     end
   end
 
