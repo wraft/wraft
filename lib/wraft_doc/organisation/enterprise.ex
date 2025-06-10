@@ -50,6 +50,9 @@ defmodule WraftDoc.Enterprise do
   @superadmin_role "superadmin"
   @editor_role "editor"
 
+  # Default storage limit in bytes (10 GB)
+  @default_storage_limit 10 * 1024 * 1024 * 1024
+
   @doc """
   Get a flow from its UUID.
   """
@@ -708,6 +711,9 @@ defmodule WraftDoc.Enterprise do
       WraftDoc.FeatureFlags.setup_defaults(organisation)
       {:ok, organisation}
     end)
+    |> Multi.run(:repository, fn _repo, %{organisation_logo: organisation} ->
+      create_default_repository(organisation, %{"creator_id" => user_id})
+    end)
     |> then(fn multi ->
       if self_hosted?() do
         multi
@@ -724,11 +730,37 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
+  defp create_default_repository(organisation, attrs) do
+    repository_attrs = %{
+      name: "#{organisation.name} Repository",
+      description: "Default repository for #{organisation.name}",
+      organisation_id: organisation.id,
+      creator_id: attrs["creator_id"] || attrs[:creator_id],
+      status: :active,
+      storage_limit: default_storage_limit(),
+      current_storage_used: 0,
+      item_count: 0
+    }
+
+    case WraftDoc.Storage.create_repository(repository_attrs) do
+      {:ok, repository} ->
+        # Return organisation with preloaded repository
+        {:ok, %{organisation | repository: repository}}
+
+      {:error, _changeset} ->
+        # Repository creation failed, but organisation exists
+        # You might want to handle this differently
+        {:ok, organisation}
+    end
+  end
+
+  defp default_storage_limit, do: @default_storage_limit
+
   @doc """
   Create a personal organisation when the user first sign up for wraft
   """
   @spec create_personal_organisation(User.t(), map) :: Organisation.t()
-  def create_personal_organisation(%User{} = user, params) do
+  def create_personal_organisation(%User{id: _user_id} = user, params) do
     Multi.new()
     |> Multi.insert(
       :organisation,

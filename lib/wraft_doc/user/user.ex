@@ -47,6 +47,7 @@ defmodule WraftDoc.Account.User do
     has_many(:field_types, WraftDoc.Fields.FieldType, foreign_key: :creator_id)
 
     has_many(:auth_tokens, WraftDoc.AuthTokens.AuthToken, foreign_key: :user_id)
+    has_many(:cloud_auth_tokens, WraftDoc.CloudImport.CloudAuthToken, foreign_key: :user_id)
 
     has_many(:instance_versions, WraftDoc.Documents.Instance.Version, foreign_key: :author_id)
     has_many(:user_roles, WraftDoc.Account.UserRole)
