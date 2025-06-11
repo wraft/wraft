@@ -1222,11 +1222,12 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   def build_wraft_json(theme, layout, c_type, data_template, file_path, current_user) do
-    with {:ok, theme, fonts} <- build_theme(theme, file_path, current_user),
-         {:ok, layout, layout_file, frame} <- build_layout(layout, file_path, current_user) do
+    with {:ok, theme_json, fonts} <- build_theme(theme, file_path, current_user),
+         {:ok, layout_json, layout_file} <- build_layout(layout, file_path, current_user),
+         {:ok, frame_json} <- build_frame(layout, file_path) do
       items = %{
-        "theme" => theme,
-        "layout" => layout,
+        "theme" => theme_json,
+        "layout" => layout_json,
         "variant" => build_c_type(c_type),
         "data_template" => %{
           "title" => data_template.title,
@@ -1255,7 +1256,7 @@ defmodule WraftDoc.TemplateAssets do
           "assets" => [layout_file],
           "fonts" => fonts
         },
-        "items" => Map.merge(items, frame)
+        "items" => Map.merge(items, frame_json)
       }
 
       {:ok, wraft_json}
@@ -1289,8 +1290,7 @@ defmodule WraftDoc.TemplateAssets do
        }
      end)}
   rescue
-    _ ->
-      {:error, "Downloading theme files failed."}
+    error -> {:error, "theme: #{error.message}"}
   end
 
   defp build_layout(layout, file_path, current_user) do
@@ -1315,13 +1315,12 @@ defmodule WraftDoc.TemplateAssets do
        "path" => download_file(asset_id, current_user, file_path, "pdf", "assets"),
        "type" => "layout",
        "description" => asset_name
-     }, get_frame(layout, file_path)}
+     }}
   rescue
-    _ ->
-      {:error, "Downloading layout files failed."}
+    error -> {:error, "layout: #{error.message}"}
   end
 
-  defp get_frame(
+  defp build_frame(
          %{
            frame: %Frame{
              asset: %{id: asset_id, file: %{file_name: file_name} = _file}
@@ -1331,13 +1330,13 @@ defmodule WraftDoc.TemplateAssets do
          file_path
        ) do
     binary = Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}")
-    FileHelper.extract_file(binary, file_path)
-    %{"frame" => "frame/wraft.json"}
+    FileHelper.extract_file(binary, "#{file_path}/frame")
+    {:ok, %{"frame" => "frame/wraft.json"}}
   rescue
-    _ -> %{}
+    error -> {:error, "frame: #{error.message}"}
   end
 
-  defp get_frame(_, _), do: %{}
+  defp build_frame(_, _), do: {:ok, %{}}
 
   defp build_c_type(c_type) do
     c_type = Repo.preload(c_type, [:theme, :layout, [fields: [:field_type]]])
