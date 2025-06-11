@@ -717,26 +717,32 @@ defmodule WraftDoc.TemplateAssets do
   end
 
   defp write_temp_file(content) do
-    temp_file_path = Briefly.create!()
-    File.write(temp_file_path, content)
-    {:ok, temp_file_path}
+    Briefly.create!()
+    |> File.write(content)
+    |> then(&{:ok, &1})
   end
 
-  defp prepare_theme_asset_params(entry, temp_file_path, current_user) do
+  defp prepare_theme_asset_params(
+         %{file_name: file_name} = _entry,
+         temp_file_path,
+         %{id: user_id} = _current_user
+       ) do
     %{
-      "name" => Path.basename(entry.file_name),
+      "name" => Path.basename(file_name),
       "type" => "theme",
       "file" => %Plug.Upload{
-        filename: Path.basename(entry.file_name),
-        content_type: get_file_type(entry.file_name),
+        filename: Path.basename(file_name),
+        content_type: get_file_type(file_name),
         path: temp_file_path
       },
-      "creator_id" => current_user.id
+      "creator_id" => user_id
     }
   end
 
   defp get_file_type(filename) do
-    case Path.extname(filename) do
+    filename
+    |> Path.extname()
+    |> case do
       ".otf" -> "font/otf"
       ".ttf" -> "font/ttf"
       ".pdf" -> "application/pdf"
@@ -836,9 +842,10 @@ defmodule WraftDoc.TemplateAssets do
            "name" => name,
            "description" => description,
            "color" => color,
-           "prefix" => prefix
+           "prefix" => prefix,
+           "type" => type
          } = content_type,
-         current_user,
+         %{id: user_id, current_org_id: current_org_id} = _current_user,
          theme_id,
          layout_id,
          flow_id
@@ -862,12 +869,13 @@ defmodule WraftDoc.TemplateAssets do
       "description" => description,
       "color" => color,
       "prefix" => prefix,
+      "type" => type,
       "layout_id" => layout_id,
       "flow_id" => flow_id,
       "theme_id" => theme_id,
       "fields" => fields,
-      "organisation_id" => current_user.current_org_id,
-      "creator_id" => current_user.id
+      "organisation_id" => current_org_id,
+      "creator_id" => user_id
     }
   end
 
@@ -1177,93 +1185,169 @@ defmodule WraftDoc.TemplateAssets do
     folder_path = data_template.title
     File.mkdir_p!(folder_path)
 
-    case create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user) do
-      :ok ->
-        template_name = "#{data_template.title}.zip"
-        {:ok, zip_path} = zip_folder(folder_path, template_name)
-
-        File.rm_rf(folder_path)
-        {:ok, zip_path}
-
+    with :ok <-
+           create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user),
+         :ok <- create_template_json(data_template, folder_path) do
+      zip_folder(folder_path, data_template.title)
+    else
       {:error, reason} ->
         File.rm_rf(folder_path)
         {:error, "Failed to prepare template: #{reason}"}
     end
   end
 
+  def create_template_json(%{serialized: serialized} = _data_template, folder_path),
+    do: File.write(folder_path <> "/template.json", Jason.encode!(serialized))
+
   def create_wraft_json(theme, layout, c_type, data_template, folder_path, current_user) do
-    wraft_data = build_wraft_json(theme, layout, c_type, data_template, folder_path, current_user)
-
-    wraft_path = Path.join(folder_path, "wraft.json")
-
-    with {:ok, json} <- Jason.encode(wraft_data, pretty: true),
-         :ok <- File.write(wraft_path, json) do
+    with {:ok, wraft_json} <-
+           build_wraft_json(theme, layout, c_type, data_template, folder_path, current_user),
+         {:ok, json} <- Jason.encode(wraft_json, pretty: true),
+         :ok <-
+           folder_path
+           |> Path.join("wraft.json")
+           |> File.write(json) do
       :ok
     else
-      {:error, reason} -> {:error, "Failed to create wraft.json: #{reason}"}
+      {:error, reason} ->
+        {:error, "Failed to create wraft.json: #{reason}"}
     end
   end
 
   defp zip_folder(folder_path, template_name) do
     zip_path = Path.join(System.tmp_dir!(), "#{template_name}.zip")
     :zip.create(String.to_charlist(zip_path), [String.to_charlist(folder_path)])
+    File.rm_rf(folder_path)
     {:ok, zip_path}
   end
 
   def build_wraft_json(theme, layout, c_type, data_template, file_path, current_user) do
-    %{
-      "theme" => build_theme(theme, file_path, current_user),
-      "layout" => build_layout(layout, file_path, current_user),
-      "variant" => build_c_type(c_type),
-      "data_template" => %{
-        "title" => data_template.title,
-        "title_template" => data_template.title_template
+    with {:ok, theme, fonts} <- build_theme(theme, file_path, current_user),
+         {:ok, layout, layout_file, frame} <- build_layout(layout, file_path, current_user) do
+      items = %{
+        "theme" => theme,
+        "layout" => layout,
+        "variant" => build_c_type(c_type),
+        "data_template" => %{
+          "title" => data_template.title,
+          "title_template" => data_template.title_template
+        }
       }
-    }
+
+      wraft_json = %{
+        "metadata" => %{
+          "name" => data_template.title,
+          "description" => data_template.title_template,
+          "type" => "template_asset",
+          "updated_at" => Date.to_iso8601(Date.utc_today())
+        },
+        "packageContents" => %{
+          "rootFiles" => [
+            %{
+              "name" => "wraft.json",
+              "path" => "wraft.json"
+            },
+            %{
+              "name" => "template.json",
+              "path" => "template.json"
+            }
+          ],
+          "assets" => [layout_file],
+          "fonts" => fonts
+        },
+        "items" => Map.merge(items, frame)
+      }
+
+      {:ok, wraft_json}
+    end
   end
 
   defp build_theme(theme, file_path, current_user) do
     theme = Repo.preload(theme, :assets)
 
-    %{
-      "name" => theme.name,
-      "fonts" =>
-        Enum.map(theme.assets, fn asset ->
-          %{
-            "fontName" => asset.name,
-            "filePath" => download_file(asset.id, current_user, file_path, "otf", "theme")
-          }
-        end),
-      "color" => %{
-        "body_color" => theme.body_color,
-        "primary_color" => theme.primary_color,
-        "secondary_color" => theme.secondary_color
-      }
-    }
+    {:ok,
+     %{
+       "name" => theme.name,
+       "color" => %{
+         "bodyColor" => theme.body_color,
+         "primaryColor" => theme.primary_color,
+         "secondaryColor" => theme.secondary_color
+       }
+     },
+     Enum.map(theme.assets, fn %{
+                                 id: asset_id,
+                                 name: asset_name,
+                                 file: %{file_name: asset_file_name}
+                               } = _asset ->
+       %{
+         "fontName" => asset_name,
+         "filePath" =>
+           asset_file_name
+           |> Path.extname()
+           |> String.trim_leading(".")
+           |> then(&download_file(asset_id, current_user, file_path, &1, "fonts"))
+       }
+     end)}
+  rescue
+    _ ->
+      {:error, "Downloading theme files failed."}
   end
 
   defp build_layout(layout, file_path, current_user) do
-    layout = Repo.preload(layout, :assets)
-    [asset | _] = layout.assets
+    layout = Repo.preload(layout, [:assets, :engine, :frame])
+    [%{id: asset_id, name: asset_name} = _asset | _] = layout.assets
 
-    %{
-      "name" => layout.name,
-      "slug" => make_slug(layout.slug, file_path),
-      "slug_file" => download_file(asset.id, current_user, file_path, "pdf", "layout"),
-      "meta" => "fields",
-      "description" => layout.description,
-      "engine" => "pandoc/latex"
-    }
+    engine =
+      case layout.engine.name do
+        "Pandoc + Typst" -> "pandoc/typst"
+        _ -> "pandoc/latex"
+      end
+
+    {:ok,
+     %{
+       "name" => layout.name,
+       "slug" => layout.slug,
+       "description" => layout.description,
+       "engine" => engine
+     },
+     %{
+       "name" => asset_name,
+       "path" => download_file(asset_id, current_user, file_path, "pdf", "assets"),
+       "type" => "layout",
+       "description" => asset_name
+     }, get_frame(layout, file_path)}
+  rescue
+    _ ->
+      {:error, "Downloading layout files failed."}
   end
+
+  defp get_frame(
+         %{
+           frame: %Frame{
+             asset: %{id: asset_id, file: %{file_name: file_name} = _file}
+           },
+           organisation_id: organisation_id
+         } = _layout,
+         file_path
+       ) do
+    binary = Minio.get_object("organisations/#{organisation_id}/assets/#{asset_id}/#{file_name}")
+    FileHelper.extract_file(binary, file_path)
+    %{"frame" => "frame/wraft.json"}
+  rescue
+    _ -> %{}
+  end
+
+  defp get_frame(_, _), do: %{}
 
   defp build_c_type(c_type) do
     c_type = Repo.preload(c_type, [:theme, :layout, [fields: [:field_type]]])
 
     %{
       "name" => c_type.name,
-      "color" => c_type.color,
       "description" => c_type.description,
       "prefix" => c_type.prefix,
+      "type" => c_type.type,
+      "color" => c_type.color,
       "fields" =>
         Enum.map(c_type.fields, fn field ->
           %{
@@ -1273,12 +1357,6 @@ defmodule WraftDoc.TemplateAssets do
           }
         end)
     }
-  end
-
-  defp make_slug(slug, file_path) do
-    path = :wraft_doc |> :code.priv_dir() |> Path.join("slugs/#{slug}/.")
-    System.cmd("cp", ["-a", path, file_path <> "/" <> slug])
-    slug
   end
 
   defp download_file(
