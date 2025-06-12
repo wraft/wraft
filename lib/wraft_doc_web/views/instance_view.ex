@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
 
   alias WraftDocWeb.Api.V1.{
     ContentTypeView,
+    FlowView,
     InstanceApprovalSystemView,
     InstanceVersionView,
     StateView,
@@ -68,6 +69,47 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
     }
   end
 
+  def render("instance_summary.json", %{content: content}) do
+    %{
+      content: %{
+        id: content.id,
+        instance_id: content.instance_id,
+        meta: content.meta,
+        approval_status: content.approval_status,
+        type: content.type,
+        title: get_in(content.serialized, ["title"]),
+        inserted_at: content.inserted_at,
+        updated_at: content.updated_at
+      },
+      content_type:
+        render_one(content.content_type, ContentTypeView, "content_type.json", as: :content_type),
+      state: render_one(content.state, StateView, "create.json", as: :state),
+      flow:
+        render_one(content.content_type.flow, FlowView, "flow_states_summary.json", as: :flow),
+      vendor: render_one(content.vendor, VendorView, "vendor.json", as: :vendor),
+      instance_approval_systems:
+        render_many(content.instance_approval_systems, InstanceApprovalSystemView, "create.json",
+          as: :instance_approval_system
+        ),
+      profile_pic: generate_url(content.creator.profile),
+      creator: render_one(content.creator, UserView, "user_id_and_name.json", as: :user)
+    }
+  end
+
+  def render("instance_summaries_paginated.json", %{
+        contents: contents,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      contents: render_many(contents, InstanceView, "instance_summary.json", as: :content),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
+  end
+
   def render("approvals_index.json", %{
         contents: contents,
         page_number: page_number,
@@ -89,7 +131,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         id: content.id,
         instance_id: content.instance_id,
         raw: content.raw,
-        serialized: content.serialized,
+        title: get_in(content.serialized, ["title"]),
         previous_state: content.previous_state,
         next_state: content.next_state,
         inserted_at: content.inserted_at,

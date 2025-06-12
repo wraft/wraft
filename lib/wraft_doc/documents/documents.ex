@@ -536,7 +536,7 @@ defmodule WraftDoc.Documents do
     |> where(^instance_index_filter_by_creator(params))
     |> order_by(^instance_index_sort(params))
     |> preload([
-      :content_type,
+      {:content_type, [flow: :states]},
       :state,
       :vendor,
       {:instance_approval_systems, :approver},

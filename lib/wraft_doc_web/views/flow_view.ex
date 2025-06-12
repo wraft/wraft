@@ -42,6 +42,14 @@ defmodule WraftDocWeb.Api.V1.FlowView do
     }
   end
 
+  def render("flow_states_summary.json", %{flow: flow}) do
+    %{
+      id: flow.id,
+      name: flow.name,
+      states: render_many(flow.states, StateView, "create.json", as: :state)
+    }
+  end
+
   def render("index.json", %{
         flows: flows,
         page_number: page_number,
