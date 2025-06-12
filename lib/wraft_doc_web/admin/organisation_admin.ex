@@ -67,7 +67,9 @@ defmodule WraftDocWeb.OrganisationAdmin do
     false
   end
 
-  defp deleted_at(%Organisation{users_organisations: [%UserOrganisation{deleted_at: _deleted_at}]}) do
+  defp deleted_at(%Organisation{
+         users_organisations: [%UserOrganisation{deleted_at: _deleted_at}]
+       }) do
     true
   end
 

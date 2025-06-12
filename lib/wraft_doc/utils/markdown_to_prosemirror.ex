@@ -661,18 +661,18 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
   defp convert_html_inline(literal, _opts) do
     # Check for specific HTML tags and handle them
     cond do
-      is_underline_tag?(literal) ->
+      underline_tag?(literal) ->
         extract_tag_content(literal, 3, -5)
 
-      is_subscript_tag?(literal) ->
+      subscript_tag?(literal) ->
         content = extract_tag_content(literal, 5, -7)
         add_mark_to_content(content, "subscript")
 
-      is_superscript_tag?(literal) ->
+      superscript_tag?(literal) ->
         content = extract_tag_content(literal, 5, -7)
         add_mark_to_content(content, "superscript")
 
-      is_highlight_tag?(literal) ->
+      highlight_tag?(literal) ->
         content = extract_tag_content(literal, 6, -8)
         add_mark_to_content(content, "highlight")
 
@@ -684,19 +684,19 @@ defmodule WraftDoc.Utils.MarkDownToProseMirror do
   end
 
   # Helper functions to check for specific HTML tags
-  defp is_underline_tag?(literal) do
+  defp underline_tag?(literal) do
     String.starts_with?(literal, "<u>") && String.ends_with?(literal, "</u>")
   end
 
-  defp is_subscript_tag?(literal) do
+  defp subscript_tag?(literal) do
     String.starts_with?(literal, "<sub>") && String.ends_with?(literal, "</sub>")
   end
 
-  defp is_superscript_tag?(literal) do
+  defp superscript_tag?(literal) do
     String.starts_with?(literal, "<sup>") && String.ends_with?(literal, "</sup>")
   end
 
-  defp is_highlight_tag?(literal) do
+  defp highlight_tag?(literal) do
     String.starts_with?(literal, "<mark>") && String.ends_with?(literal, "</mark>")
   end
 

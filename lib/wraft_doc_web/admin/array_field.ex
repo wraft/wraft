@@ -3,7 +3,6 @@ defmodule WraftDocWeb.Kaffy.ArrayField do
   Custom array field for kaffy.
   """
   use Ecto.Type
-  
   use PhoenixHTMLHelpers
 
   def type, do: {:array, :string}

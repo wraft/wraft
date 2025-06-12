@@ -10,6 +10,7 @@ defmodule WraftDoc.Enterprise.Plan do
   alias WraftDoc.Billing.Coupon
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.InternalUsers.InternalUser
+
   schema "plan" do
     field(:name, :string)
     field(:description, :string)

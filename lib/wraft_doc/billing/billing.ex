@@ -407,7 +407,10 @@ defmodule WraftDoc.Billing do
     end
   end
 
-  defp update_subscription_transaction(%{provider_subscription_id: sub_id, transaction_id: txn_id}) do
+  defp update_subscription_transaction(%{
+         provider_subscription_id: sub_id,
+         transaction_id: txn_id
+       }) do
     Subscription
     |> where(provider_subscription_id: ^sub_id)
     |> Repo.update_all(set: [transaction_id: txn_id])

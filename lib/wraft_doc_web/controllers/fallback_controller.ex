@@ -14,7 +14,9 @@ defmodule WraftDocWeb.FallbackController do
 
   def call(conn, {:error, :invalid}) do
     body =
-      Jason.encode!(%{errors: "Your email-password combination doesn't match. Please try again.!"})
+      Jason.encode!(%{
+        errors: "Your email-password combination doesn't match. Please try again.!"
+      })
 
     conn |> put_resp_content_type("application/json") |> send_resp(404, body)
   end

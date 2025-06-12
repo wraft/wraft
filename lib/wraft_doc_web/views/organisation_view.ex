@@ -137,8 +137,8 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
         name: organisation.name
       },
       email: email,
-      is_organisation_member: is_organisation_member?(is_organisation_member),
-      is_wraft_member: is_wraft_member?(is_wraft_member)
+      is_organisation_member: organisation_member?(is_organisation_member),
+      is_wraft_member: wraft_member?(is_wraft_member)
     }
   end
 
@@ -155,11 +155,11 @@ defmodule WraftDocWeb.Api.V1.OrganisationView do
     }
   end
 
-  defp is_organisation_member?({:error, :already_member}), do: true
-  defp is_organisation_member?(:ok), do: false
+  defp organisation_member?({:error, :already_member}), do: true
+  defp organisation_member?(:ok), do: false
 
-  defp is_wraft_member?(%User{}), do: true
-  defp is_wraft_member?(nil), do: false
+  defp wraft_member?(%User{}), do: true
+  defp wraft_member?(nil), do: false
 
   defp generate_url(%{logo: logo} = organisation) do
     WraftDocWeb.LogoUploader.url({logo, organisation}, signed: true)

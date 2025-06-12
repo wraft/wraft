@@ -146,23 +146,27 @@ defmodule WraftDoc.Forms do
 
   defp remove_form_fields(form, %{"fields" => fields} = params) do
     Enum.each(fields, fn field ->
-      if Map.has_key?(field, "field_id") && map_size(field) == 1 do
-        FormField
-        |> Repo.get_by(field_id: field["field_id"], form_id: form.id)
-        |> case do
-          %FormField{} = form_field ->
-            Repo.delete(form_field)
-            on_delete_form_field_order(form, form_field.order)
-
-          nil ->
-            nil
-        end
-      else
-        nil
+      if should_delete_field?(field) do
+        delete_form_field_if_exists(form, field["field_id"])
       end
     end)
 
     {:ok, Enum.filter(params["fields"], fn field -> map_size(field) != 1 end)}
+  end
+
+  defp should_delete_field?(field) do
+    Map.has_key?(field, "field_id") && map_size(field) == 1
+  end
+
+  defp delete_form_field_if_exists(form, field_id) do
+    case Repo.get_by(FormField, field_id: field_id, form_id: form.id) do
+      %FormField{} = form_field ->
+        Repo.delete(form_field)
+        on_delete_form_field_order(form, form_field.order)
+
+      nil ->
+        nil
+    end
   end
 
   # Private
@@ -391,20 +395,23 @@ defmodule WraftDoc.Forms do
   end
 
   defp validate(field, data_map) do
-    Enum.map(
-      field.validations,
-      &(Validator
-        |> Module.concat(Macro.camelize(&1.validation["rule"]))
-        |> apply(:validate, [&1, Map.get(data_map, field.field_id)])
-        |> case do
-          {:error, error} ->
-            Logger.error("Validation failed for field #{field.id}", error: error)
-            %{field_id: field.field_id, error: error}
+    Enum.map(field.validations, fn validation ->
+      validate_single_field(validation, field, data_map)
+    end)
+  end
 
-          _ ->
-            nil
-        end)
-    )
+  defp validate_single_field(validation, field, data_map) do
+    validator_module = Module.concat(Validator, Macro.camelize(validation.validation["rule"]))
+    field_value = Map.get(data_map, field.field_id)
+
+    case validator_module.validate(validation, field_value) do
+      {:error, error} ->
+        Logger.error("Validation failed for field #{field.id}", error: error)
+        %{field_id: field.field_id, error: error}
+
+      _ ->
+        nil
+    end
   end
 
   defp check_data_mapping(fields, data) do

@@ -139,7 +139,7 @@ defmodule WraftDoc.Utils.FileHelper do
   """
   @spec validate_frame_file(String.t()) :: :ok | {:error, String.t()}
   def validate_frame_file(%{path: file_path} = file) do
-    with true <- is_frame_file?(file),
+    with true <- frame_file?(file),
          {:ok, file_entries} <- FileValidator.get_file_entries(file_path),
          :ok <- validate_required_files(file_entries),
          {:ok, file_binary} <- read_file_contents(file_path),
@@ -151,7 +151,7 @@ defmodule WraftDoc.Utils.FileHelper do
     end
   end
 
-  defp is_frame_file?(file) do
+  defp frame_file?(file) do
     file
     |> get_global_file_type()
     |> case do

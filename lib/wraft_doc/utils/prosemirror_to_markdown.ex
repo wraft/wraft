@@ -173,46 +173,58 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     Enum.reduce(cells, {row_cells, updated_tracker, next_col}, fn cell,
                                                                   {acc_cells, curr_tracker,
                                                                    curr_col} ->
-      curr_col = find_next_available_column(curr_tracker, curr_col)
-
-      attrs = cell["attrs"] || %{}
-      colspan = attrs["colspan"] || 1
-      rowspan = attrs["rowspan"] || 1
-
-      cell_content = convert_pandoc_table_cell(cell, [])
-
-      cell_info = %{
-        content: cell_content,
-        colspan: colspan,
-        rowspan: rowspan,
-        col_start: curr_col,
-        attrs: attrs
-      }
-
-      new_tracker =
-        if rowspan > 1 do
-          Enum.reduce(1..(rowspan - 1), curr_tracker, fn row_offset, tracker ->
-            spans_for_row = Map.get(tracker, row_offset, %{})
-
-            spans =
-              Enum.reduce(0..(colspan - 1), spans_for_row, fn col_offset, spans ->
-                Map.put(spans, curr_col + col_offset, %{
-                  content: cell_content,
-                  colspan: colspan,
-                  col_start: curr_col,
-                  primary_col: col_offset == 0,
-                  attrs: attrs
-                })
-              end)
-
-            Map.put(tracker, row_offset, spans)
-          end)
-        else
-          curr_tracker
-        end
-
-      {acc_cells ++ [cell_info], new_tracker, curr_col + colspan}
+      process_single_cell(cell, acc_cells, curr_tracker, curr_col)
     end)
+  end
+
+  defp process_single_cell(cell, acc_cells, curr_tracker, curr_col) do
+    curr_col = find_next_available_column(curr_tracker, curr_col)
+
+    attrs = cell["attrs"] || %{}
+    colspan = attrs["colspan"] || 1
+    rowspan = attrs["rowspan"] || 1
+
+    cell_content = convert_pandoc_table_cell(cell, [])
+
+    cell_info = %{
+      content: cell_content,
+      colspan: colspan,
+      rowspan: rowspan,
+      col_start: curr_col,
+      attrs: attrs
+    }
+
+    new_tracker =
+      update_tracker_for_rowspan(rowspan, curr_tracker, curr_col, colspan, cell_content, attrs)
+
+    {acc_cells ++ [cell_info], new_tracker, curr_col + colspan}
+  end
+
+  defp update_tracker_for_rowspan(rowspan, curr_tracker, curr_col, colspan, cell_content, attrs) do
+    if rowspan > 1 do
+      Enum.reduce(1..(rowspan - 1), curr_tracker, fn row_offset, tracker ->
+        add_rowspan_to_tracker(tracker, row_offset, curr_col, colspan, cell_content, attrs)
+      end)
+    else
+      curr_tracker
+    end
+  end
+
+  defp add_rowspan_to_tracker(tracker, row_offset, curr_col, colspan, cell_content, attrs) do
+    spans_for_row = Map.get(tracker, row_offset, %{})
+
+    spans =
+      Enum.reduce(0..(colspan - 1), spans_for_row, fn col_offset, spans ->
+        Map.put(spans, curr_col + col_offset, %{
+          content: cell_content,
+          colspan: colspan,
+          col_start: curr_col,
+          primary_col: col_offset == 0,
+          attrs: attrs
+        })
+      end)
+
+    Map.put(tracker, row_offset, spans)
   end
 
   defp handle_rowspans(span_tracker, col_index, acc_cells) do
@@ -472,32 +484,45 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   end
 
   defp update_matrix_for_rowspan(matrix, row_idx, col_start, colspan, rowspan) do
-    matrix =
-      Enum.reduce(0..(colspan - 1), matrix, fn col_offset, acc_matrix ->
-        update_in(acc_matrix, [Access.at(row_idx), Access.at(col_start + col_offset)], fn _ ->
-          {:rowspan_start, rowspan}
-        end)
-      end)
+    matrix
+    |> mark_rowspan_start(row_idx, col_start, colspan, rowspan)
+    |> mark_rowspan_continue(row_idx, col_start, colspan, rowspan)
+  end
 
+  defp mark_rowspan_start(matrix, row_idx, col_start, colspan, rowspan) do
+    Enum.reduce(0..(colspan - 1), matrix, fn col_offset, acc_matrix ->
+      update_in(acc_matrix, [Access.at(row_idx), Access.at(col_start + col_offset)], fn _ ->
+        {:rowspan_start, rowspan}
+      end)
+    end)
+  end
+
+  defp mark_rowspan_continue(matrix, row_idx, col_start, colspan, rowspan) do
     Enum.reduce(1..(rowspan - 1), matrix, fn row_offset, acc_matrix ->
       if row_idx + row_offset < length(acc_matrix) do
-        Enum.reduce(0..(colspan - 1), acc_matrix, fn col_offset, inner_acc ->
-          if col_start + col_offset < length(Enum.at(inner_acc, row_idx + row_offset)) do
-            update_in(
-              inner_acc,
-              [Access.at(row_idx + row_offset), Access.at(col_start + col_offset)],
-              fn _ ->
-                :rowspan_continue
-              end
-            )
-          else
-            inner_acc
-          end
-        end)
+        update_row_for_rowspan_continue(acc_matrix, row_idx, row_offset, col_start, colspan)
       else
         acc_matrix
       end
     end)
+  end
+
+  defp update_row_for_rowspan_continue(matrix, row_idx, row_offset, col_start, colspan) do
+    Enum.reduce(0..(colspan - 1), matrix, fn col_offset, inner_acc ->
+      update_cell_for_rowspan_continue(inner_acc, row_idx, row_offset, col_start, col_offset)
+    end)
+  end
+
+  defp update_cell_for_rowspan_continue(matrix, row_idx, row_offset, col_start, col_offset) do
+    if col_start + col_offset < length(Enum.at(matrix, row_idx + row_offset)) do
+      update_in(
+        matrix,
+        [Access.at(row_idx + row_offset), Access.at(col_start + col_offset)],
+        fn _ -> :rowspan_continue end
+      )
+    else
+      matrix
+    end
   end
 
   defp create_row_separator_with_rowspans(row_idx, rows, rowspan_matrix, col_widths) do
@@ -506,45 +531,47 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     else
       next_row_spans = Enum.at(rowspan_matrix, row_idx + 1)
 
-      {separator_parts, _} =
-        Enum.reduce(0..(length(col_widths) - 1), {[], nil}, fn col_idx, {parts, prev_state} ->
-          cell_state = Enum.at(next_row_spans, col_idx)
-          width = Enum.at(col_widths, col_idx)
-
-          part =
-            case {prev_state, cell_state} do
-              {_, :rowspan_continue} ->
-                "+" <> String.duplicate(" ", width + 2)
-
-              {nil, _} ->
-                "+" <> String.duplicate("-", width + 2)
-
-              {_, _} ->
-                "+" <> String.duplicate("-", width + 2)
-            end
-
-          {parts ++ [part], cell_state}
-        end)
-
-      raw_separator = Enum.join(separator_parts) <> "+"
-
       next_row_spans
-      |> Enum.chunk_every(2, 1, :discard)
-      |> Enum.with_index(fn [a, b], idx ->
-        if a == :rowspan_continue && b == :rowspan_continue do
-          pos = (idx + 1) * (Enum.at(col_widths, idx) + 3) + idx
-          {pos, " "}
-        else
-          {-1, ""}
-        end
-      end)
-      |> Enum.filter(fn {pos, _} -> pos >= 0 end)
-      |> Enum.sort_by(fn {pos, _} -> -pos end)
-      |> Enum.reduce(raw_separator, fn {pos, replacement}, acc ->
-        String.slice(acc, 0, pos) <>
-          replacement <> String.slice(acc, pos + 1, String.length(acc))
-      end)
+      |> build_separator_parts(col_widths)
+      |> apply_rowspan_formatting(next_row_spans, col_widths)
     end
+  end
+
+  defp build_separator_parts(next_row_spans, col_widths) do
+    {separator_parts, _} =
+      Enum.reduce(0..(length(col_widths) - 1), {[], nil}, fn col_idx, {parts, prev_state} ->
+        cell_state = Enum.at(next_row_spans, col_idx)
+        width = Enum.at(col_widths, col_idx)
+
+        part =
+          case {prev_state, cell_state} do
+            {_, :rowspan_continue} -> "+" <> String.duplicate(" ", width + 2)
+            _ -> "+" <> String.duplicate("-", width + 2)
+          end
+
+        {parts ++ [part], cell_state}
+      end)
+
+    Enum.join(separator_parts) <> "+"
+  end
+
+  defp apply_rowspan_formatting(raw_separator, next_row_spans, col_widths) do
+    next_row_spans
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.with_index(fn [a, b], idx ->
+      if a == :rowspan_continue && b == :rowspan_continue do
+        pos = (idx + 1) * (Enum.at(col_widths, idx) + 3) + idx
+        {pos, " "}
+      else
+        {-1, ""}
+      end
+    end)
+    |> Enum.filter(fn {pos, _} -> pos >= 0 end)
+    |> Enum.sort_by(fn {pos, _} -> -pos end)
+    |> Enum.reduce(raw_separator, fn {pos, replacement}, acc ->
+      String.slice(acc, 0, pos) <>
+        replacement <> String.slice(acc, pos + 1, String.length(acc))
+    end)
   end
 
   defp create_header_separator_line(header_rows, col_widths) do
@@ -731,38 +758,44 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
           {line, processed}
         else
           cell_info = Enum.at(line_cells, col_idx)
-
-          case cell_info do
-            {nil, _, :empty} ->
-              width = Enum.at(col_widths, col_idx, @default_min_col_width)
-              {line <> "| " <> String.pad_trailing("", width) <> " ", processed}
-
-            {_, _, {:covered_by, _}} ->
-              {line, processed}
-
-            {content, colspan, :content} when colspan > 1 ->
-              total_width = calculate_total_colspan_width(col_idx, colspan, col_widths)
-
-              new_processed =
-                Enum.reduce(1..(colspan - 1), processed, fn offset, acc ->
-                  MapSet.put(acc, col_idx + offset)
-                end)
-
-              {line <> "| " <> String.pad_trailing(content || "", total_width) <> " ",
-               new_processed}
-
-            {content, 1, :content} ->
-              width = Enum.at(col_widths, col_idx, @default_min_col_width)
-              {line <> "| " <> String.pad_trailing(content || "", width) <> " ", processed}
-
-            _ ->
-              width = Enum.at(col_widths, col_idx, @default_min_col_width)
-              {line <> "| " <> String.pad_trailing("", width) <> " ", processed}
-          end
+          format_cell_for_line(cell_info, col_idx, col_widths, line, processed)
         end
       end)
 
     line_str <> "|"
+  end
+
+  defp format_cell_for_line(cell_info, col_idx, col_widths, line, processed) do
+    case cell_info do
+      {nil, _, :empty} ->
+        width = Enum.at(col_widths, col_idx, @default_min_col_width)
+        {line <> "| " <> String.pad_trailing("", width) <> " ", processed}
+
+      {_, _, {:covered_by, _}} ->
+        {line, processed}
+
+      {content, colspan, :content} when colspan > 1 ->
+        format_colspan_cell(content, col_idx, colspan, col_widths, line, processed)
+
+      {content, 1, :content} ->
+        width = Enum.at(col_widths, col_idx, @default_min_col_width)
+        {line <> "| " <> String.pad_trailing(content || "", width) <> " ", processed}
+
+      _ ->
+        width = Enum.at(col_widths, col_idx, @default_min_col_width)
+        {line <> "| " <> String.pad_trailing("", width) <> " ", processed}
+    end
+  end
+
+  defp format_colspan_cell(content, col_idx, colspan, col_widths, line, processed) do
+    total_width = calculate_total_colspan_width(col_idx, colspan, col_widths)
+
+    new_processed =
+      Enum.reduce(1..(colspan - 1), processed, fn offset, acc ->
+        MapSet.put(acc, col_idx + offset)
+      end)
+
+    {line <> "| " <> String.pad_trailing(content || "", total_width) <> " ", new_processed}
   end
 
   defp calculate_total_colspan_width(start_col, colspan, col_widths) do
