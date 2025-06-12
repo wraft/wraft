@@ -672,7 +672,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Documents.instance_index_of_an_organisation(current_user, params) do
-      render(conn, "index.json",
+      render(conn, "instance_summaries_paginated.json",
         contents: contents,
         page_number: page_number,
         total_pages: total_pages,
@@ -981,7 +981,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
            total_pages: total_pages,
            total_entries: total_entries
          } <- Documents.instance_index(current_user, key, params) do
-      render(conn, "index.json",
+      render(conn, "instance_summaries_paginated.json",
         contents: contents,
         page_number: page_number,
         total_pages: total_pages,
