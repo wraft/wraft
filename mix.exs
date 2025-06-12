@@ -61,7 +61,7 @@ defmodule WraftDoc.Mixfile do
       {:distillery, "~> 2.1.1"},
       {:ecto_enum, "~> 1.4"},
       {:ecto_sql, "~> 3.12"},
-      {:eqrcode, "~> 0.1"},
+      {:eqrcode, "~> 0.2.1"},
       {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
       {:ex_audit, git: "https://github.com/Kry10-NZ/ex_audit", branch: "fix-ecto-3.8"},
       {:ex_aws, "~> 2.5"},
