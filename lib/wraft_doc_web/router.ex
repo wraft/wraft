@@ -373,7 +373,7 @@ defmodule WraftDocWeb.Router do
       # put("/collection_fields/:id", CollectionFormFieldController, :update)
       # delete("/collection_fields/:id", CollectionFormFieldController, :delete)
 
-      unless Enterprise.self_hosted?() do
+      if !Enterprise.self_hosted?() do
         # Billing
         scope "/billing/subscription" do
           get("/", BillingController, :get_subscription)

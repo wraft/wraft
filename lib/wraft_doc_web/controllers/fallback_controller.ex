@@ -117,6 +117,11 @@ defmodule WraftDocWeb.FallbackController do
     conn |> put_resp_content_type("application/json") |> send_resp(status, body)
   end
 
+  def call(conn, {status, response_body}) when is_integer(status) and is_map(response_body) do
+    body = Jason.encode!(response_body)
+    conn |> put_resp_content_type("application/json") |> send_resp(status, body)
+  end
+
   def call(conn, {:error, message}) do
     body = Jason.encode!(%{errors: message})
     conn |> put_resp_content_type("application/json") |> send_resp(400, body)
