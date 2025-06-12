@@ -58,18 +58,23 @@ defmodule WraftDocWeb.WaitingListAdmin do
       first_name: %{label: "First Name"},
       last_name: %{label: "Last Name"},
       email: %{label: "Email"},
-      status: %{label: "Status"},
-      modified_by_id: %{label: "Modified_by", create: :readonly, update: :readonly}
+      status: %{
+        label: "Status",
+        type: :choices,
+        choices: [
+          {"approved", :approved},
+          {"rejected", :rejected},
+          {"pending", :pending}
+        ]
+      },
+      modified_by_id: %{label: "Modified_by", create: :hidden, update: :readonly}
     ]
   end
 
-  def ordering(_schema) do
-    # order by created_at
-    [desc: :inserted_at]
-  end
+  def ordering(_schema), do: [desc: :inserted_at]
 
   def custom_index_query(_, _, _), do: from(wl in WaitingList, preload: [:modified_by])
-  def custom_show_query(_, _, _), do: from(wl in WaitingList, preload: [:modified_by])
+  def custom_show_query(_, _, query), do: from(wl in query, preload: [:modified_by])
 
   def update(
         %{assigns: %{admin_session: %{id: internal_user_id}}, params: %{"waiting_list" => params}} =
