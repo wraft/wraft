@@ -286,7 +286,7 @@ defmodule WraftDoc.TemplateAssets do
 
     {:ok, downloaded_file_binary}
   rescue
-    error -> {:error, error.message}
+    error -> {:error, Exception.message(error)}
   end
 
   def download_zip_from_storage(%Asset{
@@ -299,7 +299,7 @@ defmodule WraftDoc.TemplateAssets do
 
     {:ok, downloaded_file_binary}
   rescue
-    error -> {:error, error.message}
+    error -> {:error, Exception.message(error)}
   end
 
   @spec template_asset_file_list(binary()) ::
@@ -1122,7 +1122,7 @@ defmodule WraftDoc.TemplateAssets do
   """
   @spec validate_template_asset_file(Plug.Upload.t()) :: :ok | {:error, String.t()}
   def validate_template_asset_file(file) do
-    with true <- is_template_asset_file?(file),
+    with true <- template_asset_file?(file),
          {:ok, file_binary} <- get_file_binary(:file, file),
          {folders, file_entries_in_zip} <- template_asset_file_list(file_binary),
          {:ok, _} <- template_zip_validator(file_binary, file_entries_in_zip ++ folders) do
@@ -1130,7 +1130,7 @@ defmodule WraftDoc.TemplateAssets do
     end
   end
 
-  defp is_template_asset_file?(file) do
+  defp template_asset_file?(file) do
     file
     |> FileHelper.get_global_file_type()
     |> case do

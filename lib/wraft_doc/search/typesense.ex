@@ -83,7 +83,10 @@ defmodule WraftDoc.Search.Typesense do
     records = Repo.all(schema)
     documents = Enum.map(records, &Encoder.to_document/1)
 
-    ExTypesense.index_multiple_documents(%{collection_name: collection_name, documents: documents})
+    ExTypesense.index_multiple_documents(%{
+      collection_name: collection_name,
+      documents: documents
+    })
   end
 
   @doc """

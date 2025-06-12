@@ -31,7 +31,7 @@ config :esbuild,
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
-  metadata: [:user_id, :error, :status, :changeset, :path]
+  metadata: [:user_id, :error, :status, :changeset, :path, :type]
 
 # Configures Guardian
 config :wraft_doc, WraftDocWeb.Guardian,
@@ -83,6 +83,8 @@ config :ex_aws,
 config :tesla, adapter: Tesla.Adapter.Hackney
 
 config :tesla, Tesla.Middleware.Logger, filter_headers: ["authorization"], debug: false
+
+config :tesla, disable_deprecated_builder_warning: true
 
 config :wraft_doc, WraftDocWeb.Mailer,
   adapter: Swoosh.Adapters.Sendgrid,

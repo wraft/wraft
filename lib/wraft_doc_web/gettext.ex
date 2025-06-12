@@ -20,5 +20,5 @@ defmodule WraftDocWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :wraft_doc
+  use Gettext.Backend, otp_app: :wraft_doc
 end

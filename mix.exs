@@ -6,17 +6,13 @@ defmodule WraftDoc.Mixfile do
     [
       app: :wraft_doc,
       version: "0.4.3",
-      elixir: "~> 1.13",
+      elixir: "~> 1.18",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
       # Coveralls
-      app: :excoveralls,
-      version: "1.0.0",
-      elixir: "~> 1.0.0",
-      deps: deps(),
       test_coverage: [tool: ExCoveralls],
       releases: [
         wraft_doc: [
@@ -54,115 +50,74 @@ defmodule WraftDoc.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.7"},
-      {:phoenix_pubsub, "~> 2.1.1"},
-      {:phoenix_ecto, "~> 4.4.0"},
-      {:phoenix_view, "~> 2.0.2"},
-      {:ecto_sql, "~> 3.11.1"},
-      {:postgrex, ">= 0.0.0"},
-      {:phoenix_html, "~> 3.3.1", override: true},
-      {:phoenix_live_reload, "~> 1.4.0", only: :dev},
-      # Live dashboard
-      {:phoenix_live_dashboard, "~> 0.8.6", override: true},
-      {:esbuild, "~> 0.5", runtime: Mix.env() == :dev},
-      {:gettext, "~> 0.20.0"},
-      {:plug_cowboy, "~> 2.7.0"},
+      {:bcrypt_elixir, "~> 3.2"},
+      {:briefly, "~> 0.5"},
+      {:bureaucrat, "~> 0.2"},
+      {:bypass, "~> 2.1", only: :test},
+      {:comeonin, "~> 5.3"},
+      {:cors_plug, "~> 3.0"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:csv, "~> 3.2"},
       {:distillery, "~> 2.1.1"},
-      # Password encryption
-      {:comeonin, "~> 5.3.2"},
-      {:bcrypt_elixir, "~> 3.0.1"},
-      # User authentication
-      {:guardian, "~> 2.3.2"},
-      {:guardian_db, "~> 3.0.0"},
-      {:guardian_phoenix, "~> 2.0"},
-      # CORS
-      {:cors_plug, "~> 3.0.1"},
-      # File upload to AWS
-      {:waffle, "~> 1.1.5"},
-      {:waffle_ecto, "~> 0.0.11"},
-      # Waffle support for AWS S3
-      {:ex_aws, "~> 2.4.0"},
-      {:ex_aws_s3, "~> 2.3.3"},
-      {:hackney, "~> 1.18.0"},
-      {:sweet_xml, "~> 0.7.3"},
-      # Time and date formating
-      {:timex, "~>  3.7.11"},
-      # Phone number validation
-      {:ex_phone_number, "~> 0.4.2"},
-      # JSON parser
-      {:jason, "~> 1.4.0"},
-      # API documentation
-      {:phoenix_swagger, "~> 0.8.3"},
-
-      # For Writing Api documentation by slate
-      {:bureaucrat, "~> 0.2.9"},
-      {:ex_json_schema, "~> 0.9.2", override: true},
-      # For testing
-      {:ex_machina, "~> 2.7", only: :test},
-      {:bypass, "~> 2.1.0", only: :test},
-      {:excoveralls, "~> 0.15.0", only: :test},
-      {:faker, "~> 0.17"},
-      {:mox, "~> 1.0"},
-      {:floki, "~> 0.36.0"},
-      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
-      # Pagination
-      {:scrivener_ecto, "~> 2.7.0"},
-      {:scrivener_list, "~> 2.0.1"},
-      # QR code generation
-      {:eqrcode, "~> 0.1.10"},
-      # Background jobs
-      {:oban, "~> 2.19.2"},
-      {:oban_web, "~> 2.11"},
-      # Email client
-      {:swoosh, "~> 1.8.3"},
-      {:httpoison, "~> 1.8.2"},
-      {:tesla, "~> 1.7.0"},
-      {:poison, "~> 5.0.0", override: true},
-
-      # Activity stream
-      {:ex_audit, git: "https://github.com/Kry10-NZ/ex_audit", branch: "fix-ecto-3.8"},
-
-      # CSV parser
-      {:csv, "~> 3.0.3"},
-      # Business logic flow
-      {:opus, "~> 0.8.3"},
-      # PDF generation using wkhtmltopdf
-      {:pdf_generator, "~> 0.6.2"},
-      # zip file
-      {:unzip, "~> 0.11"},
-
-      # Create and cleanup Tempfile
-      {:briefly, "~> 0.5.0"},
-      {:sizeable, "~> 1.0"},
-
-      # For admin pannel
-      {:kaffy, "~> 0.10.0"},
       {:ecto_enum, "~> 1.4"},
-
-      # Code analysis tool
-      {:credo, "~> 1.6.7", only: [:dev, :test], runtime: false},
-
-      # Feature Flags
-      {:fun_with_flags, "~> 1.10.1", runtime: false},
-      {:fun_with_flags_ui, "~> 0.8.1"},
-
-      # Sentry
-      {:sentry, "~> 10.2.0"},
-
-      # mjml
-      {:mjml, "~> 3.0"},
-      {:mjml_eex, "~> 0.10.0"},
-
-      # search
+      {:ecto_sql, "~> 3.12"},
+      {:eqrcode, "~> 0.2.1"},
+      {:esbuild, "~> 0.8", runtime: Mix.env() == :dev},
+      {:ex_audit, git: "https://github.com/Kry10-NZ/ex_audit", branch: "fix-ecto-3.8"},
+      {:ex_aws, "~> 2.5"},
+      {:ex_aws_s3, "~> 2.5"},
+      {:ex_json_schema, "~> 0.9", override: true},
+      {:ex_machina, "~> 2.8", only: :test},
+      {:ex_phone_number, "~> 0.4"},
       {:ex_typesense, "~> 0.6"},
-
-      # live collaboration
-      {:y_ex, "~> 0.6.5"},
-
-      # markdown
-      {:mdex, "~> 0.3.3"},
-      {:file_type, "~> 0.1.0"},
-      {:rustler, "~> 0.32.0", runtime: true}
+      {:excoveralls, "~> 0.18", only: :test},
+      {:faker, "~> 0.18"},
+      {:file_type, "~> 0.1"},
+      {:floki, "~> 0.36"},
+      {:fun_with_flags, "~> 1.11", runtime: false},
+      {:fun_with_flags_ui, "~> 0.8"},
+      {:gettext, "~> 0.26"},
+      {:guardian, "~> 2.3"},
+      {:guardian_db, "~> 3.0"},
+      {:guardian_phoenix, "~> 2.0"},
+      {:hackney, "~> 1.20"},
+      {:httpoison, "~> 2.2"},
+      {:jason, "~> 1.4"},
+      {:kaffy, "~> 0.10.3"},
+      {:mdex, "~> 0.3"},
+      {:mix_test_watch, "~> 1.2", only: [:dev, :test], runtime: false},
+      {:mjml, "~> 4.0"},
+      {:mjml_eex, "~> 0.12"},
+      {:mox, "~> 1.1"},
+      {:oban, "~> 2.19"},
+      {:oban_web, "~> 2.11"},
+      {:opus, "~> 0.8"},
+      {:pdf_generator, "~> 0.6"},
+      {:phoenix, "~> 1.7.17"},
+      {:phoenix_ecto, "~> 4.6"},
+      {:phoenix_html, "~> 4.1", override: true},
+      {:phoenix_html_helpers, "~> 1.0"},
+      {:phoenix_live_dashboard, "~> 0.8.6", override: true},
+      {:phoenix_live_reload, "~> 1.5", only: :dev},
+      {:phoenix_pubsub, "~> 2.1"},
+      {:phoenix_swagger, "~> 0.8"},
+      {:phoenix_view, "~> 2.0"},
+      {:plug_cowboy, "~> 2.7"},
+      {:poison, "~> 6.0", override: true},
+      {:postgrex, ">= 0.0.0"},
+      {:rustler, "~> 0.34", runtime: true},
+      {:scrivener_ecto, "~> 3.1"},
+      {:scrivener_list, "~> 2.1"},
+      {:sentry, "~> 10.8"},
+      {:sizeable, "~> 1.0"},
+      {:sweet_xml, "~> 0.7"},
+      {:swoosh, "~> 1.16"},
+      {:tesla, "~> 1.12"},
+      {:timex, "~> 3.7.12"},
+      {:unzip, "~> 0.12"},
+      {:waffle, "~> 1.1"},
+      {:waffle_ecto, "~> 0.0.12"},
+      {:y_ex, "~> 0.6"}
     ]
   end
 

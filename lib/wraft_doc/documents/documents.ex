@@ -1342,7 +1342,11 @@ defmodule WraftDoc.Documents do
     Jason.decode!(response_body)
   end
 
-  def generate_chart(%{"dataset" => dataset, "api_route" => api_route, "endpoint" => "blocks_api"}) do
+  def generate_chart(%{
+        "dataset" => dataset,
+        "api_route" => api_route,
+        "endpoint" => "blocks_api"
+      }) do
     %HTTPoison.Response{body: response_body} =
       HTTPoison.post!(
         api_route,
@@ -2397,7 +2401,12 @@ defmodule WraftDoc.Documents do
 
   defp validate_custom_period_dates(_params), do: {:ok, :valid}
 
-  defp validate_custom_period_interval(%{period: "custom", from: from, to: to, interval: interval})
+  defp validate_custom_period_interval(%{
+         period: "custom",
+         from: from,
+         to: to,
+         interval: interval
+       })
        when from != nil and to != nil do
     with {:ok, from_datetime} <- parse_datetime(from),
          {:ok, to_datetime} <- parse_datetime(to),

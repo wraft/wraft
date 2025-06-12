@@ -3,9 +3,7 @@ defmodule WraftDocWeb.Kaffy.ArrayField do
   Custom array field for kaffy.
   """
   use Ecto.Type
-
-  alias Phoenix.HTML.Form
-  alias Phoenix.HTML.Tag
+  use PhoenixHTMLHelpers
 
   def type, do: {:array, :string}
 
@@ -39,8 +37,8 @@ defmodule WraftDocWeb.Kaffy.ArrayField do
     Enum.reject(
       [
         {:safe, ~s(<div class="form-group">)},
-        Form.label(form, field, options[:label] || "Features"),
-        Form.textarea(form, field,
+        label(form, field, options[:label] || "Features"),
+        textarea(form, field,
           class: "form-control",
           rows: options[:rows] || 5,
           placeholder: options[:placeholder] || "Enter each feature on a new line",
@@ -61,7 +59,7 @@ defmodule WraftDocWeb.Kaffy.ArrayField do
 
       features when is_list(features) ->
         features
-        |> Enum.map(&{:safe, Tag.content_tag(:div, &1)})
+        |> Enum.map(&{:safe, "<div>#{&1}</div>"})
         |> Enum.intersperse({:safe, "<br>"})
     end
   end

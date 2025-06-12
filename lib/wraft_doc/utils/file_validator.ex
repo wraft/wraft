@@ -164,31 +164,34 @@ defmodule WraftDoc.Utils.FileValidator do
     path_string = List.to_string(path)
     ext = path_string |> Path.extname() |> String.downcase()
 
-    if not String.match?(path_string, ~r/^__MACOSX\//) and ext in @allowed_extensions and
-         ext not in @plain_text_extensions do
-      file_path = Path.join(temp_path, path_string)
-
-      file_path
-      |> Path.dirname()
-      |> File.mkdir_p!()
-
-      File.write!(file_path, binary)
-
-      file_path
-      |> FileType.from_path()
-      |> case do
-        {:ok, {detected_ext, _mime_type}} ->
-          if ".#{detected_ext}" != ext do
-            [path_string | acc]
-          else
-            acc
-          end
-
-        {:error, _reason} ->
-          [path_string | acc]
-      end
+    if should_verify_file?(path_string, ext) do
+      verify_file_signature(path_string, binary, ext, temp_path, acc)
     else
       acc
+    end
+  end
+
+  defp should_verify_file?(path_string, ext) do
+    not String.match?(path_string, ~r/^__MACOSX\//) and
+      ext in @allowed_extensions and
+      ext not in @plain_text_extensions
+  end
+
+  defp verify_file_signature(path_string, binary, ext, temp_path, acc) do
+    file_path = Path.join(temp_path, path_string)
+
+    file_path
+    |> Path.dirname()
+    |> File.mkdir_p!()
+
+    File.write!(file_path, binary)
+
+    case FileType.from_path(file_path) do
+      {:ok, {detected_ext, _mime_type}} ->
+        if ".#{detected_ext}" != ext, do: [path_string | acc], else: acc
+
+      {:error, _reason} ->
+        [path_string | acc]
     end
   end
 

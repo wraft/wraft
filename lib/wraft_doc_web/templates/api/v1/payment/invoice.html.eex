@@ -136,8 +136,8 @@
                     #24, Caravel Building, 1st Main Rd,<br>
                     S.T. Bed, Koramangala 4th Block,<br>
                     Bengaluru, Karnataka 560095<br>
-                    <%# C.I.N : U74999KA2017PTC106639<br> %>
-                    <%# GSTIN : 29AAGCD3648A1ZT %>
+                    <%!-- C.I.N : U74999KA2017PTC106639<br> --%>
+                    <%!-- GSTIN : 29AAGCD3648A1ZT --%>
                 </div>
                 <div style="float: left; display: block; overflow: hidden; font-size: 14px; line-height: 1.5;">
                     To:<br>

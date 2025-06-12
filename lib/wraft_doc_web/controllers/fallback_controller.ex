@@ -14,7 +14,9 @@ defmodule WraftDocWeb.FallbackController do
 
   def call(conn, {:error, :invalid}) do
     body =
-      Jason.encode!(%{errors: "Your email-password combination doesn't match. Please try again.!"})
+      Jason.encode!(%{
+        errors: "Your email-password combination doesn't match. Please try again.!"
+      })
 
     conn |> put_resp_content_type("application/json") |> send_resp(404, body)
   end
@@ -115,8 +117,26 @@ defmodule WraftDocWeb.FallbackController do
     conn |> put_resp_content_type("application/json") |> send_resp(status, body)
   end
 
-  def call(conn, {:error, message}) do
+  def call(conn, {status, response_body})
+      when is_integer(status) and is_map(response_body) and status >= 100 and status < 600 do
+    body = Jason.encode!(response_body)
+    conn |> put_resp_content_type("application/json") |> send_resp(status, body)
+  end
+
+  def call(conn, {:error, {status, response_body}})
+      when is_integer(status) and is_map(response_body) do
+    body = Jason.encode!(response_body)
+    conn |> put_resp_content_type("application/json") |> send_resp(status, body)
+  end
+
+  def call(conn, {:error, message}) when is_binary(message) do
     body = Jason.encode!(%{errors: message})
+    conn |> put_resp_content_type("application/json") |> send_resp(400, body)
+  end
+
+  def call(conn, {:error, message}) do
+    # Handle any other error format by inspecting it
+    body = Jason.encode!(%{errors: "An error occurred: #{inspect(message)}"})
     conn |> put_resp_content_type("application/json") |> send_resp(400, body)
   end
 
