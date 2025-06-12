@@ -44,7 +44,8 @@ defmodule WraftDoc.Enterprise do
     %{"state" => "Publish", "order" => 3, "approvers" => []}
   ]
 
-  @is_self_hosted Application.compile_env(:wraft_doc, :deployement)[:is_self_hosted]
+  # Moved to runtime configuration to avoid compile-time vs runtime mismatch
+  defp is_self_hosted?, do: Application.get_env(:wraft_doc, :deployement)[:is_self_hosted]
 
   @superadmin_role "superadmin"
   @editor_role "editor"
@@ -1880,5 +1881,5 @@ defmodule WraftDoc.Enterprise do
   Returns true if deployement mode is saas.
   """
   @spec self_hosted? :: boolean()
-  def self_hosted?, do: @is_self_hosted
+  def self_hosted?, do: is_self_hosted?()
 end

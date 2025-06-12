@@ -84,6 +84,8 @@ config :tesla, adapter: Tesla.Adapter.Hackney
 
 config :tesla, Tesla.Middleware.Logger, filter_headers: ["authorization"], debug: false
 
+config :tesla, disable_deprecated_builder_warning: true
+
 config :wraft_doc, WraftDocWeb.Mailer,
   adapter: Swoosh.Adapters.Sendgrid,
   sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"

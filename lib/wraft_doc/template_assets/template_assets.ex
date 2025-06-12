@@ -286,7 +286,7 @@ defmodule WraftDoc.TemplateAssets do
 
     {:ok, downloaded_file_binary}
   rescue
-    error -> {:error, error.message}
+    error -> {:error, Exception.message(error)}
   end
 
   def download_zip_from_storage(%Asset{
@@ -299,7 +299,7 @@ defmodule WraftDoc.TemplateAssets do
 
     {:ok, downloaded_file_binary}
   rescue
-    error -> {:error, error.message}
+    error -> {:error, Exception.message(error)}
   end
 
   @spec template_asset_file_list(binary()) ::
