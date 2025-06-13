@@ -145,13 +145,28 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
         end
       end)
 
-    {successful, failed} = Enum.split_with(results, fn {_, result} -> 
-      result == :ok or match?({:ok, _}, result)
-    end)
+    {successful, failed} =
+      Enum.split_with(results, fn {_, result} ->
+        result == :ok or match?({:ok, _}, result)
+      end)
+
+    # Convert error tuples to JSON-encodable maps
+    failed_map =
+      Enum.into(failed, %{}, fn {feature, error_tuple} ->
+        error_message =
+          case error_tuple do
+            {:error, :invalid_feature} -> "Feature not available"
+            {:error, :invalid_feature_name} -> "Invalid feature name format"
+            {:error, reason} -> "Error: #{inspect(reason)}"
+            _ -> "Unknown error"
+          end
+
+        {feature, error_message}
+      end)
 
     render(conn, "bulk_update.json", %{
       successful: Enum.map(successful, fn {feature, _} -> feature end),
-      failed: Enum.into(failed, %{}),
+      failed: failed_map,
       organization: organization
     })
   end
