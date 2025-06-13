@@ -81,6 +81,13 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
           end
 
         case result do
+          {:ok, _} ->
+            render(conn, "update.json", %{
+              feature: feature,
+              enabled: enabled,
+              organization: organization
+            })
+
           :ok ->
             render(conn, "update.json", %{
               feature: feature,
@@ -138,7 +145,9 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
         end
       end)
 
-    {successful, failed} = Enum.split_with(results, fn {_, result} -> result == :ok end)
+    {successful, failed} = Enum.split_with(results, fn {_, result} -> 
+      result == :ok or match?({:ok, _}, result)
+    end)
 
     render(conn, "bulk_update.json", %{
       successful: Enum.map(successful, fn {feature, _} -> feature end),
