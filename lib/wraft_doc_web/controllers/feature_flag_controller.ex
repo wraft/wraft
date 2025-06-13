@@ -16,9 +16,56 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
   alias WraftDoc.Enterprise
   alias WraftDoc.FeatureFlags
 
+  def swagger_definitions do
+    %{
+      FeatureFlag:
+        swagger_schema do
+          title("Feature Flag")
+          description("A feature flag status")
+
+          properties do
+            feature(:string, "Feature name", required: true)
+            enabled(:boolean, "Whether the feature is enabled", required: true)
+          end
+
+          example(%{
+            feature: "ai_features",
+            enabled: true
+          })
+        end,
+      FeatureFlagsList:
+        swagger_schema do
+          title("Feature Flags List")
+          description("List of feature flags and their status")
+
+          properties do
+            features(:object, "Map of feature names to their enabled status")
+            available_features(:array, "List of all available features")
+          end
+
+          example(%{
+            features: %{
+              ai_features: false,
+              google_drive_integration: false,
+              advanced_analytics: true
+            },
+            available_features: ["ai_features", "google_drive_integration", "advanced_analytics"]
+          })
+        end
+    }
+  end
+
   @doc """
   List available features and their status for the current organization.
   """
+  swagger_path :index do
+    get("/organisations/features")
+    summary("List organization feature flags")
+    description("Get all feature flags and their status for the current organization")
+    response(200, "OK", Schema.ref(:FeatureFlagsList))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
   def index(conn, _params) do
     current_user = conn.assigns.current_user
     organization = Enterprise.get_organisation(current_user.current_org_id)
@@ -36,6 +83,20 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
   @doc """
   Show specific feature status for the current organization.
   """
+  swagger_path :show do
+    get("/organisations/features/{feature}")
+    summary("Get specific feature flag")
+    description("Get the status of a specific feature flag for the current organization")
+
+    parameters do
+      feature(:path, :string, "Feature name", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:FeatureFlag))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
   def show(conn, %{"feature" => feature_name}) do
     current_user = conn.assigns.current_user
     organization = Enterprise.get_organisation(current_user.current_org_id)
@@ -66,6 +127,22 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
   @doc """
   Update a specific feature flag for the current organization.
   """
+  swagger_path :update do
+    put("/organisations/features/{feature}")
+    summary("Update feature flag")
+    description("Enable or disable a specific feature flag for the current organization")
+
+    parameters do
+      feature(:path, :string, "Feature name", required: true)
+      body(:body, :object, "Feature flag update", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:FeatureFlag))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
   def update(conn, %{"feature" => feature_name, "enabled" => enabled}) do
     current_user = conn.assigns.current_user
     organization = Enterprise.get_organisation(current_user.current_org_id)
@@ -116,6 +193,20 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
   @doc """
   Bulk update multiple feature flags for the current organization.
   """
+  swagger_path :bulk_update do
+    put("/organisations/features")
+    summary("Bulk update feature flags")
+    description("Update multiple feature flags for the current organization")
+
+    parameters do
+      body(:body, :object, "Feature flags bulk update", required: true)
+    end
+
+    response(200, "OK")
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(400, "Bad Request", Schema.ref(:Error))
+  end
+
   def bulk_update(conn, %{"features" => features_map}) when is_map(features_map) do
     current_user = conn.assigns.current_user
     organization = Enterprise.get_organisation(current_user.current_org_id)
@@ -123,22 +214,9 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
     results =
       Enum.map(features_map, fn {feature_name, enabled} ->
         try do
-          feature = String.to_existing_atom(feature_name)
-
-          case feature in FeatureFlags.available_features() do
-            true ->
-              result =
-                if enabled do
-                  FeatureFlags.enable(feature, organization)
-                else
-                  FeatureFlags.disable(feature, organization)
-                end
-
-              {feature, result}
-
-            false ->
-              {feature_name, {:error, :invalid_feature}}
-          end
+          feature_name
+          |> String.to_existing_atom()
+          |> FeatureFlags.validate_and_update_feature(enabled, organization)
         rescue
           ArgumentError ->
             {feature_name, {:error, :invalid_feature_name}}
@@ -150,7 +228,6 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
         result == :ok or match?({:ok, _}, result)
       end)
 
-    # Convert error tuples to JSON-encodable maps
     failed_map =
       Enum.into(failed, %{}, fn {feature, error_tuple} ->
         error_message =
@@ -175,97 +252,5 @@ defmodule WraftDocWeb.Api.V1.FeatureFlagController do
     conn
     |> put_status(:bad_request)
     |> json(%{error: "Invalid request format. Expected 'features' map."})
-  end
-
-  # Swagger documentation
-  def swagger_definitions do
-    %{
-      FeatureFlag:
-        swagger_schema do
-          title("Feature Flag")
-          description("A feature flag status")
-
-          properties do
-            feature(:string, "Feature name", required: true)
-            enabled(:boolean, "Whether the feature is enabled", required: true)
-          end
-
-          example(%{
-            feature: "ai_features",
-            enabled: true
-          })
-        end,
-      FeatureFlagsList:
-        swagger_schema do
-          title("Feature Flags List")
-          description("List of feature flags and their status")
-
-          properties do
-            features(:object, "Map of feature names to their enabled status")
-            available_features(:array, "List of all available features")
-          end
-
-          example(%{
-            features: %{
-              ai_features: false,
-              google_drive_integration: false,
-              advanced_analytics: true
-            },
-            available_features: ["ai_features", "google_drive_integration", "advanced_analytics"]
-          })
-        end
-    }
-  end
-
-  swagger_path :index do
-    get("/organisations/features")
-    summary("List organization feature flags")
-    description("Get all feature flags and their status for the current organization")
-    response(200, "OK", Schema.ref(:FeatureFlagsList))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  swagger_path :show do
-    get("/organisations/features/{feature}")
-    summary("Get specific feature flag")
-    description("Get the status of a specific feature flag for the current organization")
-
-    parameters do
-      feature(:path, :string, "Feature name", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:FeatureFlag))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  swagger_path :update do
-    put("/organisations/features/{feature}")
-    summary("Update feature flag")
-    description("Enable or disable a specific feature flag for the current organization")
-
-    parameters do
-      feature(:path, :string, "Feature name", required: true)
-      body(:body, :object, "Feature flag update", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:FeatureFlag))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
-
-  swagger_path :bulk_update do
-    put("/organisations/features")
-    summary("Bulk update feature flags")
-    description("Update multiple feature flags for the current organization")
-
-    parameters do
-      body(:body, :object, "Feature flags bulk update", required: true)
-    end
-
-    response(200, "OK")
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(400, "Bad Request", Schema.ref(:Error))
   end
 end

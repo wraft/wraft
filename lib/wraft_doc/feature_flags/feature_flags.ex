@@ -143,4 +143,26 @@ defmodule WraftDoc.FeatureFlags do
   end
 
   def enabled_globally?(_), do: false
+
+  @doc """
+  Validates and updates a feature flag for the given organization.
+  """
+  @spec validate_and_update_feature(atom(), boolean(), Organisation.t()) ::
+          {atom(), :ok | {:error, any()}}
+  def validate_and_update_feature(feature, enabled, organization) do
+    case feature in available_features() do
+      true ->
+        result =
+          if enabled do
+            enable(feature, organization)
+          else
+            disable(feature, organization)
+          end
+
+        {feature, result}
+
+      false ->
+        {feature, {:error, :invalid_feature}}
+    end
+  end
 end
