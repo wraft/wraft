@@ -704,11 +704,15 @@ defmodule WraftDoc.Enterprise do
     |> Multi.insert(:user_organisation, fn %{organisation: org} ->
       UserOrganisation.changeset(%UserOrganisation{}, %{user_id: user.id, organisation_id: org.id})
     end)
+    |> Multi.run(:setup_feature_flags, fn _repo, %{organisation_logo: organisation} ->
+      WraftDoc.FeatureFlags.setup_defaults(organisation)
+      {:ok, organisation}
+    end)
     |> then(fn multi ->
       if self_hosted?() do
         multi
       else
-        Multi.run(multi, :subscription, fn _repo, %{organisation: organisation} ->
+        Multi.run(multi, :subscription, fn _repo, %{organisation_logo: organisation} ->
           create_free_subscription(organisation.id)
         end)
       end
@@ -732,6 +736,10 @@ defmodule WraftDoc.Enterprise do
       |> build_assoc(:owned_organisations)
       |> Organisation.personal_organisation_changeset(params)
     )
+    |> Multi.run(:setup_feature_flags, fn _repo, %{organisation: organisation} ->
+      WraftDoc.FeatureFlags.setup_defaults(organisation)
+      {:ok, organisation}
+    end)
     |> then(fn multi ->
       if self_hosted?() do
         multi
