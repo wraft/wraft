@@ -331,6 +331,12 @@ defmodule WraftDocWeb.Router do
 
       # Organisations
       scope "/organisations" do
+        # Feature flags routes (must come before generic :id routes)
+        get("/features", FeatureFlagController, :index)
+        get("/features/:feature", FeatureFlagController, :show)
+        put("/features/:feature", FeatureFlagController, :update)
+        put("/features", FeatureFlagController, :bulk_update)
+
         resources("/", OrganisationController, only: [:create, :update, :show])
         delete("/", OrganisationController, :delete)
         post("/request_deletion", OrganisationController, :request_deletion)
