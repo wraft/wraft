@@ -4,10 +4,11 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
 
   alias WraftDoc.Storage
   alias WraftDoc.Storage.StorageItem
+  alias WraftDoc.Storage.StorageItems
 
-  action_fallback WraftDocWeb.FallbackController
+  action_fallback(WraftDocWeb.FallbackController)
 
-    @doc """
+  @doc """
   Lists storage items in the root folder or a specific folder.
 
   Query parameters:
@@ -37,59 +38,85 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
     end
   end
 
-    defp process_index_request(conn, params, _current_user, organisation_id) do
-    # Parse pagination parameters
+  defp process_index_request(conn, params, _current_user, organisation_id) do
+    pagination_opts = parse_pagination_opts(params)
+
+    result = resolve_storage_items(params, organisation_id, pagination_opts)
+
+    handle_storage_items_result(conn, result, params, organisation_id)
+  end
+
+  # Extract pagination parsing into its own function (helps Credo & readability)
+  defp parse_pagination_opts(params) do
     limit = parse_integer(params["limit"], 100, 1, 1000)
     offset = parse_integer(params["offset"], 0, 0, nil)
-    pagination_opts = [limit: limit, offset: offset]
+    [limit: limit, offset: offset]
+  end
 
-    storage_items = case params do
-      %{"folder_id" => folder_id} when folder_id != "" ->
-        # Validate that the folder exists and belongs to the organization
-        case Storage.get_storage_item_by_org(folder_id, organisation_id) do
-          %StorageItem{mime_type: "inode/directory"} = _folder ->
-            Storage.list_storage_items_by_parent(folder_id, organisation_id, pagination_opts)
-          %StorageItem{} ->
-            {:error, :not_a_directory}
-          nil ->
-            {:error, :folder_not_found}
-        end
+  defp resolve_storage_items(%{"folder_id" => folder_id}, organisation_id, pagination_opts)
+       when folder_id != "" do
+    case StorageItems.get_storage_item_by_org(folder_id, organisation_id) do
+      %StorageItem{mime_type: "inode/directory"} ->
+        StorageItems.list_storage_items_by_parent(folder_id, organisation_id, pagination_opts)
 
-      %{"repository_id" => repository_id} when repository_id != "" ->
-        parent_id = Map.get(params, "parent_id")
-        Storage.list_repository_storage_items(repository_id, parent_id, organisation_id, pagination_opts)
+      %StorageItem{} ->
+        {:error, :not_a_directory}
 
-      _ ->
-        Storage.list_root_storage_items(organisation_id, pagination_opts)
-    end
-
-    case storage_items do
-      {:error, :not_a_directory} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "The specified ID is not a directory"})
-
-      {:error, :folder_not_found} ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Folder not found"})
-
-      {:error, reason} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: reason})
-
-      items ->
-        Logger.info("Storage assets listed", %{
-          organisation_id: organisation_id,
-          count: length(items),
-          params: Map.take(params, ["folder_id", "repository_id", "parent_id", "limit", "offset"])
-        })
-        render(conn, :index, storage_items: items)
+      nil ->
+        {:error, :folder_not_found}
     end
   end
 
-    @doc """
+  defp resolve_storage_items(
+         %{"repository_id" => repository_id} = params,
+         organisation_id,
+         pagination_opts
+       )
+       when repository_id != "" do
+    parent_id = Map.get(params, "parent_id")
+
+    Storage.list_repository_storage_items(
+      repository_id,
+      parent_id,
+      organisation_id,
+      pagination_opts
+    )
+  end
+
+  defp resolve_storage_items(_params, organisation_id, pagination_opts) do
+    StorageItems.list_root_storage_items(organisation_id, pagination_opts)
+  end
+
+  # Handle results separately — very Credo-friendly
+  defp handle_storage_items_result(conn, {:error, :not_a_directory}, _params, _org_id) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{error: "The specified ID is not a directory"})
+  end
+
+  defp handle_storage_items_result(conn, {:error, :folder_not_found}, _params, _org_id) do
+    conn
+    |> put_status(:not_found)
+    |> json(%{error: "Folder not found"})
+  end
+
+  defp handle_storage_items_result(conn, {:error, reason}, _params, _org_id) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{error: reason})
+  end
+
+  defp handle_storage_items_result(conn, items, params, organisation_id) do
+    Logger.info("Storage assets listed", %{
+      organisation_id: organisation_id,
+      count: length(items),
+      params: Map.take(params, ["folder_id", "repository_id", "parent_id", "limit", "offset"])
+    })
+
+    render(conn, :index, storage_items: items)
+  end
+
+  @doc """
   Shows details of a specific storage item.
   """
   def show(conn, %{"id" => id}) do
@@ -97,7 +124,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
     organisation_id = current_user.current_org_id
 
     try do
-      storage_item = Storage.get_storage_item_by_org!(id, organisation_id)
+      storage_item = StorageItems.get_storage_item_by_org!(id, organisation_id)
       render(conn, :show, storage_item: storage_item)
     rescue
       Ecto.NoResultsError ->
@@ -114,14 +141,14 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
     current_user = conn.assigns[:current_user]
     organisation_id = current_user.current_org_id
 
-    with :ok <- validate_uuid_param(%{"id" => id}, "id") do
-      breadcrumbs = Storage.get_storage_item_breadcrumbs(id, organisation_id)
+    case validate_uuid_param(%{"id" => id}, "id") do
+      :ok ->
+        breadcrumbs = StorageItems.get_storage_item_breadcrumbs(id, organisation_id)
 
-      conn
-      |> json(%{
-        data: for(item <- breadcrumbs, do: breadcrumb_data(item))
-      })
-    else
+        json(conn, %{
+          data: Enum.map(breadcrumbs, &breadcrumb_data/1)
+        })
+
       {:error, _field} ->
         conn
         |> put_status(:bad_request)
@@ -135,22 +162,26 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
   def stats(conn, params) do
     current_user = conn.assigns[:current_user]
     organisation_id = current_user.current_org_id
-
     parent_id = Map.get(params, "parent_id")
 
-    with :ok <- validate_uuid_param(params, "parent_id") do
-      stats = Storage.get_storage_item_stats(parent_id, organisation_id)
-
-      conn
-      |> json(%{
-        data: stats
-      })
-    else
-      {:error, _field} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid UUID format for parent_id"})
+    case validate_uuid_param(params, "parent_id") do
+      :ok -> handle_valid_stats(conn, parent_id, organisation_id)
+      {:error, _field} -> handle_invalid_uuid(conn)
     end
+  end
+
+  defp handle_valid_stats(conn, parent_id, organisation_id) do
+    stats = StorageItems.get_storage_item_stats(parent_id, organisation_id)
+
+    json(conn, %{
+      data: stats
+    })
+  end
+
+  defp handle_invalid_uuid(conn) do
+    conn
+    |> put_status(:bad_request)
+    |> json(%{error: "Invalid UUID format for parent_id"})
   end
 
   @doc """
@@ -171,11 +202,12 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
       limit = parse_integer(params["limit"], 50, 1, 100)
       offset = parse_integer(params["offset"], 0, 0, nil)
 
-      item_type_filter = case Map.get(params, "type") do
-        "folders" -> :folders
-        "files" -> :files
-        _ -> nil
-      end
+      item_type_filter =
+        case Map.get(params, "type") do
+          "folders" -> :folders
+          "files" -> :files
+          _ -> nil
+        end
 
       search_opts = [
         limit: limit,
@@ -183,7 +215,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
         item_type: item_type_filter
       ]
 
-      results = Storage.search_storage_items(search_term, organisation_id, search_opts)
+      results = StorageItems.search_storage_items(search_term, organisation_id, search_opts)
 
       Logger.info("Storage items searched", %{
         organisation_id: organisation_id,
@@ -211,6 +243,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
     case Integer.parse(value) do
       {int, ""} when int >= min ->
         if max && int > max, do: max, else: int
+
       _ ->
         default
     end
@@ -221,14 +254,20 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
   # Helper function to validate UUID parameters
   defp validate_uuid_param(params, key) do
     case Map.get(params, key) do
-      nil -> :ok
-      "" -> :ok
+      nil ->
+        :ok
+
+      "" ->
+        :ok
+
       value when is_binary(value) ->
         case Ecto.UUID.cast(value) do
           {:ok, _} -> :ok
           :error -> {:error, key}
         end
-      _ -> {:error, key}
+
+      _ ->
+        {:error, key}
     end
   end
 end

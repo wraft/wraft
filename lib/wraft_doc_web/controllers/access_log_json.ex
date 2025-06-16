@@ -1,4 +1,7 @@
 defmodule WraftDocWeb.AccessLogJSON do
+  @moduledoc """
+  Renders access logs for storage operations.
+  """
   alias WraftDoc.Storage.AccessLog
 
   @doc """

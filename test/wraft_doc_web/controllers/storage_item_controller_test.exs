@@ -59,7 +59,33 @@ defmodule WraftDocWeb.StorageItemControllerTest do
     download_count: 43,
     last_accessed_at: ~U[2025-06-08 20:46:00Z]
   }
-  @invalid_attrs %{name: nil, size: nil, path: nil, metadata: nil, display_name: nil, item_type: nil, path_hash: nil, depth_level: nil, materialized_path: nil, mime_type: nil, file_extension: nil, checksum_sha256: nil, version_number: nil, is_current_version: nil, classification_level: nil, is_deleted: nil, deleted_at: nil, sync_source: nil, external_id: nil, external_metadata: nil, last_synced_at: nil, content_extracted: nil, thumbnail_generated: nil, download_count: nil, last_accessed_at: nil}
+  @invalid_attrs %{
+    name: nil,
+    size: nil,
+    path: nil,
+    metadata: nil,
+    display_name: nil,
+    item_type: nil,
+    path_hash: nil,
+    depth_level: nil,
+    materialized_path: nil,
+    mime_type: nil,
+    file_extension: nil,
+    checksum_sha256: nil,
+    version_number: nil,
+    is_current_version: nil,
+    classification_level: nil,
+    is_deleted: nil,
+    deleted_at: nil,
+    sync_source: nil,
+    external_id: nil,
+    external_metadata: nil,
+    last_synced_at: nil,
+    content_extracted: nil,
+    thumbnail_generated: nil,
+    download_count: nil,
+    last_accessed_at: nil
+  }
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -118,7 +144,10 @@ defmodule WraftDocWeb.StorageItemControllerTest do
   describe "update storage_item" do
     setup [:create_storage_item]
 
-    test "renders storage_item when data is valid", %{conn: conn, storage_item: %StorageItem{id: id} = storage_item} do
+    test "renders storage_item when data is valid", %{
+      conn: conn,
+      storage_item: %StorageItem{id: id} = storage_item
+    } do
       conn = put(conn, ~p"/api/storage_items/#{storage_item}", storage_item: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
@@ -167,9 +196,9 @@ defmodule WraftDocWeb.StorageItemControllerTest do
       conn = delete(conn, ~p"/api/storage_items/#{storage_item}")
       assert response(conn, 204)
 
-      assert_error_sent 404, fn ->
+      assert_error_sent(404, fn ->
         get(conn, ~p"/api/storage_items/#{storage_item}")
-      end
+      end)
     end
   end
 

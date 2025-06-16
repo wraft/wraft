@@ -4,19 +4,22 @@ alias WraftDoc.Seed
 alias WraftDoc.Storage.Repository
 
 # Create a single repository
-repository = case Repo.get_by(WraftDoc.Storage.Repository, name: "Main Repository") do
-  nil ->
-    Repo.insert!(%WraftDoc.Storage.Repository{
-      name: "Main Repository",
-      description: "A test repository for development",
-      status: "active",
-      item_count: 0,
-      storage_limit: 100_000_000, # 100MB in bytes
-      current_storage_used: 0
-    })
-  existing_repo ->
-    existing_repo
-end
+repository =
+  case Repo.get_by(WraftDoc.Storage.Repository, name: "Main Repository") do
+    nil ->
+      Repo.insert!(%WraftDoc.Storage.Repository{
+        name: "Main Repository",
+        description: "A test repository for development",
+        status: "active",
+        item_count: 0,
+        # 100MB in bytes
+        storage_limit: 100_000_000,
+        current_storage_used: 0
+      })
+
+    existing_repo ->
+      existing_repo
+  end
 
 # Load first user
 user = Repo.get_by(WraftDoc.Account.User, email: "wraftuser@gmail.com")
@@ -28,7 +31,6 @@ repository =
   |> Ecto.Changeset.put_change(:creator_id, Ecto.UUID.cast!(user.id))
   |> Ecto.Changeset.put_change(:organisation_id, Ecto.UUID.cast!(user.last_signed_in_org))
   |> Repo.update!()
-
 
 # dummyrepos = [
 #   "Contracts/",
@@ -255,7 +257,6 @@ repository =
 #   creator_id: Ecto.UUID.cast!(user.id),
 #   organisation_id: Ecto.UUID.cast!(user.last_signed_in_org),
 # })
-
 
 # # Create Documents folder
 # documents_folder = Repo.insert!(%Folder{
@@ -639,7 +640,6 @@ repository =
 # Repo.update!(Ecto.Changeset.change(email_templates_folder, child_file_count: 1))
 # Repo.update!(Ecto.Changeset.change(report_templates_folder, child_file_count: 1))
 # Repo.update!(Ecto.Changeset.change(presentation_templates_folder, child_file_count: 1))
-
 
 # # Create repository asset from local PDF file
 # # pdf_path = "temp/contract-signed.pdf"

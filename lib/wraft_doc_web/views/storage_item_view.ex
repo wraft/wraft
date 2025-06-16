@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.StorageItemView do
   use WraftDocWeb, :view
-  alias WraftDoc.Storage.StorageItem
   alias WraftDoc.Storage.StorageAsset
+  alias WraftDoc.Storage.StorageItem
 
   @doc """
   Renders a list of storage items.

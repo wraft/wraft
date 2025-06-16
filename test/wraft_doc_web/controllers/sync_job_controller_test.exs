@@ -25,7 +25,16 @@ defmodule WraftDocWeb.SyncJobControllerTest do
     items_failed: 43,
     error_details: %{}
   }
-  @invalid_attrs %{status: nil, started_at: nil, job_type: nil, sync_source: nil, completed_at: nil, items_processed: nil, items_failed: nil, error_details: nil}
+  @invalid_attrs %{
+    status: nil,
+    started_at: nil,
+    job_type: nil,
+    sync_source: nil,
+    completed_at: nil,
+    items_processed: nil,
+    items_failed: nil,
+    error_details: nil
+  }
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -67,7 +76,10 @@ defmodule WraftDocWeb.SyncJobControllerTest do
   describe "update sync_job" do
     setup [:create_sync_job]
 
-    test "renders sync_job when data is valid", %{conn: conn, sync_job: %SyncJob{id: id} = sync_job} do
+    test "renders sync_job when data is valid", %{
+      conn: conn,
+      sync_job: %SyncJob{id: id} = sync_job
+    } do
       conn = put(conn, ~p"/api/storage_sync_jobs/#{sync_job}", sync_job: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
@@ -99,9 +111,9 @@ defmodule WraftDocWeb.SyncJobControllerTest do
       conn = delete(conn, ~p"/api/storage_sync_jobs/#{sync_job}")
       assert response(conn, 204)
 
-      assert_error_sent 404, fn ->
+      assert_error_sent(404, fn ->
         get(conn, ~p"/api/storage_sync_jobs/#{sync_job}")
-      end
+      end)
     end
   end
 
