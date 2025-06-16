@@ -725,9 +725,6 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  @doc """
-  Create a default repository for the organisation
-  """
   defp create_default_repository(organisation, attrs) do
     repository_attrs = %{
       name: "#{organisation.name} Repository",
@@ -744,6 +741,7 @@ defmodule WraftDoc.Enterprise do
       {:ok, repository} ->
         # Return organisation with preloaded repository
         {:ok, %{organisation | repository: repository}}
+
       {:error, _changeset} ->
         # Repository creation failed, but organisation exists
         # You might want to handle this differently
@@ -751,9 +749,6 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  @doc """
-  Returns the default storage limit in bytes
-  """
   defp default_storage_limit, do: @default_storage_limit
 
   @doc """

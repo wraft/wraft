@@ -4,7 +4,7 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
   alias WraftDoc.Storage
   alias WraftDoc.Storage.Repository
 
-  action_fallback WraftDocWeb.FallbackController
+  action_fallback(WraftDocWeb.FallbackController)
 
   def index(conn, _params) do
     repositories = Storage.list_repositories()
@@ -28,7 +28,8 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
   def update(conn, %{"id" => id, "repository" => repository_params}) do
     repository = Storage.get_repository!(id)
 
-    with {:ok, %Repository{} = repository} <- Storage.update_repository(repository, repository_params) do
+    with {:ok, %Repository{} = repository} <-
+           Storage.update_repository(repository, repository_params) do
       render(conn, :show, repository: repository)
     end
   end

@@ -21,7 +21,14 @@ defmodule WraftDocWeb.RepositoryControllerTest do
     current_storage_used: 43,
     item_count: 43
   }
-  @invalid_attrs %{name: nil, status: nil, description: nil, storage_limit: nil, current_storage_used: nil, item_count: nil}
+  @invalid_attrs %{
+    name: nil,
+    status: nil,
+    description: nil,
+    storage_limit: nil,
+    current_storage_used: nil,
+    item_count: nil
+  }
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -61,7 +68,10 @@ defmodule WraftDocWeb.RepositoryControllerTest do
   describe "update repository" do
     setup [:create_repository]
 
-    test "renders repository when data is valid", %{conn: conn, repository: %Repository{id: id} = repository} do
+    test "renders repository when data is valid", %{
+      conn: conn,
+      repository: %Repository{id: id} = repository
+    } do
       conn = put(conn, ~p"/api/repositories/#{repository}", repository: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
@@ -91,9 +101,9 @@ defmodule WraftDocWeb.RepositoryControllerTest do
       conn = delete(conn, ~p"/api/repositories/#{repository}")
       assert response(conn, 204)
 
-      assert_error_sent 404, fn ->
+      assert_error_sent(404, fn ->
         get(conn, ~p"/api/repositories/#{repository}")
-      end
+      end)
     end
   end
 

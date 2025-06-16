@@ -4,10 +4,12 @@ defmodule WraftDoc.Workers.PDFMetadataWorker do
   """
   use Oban.Worker
 
+  require Logger
+
   alias WraftDoc.PDFMetadata
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"file_path" => file_path, "organisation_id" => organisation_id}}) do
+  def perform(%Oban.Job{args: %{"file_path" => file_path, "organisation_id" => _organisation_id}}) do
     Logger.info("🔍 Starting PDF metadata extraction for file: #{file_path}")
 
     case PDFMetadata.extract_metadata(file_path) do
@@ -22,8 +24,8 @@ defmodule WraftDoc.Workers.PDFMetadataWorker do
         🔄 Modified: #{metadata.modification_date || "N/A"}
         """)
 
-        # Here you would typically store the metadata in your database
-        # For now, we're just logging it
+      # Here you would typically store the metadata in your database
+      # For now, we're just logging it
 
       {:error, reason} ->
         Logger.error("❌ Failed to extract PDF metadata: #{reason}")

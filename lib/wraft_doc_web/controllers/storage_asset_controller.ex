@@ -2,10 +2,11 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   use WraftDocWeb, :controller
   require Logger
 
-  alias WraftDoc.Storage
   alias WraftDoc.Storage.StorageAsset
+  alias WraftDoc.Storage.StorageAssets
+  alias WraftDoc.Storage.StorageItems
 
-  action_fallback WraftDocWeb.FallbackController
+  action_fallback(WraftDocWeb.FallbackController)
 
   @doc """
   Lists storage assets with optional filtering by organisation.
@@ -15,10 +16,10 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     organisation_id = current_user.current_org_id
 
     # Parse pagination parameters
-    limit = parse_integer(params["limit"], 100, 1, 1000)
-    offset = parse_integer(params["offset"], 0, 0, nil)
+    _limit = parse_integer(params["limit"], 100, 1, 1000)
+    _offset = parse_integer(params["offset"], 0, 0, nil)
 
-    storage_assets = Storage.list_storage_assets_by_organisation(organisation_id)
+    storage_assets = StorageAssets.list_storage_assets_by_organisation(organisation_id)
 
     Logger.info("Storage assets listed", %{
       organisation_id: organisation_id,
@@ -48,8 +49,6 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   def upload(conn, %{"file" => file} = params) when not is_nil(file) do
     current_user = conn.assigns[:current_user]
 
-    IO.inspect(params)
-
     Logger.info("📁 Starting file upload", %{
       filename: file.filename,
       content_type: file.content_type,
@@ -60,9 +59,8 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     # Validate request parameters
     with :ok <- validate_upload_params(params),
          {:ok, validated_params} <- prepare_validated_params(params, current_user) do
-
       # Perform the upload
-      case Storage.create_storage_asset_with_item(current_user, validated_params) do
+      case StorageItems.create_storage_asset_with_item(current_user, validated_params) do
         {:ok, %{storage_asset: storage_asset, storage_item: storage_item}} ->
           Logger.info("✅ File upload successful", %{
             storage_asset_id: storage_asset.id,
@@ -121,7 +119,8 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   Creates a storage asset (legacy endpoint for backwards compatibility).
   """
   def create(conn, %{"asset" => storage_asset_params}) do
-    with {:ok, %StorageAsset{} = storage_asset} <- Storage.create_storage_asset(storage_asset_params) do
+    with {:ok, %StorageAsset{} = storage_asset} <-
+           StorageAssets.create_storage_asset(storage_asset_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", "/api/storage_assets/#{storage_asset}")
@@ -137,8 +136,8 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     organisation_id = current_user.current_org_id
 
     with :ok <- validate_uuid(id),
-         %StorageAsset{} = storage_asset <- Storage.get_storage_asset_by_org(id, organisation_id) do
-
+         %StorageAsset{} = storage_asset <-
+           StorageAssets.get_storage_asset_by_org(id, organisation_id) do
       render(conn, :show, storage_asset: storage_asset)
     else
       nil ->
@@ -161,9 +160,10 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     organisation_id = current_user.current_org_id
 
     with :ok <- validate_uuid(id),
-         %StorageAsset{} = storage_asset <- Storage.get_storage_asset_by_org(id, organisation_id),
-         {:ok, %StorageAsset{} = updated_asset} <- Storage.update_storage_asset(storage_asset, storage_asset_params) do
-
+         %StorageAsset{} = storage_asset <-
+           StorageAssets.get_storage_asset_by_org(id, organisation_id),
+         {:ok, %StorageAsset{} = updated_asset} <-
+           StorageAssets.update_storage_asset(storage_asset, storage_asset_params) do
       render(conn, :show, storage_asset: updated_asset)
     else
       nil ->
@@ -194,9 +194,9 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     organisation_id = current_user.current_org_id
 
     with :ok <- validate_uuid(id),
-         %StorageAsset{} = storage_asset <- Storage.get_storage_asset_by_org(id, organisation_id),
-         {:ok, %StorageAsset{}} <- Storage.delete_storage_asset(storage_asset) do
-
+         %StorageAsset{} = storage_asset <-
+           StorageAssets.get_storage_asset_by_org(id, organisation_id),
+         {:ok, %StorageAsset{}} <- StorageAssets.delete_storage_asset(storage_asset) do
       send_resp(conn, :no_content, "")
     else
       nil ->
@@ -216,9 +216,8 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   # Validates upload parameters
   defp validate_upload_params(%{"file" => %Plug.Upload{} = file} = params) do
     with :ok <- validate_file_size(file),
-         :ok <- validate_file_type(file),
-         :ok <- validate_parent_folder(params) do
-      :ok
+         :ok <- validate_file_type(file) do
+      validate_parent_folder(params)
     end
   end
 
@@ -227,7 +226,8 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   # Validates file size
   defp validate_file_size(%Plug.Upload{path: path}) do
     case File.stat(path) do
-      {:ok, %{size: size}} when size <= 10 * 1024 * 1024 -> :ok  # 10MB limit
+      # 10MB limit
+      {:ok, %{size: size}} when size <= 10 * 1024 * 1024 -> :ok
       {:ok, %{size: _}} -> {:error, :file_too_large}
       {:error, _} -> {:error, "Could not read file"}
     end
@@ -235,8 +235,10 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
 
   # Validates file type
   defp validate_file_type(%Plug.Upload{filename: filename}) do
-    extension = Path.extname(filename) |> String.downcase()
-    allowed_extensions = ~w(.jpg .jpeg .png .pdf .doc .docx .xls .xlsx .ppt .pptx .txt .odt .zip .csv)
+    extension = String.downcase(Path.extname(filename))
+
+    allowed_extensions =
+      ~w(.jpg .jpeg .png .pdf .doc .docx .xls .xlsx .ppt .pptx .txt .odt .zip .csv)
 
     if extension in allowed_extensions do
       :ok
@@ -246,7 +248,8 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   end
 
   # Validates parent folder exists and is accessible
-  defp validate_parent_folder(%{"parent_id" => parent_id}) when is_binary(parent_id) and parent_id != "" do
+  defp validate_parent_folder(%{"parent_id" => parent_id})
+       when is_binary(parent_id) and parent_id != "" do
     # This should validate that the parent folder exists and is accessible
     # For now, we'll just validate UUID format
     case Ecto.UUID.cast(parent_id) do
@@ -259,9 +262,10 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
 
   # Prepares validated parameters for upload
   defp prepare_validated_params(params, current_user) do
-    validated_params = params
-    |> Map.put("creator_id", current_user.id)
-    |> Map.put("organisation_id", current_user.current_org_id)
+    validated_params =
+      params
+      |> Map.put("creator_id", current_user.id)
+      |> Map.put("organisation_id", current_user.current_org_id)
 
     {:ok, validated_params}
   end
@@ -271,6 +275,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     case Integer.parse(value) do
       {int, ""} when int >= min ->
         if max && int > max, do: max, else: int
+
       _ ->
         default
     end

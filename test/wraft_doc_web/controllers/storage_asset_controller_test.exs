@@ -31,7 +31,19 @@ defmodule WraftDocWeb.StorageAssetControllerTest do
     processing_status: "some updated processing_status",
     upload_completed_at: ~U[2025-06-08 20:42:00Z]
   }
-  @invalid_attrs %{storage_key: nil, storage_backend: nil, file_size: nil, checksum_sha256: nil, mime_type: nil, encryption_key_id: nil, compression_type: nil, thumbnail_path: nil, preview_path: nil, processing_status: nil, upload_completed_at: nil}
+  @invalid_attrs %{
+    storage_key: nil,
+    storage_backend: nil,
+    file_size: nil,
+    checksum_sha256: nil,
+    mime_type: nil,
+    encryption_key_id: nil,
+    compression_type: nil,
+    thumbnail_path: nil,
+    preview_path: nil,
+    processing_status: nil,
+    upload_completed_at: nil
+  }
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -76,7 +88,10 @@ defmodule WraftDocWeb.StorageAssetControllerTest do
   describe "update storage_asset" do
     setup [:create_storage_asset]
 
-    test "renders storage_asset when data is valid", %{conn: conn, storage_asset: %StorageAsset{id: id} = storage_asset} do
+    test "renders storage_asset when data is valid", %{
+      conn: conn,
+      storage_asset: %StorageAsset{id: id} = storage_asset
+    } do
       conn = put(conn, ~p"/api/storage_assets/#{storage_asset}", storage_asset: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
@@ -111,9 +126,9 @@ defmodule WraftDocWeb.StorageAssetControllerTest do
       conn = delete(conn, ~p"/api/storage_assets/#{storage_asset}")
       assert response(conn, 204)
 
-      assert_error_sent 404, fn ->
+      assert_error_sent(404, fn ->
         get(conn, ~p"/api/storage_assets/#{storage_asset}")
-      end
+      end)
     end
   end
 

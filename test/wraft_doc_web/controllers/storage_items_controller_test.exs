@@ -19,16 +19,19 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
   end
 
   describe "index" do
-    test "lists root storage items when no parameters provided", %{conn: conn, organisation: organisation} do
+    test "lists root storage items when no parameters provided", %{
+      conn: conn,
+      organisation: organisation
+    } do
       conn = get(conn, ~p"/api/v1/storage/assets")
 
       assert %{
-        "data" => [],
-        "meta" => %{
-          "count" => 0,
-          "timestamp" => _
-        }
-      } = json_response(conn, 200)
+               "data" => [],
+               "meta" => %{
+                 "count" => 0,
+                 "timestamp" => _
+               }
+             } = json_response(conn, 200)
     end
 
     test "returns error for invalid folder_id UUID", %{conn: conn} do
@@ -48,12 +51,12 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
       conn = get(conn, ~p"/api/v1/storage/assets?limit=50&offset=10")
 
       assert %{
-        "data" => [],
-        "meta" => %{
-          "count" => 0,
-          "timestamp" => _
-        }
-      } = json_response(conn, 200)
+               "data" => [],
+               "meta" => %{
+                 "count" => 0,
+                 "timestamp" => _
+               }
+             } = json_response(conn, 200)
     end
   end
 
@@ -77,24 +80,24 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
       conn = get(conn, ~p"/api/v1/storage/assets/search?q=test")
 
       assert %{
-        "data" => [],
-        "meta" => %{
-          "count" => 0,
-          "timestamp" => _
-        }
-      } = json_response(conn, 200)
+               "data" => [],
+               "meta" => %{
+                 "count" => 0,
+                 "timestamp" => _
+               }
+             } = json_response(conn, 200)
     end
 
     test "respects type filter parameter", %{conn: conn} do
       conn = get(conn, ~p"/api/v1/storage/assets/search?q=test&type=files")
 
       assert %{
-        "data" => [],
-        "meta" => %{
-          "count" => 0,
-          "timestamp" => _
-        }
-      } = json_response(conn, 200)
+               "data" => [],
+               "meta" => %{
+                 "count" => 0,
+                 "timestamp" => _
+               }
+             } = json_response(conn, 200)
     end
   end
 
@@ -103,13 +106,13 @@ defmodule WraftDocWeb.Api.V1.StorageItemsControllerTest do
       conn = get(conn, ~p"/api/v1/storage/assets/stats")
 
       assert %{
-        "data" => %{
-          "total_count" => 0,
-          "folder_count" => 0,
-          "file_count" => 0,
-          "total_size" => 0
-        }
-      } = json_response(conn, 200)
+               "data" => %{
+                 "total_count" => 0,
+                 "folder_count" => 0,
+                 "file_count" => 0,
+                 "total_size" => 0
+               }
+             } = json_response(conn, 200)
     end
 
     test "returns error for invalid parent_id UUID", %{conn: conn} do

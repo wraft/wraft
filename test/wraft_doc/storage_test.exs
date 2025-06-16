@@ -8,7 +8,14 @@ defmodule WraftDoc.StorageTest do
 
     import WraftDoc.StorageFixtures
 
-    @invalid_attrs %{name: nil, status: nil, description: nil, storage_limit: nil, current_storage_used: nil, item_count: nil}
+    @invalid_attrs %{
+      name: nil,
+      status: nil,
+      description: nil,
+      storage_limit: nil,
+      current_storage_used: nil,
+      item_count: nil
+    }
 
     test "list_repositories/0 returns all repositories" do
       repository = repository_fixture()
@@ -21,7 +28,14 @@ defmodule WraftDoc.StorageTest do
     end
 
     test "create_repository/1 with valid data creates a repository" do
-      valid_attrs = %{name: "some name", status: "some status", description: "some description", storage_limit: 42, current_storage_used: 42, item_count: 42}
+      valid_attrs = %{
+        name: "some name",
+        status: "some status",
+        description: "some description",
+        storage_limit: 42,
+        current_storage_used: 42,
+        item_count: 42
+      }
 
       assert {:ok, %Repository{} = repository} = Storage.create_repository(valid_attrs)
       assert repository.name == "some name"
@@ -38,9 +52,19 @@ defmodule WraftDoc.StorageTest do
 
     test "update_repository/2 with valid data updates the repository" do
       repository = repository_fixture()
-      update_attrs = %{name: "some updated name", status: "some updated status", description: "some updated description", storage_limit: 43, current_storage_used: 43, item_count: 43}
 
-      assert {:ok, %Repository{} = repository} = Storage.update_repository(repository, update_attrs)
+      update_attrs = %{
+        name: "some updated name",
+        status: "some updated status",
+        description: "some updated description",
+        storage_limit: 43,
+        current_storage_used: 43,
+        item_count: 43
+      }
+
+      assert {:ok, %Repository{} = repository} =
+               Storage.update_repository(repository, update_attrs)
+
       assert repository.name == "some updated name"
       assert repository.status == "some updated status"
       assert repository.description == "some updated description"
@@ -72,7 +96,19 @@ defmodule WraftDoc.StorageTest do
 
     import WraftDoc.StorageFixtures
 
-    @invalid_attrs %{storage_key: nil, storage_backend: nil, file_size: nil, checksum_sha256: nil, mime_type: nil, encryption_key_id: nil, compression_type: nil, thumbnail_path: nil, preview_path: nil, processing_status: nil, upload_completed_at: nil}
+    @invalid_attrs %{
+      storage_key: nil,
+      storage_backend: nil,
+      file_size: nil,
+      checksum_sha256: nil,
+      mime_type: nil,
+      encryption_key_id: nil,
+      compression_type: nil,
+      thumbnail_path: nil,
+      preview_path: nil,
+      processing_status: nil,
+      upload_completed_at: nil
+    }
 
     test "list_storage_assets/0 returns all storage_assets" do
       storage_asset = storage_asset_fixture()
@@ -85,7 +121,19 @@ defmodule WraftDoc.StorageTest do
     end
 
     test "create_storage_asset/1 with valid data creates a storage_asset" do
-      valid_attrs = %{storage_key: "some storage_key", storage_backend: "some storage_backend", file_size: 42, checksum_sha256: "some checksum_sha256", mime_type: "some mime_type", encryption_key_id: "some encryption_key_id", compression_type: "some compression_type", thumbnail_path: "some thumbnail_path", preview_path: "some preview_path", processing_status: "some processing_status", upload_completed_at: ~U[2025-06-07 20:42:00Z]}
+      valid_attrs = %{
+        storage_key: "some storage_key",
+        storage_backend: "some storage_backend",
+        file_size: 42,
+        checksum_sha256: "some checksum_sha256",
+        mime_type: "some mime_type",
+        encryption_key_id: "some encryption_key_id",
+        compression_type: "some compression_type",
+        thumbnail_path: "some thumbnail_path",
+        preview_path: "some preview_path",
+        processing_status: "some processing_status",
+        upload_completed_at: ~U[2025-06-07 20:42:00Z]
+      }
 
       assert {:ok, %StorageAsset{} = storage_asset} = Storage.create_storage_asset(valid_attrs)
       assert storage_asset.storage_key == "some storage_key"
@@ -107,9 +155,24 @@ defmodule WraftDoc.StorageTest do
 
     test "update_storage_asset/2 with valid data updates the storage_asset" do
       storage_asset = storage_asset_fixture()
-      update_attrs = %{storage_key: "some updated storage_key", storage_backend: "some updated storage_backend", file_size: 43, checksum_sha256: "some updated checksum_sha256", mime_type: "some updated mime_type", encryption_key_id: "some updated encryption_key_id", compression_type: "some updated compression_type", thumbnail_path: "some updated thumbnail_path", preview_path: "some updated preview_path", processing_status: "some updated processing_status", upload_completed_at: ~U[2025-06-08 20:42:00Z]}
 
-      assert {:ok, %StorageAsset{} = storage_asset} = Storage.update_storage_asset(storage_asset, update_attrs)
+      update_attrs = %{
+        storage_key: "some updated storage_key",
+        storage_backend: "some updated storage_backend",
+        file_size: 43,
+        checksum_sha256: "some updated checksum_sha256",
+        mime_type: "some updated mime_type",
+        encryption_key_id: "some updated encryption_key_id",
+        compression_type: "some updated compression_type",
+        thumbnail_path: "some updated thumbnail_path",
+        preview_path: "some updated preview_path",
+        processing_status: "some updated processing_status",
+        upload_completed_at: ~U[2025-06-08 20:42:00Z]
+      }
+
+      assert {:ok, %StorageAsset{} = storage_asset} =
+               Storage.update_storage_asset(storage_asset, update_attrs)
+
       assert storage_asset.storage_key == "some updated storage_key"
       assert storage_asset.storage_backend == "some updated storage_backend"
       assert storage_asset.file_size == 43
@@ -125,7 +188,10 @@ defmodule WraftDoc.StorageTest do
 
     test "update_storage_asset/2 with invalid data returns error changeset" do
       storage_asset = storage_asset_fixture()
-      assert {:error, %Ecto.Changeset{}} = Storage.update_storage_asset(storage_asset, @invalid_attrs)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Storage.update_storage_asset(storage_asset, @invalid_attrs)
+
       assert storage_asset == Storage.get_storage_asset!(storage_asset.id)
     end
 
@@ -146,7 +212,33 @@ defmodule WraftDoc.StorageTest do
 
     import WraftDoc.StorageFixtures
 
-    @invalid_attrs %{name: nil, size: nil, path: nil, metadata: nil, display_name: nil, item_type: nil, path_hash: nil, depth_level: nil, materialized_path: nil, mime_type: nil, file_extension: nil, checksum_sha256: nil, version_number: nil, is_current_version: nil, classification_level: nil, is_deleted: nil, deleted_at: nil, sync_source: nil, external_id: nil, external_metadata: nil, last_synced_at: nil, content_extracted: nil, thumbnail_generated: nil, download_count: nil, last_accessed_at: nil}
+    @invalid_attrs %{
+      name: nil,
+      size: nil,
+      path: nil,
+      metadata: nil,
+      display_name: nil,
+      item_type: nil,
+      path_hash: nil,
+      depth_level: nil,
+      materialized_path: nil,
+      mime_type: nil,
+      file_extension: nil,
+      checksum_sha256: nil,
+      version_number: nil,
+      is_current_version: nil,
+      classification_level: nil,
+      is_deleted: nil,
+      deleted_at: nil,
+      sync_source: nil,
+      external_id: nil,
+      external_metadata: nil,
+      last_synced_at: nil,
+      content_extracted: nil,
+      thumbnail_generated: nil,
+      download_count: nil,
+      last_accessed_at: nil
+    }
 
     test "list_storage_items/0 returns all storage_items" do
       storage_item = storage_item_fixture()
@@ -159,7 +251,33 @@ defmodule WraftDoc.StorageTest do
     end
 
     test "create_storage_item/1 with valid data creates a storage_item" do
-      valid_attrs = %{name: "some name", size: 42, path: "some path", metadata: %{}, display_name: "some display_name", item_type: "some item_type", path_hash: "some path_hash", depth_level: 42, materialized_path: "some materialized_path", mime_type: "some mime_type", file_extension: "some file_extension", checksum_sha256: "some checksum_sha256", version_number: "some version_number", is_current_version: true, classification_level: "some classification_level", is_deleted: true, deleted_at: ~U[2025-06-07 20:46:00Z], sync_source: "some sync_source", external_id: "some external_id", external_metadata: %{}, last_synced_at: ~U[2025-06-07 20:46:00Z], content_extracted: true, thumbnail_generated: true, download_count: 42, last_accessed_at: ~U[2025-06-07 20:46:00Z]}
+      valid_attrs = %{
+        name: "some name",
+        size: 42,
+        path: "some path",
+        metadata: %{},
+        display_name: "some display_name",
+        item_type: "some item_type",
+        path_hash: "some path_hash",
+        depth_level: 42,
+        materialized_path: "some materialized_path",
+        mime_type: "some mime_type",
+        file_extension: "some file_extension",
+        checksum_sha256: "some checksum_sha256",
+        version_number: "some version_number",
+        is_current_version: true,
+        classification_level: "some classification_level",
+        is_deleted: true,
+        deleted_at: ~U[2025-06-07 20:46:00Z],
+        sync_source: "some sync_source",
+        external_id: "some external_id",
+        external_metadata: %{},
+        last_synced_at: ~U[2025-06-07 20:46:00Z],
+        content_extracted: true,
+        thumbnail_generated: true,
+        download_count: 42,
+        last_accessed_at: ~U[2025-06-07 20:46:00Z]
+      }
 
       assert {:ok, %StorageItem{} = storage_item} = Storage.create_storage_item(valid_attrs)
       assert storage_item.name == "some name"
@@ -195,9 +313,38 @@ defmodule WraftDoc.StorageTest do
 
     test "update_storage_item/2 with valid data updates the storage_item" do
       storage_item = storage_item_fixture()
-      update_attrs = %{name: "some updated name", size: 43, path: "some updated path", metadata: %{}, display_name: "some updated display_name", item_type: "some updated item_type", path_hash: "some updated path_hash", depth_level: 43, materialized_path: "some updated materialized_path", mime_type: "some updated mime_type", file_extension: "some updated file_extension", checksum_sha256: "some updated checksum_sha256", version_number: "some updated version_number", is_current_version: false, classification_level: "some updated classification_level", is_deleted: false, deleted_at: ~U[2025-06-08 20:46:00Z], sync_source: "some updated sync_source", external_id: "some updated external_id", external_metadata: %{}, last_synced_at: ~U[2025-06-08 20:46:00Z], content_extracted: false, thumbnail_generated: false, download_count: 43, last_accessed_at: ~U[2025-06-08 20:46:00Z]}
 
-      assert {:ok, %StorageItem{} = storage_item} = Storage.update_storage_item(storage_item, update_attrs)
+      update_attrs = %{
+        name: "some updated name",
+        size: 43,
+        path: "some updated path",
+        metadata: %{},
+        display_name: "some updated display_name",
+        item_type: "some updated item_type",
+        path_hash: "some updated path_hash",
+        depth_level: 43,
+        materialized_path: "some updated materialized_path",
+        mime_type: "some updated mime_type",
+        file_extension: "some updated file_extension",
+        checksum_sha256: "some updated checksum_sha256",
+        version_number: "some updated version_number",
+        is_current_version: false,
+        classification_level: "some updated classification_level",
+        is_deleted: false,
+        deleted_at: ~U[2025-06-08 20:46:00Z],
+        sync_source: "some updated sync_source",
+        external_id: "some updated external_id",
+        external_metadata: %{},
+        last_synced_at: ~U[2025-06-08 20:46:00Z],
+        content_extracted: false,
+        thumbnail_generated: false,
+        download_count: 43,
+        last_accessed_at: ~U[2025-06-08 20:46:00Z]
+      }
+
+      assert {:ok, %StorageItem{} = storage_item} =
+               Storage.update_storage_item(storage_item, update_attrs)
+
       assert storage_item.name == "some updated name"
       assert storage_item.size == 43
       assert storage_item.path == "some updated path"
@@ -227,7 +374,10 @@ defmodule WraftDoc.StorageTest do
 
     test "update_storage_item/2 with invalid data returns error changeset" do
       storage_item = storage_item_fixture()
-      assert {:error, %Ecto.Changeset{}} = Storage.update_storage_item(storage_item, @invalid_attrs)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Storage.update_storage_item(storage_item, @invalid_attrs)
+
       assert storage_item == Storage.get_storage_item!(storage_item.id)
     end
 
@@ -248,7 +398,14 @@ defmodule WraftDoc.StorageTest do
 
     import WraftDoc.StorageFixtures
 
-    @invalid_attrs %{success: nil, metadata: nil, action: nil, session_id: nil, ip_address: nil, user_agent: nil}
+    @invalid_attrs %{
+      success: nil,
+      metadata: nil,
+      action: nil,
+      session_id: nil,
+      ip_address: nil,
+      user_agent: nil
+    }
 
     test "list_storage_access_logs/0 returns all storage_access_logs" do
       access_log = access_log_fixture()
@@ -261,7 +418,14 @@ defmodule WraftDoc.StorageTest do
     end
 
     test "create_access_log/1 with valid data creates a access_log" do
-      valid_attrs = %{success: true, metadata: %{}, action: "some action", session_id: "some session_id", ip_address: "some ip_address", user_agent: "some user_agent"}
+      valid_attrs = %{
+        success: true,
+        metadata: %{},
+        action: "some action",
+        session_id: "some session_id",
+        ip_address: "some ip_address",
+        user_agent: "some user_agent"
+      }
 
       assert {:ok, %AccessLog{} = access_log} = Storage.create_access_log(valid_attrs)
       assert access_log.success == true
@@ -278,9 +442,19 @@ defmodule WraftDoc.StorageTest do
 
     test "update_access_log/2 with valid data updates the access_log" do
       access_log = access_log_fixture()
-      update_attrs = %{success: false, metadata: %{}, action: "some updated action", session_id: "some updated session_id", ip_address: "some updated ip_address", user_agent: "some updated user_agent"}
 
-      assert {:ok, %AccessLog{} = access_log} = Storage.update_access_log(access_log, update_attrs)
+      update_attrs = %{
+        success: false,
+        metadata: %{},
+        action: "some updated action",
+        session_id: "some updated session_id",
+        ip_address: "some updated ip_address",
+        user_agent: "some updated user_agent"
+      }
+
+      assert {:ok, %AccessLog{} = access_log} =
+               Storage.update_access_log(access_log, update_attrs)
+
       assert access_log.success == false
       assert access_log.metadata == %{}
       assert access_log.action == "some updated action"
@@ -312,7 +486,16 @@ defmodule WraftDoc.StorageTest do
 
     import WraftDoc.StorageFixtures
 
-    @invalid_attrs %{status: nil, started_at: nil, job_type: nil, sync_source: nil, completed_at: nil, items_processed: nil, items_failed: nil, error_details: nil}
+    @invalid_attrs %{
+      status: nil,
+      started_at: nil,
+      job_type: nil,
+      sync_source: nil,
+      completed_at: nil,
+      items_processed: nil,
+      items_failed: nil,
+      error_details: nil
+    }
 
     test "list_storage_sync_jobs/0 returns all storage_sync_jobs" do
       sync_job = sync_job_fixture()
@@ -325,7 +508,16 @@ defmodule WraftDoc.StorageTest do
     end
 
     test "create_sync_job/1 with valid data creates a sync_job" do
-      valid_attrs = %{status: "some status", started_at: ~U[2025-06-07 21:00:00Z], job_type: "some job_type", sync_source: "some sync_source", completed_at: ~U[2025-06-07 21:00:00Z], items_processed: 42, items_failed: 42, error_details: %{}}
+      valid_attrs = %{
+        status: "some status",
+        started_at: ~U[2025-06-07 21:00:00Z],
+        job_type: "some job_type",
+        sync_source: "some sync_source",
+        completed_at: ~U[2025-06-07 21:00:00Z],
+        items_processed: 42,
+        items_failed: 42,
+        error_details: %{}
+      }
 
       assert {:ok, %SyncJob{} = sync_job} = Storage.create_sync_job(valid_attrs)
       assert sync_job.status == "some status"
@@ -344,7 +536,17 @@ defmodule WraftDoc.StorageTest do
 
     test "update_sync_job/2 with valid data updates the sync_job" do
       sync_job = sync_job_fixture()
-      update_attrs = %{status: "some updated status", started_at: ~U[2025-06-08 21:00:00Z], job_type: "some updated job_type", sync_source: "some updated sync_source", completed_at: ~U[2025-06-08 21:00:00Z], items_processed: 43, items_failed: 43, error_details: %{}}
+
+      update_attrs = %{
+        status: "some updated status",
+        started_at: ~U[2025-06-08 21:00:00Z],
+        job_type: "some updated job_type",
+        sync_source: "some updated sync_source",
+        completed_at: ~U[2025-06-08 21:00:00Z],
+        items_processed: 43,
+        items_failed: 43,
+        error_details: %{}
+      }
 
       assert {:ok, %SyncJob{} = sync_job} = Storage.update_sync_job(sync_job, update_attrs)
       assert sync_job.status == "some updated status"

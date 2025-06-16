@@ -162,7 +162,8 @@ defmodule WraftDoc.Mixfile do
       # markdown
       {:mdex, "~> 0.3.3"},
       {:file_type, "~> 0.1.0"},
-      {:rustler, "~> 0.32.0", runtime: true}
+      {:rustler, "~> 0.32.0", runtime: true},
+      {:oauth2, "~> 2.0"}
     ]
   end
 

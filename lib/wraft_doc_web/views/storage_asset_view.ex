@@ -1,24 +1,25 @@
 defmodule WraftDocWeb.Api.V1.StorageAssetView do
   use WraftDocWeb, :view
   alias WraftDoc.Storage.StorageAsset
-  alias WraftDocWeb.StorageAssetUploader
+  # alias WraftDocWeb.StorageAssetUploader
 
   @doc """
   Renders a list of repository assets.
   """
+
   # def index(%{repository_assets: repository_assets}) do
   #   %{data: for(repository_asset <- repository_assets, do: data(repository_asset))}
   # end
 
-  def render("index.json", %{storage_assets: storage_assets}) do
-    %{data: render_many(storage_assets, __MODULE__, "file.json")}
+  def show(%{storage_assets: storage_assets}) do
+    %{data: data(storage_assets)}
   end
 
   @doc """
   Renders a single repository asset.
   """
-  def show(%{storage_assets: storage_assets}) do
-    %{data: data(storage_assets)}
+  def render("index.json", %{storage_assets: storage_assets}) do
+    %{data: render_many(storage_assets, __MODULE__, "file.json")}
   end
 
   def render("file.json", %{storage_asset: storage_asset}) do
@@ -35,7 +36,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetView do
       mime_type: storage_asset.mime_type,
       # file_extension: storage_asset.file_extension,
       storage_key: storage_asset.storage_key,
-      checksum_sha256: storage_asset.checksum_sha256,
+      checksum_sha256: storage_asset.checksum_sha256
       # content_extracted: storage_asset.content_extracted,
       # display_name: storage_asset.display_name,
       # download_count: storage_asset.download_count,
@@ -77,6 +78,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetView do
   defp generate_url(%{filename: filename} = storage_asset) do
     WraftDocWeb.StorageAssetUploader.url({filename, storage_asset}, signed: true)
   end
+
   # defp generate_url(%{filename: filename} = storage_asset) when not is_nil(filename),
   #   do: StorageAssetUploader.url({filename, storage_asset}, signed: true)
 

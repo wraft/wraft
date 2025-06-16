@@ -1,10 +1,9 @@
 defmodule WraftDocWeb.Api.V1.SyncJobController do
   use WraftDocWeb, :controller
-
-  alias WraftDoc.Storage
   alias WraftDoc.Storage.SyncJob
+  alias WraftDoc.Storage.SyncJobs, as: Storage
 
-  action_fallback WraftDocWeb.FallbackController
+  action_fallback(WraftDocWeb.FallbackController)
 
   def index(conn, _params) do
     storage_sync_jobs = Storage.list_storage_sync_jobs()

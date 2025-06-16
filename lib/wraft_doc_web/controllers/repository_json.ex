@@ -1,4 +1,5 @@
 defmodule WraftDocWeb.RepositoryJSON do
+  @moduledoc false
   alias WraftDoc.Storage.Repository
 
   @doc """

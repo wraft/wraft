@@ -21,7 +21,14 @@ defmodule WraftDocWeb.AccessLogControllerTest do
     ip_address: "some updated ip_address",
     user_agent: "some updated user_agent"
   }
-  @invalid_attrs %{success: nil, metadata: nil, action: nil, session_id: nil, ip_address: nil, user_agent: nil}
+  @invalid_attrs %{
+    success: nil,
+    metadata: nil,
+    action: nil,
+    session_id: nil,
+    ip_address: nil,
+    user_agent: nil
+  }
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -61,7 +68,10 @@ defmodule WraftDocWeb.AccessLogControllerTest do
   describe "update access_log" do
     setup [:create_access_log]
 
-    test "renders access_log when data is valid", %{conn: conn, access_log: %AccessLog{id: id} = access_log} do
+    test "renders access_log when data is valid", %{
+      conn: conn,
+      access_log: %AccessLog{id: id} = access_log
+    } do
       conn = put(conn, ~p"/api/storage_access_logs/#{access_log}", access_log: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
@@ -91,9 +101,9 @@ defmodule WraftDocWeb.AccessLogControllerTest do
       conn = delete(conn, ~p"/api/storage_access_logs/#{access_log}")
       assert response(conn, 204)
 
-      assert_error_sent 404, fn ->
+      assert_error_sent(404, fn ->
         get(conn, ~p"/api/storage_access_logs/#{access_log}")
-      end
+      end)
     end
   end
 

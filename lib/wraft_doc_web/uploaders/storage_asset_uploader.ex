@@ -7,13 +7,17 @@ defmodule WraftDocWeb.StorageAssetUploader do
   alias WraftDoc.Workers.PDFMetadataWorker
 
   @versions [:original]
-  @max_file_size 10 * 1024 * 1024  # 10MB limit
+  # 10MB limit
+  @max_file_size 10 * 1024 * 1024
 
   def validate({file, _}) do
     file_extension = file.file_name |> Path.extname() |> String.downcase()
 
-    case Enum.member?(~w(.jpg .jpeg .png .pdf .doc .docx .xls .xlsx .ppt .pptx .txt .odt), file_extension) &&
-         file_size(file) <= @max_file_size do
+    case Enum.member?(
+           ~w(.jpg .jpeg .png .pdf .doc .docx .xls .xlsx .ppt .pptx .txt .odt),
+           file_extension
+         ) &&
+           file_size(file) <= @max_file_size do
       true -> :ok
       false -> {:error, "invalid file type or size"}
     end
