@@ -135,7 +135,13 @@ defmodule WraftDoc.Mixfile do
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       test: ["ecto.create --quiet", "ecto.migrate", "test"],
       swagger: ["phx.swagger.generate priv/static/swagger.json"],
-      "assets.deploy": ["esbuild default --minify", "phx.digest"]
+      "assets.deploy": ["esbuild default --minify", "phx.digest"],
+      quality: [
+        "format",
+        "format --check-formatted",
+        "compile --warnings-as-errors",
+        "credo --all"
+      ]
     ]
   end
 end
