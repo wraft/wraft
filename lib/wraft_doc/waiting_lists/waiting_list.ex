@@ -2,6 +2,16 @@ defimpl FunWithFlags.Actor, for: Map do
   def id(%{email: email}) do
     "email:#{email}"
   end
+
+  def id(%{id: id}) do
+    "org:#{id}"
+  end
+end
+
+defimpl FunWithFlags.Actor, for: WraftDoc.Enterprise.Organisation do
+  def id(%{id: id}) do
+    "org:#{id}"
+  end
 end
 
 defmodule WraftDoc.WaitingLists.WaitingList do
