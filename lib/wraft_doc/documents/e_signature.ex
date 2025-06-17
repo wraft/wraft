@@ -14,7 +14,7 @@ defmodule WraftDoc.Documents.ESignature do
 
   schema "e_signature" do
     field(:signed_file, :string)
-    field(:signature_type, Ecto.Enum, values: @signature_types, default: :digital)
+    field(:signature_type, Ecto.Enum, values: @signature_types, default: :electronic)
     field(:signature_data, :map, default: %{})
     field(:signature_position, :map, default: %{})
     field(:signature_date, :utc_datetime)
