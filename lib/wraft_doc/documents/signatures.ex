@@ -101,11 +101,14 @@ defmodule WraftDoc.Documents.Signatures do
       ),
       do: {:error, "Counterparty has already signed the document"}
 
+  def apply_signature_to_document(_, %Instance{signature_status: true}, _),
+    do: {:error, "Document is already fully signed"}
+
   def apply_signature_to_document(
         %CounterParty{},
         %Instance{
           instance_id: instance_id,
-          content_type: %{layout: %Layout{organisation_id: org_id} = _layout} = _content_type
+          organisation_id: org_id
         } = instance,
         true
       ) do
@@ -121,8 +124,8 @@ defmodule WraftDoc.Documents.Signatures do
     |> case do
       {:ok, _signed_pdf_path} ->
         Minio.upload_file(output_pdf_path)
+        finalize_signed_document(instance, output_pdf_path)
         cleanup_signed_pdf(output_pdf_path, instance_dir_path)
-        finalize_signed_document(instance)
         {:ok, output_pdf_path}
 
       {:error, reason} ->
@@ -132,7 +135,20 @@ defmodule WraftDoc.Documents.Signatures do
     end
   end
 
-  def apply_signature_to_document(_counterparty, _instance, false), do: {:ok, nil}
+  def apply_signature_to_document(
+        _counterparty,
+        %Instance{instance_id: instance_id, organisation_id: org_id} = instance,
+        false
+      ) do
+    instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
+
+    pdf_path =
+      instance
+      |> Documents.instance_updated?()
+      |> then(&Assets.pdf_file_path(instance, instance_dir_path, &1))
+
+    {:ok, pdf_path}
+  end
 
   defp cleanup_signed_pdf(output_pdf_path, instance_dir_path) do
     File.rm_rf(Path.join(File.cwd!(), instance_dir_path))
@@ -251,15 +267,15 @@ defmodule WraftDoc.Documents.Signatures do
   @doc """
   Check if all signatures for a document are complete
   """
-  @spec is_signed?(Instance.t()) :: boolean()
-  def is_signed?(%Instance{id: document_id}) do
+  @spec document_signed?(Instance.t()) :: boolean()
+  def document_signed?(%Instance{id: document_id}) do
     document_id
     |> get_document_pending_signatures()
     |> Enum.empty?()
   end
 
   # Finalize the document after all signatures are complete
-  defp finalize_signed_document(instance) do
+  defp finalize_signed_document(instance, signed_pdf_path) do
     # Logic to finalize the document after all signatures
     # This could include:
     # - Generating a final signed PDF , digitally signing, Visual signing already done, wholesome digital signing.
@@ -269,7 +285,7 @@ defmodule WraftDoc.Documents.Signatures do
     |> Repo.update()
 
     # - Sending notifications to all parties
-    notify_document_fully_signed(instance)
+    notify_document_fully_signed(instance, signed_pdf_path)
 
     {:ok, instance}
   end
@@ -349,22 +365,16 @@ defmodule WraftDoc.Documents.Signatures do
   @doc """
   Notify all parties when a document is fully signed
   """
-  @spec notify_document_fully_signed(%Instance{}) :: :ok
-  def notify_document_fully_signed(%Instance{
-        id: instance_id,
-        content_type: %{layout: %Layout{organisation_id: org_id} = _layout} = _content_type
-      }) do
+  @spec notify_document_fully_signed(%Instance{}, String.t()) :: :ok
+  def notify_document_fully_signed(%Instance{instance_id: instance_id}, signed_pdf_path) do
     counterparties = CounterParties.get_document_counterparties(instance_id)
-
-    document_pdf_binary =
-      Minio.download("organisations/#{org_id}/contents/#{instance_id}/signed_#{instance_id}.pdf")
 
     Enum.each(counterparties, fn %CounterParty{email: email} = counterparty ->
       %{
         email: email,
         instance_id: instance_id,
         signer_name: counterparty.name,
-        signed_document: document_pdf_binary,
+        signed_document: signed_pdf_path,
         document_name: "signed_#{instance_id}.pdf"
       }
       |> EmailWorker.new(queue: "mailer", tags: ["document_fully_signed"])

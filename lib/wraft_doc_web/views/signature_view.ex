@@ -54,10 +54,11 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
   def render("email.json", %{info: info}), do: %{info: info}
   def render("error.json", %{error: error}), do: %{error: error}
 
-  def render("signed_pdf.json", %{url: url}) do
+  def render("signed_pdf.json", %{url: url, sign_status: sign_status}) do
     %{
       signed_pdf_url: url,
-      message: "Visual signature applied successfully"
+      sign_status: sign_status,
+      message: "Signature applied successfully"
     }
   end
 

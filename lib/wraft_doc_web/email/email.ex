@@ -3,6 +3,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
   import Swoosh.Email
   alias Swoosh.Attachment
+  alias WraftDoc.Client.Minio
   alias WraftDocWeb.MJML
 
   def invite_email(org_name, user_name, email, token) do
@@ -223,13 +224,15 @@ defmodule WraftDocWeb.Mailer.Email do
         to_email,
         instance_id,
         name,
-        document_pdf_binary,
+        signed_pdf_path,
         instance_file_name
       ) do
     body = %{
       instance_id: instance_id,
       name: name
     }
+
+    document_pdf_binary = Minio.download(signed_pdf_path)
 
     new()
     |> to(to_email)
