@@ -6,7 +6,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
 
   # This plug ensures the guest user has access to the document
   plug WraftDocWeb.Plug.Authorized,
-    only: [:list_counterparties, :get_document_signatures, :apply_visual_signature]
+    only: [:list_counterparties, :get_document_signatures, :apply_signature]
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -497,7 +497,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @doc """
   Apply a visual signature to a PDF document
   """
-  swagger_path :apply_visual_signature do
+  swagger_path :apply_signature do
     post("/contents/{id}/append_signature")
     summary("Apply visual signature to PDF")
     description("API to apply a visual signature to a PDF document")
@@ -514,8 +514,8 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
-  @spec apply_visual_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def apply_visual_signature(conn, %{"id" => document_id} = params) do
+  @spec apply_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def apply_signature(conn, %{"id" => document_id} = params) do
     current_user = conn.assigns.current_user
     ip_address = conn.remote_ip |> :inet_parse.ntoa() |> to_string()
     params = Map.merge(params, %{"ip_address" => ip_address})
@@ -523,11 +523,12 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
          %CounterParty{} = counter_party <-
            CounterParties.get_counterparty_with_signatures(current_user, document_id),
-         {:ok, %{counterparty: _, signed_pdf_path: signed_pdf_path}} <-
-           Signatures.apply_signature_to_document(counter_party, instance, params),
+         {:ok, %{signed_pdf_path: signed_pdf_path}} <- {:ok, %{signed_pdf_path: nil}},
          {:ok, %CounterParty{} = _counter_party} <-
-           CounterParties.counter_party_sign(counter_party, params, signed_pdf_path) do
-      Signatures.check_document_signature_status(instance)
+           CounterParties.counter_party_sign(counter_party, params, signed_pdf_path),
+         signature_status <- Signatures.is_signed?(instance),
+         {:ok, signed_pdf_path} <-
+           Signatures.apply_signature_to_document(counter_party, instance, signature_status) do
       render(conn, "signed_pdf.json", url: Minio.generate_url(signed_pdf_path))
     end
   rescue

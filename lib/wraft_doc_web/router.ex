@@ -497,7 +497,7 @@ defmodule WraftDocWeb.Router do
         get("/counterparties", SignatureController, :list_counterparties)
         post("/request_signature", SignatureController, :request_signature)
         post("/generate_signature", SignatureController, :generate_signature)
-        post("/append_signature", SignatureController, :apply_visual_signature)
+        post("/append_signature", SignatureController, :apply_signature)
 
         scope "/signatures" do
           post("/", SignatureController, :create_signature)
