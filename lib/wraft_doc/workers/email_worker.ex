@@ -96,7 +96,7 @@ defmodule WraftDoc.Workers.EmailWorker do
         args: %{
           "email" => email,
           "instance_id" => instance_id,
-          "name" => name,
+          "signer_name" => name,
           "signed_document" => signed_document,
           "document_name" => document_name
         },
