@@ -1,69 +1,3 @@
-# defmodule WraftDoc.Storage.Assets do
-#   @moduledoc """
-#   Storage assets, repositories, and upload management - handles file uploads,
-#   storage assets, repositories, access logs, and sync jobs.
-#   """
-
-#   import Ecto.Query, warn: false
-#   alias WraftDoc.Repo
-#   alias WraftDoc.Storage.{Repository, StorageAsset, StorageItem, AccessLog, SyncJob}
-
-#   def list_storage_assets do
-#     Repo.all(StorageAsset)
-#   end
-
-#   def get_storage_asset!(id), do: Repo.get!(StorageAsset, id)
-
-#   def create_storage_asset(attrs \\ %{}) do
-#     %StorageAsset{}
-#     |> StorageAsset.changeset(attrs)
-#     |> Repo.insert()
-#   end
-
-#   def update_storage_asset(%StorageAsset{} = storage_asset, attrs) do
-#     storage_asset
-#     |> StorageAsset.changeset(attrs)
-#     |> Repo.update()
-#   end
-
-#   def delete_storage_asset(%StorageAsset{} = storage_asset) do
-#     Repo.delete(storage_asset)
-#   end
-
-#   def change_storage_asset(%StorageAsset{} = storage_asset, attrs \\ %{}) do
-#     StorageAsset.changeset(storage_asset, attrs)
-#   end
-
-#     def schedule_asset_deletion(storage_item_id) do
-#     %{storage_item_id: storage_item_id}
-#     |> WraftDoc.Workers.StorageAssetDeletionWorker.new()
-#     |> Oban.insert()
-#   end
-
-#    def get_storage_asset_by_org(id, organisation_id) do
-#     from(s in StorageAsset,
-#       where: s.id == ^id,
-#       where: s.organisation_id == ^organisation_id
-#     )
-#     |> Repo.one()
-#   end
-
-#   def list_storage_assets_by_organisation(organisation_id) do
-#     from(s in StorageAsset,
-#       where: s.organisation_id == ^organisation_id,
-#       order_by: [desc: s.inserted_at]
-#     )
-#     |> Repo.all()
-#   end
-
-#   def get_storage_assets_for_item(storage_item_id) do
-#     from(sa in StorageAsset,
-#       where: sa.storage_item_id == ^storage_item_id,
-#       order_by: [desc: sa.inserted_at]
-#     )
-#     |> Repo.all()
-#   end
-# end
 defmodule WraftDoc.Storage.StorageAssets do
   @moduledoc """
   Handles storage assets, repositories, access logs, and sync jobs.
@@ -77,12 +11,6 @@ defmodule WraftDoc.Storage.StorageAssets do
   alias WraftDoc.Repo
   alias WraftDoc.Storage.StorageAsset
   alias WraftDoc.Workers.StorageAssetDeletionWorker
-
-  # alias WraftDoc.Storage.AccessLog
-  # alias WraftDoc.Storage.Repository
-
-  # alias WraftDoc.Storage.StorageItem
-  # alias WraftDoc.Storage.SyncJob
 
   def list_storage_assets do
     Repo.all(StorageAsset)

@@ -4,6 +4,7 @@ defmodule WraftDoc.CloudImport.CloudAuthTokens do
   """
   import Ecto.Query, warn: false
   alias WraftDoc.Account.User
+  alias WraftDoc.CloudImport.CloudAuth
   alias WraftDoc.CloudImport.CloudAuthToken
   alias WraftDoc.Repo
 
@@ -71,5 +72,105 @@ defmodule WraftDoc.CloudImport.CloudAuthTokens do
     |> limit(1)
     |> select([t], t.value)
     |> Repo.one()
+  end
+
+  # Add these functions to your existing WraftDoc.CloudImport.CloudAuthTokens module
+
+  @doc """
+  Gets a valid token for the specified user and service.
+  Returns {:ok, token} if valid token exists, {:error, reason} otherwise.
+  """
+  @spec get_valid_token(User.t(), atom()) :: {:ok, map()} | {:error, String.t()}
+  def get_valid_token(user, service) do
+    case get_cloud_import_token(user, service) do
+      {:ok, token} ->
+        if token_still_valid?(token) do
+          {:ok, token}
+        else
+          # Try to refresh the token
+          case refresh_token_if_possible(user, service, token) do
+            {:ok, new_token} -> {:ok, new_token}
+            {:error, _} -> {:error, "Token expired and refresh failed"}
+          end
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  Revokes/deletes tokens for a specific user and service.
+  """
+  @spec revoke_tokens(User.t(), atom()) :: :ok | {:error, any()}
+  def revoke_tokens(user, service) do
+    case get_cloud_import_token(user, service) do
+      {:ok, _token} ->
+        # Delete the token from database
+        case delete_cloud_import_token(user, service) do
+          {:ok, _} -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+
+      {:error, _} ->
+        # Token doesn't exist, consider it already revoked
+        :ok
+    end
+  end
+
+  @doc """
+  Gets a cloud import token for a user and service.
+  This function should already exist in your module, but here's a reference implementation.
+  """
+  @spec get_cloud_import_token(User.t(), atom()) :: {:ok, map()} | {:error, String.t()}
+  def get_cloud_import_token(user, service) do
+    # This should query your database/storage for the token
+    # Example implementation:
+    case Repo.get_by(CloudImportToken, user_id: user.id, service: service) do
+      nil -> {:error, "Token not found"}
+      token -> {:ok, token}
+    end
+  end
+
+  @doc """
+  Deletes a cloud import token for a user and service.
+  """
+  @spec delete_cloud_import_token(User.t(), atom()) :: {:ok, any()} | {:error, any()}
+  def delete_cloud_import_token(user, service) do
+    case Repo.get_by(CloudImportToken, user_id: user.id, service: service) do
+      nil -> {:ok, :not_found}
+      token -> Repo.delete(token)
+    end
+  end
+
+  # Private helper functions
+
+  defp token_still_valid?(token) do
+    case token do
+      %{expires_at: nil} ->
+        true
+
+      %{expires_at: expires_at} when is_integer(expires_at) ->
+        current_time = System.system_time(:second)
+        # 5 minute buffer
+        expires_at > current_time + 300
+
+      _ ->
+        false
+    end
+  end
+
+  defp refresh_token_if_possible(user, service, %{refresh_token: refresh_token} = _token)
+       when is_binary(refresh_token) do
+    with {:ok, new_token_data} <- CloudAuth.refresh_token(service, refresh_token),
+         {:ok, saved_token} <- save_cloud_import_token(user, new_token_data, service) do
+      {:ok, saved_token}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp refresh_token_if_possible(_user, _service, _token) do
+    {:error, "No refresh token available"}
   end
 end

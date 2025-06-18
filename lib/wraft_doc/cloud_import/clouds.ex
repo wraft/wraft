@@ -13,7 +13,7 @@ defmodule WraftDoc.CloudImport.Clouds do
 
   use Tesla
   require Logger
-  alias WraftDoc.CloudImport.CloudImportAssets
+  alias WraftDoc.Storage.StorageItems
   alias WraftDoc.Workers.CloudImportWorker, as: Worker
 
   # Configuration for different cloud services
@@ -416,6 +416,470 @@ defmodule WraftDoc.CloudImport.Clouds do
     |> Oban.insert()
   end
 
+  # =============================================================================
+  # Folder Operations
+  # =============================================================================
+
+  @doc """
+  List all folders from the specified cloud service.
+
+  ## Parameters
+  - `service`: Atom representing the cloud service (:google_drive, :dropbox, :onedrive)
+  - `access_token`: OAuth2 access token
+  - `params`: Keyword list of options:
+    - For Google Drive:
+      - `:page_size`: Number of items per page (default: 100)
+      - `:parent_id`: Parent folder ID to list folders from (default: "root")
+    - For Dropbox:
+      - `:path`: Path to list folders from (default: "")
+      - `:recursive`: Boolean for recursive listing (default: false)
+    - For OneDrive:
+      - `:path`: Path to list folders from (default: "/drive/root/children")
+
+  ## Examples
+      iex> list_all_folders(:google_drive, "token123", page_size: 50, parent_id: "folder123")
+      {:ok, %{"files" => [%{"name" => "Documents", "id" => "folder456", ...}, ...]}}
+
+      iex> list_all_folders(:dropbox, "token123", path: "/work", recursive: true)
+      {:ok, %{"folders" => [%{"name" => "projects", "path_display" => "/work/projects", ...}, ...]}}
+
+      iex> list_all_folders(:onedrive, "token123", path: "/drive/items/folder123/children")
+      {:ok, %{"folders" => [%{"name" => "Reports", "id" => "folder789", ...}, ...]}}
+
+  ## Returns
+  - `{:ok, map()}`: Success with folders data
+  - `{:error, map()}`: Error with status and body information
+  """
+  @spec list_all_folders(atom(), String.t(), keyword()) ::
+          {:ok, map()} | {:error, map()}
+  def list_all_folders(:google_drive, access_token, params) do
+    opts = Map.to_list(params)
+    page_size = Keyword.get(opts, :page_size, 100)
+    parent_id = Keyword.get(opts, :parent_id, "root")
+
+    query =
+      if parent_id == "root" do
+        "mimeType = 'application/vnd.google-apps.folder'"
+      else
+        "mimeType = 'application/vnd.google-apps.folder' and '#{parent_id}' in parents"
+      end
+
+    fields =
+      "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, owners, parents)"
+
+    handle_response(
+      get(
+        "#{@google_drive_base}/files",
+        query: [
+          pageSize: page_size,
+          fields: fields,
+          q: query
+        ],
+        headers: auth_headers(:google_drive, access_token)
+      )
+    )
+  end
+
+  def list_all_folders(:dropbox, access_token, params) do
+    opts = Map.to_list(params)
+    path = Keyword.get(opts, :path, "")
+    recursive = Keyword.get(opts, :recursive, false)
+
+    body = %{
+      path: path,
+      recursive: recursive,
+      include_media_info: false,
+      include_deleted: false
+    }
+
+    post =
+      post("#{@dropbox_base}/files/list_folder", body,
+        headers: auth_headers(:dropbox, access_token)
+      )
+
+    case handle_response(post) do
+      {:ok, %{"entries" => entries}} ->
+        folders = Enum.filter(entries, &(&1[".tag"] == "folder"))
+        {:ok, %{"folders" => folders}}
+
+      error ->
+        error
+    end
+  end
+
+  def list_all_folders(:onedrive, access_token, params) do
+    opts = Map.to_list(params)
+    path = Keyword.get(opts, :path, "/drive/root/children")
+
+    get =
+      get("#{@onedrive_base}/me#{path}",
+        query: [
+          "$select": "id,name,createdDateTime,lastModifiedDateTime,folder",
+          "$filter": "folder ne null"
+        ],
+        headers: auth_headers(:onedrive, access_token)
+      )
+
+    case handle_response(get) do
+      {:ok, %{"value" => entries}} ->
+        folders = Enum.filter(entries, &Map.has_key?(&1, "folder"))
+        {:ok, %{"folders" => folders}}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
+  Search for folders across cloud services.
+
+  ## Parameters
+  - `service`: Atom representing the cloud service (:google_drive, :dropbox, :onedrive)
+  - `access_token`: OAuth2 access token
+  - `opts`: Keyword list of options:
+    - `:query`: Search query string (default: "")
+    - For Google Drive:
+      - `:page_size`: Number of items per page (default: 100)
+    - For Dropbox:
+      - `:max_results`: Maximum results to return (default: 100)
+    - For OneDrive:
+      - `:top`: Maximum results to return (default: 100)
+
+  ## Examples
+      iex> search_folders(:google_drive, "token123", query: "project", page_size: 50)
+      {:ok, %{"files" => [%{"name" => "Project Alpha", ...}, ...]}}
+
+      iex> search_folders(:dropbox, "token123", query: "documents", max_results: 25)
+      {:ok, %{"folders" => [%{"name" => "My Documents", ...}, ...]}}
+
+      iex> search_folders(:onedrive, "token123", query: "reports", top: 20)
+      {:ok, %{"folders" => [%{"name" => "Annual Reports", ...}, ...]}}
+
+  ## Returns
+  - `{:ok, map()}`: Success with matching folders
+  - `{:error, map()}`: Error with status and body information
+  """
+  @spec search_folders(atom(), String.t(), keyword()) ::
+          {:ok, list(map())} | {:error, map()}
+  def search_folders(:google_drive, access_token, opts) do
+    query = Keyword.get(opts, :query, "")
+    page_size = Keyword.get(opts, :page_size, 100)
+
+    search_query =
+      if query == "" do
+        "mimeType = 'application/vnd.google-apps.folder'"
+      else
+        "mimeType = 'application/vnd.google-apps.folder' and name contains '#{query}'"
+      end
+
+    fields =
+      "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, owners, parents)"
+
+    handle_response(
+      get(
+        "#{@google_drive_base}/files",
+        query: [
+          pageSize: page_size,
+          fields: fields,
+          q: search_query
+        ],
+        headers: auth_headers(:google_drive, access_token)
+      )
+    )
+  end
+
+  def search_folders(:dropbox, access_token, opts) do
+    query = Keyword.get(opts, :query, "")
+    max_results = Keyword.get(opts, :max_results, 100)
+
+    body = %{
+      query: query,
+      options: %{
+        path: "",
+        max_results: max_results,
+        file_status: "active",
+        filename_only: true
+      },
+      match_field_options: %{
+        include_highlights: false
+      }
+    }
+
+    post =
+      post("#{@dropbox_base}/files/search_v2", body,
+        headers: auth_headers(:dropbox, access_token)
+      )
+
+    case handle_response(post) do
+      {:ok, %{"matches" => matches}} ->
+        folders =
+          matches
+          |> Enum.filter(fn match ->
+            get_in(match, ["metadata", "metadata", ".tag"]) == "folder"
+          end)
+          |> Enum.map(fn match ->
+            get_in(match, ["metadata", "metadata"])
+          end)
+
+        {:ok, %{"folders" => folders}}
+
+      error ->
+        error
+    end
+  end
+
+  def search_folders(:onedrive, access_token, opts) do
+    query = Keyword.get(opts, :query, "")
+    top = Keyword.get(opts, :top, 100)
+
+    search_query =
+      if query == "" do
+        ""
+      else
+        "search(q='#{query}')"
+      end
+
+    endpoint =
+      if query == "" do
+        "#{@onedrive_base}/me/drive/root/children"
+      else
+        "#{@onedrive_base}/me/drive/#{search_query}"
+      end
+
+    get =
+      get(endpoint,
+        query: [
+          "$top": top,
+          "$select": "id,name,createdDateTime,lastModifiedDateTime,folder",
+          "$filter": "folder ne null"
+        ],
+        headers: auth_headers(:onedrive, access_token)
+      )
+
+    case handle_response(get) do
+      {:ok, %{"value" => entries}} ->
+        folders = Enum.filter(entries, &Map.has_key?(&1, "folder"))
+        {:ok, %{"folders" => folders}}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
+  List files within a specific folder from the specified cloud service.
+
+  ## Parameters
+  - `service`: Atom representing the cloud service (:google_drive, :dropbox, :onedrive)
+  - `access_token`: OAuth2 access token
+  - `folder_id_or_path`: Folder ID (Google Drive, OneDrive) or path (Dropbox)
+  - `params`: Keyword list of options:
+    - `:file_type`: Filter by file type ("all", "pdf", "image", "document") (default: "all")
+    - For Google Drive:
+      - `:page_size`: Number of items per page (default: 100)
+    - For Dropbox:
+      - `:recursive`: Boolean for recursive listing (default: false)
+      - `:limit`: Maximum results to return (default: 2000)
+    - For OneDrive:
+      - `:top`: Maximum results to return (default: 1000)
+
+  ## Examples
+      iex> list_files_in_folder(:google_drive, "token123", "folder123", file_type: "pdf", page_size: 50)
+      {:ok, %{"files" => [%{"name" => "report.pdf", "mimeType" => "application/pdf", ...}, ...]}}
+
+      iex> list_files_in_folder(:dropbox, "token123", "/documents", recursive: true, file_type: "image")
+      {:ok, %{"files" => [%{"name" => "photo.jpg", ...}, ...]}}
+
+      iex> list_files_in_folder(:onedrive, "token123", "folder456", file_type: "document", top: 100)
+      {:ok, %{"files" => [%{"name" => "document.docx", ...}, ...]}}
+
+  ## Returns
+  - `{:ok, map()}`: Success with files data
+  - `{:error, map()}`: Error with status and body information
+  """
+  @spec list_files_in_folder(atom(), String.t(), String.t(), keyword()) ::
+          {:ok, map()} | {:error, map()}
+  def list_files_in_folder(:google_drive, access_token, folder_id, params) do
+    opts = Map.to_list(params)
+    page_size = Keyword.get(opts, :page_size, 100)
+    file_type = Keyword.get(opts, :file_type, "all")
+
+    base_query = "'#{folder_id}' in parents and trashed = false"
+
+    query =
+      case file_type do
+        "pdf" ->
+          "#{base_query} and mimeType = 'application/pdf'"
+
+        "image" ->
+          "#{base_query} and (mimeType contains 'image/')"
+
+        "document" ->
+          "#{base_query} and (mimeType contains 'document' or mimeType contains 'text')"
+
+        _ ->
+          base_query
+      end
+
+    fields =
+      "nextPageToken, files(id, name, mimeType, description, size, createdTime, modifiedTime, owners, parents, fileExtension, webViewLink)"
+
+    handle_response(
+      get(
+        "#{@google_drive_base}/files",
+        query: [
+          pageSize: page_size,
+          fields: fields,
+          q: query
+        ],
+        headers: auth_headers(:google_drive, access_token)
+      )
+    )
+  end
+
+  def list_files_in_folder(:dropbox, access_token, folder_path, params) do
+    opts = Map.to_list(params)
+    recursive = Keyword.get(opts, :recursive, false)
+    file_type = Keyword.get(opts, :file_type, "all")
+    limit = Keyword.get(opts, :limit, 2000)
+
+    body = %{
+      path: folder_path,
+      recursive: recursive,
+      include_media_info: true,
+      include_deleted: false,
+      limit: limit
+    }
+
+    post =
+      post("#{@dropbox_base}/files/list_folder", body,
+        headers: auth_headers(:dropbox, access_token)
+      )
+
+    case handle_response(post) do
+      {:ok, %{"entries" => entries}} ->
+        files =
+          entries
+          |> Enum.filter(&(&1[".tag"] == "file"))
+          |> filter_files_by_type(file_type)
+
+        {:ok, %{"files" => files}}
+
+      error ->
+        error
+    end
+  end
+
+  def list_files_in_folder(:onedrive, access_token, folder_id, params) do
+    opts = Map.to_list(params)
+    top = Keyword.get(opts, :top, 1000)
+    file_type = Keyword.get(opts, :file_type, "all")
+
+    filter_query =
+      case file_type do
+        "pdf" ->
+          "file ne null and endswith(name,'.pdf')"
+
+        "image" ->
+          "file ne null and (endswith(name,'.jpg') or endswith(name,'.jpeg') or endswith(name,'.png') or endswith(name,'.gif') or endswith(name,'.bmp'))"
+
+        "document" ->
+          "file ne null and (endswith(name,'.doc') or endswith(name,'.docx') or endswith(name,'.txt'))"
+
+        _ ->
+          "file ne null"
+      end
+
+    get =
+      get("#{@onedrive_base}/me/drive/items/#{folder_id}/children",
+        query: [
+          "$top": top,
+          "$select": "id,name,size,lastModifiedDateTime,webUrl,file,createdDateTime",
+          "$filter": filter_query
+        ],
+        headers: auth_headers(:onedrive, access_token)
+      )
+
+    case handle_response(get) do
+      {:ok, %{"value" => entries}} ->
+        files = Enum.filter(entries, &Map.has_key?(&1, "file"))
+        {:ok, %{"files" => files}}
+
+      error ->
+        error
+    end
+  end
+
+  @doc """
+  Get folder metadata from the specified cloud service.
+
+  ## Parameters
+  - `service`: Atom representing the cloud service (:google_drive, :dropbox, :onedrive)
+  - `access_token`: OAuth2 access token
+  - `folder_id_or_path`: Folder ID (Google Drive, OneDrive) or path (Dropbox)
+
+  ## Examples
+      iex> get_folder_metadata(:google_drive, "token123", "folder123")
+      {:ok, %{"id" => "folder123", "name" => "Documents", "mimeType" => "application/vnd.google-apps.folder", ...}}
+
+      iex> get_folder_metadata(:dropbox, "token123", "/work/projects")
+      {:ok, %{"name" => "projects", "path_display" => "/work/projects", ".tag" => "folder", ...}}
+
+      iex> get_folder_metadata(:onedrive, "token123", "folder456")
+      {:ok, %{"id" => "folder456", "name" => "Reports", "folder" => %{}, ...}}
+
+  ## Returns
+  - `{:ok, map()}`: Success with folder metadata
+  - `{:error, map()}`: Error with status and body information
+  """
+  @spec get_folder_metadata(atom(), String.t(), String.t()) ::
+          {:ok, map()} | {:error, map()}
+  def get_folder_metadata(:google_drive, access_token, folder_id) do
+    fields = "id,name,mimeType,createdTime,modifiedTime,owners,parents,description"
+
+    handle_response(
+      get("#{@google_drive_base}/files/#{folder_id}",
+        query: [fields: fields],
+        headers: auth_headers(:google_drive, access_token)
+      )
+    )
+  end
+
+  def get_folder_metadata(:dropbox, access_token, folder_path) do
+    body = %{path: folder_path}
+
+    handle_response(
+      post("#{@dropbox_base}/files/get_metadata", body,
+        headers: auth_headers(:dropbox, access_token)
+      )
+    )
+  end
+
+  def get_folder_metadata(:onedrive, access_token, folder_id) do
+    handle_response(
+      get("#{@onedrive_base}/me/drive/items/#{folder_id}",
+        query: ["$select": "id,name,createdDateTime,lastModifiedDateTime,folder,parentReference"],
+        headers: auth_headers(:onedrive, access_token)
+      )
+    )
+  end
+
+  @spec filter_files_by_type(list(map()), String.t()) :: list(map())
+  defp filter_files_by_type(files, "all"), do: files
+
+  defp filter_files_by_type(files, file_type) do
+    Enum.filter(files, fn file ->
+      name = String.downcase(file["name"] || "")
+
+      case file_type do
+        "pdf" -> String.ends_with?(name, ".pdf")
+        "image" -> String.ends_with?(name, [".jpg", ".jpeg", ".png", ".gif", ".bmp"])
+        "document" -> String.ends_with?(name, [".doc", ".docx", ".txt", ".rtf"])
+        _ -> true
+      end
+    end)
+  end
+
   # ============================================================================
   # Private Functions
   # ============================================================================
@@ -546,6 +1010,31 @@ defmodule WraftDoc.CloudImport.Clouds do
     end
   end
 
+  def save_files_to_storage_items(service, file) do
+    attrs = %{
+      sync_source: "#{Atom.to_string(service)}",
+      external_id: file["id"],
+      name: file["name"],
+      path: file["pathDisplay"] || "",
+      materalized_path: file["pathDisplay"] || "",
+      mime_type: file["mimeType"],
+      metadata: %{description: file["description"] || ""},
+      size: parse_size(file["size"]),
+      modified_time: file["modifiedTime"],
+      external_metadata: %{
+        owner: file["owners"],
+        created_time: file["createdTime"],
+        parents: file["parents"]
+      },
+      file_extension: file["fileExtension"]
+    }
+
+    case StorageItems.create_storage_item(attrs) do
+      {:ok, _} -> :ok
+      error -> error
+    end
+  end
+
   defp save_files_to_db(:google_drive, file) do
     attrs = %{
       cloud_service: "google_drive",
@@ -561,7 +1050,7 @@ defmodule WraftDoc.CloudImport.Clouds do
       file_extension: file["fileExtension"]
     }
 
-    case CloudImportAssets.create_cloud_service_assets(attrs) do
+    case StorageItems.create_storage_item(attrs) do
       {:ok, _} -> :ok
       error -> error
     end
@@ -583,7 +1072,7 @@ defmodule WraftDoc.CloudImport.Clouds do
       file_extension: get_file_extension(file["name"])
     }
 
-    case CloudImportAssets.create_cloud_service_assets(attrs) do
+    case StorageItems.create_storage_item(attrs) do
       {:ok, _} -> :ok
       error -> error
     end
@@ -605,7 +1094,7 @@ defmodule WraftDoc.CloudImport.Clouds do
       file_extension: get_file_extension(file["name"])
     }
 
-    case CloudImportAssets.create_cloud_service_assets(attrs) do
+    case StorageItems.create_storage_item(attrs) do
       {:ok, _} -> :ok
       error -> error
     end

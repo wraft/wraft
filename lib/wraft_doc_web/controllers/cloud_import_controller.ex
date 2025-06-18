@@ -260,4 +260,151 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
       })
     end
   end
+
+  # Google Drive folder endpoints
+  @doc """
+  Lists all folders in Google Drive.
+  """
+  def list_gdrive_folders(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_oauth),
+         {:ok, folders} <- Clouds.list_all_folders(:google_drive, token, params) do
+      json(conn, %{"status" => "success", "folders" => folders["files"]})
+    end
+  end
+
+  @doc """
+  Searches for folders in Google Drive based on provided parameters.
+  """
+  def search_gdrive_folders(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_oauth),
+         {:ok, results} <- Clouds.search_folders(:google_drive, token, params) do
+      json(conn, %{"status" => "success", "folders" => results["files"]})
+    end
+  end
+
+  @doc """
+  Lists all files within a specific Google Drive folder.
+  """
+  def list_gdrive_folder_files(conn, %{"folder_id" => folder_id} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_oauth),
+         {:ok, files} <- Clouds.list_files_in_folder(:google_drive, token, folder_id, params) do
+      json(conn, %{"status" => "success", "files" => files["files"]})
+    end
+  end
+
+  @doc """
+  Retrieves metadata for a specific folder in Google Drive.
+  """
+  def get_gdrive_folder(conn, %{"folder_id" => folder_id}) do
+    current_user = conn.assigns[:current_user]
+
+    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :google_oauth),
+         {:ok, metadata} <- Clouds.get_folder_metadata(:google_drive, token, folder_id) do
+      json(conn, %{"status" => "success", "folder_metadata" => metadata})
+    end
+  end
+
+  # Dropbox folder endpoints
+  @doc """
+  Lists all folders in Dropbox.
+  """
+  def list_dropbox_folders(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :dropbox),
+         {:ok, folders} <- Clouds.list_all_folders(:dropbox, token, params) do
+      json(conn, %{"status" => "success", "folders" => folders["folders"]})
+    end
+  end
+
+  @doc """
+  Searches for folders in Dropbox based on provided parameters.
+  """
+  def search_dropbox_folders(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :dropbox),
+         {:ok, results} <- Clouds.search_folders(:dropbox, token, params) do
+      json(conn, %{"status" => "success", "folders" => results["folders"]})
+    end
+  end
+
+  @doc """
+  Lists all files within a specific Dropbox folder.
+  """
+  def list_dropbox_folder_files(conn, %{"folder_path" => folder_path} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :dropbox),
+         {:ok, files} <- Clouds.list_files_in_folder(:dropbox, token, folder_path, params) do
+      json(conn, %{"status" => "success", "files" => files["files"]})
+    end
+  end
+
+  @doc """
+  Retrieves metadata for a specific folder in Dropbox.
+  """
+  def get_dropbox_folder(conn, %{"folder_path" => folder_path}) do
+    current_user = conn.assigns[:current_user]
+
+    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :dropbox),
+         {:ok, metadata} <- Clouds.get_folder_metadata(:dropbox, token, folder_path) do
+      json(conn, %{"status" => "success", "folder_metadata" => metadata})
+    end
+  end
+
+  # OneDrive folder endpoints
+  @doc """
+  Lists all folders in OneDrive.
+  """
+  def list_onedrive_folders(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+         {:ok, folders} <- Clouds.list_all_folders(:onedrive, token, params) do
+      json(conn, %{"status" => "success", "folders" => folders["folders"]})
+    end
+  end
+
+  @doc """
+  Searches for folders in OneDrive based on provided parameters.
+  """
+  def search_onedrive_folders(conn, params) do
+    current_user = conn.assigns[:current_user]
+
+    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+         {:ok, results} <- Clouds.search_folders(:onedrive, token, params) do
+      json(conn, %{"status" => "success", "folders" => results["folders"]})
+    end
+  end
+
+  @doc """
+  Lists all files within a specific OneDrive folder.
+  """
+  def list_onedrive_folder_files(conn, %{"folder_id" => folder_id} = params) do
+    current_user = conn.assigns[:current_user]
+
+    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+         {:ok, files} <- Clouds.list_files_in_folder(:onedrive, token, folder_id, params) do
+      json(conn, %{"status" => "success", "files" => files["files"]})
+    end
+  end
+
+  @doc """
+  Retrieves metadata for a specific folder in OneDrive.
+  """
+  def get_onedrive_folder(conn, %{"folder_id" => folder_id}) do
+    current_user = conn.assigns[:current_user]
+
+    with token when not is_nil(token) <- AuthTokens.get_latest_token(current_user, :onedrive),
+         {:ok, metadata} <- Clouds.get_folder_metadata(:onedrive, token, folder_id) do
+      json(conn, %{"status" => "success", "folder_metadata" => metadata})
+    end
+  end
 end

@@ -163,7 +163,12 @@ defmodule WraftDoc.Mixfile do
       {:mdex, "~> 0.3.3"},
       {:file_type, "~> 0.1.0"},
       {:rustler, "~> 0.32.0", runtime: true},
-      {:oauth2, "~> 2.0"}
+      {:oauth2, "~> 2.0"},
+      {:assent, "~> 0.3.0"},
+      # HTTP client for Assent
+      {:mint, "~> 1.0"},
+      # Certificate store
+      {:castore, "~> 1.0"}
     ]
   end
 

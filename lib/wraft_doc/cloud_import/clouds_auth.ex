@@ -1,6 +1,6 @@
 defmodule WraftDoc.CloudImport.CloudAuth do
   @moduledoc """
-  Handles OAuth2 authentication for Google Drive, Dropbox, and OneDrive.
+  Handles OAuth2 authentication for Google Drive, Dropbox, and OneDrive using Assent.
 
   Provides functions for:
   - Generating authorization URLs
@@ -9,23 +9,24 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   """
 
   require Logger
-  alias OAuth2.AccessToken
-  alias OAuth2.Client
+
+  alias Assent.Strategy.Google
+  alias Assent.Strategy.OAuth2
 
   @scopes %{
     # Google Drive scopes
-    google_drive: "https://www.googleapis.com/auth/drive",
-    google_drive_readonly: "https://www.googleapis.com/auth/drive.readonly",
-    google_drive_file: "https://www.googleapis.com/auth/drive.file",
-    google_drive_metadata: "https://www.googleapis.com/auth/drive.metadata.readonly",
+    google_drive: ["https://www.googleapis.com/auth/drive"],
+    google_drive_readonly: ["https://www.googleapis.com/auth/drive.readonly"],
+    google_drive_file: ["https://www.googleapis.com/auth/drive.file"],
+    google_drive_metadata: ["https://www.googleapis.com/auth/drive.metadata.readonly"],
 
     # Dropbox scopes
-    dropbox_files: "files.metadata.read files.content.read",
-    dropbox_files_write: "files.metadata.write files.content.write",
+    dropbox_files: ["files.metadata.read", "files.content.read"],
+    dropbox_files_write: ["files.metadata.write", "files.content.write"],
 
-    # OneDrive scopes (Microsoft Graph)
-    onedrive_files: "Files.ReadWrite.All offline_access",
-    onedrive_files_readonly: "Files.Read.All offline_access"
+    # OneDrive scopes
+    onedrive_files: ["Files.ReadWrite.All", "offline_access"],
+    onedrive_files_readonly: ["Files.Read.All", "offline_access"]
   }
 
   @default_scopes %{
@@ -35,206 +36,205 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   }
 
   @doc """
-  Returns a configured OAuth2 client for the specified service.
+  Generates an authorization URL for the specified service.
   """
-  @spec client(atom()) :: Client.t()
-  def client(:google_drive) do
-    config = get_config(:google_drive)
-
-    Client.new(
-      strategy: OAuth2.Strategy.AuthCode,
-      client_id: config[:client_id],
-      client_secret: config[:client_secret],
-      redirect_uri: config[:redirect_uri],
-      site: "https://accounts.google.com",
-      authorize_url: "/o/oauth2/v2/auth",
-      token_url: "/o/oauth2/token"
-    )
-  end
-
-  def client(:dropbox) do
-    config = get_config(:dropbox)
-
-    Client.new(
-      strategy: OAuth2.Strategy.AuthCode,
-      client_id: config[:client_id],
-      client_secret: config[:client_secret],
-      redirect_uri: config[:redirect_uri],
-      site: "https://www.dropbox.com",
-      authorize_url: "/oauth2/authorize",
-      token_url: "https://api.dropboxapi.com/oauth2/token"
-    )
-  end
-
-  def client(:onedrive) do
-    config = get_config(:onedrive)
-    tenant_id = config[:tenant_id] || "common"
-
-    OAuth2.Client.new(
-      strategy: OAuth2.Strategy.AuthCode,
-      client_id: config[:client_id],
-      client_secret: config[:client_secret],
-      redirect_uri: config[:redirect_uri],
-      site: "https://login.microsoftonline.com",
-      authorize_url: "/#{tenant_id}/oauth2/v2.0/authorize",
-      token_url: "/#{tenant_id}/oauth2/v2.0/token"
-    )
-  end
-
-  @doc """
-  Generates an authorization URL for the specified service and scope.
-  """
-  @spec authorize_url!(atom(), atom() | String.t() | nil) :: String.t() | {:error, String.t()}
+  @spec authorize_url!(atom(), atom() | nil) :: {:ok, String.t()} | {:error, String.t()}
   def authorize_url!(service, scope \\ nil)
 
   def authorize_url!(:google_drive, scope) do
-    scope_string = process_scope(scope || @default_scopes.google_drive)
+    config = get_google_config(scope)
 
-    client = client(:google_drive)
+    case Google.authorize_url(config) do
+      {:ok, %{url: url}} ->
+        {:ok, url}
 
-    Client.authorize_url!(
-      client,
-      scope: scope_string,
-      access_type: "offline",
-      prompt: "consent",
-      include_granted_scopes: "true"
-    )
-  rescue
-    e ->
-      Logger.error("Google Drive authorization URL error: #{inspect(e)}")
-      {:error, "Failed to generate authorization URL"}
+      {:error, error} ->
+        Logger.error("Google Drive authorization URL error: #{inspect(error)}")
+        {:error, "Failed to generate Google Drive authorization URL"}
+    end
   end
 
   def authorize_url!(:dropbox, scope) do
-    scope_string = process_scope(scope || @default_scopes.dropbox)
+    config = get_dropbox_config(scope)
 
-    client = client(:dropbox)
+    case OAuth2.authorize_url(config) do
+      {:ok, %{url: url}} ->
+        {:ok, url}
 
-    Client.authorize_url!(
-      client,
-      scope: scope_string,
-      token_access_type: "offline"
-    )
-  rescue
-    e ->
-      Logger.error("Dropbox authorization URL error: #{inspect(e)}")
-      {:error, "Failed to generate authorization URL"}
+      {:error, error} ->
+        Logger.error("Dropbox authorization URL error: #{inspect(error)}")
+        {:error, "Failed to generate Dropbox authorization URL"}
+    end
   end
 
   def authorize_url!(:onedrive, scope) do
-    scope_string = process_scope(scope || @default_scopes.onedrive)
-    config = get_config(:onedrive)
-    tenant_id = config[:tenant_id] || "common"
-    state = "onedrive_auth_#{:rand.uniform(1_000_000)}"
+    config = get_onedrive_config(scope)
 
-    query_params = %{
-      client_id: config[:client_id],
-      response_type: "code",
-      redirect_uri: config[:redirect_uri],
-      scope: scope_string,
-      state: state
-    }
+    case OAuth2.authorize_url(config) do
+      {:ok, %{url: url}} ->
+        {:ok, url}
 
-    "https://login.microsoftonline.com/#{tenant_id}/oauth2/v2.0/authorize?" <>
-      URI.encode_query(query_params)
-  rescue
-    e ->
-      Logger.error("OneDrive authorization URL error: #{inspect(e)}")
-      {:error, "Failed to generate authorization URL"}
+      {:error, error} ->
+        Logger.error("OneDrive authorization URL error: #{inspect(error)}")
+        {:error, "Failed to generate OneDrive authorization URL"}
+    end
   end
 
   @doc """
-  Exchanges authorization code for access token using a unified approach.
+  Exchanges authorization code for access token.
   """
+  @spec get_token(atom(), String.t()) :: {:ok, map()} | {:error, String.t()}
+  def get_token(:google_drive, code) do
+    config = get_google_config()
 
-  def get_token(service, code) when service in [:google_drive, :dropbox, :onedrive] do
-    execute_token_request(service, code: code)
+    case Google.callback(config, %{"code" => code}) do
+      {:ok, %{user: _user, token: token}} ->
+        {:ok, normalize_token(token)}
+
+      {:error, error} ->
+        Logger.error("Google Drive token exchange error: #{inspect(error)}")
+        {:error, "Failed to exchange Google Drive authorization code"}
+    end
   end
 
-  @doc """
-  Exchanges authorization code for Google Drive access token.
-  """
+  def get_token(:dropbox, code) do
+    config = get_dropbox_config()
 
-  def google_drive_token(code), do: get_token(:google_drive, code)
+    case OAuth2.callback(config, %{"code" => code}) do
+      {:ok, %{user: _user, token: token}} ->
+        {:ok, normalize_token(token)}
 
-  @doc """
-  Exchanges authorization code for Dropbox access token.
-  """
+      {:error, error} ->
+        Logger.error("Dropbox token exchange error: #{inspect(error)}")
+        {:error, "Failed to exchange Dropbox authorization code"}
+    end
+  end
 
-  def dropbox_token(code), do: get_token(:dropbox, code)
+  def get_token(:onedrive, code) do
+    config = get_onedrive_config()
 
-  @doc """
-  Exchanges authorization code for OneDrive access token.
-  """
+    case OAuth2.callback(config, %{"code" => code}) do
+      {:ok, %{user: _user, token: token}} ->
+        {:ok, normalize_token(token)}
 
-  def onedrive_token(code), do: get_token(:onedrive, code)
+      {:error, error} ->
+        Logger.error("OneDrive token exchange error: #{inspect(error)}")
+        {:error, "Failed to exchange OneDrive authorization code"}
+    end
+  end
 
   @doc """
   Refreshes an access token for any service.
   """
+  @spec refresh_token(atom(), String.t()) :: {:ok, map()} | {:error, String.t()}
+  def refresh_token(:google_drive, refresh_token) do
+    config = get_google_config()
 
-  def refresh_token(service, refresh_token)
-      when service in [:google_drive, :dropbox, :onedrive] do
-    execute_token_request(service, refresh_token: refresh_token)
+    case OAuth2.refresh_access_token(config, %{"refresh_token" => refresh_token}) do
+      {:ok, token} ->
+        {:ok, normalize_token(token)}
+
+      {:error, error} ->
+        Logger.error("Google Drive token refresh error: #{inspect(error)}")
+        {:error, "Failed to refresh Google Drive token"}
+    end
+  end
+
+  def refresh_token(:dropbox, refresh_token) do
+    config = get_dropbox_config()
+
+    case OAuth2.refresh_access_token(config, %{"refresh_token" => refresh_token}) do
+      {:ok, token} ->
+        {:ok, normalize_token(token)}
+
+      {:error, error} ->
+        Logger.error("Dropbox token refresh error: #{inspect(error)}")
+        {:error, "Failed to refresh Dropbox token"}
+    end
+  end
+
+  def refresh_token(:onedrive, refresh_token) do
+    config = get_onedrive_config()
+
+    case OAuth2.refresh_access_token(config, %{"refresh_token" => refresh_token}) do
+      {:ok, token} ->
+        {:ok, normalize_token(token)}
+
+      {:error, error} ->
+        Logger.error("OneDrive token refresh error: #{inspect(error)}")
+        {:error, "Failed to refresh OneDrive token"}
+    end
   end
 
   @doc """
   Validates if a token is still valid (not expired).
   """
+  @spec token_valid?(map()) :: boolean()
+  def token_valid?(%{"expires_at" => nil}), do: true
 
-  def token_valid?(%AccessToken{expires_at: nil}), do: true
-
-  def token_valid?(%AccessToken{expires_at: expires_at}) do
+  def token_valid?(%{"expires_at" => expires_at}) when is_integer(expires_at) do
     current_time = System.system_time(:second)
     expires_at > current_time
   end
 
-  @doc """
-  Extracts token information in a standardized format.
-  """
+  def token_valid?(_), do: false
 
-  def extract_token_info(%AccessToken{} = token) do
-    %{
-      access_token: token.access_token,
-      refresh_token: token.refresh_token,
-      expires_at: token.expires_at,
-      token_type: token.token_type
-    }
-  end
-
-  @doc """
-  Extracts and validates an access token from token data.
-  """
-
-  def get_access_token(_service, %{"access_token" => token})
-      when is_binary(token) and token != "" do
-    {:ok, String.trim(token)}
-  end
-
-  def get_access_token(_service, %{access_token: token}) when is_binary(token) and token != "" do
-    {:ok, String.trim(token)}
-  end
-
-  def get_access_token(service, _) do
-    Logger.error("Invalid or missing access token for #{service}")
-    {:error, "Invalid or missing access token"}
-  end
+  # Convenience functions for backward compatibility
+  def google_drive_token(code), do: get_token(:google_drive, code)
+  def dropbox_token(code), do: get_token(:dropbox, code)
+  def onedrive_token(code), do: get_token(:onedrive, code)
 
   # Private functions
 
-  defp get_config(:google_drive) do
-    validate_config(Application.fetch_env!(:wraft_doc, :google_drive), :google_drive)
+  defp get_google_config(scope \\ nil) do
+    config = get_base_config(:google_drive)
+    scopes = get_scopes(:google_drive, scope)
+    Keyword.put(config, :scope, Enum.join(scopes, " "))
   end
 
-  defp get_config(:dropbox) do
-    validate_config(Application.fetch_env!(:wraft_doc, :dropbox), :dropbox)
+  defp get_dropbox_config(scope \\ nil) do
+    config = get_base_config(:dropbox)
+    scopes = get_scopes(:dropbox, scope)
+
+    config
+    |> Keyword.put(:scope, Enum.join(scopes, " "))
+    |> Keyword.put(:strategy, OAuth2)
+    |> Keyword.put(:base_url, "https://www.dropbox.com")
+    |> Keyword.put(:authorize_url, "/oauth2/authorize")
+    |> Keyword.put(:token_url, "https://api.dropboxapi.com/oauth2/token")
+    |> Keyword.put(:authorization_params, token_access_type: "offline")
   end
 
-  defp get_config(:onedrive) do
-    validate_config(Application.fetch_env!(:wraft_doc, :onedrive), :onedrive)
+  defp get_onedrive_config(scope \\ nil) do
+    config = get_base_config(:onedrive)
+    scopes = get_scopes(:onedrive, scope)
+    tenant_id = config[:tenant_id] || "common"
+
+    config
+    |> Keyword.put(:scope, Enum.join(scopes, " "))
+    |> Keyword.put(:strategy, OAuth2)
+    |> Keyword.put(:base_url, "https://login.microsoftonline.com")
+    |> Keyword.put(:authorize_url, "/#{tenant_id}/oauth2/v2.0/authorize")
+    |> Keyword.put(:token_url, "/#{tenant_id}/oauth2/v2.0/token")
   end
 
-  defp validate_config(config, service) do
+  defp get_base_config(service) do
+    app_config = Application.fetch_env!(:wraft_doc, service)
+    validate_config!(app_config, service)
+
+    [
+      client_id: app_config[:client_id],
+      client_secret: app_config[:client_secret],
+      redirect_uri: app_config[:redirect_uri]
+    ]
+  end
+
+  defp get_scopes(service, scope_key) do
+    scope_key = scope_key || @default_scopes[service]
+    @scopes[scope_key] || @scopes[@default_scopes[service]]
+  end
+
+  defp validate_config!(config, service) do
     required_keys = [:client_id, :client_secret, :redirect_uri]
 
     Enum.each(required_keys, fn key ->
@@ -242,109 +242,31 @@ defmodule WraftDoc.CloudImport.CloudAuth do
         raise "Missing required configuration for #{service}: #{key}"
       end
     end)
-
-    config
   end
 
-  defp execute_token_request(service, params) do
-    with {:ok, client} <- create_client_safely(service),
-         {:ok, token_response} <- get_token_safely(client, params) do
-      {:ok, parse_token_response(token_response)}
-    else
-      {:error, reason} -> {:error, reason}
-    end
-  end
-
-  defp create_client_safely(service) do
-    {:ok, client(service)}
-  rescue
-    e ->
-      Logger.error("Failed to create client for #{service}: #{inspect(e)}")
-      {:error, "Client creation failed"}
-  end
-
-  defp get_token_safely(client, params) do
-    case Client.get_token(client, params) do
-      {:ok, %Client{token: %AccessToken{} = token}} ->
-        {:ok, token}
-
-      {:ok, %Client{token: token}} ->
-        Logger.info("Parsing non-AccessToken response")
-        {:ok, token}
-
-      {:error, %OAuth2.Error{reason: reason}} ->
-        Logger.error("OAuth2 error: #{inspect(reason)}")
-        {:error, "OAuth2 error: #{format_error_reason(reason)}"}
-
-      {:error, %OAuth2.Response{status_code: status, body: body}} ->
-        Logger.error("HTTP error: #{status} - #{inspect(body)}")
-        {:error, "HTTP error: #{status} - #{format_response_body(body)}"}
-
-      {:error, reason} ->
-        Logger.error("Token exchange failed: #{inspect(reason)}")
-        {:error, "Token exchange failed: #{format_error_reason(reason)}"}
-
-      other ->
-        Logger.warning("Unexpected response format: #{inspect(other)}")
-        {:error, "Unexpected response format"}
-    end
-  end
-
-  defp format_error_reason(reason) when is_binary(reason), do: reason
-  defp format_error_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
-  defp format_error_reason(reason), do: inspect(reason)
-
-  defp format_response_body(body) when is_binary(body) do
-    case String.length(body) do
-      len when len > 200 -> String.slice(body, 0, 200) <> "..."
-      _ -> body
-    end
-  end
-
-  defp format_response_body(body), do: inspect(body)
-
-  defp parse_token_response(%AccessToken{access_token: access_token} = token)
-       when is_binary(access_token) do
-    # Handle case where access_token is a JSON string
-    case Jason.decode(access_token) do
-      {:ok, parsed_token} ->
-        %{
-          access_token: parsed_token["access_token"],
-          refresh_token: parsed_token["refresh_token"],
-          expires_at: calculate_expires_at(parsed_token["expires_in"]),
-          token_type: parsed_token["token_type"] || "Bearer",
-          scope: parsed_token["scope"]
-        }
-
-      {:error, _} ->
-        # If it's not JSON, treat as regular token
-        %{
-          access_token: token.access_token,
-          refresh_token: token.refresh_token,
-          expires_at: token.expires_at,
-          token_type: token.token_type || "Bearer",
-          scope: get_in(token.other_params, ["scope"])
-        }
-    end
-  end
-
-  defp parse_token_response(%AccessToken{} = token) do
+  defp normalize_token(
+         %{
+           "access_token" => access_token,
+           "refresh_token" => refresh_token,
+           "expires_in" => expires_in
+         } = token
+       ) do
     %{
-      access_token: token.access_token,
-      refresh_token: token.refresh_token,
-      expires_at: token.expires_at,
-      token_type: token.token_type || "Bearer",
-      scope: get_in(token.other_params, ["scope"])
+      "access_token" => access_token,
+      "refresh_token" => refresh_token,
+      "expires_at" => calculate_expires_at(expires_in),
+      "token_type" => Map.get(token, "token_type", "Bearer"),
+      "scope" => Map.get(token, "scope")
     }
   end
 
-  defp parse_token_response(token) when is_map(token) do
+  defp normalize_token(token) when is_map(token) do
     %{
-      access_token: token["access_token"],
-      refresh_token: token["refresh_token"],
-      expires_at: token["expires_at"] || calculate_expires_at(token["expires_in"]),
-      token_type: token["token_type"] || "Bearer",
-      scope: token["scope"]
+      "access_token" => token["access_token"],
+      "refresh_token" => token["refresh_token"],
+      "expires_at" => token["expires_at"] || calculate_expires_at(token["expires_in"]),
+      "token_type" => token["token_type"] || "Bearer",
+      "scope" => token["scope"]
     }
   end
 
@@ -361,20 +283,5 @@ defmodule WraftDoc.CloudImport.CloudAuth do
       {int_seconds, _} -> calculate_expires_at(int_seconds)
       :error -> nil
     end
-  end
-
-  defp process_scope(scope) when is_atom(scope) do
-    Map.get(@scopes, scope) ||
-      raise "Unknown scope: #{scope}"
-  end
-
-  defp process_scope(scope) when is_binary(scope), do: scope
-
-  defp process_scope(scopes) when is_list(scopes) do
-    Enum.map_join(scopes, " ", &process_scope/1)
-  end
-
-  defp process_scope(_) do
-    @scopes[@default_scopes.google_drive]
   end
 end

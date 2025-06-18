@@ -124,17 +124,17 @@ config :ex_typesense,
 config :wraft_doc, :google_drive,
   client_id: System.get_env("GOOGLE_CLIENT_ID"),
   client_secret: System.get_env("GOOGLE_CLIENT_SECRET"),
-  redirect_uri: System.get_env("GOOGLE_REDIRECT_URI")
+  redirect_uri: System.get_env("REDIRECT_URI")
 
 config :wraft_doc, :dropbox,
   client_id: System.get_env("DROPBOX_CLIENT_ID"),
   client_secret: System.get_env("DROPBOX_CLIENT_SECRET"),
-  redirect_uri: System.get_env("DROPBOX_REDIRECT_URI")
+  redirect_uri: System.get_env("REDIRECT_URI")
 
 config :wraft_doc, :onedrive,
   client_id: System.get_env("ONEDRIVE_CLIENT_ID"),
   client_secret: System.get_env("ONEDRIVE_CLIENT_SECRET"),
-  redirect_uri: System.get_env("ONEDRIVE_REDIRECT_URI"),
+  redirect_uri: System.get_env("REDIRECT_URI"),
   tenant_id: System.get_env("ONEDRIVE_TENANT_ID")
 
 config :wraft_doc, WraftDocWeb.Mailer, api_key: System.get_env("SENDGRID_API_KEY")
