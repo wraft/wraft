@@ -41,6 +41,7 @@ defmodule WraftDoc.Documents.Signatures do
   - `key_alias`: Alias for the key in the keystore (optional, defaults to `@key_alias`)
   - `signature_reason`: Reason for the signature (optional, defaults to `@signature_reason`)
   - `signature_location`: Location of the signature (optional, defaults to `@signature_location`)
+  - `certificate_path`: Path to the certificate file (optional, defaults to `@certificate_path`)
 
 
   ## Returns
@@ -48,9 +49,9 @@ defmodule WraftDoc.Documents.Signatures do
   - `{:ok, output_path}`: If successful
   - `{:error, reason}`: If the operation fails
   """
-  @spec apply_digital_signature(String.t(), String.t()) ::
+  @spec apply_digital_signature(String.t(), String.t(), String.t()) ::
           {:ok, String.t()} | {:error, String.t()}
-  def apply_digital_signature(pdf_path, output_pdf_path) do
+  def apply_digital_signature(pdf_path, output_pdf_path, certificate_path) do
     args = [
       "-cp",
       @visual_signer_jar,
@@ -68,7 +69,9 @@ defmodule WraftDoc.Documents.Signatures do
       "--reason",
       @signature_reason,
       "--location",
-      @signature_location
+      @signature_location,
+      "--certificate",
+      certificate_path
     ]
 
     case System.cmd("java", args, stderr_to_stdout: true) do
@@ -107,6 +110,7 @@ defmodule WraftDoc.Documents.Signatures do
   def apply_signature_to_document(
         %CounterParty{},
         %Instance{
+          id: document_id,
           instance_id: instance_id,
           organisation_id: org_id
         } = instance,
@@ -119,8 +123,16 @@ defmodule WraftDoc.Documents.Signatures do
     output_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
     pdf_path = get_or_download_pdf(output_pdf_path, instance, instance_dir_path)
 
+    # Generate certificate
+    certificate_md_path = Path.join(base_local_dir_path, "certificate.md")
+    certificate_pdf_path = Path.join(base_local_dir_path, "certificate.pdf")
+    signers_content = prepare_markdown(document_id, base_local_dir_path)
+    File.write!(certificate_md_path, signers_content)
+
+    generate_certificate(certificate_md_path, certificate_pdf_path)
+
     pdf_path
-    |> apply_digital_signature(output_pdf_path)
+    |> apply_digital_signature(output_pdf_path, certificate_pdf_path)
     |> case do
       {:ok, _signed_pdf_path} ->
         Minio.upload_file(output_pdf_path)
@@ -182,17 +194,101 @@ defmodule WraftDoc.Documents.Signatures do
   end
 
   @doc """
-  Get a signature by counterparty ID
+  Generate a PDF certificate from a markdown file using Pandoc
   """
-  @spec get_signature_by_counterparty(CounterParty.t()) :: ESignature.t() | nil
-  def get_signature_by_counterparty(%CounterParty{id: counter_party_id}) do
-    ESignature
-    |> where([s], s.counter_party_id == ^counter_party_id)
-    |> preload([:user, :counter_party, content: [:creator]])
-    |> Repo.one()
+  @spec generate_certificate(String.t(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  def generate_certificate(certificate_markdown_path, certificate_pdf_path) do
+    args = [
+      "#{certificate_markdown_path}",
+      "-o",
+      "#{certificate_pdf_path}",
+      "--template=#{File.cwd!() <> "/priv/keystore/certificate.html"}",
+      "--pdf-engine=wkhtmltopdf"
+    ]
+
+    case System.cmd("pandoc", args, stderr_to_stdout: true) do
+      {output, 0} ->
+        Logger.info("Certificate generated successfully: #{output}")
+        {:ok, output}
+
+      {error_output, exit_code} ->
+        Logger.error("Failed to generate certificate: #{error_output}")
+        {:error, exit_code}
+    end
   end
 
-  def get_signature_by_counterparty(_), do: nil
+  @doc """
+  Prepare markdown content for certificate generation
+  """
+  @spec prepare_markdown(String.t(), String.t()) :: String.t()
+  def prepare_markdown(<<_::288>> = document_id, base_local_dir_path) do
+    counterparties = CounterParties.get_document_counterparties(document_id)
+
+    signers_yaml = """
+    ---
+    signers:
+    #{format_signers(counterparties, base_local_dir_path)}
+    ---
+    """
+
+    signers_yaml
+  end
+
+  defp format_signers(counterparties, base_local_dir_path) do
+    counterparties
+    |> Enum.with_index(1)
+    |> Enum.map_join("\n", &format_signer(&1, base_local_dir_path))
+  end
+
+  defp format_signer({counterparty, index}, base_local_dir_path) do
+    signature_image_path = download_signature_image(counterparty, base_local_dir_path)
+
+    """
+      - index: #{index}
+        name: #{counterparty.name}
+        email: #{counterparty.email}
+        auth_level: Email
+        counterparty_id: #{counterparty.id}
+        ip_address: #{counterparty.signature_ip || "Not available"}
+        device: #{counterparty.device || "Not available"}
+        signed_at: "#{format_datetime(counterparty.signature_date)}"
+        reason: #{@signature_reason}
+        signature_image: "#{signature_image_path}"
+    """
+  end
+
+  defp download_signature_image(%CounterParty{signature_image: nil}, _), do: nil
+
+  defp download_signature_image(%CounterParty{user_id: user_id}, base_local_dir_path) do
+    File.mkdir_p!(Path.join(base_local_dir_path, "signature/#{user_id}"))
+    signature_local_path = Path.join(base_local_dir_path, "signature/#{user_id}/signature.png")
+
+    "users/#{user_id}/signatures/signature.png"
+    |> Minio.download()
+    |> then(&File.write!(signature_local_path, &1))
+    |> case do
+      :ok -> signature_local_path
+      _ -> nil
+    end
+  end
+
+  defp format_datetime(nil), do: "Not available"
+
+  defp format_datetime(datetime) do
+    datetime
+    |> DateTime.shift_zone!("Etc/UTC")
+    |> Calendar.strftime("%Y-%m-%d %I:%M:%S %p (UTC)")
+  end
+
+  @doc """
+  Delete all signatures associated with a counterparty
+  """
+  @spec delete_signatures(CounterParty.t()) :: {non_neg_integer(), nil}
+  def delete_signatures(%CounterParty{id: counter_party_id}) do
+    ESignature
+    |> where([s], s.counter_party_id == ^counter_party_id)
+    |> Repo.delete_all()
+  end
 
   @doc """
   Get a signature by Signature ID & Document ID
@@ -256,12 +352,6 @@ defmodule WraftDoc.Documents.Signatures do
     |> preload([:content, :user, :organisation, :counter_party])
     |> Repo.all()
   end
-
-  @doc """
-  Delete a signature by ID
-  """
-  @spec delete_signature(ESignature.t()) :: {:ok, ESignature.t()} | {:error, Ecto.Changeset.t()}
-  def delete_signature(%ESignature{} = signature), do: Repo.delete(signature)
 
   # TODO need to implement this function
   @doc """
@@ -366,8 +456,11 @@ defmodule WraftDoc.Documents.Signatures do
   Notify all parties when a document is fully signed
   """
   @spec notify_document_fully_signed(%Instance{}, String.t()) :: :ok
-  def notify_document_fully_signed(%Instance{instance_id: instance_id}, signed_pdf_path) do
-    counterparties = CounterParties.get_document_counterparties(instance_id)
+  def notify_document_fully_signed(
+        %Instance{id: document_id, instance_id: instance_id},
+        signed_pdf_path
+      ) do
+    counterparties = CounterParties.get_document_counterparties(document_id)
 
     Enum.each(counterparties, fn %CounterParty{email: email} = counterparty ->
       %{
