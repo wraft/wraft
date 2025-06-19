@@ -110,15 +110,15 @@ defmodule WraftDoc.CounterParties do
   @doc """
   Update counterparty status to signed
   """
-  @spec counter_party_sign(CounterParty.t(), map(), String.t()) ::
+  @spec counter_party_sign(CounterParty.t(), map()) ::
           {:ok, CounterParty.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
   def counter_party_sign(
         counter_party,
         %{
           "ip_address" => ip_address,
+          "device" => device,
           "signature_image" => signature_image
-        },
-        signed_file
+        }
       ) do
     counter_party
     |> CounterParty.sign_changeset(%{
@@ -126,7 +126,7 @@ defmodule WraftDoc.CounterParties do
       signature_date: DateTime.utc_now(),
       signature_ip: ip_address,
       signature_image: signature_image,
-      signed_file: signed_file
+      device: device
     })
     |> Repo.update()
   end

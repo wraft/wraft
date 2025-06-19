@@ -384,9 +384,8 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     with %Instance{} = _instance <- Documents.show_instance(document_id, current_user),
          %CounterParty{} = counter_party <-
            CounterParties.get_counterparty(document_id, counter_party_id),
-         %ESignature{} = signature <- Signatures.get_signature_by_counterparty(counter_party),
-         {:ok, %ESignature{} = deleted_signature} <- Signatures.delete_signature(signature) do
-      render(conn, "signature.json", signature: deleted_signature)
+         {_, nil} <- Signatures.delete_signatures(counter_party) do
+      send_resp(conn, 200, Jason.encode!(%{info: "Signature request revoked"}))
     end
   end
 
@@ -517,18 +516,18 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   @spec apply_signature(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def apply_signature(conn, %{"id" => document_id} = params) do
     current_user = conn.assigns.current_user
+    device = conn |> get_req_header("user-agent") |> List.first()
     ip_address = conn.remote_ip |> :inet_parse.ntoa() |> to_string()
-    params = Map.merge(params, %{"ip_address" => ip_address})
+    params = Map.merge(params, %{"ip_address" => ip_address, "device" => device})
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
          %CounterParty{} = counter_party <-
            CounterParties.get_counterparty_with_signatures(current_user, document_id),
-         {:ok, %{signed_pdf_path: signed_pdf_path}} <- {:ok, %{signed_pdf_path: nil}},
          {:ok, %CounterParty{} = _counter_party} <-
-           CounterParties.counter_party_sign(counter_party, params, signed_pdf_path),
+           CounterParties.counter_party_sign(counter_party, params),
          signature_status <- Signatures.document_signed?(instance),
          {:ok, signed_pdf_path} <-
-           Signatures.apply_signature_to_document(counter_party, instance, signature_status) do
+           Signatures.apply_signature_to_document(counter_party, instance, true) do
       render(conn, "signed_pdf.json",
         url: Minio.generate_url(signed_pdf_path),
         sign_status: signature_status

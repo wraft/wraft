@@ -13,6 +13,7 @@ defmodule WraftDoc.CounterParties.CounterParty do
     field(:signature_status, Ecto.Enum, values: @signature_status, default: :pending)
     field(:signature_date, :utc_datetime)
     field(:signature_ip, :string)
+    field(:device, :string)
     field(:signature_image, WraftDocWeb.SignatureUploader.Type)
     field(:signed_file, :string)
     field(:color_rgb, :map)
@@ -52,9 +53,9 @@ defmodule WraftDoc.CounterParties.CounterParty do
 
   def sign_changeset(counter_parties, attrs) do
     counter_parties
-    |> cast(attrs, [:signature_status, :signature_date, :signature_ip, :signed_file])
+    |> cast(attrs, [:signature_status, :signature_date, :signature_ip, :signed_file, :device])
     |> cast_attachments(attrs, [:signature_image])
-    |> validate_required([:signature_status, :signature_date, :signature_image])
+    |> validate_required([:signature_status, :signature_date, :signature_image, :device])
   end
 
   defp validate_color_rgb(changeset) do
