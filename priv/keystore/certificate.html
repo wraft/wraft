@@ -4,100 +4,137 @@ $if(signers)$
 <head>
   <meta charset="UTF-8">
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      font-family: "Segoe UI", Tahoma, sans-serif;
-      width: 100%;
-    }
-
     body {
-      padding: 0;
       margin: 0;
+      padding: 32px;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
     }
 
     h1 {
-      font-size: 24px;
-      margin: 24px 0;
+      font-size: 26px;
       text-align: center;
+      margin-bottom: 40px;
+      color: #222;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      border: 1px solid #ddd;
-      table-layout: fixed;
+    .signer-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      margin-bottom: 32px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
-    th {
-      background-color: #f5f5f5;
-      text-align: left;
-      padding: 12px;
-      border: 1px solid #ccc;
+    .signer-header {
+      font-size: 18px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 8px;
+    }
+
+    .section {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
       font-size: 14px;
     }
 
-    td {
-      border: 1px solid #ccc;
-      padding: 16px;
-      vertical-align: top;
-      font-size: 13px;
+    .info-block {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .signature-box {
-      border: 2px solid #71c154;
+    .label {
+      font-weight: 600;
+      color: #555;
+    }
+
+    .value {
+      color: #333;
+    }
+
+    .signature-image {
+      border: 1px solid #d3e7c8;
       padding: 6px;
-      display: inline-block;
-    }
-
-    .signature-img {
-      max-height: 60px;
-    }
-
-    .info-label {
-      font-weight: bold;
-      display: inline-block;
-      margin-right: 6px;
+      max-height: 70px;
+      max-width: 200px;
     }
 
     .sub-info {
-      color: #555;
-      margin-top: 4px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    @media (max-width: 768px) {
+      .section {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
 
-  <h1>Signing Certificate</h1>
+  <h1>Signature Record Summary</h1>
 
   $for(signers)$
-  <div class="signer-section" style="margin-bottom: 30px;">
-    <h2 style="font-size: 18px; color: #444; margin: 20px 0 10px;">Signer #$it.index$</h2>
-    <table>
-      <tr>
-        <th>Signer Events</th>
-        <th>Signature</th>
-        <th>Details</th>
-      </tr>
-      <tr>
-        <td>
-          <div><strong>$it.name$</strong><br/>$it.email$</div>
-          <div class="sub-info">Authentication Level: $it.auth_level$</div>
-        </td>
-        <td>
-          <div class="signature-box">
-            <img src="$it.signature_image$" alt="Signature" class="signature-img" />
-          </div>
-          <div class="sub-info"><span class="info-label">Signature ID:</span>$it.counterparty_id$</div>
-          <div class="sub-info"><span class="info-label">IP Address:</span>$it.ip_address$</div>
-          <div class="sub-info"><span class="info-label">Device:</span>${it.device}</div>
-        </td>
-        <td>
-          <div class="sub-info"><span class="info-label">Signed:</span>${it.signed_at}</div>
-          <div class="sub-info"><span class="info-label">Reason:</span>${it.reason}</div>
-        </td>
-      </tr>
-    </table>
+  <div class="signer-card">
+    <div class="signer-header">Signer #$it.index$</div>
+    <div class="section">
+
+      <!-- Signer Info -->
+      <div class="info-block">
+        <div>
+          <span class="label">Name:</span>
+          <div class="value">$it.name$</div>
+        </div>
+        <div>
+          <span class="label">Email:</span>
+          <div class="value">$it.email$</div>
+        </div>
+        <div>
+          <span class="label">Authentication:</span>
+          <div class="value">$it.auth_level$</div>
+        </div>
+      </div>
+
+      <!-- Signature Block -->
+      <div class="info-block">
+        <div>
+          <img src="$it.signature_image$" alt="Signature" class="signature-image" />
+        </div>
+        <div>
+          <span class="label">Signature ID:</span>
+          <div class="value">$it.counterparty_id$</div>
+        </div>
+        <div>
+          <span class="label">IP Address:</span>
+          <div class="value">$it.ip_address$</div>
+        </div>
+        <div>
+          <span class="label">Device:</span>
+          <div class="value">${it.device}</div>
+        </div>
+      </div>
+
+      <!-- Event Metadata -->
+      <div class="info-block">
+        <div>
+          <span class="label">Signed At:</span>
+          <div class="value">${it.signed_at}</div>
+        </div>
+        <div>
+          <span class="label">Reason:</span>
+          <div class="value">${it.reason}</div>
+        </div>
+      </div>
+
+    </div>
   </div>
   $endfor$
 
