@@ -126,7 +126,8 @@ defmodule WraftDoc.Documents.Signatures do
     # Generate certificate
     certificate_md_path = Path.join(base_local_dir_path, "certificate.md")
     certificate_pdf_path = Path.join(base_local_dir_path, "certificate.pdf")
-    signers_content = prepare_markdown(document_id, base_local_dir_path)
+    counterparties = CounterParties.get_document_counterparties(document_id)
+    signers_content = prepare_markdown(base_local_dir_path, counterparties)
     File.write!(certificate_md_path, signers_content)
 
     generate_certificate(certificate_md_path, certificate_pdf_path)
@@ -136,6 +137,12 @@ defmodule WraftDoc.Documents.Signatures do
     |> case do
       {:ok, _signed_pdf_path} ->
         Minio.upload_file(output_pdf_path)
+
+        # Update the counterparty with the signed file
+        Enum.each(counterparties, fn counterparty ->
+          CounterParties.counter_party_sign(counterparty, %{signed_file: output_pdf_path})
+        end)
+
         finalize_signed_document(instance, output_pdf_path)
         cleanup_signed_pdf(output_pdf_path, instance_dir_path)
         {:ok, output_pdf_path}
@@ -220,10 +227,8 @@ defmodule WraftDoc.Documents.Signatures do
   @doc """
   Prepare markdown content for certificate generation
   """
-  @spec prepare_markdown(String.t(), String.t()) :: String.t()
-  def prepare_markdown(<<_::288>> = document_id, base_local_dir_path) do
-    counterparties = CounterParties.get_document_counterparties(document_id)
-
+  @spec prepare_markdown(String.t(), [CounterParty.t()]) :: String.t()
+  def prepare_markdown(base_local_dir_path, counterparties) do
     signers_yaml = """
     ---
     signers:

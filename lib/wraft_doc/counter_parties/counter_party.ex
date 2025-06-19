@@ -58,6 +58,12 @@ defmodule WraftDoc.CounterParties.CounterParty do
     |> validate_required([:signature_status, :signature_date, :signature_image, :device])
   end
 
+  def update_counterparty(counterparty, attrs) do
+    counterparty
+    |> cast(attrs, [:signed_file])
+    |> validate_required([:signed_file])
+  end
+
   defp validate_color_rgb(changeset) do
     changeset
     |> get_field(:color_rgb)

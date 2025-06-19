@@ -131,6 +131,12 @@ defmodule WraftDoc.CounterParties do
     |> Repo.update()
   end
 
+  def counter_party_sign(counter_party, %{signed_file: signed_file}) do
+    counter_party
+    |> CounterParty.update_counterparty(%{signed_file: signed_file})
+    |> Repo.update()
+  end
+
   def counter_party_sign(_, _), do: {:error, :invalid_data}
 
   def sign_document(%CounterParty{signature_status: :pending}, _),

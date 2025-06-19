@@ -27,36 +27,40 @@ $if(signers)$
       padding: 24px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 12px;
     }
 
     .signer-header {
       font-size: 18px;
       font-weight: 600;
-      color: #555;
+      color: #444;
       margin-bottom: 8px;
     }
 
-    .section {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 20px;
-      font-size: 14px;
+    .section-title {
+      font-weight: bold;
+      font-size: 15px;
+      margin: 16px 0 6px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 4px;
+      color: #444;
     }
 
-    .info-block {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .kv-pair {
+      margin-bottom: 8px;
     }
 
-    .label {
+    .kv-label {
+      display: inline-block;
+      width: 120px;
       font-weight: 600;
-      color: #555;
+      color: #333;
     }
 
-    .value {
-      color: #333;
+    .kv-value {
+      display: inline-block;
+      color: #555;
+      word-break: break-word;
     }
 
     .signature-image {
@@ -64,16 +68,18 @@ $if(signers)$
       padding: 6px;
       max-height: 70px;
       max-width: 200px;
-    }
-
-    .sub-info {
-      font-size: 13px;
-      color: #666;
+      background-color: #fafafa;
+      margin: 8px 0;
     }
 
     @media (max-width: 768px) {
-      .section {
-        grid-template-columns: 1fr;
+      .kv-label {
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      .kv-pair {
+        margin-bottom: 12px;
       }
     }
   </style>
@@ -85,56 +91,25 @@ $if(signers)$
   $for(signers)$
   <div class="signer-card">
     <div class="signer-header">Signer #$it.index$</div>
-    <div class="section">
 
-      <!-- Signer Info -->
-      <div class="info-block">
-        <div>
-          <span class="label">Name:</span>
-          <div class="value">$it.name$</div>
-        </div>
-        <div>
-          <span class="label">Email:</span>
-          <div class="value">$it.email$</div>
-        </div>
-        <div>
-          <span class="label">Authentication:</span>
-          <div class="value">$it.auth_level$</div>
-        </div>
-      </div>
+    <div class="section-title">Identity</div>
+    <div class="kv-pair"><span class="kv-label">Name:</span><span class="kv-value">$it.name$</span></div>
+    <div class="kv-pair"><span class="kv-label">Email:</span><span class="kv-value">$it.email$</span></div>
+    <div class="kv-pair"><span class="kv-label">Authentication:</span><span class="kv-value">$it.auth_level$</span></div>
 
-      <!-- Signature Block -->
-      <div class="info-block">
-        <div>
-          <img src="$it.signature_image$" alt="Signature" class="signature-image" />
-        </div>
-        <div>
-          <span class="label">Signature ID:</span>
-          <div class="value">$it.counterparty_id$</div>
-        </div>
-        <div>
-          <span class="label">IP Address:</span>
-          <div class="value">$it.ip_address$</div>
-        </div>
-        <div>
-          <span class="label">Device:</span>
-          <div class="value">${it.device}</div>
-        </div>
-      </div>
-
-      <!-- Event Metadata -->
-      <div class="info-block">
-        <div>
-          <span class="label">Signed At:</span>
-          <div class="value">${it.signed_at}</div>
-        </div>
-        <div>
-          <span class="label">Reason:</span>
-          <div class="value">${it.reason}</div>
-        </div>
-      </div>
-
+    <div class="section-title">Signature</div>
+    <div class="kv-pair">
+      <img src="$it.signature_image$" alt="Signature" class="signature-image" />
     </div>
+    <div class="kv-pair"><span class="kv-label">Signature ID:</span><span class="kv-value">$it.counterparty_id$</span></div>
+
+    <div class="section-title">Technical Details</div>
+    <div class="kv-pair"><span class="kv-label">IP Address:</span><span class="kv-value">$it.ip_address$</span></div>
+    <div class="kv-pair"><span class="kv-label">Device:</span><span class="kv-value">${it.device}</span></div>
+
+    <div class="section-title">Event Info</div>
+    <div class="kv-pair"><span class="kv-label">Signed At:</span><span class="kv-value">${it.signed_at}</span></div>
+    <div class="kv-pair"><span class="kv-label">Reason:</span><span class="kv-value">${it.reason}</span></div>
   </div>
   $endfor$
 
