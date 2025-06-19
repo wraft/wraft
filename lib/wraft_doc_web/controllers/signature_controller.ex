@@ -527,7 +527,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
            CounterParties.counter_party_sign(counter_party, params),
          signature_status <- Signatures.document_signed?(instance),
          {:ok, signed_pdf_path} <-
-           Signatures.apply_signature_to_document(counter_party, instance, true) do
+           Signatures.apply_signature_to_document(counter_party, instance, signature_status) do
       render(conn, "signed_pdf.json",
         url: Minio.generate_url(signed_pdf_path),
         sign_status: signature_status
