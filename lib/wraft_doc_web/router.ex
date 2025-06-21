@@ -508,6 +508,13 @@ defmodule WraftDocWeb.Router do
         SignatureController,
         :assign_counter_party
       )
+
+      # AI/ML Management
+      scope "/ai" do
+        resources("/models", ModelController, except: [:new, :edit])
+        resources("/prompts", PromptsController, except: [:new, :edit])
+        post("/generate", AiToolController, :execute)
+      end
     end
   end
 

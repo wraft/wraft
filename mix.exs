@@ -106,6 +106,7 @@ defmodule WraftDoc.Mixfile do
       {:poison, "~> 6.0", override: true},
       {:postgrex, ">= 0.0.0"},
       {:rustler, "~> 0.34", runtime: true},
+      {:oauth2, "~> 2.0"},
       {:scrivener_ecto, "~> 3.1"},
       {:scrivener_list, "~> 2.1"},
       {:sentry, "~> 10.8"},
@@ -117,7 +118,11 @@ defmodule WraftDoc.Mixfile do
       {:unzip, "~> 0.12"},
       {:waffle, "~> 1.1"},
       {:waffle_ecto, "~> 0.0.12"},
-      {:y_ex, "~> 0.6"}
+      {:y_ex, "~> 0.6"},
+      {:jido, "~> 1.1.0-rc.2"},
+      {:jido_ai, "~> 0.5.2"},
+      {:instructor, github: "thmsmlr/instructor_ex", override: true},
+      {:cloak_ecto, "~> 1.3.0"}
     ]
   end
 
