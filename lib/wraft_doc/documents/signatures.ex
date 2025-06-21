@@ -328,7 +328,7 @@ defmodule WraftDoc.Documents.Signatures do
       "#{certificate_markdown_path}",
       "-o",
       "#{certificate_pdf_path}",
-      "--template=#{File.cwd!() <> "/priv/keystore/certificate.html"}",
+      "--template=#{File.cwd!() <> "/priv/signature/certificate.html"}",
       "--pdf-engine=wkhtmltopdf"
     ]
 
