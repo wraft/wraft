@@ -627,7 +627,7 @@ defmodule WraftDoc.Documents.Signatures do
         cp in CounterParty,
         where: cp.content_id == ^document_id
       ),
-      set: [signature_status: :pending]
+      set: [signature_status: :pending, signature_image: nil]
     )
 
     # Reset the document instance sign status to false
