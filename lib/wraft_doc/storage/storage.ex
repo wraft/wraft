@@ -222,52 +222,66 @@ defmodule WraftDoc.Storage do
     end
   end
 
-  def build_breadcrumbs_from_path(%StorageItem{} = current_item, organisation_id) do
-    path = current_item.materialized_path || current_item.path
+  def build_breadcrumbs_from_path(
+        %StorageItem{materialized_path: materialized_path, path: path} = _current_item,
+        organisation_id
+      ) do
+    path = materialized_path || path
 
     if path && String.trim(path) != "" do
-      # Split the path into segments
-      segments =
-        path
-        |> String.trim()
-        |> String.trim_leading("/")
-        |> String.trim_trailing("/")
-        |> String.split("/")
-        |> Enum.reject(&(&1 == "" or is_nil(&1)))
-
-      # Build breadcrumbs for each segment except the last one (current folder)
-      segments
-      # Remove current folder from breadcrumbs
-      |> Enum.drop(-1)
-      |> Enum.with_index()
-      |> Enum.map(fn {segment, index} ->
-        # Build the path up to this segment
-        segment_path = "/" <> Enum.join(Enum.take(segments, index + 1), "/")
-
-        # Try to find the actual storage item for this path segment
-        case StorageItems.find_storage_item_by_path(segment_path, organisation_id) do
-          %StorageItem{} = item ->
-            %{
-              id: item.id,
-              name: get_meaningful_name(item),
-              is_folder: item.mime_type == "inode/directory",
-              path: item.path,
-              materialized_path: item.materialized_path
-            }
-
-          nil ->
-            # Create virtual breadcrumb if no storage item found
-            %{
-              id: nil,
-              name: segment,
-              is_folder: true,
-              path: segment_path,
-              materialized_path: segment_path
-            }
-        end
-      end)
+      path
+      |> parse_path_segments()
+      |> build_breadcrumb_items(organisation_id)
     else
       []
+    end
+  end
+
+  defp parse_path_segments(path) do
+    path
+    |> String.trim()
+    |> String.trim_leading("/")
+    |> String.trim_trailing("/")
+    |> String.split("/")
+    |> Enum.reject(&(&1 == "" or is_nil(&1)))
+    |> Enum.drop(-1)
+    |> Enum.with_index()
+  end
+
+  defp build_breadcrumb_items(indexed_segments, organisation_id) do
+    Enum.map(indexed_segments, fn {segment, index} ->
+      segment_path = build_segment_path(indexed_segments, index)
+      build_breadcrumb_item(segment, segment_path, organisation_id)
+    end)
+  end
+
+  defp build_segment_path(indexed_segments, index) do
+    segments = Enum.map(indexed_segments, &elem(&1, 0))
+    "/" <> Enum.join(Enum.take(segments, index + 1), "/")
+  end
+
+  defp build_breadcrumb_item(segment, segment_path, organisation_id) do
+    segment_path
+    |> StorageItems.find_storage_item_by_path(organisation_id)
+    |> case do
+      %StorageItem{id: id, mime_type: mime_type, path: path, materialized_path: materialized_path} =
+          item ->
+        %{
+          id: id,
+          name: get_meaningful_name(item),
+          is_folder: mime_type == "inode/directory",
+          path: path,
+          materialized_path: materialized_path
+        }
+
+      nil ->
+        %{
+          id: nil,
+          name: segment,
+          is_folder: true,
+          path: segment_path,
+          materialized_path: segment_path
+        }
     end
   end
 

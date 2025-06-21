@@ -487,47 +487,20 @@ defmodule WraftDocWeb.Router do
         only: [:create, :index, :show, :update, :delete]
       )
 
-      # Signature routes
-      post("/contents/:id/add_counterparty", SignatureController, :add_counterparty)
-      post("/contents/:id/signatures", SignatureController, :create_signature)
-      get("/contents/:id/signatures/:signature_id", SignatureController, :get_signature)
-      get("/contents/:id/counterparties", SignatureController, :list_counterparties)
-      post("/contents/:id/request_signature", SignatureController, :request_signature)
-      get("/contents/:id/signatures", SignatureController, :get_document_signatures)
-      delete("/contents/:id/signatures/:counter_party_id", SignatureController, :revoke_signature)
-      # Temporary route
-      post("/contents/:id/generate_signature", SignatureController, :generate_signature)
-      put("/contents/:id/signatures/:signature_id", SignatureController, :update_signature)
+      # AI/ML Management
+      scope "/ai" do
+        resources("/models", ModelController, except: [:new, :edit])
+        resources("/prompts", PromptsController, except: [:new, :edit])
+        post("/generate", AiToolController, :execute)
+      end
 
-      post("/contents/:id/append_signature", SignatureController, :apply_visual_signature)
+      resources("/sync_jobs", SyncJobController, except: [:new, :edit])
+      resources("/access_logs", AccessLogController, except: [:new, :edit])
 
-      post(
-        "/contents/:id/signatures/:signature_id/assign",
-        SignatureController,
-        :assign_counter_party
-      )
-
-      # Repositories
-      resources "/repositories", RepositoryController, except: [:new, :edit]
-
-      scope "/storage" do
-        resources "/items", StorageItemController, except: [:new, :edit]
-        # list_storage_items
-        get "/items/:id/breadcrumbs", StorageItemController, :breadcrumbs
-        get "/items/navigation", StorageItemController, :navigation
-
-        # Storage assets with file upload
-        resources "/assets", StorageAssetController, except: [:new, :edit]
-        post "/assets/upload", StorageAssetController, :upload
-        post "/folder", StorageItemController, :create_folder
-
-        resources "/sync_jobs", SyncJobController, except: [:new, :edit]
-        resources "/access_logs", AccessLogController, except: [:new, :edit]
-
-        # Storage items routes
-        resources "/items", StorageItemController, only: [:index, :show, :create, :update, :delete] do
-          post "/rename", StorageItemController, :rename
-        end
+      # Storage items routes
+      resources "/items", StorageItemController,
+        only: [:index, :show, :create, :update, :delete] do
+        post("/rename", StorageItemController, :rename)
       end
     end
   end

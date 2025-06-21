@@ -160,6 +160,13 @@ config :sentry,
     env: "production"
   }
 
+config :wraft_doc, WraftDoc.Utils.Vault,
+  ciphers: [
+    default:
+      {Cloak.Ciphers.AES.GCM,
+       tag: "AES.GCM.V1", key: "CLOAK_KEY" |> System.get_env() |> Base.decode64!()}
+  ]
+
 # Do not print debug messages in production
 config :logger,
   level: :info,

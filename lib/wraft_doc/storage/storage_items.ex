@@ -500,49 +500,57 @@ defmodule WraftDoc.Storage.StorageItems do
     {:ok, storage_item_params}
   end
 
-  def rename_storage_item(%StorageItem{} = storage_item, new_name, organisation_id) do
-    # Validate the new name
+  def rename_storage_item(
+        %StorageItem{id: id, parent_id: parent_id} = storage_item,
+        new_name,
+        organisation_id
+      ) do
+    with :ok <- validate_storage_item_name(new_name),
+         :ok <- check_duplicate_name(id, parent_id, new_name, organisation_id),
+         {:ok, updated_item} <- update_storage_item_name(storage_item, new_name) do
+      maybe_update_children_paths(updated_item, organisation_id)
+      {:ok, updated_item}
+    end
+  end
+
+  defp validate_storage_item_name(new_name) do
     if String.contains?(new_name, "/") do
       {:error, :invalid_name}
     else
-      # Get the parent folder to check for duplicates
-      parent_id = storage_item.parent_id
+      :ok
+    end
+  end
 
-      # Check for duplicate names in the same folder
-      duplicate_check_query =
-        from(s in StorageItem,
-          where: s.parent_id == ^parent_id,
-          where: s.organisation_id == ^organisation_id,
-          where: s.is_deleted == false,
-          where: s.id != ^storage_item.id,
-          where: s.name == ^new_name
-        )
+  defp check_duplicate_name(id, parent_id, new_name, organisation_id) do
+    duplicate_check_query =
+      from(s in StorageItem,
+        where: s.parent_id == ^parent_id,
+        where: s.organisation_id == ^organisation_id,
+        where: s.is_deleted == false,
+        where: s.id != ^id,
+        where: s.name == ^new_name
+      )
 
-      case Repo.one(duplicate_check_query) do
-        nil ->
-          # No duplicate found, proceed with rename
-          changeset =
-            StorageItem.changeset(storage_item, %{
-              name: new_name,
-              display_name: new_name
-            })
+    duplicate_check_query
+    |> Repo.one()
+    |> case do
+      nil -> :ok
+      _existing_item -> {:error, :duplicate_name}
+    end
+  end
 
-          case Repo.update(changeset) do
-            {:ok, updated_item} ->
-              # If it's a folder, update the materialized paths of all children
-              if updated_item.mime_type == "inode/directory" do
-                Helper.update_children_paths(updated_item, organisation_id)
-              end
+  defp update_storage_item_name(storage_item, new_name) do
+    storage_item
+    |> StorageItem.changeset(%{
+      name: new_name,
+      display_name: new_name
+    })
+    |> Repo.update()
+  end
 
-              {:ok, updated_item}
-
-            {:error, changeset} ->
-              {:error, changeset}
-          end
-
-        _existing_item ->
-          {:error, :duplicate_name}
-      end
+  defp maybe_update_children_paths(updated_item, organisation_id) do
+    if updated_item.mime_type == "inode/directory" do
+      Helper.update_children_paths(updated_item, organisation_id)
     end
   end
 end
