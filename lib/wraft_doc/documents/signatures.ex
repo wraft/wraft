@@ -91,21 +91,14 @@ defmodule WraftDoc.Documents.Signatures do
   - `pdf_path`: Path to the input PDF file
   - `signature_image_path`: Path to the signature image file
   - `signed_pdf_path`: Path where the signed PDF will be saved
-  - `page`: Page number where the signature should be applied (0-based)
-  - `coordinates`: Map containing x1, y1, x2, y2 coordinates for signature placement (origin is bottom left)
+  - `coordinates`: JSON string containing list of x1, y1, x2, y2 coordinates for signature placement (origin is bottom left)
   ## Returns
   - `{:ok, output_path}`: If successful
   - `{:error, reason}`: If the operation fails
   """
-  @spec apply_visual_signature(String.t(), String.t(), String.t(), integer(), map()) ::
+  @spec apply_visual_signature(String.t(), String.t(), String.t(), String.t()) ::
           {:ok, String.t()} | {:error, String.t()}
-  def apply_visual_signature(
-        pdf_path,
-        signature_image_path,
-        signed_pdf_path,
-        page,
-        %{"x1" => x1, "y1" => y1, "x2" => x2, "y2" => y2} = _coordinates
-      ) do
+  def apply_visual_signature(pdf_path, signature_image_path, signed_pdf_path, coordinates) do
     args = [
       "-cp",
       @pdf_signer_jar,
@@ -116,16 +109,8 @@ defmodule WraftDoc.Documents.Signatures do
       signature_image_path,
       "--output",
       signed_pdf_path,
-      "--page",
-      "#{page}",
-      "--x1",
-      "#{x1}",
-      "--y1",
-      "#{y1}",
-      "--x2",
-      "#{x2}",
-      "--y2",
-      "#{y2}"
+      "--coordinates-json-string",
+      coordinates
     ]
 
     Logger.info("Executing visual signer with args: #{inspect(args)}")
@@ -234,10 +219,31 @@ defmodule WraftDoc.Documents.Signatures do
     signed_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
     initial_pdf_path = get_or_download_pdf(signed_pdf_path, instance, instance_dir_path)
 
-    signatures
-    |> process_all_signatures(initial_pdf_path, signature_image_path, signed_pdf_path)
-    |> case do
-      {:ok, _final_pdf} ->
+    coordinates =
+      signatures
+      |> Enum.map(fn %{
+                       signature_data: %{
+                         "page" => page,
+                         "coordinates" => %{"x1" => x1, "y1" => y1, "x2" => x2, "y2" => y2}
+                       }
+                     } ->
+        %{
+          "page" => page,
+          "x1" => x1,
+          "y1" => y1,
+          "x2" => x2,
+          "y2" => y2
+        }
+      end)
+      |> Jason.encode!()
+
+    case apply_visual_signature(
+           initial_pdf_path,
+           signature_image_path,
+           signed_pdf_path,
+           coordinates
+         ) do
+      {:ok, _signed_pdf_path} ->
         append_signed_file_to_signatures(signatures, signed_pdf_path)
         Minio.upload_file(signed_pdf_path)
         handle_clean_up(signature_status, signed_pdf_path, instance_dir_path)
@@ -254,32 +260,6 @@ defmodule WraftDoc.Documents.Signatures do
     do: cleanup_signed_pdf(signed_pdf_path, instance_dir_path)
 
   defp handle_clean_up(true, _signed_pdf_path, _instance_dir_path), do: :ok
-
-  defp process_all_signatures(signatures, initial_pdf_path, signature_image_path, signed_pdf_path) do
-    Enum.reduce_while(signatures, {:ok, initial_pdf_path}, fn signature, {:ok, current_pdf} ->
-      process_single_signature(signature, current_pdf, signature_image_path, signed_pdf_path)
-    end)
-  end
-
-  defp process_single_signature(
-         signature,
-         current_pdf,
-         signature_image_path,
-         signed_pdf_path
-       ) do
-    %{signature_data: %{"page" => page, "coordinates" => coordinates}} = signature
-
-    case apply_visual_signature(
-           current_pdf,
-           signature_image_path,
-           signed_pdf_path,
-           page,
-           coordinates
-         ) do
-      {:ok, _new_pdf_path} -> {:cont, {:ok, signed_pdf_path}}
-      {:error, reason} -> {:halt, {:error, reason}}
-    end
-  end
 
   defp append_signed_file_to_signatures(signatures, signed_pdf_path) do
     Enum.each(signatures, fn signature ->
