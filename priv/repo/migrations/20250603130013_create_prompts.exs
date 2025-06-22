@@ -1,7 +1,7 @@
 defmodule WraftDoc.Repo.Migrations.CreatePrompts do
   use Ecto.Migration
 
-  def change do
+  def up do
     create table(:prompt, primary_key: false) do
       add(:id, :uuid, primary_key: true)
       add(:prompt, :text, null: false)
@@ -24,9 +24,17 @@ defmodule WraftDoc.Repo.Migrations.CreatePrompts do
       timestamps(type: :utc_datetime)
     end
 
-    create(index(:prompts, [:organisation_id]))
-    create(index(:prompts, [:status]))
+    create(index(:prompt, [:organisation_id]))
+    create(index(:prompt, [:status]))
 
-    create(unique_index(:prompts, [:title]))
+    create(unique_index(:prompt, [:title]))
+  end
+
+  def down do
+    drop(index(:prompt, [:organisation_id]))
+    drop(index(:prompt, [:status]))
+    drop(unique_index(:prompt, [:title]))
+
+    drop(table(:prompt))
   end
 end
