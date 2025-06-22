@@ -190,6 +190,8 @@ defmodule WraftDocWeb.Router do
       put("/user/password", UserController, :update_password)
       # Dashboard Stats
       get("/dashboard_stats", DashboardController, :dashboard_stats)
+      # Documents by content type
+      get("/documents/by_content_type", DashboardController, :documents_by_content_type)
       # Layout
       resources("/layouts", LayoutController, only: [:create, :index, :show, :update, :delete])
       # Delete layout asset

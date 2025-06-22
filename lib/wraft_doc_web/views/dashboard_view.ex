@@ -8,4 +8,8 @@ defmodule WraftDocWeb.Api.V1.DashboardView do
       pending_approvals: stats.pending_approvals
     }
   end
+
+  def render("documents_by_content_type.json", %{data: data}) do
+    data
+  end
 end

@@ -6,7 +6,9 @@ defmodule WraftDoc.Documents do
   import Ecto.Query
   require Logger
 
+  alias Ecto.Adapters.SQL
   alias Ecto.Multi
+  alias Ecto.UUID
   alias WraftDoc.Account.User
   alias WraftDoc.Assets
   alias WraftDoc.Client.Minio
@@ -2045,9 +2047,9 @@ defmodule WraftDoc.Documents do
     """
 
     # Convert string UUID to binary UUID
-    org_id_binary = Ecto.UUID.dump!(org_id)
+    org_id_binary = UUID.dump!(org_id)
 
-    case Ecto.Adapters.SQL.query(Repo, query, [org_id_binary]) do
+    case SQL.query(Repo, query, [org_id_binary]) do
       {:ok, %{rows: [[total, daily, pending]]}} ->
         %{
           total_documents: total,
@@ -2642,6 +2644,45 @@ defmodule WraftDoc.Documents do
         %Date{year: date.year, month: 1, day: 1}
         |> DateTime.new!(~T[00:00:00], "Etc/UTC")
         |> DateTime.to_iso8601()
+    end
+  end
+
+  @doc """
+  Get document counts by content type for an organization.
+  Returns a list of maps with id, name, color, and count.
+  """
+  @spec get_documents_by_content_type(User.t()) :: list(map())
+  def get_documents_by_content_type(%{current_org_id: org_id}) do
+    query = """
+    SELECT
+      id,
+      name,
+      color,
+      count
+    FROM
+      documents_by_content_type_stats
+    WHERE
+      organisation_id = $1
+    ORDER BY
+      name
+    """
+
+    # Convert string UUID to binary UUID
+    org_id_binary = UUID.dump!(org_id)
+
+    case SQL.query(Repo, query, [org_id_binary]) do
+      {:ok, %{rows: rows}} ->
+        Enum.map(rows, fn [id, name, color, count] ->
+          %{
+            id: id,
+            name: name,
+            color: color,
+            count: count
+          }
+        end)
+
+      _ ->
+        []
     end
   end
 end
