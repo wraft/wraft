@@ -490,24 +490,22 @@ defmodule WraftDocWeb.Router do
       )
 
       # Signature routes
-      post("/contents/:id/add_counterparty", SignatureController, :add_counterparty)
-      post("/contents/:id/signatures", SignatureController, :create_signature)
-      get("/contents/:id/signatures/:signature_id", SignatureController, :get_signature)
-      get("/contents/:id/counterparties", SignatureController, :list_counterparties)
-      post("/contents/:id/request_signature", SignatureController, :request_signature)
-      get("/contents/:id/signatures", SignatureController, :get_document_signatures)
-      delete("/contents/:id/signatures/:counter_party_id", SignatureController, :revoke_signature)
-      # Temporary route
-      post("/contents/:id/generate_signature", SignatureController, :generate_signature)
-      put("/contents/:id/signatures/:signature_id", SignatureController, :update_signature)
+      scope "/contents/:id" do
+        post("/add_counterparty", SignatureController, :add_counterparty)
+        get("/counterparties", SignatureController, :list_counterparties)
+        post("/request_signature", SignatureController, :request_signature)
+        post("/generate_signature", SignatureController, :generate_signature)
+        post("/append_signature", SignatureController, :apply_visual_signature)
 
-      post("/contents/:id/append_signature", SignatureController, :apply_visual_signature)
-
-      post(
-        "/contents/:id/signatures/:signature_id/assign",
-        SignatureController,
-        :assign_counter_party
-      )
+        scope "/signatures" do
+          post("/", SignatureController, :create_signature)
+          get("/", SignatureController, :get_document_signatures)
+          get("/:signature_id", SignatureController, :get_signature)
+          put("/:signature_id", SignatureController, :update_signature)
+          delete("/:counter_party_id", SignatureController, :revoke_signature)
+          post("/:signature_id/assign", SignatureController, :assign_counter_party)
+        end
+      end
 
       # AI/ML Management
       scope "/ai" do

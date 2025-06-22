@@ -120,7 +120,7 @@ defmodule WraftDoc.Mixfile do
       {:waffle_ecto, "~> 0.0.12"},
       {:y_ex, "~> 0.6"},
       {:jido, "~> 1.1.0-rc.2"},
-      {:jido_ai, "~> 0.5.2"},
+      {:jido_ai, github: "wraft/jido_ai", override: true},
       {:instructor, github: "thmsmlr/instructor_ex", override: true},
       {:cloak_ecto, "~> 1.3.0"}
     ]
