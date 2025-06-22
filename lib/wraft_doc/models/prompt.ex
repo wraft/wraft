@@ -6,6 +6,10 @@ defmodule WraftDoc.Models.Prompt do
   use WraftDoc.Schema
   import Ecto.Changeset
 
+  alias WraftDoc.Account.User
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Models.Model
+
   @primary_key {:id, Ecto.UUID, autogenerate: true}
   @foreign_key_type Ecto.UUID
 
@@ -15,9 +19,9 @@ defmodule WraftDoc.Models.Prompt do
     field(:prompt, :string)
     field(:type, Ecto.Enum, values: [:extraction, :suggestion, :refinement])
 
-    belongs_to(:ai_models, WraftDoc.Models.Model, foreign_key: :model_id)
-    belongs_to(:creator, WraftDoc.Account.User)
-    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+    belongs_to(:ai_models, Model, foreign_key: :model_id)
+    belongs_to(:creator, User)
+    belongs_to(:organisation, Organisation)
 
     timestamps()
   end
@@ -35,5 +39,6 @@ defmodule WraftDoc.Models.Prompt do
       :creator_id,
       :organisation_id
     ])
+    |> validate_inclusion(:type, [:extraction, :suggestion, :refinement])
   end
 end

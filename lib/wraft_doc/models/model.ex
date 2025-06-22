@@ -6,13 +6,18 @@ defmodule WraftDoc.Models.Model do
   use WraftDoc.Schema
   import Ecto.Changeset
 
+  alias WraftDoc.Account.User
+  alias WraftDoc.EctoType.EncryptedBinaryType
+  alias WraftDoc.Enterprise.Organisation
+  alias WraftDoc.Models.Prompt
+
   @primary_key {:id, Ecto.UUID, autogenerate: true}
   @foreign_key_type Ecto.UUID
 
   schema "ai_model" do
     field(:name, :string)
     field(:status, :string)
-    field(:auth_key, WraftDoc.EctoType.EncryptedBinaryType)
+    field(:auth_key, EncryptedBinaryType)
     field(:description, :string)
     field(:provider, :string)
     field(:endpoint_url, :string)
@@ -24,9 +29,9 @@ defmodule WraftDoc.Models.Model do
     field(:model_type, :string)
     field(:model_version, :string)
 
-    belongs_to(:creator, WraftDoc.Account.User)
-    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-    has_many(:prompts, WraftDoc.Models.Prompt)
+    belongs_to(:creator, User)
+    belongs_to(:organisation, Organisation)
+    has_many(:prompts, Prompt)
 
     timestamps()
   end

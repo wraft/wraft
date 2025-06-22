@@ -2,7 +2,6 @@ defmodule WraftDocWeb.Api.V1.PromptsView do
   use WraftDocWeb, :view
 
   alias WraftDoc.Models.Prompt
-  # alias __MODULE__
 
   @doc """
   Renders a list of prompts.
@@ -14,8 +13,8 @@ defmodule WraftDocWeb.Api.V1.PromptsView do
   @doc """
   Renders a single prompts.
   """
-  def show(%{prompts: prompts}) do
-    %{data: data(prompts)}
+  def show(%{prompt: prompt}) do
+    %{data: data(prompt)}
   end
 
   defp data(%Prompt{} = prompt) do
