@@ -523,8 +523,6 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
          %CounterParty{} = counter_party <-
            CounterParties.get_counterparty_with_signatures(current_user, document_id),
-         {:ok, %CounterParty{} = _counter_party} <-
-           CounterParties.counter_party_sign(counter_party, params),
          signature_status <- Signatures.document_signed?(instance),
          {:ok, signed_pdf_path} <-
            Signatures.apply_visual_signature_to_document(
@@ -533,12 +531,9 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
              params,
              signature_status
            ),
-         {:ok, _} <-
-           Signatures.apply_digital_signature_to_document(
-             counter_party,
-             instance,
-             signature_status
-           ) do
+         {:ok, %CounterParty{} = _counter_party} <-
+           CounterParties.counter_party_sign(counter_party, params),
+         {:ok, _} <- Signatures.apply_digital_signature_to_document(instance, signature_status) do
       render(conn, "signed_pdf.json",
         url: Minio.generate_url(signed_pdf_path),
         sign_status: signature_status
