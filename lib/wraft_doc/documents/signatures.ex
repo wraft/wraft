@@ -144,10 +144,9 @@ defmodule WraftDoc.Documents.Signatures do
   @doc """
   Apply a digital signature to a document
   """
-  @spec apply_digital_signature_to_document(CounterParty.t(), Instance.t(), boolean()) ::
+  @spec apply_digital_signature_to_document(Instance.t(), boolean()) ::
           {:ok, String.t()} | {:error, String.t()}
   def apply_digital_signature_to_document(
-        %CounterParty{},
         %Instance{
           id: document_id,
           instance_id: instance_id,
@@ -477,15 +476,14 @@ defmodule WraftDoc.Documents.Signatures do
     |> Repo.all()
   end
 
-  # TODO need to implement this function
   @doc """
-  Check if all signatures for a document are complete
+  Check if the current signer is the last signer
   """
   @spec document_signed?(Instance.t()) :: boolean()
   def document_signed?(%Instance{id: document_id}) do
     document_id
     |> get_document_pending_signatures()
-    |> Enum.empty?()
+    |> Enum.count() == 1
   end
 
   # Finalize the document after all signatures are complete
