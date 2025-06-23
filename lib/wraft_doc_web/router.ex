@@ -509,8 +509,8 @@ defmodule WraftDocWeb.Router do
 
       # AI/ML Management
       scope "/ai" do
-        resources("/models", ModelController, except: [:new, :edit])
-        resources("/prompts", PromptsController, except: [:new, :edit])
+        resources("/models", ModelController)
+        resources("/prompts", PromptsController)
         post("/generate", AiToolController, :execute)
       end
     end

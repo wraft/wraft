@@ -8,10 +8,11 @@ defmodule WraftDoc.Models.Prompt do
 
   alias WraftDoc.Account.User
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.Models.Model
 
   @primary_key {:id, Ecto.UUID, autogenerate: true}
   @foreign_key_type Ecto.UUID
+
+  @fields [:title, :prompt, :status, :type, :creator_id, :organisation_id]
 
   schema "prompt" do
     field(:status, :string)
@@ -19,7 +20,6 @@ defmodule WraftDoc.Models.Prompt do
     field(:prompt, :string)
     field(:type, Ecto.Enum, values: [:extraction, :suggestion, :refinement])
 
-    belongs_to(:ai_models, Model, foreign_key: :model_id)
     belongs_to(:creator, User)
     belongs_to(:organisation, Organisation)
 
@@ -29,16 +29,10 @@ defmodule WraftDoc.Models.Prompt do
   @doc false
   def changeset(prompts, attrs) do
     prompts
-    |> cast(attrs, [:title, :prompt, :status, :type, :model_id, :creator_id, :organisation_id])
-    |> validate_required([
-      :title,
-      :prompt,
-      :type,
-      :status,
-      :model_id,
-      :creator_id,
-      :organisation_id
-    ])
+    |> cast(attrs, @fields)
+    |> validate_required(@fields)
     |> validate_inclusion(:type, [:extraction, :suggestion, :refinement])
+    |> foreign_key_constraint(:creator_id)
+    |> foreign_key_constraint(:organisation_id)
   end
 end

@@ -21,6 +21,7 @@ defmodule WraftDocWeb.Api.V1.ModelView do
       name: model.name,
       description: model.description,
       endpoint_url: model.endpoint_url,
+      is_default: model.is_default,
       is_local: model.is_local,
       is_thinking_model: model.is_thinking_model,
       daily_request_limit: model.daily_request_limit,

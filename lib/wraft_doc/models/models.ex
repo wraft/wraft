@@ -15,12 +15,34 @@ defmodule WraftDoc.Models do
 
   ## Examples
 
-      iex> list_ai_models()
+      iex> list_ai_models(organisation_id)
       [%Model{}, ...]
 
   """
-  @spec list_ai_models() :: [Model.t()]
-  def list_ai_models, do: Repo.all(Model)
+  @spec list_ai_models(String.t()) :: [Model.t()]
+  def list_ai_models(organisation_id), do: Repo.all_by(Model, organisation_id: organisation_id)
+
+  @doc """
+  Gets the default model for a given organisation.
+
+  ## Examples
+
+      iex> get_default_model(org_id)
+      %Model{}
+
+      iex> get_default_model(org_id)
+      nil
+  """
+  @spec get_default_model(Ecto.UUID.t()) :: Model.t() | nil
+  def get_default_model(organisation_id) do
+    query =
+      from(m in Model,
+        where: m.organisation_id == ^organisation_id and m.is_default == true,
+        limit: 1
+      )
+
+    Repo.one(query)
+  end
 
   @doc """
   Gets a single model.
@@ -36,7 +58,7 @@ defmodule WraftDoc.Models do
   """
   @spec get_model(String.t()) :: Model.t() | nil | {:error, :invalid_id, atom()}
   def get_model(<<_::288>> = id), do: Repo.get(Model, id)
-  def get_model(_), do: {:error, :invalid_id, Model}
+  def get_model(_), do: {:error, "Invalid model ID"}
 
   @doc """
   Creates a model.
@@ -98,12 +120,12 @@ defmodule WraftDoc.Models do
 
   ## Examples
 
-      iex> list_prompts()
+      iex> list_prompts(organisation_id)
       [%Prompt{}, ...]
 
   """
-  @spec list_prompts() :: [Prompt.t()]
-  def list_prompts, do: Repo.all(Prompt)
+  @spec list_prompts(String.t()) :: [Prompt.t()]
+  def list_prompts(organisation_id), do: Repo.all_by(Prompt, organisation_id: organisation_id)
 
   @doc """
   Gets a single prompts.
@@ -119,7 +141,7 @@ defmodule WraftDoc.Models do
   """
   @spec get_prompt(String.t()) :: Prompt.t() | nil | {:error, :invalid_id, atom()}
   def get_prompt(<<_::288>> = id), do: Repo.get(Prompt, id)
-  def get_prompt(_), do: {:error, :invalid_id, Prompt}
+  def get_prompt(_), do: {:error, "Invalid prompt ID"}
 
   @doc """
   Creates a prompts.
@@ -213,8 +235,8 @@ defmodule WraftDoc.Models do
           {:ok, ModelLog.t()} | {:error, Ecto.Changeset.t()}
   def create_model_log(
         %{
-          model: %{id: model_id, model_name: model_name, provider: provider},
-          prompt: %{id: prompt_id, prompt: prompt_text},
+          model: %{model_name: model_name, provider: provider},
+          prompt: %{prompt: prompt_text},
           user: %{id: user_id, current_org_id: organisation_id}
         },
         status,
@@ -230,8 +252,6 @@ defmodule WraftDoc.Models do
       endpoint: base_url,
       status: status,
       response_time_ms: end_time - start_time,
-      model_id: model_id,
-      prompt_id: prompt_id,
       user_id: user_id,
       organisation_id: organisation_id
     })

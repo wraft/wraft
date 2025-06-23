@@ -9,7 +9,6 @@ defmodule WraftDoc.Models.Model do
   alias WraftDoc.Account.User
   alias WraftDoc.EctoType.EncryptedBinaryType
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.Models.Prompt
 
   @primary_key {:id, Ecto.UUID, autogenerate: true}
   @foreign_key_type Ecto.UUID
@@ -21,6 +20,7 @@ defmodule WraftDoc.Models.Model do
     field(:description, :string)
     field(:provider, :string)
     field(:endpoint_url, :string)
+    field(:is_default, :boolean, default: false)
     field(:is_local, :boolean, default: false)
     field(:is_thinking_model, :boolean, default: false)
     field(:daily_request_limit, :integer)
@@ -31,7 +31,6 @@ defmodule WraftDoc.Models.Model do
 
     belongs_to(:creator, User)
     belongs_to(:organisation, Organisation)
-    has_many(:prompts, Prompt)
 
     timestamps()
   end
@@ -41,17 +40,18 @@ defmodule WraftDoc.Models.Model do
     model
     |> cast(attrs, [
       :name,
-      :creator_id,
-      :organisation_id,
       :description,
       :provider,
       :endpoint_url,
+      :is_default,
       :is_local,
       :is_thinking_model,
       :daily_request_limit,
       :daily_token_limit,
       :auth_key,
       :status,
+      :creator_id,
+      :organisation_id,
       :model_name,
       :model_type,
       :model_version
@@ -61,6 +61,7 @@ defmodule WraftDoc.Models.Model do
       :description,
       :provider,
       :endpoint_url,
+      :is_default,
       :is_local,
       :is_thinking_model,
       :daily_request_limit,
@@ -69,9 +70,17 @@ defmodule WraftDoc.Models.Model do
       :status,
       :model_name,
       :model_type,
-      :model_version
+      :model_version,
+      :creator_id,
+      :organisation_id
     ])
-    |> unique_constraint(:name)
-    |> unique_constraint(:model_name)
+    |> unique_constraint(:name, name: :ai_model_organisation_id_name_index)
+    |> unique_constraint(:model_name, name: :ai_model_organisation_id_model_name_index)
+    |> unique_constraint(:is_default,
+      name: :unique_default_model_per_organisation,
+      message: "Only one default model is allowed per organisation"
+    )
+    |> foreign_key_constraint(:creator_id)
+    |> foreign_key_constraint(:organisation_id)
   end
 end

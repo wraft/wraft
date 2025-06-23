@@ -85,6 +85,7 @@ defmodule WraftDocWeb.Api.V1.ModelController do
             description(:string, "Description of the model", required: true)
             provider(:string, "AI provider (e.g., OpenAI, Anthropic)", required: true)
             endpoint_url(:string, "API endpoint URL", required: true)
+            is_default(:boolean, "Whether this is the default model")
             is_local(:boolean, "Whether the model is hosted locally", required: true)
 
             is_thinking_model(:boolean, "Whether this is a thinking/reasoning model",
@@ -139,8 +140,12 @@ defmodule WraftDocWeb.Api.V1.ModelController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def index(conn, _params), do: render(conn, :index, models: Models.list_ai_models())
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def index(conn, _params),
+    do:
+      render(conn, :index,
+        models: Models.list_ai_models(conn.assigns.current_user.current_org_id)
+      )
 
   @doc """
   Create a new AI model.
@@ -160,12 +165,12 @@ defmodule WraftDocWeb.Api.V1.ModelController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def create(conn, %{"model" => model_params}) when is_map(model_params) do
-    current_user = conn.assigns[:current_user]
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def create(conn, params) do
+    current_user = conn.assigns.current_user
 
     params =
-      Map.merge(model_params, %{
+      Map.merge(params, %{
         "creator_id" => current_user.id,
         "organisation_id" => current_user.current_org_id
       })
@@ -177,8 +182,6 @@ defmodule WraftDocWeb.Api.V1.ModelController do
       |> render(:show, model: model)
     end
   end
-
-  def create(conn, _), do: send_resp(conn, :bad_request, "Invalid request")
 
   @doc """
   Show a specific AI model.
@@ -198,7 +201,7 @@ defmodule WraftDocWeb.Api.V1.ModelController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     with %Model{} = model <- Models.get_model(id) do
       render(conn, :show, model: model)
@@ -225,10 +228,18 @@ defmodule WraftDocWeb.Api.V1.ModelController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => id, "model" => model_params}) do
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update(conn, %{"id" => id} = params) do
+    current_user = conn.assigns.current_user
+
+    params =
+      Map.merge(params, %{
+        "creator_id" => current_user.id,
+        "organisation_id" => current_user.current_org_id
+      })
+
     with %Model{} = model <- Models.get_model(id),
-         {:ok, %Model{} = model} <- Models.update_model(model, model_params) do
+         {:ok, %Model{} = model} <- Models.update_model(model, params) do
       render(conn, :show, model: model)
     end
   end
@@ -251,7 +262,7 @@ defmodule WraftDocWeb.Api.V1.ModelController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     with %Model{} = model <- Models.get_model(id),
          {:ok, %Model{}} <- Models.delete_model(model) do
