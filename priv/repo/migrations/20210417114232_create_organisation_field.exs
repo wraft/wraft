@@ -10,15 +10,15 @@ defmodule WraftDoc.Repo.Migrations.CreateOrganisationField do
 
       add(
         :field_type_id,
-        references(:field_type, type: :uuid, coloumn: :id, on_delete: :nilify_all)
+        references(:field_type, type: :uuid, column: :id, on_delete: :nilify_all)
       )
 
       add(
         :organisation_id,
-        references(:organisation, type: :uuid, coloumn: :id, on_delete: :nilify_all)
+        references(:organisation, type: :uuid, column: :id, on_delete: :nilify_all)
       )
 
-      add(:creator_id, references(:user, type: :uuid, coloumn: :id, on_delete: :nilify_all))
+      add(:creator_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
       timestamps()
     end
   end
