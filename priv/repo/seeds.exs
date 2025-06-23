@@ -36,7 +36,7 @@ if !FunWithFlags.enabled?(:seeds_ran?) do
   Repo.delete_all(Engine)
   [_pdf, _latex, pandoc, _pandoc_typst] = Seed.seed_engine()
 
-  for {user, organisation} <- List.zip([user_list, organisation_list]) do
+  for {user, organisation} <- Enum.zip([user_list, organisation_list]) do
     # Seed profiles with country
     Seed.seed_profile(user, country)
 
@@ -48,33 +48,33 @@ if !FunWithFlags.enabled?(:seeds_ran?) do
 
   # Seed roles and user roles
   role_list =
-    for {user, organisation} <- List.zip([user_list, organisation_list]),
+    for {user, organisation} <- Enum.zip([user_list, organisation_list]),
         do: Seed.seed_user_roles(user, organisation)
 
   # Seed layout with layout asset
   layout_list =
-    for {user, organisation} <- List.zip([user_list, organisation_list]),
+    for {user, organisation} <- Enum.zip([user_list, organisation_list]),
         do: Seed.seed_layout_and_layout_asset(user, organisation, pandoc)
 
   # Seed theme with theme asset
   theme_list =
-    for {user, organisation} <- List.zip([user_list, organisation_list]),
+    for {user, organisation} <- Enum.zip([user_list, organisation_list]),
         do: Seed.seed_theme_and_theme_asset(user, organisation)
 
   # Seed Work Flow
   flow_list =
-    for {user, organisation} <- List.zip([user_list, organisation_list]),
+    for {user, organisation} <- Enum.zip([user_list, organisation_list]),
         do: Seed.seed_flow(user, organisation)
 
   # Seed Vendor
   vendor_list =
-    for {user, organisation} <- List.zip([user_list, organisation_list]),
+    for {user, organisation} <- Enum.zip([user_list, organisation_list]),
         do: Seed.seed_vendor(user, organisation)
 
   # Seed Content Type and Content Type Role
   content_type_list =
     for {user, organisation, layout, theme, flow, role} <-
-          List.zip([user_list, organisation_list, layout_list, theme_list, flow_list, role_list]),
+          Enum.zip([user_list, organisation_list, layout_list, theme_list, flow_list, role_list]),
         do:
           Seed.seed_content_type_and_content_type_role(
             user,
@@ -88,33 +88,33 @@ if !FunWithFlags.enabled?(:seeds_ran?) do
   # Seed Flow State
   state_list =
     for {user, organisation, flow} <-
-          List.zip([user_list, organisation_list, flow_list]),
+          Enum.zip([user_list, organisation_list, flow_list]),
         do: Seed.seed_state(user, organisation, flow)
 
   # Seed Document Instance
   instance_list =
     for {user, content_type, states, vendor} <-
-          List.zip([user_list, content_type_list, state_list, vendor_list]),
+          Enum.zip([user_list, content_type_list, state_list, vendor_list]),
         do: Seed.seed_document_instance(user, content_type, Enum.random(states), vendor)
 
   # Seed Build History
-  for {user, instance} <- List.zip([user_list, instance_list]),
+  for {user, instance} <- Enum.zip([user_list, instance_list]),
       do: Seed.seed_build_history(user, instance)
 
   # Seed Approval System
-  for {user, flow} <- List.zip([user_list, flow_list]),
+  for {user, flow} <- Enum.zip([user_list, flow_list]),
       do: Seed.seed_approval_system(user, flow)
 
   # Seed Document Instance Version
-  for {user, instance} <- List.zip([user_list, instance_list]),
+  for {user, instance} <- Enum.zip([user_list, instance_list]),
       do: Seed.seed_document_instance_version(user, instance)
 
   # Seed Data Template
-  for {user, content_type} <- List.zip([user_list, content_type_list]),
+  for {user, content_type} <- Enum.zip([user_list, content_type_list]),
       do: Seed.seed_data_template(user, content_type)
 
   # Seed fields and content type field
-  for {content_type, organisation} <- List.zip([content_type_list, organisation_list]),
+  for {content_type, organisation} <- Enum.zip([content_type_list, organisation_list]),
       do: Seed.seed_field_and_content_type_field(content_type, organisation)
 
   # Enable fun with flags for ensuring that the seeds are not run more than once

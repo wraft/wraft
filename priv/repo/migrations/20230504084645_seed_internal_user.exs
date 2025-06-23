@@ -13,7 +13,7 @@ defmodule WraftDoc.Repo.Migrations.SeedInternalUser do
     SQL.query!(Repo, internal_user_insert_sql())
   rescue
     error in Postgrex.Error ->
-      Logger.error("An error occured while seeding the default internal user.")
+      Logger.error("An error occurred while seeding the default internal user.")
       Logger.error(Exception.format(:error, error, __STACKTRACE__))
 
       reraise error, __STACKTRACE__
@@ -23,7 +23,7 @@ defmodule WraftDoc.Repo.Migrations.SeedInternalUser do
     SQL.query!(Repo, internal_user_delete_sql())
   rescue
     error in Postgrex.Error ->
-      Logger.error("An error occured while deleting the default internal user.")
+      Logger.error("An error occurred while deleting the default internal user.")
       Logger.error(Exception.format(:error, error, __STACKTRACE__))
 
       reraise error, __STACKTRACE__
