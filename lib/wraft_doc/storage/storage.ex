@@ -47,6 +47,16 @@ defmodule WraftDoc.Storage do
     Repository.changeset(repository, attrs)
   end
 
+  def list_repositories_by_user_and_organisation(user_id, organisation_id) do
+    query =
+      from(r in Repository,
+        where: r.creator_id == ^user_id and r.organisation_id == ^organisation_id,
+        order_by: [desc: r.inserted_at]
+      )
+
+    Repo.all(query)
+  end
+
   @doc false
   def handle_duplicate_names(%{"parent_id" => parent_id, "name" => name} = attrs)
       when is_binary(parent_id) and is_binary(name) do
