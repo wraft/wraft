@@ -39,6 +39,8 @@ ENV PORT=4000
 
 # install mix dependencies
 COPY mix.exs mix.lock ./
+# Clean jido_ai dependency before getting dependencies
+RUN mix deps.clean jido_ai --unlock || true
 RUN HEX_HTTP_CONCURRENCY=1 HEX_HTTP_TIMEOUT=120 mix deps.get --only $MIX_ENV
 RUN mkdir config
 
