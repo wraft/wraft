@@ -8,7 +8,7 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
 
   def index(conn, _params) do
     repositories = Storage.list_repositories()
-    render(conn, :index, repositories: repositories)
+    render(conn, "index.json", repositories: repositories)
   end
 
   def create(conn, %{"repository" => repository_params}) do
