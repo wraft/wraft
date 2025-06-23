@@ -1,4 +1,4 @@
-defmodule WraftDocWeb.RepositoryView do
+defmodule WraftDocWeb.Api.V1.RepositoryView do
   use WraftDocWeb, :view
   # alias WraftDoc.Storage.Repository
 
