@@ -6,6 +6,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   """
 
   use WraftDocWeb, :controller
+  use PhoenixSwagger
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -15,6 +16,92 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   require Logger
 
   @services [:google_drive, :dropbox, :onedrive]
+  def swagger_definitions do
+    %{
+      AuthLoginUrlRequest:
+        swagger_schema do
+          title("Auth Login URL Request")
+          description("Request parameters for generating OAuth login URL")
+
+          properties do
+            service(:string, "Service to authenticate with",
+              required: true,
+              enum: Enum.map(@services, &Atom.to_string/1),
+              example: "google"
+            )
+          end
+        end,
+      AuthLoginUrlResponse:
+        swagger_schema do
+          title("Auth Login URL Response")
+          description("Successful response containing OAuth redirect URL")
+
+          properties do
+            status(:string, "Status of the request", example: "success")
+
+            redirect_url(:string, "URL to redirect for OAuth authentication",
+              example: "https://accounts.google.com/o/oauth2/auth?client_id=..."
+            )
+          end
+        end,
+      Error:
+        swagger_schema do
+          title("Error Response")
+          description("Standard error response format")
+
+          properties do
+            error(:string, "Error message", example: "Invalid service specified")
+            details(:string, "Additional error details", required: false)
+          end
+        end
+    }
+  end
+
+  swagger_path :login_url do
+    post("/api/v1/auth/login_url")
+    summary("Generate OAuth login URL")
+
+    description("""
+    Generates a redirect URL for OAuth authentication with the specified service.
+    Stores OAuth session parameters for later verification.
+    """)
+
+    operation_id("generateLoginUrl")
+    consumes("application/json")
+    produces("application/json")
+    tag("Authentication")
+
+    parameters do
+      service(:query, :string, "Service to authenticate with",
+        required: true,
+        enum: ["google_drive", "dropbox", "onedrive"],
+        example: "google"
+      )
+    end
+
+    response(200, "OK", %{
+      description: "Successfully generated login URL",
+      schema: %{
+        type: :object,
+        properties: %{
+          status: %{type: :string, example: "success"},
+          redirect_url: %{type: :string, example: "https://accounts.google.com/o/oauth2/auth?..."}
+        }
+      }
+    })
+
+    response(400, "Bad Request", %{
+      description: "Invalid service parameter",
+      schema: %{
+        type: :object,
+        properties: %{
+          error: %{type: :string, example: "Invalid service specified"}
+        }
+      }
+    })
+
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
 
   @doc """
   Redirects to cloud service OAuth login URL.
@@ -170,7 +257,6 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   # Private functions
 
   defp handle_oauth_callback(conn, params, service, code) do
-    # |> IO.inspect(label: "Current User")
     user = conn.assigns[:current_user]
 
     with {:ok, _user_data, token_data} <-
