@@ -1,5 +1,6 @@
 defmodule WraftDocWeb.Api.V1.StorageAssetsController do
   use WraftDocWeb, :controller
+  use PhoenixSwagger
   require Logger
 
   alias WraftDoc.Storage
@@ -7,6 +8,139 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
   alias WraftDoc.Storage.StorageItems
 
   action_fallback(WraftDocWeb.FallbackController)
+
+  def swagger_definitions do
+    %{
+      StorageItem:
+        swagger_schema do
+          title("Storage Item")
+          description("A file or folder in the storage system")
+
+          properties do
+            id(:string, "The ID of the storage item", required: true, format: "uuid")
+            name(:string, "Name of the item", required: true)
+            display_name(:string, "Display name of the item")
+            item_type(:string, "Type of item", enum: ["file", "folder"])
+            path(:string, "Path to the item")
+            mime_type(:string, "MIME type of the item")
+            size(:integer, "Size in bytes")
+            is_folder(:boolean, "Whether the item is a folder")
+            inserted_at(:string, "Creation timestamp", format: "ISO-8601")
+            updated_at(:string, "Last update timestamp", format: "ISO-8601")
+          end
+
+          example(%{
+            id: "550e8400-e29b-41d4-a716-446655440000",
+            name: "contract.pdf",
+            display_name: "Contract Agreement",
+            item_type: "file",
+            path: "/Contracts/Q4",
+            mime_type: "application/pdf",
+            size: 1024,
+            is_folder: false,
+            inserted_at: "2023-01-10T14:00:00Z",
+            updated_at: "2023-01-12T09:15:00Z"
+          })
+        end,
+      StorageItemList:
+        swagger_schema do
+          title("Storage Item List")
+          description("Paginated list of storage items")
+          type(:array)
+          items(Schema.ref(:StorageItem))
+        end,
+      BreadcrumbItem:
+        swagger_schema do
+          title("Breadcrumb Item")
+          description("An item in the breadcrumb navigation path")
+
+          properties do
+            id(:string, "ID of the folder", format: "uuid")
+            name(:string, "Name of the folder", required: true)
+            display_name(:string, "Display name of the folder")
+            is_folder(:boolean, "Whether this is a folder", default: true)
+            path(:string, "Path to the folder")
+          end
+
+          example(%{
+            id: "550e8400-e29b-41d4-a716-446655440001",
+            name: "Documents",
+            display_name: "My Documents",
+            is_folder: true,
+            path: "/Documents"
+          })
+        end,
+      StorageStats:
+        swagger_schema do
+          title("Storage Statistics")
+          description("Statistics for a folder or root directory")
+
+          properties do
+            total_items(:integer, "Total number of items")
+            total_size(:integer, "Total size in bytes")
+            file_count(:integer, "Number of files")
+            folder_count(:integer, "Number of folders")
+            last_updated(:string, "Last update timestamp", format: "ISO-8601")
+          end
+
+          example(%{
+            total_items: 42,
+            total_size: 10_485_760,
+            file_count: 35,
+            folder_count: 7,
+            last_updated: "2023-01-15T10:30:00Z"
+          })
+        end,
+      Error:
+        swagger_schema do
+          title("Error")
+          description("Error response")
+
+          properties do
+            error(:string, "Error message", required: true)
+            details(:string, "Additional error details")
+          end
+
+          example(%{
+            error: "Folder not found",
+            details: "The specified folder does not exist"
+          })
+        end
+    }
+  end
+
+  swagger_path :index do
+    get("/api/v1/storage/assets")
+    summary("List storage items")
+
+    description("""
+    Lists storage items in the root folder or a specific folder.
+    Supports filtering by folder or repository and pagination.
+    """)
+
+    operation_id("listStorageItems")
+    produces("application/json")
+    tag("Storage Assets")
+
+    parameters do
+      folder_id(:query, :string, "Folder ID to list contents of", format: "uuid")
+      repository_id(:query, :string, "Repository ID to filter by", format: "uuid")
+      parent_id(:query, :string, "Parent ID when using repository_id", format: "uuid")
+
+      limit(:query, :integer, "Number of items to return",
+        default: 100,
+        minimum: 1,
+        maximum: 1000
+      )
+
+      offset(:query, :integer, "Number of items to skip", default: 0, minimum: 0)
+    end
+
+    response(200, "OK", Schema.ref(:StorageItemList))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
 
   @doc """
   Lists storage items in the root folder or a specific folder.
@@ -116,6 +250,24 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
     render(conn, :index, storage_items: items)
   end
 
+  swagger_path :show do
+    get("/api/v1/storage/assets/{id}")
+    summary("Get storage item details")
+    description("Returns detailed information about a specific storage item")
+    operation_id("getStorageItem")
+    produces("application/json")
+    tag("Storage Assets")
+
+    parameters do
+      id(:path, :string, "ID of the storage item", required: true, format: "uuid")
+    end
+
+    response(200, "OK", Schema.ref(:StorageItem))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
   @doc """
   Shows details of a specific storage item.
   """
@@ -132,6 +284,34 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
         |> put_status(:not_found)
         |> json(%{error: "Storage item not found"})
     end
+  end
+
+  swagger_path :breadcrumbs do
+    get("/api/v1/storage/assets/{id}/breadcrumbs")
+    summary("Get breadcrumb navigation")
+    description("Returns the breadcrumb path for a storage item")
+    operation_id("getBreadcrumbs")
+    produces("application/json")
+    tag("Storage Assets")
+
+    parameters do
+      id(:path, :string, "ID of the storage item", required: true, format: "uuid")
+    end
+
+    response(200, "OK", %{
+      type: :object,
+      properties: %{
+        data: %{
+          type: :array,
+          items: Schema.ref(:BreadcrumbItem),
+          description: "Breadcrumb navigation items"
+        }
+      }
+    })
+
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
   end
 
   @doc """
@@ -154,6 +334,23 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
         |> put_status(:bad_request)
         |> json(%{error: "Invalid UUID format for id"})
     end
+  end
+
+  swagger_path :stats do
+    get("/api/v1/storage/assets/stats")
+    summary("Get storage statistics")
+    description("Returns statistics for a folder or root directory")
+    operation_id("getStorageStats")
+    produces("application/json")
+    tag("Storage Assets")
+
+    parameters do
+      parent_id(:query, :string, "Parent folder ID", format: "uuid")
+    end
+
+    response(200, "OK", Schema.ref(:StorageStats))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @doc """
@@ -182,6 +379,32 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
     conn
     |> put_status(:bad_request)
     |> json(%{error: "Invalid UUID format for parent_id"})
+  end
+
+  swagger_path :search do
+    get("/api/v1/storage/assets/search")
+    summary("Search storage items")
+    description("Searches storage items by name with optional filters")
+    operation_id("searchStorageItems")
+    produces("application/json")
+    tag("Storage Assets")
+
+    parameters do
+      q(:query, :string, "Search term (min 2 characters)", required: true, minLength: 2)
+      type(:query, :string, "Filter by item type", enum: ["files", "folders"])
+
+      limit(:query, :integer, "Number of results to return",
+        default: 50,
+        minimum: 1,
+        maximum: 100
+      )
+
+      offset(:query, :integer, "Number of results to skip", default: 0, minimum: 0)
+    end
+
+    response(200, "OK", Schema.ref(:StorageItemList))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
   end
 
   @doc """

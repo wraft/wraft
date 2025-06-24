@@ -86,17 +86,12 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   """
 
   def get_token(:google_drive, user_id, code) do
-    config = get_google_config()
-
     {:ok, session_params} = StateStore.get(user_id, :google_drive)
-    nconfig = Keyword.put(config, :session_params, session_params)
+    config = Keyword.put(get_google_config(), :session_params, session_params)
 
-    case OAuth2.callback(nconfig, %{"code" => code, "state" => session_params.state}, Google) do
+    case OAuth2.callback(config, %{"code" => code, "state" => session_params.state}, Google) do
       {:ok, %{user: user, token: token}} ->
         {:ok, user, token}
-
-      # {:ok, normalize_token(token)}
-      # {:ok, normalize_token(token)}
 
       {:error, error} ->
         Logger.error("Google Drive token exchange error: #{inspect(error)}")
@@ -217,7 +212,6 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     config
     |> Keyword.put(:scope, Enum.join(scopes, " "))
     |> Keyword.put(:base_url, "https://accounts.google.com")
-    |> Keyword.put(:session_params, %{state: "ZTaRrcGsyrZOUJr3fKpOnM5OOwqofNQN"})
     |> Keyword.put(:authorize_url, "/o/oauth2/v2/auth")
     |> Keyword.put(:token_url, "https://oauth2.googleapis.com/token")
     |> Keyword.put(:issuer, "https://accounts.google.com")
