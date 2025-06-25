@@ -15,12 +15,34 @@ defmodule WraftDoc.Models do
 
   ## Examples
 
-      iex> list_ai_models()
+      iex> list_ai_models(organisation_id)
       [%Model{}, ...]
 
   """
-  @spec list_ai_models() :: [Model.t()]
-  def list_ai_models, do: Repo.all(Model)
+  @spec list_ai_models(String.t()) :: [Model.t()]
+  def list_ai_models(organisation_id), do: Repo.all_by(Model, organisation_id: organisation_id)
+
+  @doc """
+  Gets the default model for a given organisation.
+
+  ## Examples
+
+      iex> get_default_model(org_id)
+      %Model{}
+
+      iex> get_default_model(org_id)
+      nil
+  """
+  @spec get_default_model(Ecto.UUID.t()) :: Model.t() | nil
+  def get_default_model(organisation_id) do
+    query =
+      from(m in Model,
+        where: m.organisation_id == ^organisation_id and m.is_default == true,
+        limit: 1
+      )
+
+    Repo.one(query)
+  end
 
   @doc """
   Gets a single model.
@@ -36,7 +58,26 @@ defmodule WraftDoc.Models do
   """
   @spec get_model(String.t()) :: Model.t() | nil | {:error, :invalid_id, atom()}
   def get_model(<<_::288>> = id), do: Repo.get(Model, id)
-  def get_model(_), do: {:error, :invalid_id, Model}
+  def get_model(_), do: {:error, "Invalid model ID"}
+
+  @doc """
+  Gets a single model scoped to an organization.
+
+  ## Examples
+
+      iex> get_model(123, org_id)
+      %Model{}
+
+      iex> get_model(456, org_id)
+      nil
+
+  """
+  @spec get_model(String.t(), String.t()) :: Model.t() | nil
+  def get_model(<<_::288>> = id, organisation_id) do
+    Repo.get_by(Model, id: id, organisation_id: organisation_id)
+  end
+
+  def get_model(_, _), do: nil
 
   @doc """
   Creates a model.
@@ -98,12 +139,12 @@ defmodule WraftDoc.Models do
 
   ## Examples
 
-      iex> list_prompts()
+      iex> list_prompts(organisation_id)
       [%Prompt{}, ...]
 
   """
-  @spec list_prompts() :: [Prompt.t()]
-  def list_prompts, do: Repo.all(Prompt)
+  @spec list_prompts(String.t()) :: [Prompt.t()]
+  def list_prompts(organisation_id), do: Repo.all_by(Prompt, organisation_id: organisation_id)
 
   @doc """
   Gets a single prompts.
@@ -119,60 +160,79 @@ defmodule WraftDoc.Models do
   """
   @spec get_prompt(String.t()) :: Prompt.t() | nil | {:error, :invalid_id, atom()}
   def get_prompt(<<_::288>> = id), do: Repo.get(Prompt, id)
-  def get_prompt(_), do: {:error, :invalid_id, Prompt}
+  def get_prompt(_), do: {:error, "Invalid prompt ID"}
 
   @doc """
-  Creates a prompts.
+  Gets a single prompt scoped to an organization.
 
   ## Examples
 
-      iex> create_prompts(%{field: value})
+      iex> get_prompt(123, org_id)
+      %Prompt{}
+
+      iex> get_prompt(456, org_id)
+      nil
+
+  """
+  @spec get_prompt(String.t(), String.t()) :: Prompt.t() | nil
+  def get_prompt(<<_::288>> = id, organisation_id) do
+    Repo.get_by(Prompt, id: id, organisation_id: organisation_id)
+  end
+
+  def get_prompt(_, _), do: nil
+
+  @doc """
+  Creates a prompt.
+
+  ## Examples
+
+      iex> create_prompt(%{field: value})
       {:ok, %Prompt{}}
 
-      iex> create_prompts(%{field: bad_value})
+      iex> create_prompt(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec create_prompts(map()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
-  def create_prompts(attrs \\ %{}) do
+  @spec create_prompt(map()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
+  def create_prompt(attrs \\ %{}) do
     %Prompt{}
     |> Prompt.changeset(attrs)
     |> Repo.insert()
   end
 
   @doc """
-  Updates a prompts.
+  Updates a prompt.
 
   ## Examples
 
-      iex> update_prompts(prompts, %{field: new_value})
+      iex> update_prompt(prompt, %{field: new_value})
       {:ok, %Prompt{}}
 
-      iex> update_prompts(prompts, %{field: bad_value})
+      iex> update_prompt(prompt, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec update_prompts(Prompt.t(), map()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
-  def update_prompts(%Prompt{} = prompts, attrs) do
-    prompts
+  @spec update_prompt(Prompt.t(), map()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
+  def update_prompt(%Prompt{} = prompt, attrs) do
+    prompt
     |> Prompt.changeset(attrs)
     |> Repo.update()
   end
 
   @doc """
-  Deletes a prompts.
+  Deletes a prompt.
 
   ## Examples
 
-      iex> delete_prompts(prompts)
+      iex> delete_prompt(prompt)
       {:ok, %Prompt{}}
 
-      iex> delete_prompts(prompts)
+      iex> delete_prompt(prompt)
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec delete_prompts(Prompt.t()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
-  def delete_prompts(%Prompt{} = prompts), do: Repo.delete(prompts)
+  @spec delete_prompt(Prompt.t()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
+  def delete_prompt(%Prompt{} = prompt), do: Repo.delete(prompt)
 
   @doc """
   Creates a model log entry.
@@ -213,8 +273,8 @@ defmodule WraftDoc.Models do
           {:ok, ModelLog.t()} | {:error, Ecto.Changeset.t()}
   def create_model_log(
         %{
-          model: %{id: model_id, model_name: model_name, provider: provider},
-          prompt: %{id: prompt_id, prompt: prompt_text},
+          model: %{model_name: model_name, provider: provider},
+          prompt: %{prompt: prompt_text},
           user: %{id: user_id, current_org_id: organisation_id}
         },
         status,
@@ -230,10 +290,35 @@ defmodule WraftDoc.Models do
       endpoint: base_url,
       status: status,
       response_time_ms: end_time - start_time,
-      model_id: model_id,
-      prompt_id: prompt_id,
       user_id: user_id,
       organisation_id: organisation_id
     })
+  end
+
+  @doc """
+  Sets a model as the default for an organization.
+  This will unset any existing default models for the organization.
+
+  ## Examples
+
+      iex> set_as_default_model(model)
+      {:ok, %Model{}}
+
+  """
+  @spec set_as_default_model(Model.t()) :: {:ok, Model.t()} | {:error, Ecto.Changeset.t()}
+  def set_as_default_model(%Model{organisation_id: org_id} = model) do
+    Repo.transaction(fn ->
+      # First, unset any existing default models for this organization
+      Repo.update_all(
+        from(m in Model, where: m.organisation_id == ^org_id and m.is_default == true),
+        set: [is_default: false]
+      )
+
+      # Then set this model as default
+      case update_model(model, %{is_default: true}) do
+        {:ok, updated_model} -> updated_model
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
   end
 end

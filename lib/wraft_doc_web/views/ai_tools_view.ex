@@ -1,4 +1,4 @@
-defmodule WraftDocWeb.Api.V1.AiToolView do
+defmodule WraftDocWeb.Api.V1.AIToolView do
   use WraftDocWeb, :view
 
   alias WraftDoc.AiAgents.ResponseModel.Extraction
