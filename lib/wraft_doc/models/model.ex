@@ -74,6 +74,10 @@ defmodule WraftDoc.Models.Model do
       :creator_id,
       :organisation_id
     ])
+    |> validate_length(:name, min: 1, max: 255)
+    |> validate_length(:description, max: 1000)
+    |> validate_inclusion(:status, ["active", "inactive", "pending"])
+    |> validate_url(:endpoint_url)
     |> unique_constraint(:name, name: :ai_model_organisation_id_name_index)
     |> unique_constraint(:model_name, name: :ai_model_organisation_id_model_name_index)
     |> unique_constraint(:is_default,
@@ -82,5 +86,17 @@ defmodule WraftDoc.Models.Model do
     )
     |> foreign_key_constraint(:creator_id)
     |> foreign_key_constraint(:organisation_id)
+  end
+
+  defp validate_url(changeset, field) do
+    validate_change(changeset, field, fn field, value ->
+      uri = URI.parse(value)
+
+      if uri.scheme in ["http", "https"] and uri.host do
+        []
+      else
+        [{field, "must be a valid HTTP/HTTPS URL"}]
+      end
+    end)
   end
 end
