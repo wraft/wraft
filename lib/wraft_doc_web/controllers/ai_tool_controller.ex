@@ -1,4 +1,4 @@
-defmodule WraftDocWeb.Api.V1.AiToolController do
+defmodule WraftDocWeb.Api.V1.AIToolController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 

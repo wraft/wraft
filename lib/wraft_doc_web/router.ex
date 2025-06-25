@@ -511,7 +511,7 @@ defmodule WraftDocWeb.Router do
       scope "/ai" do
         resources("/models", ModelController)
         resources("/prompts", PromptsController)
-        post("/generate", AiToolController, :execute)
+        post("/generate", AIToolController, :execute)
       end
     end
   end
