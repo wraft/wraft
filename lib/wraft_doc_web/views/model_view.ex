@@ -26,10 +26,20 @@ defmodule WraftDocWeb.Api.V1.ModelView do
       is_thinking_model: model.is_thinking_model,
       daily_request_limit: model.daily_request_limit,
       daily_token_limit: model.daily_token_limit,
-      auth_key: model.auth_key,
+      auth_key: mask_auth_key(model.auth_key),
       status: model.status,
       model_type: model.model_type,
       model_version: model.model_version
     }
+  end
+
+  defp mask_auth_key(nil), do: nil
+  defp mask_auth_key(:error), do: %{"error" => "Key error, please update key"}
+
+  defp mask_auth_key(key) do
+    masked_part = String.duplicate("*", byte_size(key) - 4)
+    visible_part = String.slice(key, -4, 4)
+
+    masked_part <> visible_part
   end
 end
