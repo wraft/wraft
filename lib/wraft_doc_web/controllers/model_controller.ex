@@ -203,7 +203,9 @@ defmodule WraftDocWeb.Api.V1.ModelController do
 
   @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
-    with %Model{} = model <- Models.get_model(id) do
+    current_user = conn.assigns.current_user
+
+    with %Model{} = model <- Models.get_model(id, current_user.current_org_id) do
       render(conn, :show, model: model)
     end
   end
@@ -238,7 +240,7 @@ defmodule WraftDocWeb.Api.V1.ModelController do
         "organisation_id" => current_user.current_org_id
       })
 
-    with %Model{} = model <- Models.get_model(id),
+    with %Model{} = model <- Models.get_model(id, current_user.current_org_id),
          {:ok, %Model{} = model} <- Models.update_model(model, params) do
       render(conn, :show, model: model)
     end
@@ -264,7 +266,9 @@ defmodule WraftDocWeb.Api.V1.ModelController do
 
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
-    with %Model{} = model <- Models.get_model(id),
+    current_user = conn.assigns.current_user
+
+    with %Model{} = model <- Models.get_model(id, current_user.current_org_id),
          {:ok, %Model{}} <- Models.delete_model(model) do
       send_resp(conn, :no_content, "")
     end

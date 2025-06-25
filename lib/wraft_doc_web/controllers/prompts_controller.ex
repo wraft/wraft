@@ -114,7 +114,7 @@ defmodule WraftDocWeb.Api.V1.PromptsController do
     current_user = conn.assigns[:current_user]
 
     with {:ok, %Prompt{id: id} = prompt} <-
-           Models.create_prompts(
+           Models.create_prompt(
              Map.merge(params, %{
                "creator_id" => current_user.id,
                "organisation_id" => current_user.current_org_id
@@ -178,7 +178,7 @@ defmodule WraftDocWeb.Api.V1.PromptsController do
 
     with %Prompt{} = prompt <- Models.get_prompt(id),
          {:ok, %Prompt{} = prompt} <-
-           Models.update_prompts(
+           Models.update_prompt(
              prompt,
              Map.merge(params, %{
                "creator_id" => current_user.id,
@@ -210,7 +210,7 @@ defmodule WraftDocWeb.Api.V1.PromptsController do
   @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     with %Prompt{} = prompt <- Models.get_prompt(id),
-         {:ok, %Prompt{}} <- Models.delete_prompts(prompt) do
+         {:ok, %Prompt{}} <- Models.delete_prompt(prompt) do
       send_resp(conn, :no_content, "")
     end
   end
