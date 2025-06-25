@@ -100,7 +100,7 @@ defmodule WraftDoc.AiAgents do
     end
   end
 
-  defp validate_content(content) when content != nil or content != "", do: :ok
+  defp validate_content(content) when content != nil and content != "", do: :ok
   defp validate_content(_), do: {:error, "Content is required"}
 
   defp validate_prompt_requirements(prompt_id, prompt, prompt_type) do
@@ -173,5 +173,9 @@ defmodule WraftDoc.AiAgents do
 
   def get_prompt_data(%{prompt: prompt, prompt_type: prompt_type}) when not is_nil(prompt) do
     {:ok, %{prompt: prompt, type: prompt_type}}
+  end
+
+  def get_prompt_data(_) do
+    {:error, "Either prompt_id or prompt with prompt_type is required"}
   end
 end
