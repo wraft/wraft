@@ -1,4 +1,21 @@
 defmodule WraftDocWeb.Api.V1.StorageAssetsController do
+  @moduledoc """
+  API endpoints for managing storage assets (files and metadata).
+
+  Provides operations for:
+  - Listing and searching files/folders
+  - Viewing item details
+  - Getting navigation breadcrumbs
+  - Retrieving storage statistics
+
+  ## Key Routes
+  - GET /api/v1/storage/assets - List items
+  - GET /api/v1/storage/assets/search - Search items
+  - GET /api/v1/storage/assets/:id - Get item details
+  - GET /api/v1/storage/assets/:id/breadcrumbs - Get navigation path
+  - GET /api/v1/storage/assets/stats - Get storage statistics
+  """
+
   use WraftDocWeb, :controller
   use PhoenixSwagger
   require Logger
@@ -41,13 +58,6 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
             inserted_at: "2023-01-10T14:00:00Z",
             updated_at: "2023-01-12T09:15:00Z"
           })
-        end,
-      StorageItemList:
-        swagger_schema do
-          title("Storage Item List")
-          description("Paginated list of storage items")
-          type(:array)
-          items(Schema.ref(:StorageItem))
         end,
       BreadcrumbItem:
         swagger_schema do
@@ -93,29 +103,101 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
         end,
       Error:
         swagger_schema do
-          title("Error")
-          description("Error response")
+          title("Error Response")
+          description("Standard error format")
 
           properties do
-            error(:string, "Error message", required: true)
-            details(:string, "Additional error details")
+            error(:string, "Error message", example: "Invalid folder ID")
+            details(:string, "Additional details", example: "The specified folder does not exist")
+            code(:string, "Error code", example: "not_found", required: false)
           end
 
           example(%{
-            error: "Folder not found",
-            details: "The specified folder does not exist"
+            error: "Validation failed",
+            details: "Search term must be at least 2 characters",
+            code: "invalid_input"
+          })
+        end,
+      StorageItemList:
+        swagger_schema do
+          title("Storage Item List")
+          description("Paginated list of storage items with metadata")
+
+          properties do
+            data(:array, "List of storage items", items: Schema.ref(:StorageItem))
+
+            meta(:object, "Pagination metadata",
+              properties: %{
+                total: %{type: :integer, example: 42},
+                limit: %{type: :integer, example: 100},
+                offset: %{type: :integer, example: 0}
+              }
+            )
+          end
+
+          example(%{
+            data: [
+              %{
+                id: "550e8400-e29b-41d4-a716-446655440000",
+                name: "contract.pdf",
+                item_type: "file",
+                size: 1024
+              }
+            ],
+            meta: %{
+              total: 42,
+              limit: 100,
+              offset: 0
+            }
+          })
+        end,
+      SearchResponse:
+        swagger_schema do
+          title("Search Response")
+          description("Paginated search results")
+
+          properties do
+            data(:array, "Matching items", items: Schema.ref(:StorageItem))
+            total(:integer, "Total number of matches")
+            limit(:integer, "Number of items returned")
+            offset(:integer, "Number of items skipped")
+          end
+
+          example(%{
+            data: [
+              %{
+                id: "550e8400-e29b-41d4-a716-446655440000",
+                name: "contract.pdf",
+                item_type: "file",
+                path: "/Contracts",
+                mime_type: "application/pdf",
+                size: 1024,
+                is_folder: false
+              }
+            ],
+            total: 5,
+            limit: 1,
+            offset: 0
           })
         end
     }
   end
 
   swagger_path :index do
-    get("/api/v1/storage/assets")
+    get("/storage/assets")
     summary("List storage items")
 
     description("""
-    Lists storage items in the root folder or a specific folder.
-    Supports filtering by folder or repository and pagination.
+    Lists files and folders with optional filtering.
+
+    ### Filtering Options
+    - By folder: `?folder_id=UUID`
+    - By repository: `?repository_id=UUID`
+    - By parent folder: `?parent_id=UUID` (when using repository_id)
+
+    ### Pagination
+    - limit: Items per page (1-1000, default: 100)
+    - offset: Items to skip
     """)
 
     operation_id("listStorageItems")
@@ -143,18 +225,29 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
   end
 
   @doc """
-  Lists storage items in the root folder or a specific folder.
+  Lists storage items with filtering options.
 
-  Query parameters:
-  - folder_id: Optional folder ID to list contents of a specific folder
-  - repository_id: Optional repository ID to filter by repository
-  - parent_id: Optional parent ID when using repository_id
-  - limit: Number of items to return (1-1000, default: 100)
-  - offset: Number of items to skip (default: 0)
+  ## Route
+  GET /api/v1/storage/assets
 
-  If no folder_id is provided, returns root level items.
-  If folder_id is provided, returns children of that folder.
+  ## Parameters
+  - folder_id: Filter by folder UUID
+  - repository_id: Filter by repository UUID
+  - parent_id: Filter by parent folder (with repository_id)
+  - limit: Pagination limit (default: 100)
+  - offset: Pagination offset
+
+  ## Examples
+      # List root items
+      GET /api/v1/storage/assets
+
+      # List folder contents
+      GET /api/v1/storage/assets?folder_id=550e8400-e29b-41d4-a716-446655440000
+
+      # List repository contents
+      GET /api/v1/storage/assets?repository_id=550e8400-e29b-41d4-a716-446655440001&parent_id=550e8400-e29b-41d4-a716-446655440002
   """
+
   def index(conn, params) do
     current_user = conn.assigns[:current_user]
     organisation_id = current_user.current_org_id
@@ -251,7 +344,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
   end
 
   swagger_path :show do
-    get("/api/v1/storage/assets/{id}")
+    get("/storage/assets/{id}")
     summary("Get storage item details")
     description("Returns detailed information about a specific storage item")
     operation_id("getStorageItem")
@@ -287,7 +380,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
   end
 
   swagger_path :breadcrumbs do
-    get("/api/v1/storage/assets/{id}/breadcrumbs")
+    get("/storage/assets/{id}/breadcrumbs")
     summary("Get breadcrumb navigation")
     description("Returns the breadcrumb path for a storage item")
     operation_id("getBreadcrumbs")
@@ -337,7 +430,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
   end
 
   swagger_path :stats do
-    get("/api/v1/storage/assets/stats")
+    get("/storage/assets/stats")
     summary("Get storage statistics")
     description("Returns statistics for a folder or root directory")
     operation_id("getStorageStats")
@@ -382,9 +475,18 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
   end
 
   swagger_path :search do
-    get("/api/v1/storage/assets/search")
+    get("/storage/assets/search")
     summary("Search storage items")
-    description("Searches storage items by name with optional filters")
+
+    description("""
+    Full-text search across storage items.
+    Requires at least 2 characters in search term.
+
+    ### Examples
+    - Search all: `?q=contract`
+    - Filter by type: `?q=report&type=files`
+    """)
+
     operation_id("searchStorageItems")
     produces("application/json")
     tag("Storage Assets")
@@ -409,6 +511,22 @@ defmodule WraftDocWeb.Api.V1.StorageAssetsController do
 
   @doc """
   Searches storage items by name.
+
+  ## Route
+  GET /api/v1/storage/assets/search
+
+  ## Parameters
+  - q: Search term (required, min 2 chars)
+  - type: Filter by type ("files" or "folders")
+  - limit: Results per page (default: 50)
+  - offset: Results to skip
+
+  ## Examples
+      # Basic search
+      GET /api/v1/storage/assets/search?q=contract
+
+      # Filtered search
+      GET /api/v1/storage/assets/search?q=report&type=files&limit=20
   """
   def search(conn, params) do
     current_user = conn.assigns[:current_user]

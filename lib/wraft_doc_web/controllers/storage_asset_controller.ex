@@ -1,4 +1,17 @@
 defmodule WraftDocWeb.Api.V1.StorageAssetController do
+  @moduledoc """
+  API endpoints for managing storage assets (file uploads and metadata).
+
+  Provides operations for:
+  - File uploads with automatic storage item creation
+  - Asset metadata management
+  - Asset retrieval and deletion
+
+  ## Key Endpoints
+  - POST /api/v1/storage/assets/upload - Main file upload endpoint
+  - GET /api/v1/storage/assets - List assets
+  - GET /api/v1/storage/assets/:id - Get asset details
+  """
   use WraftDocWeb, :controller
   use PhoenixSwagger
   require Logger
@@ -106,57 +119,98 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
       FileUploadResponse:
         swagger_schema do
           title("File Upload Response")
-          description("Response containing created storage asset and item")
+          description("Successful file upload response")
 
           properties do
             data(:object, "Created storage item with assets",
               properties: %{
-                id: %Schema{type: :string, format: "uuid"},
-                name: %Schema{type: :string},
-                display_name: %Schema{type: :string},
-                item_type: %Schema{type: :string},
-                path: %Schema{type: :string},
-                mime_type: %Schema{type: :string},
-                size: %Schema{type: :integer},
-                assets: %Schema{
+                id: %{
+                  type: :string,
+                  format: "uuid",
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+                },
+                name: %{type: :string, example: "contract.pdf"},
+                display_name: %{type: :string, example: "Contract Agreement"},
+                item_type: %{type: :string, example: "file"},
+                path: %{type: :string, example: "/Contracts/Q3"},
+                mime_type: %{type: :string, example: "application/pdf"},
+                size: %{type: :integer, example: 1024},
+                assets: %{
                   type: :array,
-                  items: Schema.ref(:StorageAsset)
+                  items: Schema.ref(:StorageAsset),
+                  example: [
+                    %{
+                      id: "650e8400-e29b-41d4-a716-446655440000",
+                      filename: "contract.pdf",
+                      storage_key: "uploads/2023/contract.pdf",
+                      file_size: 1024,
+                      mime_type: "application/pdf"
+                    }
+                  ]
                 }
               }
             )
           end
 
           example(%{
-            data: %{
-              id: "550e8400-e29b-41d4-a716-446655440002",
-              name: "contract.pdf",
-              display_name: "Contract Agreement",
-              item_type: "file",
-              path: "/Contracts/Q4",
-              mime_type: "application/pdf",
-              size: 1024,
-              assets: [
+            "data" => %{
+              "id" => "550e8400-e29b-41d4-a716-446655440000",
+              "name" => "contract.pdf",
+              "display_name" => "Contract Agreement",
+              "item_type" => "file",
+              "path" => "/Contracts/Q3",
+              "mime_type" => "application/pdf",
+              "size" => 1024,
+              "assets" => [
                 %{
-                  id: "650e8400-e29b-41d4-a716-446655440000",
-                  filename: "contract.pdf",
-                  storage_key: "uploads/contract.pdf",
-                  file_size: 1024,
-                  mime_type: "application/pdf"
+                  "id" => "650e8400-e29b-41d4-a716-446655440000",
+                  "filename" => "contract.pdf",
+                  "storage_key" => "uploads/2023/contract.pdf",
+                  "file_size" => 1024,
+                  "mime_type" => "application/pdf"
                 }
               ]
+            }
+          })
+        end,
+      ErrorResponse:
+        swagger_schema do
+          title("Error Response")
+          description("Standard error format")
+
+          properties do
+            error(:string, "Error message", example: "File upload failed")
+            details(:string, "Additional details", example: "File size exceeds 10MB limit")
+            validation_errors(:object, "Field-specific errors", required: false)
+          end
+
+          example(%{
+            "error" => "Validation failed",
+            "details" => "Invalid file type",
+            "validation_errors" => %{
+              "file" => "Must be a PDF, DOCX, or JPG file"
             }
           })
         end
     }
   end
 
-  @doc """
-  Lists storage assets with optional filtering by organisation.
-  """
   swagger_path :index do
-    get("/api/v1/storage/assets")
+    get("/storage/assets")
     summary("List storage assets")
-    description("Returns a list of storage assets for the current organization")
+
+    description("""
+    Returns paginated list of storage assets for the current organization.
+
+    ### Filtering
+    - By repository: `?repository_id=UUID`
+    - By parent folder: `?parent_id=UUID`
+    - By MIME type: `?mime_type=type/subtype`
+
+    ### Sorting
+    Supported via `sort_by` and `sort_order` parameters
+    """)
+
     operation_id("listStorageAssets")
     produces("application/json")
 
@@ -178,6 +232,26 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @doc """
+  Lists storage assets with optional filtering.
+
+  ## Route
+  GET /api/v1/storage/assets
+
+  ## Parameters
+  - limit: Pagination limit (default: 100)
+  - offset: Pagination offset (default: 0)
+  - repository_id: Filter by repository
+  - parent_id: Filter by parent folder
+  - mime_type: Filter by MIME type
+
+  ## Examples
+      # Basic listing
+      GET /api/v1/storage/assets
+
+      # Filtered listing
+      GET /api/v1/storage/assets?parent_id=550e8400-e29b-41d4-a716-446655440000&limit=50
+  """
   def index(conn, params) do
     current_user = conn.assigns[:current_user]
     organisation_id = current_user.current_org_id
@@ -197,12 +271,19 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   end
 
   swagger_path :upload do
-    post("/api/v1/storage/assets/upload")
+    post("/storage/assets/upload")
     summary("Upload a file")
 
     description("""
-    Uploads a new file and creates associated storage asset and item records.
-    Performs a complete upload workflow including validation and processing.
+    Main endpoint for file uploads. Creates both:
+    1. StorageAsset (physical file metadata)
+    2. StorageItem (logical file representation)
+
+    ### Supported Files
+    - Documents: PDF, DOCX, XLSX, PPTX, TXT
+    - Images: JPG, PNG
+    - Archives: ZIP
+    - Max size: 10MB
     """)
 
     operation_id("uploadFile")
@@ -228,21 +309,24 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   end
 
   @doc """
-  Creates a storage asset with file upload.
-  Performs a complete upload workflow including storage item creation.
+  Handles file uploads and creates associated storage records.
 
-  ## Parameters
-  - file: The uploaded file (required)
-  - parent_id: Parent folder ID (optional, defaults to root)
-  - repository_id: Repository ID (optional)
-  - display_name: Custom display name (optional, defaults to filename)
-  - classification_level: Security classification (optional, defaults to "public")
+  ## Route
+  POST /api/v1/storage/assets/upload
 
-  ## Returns
-  - 201: Success with created storage asset and item
-  - 400: Bad request (invalid parameters)
-  - 413: File too large
-  - 422: Validation errors
+  ## Parameters (multipart/form-data)
+  - file: The file to upload (required)
+  - parent_id: Target folder UUID (optional)
+  - repository_id: Repository UUID (optional)
+  - display_name: Custom display name (optional)
+  - classification_level: Security level (optional)
+
+  ## Examples
+      curl -X POST \\
+        -F "file=@contract.pdf" \\
+        -F "parent_id=550e8400-e29b-41d4-a716-446655440000" \\
+        -F "display_name=Contract Q3" \\
+        http://api.example.com/api/v1/storage/assets/upload
   """
   def upload(conn, %{"file" => file} = params) when not is_nil(file) do
     current_user = conn.assigns[:current_user]
@@ -314,7 +398,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   end
 
   swagger_path :create do
-    post("/api/v1/storage/assets")
+    post("/storage/assets")
     summary("Create a storage asset (legacy)")
 
     description("""
@@ -352,7 +436,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   end
 
   swagger_path :show do
-    get("/api/v1/storage/assets/{id}")
+    get("/storage/assets/{id}")
     summary("Get storage asset details")
     description("Returns detailed information about a specific storage asset")
     operation_id("getStorageAsset")
@@ -393,8 +477,8 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   end
 
   swagger_path :update do
-    patch("/api/v1/storage/assets/{id}")
-    put("/api/v1/storage/assets/{id}")
+    patch("/storage/assets/{id}")
+    put("/storage/assets/{id}")
     summary("Update a storage asset")
     description("Updates metadata for an existing storage asset")
     operation_id("updateStorageAsset")
@@ -457,7 +541,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
 
   # Delete action
   swagger_path :delete do
-    PhoenixSwagger.Path.delete("/api/v1/storage/assets/{id}")
+    PhoenixSwagger.Path.delete("/storage/assets/{id}")
     summary("Delete a storage asset")
 
     description("""

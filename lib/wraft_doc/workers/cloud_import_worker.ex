@@ -10,7 +10,8 @@ defmodule WraftDoc.Workers.CloudImportWorker do
 
   require Logger
   alias WraftDoc.Client.Minio
-  alias WraftDoc.CloudImport.Clouds
+  # alias WraftDoc.CloudImport.Clouds
+  alias WraftDoc.CloudImport.GoogleDrive
 
   @impl Oban.Worker
   def perform(%Oban.Job{
@@ -134,7 +135,7 @@ defmodule WraftDoc.Workers.CloudImportWorker do
 
   # Process individual download
   defp process_download(file_id, access_token, output_path, store_in_minio, minio_path) do
-    case Clouds.download_file(access_token, file_id, output_path) do
+    case GoogleDrive.download_file(access_token, file_id, output_path) do
       {:ok, %{content: content, metadata: metadata} = result} when store_in_minio ->
         # Store in MinIO if requested
         file_name = metadata["name"]

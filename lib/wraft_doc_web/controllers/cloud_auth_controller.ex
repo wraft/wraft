@@ -26,10 +26,13 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
           properties do
             service(:string, "Service to authenticate with",
               required: true,
-              enum: Enum.map(@services, &Atom.to_string/1),
-              example: "google"
+              enum: Enum.map(@services, &Atom.to_string/1)
             )
           end
+
+          example(%{
+            "service" => "google"
+          })
         end,
       AuthLoginUrlResponse:
         swagger_schema do
@@ -38,73 +41,92 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
 
           properties do
             status(:string, "Status of the request", example: "success")
-
-            redirect_url(:string, "URL to redirect for OAuth authentication",
-              example: "https://accounts.google.com/o/oauth2/auth?client_id=..."
-            )
+            redirect_url(:string, "URL to redirect for OAuth authentication")
           end
+
+          example(%{
+            "status" => "success",
+            "redirect_url" =>
+              "https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=12345&redirect_uri=https%3A%2F%2Fyourapp.com%2Fauth%2Fcallback&scope=email%20profile&state=abc123"
+          })
         end,
-      Error:
+      ErrorResponse:
         swagger_schema do
           title("Error Response")
           description("Standard error response format")
 
           properties do
-            error(:string, "Error message", example: "Invalid service specified")
+            error(:string, "Error message")
             details(:string, "Additional error details", required: false)
           end
+
+          example(%{
+            "error" => "Invalid service specified",
+            "details" => "Supported services: google, github, microsoft"
+          })
         end
     }
   end
 
   swagger_path :login_url do
-    post("/api/v1/auth/login_url")
+    get("/auth/{service}")
     summary("Generate OAuth login URL")
 
     description("""
     Generates a redirect URL for OAuth authentication with the specified service.
-    Stores OAuth session parameters for later verification.
+    Stores OAuth session parameters for later verification during the callback phase.
     """)
 
-    operation_id("generateLoginUrl")
-    consumes("application/json")
+    operation_id("generateOAuthRedirectUrl")
     produces("application/json")
     tag("Authentication")
 
     parameters do
-      service(:query, :string, "Service to authenticate with",
+      service(:path, :string, "Service to authenticate with",
         required: true,
-        enum: ["google_drive", "dropbox", "onedrive"],
-        example: "google"
+        enum: Enum.map(@services, &Atom.to_string/1),
+        example: "google_drive"
       )
     end
 
-    response(200, "OK", %{
-      description: "Successfully generated login URL",
-      schema: %{
-        type: :object,
-        properties: %{
-          status: %{type: :string, example: "success"},
-          redirect_url: %{type: :string, example: "https://accounts.google.com/o/oauth2/auth?..."}
-        }
+    response(200, "OK", Schema.ref(:AuthLoginUrlResponse),
+      example: %{
+        "status" => "success",
+        "redirect_url" =>
+          "https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=12345&redirect_uri=https%3A%2F%2Fyourapp.com%2Fauth%2Fcallback&scope=email%20profile&state=abc123"
       }
-    })
+    )
 
-    response(400, "Bad Request", %{
-      description: "Invalid service parameter",
-      schema: %{
-        type: :object,
-        properties: %{
-          error: %{type: :string, example: "Invalid service specified"}
-        }
+    response(400, "Bad Request", Schema.ref(:ErrorResponse),
+      example: %{
+        "error" => "Invalid service specified",
+        "details" => "Supported services: google_drive, dropbox, onedrive"
       }
-    })
-
-    response(401, "Unauthorized", Schema.ref(:Error))
+    )
   end
 
   @doc """
-  Redirects to cloud service OAuth login URL.
+  Generates OAuth login URL for the specified service.
+
+  ## Parameters
+  - service: The service to authenticate with (e.g., "google", "github")
+
+  ## Responses
+  - 200: Returns redirect URL for OAuth flow
+    ```json
+    {
+      "status": "success",
+      "redirect_url": "https://accounts.google.com/o/oauth2/auth?..."
+    }
+    ```
+  - 400: Invalid service parameter
+    ```json
+    {
+      "error": "Invalid service specified",
+      "details": "Supported services: google, github, microsoft"
+    }
+    ```
+  - 401: Unauthorized request
   """
   @spec login_url(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def login_url(conn, %{"service" => service}) do
