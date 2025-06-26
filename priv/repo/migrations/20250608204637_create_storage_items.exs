@@ -13,7 +13,7 @@ defmodule WraftDoc.Repo.Migrations.CreateStorageItems do
       add(:materialized_path, :string)
       add(:mime_type, :string)
       add(:file_extension, :string)
-      add(:size, :integer)
+      add(:size, :bigint)
       add(:checksum_sha256, :string)
       add(:version_number, :string)
       add(:is_current_version, :boolean, default: false, null: false)

@@ -1,4 +1,21 @@
 defmodule WraftDocWeb.Api.V1.StorageItemController do
+  @moduledoc """
+  API endpoints for managing storage items (files and folders).
+
+  Provides CRUD operations for storage items including:
+  - Listing items with pagination and sorting
+  - Creating files and folders
+  - Renaming items
+  - Moving items
+  - Deleting items
+  - Navigation and breadcrumbs
+
+  ## Storage Hierarchy
+  - Root level
+    - Repositories (logical containers)
+      - Folders
+        - Files
+  """
   use WraftDocWeb, :controller
   use PhoenixSwagger
   require Logger
@@ -363,12 +380,19 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   end
 
   swagger_path :index do
-    get("/api/v1/storage/items")
+    get("/storage/items")
     summary("List storage items")
 
     description("""
-    Lists storage items in the root folder or a specific folder.
-    Supports filtering, sorting, and pagination.
+    Lists storage items with pagination, sorting and filtering.
+
+    ### Path Variations
+    - `/storage/items` - Root level items
+    - `/storage/items?parent_id=UUID` - Items within a specific folder
+    - `/storage/items?repository_id=UUID` - Items within a specific repository
+
+    ### Sorting
+    Supported sort fields: name, created, updated, size, type
     """)
 
     operation_id("listStorageItems")
@@ -402,26 +426,27 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   end
 
   @doc """
-  Lists storage items in the root folder or a specific folder.
+  Lists storage items with optional filtering.
 
-  Query parameters:
-  - parent_id: Optional parent folder ID to list contents of a specific folder
-  - repository_id: Optional repository ID to filter by repository
-  - limit: Number of items to return (1-1000, default: 100)
-  - offset: Number of items to skip (default: 0)
-  - sort_by: Sort field - "name", "created", "updated", "size", "type" (default: "created")
-  - sort_order: Sort direction - "asc" or "desc" (default: "desc")
+  ## Route
+  GET /api/v1/storage/items
 
-  If no parent_id is provided, returns root level items.
-  If parent_id is provided, returns children of that folder.
+  ## Parameters
+  - parent_id: Filter by parent folder UUID
+  - repository_id: Filter by repository UUID
+  - limit: Pagination limit (default: 100)
+  - offset: Pagination offset
+  - sort_by: Field to sort by (name, created, updated, size, type)
+  - sort_order: Sort direction (asc, desc)
 
-  Sorting options:
-  - "name": Alphabetical by name (folders first)
-  - "created": By creation date (newest first by default)
-  - "updated": By last modified date (newest first by default)
-  - "size": By file size (folders first, then by size)
-  - "type": By file type/extension (folders first)
+  ## Examples
+      # List root items
+      GET /api/v1/storage/items
+
+      # List folder contents
+      GET /api/v1/storage/items?parent_id=550e8400-e29b-41d4-a716-446655440000
   """
+
   def index(conn, params) do
     current_user = conn.assigns[:current_user]
     organisation_id = current_user.current_org_id
@@ -626,7 +651,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   end
 
   swagger_path :breadcrumbs do
-    get("/api/v1/storage/items/{id}/breadcrumbs")
+    get("/storage/items/{id}/breadcrumbs")
     summary("Get breadcrumb navigation")
     description("Gets breadcrumb navigation for a storage item")
     operation_id("getStorageItemBreadcrumbs")
@@ -674,12 +699,16 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   end
 
   swagger_path :navigation do
-    get("/api/v1/storage/navigation")
-    summary("Get storage navigation data")
+    get("/storage/items/navigation")
+    summary("Get navigation structure")
 
     description("""
-    Gets storage navigation data including current folder items and breadcrumb navigation.
-    This combines the listing and breadcrumb functionality for convenience.
+    Returns combined folder contents and breadcrumbs for efficient navigation.
+
+    ### Typical Flow
+    1. Client loads root navigation
+    2. User clicks into folder
+    3. Client requests navigation for that folder
     """)
 
     operation_id("getStorageNavigation")
@@ -704,8 +733,20 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   end
 
   @doc """
-  Gets storage navigation data including current folder items and breadcrumb navigation.
-  This combines the listing and breadcrumb functionality for convenience.
+  Gets navigation data including items and breadcrumbs.
+
+  ## Route
+  GET /api/v1/storage/items/navigation
+
+  ## Parameters
+  - parent_id: Optional folder UUID to navigate into
+
+  ## Examples
+      # Root navigation
+      GET /api/v1/storage/items/navigation
+
+      # Folder navigation
+      GET /api/v1/storage/items/navigation?parent_id=550e8400-e29b-41d4-a716-446655440000
   """
   def navigation(conn, params) do
     current_user = conn.assigns[:current_user]
@@ -766,7 +807,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   end
 
   swagger_path :create do
-    post("/api/v1/storage/items")
+    post("/storage/items")
     summary("Create a storage item")
     description("Creates a new storage item (file or folder)")
     operation_id("createStorageItem")
@@ -822,9 +863,17 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   end
 
   swagger_path :create_folder do
-    post("/api/v1/storage/folders")
+    post("/storage/folder")
     summary("Create a folder")
-    description("Creates a new folder in the storage system")
+
+    description("""
+    Creates a new folder in the specified location.
+
+    ### Path Requirements
+    - Path must be absolute (start with /)
+    - Parent folders must exist
+    """)
+
     operation_id("createFolder")
     consumes("application/json")
     produces("application/json")
@@ -840,6 +889,28 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
     response(404, "Not Found", Schema.ref(:Error))
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
+
+  @doc """
+  Creates a new folder.
+
+  ## Route
+  POST /api/v1/storage/folder
+
+  ## Parameters
+  - name: Folder name (required)
+  - path: Full path including folder name (required)
+  - parent_id: Immediate parent folder ID (optional)
+
+  ## Examples
+      POST /api/v1/storage/folder
+      {
+        "folder": {
+          "name": "Contracts",
+          "path": "/Documents/Contracts",
+          "parent_id": "550e8400-e29b-41d4-a716-446655440000"
+        }
+      }
+  """
 
   def create_folder(conn, %{"folder" => folder_params}) do
     current_user = conn.assigns[:current_user]
@@ -917,7 +988,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   end
 
   swagger_path :show do
-    get("/api/v1/storage/items/{id}")
+    get("/storage/items/{id}")
     summary("Get storage item details")
     description("Returns detailed information about a specific storage item")
     operation_id("getStorageItem")
@@ -961,8 +1032,8 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   end
 
   swagger_path :update do
-    patch("/api/v1/storage/items/{id}")
-    put("/api/v1/storage/items/{id}")
+    patch("/storage/items/{id}")
+    put("/storage/items/{id}")
     summary("Update storage item")
     description("Updates an existing storage item")
     operation_id("updateStorageItem")
@@ -995,7 +1066,7 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   end
 
   swagger_path :delete do
-    PhoenixSwagger.Path.delete("/api/v1/storage/items/{id}")
+    PhoenixSwagger.Path.delete("/storage/items/{id}")
     summary("Delete storage item")
     description("Marks a storage item for deletion")
     operation_id("deleteStorageItem")
@@ -1161,29 +1232,48 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
   defp extract_name_from_path(_), do: "Unknown"
 
   swagger_path :rename do
-    patch("/api/v1/storage/items/{id}/rename")
-    summary("Rename storage item")
-    description("Renames a storage item (file or folder)")
+    post("/storage/items/{id}/rename")
+    summary("Rename a storage item")
+
+    description("""
+    Renames a file or folder while maintaining all other properties.
+
+    ### Restrictions
+    - Cannot rename to existing name in same folder
+    - Cannot include path separators (/)
+    """)
+
     operation_id("renameStorageItem")
     consumes("application/json")
     produces("application/json")
     tag("Storage Items")
 
     parameters do
-      id(:path, :string, "ID of the storage item to rename", required: true, format: "uuid")
-      rename_params(:body, Schema.ref(:RenameParams), "Rename parameters", required: true)
+      id(:path, :string, "ID of the item to rename", required: true, format: "uuid")
+      new_name(:body, :string, "New name for the item", required: true)
     end
 
     response(200, "OK", Schema.ref(:StorageItem))
     response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
     response(404, "Not Found", Schema.ref(:Error))
     response(409, "Conflict", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
   @doc """
   Renames a storage item (file or folder).
+
+  ## Route
+  POST /api/v1/storage/items/:id/rename
+
+  ## Parameters
+  - id: Item UUID (path parameter)
+  - new_name: New name for the item (body parameter)
+
+  ## Examples
+      POST /api/v1/storage/items/550e8400-e29b-41d4-a716-446655440000/rename
+      {
+        "new_name": "Renamed Document.pdf"
+      }
   """
   def rename(conn, %{"id" => id, "new_name" => new_name}, _current_user, organisation_id) do
     case StorageItems.get_storage_item_by_org(id, organisation_id) do

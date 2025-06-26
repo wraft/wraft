@@ -1,4 +1,16 @@
 defmodule WraftDocWeb.Api.V1.RepositoryController do
+  @moduledoc """
+  API endpoints for managing document repositories.
+
+  Repositories are isolated storage containers that organize documents and folders
+  for users and organizations. Each repository has configurable storage limits
+  and access controls.
+
+  ## Repository Lifecycle
+  - Created via `/api/repositories` POST
+  - Managed via CRUD operations
+  - Automatically setup for new users via `/api/repository/setup`
+  """
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
@@ -80,23 +92,31 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
       RepositoryCreateParams:
         swagger_schema do
           title("Repository Create Parameters")
-          description("Parameters for creating a new repository")
+
+          description("""
+          Parameters for creating a new repository.
+
+          Required fields:
+          - name: Must be unique within the organization
+          - storage_limit: In bytes (1GB = 1073741824 bytes)
+          """)
 
           properties do
-            name(:string, "Name of the repository", required: true)
-            description(:string, "Description of the repository")
-            storage_limit(:integer, "Storage limit in bytes")
+            name(:string, "Name of the repository", required: true, example: "Legal Documents")
+            description(:string, "Description of the repository", example: "All legal contracts")
+            storage_limit(:integer, "Storage limit in bytes", example: 107_374_182_400)
 
             status(:string, "Status of the repository",
               enum: ["active", "inactive"],
-              default: "active"
+              default: "active",
+              example: "active"
             )
           end
 
           example(%{
-            name: "My Documents",
-            description: "My personal storage repository",
-            storage_limit: 104_857_600,
+            name: "Legal Documents",
+            description: "All legal contracts and agreements",
+            storage_limit: 107_374_182_400,
             status: "active"
           })
         end,
@@ -117,6 +137,33 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
             description: "Updated description",
             storage_limit: 209_715_200,
             status: "active"
+          })
+        end,
+      RepositoriesList:
+        swagger_schema do
+          title("Repositories List")
+          description("List of repositories")
+
+          properties do
+            data(:array, "List of repositories", items: Schema.ref(:Repository))
+          end
+
+          example(%{
+            data: [
+              %{
+                id: "550e8400-e29b-41d4-a716-446655440000",
+                name: "Company Documents",
+                description: "Official company documents",
+                status: "active",
+                storage_limit: 107_374_182_400,
+                current_storage_used: 32_212_254_720,
+                item_count: 1250,
+                creator_id: "550e8400-e29b-41d4-a716-446655440000",
+                organisation_id: "550e8400-e29b-41d4-a716-446655440000",
+                inserted_at: "2023-03-15T09:30:00Z",
+                updated_at: "2023-06-20T14:22:00Z"
+              }
+            ]
           })
         end,
       CounterPartiesList:
@@ -217,31 +264,55 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     }
   end
 
+  swagger_path :index do
+    get("/repositories")
+    summary("List repositories")
+
+    description("""
+    Returns a paginated list of repositories accessible to the current user.
+
+    ### Filtering
+    - Filter by status: `?status=active`
+    - Filter by organization: `?organization_id=UUID`
+
+    ### Sorting
+    - Sort by name: `?sort=name`
+    - Sort by storage used: `?sort=storage_used`
+    """)
+
+    operation_id("listRepositories")
+    produces("application/json")
+    tag("Repositories")
+
+    response(200, "OK", Schema.ref(:RepositoriesList))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
   def index(conn, _params) do
     repositories = Storage.list_repositories()
     render(conn, "index.json", repositories: repositories)
   end
 
-  swagger_path :create do
-    post("/api/repositories")
-    summary("Create a repository")
-    description("Creates a new storage repository")
-    operation_id("createRepository")
-    consumes("application/json")
-    produces("application/json")
-    tag("Repositories")
+  # swagger_path :create do
+  #   post("/repositories")
+  #   summary("Create a repository")
+  #   description("Creates a new storage repository")
+  #   operation_id("createRepository")
+  #   consumes("application/json")
+  #   produces("application/json")
+  #   tag("Repositories")
 
-    parameters do
-      repository(:body, Schema.ref(:RepositoryCreateParams), "Repository creation parameters",
-        required: true
-      )
-    end
+  #   parameters do
+  #     repository(:body, Schema.ref(:RepositoryCreateParams), "Repository creation parameters",
+  #       required: true
+  #     )
+  #   end
 
-    response(201, "Created", Schema.ref(:Repository))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  #   response(201, "Created", Schema.ref(:Repository))
+  #   response(400, "Bad Request", Schema.ref(:Error))
+  #   response(401, "Unauthorized", Schema.ref(:Error))
+  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
+  # end
 
   def create(conn, %{"repository" => repository_params}) do
     with {:ok, %Repository{} = repository} <- Storage.create_repository(repository_params) do
@@ -253,7 +324,7 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
   end
 
   swagger_path :show do
-    get("/api/repositories/{id}")
+    get("/repositories/{id}")
     summary("Get repository details")
     description("Returns detailed information about a specific repository")
     operation_id("getRepository")
@@ -275,20 +346,55 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
   end
 
   swagger_path :check_setup do
-    get("/api/repository/check")
-    summary("Check repository setup")
+    get("/repository/check")
+    summary("Check repository setup status")
 
     description("""
-    Checks if the current user has at least one repository in their current organization.
-    Returns the list of repositories if any exist.
+    Checks if the current user has any repositories in their organization.
+
+    ### Typical Responses:
+    - 200 with empty array: No repositories exist (user needs to setup)
+    - 200 with repositories: User has existing repositories
+
+    Used during user onboarding to determine if default repository creation is needed.
     """)
 
     operation_id("checkRepositorySetup")
     produces("application/json")
     tag("Repositories")
 
-    response(200, "OK", Schema.ref(:Repository))
-    response(401, "Unauthorized", Schema.ref(:Error))
+    response(200, "OK", Schema.ref(:RepositoriesList),
+      example: %{
+        data: [
+          %{
+            id: "550e8400-e29b-41d4-a716-446655440000",
+            name: "My Documents",
+            description: "Personal storage",
+            status: "active",
+            storage_limit: 10_737_418_240,
+            current_storage_used: 5_368_709_120,
+            item_count: 42,
+            creator_id: "550e8400-e29b-41d4-a716-446655440001",
+            organisation_id: "550e8400-e29b-41d4-a716-446655440002",
+            inserted_at: "2023-01-01T00:00:00Z",
+            updated_at: "2023-01-01T00:00:00Z"
+          }
+        ]
+      }
+    )
+
+    response(200, "No Repositories", Schema.ref(:RepositoriesList),
+      example: %{
+        data: []
+      }
+    )
+
+    response(401, "Unauthorized", Schema.ref(:Error),
+      example: %{
+        error: "Unauthorized",
+        details: "Authentication required"
+      }
+    )
   end
 
   def check_setup(conn, _params) do
@@ -301,7 +407,7 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
   end
 
   swagger_path :setup_repository do
-    put("/api/repository/setup")
+    put("/repository/setup")
     summary("Setup default repository")
 
     description("""
@@ -343,30 +449,30 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
     end
   end
 
-  swagger_path :update do
-    patch("/api/repositories/{id}")
-    put("/api/repositories/{id}")
-    summary("Update repository")
-    description("Updates an existing repository")
-    operation_id("updateRepository")
-    consumes("application/json")
-    produces("application/json")
-    tag("Repositories")
+  # swagger_path :update do
+  #   patch("/repositories/{id}")
+  #   put("/api/repositories/{id}")
+  #   summary("Update repository")
+  #   description("Updates an existing repository")
+  #   operation_id("updateRepository")
+  #   consumes("application/json")
+  #   produces("application/json")
+  #   tag("Repositories")
 
-    parameters do
-      id(:path, :string, "ID of the repository to update", required: true, format: "uuid")
+  #   parameters do
+  #     id(:path, :string, "ID of the repository to update", required: true, format: "uuid")
 
-      repository(:body, Schema.ref(:RepositoryUpdateParams), "Repository update parameters",
-        required: true
-      )
-    end
+  #     repository(:body, Schema.ref(:RepositoryUpdateParams), "Repository update parameters",
+  #       required: true
+  #     )
+  #   end
 
-    response(200, "OK", Schema.ref(:Repository))
-    response(400, "Bad Request", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
-    response(404, "Not Found", Schema.ref(:Error))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-  end
+  #   response(200, "OK", Schema.ref(:Repository))
+  #   response(400, "Bad Request", Schema.ref(:Error))
+  #   response(401, "Unauthorized", Schema.ref(:Error))
+  #   response(404, "Not Found", Schema.ref(:Error))
+  #   response(422, "Unprocessable Entity", Schema.ref(:Error))
+  # end
 
   def update(conn, %{"id" => id, "repository" => repository_params}) do
     repository = Storage.get_repository!(id)
@@ -375,6 +481,23 @@ defmodule WraftDocWeb.Api.V1.RepositoryController do
            Storage.update_repository(repository, repository_params) do
       render(conn, :show, repository: repository)
     end
+  end
+
+  swagger_path :delete do
+    PhoenixSwagger.Path.delete("/repositories/{id}")
+    summary("Delete repository")
+    description("Permanently deletes a repository")
+    operation_id("deleteRepository")
+    produces("application/json")
+    tag("Repositories")
+
+    parameters do
+      id(:path, :string, "ID of the repository to delete", required: true, format: "uuid")
+    end
+
+    response(204, "No Content")
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
   end
 
   def delete(conn, %{"id" => id}) do
