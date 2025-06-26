@@ -253,9 +253,21 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
       GET /api/v1/storage/assets?parent_id=550e8400-e29b-41d4-a716-446655440000&limit=50
   """
   swagger_path :index do
-    get("/api/v1/storage/assets")
+    get("/storage/assets")
     summary("List storage assets")
-    description("Returns a list of storage assets for the current organization")
+
+    description("""
+    Returns paginated list of storage assets for the current organization.
+
+    ### Filtering
+    - By repository: `?repository_id=UUID`
+    - By parent folder: `?parent_id=UUID`
+    - By MIME type: `?mime_type=type/subtype`
+
+    ### Sorting
+    Supported via `sort_by` and `sort_order` parameters
+    """)
+
     operation_id("listStorageAssets")
     produces("application/json")
 
@@ -277,6 +289,26 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
+  @doc """
+  Lists storage assets with optional filtering.
+
+  ## Route
+  GET /api/v1/storage/assets
+
+  ## Parameters
+  - limit: Pagination limit (default: 100)
+  - offset: Pagination offset (default: 0)
+  - repository_id: Filter by repository
+  - parent_id: Filter by parent folder
+  - mime_type: Filter by MIME type
+
+  ## Examples
+      # Basic listing
+      GET /api/v1/storage/assets
+
+      # Filtered listing
+      GET /api/v1/storage/assets?parent_id=550e8400-e29b-41d4-a716-446655440000&limit=50
+  """
   def index(conn, params) do
     current_user = conn.assigns[:current_user]
     organisation_id = current_user.current_org_id
