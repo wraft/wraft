@@ -10,6 +10,7 @@ defmodule WraftDoc.AiAgents.Tools.DocRefinement do
       markdown: [type: :string, required: true, doc: "The markdown text content to process"]
     ]
 
+  alias WraftDoc.AiAgents
   alias WraftDoc.AiAgents.ResponseModel.Refinement
   alias WraftDoc.Models
 
@@ -57,7 +58,7 @@ defmodule WraftDoc.AiAgents.Tools.DocRefinement do
 
       {:error, reason, _} ->
         Models.create_model_log(params, "failed", base_url, start_time)
-        {:error, reason}
+        AiAgents.format_error(reason)
     end
   end
 end

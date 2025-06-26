@@ -178,4 +178,30 @@ defmodule WraftDoc.AiAgents do
   def get_prompt_data(_) do
     {:error, "Either prompt_id or prompt with prompt_type is required"}
   end
+
+  def format_error(message) do
+    with {:ok, %{"error" => %{"code" => code, "message" => error_message}}} <-
+           decode_error_message(message) do
+      {:error, {code, %{errors: error_message}}}
+    end
+  end
+
+  defp decode_error_message(error_msg) do
+    case Regex.run(~r/%\{.*\}/, error_msg) do
+      [map_string] ->
+        map_string
+        |> clean_map_string()
+        |> Jason.decode()
+
+      _ ->
+        {:error, "Something went wrong, please try again"}
+    end
+  end
+
+  defp clean_map_string(map_string) do
+    map_string
+    |> String.replace("\\\"", "\"")
+    |> String.replace("%{", "{")
+    |> String.replace("=>", ":")
+  end
 end
