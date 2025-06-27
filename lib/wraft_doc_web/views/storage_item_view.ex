@@ -3,19 +3,28 @@ defmodule WraftDocWeb.Api.V1.StorageItemView do
   alias WraftDoc.Storage.StorageAsset
   alias WraftDoc.Storage.StorageItem
 
-  @doc """
-  Renders a list of storage items.
-  Note: The controller now returns JSON directly with breadcrumbs included.
-  This view is kept for backward compatibility with other endpoints.
-  """
-  def index(%{storage_items: storage_items}) do
-    %{
-      data: for(storage_item <- storage_items, do: data(storage_item)),
-      meta: %{
-        count: length(storage_items),
-        timestamp: DateTime.utc_now()
-      }
-    }
+  def render("index.json", %{storage_items: storage_items}) do
+    storage_items
+  end
+
+  def render("breadcrumbs.json", %{breadcrumbs: breadcrumbs}) do
+    %{data: breadcrumbs}
+  end
+
+  def render("navigation.json", %{navigation_data: navigation_data}) do
+    %{data: navigation_data}
+  end
+
+  def render("show.json", %{storage_item: storage_item, storage_assets: storage_assets}) do
+    %{data: data(storage_item, storage_assets)}
+  end
+
+  def render("storage_item.json", %{storage_item: storage_item, storage_assets: storage_assets}) do
+    %{data: data(storage_item, storage_assets)}
+  end
+
+  def render("delete.json", %{delete: delete}) do
+    delete
   end
 
   @doc """
