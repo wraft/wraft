@@ -13,15 +13,33 @@ defmodule WraftDocWeb.Api.V1.AIToolController do
       AiToolRequest:
         swagger_schema do
           title("AI Tool Request")
-          description("Request body for AI tool execution. Either provide prompt_id for a saved prompt, or provide both prompt and prompt_type for inline execution.")
+
+          description(
+            "Request body for AI tool execution. Either provide prompt_id for a saved prompt, or provide both prompt and prompt_type for inline execution."
+          )
+
           type(:object)
           required([:content])
 
           properties do
-            model_id(:string, "Model ID (optional - will use organization's default model if not provided)")
-            prompt_id(:string, "Database prompt ID (required if prompt and prompt_type are not provided)")
+            model_id(
+              :string,
+              "Model ID (optional - will use organization's default model if not provided)"
+            )
+
+            prompt_id(
+              :string,
+              "Database prompt ID (required if prompt and prompt_type are not provided)"
+            )
+
             prompt(:string, "Inline prompt text (required if prompt_id is not provided)")
-            prompt_type(:string, "Type of prompt when using inline prompt. Must be one of: suggestion, refinement, extraction", enum: ["suggestion", "refinement", "extraction"])
+
+            prompt_type(
+              :string,
+              "Type of prompt when using inline prompt. Must be one of: suggestion, refinement, extraction",
+              enum: ["suggestion", "refinement", "extraction"]
+            )
+
             content(:string, "Content to process", required: true)
           end
 
@@ -43,12 +61,23 @@ defmodule WraftDocWeb.Api.V1.AIToolController do
           type(:object)
 
           properties do
-            # Extraction result structure
             entities(:object, "Extraction result - extracted entities",
               properties: %{
-                people: %{type: :array, items: %{type: :string}, description: "Names of people mentioned"},
-                companies: %{type: :array, items: %{type: :string}, description: "Company names mentioned"},
-                government_bodies: %{type: :array, items: %{type: :string}, description: "Government organizations mentioned"},
+                people: %{
+                  type: :array,
+                  items: %{type: :string},
+                  description: "Names of people mentioned"
+                },
+                companies: %{
+                  type: :array,
+                  items: %{type: :string},
+                  description: "Company names mentioned"
+                },
+                government_bodies: %{
+                  type: :array,
+                  items: %{type: :string},
+                  description: "Government organizations mentioned"
+                },
                 courts: %{type: :array, items: %{type: :string}, description: "Courts mentioned"}
               }
             )
@@ -58,7 +87,10 @@ defmodule WraftDocWeb.Api.V1.AIToolController do
                 type: :object,
                 properties: %{
                   date: %{type: :string, description: "Date in string format"},
-                  description: %{type: :string, description: "Description of the date's significance"}
+                  description: %{
+                    type: :string,
+                    description: "Description of the date's significance"
+                  }
                 }
               }
             )
@@ -100,22 +132,30 @@ defmodule WraftDocWeb.Api.V1.AIToolController do
               }
             )
 
-            # Suggestions result structure
             suggestions(:array, "Suggestions result - improvement recommendations",
               items: %{
                 type: :object,
                 properties: %{
                   title: %{type: :string, description: "Suggestion title"},
-                  description: %{type: :string, description: "Detailed description of the suggestion"},
-                  priority: %{type: :string, enum: ["high", "medium", "low"], description: "Priority level"},
-                  text_to_replace: %{type: :string, description: "Original text that should be replaced"},
+                  description: %{
+                    type: :string,
+                    description: "Detailed description of the suggestion"
+                  },
+                  priority: %{
+                    type: :string,
+                    enum: ["high", "medium", "low"],
+                    description: "Priority level"
+                  },
+                  text_to_replace: %{
+                    type: :string,
+                    description: "Original text that should be replaced"
+                  },
                   text_replacement: %{type: :string, description: "Suggested replacement text"},
                   reason: %{type: :string, description: "Reason for the suggestion"}
                 }
               }
             )
 
-            # Refinement result structure  
             refined_content(:string, "Refinement result - the refined/improved content")
           end
 
@@ -131,13 +171,21 @@ defmodule WraftDocWeb.Api.V1.AIToolController do
               %{date: "2024-12-31", description: "Contract expiry date"}
             ],
             important_clauses: [
-              %{clause_title: "Termination Clause", summary: "Contract can be terminated with 30 days notice"}
+              %{
+                clause_title: "Termination Clause",
+                summary: "Contract can be terminated with 30 days notice"
+              }
             ],
             financial_details: %{
               contract_value: %{amount: "100000", currency: "USD"},
               expiry_date: "2024-12-31",
               payment_schedule: [
-                %{amount: "50000", currency: "USD", due_date: "2024-06-30", remarks: "First installment"}
+                %{
+                  amount: "50000",
+                  currency: "USD",
+                  due_date: "2024-06-30",
+                  remarks: "First installment"
+                }
               ]
             }
           })
@@ -153,7 +201,11 @@ defmodule WraftDocWeb.Api.V1.AIToolController do
   swagger_path :execute do
     post("/ai/generate")
     summary("Execute AI tool")
-    description("Execute AI tool with specified content. Either provide prompt_id for a saved prompt, or provide both prompt and prompt_type for inline execution. Model ID is optional and defaults to organization's default model.")
+
+    description(
+      "Execute AI tool with specified content. Either provide prompt_id for a saved prompt, or provide both prompt and prompt_type for inline execution. Model ID is optional and defaults to organization's default model."
+    )
+
     operation_id("execute_ai_tool")
     consumes("application/json")
 
