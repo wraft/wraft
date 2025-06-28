@@ -77,7 +77,8 @@ defmodule WraftDoc.Storage.StorageItem do
       :creator_id,
       :organisation_id
     ])
-    |> validate_required([:name, :item_type, :path, :materialized_path, :mime_type])
+    # :path, :materialized_path, :mime_type])
+    |> validate_required([:name, :mime_type])
     |> unique_constraint([:external_id, :sync_source],
       name: :storage_items_external_id_sync_source_index
     )
