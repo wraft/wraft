@@ -138,6 +138,27 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
             updated_at: "2023-01-10T14:05:00Z"
           })
         end,
+      # StorageStats:
+      #   swagger_schema do
+      #     title("Storage Statistics")
+      #     description("Statistics for a folder or root directory")
+
+      #     properties do
+      #       total_items(:integer, "Total number of items")
+      #       total_size(:integer, "Total size in bytes")
+      #       file_count(:integer, "Number of files")
+      #       folder_count(:integer, "Number of folders")
+      #       last_updated(:string, "Last update timestamp", format: "ISO-8601")
+      #     end
+
+      #     example(%{
+      #       total_items: 42,
+      #       total_size: 10_485_760,
+      #       file_count: 35,
+      #       folder_count: 7,
+      #       last_updated: "2023-01-15T10:30:00Z"
+      #     })
+      #   end,
       StorageItemsList:
         swagger_schema do
           title("Storage Items List")
@@ -796,6 +817,46 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
       render(conn, :show, storage_item: storage_item)
     end
   end
+
+  #   swagger_path :stats do
+  #     get("/storage/assets/stats")
+  #     summary("Get storage statistics")
+  #     description("Returns statistics for a folder or root directory")
+  #     operation_id("getStorageStats")
+  #     produces("application/json")
+  #     tag("Storage Assets")
+
+  #     parameters do
+  #       parent_id(:query, :string, "Parent folder ID", format: "uuid")
+  #     end
+
+  #     response(200, "OK", Schema.ref(:StorageStats))
+  #     response(400, "Bad Request", Schema.ref(:Error))
+  #     response(401, "Unauthorized", Schema.ref(:Error))
+  #   end
+
+  #   @doc """
+  #   Gets statistics for a folder or root directory.
+  #   """
+  # def stats(conn, params) do
+  #   current_user = conn.assigns[:current_user]
+  #   organisation_id = current_user.current_org_id
+  #   parent_id = Map.get(params, "parent_id")
+
+  #   case validate_uuid_param(params, "parent_id") do
+  #     :ok ->
+  #       stats = StorageItems.get_storage_item_stats(parent_id, organisation_id)
+
+  #       json(conn, %{
+  #         data: stats
+  #       })
+
+  #     {:error, _field} ->
+  #       conn
+  #       |> put_status(:bad_request)
+  #       |> json(%{error: "Invalid UUID format for parent_id"})
+  #   end
+  # end
 
   swagger_path :delete do
     PhoenixSwagger.Path.delete("/storage/items/{id}")

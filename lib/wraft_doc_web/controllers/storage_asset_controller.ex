@@ -1,16 +1,6 @@
 defmodule WraftDocWeb.Api.V1.StorageAssetController do
   @moduledoc """
   API endpoints for managing storage assets (file uploads and metadata).
-
-  Provides operations for:
-  - File uploads with automatic storage item creation
-  - Asset metadata management
-  - Asset retrieval and deletion
-
-  ## Key Endpoints
-  - POST /api/v1/storage/assets/upload - Main file upload endpoint
-  - GET /api/v1/storage/assets - List assets
-  - GET /api/v1/storage/assets/:id - Get asset details
   """
   use WraftDocWeb, :controller
   use PhoenixSwagger
@@ -311,20 +301,11 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   """
   def index(conn, params) do
     current_user = conn.assigns[:current_user]
-    organisation_id = current_user.current_org_id
 
-    # Parse pagination parameters
-    _limit = parse_integer(params["limit"], 100, 1, 1000)
-    _offset = parse_integer(params["offset"], 0, 0, nil)
-
-    storage_assets = StorageAssets.list_storage_assets_by_organisation(organisation_id)
-
-    Logger.info("Storage assets listed", %{
-      organisation_id: organisation_id,
-      count: length(storage_assets)
-    })
-
-    render(conn, :index, storage_assets: storage_assets)
+    with storage_assets <-
+           StorageAssets.list_storage_assets_by_organisation(current_user.current_org_id) do
+      render(conn, :index, storage_assets: storage_assets)
+    end
   end
 
   swagger_path :upload do
@@ -365,94 +346,19 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
     response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
-  @doc """
-  Handles file uploads and creates associated storage records.
-
-  ## Route
-  POST /api/v1/storage/assets/upload
-
-  ## Parameters (multipart/form-data)
-  - file: The file to upload (required)
-  - parent_id: Target folder UUID (optional)
-  - repository_id: Repository UUID (optional)
-  - display_name: Custom display name (optional)
-  - classification_level: Security level (optional)
-
-  ## Examples
-      curl -X POST \\
-        -F "file=@contract.pdf" \\
-        -F "parent_id=550e8400-e29b-41d4-a716-446655440000" \\
-        -F "display_name=Contract Q3" \\
-        http://api.example.com/api/v1/storage/assets/upload
-  """
-  def upload(conn, %{"file" => file} = params) when not is_nil(file) do
+  def upload(conn, %{"file" => _file} = params) do
     current_user = conn.assigns[:current_user]
 
-    Logger.info("📁 Starting file upload", %{
-      filename: file.filename,
-      content_type: file.content_type,
-      user_id: current_user.id,
-      organisation_id: current_user.current_org_id
-    })
-
-    # Validate request parameters
-    with :ok <- validate_upload_params(params),
-         {:ok, validated_params} <- prepare_validated_params(params, current_user) do
-      # Perform the upload
-      case StorageItems.create_storage_asset_with_item(current_user, validated_params) do
-        {:ok, %{storage_asset: storage_asset, storage_item: storage_item}} ->
-          Logger.info("✅ File upload successful", %{
-            storage_asset_id: storage_asset.id,
-            storage_item_id: storage_item.id,
-            filename: storage_item.name
-          })
-
-          conn
-          |> put_status(:created)
-          |> put_resp_header("location", "/api/v1/storage/assets/#{storage_asset.id}")
-          |> json(%{data: WraftDocWeb.Api.V1.StorageItemView.data(storage_item, [storage_asset])})
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          Logger.error("❌ File upload failed - validation error", %{
-            errors: changeset.errors,
-            filename: file.filename
-          })
-
-          conn
-          |> put_status(:unprocessable_entity)
-          |> json(%{
-            error: "Validation failed",
-            details: format_changeset_errors(changeset)
-          })
-      end
-    else
-      {:error, :file_too_large} ->
-        conn
-        |> put_status(:payload_too_large)
-        |> json(%{error: "File size exceeds maximum allowed limit"})
-
-      {:error, :invalid_file_type} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "File type not supported"})
-
-      {:error, :invalid_parent_folder} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid parent folder specified"})
-
-      {:error, reason} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: reason})
+    with {:ok, %{storage_asset: storage_asset, storage_item: storage_item}} <-
+           StorageItems.create_storage_asset_with_item(current_user, params) do
+      conn
+      |> put_status(:created)
+      |> put_resp_header("location", "/api/v1/storage/assets/#{storage_asset.id}")
+      |> render(:show_upload, storage_asset: storage_asset, storage_item: storage_item)
     end
   end
 
-  def upload(conn, _params) do
-    conn
-    |> put_status(:bad_request)
-    |> json(%{error: "File upload is required"})
-  end
+  def upload(_conn, _params), do: {:error, :file_required}
 
   swagger_path :create do
     post("/storage/assets")
@@ -512,24 +418,13 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   @doc """
   Shows a storage asset by ID.
   """
+
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
-    organisation_id = current_user.current_org_id
 
-    with :ok <- validate_uuid(id),
-         %StorageAsset{} = storage_asset <-
-           StorageAssets.get_storage_asset_by_org(id, organisation_id) do
+    with %StorageAsset{} = storage_asset <-
+           StorageAssets.get_storage_asset_by_org(id, current_user.current_org_id) do
       render(conn, :show, storage_asset: storage_asset)
-    else
-      nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Storage asset not found"})
-
-      {:error, :invalid_uuid} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid asset ID format"})
     end
   end
 
@@ -567,32 +462,12 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   """
   def update(conn, %{"id" => id, "storage_asset" => storage_asset_params}) do
     current_user = conn.assigns[:current_user]
-    organisation_id = current_user.current_org_id
 
-    with :ok <- validate_uuid(id),
-         %StorageAsset{} = storage_asset <-
-           StorageAssets.get_storage_asset_by_org(id, organisation_id),
+    with %StorageAsset{} = storage_asset <-
+           StorageAssets.get_storage_asset_by_org(id, current_user.current_org_id),
          {:ok, %StorageAsset{} = updated_asset} <-
            StorageAssets.update_storage_asset(storage_asset, storage_asset_params) do
       render(conn, :show, storage_asset: updated_asset)
-    else
-      nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Storage asset not found"})
-
-      {:error, :invalid_uuid} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid asset ID format"})
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{
-          error: "Validation failed",
-          details: format_changeset_errors(changeset)
-        })
     end
   end
 
@@ -624,112 +499,11 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
   """
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
-    organisation_id = current_user.current_org_id
 
-    with :ok <- validate_uuid(id),
-         %StorageAsset{} = storage_asset <-
-           StorageAssets.get_storage_asset_by_org(id, organisation_id),
+    with %StorageAsset{} = storage_asset <-
+           StorageAssets.get_storage_asset_by_org(id, current_user.current_org_id),
          {:ok, %StorageAsset{}} <- StorageAssets.delete_storage_asset(storage_asset) do
       send_resp(conn, :no_content, "")
-    else
-      nil ->
-        conn
-        |> put_status(:not_found)
-        |> json(%{error: "Storage asset not found"})
-
-      {:error, :invalid_uuid} ->
-        conn
-        |> put_status(:bad_request)
-        |> json(%{error: "Invalid asset ID format"})
     end
-  end
-
-  # Private helper functions
-
-  # Validates upload parameters
-  defp validate_upload_params(%{"file" => %Plug.Upload{} = file} = params) do
-    with :ok <- validate_file_size(file),
-         :ok <- validate_file_type(file) do
-      validate_parent_folder(params)
-    end
-  end
-
-  defp validate_upload_params(_params), do: {:error, "File upload is required"}
-
-  # Validates file size
-  defp validate_file_size(%Plug.Upload{path: path}) do
-    case File.stat(path) do
-      # 10MB limit
-      {:ok, %{size: size}} when size <= 10 * 1024 * 1024 -> :ok
-      {:ok, %{size: _}} -> {:error, :file_too_large}
-      {:error, _} -> {:error, "Could not read file"}
-    end
-  end
-
-  # Validates file type
-  defp validate_file_type(%Plug.Upload{filename: filename}) do
-    extension = String.downcase(Path.extname(filename))
-
-    allowed_extensions =
-      ~w(.jpg .jpeg .png .pdf .doc .docx .xls .xlsx .ppt .pptx .txt .odt .zip .csv)
-
-    if extension in allowed_extensions do
-      :ok
-    else
-      {:error, :invalid_file_type}
-    end
-  end
-
-  # Validates parent folder exists and is accessible
-  defp validate_parent_folder(%{"parent_id" => parent_id})
-       when is_binary(parent_id) and parent_id != "" do
-    # This should validate that the parent folder exists and is accessible
-    # For now, we'll just validate UUID format
-    case Ecto.UUID.cast(parent_id) do
-      {:ok, _} -> :ok
-      :error -> {:error, :invalid_parent_folder}
-    end
-  end
-
-  defp validate_parent_folder(_params), do: :ok
-
-  # Prepares validated parameters for upload
-  defp prepare_validated_params(params, current_user) do
-    validated_params =
-      params
-      |> Map.put("creator_id", current_user.id)
-      |> Map.put("organisation_id", current_user.current_org_id)
-
-    {:ok, validated_params}
-  end
-
-  # Helper function to parse integer parameters
-  defp parse_integer(value, default, min, max) when is_binary(value) do
-    case Integer.parse(value) do
-      {int, ""} when int >= min ->
-        if max && int > max, do: max, else: int
-
-      _ ->
-        default
-    end
-  end
-
-  defp parse_integer(_, default, _, _), do: default
-
-  # Helper function to validate UUID format
-  defp validate_uuid(uuid) when is_binary(uuid) do
-    case Ecto.UUID.cast(uuid) do
-      {:ok, _} -> :ok
-      :error -> {:error, :invalid_uuid}
-    end
-  end
-
-  # Formats changeset errors for API response
-  defp format_changeset_errors(%Ecto.Changeset{} = changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Enum.reduce(opts, msg, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", inspect(value))
-      end)
-    end)
   end
 end
