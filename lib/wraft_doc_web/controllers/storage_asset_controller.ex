@@ -242,64 +242,7 @@ defmodule WraftDocWeb.Api.V1.StorageAssetController do
       # Filtered listing
       GET /api/v1/storage/assets?parent_id=550e8400-e29b-41d4-a716-446655440000&limit=50
   """
-  swagger_path :index do
-    get("/storage/assets")
-    summary("List storage assets")
-
-    description("""
-    Returns paginated list of storage assets for the current organization.
-
-    ### Filtering
-    - By repository: `?repository_id=UUID`
-    - By parent folder: `?parent_id=UUID`
-    - By MIME type: `?mime_type=type/subtype`
-
-    ### Sorting
-    Supported via `sort_by` and `sort_order` parameters
-    """)
-
-    operation_id("listStorageAssets")
-    produces("application/json")
-
-    parameters do
-      # Add query parameters here
-      limit(:query, :integer, "Number of items to return",
-        default: 100,
-        minimum: 1,
-        maximum: 1000
-      )
-
-      offset(:query, :integer, "Number of items to skip", default: 0, minimum: 0)
-      # repository_id(:query, :string, "Filter by repository ID", format: "uuid")
-      # parent_id(:query, :string, "Filter by parent folder ID", format: "uuid")
-      # mime_type(:query, :string, "Filter by MIME type")
-    end
-
-    response(200, "OK", Schema.ref(:StorageAssetList))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  @doc """
-  Lists storage assets with optional filtering.
-
-  ## Route
-  GET /api/v1/storage/assets
-
-  ## Parameters
-  - limit: Pagination limit (default: 100)
-  - offset: Pagination offset (default: 0)
-  - repository_id: Filter by repository
-  - parent_id: Filter by parent folder
-  - mime_type: Filter by MIME type
-
-  ## Examples
-      # Basic listing
-      GET /api/v1/storage/assets
-
-      # Filtered listing
-      GET /api/v1/storage/assets?parent_id=550e8400-e29b-41d4-a716-446655440000&limit=50
-  """
-  def index(conn, params) do
+  def index(conn, _params) do
     current_user = conn.assigns[:current_user]
 
     with storage_assets <-

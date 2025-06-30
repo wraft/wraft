@@ -2,7 +2,38 @@ defmodule WraftDoc.Storage.StorageItems do
   @moduledoc """
   Storage items management - handles CRUD operations, navigation, and organization
   of storage items including files and folders.
+
+  This module provides functionality for:
+  - Creating, reading, updating, and deleting storage items
+  - Managing hierarchical folder structures with breadcrumb navigation
+  - Handling file uploads and asset creation
+  - Searching and filtering storage items
+  - Managing storage item statistics and metadata
+  - Soft deletion and recovery operations
+
+  ## Storage Item Structure
+
+  Storage items represent both files and folders in a hierarchical structure:
+  - Files contain actual content and have associated storage assets
+  - Folders (mime_type: "inode/directory") organize other items
+  - Each item has a materialized path for efficient hierarchy queries
+  - Items support versioning, classification levels, and metadata
+
+  ## Examples
+
+      # List root level items for an organization
+      iex> list_storage_items(nil, "org-123")
+      [%StorageItem{}, ...]
+
+      # Get breadcrumb navigation for an item
+      iex> get_storage_item_breadcrumb_navigation("item-456", "org-123")
+      [%{id: "root", name: "Documents", is_folder: true}, ...]
+
+      # Search for items by name
+      iex> search_storage_items("contract", "org-123", limit: 10)
+      [%StorageItem{name: "contract.pdf"}, ...]
   """
+
   require Logger
   import Ecto.Query, warn: false
   alias WraftDoc.Repo
@@ -11,9 +42,64 @@ defmodule WraftDoc.Storage.StorageItems do
   alias WraftDoc.Storage.StorageAssets
   alias WraftDoc.Storage.StorageItem
 
+  @type storage_item_opts :: [
+          limit: pos_integer(),
+          offset: non_neg_integer(),
+          sort_by: String.t(),
+          sort_order: String.t()
+        ]
+
+  @type breadcrumb_item :: %{
+          id: String.t(),
+          name: String.t(),
+          is_folder: boolean(),
+          path: String.t(),
+          materialized_path: String.t()
+        }
+
+  @type storage_stats :: %{
+          total_count: non_neg_integer(),
+          folder_count: non_neg_integer(),
+          file_count: non_neg_integer(),
+          total_size: non_neg_integer()
+        }
+
+  @type navigation_response :: %{
+          data: %{
+            items: [map()],
+            breadcrumbs: [breadcrumb_item()]
+          },
+          meta: %{
+            count: non_neg_integer(),
+            timestamp: DateTime.t()
+          }
+        }
+
   @doc """
-  Returns the list of storage items.
+  Returns the list of storage items based on parent and organization filters.
+
+  ## Parameters
+  - `parent_id` - UUID of parent folder, or `nil` for root level items
+  - `organisation_id` - UUID of the organization
+  - `opts` - Keyword list of options for pagination and sorting
+
+  ## Options
+  - `:limit` - Maximum number of items to return (default: 100)
+  - `:offset` - Number of items to skip (default: 0)
+  - `:sort_by` - Field to sort by: "created", "name", "size" (default: "created")
+  - `:sort_order` - Sort direction: "asc" or "desc" (default: "desc")
+
+  ## Examples
+
+      iex> list_storage_items(nil, "org-123")
+      [%StorageItem{}, ...]
+
+      iex> list_storage_items("parent-456", "org-123", limit: 50, sort_by: "name")
+      [%StorageItem{}, ...]
   """
+  @spec list_storage_items(String.t() | nil, String.t() | nil, storage_item_opts()) :: [
+          StorageItem.t()
+        ]
   def list_storage_items(parent_id \\ nil, organisation_id \\ nil, opts \\ [])
 
   def list_storage_items(nil, nil, _opts) do
@@ -56,10 +142,43 @@ defmodule WraftDoc.Storage.StorageItems do
   end
 
   @doc """
-  Gets a single storage_item.
+  Gets a single storage item by ID.
+
+  Raises `Ecto.NoResultsError` if the storage item does not exist.
+
+  ## Examples
+
+      iex> get_storage_item!("valid-uuid")
+      %StorageItem{}
+
+      iex> get_storage_item!("invalid-uuid")
+      ** (Ecto.NoResultsError)
   """
+  @spec get_storage_item!(String.t()) :: StorageItem.t()
   def get_storage_item!(id), do: Repo.get!(StorageItem, id)
 
+  @doc """
+  Creates a storage item with the given attributes.
+
+  Handles duplicate external_id gracefully by returning the existing item
+  if a duplicate constraint violation occurs.
+
+  ## Parameters
+  - `attrs` - Map of attributes for the storage item
+
+  ## Returns
+  - `{:ok, storage_item}` - Successfully created or found existing item
+  - `{:error, changeset}` - Validation or other errors occurred
+
+  ## Examples
+
+      iex> create_storage_item(%{name: "document.pdf", organisation_id: "org-123"})
+      {:ok, %StorageItem{}}
+
+      iex> create_storage_item(%{name: ""})
+      {:error, %Ecto.Changeset{}}
+  """
+  @spec create_storage_item(map()) :: {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()}
   def create_storage_item(attrs \\ %{}) do
     attrs = Helper.handle_duplicate_names(attrs)
 
@@ -80,6 +199,7 @@ defmodule WraftDoc.Storage.StorageItems do
     end
   end
 
+  @spec duplicate_external_id_error?(Ecto.Changeset.t()) :: boolean()
   defp duplicate_external_id_error?(%Ecto.Changeset{errors: errors}) do
     case Keyword.get(errors, :external_id) do
       {"has already been taken", opts} ->
@@ -90,6 +210,8 @@ defmodule WraftDoc.Storage.StorageItems do
     end
   end
 
+  @spec get_existing_storage_item(map()) ::
+          {:ok, StorageItem.t()} | {:error, :not_found | :invalid_lookup_keys}
   defp get_existing_storage_item(%{"external_id" => ext_id, "sync_source" => sync} = _attrs)
        when not is_nil(ext_id) and not is_nil(sync) do
     case Repo.get_by(StorageItem, external_id: ext_id, sync_source: sync) do
@@ -100,12 +222,37 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp get_existing_storage_item(_), do: {:ok, :invalid_lookup_keys}
 
+  @doc """
+  Updates a storage item with the given attributes.
+
+  ## Examples
+
+      iex> update_storage_item(storage_item, %{name: "new_name.pdf"})
+      {:ok, %StorageItem{}}
+
+      iex> update_storage_item(storage_item, %{name: ""})
+      {:error, %Ecto.Changeset{}}
+  """
+  @spec update_storage_item(StorageItem.t(), map()) ::
+          {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()}
   def update_storage_item(%StorageItem{} = storage_item, attrs) do
     storage_item
     |> StorageItem.changeset(attrs)
     |> Repo.update()
   end
 
+  @doc """
+  Deletes a storage item (soft delete).
+
+  For folders, schedules recursive deletion of all children.
+  Also schedules deletion of associated storage assets.
+
+  ## Examples
+
+      iex> delete_storage_item(storage_item)
+      {:ok, %StorageItem{is_deleted: true}}
+  """
+  @spec delete_storage_item(StorageItem.t()) :: {:ok, any()} | {:error, any()}
   def delete_storage_item(%StorageItem{} = storage_item) do
     Repo.transaction(fn ->
       # Mark the item as deleted
@@ -126,6 +273,17 @@ defmodule WraftDoc.Storage.StorageItems do
     end)
   end
 
+  @doc """
+  Gets the breadcrumb trail for a storage item.
+
+  Returns a list of ancestor items from root to the specified item.
+
+  ## Examples
+
+      iex> get_storage_item_breadcrumbs("item-123", "org-456")
+      [%StorageItem{name: "Documents"}, %StorageItem{name: "Contracts"}]
+  """
+  @spec get_storage_item_breadcrumbs(String.t(), String.t()) :: [StorageItem.t()]
   def get_storage_item_breadcrumbs(item_id, organisation_id) do
     case get_storage_item_by_org(item_id, organisation_id) do
       nil -> []
@@ -133,12 +291,24 @@ defmodule WraftDoc.Storage.StorageItems do
     end
   end
 
+  @doc """
+  Gets breadcrumb navigation data for a storage item.
+
+  Returns a simplified list of breadcrumb items suitable for UI navigation.
+
+  ## Examples
+
+      iex> get_storage_item_breadcrumb_navigation("item-123", "org-456")
+      [%{id: "root", name: "Documents", is_folder: true, path: "/docs"}]
+  """
+  @spec get_storage_item_breadcrumb_navigation(String.t(), String.t()) :: [breadcrumb_item()]
   def get_storage_item_breadcrumb_navigation(item_id, organisation_id) do
     item_id
     |> get_storage_item_breadcrumbs(organisation_id)
     |> Enum.map(&map_breadcrumb_item/1)
   end
 
+  @spec map_breadcrumb_item(StorageItem.t()) :: breadcrumb_item()
   defp map_breadcrumb_item(
          %{
            id: id,
@@ -156,19 +326,41 @@ defmodule WraftDoc.Storage.StorageItems do
     }
   end
 
+  @doc """
+  Returns an `Ecto.Changeset` for tracking storage item changes.
+
+  ## Examples
+
+      iex> change_storage_item(storage_item)
+      %Ecto.Changeset{data: %StorageItem{}}
+  """
+  @spec change_storage_item(StorageItem.t(), map()) :: Ecto.Changeset.t()
   def change_storage_item(%StorageItem{} = storage_item, attrs \\ %{}),
     do: StorageItem.changeset(storage_item, attrs)
 
+  @spec now_utc() :: DateTime.t()
   defp now_utc, do: DateTime.utc_now()
 
+  @doc """
+  Performs a soft delete on a storage item and its children (if folder).
+
+  ## Examples
+
+      iex> soft_delete_storage_item(storage_item)
+      {:ok, %StorageItem{is_deleted: true}}
+  """
+  @spec soft_delete_storage_item(StorageItem.t()) :: {:ok, any()} | {:error, any()}
   def soft_delete_storage_item(%StorageItem{} = storage_item),
     do: Repo.transaction(fn -> perform_soft_delete(storage_item) end)
 
+  @spec perform_soft_delete(StorageItem.t()) ::
+          {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()}
   defp perform_soft_delete(%StorageItem{} = storage_item) do
     maybe_soft_delete_children(storage_item, now_utc())
     soft_delete_item(storage_item, now_utc())
   end
 
+  @spec maybe_soft_delete_children(StorageItem.t(), DateTime.t()) :: :ok | {integer(), nil}
   defp maybe_soft_delete_children(%StorageItem{mime_type: "inode/directory", id: id}, now) do
     children = get_all_children_storage_items(id)
 
@@ -182,13 +374,23 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp maybe_soft_delete_children(_storage_item, _now), do: :ok
 
+  @spec soft_delete_item(StorageItem.t(), DateTime.t()) ::
+          {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()}
   defp soft_delete_item(storage_item, now) do
     storage_item
     |> StorageItem.changeset(%{is_deleted: true, deleted_at: now})
     |> Repo.update()
   end
 
-  # Gets all children of a storage item recursively (for folders).
+  @doc """
+  Gets all children of a storage item recursively (for folders).
+
+  ## Examples
+
+      iex> get_all_children_storage_items("folder-123")
+      [%StorageItem{}, %StorageItem{}, ...]
+  """
+  @spec get_all_children_storage_items(String.t()) :: [StorageItem.t()]
   def get_all_children_storage_items(parent_id) do
     parent_id
     |> fetch_immediate_children()
@@ -197,6 +399,7 @@ defmodule WraftDoc.Storage.StorageItems do
     end)
   end
 
+  @spec fetch_immediate_children(String.t()) :: [StorageItem.t()]
   defp fetch_immediate_children(parent_id) do
     fetch =
       from(s in StorageItem,
@@ -206,12 +409,29 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.all(fetch)
   end
 
+  @spec process_child(StorageItem.t()) :: [StorageItem.t()]
   defp process_child(%StorageItem{mime_type: "inode/directory", id: id} = child) do
     [child | get_all_children_storage_items(id)]
   end
 
   defp process_child(child), do: [child]
 
+  @doc """
+  Lists storage items with breadcrumb navigation data.
+
+  Returns items along with breadcrumb trail and current folder information.
+
+  ## Examples
+
+      iex> list_storage_items_with_breadcrumbs("parent-123", "org-456")
+      %{items: [...], breadcrumbs: [...], current_folder: %{...}}
+  """
+  @spec list_storage_items_with_breadcrumbs(String.t() | nil, String.t(), storage_item_opts()) ::
+          %{
+            items: [StorageItem.t()],
+            breadcrumbs: [breadcrumb_item()],
+            current_folder: map() | nil
+          }
   def list_storage_items_with_breadcrumbs(parent_id \\ nil, organisation_id, opts \\ []) do
     items = list_storage_items(parent_id, organisation_id, opts)
     {breadcrumbs, current_folder} = build_breadcrumbs_and_folder(parent_id, organisation_id)
@@ -223,6 +443,8 @@ defmodule WraftDoc.Storage.StorageItems do
     }
   end
 
+  @spec build_breadcrumbs_and_folder(String.t() | nil, String.t()) ::
+          {[breadcrumb_item()], map() | nil}
   defp build_breadcrumbs_and_folder(nil, _organisation_id), do: {[], nil}
 
   defp build_breadcrumbs_and_folder(parent_id, organisation_id) do
@@ -237,6 +459,7 @@ defmodule WraftDoc.Storage.StorageItems do
     end
   end
 
+  @spec build_folder_map(StorageItem.t()) :: map()
   defp build_folder_map(
          %StorageItem{
            id: id,
@@ -254,7 +477,18 @@ defmodule WraftDoc.Storage.StorageItems do
     }
   end
 
-  # Helper to find storage item by path
+  @doc """
+  Finds a storage item by its path within an organization.
+
+  ## Examples
+
+      iex> find_storage_item_by_path("/documents/contract.pdf", "org-123")
+      %StorageItem{}
+
+      iex> find_storage_item_by_path("/nonexistent", "org-123")
+      nil
+  """
+  @spec find_storage_item_by_path(String.t(), String.t()) :: StorageItem.t() | nil
   def find_storage_item_by_path(path, organisation_id) do
     query =
       from(s in StorageItem,
@@ -267,6 +501,17 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.one(query)
   end
 
+  @doc """
+  Lists storage items by repository with pagination.
+
+  ## Examples
+
+      iex> list_storage_items_by_repository("repo-123", "org-456", limit: 20)
+      [%StorageItem{}, ...]
+  """
+  @spec list_storage_items_by_repository(String.t(), String.t(), storage_item_opts()) :: [
+          StorageItem.t()
+        ]
   def list_storage_items_by_repository(repository_id, organisation_id, opts \\ []) do
     limit = Keyword.get(opts, :limit, 100)
     offset = Keyword.get(opts, :offset, 0)
@@ -286,6 +531,17 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.all(query)
   end
 
+  @doc """
+  Lists storage items by parent with sorting and pagination.
+
+  ## Examples
+
+      iex> list_storage_items_by_parent("parent-123", "org-456", sort_by: "name")
+      [%StorageItem{}, ...]
+  """
+  @spec list_storage_items_by_parent(String.t(), String.t(), storage_item_opts()) :: [
+          StorageItem.t()
+        ]
   def list_storage_items_by_parent(parent_id, organisation_id, opts \\ []) do
     limit = Keyword.get(opts, :limit, 100)
     offset = Keyword.get(opts, :offset, 0)
@@ -308,6 +564,15 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.all(query)
   end
 
+  @doc """
+  Lists root level storage items for an organization.
+
+  ## Examples
+
+      iex> list_root_storage_items("org-123", limit: 50)
+      [%StorageItem{}, ...]
+  """
+  @spec list_root_storage_items(String.t(), storage_item_opts()) :: [StorageItem.t()]
   def list_root_storage_items(organisation_id, opts \\ []) do
     limit = Keyword.get(opts, :limit, 100)
     offset = Keyword.get(opts, :offset, 0)
@@ -326,6 +591,18 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.all(query)
   end
 
+  @doc """
+  Gets a storage item by ID and organization, raising if not found.
+
+  ## Examples
+
+      iex> get_storage_item_by_org!("item-123", "org-456")
+      %StorageItem{}
+
+      iex> get_storage_item_by_org!("nonexistent", "org-456")
+      ** (Ecto.NoResultsError)
+  """
+  @spec get_storage_item_by_org!(String.t(), String.t()) :: StorageItem.t()
   def get_storage_item_by_org!(id, organisation_id) do
     query =
       from(s in StorageItem,
@@ -337,6 +614,18 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.one!(query)
   end
 
+  @doc """
+  Gets a storage item by ID and organization.
+
+  ## Examples
+
+      iex> get_storage_item_by_org("item-123", "org-456")
+      %StorageItem{}
+
+      iex> get_storage_item_by_org("nonexistent", "org-456")
+      nil
+  """
+  @spec get_storage_item_by_org(String.t(), String.t()) :: StorageItem.t() | nil
   def get_storage_item_by_org(id, organisation_id) do
     query =
       from(s in StorageItem,
@@ -348,6 +637,18 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.one(query)
   end
 
+  @doc """
+  Counts storage items under a parent or at root level.
+
+  ## Examples
+
+      iex> count_storage_items("parent-123", "org-456")
+      42
+
+      iex> count_storage_items(nil, "org-456")
+      15
+  """
+  @spec count_storage_items(String.t() | nil, String.t()) :: non_neg_integer()
   def count_storage_items(parent_id, organisation_id) when is_binary(parent_id) do
     query =
       from(s in StorageItem,
@@ -373,6 +674,17 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.one(query)
   end
 
+  @doc """
+  Gets statistics for storage items under a parent or at root level.
+
+  Returns counts and total size information.
+
+  ## Examples
+
+      iex> get_storage_item_stats("parent-123", "org-456")
+      %{total_count: 10, folder_count: 3, file_count: 7, total_size: 1024000}
+  """
+  @spec get_storage_item_stats(String.t() | nil, String.t()) :: storage_stats()
   def get_storage_item_stats(parent_id, organisation_id) do
     base_query = build_base_query(organisation_id)
     scoped_query = apply_parent_scope(base_query, parent_id)
@@ -382,6 +694,7 @@ defmodule WraftDoc.Storage.StorageItems do
     normalize_stats(stats_result)
   end
 
+  @spec build_base_query(String.t()) :: Ecto.Query.t()
   defp build_base_query(organisation_id) do
     from(s in StorageItem,
       where: s.organisation_id == ^organisation_id,
@@ -389,6 +702,7 @@ defmodule WraftDoc.Storage.StorageItems do
     )
   end
 
+  @spec apply_parent_scope(Ecto.Query.t(), String.t() | nil) :: Ecto.Query.t()
   defp apply_parent_scope(query, nil) do
     from(s in query,
       where: is_nil(s.parent_id) and s.depth_level == 1
@@ -401,6 +715,7 @@ defmodule WraftDoc.Storage.StorageItems do
     )
   end
 
+  @spec build_stats_query(Ecto.Query.t()) :: Ecto.Query.t()
   def build_stats_query(query) do
     from(s in query,
       select: %{
@@ -414,6 +729,7 @@ defmodule WraftDoc.Storage.StorageItems do
     )
   end
 
+  @spec normalize_stats(map() | nil) :: storage_stats()
   def normalize_stats(nil) do
     %{
       total_count: 0,
@@ -432,6 +748,27 @@ defmodule WraftDoc.Storage.StorageItems do
     }
   end
 
+  @doc """
+  Searches storage items by name or display name.
+
+  ## Parameters
+  - `search_term` - Text to search for in item names
+  - `organisation_id` - Organization UUID
+  - `opts` - Search options including filters and pagination
+
+  ## Options
+  - `:item_type` - Filter by type: `:folders`, `:files`, or `nil` for all
+  - `:limit` - Maximum results (default: 50)
+  - `:offset` - Results to skip (default: 0)
+  - `:sort_by` - Sort field (default: "created")
+  - `:sort_order` - Sort direction (default: "desc")
+
+  ## Examples
+
+      iex> search_storage_items("contract", "org-123", item_type: :files, limit: 10)
+      [%StorageItem{name: "contract.pdf"}, ...]
+  """
+  @spec search_storage_items(String.t(), String.t(), keyword()) :: [StorageItem.t()]
   def search_storage_items(search_term, organisation_id, opts \\ []) do
     limit = Keyword.get(opts, :limit, 50)
     offset = Keyword.get(opts, :offset, 0)
@@ -466,6 +803,17 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.all(query)
   end
 
+  @doc """
+  Creates a storage asset with associated storage item for authenticated users.
+
+  Handles file upload, metadata extraction, and storage item creation in a transaction.
+
+  ## Examples
+
+      iex> create_storage_asset_with_item(current_user, %{"file" => upload, "parent_id" => "folder-123"})
+      {:ok, %{storage_item: %StorageItem{}, storage_asset: %StorageAsset{}}}
+  """
+  @spec create_storage_asset_with_item(map(), map()) :: {:ok, map()} | {:error, any()}
   def create_storage_asset_with_item(current_user, params) do
     organisation_id = current_user.current_org_id
 
@@ -480,7 +828,13 @@ defmodule WraftDoc.Storage.StorageItems do
 
   @doc """
   Creates a storage asset with file upload for public access (no user required).
+
+  ## Examples
+
+      iex> create_storage_asset_with_item_public(%{"file" => upload}, "org-123")
+      {:ok, %{storage_item: %StorageItem{}, storage_asset: %StorageAsset{}}}
   """
+  @spec create_storage_asset_with_item_public(map(), String.t()) :: {:ok, map()} | {:error, any()}
   def create_storage_asset_with_item_public(params, organisation_id) do
     with {:ok, enriched_params} <- Helper.prepare_upload_params(params, nil, organisation_id),
          {:ok, result} <- Helper.execute_upload_transaction(enriched_params) do
@@ -490,6 +844,15 @@ defmodule WraftDoc.Storage.StorageItems do
     end
   end
 
+  @doc """
+  Builds storage item parameters from upload metadata.
+
+  ## Examples
+
+      iex> build_storage_item_params(params, file_metadata, user, "org-123")
+      {:ok, %{name: "document", mime_type: "application/pdf", ...}}
+  """
+  @spec build_storage_item_params(map(), map(), map() | nil, String.t()) :: {:ok, map()}
   def build_storage_item_params(params, file_metadata, current_user, organisation_id) do
     parent_id = Map.get(params, "parent_id")
     repository_id = Map.get(params, "repository_id")
@@ -534,6 +897,19 @@ defmodule WraftDoc.Storage.StorageItems do
     {:ok, storage_item_params}
   end
 
+  @doc """
+  Renames a storage item and updates children paths if it's a folder.
+
+  ## Examples
+
+      iex> rename_storage_item(storage_item, "new_name", "org-123")
+      {:ok, %StorageItem{name: "new_name"}}
+
+      iex> rename_storage_item(storage_item, "invalid/name", "org-123")
+      {:error, :invalid_name}
+  """
+  @spec rename_storage_item(StorageItem.t(), String.t(), String.t()) ::
+          {:ok, StorageItem.t()} | {:error, atom()}
   def rename_storage_item(%StorageItem{} = storage_item, new_name, organisation_id) do
     with :ok <- validate_name(new_name),
          :ok <- check_duplicate_name(storage_item, new_name, organisation_id),
@@ -543,6 +919,7 @@ defmodule WraftDoc.Storage.StorageItems do
     end
   end
 
+  @spec validate_name(String.t()) :: :ok | {:error, :invalid_name}
   defp validate_name(name) do
     if String.contains?(name, "/") do
       {:error, :invalid_name}
@@ -551,6 +928,8 @@ defmodule WraftDoc.Storage.StorageItems do
     end
   end
 
+  @spec check_duplicate_name(StorageItem.t(), String.t(), String.t()) ::
+          :ok | {:error, :duplicate_name}
   defp check_duplicate_name(storage_item, new_name, organisation_id) do
     duplicate_check_query =
       from(s in StorageItem,
@@ -567,6 +946,8 @@ defmodule WraftDoc.Storage.StorageItems do
     end
   end
 
+  @spec update_storage_item_name(StorageItem.t(), String.t()) ::
+          {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()}
   defp update_storage_item_name(storage_item, new_name) do
     changeset =
       StorageItem.changeset(storage_item, %{
@@ -577,12 +958,25 @@ defmodule WraftDoc.Storage.StorageItems do
     Repo.update(changeset)
   end
 
+  @spec maybe_update_children_paths(StorageItem.t(), String.t()) :: any()
   defp maybe_update_children_paths(updated_item, organisation_id) do
     if updated_item.mime_type == "inode/directory" do
       Helper.update_children_paths(updated_item, organisation_id)
     end
   end
 
+  @doc """
+  Processes index request with various filtering and navigation options.
+
+  Handles parent-based, repository-based, or root-level item listing with
+  appropriate breadcrumb navigation.
+
+  ## Examples
+
+      iex> process_index_request(%{"parent_id" => "folder-123"}, user, "org-456")
+      {:ok, %{data: [...], breadcrumbs: [...], meta: %{...}}}
+  """
+  @spec process_index_request(map(), map(), String.t()) :: {:ok, map()} | {:error, String.t()}
   def process_index_request(params, _current_user, organisation_id) do
     pagination_opts = build_pagination_opts(params)
 
@@ -601,7 +995,7 @@ defmodule WraftDoc.Storage.StorageItems do
     respond_with_result(result, params, organisation_id)
   end
 
-  # BUILD PAGINATION OPTIONS
+  @spec build_pagination_opts(map()) :: storage_item_opts()
   defp build_pagination_opts(params) do
     limit = parse_integer(params["limit"], 100, 1, 1000)
     offset = parse_integer(params["offset"], 0, 0, nil)
@@ -616,14 +1010,16 @@ defmodule WraftDoc.Storage.StorageItems do
     ]
   end
 
-  # CONDITION HELPERS
+  @spec valid_parent_id?(map()) :: boolean()
   defp valid_parent_id?(%{"parent_id" => parent_id}), do: parent_id != ""
   defp valid_parent_id?(_), do: false
 
+  @spec valid_repository_id?(map()) :: boolean()
   defp valid_repository_id?(%{"repository_id" => repository_id}), do: repository_id != ""
   defp valid_repository_id?(_), do: false
 
-  # HANDLE FLOWS
+  @spec handle_parent_flow(map(), String.t(), storage_item_opts()) ::
+          {:ok, map()} | {:error, atom()}
   defp handle_parent_flow(params, organisation_id, pagination_opts) do
     parent_id = params["parent_id"]
     sort_by = pagination_opts[:sort_by]
@@ -661,6 +1057,7 @@ defmodule WraftDoc.Storage.StorageItems do
     end
   end
 
+  @spec handle_repository_flow(map(), String.t(), storage_item_opts()) :: {:ok, map()}
   defp handle_repository_flow(params, organisation_id, pagination_opts) do
     repository_id = params["repository_id"]
     parent_id = Map.get(params, "parent_id")
@@ -710,12 +1107,14 @@ defmodule WraftDoc.Storage.StorageItems do
     {:ok, %{items: items, breadcrumbs: breadcrumbs, current_folder: current_folder}}
   end
 
+  @spec handle_root_flow(String.t(), storage_item_opts()) :: {:ok, map()}
   defp handle_root_flow(organisation_id, pagination_opts) do
     Logger.info("🏠 Fetching root level items", %{organisation_id: organisation_id})
     {:ok, list_storage_items_with_breadcrumbs(nil, organisation_id, pagination_opts)}
   end
 
-  # BUILD RESPONSE
+  @spec respond_with_result({:ok, map()} | {:error, atom()}, map(), String.t()) ::
+          {:ok, map()} | {:error, String.t()}
   defp respond_with_result(
          {:ok, %{items: items, breadcrumbs: breadcrumbs, current_folder: current_folder}},
          params,
@@ -738,7 +1137,7 @@ defmodule WraftDoc.Storage.StorageItems do
   defp respond_with_result({:error, :folder_not_found}, _params, _org),
     do: {:error, "Folder not found"}
 
-  # Helper function to format storage item data
+  @spec storage_item_data(StorageItem.t(), [StorageAsset.t()]) :: map()
   defp storage_item_data(%StorageItem{} = storage_item, storage_assets \\ []) do
     %{
       id: storage_item.id,
@@ -770,7 +1169,7 @@ defmodule WraftDoc.Storage.StorageItems do
     }
   end
 
-  # Helper function to format storage asset data
+  @spec storage_asset_data(StorageAsset.t()) :: map()
   defp storage_asset_data(%StorageAsset{} = storage_asset) do
     %{
       id: storage_asset.id,
@@ -790,7 +1189,7 @@ defmodule WraftDoc.Storage.StorageItems do
     }
   end
 
-  # Helper function to parse integer parameters with validation
+  @spec parse_integer(String.t() | nil, integer(), integer(), integer() | nil) :: integer()
   defp parse_integer(value, default, min, max) when is_binary(value) do
     case Integer.parse(value) do
       {int, ""} when int >= min ->
@@ -803,7 +1202,7 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp parse_integer(_, default, _, _), do: default
 
-  # Helper function to extract a meaningful name from a storage item
+  @spec get_folder_name(StorageItem.t()) :: String.t()
   defp get_folder_name(%StorageItem{} = item) do
     item.display_name
     |> fallback(item.name)
@@ -812,15 +1211,17 @@ defmodule WraftDoc.Storage.StorageItems do
     |> default_if_blank("Unnamed Folder")
   end
 
+  @spec fallback(String.t() | nil, String.t() | nil) :: String.t() | nil
   defp fallback(nil, fallback), do: fallback
   defp fallback("", fallback), do: fallback
   defp fallback(value, _fallback), do: value
 
+  @spec default_if_blank(String.t() | nil, String.t()) :: String.t()
   defp default_if_blank(nil, default), do: default
   defp default_if_blank("", default), do: default
   defp default_if_blank(value, _default), do: value
 
-  # Helper function to extract the last segment from a path
+  @spec extract_name_from_path(String.t() | nil) :: String.t()
   defp extract_name_from_path(path) when is_binary(path) do
     path
     |> String.trim()
@@ -836,6 +1237,7 @@ defmodule WraftDoc.Storage.StorageItems do
 
   defp extract_name_from_path(_), do: "Unknown"
 
+  @spec log_success(String.t(), [StorageItem.t()], [breadcrumb_item()], map() | nil, map()) :: :ok
   defp log_success(organisation_id, items, breadcrumbs, current_folder, params) do
     Logger.info("Storage items listed", %{
       organisation_id: organisation_id,
@@ -856,6 +1258,7 @@ defmodule WraftDoc.Storage.StorageItems do
     })
   end
 
+  @spec build_meta([StorageItem.t()], [breadcrumb_item()], map()) :: map()
   defp build_meta(items, breadcrumbs, params) do
     %{
       count: length(items),
@@ -870,6 +1273,17 @@ defmodule WraftDoc.Storage.StorageItems do
   Validates a UUID parameter in the given map.
 
   Returns `:ok` if the parameter is valid, or `{:error, String.t()}` if it is invalid.
+
+  ## Examples
+
+      iex> validate_uuid_param(%{"parent_id" => "550e8400-e29b-41d4-a716-446655440000"}, "parent_id")
+      :ok
+
+      iex> validate_uuid_param(%{"parent_id" => "invalid-uuid"}, "parent_id")
+      {:error, "Invalid UUID format for parent_id"}
+
+      iex> validate_uuid_param(%{}, "parent_id")
+      :ok
   """
   @spec validate_uuid_param(map(), String.t()) :: :ok | {:error, String.t()}
   def validate_uuid_param(params, key) do
@@ -888,6 +1302,15 @@ defmodule WraftDoc.Storage.StorageItems do
     end
   end
 
+  @doc """
+  Handles navigation request for storage items with breadcrumb data.
+
+  ## Examples
+
+      iex> handle_navigation("parent-123", "org-456", %{"limit" => "20"})
+      {:ok, %{data: %{items: [...], breadcrumbs: [...]}, meta: %{...}}}
+  """
+  @spec handle_navigation(String.t() | nil, String.t(), map()) :: {:ok, navigation_response()}
   def handle_navigation(parent_id, organisation_id, params) do
     pagination_opts = build_pagination_opts(params)
 
@@ -901,6 +1324,7 @@ defmodule WraftDoc.Storage.StorageItems do
     {:ok, response}
   end
 
+  @spec log_navigation_retrieved(String.t(), String.t() | nil, map()) :: :ok
   defp log_navigation_retrieved(organisation_id, parent_id, navigation_data) do
     Logger.info("Storage navigation data retrieved", %{
       organisation_id: organisation_id,
@@ -910,6 +1334,7 @@ defmodule WraftDoc.Storage.StorageItems do
     })
   end
 
+  @spec build_navigation_response(map()) :: navigation_response()
   defp build_navigation_response(navigation_data) do
     %{
       data: %{
@@ -926,10 +1351,17 @@ defmodule WraftDoc.Storage.StorageItems do
   @doc """
   Calculates the depth level of a storage item based on its path.
 
+  The depth level represents how deep an item is in the folder hierarchy:
+  - Root level items have depth 1
+  - Items in subfolders have incrementally higher depths
+
   ## Examples
 
       iex> calculate_depth_level("/Documents/Contracts/Q4/August")
       4
+
+      iex> calculate_depth_level("/Documents")
+      1
 
       iex> calculate_depth_level("/")
       0
@@ -937,6 +1369,7 @@ defmodule WraftDoc.Storage.StorageItems do
       iex> calculate_depth_level("")
       0
   """
+  @spec calculate_depth_level(String.t()) :: non_neg_integer()
   def calculate_depth_level(path) when is_binary(path) do
     path
     |> String.trim("/")

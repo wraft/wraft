@@ -28,6 +28,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Repo
+  alias WraftDoc.Storage
   alias WraftDoc.TaskSupervisor
   alias WraftDoc.Workers.DefaultWorker
   alias WraftDoc.Workers.EmailWorker
@@ -737,24 +738,19 @@ defmodule WraftDoc.Enterprise do
       organisation_id: organisation.id,
       creator_id: attrs["creator_id"] || attrs[:creator_id],
       status: :active,
-      storage_limit: default_storage_limit(),
+      storage_limit: @default_storage_limit,
       current_storage_used: 0,
       item_count: 0
     }
 
-    case WraftDoc.Storage.create_repository(repository_attrs) do
+    case Storage.create_repository(repository_attrs) do
       {:ok, repository} ->
-        # Return organisation with preloaded repository
         {:ok, %{organisation | repository: repository}}
 
       {:error, _changeset} ->
-        # Repository creation failed, but organisation exists
-        # You might want to handle this differently
         {:ok, organisation}
     end
   end
-
-  defp default_storage_limit, do: @default_storage_limit
 
   @doc """
   Create a personal organisation when the user first sign up for wraft

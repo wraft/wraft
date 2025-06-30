@@ -1,7 +1,16 @@
 defmodule WraftDoc.Storage do
   @moduledoc """
-  The sync job model.
+  The Storage context provides functionality for managing file storage, repositories,
+  and storage items within organizations.
+
+  This module handles:
+  - Repository CRUD operations
+  - File upload processing and metadata extraction
+  - Storage item hierarchy and navigation
+  - Duplicate name handling
+  - Background processing for content extraction and thumbnails
   """
+
   import Ecto.Query, warn: false
   require Logger
 
@@ -13,10 +22,16 @@ defmodule WraftDoc.Storage do
   alias WraftDoc.Storage.StorageItem
   alias WraftDoc.Storage.StorageItems
 
+  # Repository functions
+
+  @doc "Lists all repositories"
+  @spec list_repositories() :: [Repository.t()]
   def list_repositories do
     Repo.all(Repository)
   end
 
+  @doc "Gets the latest repository for an organization"
+  @spec get_latest_repository(String.t()) :: Repository.t() | nil
   def get_latest_repository(organisation_id) do
     Repository
     |> where([r], r.organisation_id == ^organisation_id)
@@ -25,28 +40,41 @@ defmodule WraftDoc.Storage do
     |> Repo.one()
   end
 
+  @doc "Gets a repository by ID, raises if not found"
+  @spec get_repository!(String.t()) :: Repository.t()
   def get_repository!(id), do: Repo.get!(Repository, id)
 
+  @doc "Creates a new repository"
+  @spec create_repository(map()) :: {:ok, Repository.t()} | {:error, Ecto.Changeset.t()}
   def create_repository(attrs \\ %{}) do
     %Repository{}
     |> Repository.changeset(attrs)
     |> Repo.insert()
   end
 
+  @doc "Updates a repository"
+  @spec update_repository(Repository.t(), map()) ::
+          {:ok, Repository.t()} | {:error, Ecto.Changeset.t()}
   def update_repository(%Repository{} = repository, attrs) do
     repository
     |> Repository.changeset(attrs)
     |> Repo.update()
   end
 
+  @doc "Deletes a repository"
+  @spec delete_repository(Repository.t()) :: {:ok, Repository.t()} | {:error, Ecto.Changeset.t()}
   def delete_repository(%Repository{} = repository) do
     Repo.delete(repository)
   end
 
+  @doc "Creates a changeset for a repository"
+  @spec change_repository(Repository.t(), map()) :: Ecto.Changeset.t()
   def change_repository(%Repository{} = repository, attrs \\ %{}) do
     Repository.changeset(repository, attrs)
   end
 
+  @doc "Lists repositories by user and organization"
+  @spec list_repositories_by_user_and_organisation(String.t(), String.t()) :: [Repository.t()]
   def list_repositories_by_user_and_organisation(user_id, organisation_id) do
     query =
       from(r in Repository,
@@ -57,7 +85,10 @@ defmodule WraftDoc.Storage do
     Repo.all(query)
   end
 
-  @doc false
+  # File handling functions
+
+  @doc "Handles duplicate names by appending a number suffix"
+  @spec handle_duplicate_names(map()) :: map()
   def handle_duplicate_names(%{"parent_id" => parent_id, "name" => name} = attrs)
       when is_binary(parent_id) and is_binary(name) do
     {base_name, extension} = split_name_and_extension(name)
@@ -82,16 +113,16 @@ defmodule WraftDoc.Storage do
 
   def handle_duplicate_names(attrs), do: attrs
 
-  # Utility: more robust name splitting
+  @spec split_name_and_extension(String.t()) :: {String.t(), String.t()}
   defp split_name_and_extension(name) do
     extension = Path.extname(name)
     base_name = Path.rootname(name)
     {base_name, extension}
   end
 
-  @doc false
+  @doc "Finds the next available number for duplicate names"
+  @spec find_next_available_number([String.t()], String.t(), String.t()) :: integer()
   def find_next_available_number(similar_names, base_name, extension) do
-    # Extract numbers from existing names
     numbers =
       Enum.map(similar_names, fn name ->
         case Regex.run(~r/#{base_name}_(\d+)#{extension}/, name) do
@@ -100,19 +131,22 @@ defmodule WraftDoc.Storage do
         end
       end)
 
-    # Find the next available number
     case numbers do
       [] -> 1
       nums -> Enum.max(nums) + 1
     end
   end
 
+  @doc "Schedules folder deletion using background worker"
+  @spec schedule_folder_deletion(String.t()) :: {:ok, Oban.Job.t()} | {:error, Ecto.Changeset.t()}
   def schedule_folder_deletion(folder_id) do
     %{folder_id: folder_id}
     |> WraftDoc.Workers.StorageDeletionWorker.new()
     |> Oban.insert()
   end
 
+  @doc "Gets meaningful display name for a storage item"
+  @spec get_meaningful_name(StorageItem.t()) :: String.t()
   def get_meaningful_name(%StorageItem{} = item) do
     item
     |> extract_first_non_empty([
@@ -127,6 +161,7 @@ defmodule WraftDoc.Storage do
     end
   end
 
+  @spec extract_first_non_empty(StorageItem.t(), [function()]) :: String.t() | nil
   defp extract_first_non_empty(item, extractors) do
     Enum.find_value(extractors, fn extractor ->
       value = safe_trim(extractor.(item))
@@ -134,10 +169,11 @@ defmodule WraftDoc.Storage do
     end)
   end
 
+  @spec safe_trim(String.t() | nil) :: String.t() | nil
   defp safe_trim(nil), do: nil
   defp safe_trim(value), do: String.trim(value)
-
-  # Helper function to extract the last segment from a path
+  @doc "Extracts name from a file path"
+  @spec extract_name_from_path(String.t() | nil) :: String.t()
   def extract_name_from_path(path) when is_binary(path) do
     path
     |> String.trim()
@@ -153,16 +189,15 @@ defmodule WraftDoc.Storage do
 
   def extract_name_from_path(_), do: "Unknown"
 
+  @doc "Gets storage navigation data including items and breadcrumbs"
+  @spec get_storage_navigation_data(String.t() | nil, String.t(), keyword()) :: map()
   def get_storage_navigation_data(folder_id \\ nil, organisation_id, opts \\ []) do
-    # Get the current folder's items
     items = StorageItems.list_storage_items(folder_id, organisation_id, opts)
 
-    # Get breadcrumb navigation
     breadcrumbs =
       if folder_id do
         StorageItems.get_storage_item_breadcrumb_navigation(folder_id, organisation_id)
       else
-        # For root level, return empty breadcrumbs or a root breadcrumb
         []
       end
 
@@ -172,9 +207,9 @@ defmodule WraftDoc.Storage do
     }
   end
 
-  # Get breadcrumbs for ancestors only (excluding the current item)
+  @doc "Gets ancestors breadcrumbs for navigation"
+  @spec get_ancestors_breadcrumbs(StorageItem.t(), String.t()) :: [map()]
   def get_ancestors_breadcrumbs(%StorageItem{parent_id: nil} = current_item, organisation_id) do
-    # Even if parent_id is nil, try to build breadcrumbs from path if it's multi-level
     path = current_item.materialized_path || current_item.path
     require Logger
 
@@ -208,16 +243,13 @@ defmodule WraftDoc.Storage do
       materialized_path: current_item.materialized_path
     })
 
-    # Try to get breadcrumbs using parent_id relationships first
     case StorageItems.get_storage_item_by_org(parent_id, organisation_id) do
       nil ->
         Logger.info("⚠️ Parent not found by parent_id, trying path-based breadcrumbs")
-        # If parent_id doesn't point to an existing record, try to build from path
         build_breadcrumbs_from_path(current_item, organisation_id)
 
       parent ->
         Logger.info("✅ Found parent, building breadcrumbs from parent_id relationships")
-        # Build using parent_id relationships
         build = build_storage_ancestors(parent, organisation_id, [])
 
         Enum.map(build, fn item ->
@@ -232,13 +264,14 @@ defmodule WraftDoc.Storage do
     end
   end
 
+  @doc "Builds breadcrumbs from materialized path when parent relationships are missing"
+  @spec build_breadcrumbs_from_path(StorageItem.t(), String.t()) :: [map()]
   def build_breadcrumbs_from_path(%StorageItem{} = current_item, organisation_id) do
     path = current_item.materialized_path || current_item.path
 
     case extract_path_segments(path) do
       {:ok, segments} ->
         segments
-        # Remove current folder from breadcrumbs
         |> Enum.drop(-1)
         |> Enum.with_index()
         |> Enum.map(&build_breadcrumb(&1, segments, organisation_id))
@@ -248,6 +281,7 @@ defmodule WraftDoc.Storage do
     end
   end
 
+  @spec extract_path_segments(String.t() | nil) :: {:ok, [String.t()]} | :empty_path
   defp extract_path_segments(path) do
     if path && String.trim(path) != "" do
       segments =
@@ -264,6 +298,7 @@ defmodule WraftDoc.Storage do
     end
   end
 
+  @spec build_breadcrumb({String.t(), integer()}, [String.t()], String.t()) :: map()
   defp build_breadcrumb({segment, index}, segments, organisation_id) do
     segment_path = "/" <> Enum.join(Enum.take(segments, index + 1), "/")
 
@@ -273,6 +308,7 @@ defmodule WraftDoc.Storage do
     end
   end
 
+  @spec build_real_breadcrumb(StorageItem.t()) :: map()
   defp build_real_breadcrumb(item) do
     %{
       id: item.id,
@@ -283,6 +319,7 @@ defmodule WraftDoc.Storage do
     }
   end
 
+  @spec build_virtual_breadcrumb(String.t(), String.t()) :: map()
   defp build_virtual_breadcrumb(segment, segment_path) do
     %{
       id: nil,
@@ -293,7 +330,10 @@ defmodule WraftDoc.Storage do
     }
   end
 
-  # Builds the list of ancestors recursively, starting from the current item
+  @doc "Builds storage ancestors recursively for breadcrumb navigation"
+  @spec build_storage_ancestors(StorageItem.t(), String.t(), [StorageItem.t()]) :: [
+          StorageItem.t()
+        ]
   def build_storage_ancestors(%StorageItem{parent_id: nil} = item, _organisation_id, acc),
     do: [item | acc]
 
@@ -304,13 +344,16 @@ defmodule WraftDoc.Storage do
     end
   end
 
+  @doc "Lists storage items within a repository with pagination and sorting"
+  @spec list_repository_storage_items(String.t(), String.t() | nil, String.t(), keyword()) :: [
+          StorageItem.t()
+        ]
   def list_repository_storage_items(repository_id, parent_id \\ nil, organisation_id, opts \\ []) do
     limit = Keyword.get(opts, :limit, 100)
     offset = Keyword.get(opts, :offset, 0)
     sort_by = Keyword.get(opts, :sort_by, "created")
     sort_order = Keyword.get(opts, :sort_order, "desc")
 
-    # Parse sorting options
     order_by_clause = parse_sort_options(sort_by, sort_order)
 
     query =
@@ -327,7 +370,6 @@ defmodule WraftDoc.Storage do
       if parent_id do
         from(s in query, where: s.parent_id == ^parent_id)
       else
-        # For root level items in repository, filter by parent_id being nil AND depth_level = 1
         from(s in query,
           where: is_nil(s.parent_id) and s.depth_level == 1
         )
@@ -336,12 +378,15 @@ defmodule WraftDoc.Storage do
     Repo.all(query)
   end
 
-  # Helper function to parse sort options
+  @doc "Parses sort options into Ecto query order_by clause"
+  @spec parse_sort_options(String.t(), String.t()) :: keyword()
   def parse_sort_options(sort_by, sort_order) do
-    direction = parse_sort_direction(sort_order)
-    parse_sort_field(sort_by, direction)
+    sort_order
+    |> parse_sort_direction()
+    |> then(&parse_sort_field(sort_by, &1))
   end
 
+  @spec parse_sort_direction(String.t()) :: :asc | :desc
   defp parse_sort_direction(sort_order) do
     case String.downcase(sort_order || "") do
       "asc" -> :asc
@@ -350,6 +395,7 @@ defmodule WraftDoc.Storage do
     end
   end
 
+  @spec parse_sort_field(String.t(), :asc | :desc) :: keyword()
   defp parse_sort_field(sort_by, direction) do
     case String.downcase(sort_by || "") do
       "name" -> [{:asc, :item_type}, {direction, :name}]
@@ -361,14 +407,15 @@ defmodule WraftDoc.Storage do
     end
   end
 
-  # Prepares and validates upload parameters
+  # File upload functions
+
+  @doc "Prepares upload parameters from form data"
+  @spec prepare_upload_params(map(), any(), String.t()) :: {:ok, map()} | {:error, String.t()}
   def prepare_upload_params(
         %{"file" => %Plug.Upload{} = upload} = params,
         current_user,
         organisation_id
       ) do
-    require Logger
-
     Logger.info("📁 Preparing upload parameters", %{
       filename: upload.filename,
       size: upload.path |> File.stat!() |> Map.get(:size),
@@ -413,7 +460,8 @@ defmodule WraftDoc.Storage do
     {:error, "File upload is required"}
   end
 
-  # Extracts metadata from uploaded file
+  @doc "Extracts metadata from uploaded file"
+  @spec extract_file_metadata(Plug.Upload.t()) :: {:ok, map()} | {:error, String.t()}
   def extract_file_metadata(%Plug.Upload{} = upload) do
     with {:ok, file_stat} <- File.stat(upload.path),
          {:ok, checksum} <- calculate_file_checksum(upload.path) do
@@ -436,9 +484,8 @@ defmodule WraftDoc.Storage do
     end
   end
 
-  # Builds parameters for storage item creation
-
-  # Executes the complete upload transaction
+  @doc "Executes file upload transaction"
+  @spec execute_upload_transaction(map()) :: {:ok, map()} | {:error, Ecto.Changeset.t()}
   def execute_upload_transaction(enriched_params) do
     require Logger
     Logger.info("🔄 Starting upload transaction")
@@ -455,7 +502,6 @@ defmodule WraftDoc.Storage do
       StorageAsset.changeset(%StorageAsset{}, storage_asset_params)
     end)
     |> Ecto.Multi.update(:upload_file, fn %{storage_asset: storage_asset} ->
-      # Use Waffle to handle the file upload
       StorageAsset.file_changeset(storage_asset, %{filename: enriched_params.file_upload})
     end)
     |> Ecto.Multi.update(:complete_upload, fn %{upload_file: storage_asset} ->
@@ -479,7 +525,6 @@ defmodule WraftDoc.Storage do
           storage_asset_id: storage_asset.id
         })
 
-        # Schedule background processing
         schedule_background_processing(storage_asset, storage_item)
 
         {:ok, %{storage_asset: storage_asset, storage_item: storage_item}}
@@ -494,7 +539,9 @@ defmodule WraftDoc.Storage do
     end
   end
 
-  # Calculates hierarchy information for storage item
+  @doc "Calculates item hierarchy depth and materialized path"
+  @spec calculate_item_hierarchy(String.t() | nil, String.t(), String.t()) ::
+          {integer(), String.t()}
   def calculate_item_hierarchy(nil, _organisation_id, _filename) do
     # Root level item
     {1, "/"}
@@ -508,12 +555,12 @@ defmodule WraftDoc.Storage do
         {depth_level, materialized_path}
 
       nil ->
-        # Parent not found, treat as root level
         {1, "/#{filename}"}
     end
   end
 
-  # Calculates SHA256 checksum of file
+  @doc "Calculates SHA256 checksum for a file"
+  @spec calculate_file_checksum(String.t()) :: {:ok, String.t()} | {:error, atom()}
   def calculate_file_checksum(file_path) do
     case File.open(file_path, [:read, :binary]) do
       {:ok, file} ->
@@ -532,7 +579,8 @@ defmodule WraftDoc.Storage do
     end
   end
 
-  # Schedules background processing for uploaded file
+  @doc "Schedules background processing for uploaded files (content extraction, thumbnails)"
+  @spec schedule_background_processing(StorageAsset.t(), StorageItem.t()) :: {:ok, pid()}
   def schedule_background_processing(storage_asset, storage_item) do
     Task.start(fn ->
       require Logger
@@ -542,19 +590,15 @@ defmodule WraftDoc.Storage do
         storage_item_id: storage_item.id
       })
 
-      # Update processing status
       StorageAssets.update_storage_asset(storage_asset, %{processing_status: "processing"})
 
-      # Perform background tasks
       with :ok <- extract_content_if_supported(storage_item),
            :ok <- generate_thumbnail_if_supported(storage_item) do
-        # Update storage item with processing results
         StorageItems.update_storage_item(storage_item, %{
           content_extracted: true,
           thumbnail_generated: true
         })
 
-        # Update asset processing status
         StorageAssets.update_storage_asset(storage_asset, %{processing_status: "completed"})
 
         Logger.info("✅ Background processing completed", %{
@@ -574,22 +618,23 @@ defmodule WraftDoc.Storage do
     end)
   end
 
-  # Extracts content from supported file types
+  @doc "Extracts content from supported file types (PDF, text files)"
+  @spec extract_content_if_supported(StorageItem.t()) :: :ok
   def extract_content_if_supported(%StorageItem{mime_type: "application/pdf"}), do: :ok
   def extract_content_if_supported(%StorageItem{mime_type: "text/" <> _}), do: :ok
   def extract_content_if_supported(_), do: :ok
 
-  # Generates thumbnails for supported file types
+  @doc "Generates thumbnails for supported file types (images, PDFs)"
+  @spec generate_thumbnail_if_supported(StorageItem.t()) :: :ok
   def generate_thumbnail_if_supported(%StorageItem{mime_type: "image/" <> _}), do: :ok
   def generate_thumbnail_if_supported(%StorageItem{mime_type: "application/pdf"}), do: :ok
   def generate_thumbnail_if_supported(_), do: :ok
 
-  # Helper function to update materialized paths of all children when a folder is renamed
+  @doc "Updates materialized paths for all children when parent item is moved/renamed"
+  @spec update_children_paths(StorageItem.t(), String.t()) :: :ok
   def update_children_paths(%StorageItem{} = parent_item, _organisation_id) do
-    # Get all children recursively
     children = StorageItems.get_all_children_storage_items(parent_item.id)
 
-    # Update each child's materialized path
     Enum.each(children, fn child ->
       new_materialized_path =
         String.replace(

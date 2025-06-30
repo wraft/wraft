@@ -1,11 +1,11 @@
-defmodule WraftDoc.CloudImport.CloudAuthTokens do
+defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
   @moduledoc """
   Context for managing Cloud Auth Tokens.
   """
   import Ecto.Query, warn: false
   alias WraftDoc.Account.User
   # alias WraftDoc.CloudImport.CloudAuth
-  alias WraftDoc.CloudImport.CloudAuthToken
+  alias WraftDoc.CloudImport.RepositoryCloudToken
   alias WraftDoc.Repo
 
   @doc """
@@ -14,8 +14,8 @@ defmodule WraftDoc.CloudImport.CloudAuthTokens do
   def insert_auth_token!(%User{id: user_id}, params) do
     params = Map.put(params, :user_id, user_id)
 
-    %CloudAuthToken{}
-    |> CloudAuthToken.changeset(params)
+    %RepositoryCloudToken{}
+    |> RepositoryCloudToken.changeset(params)
     |> Repo.insert!()
   end
 
@@ -24,9 +24,9 @@ defmodule WraftDoc.CloudImport.CloudAuthTokens do
   @doc """
   Updates a Cloud Auth Token.
   """
-  def update_cloud_auth_token(%CloudAuthToken{} = token, attrs) do
+  def update_cloud_auth_token(%RepositoryCloudToken{} = token, attrs) do
     token
-    |> CloudAuthToken.changeset(attrs)
+    |> RepositoryCloudToken.changeset(attrs)
     |> Repo.update()
   end
 
@@ -36,7 +36,7 @@ defmodule WraftDoc.CloudImport.CloudAuthTokens do
   def delete_cloud_auth_token(user_id, type) do
     query =
       from(
-        a in CloudAuthToken,
+        a in RepositoryCloudToken,
         where: a.user_id == ^user_id,
         where: a.token_type == ^type
       )
@@ -44,16 +44,18 @@ defmodule WraftDoc.CloudImport.CloudAuthTokens do
     Repo.delete_all(query)
   end
 
-  def save_cloud_import_token(
+  def save_token_data(
         %User{id: user_id} = user,
+        organisation_id,
         token_data,
-        service,
+        provider,
         _external_user_data \\ %{}
       ) do
     params = %{
       access_token: token_data["access_token"] || token_data.access_token,
-      service: ensure_atom(service),
+      provider: ensure_atom(provider),
       user_id: user_id,
+      organisation_id: organisation_id,
       refresh_token: token_data["refresh_token"] || token_data.refresh_token,
       expires_at: calculate_expiry(token_data["expires_in"]),
       meta_data: %{
@@ -80,7 +82,7 @@ defmodule WraftDoc.CloudImport.CloudAuthTokens do
   end
 
   def get_latest_token(%User{id: user_id}, type) do
-    CloudAuthToken
+    RepositoryCloudToken
     |> where([t], t.service == ^type and t.user_id == ^user_id)
     |> order_by([t], desc: t.inserted_at)
     |> limit(1)
@@ -153,8 +155,8 @@ defmodule WraftDoc.CloudImport.CloudAuthTokens do
   Deletes a cloud import token for a user and service.
   """
   @spec delete_cloud_import_token(User.t(), atom()) :: {:ok, any()} | {:error, any()}
-  def delete_cloud_import_token(user, service) do
-    case Repo.get_by(CloudImportToken, user_id: user.id, service: service) do
+  def delete_cloud_import_token(user, provider) do
+    case Repo.get_by(RepositoryCloudToken, user_id: user.id, service: provider) do
       nil -> {:ok, :not_found}
       token -> Repo.delete(token)
     end

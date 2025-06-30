@@ -1,4 +1,4 @@
-defmodule WraftDoc.CloudImport.CloudAuthToken do
+defmodule WraftDoc.CloudImport.RepositoryCloudToken do
   @moduledoc """
   Schema for Cloud Auth Tokens
   """
@@ -8,7 +8,7 @@ defmodule WraftDoc.CloudImport.CloudAuthToken do
   @derive {Jason.Encoder,
            only: [
              :id,
-             :service,
+             :provider,
              :expires_at,
              :refresh_token,
              :access_token,
@@ -19,21 +19,31 @@ defmodule WraftDoc.CloudImport.CloudAuthToken do
     :dropbox,
     :onedrive
   ]
-  schema "cloud_auth_tokens" do
-    field(:service, Ecto.Enum, values: @service_types)
+  schema "repository_cloud_tokens" do
+    field(:provider, Ecto.Enum, values: @service_types)
     field(:expires_at, :utc_datetime)
     field(:refresh_token, :string)
     field(:access_token, :string)
     field(:meta_data, :map, default: %{})
+    belongs_to(:organisation, WraftDoc.Enterprise.Organisation, type: :binary_id)
     belongs_to(:user, WraftDoc.Account.User, type: :binary_id)
 
     timestamps()
   end
 
-  def changeset(cloud_auth_token, attrs \\ %{}) do
-    cloud_auth_token
-    |> cast(attrs, [:refresh_token, :access_token, :service, :expires_at, :meta_data, :user_id])
+  def changeset(repo_cloud_token, attrs \\ %{}) do
+    repo_cloud_token
+    |> cast(attrs, [
+      :refresh_token,
+      :access_token,
+      :provider,
+      :expires_at,
+      :meta_data,
+      :user_id,
+      :organisation_id
+    ])
     |> validate_required([:refresh_token, :access_token, :user_id])
     |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:organisation_id)
   end
 end

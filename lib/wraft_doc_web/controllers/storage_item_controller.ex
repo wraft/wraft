@@ -949,7 +949,9 @@ defmodule WraftDocWeb.Api.V1.StorageItemController do
         "new_name": "Renamed Document.pdf"
       }
   """
-  def rename(conn, %{"id" => id, "new_name" => new_name}, _current_user, organisation_id) do
+  def rename(conn, %{"id" => id, "new_name" => new_name}) do
+    organisation_id = conn.assigns[:current_user].current_org_id
+
     case StorageItems.get_storage_item_by_org(id, organisation_id) do
       nil ->
         conn

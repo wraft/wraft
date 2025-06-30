@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.CloudImport.CloudAuth
-  alias WraftDoc.CloudImport.CloudAuthTokens, as: AuthTokens
+  alias WraftDoc.CloudImport.RepositoryCloudTokens, as: AuthTokens
   alias WraftDoc.CloudImport.StateStore
   require Logger
 
@@ -283,7 +283,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
 
     with {:ok, _user_data, token_data} <-
            CloudAuth.get_token(service, user.id, code),
-         {:ok, _token} <- AuthTokens.save_cloud_import_token(user, token_data, service) do
+         {:ok, _token} <-
+           AuthTokens.save_token_data(user, user.organisation_id, token_data, service) do
       Logger.info("Successfully authenticated #{user.name} with #{token_data["access_token"]}")
 
       # |> put_flash(:info, "Successfully connected to #{format_service_name(service)}")
