@@ -1,6 +1,6 @@
 defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
   @moduledoc """
-  Controller for handling cloud service interactions with Google Drive, Dropbox, and OneDrive.
+  Controller for handling cloud provider interactions with Google Drive, Dropbox, and OneDrive.
   Provides endpoints for authentication, file exploration, and file operations.
   Now using Assent for OAuth2 authentication.
   """
@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
 
   require Logger
 
-  @services [:google_drive, :dropbox, :onedrive]
+  @providers [:google_drive, :dropbox, :onedrive]
   def swagger_definitions do
     %{
       AuthLoginUrlRequest:
@@ -24,14 +24,14 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
           description("Request parameters for generating OAuth login URL")
 
           properties do
-            service(:string, "Service to authenticate with",
+            provider(:string, "Provider to authenticate with",
               required: true,
-              enum: Enum.map(@services, &Atom.to_string/1)
+              enum: Enum.map(@providers, &Atom.to_string/1)
             )
           end
 
           example(%{
-            "service" => "google"
+            "provider" => "google"
           })
         end,
       AuthLoginUrlResponse:
@@ -61,19 +61,19 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
           end
 
           example(%{
-            "error" => "Invalid service specified",
-            "details" => "Supported services: google, github, microsoft"
+            "error" => "Invalid provider specified",
+            "details" => "Supported providers: google, github, microsoft"
           })
         end
     }
   end
 
   swagger_path :login_url do
-    get("/auth/{service}")
+    get("/auth/{provider}")
     summary("Generate OAuth login URL")
 
     description("""
-    Generates a redirect URL for OAuth authentication with the specified service.
+    Generates a redirect URL for OAuth authentication with the specified provider.
     Stores OAuth session parameters for later verification during the callback phase.
     """)
 
@@ -82,9 +82,9 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
     tag("Authentication")
 
     parameters do
-      service(:path, :string, "Service to authenticate with",
+      provider(:path, :string, "Provider to authenticate with",
         required: true,
-        enum: Enum.map(@services, &Atom.to_string/1),
+        enum: Enum.map(@providers, &Atom.to_string/1),
         example: "google_drive"
       )
     end
@@ -99,17 +99,17 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
 
     response(400, "Bad Request", Schema.ref(:ErrorResponse),
       example: %{
-        "error" => "Invalid service specified",
-        "details" => "Supported services: google_drive, dropbox, onedrive"
+        "error" => "Invalid provider specified",
+        "details" => "Supported providers: google_drive, dropbox, onedrive"
       }
     )
   end
 
   @doc """
-  Generates OAuth login URL for the specified service.
+  Generates OAuth login URL for the specified provider.
 
   ## Parameters
-  - service: The service to authenticate with (e.g., "google", "github")
+  - provider: The provider to authenticate with (e.g., "google", "github")
 
   ## Responses
   - 200: Returns redirect URL for OAuth flow
@@ -119,25 +119,25 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
       "redirect_url": "https://accounts.google.com/o/oauth2/auth?..."
     }
     ```
-  - 400: Invalid service parameter
+  - 400: Invalid provider parameter
     ```json
     {
-      "error": "Invalid service specified",
-      "details": "Supported services: google, github, microsoft"
+      "error": "Invalid provider specified",
+      "details": "Supported providers: google, github, microsoft"
     }
     ```
   - 401: Unauthorized request
   """
   @spec login_url(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def login_url(conn, %{"service" => service}) do
+  def login_url(conn, %{"provider" => provider}) do
     user = conn.assigns[:current_user]
 
-    with service <- String.to_existing_atom(service),
-         true <- service in @services,
-         {:ok, redirect_url, session_params} <- CloudAuth.authorize_url!(service) do
-      StateStore.put(user.id, service, session_params)
+    with provider <- String.to_existing_atom(provider),
+         true <- provider in @providers,
+         {:ok, redirect_url, session_params} <- CloudAuth.authorize_url!(provider) do
+      StateStore.put(user.id, provider, session_params)
 
-      Logger.info("Redirecting to #{service} OAuth: #{redirect_url}")
+      Logger.info("Redirecting to #{provider} OAuth: #{redirect_url}")
 
       json(conn, %{
         status: "success",

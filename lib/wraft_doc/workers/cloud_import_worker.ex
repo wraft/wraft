@@ -6,7 +6,7 @@ defmodule WraftDoc.Workers.CloudImportWorker do
   Can store files locally or in MinIO storage.
   """
 
-  use Oban.Worker, queue: :cloud_service, max_attempts: 3
+  use Oban.Worker, queue: :cloud_provider, max_attempts: 3
 
   require Logger
   alias WraftDoc.Client.Minio

@@ -52,28 +52,38 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
   @doc """
   Saves token data for a user.
   """
-  @spec save_token_data(User.t(), String.t(), map(), String.t(), map()) ::
-          {:ok, %RepositoryCloudToken{}} | {:error, Ecto.Changeset.t()}
+  @spec save_token_data(User.t(), map(), atom(), map()) ::
+          {:ok, RepositoryCloudToken.t()} | {:error, Ecto.Changeset.t()} | {:error, atom()}
   def save_token_data(
         %User{id: user_id} = user,
-        organisation_id,
         token_data,
         provider,
-        _external_user_data \\ %{}
+        external_user_data \\ %{}
       ) do
-    params = %{
-      access_token: token_data["access_token"] || token_data.access_token,
-      provider: ensure_atom(provider),
-      user_id: user_id,
-      organisation_id: organisation_id,
-      refresh_token: token_data["refresh_token"] || token_data.refresh_token,
-      expires_at: calculate_expiry(token_data["expires_in"]),
-      meta_data: %{
-        "scope" => token_data["scope"]
-      }
-    }
+    existing_token =
+      WraftDoc.Repo.get_by(RepositoryCloudToken,
+        provider: provider,
+        organisation_id: user.current_org_id
+      )
 
-    {:ok, insert_auth_token!(user, params)}
+    if existing_token do
+      {:error, :google_drive_already_exists_for_org}
+    else
+      params = %{
+        access_token: token_data["access_token"] || token_data.access_token,
+        provider: ensure_atom(provider),
+        user_id: user_id,
+        external_user_data: external_user_data,
+        organisation_id: user.current_org_id,
+        refresh_token: token_data["refresh_token"] || token_data.refresh_token,
+        expires_at: calculate_expiry(token_data["expires_in"]),
+        meta_data: %{
+          "scope" => token_data["scope"]
+        }
+      }
+
+      {:ok, insert_auth_token!(user, params)}
+    end
   end
 
   defp calculate_expiry(nil), do: NaiveDateTime.add(NaiveDateTime.utc_now(), 3600)
@@ -96,51 +106,27 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
   Returns {:ok, token} if valid token exists, nil otherwise.
   """
   @spec get_latest_token(User.t(), atom()) :: String.t() | nil
-  def get_latest_token(%User{id: user_id}, type) do
+  def get_latest_token(%User{current_org_id: org_id}, type) do
     RepositoryCloudToken
-    |> where([t], t.service == ^type and t.user_id == ^user_id)
+    |> where([t], t.provider == ^type and t.organisation_id == ^org_id)
     |> order_by([t], desc: t.inserted_at)
     |> limit(1)
     |> select([t], t.access_token)
     |> Repo.one()
   end
 
-  # Add these functions to your existing WraftDoc.CloudImport.CloudAuthTokens module
+  # TODO revoke token / delete token acess/refresh token (automatically delete after 1 hour)
 
   # @doc """
-  # Gets a valid token for the specified user and service.
-  # Returns {:ok, token} if valid token exists, {:error, reason} otherwise.
-  # """
-
-  # @spec get_valid_token(User.t(), atom()) :: {:ok, map()} | {:error, String.t()}
-  # def get_valid_token(user, service) do
-  #   case get_cloud_import_token(user, service) do
-  #     {:ok, token} ->
-  #       if token_still_valid?(token) do
-  #         {:ok, token}
-  #       else
-  #         # Try to refresh the token
-  #         case refresh_token_if_possible(user, service, token) do
-  #           {:ok, new_token} -> {:ok, new_token}
-  #           {:error, _} -> {:error, "Token expired and refresh failed"}
-  #         end
-  #       end
-
-  #     {:error, reason} ->
-  #       {:error, reason}
-  #   end
-  # end
-
-  # @doc """
-  # Revokes/deletes tokens for a specific user and service.
+  # Revokes/deletes tokens for a specific user and provider.
   # """
 
   # @spec revoke_tokens(User.t(), atom()) :: :ok | {:error, any()}
-  # def revoke_tokens(user, service) do
-  #   case get_cloud_import_token(user, service) do
+  # def revoke_tokens(user, provider) do
+  #   case get_cloud_import_token(user, provider) do
   #     {:ok, _token} ->
   #       # Delete the token from database
-  #       case delete_cloud_import_token(user, service) do
+  #       case delete_cloud_import_token(user, provider) do
   #         {:ok, _} -> :ok
   #         {:error, reason} -> {:error, reason}
   #       end
@@ -150,28 +136,12 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
   #       :ok
   #   end
   # end
-
-  # @doc """
-  # Gets a cloud import token for a user and service.
-  # This function should already exist in your module, but here's a reference implementation.
-  # """
-
-  # @spec get_cloud_import_token(User.t(), atom()) :: {:ok, map()} | {:error, String.t()}
-  # def get_cloud_import_token(user, service) do
-  #   # This should query your database/storage for the token
-  #   # Example implementation:
-  #   case Repo.get_by(CloudImportToken, user_id: user.id, service: service) do
-  #     nil -> {:error, "Token not found"}
-  #     token -> {:ok, token}
-  #   end
-  # end
-
   @doc """
-  Deletes a cloud import token for a user and service.
+  Deletes a cloud import token for a user and provider.
   """
   @spec delete_cloud_import_token(User.t(), atom()) :: {:ok, any()} | {:error, any()}
   def delete_cloud_import_token(user, provider) do
-    case Repo.get_by(RepositoryCloudToken, user_id: user.id, service: provider) do
+    case Repo.get_by(RepositoryCloudToken, user_id: user.id, provider: provider) do
       nil -> {:ok, :not_found}
       token -> Repo.delete(token)
     end
@@ -194,17 +164,17 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
   #   end
   # end
 
-  # defp refresh_token_if_possible(user, service, %{refresh_token: refresh_token} = _token)
+  # defp refresh_token_if_possible(user, provider, %{refresh_token: refresh_token} = _token)
   #      when is_binary(refresh_token) do
-  #   with {:ok, new_token_data} <- CloudAuth.refresh_token(service, refresh_token),
-  #        {:ok, saved_token} <- save_cloud_import_token(user, new_token_data, service) do
+  #   with {:ok, new_token_data} <- CloudAuth.refresh_token(provider, refresh_token),
+  #        {:ok, saved_token} <- save_cloud_import_token(user, new_token_data, provider) do
   #     {:ok, saved_token}
   #   else
   #     {:error, reason} -> {:error, reason}
   #   end
   # end
 
-  # defp refresh_token_if_possible(_user, _service, _token) do
+  # defp refresh_token_if_possible(_user, _provider, _token) do
   #   {:error, "No refresh token available"}
   # end
 end

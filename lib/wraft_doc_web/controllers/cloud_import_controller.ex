@@ -1,7 +1,7 @@
 defmodule WraftDocWeb.Api.V1.CloudImportController do
   @moduledoc """
-  Controller for handling cloud service interactions with Google Drive, Dropbox, and OneDrive.
-  Provides fully independent endpoint implementations for each service.
+  Controller for handling cloud provider interactions with Google Drive, Dropbox, and OneDrive.
+  Provides fully independent endpoint implementations for each provider.
   """
   use WraftDocWeb, :controller
   use PhoenixSwagger
@@ -126,12 +126,12 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
 
           properties do
             status(:string, "Processing status", enum: ["processing"])
-            service(:string, "Service name", enum: ["google_drive"])
+            provider(:string, "Provider name", enum: ["google_drive"])
           end
 
           example(%{
             status: "processing",
-            service: "google_drive"
+            provider: "google_drive"
           })
         end,
       SyncResponse:
@@ -332,8 +332,8 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
       |> put_status(:accepted)
       |> json(%{
         status: "processing",
-        service: "google_drive"
-        #     results: results
+        provider: "google_drive"
+        # results: results
       })
     end
   end
@@ -532,7 +532,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
       |> put_status(:accepted)
       |> json(%{
         status: "processing",
-        service: "dropbox",
+        provider: "dropbox",
         results: results
       })
     end
@@ -663,7 +663,7 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
       |> put_status(:accepted)
       |> json(%{
         status: "processing",
-        service: "onedrive",
+        provider: "onedrive",
         results: results
       })
     end

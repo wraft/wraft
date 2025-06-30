@@ -2,28 +2,19 @@ defmodule WraftDoc.CloudImport.RepositoryCloudToken do
   @moduledoc """
   Schema for Cloud Auth Tokens
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
 
-  @derive {Jason.Encoder,
-           only: [
-             :id,
-             :provider,
-             :expires_at,
-             :refresh_token,
-             :access_token,
-             :meta_data
-           ]}
-  @service_types [
+  @provider_types [
     :google_drive,
     :dropbox,
     :onedrive
   ]
   schema "repository_cloud_tokens" do
-    field(:provider, Ecto.Enum, values: @service_types)
+    field(:provider, Ecto.Enum, values: @provider_types)
     field(:expires_at, :utc_datetime)
     field(:refresh_token, :string)
     field(:access_token, :string)
+    field(:external_user_data, :map, default: %{})
     field(:meta_data, :map, default: %{})
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation, type: :binary_id)
     belongs_to(:user, WraftDoc.Account.User, type: :binary_id)
@@ -37,6 +28,7 @@ defmodule WraftDoc.CloudImport.RepositoryCloudToken do
       :refresh_token,
       :access_token,
       :provider,
+      :external_user_data,
       :expires_at,
       :meta_data,
       :user_id,

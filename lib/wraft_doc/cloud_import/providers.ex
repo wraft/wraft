@@ -57,8 +57,8 @@ defmodule WraftDoc.CloudImport.Providers do
       end
 
       def schedule_download_to_minio(access_token, file_id, org_id, metadata \\ %{}) do
-        service_name = __MODULE__ |> Module.split() |> List.last() |> String.downcase()
-        action = "download_#{service_name}_to_minio"
+        provider_name = __MODULE__ |> Module.split() |> List.last() |> String.downcase()
+        action = "download_#{provider_name}_to_minio"
 
         params = %{
           action: action,

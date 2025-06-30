@@ -38,10 +38,10 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   }
 
   @doc """
-  Generates an authorization URL for the specified service.
+  Generates an authorization URL for the specified provider.
   """
   @spec authorize_url!(atom(), atom() | nil) :: {:ok, String.t()} | {:error, String.t()}
-  def authorize_url!(service, scope \\ nil)
+  def authorize_url!(provider, scope \\ nil)
 
   def authorize_url!(:google_drive, scope) do
     scope
@@ -58,6 +58,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   end
 
   # TODO: Uncomment and implement Dropbox authorization URL generation when Dropbox integration is enabled
+
   # def authorize_url!(:dropbox, scope) do
   #   config = get_dropbox_config(scope)
 
@@ -131,7 +132,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   # end
 
   @doc """
-  Refreshes an access token for any service.
+  Refreshes an access token for any provider.
   """
   @spec refresh_token(atom(), String.t()) :: {:ok, map()} | {:error, String.t()}
   def refresh_token(:google_drive, refresh_token) do
@@ -233,9 +234,9 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   #   |> Keyword.put(:token_url, "/#{tenant_id}/oauth2/v2.0/token")
   # end
 
-  defp get_base_config(service) do
-    app_config = Application.fetch_env!(:wraft_doc, service)
-    validate_config!(app_config, service)
+  defp get_base_config(provider) do
+    app_config = Application.fetch_env!(:wraft_doc, provider)
+    validate_config!(app_config, provider)
 
     [
       client_id: app_config[:client_id],
@@ -244,17 +245,17 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     ]
   end
 
-  defp get_scopes(service, scope_key) do
-    scope_key = scope_key || @default_scopes[service]
-    @scopes[scope_key] || @scopes[@default_scopes[service]]
+  defp get_scopes(provider, scope_key) do
+    scope_key = scope_key || @default_scopes[provider]
+    @scopes[scope_key] || @scopes[@default_scopes[provider]]
   end
 
-  defp validate_config!(config, service) do
+  defp validate_config!(config, provider) do
     required_keys = [:client_id, :client_secret, :redirect_uri]
 
     Enum.each(required_keys, fn key ->
       if is_nil(config[key]) or config[key] == "" do
-        raise "Missing required configuration for #{service}: #{key}"
+        raise "Missing required configuration for #{provider}: #{key}"
       end
     end)
   end
@@ -307,21 +308,21 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   """
   @spec handle_oauth_callback(User.t(), map(), atom(), String.t()) :: String.t()
   def handle_oauth_callback(
-        %{id: user_id, name: user_name, organisation_id: organisation_id} = user,
+        user,
         params,
-        service,
+        provider,
         code
       ) do
-    with {:ok, _user_data, token_data} <-
-           get_token(service, user_id, code),
+    with {:ok, user_data, token_data} <-
+           get_token(provider, user.id, code),
          {:ok, _token} <-
-           AuthTokens.save_token_data(user, organisation_id, token_data, service) do
-      Logger.info("Successfully authenticated #{user_name} with #{token_data["access_token"]}")
+           AuthTokens.save_token_data(user, token_data, provider, user_data) do
+      Logger.info("Successfully authenticated with #{token_data["access_token"]}")
       get_redirect_path(params)
     else
       {:error, reason} ->
         Logger.error(
-          "#{format_service_name(service)} authentication failed for user #{user_id}: #{inspect(reason)}"
+          "#{format_provider_name(provider)} authentication failed for user #{user.id}: #{inspect(reason)}"
         )
 
         get_redirect_path(params, "/")
@@ -345,7 +346,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     state
     |> String.split("_", parts: 4)
     |> case do
-      [_service, "auth", _random, redirect_path] when redirect_path != "" ->
+      [_provider, "auth", _random, redirect_path] when redirect_path != "" ->
         "/" <> redirect_path
 
       _ ->
@@ -353,8 +354,8 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     end
   end
 
-  defp format_service_name(:google_drive), do: "Google Drive"
-  defp format_service_name(:dropbox), do: "Dropbox"
-  defp format_service_name(:onedrive), do: "OneDrive"
-  defp format_service_name(service), do: service |> to_string() |> String.capitalize()
+  defp format_provider_name(:google_drive), do: "Google Drive"
+  defp format_provider_name(:dropbox), do: "Dropbox"
+  defp format_provider_name(:onedrive), do: "OneDrive"
+  defp format_provider_name(provider), do: provider |> to_string() |> String.capitalize()
 end

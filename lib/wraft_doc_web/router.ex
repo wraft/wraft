@@ -514,7 +514,7 @@ defmodule WraftDocWeb.Router do
         post("/generate", AIToolController, :execute)
       end
 
-      get("/auth/:service", CloudImportAuthController, :login_url)
+      get("/auth/:provider", CloudImportAuthController, :login_url)
       get("/googledrive/callback", CloudImportAuthController, :google_callback)
       get("/dropbox/callback", CloudImportAuthController, :dropbox_callback)
       get("/onedrive/callback", CloudImportAuthController, :onedrive_callback)
