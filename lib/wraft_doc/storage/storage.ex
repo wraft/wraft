@@ -16,7 +16,6 @@ defmodule WraftDoc.Storage do
 
   alias WraftDoc.Repo
   alias WraftDoc.Storage.Repository
-  alias WraftDoc.Storage.StorageAcessLogs
   alias WraftDoc.Storage.StorageAsset
   alias WraftDoc.Storage.StorageAssets
   alias WraftDoc.Storage.StorageItem
@@ -509,13 +508,6 @@ defmodule WraftDoc.Storage do
         processing_status: "completed",
         upload_completed_at: DateTime.utc_now()
       })
-    end)
-    |> Ecto.Multi.run(:create_access_log, fn _repo,
-                                             %{
-                                               storage_item: storage_item,
-                                               complete_upload: storage_asset
-                                             } ->
-      StorageAcessLogs.create_upload_access_log(storage_item, storage_asset, enriched_params)
     end)
     |> Repo.transaction()
     |> case do

@@ -576,7 +576,6 @@ defmodule WraftDocWeb.Router do
         post("/folder", StorageItemController, :create_folder)
 
         resources("/sync_jobs", SyncJobController, except: [:new, :edit])
-        resources("/access_logs", AccessLogController, except: [:new, :edit])
 
         # Storage items routes
         resources "/items", StorageItemController,
