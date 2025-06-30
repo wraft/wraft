@@ -11,7 +11,7 @@ defmodule WraftDoc.Workers.CloudImportWorker do
   require Logger
   alias WraftDoc.Client.Minio
   # alias WraftDoc.CloudImport.Clouds
-  alias WraftDoc.CloudImport.GoogleDrive
+  alias WraftDoc.CloudImport.Providers.GoogleDrive
 
   @impl Oban.Worker
   def perform(%Oban.Job{

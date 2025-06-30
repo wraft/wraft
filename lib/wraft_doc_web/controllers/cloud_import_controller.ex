@@ -6,9 +6,9 @@ defmodule WraftDocWeb.Api.V1.CloudImportController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
-  alias WraftDoc.CloudImport.Dropbox
-  alias WraftDoc.CloudImport.GoogleDrive, as: Google
-  alias WraftDoc.CloudImport.Onedrive
+  alias WraftDoc.CloudImport.Providers.Dropbox
+  alias WraftDoc.CloudImport.Providers.GoogleDrive, as: Google
+  alias WraftDoc.CloudImport.Providers.Onedrive
   alias WraftDoc.CloudImport.RepositoryCloudTokens, as: AuthTokens
 
   action_fallback(WraftDocWeb.FallbackController)
