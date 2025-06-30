@@ -128,7 +128,6 @@ defmodule WraftDoc.Storage.StorageItems do
       if parent_id do
         from(s in base_query, where: s.parent_id == ^parent_id)
       else
-        # For root level items, filter by both parent_id being nil AND depth_level = 1
         from(s in base_query,
           where: is_nil(s.parent_id) and s.depth_level == 1
         )
@@ -190,10 +189,8 @@ defmodule WraftDoc.Storage.StorageItems do
 
       {:error, changeset} ->
         if duplicate_external_id_error?(changeset) do
-          # Handle duplicate gracefully
           get_existing_storage_item(attrs)
         else
-          # Return other errors normally
           {:error, changeset}
         end
     end
@@ -263,12 +260,10 @@ defmodule WraftDoc.Storage.StorageItems do
       })
       |> Repo.update()
 
-      # If it's a folder, schedule recursive deletion of children
       if storage_item.mime_type == "inode/directory" do
         Helper.schedule_folder_deletion(storage_item.id)
       end
 
-      # Schedule asset deletion
       StorageAssets.schedule_asset_deletion(storage_item.id)
     end)
   end
@@ -547,8 +542,6 @@ defmodule WraftDoc.Storage.StorageItems do
     offset = Keyword.get(opts, :offset, 0)
     sort_by = Keyword.get(opts, :sort_by, "created")
     sort_order = Keyword.get(opts, :sort_order, "desc")
-
-    # Parse sorting options
     order_by_clause = Helper.parse_sort_options(sort_by, sort_order)
 
     query =
@@ -686,12 +679,12 @@ defmodule WraftDoc.Storage.StorageItems do
   """
   @spec get_storage_item_stats(String.t() | nil, String.t()) :: storage_stats()
   def get_storage_item_stats(parent_id, organisation_id) do
-    base_query = build_base_query(organisation_id)
-    scoped_query = apply_parent_scope(base_query, parent_id)
-    stats_query = build_stats_query(scoped_query)
-    stats_result = Repo.one(stats_query)
-
-    normalize_stats(stats_result)
+    organisation_id
+    |> build_base_query()
+    |> apply_parent_scope(parent_id)
+    |> build_stats_query()
+    |> Repo.one()
+    |> normalize_stats()
   end
 
   @spec build_base_query(String.t()) :: Ecto.Query.t()
@@ -775,8 +768,6 @@ defmodule WraftDoc.Storage.StorageItems do
     item_type_filter = Keyword.get(opts, :item_type)
     sort_by = Keyword.get(opts, :sort_by, "created")
     sort_order = Keyword.get(opts, :sort_order, "desc")
-
-    # Parse sorting options
     order_by_clause = Helper.parse_sort_options(sort_by, sort_order)
 
     base_query =
@@ -857,7 +848,6 @@ defmodule WraftDoc.Storage.StorageItems do
     parent_id = Map.get(params, "parent_id")
     repository_id = Map.get(params, "repository_id")
 
-    # Calculate depth level and materialized path
     {depth_level, materialized_path} =
       Helper.calculate_item_hierarchy(parent_id, organisation_id, file_metadata.filename)
 
@@ -949,13 +939,12 @@ defmodule WraftDoc.Storage.StorageItems do
   @spec update_storage_item_name(StorageItem.t(), String.t()) ::
           {:ok, StorageItem.t()} | {:error, Ecto.Changeset.t()}
   defp update_storage_item_name(storage_item, new_name) do
-    changeset =
-      StorageItem.changeset(storage_item, %{
-        name: new_name,
-        display_name: new_name
-      })
-
-    Repo.update(changeset)
+    storage_item
+    |> StorageItem.changeset(%{
+      name: new_name,
+      display_name: new_name
+    })
+    |> Repo.update()
   end
 
   @spec maybe_update_children_paths(StorageItem.t(), String.t()) :: any()

@@ -21,13 +21,9 @@ defmodule WraftDoc.Storage do
   alias WraftDoc.Storage.StorageItem
   alias WraftDoc.Storage.StorageItems
 
-  # Repository functions
-
   @doc "Lists all repositories"
   @spec list_repositories() :: [Repository.t()]
-  def list_repositories do
-    Repo.all(Repository)
-  end
+  def list_repositories, do: Repo.all(Repository)
 
   @doc "Gets the latest repository for an organization"
   @spec get_latest_repository(String.t()) :: Repository.t() | nil
@@ -62,18 +58,15 @@ defmodule WraftDoc.Storage do
 
   @doc "Deletes a repository"
   @spec delete_repository(Repository.t()) :: {:ok, Repository.t()} | {:error, Ecto.Changeset.t()}
-  def delete_repository(%Repository{} = repository) do
-    Repo.delete(repository)
-  end
+  def delete_repository(%Repository{} = repository), do: Repo.delete(repository)
 
   @doc "Creates a changeset for a repository"
   @spec change_repository(Repository.t(), map()) :: Ecto.Changeset.t()
-  def change_repository(%Repository{} = repository, attrs \\ %{}) do
-    Repository.changeset(repository, attrs)
-  end
+  def change_repository(%Repository{} = repository, attrs \\ %{}),
+    do: Repository.changeset(repository, attrs)
 
   @doc "Lists repositories by user and organization"
-  @spec list_repositories_by_user_and_organisation(String.t(), String.t()) :: [Repository.t()]
+  @spec list_repositories_by_user_and_organisation(Ecto.UUID.t(), String.t()) :: [Repository.t()]
   def list_repositories_by_user_and_organisation(user_id, organisation_id) do
     query =
       from(r in Repository,
@@ -83,8 +76,6 @@ defmodule WraftDoc.Storage do
 
     Repo.all(query)
   end
-
-  # File handling functions
 
   @doc "Handles duplicate names by appending a number suffix"
   @spec handle_duplicate_names(map()) :: map()
@@ -171,6 +162,7 @@ defmodule WraftDoc.Storage do
   @spec safe_trim(String.t() | nil) :: String.t() | nil
   defp safe_trim(nil), do: nil
   defp safe_trim(value), do: String.trim(value)
+
   @doc "Extracts name from a file path"
   @spec extract_name_from_path(String.t() | nil) :: String.t()
   def extract_name_from_path(path) when is_binary(path) do
@@ -210,7 +202,6 @@ defmodule WraftDoc.Storage do
   @spec get_ancestors_breadcrumbs(StorageItem.t(), String.t()) :: [map()]
   def get_ancestors_breadcrumbs(%StorageItem{parent_id: nil} = current_item, organisation_id) do
     path = current_item.materialized_path || current_item.path
-    require Logger
 
     Logger.info("🔍 Building breadcrumbs for item with nil parent_id", %{
       id: current_item.id,
@@ -233,8 +224,6 @@ defmodule WraftDoc.Storage do
         organisation_id
       )
       when not is_nil(parent_id) do
-    require Logger
-
     Logger.info("🔍 Building breadcrumbs for item with parent_id", %{
       id: current_item.id,
       parent_id: parent_id,
@@ -406,8 +395,6 @@ defmodule WraftDoc.Storage do
     end
   end
 
-  # File upload functions
-
   @doc "Prepares upload parameters from form data"
   @spec prepare_upload_params(map(), any(), String.t()) :: {:ok, map()} | {:error, String.t()}
   def prepare_upload_params(
@@ -486,7 +473,6 @@ defmodule WraftDoc.Storage do
   @doc "Executes file upload transaction"
   @spec execute_upload_transaction(map()) :: {:ok, map()} | {:error, Ecto.Changeset.t()}
   def execute_upload_transaction(enriched_params) do
-    require Logger
     Logger.info("🔄 Starting upload transaction")
 
     Ecto.Multi.new()
@@ -535,7 +521,6 @@ defmodule WraftDoc.Storage do
   @spec calculate_item_hierarchy(String.t() | nil, String.t(), String.t()) ::
           {integer(), String.t()}
   def calculate_item_hierarchy(nil, _organisation_id, _filename) do
-    # Root level item
     {1, "/"}
   end
 
@@ -575,8 +560,6 @@ defmodule WraftDoc.Storage do
   @spec schedule_background_processing(StorageAsset.t(), StorageItem.t()) :: {:ok, pid()}
   def schedule_background_processing(storage_asset, storage_item) do
     Task.start(fn ->
-      require Logger
-
       Logger.info("🔄 Starting background processing", %{
         storage_asset_id: storage_asset.id,
         storage_item_id: storage_item.id

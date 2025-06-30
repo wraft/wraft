@@ -60,13 +60,12 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
         provider,
         external_user_data \\ %{}
       ) do
-    existing_token =
-      WraftDoc.Repo.get_by(RepositoryCloudToken,
-        provider: provider,
-        organisation_id: user.current_org_id
-      )
-
-    if existing_token do
+    RepositoryCloudToken
+    |> Repo.get_by(
+      provider: provider,
+      organisation_id: user.current_org_id
+    )
+    |> if do
       {:error, :google_drive_already_exists_for_org}
     else
       params = %{
@@ -88,9 +87,8 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
 
   defp calculate_expiry(nil), do: NaiveDateTime.add(NaiveDateTime.utc_now(), 3600)
 
-  defp calculate_expiry(expires_in) when is_integer(expires_in) do
-    NaiveDateTime.add(NaiveDateTime.utc_now(), expires_in)
-  end
+  defp calculate_expiry(expires_in) when is_integer(expires_in),
+    do: NaiveDateTime.add(NaiveDateTime.utc_now(), expires_in)
 
   defp calculate_expiry(_), do: NaiveDateTime.add(NaiveDateTime.utc_now(), 3600)
 
@@ -136,16 +134,18 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
   #   end
   # end
 
-  @doc """
-  Deletes a cloud import token for a user and provider.
-  """
-  @spec delete_cloud_import_token(User.t(), atom()) :: {:ok, any()} | {:error, any()}
-  def delete_cloud_import_token(user, provider) do
-    case Repo.get_by(RepositoryCloudToken, user_id: user.id, provider: provider) do
-      nil -> {:ok, :not_found}
-      token -> Repo.delete(token)
-    end
-  end
+  # @doc """
+  # Deletes a cloud import token for a user and provider.
+  # """
+  # @spec delete_cloud_import_token(User.t(), atom()) :: {:ok, any()} | {:error, any()}
+  # def delete_cloud_import_token(%User{id: user_id}, provider) do
+  #   RepositoryCloudToken
+  #   |> Repo.get_by(user_id: user_id, provider: provider)
+  #   |> case do
+  #     nil -> {:ok, :not_found}
+  #     token -> Repo.delete(token)
+  #   end
+  # end
 
   # defp token_still_valid?(token) do
   #   case token do

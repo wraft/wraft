@@ -310,7 +310,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   """
   @spec handle_oauth_callback(User.t(), map(), atom(), String.t()) :: String.t()
   def handle_oauth_callback(
-        user,
+        %{id: user_id} = user,
         params,
         provider,
         code
@@ -324,7 +324,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     else
       {:error, reason} ->
         Logger.error(
-          "#{format_provider_name(provider)} authentication failed for user #{user.id}: #{inspect(reason)}"
+          "#{format_provider_name(provider)} authentication failed for user #{user_id}: #{inspect(reason)}"
         )
 
         get_redirect_path(params, "/")

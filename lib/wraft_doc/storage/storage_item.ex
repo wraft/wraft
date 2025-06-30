@@ -2,10 +2,8 @@ defmodule WraftDoc.Storage.StorageItem do
   @moduledoc """
   The sync job model.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
 
-  @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
   schema "storage_items" do

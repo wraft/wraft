@@ -2,11 +2,9 @@ defmodule WraftDoc.Storage.StorageAsset do
   @moduledoc """
   The sync job model.
   """
-  use Ecto.Schema
   use Waffle.Ecto.Schema
-  import Ecto.Changeset
+  use WraftDoc.Schema
 
-  @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
   schema "storage_assets" do

@@ -731,11 +731,11 @@ defmodule WraftDoc.Enterprise do
     end
   end
 
-  defp create_default_repository(organisation, attrs) do
+  defp create_default_repository(%Organisation{id: id, name: name} = organisation, attrs) do
     repository_attrs = %{
-      name: "#{organisation.name} Repository",
-      description: "Default repository for #{organisation.name}",
-      organisation_id: organisation.id,
+      name: "#{name} Repository",
+      description: "Default repository for #{name}",
+      organisation_id: id,
       creator_id: attrs["creator_id"] || attrs[:creator_id],
       status: :active,
       storage_limit: @default_storage_limit,
@@ -743,9 +743,11 @@ defmodule WraftDoc.Enterprise do
       item_count: 0
     }
 
-    case Storage.create_repository(repository_attrs) do
+    repository_attrs
+    |> Storage.create_repository()
+    |> case do
       {:ok, repository} ->
-        {:ok, %{organisation | repository: repository}}
+        {:ok, %{organisation: organisation, repository: repository}}
 
       {:error, _changeset} ->
         {:ok, organisation}
@@ -756,7 +758,7 @@ defmodule WraftDoc.Enterprise do
   Create a personal organisation when the user first sign up for wraft
   """
   @spec create_personal_organisation(User.t(), map) :: Organisation.t()
-  def create_personal_organisation(%User{id: _user_id} = user, params) do
+  def create_personal_organisation(%User{} = user, params) do
     Multi.new()
     |> Multi.insert(
       :organisation,

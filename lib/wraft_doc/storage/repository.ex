@@ -5,13 +5,10 @@ defmodule WraftDoc.Storage.Repository do
   name, description, storage limit, and current storage used.
   It also maintains relationships with the user who created it and the organisation it belongs to.
   """
-  use Ecto.Schema
-  import Ecto.Changeset
-
+  use WraftDoc.Schema
   alias WraftDoc.Account.User
   alias WraftDoc.Enterprise.Organisation
 
-  @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
   schema "repositories" do
