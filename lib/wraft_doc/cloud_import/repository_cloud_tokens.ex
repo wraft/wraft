@@ -116,7 +116,6 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
   end
 
   # TODO revoke token / delete token acess/refresh token (automatically delete after 1 hour)
-
   # @doc """
   # Revokes/deletes tokens for a specific user and provider.
   # """
@@ -136,6 +135,7 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
   #       :ok
   #   end
   # end
+
   @doc """
   Deletes a cloud import token for a user and provider.
   """
@@ -146,8 +146,6 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
       token -> Repo.delete(token)
     end
   end
-
-  # Private helper functions
 
   # defp token_still_valid?(token) do
   #   case token do

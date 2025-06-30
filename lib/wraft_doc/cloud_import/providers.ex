@@ -46,13 +46,11 @@ defmodule WraftDoc.CloudImport.Providers do
 
       def sync_files_to_db(access_token, params, org_id \\ nil) do
         with {:ok, %{"files" => files}} <- list_all_files(access_token, params) do
-          results =
-            files
-            |> Enum.map(&Task.async(fn -> save_files_to_db(&1, org_id) end))
-            |> Enum.map(&Task.await(&1, 15_000))
-
-          stats = calculate_sync_stats(results, files)
-          {:ok, stats}
+          files
+          |> Enum.map(&Task.async(fn -> save_files_to_db(&1, org_id) end))
+          |> Enum.map(&Task.await(&1, 15_000))
+          |> calculate_sync_stats(files)
+          |> then(&{:ok, &1})
         end
       end
 
@@ -74,18 +72,13 @@ defmodule WraftDoc.CloudImport.Providers do
         |> Oban.insert()
       end
 
-      # Protected helper functions
-      defp handle_response({:ok, %{status: status, body: body}}) when status in 200..299 do
-        {:ok, body}
-      end
+      defp handle_response({:ok, %{status: status, body: body}}) when status in 200..299,
+        do: {:ok, body}
 
-      defp handle_response({:ok, %{status: status, body: body}}) do
-        {:error, %{status: status, body: body}}
-      end
+      defp handle_response({:ok, %{status: status, body: body}}),
+        do: {:error, %{status: status, body: body}}
 
-      defp handle_response({:error, reason}) do
-        {:error, %{status: 500, body: reason}}
-      end
+      defp handle_response({:error, reason}), do: {:error, %{status: 500, body: reason}}
 
       defp calculate_sync_stats(results, files) do
         success_count = Enum.count(results, &(&1 == :ok))
@@ -103,21 +96,23 @@ defmodule WraftDoc.CloudImport.Providers do
       defp parse_size(size) when is_integer(size), do: size
       defp parse_size(_), do: 0
 
-      defp write_file_result(content, nil, metadata) do
-        {:ok, %{content: content, metadata: metadata}}
-      end
+      defp write_file_result(content, nil, metadata),
+        do: {:ok, %{content: content, metadata: metadata}}
 
       defp write_file_result(content, output_path, metadata) do
-        case File.write(output_path, content) do
+        output_path
+        |> File.write(content)
+        |> case do
           :ok -> {:ok, %{path: output_path, metadata: metadata}}
           {:error, reason} -> {:error, "Failed to write file: #{inspect(reason)}"}
         end
       end
 
       defp save_files_to_db(file, org_id \\ nil) do
-        attrs = build_storage_attrs(file, org_id)
-
-        case StorageItems.create_storage_item(attrs) do
+        file
+        |> build_storage_attrs(org_id)
+        |> StorageItems.create_storage_item()
+        |> case do
           {:ok, _} -> :ok
           error -> error
         end

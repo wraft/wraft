@@ -14,10 +14,7 @@ defmodule WraftDoc.CloudImport.StateStore do
     {:ok, nil}
   end
 
-  # Wrappers for insert and lookup
-  def put(user_id, key, value) do
-    :ets.insert(@table, {{user_id, key}, {value, now()}})
-  end
+  def put(user_id, key, value), do: :ets.insert(@table, {{user_id, key}, {value, now()}})
 
   def get(user_id, key) do
     case :ets.lookup(@table, {user_id, key}) do
@@ -29,9 +26,7 @@ defmodule WraftDoc.CloudImport.StateStore do
     end
   end
 
-  def delete(user_id, key) do
-    :ets.delete(@table, {user_id, key})
-  end
+  def delete(user_id, key), do: :ets.delete(@table, {user_id, key})
 
   defp now, do: System.system_time(:second)
 

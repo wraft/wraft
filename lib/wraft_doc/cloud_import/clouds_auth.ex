@@ -92,9 +92,11 @@ defmodule WraftDoc.CloudImport.CloudAuth do
           {:ok, map(), String.t()} | {:error, String.t()}
   def get_token(:google_drive, user_id, code) do
     {:ok, session_params} = StateStore.get(user_id, :google_drive)
-    config = Keyword.put(get_google_config(), :session_params, session_params)
 
-    case OAuth2.callback(config, %{"code" => code, "state" => session_params.state}, Google) do
+    get_google_config()
+    |> Keyword.put(:session_params, session_params)
+    |> OAuth2.callback(%{"code" => code, "state" => session_params.state}, Google)
+    |> case do
       {:ok, %{user: user, token: token}} ->
         {:ok, user, token}
 
@@ -189,10 +191,10 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   def token_valid?(_), do: false
 
   defp get_google_config(scope \\ nil) do
-    config = get_base_config(:google_drive)
     scopes = get_scopes(:google_drive, scope)
 
-    config
+    :google_drive
+    |> get_base_config()
     |> Keyword.put(:scope, Enum.join(scopes, " "))
     |> Keyword.put(:base_url, "https://accounts.google.com")
     |> Keyword.put(:authorize_url, "/o/oauth2/v2/auth")

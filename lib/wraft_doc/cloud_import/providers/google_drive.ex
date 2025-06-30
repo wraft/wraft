@@ -68,7 +68,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     query_params =
       if page_token, do: Map.put(query_params, :pageToken, page_token), else: query_params
 
-    "/files"
+    "#{@base_url}/files"
     |> get(
       query: query_params,
       headers: auth_headers(access_token)
@@ -126,7 +126,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     fields =
       "id,name,mimeType,size,description,createdTime,modifiedTime,owners,parents,fileExtension"
 
-    "/files/#{file_id}"
+    "#{@base_url}/files/#{file_id}"
     |> get(
       query: [fields: fields],
       headers: auth_headers(access_token)
@@ -151,7 +151,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
   def list_all_pdfs(access_token, params \\ %{}) do
     page_size = Map.get(params, "page_size", 1000)
 
-    "/files"
+    "#{@base_url}/files"
     |> get(
       query: [
         q: "mimeType = 'application/pdf'",
@@ -211,7 +211,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     with {:ok, metadata} <- get_file_metadata(access_token, file_id),
          :ok <- save_files_to_db(metadata),
          {:ok, %{status: 200, body: body}} <-
-           get("/files/#{file_id}",
+           get("#{@base_url}/files/#{file_id}",
              query: [alt: "media"],
              headers: auth_headers(access_token)
            ) do
@@ -252,7 +252,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     fields =
       "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, owners, parents)"
 
-    "/files"
+    "#{@base_url}/files"
     |> get(
       query: [
         pageSize: page_size,
@@ -294,7 +294,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     fields =
       "nextPageToken, files(id, name, mimeType, createdTime, modifiedTime, owners, parents)"
 
-    "/files"
+    "#{@base_url}/files"
     |> get(
       query: [
         pageSize: page_size,
@@ -348,7 +348,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
     fields =
       "nextPageToken, files(id, name, mimeType, description, size, createdTime, modifiedTime, owners, parents, fileExtension, webViewLink)"
 
-    "/files"
+    "#{@base_url}/files"
     |> get(
       query: [
         pageSize: page_size,
@@ -378,7 +378,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
       when is_binary(access_token) and is_binary(folder_id) do
     fields = "id,name,mimeType,createdTime,modifiedTime,owners,parents,description"
 
-    "/files/#{folder_id}"
+    "#{@base_url}/files/#{folder_id}"
     |> get(
       query: [fields: fields],
       headers: auth_headers(access_token)
@@ -421,7 +421,7 @@ defmodule WraftDoc.CloudImport.Providers.GoogleDrive do
       |> Enum.reject(&is_nil/1)
       |> Enum.join(" and ")
 
-    "/files"
+    "#{@base_url}/files"
     |> get(
       query: [
         q: conditions,
