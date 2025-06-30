@@ -12,6 +12,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
 
   alias Assent.Strategy.Google
   alias Assent.Strategy.OAuth2
+  alias WraftDoc.CloudImport.RepositoryCloudTokens, as: AuthTokens
   alias WraftDoc.CloudImport.StateStore
 
   @scopes %{
@@ -43,9 +44,10 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   def authorize_url!(service, scope \\ nil)
 
   def authorize_url!(:google_drive, scope) do
-    config = get_google_config(scope)
-
-    case Google.authorize_url(config) do
+    scope
+    |> get_google_config()
+    |> Google.authorize_url()
+    |> case do
       {:ok, %{url: url, session_params: session_params}} ->
         {:ok, url, session_params}
 
@@ -55,6 +57,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     end
   end
 
+  # TODO: Uncomment and implement Dropbox authorization URL generation when Dropbox integration is enabled
   # def authorize_url!(:dropbox, scope) do
   #   config = get_dropbox_config(scope)
 
@@ -84,7 +87,8 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   @doc """
   Exchanges authorization code for access token.
   """
-
+  @spec get_token(atom(), String.t(), String.t()) ::
+          {:ok, map(), String.t()} | {:error, String.t()}
   def get_token(:google_drive, user_id, code) do
     {:ok, session_params} = StateStore.get(user_id, :google_drive)
     config = Keyword.put(get_google_config(), :session_params, session_params)
@@ -99,6 +103,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     end
   end
 
+  # TODO: Uncomment and implement Dropbox authorization URL generation when Dropbox integration is enabled
   # def get_token(:dropbox, code, _state) do
   #   config = get_dropbox_config()
 
@@ -130,9 +135,9 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   """
   @spec refresh_token(atom(), String.t()) :: {:ok, map()} | {:error, String.t()}
   def refresh_token(:google_drive, refresh_token) do
-    config = get_google_config()
-
-    case OAuth2.refresh_access_token(config, %{"refresh_token" => refresh_token}) do
+    get_google_config()
+    |> OAuth2.refresh_access_token(%{"refresh_token" => refresh_token})
+    |> case do
       {:ok, token} ->
         {:ok, normalize_token(token)}
 
@@ -142,6 +147,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     end
   end
 
+  # TODO: Uncomment and implement Dropbox authorization URL generation when Dropbox integration is enabled
   # def refresh_token(:dropbox, refresh_token) do
   #   config = get_dropbox_config()
 
@@ -181,33 +187,9 @@ defmodule WraftDoc.CloudImport.CloudAuth do
 
   def token_valid?(_), do: false
 
-  # Convenience functions for backward compatibility
-
-  # def google_drive_token(code), do: get_token(:google_drive, code, nil)
-  # def dropbox_token(code), do: get_token(:dropbox, code, nil)
-  # def onedrive_token(code), do: get_token(:onedrive, code, nil)
-
-  # Private functions
-  # config = [
-  #   base_url: "https://accounts.google.com",
-  #   authorize_url: "/o/oauth2/v2/auth",
-  #   session_params: %{state: "Vo-Mel6o4KHvfXkbp1-SJgW_AVLhwAeev"},
-  #   token_url: "/o/oauth2/token"
-  #   user_url: "https://openidconnect.googleapis.com/v1/userinfo",
-  #   client_id: "YOUR_CLIENT_ID",
-  #   client_secret: "YOUR_CLIENT_SECRET",
-  #   redirect_uri: "http://localhost:3000/api/auth/callback",
-  #   auth_method: :client_secret_post,
-  #   authorization_params: [
-  #     access_type: "offline",
-  #     prompt: "consent",
-  #     scope:  "email+profile+https://www.googleapis.com/auth/userinfo.email+https://www.googleapis.com/auth/userinfo.profile+openid"
-  #   ]
-  # ]
   defp get_google_config(scope \\ nil) do
     config = get_base_config(:google_drive)
     scopes = get_scopes(:google_drive, scope)
-    # scope is to be put in auth_prams but for now its given full acess
 
     config
     |> Keyword.put(:scope, Enum.join(scopes, " "))
@@ -224,6 +206,7 @@ defmodule WraftDoc.CloudImport.CloudAuth do
     |> Keyword.put(:auth_method, :client_secret_post)
   end
 
+  # TODO: Uncomment and implement Dropbox authorization URL generation when Dropbox integration is enabled
   # defp get_dropbox_config(scope \\ nil) do
   #   config = get_base_config(:dropbox)
   #   scopes = get_scopes(:dropbox, scope)
@@ -311,9 +294,67 @@ defmodule WraftDoc.CloudImport.CloudAuth do
   end
 
   defp calculate_expires_at(seconds) when is_binary(seconds) do
-    case Integer.parse(seconds) do
+    seconds
+    |> Integer.parse()
+    |> case do
       {int_seconds, _} -> calculate_expires_at(int_seconds)
       :error -> nil
     end
   end
+
+  @doc """
+  Handles auth callback.
+  """
+  @spec handle_oauth_callback(User.t(), map(), atom(), String.t()) :: String.t()
+  def handle_oauth_callback(
+        %{id: user_id, name: user_name, organisation_id: organisation_id} = user,
+        params,
+        service,
+        code
+      ) do
+    with {:ok, _user_data, token_data} <-
+           get_token(service, user_id, code),
+         {:ok, _token} <-
+           AuthTokens.save_token_data(user, organisation_id, token_data, service) do
+      Logger.info("Successfully authenticated #{user_name} with #{token_data["access_token"]}")
+      get_redirect_path(params)
+    else
+      {:error, reason} ->
+        Logger.error(
+          "#{format_service_name(service)} authentication failed for user #{user_id}: #{inspect(reason)}"
+        )
+
+        get_redirect_path(params, "/")
+    end
+  end
+
+  defp get_redirect_path(params, default \\ "/") do
+    case params do
+      %{"redirect_to" => path} when is_binary(path) and path != "" ->
+        path
+
+      %{"state" => state} when is_binary(state) ->
+        extract_redirect_from_state(state, default)
+
+      _ ->
+        default
+    end
+  end
+
+  defp extract_redirect_from_state(state, default) do
+    state
+    |> String.split("_", parts: 4)
+    |> case do
+      [_service, "auth", _random, redirect_path] when redirect_path != "" ->
+        "/" <> redirect_path
+
+      _ ->
+        default
+    end
+  end
+
+  defp format_service_name(:google_drive), do: "Google Drive"
+  defp format_service_name(:dropbox), do: "Dropbox"
+  defp format_service_name(:onedrive), do: "OneDrive"
+  defp format_service_name(service), do: service |> to_string() |> String.capitalize()
 end

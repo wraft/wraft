@@ -3,14 +3,15 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
   Context for managing Cloud Auth Tokens.
   """
   import Ecto.Query, warn: false
+
   alias WraftDoc.Account.User
-  # alias WraftDoc.CloudImport.CloudAuth
   alias WraftDoc.CloudImport.RepositoryCloudToken
   alias WraftDoc.Repo
 
   @doc """
   Creates a Cloud Auth Token.
   """
+  @spec insert_auth_token!(User.t(), map()) :: RepositoryCloudToken.t()
   def insert_auth_token!(%User{id: user_id}, params) do
     params = Map.put(params, :user_id, user_id)
 
@@ -24,7 +25,9 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
   @doc """
   Updates a Cloud Auth Token.
   """
-  def update_cloud_auth_token(%RepositoryCloudToken{} = token, attrs) do
+  @spec update_cloud_auth_token!(User.t(), map()) ::
+          {:ok, %RepositoryCloudToken{}} | {:error, Ecto.Changeset.t()}
+  def update_cloud_auth_token!(%RepositoryCloudToken{} = token, attrs) do
     token
     |> RepositoryCloudToken.changeset(attrs)
     |> Repo.update()
@@ -33,6 +36,8 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
   @doc """
   Deletes a Cloud Auth Token.
   """
+  @spec delete_cloud_auth_token(User.t(), String.t()) ::
+          {:ok, %RepositoryCloudToken{}} | {:error, Ecto.Changeset.t()}
   def delete_cloud_auth_token(user_id, type) do
     query =
       from(
@@ -44,6 +49,11 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
     Repo.delete_all(query)
   end
 
+  @doc """
+  Saves token data for a user.
+  """
+  @spec save_token_data(User.t(), String.t(), map(), String.t(), map()) ::
+          {:ok, %RepositoryCloudToken{}} | {:error, Ecto.Changeset.t()}
   def save_token_data(
         %User{id: user_id} = user,
         organisation_id,
@@ -81,6 +91,11 @@ defmodule WraftDoc.CloudImport.RepositoryCloudTokens do
     end
   end
 
+  @doc """
+  Retrieves the latest access token for the specified user and service.
+  Returns {:ok, token} if valid token exists, nil otherwise.
+  """
+  @spec get_latest_token(User.t(), atom()) :: String.t() | nil
   def get_latest_token(%User{id: user_id}, type) do
     RepositoryCloudToken
     |> where([t], t.service == ^type and t.user_id == ^user_id)
