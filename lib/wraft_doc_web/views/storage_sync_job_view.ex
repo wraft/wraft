@@ -1,14 +1,12 @@
-defmodule WraftDocWeb.Api.V1.SyncJobView do
+defmodule WraftDocWeb.Api.V1.StorageSyncJobView do
   use WraftDocWeb, :view
 
-  alias WraftDocWeb.Api.V1.SyncJobView
-
   def render("index.json", %{storage_sync_jobs: sync_jobs}) do
-    %{data: render_many(sync_jobs, SyncJobView, "sync_job.json")}
+    %{data: render_many(sync_jobs, __MODULE__, "sync_job.json")}
   end
 
   def render("show.json", %{sync_job: sync_job}) do
-    %{data: render_one(sync_job, SyncJobView, "sync_job.json")}
+    %{data: render_one(sync_job, __MODULE__, "sync_job.json")}
   end
 
   def render("sync_job.json", %{sync_job: sync_job}) do

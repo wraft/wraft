@@ -1,4 +1,4 @@
-defmodule WraftDocWeb.Api.V1.SyncJobController do
+defmodule WraftDocWeb.Api.V1.StorageSyncJobController do
   use WraftDocWeb, :controller
   alias WraftDoc.Storage.SyncJob
   alias WraftDoc.Storage.SyncJobs, as: Storage

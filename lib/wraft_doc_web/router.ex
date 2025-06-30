@@ -575,7 +575,7 @@ defmodule WraftDocWeb.Router do
         post("/assets/upload", StorageAssetController, :upload)
         post("/folder", StorageItemController, :create_folder)
 
-        resources("/sync_jobs", SyncJobController, except: [:new, :edit])
+        resources("/sync_jobs", StorageSyncJobController, except: [:new, :edit])
 
         # Storage items routes
         resources "/items", StorageItemController,

@@ -1,4 +1,4 @@
-defmodule WraftDocWeb.SyncJobControllerTest do
+defmodule WraftDocWeb.StorageSyncJobControllerTest do
   use WraftDocWeb.ConnCase
 
   import WraftDoc.StorageFixtures
