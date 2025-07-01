@@ -28,6 +28,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Repo
+  alias WraftDoc.Storage
   alias WraftDoc.TaskSupervisor
   alias WraftDoc.Workers.DefaultWorker
   alias WraftDoc.Workers.EmailWorker
@@ -49,6 +50,9 @@ defmodule WraftDoc.Enterprise do
 
   @superadmin_role "superadmin"
   @editor_role "editor"
+
+  # Default storage limit in bytes (10 GB)
+  @default_storage_limit 10 * 1024 * 1024 * 1024
 
   @doc """
   Get a flow from its UUID.
@@ -708,6 +712,9 @@ defmodule WraftDoc.Enterprise do
       WraftDoc.FeatureFlags.setup_defaults(organisation)
       {:ok, organisation}
     end)
+    |> Multi.run(:repository, fn _repo, %{organisation_logo: organisation} ->
+      create_default_repository(organisation, %{"creator_id" => user_id})
+    end)
     |> then(fn multi ->
       if self_hosted?() do
         multi
@@ -721,6 +728,29 @@ defmodule WraftDoc.Enterprise do
     |> case do
       {:ok, %{organisation_logo: organisation}} -> organisation
       {:error, _, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  defp create_default_repository(%Organisation{id: id, name: name} = organisation, attrs) do
+    repository_attrs = %{
+      name: "#{name} Repository",
+      description: "Default repository for #{name}",
+      organisation_id: id,
+      creator_id: attrs["creator_id"] || attrs[:creator_id],
+      status: :active,
+      storage_limit: @default_storage_limit,
+      current_storage_used: 0,
+      item_count: 0
+    }
+
+    repository_attrs
+    |> Storage.create_repository()
+    |> case do
+      {:ok, repository} ->
+        {:ok, %{organisation: organisation, repository: repository}}
+
+      {:error, _changeset} ->
+        {:ok, organisation}
     end
   end
 

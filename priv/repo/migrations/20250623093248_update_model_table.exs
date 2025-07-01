@@ -6,11 +6,11 @@ defmodule WraftDoc.Repo.Migrations.UpdateModelTable do
       add(:is_default, :boolean, default: false)
     end
 
-    drop(index(:ai_model, [:name]))
-    drop(index(:ai_model, [:model_name]))
+    # drop(index(:ai_model, [:name]))
+    # drop(index(:ai_model, [:model_name]))
 
-    create(unique_index(:ai_model, [:organisation_id, :name]))
-    create(unique_index(:ai_model, [:organisation_id, :model_name]))
+    # create(unique_index(:ai_model, [:organisation_id, :name]))
+    # create(unique_index(:ai_model, [:organisation_id, :model_name]))
 
     create(
       unique_index(:ai_model, [:organisation_id],
