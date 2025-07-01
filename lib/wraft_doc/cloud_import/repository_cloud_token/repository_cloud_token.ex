@@ -3,6 +3,7 @@ defmodule WraftDoc.CloudImport.RepositoryCloudToken do
   Schema for Cloud Auth Tokens
   """
   use WraftDoc.Schema
+  alias WraftDoc.EctoType.EncryptedBinaryType
 
   @provider_types [
     :google_drive,
@@ -12,8 +13,8 @@ defmodule WraftDoc.CloudImport.RepositoryCloudToken do
   schema "repository_cloud_tokens" do
     field(:provider, Ecto.Enum, values: @provider_types)
     field(:expires_at, :utc_datetime)
-    field(:refresh_token, :string)
-    field(:access_token, :string)
+    field(:refresh_token, EncryptedBinaryType)
+    field(:access_token, EncryptedBinaryType)
     field(:external_user_data, :map, default: %{})
     field(:meta_data, :map, default: %{})
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation, type: :binary_id)

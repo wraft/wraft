@@ -121,6 +121,47 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
     )
   end
 
+  @doc """
+  Generates OAuth login URL for the specified provider.
+
+  ## Parameters
+  - provider: The provider to authenticate with (e.g., "google_drive", "dropbox", "onedrive")
+
+  ## Responses
+  - 200: Returns redirect URL for OAuth flow
+    ```json
+    {
+      "status": "success",
+      "redirect_url": "https://accounts.google.com/o/oauth2/auth?..."
+    }
+    ```
+  - 400: Invalid provider parameter
+    ```json
+    {
+      "error": "Invalid provider specified",
+      "details": "Supported providers: google_drive, dropbox, onedrive"
+    }
+    ```
+  - 401: Unauthorized request
+  """
+  @spec login_url(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def login_url(conn, %{"provider" => provider}) do
+    user = conn.assigns[:current_user]
+
+    with provider <- String.to_existing_atom(provider),
+         true <- provider in @providers,
+         {:ok, redirect_url, session_params} <- CloudAuth.authorize_url!(provider) do
+      StateStore.put(user.id, provider, session_params)
+
+      Logger.info("Redirecting to #{provider} OAuth: #{redirect_url}")
+
+      json(conn, %{
+        status: "success",
+        redirect_url: redirect_url
+      })
+    end
+  end
+
   swagger_path :google_callback do
     get("/auth/google/callback")
     summary("Google Drive OAuth callback endpoint")
@@ -177,47 +218,6 @@ defmodule WraftDocWeb.Api.V1.CloudImportAuthController do
     response(401, "Unauthorized", Schema.ref(:ErrorResponse),
       description: "OAuth state mismatch or invalid session"
     )
-  end
-
-  @doc """
-  Generates OAuth login URL for the specified provider.
-
-  ## Parameters
-  - provider: The provider to authenticate with (e.g., "google_drive", "dropbox", "onedrive")
-
-  ## Responses
-  - 200: Returns redirect URL for OAuth flow
-    ```json
-    {
-      "status": "success",
-      "redirect_url": "https://accounts.google.com/o/oauth2/auth?..."
-    }
-    ```
-  - 400: Invalid provider parameter
-    ```json
-    {
-      "error": "Invalid provider specified",
-      "details": "Supported providers: google_drive, dropbox, onedrive"
-    }
-    ```
-  - 401: Unauthorized request
-  """
-  @spec login_url(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def login_url(conn, %{"provider" => provider}) do
-    user = conn.assigns[:current_user]
-
-    with provider <- String.to_existing_atom(provider),
-         true <- provider in @providers,
-         {:ok, redirect_url, session_params} <- CloudAuth.authorize_url!(provider) do
-      StateStore.put(user.id, provider, session_params)
-
-      Logger.info("Redirecting to #{provider} OAuth: #{redirect_url}")
-
-      json(conn, %{
-        status: "success",
-        redirect_url: redirect_url
-      })
-    end
   end
 
   @doc """

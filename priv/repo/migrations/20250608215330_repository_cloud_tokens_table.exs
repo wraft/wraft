@@ -4,8 +4,8 @@ defmodule WraftDoc.Repo.Migrations.RepositoryCloudTokensTable do
   def change do
     create table(:repository_cloud_tokens, primary_key: false) do
       add(:id, :uuid, primary_key: true)
-      add(:access_token, :string)
-      add(:refresh_token, :string)
+      add(:access_token, :binary)
+      add(:refresh_token, :binary)
       add(:expires_at, :utc_datetime)
       add(:provider, :string)
       add(:meta_data, :map, default: %{})
