@@ -185,7 +185,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     end
   end
 
-  swagger_path :replies do
+  swagger_path :reply do
     get("/comments/replies")
     summary("Comment replies")
     description("API to get the list of replies under a comment")
@@ -262,6 +262,30 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
     with %Comment{} = comment <- Comments.get_comment(id, current_user),
          %Comment{} = comment <- Comments.update_comment(comment, params) do
+      render(conn, "comment.json", comment: comment)
+    end
+  end
+
+  swagger_path :resolve do
+    put("/comments/{id}/resolve")
+    summary("Resolve a comment")
+    description("API to resolve a comment")
+
+    parameters do
+      id(:path, :string, "comment id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Comment))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(400, "Bad Request", Schema.ref(:Error))
+  end
+
+  def resolve(conn, %{"id" => id}) do
+    current_user = conn.assigns.current_user
+
+    with %Comment{} = comment <- Comments.get_comment(id, current_user),
+         %Comment{} = comment <- Comments.resolve_comment(comment, current_user) do
       render(conn, "comment.json", comment: comment)
     end
   end

@@ -12,6 +12,8 @@ defmodule WraftDocWeb.Api.V1.CommentView do
       parent_id: comment.parent_id,
       master: comment.master,
       master_id: comment.master_id,
+      resolved?: comment.resolved?,
+      resolved_by: render_one(comment.resolver, UserView, "user.json", as: :user),
       user: render_one(comment.user, UserView, "user.json", as: :user),
       profile: render_one(comment.user.profile, ProfileView, "base_profile.json", as: :profile),
       inserted_at: comment.inserted_at,

@@ -449,6 +449,8 @@ defmodule WraftDocWeb.Router do
       # Comments
       resources("/comments", CommentController)
       get("/comments/:id/replies", CommentController, :reply)
+      put("/comments/:id/resolve", CommentController, :resolve)
+
       # Approval system
       resources("/approval_systems", ApprovalSystemController,
         only: [:create, :index, :show, :update, :delete]

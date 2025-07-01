@@ -5,9 +5,10 @@ defmodule WraftDoc.Comments do
   import Ecto
   import Ecto.Query
 
+  alias WraftDoc.Account.User
   alias WraftDoc.Comments.Comment
+  alias WraftDoc.Documents
   alias WraftDoc.Repo
-  alias WraftDoc.User
 
   @doc """
   Create a comment
@@ -36,7 +37,7 @@ defmodule WraftDoc.Comments do
         changeset
 
       {:ok, comment} ->
-        Repo.preload(comment, [{:user, :profile}])
+        Repo.preload(comment, [{:user, :profile}, {:resolver, :profile}])
     end
   end
 
@@ -70,7 +71,7 @@ defmodule WraftDoc.Comments do
   @spec show_comment(Ecto.UUID.t(), User.t()) :: Comment.t() | nil
   def show_comment(id, user) do
     with %Comment{} = comment <- get_comment(id, user) do
-      Repo.preload(comment, [{:user, :profile}])
+      Repo.preload(comment, [{:user, :profile}, {:resolver, :profile}])
     end
   end
 
@@ -78,6 +79,7 @@ defmodule WraftDoc.Comments do
   Comments under a master
   """
   # TODO - improve tests
+  @spec comment_index(User.t(), map()) :: Scrivener.Page.t()
   def comment_index(%{current_org_id: org_id}, %{"master_id" => master_id} = params) do
     query =
       from(c in Comment,
@@ -85,7 +87,7 @@ defmodule WraftDoc.Comments do
         where: c.master_id == ^master_id,
         where: c.is_parent == true,
         order_by: [desc: c.inserted_at],
-        preload: [{:user, :profile}]
+        preload: [{:user, :profile}, {:resolver, :profile}]
       )
 
     Repo.paginate(query, params)
@@ -112,7 +114,7 @@ defmodule WraftDoc.Comments do
           where: c.is_parent == false,
           where: c.parent_id == ^parent_id,
           order_by: [desc: c.inserted_at],
-          preload: [{:user, :profile}]
+          preload: [{:user, :profile}, {:resolver, :profile}]
         )
 
       Repo.paginate(query, params)
@@ -131,10 +133,46 @@ defmodule WraftDoc.Comments do
     |> Repo.insert()
     |> case do
       {:ok, comment} ->
-        Repo.preload(comment, [{:user, :profile}])
+        Repo.preload(comment, [{:user, :profile}, {:resolver, :profile}])
 
       {:error, _} = changeset ->
         changeset
+    end
+  end
+
+  @doc """
+  Resolve a comment by marking it as resolved and assigning the resolver.
+  """
+  @spec resolve_comment(Comment.t(), User.t()) :: Comment.t() | {:error, Ecto.Changeset.t()}
+  def resolve_comment(
+        %Comment{master_id: master_id, user_id: creator_id} = comment,
+        %User{id: resolver_id} = current_user
+      ) do
+    with %{allowed_users: allowed_users} = _instance <-
+           Documents.get_instance(master_id, current_user),
+         :ok <- check_resolver(resolver_id, creator_id, allowed_users) do
+      comment
+      |> Comment.changeset(%{resolved?: true, resolver_id: resolver_id})
+      |> Repo.update()
+      |> case do
+        {:ok, comment} ->
+          Repo.preload(comment, [{:user, :profile}, {:resolver, :profile}])
+
+        {:error, _} = changeset ->
+          changeset
+      end
+    end
+  end
+
+  defp check_resolver(resolver_id, creator_id, allowed_users) do
+    if resolver_id in allowed_users || creator_id == resolver_id do
+      :ok
+    else
+      {:error,
+       {401,
+        %{
+          "errors" => "You are not authorized for this action.!"
+        }}}
     end
   end
 end
