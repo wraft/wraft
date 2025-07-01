@@ -24,7 +24,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
             is_parent(:boolean, "Declare the comment is parent or child", required: true)
             parent_id(:string, "Parent id of a child comment", required: true)
             master(:string, "Comments master", required: true)
-            master_id(:string, "master id of the comment", required: true)
+            master_id(:string, "Document id of the comment", required: true)
           end
 
           example(%{
@@ -128,7 +128,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"master_id" => document_id, "type" => "guest"} = params) do
     current_user = conn.assigns.current_user
 
@@ -141,12 +141,13 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Comment{} = comment <- Comments.create_comment(current_user, params) do
+    with %Comment{master_id: master_id, organisation_id: organisation_id} = comment <-
+           Comments.create_comment(current_user, params) do
       Task.start(fn ->
         Notifications.comment_notification(
           current_user.id,
-          comment.organisation_id,
-          comment.master_id
+          organisation_id,
+          master_id
         )
       end)
 
@@ -158,7 +159,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     get("/comments")
     summary("Comment index")
     description("API to get the list of all comments created under a master")
-    parameter(:master_id, :query, :string, "Master id")
+    parameter(:master_id, :query, :string, "Document id")
     parameter(:page, :query, :string, "Page number")
 
     response(200, "Ok", Schema.ref(:CommentIndex))
@@ -166,7 +167,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     current_user = conn.assigns.current_user
 
@@ -186,11 +187,11 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   end
 
   swagger_path :reply do
-    get("/comments/replies")
+    get("/comments/{id}/replies")
     summary("Comment replies")
     description("API to get the list of replies under a comment")
-    parameter(:master_id, :query, :string, "Master id")
-    parameter(:comment_id, :query, :string, "comment_id")
+    parameter(:id, :path, :string, "comment_id")
+    parameter(:master_id, :query, :string, "Document id")
     parameter(:page, :query, :string, "Page number")
 
     response(200, "Ok", Schema.ref(:CommentIndex))
@@ -198,7 +199,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec reply(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec reply(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def reply(conn, params) do
     current_user = conn.assigns.current_user
 
@@ -231,7 +232,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
@@ -256,7 +257,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
@@ -276,11 +277,12 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     end
 
     response(200, "Ok", Schema.ref(:Comment))
-    response(422, "Unprocessable Entity", Schema.ref(:Error))
-    response(401, "Unauthorized", Schema.ref(:Error))
     response(400, "Bad Request", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
   end
 
+  @spec resolve(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def resolve(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
@@ -305,7 +307,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 

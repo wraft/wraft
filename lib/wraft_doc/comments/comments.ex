@@ -104,7 +104,7 @@ defmodule WraftDoc.Comments do
   @spec comment_replies(%{current_org_id: any}, map) :: Scrivener.Page.t()
   def comment_replies(
         %{current_org_id: org_id} = user,
-        %{"master_id" => master_id, "comment_id" => comment_id} = params
+        %{"master_id" => master_id, "id" => comment_id} = params
       ) do
     with %Comment{id: parent_id} <- get_comment(comment_id, user) do
       query =
@@ -121,7 +121,7 @@ defmodule WraftDoc.Comments do
     end
   end
 
-  def comment_replies(_, %{"master_id" => _, "comment_id" => _}), do: {:error, :fake}
+  def comment_replies(_, %{"master_id" => _, "id" => _}), do: {:error, :fake}
   def comment_replies(%{current_org_id: _}, _), do: {:error, :invalid_data}
   def comment_replies(_, _), do: {:error, :invalid_data}
 
@@ -168,11 +168,7 @@ defmodule WraftDoc.Comments do
     if resolver_id in allowed_users || creator_id == resolver_id do
       :ok
     else
-      {:error,
-       {401,
-        %{
-          "errors" => "You are not authorized for this action.!"
-        }}}
+      {:error, :fake}
     end
   end
 end
