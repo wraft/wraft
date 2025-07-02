@@ -48,6 +48,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
             parent_id(:string, "The ParentId of the comment", required: true)
             master(:string, "The Master of the comment", required: true)
             master_id(:string, "The MasterId of the comment", required: true)
+            children(:array, "Children of the comment", required: true)
 
             inserted_at(:string, "When was the comment inserted", format: "ISO-8601")
             updated_at(:string, "When was the comment last updated", format: "ISO-8601")
@@ -61,6 +62,19 @@ defmodule WraftDocWeb.Api.V1.CommentController do
             master_id: "sdf15511551sdf",
             user_id: "asdf2s2dfasd2",
             organisation_id: "451s51dfsdf515",
+            children: [
+              %{
+                comment: "a sample comment",
+                is_parent: true,
+                master: "instance",
+                meta: %{block: "introduction", line: 12},
+                master_id: "sdf15511551sdf",
+                user_id: "asdf2s2dfasd2",
+                organisation_id: "451s51dfsdf515",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              }
+            ],
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -91,7 +105,20 @@ defmodule WraftDocWeb.Api.V1.CommentController do
                 user_id: "asdf2s2dfasd2",
                 organisation_id: "451s51dfsdf515",
                 updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z"
+                inserted_at: "2020-02-21T14:00:00Z",
+                children: [
+                  %{
+                    comment: "a sample comment",
+                    is_parent: true,
+                    master: "instance",
+                    meta: %{block: "introduction", line: 12},
+                    master_id: "sdf15511551sdf",
+                    user_id: "asdf2s2dfasd2",
+                    organisation_id: "451s51dfsdf515",
+                    updated_at: "2020-01-21T14:00:00Z",
+                    inserted_at: "2020-02-21T14:00:00Z"
+                  }
+                ]
               },
               %{
                 comment: "a sample comment",
