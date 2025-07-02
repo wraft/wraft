@@ -188,6 +188,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     description("API to get the list of all comments created under a master")
     parameter(:master_id, :query, :string, "Document id")
     parameter(:page, :query, :string, "Page number")
+    parameter(:page_size, :query, :string, "Page size")
 
     response(200, "Ok", Schema.ref(:CommentIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
