@@ -7,6 +7,7 @@ defmodule WraftDoc.Repo.Migrations.UpdateCommentTableAddResolver do
       add(:resolved?, :boolean, default: false)
       add(:resolver_id, references(:user, type: :uuid, on_delete: :nilify_all))
       add(:doc_version_id, references(:version, type: :uuid, on_delete: :nilify_all))
+      modify(:reply_count, :integer, default: 0)
     end
   end
 

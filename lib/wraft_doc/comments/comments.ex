@@ -5,6 +5,7 @@ defmodule WraftDoc.Comments do
   import Ecto
   import Ecto.Query
 
+  alias Ecto.Multi
   alias WraftDoc.Account.User
   alias WraftDoc.Comments.Comment
   alias WraftDoc.Documents
@@ -43,8 +44,12 @@ defmodule WraftDoc.Comments do
   end
 
   @doc """
-  Deletes a coment
+  Deletes a comment.
+
+  - If the comment is a parent (`is_parent: true`), it deletes all its child replies first, then deletes the parent.
+  - If the comment is a child reply, it deletes the comment and decrements the `reply_count` on its parent.
   """
+  @spec delete_comment(Comment.t()) :: Comment.t()
   def delete_comment(%Comment{id: id, is_parent: true} = comment) do
     Comment
     |> where([c], c.parent_id == ^id)
@@ -53,7 +58,20 @@ defmodule WraftDoc.Comments do
     Repo.delete(comment)
   end
 
-  def delete_comment(%Comment{} = comment), do: Repo.delete(comment)
+  def delete_comment(%Comment{parent_id: parent_id} = comment) do
+    Multi.new()
+    |> Multi.delete(:delete_comment, comment)
+    |> Multi.update_all(
+      :decrement_reply_count,
+      from(c in Comment, where: c.id == ^parent_id),
+      inc: [reply_count: -1]
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{delete_comment: deleted_comment}} -> {:ok, deleted_comment}
+      {:error, _, changeset_or_reason, _} -> {:error, changeset_or_reason}
+    end
+  end
 
   @doc """
   Get a comment by uuid.
@@ -157,7 +175,10 @@ defmodule WraftDoc.Comments do
     end
   end
 
-  defp insert_comment(current_user, %{"master_id" => document_id} = params) do
+  defp insert_comment(
+         current_user,
+         %{"master_id" => document_id} = params
+       ) do
     doc_version_id = Documents.get_latest_version_id(document_id)
 
     params =
@@ -165,18 +186,37 @@ defmodule WraftDoc.Comments do
       |> ensure_is_parent()
       |> Map.put("doc_version_id", doc_version_id)
 
-    current_user
-    |> build_assoc(:comments)
-    |> Comment.changeset(params)
-    |> Repo.insert()
+    multi =
+      Multi.insert(
+        Multi.new(),
+        :insert_comment,
+        current_user
+        |> build_assoc(:comments)
+        |> Comment.changeset(params)
+      )
+
+    multi
+    |> do_insert_comment(params)
+    |> Repo.transaction()
     |> case do
-      {:ok, comment} ->
+      {:ok, %{insert_comment: comment}} ->
         preload_comment_profiles(comment)
 
-      {:error, _} = changeset ->
-        changeset
+      {:error, _, changeset, _} ->
+        {:error, changeset}
     end
   end
+
+  defp do_insert_comment(multi, %{"parent_id" => parent_id} = _params) do
+    Multi.update_all(
+      multi,
+      :update_parent_reply_count,
+      from(c in Comment, where: c.id == ^parent_id),
+      inc: [reply_count: 1]
+    )
+  end
+
+  defp do_insert_comment(multi, _params), do: multi
 
   defp build_nested_comments(comments) do
     {parent_comments, child_comments} =
