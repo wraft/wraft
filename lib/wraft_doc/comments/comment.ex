@@ -10,12 +10,15 @@ defmodule WraftDoc.Comments.Comment do
     field(:master_id, :string)
     field(:reply_count, :integer)
     field(:meta, :map)
+    field(:state, Ecto.Enum, values: [:active, :archive], default: :active)
+    field(:resolved?, :boolean, default: false)
+
+    belongs_to(:resolver, WraftDoc.Account.User)
+    belongs_to(:doc_version, WraftDoc.Documents.Instance.Version)
     belongs_to(:parent, WraftDoc.Comments.Comment)
     belongs_to(:user, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-    field(:state, Ecto.Enum, values: [:active, :archive], default: :active)
-    field(:doc_version_id, :string, default: "0.0")
-    # belongs_to(:doc_version, WraftDoc.Documents.Instance.Version, type: :binary_id)
+
     timestamps()
   end
 
@@ -27,7 +30,10 @@ defmodule WraftDoc.Comments.Comment do
       :master,
       :master_id,
       :parent_id,
+      :resolver_id,
+      :resolved?,
       :user_id,
+      :doc_version_id,
       :organisation_id,
       :meta,
       :state

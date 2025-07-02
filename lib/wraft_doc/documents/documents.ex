@@ -2026,6 +2026,23 @@ defmodule WraftDoc.Documents do
   defp get_previous_version(_, _), do: nil
 
   @doc """
+  Retrieves the ID of the latest version of a content item.
+
+  Returns a tuple with the following structure:
+  - `id` if the latest version was found.
+  - `nil` if no version was found.
+  """
+  @spec get_latest_version_id(Ecto.UUID.t()) :: Ecto.UUID.t() | nil
+  def get_latest_version_id(content_id) do
+    Version
+    |> where([v], v.content_id == ^content_id)
+    |> order_by([v], desc: v.version_number)
+    |> select([v], v.id)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  @doc """
   Retrieves dashboard statistics for the current organization.
 
   Returns a map containing the following keys:

@@ -24,7 +24,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
             is_parent(:boolean, "Declare the comment is parent or child", required: true)
             parent_id(:string, "Parent id of a child comment", required: true)
             master(:string, "Comments master", required: true)
-            master_id(:string, "master id of the comment", required: true)
+            master_id(:string, "Document id of the comment", required: true)
           end
 
           example(%{
@@ -48,6 +48,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
             parent_id(:string, "The ParentId of the comment", required: true)
             master(:string, "The Master of the comment", required: true)
             master_id(:string, "The MasterId of the comment", required: true)
+            children(:array, "Children of the comment", required: true)
 
             inserted_at(:string, "When was the comment inserted", format: "ISO-8601")
             updated_at(:string, "When was the comment last updated", format: "ISO-8601")
@@ -61,6 +62,19 @@ defmodule WraftDocWeb.Api.V1.CommentController do
             master_id: "sdf15511551sdf",
             user_id: "asdf2s2dfasd2",
             organisation_id: "451s51dfsdf515",
+            children: [
+              %{
+                comment: "a sample comment",
+                is_parent: true,
+                master: "instance",
+                meta: %{block: "introduction", line: 12},
+                master_id: "sdf15511551sdf",
+                user_id: "asdf2s2dfasd2",
+                organisation_id: "451s51dfsdf515",
+                updated_at: "2020-01-21T14:00:00Z",
+                inserted_at: "2020-02-21T14:00:00Z"
+              }
+            ],
             updated_at: "2020-01-21T14:00:00Z",
             inserted_at: "2020-02-21T14:00:00Z"
           })
@@ -91,7 +105,20 @@ defmodule WraftDocWeb.Api.V1.CommentController do
                 user_id: "asdf2s2dfasd2",
                 organisation_id: "451s51dfsdf515",
                 updated_at: "2020-01-21T14:00:00Z",
-                inserted_at: "2020-02-21T14:00:00Z"
+                inserted_at: "2020-02-21T14:00:00Z",
+                children: [
+                  %{
+                    comment: "a sample comment",
+                    is_parent: true,
+                    master: "instance",
+                    meta: %{block: "introduction", line: 12},
+                    master_id: "sdf15511551sdf",
+                    user_id: "asdf2s2dfasd2",
+                    organisation_id: "451s51dfsdf515",
+                    updated_at: "2020-01-21T14:00:00Z",
+                    inserted_at: "2020-02-21T14:00:00Z"
+                  }
+                ]
               },
               %{
                 comment: "a sample comment",
@@ -128,7 +155,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, %{"master_id" => document_id, "type" => "guest"} = params) do
     current_user = conn.assigns.current_user
 
@@ -141,12 +168,13 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Comment{} = comment <- Comments.create_comment(current_user, params) do
+    with %Comment{master_id: master_id, organisation_id: organisation_id} = comment <-
+           Comments.create_comment(current_user, params) do
       Task.start(fn ->
         Notifications.comment_notification(
           current_user.id,
-          comment.organisation_id,
-          comment.master_id
+          organisation_id,
+          master_id
         )
       end)
 
@@ -158,15 +186,16 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     get("/comments")
     summary("Comment index")
     description("API to get the list of all comments created under a master")
-    parameter(:master_id, :query, :string, "Master id")
+    parameter(:master_id, :query, :string, "Document id")
     parameter(:page, :query, :string, "Page number")
+    parameter(:page_size, :query, :string, "Page size")
 
     response(200, "Ok", Schema.ref(:CommentIndex))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     current_user = conn.assigns.current_user
 
@@ -185,12 +214,12 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     end
   end
 
-  swagger_path :replies do
-    get("/comments/replies")
+  swagger_path :reply do
+    get("/comments/{id}/replies")
     summary("Comment replies")
     description("API to get the list of replies under a comment")
-    parameter(:master_id, :query, :string, "Master id")
-    parameter(:comment_id, :query, :string, "comment_id")
+    parameter(:id, :path, :string, "comment_id")
+    parameter(:master_id, :query, :string, "Document id")
     parameter(:page, :query, :string, "Page number")
 
     response(200, "Ok", Schema.ref(:CommentIndex))
@@ -198,7 +227,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec reply(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec reply(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def reply(conn, params) do
     current_user = conn.assigns.current_user
 
@@ -231,7 +260,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
@@ -256,12 +285,37 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
     with %Comment{} = comment <- Comments.get_comment(id, current_user),
          %Comment{} = comment <- Comments.update_comment(comment, params) do
+      render(conn, "comment.json", comment: comment)
+    end
+  end
+
+  swagger_path :resolve do
+    put("/comments/{id}/resolve")
+    summary("Resolve a comment")
+    description("API to resolve a comment")
+
+    parameters do
+      id(:path, :string, "comment id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Comment))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec resolve(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def resolve(conn, %{"id" => id}) do
+    current_user = conn.assigns.current_user
+
+    with %Comment{} = comment <- Comments.get_comment(id, current_user),
+         %Comment{} = comment <- Comments.resolve_comment(comment, current_user) do
       render(conn, "comment.json", comment: comment)
     end
   end
@@ -281,7 +335,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     response(400, "Bad Request", Schema.ref(:Error))
   end
 
-  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
