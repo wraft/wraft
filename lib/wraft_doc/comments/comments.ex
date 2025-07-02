@@ -45,6 +45,14 @@ defmodule WraftDoc.Comments do
   @doc """
   Deletes a coment
   """
+  def delete_comment(%Comment{id: id, is_parent: true} = comment) do
+    Comment
+    |> where([c], c.parent_id == ^id)
+    |> Repo.delete_all()
+
+    Repo.delete(comment)
+  end
+
   def delete_comment(%Comment{} = comment), do: Repo.delete(comment)
 
   @doc """
@@ -176,10 +184,12 @@ defmodule WraftDoc.Comments do
 
     children_by_parent = Enum.group_by(child_comments, & &1.parent_id)
 
-    Enum.map(parent_comments, fn %{id: parent_id} = parent ->
-      children = Map.get(children_by_parent, parent_id, [])
+    parent_comments
+    |> Enum.map(fn parent ->
+      children = Map.get(children_by_parent, parent.id, [])
       Map.put(parent, :children, children)
     end)
+    |> Enum.sort_by(& &1.inserted_at, :desc)
   end
 
   defp get_children(%Comment{id: comment_id} = comment, organisation_id) do
@@ -207,6 +217,6 @@ defmodule WraftDoc.Comments do
   defp preload_comment_profiles(comment),
     do: Repo.preload(comment, [{:user, :profile}, {:resolver, :profile}])
 
-  defp ensure_is_parent(%{"parent_id" => _} = params), do: Map.put(params, "is_parent", true)
-  defp ensure_is_parent(params), do: Map.put(params, "is_parent", false)
+  defp ensure_is_parent(%{"parent_id" => _} = params), do: Map.put(params, "is_parent", false)
+  defp ensure_is_parent(params), do: Map.put(params, "is_parent", true)
 end
