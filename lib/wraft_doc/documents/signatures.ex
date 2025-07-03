@@ -441,8 +441,7 @@ defmodule WraftDoc.Documents.Signatures do
   """
   def get_document_pending_signatures(<<_::288>> = document_id) do
     CounterParty
-    |> where([cp], cp.content_id == ^document_id and cp.signature_status == :pending)
-    |> preload([:content, :user])
+    |> where([cp], cp.content_id == ^document_id and cp.signature_status != :signed)
     |> Repo.all()
   end
 
@@ -599,14 +598,8 @@ defmodule WraftDoc.Documents.Signatures do
       )
     )
 
-    # When ESignature are removed. Also put the associated counterparty to pending
-    Repo.update_all(
-      from(
-        cp in CounterParty,
-        where: cp.content_id == ^document_id
-      ),
-      set: [signature_status: :pending, signature_image: nil]
-    )
+    # When ESignature are removed, remove the counterparties as well
+    Repo.delete_all(from(cp in CounterParty, where: cp.content_id == ^document_id))
 
     # Reset the document instance sign status to false
     instance
