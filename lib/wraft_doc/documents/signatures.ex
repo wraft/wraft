@@ -176,7 +176,7 @@ defmodule WraftDoc.Documents.Signatures do
     end
   end
 
-  def apply_digital_signature_to_document(_, _, false),
+  def apply_digital_signature_to_document(_, false),
     do: {:ok, "Document is not completely visually signed yet"}
 
   @doc """
