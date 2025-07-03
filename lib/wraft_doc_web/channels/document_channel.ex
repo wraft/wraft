@@ -6,6 +6,7 @@ defmodule WraftDocWeb.DocumentChannel do
 
   use Phoenix.Channel
   alias WraftDoc.Documents
+  alias WraftDoc.SessionCache
   alias Yex.Sync.SharedDoc
 
   @impl true
@@ -88,9 +89,15 @@ defmodule WraftDocWeb.DocumentChannel do
         access
 
       _ ->
-        access_result = Documents.has_access?(current_user, content_id)
-        WraftDoc.SessionCache.put(cache_key, access_result, 15 * 60 * 1000)
-        access_result
+        case Documents.has_access?(current_user, content_id) do
+          true ->
+            SessionCache.put(cache_key, true, 15 * 60 * 1000)
+            true
+
+          _ ->
+            SessionCache.put(cache_key, false, 5 * 60 * 1000)
+            false
+        end
     end
   end
 end

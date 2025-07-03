@@ -15,26 +15,67 @@ defmodule WraftDocWeb.UserSocket do
   The socket is used to connect to the server and authenticate the user.
   """
   def connect(%{"token" => token} = _params, socket, _connect_info) do
-    cache_key = token_hash(token)
+    cache_key = token_cache_key(token)
 
     case WraftDoc.SessionCache.get(cache_key) do
-      {:ok, user} ->
-        {:ok, assign(socket, :current_user, user)}
+      {:ok, user} when is_map(user) ->
+        if user_data_fresh?(user) do
+          {:ok, assign(socket, :current_user, user)}
+        else
+          authenticate_and_cache(token, socket, cache_key)
+        end
 
       {:error, :not_found} ->
-        with {:ok, authed_socket} <- authenticate(socket, WraftDocWeb.Guardian, token),
-             {:ok, user} <- fetch_user(authed_socket) do
-          WraftDoc.SessionCache.put(cache_key, user, @cache_ttl)
-          {:ok, assign(authed_socket, :current_user, user)}
-        else
-          _ -> :error
-        end
+        authenticate_and_cache(token, socket, cache_key)
     end
   end
 
-  defp token_hash(token) do
-    Base.encode16(:crypto.hash(:sha256, token))
+  def connect(_params, _socket, _connect_info) do
+    {:error, :unauthorized_connection}
   end
+
+  def invalidate_user_cache(token) when is_binary(token) do
+    cache_key = token_cache_key(token)
+    WraftDoc.SessionCache.delete(cache_key)
+  end
+
+  def invalidate_user_cache(_), do: :ok
+
+  def invalidate_user_cache_pattern(user_id) when is_binary(user_id) do
+    # This is a simplified approach - in production you might want a more sophisticated pattern
+    pattern = {"user:" <> user_id, :_}
+    WraftDoc.SessionCache.delete_pattern(pattern)
+  end
+
+  defp authenticate_and_cache(token, socket, cache_key) do
+    with {:ok, authed_socket} <-
+           authenticate(socket, WraftDocWeb.Guardian, token),
+         {:ok, user} <- fetch_user(authed_socket) do
+      case WraftDoc.SessionCache.put(cache_key, user, @cache_ttl) do
+        :ok ->
+          {:ok, assign(authed_socket, :current_user, user)}
+
+        {:error, :cache_full} ->
+          # Still allow authentication even if cache is full
+          {:ok, assign(authed_socket, :current_user, user)}
+      end
+    else
+      _ -> :error
+    end
+  end
+
+  defp token_cache_key(token) do
+    # Simplified approach - just use first 16 chars of token for cache key
+    "user_token:" <> String.slice(token, 0, 16)
+  end
+
+  defp user_data_fresh?(%{cached_at: cached_at}) when is_integer(cached_at) do
+    now = System.system_time(:millisecond)
+    # Consider data fresh if cached within the last 5 minutes
+    now - cached_at < 5 * 60 * 1000
+  end
+
+  defp user_data_fresh?(_), do: false
 
   defp fetch_user(socket) do
     user =
@@ -43,7 +84,12 @@ defmodule WraftDocWeb.UserSocket do
       |> Account.get_user_by_email()
       |> Repo.preload([:profile, :roles])
 
-    {:ok, Map.put(user, :role_names, Enum.map(user.roles, & &1.name))}
+    user_with_metadata =
+      user
+      |> Map.put(:role_names, Enum.map(user.roles, & &1.name))
+      |> Map.put(:cached_at, System.system_time(:millisecond))
+
+    {:ok, user_with_metadata}
   end
 
   # Use actual user ID for targeted broadcasts
