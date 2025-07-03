@@ -61,3 +61,8 @@ config :wraft_doc, WraftDoc.Repo,
   pool_size: 10,
   timeout: 300_000,
   show_sensitive_data_on_connetion_error: true
+
+# Configure HTTPoison for webhooks
+config :httpoison,
+  timeout: 30_000,
+  recv_timeout: 30_000
