@@ -9,6 +9,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   alias WraftDoc.Comments
   alias WraftDoc.Comments.Comment
   alias WraftDoc.Documents
+  alias WraftDoc.Documents.Instance
 
   def swagger_definitions do
     %{
@@ -178,6 +179,11 @@ defmodule WraftDocWeb.Api.V1.CommentController do
         )
       end)
 
+      # Trigger webhook for comment added (only if it's a document comment)
+      if comment.master do
+        Task.start(fn -> trigger_comment_webhook(comment, current_user) end)
+      end
+
       render(conn, "comment.json", comment: comment)
     end
   end
@@ -342,6 +348,31 @@ defmodule WraftDocWeb.Api.V1.CommentController do
     with %Comment{} = comment <- Comments.get_comment(id, current_user),
          {:ok, %Comment{}} <- Comments.delete_comment(comment) do
       render(conn, "delete.json", comment: comment)
+    end
+  end
+
+  # Private function to handle webhook trigger for document comments
+  defp trigger_comment_webhook(comment, current_user) do
+    case Documents.get_instance(comment.master_id, %{
+           current_org_id: comment.organisation_id
+         }) do
+      %Instance{} = instance ->
+        comment_data = %{
+          id: comment.id,
+          comment: comment.comment,
+          user_id: current_user.id,
+          user_name: current_user.name,
+          user_email: current_user.email,
+          inserted_at: comment.inserted_at
+        }
+
+        WraftDoc.Webhooks.EventTrigger.trigger_document_comment_added(
+          instance,
+          comment_data
+        )
+
+      _ ->
+        :ok
     end
   end
 end
