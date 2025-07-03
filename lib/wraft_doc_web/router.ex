@@ -201,6 +201,16 @@ defmodule WraftDocWeb.Router do
       # Delete layout asset
       delete("/layouts/:id/assets/:a_id", LayoutController, :delete_layout_asset)
 
+      # Webhooks
+      get("/webhooks/events", WebhookController, :events)
+      get("/webhooks/logs", WebhookController, :all_logs)
+      get("/webhooks/logs/:log_id", WebhookController, :log_details)
+      resources("/webhooks", WebhookController, only: [:create, :index, :show, :update, :delete])
+      patch("/webhooks/:id/toggle", WebhookController, :toggle_status)
+      post("/webhooks/:id/test", WebhookController, :test)
+      get("/webhooks/:id/logs", WebhookController, :logs)
+      get("/webhooks/:id/stats", WebhookController, :stats)
+
       scope "/content_types" do
         # Content type
         resources("/", ContentTypeController, only: [:create, :index, :show, :update, :delete])

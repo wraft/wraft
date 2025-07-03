@@ -1,48 +1,51 @@
-block:show,Block,Show
-block:manage,Block,Manage
 block:delete,Block,Delete
-block_template:show,Block Template,Show
-block_template:manage,Block Template,Manage
+block:manage,Block,Manage
+block:show,Block,Show
 block_template:delete,Block Template,Delete
-variant:show,Variant,Show
-variant:manage,Variant,Manage
-variant:delete,Variant,Delete
-template:show,Template,Show
-template:manage,Template,Manage
-template:delete,Template,Delete
-flow:show,Flow,Show
-flow:manage,Flow,Manage
-flow:delete,Flow,Delete
-document:show,Document,Show
+block_template:manage,Block Template,Manage
+block_template:show,Block Template,Show
 document:delete,Document,Delete
-document:manage,Document,Manage
 document:lock,Document,Lock
+document:manage,Document,Manage
 document:review,Document,Review
-layout:show,Layout,Show
-layout:manage,Layout,Manage
-layout:delete,Layout,Delete
-members:show,Members,Show
-members:manage,Members,Manage
-workspace:update,Workspace,Update
-workspace:delete,Workspace,Delete
-workspace:invite,Workspace,Invite
-payment:show,Payment,Show
-pipeline:show,Pipeline,Show
-pipeline:manage,Pipeline,Manage
-pipeline:delete,Pipeline,Delete
-role:show,Role,Show
-role:manage,Role,Manage
-role:delete,Role,Delete
-theme:show,Theme,Show
-theme:manage,Theme,Manage
-theme:delete,Theme,Delete
-form:show,Form,Show
-form:manage,Form,Manage
+document:show,Document,Show
+flow:delete,Flow,Delete
+flow:manage,Flow,Manage
+flow:show,Flow,Show
 form:delete,Form,Delete
-form_entry:show,Form Entry,Show
-form_entry:manage,Form Entry,Manage
+form:manage,Form,Manage
+form:show,Form,Show
 form_entry:delete,Form Entry,Delete
+form_entry:manage,Form Entry,Manage
+form_entry:show,Form Entry,Show
 global_import:manage,Global Import,Manage
+layout:delete,Layout,Delete
+layout:manage,Layout,Manage
+layout:show,Layout,Show
+members:manage,Members,Manage
+members:show,Members,Show
+payment:show,Payment,Show
+pipeline:delete,Pipeline,Delete
+pipeline:manage,Pipeline,Manage
+pipeline:show,Pipeline,Show
+role:delete,Role,Delete
+role:manage,Role,Manage
+role:show,Role,Show
+template:delete,Template,Delete
+template:manage,Template,Manage
+template:show,Template,Show
+theme:delete,Theme,Delete
+theme:manage,Theme,Manage
+theme:show,Theme,Show
+variant:delete,Variant,Delete
+variant:manage,Variant,Manage
+variant:show,Variant,Show
 vendor:show,Vendor,Show
 vendor:manage,Vendor,Manage
 vendor:delete,Vendor,Delete
+webhook:delete,Webhook,Delete
+webhook:manage,Webhook,Manage
+webhook:show,Webhook,Show
+workspace:delete,Workspace,Delete
+workspace:invite,Workspace,Invite
+workspace:update,Workspace,Update
