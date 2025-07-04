@@ -86,7 +86,11 @@ defmodule WraftDocWeb.Api.V1.StorageItemView do
       preview_path: storage_asset.preview_path,
       inserted_at: storage_asset.inserted_at,
       updated_at: storage_asset.updated_at,
-      url: WraftDocWeb.StorageAssetUploader.url({storage_asset.filename, storage_asset})
+      url: generate_url(storage_asset)
     }
+  end
+
+  defp generate_url(storage_asset) do
+    WraftDocWeb.StorageAssetUploader.url({storage_asset.filename, storage_asset}, signed: true)
   end
 end

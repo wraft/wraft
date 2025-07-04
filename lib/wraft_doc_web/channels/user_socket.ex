@@ -1,78 +1,92 @@
 defmodule WraftDocWeb.UserSocket do
-  @moduledoc """
-  User socket module
-  """
   use Phoenix.Socket
-  # alias WraftDoc.{Account, Repo}
-  # import Guardian.Phoenix.Socket
 
-  ## Channels
+  import Guardian.Phoenix.Socket
+  alias WraftDoc.{Account, Repo}
+
+  # 30 minutes in milliseconds
+  @cache_ttl 30 * 60 * 1000
+
   channel("notification:*", WraftDocWeb.NotificationChannel)
   channel("doc_room:*", WraftDocWeb.DocumentChannel)
-
   # channel("room:*", WraftDocWeb.NotificationChannel)
 
-  # Socket params are passed from the client and can
-  # be used to verify and authenticate a user. After
-  # verification, you can put default assigns into
-  # the socket that will be set for all channels, ie
-  #
-  #     {:ok, assign(socket, :user_id, verified_user_id)}
-  #
-  # To deny connection, return `:error`.
-  #
-  # See `Phoenix.Token` documentation for examples in
-  # performing token verification on connect.
-  # def connect(_params, socket) do
-  #   {:ok, socket}
-  # end
-  @impl true
+  @doc """
+  The socket is used to connect to the server and authenticate the user.
+  """
+  def connect(%{"token" => token} = _params, socket, _connect_info) do
+    cache_key = token_cache_key(token)
 
-  # def connect(%{"token" => token}, socket, _connect_info) do
-  #   case authenticate(socket, WraftDocWeb.Guardian, token) do
-  #     {:ok, authed_socket} ->
-  #       user = authed_socket |> current_resource() |> Account.get_user_by_email()
-  #       user = Repo.preload(user, [:profile, :roles])
-  #       role_names = Enum.map(user.roles, fn x -> x.name end)
-  #       user = Map.put(user, :role_names, role_names)
-  #       {:ok, assign(authed_socket, :current_user, user)}
+    case WraftDoc.SessionCache.get(cache_key) do
+      {:ok, user} when is_map(user) ->
+        if user_data_fresh?(user) do
+          {:ok, assign(socket, :current_user, user)}
+        else
+          authenticate_and_cache(token, socket, cache_key)
+        end
 
-  #     {:error, _} ->
-  #       :error
-  #   end
-  # end
-
-  # Temporary connect function
-  def connect(_params, socket, _connect_info) do
-    {:ok, socket}
+      {:error, :not_found} ->
+        authenticate_and_cache(token, socket, cache_key)
+    end
   end
 
-  # def connect(_params, socket, _conntection_info) do
-
-  #   {:ok, socket}
-  # end
-
-  # This function will be called when there was no authentication information
-  # Temporarily commented
-  # @impl true
-  # def connect(_params, _socket, _) do
-  #   :error
-  # end
-
-  # def id(socket), do: socket.assigns[:current_user].id |> to_string()
-  @impl true
-  def id(_socket) do
-    "socket"
+  def connect(_params, _socket, _connect_info) do
+    {:error, :unauthorized_connection}
   end
 
-  # Socket id's are topics that allow you to identify all sockets for a given user:
-  #
-  #     def id(socket), do: "user_socket:#{socket.assigns.user_id}"
-  #
-  # Would allow you to broadcast a "disconnect" event and terminate
-  # all active sockets and channels for a given user:
-  #
-  #     WraftDocWeb.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
-  #
-  # Returning `nil` makes this socket anonymous.
+  def invalidate_user_cache(token) when is_binary(token) do
+    cache_key = token_cache_key(token)
+    WraftDoc.SessionCache.delete(cache_key)
+  end
+
+  def invalidate_user_cache(_), do: :ok
+
+  def invalidate_user_cache_pattern(user_id) when is_binary(user_id) do
+    pattern = {"user:" <> user_id, :_}
+    WraftDoc.SessionCache.delete_pattern(pattern)
+  end
+
+  defp authenticate_and_cache(token, socket, cache_key) do
+    with {:ok, authed_socket} <- authenticate(socket, WraftDocWeb.Guardian, token),
+         {:ok, user} <- fetch_user(authed_socket) do
+      case WraftDoc.SessionCache.put(cache_key, user, @cache_ttl) do
+        :ok ->
+          {:ok, assign(authed_socket, :current_user, user)}
+
+        {:error, :cache_full} ->
+          # Still allow authentication even if cache is full
+          {:ok, assign(authed_socket, :current_user, user)}
+      end
+    else
+      _error -> :error
+    end
+  end
+
+  defp token_cache_key(token) do
+    "user_token:" <> String.slice(token, 0, 16)
+  end
+
+  defp user_data_fresh?(%{cached_at: cached_at}) when is_integer(cached_at) do
+    now = System.system_time(:millisecond)
+    now - cached_at < 5 * 60 * 1000
+  end
+
+  defp user_data_fresh?(_), do: false
+
+  defp fetch_user(socket) do
+    user =
+      socket
+      |> current_resource()
+      |> Account.get_user_by_email()
+      |> Repo.preload([:profile, :roles])
+
+    user_with_metadata =
+      user
+      |> Map.put(:role_names, Enum.map(user.roles, & &1.name))
+      |> Map.put(:cached_at, System.system_time(:millisecond))
+
+    {:ok, user_with_metadata}
+  end
+
+  def id(socket), do: "user_socket:#{socket.assigns.current_user.id}"
 end
