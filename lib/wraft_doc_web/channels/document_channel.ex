@@ -89,7 +89,7 @@ defmodule WraftDocWeb.DocumentChannel do
         access
 
       _ ->
-        case Documents.has_access?(current_user, content_id, :socket) do
+        case Documents.has_access?(current_user, content_id) do
           true ->
             SessionCache.put(cache_key, true, 15 * 60 * 1000)
             true
