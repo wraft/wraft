@@ -14,7 +14,6 @@
 % Commands
 \newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
 
-
 % Packages
 \usepackage{fontspec}
 \usepackage{eurosym}
@@ -26,11 +25,14 @@
 \usepackage{graphicx}
 \usepackage{grffile}
 \usepackage[normalem]{ulem}
-\usepackage[setpagesize=false,
-            unicode=false,
-            colorlinks=true,
-            urlcolor=blue,
-            linkcolor=black]{hyperref}
+
+\PassOptionsToPackage{setpagesize=false,
+                      unicode=false,
+                      colorlinks=true,
+                      urlcolor=blue,
+                      linkcolor=black}{hyperref}
+
+\usepackage{eforms}
 \usepackage{sectsty}
 \usepackage{xcolor}
 
@@ -87,7 +89,6 @@ $highlighting-macros$
 \newcommand{\authorEmail}{$author_email$}
 
 % Set the PDF metadata
-\usepackage{hyperref}
 \newcommand{\DocumentInstanceTitle}{$title$}
 \newcommand{\pdfAuthor}{$organisation_name$}
 \hypersetup{
