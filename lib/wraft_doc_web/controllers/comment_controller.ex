@@ -132,7 +132,7 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def create(conn, %{"master_id" => document_id, "type" => "guest"} = params) do
     current_user = conn.assigns.current_user
 
-    with true <- Documents.has_access?(current_user, document_id),
+    with true <- Documents.has_access?(current_user, document_id, :collaborator),
          %Comment{} = comment <- Comments.create_comment(current_user, params) do
       render(conn, "comment.json", comment: comment)
     end

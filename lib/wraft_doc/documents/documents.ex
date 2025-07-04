@@ -2229,8 +2229,8 @@ defmodule WraftDoc.Documents do
   @doc """
     Check if user has access to a document
   """
-  @spec has_access?(User.t(), Ecto.UUID.t()) :: boolean() | {:error, String.t()}
-  def has_access?(%User{id: user_id}, document_id) do
+  @spec has_access?(User.t(), Ecto.UUID.t(), atom()) :: boolean() | {:error, String.t()}
+  def has_access?(%User{id: user_id}, document_id, :collaborator) do
     ContentCollaboration
     |> where(
       [cc],
@@ -2269,6 +2269,15 @@ defmodule WraftDoc.Documents do
     |> case do
       true -> true
       false -> {:error, "Collaborator does not have access to the document"}
+    end
+  end
+
+  def has_access?(%User{} = user, document_id, :socket) do
+    [:editor, :collaborator, :counterparty]
+    |> Enum.any?(&has_access?(user, document_id, &1))
+    |> case do
+      true -> true
+      false -> {:error, "User does not have access to the document"}
     end
   end
 

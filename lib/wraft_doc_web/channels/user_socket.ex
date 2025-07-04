@@ -9,7 +9,7 @@ defmodule WraftDocWeb.UserSocket do
   # Channels (keep your existing channels)
   channel("notification:*", WraftDocWeb.NotificationChannel)
   channel("doc_room:*", WraftDocWeb.DocumentChannel)
-  channel("room:*", WraftDocWeb.NotificationChannel)
+  # channel("room:*", WraftDocWeb.NotificationChannel)
 
   @doc """
   The socket is used to connect to the server and authenticate the user.
@@ -42,7 +42,6 @@ defmodule WraftDocWeb.UserSocket do
   def invalidate_user_cache(_), do: :ok
 
   def invalidate_user_cache_pattern(user_id) when is_binary(user_id) do
-    # This is a simplified approach - in production you might want a more sophisticated pattern
     pattern = {"user:" <> user_id, :_}
     WraftDoc.SessionCache.delete_pattern(pattern)
   end
@@ -65,13 +64,11 @@ defmodule WraftDocWeb.UserSocket do
   end
 
   defp token_cache_key(token) do
-    # Simplified approach - just use first 16 chars of token for cache key
     "user_token:" <> String.slice(token, 0, 16)
   end
 
   defp user_data_fresh?(%{cached_at: cached_at}) when is_integer(cached_at) do
     now = System.system_time(:millisecond)
-    # Consider data fresh if cached within the last 5 minutes
     now - cached_at < 5 * 60 * 1000
   end
 
@@ -92,6 +89,5 @@ defmodule WraftDocWeb.UserSocket do
     {:ok, user_with_metadata}
   end
 
-  # Use actual user ID for targeted broadcasts
   def id(socket), do: "user_socket:#{socket.assigns.current_user.id}"
 end

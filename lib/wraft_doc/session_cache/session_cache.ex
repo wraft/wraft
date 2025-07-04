@@ -10,11 +10,8 @@ defmodule WraftDoc.SessionCache do
   require Logger
 
   @table_name :session_cache
-  # 1 minute in milliseconds
   @default_cleanup_interval 60_000
-  # Minimum TTL of 5 seconds
   @min_ttl 5_000
-  # Maximum cache size to prevent DoS
   @max_cache_size 10_000
 
   @type key :: any()

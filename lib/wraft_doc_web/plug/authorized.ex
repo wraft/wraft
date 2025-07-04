@@ -48,7 +48,7 @@ defmodule WraftDocWeb.Plug.Authorized do
         } = conn,
         _opts
       ) do
-    case Documents.has_access?(current_user, document_id) do
+    case Documents.has_access?(current_user, document_id, :collaborator) do
       true ->
         conn
 
