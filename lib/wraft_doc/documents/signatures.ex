@@ -204,7 +204,7 @@ defmodule WraftDoc.Documents.Signatures do
     do: {:error, "Document is already fully signed"}
 
   def apply_visual_signature_to_document(
-        %CounterParty{e_signature: signatures},
+        %CounterParty{e_signature: signatures, name: counterparty_name} = _counterparty,
         %Instance{
           instance_id: instance_id,
           content_type: %{layout: %Layout{organisation_id: org_id} = _layout} = _content_type
@@ -244,6 +244,7 @@ defmodule WraftDoc.Documents.Signatures do
            coordinates
          ) do
       {:ok, _signed_pdf_path} ->
+        notify_document_owner_email(instance, counterparty_name)
         append_signed_file_to_signatures(signatures, signed_pdf_path)
         Minio.upload_file(signed_pdf_path)
         handle_clean_up(signature_status, signed_pdf_path, instance_dir_path)
@@ -533,21 +534,18 @@ defmodule WraftDoc.Documents.Signatures do
     end)
   end
 
-  # TODO : Function need to be implemented
   @doc """
   Notify the document owner when a signature is completed
   """
+  @spec notify_document_owner_email(%Instance{}, String.t()) :: Oban.Job.t() | {:error, term()}
   def notify_document_owner_email(
-        %ESignature{
-          content: %Instance{creator: owner, instance_id: instance_id},
-          counter_party: counterparty
-        } =
-          _signature
+        %Instance{creator: owner, instance_id: instance_id},
+        counterparty_name
       ) do
     %{
       email: owner.email,
       instance_id: instance_id,
-      signer_name: counterparty.name
+      signer_name: counterparty_name
     }
     |> EmailWorker.new(queue: "mailer", tags: ["notify_document_owner_signature_complete"])
     |> Oban.insert()
