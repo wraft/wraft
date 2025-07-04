@@ -1,12 +1,12 @@
 defmodule WraftDocWeb.UserSocket do
   use Phoenix.Socket
+
   import Guardian.Phoenix.Socket
   alias WraftDoc.{Account, Repo}
 
   # 30 minutes in milliseconds
   @cache_ttl 30 * 60 * 1000
 
-  # Channels (keep your existing channels)
   channel("notification:*", WraftDocWeb.NotificationChannel)
   channel("doc_room:*", WraftDocWeb.DocumentChannel)
   # channel("room:*", WraftDocWeb.NotificationChannel)
@@ -47,8 +47,7 @@ defmodule WraftDocWeb.UserSocket do
   end
 
   defp authenticate_and_cache(token, socket, cache_key) do
-    with {:ok, authed_socket} <-
-           authenticate(socket, WraftDocWeb.Guardian, token),
+    with {:ok, authed_socket} <- authenticate(socket, WraftDocWeb.Guardian, token),
          {:ok, user} <- fetch_user(authed_socket) do
       case WraftDoc.SessionCache.put(cache_key, user, @cache_ttl) do
         :ok ->
@@ -59,7 +58,7 @@ defmodule WraftDocWeb.UserSocket do
           {:ok, assign(authed_socket, :current_user, user)}
       end
     else
-      _ -> :error
+      _error -> :error
     end
   end
 
