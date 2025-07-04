@@ -35,13 +35,11 @@ defmodule WraftDoc.Models do
   """
   @spec get_default_model(Ecto.UUID.t()) :: Model.t() | nil
   def get_default_model(organisation_id) do
-    query =
-      from(m in Model,
-        where: m.organisation_id == ^organisation_id and m.is_default == true,
-        limit: 1
-      )
-
-    Repo.one(query)
+    Model
+    |> where([m], m.organisation_id == ^organisation_id)
+    |> where([m], m.is_default == true)
+    |> limit(1)
+    |> Repo.one()
   end
 
   @doc """
@@ -73,9 +71,8 @@ defmodule WraftDoc.Models do
 
   """
   @spec get_model(String.t(), String.t()) :: Model.t() | nil
-  def get_model(<<_::288>> = id, organisation_id) do
-    Repo.get_by(Model, id: id, organisation_id: organisation_id)
-  end
+  def get_model(<<_::288>> = id, organisation_id),
+    do: Repo.get_by(Model, id: id, organisation_id: organisation_id)
 
   def get_model(_, _), do: nil
 
@@ -130,9 +127,7 @@ defmodule WraftDoc.Models do
 
   """
   @spec delete_model(Model.t()) :: {:ok, Model.t()} | {:error, Ecto.Changeset.t()}
-  def delete_model(%Model{} = model) do
-    Repo.delete(model)
-  end
+  def delete_model(%Model{} = model), do: Repo.delete(model)
 
   @doc """
   Returns the list of prompts.
@@ -144,7 +139,11 @@ defmodule WraftDoc.Models do
 
   """
   @spec list_prompts(String.t()) :: [Prompt.t()]
-  def list_prompts(organisation_id), do: Repo.all_by(Prompt, organisation_id: organisation_id)
+  def list_prompts(organisation_id) do
+    Prompt
+    |> where([p], p.organisation_id == ^organisation_id or is_nil(p.organisation_id))
+    |> Repo.all()
+  end
 
   @doc """
   Gets a single prompts.
@@ -175,9 +174,8 @@ defmodule WraftDoc.Models do
 
   """
   @spec get_prompt(String.t(), String.t()) :: Prompt.t() | nil
-  def get_prompt(<<_::288>> = id, organisation_id) do
-    Repo.get_by(Prompt, id: id, organisation_id: organisation_id)
-  end
+  def get_prompt(<<_::288>> = id, organisation_id),
+    do: Repo.get_by(Prompt, id: id, organisation_id: organisation_id)
 
   def get_prompt(_, _), do: nil
 
@@ -231,7 +229,11 @@ defmodule WraftDoc.Models do
       {:error, %Ecto.Changeset{}}
 
   """
-  @spec delete_prompt(Prompt.t()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
+  @spec delete_prompt(Prompt.t()) ::
+          {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def delete_prompt(%Prompt{organisation_id: nil, creator_id: nil} = _prompt),
+    do: {:error, "System prompt cannot be deleted"}
+
   def delete_prompt(%Prompt{} = prompt), do: Repo.delete(prompt)
 
   @doc """
