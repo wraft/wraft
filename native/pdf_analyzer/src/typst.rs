@@ -122,7 +122,7 @@ fn analyze_stream_object(stream: &Stream, page_num: u32, page_height: f64, targe
     }
 }
 
-fn analyze_content_operations(operations: &[Operation], page_num: u32, page_height: f64, target_fill_color: Option<&str>, target_stroke_color: Option<&str>) -> PageAnalysisResult {
+fn analyze_content_operations(operations: &[Operation], page_num: u32, _page_height: f64, target_fill_color: Option<&str>, target_stroke_color: Option<&str>) -> PageAnalysisResult {
     let mut rectangle_count = 0;
     let mut path_ops_count = 0;
     let mut text_ops_count = 0;
@@ -133,16 +133,50 @@ fn analyze_content_operations(operations: &[Operation], page_num: u32, page_heig
     let mut graphics_stack: Vec<GraphicsState> = Vec::new();
     let mut rectangles_data: Vec<RectangleData> = Vec::new();
 
+    // Transformation matrix [a, b, c, d, e, f] where:
+    // x' = a*x + c*y + e
+    // y' = b*x + d*y + f
+    let mut transform_matrix: [f64; 6] = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]; // Identity matrix
+    let mut transform_stack: Vec<[f64; 6]> = Vec::new();
+
     for (i, op) in operations.iter().enumerate() {
         *op_counts.entry(op.operator.clone()).or_insert(0) += 1;
 
         match op.operator.as_str() {
             "q" => {
                 graphics_stack.push(state.clone());
+                transform_stack.push(transform_matrix);
             },
             "Q" => {
                 if let Some(prev_state) = graphics_stack.pop() {
                     state = prev_state;
+                }
+                if let Some(prev_matrix) = transform_stack.pop() {
+                    transform_matrix = prev_matrix;
+                }
+            },
+            "cm" => {
+                // Transformation matrix: [a b c d e f]
+                // x' = a*x + c*y + e
+                // y' = b*x + d*y + f
+                if op.operands.len() >= 6 {
+                    let a = object_to_f64(&op.operands[0]);
+                    let b = object_to_f64(&op.operands[1]);
+                    let c = object_to_f64(&op.operands[2]);
+                    let d = object_to_f64(&op.operands[3]);
+                    let e = object_to_f64(&op.operands[4]);
+                    let f = object_to_f64(&op.operands[5]);
+
+                    // Multiply current matrix with new matrix
+                    let new_matrix = [
+                        transform_matrix[0] * a + transform_matrix[2] * b,
+                        transform_matrix[1] * a + transform_matrix[3] * b,
+                        transform_matrix[0] * c + transform_matrix[2] * d,
+                        transform_matrix[1] * c + transform_matrix[3] * d,
+                        transform_matrix[0] * e + transform_matrix[2] * f + transform_matrix[4],
+                        transform_matrix[1] * e + transform_matrix[3] * f + transform_matrix[5],
+                    ];
+                    transform_matrix = new_matrix;
                 }
             },
             "CS" => {
@@ -277,23 +311,34 @@ fn analyze_content_operations(operations: &[Operation], page_num: u32, page_heig
 
                     // Only add the rectangle if it matches both target colors (or if no targets specified)
                     if fill_color_matches && stroke_color_matches {
-                        // Transform coordinates to bottom-left origin system
-                        // In PDF, y increases upward from bottom-left, but some systems expect top-left origin
-                        // For bottom-left origin: new_y = page_height - (old_y + height)
-                        let transformed_y = page_height - (y + height);
+                        // Apply transformation matrix to coordinates
+                        // x' = a*x + c*y + e
+                        // y' = b*x + d*y + f
+                        let transformed_x = transform_matrix[0] * x + transform_matrix[2] * y + transform_matrix[4];
+                        let transformed_y = transform_matrix[1] * x + transform_matrix[3] * y + transform_matrix[5];
 
-                        // Calculate corner coordinates with bottom-left origin
-                        let y1 = transformed_y;
-                        let y2 = transformed_y + height;
+                        // Transform the width and height vectors as well
+                        let transformed_x2 = transform_matrix[0] * (x + width) + transform_matrix[2] * (y + height) + transform_matrix[4];
+                        let transformed_y2 = transform_matrix[1] * (x + width) + transform_matrix[3] * (y + height) + transform_matrix[5];
+
+                        // Calculate actual width and height after transformation
+                        let actual_width = transformed_x2 - transformed_x;
+                        let actual_height = transformed_y2 - transformed_y;
+
+                        // Calculate corner coordinates in bottom-left origin system
+                        // Ensure y1 is the bottom edge and y2 is the top edge
+                        let y1 = transformed_y.min(transformed_y + actual_height);  // bottom edge
+                        let y2 = transformed_y.max(transformed_y + actual_height);  // top edge
+                        let corrected_height = (y2 - y1).abs();
 
                         let rect_data = RectangleData {
                             operation: i,
-                            position: Point { x, y: transformed_y },
-                            dimensions: Dimensions { width, height },
+                            position: Point { x: transformed_x, y: transformed_y },
+                            dimensions: Dimensions { width: actual_width.abs(), height: corrected_height },
                             corners: CornerCoordinates {
-                                x1: x,
+                                x1: transformed_x,
                                 y1,
-                                x2: x + width,
+                                x2: transformed_x + actual_width,
                                 y2,
                             },
                             fill_color: fill_color_override.clone().unwrap_or(current_fill_color_formatted),
@@ -314,9 +359,8 @@ fn analyze_content_operations(operations: &[Operation], page_num: u32, page_heig
                 path_ops_count += 1;
                 if op.operator == "m" && op.operands.len() >= 2 {
                     state.current_x = object_to_f64(&op.operands[0]);
-                    // Transform Y coordinate to bottom-left origin for consistency
-                    let raw_y = object_to_f64(&op.operands[1]);
-                    state.current_y = page_height - raw_y;
+                    // Keep Y coordinate as-is since PDF already uses bottom-left origin
+                    state.current_y = object_to_f64(&op.operands[1]);
                 }
             },
             "BT" | "ET" | "Tj" | "TJ" | "Td" | "TD" | "T*" => {
