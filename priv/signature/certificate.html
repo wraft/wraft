@@ -1,118 +1,193 @@
-$if(signers)$
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <style>
     body {
-      margin: 0;
-      padding: 32px;
       font-family: 'Segoe UI', Tahoma, sans-serif;
-      background-color: #f9f9f9;
+      margin: 0;
       color: #333;
     }
 
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
     h1 {
-      font-size: 26px;
-      text-align: center;
-      margin-bottom: 40px;
+      font-size: 24px;
+      font-weight: 600;
       color: #222;
+      margin-bottom: 36px;
+      border-left: 4px solid #1aae6f;
+      padding-left: 12px;
     }
 
     .signer-card {
       background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-      margin-bottom: 32px;
-      padding: 24px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      padding: 20px 32px;
       display: flex;
-      flex-direction: column;
-      gap: 12px;
+      flex-direction: row;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      gap: 24px;
     }
 
-    .signer-header {
-      font-size: 18px;
+    .left,
+    .right {
+      flex: 1 1 0; /* Changed from auto to 0 */
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    .left {
+      margin-right: 24px; /* Added margin for spacing */
+    }
+
+    .signer-badge {
       font-weight: 600;
-      color: #444;
-      margin-bottom: 8px;
+      font-size: 16px;
+      color: #1aae6f;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
-    .section-title {
+    .signer-badge span {
+      display: inline-block;
+      background-color: #1aae6f;
+      color: white;
+      border-radius: 50%;
+      width: 26px;
+      height: 26px;
+      line-height: 26px;
+      text-align: center;
+      font-size: 14px;
       font-weight: bold;
-      font-size: 15px;
-      margin: 16px 0 6px;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 4px;
-      color: #444;
+      margin-right: 8px; /* Added spacing */
     }
 
     .kv-pair {
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
 
     .kv-label {
-      display: inline-block;
-      width: 120px;
       font-weight: 600;
-      color: #333;
+      color: #555;
+      display: inline-block;
+      /* width: 90px; */ /* Removed fixed width to reduce spacing */
+      margin-right: 8px; /* Added small space after the label */
     }
 
     .kv-value {
-      display: inline-block;
-      color: #555;
+      color: #333;
+      /* word-break: break-word; */ /* Removed word-break to prevent cutting off long IDs */
+    }
+
+    .kv-value.id-value {
       word-break: break-word;
     }
 
-    .signature-image {
-      border: 1px solid #d3e7c8;
-      padding: 6px;
-      max-height: 70px;
-      max-width: 200px;
-      background-color: #fafafa;
-      margin: 8px 0;
+    .section-title {
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #444;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 4px;
+      width: 100%; /* Ensure the line spans the width of the left panel */
     }
 
-    @media (max-width: 768px) {
-      .kv-label {
-        display: block;
-        margin-bottom: 2px;
-      }
+    .signature-box {
+      border: 1px solid #ddd;
+      background: #fafafa;
+      height: 70px;
+      width: auto;
+      max-width: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      margin-top: 8px;
+      margin-bottom: 12px;
+    }
 
-      .kv-pair {
-        margin-bottom: 12px;
-      }
+    .signature-box img {
+      max-height: 60px;
+      max-width: 220px;
+    }
+
+    .footer {
+      margin-top: 60px;
+      font-size: 13px;
+      text-align: center;
+      color: #666;
+    }
+
+    .footer p {
+      margin: 4px 0;
+    }
+
+    .signing-provider {
+      margin-top: 40px;
+      text-align: center;
+    }
+
+    .signing-provider img {
+      max-width: 150px;
+      height: auto;
+      margin-top: 8px;
     }
   </style>
 </head>
 <body>
 
-  <h1>Signature Record Summary</h1>
+  <div class="container">
+    <h1>Signature Record Summary</h1>
 
-  $for(signers)$
-  <div class="signer-card">
-    <div class="signer-header">Signer #$it.index$</div>
+    $for(signers)$
+    <div class="signer-card">
+      <div class="left">
+        <div class="signer-badge"><span>$it.index$</span> Signer #$it.index$</div>
 
-    <div class="section-title">Identity</div>
-    <div class="kv-pair"><span class="kv-label">Name:</span><span class="kv-value">$it.name$</span></div>
-    <div class="kv-pair"><span class="kv-label">Email:</span><span class="kv-value">$it.email$</span></div>
-    <div class="kv-pair"><span class="kv-label">Authentication:</span><span class="kv-value">$it.auth_level$</span></div>
+        <div class="kv-pair"><span class="kv-label">Name:</span><span class="kv-value">$it.name$</span></div>
+        <div class="kv-pair"><span class="kv-label">Email:</span><span class="kv-value">$it.email$</span></div>
+        <div class="kv-pair"><span class="kv-label">Auth:</span><span class="kv-value">$it.auth_level$</span></div>
 
-    <div class="section-title">Signature</div>
-    <div class="kv-pair">
-      <img src="$it.signature_image$" alt="Signature" class="signature-image" />
+        <div class="section-title">Signature</div>
+        <div class="signature-box">
+          $if(it.signature_image)$
+          <img src="$it.signature_image$" alt="Signature" />
+          $else$
+          <span>Signature not available</span>
+          $endif$
+        </div>
+        <div class="kv-pair"><span class="kv-label">ID:</span><span class="kv-value id-value">$it.counterparty_id$</span></div>
+      </div>
+
+      <div class="right">
+        <div class="kv-pair"><span class="kv-label">IP:</span><span class="kv-value">$it.ip_address$</span></div>
+        <div class="kv-pair"><span class="kv-label">Device:</span><span class="kv-value">$it.device$</span></div>
+        <div class="kv-pair"><span class="kv-label">Signed:</span><span class="kv-value">$it.signed_at$ (UTC)</span></div>
+        <div class="kv-pair"><span class="kv-label">Reason:</span><span class="kv-value"><em>$it.reason$</em></span></div>
+      </div>
     </div>
-    <div class="kv-pair"><span class="kv-label">Signature ID:</span><span class="kv-value">$it.counterparty_id$</span></div>
+    $endfor$
 
-    <div class="section-title">Technical Details</div>
-    <div class="kv-pair"><span class="kv-label">IP Address:</span><span class="kv-value">$it.ip_address$</span></div>
-    <div class="kv-pair"><span class="kv-label">Device:</span><span class="kv-value">${it.device}</span></div>
-
-    <div class="section-title">Event Info</div>
-    <div class="kv-pair"><span class="kv-label">Signed At:</span><span class="kv-value">${it.signed_at}</span></div>
-    <div class="kv-pair"><span class="kv-label">Reason:</span><span class="kv-value">${it.reason}</span></div>
+    <div class="footer">
+      <p>This document was electronically signed and is legally binding.</p>
+      <p>Generated on $generated_at$</p>
+    </div>
+    <div class="signing-provider">
+      <p>Signing certificate provided by: Wraft</p>
+    </div>
   </div>
-  $endfor$
 
 </body>
 </html>
-$endif$

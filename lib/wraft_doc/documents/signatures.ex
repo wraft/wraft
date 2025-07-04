@@ -330,6 +330,7 @@ defmodule WraftDoc.Documents.Signatures do
   def prepare_markdown(base_local_dir_path, counterparties) do
     signers_yaml = """
     ---
+    generated_at: "#{format_datetime(DateTime.utc_now())}"
     signers:
     #{format_signers(counterparties, base_local_dir_path)}
     ---
