@@ -90,8 +90,11 @@ defmodule WraftDoc.Models do
   """
   @spec create_model(map()) :: {:ok, Model.t()} | {:error, Ecto.Changeset.t()}
   def create_model(attrs \\ %{}) do
-    %Model{}
-    |> Model.changeset(attrs)
+    set_default = Repo.aggregate(Model, :count, :id) == 0
+
+    attrs
+    |> Map.put("is_default", set_default)
+    |> then(&Model.changeset(%Model{}, &1))
     |> Repo.insert()
   end
 
@@ -128,6 +131,91 @@ defmodule WraftDoc.Models do
   """
   @spec delete_model(Model.t()) :: {:ok, Model.t()} | {:error, Ecto.Changeset.t()}
   def delete_model(%Model{} = model), do: Repo.delete(model)
+
+  @doc """
+  Creates a model log entry.
+
+  ## Examples
+
+      iex> create_model_log(%{field: value})
+      {:ok, %ModelLog{}}
+
+      iex> create_model_log(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  @spec create_model_log(map()) :: {:ok, ModelLog.t()} | {:error, Ecto.Changeset.t()}
+  def create_model_log(attrs \\ %{}) do
+    %ModelLog{}
+    |> ModelLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Creates a model log entry with execution context.
+
+  ## Parameters
+
+    - `context` - Map containing model, prompt, and user information
+    - `status` - Status of the model execution
+    - `base_url` - Base URL of the model endpoint
+    - `start_time` - Start time of the execution in milliseconds
+
+  ## Examples
+
+      iex> create_model_log(context, "success", "https://api.example.com", 1640995200000)
+      {:ok, %ModelLog{}}
+
+  """
+  @spec create_model_log(map(), String.t(), String.t(), integer()) ::
+          {:ok, ModelLog.t()} | {:error, Ecto.Changeset.t()}
+  def create_model_log(
+        %{
+          model: %{model_name: model_name, provider: provider},
+          prompt: %{prompt: prompt_text},
+          user: %{id: user_id, current_org_id: organisation_id}
+        },
+        status,
+        base_url,
+        start_time
+      ) do
+    end_time = System.monotonic_time(:millisecond)
+
+    create_model_log(%{
+      model_name: model_name,
+      provider: provider,
+      prompt_text: prompt_text,
+      endpoint: base_url,
+      status: status,
+      response_time_ms: end_time - start_time,
+      user_id: user_id,
+      organisation_id: organisation_id
+    })
+  end
+
+  @doc """
+  Sets a model as the default for an organization.
+  This will unset any existing default models for the organization.
+
+  ## Examples
+
+      iex> set_as_default_model(model)
+      {:ok, %Model{}}
+
+  """
+  @spec set_as_default_model(Model.t()) :: {:ok, Model.t()} | {:error, Ecto.Changeset.t()}
+  def set_as_default_model(%Model{organisation_id: organisation_id} = model) do
+    Model
+    |> where([m], m.organisation_id == ^organisation_id and m.is_default == true)
+    |> Repo.update_all(set: [is_default: false])
+
+    model
+    |> update_model(%{"is_default" => true})
+    |> case do
+      {:ok, model} -> {:ok, model}
+      {:error, changeset} -> {:error, changeset}
+    end
+  end
 
   @doc """
   Returns the list of prompts.
@@ -235,92 +323,4 @@ defmodule WraftDoc.Models do
     do: {:error, "System prompt cannot be deleted"}
 
   def delete_prompt(%Prompt{} = prompt), do: Repo.delete(prompt)
-
-  @doc """
-  Creates a model log entry.
-
-  ## Examples
-
-      iex> create_model_log(%{field: value})
-      {:ok, %ModelLog{}}
-
-      iex> create_model_log(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  @spec create_model_log(map()) :: {:ok, ModelLog.t()} | {:error, Ecto.Changeset.t()}
-  def create_model_log(attrs \\ %{}) do
-    %ModelLog{}
-    |> ModelLog.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Creates a model log entry with execution context.
-
-  ## Parameters
-
-    - `context` - Map containing model, prompt, and user information
-    - `status` - Status of the model execution
-    - `base_url` - Base URL of the model endpoint
-    - `start_time` - Start time of the execution in milliseconds
-
-  ## Examples
-
-      iex> create_model_log(context, "success", "https://api.example.com", 1640995200000)
-      {:ok, %ModelLog{}}
-
-  """
-  @spec create_model_log(map(), String.t(), String.t(), integer()) ::
-          {:ok, ModelLog.t()} | {:error, Ecto.Changeset.t()}
-  def create_model_log(
-        %{
-          model: %{model_name: model_name, provider: provider},
-          prompt: %{prompt: prompt_text},
-          user: %{id: user_id, current_org_id: organisation_id}
-        },
-        status,
-        base_url,
-        start_time
-      ) do
-    end_time = System.monotonic_time(:millisecond)
-
-    create_model_log(%{
-      model_name: model_name,
-      provider: provider,
-      prompt_text: prompt_text,
-      endpoint: base_url,
-      status: status,
-      response_time_ms: end_time - start_time,
-      user_id: user_id,
-      organisation_id: organisation_id
-    })
-  end
-
-  @doc """
-  Sets a model as the default for an organization.
-  This will unset any existing default models for the organization.
-
-  ## Examples
-
-      iex> set_as_default_model(model)
-      {:ok, %Model{}}
-
-  """
-  @spec set_as_default_model(Model.t()) :: {:ok, Model.t()} | {:error, Ecto.Changeset.t()}
-  def set_as_default_model(%Model{organisation_id: org_id} = model) do
-    Repo.transaction(fn ->
-      # First, unset any existing default models for this organization
-      Repo.update_all(
-        from(m in Model, where: m.organisation_id == ^org_id and m.is_default == true),
-        set: [is_default: false]
-      )
-
-      # Then set this model as default
-      case update_model(model, %{is_default: true}) do
-        {:ok, updated_model} -> updated_model
-        {:error, changeset} -> Repo.rollback(changeset)
-      end
-    end)
-  end
 end

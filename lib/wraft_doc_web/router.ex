@@ -512,6 +512,7 @@ defmodule WraftDocWeb.Router do
       # AI/ML Management
       scope "/ai" do
         resources("/models", ModelController)
+        put("/models/:id/set_default", ModelController, :set_default)
         resources("/prompts", PromptsController)
         post("/generate", AIToolController, :execute)
       end

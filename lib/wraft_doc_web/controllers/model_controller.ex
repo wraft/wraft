@@ -134,6 +134,7 @@ defmodule WraftDocWeb.Api.V1.ModelController do
     get("/ai/models")
     summary("List all AI models")
     description("Retrieve a list of all AI models")
+    tag("AI")
 
     response(200, "Ok", Schema.ref(:Models))
     response(401, "Unauthorized", Schema.ref(:Error))
@@ -154,6 +155,7 @@ defmodule WraftDocWeb.Api.V1.ModelController do
     post("/ai/models")
     summary("Create a new AI model")
     description("Create a new AI model configuration")
+    tag("AI")
 
     parameters do
       model(:body, Schema.ref(:ModelRequest), "Model to be created", required: true)
@@ -190,6 +192,7 @@ defmodule WraftDocWeb.Api.V1.ModelController do
     get("/ai/models/{id}")
     summary("Show an AI model")
     description("Retrieve details of a specific AI model")
+    tag("AI")
 
     parameters do
       id(:path, :string, "Model ID", required: true)
@@ -217,6 +220,7 @@ defmodule WraftDocWeb.Api.V1.ModelController do
     put("/ai/models/{id}")
     summary("Update an AI model")
     description("Update an existing AI model configuration")
+    tag("AI")
 
     parameters do
       id(:path, :string, "Model ID", required: true)
@@ -253,6 +257,7 @@ defmodule WraftDocWeb.Api.V1.ModelController do
     PhoenixSwagger.Path.delete("/ai/models/{id}")
     summary("Delete an AI model")
     description("Delete an existing AI model configuration")
+    tag("AI")
 
     parameters do
       id(:path, :string, "Model ID", required: true)
@@ -271,6 +276,35 @@ defmodule WraftDocWeb.Api.V1.ModelController do
     with %Model{} = model <- Models.get_model(id, current_user.current_org_id),
          {:ok, %Model{}} <- Models.delete_model(model) do
       send_resp(conn, :no_content, "")
+    end
+  end
+
+  @doc """
+  Set an AI model as default.
+  """
+  swagger_path :set_default do
+    put("/ai/models/{id}/set_default")
+    summary("Set an AI model as default")
+    description("Set an existing AI model as default")
+    tag("AI")
+
+    parameters do
+      id(:path, :string, "Model ID", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Model))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(400, "Bad Request", Schema.ref(:Error))
+  end
+
+  @spec set_default(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def set_default(conn, %{"id" => id}) do
+    current_user = conn.assigns.current_user
+
+    with %Model{} = model <- Models.get_model(id, current_user.current_org_id),
+         {:ok, %Model{} = model} <- Models.set_as_default_model(model) do
+      render(conn, :show, model: model)
     end
   end
 end

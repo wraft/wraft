@@ -79,6 +79,8 @@ defmodule WraftDocWeb.Api.V1.PromptsController do
     summary("List all prompts")
     description("Retrieve a list of all AI prompts")
 
+    tag("AI")
+
     response(200, "Ok", Schema.ref(:Prompts))
     response(401, "Unauthorized", Schema.ref(:Error))
     response(400, "Bad Request", Schema.ref(:Error))
@@ -98,6 +100,7 @@ defmodule WraftDocWeb.Api.V1.PromptsController do
     post("/ai/prompts")
     summary("Create a new prompt")
     description("Create a new AI prompt")
+    tag("AI")
 
     parameters do
       prompt(:body, Schema.ref(:PromptRequest), "Prompt to be created", required: true)
@@ -134,6 +137,7 @@ defmodule WraftDocWeb.Api.V1.PromptsController do
     get("/ai/prompts/{id}")
     summary("Show a prompt")
     description("Retrieve details of a specific prompt")
+    tag("AI")
 
     parameters do
       id(:path, :string, "Prompt ID", required: true)
@@ -159,6 +163,7 @@ defmodule WraftDocWeb.Api.V1.PromptsController do
     put("/ai/prompts/{id}")
     summary("Update a prompt")
     description("Update an existing AI prompt")
+    tag("AI")
 
     parameters do
       id(:path, :string, "Prompt ID", required: true)
@@ -196,6 +201,7 @@ defmodule WraftDocWeb.Api.V1.PromptsController do
     PhoenixSwagger.Path.delete("/ai/prompts/{id}")
     summary("Delete a prompt")
     description("Delete an existing AI prompt")
+    tag("AI")
 
     parameters do
       id(:path, :string, "Prompt ID", required: true)

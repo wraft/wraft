@@ -206,6 +206,7 @@ defmodule WraftDocWeb.Api.V1.AIToolController do
       "Execute AI tool with specified content. Either provide prompt_id for a saved prompt, or provide both prompt and prompt_type for inline execution. Model ID is optional and defaults to organization's default model."
     )
 
+    tag("AI")
     operation_id("execute_ai_tool")
     consumes("application/json")
 
