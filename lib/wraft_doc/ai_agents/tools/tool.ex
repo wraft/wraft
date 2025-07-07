@@ -24,7 +24,7 @@ defmodule WraftDoc.AiAgents.Tool do
 
       def run(
             %{
-              model: %{model_name: model_name, provider: provider, auth_key: auth_key},
+              model: %{model_name: model_name, provider: provider, auth_key: auth_key} = model,
               prompt: %{prompt: prompt_text},
               content: content
             } = params,
@@ -40,14 +40,21 @@ defmodule WraftDoc.AiAgents.Tool do
             ]
           })
 
+        model_config = [
+          model: model_name,
+          api_key: auth_key
+        ]
+
+        model_config =
+          model
+          |> Map.get(:endpoint_url)
+          |> case do
+            nil -> model_config
+            endpoint_url -> model_config ++ [base_url: endpoint_url]
+          end
+
         {:ok, %{base_url: base_url} = model} =
-          Jido.AI.Model.from(
-            {String.to_atom(provider),
-             [
-               model: model_name,
-               api_key: auth_key
-             ]}
-          )
+          Jido.AI.Model.from({String.to_atom(provider), model_config})
 
         %{
           model: model,
