@@ -94,6 +94,25 @@ defmodule WraftDoc.Workers.EmailWorker do
 
   def perform(%Job{
         args: %{
+          "email" => email,
+          "instance_id" => instance_id,
+          "signer_name" => name,
+          "signed_document" => signed_document,
+          "document_name" => document_name
+        },
+        tags: ["document_fully_signed"]
+      }) do
+    Logger.info("Document fully signed mailer job started.")
+
+    email
+    |> Email.document_fully_signed_email(instance_id, name, signed_document, document_name)
+    |> Mailer.deliver()
+
+    Logger.info("Document fully signed mailer job end.")
+  end
+
+  def perform(%Job{
+        args: %{
           "name" => name,
           "email" => email,
           "token" => token,

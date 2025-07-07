@@ -7,7 +7,7 @@ defmodule WraftDoc.Documents.Signatures do
   require Logger
 
   # Path to the pdf signer JAR file
-  @visual_signer_jar Application.compile_env!(:wraft_doc, [:signature_jar_file])
+  @pdf_signer_jar Application.compile_env!(:wraft_doc, [:signature_jar_file])
   # Digital signature keystore configuration
   @keystore_file Application.compile_env!(:wraft_doc, [:keystore_file])
   @signature_reason "I hereby certify that I have signed this document"
@@ -19,6 +19,7 @@ defmodule WraftDoc.Documents.Signatures do
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Client.Minio
+  alias WraftDoc.CounterParties
   alias WraftDoc.CounterParties.CounterParty
   alias WraftDoc.Documents
   alias WraftDoc.Documents.ESignature
@@ -29,20 +30,18 @@ defmodule WraftDoc.Documents.Signatures do
   alias WraftDoc.Workers.EmailWorker
 
   @doc """
-  Apply a visual signature to a PDF document
+  Apply digital signature to a PDF document
 
   ## Parameters
 
   - `pdf_path`: Path to the input PDF file
-  - `signature_image_path`: Path to the signature image file
-  - `output_pdf_path`: Path where the signed PDF will be saved
-  - `page`: Page number where the signature should be applied (0-based)
-  - `coordinates`: Map containing x1, y1, x2, y2 coordinates for signature placement
+  - `signed_pdf_path`: Path where the signed PDF will be saved
   - `keystore_file`: Path to the keystore file (optional, defaults to `@keystore_file`)
   - `keystore_password`: Password for the keystore (optional, defaults to `@keystore_password`)
   - `key_alias`: Alias for the key in the keystore (optional, defaults to `@key_alias`)
   - `signature_reason`: Reason for the signature (optional, defaults to `@signature_reason`)
   - `signature_location`: Location of the signature (optional, defaults to `@signature_location`)
+  - `certificate_path`: Path to the certificate file (optional, defaults to `@certificate_path`)
 
 
   ## Returns
@@ -50,35 +49,17 @@ defmodule WraftDoc.Documents.Signatures do
   - `{:ok, output_path}`: If successful
   - `{:error, reason}`: If the operation fails
   """
-  @spec apply_visual_signature(String.t(), String.t(), String.t(), integer(), map()) ::
+  @spec apply_digital_signature(String.t(), String.t(), String.t()) ::
           {:ok, String.t()} | {:error, String.t()}
-  def apply_visual_signature(
-        pdf_path,
-        signature_image_path,
-        output_pdf_path,
-        page,
-        %{"x1" => x1, "y1" => y1, "x2" => x2, "y2" => y2} = _coordinates
-      ) do
+  def apply_digital_signature(pdf_path, signed_pdf_path, certificate_path) do
     args = [
       "-cp",
-      @visual_signer_jar,
-      "com.wraft.VisualSignerApp",
+      @pdf_signer_jar,
+      "com.wraft.DigitalSignerApp",
       "--input",
       pdf_path,
-      "--signature",
-      signature_image_path,
       "--output",
-      output_pdf_path,
-      "--page",
-      "#{page}",
-      "--x1",
-      "#{x1}",
-      "--y1",
-      "#{y1}",
-      "--x2",
-      "#{x2}",
-      "--y2",
-      "#{y2}",
+      signed_pdf_path,
       "--keystore",
       @keystore_file,
       "--keystore-password",
@@ -88,13 +69,56 @@ defmodule WraftDoc.Documents.Signatures do
       "--reason",
       @signature_reason,
       "--location",
-      @signature_location
+      @signature_location,
+      "--certificate",
+      certificate_path
     ]
 
     case System.cmd("java", args, stderr_to_stdout: true) do
       {output, 0} ->
+        Logger.info("PDF signature applied successfully: #{output}")
+        {:ok, signed_pdf_path}
+
+      {error, code} ->
+        Logger.error("Failed to apply PDF signature. Exit code: #{code}, Error: #{error}")
+        {:error, "Failed to apply PDF signature: #{error}"}
+    end
+  end
+
+  @doc """
+  Apply a visual signature to a PDF document
+  ## Parameters
+  - `pdf_path`: Path to the input PDF file
+  - `signature_image_path`: Path to the signature image file
+  - `signed_pdf_path`: Path where the signed PDF will be saved
+  - `coordinates`: JSON string containing list of x1, y1, x2, y2 coordinates for signature placement (origin is bottom left)
+  ## Returns
+  - `{:ok, output_path}`: If successful
+  - `{:error, reason}`: If the operation fails
+  """
+  @spec apply_visual_signature(String.t(), String.t(), String.t(), String.t()) ::
+          {:ok, String.t()} | {:error, String.t()}
+  def apply_visual_signature(pdf_path, signature_image_path, signed_pdf_path, coordinates) do
+    args = [
+      "-cp",
+      @pdf_signer_jar,
+      "com.wraft.VisualSignerApp",
+      "--input",
+      pdf_path,
+      "--signature",
+      signature_image_path,
+      "--output",
+      signed_pdf_path,
+      "--coordinates-json-string",
+      coordinates
+    ]
+
+    Logger.info("Executing visual signer with args: #{inspect(args)}")
+
+    case System.cmd("java", args, stderr_to_stdout: true) do
+      {output, 0} ->
         Logger.info("Visual signature applied successfully: #{output}")
-        {:ok, output_pdf_path}
+        {:ok, signed_pdf_path}
 
       {error, code} ->
         Logger.error("Failed to apply visual signature. Exit code: #{code}, Error: #{error}")
@@ -103,91 +127,164 @@ defmodule WraftDoc.Documents.Signatures do
   end
 
   @doc """
-  Apply a signature to a document using the visual signer
+  Apply a digital signature to a document
   """
-  @spec apply_signature_to_document(ESignature.t(), Instance.t(), map()) ::
-          {:ok, ESignature.t()} | {:error, String.t()}
-  def apply_signature_to_document(
+  @spec apply_digital_signature_to_document(Instance.t(), boolean()) ::
+          {:ok, String.t()} | {:error, String.t()}
+  def apply_digital_signature_to_document(
+        %Instance{
+          id: document_id,
+          instance_id: instance_id,
+          organisation_id: org_id
+        } = instance,
+        true
+      ) do
+    instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
+    base_local_dir_path = Path.join(File.cwd!(), instance_dir_path)
+
+    signed_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
+    pdf_path = get_or_download_pdf(signed_pdf_path, instance, instance_dir_path)
+
+    # Generate certificate
+    certificate_md_path = Path.join(base_local_dir_path, "certificate.md")
+    certificate_pdf_path = Path.join(base_local_dir_path, "certificate.pdf")
+    counterparties = CounterParties.get_document_counterparties(document_id)
+    signers_content = prepare_markdown(base_local_dir_path, counterparties)
+    File.write!(certificate_md_path, signers_content)
+
+    generate_certificate(certificate_md_path, certificate_pdf_path)
+
+    pdf_path
+    |> apply_digital_signature(signed_pdf_path, certificate_pdf_path)
+    |> case do
+      {:ok, _signed_pdf_path} ->
+        Minio.upload_file(signed_pdf_path)
+
+        # Update the counterparty with the signed file
+        Enum.each(counterparties, fn counterparty ->
+          CounterParties.counter_party_sign(counterparty, %{signed_file: signed_pdf_path})
+        end)
+
+        finalize_signed_document(instance, signed_pdf_path)
+        cleanup_signed_pdf(signed_pdf_path, instance_dir_path)
+        {:ok, signed_pdf_path}
+
+      {:error, reason} ->
+        Logger.error("Failed to apply digital signature: #{reason}")
+        cleanup_signed_pdf(signed_pdf_path, instance_dir_path)
+        {:error, reason}
+    end
+  end
+
+  def apply_digital_signature_to_document(_, false),
+    do: {:ok, "Document is not completely visually signed yet"}
+
+  @doc """
+  Apply a visual signature to a document
+  """
+  @spec apply_visual_signature_to_document(CounterParty.t(), Instance.t(), map(), boolean()) ::
+          {:ok, String.t()} | {:error, String.t()}
+  def apply_visual_signature_to_document(
         %CounterParty{e_signature: []},
         _instance,
-        _params
+        _params,
+        _signature_status
       ),
       do: {:error, "Counterparty has no signatures"}
 
-  def apply_signature_to_document(
+  def apply_visual_signature_to_document(
         %CounterParty{signature_status: :signed} = _counterparty,
         _instance,
-        _params
+        _params,
+        _signature_status
       ),
       do: {:error, "Counterparty has already signed the document"}
 
-  def apply_signature_to_document(
-        %CounterParty{e_signature: signatures} = counterparty,
+  def apply_visual_signature_to_document(_, %Instance{signature_status: true}, _, _),
+    do: {:error, "Document is already fully signed"}
+
+  def apply_visual_signature_to_document(
+        %CounterParty{e_signature: signatures, name: counterparty_name} = _counterparty,
         %Instance{
           instance_id: instance_id,
           content_type: %{layout: %Layout{organisation_id: org_id} = _layout} = _content_type
         } = instance,
-        %{"signature_image" => %Plug.Upload{path: signature_image_path}}
+        %{"signature_image" => %Plug.Upload{path: signature_image_path}},
+        signature_status
       ) do
     instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
     base_local_dir_path = Path.join(File.cwd!(), instance_dir_path)
     File.mkdir_p!(base_local_dir_path)
 
-    output_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
-    pdf_path = get_or_download_pdf(output_pdf_path, instance, instance_dir_path)
+    signed_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
+    initial_pdf_path = get_or_download_pdf(signed_pdf_path, instance, instance_dir_path)
 
-    {updated_signatures, _} =
-      Enum.map_reduce(signatures, pdf_path, fn %ESignature{
-                                                 signature_data: %{
-                                                   "page" => page,
-                                                   "coordinates" => coordinates
-                                                 }
-                                               } = signature,
-                                               current_pdf ->
-        case apply_visual_signature(
-               current_pdf,
-               signature_image_path,
-               output_pdf_path,
-               page,
-               coordinates
-             ) do
-          {:ok, _output_path} ->
-            {:ok, updated_signature} =
-              update_e_signature(signature, %{signed_file: output_pdf_path})
-
-            {updated_signature, output_pdf_path}
-
-          {:error, reason} ->
-            Logger.error("Failed to apply signature: #{inspect(reason)}")
-            {signature, current_pdf}
-        end
+    coordinates =
+      signatures
+      |> Enum.map(fn %{
+                       signature_data: %{
+                         "page" => page,
+                         "coordinates" => %{"x1" => x1, "y1" => y1, "x2" => x2, "y2" => y2}
+                       }
+                     } ->
+        %{
+          "page" => page,
+          "x1" => x1,
+          "y1" => y1,
+          "x2" => x2,
+          "y2" => y2
+        }
       end)
+      |> Jason.encode!()
 
-    Minio.upload_file(output_pdf_path)
+    case apply_visual_signature(
+           initial_pdf_path,
+           signature_image_path,
+           signed_pdf_path,
+           coordinates
+         ) do
+      {:ok, _signed_pdf_path} ->
+        notify_document_owner_email(instance, counterparty_name)
+        append_signed_file_to_signatures(signatures, signed_pdf_path)
+        Minio.upload_file(signed_pdf_path)
+        handle_clean_up(signature_status, signed_pdf_path, instance_dir_path)
+        {:ok, signed_pdf_path}
 
-    # Clean up
-    File.rm_rf(Path.join(File.cwd!(), instance_dir_path))
-    File.rm_rf(output_pdf_path)
-
-    {:ok,
-     %{
-       counterparty: %{counterparty | e_signature: updated_signatures},
-       signed_pdf_path: output_pdf_path
-     }}
+      {:error, reason} ->
+        Logger.error("Failed to apply signature: #{inspect(reason)}")
+        cleanup_signed_pdf(signed_pdf_path, instance_dir_path)
+        {:error, reason}
+    end
   end
 
-  defp get_or_download_pdf(output_pdf_path, instance, instance_dir_path) do
-    if Minio.file_exists?(output_pdf_path) do
-      download_existing_signed_pdf(output_pdf_path)
+  defp handle_clean_up(false, signed_pdf_path, instance_dir_path),
+    do: cleanup_signed_pdf(signed_pdf_path, instance_dir_path)
+
+  defp handle_clean_up(true, _signed_pdf_path, _instance_dir_path), do: :ok
+
+  defp append_signed_file_to_signatures(signatures, signed_pdf_path) do
+    Enum.each(signatures, fn signature ->
+      update_e_signature(signature, %{signed_file: signed_pdf_path})
+    end)
+  end
+
+  defp cleanup_signed_pdf(signed_pdf_path, instance_dir_path) do
+    File.rm_rf(Path.join(File.cwd!(), instance_dir_path))
+    File.rm_rf(signed_pdf_path)
+  end
+
+  defp get_or_download_pdf(signed_pdf_path, instance, instance_dir_path) do
+    if Minio.file_exists?(signed_pdf_path) do
+      download_existing_signed_pdf(signed_pdf_path)
     else
       download_original_pdf(instance, instance_dir_path)
     end
   end
 
-  defp download_existing_signed_pdf(output_pdf_path) do
-    binary = Minio.download(output_pdf_path)
-    File.write!(output_pdf_path, binary)
-    output_pdf_path
+  defp download_existing_signed_pdf(signed_pdf_path) do
+    binary = Minio.download(signed_pdf_path)
+    File.write!(signed_pdf_path, binary)
+    signed_pdf_path
   end
 
   defp download_original_pdf(instance, instance_dir_path) do
@@ -203,17 +300,100 @@ defmodule WraftDoc.Documents.Signatures do
   end
 
   @doc """
-  Get a signature by counterparty ID
+  Generate a PDF certificate from a markdown file using Pandoc
   """
-  @spec get_signature_by_counterparty(CounterParty.t()) :: ESignature.t() | nil
-  def get_signature_by_counterparty(%CounterParty{id: counter_party_id}) do
-    ESignature
-    |> where([s], s.counter_party_id == ^counter_party_id)
-    |> preload([:user, :counter_party, content: [:creator]])
-    |> Repo.one()
+  @spec generate_certificate(String.t(), String.t()) :: {:ok, String.t()} | {:error, String.t()}
+  def generate_certificate(certificate_markdown_path, certificate_pdf_path) do
+    args = [
+      "#{certificate_markdown_path}",
+      "-o",
+      "#{certificate_pdf_path}",
+      "--template=#{File.cwd!() <> "/priv/signature/certificate.html"}",
+      "--pdf-engine=wkhtmltopdf"
+    ]
+
+    case System.cmd("pandoc", args, stderr_to_stdout: true) do
+      {output, 0} ->
+        Logger.info("Certificate generated successfully: #{output}")
+        {:ok, output}
+
+      {error_output, exit_code} ->
+        Logger.error("Failed to generate certificate: #{error_output}")
+        {:error, exit_code}
+    end
   end
 
-  def get_signature_by_counterparty(_), do: nil
+  @doc """
+  Prepare markdown content for certificate generation
+  """
+  @spec prepare_markdown(String.t(), [CounterParty.t()]) :: String.t()
+  def prepare_markdown(base_local_dir_path, counterparties) do
+    signers_yaml = """
+    ---
+    generated_at: "#{format_datetime(DateTime.utc_now())}"
+    signers:
+    #{format_signers(counterparties, base_local_dir_path)}
+    ---
+    """
+
+    signers_yaml
+  end
+
+  defp format_signers(counterparties, base_local_dir_path) do
+    counterparties
+    |> Enum.with_index(1)
+    |> Enum.map_join("\n", &format_signer(&1, base_local_dir_path))
+  end
+
+  defp format_signer({counterparty, index}, base_local_dir_path) do
+    signature_image_path = download_signature_image(counterparty, base_local_dir_path)
+
+    """
+      - index: #{index}
+        name: #{counterparty.name}
+        email: #{counterparty.email}
+        auth_level: Email
+        counterparty_id: #{counterparty.id}
+        ip_address: #{counterparty.signature_ip || "Not available"}
+        device: #{counterparty.device || "Not available"}
+        signed_at: "#{format_datetime(counterparty.signature_date)}"
+        reason: #{@signature_reason}
+        signature_image: "#{signature_image_path}"
+    """
+  end
+
+  defp download_signature_image(%CounterParty{signature_image: nil}, _), do: nil
+
+  defp download_signature_image(%CounterParty{user_id: user_id}, base_local_dir_path) do
+    File.mkdir_p!(Path.join(base_local_dir_path, "signature/#{user_id}"))
+    signature_local_path = Path.join(base_local_dir_path, "signature/#{user_id}/signature.png")
+
+    "users/#{user_id}/signatures/signature.png"
+    |> Minio.download()
+    |> then(&File.write!(signature_local_path, &1))
+    |> case do
+      :ok -> signature_local_path
+      _ -> nil
+    end
+  end
+
+  defp format_datetime(nil), do: "Not available"
+
+  defp format_datetime(datetime) do
+    datetime
+    |> DateTime.shift_zone!("Etc/UTC")
+    |> Calendar.strftime("%Y-%m-%d %I:%M:%S %p (UTC)")
+  end
+
+  @doc """
+  Delete all signatures associated with a counterparty
+  """
+  @spec delete_signatures(CounterParty.t()) :: {non_neg_integer(), nil}
+  def delete_signatures(%CounterParty{id: counter_party_id}) do
+    ESignature
+    |> where([s], s.counter_party_id == ^counter_party_id)
+    |> Repo.delete_all()
+  end
 
   @doc """
   Get a signature by Signature ID & Document ID
@@ -263,8 +443,7 @@ defmodule WraftDoc.Documents.Signatures do
   """
   def get_document_pending_signatures(<<_::288>> = document_id) do
     CounterParty
-    |> where([cp], cp.content_id == ^document_id and cp.signature_status == :pending)
-    |> preload([:content, :user])
+    |> where([cp], cp.content_id == ^document_id and cp.signature_status != :signed)
     |> Repo.all()
   end
 
@@ -279,42 +458,28 @@ defmodule WraftDoc.Documents.Signatures do
   end
 
   @doc """
-  Delete a signature by ID
+  Check if the current signer is the last signer
   """
-  @spec delete_signature(ESignature.t()) :: {:ok, ESignature.t()} | {:error, Ecto.Changeset.t()}
-  def delete_signature(%ESignature{} = signature), do: Repo.delete(signature)
-
-  # TODO need to implement this function
-  @doc """
-  Check if all signatures for a document are complete
-  """
-  @spec check_document_signature_status(Instance.t()) ::
-          {:ok, Instance.t()} | {:error, :not_signed}
-  def check_document_signature_status(%Instance{id: document_id}) do
+  @spec document_signed?(Instance.t()) :: boolean()
+  def document_signed?(%Instance{id: document_id}) do
     document_id
     |> get_document_pending_signatures()
-    |> Enum.empty?()
-    |> case do
-      true ->
-        # All signatures are complete
-        finalize_signed_document(document_id)
-
-      false ->
-        # There are still pending signatures
-        {:error, :not_signed}
-    end
+    |> Enum.count() == 1
   end
 
   # Finalize the document after all signatures are complete
-  defp finalize_signed_document(instance) do
+  defp finalize_signed_document(instance, signed_pdf_path) do
     # Logic to finalize the document after all signatures
     # This could include:
+    # - Generating a final signed PDF , digitally signing, Visual signing already done, wholesome digital signing.
     # - Marking the document as fully signed
-    # - Generating a final signed PDF
-    # - Updating the document status
-    # - Sending notifications to all parties
+    instance
+    |> Instance.update_signature_status_changeset(%{signature_status: true})
+    |> Repo.update()
 
-    # Future implementation details would go here
+    # - Sending notifications to all parties
+    notify_document_fully_signed(instance, signed_pdf_path)
+
     {:ok, instance}
   end
 
@@ -370,24 +535,44 @@ defmodule WraftDoc.Documents.Signatures do
     end)
   end
 
-  # TODO : Function need to be implemented
   @doc """
   Notify the document owner when a signature is completed
   """
+  @spec notify_document_owner_email(%Instance{}, String.t()) :: Oban.Job.t() | {:error, term()}
   def notify_document_owner_email(
-        %ESignature{
-          content: %Instance{creator: owner, instance_id: instance_id},
-          counter_party: counterparty
-        } =
-          _signature
+        %Instance{creator: owner, instance_id: instance_id},
+        counterparty_name
       ) do
     %{
       email: owner.email,
       instance_id: instance_id,
-      signer_name: counterparty.name
+      signer_name: counterparty_name
     }
     |> EmailWorker.new(queue: "mailer", tags: ["notify_document_owner_signature_complete"])
     |> Oban.insert()
+  end
+
+  @doc """
+  Notify all parties when a document is fully signed
+  """
+  @spec notify_document_fully_signed(%Instance{}, String.t()) :: :ok
+  def notify_document_fully_signed(
+        %Instance{id: document_id, instance_id: instance_id},
+        signed_pdf_path
+      ) do
+    counterparties = CounterParties.get_document_counterparties(document_id)
+
+    Enum.each(counterparties, fn %CounterParty{email: email} = counterparty ->
+      %{
+        email: email,
+        instance_id: instance_id,
+        signer_name: counterparty.name,
+        signed_document: signed_pdf_path,
+        document_name: "signed_#{instance_id}.pdf"
+      }
+      |> EmailWorker.new(queue: "mailer", tags: ["document_fully_signed"])
+      |> Oban.insert()
+    end)
   end
 
   @doc """
@@ -412,14 +597,18 @@ defmodule WraftDoc.Documents.Signatures do
       )
     )
 
-    # When ESignature are removed. Also put the associated counterparty to pending
-    Repo.update_all(
-      from(
-        cp in CounterParty,
-        where: cp.content_id == ^document_id
-      ),
-      set: [signature_status: :pending]
-    )
+    # When ESignature are removed, remove the counterparties as well
+    Repo.delete_all(from(cp in CounterParty, where: cp.content_id == ^document_id))
+
+    # Reset the document instance sign status to false
+    instance
+    |> Instance.update_signature_status_changeset(%{signature_status: false})
+    |> Repo.update()
+
+    # Delete the signed_file in minio
+    instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
+    signed_pdf_path = Path.join(instance_dir_path, "signed_#{instance_id}.pdf")
+    Minio.delete_file(signed_pdf_path)
 
     case Documents.build_doc(instance, layout, sign: true) do
       {_, 0} ->

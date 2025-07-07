@@ -3,7 +3,7 @@ defmodule WraftDocWeb.Mailer.Email do
 
   import Swoosh.Email
   alias Swoosh.Attachment
-  alias WraftDoc.Documents.Instance
+  alias WraftDoc.Client.Minio
   alias WraftDocWeb.MJML
 
   def invite_email(org_name, user_name, email, token) do
@@ -185,18 +185,6 @@ defmodule WraftDocWeb.Mailer.Email do
 
   defp maybe_add_cc(email, nil), do: email
 
-  defp add_attachment(email, document_pdf_binary, instance_file_name) do
-    attachment(
-      email,
-      Attachment.new(
-        {:data, document_pdf_binary},
-        filename: instance_file_name,
-        content_type: "application/pdf",
-        type: :inline
-      )
-    )
-  end
-
   @doc """
   Email to request signature from a counterparty
   """
@@ -232,17 +220,38 @@ defmodule WraftDocWeb.Mailer.Email do
   @doc """
   Email to notify all parties when a document is fully signed
   """
-  def document_fully_signed_email(to_email, %Instance{instance_id: instance_id} = _instance, name) do
+  def document_fully_signed_email(
+        to_email,
+        instance_id,
+        name,
+        signed_pdf_path,
+        instance_file_name
+      ) do
     body = %{
       instance_id: instance_id,
       name: name
     }
+
+    document_pdf_binary = Minio.download(signed_pdf_path)
 
     new()
     |> to(to_email)
     |> from({"Wraft", sender_email()})
     |> subject("Document Fully Signed: #{instance_id}")
     |> html_body(MJML.DocumentFullySigned.render(body))
+    |> add_attachment(document_pdf_binary, instance_file_name)
+  end
+
+  defp add_attachment(email, document_pdf_binary, instance_file_name) do
+    attachment(
+      email,
+      Attachment.new(
+        {:data, document_pdf_binary},
+        filename: instance_file_name,
+        content_type: "application/pdf",
+        type: :inline
+      )
+    )
   end
 
   defp sender_email do

@@ -53,6 +53,33 @@ RUN wget -q https://github.com/typst/typst/releases/download/v0.13.0/typst-x86_6
 RUN echo "xvfb-run -a -s \"-screen 0 640x480x16\" wkhtmltopdf \"\$@\"" > /usr/local/bin/wkhtmltopdf-wrapper && \
     chmod +x /usr/local/bin/wkhtmltopdf-wrapper
 
+# Install eforms.sty, insdljs.sty, exerquiz.sty, taborder.sty and required .def files
+WORKDIR /tmp/acrotex
+RUN wget https://mirrors.ctan.org/macros/latex/contrib/acrotex/eforms.dtx && \
+    wget https://mirrors.ctan.org/macros/latex/contrib/acrotex/eforms.ins && \
+    latex eforms.ins && \
+    \
+    wget https://mirrors.ctan.org/macros/latex/contrib/acrotex/insdljs.dtx && \
+    wget https://mirrors.ctan.org/macros/latex/contrib/acrotex/insdljs.ins && \
+    latex insdljs.ins && \
+    \
+    wget https://mirrors.ctan.org/macros/latex/contrib/acrotex/exerquiz.dtx && \
+    wget https://mirrors.ctan.org/macros/latex/contrib/acrotex/exerquiz.ins && \
+    latex exerquiz.ins && \
+    \
+    wget https://mirrors.ctan.org/macros/latex/contrib/acrotex/taborder.dtx && \
+    wget https://mirrors.ctan.org/macros/latex/contrib/acrotex/taborder.ins && \
+    latex taborder.ins && \
+    \
+    mkdir -p /usr/local/share/texmf/tex/latex/acrotex && \
+    mv eforms.sty insdljs.sty exerquiz.sty taborder.sty \
+    *.def *.dtx /usr/local/share/texmf/tex/latex/acrotex/ && \
+    \
+    mktexlsr && \
+    kpsewhich eforms.sty && \
+    kpsewhich insdljs.sty && \
+    kpsewhich exerquiz.sty && \
+    kpsewhich taborder.sty
 
 WORKDIR /app
 COPY config /app/config

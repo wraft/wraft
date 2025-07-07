@@ -33,6 +33,7 @@ defmodule WraftDoc.Documents.Instance do
     field(:editable, :boolean, default: true)
     field(:allowed_users, {:array, :string}, default: [])
     field(:approval_status, :boolean, default: false)
+    field(:signature_status, :boolean, default: false)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
@@ -104,6 +105,12 @@ defmodule WraftDoc.Documents.Instance do
     instance
     |> cast(attrs, [:state_id, :allowed_users, :approval_status])
     |> validate_required([:state_id])
+  end
+
+  def update_signature_status_changeset(%Instance{} = instance, attrs \\ %{}) do
+    instance
+    |> cast(attrs, [:signature_status])
+    |> validate_required([:signature_status])
   end
 
   def update_allowed_users_changeset(%Instance{} = instance, attrs \\ %{}) do
