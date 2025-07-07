@@ -450,12 +450,20 @@ defmodule WraftDoc.Documents.Signatures do
   @doc """
   Get all signatures for a document
   """
-  def get_document_signatures(document_id) do
+  @spec get_document_signatures(Ecto.UUID.t()) ::
+          {:ok, list(ESignature.t())} | {:error, String.t()}
+  def get_document_signatures(<<_::288>> = document_id) do
     ESignature
     |> where([s], s.content_id == ^document_id)
     |> preload([:content, :user, :organisation, :counter_party])
     |> Repo.all()
+    |> case do
+      [] -> {:error, "No signatures found for this document"}
+      signatures -> {:ok, signatures}
+    end
   end
+
+  def get_document_signatures(_), do: {:error, "Invalid document ID"}
 
   @doc """
   Check if the current signer is the last signer

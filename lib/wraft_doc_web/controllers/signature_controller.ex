@@ -352,9 +352,8 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
   def get_document_signatures(conn, %{"id" => document_id}) do
     current_user = conn.assigns.current_user
 
-    with %Instance{build: document_url} = _instance <-
-           Documents.show_instance(document_id, current_user),
-         signatures <- Signatures.get_document_signatures(document_id) do
+    with %Instance{build: document_url} <- Documents.show_instance(document_id, current_user),
+         {:ok, signatures} <- Signatures.get_document_signatures(document_id) do
       render(conn, "signatures.json", signatures: signatures, document_url: document_url)
     end
   end
