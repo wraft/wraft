@@ -137,7 +137,7 @@ config :wraft_doc, :onedrive,
   redirect_uri: System.get_env("REDIRECT_URI"),
   tenant_id: System.get_env("ONEDRIVE_TENANT_ID")
 
-config :wraft_doc, WraftDocWeb.Mailer, api_key: System.get_env("SENDGRID_API_KEY")
+config :wraft_doc, WraftDocWeb.Mailer, api_key: System.fetch_env!("RESEND_API_KEY")
 
 config :wraft_doc, sender_email: "no-reply@#{System.get_env("WRAFT_HOSTNAME")}"
 

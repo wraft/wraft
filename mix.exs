@@ -113,6 +113,7 @@ defmodule WraftDoc.Mixfile do
       {:sizeable, "~> 1.0"},
       {:sweet_xml, "~> 0.7"},
       {:swoosh, "~> 1.16"},
+      {:resend, "~> 0.4.0"},
       {:tesla, "~> 1.12"},
       {:timex, "~> 3.7.12"},
       {:unzip, "~> 0.12"},
