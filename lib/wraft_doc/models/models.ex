@@ -35,13 +35,11 @@ defmodule WraftDoc.Models do
   """
   @spec get_default_model(Ecto.UUID.t()) :: Model.t() | nil
   def get_default_model(organisation_id) do
-    query =
-      from(m in Model,
-        where: m.organisation_id == ^organisation_id and m.is_default == true,
-        limit: 1
-      )
-
-    Repo.one(query)
+    Model
+    |> where([m], m.organisation_id == ^organisation_id)
+    |> where([m], m.is_default == true)
+    |> limit(1)
+    |> Repo.one()
   end
 
   @doc """
@@ -73,9 +71,8 @@ defmodule WraftDoc.Models do
 
   """
   @spec get_model(String.t(), String.t()) :: Model.t() | nil
-  def get_model(<<_::288>> = id, organisation_id) do
-    Repo.get_by(Model, id: id, organisation_id: organisation_id)
-  end
+  def get_model(<<_::288>> = id, organisation_id),
+    do: Repo.get_by(Model, id: id, organisation_id: organisation_id)
 
   def get_model(_, _), do: nil
 
@@ -93,8 +90,11 @@ defmodule WraftDoc.Models do
   """
   @spec create_model(map()) :: {:ok, Model.t()} | {:error, Ecto.Changeset.t()}
   def create_model(attrs \\ %{}) do
-    %Model{}
-    |> Model.changeset(attrs)
+    set_default = Repo.aggregate(Model, :count, :id) == 0
+
+    attrs
+    |> Map.put("is_default", set_default)
+    |> then(&Model.changeset(%Model{}, &1))
     |> Repo.insert()
   end
 
@@ -130,109 +130,7 @@ defmodule WraftDoc.Models do
 
   """
   @spec delete_model(Model.t()) :: {:ok, Model.t()} | {:error, Ecto.Changeset.t()}
-  def delete_model(%Model{} = model) do
-    Repo.delete(model)
-  end
-
-  @doc """
-  Returns the list of prompts.
-
-  ## Examples
-
-      iex> list_prompts(organisation_id)
-      [%Prompt{}, ...]
-
-  """
-  @spec list_prompts(String.t()) :: [Prompt.t()]
-  def list_prompts(organisation_id), do: Repo.all_by(Prompt, organisation_id: organisation_id)
-
-  @doc """
-  Gets a single prompts.
-
-  ## Examples
-
-      iex> get_prompt(123)
-      %Prompt{}
-
-      iex> get_prompt(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  @spec get_prompt(String.t()) :: Prompt.t() | nil | {:error, :invalid_id, atom()}
-  def get_prompt(<<_::288>> = id), do: Repo.get(Prompt, id)
-  def get_prompt(_), do: {:error, "Invalid prompt ID"}
-
-  @doc """
-  Gets a single prompt scoped to an organization.
-
-  ## Examples
-
-      iex> get_prompt(123, org_id)
-      %Prompt{}
-
-      iex> get_prompt(456, org_id)
-      nil
-
-  """
-  @spec get_prompt(String.t(), String.t()) :: Prompt.t() | nil
-  def get_prompt(<<_::288>> = id, organisation_id) do
-    Repo.get_by(Prompt, id: id, organisation_id: organisation_id)
-  end
-
-  def get_prompt(_, _), do: nil
-
-  @doc """
-  Creates a prompt.
-
-  ## Examples
-
-      iex> create_prompt(%{field: value})
-      {:ok, %Prompt{}}
-
-      iex> create_prompt(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  @spec create_prompt(map()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
-  def create_prompt(attrs \\ %{}) do
-    %Prompt{}
-    |> Prompt.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates a prompt.
-
-  ## Examples
-
-      iex> update_prompt(prompt, %{field: new_value})
-      {:ok, %Prompt{}}
-
-      iex> update_prompt(prompt, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  @spec update_prompt(Prompt.t(), map()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
-  def update_prompt(%Prompt{} = prompt, attrs) do
-    prompt
-    |> Prompt.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a prompt.
-
-  ## Examples
-
-      iex> delete_prompt(prompt)
-      {:ok, %Prompt{}}
-
-      iex> delete_prompt(prompt)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  @spec delete_prompt(Prompt.t()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
-  def delete_prompt(%Prompt{} = prompt), do: Repo.delete(prompt)
+  def delete_model(%Model{} = model), do: Repo.delete(model)
 
   @doc """
   Creates a model log entry.
@@ -306,19 +204,123 @@ defmodule WraftDoc.Models do
 
   """
   @spec set_as_default_model(Model.t()) :: {:ok, Model.t()} | {:error, Ecto.Changeset.t()}
-  def set_as_default_model(%Model{organisation_id: org_id} = model) do
-    Repo.transaction(fn ->
-      # First, unset any existing default models for this organization
-      Repo.update_all(
-        from(m in Model, where: m.organisation_id == ^org_id and m.is_default == true),
-        set: [is_default: false]
-      )
+  def set_as_default_model(%Model{organisation_id: organisation_id} = model) do
+    Model
+    |> where([m], m.organisation_id == ^organisation_id and m.is_default == true)
+    |> Repo.update_all(set: [is_default: false])
 
-      # Then set this model as default
-      case update_model(model, %{is_default: true}) do
-        {:ok, updated_model} -> updated_model
-        {:error, changeset} -> Repo.rollback(changeset)
-      end
-    end)
+    model
+    |> update_model(%{"is_default" => true})
+    |> case do
+      {:ok, model} -> {:ok, model}
+      {:error, changeset} -> {:error, changeset}
+    end
   end
+
+  @doc """
+  Returns the list of prompts.
+
+  ## Examples
+
+      iex> list_prompts(organisation_id)
+      [%Prompt{}, ...]
+
+  """
+  @spec list_prompts(String.t()) :: [Prompt.t()]
+  def list_prompts(organisation_id) do
+    Prompt
+    |> where([p], p.organisation_id == ^organisation_id or is_nil(p.organisation_id))
+    |> Repo.all()
+  end
+
+  @doc """
+  Gets a single prompts.
+
+  ## Examples
+
+      iex> get_prompt(123)
+      %Prompt{}
+
+      iex> get_prompt(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  @spec get_prompt(String.t()) :: Prompt.t() | nil | {:error, :invalid_id, atom()}
+  def get_prompt(<<_::288>> = id), do: Repo.get(Prompt, id)
+  def get_prompt(_), do: {:error, "Invalid prompt ID"}
+
+  @doc """
+  Gets a single prompt scoped to an organization.
+
+  ## Examples
+
+      iex> get_prompt(123, org_id)
+      %Prompt{}
+
+      iex> get_prompt(456, org_id)
+      nil
+
+  """
+  @spec get_prompt(String.t(), String.t()) :: Prompt.t() | nil
+  def get_prompt(<<_::288>> = id, organisation_id),
+    do: Repo.get_by(Prompt, id: id, organisation_id: organisation_id)
+
+  def get_prompt(_, _), do: nil
+
+  @doc """
+  Creates a prompt.
+
+  ## Examples
+
+      iex> create_prompt(%{field: value})
+      {:ok, %Prompt{}}
+
+      iex> create_prompt(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  @spec create_prompt(map()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
+  def create_prompt(attrs \\ %{}) do
+    %Prompt{}
+    |> Prompt.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a prompt.
+
+  ## Examples
+
+      iex> update_prompt(prompt, %{field: new_value})
+      {:ok, %Prompt{}}
+
+      iex> update_prompt(prompt, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  @spec update_prompt(Prompt.t(), map()) :: {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()}
+  def update_prompt(%Prompt{} = prompt, attrs) do
+    prompt
+    |> Prompt.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a prompt.
+
+  ## Examples
+
+      iex> delete_prompt(prompt)
+      {:ok, %Prompt{}}
+
+      iex> delete_prompt(prompt)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  @spec delete_prompt(Prompt.t()) ::
+          {:ok, Prompt.t()} | {:error, Ecto.Changeset.t()} | {:error, String.t()}
+  def delete_prompt(%Prompt{organisation_id: nil, creator_id: nil} = _prompt),
+    do: {:error, "System prompt cannot be deleted"}
+
+  def delete_prompt(%Prompt{} = prompt), do: Repo.delete(prompt)
 end

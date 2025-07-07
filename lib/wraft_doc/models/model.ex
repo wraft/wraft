@@ -60,7 +60,6 @@ defmodule WraftDoc.Models.Model do
       :name,
       :description,
       :provider,
-      :endpoint_url,
       :is_default,
       :is_local,
       :is_thinking_model,
