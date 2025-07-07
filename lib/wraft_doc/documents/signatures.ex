@@ -660,29 +660,41 @@ defmodule WraftDoc.Documents.Signatures do
 
   # Helper function to create signature entries
   defp create_signature_entries(signature_fields, content_id, user_id, org_id) do
-    Enum.map(signature_fields, fn field ->
-      changeset =
-        ESignature.changeset(%ESignature{}, %{
-          content_id: content_id,
-          signature_data: field,
-          signature_position: field.coordinates,
-          signature_type: :electronic,
-          user_id: user_id,
-          organisation_id: org_id,
-          counter_party_id: nil
-        })
-
-      changeset
-      |> Repo.insert()
-      |> case do
-        {:ok, signature} ->
-          Repo.preload(signature, [:counter_party])
-
-        {:error, changeset} ->
-          Logger.error("Failed to create signature entry: #{inspect(changeset)}")
-          {:error, changeset}
+    signature_fields
+    |> Enum.map(&build_signature_changeset(&1, content_id, user_id, org_id))
+    |> Enum.map(fn changeset ->
+      case Repo.insert(changeset) do
+        {:ok, signature} -> Repo.preload(signature, [:counter_party])
+        {:error, changeset} -> {:error, changeset}
       end
     end)
+    |> Enum.reduce_while({:ok, []}, fn
+      {:error, changeset}, _acc ->
+        {:halt, {:error, changeset}}
+
+      signature, {:ok, acc} ->
+        {:cont, {:ok, [signature | acc]}}
+    end)
+    |> case do
+      {:ok, signatures} ->
+        {:ok, Enum.reverse(signatures)}
+
+      {:error, changeset} ->
+        Logger.error("Failed to create signature entry: #{inspect(changeset.errors)}")
+        {:error, "Failed to create signature entry"}
+    end
+  end
+
+  defp build_signature_changeset(field, content_id, user_id, org_id) do
+    ESignature.changeset(%ESignature{}, %{
+      content_id: content_id,
+      signature_data: field,
+      signature_position: field.coordinates,
+      signature_type: :electronic,
+      user_id: user_id,
+      organisation_id: org_id,
+      counter_party_id: nil
+    })
   end
 
   # Helper function to extract signature fields from rectangle data

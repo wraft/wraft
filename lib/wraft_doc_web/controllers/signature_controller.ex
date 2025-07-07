@@ -412,7 +412,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
 
     with %Instance{build: document_url} = instance <-
            Documents.show_instance(document_id, current_user),
-         signatures <- Signatures.generate_signature(instance, current_user) do
+         {:ok, signatures} <- Signatures.generate_signature(instance, current_user) do
       render(conn, "signatures.json", signatures: signatures, document_url: document_url)
     end
   rescue
