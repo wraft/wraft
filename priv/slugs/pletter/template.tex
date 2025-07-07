@@ -29,6 +29,14 @@ $endif$
   {\normalfont\normalsize\bfseries}}
 \makeatother
 
+\PassOptionsToPackage{setpagesize=false,
+                      unicode=false,
+                      colorlinks=true,
+                      urlcolor=blue,
+                      linkcolor=black}{hyperref}
+
+\usepackage{eforms}
+
 $if(fontfamily)$
 \usepackage[$for(fontfamilyoptions)$$fontfamilyoptions$$sep$,$endfor$]{$fontfamily$}
 $else$
@@ -224,7 +232,6 @@ $else$
 $endif$
 
 % Set the PDF metadata
-\usepackage{hyperref}
 \newcommand{\DocumentInstanceTitle}{$title$}
 \newcommand{\pdfAuthor}{$organisation_name$}
 \hypersetup{
