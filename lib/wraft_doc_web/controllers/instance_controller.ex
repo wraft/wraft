@@ -27,6 +27,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.ContentTypes
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Documents
+  alias WraftDoc.Documents.Charts
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Reminders
   alias WraftDoc.Enterprise
@@ -476,12 +477,14 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
               %{
                 datetime: "2024-04-01T00:00:00Z",
                 total: 25,
+                total_amount: 0,
                 confirmed: 18,
                 pending: 7
               },
               %{
                 datetime: "2024-04-08T00:00:00Z",
                 total: 32,
+                total_amount: 0,
                 confirmed: 24,
                 pending: 8
               }
@@ -1167,6 +1170,12 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
         example: "week"
       )
 
+      doc_type(:query, :string, "Field to filter contents by thier type",
+        enum: ["contract", "document", "both"],
+        default: "both",
+        example: "both"
+      )
+
       select_by(:query, :string, "Field to filter contracts by",
         enum: ["insert", "update"],
         default: "insert",
@@ -1202,7 +1211,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   def contract_chart(conn, params) do
     current_user = conn.assigns.current_user
 
-    with {:ok, contract_list} <- Documents.get_contract_chart(current_user, params) do
+    with {:ok, contract_list} <- Charts.get_contract_chart(current_user, params) do
       render(conn, "contract_chart.json", contract_list: contract_list)
     end
   end
