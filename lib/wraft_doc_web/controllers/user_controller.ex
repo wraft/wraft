@@ -926,7 +926,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
            Enterprise.join_org_by_invite(current_user, token) do
       Task.start(fn ->
         Notifications.create_notification(
-          [current_user],
+          [current_user.id],
           %{type: :join_organisation, organisation_name: organisation.name}
         )
       end)

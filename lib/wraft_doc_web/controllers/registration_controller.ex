@@ -70,14 +70,14 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
   def create(conn, params) do
     case FunWithFlags.enabled?(:waiting_list_registration_control, for: %{email: params["email"]}) do
       true ->
-        with {:ok, %{organisations: organisations, user: %User{} = user}} <-
+        with {:ok, %{organisations: organisations, user: %User{id: user_id} = user}} <-
                Account.registration(params),
              %{user: user, tokens: [access_token: access_token, refresh_token: refresh_token]} <-
                Account.authenticate(%{user: user, password: params["password"]}) do
           AuthTokens.create_token_and_send_email(params["email"])
 
           Task.start(fn ->
-            Notifications.create_notification([user], %{
+            Notifications.create_notification([user_id], %{
               type: :user_joins_wraft,
               user_name: user.name
             })

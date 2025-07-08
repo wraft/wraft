@@ -12,6 +12,7 @@ defmodule WraftDocWeb.Api.V1.RoleController do
 
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
+  alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
   alias WraftDoc.Enterprise
@@ -248,9 +249,9 @@ defmodule WraftDocWeb.Api.V1.RoleController do
          %Role{organisation: %Organisation{name: organisation_name}} = role <-
            Account.get_role_with_organisation(current_user, role_id),
          {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id),
-         user <- Account.get_user(user_id) do
+         %User{id: user_id} = _user <- Account.get_user(user_id) do
       Task.start(fn ->
-        Notifications.create_notification([user], %{
+        Notifications.create_notification([user_id], %{
           type: :assign_role,
           role_name: role.name,
           organisation_name: organisation_name
@@ -287,9 +288,9 @@ defmodule WraftDocWeb.Api.V1.RoleController do
          true <- Account.allowed_to_unassign_role?(current_user, user_id, role_name),
          %UserRole{} = user_role <- Account.get_user_role(current_user, user_id, role_id),
          {:ok, _} <- Account.delete_user_role(user_role),
-         user <- Account.get_user(user_id) do
+         %User{id: user_id} = _user <- Account.get_user(user_id) do
       Task.start(fn ->
-        Notifications.create_notification([user], %{
+        Notifications.create_notification([user_id], %{
           type: :unassign_role,
           role_name: role_name,
           organisation_name: organisation_name
