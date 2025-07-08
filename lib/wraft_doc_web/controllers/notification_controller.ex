@@ -182,8 +182,7 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
-    current_user = conn.assigns.current_user
-    notification = Notifications.create_notification(current_user, params)
+    notification = Notifications.create_notification([conn.assigns.current_user.id], params)
 
     render(conn, "notification.json", notification: notification)
   end

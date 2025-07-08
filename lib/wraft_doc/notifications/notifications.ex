@@ -100,7 +100,7 @@ defmodule WraftDoc.Notifications do
 
     document.allowed_users
     |> List.delete(user_id)
-    |> Enum.map(&Account.get_user/1)
+    |> Enum.map(&Account.get_user(&1).id)
     |> create_notification(%{
       type: :add_comment,
       organisation_name: organisation.name,
