@@ -23,17 +23,12 @@ defmodule WraftDoc.Documents.Charts do
   def get_contract_chart(current_user, params \\ %{}) do
     with {:ok, normalized_params} <- normalize_params(params),
          {:ok, _} <-
-           validate_period_interval_combination(
-             normalized_params.period,
-             normalized_params.interval
-           ),
+           validate_period_interval_combination(normalized_params),
          {:ok, _} <- validate_custom_period_dates(normalized_params),
          {:ok, _} <- validate_custom_period_interval(normalized_params),
          {:ok, contracts} <-
            fetch_contracts_by_period(
              current_user,
-             normalized_params.period,
-             normalized_params.select_by,
              normalized_params
            ),
          {:ok, grouped_data} <- group_by_interval(contracts, normalized_params.interval) do
@@ -60,7 +55,7 @@ defmodule WraftDoc.Documents.Charts do
     end
   end
 
-  defp validate_period_interval_combination(period, interval) do
+  defp validate_period_interval_combination(%{period: period, interval: interval} = _params) do
     @valid_combinations
     |> Map.get(period)
     |> case do
@@ -181,25 +176,21 @@ defmodule WraftDoc.Documents.Charts do
 
   defp fetch_contracts_by_period(
          %{current_org_id: org_id} = _current_user,
-         period,
-         select_by,
-         params
+         %{period: period, select_by: select_by, doc_type: doc_type} = params
        ) do
-    # TODO: Add organisation_id in instance and remove join query.
-
     base_query =
       Instance
       |> where([i], i.organisation_id == ^org_id)
-      |> filter_by_doc_type(params["doc_type"])
+      |> filter_by_doc_type(doc_type)
 
-    query =
-      case period do
-        "alltime" -> base_query
-        "custom" -> build_custom_period_query(base_query, select_by, params)
-        _ -> build_period_query(base_query, period, select_by)
-      end
-
-    case Repo.all(query) do
+    period
+    |> case do
+      "alltime" -> base_query
+      "custom" -> build_custom_period_query(base_query, select_by, params)
+      _ -> build_period_query(base_query, period, select_by)
+    end
+    |> Repo.all()
+    |> case do
       contracts when is_list(contracts) -> {:ok, contracts}
       {:error, reason} -> {:error, "Database error: #{reason}"}
     end
@@ -299,7 +290,7 @@ defmodule WraftDoc.Documents.Charts do
         Enum.sum(
           Enum.map(contracts, fn contract ->
             case contract.meta do
-              %{amount: amount} -> amount
+              %{"contract_value" => contract_value} -> String.to_integer(contract_value)
               _ -> 0
             end
           end)
