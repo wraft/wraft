@@ -50,6 +50,10 @@ defmodule WraftDocWeb.Router do
     plug WraftDocWeb.Plugs.KaffyAdminPlug
   end
 
+  if Mix.env() == :dev do
+    forward("/dev/mailbox", Plug.Swoosh.MailboxPreview)
+  end
+
   scope "/", WraftDocWeb do
     # Use the default browser stack
     pipe_through(:browser)

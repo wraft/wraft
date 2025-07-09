@@ -61,3 +61,7 @@ config :wraft_doc, WraftDoc.Repo,
   pool_size: 10,
   timeout: 300_000,
   show_sensitive_data_on_connetion_error: true
+
+config :wraft_doc, WraftDocWeb.Mailer, adapter: Swoosh.Adapters.Local
+
+config :swoosh, :api_client, false
