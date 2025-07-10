@@ -10,6 +10,9 @@ defmodule WraftDocWeb.Api.V1.VendorView do
       email: vendor.email,
       phone: vendor.phone,
       address: vendor.address,
+      city: vendor.city,
+      country: vendor.country,
+      website: vendor.website,
       gstin: vendor.gstin,
       reg_no: vendor.reg_no,
       contact_person: vendor.contact_person,
@@ -25,6 +28,9 @@ defmodule WraftDocWeb.Api.V1.VendorView do
       email: vendor.email,
       phone: vendor.phone,
       address: vendor.address,
+      city: vendor.city,
+      country: vendor.country,
+      website: vendor.website,
       gstin: vendor.gstin,
       reg_no: vendor.reg_no,
       logo: vendor.logo,
@@ -43,6 +49,38 @@ defmodule WraftDocWeb.Api.V1.VendorView do
       }) do
     %{
       vendors: render_many(vendors, VendorView, "vendor.json", as: :vendor),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
+  end
+
+  # ===============================
+  # VENDOR CONTACT VIEWS
+  # ===============================
+
+  def render("vendor_contact.json", %{vendor_contact: vendor_contact}) do
+    %{
+      id: vendor_contact.id,
+      name: vendor_contact.name,
+      email: vendor_contact.email,
+      phone: vendor_contact.phone,
+      job_title: vendor_contact.job_title,
+      vendor_id: vendor_contact.vendor_id,
+      inserted_at: vendor_contact.inserted_at,
+      updated_at: vendor_contact.updated_at
+    }
+  end
+
+  def render("contacts_index.json", %{
+        vendor_contacts: vendor_contacts,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      vendor_contacts:
+        render_many(vendor_contacts, VendorView, "vendor_contact.json", as: :vendor_contact),
       page_number: page_number,
       total_pages: total_pages,
       total_entries: total_entries

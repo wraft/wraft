@@ -27,6 +27,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Organisation.VendorContact
   alias WraftDoc.Repo
   alias WraftDoc.Storage
   alias WraftDoc.TaskSupervisor
@@ -1606,9 +1607,10 @@ defmodule WraftDoc.Enterprise do
 
   """
   @spec create_vendor(User.t(), map) :: Vendor.t() | {:error, Ecto.Changeset.t()}
-  def create_vendor(current_user, params) do
-    current_user
-    |> build_assoc(:vendors, organisation_id: current_user.current_org_id)
+  def create_vendor(%User{current_org_id: org_id} = current_user, params) do
+    params = Map.merge(params, %{"organisation_id" => org_id, "creator_id" => current_user.id})
+
+    %Vendor{}
     |> Vendor.changeset(params)
     |> Repo.insert()
     |> case do
@@ -1913,6 +1915,84 @@ defmodule WraftDoc.Enterprise do
     |> File.stream!()
     |> CSV.decode()
     |> Enum.map(fn {:ok, [permission]} -> permission end)
+  end
+
+  @doc """
+  Create a vendor contact
+  """
+  @spec create_vendor_contact(User.t(), map) :: VendorContact.t() | {:error, Ecto.Changeset.t()}
+  def create_vendor_contact(%User{current_org_id: _org_id} = current_user, params) do
+    params = Map.merge(params, %{"creator_id" => current_user.id})
+
+    %VendorContact{}
+    |> VendorContact.changeset(params)
+    |> Repo.insert()
+    |> case do
+      {:ok, vendor_contact} ->
+        Repo.preload(vendor_contact, [:vendor, :creator])
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Get vendor contact by id
+  """
+  @spec get_vendor_contact(User.t(), Ecto.UUID.t()) :: VendorContact.t() | {:error, :invalid_id}
+  def get_vendor_contact(%User{current_org_id: org_id}, id) do
+    query =
+      from(vc in VendorContact,
+        join: v in Vendor,
+        on: vc.vendor_id == v.id,
+        where: vc.id == ^id and v.organisation_id == ^org_id
+      )
+
+    case Repo.one(query) do
+      %VendorContact{} = vendor_contact -> vendor_contact
+      _ -> {:error, :invalid_id}
+    end
+  end
+
+  @doc """
+  Update vendor contact
+  """
+  @spec update_vendor_contact(VendorContact.t(), map) ::
+          {:ok, VendorContact.t()} | {:error, Ecto.Changeset.t()}
+  def update_vendor_contact(vendor_contact, params) do
+    vendor_contact
+    |> VendorContact.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, vendor_contact} ->
+        {:ok, Repo.preload(vendor_contact, [:vendor, :creator])}
+
+      {:error, _} = changeset ->
+        changeset
+    end
+  end
+
+  @doc """
+  Delete vendor contact
+  """
+  @spec delete_vendor_contact(VendorContact.t()) ::
+          {:ok, VendorContact.t()} | {:error, Ecto.Changeset.t()}
+  def delete_vendor_contact(%VendorContact{} = vendor_contact), do: Repo.delete(vendor_contact)
+
+  @doc """
+  List vendor contacts for a vendor
+  """
+  @spec vendor_contacts_index(User.t(), Ecto.UUID.t(), map) :: Scrivener.Page.t()
+  def vendor_contacts_index(%User{current_org_id: org_id}, vendor_id, params) do
+    query =
+      from(vc in VendorContact,
+        join: v in Vendor,
+        on: vc.vendor_id == v.id,
+        where: vc.vendor_id == ^vendor_id and v.organisation_id == ^org_id,
+        preload: [:vendor, :creator]
+      )
+
+    Repo.paginate(query, params)
   end
 
   @doc """
