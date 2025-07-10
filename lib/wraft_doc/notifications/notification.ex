@@ -4,13 +4,15 @@ defmodule WraftDoc.Notifications.Notification do
   """
   use WraftDoc.Schema
 
-  @derive {Jason.Encoder, only: [:type, :message, :actor_id]}
-  @fields [:type, :message, :action, :actor_id]
+  @derive {Jason.Encoder, only: [:event_type, :message, :actor_id]}
+  @fields [:event_type, :message, :action, :actor_id]
 
   schema "notification" do
-    field(:type, WraftDoc.EctoType.AtomType)
+    field(:event_type, WraftDoc.EctoType.AtomType)
     field(:message, :string)
     field(:is_global, :boolean, default: false)
+    field(:channel, Ecto.Enum, values: [:all, :email, :in_app], default: :all)
+    field(:scope, Ecto.Enum, values: [:user, :role, :organization], default: :user)
     field(:action, :map, default: %{})
     belongs_to(:actor, WraftDoc.Account.User)
 
@@ -21,6 +23,6 @@ defmodule WraftDoc.Notifications.Notification do
   def changeset(notification, attrs \\ %{}) do
     notification
     |> cast(attrs, @fields)
-    |> validate_required([:message, :type])
+    |> validate_required([:message, :event_type])
   end
 end

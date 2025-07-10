@@ -8,7 +8,7 @@ defmodule WraftDocWeb.Api.V1.NotificationView do
   def render("notification.json", %{notification: notification}) do
     %{
       id: notification.id,
-      type: notification.type,
+      type: notification.event_type,
       message: notification.message,
       is_global: notification.is_global,
       action: notification.action,

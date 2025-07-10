@@ -8,8 +8,9 @@ defmodule WraftDocWeb.UserSocket do
   @cache_ttl 30 * 60 * 1000
 
   channel("notification:*", WraftDocWeb.NotificationChannel)
+  channel("user_notification:*", WraftDocWeb.NotificationChannel)
+  channel("organisation_notification:*", WraftDocWeb.NotificationChannel)
   channel("doc_room:*", WraftDocWeb.DocumentChannel)
-  # channel("room:*", WraftDocWeb.NotificationChannel)
 
   @doc """
   The socket is used to connect to the server and authenticate the user.

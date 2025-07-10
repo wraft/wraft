@@ -21,21 +21,38 @@ defmodule WraftDocWeb.NotificationChannel do
     end
   end
 
-  def broad_cast(message, user) do
-    socket = create_socket(user)
-    broadcast!(socket, "message_created", %{body: message})
+  def join("user_notification:" <> user_id, _payload, socket) do
+    if authorized?(user_id, socket.assigns.current_user) do
+      {:ok, socket}
+    else
+      {:error, %{reason: "unauthorized"}}
+    end
+  end
+
+  def join("organisation_notification:" <> organisation_id, _payload, socket) do
+    if authorized?(organisation_id, socket.assigns.current_user) do
+      {:ok, socket}
+    else
+      {:error, %{reason: "unauthorized"}}
+    end
+  end
+
+  @spec broad_cast(String.t(), String.t(), atom(), User.t()) :: {:noreply, Phoenix.Socket.t()}
+  def broad_cast(message, event, scope, user) do
+    socket = create_socket(scope, user)
+    broadcast!(socket, event, %{body: message})
     {:noreply, socket}
   end
 
-  defp create_socket(%{id: user_id} = current_user) do
-    socket = build_socket_params(user_id)
+  defp create_socket(scope, current_user) do
+    socket = build_socket_params(scope, current_user)
 
     %Phoenix.Socket{}
     |> assign(:current_user, current_user)
     |> Map.merge(socket)
   end
 
-  defp build_socket_params(user_id) do
+  defp build_socket_params(scope, current_user) do
     %{
       channel: WraftDocWeb.NotificationChannel,
       endpoint: WraftDocWeb.Endpoint,
@@ -47,18 +64,28 @@ defmodule WraftDocWeb.NotificationChannel do
       pubsub_server: WraftDoc.PubSub,
       ref: nil,
       serializer: Phoenix.Transports.V2.WebSocketSerializer,
-      topic: "notification:" <> user_id,
+      topic: get_topic(scope, current_user),
       transport: Phoenix.Transports.WebSocket,
       transport_name: :websocket,
       vsn: "2.0.0"
     }
   end
 
-  defp authorized?(user_id, %{id: current_user_id}) do
-    if user_id == current_user_id do
-      :ok
-    else
-      {:error, :unauthorized}
-    end
-  end
+  defp get_topic(:user, %{id: user_id} = _user), do: "user_notification:#{user_id}"
+
+  defp get_topic(:organisation, %{current_org_id: organisation_id} = _user),
+    do: "organisation_notification:#{organisation_id}"
+
+  # TODO: remove this later.
+  defp get_topic(_, %{id: user_id} = _user), do: "notification:#{user_id}"
+
+  defp authorized?(user_id, %{id: current_user_id})
+       when user_id == current_user_id,
+       do: :ok
+
+  defp authorized?(organisation_id, %{current_org_id: current_org_id})
+       when organisation_id == current_org_id,
+       do: :ok
+
+  defp authorized?(_, _), do: {:error, :unauthorized}
 end

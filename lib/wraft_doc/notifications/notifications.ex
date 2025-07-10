@@ -7,62 +7,75 @@ defmodule WraftDoc.Notifications do
   alias Ecto.Multi
   alias WraftDoc.Account
   alias WraftDoc.Account.User
-  alias WraftDoc.Documents
-  alias WraftDoc.Documents.Instance
-  alias WraftDoc.Enterprise
-  alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Notifications.Notification
   alias WraftDoc.Notifications.NotificationMessages
-  alias WraftDoc.Notifications.UserNotifications
+  alias WraftDoc.Notifications.UserNotification
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.NotificationChannel
 
   @doc """
   Creates notifications for a list of users based on given parameters.
-  Returns a list of successfully created notifications or an error.
+
+  This function iterates through the provided list of `users`, builds a notification
+  for each, persists them to the database, and enqueues background jobs for
+  email and real-time (in-app) broadcasts.
+
+  ## Parameters
+  - `users`: A list of `WraftDoc.Account.User` structs (or user IDs) for whom
+             the notifications are to be created.
+  - `params`: A map containing notification details. This map **must** include an
+              `:event_type` atom (e.g., `:add_comment`, `:mention_comment`),
+              which determines the message content via `NotificationMessages`,
+              and may contain other data specific to the event type.
+
+  ## Returns
+  - `{:ok, notifications}`: A tuple containing `:ok` and a list of successfully
+                           created `Notification` structs.
+  - `{:error, reason}`: A tuple containing `{:error, reason}` if any notification
+                       creation or associated transaction fails.
   """
-
-  def create_notification(users, params) when is_list(users) do
-    users
-    |> Enum.map(&build_notification_params(&1, params))
-    |> Enum.map(&insert_notification/1)
-    |> Enum.split_with(&match?({:ok, _}, &1))
-    |> format_results()
-  end
-
-  def create_notification(_), do: nil
-
-  defp build_notification_params(actor_id, params) do
+  def create_notification(user_id, %{event_type: event_type} = params) do
     params
-    |> Map.put(:actor_id, actor_id)
-    |> Map.put(:message, NotificationMessages.message(params.type, params))
+    |> Map.merge(%{
+      actor_id: user_id,
+      message: NotificationMessages.message(event_type, params)
+    })
+    |> do_create_notification()
   end
 
-  defp insert_notification(notification_params) do
+  defp do_create_notification(%{actor_id: actor_id} = params) do
+    user = Account.get_user(actor_id)
+
     Multi.new()
-    |> Multi.insert(:notification, Notification.changeset(%Notification{}, notification_params))
-    |> Multi.run(:fetch_recipient, &fetch_recipient/2)
-    |> Multi.insert(:user_notification, fn %{
-                                             notification: notification,
-                                             fetch_recipient: recipient
-                                           } ->
-      UserNotifications.changeset(%UserNotifications{}, %{
-        notification_id: notification.id,
-        actor_id: notification_params.actor_id,
-        recipient_id: recipient.id
-      })
-    end)
-    |> Multi.run(:broadcast, fn _repo,
-                                %{notification: notification, fetch_recipient: recipient} ->
-      broadcast_notification(notification.message, recipient)
-      {:ok, :broadcast_success}
-    end)
+    |> Multi.insert(:notification, Notification.changeset(%Notification{}, params))
+    |> Multi.insert(
+      :user_notification,
+      fn %{
+           notification: notification
+         } ->
+        UserNotification.changeset(%UserNotification{}, %{
+          notification_id: notification.id,
+          recipient_id: user.id
+        })
+      end
+    )
     |> Repo.transaction()
-    |> handle_transaction_result()
+    |> handle_transaction_result(user)
   end
 
-  def broadcast_notification(notification, recipient) do
+  defp handle_transaction_result(
+         {:ok, %{notification: %{event_type: event_type} = notification}},
+         user
+       ) do
+    email_notification(notification, event_type, :user, user)
+    {:ok, notification}
+  end
+
+  defp handle_transaction_result({:error, _, reason, _}, _user), do: {:error, reason}
+
+  def email_notification(%{channel: channel} = notification, event, scope, recipient)
+      when channel in [:email, :all] do
     %{
       user_name: recipient.name,
       notification_message: notification,
@@ -74,70 +87,14 @@ defmodule WraftDoc.Notifications do
     )
     |> Oban.insert()
 
-    NotificationChannel.broad_cast(notification, recipient)
+    broadcast_notification(notification, event, scope, recipient)
   end
 
-  defp handle_transaction_result({:ok, %{notification: notification}}), do: {:ok, notification}
-  defp handle_transaction_result({:error, _, reason, _}), do: {:error, reason}
+  def email_notification(_, _, _, _), do: nil
 
-  defp format_results({successes, []}), do: {:ok, Enum.map(successes, fn {:ok, n} -> n end)}
-  defp format_results({_, [{:error, reason} | _]}), do: {:error, reason}
-
-  defp fetch_recipient(_repo, %{notification: %{actor_id: actor_id}}) do
-    case Account.get_user(actor_id) do
-      nil -> {:error, :user_not_found}
-      user -> {:ok, user}
-    end
-  end
-
-  @doc """
-  Sends a comment notification to users allowed to access a document, excluding the initiating user.
-  """
-  @spec comment_notification(integer(), integer(), integer()) :: list(%Notification{})
-  def comment_notification(user_id, organisation_id, document_id) do
-    document = Documents.get_instance(document_id, %{current_org_id: organisation_id})
-    organisation = Enterprise.get_organisation(organisation_id)
-
-    document.allowed_users
-    |> List.delete(user_id)
-    |> Enum.map(&Account.get_user(&1).id)
-    |> create_notification(%{
-      type: :add_comment,
-      organisation_name: organisation.name,
-      document_title: document.serialized["title"]
-    })
-  end
-
-  @doc """
-  Notification for the document flow.
-  """
-  def document_notification(
-        %User{name: approver_name} = _current_user,
-        %Instance{serialized: %{"title" => document_title}} = _instance,
-        %Organisation{name: organisation_name} = _organisation,
-        state
-      ) do
-    next_state = Documents.next_state(state)
-
-    with {:ok, _} <-
-           create_notification(state.approvers, %{
-             type: :state_update,
-             document_title: document_title,
-             organisation_name: organisation_name,
-             state_name: state.state,
-             approver_name: approver_name
-           }),
-         {:ok, _} <-
-           create_notification(next_state.approvers, %{
-             type: :pending_approvals,
-             document_title: document_title,
-             organisation_name: organisation_name,
-             state_name: next_state.state
-           }) do
-      {:ok, :notifications_sent}
-    else
-      {:error, reason} -> {:error, reason}
-    end
+  # TODO lets try with oban. for check
+  def broadcast_notification(notification, event, scope, recipient) do
+    NotificationChannel.broad_cast(notification, event, scope, recipient)
   end
 
   @doc """
@@ -147,7 +104,7 @@ defmodule WraftDoc.Notifications do
   """
   @spec list_unread_notifications(User.t(), map) :: map
   def list_unread_notifications(%User{} = user, params) do
-    UserNotifications
+    UserNotification
     |> where(
       [un],
       un.recipient_id == ^user.id and un.status == :unread
@@ -162,10 +119,10 @@ defmodule WraftDoc.Notifications do
   ## Parameters
   * `user_notification`- user notification struct
   """
-  @spec read_notification(UserNotifications.t()) :: UserNotifications.t()
+  @spec read_notification(UserNotification.t()) :: UserNotification.t()
   def read_notification(user_notification) do
     user_notification
-    |> UserNotifications.status_update_changeset(%{seen_at: Timex.now(), status: "read"})
+    |> UserNotification.status_update_changeset(%{seen_at: Timex.now(), status: "read"})
     |> Repo.update!()
   end
 
@@ -176,7 +133,7 @@ defmodule WraftDoc.Notifications do
   """
   @spec unread_notification_count(User.t()) :: integer
   def unread_notification_count(%User{} = user) do
-    UserNotifications
+    UserNotification
     |> where(
       [un],
       un.recipient_id == ^user.id and un.status == :unread
@@ -192,7 +149,7 @@ defmodule WraftDoc.Notifications do
   """
   @spec read_all_notifications(User.t()) :: {integer(), nil}
   def read_all_notifications(%User{} = current_user) do
-    UserNotifications
+    UserNotification
     |> where(
       [un],
       un.recipient_id == ^current_user.id and
@@ -207,9 +164,9 @@ defmodule WraftDoc.Notifications do
   * `current_user`- user struct
   * `notification` - notification struct
   """
-  @spec get_user_notification(User.t(), Ecto.UUID.t()) :: UserNotifications.t() | nil
+  @spec get_user_notification(User.t(), Ecto.UUID.t()) :: UserNotification.t() | nil
   def get_user_notification(%User{} = current_user, notification_id) do
-    UserNotifications
+    UserNotification
     |> where(
       [un],
       un.recipient_id == ^current_user.id and un.notification_id == ^notification_id and

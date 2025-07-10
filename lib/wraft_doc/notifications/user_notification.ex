@@ -1,4 +1,4 @@
-defmodule WraftDoc.Notifications.UserNotifications do
+defmodule WraftDoc.Notifications.UserNotification do
   @moduledoc """
   User Notifications Module
   """
@@ -11,6 +11,7 @@ defmodule WraftDoc.Notifications.UserNotifications do
   schema "user_notifications" do
     field(:status, Ecto.Enum, values: @statuses, default: :unread)
     field(:seen_at, :utc_datetime)
+
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
     belongs_to(:recipient, WraftDoc.Account.User)
     belongs_to(:notification, WraftDoc.Notifications.Notification)
@@ -18,7 +19,7 @@ defmodule WraftDoc.Notifications.UserNotifications do
     timestamps()
   end
 
-  def changeset(%UserNotifications{} = user_notification, attrs) do
+  def changeset(%UserNotification{} = user_notification, attrs) do
     user_notification
     |> cast(attrs, @fields)
     |> validate_required([:status])
@@ -32,7 +33,7 @@ defmodule WraftDoc.Notifications.UserNotifications do
     |> foreign_key_constraint(:organisation_id, message: "Please enter a valid organisation")
   end
 
-  def status_update_changeset(%UserNotifications{} = user_notification, attrs) do
+  def status_update_changeset(%UserNotification{} = user_notification, attrs) do
     user_notification
     |> cast(attrs, [:status, :seen_at])
     |> validate_required([:status, :seen_at])

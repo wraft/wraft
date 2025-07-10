@@ -43,7 +43,14 @@ defmodule WraftDoc.Notifications.NotificationMessages do
         organisation_name: organisation_name,
         document_title: document_title
       }) do
-    "You've been mentioned in a comment on #{document_title} in #{organisation_name}. Check it out!"
+    "New comment on #{document_title} in #{organisation_name}. Check it out!"
+  end
+
+  def message(:mention_comment, %{
+        document_title: document_title,
+        mentioned_by: mentioned_by
+      }) do
+    "You've been mentioned in a comment on #{document_title} by #{mentioned_by}. Check it out!"
   end
 
   def message(:form_mapping_not_complete, _) do

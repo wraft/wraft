@@ -251,8 +251,8 @@ defmodule WraftDocWeb.Api.V1.RoleController do
          {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id),
          %User{id: user_id} = _user <- Account.get_user(user_id) do
       Task.start(fn ->
-        Notifications.create_notification([user_id], %{
-          type: :assign_role,
+        Notifications.create_notification(user_id, %{
+          event_type: :assign_role,
           role_name: role.name,
           organisation_name: organisation_name
         })
@@ -290,8 +290,8 @@ defmodule WraftDocWeb.Api.V1.RoleController do
          {:ok, _} <- Account.delete_user_role(user_role),
          %User{id: user_id} = _user <- Account.get_user(user_id) do
       Task.start(fn ->
-        Notifications.create_notification([user_id], %{
-          type: :unassign_role,
+        Notifications.create_notification(user_id, %{
+          event_type: :unassign_role,
           role_name: role_name,
           organisation_name: organisation_name
         })
