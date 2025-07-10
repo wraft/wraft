@@ -1,75 +1,127 @@
 defmodule WraftDoc.Enterprise.Vendor do
   @moduledoc """
-  Vendor is actually the document recipient of a document issuing authority
-  ## Example
-  * If Company X is sending a proposal to Y the Y is the vendor and x is the issuing authority
+  This module handles vendor information and validations.
+  Vendors are organizations that provide goods/services and are standalone entities
+  not bound to specific documents.
   """
-
   use WraftDoc.Schema
   import Waffle.Ecto.Schema
-  alias __MODULE__
+  alias WraftDoc.Account.User
+  alias WraftDoc.Enterprise.Organisation
 
-  schema "vendor" do
+  @type t :: %__MODULE__{
+          id: integer() | nil,
+          name: String.t(),
+          email: String.t() | nil,
+          phone: String.t() | nil,
+          address: String.t() | nil,
+          city: String.t() | nil,
+          country: String.t() | nil,
+          gstin: String.t() | nil,
+          reg_no: String.t() | nil,
+          website: String.t() | nil,
+          logo: String.t() | nil,
+          contact_person: String.t() | nil,
+          creator_id: integer(),
+          organisation_id: integer(),
+          inserted_at: NaiveDateTime.t() | nil,
+          updated_at: NaiveDateTime.t() | nil
+        }
+
+  schema "vendors" do
     field(:name, :string)
     field(:email, :string)
     field(:phone, :string)
     field(:address, :string)
+    field(:city, :string)
+    field(:country, :string)
     field(:gstin, :string)
     field(:reg_no, :string)
+    field(:website, :string)
     field(:logo, WraftDocWeb.LogoUploader.Type)
     field(:contact_person, :string)
-    belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-    belongs_to(:creator, WraftDoc.Account.User)
+
+    # Associations
+    belongs_to(:creator, User)
+    belongs_to(:organisation, Organisation)
+
+    has_many(:vendor_contacts, WraftDoc.Organisation.VendorContact)
+
     timestamps()
   end
 
-  def changeset(%Vendor{} = vendor, attrs \\ %{}) do
+  @doc """
+  Builds a changeset for a vendor with validation rules.
+  """
+  @spec changeset(t() | Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
+  def changeset(vendor, attrs) do
     vendor
     |> cast(attrs, [
       :name,
       :email,
       :phone,
       :address,
+      :city,
+      :country,
       :gstin,
       :reg_no,
+      :website,
       :contact_person,
-      :organisation_id,
-      :creator_id
+      :creator_id,
+      :organisation_id
     ])
-    |> validate_required([
-      :name,
-      :email,
-      :phone,
-      :address,
-      :gstin,
-      :reg_no,
-      :organisation_id,
-      :creator_id
-    ])
+    |> validate_required([:name, :creator_id, :organisation_id])
+    |> validate_format(:email, ~r/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/,
+      message: "must be a valid email address"
+    )
+    |> validate_length(:email, max: 255)
+    |> validate_length(:phone, max: 50)
+    |> validate_length(:name, max: 255, min: 2)
+    |> unique_constraint(:gstin,
+      name: :vendors_gstin_unique,
+      message: "Vendor with this GSTIN already exists"
+    )
+    |> unique_constraint([:organisation_id, :name],
+      name: :vendors_organisation_id_name_unique,
+      message: "Vendor with this name already exists in the organization"
+    )
   end
 
-  def update_changeset(%Vendor{} = vendor, attrs \\ %{}) do
+  @doc """
+  Builds a changeset for updating a vendor with validation rules.
+  """
+  @spec update_changeset(t() | Ecto.Changeset.t(), map()) :: Ecto.Changeset.t()
+  def update_changeset(vendor, attrs \\ %{}) do
     vendor
     |> cast(attrs, [
       :name,
       :email,
       :phone,
       :address,
+      :city,
+      :country,
       :gstin,
       :reg_no,
+      :website,
       :contact_person,
-      :organisation_id,
-      :logo,
-      :creator_id
+      :creator_id,
+      :organisation_id
     ])
-    |> validate_required([
-      :name,
-      :email,
-      :phone,
-      :address,
-      :gstin,
-      :reg_no
-    ])
+    |> validate_required([:name, :creator_id, :organisation_id])
+    |> validate_format(:email, ~r/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/,
+      message: "must be a valid email address"
+    )
+    |> validate_length(:email, max: 255)
+    |> validate_length(:phone, max: 50)
+    |> validate_length(:name, max: 255, min: 2)
+    |> unique_constraint(:gstin,
+      name: :vendors_gstin_unique,
+      message: "Vendor with this GSTIN already exists"
+    )
+    |> unique_constraint([:organisation_id, :name],
+      name: :vendors_organisation_id_name_unique,
+      message: "Vendor with this name already exists in the organization"
+    )
     |> cast_attachments(attrs, [:logo])
   end
 end

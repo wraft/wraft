@@ -386,6 +386,18 @@ defmodule WraftDocWeb.Router do
         only: [:create, :update, :show, :delete, :index]
       )
 
+      # Vendor APIs
+      resources("/vendors", VendorController, only: [:create, :index, :show, :update, :delete])
+
+      # Vendor Contact APIs (nested under vendors)
+      scope "/vendors/:vendor_id" do
+        post("/contacts", VendorController, :create_contact)
+        get("/contacts", VendorController, :contacts_index)
+        get("/contacts/:id", VendorController, :show_contact)
+        put("/contacts/:id", VendorController, :update_contact)
+        delete("/contacts/:id", VendorController, :delete_contact)
+      end
+
       # get("/collection_forms/:c_form_id/collection_fields/:id", CollectionFormFieldController, :show)
       # post("/collection_fields", CollectionFormFieldController, :create)
       # put("/collection_fields/:id", CollectionFormFieldController, :update)

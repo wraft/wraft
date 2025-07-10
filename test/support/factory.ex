@@ -53,6 +53,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
+  alias WraftDoc.Organisation.VendorContact
   alias WraftDoc.Pipelines.Pipeline
   alias WraftDoc.Pipelines.Stages.Stage
   alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
@@ -528,12 +529,25 @@ defmodule WraftDoc.Factory do
   def vendor_factory do
     %Vendor{
       name: sequence(:name, &"Vendor name #{&1} "),
-      email: sequence(:email, &"Vendor email #{&1} "),
-      phone: sequence(:phone, &"Vendor phone #{&1} "),
-      address: sequence(:address, &"Vendor address #{&1} "),
-      gstin: sequence(:gstin, &"Vendor gstin #{&1} "),
-      reg_no: sequence(:reg_no, &"Vendor reg_no #{&1} "),
-      contact_person: sequence(:contact_person, &"Vendor contact_person #{&1} ")
+      email: sequence(:email, &"vendor#{&1}@example.com"),
+      phone: sequence(:phone, &"555-000-#{String.pad_leading("#{&1}", 4, "0")}"),
+      address: sequence(:address, &"#{&1} Main Street"),
+      city: sequence(:city, &"City #{&1}"),
+      country: sequence(:country, &"Country #{&1}"),
+      website: sequence(:website, &"https://vendor#{&1}.com"),
+      gstin: sequence(:gstin, &"GST#{String.pad_leading("#{&1}", 10, "0")}"),
+      reg_no: sequence(:reg_no, &"REG#{String.pad_leading("#{&1}", 8, "0")}"),
+      contact_person: sequence(:contact_person, &"Contact Person #{&1}")
+    }
+  end
+
+  def vendor_contact_factory do
+    %VendorContact{
+      name: sequence(:name, &"Contact #{&1}"),
+      email: sequence(:email, &"contact#{&1}@vendor.com"),
+      phone: sequence(:phone, &"555-100-#{String.pad_leading("#{&1}", 4, "0")}"),
+      job_title: sequence(:job_title, &"Job Title #{&1}"),
+      vendor: build(:vendor)
     }
   end
 
