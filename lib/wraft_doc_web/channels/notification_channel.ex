@@ -14,7 +14,7 @@ defmodule WraftDocWeb.NotificationChannel do
   """
   @spec join(String.t(), map(), Phoenix.Socket.t()) :: {:ok, Phoenix.Socket.t()} | {:error, map()}
   def join("notification:" <> user_id, _payload, socket) do
-    if authorized?(user_id, socket.assigns.current_user) do
+    if authorized?(:user, user_id, socket.assigns.current_user) do
       {:ok, socket}
     else
       {:error, %{reason: "unauthorized"}}
@@ -22,7 +22,15 @@ defmodule WraftDocWeb.NotificationChannel do
   end
 
   def join("user_notification:" <> user_id, _payload, socket) do
-    if authorized?(user_id, socket.assigns.current_user) do
+    if authorized?(:user, user_id, socket.assigns.current_user) do
+      {:ok, socket}
+    else
+      {:error, %{reason: "unauthorized"}}
+    end
+  end
+
+  def join("role_group_notification:" <> role_group_id, _payload, socket) do
+    if authorized?(:role, role_group_id, socket.assigns.current_user) do
       {:ok, socket}
     else
       {:error, %{reason: "unauthorized"}}
@@ -30,29 +38,29 @@ defmodule WraftDocWeb.NotificationChannel do
   end
 
   def join("organisation_notification:" <> organisation_id, _payload, socket) do
-    if authorized?(organisation_id, socket.assigns.current_user) do
+    if authorized?(:organisation, organisation_id, socket.assigns.current_user) do
       {:ok, socket}
     else
       {:error, %{reason: "unauthorized"}}
     end
   end
 
-  @spec broad_cast(String.t(), String.t(), atom(), User.t()) :: {:noreply, Phoenix.Socket.t()}
-  def broad_cast(message, event, scope, user) do
-    socket = create_socket(scope, user)
-    broadcast!(socket, event, %{body: message})
+  @spec broad_cast(Notification.t(), User.t()) :: {:noreply, Phoenix.Socket.t()}
+  def broad_cast(%{event_type: event, message: message} = notification, user) do
+    socket = create_socket(notification, user)
+    broadcast!(socket, Atom.to_string(event), %{body: message})
     {:noreply, socket}
   end
 
-  defp create_socket(scope, current_user) do
-    socket = build_socket_params(scope, current_user)
+  defp create_socket(notification, current_user) do
+    socket = build_socket_params(notification, current_user)
 
     %Phoenix.Socket{}
     |> assign(:current_user, current_user)
     |> Map.merge(socket)
   end
 
-  defp build_socket_params(scope, current_user) do
+  defp build_socket_params(notification, current_user) do
     %{
       channel: WraftDocWeb.NotificationChannel,
       endpoint: WraftDocWeb.Endpoint,
@@ -64,28 +72,41 @@ defmodule WraftDocWeb.NotificationChannel do
       pubsub_server: WraftDoc.PubSub,
       ref: nil,
       serializer: Phoenix.Transports.V2.WebSocketSerializer,
-      topic: get_topic(scope, current_user),
+      topic: get_topic(notification, current_user),
       transport: Phoenix.Transports.WebSocket,
       transport_name: :websocket,
       vsn: "2.0.0"
     }
   end
 
-  defp get_topic(:user, %{id: user_id} = _user), do: "user_notification:#{user_id}"
+  defp get_topic(%{scope: :user}, %{id: user_id} = _user), do: "user_notification:#{user_id}"
 
-  defp get_topic(:organisation, %{current_org_id: organisation_id} = _user),
+  defp get_topic(%{scope: :organisation}, %{current_org_id: organisation_id} = _user),
     do: "organisation_notification:#{organisation_id}"
+
+  defp get_topic(%{scope: :role_group, scope_id: scope_id}, _user),
+    do: "role_group_notification:#{scope_id}"
 
   # TODO: remove this later.
   defp get_topic(_, %{id: user_id} = _user), do: "notification:#{user_id}"
 
-  defp authorized?(user_id, %{id: current_user_id})
+  defp authorized?(:user, user_id, %{id: current_user_id})
        when user_id == current_user_id,
        do: :ok
 
-  defp authorized?(organisation_id, %{current_org_id: current_org_id})
+  defp authorized?(:organisation, organisation_id, %{current_org_id: current_org_id})
        when organisation_id == current_org_id,
        do: :ok
 
-  defp authorized?(_, _), do: {:error, :unauthorized}
+  # TODO: authorize user_roles
+  defp authorized?(:role, role_id, %{roles: roles} = _user) do
+    roles
+    |> Enum.any?(fn role -> role.id == role_id end)
+    |> case do
+      true -> :ok
+      false -> {:error, :unauthorized}
+    end
+  end
+
+  defp authorized?(_, _, _), do: {:error, :unauthorized}
 end

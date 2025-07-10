@@ -65,16 +65,19 @@ defmodule WraftDoc.Notifications do
   end
 
   defp handle_transaction_result(
-         {:ok, %{notification: %{event_type: event_type} = notification}},
+         {:ok, %{notification: notification}},
          user
        ) do
-    email_notification(notification, event_type, :user, user)
+    email_notification(notification, user)
     {:ok, notification}
   end
 
   defp handle_transaction_result({:error, _, reason, _}, _user), do: {:error, reason}
 
-  def email_notification(%{channel: channel} = notification, event, scope, recipient)
+  def email_notification(
+        %{channel: channel} = notification,
+        recipient
+      )
       when channel in [:email, :all] do
     %{
       user_name: recipient.name,
@@ -87,14 +90,17 @@ defmodule WraftDoc.Notifications do
     )
     |> Oban.insert()
 
-    broadcast_notification(notification, event, scope, recipient)
+    broadcast_notification(notification, recipient)
   end
 
   def email_notification(_, _, _, _), do: nil
 
-  # TODO lets try with oban. for check
-  def broadcast_notification(notification, event, scope, recipient) do
-    NotificationChannel.broad_cast(notification, event, scope, recipient)
+  # TODO lets try with oban.
+  def broadcast_notification(
+        notification,
+        recipient
+      ) do
+    NotificationChannel.broad_cast(notification, recipient)
   end
 
   @doc """
