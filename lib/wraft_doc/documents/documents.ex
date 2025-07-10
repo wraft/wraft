@@ -34,6 +34,7 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Layouts.Layout
+  alias WraftDoc.Notifications
   alias WraftDoc.Repo
   alias WraftDoc.Themes
   alias WraftDoc.Utils.CSVHelper
@@ -2360,5 +2361,38 @@ defmodule WraftDoc.Documents do
       _ ->
         []
     end
+  end
+
+  @doc """
+  Notification for the document flow.
+  """
+  def document_notification(
+        %User{name: approver_name} = _current_user,
+        %Instance{serialized: %{"title" => document_title}} = _instance,
+        %Organisation{name: organisation_name} = _organisation,
+        state
+      ) do
+    next_state = next_state(state)
+
+    Enum.each(
+      state.approvers,
+      &Notifications.create_notification(&1, %{
+        event_type: :state_update,
+        document_title: document_title,
+        organisation_name: organisation_name,
+        state_name: state.state,
+        approver_name: approver_name
+      })
+    )
+
+    Enum.each(
+      next_state.approvers,
+      &Notifications.create_notification(&1, %{
+        event_type: :pending_approvals,
+        document_title: document_title,
+        organisation_name: organisation_name,
+        state_name: next_state.state
+      })
+    )
   end
 end

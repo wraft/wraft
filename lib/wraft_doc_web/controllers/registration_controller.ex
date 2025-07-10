@@ -77,8 +77,8 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
           AuthTokens.create_token_and_send_email(params["email"])
 
           Task.start(fn ->
-            Notifications.create_notification([user_id], %{
-              type: :user_joins_wraft,
+            Notifications.create_notification(user_id, %{
+              event_type: :user_joins_wraft,
               user_name: user.name
             })
           end)

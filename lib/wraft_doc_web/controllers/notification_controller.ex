@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Notifications
-  alias WraftDoc.Notifications.UserNotifications
+  alias WraftDoc.Notifications.UserNotification
 
   def swagger_definitions do
     %{
@@ -182,7 +182,7 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
-    notification = Notifications.create_notification([conn.assigns.current_user.id], params)
+    notification = Notifications.create_notification(conn.assigns.current_user.id, params)
 
     render(conn, "notification.json", notification: notification)
   end
@@ -238,9 +238,9 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
   def read(conn, %{"id" => id} = _params) do
     current_user = conn.assigns.current_user
 
-    with %UserNotifications{} = user_notification <-
+    with %UserNotification{} = user_notification <-
            Notifications.get_user_notification(current_user, id),
-         %UserNotifications{} <- Notifications.read_notification(user_notification) do
+         %UserNotification{} <- Notifications.read_notification(user_notification) do
       render(conn, "mark_as_read.json", info: "Notification marked as read")
     end
   end

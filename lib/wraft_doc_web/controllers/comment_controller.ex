@@ -9,7 +9,6 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   alias WraftDoc.Comments
   alias WraftDoc.Comments.Comment
   alias WraftDoc.Documents
-  alias WraftDoc.Notifications
 
   def swagger_definitions do
     %{
@@ -170,12 +169,17 @@ defmodule WraftDocWeb.Api.V1.CommentController do
 
     with %Comment{master_id: master_id, organisation_id: organisation_id} = comment <-
            Comments.create_comment(current_user, params) do
+      # TODO Move these to context
       Task.start(fn ->
-        Notifications.comment_notification(
+        Comments.comment_notification(
           current_user.id,
           organisation_id,
           master_id
         )
+      end)
+
+      Task.start(fn ->
+        Comments.comment_mention_notification(comment.meta["mentions"], current_user, master_id)
       end)
 
       render(conn, "comment.json", comment: comment)

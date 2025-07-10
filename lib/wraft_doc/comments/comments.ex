@@ -9,6 +9,8 @@ defmodule WraftDoc.Comments do
   alias WraftDoc.Account.User
   alias WraftDoc.Comments.Comment
   alias WraftDoc.Documents
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Notifications
   alias WraftDoc.Repo
 
   @doc """
@@ -18,6 +20,7 @@ defmodule WraftDoc.Comments do
   def create_comment(%{current_org_id: <<_::288>> = organisation_id} = current_user, params) do
     params
     |> Map.put("organisation_id", organisation_id)
+    |> Map.merge(%{"meta" => %{"mentions" => [current_user.id]}})
     |> then(&insert_comment(current_user, &1))
   end
 
@@ -259,4 +262,42 @@ defmodule WraftDoc.Comments do
 
   defp ensure_is_parent(%{"parent_id" => _} = params), do: Map.put(params, "is_parent", false)
   defp ensure_is_parent(params), do: Map.put(params, "is_parent", true)
+
+  # Improve this
+  @doc """
+  Sends a comment notification to users allowed to access a document, excluding the initiating user.
+  """
+  @spec comment_notification(Ecto.UUID.t(), Ecto.UUID.t(), Ecto.UUID.t()) ::
+          [Notification.t()]
+  def comment_notification(user_id, organisation_id, document_id) do
+    document = Documents.get_instance(document_id, %{current_org_id: organisation_id})
+    organisation = Enterprise.get_organisation(organisation_id)
+
+    document.allowed_users
+    |> List.delete(user_id)
+    |> Enum.map(
+      &Notifications.create_notification(&1, %{
+        event_type: :add_comment,
+        organisation_name: organisation.name,
+        document_title: document.serialized["title"]
+      })
+    )
+  end
+
+  def comment_mention_notification(
+        users,
+        %{name: mentioned_by, current_org_id: organisation_id},
+        document_id
+      ) do
+    document = Documents.get_instance(document_id, %{current_org_id: organisation_id})
+
+    Enum.map(
+      users,
+      &Notifications.create_notification(&1, %{
+        event_type: :mention_comment,
+        mentioned_by: mentioned_by,
+        document_title: document.serialized["title"]
+      })
+    )
+  end
 end

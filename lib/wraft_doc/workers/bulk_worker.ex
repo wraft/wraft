@@ -110,7 +110,10 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :form_mapping_not_complete})
+      Notifications.create_notification(trigger.creator_id, %{
+        event_type: :form_mapping_not_complete
+      })
+
       Logger.error("Form mapping not complete. Pipeline execution failed.")
       trigger
     end)
@@ -130,7 +133,7 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_not_found})
+      Notifications.create_notification(trigger.creator_id, %{event_type: :pipeline_not_found})
     end)
 
     Logger.error("Pipeline not found. Pipeline execution failed.")
@@ -151,7 +154,9 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_instance_failed})
+      Notifications.create_notification(trigger.creator_id, %{
+        event_type: :pipeline_instance_failed
+      })
     end)
 
     Logger.error("Instance creation failed. Pipeline execution failed.")
@@ -172,7 +177,9 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_downLoad_error})
+      Notifications.create_notification(trigger.creator_id, %{
+        event_type: :pipeline_downLoad_error
+      })
     end)
 
     Logger.error("Instance creation failed. Pipeline execution failed.")
@@ -201,7 +208,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_build_success})
+      Notifications.create_notification(trigger.creator_id, %{event_type: :pipeline_build_success})
     end)
 
     Logger.info("Pipeline completed succesfully.!")
@@ -222,7 +229,7 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_build_failed})
+      Notifications.create_notification(trigger.creator_id, %{event_type: :pipeline_build_failed})
     end)
 
     Logger.error("Pipeline partially completed.! Some builds failed.!")

@@ -292,12 +292,13 @@ defmodule WraftDoc.Documents.Reminders do
        ) do
     reminder
     |> get_recipients()
-    |> Enum.map(& &1.id)
-    |> Notifications.create_notification(%{
-      type: :document_reminder,
-      instance_id: instance_id,
-      document_title: serialized["title"]
-    })
+    |> Enum.each(fn recipient ->
+      Notifications.create_notification(recipient.id, %{
+        event_type: :document_reminder,
+        instance_id: instance_id,
+        document_title: serialized["title"]
+      })
+    end)
 
     Logger.info("In-app notifications sent for reminder #{reminder.id}")
 
