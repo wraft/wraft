@@ -10,6 +10,7 @@ defmodule WraftDocWeb.UserSocket do
   channel("notification:*", WraftDocWeb.NotificationChannel)
   channel("user_notification:*", WraftDocWeb.NotificationChannel)
   channel("organisation_notification:*", WraftDocWeb.NotificationChannel)
+  channel("role_group_notification:*", WraftDocWeb.NotificationChannel)
   channel("doc_room:*", WraftDocWeb.DocumentChannel)
 
   @doc """

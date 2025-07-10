@@ -4,6 +4,7 @@ defmodule WraftDoc.Repo.Migrations.UpdateNotificationTableAddScopeAndType do
   def up do
     alter table(:notification) do
       add(:scope, :string)
+      add(:scope_id, :string)
       add(:channel, :string)
     end
 
@@ -13,6 +14,7 @@ defmodule WraftDoc.Repo.Migrations.UpdateNotificationTableAddScopeAndType do
   def down do
     alter table(:notification) do
       remove(:scope)
+      remove(:scope_id)
       remove(:channel)
     end
 
