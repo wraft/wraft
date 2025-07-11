@@ -42,6 +42,7 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Enterprise.VendorContact
   alias WraftDoc.Fields.Field
   alias WraftDoc.Fields.FieldType
   alias WraftDoc.Forms.Form
@@ -53,7 +54,6 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.InvitedUsers.InvitedUser
   alias WraftDoc.Layouts.Layout
   alias WraftDoc.Layouts.LayoutAsset
-  alias WraftDoc.Organisation.VendorContact
   alias WraftDoc.Pipelines.Pipeline
   alias WraftDoc.Pipelines.Stages.Stage
   alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory

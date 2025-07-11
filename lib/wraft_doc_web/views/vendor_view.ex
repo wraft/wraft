@@ -1,7 +1,9 @@
 defmodule WraftDocWeb.Api.V1.VendorView do
   use WraftDocWeb, :view
   alias __MODULE__
-  alias WraftDocWeb.Api.V1.{OrganisationView, UserView}
+  alias WraftDocWeb.Api.V1.InstanceView
+  alias WraftDocWeb.Api.V1.OrganisationView
+  alias WraftDocWeb.Api.V1.UserView
 
   def render("vendor.json", %{vendor: vendor}) do
     %{
@@ -84,6 +86,12 @@ defmodule WraftDocWeb.Api.V1.VendorView do
       page_number: page_number,
       total_pages: total_pages,
       total_entries: total_entries
+    }
+  end
+
+  def render("document_with_vendor.json", %{instance: instance}) do
+    %{
+      instance: render_one(instance, InstanceView, "show.json", as: :instance)
     }
   end
 end

@@ -27,7 +27,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
-  alias WraftDoc.Organisation.VendorContact
+  alias WraftDoc.Enterprise.VendorContact
   alias WraftDoc.Repo
   alias WraftDoc.Storage
   alias WraftDoc.TaskSupervisor
