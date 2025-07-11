@@ -53,14 +53,13 @@ defmodule WraftDoc.Organisation.VendorContact do
     |> validate_length(:phone, max: 50)
     |> validate_length(:job_title, max: 100)
     |> validate_length(:name, max: 255, min: 2)
-    |> foreign_key_constraint(:vendor_id)
-  end
-
-  @doc """
-  Builds a changeset for creating a new vendor contact.
-  """
-  @spec create_changeset(map()) :: Ecto.Changeset.t()
-  def create_changeset(attrs) do
-    changeset(%__MODULE__{}, attrs)
+    |> foreign_key_constraint(:vendor_id,
+      name: :vendor_contacts_vendor_id_fkey,
+      message: "Vendor does not exist"
+    )
+    |> foreign_key_constraint(:creator_id,
+      name: :vendor_contacts_creator_id_fkey,
+      message: "Creator does not exist"
+    )
   end
 end
