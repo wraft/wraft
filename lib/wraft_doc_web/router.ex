@@ -252,6 +252,7 @@ defmodule WraftDocWeb.Router do
       scope "/notifications" do
         post("/", NotificationController, :create)
         get("/", NotificationController, :index)
+        get("/read", NotificationController, :index_read)
         get("/count", NotificationController, :count)
         put("/read/:id", NotificationController, :read)
         put("/read_all", NotificationController, :read_all)

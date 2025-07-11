@@ -212,6 +212,20 @@ defmodule WraftDoc.Account do
   end
 
   @doc """
+  Returns a list of role IDs for the given user in the current organisation.
+  """
+  @spec get_user_role_ids(User.t()) :: [Ecto.UUID.t()]
+  def get_user_role_ids(%User{id: user_id, current_org_id: organisation_id}) do
+    UserRole
+    |> join(:inner, [ur], r in Role,
+      on: r.id == ur.role_id and r.organisation_id == ^organisation_id
+    )
+    |> where([ur, r], ur.user_id == ^user_id)
+    |> select([ur, r], ur.role_id)
+    |> Repo.all()
+  end
+
+  @doc """
   Checks if the user is allowed to unassign the given role
   """
   @spec allowed_to_unassign_role?(User.t(), Ecto.UUID.t(), Ecto.UUID.t()) ::
