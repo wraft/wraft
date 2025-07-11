@@ -53,14 +53,14 @@ defmodule WraftDocWeb.NotificationChannel do
   end
 
   defp create_socket(notification, current_user) do
-    socket = build_socket_params(notification, current_user)
+    socket = build_socket_params(notification)
 
     %Phoenix.Socket{}
     |> assign(:current_user, current_user)
     |> Map.merge(socket)
   end
 
-  defp build_socket_params(notification, current_user) do
+  defp build_socket_params(notification) do
     %{
       channel: WraftDocWeb.NotificationChannel,
       endpoint: WraftDocWeb.Endpoint,
@@ -72,23 +72,15 @@ defmodule WraftDocWeb.NotificationChannel do
       pubsub_server: WraftDoc.PubSub,
       ref: nil,
       serializer: Phoenix.Transports.V2.WebSocketSerializer,
-      topic: get_topic(notification, current_user),
+      topic: get_topic(notification),
       transport: Phoenix.Transports.WebSocket,
       transport_name: :websocket,
       vsn: "2.0.0"
     }
   end
 
-  defp get_topic(%{scope: :user}, %{id: user_id} = _user), do: "user_notification:#{user_id}"
-
-  defp get_topic(%{scope: :organisation}, %{current_org_id: organisation_id} = _user),
-    do: "organisation_notification:#{organisation_id}"
-
-  defp get_topic(%{scope: :role_group, scope_id: scope_id}, _user),
-    do: "role_group_notification:#{scope_id}"
-
-  # TODO: remove this later.
-  defp get_topic(_, %{id: user_id} = _user), do: "notification:#{user_id}"
+  defp get_topic(%{channel: channel, channel_id: channel_id} = _notification),
+    do: "#{Atom.to_string(channel)}:#{channel_id}"
 
   defp authorized?(:user, user_id, %{id: current_user_id})
        when user_id == current_user_id,

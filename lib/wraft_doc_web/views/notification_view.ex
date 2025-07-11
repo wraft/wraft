@@ -8,17 +8,49 @@ defmodule WraftDocWeb.Api.V1.NotificationView do
   def render("notification.json", %{notification: notification}) do
     %{
       id: notification.id,
-      type: notification.event_type,
+      event_type: notification.event_type,
       message: notification.message,
       is_global: notification.is_global,
       action: notification.action,
-      actor: render_one(notification.actor, UserView, "user.json"),
+      # actor: render_one(notification.actor, UserView, "user.json"),
       inserted_at: notification.inserted_at,
       updated_at: notification.updated_at
     }
   end
 
   def render("index.json", %{
+        notifications: notifications,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      notifications:
+        render_many(notifications, NotificationView, "notification.json", as: :notification),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
+  end
+
+  def render("index_read.json", %{
+        notifications: notifications,
+        page_number: page_number,
+        total_pages: total_pages,
+        total_entries: total_entries
+      }) do
+    %{
+      notifications:
+        render_many(notifications, NotificationView, "user_notification.json",
+          as: :user_notification
+        ),
+      page_number: page_number,
+      total_pages: total_pages,
+      total_entries: total_entries
+    }
+  end
+
+  def render("index_unread.json", %{
         notifications: notifications,
         page_number: page_number,
         total_pages: total_pages,

@@ -3,21 +3,24 @@ defmodule WraftDoc.Repo.Migrations.UpdateNotificationTableAddScopeAndType do
 
   def up do
     alter table(:notification) do
-      add(:scope, :string)
-      add(:scope_id, :string)
+      add(:event_type, :string)
       add(:channel, :string)
-    end
+      add(:channel_id, :string)
 
-    rename(table(:notification), :type, to: :event_type)
+      remove(:actor_id)
+
+      add(:organisation_id, references(:organisation, type: :uuid, on_delete: :nilify_all))
+    end
   end
 
   def down do
     alter table(:notification) do
-      remove(:scope)
-      remove(:scope_id)
+      remove(:event_type)
+      remove(:channel_id)
       remove(:channel)
-    end
+      remove(:organisation_id)
 
-    rename(table(:notification), :event_type, to: :type)
+      add(:actor_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
+    end
   end
 end
