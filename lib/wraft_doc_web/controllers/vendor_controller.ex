@@ -4,9 +4,11 @@ defmodule WraftDocWeb.Api.V1.VendorController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
+  alias WraftDoc.Documents
+  alias WraftDoc.Documents.Instance
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Vendor
-  alias WraftDoc.Organisation.VendorContact
+  alias WraftDoc.Enterprise.VendorContact
 
   def swagger_definitions do
     %{
@@ -475,6 +477,64 @@ defmodule WraftDocWeb.Api.V1.VendorController do
     with %VendorContact{} = vendor_contact <- Enterprise.get_vendor_contact(current_user, id),
          {:ok, %VendorContact{}} <- Enterprise.delete_vendor_contact(vendor_contact) do
       render(conn, "vendor_contact.json", vendor_contact: vendor_contact)
+    end
+  end
+
+  swagger_path :connect_to_document do
+    put("/content/{id}/documents/{vendor_id}/vendor")
+    summary("Connect vendor to document")
+    description("API to connect a vendor to a document instance")
+
+    parameters do
+      vendor_id(:path, :string, "vendor id", required: true)
+      id(:path, :string, "document instance id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  @spec connect_to_document(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def connect_to_document(conn, %{"vendor_id" => vendor_id, "document_id" => document_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, vendor_id),
+         %Instance{} = instance <- Documents.get_instance(document_id, current_user),
+         {:ok, %Instance{} = updated_instance} <-
+           Documents.connect_vendor_to_instance(instance, vendor) do
+      render(conn, "document_with_vendor.json", instance: updated_instance)
+    end
+  end
+
+  swagger_path :disconnect_from_document do
+    PhoenixSwagger.Path.delete("/content/{id}/documents/{vendor_id}/vendor")
+    summary("Disconnect vendor from document")
+    description("API to disconnect a vendor from a document instance")
+
+    parameters do
+      vendor_id(:path, :string, "vendor id", required: true)
+      id(:path, :string, "document instance id", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:Content))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(400, "Bad Request", Schema.ref(:Error))
+    response(404, "Not Found", Schema.ref(:Error))
+  end
+
+  @spec disconnect_from_document(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def disconnect_from_document(conn, %{"vendor_id" => vendor_id, "document_id" => document_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Vendor{} = _vendor <- Enterprise.get_vendor(current_user, vendor_id),
+         %Instance{} = instance <- Documents.get_instance(document_id, current_user),
+         {:ok, %Instance{} = updated_instance} <-
+           Documents.disconnect_vendor_from_instance(instance) do
+      render(conn, "document_with_vendor.json", instance: updated_instance)
     end
   end
 end

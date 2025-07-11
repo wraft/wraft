@@ -45,7 +45,7 @@ defmodule WraftDoc.Enterprise.Vendor do
     belongs_to(:creator, User)
     belongs_to(:organisation, Organisation)
 
-    has_many(:vendor_contacts, WraftDoc.Organisation.VendorContact)
+    has_many(:vendor_contacts, WraftDoc.Enterprise.VendorContact)
 
     timestamps()
   end

@@ -1,16 +1,13 @@
 defmodule WraftDocWeb.Api.V1.InstanceView do
   use WraftDocWeb, :view
 
-  alias WraftDocWeb.Api.V1.{
-    ContentTypeView,
-    FlowView,
-    InstanceApprovalSystemView,
-    InstanceVersionView,
-    StateView,
-    UserView,
-    VendorView
-  }
-
+  alias WraftDocWeb.Api.V1.ContentTypeView
+  alias WraftDocWeb.Api.V1.FlowView
+  alias WraftDocWeb.Api.V1.InstanceApprovalSystemView
+  alias WraftDocWeb.Api.V1.InstanceVersionView
+  alias WraftDocWeb.Api.V1.StateView
+  alias WraftDocWeb.Api.V1.UserView
+  alias WraftDocWeb.Api.V1.VendorView
   alias __MODULE__
 
   def render("create.json", %{content: content}) do
@@ -158,7 +155,8 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       instance_approval_systems:
         render_many(instance.instance_approval_systems, InstanceApprovalSystemView, "create.json",
           as: :instance_approval_system
-        )
+        ),
+      vendor: render_one(instance.vendor, VendorView, "vendor.json", as: :vendor)
     }
   end
 

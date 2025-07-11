@@ -15,7 +15,7 @@ defmodule WraftDoc.EnterpriseTest do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.Vendor
-  alias WraftDoc.Organisation.VendorContact
+  alias WraftDoc.Enterprise.VendorContact
   alias WraftDoc.Repo
 
   setup :verify_on_exit!
@@ -1342,8 +1342,6 @@ defmodule WraftDoc.EnterpriseTest do
       assert response.total_entries == 2
     end
   end
-
-  ################# <<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>####################
 
   describe "create_vendor/2" do
     test "create vendor on valid attributes" do

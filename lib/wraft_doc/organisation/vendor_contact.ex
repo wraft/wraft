@@ -1,4 +1,4 @@
-defmodule WraftDoc.Organisation.VendorContact do
+defmodule WraftDoc.Enterprise.VendorContact do
   @moduledoc """
   This module handles vendor contact information.
   Vendor contacts are individuals associated with vendor organizations.
