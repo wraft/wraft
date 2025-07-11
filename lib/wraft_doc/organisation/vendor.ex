@@ -70,6 +70,7 @@ defmodule WraftDoc.Enterprise.Vendor do
       :creator_id,
       :organisation_id
     ])
+    |> cast_attachments(attrs, [:logo])
     |> validate_required([:name, :creator_id, :organisation_id])
     |> validate_format(:email, ~r/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/,
       message: "must be a valid email address"
@@ -77,13 +78,17 @@ defmodule WraftDoc.Enterprise.Vendor do
     |> validate_length(:email, max: 255)
     |> validate_length(:phone, max: 50)
     |> validate_length(:name, max: 255, min: 2)
-    |> unique_constraint(:gstin,
-      name: :vendors_gstin_unique,
-      message: "Vendor with this GSTIN already exists"
-    )
     |> unique_constraint([:organisation_id, :name],
-      name: :vendors_organisation_id_name_unique,
+      name: :vendors_organisation_id_name_index,
       message: "Vendor with this name already exists in the organization"
+    )
+    |> foreign_key_constraint(:organisation_id,
+      name: :vendors_organisation_id_fkey,
+      message: "Organization does not exist"
+    )
+    |> foreign_key_constraint(:creator_id,
+      name: :vendors_creator_id_fkey,
+      message: "Creator does not exist"
     )
   end
 
@@ -107,6 +112,7 @@ defmodule WraftDoc.Enterprise.Vendor do
       :creator_id,
       :organisation_id
     ])
+    |> cast_attachments(attrs, [:logo])
     |> validate_required([:name, :creator_id, :organisation_id])
     |> validate_format(:email, ~r/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/,
       message: "must be a valid email address"
@@ -114,14 +120,17 @@ defmodule WraftDoc.Enterprise.Vendor do
     |> validate_length(:email, max: 255)
     |> validate_length(:phone, max: 50)
     |> validate_length(:name, max: 255, min: 2)
-    |> unique_constraint(:gstin,
-      name: :vendors_gstin_unique,
-      message: "Vendor with this GSTIN already exists"
-    )
     |> unique_constraint([:organisation_id, :name],
-      name: :vendors_organisation_id_name_unique,
+      name: :vendors_organisation_id_name_index,
       message: "Vendor with this name already exists in the organization"
     )
-    |> cast_attachments(attrs, [:logo])
+    |> foreign_key_constraint(:organisation_id,
+      name: :vendors_organisation_id_fkey,
+      message: "Organization does not exist"
+    )
+    |> foreign_key_constraint(:creator_id,
+      name: :vendors_creator_id_fkey,
+      message: "Creator does not exist"
+    )
   end
 end
