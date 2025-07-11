@@ -293,7 +293,7 @@ defmodule WraftDoc.Seed do
     })
   end
 
-  def seed_document_instance(user, content_type, state, vendor) do
+  def seed_document_instance(user, content_type, state) do
     Repo.insert!(%Instance{
       instance_id: Faker.Nato.letter_code_word(),
       raw: Faker.Company.buzzword_prefix(),
@@ -304,8 +304,7 @@ defmodule WraftDoc.Seed do
       type: 1,
       creator_id: user.id,
       content_type_id: content_type.id,
-      state_id: state.id,
-      vendor_id: vendor.id
+      state_id: state.id
     })
   end
 
