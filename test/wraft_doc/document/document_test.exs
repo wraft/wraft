@@ -5811,4 +5811,154 @@ defmodule WraftDoc.DocumentTest do
       assert {:error, %Ecto.Changeset{}} = Fields.create_field(field_type, %{})
     end
   end
+
+  describe "connect_vendor_to_instance/2" do
+    test "successfully connects a vendor to an instance" do
+      user = insert(:user_with_organisation)
+      vendor = insert(:vendor, creator: user, organisation: List.first(user.owned_organisations))
+
+      content_type =
+        insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+
+      instance = insert(:instance, creator: user, content_type: content_type, vendor: nil)
+
+      # Verify instance has no vendor initially
+      assert instance.vendor_id == nil
+
+      # Connect vendor to instance
+      {:ok, updated_instance} = Documents.connect_vendor_to_instance(instance, vendor)
+
+      # Verify the connection was successful
+      assert updated_instance.vendor_id == vendor.id
+      assert updated_instance.vendor.id == vendor.id
+      assert updated_instance.vendor.name == vendor.name
+
+      # Verify the database was updated
+      db_instance = Repo.get(Instance, instance.id)
+      assert db_instance.vendor_id == vendor.id
+    end
+
+    test "successfully updates vendor when instance already has a different vendor" do
+      user = insert(:user_with_organisation)
+
+      old_vendor =
+        insert(:vendor, creator: user, organisation: List.first(user.owned_organisations))
+
+      new_vendor =
+        insert(:vendor, creator: user, organisation: List.first(user.owned_organisations))
+
+      content_type =
+        insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+
+      instance = insert(:instance, creator: user, content_type: content_type, vendor: old_vendor)
+
+      # Verify instance has the old vendor initially
+      assert instance.vendor_id == old_vendor.id
+
+      # Connect new vendor to instance
+      {:ok, updated_instance} = Documents.connect_vendor_to_instance(instance, new_vendor)
+
+      # Verify the connection was updated
+      assert updated_instance.vendor_id == new_vendor.id
+      assert updated_instance.vendor.id == new_vendor.id
+      assert updated_instance.vendor.name == new_vendor.name
+
+      # Verify the database was updated
+      db_instance = Repo.get(Instance, instance.id)
+      assert db_instance.vendor_id == new_vendor.id
+    end
+
+    test "preloads related associations correctly" do
+      user = insert(:user_with_organisation)
+      vendor = insert(:vendor, creator: user, organisation: List.first(user.owned_organisations))
+
+      content_type =
+        insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+
+      state = insert(:state, creator: user, organisation: List.first(user.owned_organisations))
+
+      instance =
+        insert(:instance, creator: user, content_type: content_type, vendor: nil, state: state)
+
+      # Connect vendor to instance
+      {:ok, updated_instance} = Documents.connect_vendor_to_instance(instance, vendor)
+
+      # Verify associations are preloaded
+      assert updated_instance.vendor.id == vendor.id
+      assert updated_instance.content_type.id == content_type.id
+      assert updated_instance.state.id == state.id
+      assert updated_instance.creator.id == user.id
+    end
+  end
+
+  describe "disconnect_vendor_from_instance/1" do
+    test "successfully disconnects vendor from instance" do
+      user = insert(:user_with_organisation)
+      vendor = insert(:vendor, creator: user, organisation: List.first(user.owned_organisations))
+
+      content_type =
+        insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+
+      instance = insert(:instance, creator: user, content_type: content_type, vendor: vendor)
+
+      # Verify instance has a vendor initially
+      assert instance.vendor_id == vendor.id
+
+      # Disconnect vendor from instance
+      {:ok, updated_instance} = Documents.disconnect_vendor_from_instance(instance)
+
+      # Verify the disconnection was successful
+      assert updated_instance.vendor_id == nil
+      assert updated_instance.vendor == nil
+
+      # Verify the database was updated
+      db_instance = Repo.get(Instance, instance.id)
+      assert db_instance.vendor_id == nil
+    end
+
+    test "successfully handles instance that already has no vendor" do
+      user = insert(:user_with_organisation)
+
+      content_type =
+        insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+
+      instance = insert(:instance, creator: user, content_type: content_type, vendor: nil)
+
+      # Verify instance has no vendor initially
+      assert instance.vendor_id == nil
+
+      # Disconnect vendor from instance (should still work)
+      {:ok, updated_instance} = Documents.disconnect_vendor_from_instance(instance)
+
+      # Verify the result
+      assert updated_instance.vendor_id == nil
+      assert updated_instance.vendor == nil
+
+      # Verify the database state
+      db_instance = Repo.get(Instance, instance.id)
+      assert db_instance.vendor_id == nil
+    end
+
+    test "preloads related associations correctly" do
+      user = insert(:user_with_organisation)
+      vendor = insert(:vendor, creator: user, organisation: List.first(user.owned_organisations))
+
+      content_type =
+        insert(:content_type, creator: user, organisation: List.first(user.owned_organisations))
+
+      state = insert(:state, creator: user, organisation: List.first(user.owned_organisations))
+
+      instance =
+        insert(:instance, creator: user, content_type: content_type, vendor: vendor, state: state)
+
+      # Disconnect vendor from instance
+      {:ok, updated_instance} = Documents.disconnect_vendor_from_instance(instance)
+
+      # Verify associations are preloaded
+      assert updated_instance.vendor == nil
+      assert updated_instance.content_type.id == content_type.id
+      assert updated_instance.state.id == state.id
+      assert updated_instance.creator.id == user.id
+    end
+  end
 end

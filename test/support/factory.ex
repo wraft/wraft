@@ -271,7 +271,8 @@ defmodule WraftDoc.Factory do
       state: build(:state),
       content_type: build(:content_type),
       creator: build(:user),
-      allowed_users: []
+      allowed_users: [],
+      organisation: build(:organisation)
     }
   end
 
