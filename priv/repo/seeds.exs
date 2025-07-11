@@ -93,9 +93,9 @@ if !FunWithFlags.enabled?(:seeds_ran?) do
 
   # Seed Document Instance
   instance_list =
-    for {user, content_type, states, vendor} <-
-          Enum.zip([user_list, content_type_list, state_list, vendor_list]),
-        do: Seed.seed_document_instance(user, content_type, Enum.random(states), vendor)
+    for {user, content_type, states} <-
+          Enum.zip([user_list, content_type_list, state_list]),
+        do: Seed.seed_document_instance(user, content_type, Enum.random(states))
 
   # Seed Build History
   for {user, instance} <- Enum.zip([user_list, instance_list]),
