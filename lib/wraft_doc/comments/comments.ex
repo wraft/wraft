@@ -276,7 +276,7 @@ defmodule WraftDoc.Comments do
     document.allowed_users
     |> List.delete(user_id)
     |> Enum.map(
-      &Delivery.dispatch(current_user, :add_comment, %{
+      &Delivery.dispatch(current_user, "document.add_comment", %{
         organisation_name: organisation.name,
         document_title: document.serialized["title"],
         channel: :user_notification,

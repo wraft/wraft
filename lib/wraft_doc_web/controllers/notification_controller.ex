@@ -8,6 +8,8 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
 
   alias WraftDoc.Notifications
   alias WraftDoc.Notifications.Notification
+  alias WraftDoc.Notifications.Settings
+  alias WraftDoc.Notifications.Template
   alias WraftDoc.Notifications.UserNotification
 
   def swagger_definitions do
@@ -325,22 +327,60 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
   end
 
   @doc """
-  get preferences
+  get settings
   """
-  swagger_path :get_preferences do
-    get("/notifications/preferences")
-    summary("get preferences")
-    description("get preferences")
-    response(200, "Ok", Schema.ref(:NotificationPreferencesResponse))
+  swagger_path :get_settings do
+    get("/notifications/settings")
+    summary("get settings")
+    description("get settings")
+    response(200, "Ok", Schema.ref(:NotificationSettingsResponse))
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec get_preferences(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def get_preferences(conn, _params) do
+  @spec get_settings(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def get_settings(conn, _params) do
     current_user = conn.assigns.current_user
 
-    with preferences <- Notifications.get_organisation_settings(current_user) do
-      render(conn, "preferences.json", preferences: preferences)
+    with %Settings{} = settings <- Notifications.get_organisation_settings(current_user) do
+      render(conn, "settings.json", settings: settings)
     end
+  end
+
+  @doc """
+  update settings
+  """
+  swagger_path :update_settings do
+    put("/notifications/settings")
+    summary("update settings")
+    description("update settings")
+    response(200, "Ok", Schema.ref(:NotificationSettingsResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec update_settings(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update_settings(conn, %{"events" => events}) do
+    current_user = conn.assigns.current_user
+
+    with %Settings{} = settings <- Notifications.get_organisation_settings(current_user),
+         {:ok, settings} <-
+           Notifications.update_organisation_settings(settings, %{events: events}) do
+      render(conn, "settings.json", settings: settings)
+    end
+  end
+
+  @doc """
+  get events
+  """
+  swagger_path :get_events do
+    get("/notifications/events")
+    summary("get events")
+    description("get events")
+    response(200, "Ok", Schema.ref(:NotificationEventsResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec get_events(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def get_events(conn, _params) do
+    render(conn, "events.json", events: Template.list_notification_types())
   end
 end

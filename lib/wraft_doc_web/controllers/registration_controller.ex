@@ -78,7 +78,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
           AuthTokens.create_token_and_send_email(params["email"])
 
           Task.start(fn ->
-            Delivery.dispatch(user, :user_joins_wraft, %{
+            Delivery.dispatch(user, "registration.user_joins_wraft", %{
               user_name: user_name,
               channel: :user_notification,
               channel_id: user_id

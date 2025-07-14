@@ -48,9 +48,9 @@ defmodule WraftDocWeb.NotificationChannel do
   end
 
   @spec broad_cast(Notification.t(), User.t()) :: {:noreply, Phoenix.Socket.t()}
-  def broad_cast(%{event_type: event, message: message} = notification, user) do
+  def broad_cast(notification, user) do
     socket = create_socket(notification, user)
-    broadcast!(socket, Atom.to_string(event), %{body: message})
+    broadcast!(socket, "notification", %{body: notification})
     {:noreply, socket}
   end
 

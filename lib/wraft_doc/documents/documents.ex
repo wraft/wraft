@@ -2376,7 +2376,7 @@ defmodule WraftDoc.Documents do
 
     Enum.each(
       state.approvers,
-      &Delivery.dispatch(current_user, :state_update, %{
+      &Delivery.dispatch(current_user, "document.state_update", %{
         organisation_name: organisation_name,
         document_title: document_title,
         state_name: state.state,
@@ -2388,7 +2388,7 @@ defmodule WraftDoc.Documents do
 
     Enum.each(
       next_state.approvers,
-      &Delivery.dispatch(current_user, :pending_approvals, %{
+      &Delivery.dispatch(current_user, "document.pending_approvals", %{
         organisation_name: organisation_name,
         document_title: document_title,
         state_name: state.state,

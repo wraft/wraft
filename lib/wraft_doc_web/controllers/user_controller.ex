@@ -925,9 +925,9 @@ defmodule WraftDocWeb.Api.V1.UserController do
     with {:ok, %{organisations: %{name: organisation_name} = organisation}} <-
            Enterprise.join_org_by_invite(current_user, token) do
       Task.start(fn ->
-        Delivery.dispatch(current_user, :assign_role, %{
+        Delivery.dispatch(current_user, "organisation.join_organisation", %{
           organisation_name: organisation_name,
-          channel: :join_organisation,
+          channel: "organisation.join_organisation",
           channel_id: current_user.id
         })
       end)

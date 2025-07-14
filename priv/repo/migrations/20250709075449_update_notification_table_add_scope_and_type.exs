@@ -8,6 +8,7 @@ defmodule WraftDoc.Repo.Migrations.UpdateNotificationTableAddScopeAndType do
       add(:event_type, :string)
       add(:channel, :string)
       add(:channel_id, :string)
+      add(:metadata, :map, default: %{})
 
       remove(:actor_id)
 
@@ -21,6 +22,7 @@ defmodule WraftDoc.Repo.Migrations.UpdateNotificationTableAddScopeAndType do
       remove(:channel_id)
       remove(:channel)
       remove(:organisation_id)
+      remove(:metadata)
 
       add(:actor_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
     end

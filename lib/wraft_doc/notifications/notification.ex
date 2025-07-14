@@ -26,6 +26,8 @@ defmodule WraftDoc.Notifications.Notification do
 
     field(:channel_id, :string)
     field(:action, :map, default: %{})
+    field(:metadata, :map, default: %{})
+
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     timestamps()
