@@ -12,7 +12,6 @@ defmodule WraftDocWeb.Api.V1.NotificationView do
       message: notification.message,
       is_global: notification.is_global,
       action: notification.action,
-      # actor: render_one(notification.actor, UserView, "user.json"),
       inserted_at: notification.inserted_at,
       updated_at: notification.updated_at
     }
@@ -89,6 +88,12 @@ defmodule WraftDocWeb.Api.V1.NotificationView do
   def render("mark_as_read.json", %{info: info}) do
     %{
       info: info
+    }
+  end
+
+  def render("preferences.json", %{preferences: preferences}) do
+    %{
+      preferences: preferences
     }
   end
 end

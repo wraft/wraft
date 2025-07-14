@@ -7,6 +7,8 @@ defmodule WraftDocWeb.NotificationChannel do
   use Phoenix.Channel
   require Logger
 
+  alias WraftDoc.Account
+
   @impl true
 
   @doc """
@@ -91,12 +93,13 @@ defmodule WraftDocWeb.NotificationChannel do
        do: :ok
 
   # TODO: authorize user_roles
-  defp authorized?(:role, role_id, %{roles: roles} = _user) do
-    roles
-    |> Enum.any?(fn role -> role.id == role_id end)
+  defp authorized?(:role, role_id, %{id: user_id} = _user) do
+    role_id
+    |> Account.get_role_users()
+    |> Enum.member?(user_id)
     |> case do
       true -> :ok
-      false -> {:error, :unauthorized}
+      _ -> {:error, :unauthorized}
     end
   end
 

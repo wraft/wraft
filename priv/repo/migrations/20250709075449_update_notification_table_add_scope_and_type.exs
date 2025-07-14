@@ -2,7 +2,9 @@ defmodule WraftDoc.Repo.Migrations.UpdateNotificationTableAddScopeAndType do
   use Ecto.Migration
 
   def up do
-    alter table(:notification) do
+    rename(table("notification"), to: table("notifications"))
+
+    alter table(:notifications) do
       add(:event_type, :string)
       add(:channel, :string)
       add(:channel_id, :string)
@@ -14,7 +16,7 @@ defmodule WraftDoc.Repo.Migrations.UpdateNotificationTableAddScopeAndType do
   end
 
   def down do
-    alter table(:notification) do
+    alter table(:notifications) do
       remove(:event_type)
       remove(:channel_id)
       remove(:channel)
@@ -22,5 +24,7 @@ defmodule WraftDoc.Repo.Migrations.UpdateNotificationTableAddScopeAndType do
 
       add(:actor_id, references(:user, type: :uuid, column: :id, on_delete: :nilify_all))
     end
+
+    rename(table("notifications"), to: table("notification"))
   end
 end

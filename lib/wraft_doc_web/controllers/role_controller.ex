@@ -17,7 +17,7 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   alias WraftDoc.Account.UserRole
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.Notifications
+  alias WraftDoc.Notifications.Delivery
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -246,15 +246,16 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     current_user = conn.assigns[:current_user]
 
     with %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
-         %Role{organisation: %Organisation{name: organisation_name}} = role <-
+         %Role{organisation: %Organisation{name: organisation_name}, name: role_name} = _role <-
            Account.get_role_with_organisation(current_user, role_id),
          {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id),
-         %User{id: user_id} = _user <- Account.get_user(user_id) do
+         %User{id: user_id} = user <- Account.get_user(user_id) do
       Task.start(fn ->
-        Notifications.create_notification(user_id, %{
-          event_type: :assign_role,
-          role_name: role.name,
-          organisation_name: organisation_name
+        Delivery.dispatch(user, :assign_role, %{
+          role_name: role_name,
+          organisation_name: organisation_name,
+          channel: :user_notification,
+          channel_id: user_id
         })
       end)
 
@@ -288,12 +289,13 @@ defmodule WraftDocWeb.Api.V1.RoleController do
          true <- Account.allowed_to_unassign_role?(current_user, user_id, role_name),
          %UserRole{} = user_role <- Account.get_user_role(current_user, user_id, role_id),
          {:ok, _} <- Account.delete_user_role(user_role),
-         %User{id: user_id} = _user <- Account.get_user(user_id) do
+         %User{id: user_id} = user <- Account.get_user(user_id) do
       Task.start(fn ->
-        Notifications.create_notification(user_id, %{
-          event_type: :unassign_role,
+        Delivery.dispatch(user, :unassign_role, %{
           role_name: role_name,
-          organisation_name: organisation_name
+          organisation_name: organisation_name,
+          channel: :user_notification,
+          channel_id: user_id
         })
       end)
 

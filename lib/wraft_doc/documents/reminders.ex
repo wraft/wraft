@@ -12,7 +12,7 @@ defmodule WraftDoc.Documents.Reminders do
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Reminder
-  alias WraftDoc.Notifications
+  alias WraftDoc.Notifications.Delivery
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
 
@@ -292,19 +292,21 @@ defmodule WraftDoc.Documents.Reminders do
        ) do
     reminder
     |> get_recipients()
-    |> Enum.each(fn recipient ->
-      Notifications.create_notification(recipient.id, %{
-        event_type: :document_reminder,
+    |> Enum.each(
+      &Delivery.dispatch(&1, :document_reminder, %{
         instance_id: instance_id,
-        document_title: serialized["title"]
+        document_title: serialized["title"],
+        channel: :user_notification,
+        channel_id: &1.id
       })
-    end)
+    )
 
     Logger.info("In-app notifications sent for reminder #{reminder.id}")
 
     reminder
   end
 
+  # TODO remove this if unwanted.
   defp get_recipients(%{recipients: recipients})
        when is_list(recipients) and length(recipients) > 0 do
     recipients
