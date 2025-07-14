@@ -9,6 +9,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Enterprise.VendorContact
+  alias WraftDoc.Enterprise.VendorsContent
 
   def swagger_definitions do
     %{
@@ -481,7 +482,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   end
 
   swagger_path :connect_to_document do
-    put("/content/{id}/documents/{vendor_id}/vendor")
+    post("/contents/{id}/vendors/{vendor_id}")
     summary("Connect vendor to document")
     description("API to connect a vendor to a document instance")
 
@@ -498,19 +499,19 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   end
 
   @spec connect_to_document(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def connect_to_document(conn, %{"vendor_id" => vendor_id, "document_id" => document_id}) do
+  def connect_to_document(conn, %{"vendor_id" => vendor_id, "id" => document_id}) do
     current_user = conn.assigns.current_user
 
     with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, vendor_id),
          %Instance{} = instance <- Documents.get_instance(document_id, current_user),
-         {:ok, %Instance{} = updated_instance} <-
+         {:ok, %VendorsContent{} = vendors_content} <-
            Documents.connect_vendor_to_instance(instance, vendor) do
-      render(conn, "document_with_vendor.json", instance: updated_instance)
+      render(conn, "vendor_document.json", vendors_content: vendors_content)
     end
   end
 
   swagger_path :disconnect_from_document do
-    PhoenixSwagger.Path.delete("/content/{id}/documents/{vendor_id}/vendor")
+    PhoenixSwagger.Path.delete("/contents/{id}/vendors/{vendor_id}")
     summary("Disconnect vendor from document")
     description("API to disconnect a vendor from a document instance")
 
@@ -527,14 +528,16 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   end
 
   @spec disconnect_from_document(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def disconnect_from_document(conn, %{"vendor_id" => vendor_id, "document_id" => document_id}) do
+  def disconnect_from_document(conn, %{"vendor_id" => vendor_id, "id" => document_id}) do
     current_user = conn.assigns.current_user
 
-    with %Vendor{} = _vendor <- Enterprise.get_vendor(current_user, vendor_id),
+    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, vendor_id),
          %Instance{} = instance <- Documents.get_instance(document_id, current_user),
-         {:ok, %Instance{} = updated_instance} <-
-           Documents.disconnect_vendor_from_instance(instance) do
-      render(conn, "document_with_vendor.json", instance: updated_instance)
+         {:ok, %VendorsContent{} = _vendors_content} <-
+           Documents.disconnect_vendor_from_instance(instance, vendor) do
+      conn
+      |> put_status(:ok)
+      |> json(%{message: "Vendor disconnected from document"})
     end
   end
 end

@@ -1683,8 +1683,9 @@ defmodule WraftDoc.Enterprise do
   """
   @spec vendor_index(Organisation.t(), map()) :: Scrivener.Paginater.t()
   def vendor_index(%User{current_org_id: organisation_id}, params) do
-    query = from(v in Vendor, where: v.organisation_id == ^organisation_id)
-    Repo.paginate(query, params)
+    Vendor
+    |> where([v], v.organisation_id == ^organisation_id)
+    |> Repo.paginate(params)
   end
 
   def vendor_index(_, _), do: nil
@@ -1941,14 +1942,11 @@ defmodule WraftDoc.Enterprise do
   """
   @spec get_vendor_contact(User.t(), Ecto.UUID.t()) :: VendorContact.t() | {:error, :invalid_id}
   def get_vendor_contact(%User{current_org_id: org_id}, id) do
-    query =
-      from(vc in VendorContact,
-        join: v in Vendor,
-        on: vc.vendor_id == v.id,
-        where: vc.id == ^id and v.organisation_id == ^org_id
-      )
-
-    case Repo.one(query) do
+    VendorContact
+    |> join(:inner, [vc], v in Vendor, on: vc.vendor_id == v.id)
+    |> where([vc, v], vc.id == ^id and v.organisation_id == ^org_id)
+    |> Repo.one()
+    |> case do
       %VendorContact{} = vendor_contact -> vendor_contact
       _ -> {:error, :invalid_id}
     end
@@ -1984,15 +1982,11 @@ defmodule WraftDoc.Enterprise do
   """
   @spec vendor_contacts_index(User.t(), Ecto.UUID.t(), map) :: Scrivener.Page.t()
   def vendor_contacts_index(%User{current_org_id: org_id}, vendor_id, params) do
-    query =
-      from(vc in VendorContact,
-        join: v in Vendor,
-        on: vc.vendor_id == v.id,
-        where: vc.vendor_id == ^vendor_id and v.organisation_id == ^org_id,
-        preload: [:vendor, :creator]
-      )
-
-    Repo.paginate(query, params)
+    VendorContact
+    |> join(:inner, [vc], v in Vendor, on: vc.vendor_id == v.id)
+    |> where([vc, v], v.id == ^vendor_id and v.organisation_id == ^org_id)
+    |> preload([vc, v], [:vendor, :creator])
+    |> Repo.paginate(params)
   end
 
   @doc """
