@@ -332,10 +332,6 @@ defmodule WraftDocWeb.Api.V1.VendorController do
     end
   end
 
-  # ===============================
-  # VENDOR CONTACT CRUD OPERATIONS
-  # ===============================
-
   swagger_path :create_contact do
     post("/vendors/{vendor_id}/contacts")
     summary("Create vendor contact")

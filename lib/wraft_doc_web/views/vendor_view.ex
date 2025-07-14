@@ -75,7 +75,7 @@ defmodule WraftDocWeb.Api.V1.VendorView do
         total_entries: total_entries
       }) do
     %{
-      vendor_contacts:
+      contacts:
         render_many(vendor_contacts, VendorView, "vendor_contact.json", as: :vendor_contact),
       page_number: page_number,
       total_pages: total_pages,
