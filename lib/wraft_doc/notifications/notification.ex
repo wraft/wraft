@@ -7,14 +7,20 @@ defmodule WraftDoc.Notifications.Notification do
   @derive {Jason.Encoder,
            only: [:event_type, :message, :channel, :channel_id, :action, :organisation_id]}
   @fields [:event_type, :message, :channel_id, :channel, :action, :organisation_id]
+  @channel_values [
+    :user_notification,
+    :role_group_notification,
+    :organisation_notification,
+    :announcement
+  ]
 
-  schema "notification" do
+  schema "notifications" do
     field(:event_type, WraftDoc.EctoType.AtomType)
     field(:message, :string)
     field(:is_global, :boolean, default: false)
 
     field(:channel, Ecto.Enum,
-      values: [:user_notification, :role_group_notification, :organisation_notification],
+      values: @channel_values,
       default: :user_notification
     )
 

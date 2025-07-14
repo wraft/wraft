@@ -15,7 +15,7 @@ defmodule WraftDocWeb.Api.V1.UserController do
   alias WraftDoc.AuthTokens
   alias WraftDoc.AuthTokens.AuthToken
   alias WraftDoc.Enterprise
-  alias WraftDoc.Notifications
+  alias WraftDoc.Notifications.Delivery
   alias WraftDocWeb.Guardian
 
   action_fallback(WraftDocWeb.FallbackController)
@@ -922,13 +922,14 @@ defmodule WraftDocWeb.Api.V1.UserController do
   def join_organisation(conn, %{"token" => token} = _params) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, %{organisations: organisation}} <-
+    with {:ok, %{organisations: %{name: organisation_name} = organisation}} <-
            Enterprise.join_org_by_invite(current_user, token) do
       Task.start(fn ->
-        Notifications.create_notification(
-          current_user.id,
-          %{event_type: :join_organisation, organisation_name: organisation.name}
-        )
+        Delivery.dispatch(current_user, :assign_role, %{
+          organisation_name: organisation_name,
+          channel: :join_organisation,
+          channel_id: current_user.id
+        })
       end)
 
       render(conn, "join_org.json", organisation: organisation)

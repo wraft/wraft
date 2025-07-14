@@ -13,7 +13,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   alias WraftDoc.DataTemplates
   alias WraftDoc.Documents
   alias WraftDoc.Enterprise
-  alias WraftDoc.Notifications
+  alias WraftDoc.Notifications.Delivery
   alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDoc.Repo
 
@@ -110,13 +110,16 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification(trigger.creator_id, %{
-        event_type: :form_mapping_not_complete
+      trigger.creator_id
+      |> Account.get_user()
+      |> Delivery.dispatch(:form_mapping_not_complete, %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id
       })
-
-      Logger.error("Form mapping not complete. Pipeline execution failed.")
-      trigger
     end)
+
+    Logger.error("Form mapping not complete. Pipeline execution failed.")
+    trigger
   end
 
   defp handle_exceptions(
@@ -133,7 +136,12 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification(trigger.creator_id, %{event_type: :pipeline_not_found})
+      trigger.creator_id
+      |> Account.get_user()
+      |> Delivery.dispatch(:pipeline_not_found, %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id
+      })
     end)
 
     Logger.error("Pipeline not found. Pipeline execution failed.")
@@ -154,8 +162,11 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification(trigger.creator_id, %{
-        event_type: :pipeline_instance_failed
+      trigger.creator_id
+      |> Account.get_user()
+      |> Delivery.dispatch(:pipeline_instance_failed, %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id
       })
     end)
 
@@ -177,8 +188,11 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification(trigger.creator_id, %{
-        event_type: :pipeline_downLoad_error
+      trigger.creator_id
+      |> Account.get_user()
+      |> Delivery.dispatch(:pipeline_downLoad_error, %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id
       })
     end)
 
@@ -208,7 +222,12 @@ defmodule WraftDoc.Workers.BulkWorker do
     trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
 
     Task.start(fn ->
-      Notifications.create_notification(trigger.creator_id, %{event_type: :pipeline_build_success})
+      trigger.creator_id
+      |> Account.get_user()
+      |> Delivery.dispatch(:pipeline_build_success, %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id
+      })
     end)
 
     Logger.info("Pipeline completed succesfully.!")
@@ -229,7 +248,12 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification(trigger.creator_id, %{event_type: :pipeline_build_failed})
+      trigger.creator_id
+      |> Account.get_user()
+      |> Delivery.dispatch(:pipeline_build_failed, %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id
+      })
     end)
 
     Logger.error("Pipeline partially completed.! Some builds failed.!")

@@ -323,4 +323,24 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
     count = Notifications.unread_notification_count(current_user)
     render(conn, "count.json", count: count)
   end
+
+  @doc """
+  get preferences
+  """
+  swagger_path :get_preferences do
+    get("/notifications/preferences")
+    summary("get preferences")
+    description("get preferences")
+    response(200, "Ok", Schema.ref(:NotificationPreferencesResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec get_preferences(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def get_preferences(conn, _params) do
+    current_user = conn.assigns.current_user
+
+    with preferences <- Notifications.get_organisation_settings(current_user) do
+      render(conn, "preferences.json", preferences: preferences)
+    end
+  end
 end

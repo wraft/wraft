@@ -7,11 +7,10 @@ defmodule WraftDoc.Notifications do
   alias WraftDoc.Account
   alias WraftDoc.Account.User
   alias WraftDoc.Notifications.Notification
-  alias WraftDoc.Notifications.NotificationMessages
+  alias WraftDoc.Notifications.Settings
   alias WraftDoc.Notifications.UserNotification
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
-  alias WraftDocWeb.NotificationChannel
 
   @doc """
   Creates notifications for a list of users based on given parameters.
@@ -35,25 +34,15 @@ defmodule WraftDoc.Notifications do
                        creation or associated transaction fails.
   """
   def create_notification(
-        %{id: user_id, current_org_id: current_org_id} = current_user,
-        %{event_type: event_type} = params
+        %{current_org_id: current_org_id} = _current_user,
+        params
       ) do
     params
     |> Map.merge(%{
-      actor_id: user_id,
-      message: NotificationMessages.message(event_type, params),
       organisation_id: current_org_id
     })
     |> then(&Notification.changeset(%Notification{}, &1))
     |> Repo.insert()
-    |> case do
-      {:ok, notification} ->
-        NotificationChannel.broad_cast(notification, current_user)
-        {:ok, notification}
-
-      {:error, _, reason, _} ->
-        {:error, reason}
-    end
   end
 
   @doc """
@@ -61,7 +50,7 @@ defmodule WraftDoc.Notifications do
   ## Parameters
   * `current_user`- user struct
   """
-  @spec list_unread_notifications(User.t(), map()) :: map()
+  # @spec list_unread_notifications(User.t(), map()) :: map()
   def list_unread_notifications(%User{id: user_id, current_org_id: current_org_id} = user, params) do
     Notification
     |> where(
@@ -78,6 +67,70 @@ defmodule WraftDoc.Notifications do
     |> where([n, un], is_nil(un.id))
     |> order_by([n], desc: n.inserted_at)
     |> Repo.paginate(params)
+  end
+
+  def list_notifications(%User{} = user, params) do
+    status = Map.get(params, "status", "unread")
+
+    case status do
+      "unread" ->
+        user
+        |> unread_from_user_notifications()
+        |> union_all(^unread_from_notifications(user))
+        |> order_by([un], desc: un.inserted_at)
+        |> Repo.paginate(params)
+        |> Repo.preload([:notification, :organisation, :recipient])
+
+      "read" ->
+        UserNotification
+        |> where([un], un.recipient_id == ^user.id and un.status == :read)
+        |> order_by([un], desc: un.inserted_at)
+        |> preload([:notification, :organisation, :recipient])
+        |> Repo.paginate(params)
+
+      _ ->
+        nil
+    end
+  end
+
+  defp unread_from_user_notifications(%User{} = user) do
+    from(un in UserNotification,
+      where: un.recipient_id == ^user.id and un.status == :unread,
+      select: %{
+        id: un.id,
+        status: un.status,
+        seen_at: un.seen_at,
+        organisation_id: un.organisation_id,
+        recipient_id: un.recipient_id,
+        notification_id: un.notification_id,
+        inserted_at: un.inserted_at,
+        updated_at: un.updated_at
+      }
+    )
+  end
+
+  defp unread_from_notifications(%User{id: user_id, current_org_id: org_id} = user) do
+    from(n in Notification,
+      where:
+        n.organisation_id == ^org_id and
+          (n.channel == :organisation_notification or
+             (n.channel == :user_notification and n.channel_id == ^user_id) or
+             (n.channel == :role_group_notification and
+                n.channel_id in ^Account.get_user_role_ids(user))),
+      left_join: un in UserNotification,
+      on: un.notification_id == n.id and un.recipient_id == ^user_id,
+      where: is_nil(un.id),
+      select: %{
+        id: fragment("NULL"),
+        status: ^:unread,
+        seen_at: nil,
+        organisation_id: n.organisation_id,
+        recipient_id: ^user_id,
+        notification_id: n.id,
+        inserted_at: n.inserted_at,
+        updated_at: n.updated_at
+      }
+    )
   end
 
   @doc """
@@ -195,26 +248,13 @@ defmodule WraftDoc.Notifications do
   def get_notification(%User{current_org_id: current_org_id} = _current_user, notification_id),
     do: Repo.get_by(Notification, id: notification_id, organisation_id: current_org_id)
 
-  # def dispatch(:both, notification, user) do
-  #   dispatch(:email, notification, user)
-  #   dispatch(:in_app, notification, user)
-  # end
-
-  # def dispatch(:email, notification, user) do
-  #   email_notification(notification, user)
-  # end
-
-  # def dispatch(:in_app, notification, user) do
-  #   # Implementation for in-app dispatcher
-  # end
-
   def email_notification(
-        notification,
+        %{message: message} = _notification,
         %{name: name, email: email} = _recipient
       ) do
     %{
       user_name: name,
-      notification_message: notification,
+      notification_message: message,
       email: email
     }
     |> EmailWorker.new(
@@ -224,5 +264,8 @@ defmodule WraftDoc.Notifications do
     |> Oban.insert()
   end
 
-  def email_notification(_, _, _, _), do: nil
+  def email_notification(_, _), do: nil
+
+  def get_organisation_settings(%User{current_org_id: current_org_id} = _current_user),
+    do: Repo.get_by(Settings, organisation_id: current_org_id)
 end

@@ -256,6 +256,7 @@ defmodule WraftDocWeb.Router do
         get("/count", NotificationController, :count)
         put("/read/:id", NotificationController, :read)
         put("/read_all", NotificationController, :read_all)
+        get("/preferences", NotificationController, :get_preferences)
       end
 
       # Theme

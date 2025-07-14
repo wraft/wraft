@@ -10,7 +10,7 @@ defmodule WraftDoc.Comments do
   alias WraftDoc.Comments.Comment
   alias WraftDoc.Documents
   alias WraftDoc.Enterprise
-  alias WraftDoc.Notifications
+  alias WraftDoc.Notifications.Delivery
   alias WraftDoc.Repo
 
   @doc """
@@ -269,34 +269,18 @@ defmodule WraftDoc.Comments do
   """
   @spec comment_notification(Ecto.UUID.t(), Ecto.UUID.t(), Ecto.UUID.t()) ::
           [Notification.t()]
-  def comment_notification(user_id, organisation_id, document_id) do
+  def comment_notification(%{id: user_id} = current_user, organisation_id, document_id) do
     document = Documents.get_instance(document_id, %{current_org_id: organisation_id})
     organisation = Enterprise.get_organisation(organisation_id)
 
     document.allowed_users
     |> List.delete(user_id)
     |> Enum.map(
-      &Notifications.create_notification(&1, %{
-        event_type: :add_comment,
+      &Delivery.dispatch(current_user, :add_comment, %{
         organisation_name: organisation.name,
-        document_title: document.serialized["title"]
-      })
-    )
-  end
-
-  def comment_mention_notification(
-        users,
-        %{name: mentioned_by, current_org_id: organisation_id},
-        document_id
-      ) do
-    document = Documents.get_instance(document_id, %{current_org_id: organisation_id})
-
-    Enum.map(
-      users,
-      &Notifications.create_notification(&1, %{
-        event_type: :mention_comment,
-        mentioned_by: mentioned_by,
-        document_title: document.serialized["title"]
+        document_title: document.serialized["title"],
+        channel: :user_notification,
+        channel_id: &1
       })
     )
   end

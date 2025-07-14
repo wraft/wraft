@@ -7,7 +7,7 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
   alias WraftDoc.Account
   alias WraftDoc.Account.User
   alias WraftDoc.AuthTokens
-  alias WraftDoc.Notifications
+  alias WraftDoc.Notifications.Delivery
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -70,16 +70,18 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
   def create(conn, params) do
     case FunWithFlags.enabled?(:waiting_list_registration_control, for: %{email: params["email"]}) do
       true ->
-        with {:ok, %{organisations: organisations, user: %User{id: user_id} = user}} <-
+        with {:ok,
+              %{organisations: organisations, user: %User{id: user_id, name: user_name} = user}} <-
                Account.registration(params),
              %{user: user, tokens: [access_token: access_token, refresh_token: refresh_token]} <-
                Account.authenticate(%{user: user, password: params["password"]}) do
           AuthTokens.create_token_and_send_email(params["email"])
 
           Task.start(fn ->
-            Notifications.create_notification(user_id, %{
-              event_type: :user_joins_wraft,
-              user_name: user.name
+            Delivery.dispatch(user, :user_joins_wraft, %{
+              user_name: user_name,
+              channel: :user_notification,
+              channel_id: user_id
             })
           end)
 
