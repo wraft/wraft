@@ -37,7 +37,6 @@ defmodule WraftDoc.Documents.Instance do
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
-    belongs_to(:vendor, WraftDoc.Enterprise.Vendor)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     has_many(:content_collaboration, WraftDoc.Documents.ContentCollaboration,
@@ -47,6 +46,7 @@ defmodule WraftDoc.Documents.Instance do
     has_many(:instance_approval_systems, WraftDoc.Documents.InstanceApprovalSystem)
     has_many(:build_histories, WraftDoc.Documents.Instance.History, foreign_key: :content_id)
     has_many(:versions, WraftDoc.Documents.Instance.Version, foreign_key: :content_id)
+    many_to_many(:vendors, WraftDoc.Enterprise.Vendor, join_through: "vendors_contents")
 
     embeds_one(:doc_settings, DocumentSettings)
 
@@ -63,7 +63,6 @@ defmodule WraftDoc.Documents.Instance do
       :content_type_id,
       :type,
       :creator_id,
-      :vendor_id,
       :allowed_users,
       :organisation_id
     ])
@@ -143,7 +142,6 @@ defmodule WraftDoc.Documents.Instance do
         %{name: "creator_id", type: "string", facet: true},
         %{name: "content_type_id", type: "string", facet: true},
         %{name: "state_id", type: "string", facet: true},
-        %{name: "vendor_id", type: "string", facet: true},
         %{name: "inserted_at", type: "int64", facet: false},
         %{name: "updated_at", type: "int64", facet: false},
         %{name: "organisation_id", type: "string", facet: true}

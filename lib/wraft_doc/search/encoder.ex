@@ -43,7 +43,6 @@ defimpl WraftDoc.Search.Encoder, for: WraftDoc.Documents.Instance do
       creator_id: to_string(instance.creator_id),
       content_type_id: to_string(instance.content_type_id),
       state_id: to_string(instance.state_id),
-      vendor_id: to_string(instance.vendor_id),
       inserted_at: instance.inserted_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix(),
       updated_at: instance.updated_at |> DateTime.from_naive!("Etc/UTC") |> DateTime.to_unix()
     }

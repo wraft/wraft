@@ -31,6 +31,7 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Enterprise.VendorsContent
   alias WraftDoc.Fields.Field
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
@@ -131,7 +132,6 @@ defmodule WraftDoc.Documents do
           {:content_type, [layout: [:assets, :frame, :engine, :organisation]]},
           {:versions, versions_preload_query},
           :state,
-          :vendor,
           :instance_approval_systems
         ])
 
@@ -213,7 +213,6 @@ defmodule WraftDoc.Documents do
         Repo.preload(content, [
           :content_type,
           :state,
-          :vendor,
           {:instance_approval_systems, :approver}
         ])
 
@@ -542,7 +541,6 @@ defmodule WraftDoc.Documents do
     |> preload([
       {:content_type, [flow: :states]},
       :state,
-      :vendor,
       {:instance_approval_systems, :approver},
       {:creator, :profile}
     ])
@@ -575,7 +573,6 @@ defmodule WraftDoc.Documents do
     |> preload([
       :content_type,
       :state,
-      :vendor,
       {:instance_approval_systems, :approver},
       {:creator, :profile}
     ])
@@ -663,7 +660,6 @@ defmodule WraftDoc.Documents do
         preload: [
           :content_type,
           :state,
-          :vendor,
           {:instance_approval_systems, :approver},
           creator: [:profile]
         ]
@@ -2368,14 +2364,14 @@ defmodule WraftDoc.Documents do
   Connect a vendor to a document instance.
   """
   @spec connect_vendor_to_instance(Instance.t(), Vendor.t()) ::
-          {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def connect_vendor_to_instance(%Instance{} = instance, %Vendor{id: vendor_id}) do
-    instance
-    |> Instance.changeset(%{vendor_id: vendor_id})
-    |> Repo.update()
+          {:ok, VendorsContent.t()} | {:error, Ecto.Changeset.t()}
+  def connect_vendor_to_instance(%Instance{id: document_id}, %Vendor{id: vendor_id}) do
+    %VendorsContent{}
+    |> VendorsContent.changeset(%{content_id: document_id, vendor_id: vendor_id})
+    |> Repo.insert()
     |> case do
-      {:ok, updated_instance} ->
-        {:ok, Repo.preload(updated_instance, [:vendor, :content_type, :state, :creator])}
+      {:ok, vendors_content} ->
+        {:ok, Repo.preload(vendors_content, [:vendor, :content])}
 
       {:error, changeset} ->
         {:error, changeset}
@@ -2385,18 +2381,17 @@ defmodule WraftDoc.Documents do
   @doc """
   Disconnect a vendor from a document instance.
   """
-  @spec disconnect_vendor_from_instance(Instance.t()) ::
-          {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def disconnect_vendor_from_instance(%Instance{} = instance) do
-    instance
-    |> Instance.changeset(%{vendor_id: nil})
-    |> Repo.update()
+  @spec disconnect_vendor_from_instance(Instance.t(), Vendor.t()) ::
+          {:ok, VendorsContent.t()} | {:error, Ecto.Changeset.t()}
+  def disconnect_vendor_from_instance(%Instance{id: document_id}, %Vendor{id: vendor_id}) do
+    VendorsContent
+    |> Repo.get_by(content_id: document_id, vendor_id: vendor_id)
     |> case do
-      {:ok, updated_instance} ->
-        {:ok, Repo.preload(updated_instance, [:vendor, :content_type, :state, :creator])}
+      nil ->
+        {:error, "Vendor not found for this document"}
 
-      {:error, changeset} ->
-        {:error, changeset}
+      vendors_content ->
+        Repo.delete(vendors_content)
     end
   end
 

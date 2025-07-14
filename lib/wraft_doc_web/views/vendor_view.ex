@@ -57,10 +57,6 @@ defmodule WraftDocWeb.Api.V1.VendorView do
     }
   end
 
-  # ===============================
-  # VENDOR CONTACT VIEWS
-  # ===============================
-
   def render("vendor_contact.json", %{vendor_contact: vendor_contact}) do
     %{
       id: vendor_contact.id,
@@ -89,9 +85,10 @@ defmodule WraftDocWeb.Api.V1.VendorView do
     }
   end
 
-  def render("document_with_vendor.json", %{instance: instance}) do
+  def render("vendor_document.json", %{vendors_content: vendors_content}) do
     %{
-      instance: render_one(instance, InstanceView, "show.json", as: :instance)
+      vendor: render_one(vendors_content.vendor, VendorView, "vendor.json", as: :vendor),
+      document: render_one(vendors_content.content, InstanceView, "instance.json", as: :instance)
     }
   end
 end

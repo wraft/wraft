@@ -4,10 +4,10 @@ defmodule WraftDoc.Enterprise.VendorsContent do
   """
   use WraftDoc.Schema
 
-  @fields [:vendors_id, :content_id]
+  @fields [:vendor_id, :content_id]
 
   schema "vendors_contents" do
-    belongs_to(:vendors, WraftDoc.Enterprise.Vendor)
+    belongs_to(:vendor, WraftDoc.Enterprise.Vendor)
     belongs_to(:content, WraftDoc.Documents.Instance)
 
     timestamps()
@@ -18,7 +18,7 @@ defmodule WraftDoc.Enterprise.VendorsContent do
     |> cast(params, @fields)
     |> validate_required(@fields)
     |> unique_constraint(@fields, message: "already exist")
-    |> foreign_key_constraint(:vendors_id, message: "Please enter a valid vendor")
+    |> foreign_key_constraint(:vendor_id, message: "Please enter a valid vendor")
     |> foreign_key_constraint(:contents_id, message: "Please enter a valid content")
   end
 end
