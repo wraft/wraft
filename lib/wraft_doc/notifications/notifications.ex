@@ -50,36 +50,18 @@ defmodule WraftDoc.Notifications do
   ## Parameters
   * `current_user`- user struct
   """
-  # @spec list_unread_notifications(User.t(), map()) :: map()
-  def list_unread_notifications(%User{id: user_id, current_org_id: current_org_id} = user, params) do
-    Notification
-    |> where(
-      [n],
-      n.organisation_id == ^current_org_id and
-        (n.channel == :organisation_notification or
-           (n.channel == :user_notification and n.channel_id == ^user_id) or
-           (n.channel == :role_group_notification and
-              n.channel_id in ^Account.get_user_role_ids(user)))
-    )
-    |> join(:left, [n], un in UserNotification,
-      on: un.notification_id == n.id and un.recipient_id == ^user_id
-    )
-    |> where([n, un], is_nil(un.id))
-    |> order_by([n], desc: n.inserted_at)
-    |> Repo.paginate(params)
-  end
-
+  @spec list_notifications(User.t(), map()) :: map()
   def list_notifications(%User{} = user, params) do
-    status = Map.get(params, "status", "unread")
-
-    case status do
+    params
+    |> Map.get("status", "unread")
+    |> case do
       "unread" ->
         user
         |> unread_from_user_notifications()
         |> union_all(^unread_from_notifications(user))
-        |> order_by([un], desc: un.inserted_at)
+        |> order_by([un], desc: fragment("?", 7))
         |> Repo.paginate(params)
-        |> Repo.preload([:notification, :organisation, :recipient])
+        |> preload_associations()
 
       "read" ->
         UserNotification
@@ -87,9 +69,6 @@ defmodule WraftDoc.Notifications do
         |> order_by([un], desc: un.inserted_at)
         |> preload([:notification, :organisation, :recipient])
         |> Repo.paginate(params)
-
-      _ ->
-        nil
     end
   end
 
@@ -121,11 +100,11 @@ defmodule WraftDoc.Notifications do
       on: un.notification_id == n.id and un.recipient_id == ^user_id,
       where: is_nil(un.id),
       select: %{
-        id: fragment("NULL"),
-        status: ^:unread,
-        seen_at: nil,
+        id: fragment("NULL::uuid"),
+        status: fragment("'unread'::text"),
+        seen_at: fragment("NULL::timestamp"),
         organisation_id: n.organisation_id,
-        recipient_id: ^user_id,
+        recipient_id: type(^user_id, :binary_id),
         notification_id: n.id,
         inserted_at: n.inserted_at,
         updated_at: n.updated_at
@@ -133,20 +112,15 @@ defmodule WraftDoc.Notifications do
     )
   end
 
-  @doc """
-  List read notifications for an user
-  ## Parameters
-  * `current_user`- user struct
-  """
-  @spec list_read_notifications(User.t(), map()) :: map()
-  def list_read_notifications(%User{id: user_id, current_org_id: current_org_id} = _user, params) do
-    UserNotification
-    |> where([un], un.organisation_id == ^current_org_id)
-    |> where([un], un.recipient_id == ^user_id)
-    |> where([un], un.status == :read)
-    |> order_by([un], desc: un.inserted_at)
-    |> preload([:notification, :organisation, :recipient])
-    |> Repo.paginate(params)
+  defp preload_associations(%Scrivener.Page{entries: entries} = result) do
+    preloaded_entries =
+      entries
+      |> Enum.map(fn user_notification_map ->
+        struct(UserNotification, user_notification_map)
+      end)
+      |> Repo.preload([:recipient, :organisation, notification: [:organisation]])
+
+    %Scrivener.Page{result | entries: preloaded_entries}
   end
 
   @doc """
@@ -156,13 +130,14 @@ defmodule WraftDoc.Notifications do
   """
   @spec read_notification(User.t(), Notification.t()) ::
           {:ok, UserNotification.t()} | {:error, Ecto.Changeset.t()}
-  def read_notification(user, notification) do
+  def read_notification(%{current_org_id: current_org_id} = user, notification) do
     %UserNotification{}
     |> UserNotification.changeset(%{
       seen_at: Timex.now(),
       status: "read",
       notification_id: notification.id,
-      recipient_id: user.id
+      recipient_id: user.id,
+      organisation_id: current_org_id
     })
     |> Repo.insert()
   end

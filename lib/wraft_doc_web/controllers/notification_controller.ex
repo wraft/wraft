@@ -211,44 +211,8 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Notifications.list_unread_notifications(current_user, params) do
+         } <- Notifications.list_notifications(current_user, params) do
       render(conn, "index.json",
-        notifications: notifications,
-        page_number: page_number,
-        total_pages: total_pages,
-        total_entries: total_entries
-      )
-    end
-  end
-
-  @doc """
-  List read notifications for a user within the organisation
-  """
-  swagger_path :index_read do
-    get("/notifications/read")
-    summary("list read notifications for a user within the organisation")
-    description("list read notifications for a user within the organisation")
-
-    parameters do
-      page(:query, :integer, "page number", required: false)
-      per_page(:query, :integer, "number of notifications per page", required: false)
-    end
-
-    response(200, "Ok", Schema.ref(:NotificationIndexResponse))
-    response(401, "Unauthorized", Schema.ref(:Error))
-  end
-
-  @spec index_read(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def index_read(conn, params) do
-    current_user = conn.assigns.current_user
-
-    with %{
-           entries: notifications,
-           page_number: page_number,
-           total_pages: total_pages,
-           total_entries: total_entries
-         } <- Notifications.list_read_notifications(current_user, params) do
-      render(conn, "index_read.json",
         notifications: notifications,
         page_number: page_number,
         total_pages: total_pages,
