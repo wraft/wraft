@@ -114,7 +114,13 @@ defmodule WraftDoc.Workers.BulkWorker do
       |> Account.get_user()
       |> Delivery.dispatch("pipeline.form_mapping_not_complete", %{
         channel: :user_notification,
-        channel_id: trigger.creator_id
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id,
+          stage_id: stage.id
+        }
       })
     end)
 
@@ -140,7 +146,13 @@ defmodule WraftDoc.Workers.BulkWorker do
       |> Account.get_user()
       |> Delivery.dispatch("pipeline.not_found", %{
         channel: :user_notification,
-        channel_id: trigger.creator_id
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id,
+          stage_id: stage.id
+        }
       })
     end)
 
@@ -166,7 +178,13 @@ defmodule WraftDoc.Workers.BulkWorker do
       |> Account.get_user()
       |> Delivery.dispatch("pipeline.instance_failed", %{
         channel: :user_notification,
-        channel_id: trigger.creator_id
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id,
+          stage_id: stage.id
+        }
       })
     end)
 
@@ -192,7 +210,13 @@ defmodule WraftDoc.Workers.BulkWorker do
       |> Account.get_user()
       |> Delivery.dispatch("pipeline.download_error", %{
         channel: :user_notification,
-        channel_id: trigger.creator_id
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id,
+          stage_id: stage.id
+        }
       })
     end)
 
@@ -226,7 +250,12 @@ defmodule WraftDoc.Workers.BulkWorker do
       |> Account.get_user()
       |> Delivery.dispatch("pipeline.build_success", %{
         channel: :user_notification,
-        channel_id: trigger.creator_id
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id
+        }
       })
     end)
 
@@ -252,7 +281,12 @@ defmodule WraftDoc.Workers.BulkWorker do
       |> Account.get_user()
       |> Delivery.dispatch("pipeline.build_failed", %{
         channel: :user_notification,
-        channel_id: trigger.creator_id
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id
+        }
       })
     end)
 

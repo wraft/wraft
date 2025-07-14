@@ -167,12 +167,13 @@ defmodule WraftDocWeb.Api.V1.CommentController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Comment{master_id: master_id, organisation_id: organisation_id} = comment <-
+    with %Comment{id: comment_id, master_id: master_id} =
+           comment <-
            Comments.create_comment(current_user, params) do
       Task.start(fn ->
         Comments.comment_notification(
           current_user,
-          organisation_id,
+          comment_id,
           master_id
         )
       end)

@@ -246,7 +246,8 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     current_user = conn.assigns[:current_user]
 
     with %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
-         %Role{organisation: %Organisation{name: organisation_name}, name: role_name} = _role <-
+         %Role{id: role_id, organisation: %Organisation{name: organisation_name}, name: role_name} =
+           _role <-
            Account.get_role_with_organisation(current_user, role_id),
          {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id),
          %User{id: user_id} = user <- Account.get_user(user_id) do
@@ -255,7 +256,8 @@ defmodule WraftDocWeb.Api.V1.RoleController do
           role_name: role_name,
           organisation_name: organisation_name,
           channel: :user_notification,
-          channel_id: user_id
+          channel_id: user_id,
+          metadata: %{user_id: user_id, type: "role", role_id: role_id, role_name: role_name}
         })
       end)
 
@@ -284,7 +286,8 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   def unassign_role(conn, %{"user_id" => user_id, "role_id" => role_id} = _params) do
     current_user = conn.assigns[:current_user]
 
-    with %Role{name: role_name, organisation: %Organisation{name: organisation_name}} = _role <-
+    with %Role{id: role_id, name: role_name, organisation: %Organisation{name: organisation_name}} =
+           _role <-
            Account.get_role_with_organisation(current_user, role_id),
          true <- Account.allowed_to_unassign_role?(current_user, user_id, role_name),
          %UserRole{} = user_role <- Account.get_user_role(current_user, user_id, role_id),
@@ -295,7 +298,8 @@ defmodule WraftDocWeb.Api.V1.RoleController do
           role_name: role_name,
           organisation_name: organisation_name,
           channel: :user_notification,
-          channel_id: user_id
+          channel_id: user_id,
+          metadata: %{user_id: user_id, type: "role", role_id: role_id, role_name: role_name}
         })
       end)
 

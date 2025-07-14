@@ -81,7 +81,8 @@ defmodule WraftDocWeb.Api.V1.RegistrationController do
             Delivery.dispatch(user, "registration.user_joins_wraft", %{
               user_name: user_name,
               channel: :user_notification,
-              channel_id: user_id
+              channel_id: user_id,
+              metadata: %{user_id: user_id, type: "registration"}
             })
           end)
 
