@@ -2367,8 +2367,8 @@ defmodule WraftDoc.Documents do
   Notification for the document flow.
   """
   def document_notification(
-        %User{name: approver_name} = current_user,
-        %Instance{serialized: %{"title" => document_title}} = _instance,
+        %User{id: user_id, name: approver_name} = current_user,
+        %Instance{id: instance_id, serialized: %{"title" => document_title}} = _instance,
         %Organisation{name: organisation_name} = _organisation,
         state
       ) do
@@ -2382,7 +2382,8 @@ defmodule WraftDoc.Documents do
         state_name: state.state,
         approver_name: approver_name,
         channel: :user_notification,
-        channel_id: &1
+        channel_id: &1,
+        metadata: %{user_id: user_id, document_id: instance_id}
       })
     )
 
@@ -2393,7 +2394,8 @@ defmodule WraftDoc.Documents do
         document_title: document_title,
         state_name: state.state,
         channel: :user_notification,
-        channel_id: &1
+        channel_id: &1,
+        metadata: %{user_id: user_id, document_id: instance_id}
       })
     )
   end

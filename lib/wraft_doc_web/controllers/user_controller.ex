@@ -928,7 +928,11 @@ defmodule WraftDocWeb.Api.V1.UserController do
         Delivery.dispatch(current_user, "organisation.join_organisation", %{
           organisation_name: organisation_name,
           channel: "organisation.join_organisation",
-          channel_id: current_user.id
+          channel_id: current_user.id,
+          metadata: %{
+            user_id: current_user.id,
+            type: "join"
+          }
         })
       end)
 

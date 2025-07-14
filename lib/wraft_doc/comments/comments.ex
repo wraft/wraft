@@ -269,7 +269,11 @@ defmodule WraftDoc.Comments do
   """
   @spec comment_notification(Ecto.UUID.t(), Ecto.UUID.t(), Ecto.UUID.t()) ::
           [Notification.t()]
-  def comment_notification(%{id: user_id} = current_user, organisation_id, document_id) do
+  def comment_notification(
+        %{id: user_id, current_org_id: organisation_id} = current_user,
+        comment_id,
+        document_id
+      ) do
     document = Documents.get_instance(document_id, %{current_org_id: organisation_id})
     organisation = Enterprise.get_organisation(organisation_id)
 
@@ -280,7 +284,12 @@ defmodule WraftDoc.Comments do
         organisation_name: organisation.name,
         document_title: document.serialized["title"],
         channel: :user_notification,
-        channel_id: &1
+        channel_id: &1,
+        metadata: %{
+          document_id: document_id,
+          comment_id: comment_id,
+          type: :comment
+        }
       })
     )
   end
