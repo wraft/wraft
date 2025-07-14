@@ -728,7 +728,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
 
     parameters do
       id(:path, :string, "Instance id", required: true)
-
       content(:body, Schema.ref(:ContentUpdateRequest), "Instance to be updated", required: true)
     end
 

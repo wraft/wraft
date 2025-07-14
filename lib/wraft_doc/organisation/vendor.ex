@@ -17,7 +17,6 @@ defmodule WraftDoc.Enterprise.Vendor do
           address: String.t() | nil,
           city: String.t() | nil,
           country: String.t() | nil,
-          gstin: String.t() | nil,
           reg_no: String.t() | nil,
           website: String.t() | nil,
           logo: String.t() | nil,
@@ -35,7 +34,6 @@ defmodule WraftDoc.Enterprise.Vendor do
     field(:address, :string)
     field(:city, :string)
     field(:country, :string)
-    field(:gstin, :string)
     field(:reg_no, :string)
     field(:website, :string)
     field(:logo, WraftDocWeb.LogoUploader.Type)
@@ -44,8 +42,7 @@ defmodule WraftDoc.Enterprise.Vendor do
     # Associations
     belongs_to(:creator, User)
     belongs_to(:organisation, Organisation)
-
-    has_many(:vendor_contacts, WraftDoc.Enterprise.VendorContact)
+    many_to_many(:documents, WraftDoc.Documents.Instance, join_through: "vendors_contents")
 
     timestamps()
   end
@@ -63,7 +60,6 @@ defmodule WraftDoc.Enterprise.Vendor do
       :address,
       :city,
       :country,
-      :gstin,
       :reg_no,
       :website,
       :contact_person,
@@ -105,7 +101,6 @@ defmodule WraftDoc.Enterprise.Vendor do
       :address,
       :city,
       :country,
-      :gstin,
       :reg_no,
       :website,
       :contact_person,
