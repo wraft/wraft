@@ -3,6 +3,10 @@ defmodule WraftDoc.Seed do
     Smaller functions to seed various tables.
   """
 
+  alias Faker.Address.En, as: FakerAddressEn
+  alias Faker.Code
+  alias Faker.Internet
+  alias Faker.Person
   alias Faker.Phone
   alias WraftDoc.Account.Profile
   alias WraftDoc.Account.Role
@@ -72,8 +76,8 @@ defmodule WraftDoc.Seed do
   def generate_user do
     user =
       Repo.insert!(%User{
-        name: Faker.Person.first_name() <> " " <> Faker.Person.last_name(),
-        email: Faker.Internet.email(),
+        name: Person.first_name() <> " " <> Person.last_name(),
+        email: Internet.email(),
         encrypted_password: Bcrypt.hash_pwd_salt("password"),
         email_verify: true,
         deleted_at: nil
@@ -119,21 +123,7 @@ defmodule WraftDoc.Seed do
     role
   end
 
-  def seed_user_organisation(user) do
-    organisation =
-      Repo.insert!(%Organisation{
-        name: Faker.Company.name(),
-        legal_name: Faker.Company.name(),
-        address: Faker.Address.street_address(),
-        name_of_ceo: Faker.Person.name(),
-        name_of_cto: Faker.Person.name(),
-        gstin: Faker.String.base64(15),
-        corporate_id: Faker.String.base64(21),
-        phone: Phone.EnGb.number(),
-        email: Faker.Internet.email(),
-        creator_id: user.id
-      })
-
+  def seed_user_organisation(user, organisation) do
     Repo.insert!(%UserOrganisation{user_id: user.id, organisation_id: organisation.id})
     organisation
   end
@@ -281,13 +271,16 @@ defmodule WraftDoc.Seed do
 
   def seed_vendor(user, organisation) do
     Repo.insert!(%Vendor{
-      name: Faker.Company.name(),
-      email: Faker.Internet.email(),
+      name: Person.name(),
+      email: Internet.email(),
       phone: Phone.EnGb.number(),
-      address: Faker.Address.En.street_address(),
-      gstin: Faker.Code.iban(),
-      reg_no: Faker.Code.isbn(),
-      contact_person: Faker.Person.name(),
+      address: FakerAddressEn.street_address(),
+      city: FakerAddressEn.city(),
+      country: FakerAddressEn.country(),
+      reg_no: Code.isbn(),
+      website: Internet.url(),
+      logo: nil,
+      contact_person: Person.name(),
       organisation_id: organisation.id,
       creator_id: user.id
     })
@@ -299,7 +292,7 @@ defmodule WraftDoc.Seed do
       raw: Faker.Company.buzzword_prefix(),
       serialized: %{
         title: Faker.Company.catch_phrase(),
-        body: "Hi #{Faker.Person.name()}, We offer you the position of Elixir developer"
+        body: "Hi #{Person.name()}, We offer you the position of Elixir developer"
       },
       type: 1,
       creator_id: user.id,

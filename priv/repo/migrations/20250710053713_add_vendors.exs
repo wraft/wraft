@@ -10,6 +10,7 @@ defmodule WraftDoc.Repo.Migrations.MigrateVendorAndAddVendorContacts do
       add(:city, :string)
       add(:country, :string)
       add(:website, :string)
+      remove(:gstin, :string)
     end
 
     # Add unique index on organisation_id and name
@@ -47,6 +48,7 @@ defmodule WraftDoc.Repo.Migrations.MigrateVendorAndAddVendorContacts do
       remove(:city)
       remove(:country)
       remove(:website)
+      add(:gstin, :string)
     end
   end
 end
