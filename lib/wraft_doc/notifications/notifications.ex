@@ -267,5 +267,15 @@ defmodule WraftDoc.Notifications do
   def email_notification(_, _), do: nil
 
   def get_organisation_settings(%User{current_org_id: current_org_id} = _current_user),
-    do: Repo.get_by(Settings, organisation_id: current_org_id)
+    do: Settings |> Repo.get_by(organisation_id: current_org_id) |> Repo.preload(:organisation)
+
+  def update_organisation_settings(%Settings{} = settings, params) do
+    settings
+    |> Settings.changeset(params)
+    |> Repo.update()
+    |> case do
+      {:ok, _} -> {:ok, Repo.preload(settings, :organisation)}
+      {:error, _} -> {:error, settings}
+    end
+  end
 end

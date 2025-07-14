@@ -251,7 +251,7 @@ defmodule WraftDocWeb.Api.V1.RoleController do
          {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id),
          %User{id: user_id} = user <- Account.get_user(user_id) do
       Task.start(fn ->
-        Delivery.dispatch(user, :assign_role, %{
+        Delivery.dispatch(user, "organisation.assign_role", %{
           role_name: role_name,
           organisation_name: organisation_name,
           channel: :user_notification,
@@ -291,7 +291,7 @@ defmodule WraftDocWeb.Api.V1.RoleController do
          {:ok, _} <- Account.delete_user_role(user_role),
          %User{id: user_id} = user <- Account.get_user(user_id) do
       Task.start(fn ->
-        Delivery.dispatch(user, :unassign_role, %{
+        Delivery.dispatch(user, "organisation.unassign_role", %{
           role_name: role_name,
           organisation_name: organisation_name,
           channel: :user_notification,

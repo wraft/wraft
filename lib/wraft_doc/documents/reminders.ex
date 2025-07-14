@@ -293,7 +293,7 @@ defmodule WraftDoc.Documents.Reminders do
     reminder
     |> get_recipients()
     |> Enum.each(
-      &Delivery.dispatch(&1, :document_reminder, %{
+      &Delivery.dispatch(&1, "document.reminder", %{
         instance_id: instance_id,
         document_title: serialized["title"],
         channel: :user_notification,

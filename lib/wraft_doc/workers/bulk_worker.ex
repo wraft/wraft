@@ -112,7 +112,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     Task.start(fn ->
       trigger.creator_id
       |> Account.get_user()
-      |> Delivery.dispatch(:form_mapping_not_complete, %{
+      |> Delivery.dispatch("pipeline.form_mapping_not_complete", %{
         channel: :user_notification,
         channel_id: trigger.creator_id
       })
@@ -138,7 +138,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     Task.start(fn ->
       trigger.creator_id
       |> Account.get_user()
-      |> Delivery.dispatch(:pipeline_not_found, %{
+      |> Delivery.dispatch("pipeline.not_found", %{
         channel: :user_notification,
         channel_id: trigger.creator_id
       })
@@ -164,7 +164,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     Task.start(fn ->
       trigger.creator_id
       |> Account.get_user()
-      |> Delivery.dispatch(:pipeline_instance_failed, %{
+      |> Delivery.dispatch("pipeline.instance_failed", %{
         channel: :user_notification,
         channel_id: trigger.creator_id
       })
@@ -190,7 +190,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     Task.start(fn ->
       trigger.creator_id
       |> Account.get_user()
-      |> Delivery.dispatch(:pipeline_downLoad_error, %{
+      |> Delivery.dispatch("pipeline.download_error", %{
         channel: :user_notification,
         channel_id: trigger.creator_id
       })
@@ -224,7 +224,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     Task.start(fn ->
       trigger.creator_id
       |> Account.get_user()
-      |> Delivery.dispatch(:pipeline_build_success, %{
+      |> Delivery.dispatch("pipeline.build_success", %{
         channel: :user_notification,
         channel_id: trigger.creator_id
       })
@@ -250,7 +250,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     Task.start(fn ->
       trigger.creator_id
       |> Account.get_user()
-      |> Delivery.dispatch(:pipeline_build_failed, %{
+      |> Delivery.dispatch("pipeline.build_failed", %{
         channel: :user_notification,
         channel_id: trigger.creator_id
       })

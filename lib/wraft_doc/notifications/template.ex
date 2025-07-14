@@ -5,7 +5,7 @@ defmodule WraftDoc.Notifications.Template do
 
   use WraftDoc.Notifications.Definition
 
-  defnotification :user_joins_wraft do
+  defnotification "registration.user_joins_wraft" do
     title("Welcome to Wraft")
 
     message(fn %{user_name: user_name} ->
@@ -17,7 +17,7 @@ defmodule WraftDoc.Notifications.Template do
     email_subject("Welcome to Wraft!")
   end
 
-  defnotification :join_organisation do
+  defnotification "organisation.join_organisation" do
     title("Organization Welcome")
 
     message(fn %{organisation_name: organisation_name} ->
@@ -27,7 +27,7 @@ defmodule WraftDoc.Notifications.Template do
     channels([:in_app])
   end
 
-  defnotification :assign_role do
+  defnotification "organisation.assign_role" do
     title("Role Assignment")
 
     message(fn %{role_name: role_name, organisation_name: organisation_name} ->
@@ -37,7 +37,7 @@ defmodule WraftDoc.Notifications.Template do
     channels([:in_app])
   end
 
-  defnotification :unassign_role do
+  defnotification "organisation.unassign_role" do
     title("Role Revoked")
 
     message(fn %{organisation_name: organisation_name, role_name: role_name} ->
@@ -47,8 +47,7 @@ defmodule WraftDoc.Notifications.Template do
     channels([:in_app])
   end
 
-  # Document notifications
-  defnotification :state_update do
+  defnotification "document.state_update" do
     title("Document State Update")
 
     message(fn %{
@@ -68,7 +67,7 @@ defmodule WraftDoc.Notifications.Template do
     end)
   end
 
-  defnotification :pending_approvals do
+  defnotification "document.pending_approvals" do
     title("Pending Approval")
 
     message(fn %{
@@ -84,7 +83,7 @@ defmodule WraftDoc.Notifications.Template do
     email_subject("Document Pending Approval")
   end
 
-  defnotification :add_comment do
+  defnotification "document.add_comment" do
     title("New Comment")
 
     message(fn %{
@@ -99,7 +98,7 @@ defmodule WraftDoc.Notifications.Template do
     email_subject("New Comment Mention")
   end
 
-  defnotification :document_reminder do
+  defnotification "document.reminder" do
     title("Document Reminder")
 
     message(fn %{document_title: document_title} ->
@@ -111,12 +110,61 @@ defmodule WraftDoc.Notifications.Template do
     email_subject("Document Reminder")
   end
 
-  # Pipeline notifications
-  defnotification :form_mapping_not_complete do
+  defnotification "pipeline.form_mapping_not_complete" do
     title("Form Mapping Incomplete")
 
     message(fn _params ->
       "Please complete the form mapping for pipeline and try again."
+    end)
+
+    channels([:in_app])
+  end
+
+  defnotification "pipeline.not_found" do
+    title("Pipeline Not Found")
+
+    message(fn _params ->
+      "The pipeline you are trying to access does not exist."
+    end)
+
+    channels([:in_app])
+  end
+
+  defnotification "pipeline.instance_failed" do
+    title("Pipeline Instance Failed")
+
+    message(fn _params ->
+      "The pipeline instance has failed."
+    end)
+
+    channels([:in_app])
+  end
+
+  defnotification "pipeline.download_error" do
+    title("Pipeline Download Error")
+
+    message(fn _params ->
+      "There was an error downloading the pipeline."
+    end)
+
+    channels([:in_app])
+  end
+
+  defnotification "pipeline.build_success" do
+    title("Pipeline Build Success")
+
+    message(fn _params ->
+      "The pipeline build has succeeded."
+    end)
+
+    channels([:in_app])
+  end
+
+  defnotification "pipeline.build_failed" do
+    title("Pipeline Build Failed")
+
+    message(fn _params ->
+      "The pipeline build has failed."
     end)
 
     channels([:in_app])
