@@ -2,8 +2,9 @@ defmodule WraftDoc.Notifications.Template do
   @moduledoc """
   Defines all notification templates and their configurations.
   """
-
   use WraftDoc.Notifications.Definition
+
+  alias WraftDocWeb.MJML
 
   defnotification "registration.user_joins_wraft" do
     title("Welcome to Wraft")
@@ -13,7 +14,7 @@ defmodule WraftDoc.Notifications.Template do
     end)
 
     channels([:in_app, :email])
-    email_template(:welcome_email)
+    email_template(MJML.Welcome)
     email_subject("Welcome to Wraft!")
   end
 
@@ -60,7 +61,7 @@ defmodule WraftDoc.Notifications.Template do
     end)
 
     channels([:in_app, :email])
-    email_template(:document_state_update)
+    email_template(MJML.DocumentStateUpdate)
 
     email_subject(fn %{document_title: title, state_name: state} ->
       "Document '#{title}' - #{state} State Update"
@@ -79,7 +80,7 @@ defmodule WraftDoc.Notifications.Template do
     end)
 
     channels([:in_app, :email])
-    email_template(:pending_approval)
+    email_template(MJML.PendingApproval)
     email_subject("Document Pending Approval")
   end
 
@@ -94,7 +95,7 @@ defmodule WraftDoc.Notifications.Template do
     end)
 
     channels([:in_app, :email])
-    email_template(:comment_notification)
+    email_template(MJML.CommentNotification)
     email_subject("New Comment Mention")
   end
 
@@ -106,7 +107,7 @@ defmodule WraftDoc.Notifications.Template do
     end)
 
     channels([:in_app, :email])
-    email_template(:document_reminder)
+    email_template(MJML.DocumentReminder)
     email_subject("Document Reminder")
   end
 

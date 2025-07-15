@@ -231,4 +231,24 @@ defmodule WraftDoc.Workers.EmailWorker do
 
     Logger.info("Document reminder mailer job end.")
   end
+
+  def perform(%Job{
+        args: %{
+          "template" => template,
+          "subject" => subject,
+          "params" => params
+        },
+        tags: ["notification"]
+      }) do
+    template
+    |> String.to_existing_atom()
+    |> Email.notification_email(subject, atomize_keys(params))
+    |> Mailer.deliver()
+  end
+
+  defp atomize_keys(map) do
+    for {k, v} <- map, into: %{} do
+      {String.to_atom(k), v}
+    end
+  end
 end

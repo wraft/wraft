@@ -9,8 +9,8 @@ defmodule WraftDoc.Notifications.Delivery do
   alias WraftDoc.Notifications
   alias WraftDoc.Notifications.Template
   alias WraftDoc.{Account, Repo}
+  alias WraftDoc.Workers.EmailWorker
   alias WraftDocWeb.NotificationChannel
-  # alias WraftDoc.Workers.EmailWorker
 
   @doc """
   Delivers a notification to a list of users through configured delivery channels.
@@ -57,31 +57,36 @@ defmodule WraftDoc.Notifications.Delivery do
   defp send_through_delivery_channel(:in_app, current_user, notification, _params),
     do: NotificationChannel.broad_cast(notification, current_user)
 
-  defp send_through_delivery_channel(:email, current_user, notification, _params) do
-    with {:ok, _email_config} <- Template.get_email_config(notification.event_type) do
+  defp send_through_delivery_channel(
+         :email,
+         current_user,
+         %{event_type: event_type} = notification,
+         params
+       ) do
+    with {:ok, %{template: template, subject: subject} = _email_config} <-
+           Template.get_email_config(event_type) do
       notification
       |> get_channel_users(current_user)
       |> Enum.each(fn user_id ->
         user = Account.get_user(user_id)
 
-        # email_params =
-        #   Map.merge(params, %{
-        #     user_name: user.name,
-        #     email: user.email,
-        #     notification_message: notification.message
-        #   })
+        email_params =
+          Map.merge(params, %{
+            user_name: user.name,
+            email: user.email,
+            message: notification.message
+          })
 
-        # %{
-        #   template: email_config.template,
-        #   subject: email_config.subject.(params),
-        #   params: email_params
-        # }
-        # |> EmailWorker.new(
-        #   queue: "mailer",
-        #   tags: ["notification", to_string(notification.event_type)]
-        # )
-        # |> Oban.insert()
-        Notifications.email_notification(notification, user)
+        %{
+          template: template,
+          subject: subject.(params),
+          params: email_params
+        }
+        |> EmailWorker.new(
+          queue: "mailer",
+          tags: ["notification"]
+        )
+        |> Oban.insert()
       end)
     end
   end
@@ -100,9 +105,7 @@ defmodule WraftDoc.Notifications.Delivery do
       :role_group_notification ->
         Account.get_role_users(channel_id)
 
-      # get list of user ids
       :organisation_notification ->
-        # Enterprise.members_index(current_user, %{})
         User
         |> join(:inner, [u], uo in UserOrganisation, on: uo.user_id == u.id)
         |> where([u, uo], uo.organisation_id == ^channel_id)

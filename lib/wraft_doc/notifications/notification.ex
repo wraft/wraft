@@ -15,7 +15,7 @@ defmodule WraftDoc.Notifications.Notification do
   ]
 
   schema "notifications" do
-    field(:event_type, WraftDoc.EctoType.AtomType)
+    field(:event_type, :string)
     field(:message, :string)
     field(:is_global, :boolean, default: false)
 

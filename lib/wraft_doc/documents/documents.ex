@@ -2381,6 +2381,7 @@ defmodule WraftDoc.Documents do
         document_title: document_title,
         state_name: state.state,
         approver_name: approver_name,
+        document_url: URI.encode("#{System.get_env("FRONTEND_URL")}/documents/#{instance_id}"),
         channel: :user_notification,
         channel_id: &1,
         metadata: %{user_id: user_id, document_id: instance_id}
@@ -2393,6 +2394,7 @@ defmodule WraftDoc.Documents do
         organisation_name: organisation_name,
         document_title: document_title,
         state_name: state.state,
+        document_url: URI.encode("#{System.get_env("FRONTEND_URL")}/documents/#{instance_id}"),
         channel: :user_notification,
         channel_id: &1,
         metadata: %{user_id: user_id, document_id: instance_id}

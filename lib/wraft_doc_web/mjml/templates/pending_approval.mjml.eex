@@ -1,0 +1,67 @@
+<mjml>
+  <mj-head>
+    <mj-title>Pending Approval - <%= @document_title %></mj-title>
+    <mj-font name="Arial" href="https://fonts.googleapis.com/css?family=Arial" />
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" color="#555555" line-height="1.5" />
+      <mj-button background-color="#004A0F" color="white" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column width="100%">
+        <mj-image src="https://dev.wraft.co/logo.png" alt="Wraft Logo" align="center" width="120px" />
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-text font-size="24px" color="#333333" font-weight="bold">
+          Document Pending Approval
+        </mj-text>
+        <mj-text>
+          Hello,
+        </mj-text>
+        <mj-text>
+          The document "<strong><%= @document_title %></strong>" in <%= @organisation_name %> has been pending approval for the <strong><%= @state_name %></strong> state.
+        </mj-text>
+        <mj-text>
+          This document requires your attention and approval to proceed to the next stage of the workflow.
+        </mj-text>
+        <mj-text>
+          <strong>Document Details:</strong><br/>
+          • Document: <%= @document_title %><br/>
+          • Organization: <%= @organisation_name %><br/>
+          • Pending State: <%= @state_name %><br/>
+          • Date Submitted: <%= DateTime.utc_now() |> DateTime.to_date() %>
+        </mj-text>
+        <mj-text>
+          Please review the document and take the necessary approval action to keep the workflow moving forward.
+        </mj-text>
+        <mj-button background-color="#004A0F" href="<%= @document_url || "https://app.wraft.co/documents" %>" padding="20px 0">
+          Review & Approve
+        </mj-button>
+        <mj-text>
+          If you have questions about this document or need additional information before approving, please contact the document author or your administrator.
+        </mj-text>
+        <mj-text>
+          <strong>Important:</strong> Timely approval helps maintain efficient document workflows for your organization.
+        </mj-text>
+        <mj-text>
+          Best regards,<br/>
+          Wraft Document Team
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f4f4f4" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-text font-size="14px" color="#888888" align="center">
+          © 2024 Wraft. All rights reserved.
+        </mj-text>
+        <mj-text font-size="14px" color="#888888" align="center">
+          This is an automated notification. For support, contact us at support@wraft.co
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
