@@ -152,7 +152,6 @@ config :fun_with_flags, :cache,
 
 config :wraft_doc,
   permissions_file: "priv/repo/data/rbac/permissions.csv",
-  events_file: "priv/repo/data/events.csv",
   theme_folder: "priv/wraft_files/Roboto",
   layout_file: "priv/wraft_files/letterhead.pdf",
   default_template_files: "priv/wraft_files/templates",

@@ -12,6 +12,7 @@ defmodule WraftDocWeb.Api.V1.NotificationView do
       message: notification.message,
       is_global: notification.is_global,
       action: notification.action,
+      meta: notification.metadata,
       inserted_at: notification.inserted_at,
       updated_at: notification.updated_at
     }

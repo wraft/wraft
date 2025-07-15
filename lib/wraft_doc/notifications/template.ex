@@ -88,10 +88,10 @@ defmodule WraftDoc.Notifications.Template do
     title("New Comment")
 
     message(fn %{
-                 organisation_name: organisation_name,
-                 document_title: document_title
+                 document_title: document_title,
+                 commenter_name: user_name
                } ->
-      "You've been mentioned in a comment on #{document_title} in #{organisation_name}. Check it out!"
+      "You've been mentioned in a comment on #{document_title} by #{user_name}. Check it out!"
     end)
 
     channels([:in_app, :email])
