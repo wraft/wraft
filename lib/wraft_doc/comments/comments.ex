@@ -270,7 +270,7 @@ defmodule WraftDoc.Comments do
   @spec comment_notification(Ecto.UUID.t(), Ecto.UUID.t(), Ecto.UUID.t()) ::
           [Notification.t()]
   def comment_notification(
-        %{id: user_id, current_org_id: organisation_id} = current_user,
+        %{id: user_id, current_org_id: organisation_id, name: user_name} = current_user,
         comment_id,
         document_id
       ) do
@@ -283,6 +283,8 @@ defmodule WraftDoc.Comments do
       &Delivery.dispatch(current_user, "document.add_comment", %{
         organisation_name: organisation.name,
         document_title: document.serialized["title"],
+        document_url: URI.encode("#{System.get_env("FRONTEND_URL")}/documents/#{document_id}"),
+        commenter_name: user_name,
         channel: :user_notification,
         channel_id: &1,
         metadata: %{

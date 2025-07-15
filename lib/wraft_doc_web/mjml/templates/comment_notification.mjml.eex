@@ -1,0 +1,64 @@
+<mjml>
+  <mj-head>
+    <mj-title>New Comment Mention - <%= @document_title %></mj-title>
+    <mj-font name="Arial" href="https://fonts.googleapis.com/css?family=Arial" />
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" color="#555555" line-height="1.5" />
+      <mj-button background-color="#004A0F" color="white" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column width="100%">
+        <mj-image src="https://dev.wraft.co/logo.png" alt="Wraft Logo" align="center" width="120px" />
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#ffffff" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-text font-size="24px" color="#333333" font-weight="bold">
+          New Comment Mention
+        </mj-text>
+        <mj-text>
+          Hello,
+        </mj-text>
+        <mj-text>
+          You've been mentioned in a comment on "<strong><%= @document_title %></strong>" in <%= @organisation_name %>. Check it out!
+        </mj-text>
+        <mj-text>
+          Someone has left a comment that mentions you, and they might be waiting for your response or input.
+        </mj-text>
+        <mj-text>
+          <strong>Document Details:</strong><br/>
+          • Document: <%= @document_title %><br/>
+          • Organization: <%= @organisation_name %><br/>
+          • Mentioned By: <%= @commenter_name || "A team member" %><br/>
+          • Date: <%= DateTime.utc_now() |> DateTime.to_date() %>
+        </mj-text>
+        <mj-text>
+          Click below to view the comment and respond if needed:
+        </mj-text>
+        <mj-button background-color="#004A0F" href="<%= @document_url || "https://app.wraft.co/documents" %>" padding="20px 0">
+          View Comment
+        </mj-button>
+        <mj-text>
+          Stay engaged with your team's discussions to keep projects moving forward smoothly.
+        </mj-text>
+        <mj-text>
+          Best regards,<br/>
+          Wraft Document Team
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#f4f4f4" padding="20px 30px">
+      <mj-column width="100%">
+        <mj-text font-size="14px" color="#888888" align="center">
+          © 2024 Wraft. All rights reserved.
+        </mj-text>
+        <mj-text font-size="14px" color="#888888" align="center">
+          This is an automated notification. For support, contact us at support@wraft.co
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
