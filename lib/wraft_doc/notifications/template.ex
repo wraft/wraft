@@ -111,6 +111,25 @@ defmodule WraftDoc.Notifications.Template do
     email_subject("Document Reminder")
   end
 
+  defnotification "document.share" do
+    title("Document Shared With You")
+
+    message(fn %{
+                 document_title: document_title,
+                 sharer_name: sharer_name,
+                 organisation_name: organisation_name
+               } ->
+      "#{sharer_name} has shared the document '#{document_title}' with you in #{organisation_name}. You can now access, review, and collaborate on this document as part of the workflow."
+    end)
+
+    channels([:in_app, :email])
+    email_template(MJML.Notification)
+
+    email_subject(fn %{document_title: document_title} ->
+      "Document Shared: #{document_title}"
+    end)
+  end
+
   defnotification "pipeline.form_mapping_not_complete" do
     title("Form Mapping Incomplete")
 

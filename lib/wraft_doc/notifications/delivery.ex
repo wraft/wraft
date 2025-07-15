@@ -14,7 +14,18 @@ defmodule WraftDoc.Notifications.Delivery do
 
   @doc """
   Delivers a notification to a list of users through configured delivery channels.
+
+  ## Parameters
+  - `current_user` - The user creating the notification
+  - `type` - The notification type (e.g., "document.share")
+  - `params` - Map containing notification parameters
+
+  ## Returns
+  - `{:ok, notification_record}` - On successful delivery
+  - `{:error, reason}` - On failure
   """
+  @spec dispatch(User.t(), String.t(), map()) ::
+          {:ok, Notification.t()} | {:error, String.t()}
   def dispatch(current_user, type, params) do
     delivery_channels = Template.get_channels(type)
 
