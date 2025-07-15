@@ -6,6 +6,8 @@ defmodule WraftDoc.Notifications.Delivery do
   import Ecto.Query
   require Logger
 
+  alias WraftDoc.Account.User
+  alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Notifications
   alias WraftDoc.Notifications.Template
   alias WraftDoc.{Account, Repo}
@@ -74,7 +76,7 @@ defmodule WraftDoc.Notifications.Delivery do
          %{event_type: event_type} = notification,
          params
        ) do
-    with {:ok, %{template: template, subject: subject} = _email_config} <-
+    with {:ok, %{title: title, template: template, subject: subject} = _email_config} <-
            Template.get_email_config(event_type) do
       notification
       |> get_channel_users(current_user)
@@ -85,8 +87,20 @@ defmodule WraftDoc.Notifications.Delivery do
           Map.merge(params, %{
             user_name: user.name,
             email: user.email,
-            message: notification.message
+            message: notification.message,
+            title: title
           })
+
+        email_params =
+          Map.merge(
+            %{
+              button_text: nil,
+              button_url: nil,
+              additional_info: nil,
+              signature: nil
+            },
+            email_params
+          )
 
         %{
           template: template,

@@ -2368,11 +2368,16 @@ defmodule WraftDoc.Documents do
   """
   def document_notification(
         %User{id: user_id, name: approver_name} = current_user,
-        %Instance{id: instance_id, serialized: %{"title" => document_title}} = _instance,
-        %Organisation{name: organisation_name} = _organisation,
+        %Instance{
+          id: instance_id,
+          serialized: %{"title" => document_title},
+          approval_status: approval_status
+        } = _instance,
+        %Organisation{id: current_org_id, name: organisation_name} = _organisation,
         state
       ) do
     next_state = next_state(state)
+    document_url = URI.encode("#{System.get_env("FRONTEND_URL")}/documents/#{instance_id}")
 
     Enum.each(
       state.approvers,
@@ -2381,7 +2386,7 @@ defmodule WraftDoc.Documents do
         document_title: document_title,
         state_name: state.state,
         approver_name: approver_name,
-        document_url: URI.encode("#{System.get_env("FRONTEND_URL")}/documents/#{instance_id}"),
+        document_url: document_url,
         channel: :user_notification,
         channel_id: &1,
         metadata: %{user_id: user_id, document_id: instance_id}
@@ -2394,11 +2399,22 @@ defmodule WraftDoc.Documents do
         organisation_name: organisation_name,
         document_title: document_title,
         state_name: state.state,
-        document_url: URI.encode("#{System.get_env("FRONTEND_URL")}/documents/#{instance_id}"),
+        document_url: document_url,
         channel: :user_notification,
         channel_id: &1,
         metadata: %{user_id: user_id, document_id: instance_id}
       })
     )
+
+    if approval_status do
+      Delivery.dispatch(current_user, "document.publish", %{
+        publisher_name: approver_name,
+        document_title: document_title,
+        document_url: document_url,
+        channel: :organisation_notification,
+        channel_id: current_org_id,
+        metadata: %{user_id: user_id, document_id: instance_id}
+      })
+    end
   end
 end

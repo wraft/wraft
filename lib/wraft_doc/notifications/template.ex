@@ -130,6 +130,24 @@ defmodule WraftDoc.Notifications.Template do
     end)
   end
 
+  defnotification "document.publish" do
+    title("Document Published")
+
+    message(fn %{
+                 document_title: document_title,
+                 publisher_name: publisher_name
+               } ->
+      "The document '#{document_title}' has been published by #{publisher_name}. The document is now live and available for viewing."
+    end)
+
+    channels([:in_app, :email])
+    email_template(MJML.Notification)
+
+    email_subject(fn %{document_title: document_title} ->
+      "Document Published: #{document_title}"
+    end)
+  end
+
   defnotification "pipeline.form_mapping_not_complete" do
     title("Form Mapping Incomplete")
 
@@ -229,9 +247,9 @@ defmodule WraftDoc.Notifications.Template do
     type
     |> get_notification()
     |> case do
-      %{email_template: template, email_subject: subject}
+      %{email_template: template, email_subject: subject, title: title}
       when not is_nil(template) ->
-        {:ok, %{template: template, subject: normalize_subject(subject)}}
+        {:ok, %{template: template, subject: normalize_subject(subject), title: title}}
 
       _ ->
         :error
