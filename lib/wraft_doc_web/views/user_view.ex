@@ -101,6 +101,17 @@ defmodule WraftDocWeb.Api.V1.UserView do
     }
   end
 
+  @doc """
+  Actor.
+  """
+  def render("actor.json", %{user: user}) do
+    %{
+      id: user.id,
+      name: user.name,
+      profile_pic: generate_url(user.profile)
+    }
+  end
+
   def render("me.json", %{user: me}) do
     %{
       id: me.id,

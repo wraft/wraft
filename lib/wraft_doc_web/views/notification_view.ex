@@ -10,11 +10,10 @@ defmodule WraftDocWeb.Api.V1.NotificationView do
       id: notification.id,
       event_type: notification.event_type,
       message: notification.message,
-      is_global: notification.is_global,
       action: notification.action,
+      actor_id: render_one(notification.actor, UserView, "actor.json"),
       meta: notification.metadata,
-      inserted_at: notification.inserted_at,
-      updated_at: notification.updated_at
+      inserted_at: notification.inserted_at
     }
   end
 
@@ -41,8 +40,6 @@ defmodule WraftDocWeb.Api.V1.NotificationView do
       status: user_notification.status,
       seen_at: user_notification.seen_at,
       inserted_at: user_notification.inserted_at,
-      updated_at: user_notification.updated_at,
-      recipient: render_one(user_notification.recipient, UserView, "user.json"),
       notification:
         render_one(user_notification.notification, NotificationView, "notification.json")
     }
