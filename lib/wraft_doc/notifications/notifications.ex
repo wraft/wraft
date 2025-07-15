@@ -13,26 +13,36 @@ defmodule WraftDoc.Notifications do
   alias WraftDoc.Workers.EmailWorker
 
   @doc """
-  Creates notifications for a list of users based on given parameters.
+  Creates a notification for the current user's organization.
 
-  This function iterates through the provided list of `users`, builds a notification
-  for each, persists them to the database, and enqueues background jobs for
-  email and real-time (in-app) broadcasts.
+  This function creates a single notification record in the database for the
+  current user's organization, merging the provided parameters with the
+  organization ID.
 
   ## Parameters
-  - `users`: A list of `WraftDoc.Account.User` structs (or user IDs) for whom
-             the notifications are to be created.
-  - `params`: A map containing notification details. This map **must** include an
-              `:event_type` atom (e.g., `:add_comment`, `:mention_comment`),
-              which determines the message content via `NotificationMessages`,
-              and may contain other data specific to the event type.
+  - `current_user`: A user struct containing `current_org_id` field
+  - `params`: A map containing notification details. This map **must** include:
+    - `:event_type` - String identifying the notification type (e.g., "document.share")
+    - `:message` - String containing the notification message
+    - `:channel` - Atom indicating the notification channel (optional, defaults to :user_notification)
+    - `:channel_id` - String identifying the target channel (optional)
+    - `:action` - Map containing action details (optional)
 
   ## Returns
-  - `{:ok, notifications}`: A tuple containing `:ok` and a list of successfully
-                           created `Notification` structs.
-  - `{:error, reason}`: A tuple containing `{:error, reason}` if any notification
-                       creation or associated transaction fails.
+  - `{:ok, notification}`: A tuple containing `:ok` and the successfully created `Notification` struct
+  - `{:error, changeset}`: A tuple containing `:error` and an `Ecto.Changeset` if validation fails
+
+  ## Examples
+      iex> create_notification(current_user, %{
+      ...>   event_type: "document.share",
+      ...>   message: "Document shared with you",
+      ...>   channel: :user_notification,
+      ...>   channel_id: "user_123"
+      ...> })
+      {:ok, %Notification{}}
   """
+  @spec create_notification(User.t(), map()) ::
+          {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def create_notification(
         %{current_org_id: current_org_id} = _current_user,
         params
@@ -124,9 +134,23 @@ defmodule WraftDoc.Notifications do
   end
 
   @doc """
-  Mark notification as read
+  Mark a notification as read for a specific user.
+
+  This function creates a UserNotification record marking the given notification
+  as read for the specified user. If the notification is already marked as read,
+  this will fail due to unique constraint.
+
   ## Parameters
-  * `user_notification`- user notification struct
+  - `user`: A user struct containing `current_org_id` and `id` fields
+  - `notification`: A notification struct to mark as read
+
+  ## Returns
+  - `{:ok, user_notification}`: A tuple containing `:ok` and the created `UserNotification` struct
+  - `{:error, changeset}`: A tuple containing `:error` and an `Ecto.Changeset` if creation fails
+
+  ## Examples
+      iex> read_notification(current_user, notification)
+      {:ok, %UserNotification{status: :read}}
   """
   @spec read_notification(User.t(), Notification.t()) ::
           {:ok, UserNotification.t()} | {:error, Ecto.Changeset.t()}
@@ -143,9 +167,20 @@ defmodule WraftDoc.Notifications do
   end
 
   @doc """
-  Count unread notifications for an user
+  Count unread notifications for a user.
+
+  This function counts the number of unread notifications for the given user
+  by querying UserNotification records with status :unread.
+
   ## Parameters
-  * `current_user`- user struct
+  - `user`: A user struct containing the `id` field
+
+  ## Returns
+  - `integer`: The count of unread notifications
+
+  ## Examples
+      iex> unread_notification_count(current_user)
+      5
   """
   @spec unread_notification_count(User.t()) :: integer
   def unread_notification_count(%User{} = user) do
@@ -159,9 +194,21 @@ defmodule WraftDoc.Notifications do
   end
 
   @doc """
-  Mark all notifications as read
+  Mark all unread notifications as read for a user.
+
+  This function finds all unread notifications for the user in their current
+  organization and creates UserNotification records marking them as read.
+  It uses bulk insert for performance.
+
   ## Parameters
-  * `current_user`- user struct
+  - `current_user`: A user struct containing `id` and `current_org_id` fields
+
+  ## Returns
+  - `{count, nil}`: A tuple containing the number of notifications marked as read and `nil`
+
+  ## Examples
+      iex> read_all_notifications(current_user)
+      {3, nil}
   """
   @spec read_all_notifications(User.t()) :: {integer(), nil}
   def read_all_notifications(%User{id: user_id, current_org_id: organisation_id} = _current_user) do
@@ -197,10 +244,22 @@ defmodule WraftDoc.Notifications do
   end
 
   @doc """
-  Get user notification
+  Get a specific unread user notification.
+
+  This function retrieves a UserNotification record for the given user and
+  notification ID, but only if the notification is still unread.
+
   ## Parameters
-  * `current_user`- user struct
-  * `notification` - notification struct
+  - `current_user`: A user struct containing the `id` field
+  - `notification_id`: UUID of the notification to retrieve
+
+  ## Returns
+  - `UserNotification.t()`: The user notification struct if found and unread
+  - `nil`: If no unread notification found with the given ID
+
+  ## Examples
+      iex> get_user_notification(current_user, "123e4567-e89b-12d3-a456-426614174000")
+      %UserNotification{status: :unread}
   """
   @spec get_user_notification(User.t(), Ecto.UUID.t()) :: UserNotification.t() | nil
   def get_user_notification(%User{} = current_user, notification_id) do
@@ -214,15 +273,48 @@ defmodule WraftDoc.Notifications do
   end
 
   @doc """
-  Get notification
+  Get a notification by ID within the user's organization.
+
+  This function retrieves a notification record by its ID, but only if it
+  belongs to the user's current organization for security purposes.
+
   ## Parameters
-  * `current_user`- user struct
-  * `notification` - notification struct
+  - `current_user`: A user struct containing the `current_org_id` field
+  - `notification_id`: UUID of the notification to retrieve
+
+  ## Returns
+  - `Notification.t()`: The notification struct if found within the user's organization
+  - `nil`: If no notification found with the given ID in the user's organization
+
+  ## Examples
+      iex> get_notification(current_user, "123e4567-e89b-12d3-a456-426614174000")
+      %Notification{event_type: "document.share"}
   """
   @spec get_notification(User.t(), Ecto.UUID.t()) :: Notification.t() | nil
   def get_notification(%User{current_org_id: current_org_id} = _current_user, notification_id),
     do: Repo.get_by(Notification, id: notification_id, organisation_id: current_org_id)
 
+  @doc """
+  Send an email notification to a recipient.
+
+  This function creates and enqueues an email job for sending a notification
+  to a specific recipient. It uses the EmailWorker to handle the actual email
+  sending asynchronously.
+
+  ## Parameters
+  - `notification`: A notification struct containing at least a `message` field
+  - `recipient`: A recipient struct containing `name` and `email` fields
+
+  ## Returns
+  - `{:ok, job}`: If the email job was successfully enqueued
+  - `{:error, reason}`: If the email job failed to enqueue
+  - `nil`: If the notification or recipient is invalid
+
+  ## Examples
+      iex> email_notification(notification, %{name: "John", email: "john@example.com"})
+      {:ok, %Oban.Job{}}
+  """
+  @spec email_notification(map(), map()) :: {:ok, Oban.Job.t()} | {:error, term()} | nil
   def email_notification(
         %{message: message} = _notification,
         %{name: name, email: email} = _recipient
@@ -241,9 +333,48 @@ defmodule WraftDoc.Notifications do
 
   def email_notification(_, _), do: nil
 
+  @doc """
+  Get notification settings for the user's organization.
+
+  This function retrieves the notification settings configured for the user's
+  current organization, including preloaded organization details.
+
+  ## Parameters
+  - `current_user`: A user struct containing the `current_org_id` field
+
+  ## Returns
+  - `Settings.t()`: The organization's notification settings with preloaded organization
+  - `nil`: If no settings found for the organization
+
+  ## Examples
+      iex> get_organisation_settings(current_user)
+      %Settings{events: ["document.share", "document.comment"]}
+  """
+  @spec get_organisation_settings(User.t()) :: Settings.t() | nil
   def get_organisation_settings(%User{current_org_id: current_org_id} = _current_user),
     do: Settings |> Repo.get_by(organisation_id: current_org_id) |> Repo.preload(:organisation)
 
+  @doc """
+  Update notification settings for an organization.
+
+  This function updates the notification settings for an organization with the
+  provided parameters. It validates the changes and returns the updated settings
+  with preloaded organization details.
+
+  ## Parameters
+  - `settings`: A Settings struct representing the current organization settings
+  - `params`: A map containing the fields to update (e.g., %{events: ["document.share"]})
+
+  ## Returns
+  - `{:ok, settings}`: A tuple containing `:ok` and the updated Settings struct with preloaded organization
+  - `{:error, settings}`: A tuple containing `:error` and the original Settings struct if update fails
+
+  ## Examples
+      iex> update_organisation_settings(settings, %{events: ["document.share"]})
+      {:ok, %Settings{events: ["document.share"]}}
+  """
+  @spec update_organisation_settings(Settings.t(), map()) ::
+          {:ok, Settings.t()} | {:error, Settings.t()}
   def update_organisation_settings(%Settings{} = settings, params) do
     settings
     |> Settings.changeset(params)
