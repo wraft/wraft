@@ -148,6 +148,31 @@ defmodule WraftDoc.Notifications.Template do
     end)
   end
 
+  defnotification "document.signature_request" do
+    title("Signature Request")
+
+    message(fn %{
+                 document_title: document_title,
+                 requester_name: requester_name
+               } ->
+      "#{requester_name} has requested your signature on the document '#{document_title}'. Please review and sign the document at your earliest convenience."
+    end)
+
+    channels([:in_app])
+  end
+
+  defnotification "document.fully_signed" do
+    title("Document Fully Signed")
+
+    message(fn %{
+                 document_title: document_title
+               } ->
+      "The document '#{document_title}' has been fully signed by all parties. The signed document is now available for download."
+    end)
+
+    channels([:in_app])
+  end
+
   defnotification "pipeline.form_mapping_not_complete" do
     title("Form Mapping Incomplete")
 
@@ -222,6 +247,9 @@ defmodule WraftDoc.Notifications.Template do
     |> case do
       %{message: message_fn} when is_function(message_fn) ->
         message_fn.(params)
+
+      %{message: message} when is_binary(message) ->
+        message
 
       _ ->
         raise "Notification type #{type} not found"
