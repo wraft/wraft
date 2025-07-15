@@ -28,8 +28,11 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Enterprise.VendorContact
+<<<<<<< HEAD
   alias WraftDoc.Enterprise.VendorsContent
   alias WraftDoc.Notifications.Settings
+=======
+>>>>>>> a4507ec0 (feat: revert vendor document to one to one relationship)
   alias WraftDoc.Repo
   alias WraftDoc.Storage
   alias WraftDoc.TaskSupervisor
@@ -2015,33 +2018,27 @@ defmodule WraftDoc.Enterprise do
   """
   @spec get_vendor_stats(Vendor.t()) :: map()
   def get_vendor_stats(%Vendor{id: vendor_id, organisation_id: _org_id}) do
-    alias WraftDoc.Enterprise.VendorsContent
-
     # Get total documents connected to this vendor
     total_documents_query =
-      from(vc in VendorsContent,
-        where: vc.vendor_id == ^vendor_id,
-        select: count(vc.content_id)
+      from(i in Instance,
+        where: i.vendor_id == ^vendor_id,
+        select: count(i.id)
       )
 
     # Get pending approvals for documents connected to this vendor
     # Based on approval_status field in Instance table
     pending_approvals_query =
-      from(vc in VendorsContent,
-        join: i in Instance,
-        on: i.id == vc.content_id,
-        where: vc.vendor_id == ^vendor_id and i.approval_status == false,
+      from(i in Instance,
+        where: i.vendor_id == ^vendor_id and i.approval_status == false,
         select: count(i.id)
       )
 
     # Get total contract value for documents with contract metadata
     # Contract value is stored in meta field as per contract_meta.ex
     total_contract_value_query =
-      from(vc in VendorsContent,
-        join: i in Instance,
-        on: i.id == vc.content_id,
+      from(i in Instance,
         where:
-          vc.vendor_id == ^vendor_id and
+          i.vendor_id == ^vendor_id and
             not is_nil(fragment("? -> 'contract_value'", i.meta)),
         select: coalesce(sum(fragment("CAST(? ->> 'contract_value' AS DECIMAL)", i.meta)), 0)
       )
@@ -2060,10 +2057,8 @@ defmodule WraftDoc.Enterprise do
     start_of_month_datetime = DateTime.new!(start_of_month, ~T[00:00:00])
 
     new_this_month_query =
-      from(vc in VendorsContent,
-        join: i in Instance,
-        on: i.id == vc.content_id,
-        where: vc.vendor_id == ^vendor_id and i.inserted_at >= ^start_of_month_datetime,
+      from(i in Instance,
+        where: i.vendor_id == ^vendor_id and i.inserted_at >= ^start_of_month_datetime,
         select: count(i.id)
       )
 

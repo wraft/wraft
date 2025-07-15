@@ -42,7 +42,7 @@ defmodule WraftDoc.Enterprise.Vendor do
     # Associations
     belongs_to(:creator, User)
     belongs_to(:organisation, Organisation)
-    many_to_many(:documents, WraftDoc.Documents.Instance, join_through: "vendors_contents")
+    has_many(:documents, WraftDoc.Documents.Instance, foreign_key: :vendor_id)
 
     timestamps()
   end

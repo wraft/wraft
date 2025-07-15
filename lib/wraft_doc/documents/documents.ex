@@ -31,7 +31,6 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
-  alias WraftDoc.Enterprise.VendorsContent
   alias WraftDoc.Fields.Field
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
@@ -2364,35 +2363,22 @@ defmodule WraftDoc.Documents do
   Connect a vendor to a document instance.
   """
   @spec connect_vendor_to_instance(Instance.t(), Vendor.t()) ::
-          {:ok, VendorsContent.t()} | {:error, Ecto.Changeset.t()}
-  def connect_vendor_to_instance(%Instance{id: document_id}, %Vendor{id: vendor_id}) do
-    %VendorsContent{}
-    |> VendorsContent.changeset(%{content_id: document_id, vendor_id: vendor_id})
-    |> Repo.insert()
-    |> case do
-      {:ok, vendors_content} ->
-        {:ok, Repo.preload(vendors_content, [:vendor, :content])}
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
+          {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
+  def connect_vendor_to_instance(%Instance{} = instance, %Vendor{id: vendor_id}) do
+    instance
+    |> Instance.changeset(%{vendor_id: vendor_id})
+    |> Repo.update()
   end
 
   @doc """
   Disconnect a vendor from a document instance.
   """
-  @spec disconnect_vendor_from_instance(Instance.t(), Vendor.t()) ::
-          {:ok, VendorsContent.t()} | {:error, Ecto.Changeset.t()}
-  def disconnect_vendor_from_instance(%Instance{id: document_id}, %Vendor{id: vendor_id}) do
-    VendorsContent
-    |> Repo.get_by(content_id: document_id, vendor_id: vendor_id)
-    |> case do
-      nil ->
-        {:error, "Vendor not found for this document"}
-
-      vendors_content ->
-        Repo.delete(vendors_content)
-    end
+  @spec disconnect_vendor_from_instance(Instance.t()) ::
+          {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
+  def disconnect_vendor_from_instance(%Instance{} = instance) do
+    instance
+    |> Instance.changeset(%{vendor_id: nil})
+    |> Repo.update()
   end
 
   @doc """

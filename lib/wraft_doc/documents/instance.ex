@@ -38,6 +38,7 @@ defmodule WraftDoc.Documents.Instance do
     belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
+    belongs_to(:vendor, WraftDoc.Enterprise.Vendor)
 
     has_many(:content_collaboration, WraftDoc.Documents.ContentCollaboration,
       foreign_key: :content_id
@@ -46,7 +47,6 @@ defmodule WraftDoc.Documents.Instance do
     has_many(:instance_approval_systems, WraftDoc.Documents.InstanceApprovalSystem)
     has_many(:build_histories, WraftDoc.Documents.Instance.History, foreign_key: :content_id)
     has_many(:versions, WraftDoc.Documents.Instance.Version, foreign_key: :content_id)
-    many_to_many(:vendors, WraftDoc.Enterprise.Vendor, join_through: "vendors_contents")
 
     embeds_one(:doc_settings, DocumentSettings)
 
@@ -64,7 +64,8 @@ defmodule WraftDoc.Documents.Instance do
       :type,
       :creator_id,
       :allowed_users,
-      :organisation_id
+      :organisation_id,
+      :vendor_id
     ])
     |> cast_embed(:doc_settings, with: &DocumentSettings.changeset/2)
     |> validate_required([

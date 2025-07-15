@@ -83,10 +83,10 @@ defmodule WraftDocWeb.Api.V1.VendorView do
     }
   end
 
-  def render("vendor_document.json", %{vendors_content: vendors_content}) do
+  def render("vendor_document.json", %{instance: instance, vendor: vendor}) do
     %{
-      vendor: render_one(vendors_content.vendor, VendorView, "vendor.json", as: :vendor),
-      document: render_one(vendors_content.content, InstanceView, "instance.json", as: :instance)
+      vendor: render_one(vendor, VendorView, "vendor.json", as: :vendor),
+      document: render_one(instance, InstanceView, "instance.json", as: :instance)
     }
   end
 
