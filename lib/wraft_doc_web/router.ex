@@ -382,6 +382,7 @@ defmodule WraftDocWeb.Router do
 
       # Vendor APIs
       resources("/vendors", VendorController, only: [:create, :index, :show, :update, :delete])
+      get("/vendors/:vendor_id/stats", VendorController, :stats)
 
       # Vendor Contact APIs (nested under vendors)
       scope "/vendors/:vendor_id" do

@@ -89,4 +89,14 @@ defmodule WraftDocWeb.Api.V1.VendorView do
       document: render_one(vendors_content.content, InstanceView, "instance.json", as: :instance)
     }
   end
+
+  def render("vendor_stats.json", %{stats: stats}) do
+    %{
+      total_documents: stats.total_documents,
+      pending_approvals: stats.pending_approvals,
+      total_contract_value: Decimal.to_string(stats.total_contract_value),
+      total_contacts: stats.total_contacts,
+      new_this_month: stats.new_this_month
+    }
+  end
 end
