@@ -9,7 +9,6 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Enterprise.VendorContact
-  alias WraftDoc.Enterprise.VendorsContent
 
   def swagger_definitions do
     %{
@@ -521,9 +520,9 @@ defmodule WraftDocWeb.Api.V1.VendorController do
 
     with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, vendor_id),
          %Instance{} = instance <- Documents.get_instance(document_id, current_user),
-         {:ok, %VendorsContent{} = vendors_content} <-
+         {:ok, %Instance{} = updated_instance} <-
            Documents.connect_vendor_to_instance(instance, vendor) do
-      render(conn, "vendor_document.json", vendors_content: vendors_content)
+      render(conn, "vendor_document.json", instance: updated_instance, vendor: vendor)
     end
   end
 
@@ -548,10 +547,10 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   def disconnect_from_document(conn, %{"vendor_id" => vendor_id, "id" => document_id}) do
     current_user = conn.assigns.current_user
 
-    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, vendor_id),
+    with %Vendor{} = _vendor <- Enterprise.get_vendor(current_user, vendor_id),
          %Instance{} = instance <- Documents.get_instance(document_id, current_user),
-         {:ok, %VendorsContent{} = _vendors_content} <-
-           Documents.disconnect_vendor_from_instance(instance, vendor) do
+         {:ok, %Instance{} = _updated_instance} <-
+           Documents.disconnect_vendor_from_instance(instance) do
       conn
       |> put_status(:ok)
       |> json(%{message: "Vendor disconnected from document"})
