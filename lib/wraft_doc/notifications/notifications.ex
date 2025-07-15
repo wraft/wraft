@@ -44,11 +44,12 @@ defmodule WraftDoc.Notifications do
   @spec create_notification(User.t(), map()) ::
           {:ok, Notification.t()} | {:error, Ecto.Changeset.t()}
   def create_notification(
-        %{current_org_id: current_org_id} = _current_user,
+        %{id: user_id, current_org_id: current_org_id} = _current_user,
         params
       ) do
     params
     |> Map.merge(%{
+      actor_id: user_id,
       organisation_id: current_org_id
     })
     |> then(&Notification.changeset(%Notification{}, &1))
@@ -128,7 +129,11 @@ defmodule WraftDoc.Notifications do
       |> Enum.map(fn user_notification_map ->
         struct(UserNotification, user_notification_map)
       end)
-      |> Repo.preload([:recipient, :organisation, notification: [:organisation]])
+      |> Repo.preload([
+        :recipient,
+        :organisation,
+        notification: [:organisation, actor: [:profile]]
+      ])
 
     %Scrivener.Page{result | entries: preloaded_entries}
   end

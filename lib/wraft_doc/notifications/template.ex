@@ -10,7 +10,7 @@ defmodule WraftDoc.Notifications.Template do
     title("Welcome to Wraft")
 
     message(fn %{user_name: user_name} ->
-      "Welcome to Wraft, #{user_name}! We're excited to have you on board."
+      "Welcome to Wraft, <strong>#{user_name}</strong> We're excited to have you on board."
     end)
 
     channels([:in_app, :email])
@@ -22,7 +22,7 @@ defmodule WraftDoc.Notifications.Template do
     title("Organization Welcome")
 
     message(fn %{organisation_name: organisation_name} ->
-      "Welcome to #{organisation_name}!"
+      "Welcome to <strong>#{organisation_name}</strong>!"
     end)
 
     channels([:in_app])
@@ -32,7 +32,7 @@ defmodule WraftDoc.Notifications.Template do
     title("Role Assignment")
 
     message(fn %{role_name: role_name, organisation_name: organisation_name} ->
-      "The Role of #{role_name} has been assigned to you in #{organisation_name}!"
+      "The Role <strong>#{role_name}</strong> has been assigned to you in <strong>#{organisation_name}</strong>!"
     end)
 
     channels([:in_app])
@@ -42,7 +42,7 @@ defmodule WraftDoc.Notifications.Template do
     title("Role Revoked")
 
     message(fn %{organisation_name: organisation_name, role_name: role_name} ->
-      "Your role of #{role_name} in #{organisation_name} has been revoked. Contact the #{organisation_name} administrator for further details."
+      "Your role of <strong>#{role_name}</strong> in <strong>#{organisation_name}</strong> has been revoked. Contact the <strong>#{organisation_name}</strong> administrator for further details."
     end)
 
     channels([:in_app])
@@ -57,14 +57,14 @@ defmodule WraftDoc.Notifications.Template do
                  state_name: state_name,
                  approver_name: approver_name
                } ->
-      "The Document #{document_title} in #{organisation_name} had been approved for the #{state_name} State by #{approver_name}"
+      "The Document <strong>#{document_title}</strong> in <strong>#{organisation_name}</strong> had been approved for the <strong>#{state_name}</strong> State by <strong>#{approver_name}</strong>"
     end)
 
     channels([:in_app, :email])
     email_template(MJML.DocumentStateUpdate)
 
     email_subject(fn %{document_title: title, state_name: state} ->
-      "Document '#{title}' - #{state} State Update"
+      "Document <strong>#{title}</strong> - <strong>#{state}</strong> State Update"
     end)
   end
 
@@ -76,7 +76,7 @@ defmodule WraftDoc.Notifications.Template do
                  organisation_name: organisation_name,
                  state_name: state_name
                } ->
-      "The Document #{document_title} in #{organisation_name} has been pending for the #{state_name}"
+      "The Document <strong>#{document_title}</strong> in <strong>#{organisation_name}</strong> has been pending for the <strong>#{state_name}</strong>"
     end)
 
     channels([:in_app, :email])
@@ -91,7 +91,7 @@ defmodule WraftDoc.Notifications.Template do
                  document_title: document_title,
                  commenter_name: user_name
                } ->
-      "You've been mentioned in a comment on #{document_title} by #{user_name}. Check it out!"
+      "You've been mentioned in a comment on <strong>#{document_title}</strong> by <strong>#{user_name}</strong>. Check it out!"
     end)
 
     channels([:in_app, :email])
@@ -103,7 +103,7 @@ defmodule WraftDoc.Notifications.Template do
     title("Document Reminder")
 
     message(fn %{document_title: document_title} ->
-      "Reminder: Document '#{document_title}' needs your attention."
+      "Reminder: Document <strong>'#{document_title}'</strong> needs your attention."
     end)
 
     channels([:in_app, :email])
@@ -119,14 +119,14 @@ defmodule WraftDoc.Notifications.Template do
                  sharer_name: sharer_name,
                  organisation_name: organisation_name
                } ->
-      "#{sharer_name} has shared the document '#{document_title}' with you in #{organisation_name}. You can now access, review, and collaborate on this document as part of the workflow."
+      "<strong>#{sharer_name}</strong> has shared the document <strong>'#{document_title}'</strong> with you in <strong>#{organisation_name}</strong>. You can now access, review, and collaborate on this document as part of the workflow."
     end)
 
     channels([:in_app, :email])
     email_template(MJML.Notification)
 
     email_subject(fn %{document_title: document_title} ->
-      "Document Shared: #{document_title}"
+      "Document Shared: <strong>#{document_title}</strong>"
     end)
   end
 
@@ -137,14 +137,14 @@ defmodule WraftDoc.Notifications.Template do
                  document_title: document_title,
                  publisher_name: publisher_name
                } ->
-      "The document '#{document_title}' has been published by #{publisher_name}. The document is now live and available for viewing."
+      "The document <strong>'#{document_title}'</strong> has been published by <strong>#{publisher_name}</strong>. The document is now live and available for viewing."
     end)
 
     channels([:in_app, :email])
     email_template(MJML.Notification)
 
     email_subject(fn %{document_title: document_title} ->
-      "Document Published: #{document_title}"
+      "Document Published: <strong>#{document_title}</strong>"
     end)
   end
 
@@ -155,7 +155,7 @@ defmodule WraftDoc.Notifications.Template do
                  document_title: document_title,
                  requester_name: requester_name
                } ->
-      "#{requester_name} has requested your signature on the document '#{document_title}'. Please review and sign the document at your earliest convenience."
+      "<strong>#{requester_name}</strong> has requested your signature on the document <strong>'#{document_title}'</strong>. Please review and sign the document at your earliest convenience."
     end)
 
     channels([:in_app])
@@ -167,7 +167,7 @@ defmodule WraftDoc.Notifications.Template do
     message(fn %{
                  document_title: document_title
                } ->
-      "The document '#{document_title}' has been fully signed by all parties. The signed document is now available for download."
+      "The document <strong>'#{document_title}'</strong> has been fully signed by all parties. The signed document is now available for download."
     end)
 
     channels([:in_app])

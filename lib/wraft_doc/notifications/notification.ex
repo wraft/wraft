@@ -5,8 +5,26 @@ defmodule WraftDoc.Notifications.Notification do
   use WraftDoc.Schema
 
   @derive {Jason.Encoder,
-           only: [:event_type, :message, :channel, :channel_id, :action, :organisation_id]}
-  @fields [:event_type, :message, :channel_id, :channel, :action, :organisation_id, :metadata]
+           only: [
+             :event_type,
+             :message,
+             :channel,
+             :channel_id,
+             :action,
+             :organisation_id,
+             :metadata,
+             :actor_id
+           ]}
+  @fields [
+    :event_type,
+    :message,
+    :channel_id,
+    :channel,
+    :action,
+    :organisation_id,
+    :metadata,
+    :actor_id
+  ]
   @channel_values [
     :user_notification,
     :role_group_notification,
@@ -28,6 +46,7 @@ defmodule WraftDoc.Notifications.Notification do
     field(:action, :map, default: %{})
     field(:metadata, :map, default: %{})
 
+    belongs_to(:actor, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     timestamps()
