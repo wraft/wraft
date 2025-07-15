@@ -92,7 +92,7 @@ defmodule WraftDoc.Documents.Instance do
 
   def update_changeset(%Instance{} = instance, attrs \\ %{}) do
     instance
-    |> cast(attrs, [:instance_id, :raw, :serialized])
+    |> cast(attrs, [:instance_id, :raw, :serialized, :vendor_id])
     |> cast_embed(:doc_settings, with: &DocumentSettings.changeset/2)
     |> validate_required([:instance_id, :raw, :serialized])
     |> unique_constraint(:instance_id,
