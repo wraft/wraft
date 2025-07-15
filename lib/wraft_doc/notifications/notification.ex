@@ -6,7 +6,7 @@ defmodule WraftDoc.Notifications.Notification do
 
   @derive {Jason.Encoder,
            only: [:event_type, :message, :channel, :channel_id, :action, :organisation_id]}
-  @fields [:event_type, :message, :channel_id, :channel, :action, :organisation_id]
+  @fields [:event_type, :message, :channel_id, :channel, :action, :organisation_id, :metadata]
   @channel_values [
     :user_notification,
     :role_group_notification,
