@@ -199,6 +199,27 @@ defmodule WraftDocWeb.Api.V1.VendorController do
             total_pages: 1,
             total_entries: 5
           })
+        end,
+      VendorStatsResponse:
+        swagger_schema do
+          title("Vendor Statistics Response")
+          description("Statistics for a specific vendor")
+
+          properties do
+            total_documents(:integer, "Total number of documents connected to this vendor")
+            pending_approvals(:integer, "Number of documents awaiting approval")
+            total_contract_value(:string, "Combined value of all contracts")
+            total_contacts(:integer, "Number of vendor contacts registered")
+            new_this_month(:integer, "Number of vendors added this month in the organization")
+          end
+
+          example(%{
+            total_documents: 847,
+            pending_approvals: 34,
+            total_contract_value: "2500000.00",
+            total_contacts: 293,
+            new_this_month: 18
+          })
         end
     }
   end
@@ -534,6 +555,31 @@ defmodule WraftDocWeb.Api.V1.VendorController do
       conn
       |> put_status(:ok)
       |> json(%{message: "Vendor disconnected from document"})
+    end
+  end
+
+  swagger_path :stats do
+    get("/vendors/{vendor_id}/stats")
+    summary("Get vendor statistics")
+    description("API to get statistics for a specific vendor")
+
+    parameters do
+      vendor_id(:path, :string, "Vendor ID", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:VendorStatsResponse))
+    response(404, "Not Found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec stats(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def stats(conn, %{"vendor_id" => vendor_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, vendor_id) do
+      stats = Enterprise.get_vendor_stats(vendor)
+      render(conn, "vendor_stats.json", stats: stats)
     end
   end
 end
