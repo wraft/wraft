@@ -541,7 +541,8 @@ defmodule WraftDoc.Documents do
       {:content_type, [flow: :states]},
       :state,
       {:instance_approval_systems, :approver},
-      {:creator, :profile}
+      {:creator, :profile},
+      :vendor
     ])
     |> Repo.paginate(params)
   end
@@ -573,7 +574,8 @@ defmodule WraftDoc.Documents do
       :content_type,
       :state,
       {:instance_approval_systems, :approver},
-      {:creator, :profile}
+      {:creator, :profile},
+      :vendor
     ])
     |> Repo.paginate(params)
   end
@@ -660,6 +662,7 @@ defmodule WraftDoc.Documents do
           :content_type,
           :state,
           {:instance_approval_systems, :approver},
+          :vendor,
           creator: [:profile]
         ]
       )
@@ -733,6 +736,7 @@ defmodule WraftDoc.Documents do
         {:versions, versions_preload_query},
         {:state, :approvers},
         {:instance_approval_systems, :approver},
+        :vendor,
         state: [
           approval_system: [:post_state, :approver],
           rejection_system: [:pre_state, :approver]
@@ -817,6 +821,7 @@ defmodule WraftDoc.Documents do
           {:content_type, :layout},
           {:versions, :author},
           {:instance_approval_systems, :approver},
+          :vendor,
           state: [approval_system: [:post_state, :approver]]
         ])
         |> get_built_document()
