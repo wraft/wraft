@@ -2,6 +2,21 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   use WraftDocWeb, :controller
   use PhoenixSwagger
 
+  plug WraftDocWeb.Plug.AddActionLog
+
+  plug WraftDocWeb.Plug.Authorized,
+    create: "vendor:manage",
+    index: "vendor:show",
+    show: "vendor:show",
+    update: "vendor:manage",
+    delete: "vendor:delete",
+    create_contact: "vendor:manage",
+    contacts_index: "vendor:show",
+    show_contact: "vendor:show",
+    update_contact: "vendor:manage",
+    delete_contact: "vendor:delete",
+    stats: "vendor:show"
+
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Documents
