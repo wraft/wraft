@@ -515,9 +515,6 @@ defmodule WraftDocWeb.Router do
         post("/request_signature", SignatureController, :request_signature)
         post("/generate_signature", SignatureController, :generate_signature)
         post("/append_signature", SignatureController, :apply_signature)
-        # Vendor Document Connection APIs
-        post("/vendors/:vendor_id", VendorController, :connect_to_document)
-        delete("/vendors/:vendor_id", VendorController, :disconnect_from_document)
 
         scope "/signatures" do
           post("/", SignatureController, :create_signature)
