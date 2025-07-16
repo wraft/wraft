@@ -177,13 +177,10 @@ defmodule WraftDoc.Notifications do
   """
   @spec unread_notification_count(User.t()) :: integer
   def unread_notification_count(%User{} = user) do
-    UserNotification
-    |> where(
-      [un],
-      un.recipient_id == ^user.id and un.read == false
-    )
-    |> select([un], count(un.id))
-    |> Repo.one()
+    user
+    |> unread_from_notifications()
+    |> Repo.all()
+    |> Enum.count()
   end
 
   @doc """
