@@ -8,6 +8,7 @@ defmodule WraftDocWeb.NotificationChannel do
   require Logger
 
   alias WraftDoc.Account
+  alias WraftDocWeb.Api.V1.NotificationView
 
   @impl true
 
@@ -15,14 +16,6 @@ defmodule WraftDocWeb.NotificationChannel do
   Handles joining a "notification" channel for a specific user
   """
   @spec join(String.t(), map(), Phoenix.Socket.t()) :: {:ok, Phoenix.Socket.t()} | {:error, map()}
-  def join("notification:" <> user_id, _payload, socket) do
-    if authorized?(:user, user_id, socket.assigns.current_user) do
-      {:ok, socket}
-    else
-      {:error, %{reason: "unauthorized"}}
-    end
-  end
-
   def join("user_notification:" <> user_id, _payload, socket) do
     if authorized?(:user, user_id, socket.assigns.current_user) do
       {:ok, socket}
@@ -47,10 +40,11 @@ defmodule WraftDocWeb.NotificationChannel do
     end
   end
 
-  @spec broad_cast(Notification.t(), User.t()) :: {:noreply, Phoenix.Socket.t()}
-  def broad_cast(notification, user) do
+  @spec broadcast(Notification.t(), User.t()) :: {:noreply, Phoenix.Socket.t()}
+  def broadcast(notification, user) do
     socket = create_socket(notification, user)
-    broadcast!(socket, "notification", %{body: notification})
+    payload = create_notification_payload(notification)
+    broadcast!(socket, "notification", %{body: payload})
     {:noreply, socket}
   end
 
@@ -83,6 +77,12 @@ defmodule WraftDocWeb.NotificationChannel do
 
   defp get_topic(%{channel: channel, channel_id: channel_id} = _notification),
     do: "#{Atom.to_string(channel)}:#{channel_id}"
+
+  def create_notification_payload(notification) do
+    %{read: false, seen_at: nil}
+    |> Map.put(:notification, notification)
+    |> then(&NotificationView.render("user_notification.json", %{user_notification: &1}))
+  end
 
   defp authorized?(:user, user_id, %{id: current_user_id})
        when user_id == current_user_id,

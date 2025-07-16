@@ -1,7 +1,6 @@
 defmodule WraftDocWeb.Api.V1.NotificationView do
   use WraftDocWeb, :view
 
-  alias WraftDocWeb.Api.V1.OrganisationView
   alias WraftDocWeb.Api.V1.UserView
   alias __MODULE__
 
@@ -57,8 +56,7 @@ defmodule WraftDocWeb.Api.V1.NotificationView do
   def render("settings.json", %{settings: settings}) do
     %{
       id: settings.id,
-      events: settings.events,
-      organisation: render_one(settings.organisation, OrganisationView, "organisation.json")
+      events: settings.events
     }
   end
 
