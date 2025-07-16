@@ -73,10 +73,9 @@ defmodule WraftDoc.Notifications.Template do
 
     message(fn %{
                  document_title: document_title,
-                 organisation_name: organisation_name,
                  state_name: state_name
                } ->
-      "The Document <strong>#{document_title}</strong> in <strong>#{organisation_name}</strong> has been pending for the <strong>#{state_name}</strong>"
+      "Some approvals in <strong>#{state_name}</strong> are pending for the Document <strong>#{document_title}</strong>"
     end)
 
     channels([:in_app, :email])
@@ -91,7 +90,7 @@ defmodule WraftDoc.Notifications.Template do
                  document_title: document_title,
                  commenter_name: user_name
                } ->
-      "You've been mentioned in a comment on <strong>#{document_title}</strong> by <strong>#{user_name}</strong>. Check it out!"
+      "<strong>#{user_name}</strong> added a comment on <strong>#{document_title}</strong>. Check it out!"
     end)
 
     channels([:in_app, :email])
@@ -137,7 +136,7 @@ defmodule WraftDoc.Notifications.Template do
                  document_title: document_title,
                  publisher_name: publisher_name
                } ->
-      "The document <strong>'#{document_title}'</strong> has been published by <strong>#{publisher_name}</strong>. The document is now live and available for viewing."
+      "<strong>#{publisher_name}</strong> has published the document <strong>'#{document_title}'</strong>. The document is now live and available for viewing."
     end)
 
     channels([:in_app, :email])
@@ -155,7 +154,7 @@ defmodule WraftDoc.Notifications.Template do
                  document_title: document_title,
                  requester_name: requester_name
                } ->
-      "<strong>#{requester_name}</strong> has requested your signature on the document <strong>'#{document_title}'</strong>. Please review and sign the document at your earliest convenience."
+      "<strong>#{requester_name}</strong> has requested your signature on the document <strong>'#{document_title}'</strong>."
     end)
 
     channels([:in_app])

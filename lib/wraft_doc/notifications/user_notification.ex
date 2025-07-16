@@ -5,11 +5,10 @@ defmodule WraftDoc.Notifications.UserNotification do
   alias __MODULE__
   use WraftDoc.Schema
 
-  @fields [:status, :seen_at, :organisation_id, :recipient_id, :notification_id]
-  @statuses [:unread, :read]
+  @fields [:read, :seen_at, :organisation_id, :recipient_id, :notification_id]
 
   schema "user_notifications" do
-    field(:status, Ecto.Enum, values: @statuses, default: :unread)
+    field(:read, :boolean, default: false)
     field(:seen_at, :utc_datetime)
 
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
@@ -22,8 +21,7 @@ defmodule WraftDoc.Notifications.UserNotification do
   def changeset(%UserNotification{} = user_notification, attrs) do
     user_notification
     |> cast(attrs, @fields)
-    |> validate_required([:status])
-    |> validate_inclusion(:status, @statuses)
+    |> validate_required([:read])
     |> unique_constraint([:recipient_id, :notification_id],
       message: "has already been notified",
       name: :unique_user_notification
@@ -35,8 +33,7 @@ defmodule WraftDoc.Notifications.UserNotification do
 
   def status_update_changeset(%UserNotification{} = user_notification, attrs) do
     user_notification
-    |> cast(attrs, [:status, :seen_at])
-    |> validate_required([:status, :seen_at])
-    |> validate_inclusion(:status, @statuses)
+    |> cast(attrs, [:read, :seen_at])
+    |> validate_required([:read, :seen_at])
   end
 end

@@ -27,6 +27,8 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Notifications.Settings
+  alias WraftDoc.Notifications.Template
   alias WraftDoc.Repo
   alias WraftDoc.Storage
   alias WraftDoc.TaskSupervisor
@@ -715,6 +717,12 @@ defmodule WraftDoc.Enterprise do
     |> Multi.run(:repository, fn _repo, %{organisation_logo: organisation} ->
       create_default_repository(organisation, %{"creator_id" => user_id})
     end)
+    |> Multi.run(:setup_notification_settings, fn _repo, %{organisation_logo: organisation} ->
+      Settings.changeset(%Settings{}, %{
+        organisation_id: organisation.id,
+        events: Template.list_notification_types()
+      })
+    end)
     |> then(fn multi ->
       if self_hosted?() do
         multi
@@ -769,6 +777,12 @@ defmodule WraftDoc.Enterprise do
     |> Multi.run(:setup_feature_flags, fn _repo, %{organisation: organisation} ->
       WraftDoc.FeatureFlags.setup_defaults(organisation)
       {:ok, organisation}
+    end)
+    |> Multi.run(:setup_notification_settings, fn _repo, %{organisation: organisation} ->
+      Settings.changeset(%Settings{}, %{
+        organisation_id: organisation.id,
+        events: Template.list_notification_types()
+      })
     end)
     |> then(fn multi ->
       if self_hosted?() do
