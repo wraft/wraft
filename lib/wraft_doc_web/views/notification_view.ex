@@ -11,7 +11,7 @@ defmodule WraftDocWeb.Api.V1.NotificationView do
       event_type: notification.event_type,
       message: notification.message,
       action: notification.action,
-      actor_id: render_one(notification.actor, UserView, "actor.json"),
+      actor: render_one(notification.actor, UserView, "actor.json"),
       meta: notification.metadata,
       inserted_at: notification.inserted_at
     }
@@ -35,14 +35,13 @@ defmodule WraftDocWeb.Api.V1.NotificationView do
   end
 
   def render("user_notification.json", %{user_notification: user_notification}) do
-    %{
-      id: user_notification.id,
-      status: user_notification.status,
-      seen_at: user_notification.seen_at,
-      inserted_at: user_notification.inserted_at,
-      notification:
-        render_one(user_notification.notification, NotificationView, "notification.json")
-    }
+    Map.merge(
+      %{
+        read: user_notification.read,
+        seen_at: user_notification.seen_at
+      },
+      render_one(user_notification.notification, NotificationView, "notification.json")
+    )
   end
 
   def render("count.json", %{count: count}) do

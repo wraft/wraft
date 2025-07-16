@@ -63,32 +63,20 @@ defmodule WraftDoc.Notifications do
   """
   @spec list_notifications(User.t(), map()) :: map()
   def list_notifications(%User{} = user, params) do
-    params
-    |> Map.get("status", "unread")
-    |> case do
-      "unread" ->
-        user
-        |> unread_from_user_notifications()
-        |> union_all(^unread_from_notifications(user))
-        |> order_by([un], desc: fragment("?", 7))
-        |> Repo.paginate(params)
-        |> preload_associations()
-
-      "read" ->
-        UserNotification
-        |> where([un], un.recipient_id == ^user.id and un.status == :read)
-        |> order_by([un], desc: un.inserted_at)
-        |> preload([:notification, :organisation, :recipient])
-        |> Repo.paginate(params)
-    end
+    user
+    |> unread_from_user_notifications()
+    |> union_all(^unread_from_notifications(user))
+    |> order_by([un], desc: fragment("?", 7))
+    |> Repo.paginate(params)
+    |> preload_associations()
   end
 
   defp unread_from_user_notifications(%User{} = user) do
     from(un in UserNotification,
-      where: un.recipient_id == ^user.id and un.status == :unread,
+      where: un.recipient_id == ^user.id,
       select: %{
         id: un.id,
-        status: un.status,
+        read: un.read,
         seen_at: un.seen_at,
         organisation_id: un.organisation_id,
         recipient_id: un.recipient_id,
@@ -112,7 +100,7 @@ defmodule WraftDoc.Notifications do
       where: is_nil(un.id),
       select: %{
         id: fragment("NULL::uuid"),
-        status: fragment("'unread'::text"),
+        read: fragment("false::boolean"),
         seen_at: fragment("NULL::timestamp"),
         organisation_id: n.organisation_id,
         recipient_id: type(^user_id, :binary_id),
@@ -155,17 +143,17 @@ defmodule WraftDoc.Notifications do
 
   ## Examples
       iex> read_notification(current_user, notification)
-      {:ok, %UserNotification{status: :read}}
+      {:ok, %UserNotification{read: true}}
   """
   @spec read_notification(User.t(), Notification.t()) ::
           {:ok, UserNotification.t()} | {:error, Ecto.Changeset.t()}
-  def read_notification(%{current_org_id: current_org_id} = user, notification) do
+  def read_notification(%{id: user_id, current_org_id: current_org_id} = _user, notification) do
     %UserNotification{}
     |> UserNotification.changeset(%{
       seen_at: Timex.now(),
-      status: "read",
+      read: true,
       notification_id: notification.id,
-      recipient_id: user.id,
+      recipient_id: user_id,
       organisation_id: current_org_id
     })
     |> Repo.insert()
@@ -175,7 +163,7 @@ defmodule WraftDoc.Notifications do
   Count unread notifications for a user.
 
   This function counts the number of unread notifications for the given user
-  by querying UserNotification records with status :unread.
+  by querying UserNotification records with read false.
 
   ## Parameters
   - `user`: A user struct containing the `id` field
@@ -192,7 +180,7 @@ defmodule WraftDoc.Notifications do
     UserNotification
     |> where(
       [un],
-      un.recipient_id == ^user.id and un.status == :unread
+      un.recipient_id == ^user.id and un.read == false
     )
     |> select([un], count(un.id))
     |> Repo.one()
@@ -216,15 +204,21 @@ defmodule WraftDoc.Notifications do
       {3, nil}
   """
   @spec read_all_notifications(User.t()) :: {integer(), nil}
-  def read_all_notifications(%User{id: user_id, current_org_id: organisation_id} = _current_user) do
+  def read_all_notifications(%User{id: user_id, current_org_id: organisation_id} = user) do
+    user_role_ids = Account.get_user_role_ids(user)
+
     unread_notification_ids =
       Notification
       |> join(:left, [n], un in UserNotification,
-        on:
-          un.notification_id == n.id and
-            un.recipient_id == ^user_id
+        on: un.notification_id == n.id and un.recipient_id == ^user_id
       )
-      |> where([n, _un], n.organisation_id == ^organisation_id)
+      |> where(
+        [n, _un],
+        n.organisation_id == ^organisation_id and
+          (n.channel == :organisation_notification or
+             (n.channel == :user_notification and n.channel_id == ^user_id) or
+             (n.channel == :role_group_notification and n.channel_id in ^user_role_ids))
+      )
       |> where([_n, un], is_nil(un.id))
       |> select([n, _un], n.id)
       |> Repo.all()
@@ -235,7 +229,8 @@ defmodule WraftDoc.Notifications do
           notification_id: notification_id,
           recipient_id: user_id,
           organisation_id: organisation_id,
-          status: :read,
+          read: true,
+          seen_at: DateTime.truncate(DateTime.utc_now(), :second),
           inserted_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second),
           updated_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), :second)
         }
@@ -264,7 +259,7 @@ defmodule WraftDoc.Notifications do
 
   ## Examples
       iex> get_user_notification(current_user, "123e4567-e89b-12d3-a456-426614174000")
-      %UserNotification{status: :unread}
+      %UserNotification{read: false}
   """
   @spec get_user_notification(User.t(), Ecto.UUID.t()) :: UserNotification.t() | nil
   def get_user_notification(%User{} = current_user, notification_id) do
@@ -272,7 +267,7 @@ defmodule WraftDoc.Notifications do
     |> where(
       [un],
       un.recipient_id == ^current_user.id and un.notification_id == ^notification_id and
-        un.status == :unread
+        un.read == false
     )
     |> Repo.one()
   end

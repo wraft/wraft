@@ -14,6 +14,11 @@ defmodule WraftDoc.Repo.Migrations.UpdateNotificationTableAddScopeAndType do
 
       remove(:type)
     end
+
+    alter table(:user_notifications) do
+      remove(:status)
+      add(:read, :boolean, default: false, null: false)
+    end
   end
 
   def down do
@@ -24,9 +29,14 @@ defmodule WraftDoc.Repo.Migrations.UpdateNotificationTableAddScopeAndType do
       remove(:organisation_id)
       remove(:metadata)
 
-      # add(:type, :string)
+      add(:type, :string)
     end
 
     rename(table("notifications"), to: table("notification"))
+
+    alter table(:user_notifications) do
+      remove(:read)
+      add(:status, :string)
+    end
   end
 end
