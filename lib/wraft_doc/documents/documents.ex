@@ -30,7 +30,6 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.StateUser
-  alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Fields.Field
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
@@ -2362,28 +2361,6 @@ defmodule WraftDoc.Documents do
       _ ->
         []
     end
-  end
-
-  @doc """
-  Connect a vendor to a document instance.
-  """
-  @spec connect_vendor_to_instance(Instance.t(), Vendor.t()) ::
-          {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def connect_vendor_to_instance(%Instance{} = instance, %Vendor{id: vendor_id}) do
-    instance
-    |> Instance.changeset(%{vendor_id: vendor_id})
-    |> Repo.update()
-  end
-
-  @doc """
-  Disconnect a vendor from a document instance.
-  """
-  @spec disconnect_vendor_from_instance(Instance.t()) ::
-          {:ok, Instance.t()} | {:error, Ecto.Changeset.t()}
-  def disconnect_vendor_from_instance(%Instance{} = instance) do
-    instance
-    |> Instance.changeset(%{vendor_id: nil})
-    |> Repo.update()
   end
 
   @doc """
