@@ -54,6 +54,15 @@ defmodule WraftDoc.Notifications do
     })
     |> then(&Notification.changeset(%Notification{}, &1))
     |> Repo.insert()
+    |> case do
+      {:ok, notification} ->
+        notification
+        |> Repo.preload(actor: [:profile])
+        |> then(&{:ok, &1})
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   @doc """

@@ -68,7 +68,7 @@ defmodule WraftDoc.Notifications.Delivery do
   end
 
   defp send_through_delivery_channel(:in_app, current_user, notification, _params),
-    do: NotificationChannel.broad_cast(notification, current_user)
+    do: NotificationChannel.broadcast(notification, current_user)
 
   defp send_through_delivery_channel(
          :email,
