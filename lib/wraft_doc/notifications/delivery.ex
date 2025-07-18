@@ -153,10 +153,10 @@ defmodule WraftDoc.Notifications.Delivery do
     |> Notifications.get_organisation_settings()
     |> case do
       %{events: events} ->
-        Enum.member?(events, type)
+        not Enum.member?(events, type)
 
       _ ->
-        false
+        true
     end
   end
 end

@@ -922,13 +922,25 @@ defmodule WraftDocWeb.Api.V1.UserController do
   def join_organisation(conn, %{"token" => token} = _params) do
     current_user = conn.assigns[:current_user]
 
-    with {:ok, %{organisations: %{name: organisation_name} = organisation}} <-
+    with {:ok, %{organisations: %{id: organisation_id, name: organisation_name} = organisation}} <-
            Enterprise.join_org_by_invite(current_user, token) do
       Task.start(fn ->
         Delivery.dispatch(current_user, "organisation.join_organisation", %{
           organisation_name: organisation_name,
-          channel: "organisation.join_organisation",
+          channel: :user_notification,
           channel_id: current_user.id,
+          metadata: %{
+            user_id: current_user.id,
+            type: "join"
+          }
+        })
+      end)
+
+      Task.start(fn ->
+        Delivery.dispatch(current_user, "organisation.join_organisation.all", %{
+          user_name: current_user.name,
+          channel: :organisation_notification,
+          channel_id: organisation_id,
           metadata: %{
             user_id: current_user.id,
             type: "join"

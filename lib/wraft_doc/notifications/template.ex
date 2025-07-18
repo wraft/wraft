@@ -28,6 +28,16 @@ defmodule WraftDoc.Notifications.Template do
     channels([:in_app])
   end
 
+  defnotification "organisation.join_organisation.all" do
+    title("Joined in Organization")
+
+    message(fn %{user_name: user_name} ->
+      "#{user_name} joined to your organization"
+    end)
+
+    channels([:in_app])
+  end
+
   defnotification "organisation.assign_role" do
     title("Role Assignment")
 

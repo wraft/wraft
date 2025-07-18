@@ -28,7 +28,6 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Notifications.Settings
-  alias WraftDoc.Notifications.Template
   alias WraftDoc.Repo
   alias WraftDoc.Storage
   alias WraftDoc.TaskSupervisor
@@ -720,7 +719,7 @@ defmodule WraftDoc.Enterprise do
     |> Multi.insert(:setup_notification_settings, fn %{organisation_logo: organisation} ->
       Settings.changeset(%Settings{}, %{
         organisation_id: organisation.id,
-        events: Template.list_notification_types()
+        events: []
       })
     end)
     |> then(fn multi ->
@@ -781,7 +780,7 @@ defmodule WraftDoc.Enterprise do
     |> Multi.insert(:setup_notification_settings, fn %{organisation: organisation} ->
       Settings.changeset(%Settings{}, %{
         organisation_id: organisation.id,
-        events: Template.list_notification_types()
+        events: []
       })
     end)
     |> then(fn multi ->
