@@ -516,6 +516,10 @@ defmodule WraftDocWeb.Router do
         post("/generate_signature", SignatureController, :generate_signature)
         post("/append_signature", SignatureController, :apply_signature)
 
+        # Content sign settings routes
+        get("/sign_settings", SignatureController, :get_content_sign_settings)
+        put("/sign_settings", SignatureController, :update_content_sign_settings)
+
         scope "/signatures" do
           post("/", SignatureController, :create_signature)
           get("/", SignatureController, :get_document_signatures)

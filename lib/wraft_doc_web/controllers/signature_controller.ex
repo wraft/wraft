@@ -145,6 +145,42 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
             signed_pdf_url: "https://example.com/signed_document.pdf",
             message: "Visual signature applied successfully"
           })
+        end,
+      ContentSignSettings:
+        swagger_schema do
+          title("Content Sign Settings")
+          description("Settings for document signature behavior")
+
+          properties do
+            signature_type(:string, "Type of signature",
+              enum: ["e_sign", "digital", "docusign", "zoho_sign"],
+              default: "e_sign"
+            )
+
+            sign_order_enabled(:boolean, "Whether signature order is enabled", default: false)
+            day_to_complete(:string, "Days to complete signature", default: "15")
+            reminder_enabled(:boolean, "Whether reminders are enabled", default: true)
+            reminder_interval_days(:integer, "Interval for sending reminders in days", default: 3)
+
+            cc_recipients(:array, "Array of CC recipients with name and email",
+              items: %{
+                type: :object,
+                properties: %{name: %{type: :string}, email: %{type: :string}}
+              }
+            )
+          end
+
+          example(%{
+            signature_type: "e_sign",
+            sign_order_enabled: false,
+            day_to_complete: "15",
+            reminder_enabled: true,
+            reminder_interval_days: 3,
+            cc_recipients: [
+              %{name: "John Doe", email: "john@example.com"},
+              %{name: "Jane Smith", email: "jane@example.com"}
+            ]
+          })
         end
     }
   end
@@ -489,6 +525,63 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
          {:ok, %ESignature{} = updated_signature} <-
            Signatures.assign_counter_party(signature, counter_party) do
       render(conn, "signature.json", signature: updated_signature)
+    end
+  end
+
+  @doc """
+  Get content sign settings for a document
+  """
+  swagger_path :get_content_sign_settings do
+    get("/contents/{id}/sign_settings")
+    summary("Get document sign settings")
+    description("API to get signature settings for a document")
+
+    parameters do
+      id(:path, :string, "Document ID", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ContentSignSettings))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+  end
+
+  @doc """
+  Update content sign settings for a document
+  """
+  swagger_path :update_content_sign_settings do
+    put("/contents/{id}/sign_settings")
+    summary("Update document sign settings")
+    description("API to update signature settings for a document")
+
+    parameters do
+      id(:path, :string, "Document ID", required: true)
+      settings(:body, Schema.ref(:ContentSignSettings), "Sign settings to update", required: true)
+    end
+
+    response(200, "Ok", Schema.ref(:ContentSignSettings))
+    response(401, "Unauthorized", Schema.ref(:Error))
+    response(404, "Not found", Schema.ref(:Error))
+    response(422, "Unprocessable Entity", Schema.ref(:Error))
+  end
+
+  @spec get_content_sign_settings(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def get_content_sign_settings(conn, %{"id" => document_id}) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{content_sign_settings: settings} = _instance <-
+           Documents.show_instance(document_id, current_user) do
+      render(conn, "content_sign_settings.json", settings: settings || %{})
+    end
+  end
+
+  @spec update_content_sign_settings(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update_content_sign_settings(conn, %{"id" => document_id} = params) do
+    current_user = conn.assigns.current_user
+
+    with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
+         {:ok, %Instance{} = updated_instance} <-
+           Documents.update_instance(instance, %{content_sign_settings: params}) do
+      render(conn, "content_sign_settings.json", settings: updated_instance.content_sign_settings)
     end
   end
 

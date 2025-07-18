@@ -14,6 +14,7 @@ defmodule WraftDoc.Documents.Instance do
   @behaviour ExTypesense
 
   alias __MODULE__
+  alias WraftDoc.Documents.ContentSignSettings
   alias WraftDoc.Documents.DocumentSettings
   alias WraftDoc.EctoType.DocumentMetaType
 
@@ -49,6 +50,7 @@ defmodule WraftDoc.Documents.Instance do
     has_many(:versions, WraftDoc.Documents.Instance.Version, foreign_key: :content_id)
 
     embeds_one(:doc_settings, DocumentSettings)
+    embeds_one(:content_sign_settings, ContentSignSettings)
 
     timestamps()
   end
@@ -68,6 +70,7 @@ defmodule WraftDoc.Documents.Instance do
       :vendor_id
     ])
     |> cast_embed(:doc_settings, with: &DocumentSettings.changeset/2)
+    |> cast_embed(:content_sign_settings, with: &ContentSignSettings.changeset/2)
     |> validate_required([
       :instance_id,
       :raw,
@@ -94,6 +97,7 @@ defmodule WraftDoc.Documents.Instance do
     instance
     |> cast(attrs, [:instance_id, :raw, :serialized, :vendor_id])
     |> cast_embed(:doc_settings, with: &DocumentSettings.changeset/2)
+    |> cast_embed(:content_sign_settings, with: &ContentSignSettings.changeset/2)
     |> validate_required([:instance_id, :raw, :serialized])
     |> unique_constraint(:instance_id,
       message: "Instance with the ID exists.!",

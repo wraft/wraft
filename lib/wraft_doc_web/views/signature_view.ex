@@ -62,6 +62,17 @@ defmodule WraftDocWeb.Api.V1.SignatureView do
     }
   end
 
+  def render("content_sign_settings.json", %{settings: settings}) do
+    %{
+      signature_type: settings["signature_type"],
+      sign_order_enabled: settings["sign_order_enabled"],
+      day_to_complete: settings["day_to_complete"],
+      reminder_enabled: settings["reminder_enabled"],
+      reminder_interval_days: settings["reminder_interval_days"],
+      cc_recipients: settings["cc_recipients"]
+    }
+  end
+
   def generate_url(%{signature_image: file} = signature) do
     WraftDocWeb.SignatureUploader.url({file, signature}, signed: true)
   end
