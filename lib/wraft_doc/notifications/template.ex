@@ -31,8 +31,8 @@ defmodule WraftDoc.Notifications.Template do
   defnotification "organisation.assign_role" do
     title("Role Assignment")
 
-    message(fn %{role_name: role_name, organisation_name: organisation_name} ->
-      "The Role <strong>#{role_name}</strong> has been assigned to you in <strong>#{organisation_name}</strong>!"
+    message(fn %{role_name: role_name, assigned_by: assigned_by} ->
+      "<strong>#{assigned_by}</strong> assigned the role <strong>#{role_name}</strong> to you"
     end)
 
     channels([:in_app])
@@ -41,8 +41,11 @@ defmodule WraftDoc.Notifications.Template do
   defnotification "organisation.unassign_role" do
     title("Role Revoked")
 
-    message(fn %{organisation_name: organisation_name, role_name: role_name} ->
-      "Your role of <strong>#{role_name}</strong> in <strong>#{organisation_name}</strong> has been revoked. Contact the <strong>#{organisation_name}</strong> administrator for further details."
+    message(fn %{
+                 assigned_by: assigned_by,
+                 role_name: role_name
+               } ->
+      "<strong>#{assigned_by}</strong> revoked your role of <strong>#{role_name}</strong>"
     end)
 
     channels([:in_app])
@@ -53,11 +56,10 @@ defmodule WraftDoc.Notifications.Template do
 
     message(fn %{
                  document_title: document_title,
-                 organisation_name: organisation_name,
                  state_name: state_name,
                  approver_name: approver_name
                } ->
-      "The Document <strong>#{document_title}</strong> in <strong>#{organisation_name}</strong> had been approved for the <strong>#{state_name}</strong> State by <strong>#{approver_name}</strong>"
+      "<strong>#{approver_name}</strong> approved the document <strong>#{document_title}</strong> for the <strong>#{state_name}</strong> state"
     end)
 
     channels([:in_app, :email])
@@ -75,7 +77,7 @@ defmodule WraftDoc.Notifications.Template do
                  document_title: document_title,
                  state_name: state_name
                } ->
-      "Some approvals in <strong>#{state_name}</strong> are pending for the Document <strong>#{document_title}</strong>"
+      "Document <strong>#{document_title}</strong> is waiting for approvals in the <strong>#{state_name}</strong> state"
     end)
 
     channels([:in_app, :email])
@@ -115,10 +117,9 @@ defmodule WraftDoc.Notifications.Template do
 
     message(fn %{
                  document_title: document_title,
-                 sharer_name: sharer_name,
-                 organisation_name: organisation_name
+                 sharer_name: sharer_name
                } ->
-      "<strong>#{sharer_name}</strong> has shared the document <strong>'#{document_title}'</strong> with you in <strong>#{organisation_name}</strong>. You can now access, review, and collaborate on this document as part of the workflow."
+      "<strong>#{sharer_name}</strong> has shared the document <strong>'#{document_title}'</strong> with you. You can now access, review, and collaborate on this document as part of the workflow."
     end)
 
     channels([:in_app, :email])
