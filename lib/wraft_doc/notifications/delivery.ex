@@ -29,18 +29,22 @@ defmodule WraftDoc.Notifications.Delivery do
   @spec dispatch(User.t(), String.t(), map()) ::
           {:ok, Notification.t()} | {:error, String.t()}
   def dispatch(current_user, type, params) do
-    delivery_channels = Template.get_channels(type)
+    current_user
+    |> allowed_notification?(type)
+    |> if do
+      delivery_channels = Template.get_channels(type)
 
-    with {:ok, notification_record} <-
-           create_notification_record(current_user, type, params),
-         :ok <-
-           send_through_delivery_channels(
-             current_user,
-             notification_record,
-             delivery_channels,
-             params
-           ) do
-      {:ok, notification_record}
+      with {:ok, notification_record} <-
+             create_notification_record(current_user, type, params),
+           :ok <-
+             send_through_delivery_channels(
+               current_user,
+               notification_record,
+               delivery_channels,
+               params
+             ) do
+        {:ok, notification_record}
+      end
     end
   end
 
@@ -141,6 +145,18 @@ defmodule WraftDoc.Notifications.Delivery do
         User
         |> select([u], u.id)
         |> Repo.all()
+    end
+  end
+
+  defp allowed_notification?(user, type) do
+    user
+    |> Notifications.get_organisation_settings()
+    |> case do
+      %{events: events} ->
+        Enum.member?(events, type)
+
+      _ ->
+        false
     end
   end
 end

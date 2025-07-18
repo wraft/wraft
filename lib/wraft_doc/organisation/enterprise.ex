@@ -717,7 +717,7 @@ defmodule WraftDoc.Enterprise do
     |> Multi.run(:repository, fn _repo, %{organisation_logo: organisation} ->
       create_default_repository(organisation, %{"creator_id" => user_id})
     end)
-    |> Multi.run(:setup_notification_settings, fn _repo, %{organisation_logo: organisation} ->
+    |> Multi.insert(:setup_notification_settings, fn %{organisation_logo: organisation} ->
       Settings.changeset(%Settings{}, %{
         organisation_id: organisation.id,
         events: Template.list_notification_types()
@@ -778,7 +778,7 @@ defmodule WraftDoc.Enterprise do
       WraftDoc.FeatureFlags.setup_defaults(organisation)
       {:ok, organisation}
     end)
-    |> Multi.run(:setup_notification_settings, fn _repo, %{organisation: organisation} ->
+    |> Multi.insert(:setup_notification_settings, fn %{organisation: organisation} ->
       Settings.changeset(%Settings{}, %{
         organisation_id: organisation.id,
         events: Template.list_notification_types()
