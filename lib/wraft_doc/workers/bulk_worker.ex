@@ -13,7 +13,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   alias WraftDoc.DataTemplates
   alias WraftDoc.Documents
   alias WraftDoc.Enterprise
-  alias WraftDoc.Notifications
+  alias WraftDoc.Notifications.Delivery
   alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDoc.Repo
 
@@ -110,10 +110,22 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :form_mapping_not_complete})
-      Logger.error("Form mapping not complete. Pipeline execution failed.")
-      trigger
+      trigger.creator_id
+      |> Account.get_user()
+      |> Delivery.dispatch("pipeline.form_mapping_not_complete", %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id,
+          stage_id: stage.id
+        }
+      })
     end)
+
+    Logger.error("Form mapping not complete. Pipeline execution failed.")
+    trigger
   end
 
   defp handle_exceptions(
@@ -130,7 +142,18 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_not_found})
+      trigger.creator_id
+      |> Account.get_user()
+      |> Delivery.dispatch("pipeline.not_found", %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id,
+          stage_id: stage.id
+        }
+      })
     end)
 
     Logger.error("Pipeline not found. Pipeline execution failed.")
@@ -151,7 +174,18 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_instance_failed})
+      trigger.creator_id
+      |> Account.get_user()
+      |> Delivery.dispatch("pipeline.instance_failed", %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id,
+          stage_id: stage.id
+        }
+      })
     end)
 
     Logger.error("Instance creation failed. Pipeline execution failed.")
@@ -172,7 +206,18 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_downLoad_error})
+      trigger.creator_id
+      |> Account.get_user()
+      |> Delivery.dispatch("pipeline.download_error", %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id,
+          stage_id: stage.id
+        }
+      })
     end)
 
     Logger.error("Instance creation failed. Pipeline execution failed.")
@@ -201,7 +246,17 @@ defmodule WraftDoc.Workers.BulkWorker do
     trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_build_success})
+      trigger.creator_id
+      |> Account.get_user()
+      |> Delivery.dispatch("pipeline.build_success", %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id
+        }
+      })
     end)
 
     Logger.info("Pipeline completed succesfully.!")
@@ -222,7 +277,17 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_build_failed})
+      trigger.creator_id
+      |> Account.get_user()
+      |> Delivery.dispatch("pipeline.build_failed", %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id
+        }
+      })
     end)
 
     Logger.error("Pipeline partially completed.! Some builds failed.!")

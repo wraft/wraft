@@ -35,7 +35,6 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Frames
   alias WraftDoc.Layouts.Layout
-  alias WraftDoc.Notifications
   alias WraftDoc.Search.TypesenseServer, as: Typesense
   alias WraftDocWeb.Api.V1.InstanceVersionView
 
@@ -1056,7 +1055,7 @@ defmodule WraftDocWeb.Api.V1.InstanceController do
       Task.start(fn -> Reminders.maybe_create_auto_reminders(current_user, instance) end)
 
       Task.start(fn ->
-        Notifications.document_notification(
+        Documents.document_notification(
           current_user,
           instance,
           organisation,
