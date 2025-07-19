@@ -24,9 +24,9 @@
         <mj-text>
           Hello<%= if @user_name, do: " #{String.capitalize(@user_name)}" %>,
         </mj-text>
-        <mj-text>
+        <mj-raw>
           <%= @message %>
-        </mj-text>
+        </mj-raw>
         <%= if @button_text && @button_url do %>
         <mj-button background-color="#004A0F" href="<%= @button_url %>" padding="20px 0">
           <%= @button_text %>
