@@ -648,7 +648,8 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
     %{
       "colspan" => String.to_integer(Map.get(converted, "colspan", "1")),
       "rowspan" => String.to_integer(Map.get(converted, "rowspan", "1")),
-      "alignment" => Map.get(converted, "align")
+      "alignment" => Map.get(converted, "align"),
+      "colwidth" => parse_colwidth(Map.get(converted, "colwidth"))
     }
   end
 
@@ -983,6 +984,53 @@ defmodule WraftDoc.Utils.XmlToProseMirror do
   defp parse_boolean(true), do: true
   defp parse_boolean(false), do: false
   defp parse_boolean(_), do: false
+
+  defp parse_colwidth(nil), do: nil
+  defp parse_colwidth(value) when is_list(value), do: value
+
+  defp parse_colwidth(value) when is_binary(value) do
+    # Handle string format like "[32]" or "32,166,106" or "0xa6"
+    case value do
+      "[" <> rest ->
+        # Remove trailing "]" and parse as comma-separated integers
+        rest
+        |> String.trim_trailing("]")
+        |> String.split(",")
+        |> Enum.map(&String.trim/1)
+        |> Enum.map(&parse_number/1)
+        |> Enum.reject(&is_nil/1)
+
+      _ ->
+        # Try parsing as comma-separated values or single value
+        value
+        |> String.split(",")
+        |> Enum.map(&String.trim/1)
+        |> Enum.map(&parse_number/1)
+        |> Enum.reject(&is_nil/1)
+    end
+  end
+
+  defp parse_colwidth(value) when is_integer(value), do: [value]
+  defp parse_colwidth(_), do: nil
+
+  # Helper function to parse numbers (decimal, hexadecimal, etc.)
+  defp parse_number(str) do
+    str = String.trim(str)
+
+    if String.starts_with?(str, "0x") or String.starts_with?(str, "0X") do
+      # Handle hexadecimal format (0x...)
+      case Integer.parse(str, 16) do
+        {int, _} -> int
+        :error -> nil
+      end
+    else
+      # Handle decimal format
+      case Integer.parse(str) do
+        {int, _} -> int
+        :error -> nil
+      end
+    end
+  end
 end
 
 defmodule WraftDoc.Utils.XmlToProseMirror.XmlParseError do
