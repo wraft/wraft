@@ -7,7 +7,6 @@ defmodule WraftDocWeb.UserSocket do
   # 30 minutes in milliseconds
   @cache_ttl 30 * 60 * 1000
 
-  channel("notification:*", WraftDocWeb.NotificationChannel)
   channel("user_notification:*", WraftDocWeb.NotificationChannel)
   channel("organisation_notification:*", WraftDocWeb.NotificationChannel)
   channel("role_group_notification:*", WraftDocWeb.NotificationChannel)

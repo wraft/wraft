@@ -20,7 +20,6 @@ defmodule WraftDoc.Comments do
   def create_comment(%{current_org_id: <<_::288>> = organisation_id} = current_user, params) do
     params
     |> Map.put("organisation_id", organisation_id)
-    |> Map.merge(%{"meta" => %{"mentions" => [current_user.id]}})
     |> then(&insert_comment(current_user, &1))
   end
 
@@ -263,7 +262,6 @@ defmodule WraftDoc.Comments do
   defp ensure_is_parent(%{"parent_id" => _} = params), do: Map.put(params, "is_parent", false)
   defp ensure_is_parent(params), do: Map.put(params, "is_parent", true)
 
-  # Improve this
   @doc """
   Sends a comment notification to users allowed to access a document, excluding the initiating user.
   """

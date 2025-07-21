@@ -316,7 +316,6 @@ defmodule WraftDoc.Documents.Reminders do
     reminder
   end
 
-  # TODO remove this if unwanted.
   defp get_recipients(%{recipients: recipients})
        when is_list(recipients) and length(recipients) > 0 do
     recipients

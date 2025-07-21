@@ -246,11 +246,13 @@ defmodule WraftDoc.Notifications.Template do
   @doc """
     List all available notification types.
   """
+  @spec list_notification_types() :: [String.t()]
   def list_notification_types, do: notification_types()
 
   @doc """
     Render a notification message.
   """
+  @spec render_message(String.t(), map()) :: String.t()
   def render_message(type, params) do
     type
     |> get_notification()
@@ -269,6 +271,7 @@ defmodule WraftDoc.Notifications.Template do
   @doc """
     Get notification channels.
   """
+  @spec get_channels(String.t()) :: [atom()]
   def get_channels(type) do
     type
     |> get_notification()
@@ -281,6 +284,7 @@ defmodule WraftDoc.Notifications.Template do
   @doc """
     Get email configuration.
   """
+  @spec get_email_config(String.t()) :: {:ok, map()} | :error
   def get_email_config(type) do
     type
     |> get_notification()

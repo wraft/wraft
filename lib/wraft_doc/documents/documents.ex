@@ -2366,6 +2366,7 @@ defmodule WraftDoc.Documents do
   @doc """
   Notification for the document flow.
   """
+  @spec document_notification(User.t(), Instance.t(), Organisation.t(), State.t()) :: :ok
   def document_notification(
         %User{id: user_id, name: approver_name} = current_user,
         %Instance{

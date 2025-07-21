@@ -92,7 +92,6 @@ defmodule WraftDocWeb.NotificationChannel do
        when organisation_id == current_org_id,
        do: :ok
 
-  # TODO: authorize user_roles
   defp authorized?(:role, role_id, %{id: user_id} = _user) do
     role_id
     |> Account.get_role_users()

@@ -512,6 +512,7 @@ defmodule WraftDoc.Forms do
     end)
     |> Multi.run(:pipeline_job, fn _, %{trigger_history: trigger_history} ->
       TriggerHistories.create_pipeline_job(
+        current_user,
         trigger_history,
         DateTime.add(DateTime.utc_now(), scheduled_at_offset, :second)
       )

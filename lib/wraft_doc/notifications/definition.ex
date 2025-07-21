@@ -1,25 +1,59 @@
 defmodule WraftDoc.Notifications.Definition do
   @moduledoc """
-  Provides a declarative way to define notifications.
-  Example:
-    defnotification :user_joins_wraft do
-      title "Welcome to Wraft"
-      message fn %{name: name} ->
-        "Welcome to Wraft, \#{name}! We're excited to have you on board."
-      end
-      channels [:in_app, :email]
-      email_template :welcome_email
-      email_subject "Welcome to Wraft!"
-      # Optional handlers
-      before_send fn notification ->
-        # Custom logic before sending
-        {:ok, notification}
-      end
-      after_send fn result ->
-        # Custom logic after sending
-        :ok
-      end
+  Provides a declarative way to define notifications with a DSL for configuring
+  message content, delivery channels, email templates, and lifecycle hooks.
+
+  ## Overview
+
+  This module allows you to define notification templates using a clean, declarative
+  syntax. Each notification definition specifies how messages should be formatted,
+  which channels to use for delivery, and any custom logic to execute during the
+  notification lifecycle.
+
+  ## Basic Usage
+
+  ```elixir
+  defmodule MyApp.Notifications do
+    use WraftDoc.Notifications.Definition
+
+    defnotification "registration.user_joins_wraft" do
+      title("Welcome to Wraft")
+
+      message(fn %{user_name: user_name} ->
+        "Welcome to Wraft, <strong>user_name</strong> We're excited to have you on board."
+      end)
+
+      channels([:in_app, :email])
+      email_template(MJML.Welcome)
+      email_subject("Welcome to Wraft!")
     end
+  end
+  ```
+
+  ## Configuration Options
+
+  ### Required Fields
+
+  - `title/1` - The notification title displayed in the UI
+  - `message/1` - Either a string or function that returns the message content
+
+  ### Delivery Channels
+
+  - `channels/1` - List of delivery channels: `:in_app`, `:email`, `:sms`, etc.
+
+  ### Email Configuration
+
+  - `email_template/1` - MJML template module for email rendering
+  - `email_subject/1` - Email subject line (string or function)
+
+  ### Advanced Options
+
+  - `recipients/1` - Custom recipient selection logic
+  - `priority/1` - Notification priority: `:low`, `:medium`, `:high`, `:urgent`
+  - `conditions/1` - Conditions that must be met for delivery
+  - `before_send/1` - Hook executed before sending notification
+  - `after_send/1` - Hook executed after sending notification
+  ```
   """
 
   defmacro __using__(_opts) do
