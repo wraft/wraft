@@ -45,7 +45,10 @@ config :wraft_doc, WraftDocWeb.Endpoint,
   ]
 
 # Do not include metadata nor timestamps in development logs
-config :logger, :console, format: "[$level] $message\n"
+config :logger, :console,
+  format: "$time [$level] $message\n",
+  level: :debug,
+  metadata: [:user_id, :error, :status, :changeset, :path, :type]
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
