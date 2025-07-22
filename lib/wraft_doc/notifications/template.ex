@@ -8,6 +8,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "registration.user_joins_wraft" do
     title("Welcome to Wraft")
+    description("Receive a welcome message when you first join Wraft")
 
     message(fn %{user_name: user_name} ->
       "Welcome to Wraft, <strong>#{user_name}</strong> We're excited to have you on board."
@@ -20,6 +21,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "organisation.join_organisation" do
     title("Organization Welcome")
+    description("Get notified when you join a new organization")
 
     message(fn %{organisation_name: organisation_name} ->
       "Welcome to <strong>#{organisation_name}</strong>!"
@@ -30,6 +32,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "organisation.join_organisation.all" do
     title("Joined in Organization")
+    description("Be notified when new members join your organization")
 
     message(fn %{user_name: user_name} ->
       "#{user_name} joined to your organization"
@@ -40,6 +43,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "organisation.assign_role" do
     title("Role Assignment")
+    description("Get notified when you are assigned a new role or permission")
 
     message(fn %{role_name: role_name, assigned_by: assigned_by} ->
       "<strong>#{assigned_by}</strong> assigned the role <strong>#{role_name}</strong> to you"
@@ -50,6 +54,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "organisation.unassign_role" do
     title("Role Revoked")
+    description("Be informed when your role or permissions are removed")
 
     message(fn %{
                  assigned_by: assigned_by,
@@ -63,6 +68,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "document.state_update" do
     title("Document State Update")
+    description("Stay updated when documents progress through approval workflow states")
 
     message(fn %{
                  document_title: document_title,
@@ -82,6 +88,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "document.pending_approvals" do
     title("Pending Approval")
+    description("Get notified when documents require your approval or review")
 
     message(fn %{
                  document_title: document_title,
@@ -97,6 +104,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "document.add_comment" do
     title("New Comment")
+    description("Receive notifications when someone comments on your documents or mentions you")
 
     message(fn %{
                  document_title: document_title,
@@ -112,6 +120,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "document.reminder" do
     title("Document Reminder")
+    description("Get reminded about documents that need your attention or action")
 
     message(fn %{document_title: document_title} ->
       "Reminder: Document <strong>'#{document_title}'</strong> needs your attention."
@@ -124,6 +133,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "document.share" do
     title("Document Shared With You")
+    description("Be notified when someone shares a document with you for collaboration")
 
     message(fn %{
                  document_title: document_title,
@@ -142,6 +152,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "document.publish" do
     title("Document Published")
+    description("Get notified when documents you're involved with are published and go live")
 
     message(fn %{
                  document_title: document_title,
@@ -160,6 +171,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "document.signature_request" do
     title("Signature Request")
+    description("Receive alerts when your digital signature is requested on documents")
 
     message(fn %{
                  document_title: document_title,
@@ -173,6 +185,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "document.fully_signed" do
     title("Document Fully Signed")
+    description("Know when documents requiring signatures are completed by all parties")
 
     message(fn %{
                  document_title: document_title
@@ -185,6 +198,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "pipeline.form_mapping_not_complete" do
     title("Form Mapping Incomplete")
+    description("Get alerted when pipeline form mappings need to be completed")
 
     message(fn _params ->
       "Please complete the form mapping for pipeline and try again."
@@ -195,6 +209,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "pipeline.not_found" do
     title("Pipeline Not Found")
+    description("Be informed when pipelines cannot be found or accessed")
 
     message(fn _params ->
       "The pipeline you are trying to access does not exist."
@@ -205,6 +220,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "pipeline.instance_failed" do
     title("Pipeline Instance Failed")
+    description("Receive alerts when your pipeline executions encounter failures")
 
     message(fn _params ->
       "The pipeline instance has failed."
@@ -215,6 +231,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "pipeline.download_error" do
     title("Pipeline Download Error")
+    description("Get notified when there are issues downloading pipeline outputs")
 
     message(fn _params ->
       "There was an error downloading the pipeline."
@@ -225,6 +242,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "pipeline.build_success" do
     title("Pipeline Build Success")
+    description("Celebrate when your pipeline builds complete successfully")
 
     message(fn _params ->
       "The pipeline build has succeeded."
@@ -235,6 +253,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "pipeline.build_failed" do
     title("Pipeline Build Failed")
+    description("Stay informed when pipeline builds fail so you can take action")
 
     message(fn _params ->
       "The pipeline build has failed."
@@ -248,6 +267,24 @@ defmodule WraftDoc.Notifications.Template do
   """
   @spec list_notification_types() :: [String.t()]
   def list_notification_types, do: notification_types()
+
+  @doc """
+    Get notifications with description.
+  """
+  @spec list_notifications() :: [%{event: String.t(), description: String.t()}]
+  def list_notifications do
+    Enum.map(notification_types(), fn type ->
+      type
+      |> get_notification()
+      |> case do
+        %{description: description} when not is_nil(description) ->
+          %{event: type, description: description}
+
+        _ ->
+          %{event: type, description: ""}
+      end
+    end)
+  end
 
   @doc """
     Render a notification message.

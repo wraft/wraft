@@ -8,6 +8,7 @@ defmodule WraftDoc.Notifications do
   alias WraftDoc.Account.User
   alias WraftDoc.Notifications.Notification
   alias WraftDoc.Notifications.Settings
+  alias WraftDoc.Notifications.Template
   alias WraftDoc.Notifications.UserNotification
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
@@ -389,12 +390,22 @@ defmodule WraftDoc.Notifications do
   @spec update_organisation_settings(Settings.t(), map()) ::
           {:ok, Settings.t()} | {:error, Settings.t()}
   def update_organisation_settings(%Settings{} = settings, params) do
-    settings
-    |> Settings.changeset(params)
-    |> Repo.update()
-    |> case do
-      {:ok, _} -> {:ok, Repo.preload(settings, :organisation)}
-      {:error, _} -> {:error, settings}
+    with {:ok, params} <- validate_events(params),
+         {:ok, settings} <- settings |> Settings.changeset(params) |> Repo.update() do
+      {:ok, Repo.preload(settings, :organisation)}
     end
   end
+
+  def validate_events(%{"events" => events} = params) when is_list(events) do
+    valid_events = Template.list_notification_types()
+
+    filtered_events =
+      events
+      |> Enum.filter(&(&1 in valid_events))
+      |> Enum.uniq()
+
+    {:ok, Map.put(params, "events", filtered_events)}
+  end
+
+  def validate_events(_, _), do: {:error, "Invalid notification event"}
 end

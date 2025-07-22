@@ -107,6 +107,12 @@ defmodule WraftDoc.Notifications.Definition do
     end
   end
 
+  defmacro description(description) do
+    quote do
+      var!(config) = Map.put(var!(config), :description, unquote(description))
+    end
+  end
+
   defmacro message(message_value) do
     quote do
       var!(config) = Map.put(var!(config), :message, unquote(message_value))

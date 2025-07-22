@@ -212,20 +212,15 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
           end
 
           example([
-            "pipeline.build_failed",
-            "pipeline.build_success",
-            "pipeline.download_error",
-            "pipeline.instance_failed",
-            "pipeline.not_found",
-            "pipeline.form_mapping_not_complete",
-            "document.reminder",
-            "document.add_comment",
-            "document.pending_approvals",
-            "document.state_update",
-            "organisation.unassign_role",
-            "organisation.assign_role",
-            "organisation.join_organisation",
-            "registration.user_joins_wraft"
+            %{
+              description: "Get notified when documents require your approval or review",
+              event: "document.pending_approvals"
+            },
+            %{
+              description:
+                "Stay updated when documents progress through approval workflow states",
+              event: "document.state_update"
+            }
           ])
         end
     }
@@ -392,12 +387,12 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
   end
 
   @spec update_settings(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def update_settings(conn, %{"events" => events}) do
+  def update_settings(conn, params) do
     current_user = conn.assigns.current_user
 
     with %Settings{} = settings <- Notifications.get_organisation_settings(current_user),
          {:ok, settings} <-
-           Notifications.update_organisation_settings(settings, %{events: events}) do
+           Notifications.update_organisation_settings(settings, params) do
       render(conn, "settings.json", settings: settings)
     end
   end
@@ -415,6 +410,6 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
 
   @spec get_events(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def get_events(conn, _params) do
-    render(conn, "events.json", events: Template.list_notification_types())
+    render(conn, "events.json", events: Template.list_notifications())
   end
 end
