@@ -357,8 +357,15 @@ defmodule WraftDoc.Notifications do
       %Settings{events: ["document.share", "document.comment"]}
   """
   @spec get_organisation_settings(User.t()) :: Settings.t() | nil
-  def get_organisation_settings(%User{current_org_id: current_org_id} = _current_user),
-    do: Settings |> Repo.get_by(organisation_id: current_org_id) |> Repo.preload(:organisation)
+  def get_organisation_settings(%User{current_org_id: current_org_id} = _current_user) do
+    Settings
+    |> Repo.get_by(organisation_id: current_org_id)
+    |> Repo.preload(:organisation)
+    |> case do
+      nil -> %Settings{}
+      settings -> settings
+    end
+  end
 
   @doc """
   Update notification settings for an organization.

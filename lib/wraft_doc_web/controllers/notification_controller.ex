@@ -164,6 +164,69 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
           example(%{
             count: 1
           })
+        end,
+      NotificationSettingsResponse:
+        swagger_schema do
+          title("Notification Settings Info")
+          description("Response for notification settings")
+
+          properties do
+            settings(:array, "Notification settings")
+          end
+
+          example([
+            "pipeline.instance_failed",
+            "pipeline.not_found",
+            "pipeline.form_mapping_not_complete"
+          ])
+        end,
+      NotificationEventsRequest:
+        swagger_schema do
+          title("Notification Events Request")
+          description("Request body for updating notification settings")
+
+          properties do
+            events(:array, "List of notification events to enable", items: %{type: :string})
+          end
+
+          example(%{
+            events: [
+              "document.reminder",
+              "document.add_comment",
+              "document.pending_approvals",
+              "document.state_update",
+              "organisation.unassign_role",
+              "organisation.assign_role",
+              "organisation.join_organisation",
+              "registration.user_joins_wraft"
+            ]
+          })
+        end,
+      NotificationEventsResponse:
+        swagger_schema do
+          title("Notification Events Info")
+          description("Response for notification events")
+
+          properties do
+            events(:array, "Notification events")
+          end
+
+          example([
+            "pipeline.build_failed",
+            "pipeline.build_success",
+            "pipeline.download_error",
+            "pipeline.instance_failed",
+            "pipeline.not_found",
+            "pipeline.form_mapping_not_complete",
+            "document.reminder",
+            "document.add_comment",
+            "document.pending_approvals",
+            "document.state_update",
+            "organisation.unassign_role",
+            "organisation.assign_role",
+            "organisation.join_organisation",
+            "registration.user_joins_wraft"
+          ])
         end
     }
   end
@@ -317,6 +380,13 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
     put("/notifications/settings")
     summary("update settings")
     description("update settings")
+
+    parameters do
+      body(:body, Schema.ref(:NotificationEventsRequest), "Notification events request",
+        required: true
+      )
+    end
+
     response(200, "Ok", Schema.ref(:NotificationSettingsResponse))
     response(401, "Unauthorized", Schema.ref(:Error))
   end

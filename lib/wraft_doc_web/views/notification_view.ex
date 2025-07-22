@@ -53,16 +53,7 @@ defmodule WraftDocWeb.Api.V1.NotificationView do
     }
   end
 
-  def render("settings.json", %{settings: settings}) do
-    %{
-      id: settings.id,
-      events: settings.events
-    }
-  end
+  def render("settings.json", %{settings: settings}), do: settings.events
 
-  def render("events.json", %{events: events}) do
-    %{
-      events: events
-    }
-  end
+  def render("events.json", %{events: events}), do: events
 end
