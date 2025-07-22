@@ -152,7 +152,7 @@ defmodule WraftDoc.Notifications.Delivery do
     user
     |> Notifications.get_organisation_settings()
     |> case do
-      %{events: events} ->
+      %{events: events} when is_list(events) and events != [] ->
         not Enum.member?(events, type)
 
       _ ->

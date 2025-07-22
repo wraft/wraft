@@ -15,5 +15,6 @@ defmodule WraftDoc.Notifications.Settings do
     settings
     |> cast(params, [:events, :organisation_id])
     |> validate_required([:events, :organisation_id])
+    |> unique_constraint(:organisation_id)
   end
 end

@@ -361,10 +361,9 @@ defmodule WraftDoc.Notifications do
   def get_organisation_settings(%User{current_org_id: current_org_id} = _current_user) do
     Settings
     |> Repo.get_by(organisation_id: current_org_id)
-    |> Repo.preload(:organisation)
     |> case do
-      nil -> %Settings{}
-      settings -> settings
+      %Settings{} = settings -> settings
+      _ -> %Settings{events: []}
     end
   end
 
@@ -387,12 +386,26 @@ defmodule WraftDoc.Notifications do
       iex> update_organisation_settings(settings, %{events: ["document.share"]})
       {:ok, %Settings{events: ["document.share"]}}
   """
-  @spec update_organisation_settings(Settings.t(), map()) ::
+  @spec create_or_update_organisation_settings(Settings.t(), map()) ::
           {:ok, Settings.t()} | {:error, Settings.t()}
-  def update_organisation_settings(%Settings{} = settings, params) do
-    with {:ok, params} <- validate_events(params),
-         {:ok, settings} <- settings |> Settings.changeset(params) |> Repo.update() do
-      {:ok, Repo.preload(settings, :organisation)}
+  def create_or_update_organisation_settings(
+        %{current_org_id: current_org_id} = _current_user,
+        params
+      ) do
+    with {:ok, params} <- validate_events(params) do
+      Settings
+      |> Repo.get_by(organisation_id: current_org_id)
+      |> case do
+        nil ->
+          %Settings{}
+          |> Settings.changeset(Map.merge(params, %{"organisation_id" => current_org_id}))
+          |> Repo.insert()
+
+        settings ->
+          settings
+          |> Settings.changeset(params)
+          |> Repo.update()
+      end
     end
   end
 

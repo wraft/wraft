@@ -57,10 +57,10 @@ defmodule WraftDoc.Notifications.Template do
     description("Be informed when your role or permissions are removed")
 
     message(fn %{
-                 assigned_by: assigned_by,
+                 unassigned_by: unassigned_by,
                  role_name: role_name
                } ->
-      "<strong>#{assigned_by}</strong> revoked your role of <strong>#{role_name}</strong>"
+      "<strong>#{unassigned_by}</strong> revoked your role of <strong>#{role_name}</strong>"
     end)
 
     channels([:in_app])

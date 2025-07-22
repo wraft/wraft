@@ -13,10 +13,11 @@ defmodule WraftDoc.Repo.Migrations.AddNotificationSettings do
       timestamps()
     end
 
-    create(index(:notification_settings, [:organisation_id]))
+    create(unique_index(:notification_settings, [:organisation_id]))
   end
 
   def down do
+    drop(unique_index(:notification_settings, [:organisation_id]))
     drop(table(:notification_settings))
   end
 end

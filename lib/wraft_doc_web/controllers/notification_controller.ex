@@ -390,9 +390,8 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
   def update_settings(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Settings{} = settings <- Notifications.get_organisation_settings(current_user),
-         {:ok, settings} <-
-           Notifications.update_organisation_settings(settings, params) do
+    with {:ok, settings} <-
+           Notifications.create_or_update_organisation_settings(current_user, params) do
       render(conn, "settings.json", settings: settings)
     end
   end
