@@ -67,6 +67,31 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     end)
   end
 
+  defp convert_node(
+         %{
+           "type" => "orderedList",
+           "attrs" => %{"order" => start_order} = _attrs,
+           "content" => content
+         },
+         opts
+       ) do
+    start_index = start_order || 1
+
+    content
+    |> Enum.with_index(start_index)
+    |> Enum.map_join("\n", fn {node, index} ->
+      "#{index}. " <> convert_node(node, opts)
+    end)
+  end
+
+  defp convert_node(%{"type" => "orderedList", "content" => content}, opts) do
+    content
+    |> Enum.with_index(1)
+    |> Enum.map_join("\n", fn {node, index} ->
+      "#{index}. " <> convert_node(node, opts)
+    end)
+  end
+
   defp convert_node(%{"type" => "listItem", "content" => content}, opts) do
     Enum.map_join(content, "", &convert_node(&1, opts))
   end
@@ -115,6 +140,12 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
   defp convert_node(%{"type" => "codeBlock", "content" => content}, opts) do
     content = Enum.map_join(content, "", &convert_node(&1, opts))
     "```\n#{content}\n```"
+  end
+
+  defp convert_node(%{"type" => "tableRow", "content" => content}, opts) do
+    # Table rows are handled within the table processing
+    # This is just a fallback in case a row is processed individually
+    Enum.map_join(content, "", &convert_node(&1, opts))
   end
 
   defp convert_node(%{"type" => "hardBreak"}, _opts), do: "  \n"
@@ -312,6 +343,23 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     width = get_width_size(colwidth)
     width_per_col = if colspan > 1, do: div(width, colspan), else: width
     update_column_widths(widths, col_start, colspan, width_per_col)
+  end
+
+  defp process_cell_width(
+         %{
+           col_start: col_start,
+           colspan: colspan
+         },
+         widths
+       ) do
+    # Use default width for cells without colwidth
+    width_per_col = @default_min_col_width
+    update_column_widths(widths, col_start, colspan, width_per_col)
+  end
+
+  defp process_cell_width(_cell, widths) do
+    # Fallback for any unexpected cell structure
+    widths
   end
 
   defp update_column_widths(widths, col_start, colspan, width_per_col) do
@@ -803,6 +851,18 @@ defmodule WraftDoc.Utils.ProsemirrorToMarkdown do
     col_width_sum = Enum.sum(span_widths)
 
     col_width_sum + (colspan - 1) * 3
+  end
+
+  defp convert_pandoc_table_cell(%{"type" => "tableHeaderCell", "content" => content}, opts) do
+    content
+    |> Enum.map_join("", fn item -> process_cell_content_item(item, opts) end)
+    |> String.trim_trailing()
+  end
+
+  defp convert_pandoc_table_cell(%{"type" => "tableCell", "content" => content}, opts) do
+    content
+    |> Enum.map_join("", fn item -> process_cell_content_item(item, opts) end)
+    |> String.trim_trailing()
   end
 
   defp convert_pandoc_table_cell(%{"type" => _cell_type, "content" => content}, opts) do

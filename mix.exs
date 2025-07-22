@@ -119,7 +119,7 @@ defmodule WraftDoc.Mixfile do
       {:unzip, "~> 0.12"},
       {:waffle, "~> 1.1"},
       {:waffle_ecto, "~> 0.0.12"},
-      {:y_ex, "~> 0.6"},
+      {:y_ex, "~> 0.8.0"},
       {:assent, "~> 0.3.0"},
       {:mint, "~> 1.0"},
       {:castore, "~> 1.0"},
