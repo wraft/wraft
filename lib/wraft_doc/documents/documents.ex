@@ -34,6 +34,7 @@ defmodule WraftDoc.Documents do
   alias WraftDoc.Frames
   alias WraftDoc.Frames.Frame
   alias WraftDoc.Layouts.Layout
+  alias WraftDoc.Notifications.Delivery
   alias WraftDoc.Repo
   alias WraftDoc.Themes
   alias WraftDoc.Utils.CSVHelper
@@ -2359,6 +2360,62 @@ defmodule WraftDoc.Documents do
 
       _ ->
         []
+    end
+  end
+
+  @doc """
+  Notification for the document flow.
+  """
+  @spec document_notification(User.t(), Instance.t(), Organisation.t(), State.t()) :: :ok
+  def document_notification(
+        %User{id: user_id, name: approver_name} = current_user,
+        %Instance{
+          id: instance_id,
+          serialized: %{"title" => document_title},
+          approval_status: approval_status
+        } = _instance,
+        %Organisation{id: current_org_id, name: organisation_name} = _organisation,
+        state
+      ) do
+    next_state = next_state(state)
+    document_url = URI.encode("#{System.get_env("FRONTEND_URL")}/documents/#{instance_id}")
+
+    if approval_status do
+      Delivery.dispatch(current_user, "document.publish", %{
+        publisher_name: approver_name,
+        document_title: document_title,
+        document_url: document_url,
+        channel: :organisation_notification,
+        channel_id: current_org_id,
+        metadata: %{user_id: user_id, document_id: instance_id}
+      })
+    else
+      Enum.each(
+        state.approvers,
+        &Delivery.dispatch(current_user, "document.state_update", %{
+          organisation_name: organisation_name,
+          document_title: document_title,
+          state_name: state.state,
+          approver_name: approver_name,
+          document_url: document_url,
+          channel: :user_notification,
+          channel_id: &1.id,
+          metadata: %{user_id: user_id, document_id: instance_id}
+        })
+      )
+
+      Enum.each(
+        next_state.approvers,
+        &Delivery.dispatch(current_user, "document.pending_approvals", %{
+          organisation_name: organisation_name,
+          document_title: document_title,
+          state_name: state.state,
+          document_url: document_url,
+          channel: :user_notification,
+          channel_id: &1.id,
+          metadata: %{user_id: user_id, document_id: instance_id}
+        })
+      )
     end
   end
 end

@@ -260,7 +260,7 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
 
     with %Instance{} = instance <- Documents.show_instance(document_id, current_user),
          counter_parties <- Signatures.get_document_pending_signatures(document_id) do
-      Signatures.signature_request_email(instance, counter_parties)
+      Signatures.signature_request_email(instance, counter_parties, current_user)
 
       render(conn, "email.json",
         info: "Signature request email sent to #{length(counter_parties)} counterparties"
@@ -532,7 +532,12 @@ defmodule WraftDocWeb.Api.V1.SignatureController do
            ),
          {:ok, %CounterParty{} = _counter_party} <-
            CounterParties.counter_party_sign(counter_party, params),
-         {:ok, _} <- Signatures.apply_digital_signature_to_document(instance, signature_status) do
+         {:ok, _} <-
+           Signatures.apply_digital_signature_to_document(
+             instance,
+             signature_status,
+             current_user
+           ) do
       render(conn, "signed_pdf.json",
         url: Minio.generate_url(signed_pdf_path),
         sign_status: signature_status

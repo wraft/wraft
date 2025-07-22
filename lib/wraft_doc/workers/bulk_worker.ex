@@ -13,7 +13,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   alias WraftDoc.DataTemplates
   alias WraftDoc.Documents
   alias WraftDoc.Enterprise
-  alias WraftDoc.Notifications
+  alias WraftDoc.Notifications.Delivery
   alias WraftDoc.Pipelines.TriggerHistories.TriggerHistory
   alias WraftDoc.Repo
 
@@ -69,7 +69,10 @@ defmodule WraftDoc.Workers.BulkWorker do
     :ok
   end
 
-  def perform(%Job{args: trigger, tags: ["pipeline_job"]}) do
+  def perform(%Job{
+        args: %{"current_user" => current_user, "trigger_history" => trigger},
+        tags: ["pipeline_job"]
+      }) do
     Logger.info("Job starting for running the pipeline...")
     start_time = Timex.now()
     state = TriggerHistory.states()[:executing]
@@ -78,7 +81,7 @@ defmodule WraftDoc.Workers.BulkWorker do
     |> convert_map_to_trigger_struct()
     |> trigger_start_update(%{state: state, start_time: start_time})
     |> WraftDoc.PipelineRunner.call()
-    |> handle_exceptions()
+    |> handle_exceptions(current_user)
     |> trigger_end_update()
 
     Logger.info("Job end for running the pipeline.!")
@@ -96,9 +99,11 @@ defmodule WraftDoc.Workers.BulkWorker do
   end
 
   # Handle exceptions/responses returned from the PipelineRunner
-  @spec handle_exceptions(tuple) :: any
+  @spec handle_exceptions(tuple(), User.t()) :: any()
   defp handle_exceptions(
-         {:error, %PipelineError{error: :form_mapping_not_complete, input: trigger, stage: stage}}
+         {:error,
+          %PipelineError{error: :form_mapping_not_complete, input: trigger, stage: stage}},
+         _current_user
        ) do
     state = TriggerHistory.states()[:failed]
 
@@ -109,15 +114,13 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
-    Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :form_mapping_not_complete})
-      Logger.error("Form mapping not complete. Pipeline execution failed.")
-      trigger
-    end)
+    Logger.error("Form mapping not complete. Pipeline execution failed.")
+    trigger
   end
 
   defp handle_exceptions(
-         {:error, %PipelineError{error: :pipeline_not_found, input: trigger, stage: stage}}
+         {:error, %PipelineError{error: :pipeline_not_found, input: trigger, stage: stage}},
+         _current_user
        ) do
     state = TriggerHistory.states()[:failed]
 
@@ -129,16 +132,13 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
-    Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_not_found})
-    end)
-
     Logger.error("Pipeline not found. Pipeline execution failed.")
     trigger
   end
 
   defp handle_exceptions(
-         {:error, %PipelineError{error: :instance_failed, input: trigger, stage: stage}}
+         {:error, %PipelineError{error: :instance_failed, input: trigger, stage: stage}},
+         _current_user
        ) do
     state = TriggerHistory.states()[:failed]
 
@@ -150,17 +150,14 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
-    Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_instance_failed})
-    end)
-
     Logger.error("Instance creation failed. Pipeline execution failed.")
     trigger
   end
 
   defp handle_exceptions(
          {:error,
-          %PipelineError{error: %DownloadError{message: message}, input: trigger, stage: stage}}
+          %PipelineError{error: %DownloadError{message: message}, input: trigger, stage: stage}},
+         _current_user
        ) do
     state = TriggerHistory.states()[:failed]
 
@@ -171,17 +168,14 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
-    Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_downLoad_error})
-    end)
-
     Logger.error("Instance creation failed. Pipeline execution failed.")
     trigger
   end
 
   defp handle_exceptions(
          {:error,
-          %PipelineError{error: %InvalidJsonError{message: message}, input: trigger, stage: stage}}
+          %PipelineError{error: %InvalidJsonError{message: message}, input: trigger, stage: stage}},
+         _current_user
        ) do
     state = TriggerHistory.states()[:failed]
 
@@ -196,12 +190,26 @@ defmodule WraftDoc.Workers.BulkWorker do
     trigger
   end
 
-  defp handle_exceptions({:ok, %{trigger: trigger, failed_builds: [], zip_file: zip_file}}) do
+  defp handle_exceptions(
+         {:ok, %{trigger: trigger, failed_builds: [], zip_file: zip_file}},
+         current_user
+       ) do
     state = TriggerHistory.states()[:success]
     trigger = update_trigger_history(trigger, %{state: state, zip_file: zip_file})
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_build_success})
+      trigger.creator_id
+      |> Account.get_user()
+      |> Map.put(:current_org_id, current_user["current_org_id"])
+      |> Delivery.dispatch("pipeline.build_success", %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id
+        }
+      })
     end)
 
     Logger.info("Pipeline completed succesfully.!")
@@ -209,7 +217,8 @@ defmodule WraftDoc.Workers.BulkWorker do
   end
 
   defp handle_exceptions(
-         {:ok, %{trigger: trigger, failed_builds: failed_builds, zip_file: zip_file}}
+         {:ok, %{trigger: trigger, failed_builds: failed_builds, zip_file: zip_file}},
+         current_user
        ) do
     state = TriggerHistory.states()[:partially_completed]
 
@@ -222,7 +231,18 @@ defmodule WraftDoc.Workers.BulkWorker do
       })
 
     Task.start(fn ->
-      Notifications.create_notification([trigger.creator_id], %{type: :pipeline_build_failed})
+      trigger.creator_id
+      |> Account.get_user()
+      |> Map.put(:current_org_id, current_user["current_org_id"])
+      |> Delivery.dispatch("pipeline.build_failed", %{
+        channel: :user_notification,
+        channel_id: trigger.creator_id,
+        metadata: %{
+          type: "pipeline",
+          user_id: trigger.creator_id,
+          pipeline_id: trigger.pipeline_id
+        }
+      })
     end)
 
     Logger.error("Pipeline partially completed.! Some builds failed.!")

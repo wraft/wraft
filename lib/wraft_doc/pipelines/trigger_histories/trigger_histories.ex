@@ -106,13 +106,21 @@ defmodule WraftDoc.Pipelines.TriggerHistories do
   # TODO - improve tests
   @spec create_pipeline_job(TriggerHistory.t(), DateTime.t()) ::
           {:error, Ecto.Changeset.t()} | {:ok, Oban.Job.t()}
-  def create_pipeline_job(%TriggerHistory{} = trigger_history, scheduled_at) do
-    Documents.create_bulk_job(trigger_history, scheduled_at, ["pipeline_job"])
+  def create_pipeline_job(current_user, %TriggerHistory{} = trigger_history, scheduled_at) do
+    Documents.create_bulk_job(
+      %{current_user: current_user, trigger_history: trigger_history},
+      scheduled_at,
+      ["pipeline_job"]
+    )
   end
 
-  def create_pipeline_job(%TriggerHistory{} = trigger_history) do
-    Documents.create_bulk_job(trigger_history, nil, ["pipeline_job"])
+  def create_pipeline_job(current_user, %TriggerHistory{} = trigger_history) do
+    Documents.create_bulk_job(
+      %{current_user: current_user, trigger_history: trigger_history},
+      nil,
+      ["pipeline_job"]
+    )
   end
 
-  def create_pipeline_job(_), do: nil
+  def create_pipeline_job(_, _), do: nil
 end

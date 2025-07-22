@@ -23,12 +23,16 @@ defmodule WraftDocWeb.Mailer.Email do
     |> html_body(MJML.Invite.render(body))
   end
 
-  def notification_email(user_name, notification_message, email) do
+  def notification_email(
+        template,
+        subject,
+        email_params
+      ) do
     new()
-    |> to(email)
+    |> to(email_params["email"])
     |> from({"Wraft", sender_email()})
-    |> subject(" #{user_name} ")
-    |> html_body("Hi, #{user_name} #{notification_message}")
+    |> subject(subject)
+    |> html_body(template.render(email_params))
   end
 
   @doc """

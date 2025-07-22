@@ -12,7 +12,7 @@ defmodule WraftDoc.Documents.Reminders do
   alias WraftDoc.ContentTypes.ContentType
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Documents.Reminder
-  alias WraftDoc.Notifications
+  alias WraftDoc.Notifications.Delivery
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
 
@@ -246,6 +246,7 @@ defmodule WraftDoc.Documents.Reminders do
     end
   end
 
+  # TODO : use latest notification structure.
   defp send_reminder_notifications(%{notification_type: :both} = reminder) do
     reminder
     |> send_email_notification()
@@ -287,17 +288,28 @@ defmodule WraftDoc.Documents.Reminders do
   end
 
   defp send_in_app_notification(
-         %Reminder{content: %Instance{instance_id: instance_id, serialized: serialized}} =
+         %Reminder{
+           id: reminder_id,
+           content: %Instance{instance_id: instance_id, serialized: serialized}
+         } =
            reminder
        ) do
     reminder
     |> get_recipients()
-    |> Enum.map(& &1.id)
-    |> Notifications.create_notification(%{
-      type: :document_reminder,
-      instance_id: instance_id,
-      document_title: serialized["title"]
-    })
+    |> Enum.each(
+      &Delivery.dispatch(&1, "document.reminder", %{
+        instance_id: instance_id,
+        document_title: serialized["title"],
+        channel: :user_notification,
+        channel_id: &1.id,
+        metadata: %{
+          user_id: &1.id,
+          type: "reminder",
+          document_id: instance_id,
+          reminder_id: reminder_id
+        }
+      })
+    )
 
     Logger.info("In-app notifications sent for reminder #{reminder.id}")
 

@@ -9,6 +9,8 @@ defmodule WraftDoc.Comments do
   alias WraftDoc.Account.User
   alias WraftDoc.Comments.Comment
   alias WraftDoc.Documents
+  alias WraftDoc.Enterprise
+  alias WraftDoc.Notifications.Delivery
   alias WraftDoc.Repo
 
   @doc """
@@ -259,4 +261,36 @@ defmodule WraftDoc.Comments do
 
   defp ensure_is_parent(%{"parent_id" => _} = params), do: Map.put(params, "is_parent", false)
   defp ensure_is_parent(params), do: Map.put(params, "is_parent", true)
+
+  @doc """
+  Sends a comment notification to users allowed to access a document, excluding the initiating user.
+  """
+  @spec comment_notification(Ecto.UUID.t(), Ecto.UUID.t(), Ecto.UUID.t()) ::
+          [Notification.t()]
+  def comment_notification(
+        %{id: user_id, current_org_id: organisation_id, name: user_name} = current_user,
+        comment_id,
+        document_id
+      ) do
+    document = Documents.get_instance(document_id, %{current_org_id: organisation_id})
+    organisation = Enterprise.get_organisation(organisation_id)
+
+    document.allowed_users
+    |> List.delete(user_id)
+    |> Enum.map(
+      &Delivery.dispatch(current_user, "document.add_comment", %{
+        organisation_name: organisation.name,
+        document_title: document.serialized["title"],
+        document_url: URI.encode("#{System.get_env("FRONTEND_URL")}/documents/#{document_id}"),
+        commenter_name: user_name,
+        channel: :user_notification,
+        channel_id: &1,
+        metadata: %{
+          document_id: document_id,
+          comment_id: comment_id,
+          type: :comment
+        }
+      })
+    )
+  end
 end

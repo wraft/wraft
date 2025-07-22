@@ -25,6 +25,7 @@ defmodule WraftDoc.Documents.Signatures do
   alias WraftDoc.Documents.ESignature
   alias WraftDoc.Documents.Instance
   alias WraftDoc.Layouts.Layout
+  alias WraftDoc.Notifications.Delivery
   alias WraftDoc.PdfAnalyzer
   alias WraftDoc.Repo
   alias WraftDoc.Workers.EmailWorker
@@ -129,7 +130,7 @@ defmodule WraftDoc.Documents.Signatures do
   @doc """
   Apply a digital signature to a document
   """
-  @spec apply_digital_signature_to_document(Instance.t(), boolean()) ::
+  @spec apply_digital_signature_to_document(Instance.t(), boolean(), User.t()) ::
           {:ok, String.t()} | {:error, String.t()}
   def apply_digital_signature_to_document(
         %Instance{
@@ -137,7 +138,8 @@ defmodule WraftDoc.Documents.Signatures do
           instance_id: instance_id,
           organisation_id: org_id
         } = instance,
-        true
+        true,
+        current_user
       ) do
     instance_dir_path = "organisations/#{org_id}/contents/#{instance_id}"
     base_local_dir_path = Path.join(File.cwd!(), instance_dir_path)
@@ -165,7 +167,7 @@ defmodule WraftDoc.Documents.Signatures do
           CounterParties.counter_party_sign(counterparty, %{signed_file: signed_pdf_path})
         end)
 
-        finalize_signed_document(instance, signed_pdf_path)
+        finalize_signed_document(instance, signed_pdf_path, current_user)
         cleanup_signed_pdf(signed_pdf_path, instance_dir_path)
         {:ok, signed_pdf_path}
 
@@ -176,7 +178,7 @@ defmodule WraftDoc.Documents.Signatures do
     end
   end
 
-  def apply_digital_signature_to_document(_, false),
+  def apply_digital_signature_to_document(_, false, _),
     do: {:ok, "Document is not completely visually signed yet"}
 
   @doc """
@@ -476,7 +478,7 @@ defmodule WraftDoc.Documents.Signatures do
   end
 
   # Finalize the document after all signatures are complete
-  defp finalize_signed_document(instance, signed_pdf_path) do
+  defp finalize_signed_document(instance, signed_pdf_path, current_user) do
     # Logic to finalize the document after all signatures
     # This could include:
     # - Generating a final signed PDF , digitally signing, Visual signing already done, wholesome digital signing.
@@ -486,7 +488,7 @@ defmodule WraftDoc.Documents.Signatures do
     |> Repo.update()
 
     # - Sending notifications to all parties
-    notify_document_fully_signed(instance, signed_pdf_path)
+    notify_document_fully_signed(instance, signed_pdf_path, current_user)
 
     {:ok, instance}
   end
@@ -532,13 +534,29 @@ defmodule WraftDoc.Documents.Signatures do
     |> Oban.insert()
   end
 
-  @doc """
-  Send signature request emails to all counterparties for a document
-  """
-  @spec signature_request_email(%Instance{}, [CounterParty.t()]) :: :ok
-  def signature_request_email(instance, counterparties) do
-    Enum.each(counterparties, fn %CounterParty{email: email} = counterparty ->
+  @spec signature_request_email(%Instance{}, [CounterParty.t()], User.t()) :: :ok
+  def signature_request_email(
+        %Instance{id: id, instance_id: instance_id} = instance,
+        counterparties,
+        %{name: user_name} = current_user
+      ) do
+    Enum.each(counterparties, fn %CounterParty{email: email, user_id: user_id} = counterparty ->
       {:ok, %AuthToken{value: token}} = AuthTokens.create_signer_invite_token(instance, email)
+
+      Task.async(fn ->
+        Delivery.dispatch(current_user, "document.signature_request", %{
+          document_title: instance_id,
+          requester_name: user_name,
+          document_url: URI.encode("#{System.get_env("FRONTEND_URL")}/documents/#{instance_id}"),
+          channel: :user_notification,
+          channel_id: user_id,
+          metadata: %{
+            user_id: user_id,
+            document_id: id
+          }
+        })
+      end)
+
       signature_request_email(instance, counterparty, token)
     end)
   end
@@ -563,23 +581,43 @@ defmodule WraftDoc.Documents.Signatures do
   @doc """
   Notify all parties when a document is fully signed
   """
-  @spec notify_document_fully_signed(%Instance{}, String.t()) :: :ok
+  @spec notify_document_fully_signed(%Instance{}, String.t(), User.t()) :: :ok
   def notify_document_fully_signed(
-        %Instance{id: document_id, instance_id: instance_id},
-        signed_pdf_path
+        %Instance{
+          id: document_id,
+          instance_id: instance_id
+        },
+        signed_pdf_path,
+        current_user
       ) do
     counterparties = CounterParties.get_document_counterparties(document_id)
 
-    Enum.each(counterparties, fn %CounterParty{email: email} = counterparty ->
+    Enum.each(counterparties, fn %CounterParty{email: email, user_id: user_id, name: name} =
+                                   _counterparty ->
       %{
         email: email,
         instance_id: instance_id,
-        signer_name: counterparty.name,
+        signer_name: name,
         signed_document: signed_pdf_path,
         document_name: "signed_#{instance_id}.pdf"
       }
       |> EmailWorker.new(queue: "mailer", tags: ["document_fully_signed"])
       |> Oban.insert()
+
+      Task.async(fn ->
+        Delivery.dispatch(current_user, "document.fully_signed", %{
+          document_title: instance_id,
+          signer_name: name,
+          signed_document: signed_pdf_path,
+          document_name: "signed_#{instance_id}.pdf",
+          channel: :user_notification,
+          channel_id: user_id,
+          metadata: %{
+            user_id: user_id,
+            document_id: document_id
+          }
+        })
+      end)
     end)
   end
 

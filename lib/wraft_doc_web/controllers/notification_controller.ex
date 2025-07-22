@@ -7,7 +7,10 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
   action_fallback(WraftDocWeb.FallbackController)
 
   alias WraftDoc.Notifications
-  alias WraftDoc.Notifications.UserNotifications
+  alias WraftDoc.Notifications.Notification
+  alias WraftDoc.Notifications.Settings
+  alias WraftDoc.Notifications.Template
+  alias WraftDoc.Notifications.UserNotification
 
   def swagger_definitions do
     %{
@@ -161,6 +164,64 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
           example(%{
             count: 1
           })
+        end,
+      NotificationSettingsResponse:
+        swagger_schema do
+          title("Notification Settings Info")
+          description("Response for notification settings")
+
+          properties do
+            settings(:array, "Notification settings")
+          end
+
+          example([
+            "pipeline.instance_failed",
+            "pipeline.not_found",
+            "pipeline.form_mapping_not_complete"
+          ])
+        end,
+      NotificationEventsRequest:
+        swagger_schema do
+          title("Notification Events Request")
+          description("Request body for updating notification settings")
+
+          properties do
+            events(:array, "List of notification events to enable", items: %{type: :string})
+          end
+
+          example(%{
+            events: [
+              "document.reminder",
+              "document.add_comment",
+              "document.pending_approvals",
+              "document.state_update",
+              "organisation.unassign_role",
+              "organisation.assign_role",
+              "organisation.join_organisation",
+              "registration.user_joins_wraft"
+            ]
+          })
+        end,
+      NotificationEventsResponse:
+        swagger_schema do
+          title("Notification Events Info")
+          description("Response for notification events")
+
+          properties do
+            events(:array, "Notification events")
+          end
+
+          example([
+            %{
+              description: "Get notified when documents require your approval or review",
+              event: "document.pending_approvals"
+            },
+            %{
+              description:
+                "Stay updated when documents progress through approval workflow states",
+              event: "document.state_update"
+            }
+          ])
         end
     }
   end
@@ -182,8 +243,7 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
 
   @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
-    current_user = conn.assigns.current_user
-    notification = Notifications.create_notification(current_user, params)
+    notification = Notifications.create_notification(conn.assigns.current_user.id, params)
 
     render(conn, "notification.json", notification: notification)
   end
@@ -209,7 +269,7 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Notifications.list_unread_notifications(current_user, params) do
+         } <- Notifications.list_notifications(current_user, params) do
       render(conn, "index.json",
         notifications: notifications,
         page_number: page_number,
@@ -239,9 +299,9 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
   def read(conn, %{"id" => id} = _params) do
     current_user = conn.assigns.current_user
 
-    with %UserNotifications{} = user_notification <-
-           Notifications.get_user_notification(current_user, id),
-         %UserNotifications{} <- Notifications.read_notification(user_notification) do
+    with %Notification{} = notification <-
+           Notifications.get_notification(current_user, id),
+         {:ok, %UserNotification{}} <- Notifications.read_notification(current_user, notification) do
       render(conn, "mark_as_read.json", info: "Notification marked as read")
     end
   end
@@ -259,9 +319,9 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
 
   @spec read_all(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def read_all(conn, _params) do
-    current_user = conn.assigns.current_user
-
-    case Notifications.read_all_notifications(current_user) do
+    conn.assigns.current_user
+    |> Notifications.read_all_notifications()
+    |> case do
       {0, nil} ->
         render(conn, "mark_as_read.json", info: "No notifications found")
 
@@ -286,5 +346,69 @@ defmodule WraftDocWeb.Api.V1.NotificationController do
     current_user = conn.assigns.current_user
     count = Notifications.unread_notification_count(current_user)
     render(conn, "count.json", count: count)
+  end
+
+  @doc """
+  get settings
+  """
+  swagger_path :get_settings do
+    get("/notifications/settings")
+    summary("get settings")
+    description("get settings")
+    response(200, "Ok", Schema.ref(:NotificationSettingsResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec get_settings(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def get_settings(conn, _params) do
+    current_user = conn.assigns.current_user
+
+    with %Settings{} = settings <- Notifications.get_organisation_settings(current_user) do
+      render(conn, "settings.json", settings: settings)
+    end
+  end
+
+  @doc """
+  update settings
+  """
+  swagger_path :update_settings do
+    put("/notifications/settings")
+    summary("update settings")
+    description("update settings")
+
+    parameters do
+      body(:body, Schema.ref(:NotificationEventsRequest), "Notification events request",
+        required: true
+      )
+    end
+
+    response(200, "Ok", Schema.ref(:NotificationSettingsResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec update_settings(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update_settings(conn, params) do
+    current_user = conn.assigns.current_user
+
+    with {:ok, settings} <-
+           Notifications.create_or_update_organisation_settings(current_user, params) do
+      render(conn, "settings.json", settings: settings)
+    end
+  end
+
+  @doc """
+  get events
+  """
+  swagger_path :get_events do
+    get("/notifications/events")
+    summary("get events")
+    description("get events")
+    response(200, "Ok", Schema.ref(:NotificationEventsResponse))
+    response(401, "Unauthorized", Schema.ref(:Error))
+  end
+
+  @spec get_events(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def get_events(conn, _params) do
+    render(conn, "events.json", events: Template.list_notifications())
   end
 end

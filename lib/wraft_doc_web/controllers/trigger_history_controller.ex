@@ -158,7 +158,7 @@ defmodule WraftDocWeb.Api.V1.TriggerHistoryController do
     with %Pipeline{} = pipeline <- Pipelines.get_pipeline(current_user, p_uuid),
          {:ok, %TriggerHistory{} = trigger_history} <-
            TriggerHistories.create_trigger_history(current_user, pipeline, data),
-         {:ok, %Oban.Job{}} <- TriggerHistories.create_pipeline_job(trigger_history) do
+         {:ok, %Oban.Job{}} <- TriggerHistories.create_pipeline_job(current_user, trigger_history) do
       render(conn, "create.json")
     end
   end

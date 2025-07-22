@@ -249,11 +249,17 @@ defmodule WraftDocWeb.Router do
       end
 
       # Notification
-      post("/notifications", NotificationController, :create)
-      get("/notifications", NotificationController, :index)
-      get("/notifications/count", NotificationController, :count)
-      put("/notifications/read/:id", NotificationController, :read)
-      put("/notifications/read_all", NotificationController, :read_all)
+      scope "/notifications" do
+        post("/", NotificationController, :create)
+        get("/", NotificationController, :index)
+        get("/read", NotificationController, :index_read)
+        get("/count", NotificationController, :count)
+        put("/read/:id", NotificationController, :read)
+        put("/read_all", NotificationController, :read_all)
+        get("/settings", NotificationController, :get_settings)
+        put("/settings", NotificationController, :update_settings)
+        get("/events", NotificationController, :get_events)
+      end
 
       # Theme
       resources("/themes", ThemeController, only: [:create, :index, :show, :update, :delete])

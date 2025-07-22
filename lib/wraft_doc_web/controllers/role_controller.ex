@@ -12,11 +12,12 @@ defmodule WraftDocWeb.Api.V1.RoleController do
 
   alias WraftDoc.Account
   alias WraftDoc.Account.Role
+  alias WraftDoc.Account.User
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Account.UserRole
   alias WraftDoc.Enterprise
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.Notifications
+  alias WraftDoc.Notifications.Delivery
 
   action_fallback(WraftDocWeb.FallbackController)
 
@@ -245,15 +246,21 @@ defmodule WraftDocWeb.Api.V1.RoleController do
     current_user = conn.assigns[:current_user]
 
     with %UserOrganisation{} <- Enterprise.get_user_organisation(current_user, user_id),
-         %Role{organisation: %Organisation{name: organisation_name}} = role <-
+         %Role{id: role_id, organisation: %Organisation{name: organisation_name}, name: role_name} =
+           _role <-
            Account.get_role_with_organisation(current_user, role_id),
          {:ok, %UserRole{}} <- Account.create_user_role(user_id, role_id),
-         user <- Account.get_user(user_id) do
+         %User{id: user_id} = user <- Account.get_user(user_id) do
       Task.start(fn ->
-        Notifications.create_notification([user], %{
-          type: :assign_role,
-          role_name: role.name,
-          organisation_name: organisation_name
+        user
+        |> Map.put(:current_org_id, current_user.current_org_id)
+        |> Delivery.dispatch("organisation.assign_role", %{
+          role_name: role_name,
+          assigned_by: current_user.name,
+          organisation_name: organisation_name,
+          channel: :user_notification,
+          channel_id: user_id,
+          metadata: %{user_id: user_id, type: "role", role_id: role_id, role_name: role_name}
         })
       end)
 
@@ -282,17 +289,23 @@ defmodule WraftDocWeb.Api.V1.RoleController do
   def unassign_role(conn, %{"user_id" => user_id, "role_id" => role_id} = _params) do
     current_user = conn.assigns[:current_user]
 
-    with %Role{name: role_name, organisation: %Organisation{name: organisation_name}} = _role <-
+    with %Role{id: role_id, name: role_name, organisation: %Organisation{name: organisation_name}} =
+           _role <-
            Account.get_role_with_organisation(current_user, role_id),
          true <- Account.allowed_to_unassign_role?(current_user, user_id, role_name),
          %UserRole{} = user_role <- Account.get_user_role(current_user, user_id, role_id),
          {:ok, _} <- Account.delete_user_role(user_role),
-         user <- Account.get_user(user_id) do
+         %User{id: user_id} = user <- Account.get_user(user_id) do
       Task.start(fn ->
-        Notifications.create_notification([user], %{
-          type: :unassign_role,
+        user
+        |> Map.put(:current_org_id, current_user.current_org_id)
+        |> Delivery.dispatch("organisation.unassign_role", %{
           role_name: role_name,
-          organisation_name: organisation_name
+          organisation_name: organisation_name,
+          unassigned_by: current_user.name,
+          channel: :user_notification,
+          channel_id: user_id,
+          metadata: %{user_id: user_id, type: "role", role_id: role_id, role_name: role_name}
         })
       end)
 
