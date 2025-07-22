@@ -196,53 +196,9 @@ defmodule WraftDoc.Notifications.Template do
     channels([:in_app])
   end
 
-  defnotification "pipeline.form_mapping_not_complete" do
-    title("Form Mapping Incomplete")
-    description("Get alerted when pipeline form mappings need to be completed")
-
-    message(fn _params ->
-      "Please complete the form mapping for pipeline and try again."
-    end)
-
-    channels([:in_app])
-  end
-
-  defnotification "pipeline.not_found" do
-    title("Pipeline Not Found")
-    description("Be informed when pipelines cannot be found or accessed")
-
-    message(fn _params ->
-      "The pipeline you are trying to access does not exist."
-    end)
-
-    channels([:in_app])
-  end
-
-  defnotification "pipeline.instance_failed" do
-    title("Pipeline Instance Failed")
-    description("Receive alerts when your pipeline executions encounter failures")
-
-    message(fn _params ->
-      "The pipeline instance has failed."
-    end)
-
-    channels([:in_app])
-  end
-
-  defnotification "pipeline.download_error" do
-    title("Pipeline Download Error")
-    description("Get notified when there are issues downloading pipeline outputs")
-
-    message(fn _params ->
-      "There was an error downloading the pipeline."
-    end)
-
-    channels([:in_app])
-  end
-
   defnotification "pipeline.build_success" do
     title("Pipeline Build Success")
-    description("Celebrate when your pipeline builds complete successfully")
+    description("Get notified when your pipeline builds complete successfully")
 
     message(fn _params ->
       "The pipeline build has succeeded."
@@ -253,7 +209,7 @@ defmodule WraftDoc.Notifications.Template do
 
   defnotification "pipeline.build_failed" do
     title("Pipeline Build Failed")
-    description("Stay informed when pipeline builds fail so you can take action")
+    description("Get notified when pipeline builds fail so you can take action")
 
     message(fn _params ->
       "The pipeline build has failed."

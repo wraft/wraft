@@ -103,7 +103,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   defp handle_exceptions(
          {:error,
           %PipelineError{error: :form_mapping_not_complete, input: trigger, stage: stage}},
-         current_user
+         _current_user
        ) do
     state = TriggerHistory.states()[:failed]
 
@@ -114,29 +114,13 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
-    Task.start(fn ->
-      trigger.creator_id
-      |> Account.get_user()
-      |> Map.put(:current_org_id, current_user["current_org_id"])
-      |> Delivery.dispatch("pipeline.form_mapping_not_complete", %{
-        channel: :user_notification,
-        channel_id: trigger.creator_id,
-        metadata: %{
-          type: "pipeline",
-          user_id: trigger.creator_id,
-          pipeline_id: trigger.pipeline_id,
-          stage_id: stage.id
-        }
-      })
-    end)
-
     Logger.error("Form mapping not complete. Pipeline execution failed.")
     trigger
   end
 
   defp handle_exceptions(
          {:error, %PipelineError{error: :pipeline_not_found, input: trigger, stage: stage}},
-         current_user
+         _current_user
        ) do
     state = TriggerHistory.states()[:failed]
 
@@ -148,29 +132,13 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
-    Task.start(fn ->
-      trigger.creator_id
-      |> Account.get_user()
-      |> Map.put(:current_org_id, current_user["current_org_id"])
-      |> Delivery.dispatch("pipeline.not_found", %{
-        channel: :user_notification,
-        channel_id: trigger.creator_id,
-        metadata: %{
-          type: "pipeline",
-          user_id: trigger.creator_id,
-          pipeline_id: trigger.pipeline_id,
-          stage_id: stage.id
-        }
-      })
-    end)
-
     Logger.error("Pipeline not found. Pipeline execution failed.")
     trigger
   end
 
   defp handle_exceptions(
          {:error, %PipelineError{error: :instance_failed, input: trigger, stage: stage}},
-         current_user
+         _current_user
        ) do
     state = TriggerHistory.states()[:failed]
 
@@ -182,22 +150,6 @@ defmodule WraftDoc.Workers.BulkWorker do
         stage: stage
       })
 
-    Task.start(fn ->
-      trigger.creator_id
-      |> Account.get_user()
-      |> Map.put(:current_org_id, current_user["current_org_id"])
-      |> Delivery.dispatch("pipeline.instance_failed", %{
-        channel: :user_notification,
-        channel_id: trigger.creator_id,
-        metadata: %{
-          type: "pipeline",
-          user_id: trigger.creator_id,
-          pipeline_id: trigger.pipeline_id,
-          stage_id: stage.id
-        }
-      })
-    end)
-
     Logger.error("Instance creation failed. Pipeline execution failed.")
     trigger
   end
@@ -205,7 +157,7 @@ defmodule WraftDoc.Workers.BulkWorker do
   defp handle_exceptions(
          {:error,
           %PipelineError{error: %DownloadError{message: message}, input: trigger, stage: stage}},
-         current_user
+         _current_user
        ) do
     state = TriggerHistory.states()[:failed]
 
@@ -215,22 +167,6 @@ defmodule WraftDoc.Workers.BulkWorker do
         message: message,
         stage: stage
       })
-
-    Task.start(fn ->
-      trigger.creator_id
-      |> Account.get_user()
-      |> Map.put(:current_org_id, current_user["current_org_id"])
-      |> Delivery.dispatch("pipeline.download_error", %{
-        channel: :user_notification,
-        channel_id: trigger.creator_id,
-        metadata: %{
-          type: "pipeline",
-          user_id: trigger.creator_id,
-          pipeline_id: trigger.pipeline_id,
-          stage_id: stage.id
-        }
-      })
-    end)
 
     Logger.error("Instance creation failed. Pipeline execution failed.")
     trigger
