@@ -123,7 +123,21 @@ defmodule WraftDoc.Seed do
     role
   end
 
-  def seed_user_organisation(user, organisation) do
+  def seed_user_organisation(user) do
+    organisation =
+      Repo.insert!(%Organisation{
+        name: Faker.Company.name(),
+        legal_name: Faker.Company.name(),
+        address: Faker.Address.street_address(),
+        name_of_ceo: Faker.Person.name(),
+        name_of_cto: Faker.Person.name(),
+        gstin: Faker.String.base64(15),
+        corporate_id: Faker.String.base64(21),
+        phone: Phone.EnGb.number(),
+        email: Faker.Internet.email(),
+        creator_id: user.id
+      })
+
     Repo.insert!(%UserOrganisation{user_id: user.id, organisation_id: organisation.id})
     organisation
   end
@@ -286,7 +300,7 @@ defmodule WraftDoc.Seed do
     })
   end
 
-  def seed_document_instance(user, content_type, state) do
+  def seed_document_instance(user, content_type, state, vendor) do
     Repo.insert!(%Instance{
       instance_id: Faker.Nato.letter_code_word(),
       raw: Faker.Company.buzzword_prefix(),
@@ -297,7 +311,8 @@ defmodule WraftDoc.Seed do
       type: 1,
       creator_id: user.id,
       content_type_id: content_type.id,
-      state_id: state.id
+      state_id: state.id,
+      vendor_id: vendor.id
     })
   end
 

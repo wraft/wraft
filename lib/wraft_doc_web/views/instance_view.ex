@@ -20,7 +20,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         approval_status: content.approval_status,
         type: content.type,
         serialized: content.serialized,
-        vendor: render_vendor(content.vendor),
+        vendor: render_one(content.vendor, VendorView, "vendor.json", as: :vendor),
         inserted_at: content.inserted_at,
         updated_at: content.updated_at
       },
@@ -47,7 +47,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       build: instance.build,
       signed_doc_url: instance.signed_doc_url,
       editable: instance.editable,
-      vendor: render_vendor(instance.vendor),
+      vendor: render_one(instance.vendor, VendorView, "vendor.json", as: :vendor),
       inserted_at: instance.inserted_at,
       updated_at: instance.updated_at
     }
@@ -76,7 +76,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
         approval_status: content.approval_status,
         type: content.type,
         title: get_in(content.serialized, ["title"]),
-        vendor: render_vendor(content.vendor),
+        vendor: render_one(content.vendor, VendorView, "vendor.json", as: :vendor),
         inserted_at: content.inserted_at,
         updated_at: content.updated_at
       },
@@ -152,7 +152,7 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
       state: render_one(instance.state, StateView, "instance_state.json", as: :state),
       creator: render_one(instance.creator, UserView, "user.json", as: :user),
       profile_pic: generate_url(instance.creator.profile),
-      vendor: render_vendor(instance.vendor),
+      vendor: render_one(instance.vendor, VendorView, "vendor.json", as: :vendor),
       versions: render_many(instance.versions, InstanceVersionView, "version.json", as: :version),
       instance_approval_systems:
         render_many(instance.instance_approval_systems, InstanceApprovalSystemView, "create.json",
@@ -199,11 +199,5 @@ defmodule WraftDocWeb.Api.V1.InstanceView do
 
   def generate_url(%{profile_pic: pic} = profile) do
     WraftDocWeb.PropicUploader.url({pic, profile}, signed: true)
-  end
-
-  defp render_vendor(nil), do: nil
-
-  defp render_vendor(vendor) do
-    render_one(vendor, VendorView, "vendor.json", as: :vendor)
   end
 end

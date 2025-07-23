@@ -28,11 +28,7 @@ defmodule WraftDoc.Enterprise do
   alias WraftDoc.Enterprise.StateUser
   alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Enterprise.VendorContact
-<<<<<<< HEAD
-  alias WraftDoc.Enterprise.VendorsContent
   alias WraftDoc.Notifications.Settings
-=======
->>>>>>> a4507ec0 (feat: revert vendor document to one to one relationship)
   alias WraftDoc.Repo
   alias WraftDoc.Storage
   alias WraftDoc.TaskSupervisor

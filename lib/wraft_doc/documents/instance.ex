@@ -143,6 +143,7 @@ defmodule WraftDoc.Documents.Instance do
         %{name: "creator_id", type: "string", facet: true},
         %{name: "content_type_id", type: "string", facet: true},
         %{name: "state_id", type: "string", facet: true},
+        %{name: "vendor_id", type: "string", facet: true},
         %{name: "inserted_at", type: "int64", facet: false},
         %{name: "updated_at", type: "int64", facet: false},
         %{name: "organisation_id", type: "string", facet: true}
