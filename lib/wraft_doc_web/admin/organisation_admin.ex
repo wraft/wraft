@@ -54,24 +54,22 @@ defmodule WraftDocWeb.OrganisationAdmin do
     ]
   end
 
-  def ordering(_schema) do
-    # order by created_at
-    [desc: :inserted_at]
-  end
+  def ordering(_schema), do: [desc: :inserted_at]
 
   def custom_index_query(_conn, _schema, query) do
-    from(q in query, preload: [:users_organisations])
+    from(q in query,
+      where: q.name != "Personal",
+      preload: [:users_organisations]
+    )
   end
 
-  defp deleted_at(%Organisation{users_organisations: [%UserOrganisation{deleted_at: nil}]}) do
-    false
-  end
+  defp deleted_at(%Organisation{users_organisations: [%UserOrganisation{deleted_at: nil}]}),
+    do: false
 
   defp deleted_at(%Organisation{
          users_organisations: [%UserOrganisation{deleted_at: _deleted_at}]
-       }) do
-    true
-  end
+       }),
+       do: true
 
   defp deleted_at(_), do: ""
 end
