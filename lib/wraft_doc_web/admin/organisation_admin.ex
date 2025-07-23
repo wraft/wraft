@@ -59,8 +59,18 @@ defmodule WraftDocWeb.OrganisationAdmin do
   def custom_index_query(_conn, _schema, query) do
     from(q in query,
       where: q.name != "Personal",
-      preload: [:users_organisations]
+      preload: [:users_organisations, :modified_by]
     )
+  end
+
+  def delete(conn, changeset) do
+    admin_id = conn.assigns.admin_session.id
+
+    changeset.data
+    |> Organisation.changeset(%{
+      modified_by_id: admin_id
+    })
+    |> Repo.update()
   end
 
   defp deleted_at(%Organisation{users_organisations: [%UserOrganisation{deleted_at: nil}]}),

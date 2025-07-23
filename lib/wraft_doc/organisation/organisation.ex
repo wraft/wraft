@@ -9,6 +9,7 @@ defmodule WraftDoc.Enterprise.Organisation do
   alias WraftDoc.Account.UserOrganisation
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.InternalUsers.InternalUser
   alias WraftDoc.Pipelines.Pipeline
   alias WraftDoc.Themes.Theme
 
@@ -27,18 +28,22 @@ defmodule WraftDoc.Enterprise.Organisation do
     field(:email, :string)
     field(:url, :string)
     field(:members_count, :integer, virtual: true)
+    field(:logo, WraftDocWeb.LogoUploader.Type)
+
     belongs_to(:creator, User)
     belongs_to(:owner, User)
-    field(:logo, WraftDocWeb.LogoUploader.Type)
+    belongs_to(:modified_by, InternalUser)
+
     has_many(:users_organisations, UserOrganisation)
     has_many(:fields, WraftDoc.Fields.Field)
     has_many(:forms, WraftDoc.Forms.Form)
-    many_to_many(:users, User, join_through: "users_organisations")
     has_many(:pipelines, Pipeline)
     has_many(:vendors, Vendor)
     has_many(:themes, Theme)
-
     has_many(:roles, Role)
+
+    many_to_many(:users, User, join_through: "users_organisations")
+
     timestamps()
   end
 
