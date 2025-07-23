@@ -227,6 +227,63 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
             total_pages: 2,
             total_entries: 15
           })
+        end,
+      LayoutCreate:
+        swagger_schema do
+          title("LayoutCreate")
+          description("Payload for creating a layout")
+
+          properties do
+            name(:string, "Layout name", required: true)
+            description(:string, "Description", required: true)
+            width(:string, "Layout width", required: true)
+            height(:string, "Layout height", required: true)
+            unit(:string, "Dimension unit", required: true)
+            slug(:string, "Slug for the layout")
+            frame_id(:string, "ID of the frame")
+            screenshot(:string, "Screenshot file name or URL")
+            assets(Schema.array(:string), "List of asset IDs")
+            engine_id(:string, "Layout engine ID", required: true)
+            margin(Schema.ref(:Margin), "Margins object")
+          end
+
+          example(%{
+            name: "Letter Layout",
+            description: "Standard letter page",
+            width: "216",
+            height: "279",
+            unit: "mm",
+            slug: "letter-layout",
+            frame_id: "uuid-frame",
+            screenshot: "letter_preview.png",
+            assets: ["asset-1", "asset-2"],
+            engine_id: "uuid-engine",
+            margin: %{
+              top: 2.5,
+              right: 2.5,
+              bottom: 2.5,
+              left: 2.5
+            }
+          })
+        end,
+      Margin:
+        swagger_schema do
+          title("Margin")
+          description("Margins for layout")
+
+          properties do
+            top(:float, "Top margin", required: true)
+            right(:float, "Right margin", required: true)
+            bottom(:float, "Bottom margin", required: true)
+            left(:float, "Left margin", required: true)
+          end
+
+          example(%{
+            top: 2.5,
+            right: 2.5,
+            bottom: 2.5,
+            left: 2.5
+          })
         end
     }
   end
@@ -239,27 +296,9 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     summary("Create layout")
     description("Create layout API")
 
-    consumes("multipart/form-data")
+    consumes("application/json")
 
-    parameter(:name, :formData, :string, "Layout's name", required: true)
-
-    parameter(:description, :formData, :string, "Layout description", required: true)
-
-    parameter(:width, :formData, :string, "Layout width", required: true)
-
-    parameter(:height, :formData, :string, "Layout height", required: true)
-
-    parameter(:unit, :formData, :string, "Layout dimension unit", required: true)
-
-    parameter(:slug, :formData, :string, "Name of slug to be used")
-
-    parameter(:frame_id, :formData, :string, "ID of the frame")
-
-    parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
-
-    parameter(:assets, :formData, :list, "IDs of assets of the layout")
-
-    parameter(:engine_id, :formData, :string, "ID of layout's engine", required: true)
+    parameter(:body, :body, Schema.ref(:LayoutCreate), "Layout create payload", required: true)
 
     response(200, "Ok", Schema.ref(:LayoutAndEngine))
     response(422, "Unprocessable Entity", Schema.ref(:Error))

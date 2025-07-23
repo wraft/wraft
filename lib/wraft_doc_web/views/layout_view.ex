@@ -17,6 +17,7 @@ defmodule WraftDocWeb.Api.V1.LayoutView do
       unit: layout.unit,
       slug: layout.slug,
       frame: render_frame(layout),
+      margin: layout.margin,
       screenshot: generate_ss_url(layout),
       inserted_at: layout.inserted_at,
       update_at: layout.updated_at,
