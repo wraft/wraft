@@ -1,11 +1,11 @@
-defmodule WraftDoc.Enterprise.VendorContact do
+defmodule WraftDoc.Vendors.VendorContact do
   @moduledoc """
   This module handles vendor contact information.
   Vendor contacts are individuals associated with vendor organizations.
   """
   use WraftDoc.Schema
   alias WraftDoc.Account.User
-  alias WraftDoc.Enterprise.Vendor
+  alias WraftDoc.Vendors.Vendor
 
   @email_regex ~r/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$/
 

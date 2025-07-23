@@ -1,4 +1,4 @@
-defmodule WraftDoc.Enterprise.Vendor do
+defmodule WraftDoc.Vendors.Vendor do
   @moduledoc """
   This module handles vendor information and validations.
   Vendors are organizations that provide goods/services and are standalone entities

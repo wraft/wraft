@@ -41,8 +41,6 @@ defmodule WraftDoc.Factory do
   alias WraftDoc.Enterprise.Organisation
   alias WraftDoc.Enterprise.Plan
   alias WraftDoc.Enterprise.StateUser
-  alias WraftDoc.Enterprise.Vendor
-  alias WraftDoc.Enterprise.VendorContact
   alias WraftDoc.Fields.Field
   alias WraftDoc.Fields.FieldType
   alias WraftDoc.Forms.Form
@@ -528,7 +526,7 @@ defmodule WraftDoc.Factory do
   end
 
   def vendor_factory do
-    %Vendor{
+    %WraftDoc.Vendors.Vendor{
       name: sequence(:name, &"Vendor name #{&1} "),
       email: sequence(:email, &"vendor#{&1}@example.com"),
       phone: sequence(:phone, &"555-000-#{String.pad_leading("#{&1}", 4, "0")}"),
@@ -536,14 +534,15 @@ defmodule WraftDoc.Factory do
       city: sequence(:city, &"City #{&1}"),
       country: sequence(:country, &"Country #{&1}"),
       website: sequence(:website, &"https://vendor#{&1}.com"),
-      gstin: sequence(:gstin, &"GST#{String.pad_leading("#{&1}", 10, "0")}"),
       reg_no: sequence(:reg_no, &"REG#{String.pad_leading("#{&1}", 8, "0")}"),
-      contact_person: sequence(:contact_person, &"Contact Person #{&1}")
+      contact_person: sequence(:contact_person, &"Contact Person #{&1}"),
+      creator: build(:user),
+      organisation: build(:organisation)
     }
   end
 
   def vendor_contact_factory do
-    %VendorContact{
+    %WraftDoc.Vendors.VendorContact{
       name: sequence(:name, &"Contact #{&1}"),
       email: sequence(:email, &"contact#{&1}@vendor.com"),
       phone: sequence(:phone, &"555-100-#{String.pad_leading("#{&1}", 4, "0")}"),

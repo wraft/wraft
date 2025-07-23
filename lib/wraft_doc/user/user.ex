@@ -66,7 +66,7 @@ defmodule WraftDoc.Account.User do
 
     has_many(:pipelines, WraftDoc.Pipelines.Pipeline, foreign_key: :creator_id)
     has_many(:payments, WraftDoc.Enterprise.Membership.Payment, foreign_key: :creator_id)
-    has_many(:vendors, WraftDoc.Enterprise.Vendor, foreign_key: :creator_id)
+    has_many(:vendors, WraftDoc.Vendors.Vendor, foreign_key: :creator_id)
     has_many(:organisation_fields, WraftDoc.Documents.OrganisationField, foreign_key: :creator_id)
     has_many(:owned_organisations, WraftDoc.Enterprise.Organisation, foreign_key: :creator_id)
     has_many(:forms, WraftDoc.Forms.Form, foreign_key: :creator_id)

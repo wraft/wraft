@@ -38,7 +38,7 @@ defmodule WraftDoc.Documents.Instance do
     belongs_to(:content_type, WraftDoc.ContentTypes.ContentType)
     belongs_to(:state, WraftDoc.Enterprise.Flow.State)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
-    belongs_to(:vendor, WraftDoc.Enterprise.Vendor)
+    belongs_to(:vendor, WraftDoc.Vendors.Vendor)
 
     has_many(:content_collaboration, WraftDoc.Documents.ContentCollaboration,
       foreign_key: :content_id

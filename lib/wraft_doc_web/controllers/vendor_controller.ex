@@ -19,9 +19,9 @@ defmodule WraftDocWeb.Api.V1.VendorController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Enterprise
-  alias WraftDoc.Enterprise.Vendor
-  alias WraftDoc.Enterprise.VendorContact
+  alias WraftDoc.Vendors
+  alias WraftDoc.Vendors.Vendor
+  alias WraftDoc.Vendors.VendorContact
 
   def swagger_definitions do
     %{
@@ -255,7 +255,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   def create(conn, params) do
     current_user = conn.assigns.current_user
 
-    with %Vendor{} = vendor <- Enterprise.create_vendor(current_user, params) do
+    with %Vendor{} = vendor <- Vendors.create_vendor(current_user, params) do
       render(conn, "create.json", vendor: vendor)
     end
   end
@@ -281,7 +281,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Enterprise.vendor_index(current_user, params) do
+         } <- Vendors.vendor_index(current_user, params) do
       render(conn, "index.json",
         vendors: vendors,
         page_number: page_number,
@@ -309,7 +309,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Vendor{} = vendor <- Enterprise.show_vendor(id, current_user) do
+    with %Vendor{} = vendor <- Vendors.show_vendor(id, current_user) do
       render(conn, "create.json", vendor: vendor)
     end
   end
@@ -334,8 +334,8 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   def update(conn, %{"id" => id} = params) do
     current_user = conn.assigns.current_user
 
-    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, id),
-         %Vendor{} = vendor <- Enterprise.update_vendor(vendor, params) do
+    with %Vendor{} = vendor <- Vendors.get_vendor(current_user, id),
+         %Vendor{} = vendor <- Vendors.update_vendor(vendor, params) do
       render(conn, "vendor.json", vendor: vendor)
     end
   end
@@ -359,8 +359,8 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, id),
-         {:ok, %Vendor{}} <- Enterprise.delete_vendor(vendor) do
+    with %Vendor{} = vendor <- Vendors.get_vendor(current_user, id),
+         {:ok, %Vendor{}} <- Vendors.delete_vendor(vendor) do
       render(conn, "vendor.json", vendor: vendor)
     end
   end
@@ -390,7 +390,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
     params = Map.put(params, "vendor_id", vendor_id)
 
     with %VendorContact{} = vendor_contact <-
-           Enterprise.create_vendor_contact(current_user, params) do
+           Vendors.create_vendor_contact(current_user, params) do
       render(conn, "vendor_contact.json", vendor_contact: vendor_contact)
     end
   end
@@ -419,7 +419,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
            page_number: page_number,
            total_pages: total_pages,
            total_entries: total_entries
-         } <- Enterprise.vendor_contacts_index(current_user, vendor_id, params) do
+         } <- Vendors.vendor_contacts_index(current_user, vendor_id, params) do
       render(conn, "contacts_index.json",
         vendor_contacts: vendor_contacts,
         page_number: page_number,
@@ -448,7 +448,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   def show_contact(conn, %{"vendor_id" => _vendor_id, "id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %VendorContact{} = vendor_contact <- Enterprise.get_vendor_contact(current_user, id) do
+    with %VendorContact{} = vendor_contact <- Vendors.get_vendor_contact(current_user, id) do
       render(conn, "vendor_contact.json", vendor_contact: vendor_contact)
     end
   end
@@ -477,9 +477,9 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   def update_contact(conn, %{"vendor_id" => _vendor_id, "id" => id} = params) do
     current_user = conn.assigns.current_user
 
-    with %VendorContact{} = vendor_contact <- Enterprise.get_vendor_contact(current_user, id),
+    with %VendorContact{} = vendor_contact <- Vendors.get_vendor_contact(current_user, id),
          {:ok, %VendorContact{} = vendor_contact} <-
-           Enterprise.update_vendor_contact(vendor_contact, params) do
+           Vendors.update_vendor_contact(vendor_contact, params) do
       render(conn, "vendor_contact.json", vendor_contact: vendor_contact)
     end
   end
@@ -504,8 +504,8 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   def delete_contact(conn, %{"vendor_id" => _vendor_id, "id" => id}) do
     current_user = conn.assigns.current_user
 
-    with %VendorContact{} = vendor_contact <- Enterprise.get_vendor_contact(current_user, id),
-         {:ok, %VendorContact{}} <- Enterprise.delete_vendor_contact(vendor_contact) do
+    with %VendorContact{} = vendor_contact <- Vendors.get_vendor_contact(current_user, id),
+         {:ok, %VendorContact{}} <- Vendors.delete_vendor_contact(vendor_contact) do
       render(conn, "vendor_contact.json", vendor_contact: vendor_contact)
     end
   end
@@ -529,8 +529,8 @@ defmodule WraftDocWeb.Api.V1.VendorController do
   def stats(conn, %{"vendor_id" => vendor_id}) do
     current_user = conn.assigns.current_user
 
-    with %Vendor{} = vendor <- Enterprise.get_vendor(current_user, vendor_id) do
-      stats = Enterprise.get_vendor_stats(vendor)
+    with %Vendor{} = vendor <- Vendors.get_vendor(current_user, vendor_id) do
+      stats = Vendors.get_vendor_stats(vendor)
       render(conn, "vendor_stats.json", stats: stats)
     end
   end

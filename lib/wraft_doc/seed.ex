@@ -30,7 +30,6 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.Enterprise.Flow.State
   alias WraftDoc.Enterprise.Membership
   alias WraftDoc.Enterprise.Organisation
-  alias WraftDoc.Enterprise.Vendor
   alias WraftDoc.Fields.Field
   alias WraftDoc.Fields.FieldType
   alias WraftDoc.Layouts.Layout
@@ -38,6 +37,7 @@ defmodule WraftDoc.Seed do
   alias WraftDoc.Repo
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Themes.ThemeAsset
+  alias WraftDoc.Vendors.Vendor
 
   require Logger
 
