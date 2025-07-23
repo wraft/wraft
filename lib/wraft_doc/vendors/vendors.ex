@@ -180,62 +180,59 @@ defmodule WraftDoc.Vendors do
   @spec get_vendor_stats(Vendor.t()) :: map()
   def get_vendor_stats(%Vendor{id: vendor_id, organisation_id: _org_id}) do
     # Get total documents connected to this vendor
-    total_documents_query =
-      from(i in Instance,
-        where: i.vendor_id == ^vendor_id,
-        select: count(i.id)
-      )
+    total_documents =
+      Instance
+      |> where([i], i.vendor_id == ^vendor_id)
+      |> select([i], count(i.id))
+      |> Repo.one()
 
     # Get pending approvals for documents connected to this vendor
     # Based on approval_status field in Instance table
-    pending_approvals_query =
-      from(i in Instance,
-        where: i.vendor_id == ^vendor_id and i.approval_status == false,
-        select: count(i.id)
-      )
+    pending_approvals =
+      Instance
+      |> where([i], i.vendor_id == ^vendor_id and i.approval_status == false)
+      |> select([i], count(i.id))
+      |> Repo.one()
 
     # Get total contract value for documents with contract metadata
     # Contract value is stored in meta field as per contract_meta.ex
-    total_contract_value_query =
-      from(i in Instance,
-        where:
-          i.vendor_id == ^vendor_id and
-            not is_nil(fragment("? -> 'contract_value'", i.meta)),
-        select: coalesce(sum(fragment("CAST(? ->> 'contract_value' AS DECIMAL)", i.meta)), 0)
+    total_contract_value =
+      Instance
+      |> where(
+        [i],
+        i.vendor_id == ^vendor_id and not is_nil(fragment("? -> 'contract_value'", i.meta))
       )
+      |> select(
+        [i],
+        coalesce(sum(fragment("CAST(? ->> 'contract_value' AS DECIMAL)", i.meta)), 0)
+      )
+      |> Repo.one()
 
     # Get total vendor contacts for this vendor
     # Based on vendor_contacts table relationship
-    total_contacts_query =
-      from(contact in VendorContact,
-        where: contact.vendor_id == ^vendor_id,
-        select: count(contact.id)
-      )
+    total_contacts =
+      VendorContact
+      |> where([contact], contact.vendor_id == ^vendor_id)
+      |> select([contact], count(contact.id))
+      |> Repo.one()
 
     # Get documents added this month (not vendors, but documents connected to vendors)
     # This represents new document activity for vendors this month
     start_of_month = Date.beginning_of_month(Date.utc_today())
     start_of_month_datetime = DateTime.new!(start_of_month, ~T[00:00:00])
 
-    new_this_month_query =
-      from(i in Instance,
-        where: i.vendor_id == ^vendor_id and i.inserted_at >= ^start_of_month_datetime,
-        select: count(i.id)
-      )
-
-    # Execute all queries
-    total_documents = Repo.one(total_documents_query) || 0
-    pending_approvals = Repo.one(pending_approvals_query) || 0
-    total_contract_value = Repo.one(total_contract_value_query) || Decimal.new(0)
-    total_contacts = Repo.one(total_contacts_query) || 0
-    new_this_month = Repo.one(new_this_month_query) || 0
+    new_this_month =
+      Instance
+      |> where([i], i.vendor_id == ^vendor_id and i.inserted_at >= ^start_of_month_datetime)
+      |> select([i], count(i.id))
+      |> Repo.one()
 
     %{
-      total_documents: total_documents,
-      pending_approvals: pending_approvals,
-      total_contract_value: total_contract_value,
-      total_contacts: total_contacts,
-      new_this_month: new_this_month
+      total_documents: total_documents || 0,
+      pending_approvals: pending_approvals || 0,
+      total_contract_value: total_contract_value || Decimal.new(0),
+      total_contacts: total_contacts || 0,
+      new_this_month: new_this_month || 0
     }
   end
 end
