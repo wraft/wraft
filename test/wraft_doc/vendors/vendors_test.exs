@@ -4,6 +4,7 @@ defmodule WraftDoc.VendorsTest do
   import Mox
 
   alias WraftDoc.Repo
+  alias WraftDoc.Vendors
   alias WraftDoc.Vendors.Vendor
   alias WraftDoc.Vendors.VendorContact
 
@@ -308,22 +309,6 @@ defmodule WraftDoc.VendorsTest do
     end
   end
 
-  # ===============================
-  # VENDOR STATS TESTS
-  # ===============================
-
-  # ===============================
-  # VENDOR STATS TESTS
-  # ===============================
-end
-
-defmodule WraftDoc.Vendors.VendorStatsTest do
-  use WraftDoc.DataCase
-  @moduletag :vendors
-  import WraftDoc.Factory
-
-  alias WraftDoc.Vendors
-
   describe "get_vendor_stats/1" do
     setup do
       user = insert(:user_with_organisation)
@@ -505,12 +490,4 @@ defmodule WraftDoc.Vendors.VendorStatsTest do
       assert stats.new_this_month == 0
     end
   end
-
-  # ===============================
-  # VENDOR STATS TESTS
-  # ===============================
-
-  # ===============================
-  # VENDOR STATS TESTS
-  # ===============================
 end
