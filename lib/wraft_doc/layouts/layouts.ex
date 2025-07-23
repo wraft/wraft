@@ -20,7 +20,11 @@ defmodule WraftDoc.Layouts do
   # TODO - improve tests
   @spec create_layout(User.t(), Engine.t(), map) :: Layout.t() | {:error, Ecto.Changeset.t()}
   def create_layout(%{current_org_id: org_id} = current_user, %{id: engine_id} = engine, params) do
-    params = Map.merge(params, %{"organisation_id" => org_id, "engine_id" => engine_id})
+    params =
+      Map.merge(params, %{
+        "organisation_id" => org_id,
+        "engine_id" => engine_id
+      })
 
     current_user
     |> build_assoc(:layouts, engine: engine)
