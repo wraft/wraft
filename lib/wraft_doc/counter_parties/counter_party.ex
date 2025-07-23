@@ -1,11 +1,17 @@
 defmodule WraftDoc.CounterParties.CounterParty do
   @moduledoc """
-    This is the Counter Parties module for managing document signatories
+    This is the Counter Parties module for managing document signatories.
+
+    Counter parties can be categorized by party_type (external, vendor, current_org)
+    and can sign documents using different signature_type methods (electronic, digital, zoho_sign, docusign).
+    The sign_order field determines the sequence in which counterparties should sign the document.
   """
   use Waffle.Ecto.Schema
   use WraftDoc.Schema
 
   @signature_status [:pending, :accepted, :signed]
+  @party_types [:external, :vendor, :current_org]
+  @signature_types [:electronic, :digital, :zoho_sign, :docusign]
 
   schema "counter_parties" do
     field(:name, :string)
@@ -17,9 +23,13 @@ defmodule WraftDoc.CounterParties.CounterParty do
     field(:signature_image, WraftDocWeb.SignatureUploader.Type)
     field(:signed_file, :string)
     field(:color_rgb, :map)
+    field(:party_type, Ecto.Enum, values: @party_types)
+    field(:signature_type, Ecto.Enum, values: @signature_types)
+    field(:sign_order, :integer)
     has_many(:e_signature, WraftDoc.Documents.ESignature)
     belongs_to(:content, WraftDoc.Documents.Instance)
     belongs_to(:user, WraftDoc.Account.User)
+    belongs_to(:party_type_ref, WraftDoc.CounterParties.PartyType, foreign_key: :party_type_id)
 
     timestamps()
   end
@@ -34,7 +44,11 @@ defmodule WraftDoc.CounterParties.CounterParty do
       :signature_status,
       :signature_date,
       :signature_ip,
-      :color_rgb
+      :color_rgb,
+      :party_type,
+      :signature_type,
+      :sign_order,
+      :party_type_id
     ])
     |> validate_required([:name, :content_id])
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
@@ -43,6 +57,7 @@ defmodule WraftDoc.CounterParties.CounterParty do
       message: "Counterparty already exists for this document"
     )
     |> validate_color_rgb()
+    |> validate_number(:sign_order, greater_than: 0)
   end
 
   def update_status_changeset(counter_parties, attrs) do
