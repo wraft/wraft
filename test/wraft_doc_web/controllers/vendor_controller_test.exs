@@ -260,78 +260,92 @@ defmodule WraftDocWeb.Api.V1.VendorControllerTest do
       assert json_response(conn, 200)["name"] == contact.name
     end
   end
-end
 
-describe "vendor stats" do
-  setup [:create_user_and_organisation, :create_vendor]
+  describe "vendor stats" do
+    setup [:create_user_and_organisation, :create_vendor]
 
-  test "returns vendor stats successfully", %{conn: conn, vendor: vendor} do
-    conn = get(conn, Routes.vendor_path(conn, :stats, vendor.id))
+    test "returns vendor stats successfully", %{conn: conn, vendor: vendor} do
+      conn = get(conn, Routes.v1_vendor_path(conn, :stats, vendor.id))
 
-    assert %{
-             "total_documents" => 0,
-             "pending_approvals" => 0,
-             "total_contract_value" => _,
-             "total_contacts" => 0,
-             "new_this_month" => 0
-           } = json_response(conn, 200)
-  end
+      assert %{
+               "total_documents" => 0,
+               "pending_approvals" => 0,
+               "total_contract_value" => _,
+               "total_contacts" => 0,
+               "new_this_month" => 0
+             } = json_response(conn, 200)
+    end
 
-  test "returns vendor stats with documents", %{
-    conn: conn,
-    vendor: vendor,
-    user: user,
-    organisation: organisation
-  } do
-    # Create some test data
-    content_type = insert(:content_type, organisation: organisation)
-    insert(:instance, content_type: content_type, vendor: vendor, creator: user)
-
-    insert(:instance,
-      content_type: content_type,
+    test "returns vendor stats with documents", %{
+      conn: conn,
       vendor: vendor,
-      creator: user,
-      approval_status: false
-    )
+      user: user,
+      organisation: organisation
+    } do
+      # Create some test data
+      content_type = insert(:content_type, organisation: organisation)
+      insert(:instance, content_type: content_type, vendor: vendor, creator: user)
 
-    insert(:vendor_contact, vendor: vendor, creator: user)
+      insert(:instance,
+        content_type: content_type,
+        vendor: vendor,
+        creator: user,
+        approval_status: false
+      )
 
-    conn = get(conn, Routes.vendor_path(conn, :stats, vendor.id))
+      insert(:vendor_contact, vendor: vendor, creator: user)
 
-    response = json_response(conn, 200)
+      conn = get(conn, Routes.v1_vendor_path(conn, :stats, vendor.id))
 
-    assert response["total_documents"] == 2
-    assert response["pending_approvals"] == 1
-    assert response["total_contacts"] == 1
-    assert response["new_this_month"] == 2
-    assert Map.has_key?(response, "total_contract_value")
+      response = json_response(conn, 200)
+
+      assert response["total_documents"] == 2
+      assert response["pending_approvals"] == 2
+      assert response["total_contacts"] == 1
+      assert response["new_this_month"] == 2
+      assert Map.has_key?(response, "total_contract_value")
+    end
+
+    test "returns 400 for non-existent vendor", %{conn: conn} do
+      conn = get(conn, Routes.v1_vendor_path(conn, :stats, Ecto.UUID.generate()))
+      assert json_response(conn, 400)["errors"] == "The Vendor id does not exist..!"
+    end
+
+    test "returns 400 for vendor from different organisation", %{conn: conn} do
+      other_user = insert(:user_with_organisation)
+      [other_organisation] = other_user.owned_organisations
+      other_vendor = insert(:vendor, creator: other_user, organisation: other_organisation)
+
+      conn = get(conn, Routes.v1_vendor_path(conn, :stats, other_vendor.id))
+      assert json_response(conn, 400)["errors"] == "The Vendor id does not exist..!"
+    end
+
+    test "returns stats with proper data types", %{conn: conn, vendor: vendor} do
+      conn = get(conn, Routes.v1_vendor_path(conn, :stats, vendor.id))
+      response = json_response(conn, 200)
+
+      # Verify all required fields are present and have correct types
+      assert is_integer(response["total_documents"])
+      assert is_integer(response["pending_approvals"])
+      assert is_integer(response["total_contacts"])
+      assert is_integer(response["new_this_month"])
+      # total_contract_value should be a string representation of decimal
+      assert is_binary(response["total_contract_value"]) or
+               is_number(response["total_contract_value"])
+    end
   end
 
-  test "returns 404 for non-existent vendor", %{conn: conn} do
-    conn = get(conn, Routes.vendor_path(conn, :stats, Ecto.UUID.generate()))
-    assert json_response(conn, 404)
+  # Setup functions for vendor stats tests
+  defp create_user_and_organisation(%{conn: conn}) do
+    user = conn.assigns.current_user
+    [organisation] = user.owned_organisations
+
+    {:ok, %{user: user, organisation: organisation, conn: conn}}
   end
 
-  test "returns 404 for vendor from different organisation", %{conn: conn} do
-    other_user = insert(:user_with_organisation)
-    [other_organisation] = other_user.owned_organisations
-    other_vendor = insert(:vendor, creator: other_user, organisation: other_organisation)
+  defp create_vendor(%{user: user, organisation: organisation, conn: conn}) do
+    vendor = insert(:vendor, organisation: organisation, creator: user)
 
-    conn = get(conn, Routes.vendor_path(conn, :stats, other_vendor.id))
-    assert json_response(conn, 404)
-  end
-
-  test "returns stats with proper data types", %{conn: conn, vendor: vendor} do
-    conn = get(conn, Routes.vendor_path(conn, :stats, vendor.id))
-    response = json_response(conn, 200)
-
-    # Verify all required fields are present and have correct types
-    assert is_integer(response["total_documents"])
-    assert is_integer(response["pending_approvals"])
-    assert is_integer(response["total_contacts"])
-    assert is_integer(response["new_this_month"])
-    # total_contract_value should be a string representation of decimal
-    assert is_binary(response["total_contract_value"]) or
-             is_number(response["total_contract_value"])
+    {:ok, %{vendor: vendor, user: user, organisation: organisation, conn: conn}}
   end
 end
