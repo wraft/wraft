@@ -130,7 +130,8 @@ defmodule WraftDoc.Documents do
           {:content_type, [layout: [:assets, :frame, :engine, :organisation]]},
           {:versions, versions_preload_query},
           :state,
-          :instance_approval_systems
+          :instance_approval_systems,
+          :vendor
         ])
 
       {:error, _, changeset, _} ->
@@ -211,7 +212,8 @@ defmodule WraftDoc.Documents do
         Repo.preload(content, [
           :content_type,
           :state,
-          {:instance_approval_systems, :approver}
+          {:instance_approval_systems, :approver},
+          :vendor
         ])
 
       {:error, _, changeset, _} ->
