@@ -458,7 +458,6 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
          %Layout{} = layout <-
            Layouts.update_layout(
              layout,
-             current_user,
              Map.merge(params, %{"engine_id" => engine_id})
            ) do
       Typesense.update_document(layout)
