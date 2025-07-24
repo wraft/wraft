@@ -266,6 +266,7 @@ defmodule WraftDocWeb.Api.V1.VendorController do
     description("API to get the list of all vendors created so far")
 
     parameter(:page, :query, :string, "Page number")
+    parameter(:query, :query, :string, "Search query to filter vendors by name or email")
 
     response(200, "Ok", Schema.ref(:VendorIndex))
     response(401, "Unauthorized", Schema.ref(:Error))

@@ -91,16 +91,29 @@ defmodule WraftDoc.Vendors do
   @doc """
   Lists all vendors under an organisation
   -`organisation`- an Organisation struct
-  -`params` - a map contains params for pagination
+  -`params` - a map contains params for pagination and search query
   """
   @spec vendor_index(User.t(), map()) :: Scrivener.Paginater.t()
   def vendor_index(%User{current_org_id: organisation_id}, params) do
-    Vendor
-    |> where([v], v.organisation_id == ^organisation_id)
-    |> Repo.paginate(params)
+    query =
+      Vendor
+      |> where([v], v.organisation_id == ^organisation_id)
+      |> apply_search_filter(params)
+
+    Repo.paginate(query, params)
   end
 
   def vendor_index(_, _), do: nil
+
+  # Private function to apply search filter based on query parameter
+  defp apply_search_filter(query, %{"query" => search_term})
+       when is_binary(search_term) and search_term != "" do
+    search_pattern = "%#{search_term}%"
+
+    where(query, [v], ilike(v.name, ^search_pattern) or ilike(v.email, ^search_pattern))
+  end
+
+  defp apply_search_filter(query, _params), do: query
 
   @doc """
   Create a vendor contact
