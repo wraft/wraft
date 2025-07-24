@@ -193,7 +193,7 @@ defmodule WraftDoc.Assets do
   @spec preload_asset(Layout.t()) :: Layout.t()
   def preload_asset(%Layout{} = layout) do
     Repo.preload(layout, [
-      :assets,
+      :asset,
       :creator,
       :organisation,
       :engine,

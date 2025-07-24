@@ -127,7 +127,7 @@ defmodule WraftDoc.Documents do
           )
 
         Repo.preload(content, [
-          {:content_type, [layout: [:assets, :frame, :engine, :organisation]]},
+          {:content_type, [layout: [:asset, :frame, :engine, :organisation]]},
           {:versions, versions_preload_query},
           :state,
           :instance_approval_systems,
@@ -1106,16 +1106,14 @@ defmodule WraftDoc.Documents do
            doc_settings: document_settings,
            creator: %User{name: name, email: email}
          } = instance,
-         %Layout{organisation: %Organisation{name: organisation_name}, slug: slug} = layout,
+         %Layout{organisation: %Organisation{name: organisation_name}, slug: slug, asset: asset} =
+           layout,
          header,
          mkdir,
          theme,
          task
        ) do
-    header =
-      Enum.reduce(layout.assets, header, fn asset, acc ->
-        Assets.find_asset_header_values(asset, acc, layout, instance)
-      end)
+    header = Assets.find_asset_header_values(asset, header, layout, instance)
 
     qr_code = Task.await(task)
     page_title = instance.serialized["title"]

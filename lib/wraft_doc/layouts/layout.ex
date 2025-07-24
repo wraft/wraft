@@ -22,12 +22,11 @@ defmodule WraftDoc.Layouts.Layout do
 
     belongs_to(:engine, WraftDoc.Documents.Engine)
     belongs_to(:frame, WraftDoc.Frames.Frame)
+    belongs_to(:asset, WraftDoc.Assets.Asset)
     belongs_to(:creator, WraftDoc.Account.User)
     belongs_to(:organisation, WraftDoc.Enterprise.Organisation)
 
     has_many(:content_types, WraftDoc.ContentTypes.ContentType)
-    has_many(:layout_assets, WraftDoc.Layouts.LayoutAsset)
-    has_many(:assets, through: [:layout_assets, :asset])
 
     timestamps()
   end
@@ -42,6 +41,7 @@ defmodule WraftDoc.Layouts.Layout do
       :unit,
       :slug,
       :frame_id,
+      :asset_id,
       :organisation_id,
       :engine_id
     ])
@@ -68,6 +68,7 @@ defmodule WraftDoc.Layouts.Layout do
       :height,
       :unit,
       :slug,
+      :asset_id,
       :frame_id,
       :engine_id
     ])
