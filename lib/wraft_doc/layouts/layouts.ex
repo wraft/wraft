@@ -198,24 +198,33 @@ defmodule WraftDoc.Layouts do
   Update a layout.
   """
   # TODO - improve tests
-  @spec update_layout(Layout.t(), map()) :: Layout.t() | {:error, Ecto.Changeset.t()}
-  def update_layout(layout, params) do
-    params = Map.put(params, "name", params["layout_name"])
+  @spec update_layout(User.t(), Layout.t(), map()) :: Layout.t() | {:error, Ecto.Changeset.t()}
+  def update_layout(%{current_org_id: org_id} = _current_user, %{asset: asset} = layout, params) do
+    Multi.new()
+    |> Multi.run(:asset, fn _repo, _changes ->
+      params =
+        Map.merge(params, %{
+          "organisation_id" => org_id,
+          "name" => Map.get(params, "asset_name", asset.name)
+        })
 
-    layout
-    |> Layout.update_changeset(params)
-    |> Repo.update()
+      Assets.update_asset(asset, params)
+    end)
+    |> Multi.update(:layout, fn _ ->
+      params =
+        Map.merge(params, %{
+          "organisation_id" => org_id
+        })
+
+      Layout.update_changeset(layout, params)
+    end)
+    |> Repo.transaction()
     |> case do
-      {:error, _} = changeset ->
-        changeset
+      {:ok, %{layout: layout}} ->
+        Assets.preload_asset(layout)
 
-      {:ok, layout} ->
-        Repo.preload(layout, [
-          :engine,
-          :creator,
-          :asset,
-          frame: [:asset]
-        ])
+      {:error, _operation, reason, _changes} ->
+        {:error, reason}
     end
   end
 

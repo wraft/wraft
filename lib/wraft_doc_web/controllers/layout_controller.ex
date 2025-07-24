@@ -14,8 +14,6 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
   action_fallback(WraftDocWeb.FallbackController)
 
-  alias WraftDoc.Assets
-  alias WraftDoc.Assets.Asset
   alias WraftDoc.Documents.Engine
   alias WraftDoc.Frames
   alias WraftDoc.Layouts
@@ -298,7 +296,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     summary("Create Layout")
     description("Creates a new asset and uses it to create a layout")
 
-    consumes("application/json")
+    consumes("multipart/form-data")
 
     parameter(:asset_name, :formData, :string, "Name of the asset", required: true)
 
@@ -306,7 +304,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:type, :formData, :string, "Type of the asset", required: true)
 
-    parameter(:layout_name, :formData, :string, "Layout's name", required: true)
+    parameter(:name, :formData, :string, "Layout's name", required: true)
 
     parameter(:description, :formData, :string, "Layout description", required: true)
 
@@ -317,6 +315,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     parameter(:unit, :formData, :string, "Layout dimension unit", required: true)
 
     parameter(:slug, :formData, :string, "Name of slug to be used")
+
     parameter(:frame_id, :formData, :string, "ID of the frame")
 
     parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
@@ -328,7 +327,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec create(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec create(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def create(conn, params) do
     current_user = conn.assigns[:current_user]
 
@@ -361,7 +360,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec index(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec index(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def index(conn, params) do
     current_user = conn.assigns[:current_user]
 
@@ -396,7 +395,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec show(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec show(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def show(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
 
@@ -425,7 +424,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
 
     parameter(:type, :formData, :string, "Type of the asset", required: true)
 
-    parameter(:layout_name, :formData, :string, "Layout's name", required: true)
+    parameter(:name, :formData, :string, "Layout's name", required: true)
 
     parameter(:description, :formData, :string, "Layout description", required: true)
 
@@ -436,6 +435,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     parameter(:unit, :formData, :string, "Layout dimension unit", required: true)
 
     parameter(:slug, :formData, :string, "Name of slug to be used")
+
     parameter(:frame_id, :formData, :string, "ID of the frame")
 
     parameter(:screenshot, :formData, :file, "Screenshot to upload", required: true)
@@ -447,16 +447,15 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec update(Plug.Conn.t(), map) :: Plug.Conn.t()
-  def update(conn, %{"id" => layout_id, "asset_id" => asset_id} = params) do
+  @spec update(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def update(conn, %{"id" => layout_id} = params) do
     current_user = conn.assigns[:current_user]
 
     with %Layout{} = layout <- Layouts.get_layout(layout_id, current_user),
          %Engine{id: engine_id} = _engine <- Frames.get_engine_by_frame_type(params),
-         %Asset{} = asset <- Assets.get_asset(asset_id, current_user),
-         {:ok, _asset} <- Assets.update_asset(asset, params),
          %Layout{} = layout <-
            Layouts.update_layout(
+             current_user,
              layout,
              Map.merge(params, %{"engine_id" => engine_id})
            ) do
@@ -482,7 +481,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec delete(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec delete(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete(conn, %{"id" => id}) do
     current_user = conn.assigns[:current_user]
 
@@ -511,7 +510,7 @@ defmodule WraftDocWeb.Api.V1.LayoutController do
     response(401, "Unauthorized", Schema.ref(:Error))
   end
 
-  @spec delete_layout_asset(Plug.Conn.t(), map) :: Plug.Conn.t()
+  @spec delete_layout_asset(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def delete_layout_asset(conn, %{"id" => l_id, "a_id" => a_id}) do
     current_user = conn.assigns[:current_user]
 
