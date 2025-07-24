@@ -14,7 +14,7 @@ defmodule WraftDoc.Enterprise.Organisation do
   alias WraftDoc.Themes.Theme
   alias WraftDoc.Vendors.Vendor
 
-  @fields ~w(name legal_name email url address name_of_ceo name_of_cto gstin corporate_id phone creator_id owner_id)a
+  @fields ~w(name legal_name email url address name_of_ceo name_of_cto gstin corporate_id phone creator_id owner_id modified_by_id)a
 
   @derive {Jason.Encoder, only: [:name]}
   schema "organisation" do

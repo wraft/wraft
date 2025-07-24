@@ -16,6 +16,24 @@ defmodule WraftDoc.Workers.ScheduledWorker do
   alias WraftDoc.Repo
 
   @impl Oban.Worker
+  def perform(%Job{args: %{"type" => "purge_deleted_records"}}) do
+    cutoff_date = DateTime.add(DateTime.utc_now(), -30 * 24 * 60 * 60, :second)
+
+    org_ids_to_check =
+      WraftDoc.Account.UserOrganisation
+      |> where([r], not is_nil(r.deleted_at) and r.deleted_at < ^cutoff_date)
+      |> select([r], r.organisation_id)
+      |> Repo.all()
+
+    WraftDoc.Enterprise.Organisation
+    |> where([org], org.id in ^org_ids_to_check)
+    |> Repo.delete_all()
+
+    Logger.info("Deleted #{length(org_ids_to_check)} organisations")
+
+    :ok
+  end
+
   def perform(%Job{}) do
     Logger.info("Job started..!")
 
